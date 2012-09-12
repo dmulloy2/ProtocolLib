@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" output="class_test" path="test"/>
+	<classpathentry kind="lib" path="D:/Games/Minecraft/Server Mods/Server/craftbukkit-1.3.1-R2.0.jar"/>
+	<classpathentry kind="lib" path="lib/cglib-nodep-2.2.3.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/D:/Kristian/Programmer/Binaries/cglib.2.2.3/cglib-docs-2.2.3.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre6"/>
+	<classpathentry kind="output" path="class"/>
+</classpath>

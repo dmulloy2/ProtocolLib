@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="compile" name="Project ItemDisguise" basedir=".">
+    <!--ANT 1.7 is required                                        -->
+    <target name="compile">
+        <jar destfile="bin/ProtocolLib.jar" filesetmanifest="mergewithoutmain" excludes="test/*">
+            <manifest>
+                <attribute name="Main-Class" value="com.comphenix.itemdisguise.Application"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="class"/>
+            <zipfileset excludes="META-INF/*.SF" src="lib/cglib-nodep-2.2.3.jar"/>
+        </jar>
+    </target>
+</project>
