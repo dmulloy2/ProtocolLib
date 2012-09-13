@@ -418,6 +418,14 @@ public final class PacketFilterManager implements ProtocolManager {
 			throw new IllegalArgumentException("Player has no injected handler.");
 	}
 	
+	/**
+	 * Retrieves the current plugin class loader.
+	 * @return Class loader.
+	 */
+	public ClassLoader getClassLoader() {
+		return classLoader;
+	}
+	
 	@Override
 	public boolean isClosed() {
 		return hasClosed;

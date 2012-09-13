@@ -218,19 +218,21 @@ class PlayerInjector {
 					@Override
 					public boolean add(Packet packet) {
 
+						Packet result = null;
+						
 						// Check for fake packets and ignored packets
 						if (packet instanceof FakePacket) {
 							return true;
 						} else if (ignoredPackets.contains(packet)) {
 							ignoredPackets.remove(packet);
 						} else {
-							packet = handlePacketRecieved(packet);
+							result = handlePacketRecieved(packet);
 						}
 						
 						// A NULL packet indicate cancelling
 						try {
-							if (packet != null) {
-								super.add(packet);
+							if (result != null) {
+								super.add(result);
 							} else {
 								// We'll use the FakePacket marker instead of preventing the filters
 								sendServerPacket(createNegativePacket(packet), true);
@@ -280,7 +282,7 @@ class PlayerInjector {
 		//   }
 		ex.setInterfaces(new Class[] { FakePacket.class } );
 		ex.setUseCache(true);
-		ex.setClassLoader(type.getClassLoader());
+		ex.setClassLoader(manager.getClassLoader());
 		ex.setSuperclass(type);
 		ex.setCallback(new MethodInterceptor() {
 			@Override
