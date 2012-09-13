@@ -2,9 +2,8 @@ package com.comphenix.protocol.injector;
 
 import java.io.DataInputStream;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.WeakHashMap;
-
-import org.apache.commons.lang.ArrayUtils;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -55,7 +54,7 @@ class ReadPacketModifier implements MethodInterceptor {
 		
 		// Is this a readPacketData method?
 		if (returnValue == null && 
-				ArrayUtils.isEquals(method.getParameterTypes(), parameters)) {
+				Arrays.equals(method.getParameterTypes(), parameters)) {
 			
 			// We need this in order to get the correct player
 			DataInputStream input = (DataInputStream) args[0];

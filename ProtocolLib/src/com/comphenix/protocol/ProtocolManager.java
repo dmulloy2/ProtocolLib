@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
 
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
@@ -19,20 +20,28 @@ public interface ProtocolManager {
 	 * Retrieves a list of every registered packet listener.
 	 * @return Every registered packet listener.
 	 */
-	public abstract ImmutableSet<PacketListener> getPacketListeners();
+	public ImmutableSet<PacketListener> getPacketListeners();
 
 	/**
 	 * Adds a packet listener.
 	 * @param listener - new packet listener.
 	 */
-	public abstract void addPacketListener(PacketListener listener);
+	public void addPacketListener(PacketListener listener);
 
 	/**
 	 * Removes a given packet listener.
 	 * @param listener - the packet listener to remove.
 	 */
-	public abstract void removePacketListener(PacketListener listener);
+	public void removePacketListener(PacketListener listener);
 
+	/**
+	 * Removes every listener associated with the given plugin.
+	 * <p>
+	 * Note that this only works for listeners that derive from PacketAdapter.
+	 * @param plugin - the plugin to unload.
+	 */
+	public void removePacketAdapters(Plugin plugin);
+	
 	/**
 	 * Send a packet to the given player.
 	 * @param reciever - the reciever.

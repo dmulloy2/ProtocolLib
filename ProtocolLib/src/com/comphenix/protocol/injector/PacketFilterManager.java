@@ -2,6 +2,7 @@ package com.comphenix.protocol.injector;
 
 import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,8 +12,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
-import org.apache.commons.lang.NullArgumentException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,9 +27,11 @@ import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -47,6 +52,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	// Whether or not this class has been closed
 	private boolean hasClosed;
 	
+	// The default class loader
+	private ClassLoader classLoader;
+	
 	// Error logger
 	private Logger logger;
 	
@@ -55,12 +63,13 @@ public final class PacketFilterManager implements ProtocolManager {
 	 */
 	public PacketFilterManager(ClassLoader classLoader, Logger logger) {
 		if (logger == null)
-			throw new NullArgumentException("logger");
+			throw new IllegalArgumentException("logger cannot be NULL.");
 		if (classLoader == null)
-			throw new NullArgumentException("classLoader");
+			throw new IllegalArgumentException("classLoader cannot be NULL.");
 		
 		try {
 			// Initialize values
+			this.classLoader = classLoader;
 			this.logger = logger;
 			this.packetInjector = new PacketInjector(classLoader, this, connectionLookup);
 		} catch (IllegalAccessException e) {
@@ -80,7 +89,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	@Override
 	public void addPacketListener(PacketListener listener) {
 		if (listener == null)
-			throw new NullArgumentException("listener");
+			throw new IllegalArgumentException("listener cannot be NULL.");
 		
 		packetListeners.add(listener);
 		enablePacketFilters(listener.getConnectionSide(), 
@@ -90,11 +99,27 @@ public final class PacketFilterManager implements ProtocolManager {
 	@Override
 	public void removePacketListener(PacketListener listener) {
 		if (listener == null)
-			throw new NullArgumentException("listener");
+			throw new IllegalArgumentException("listener cannot be NULL");
 		
 		packetListeners.remove(listener);
 		disablePacketFilters(listener.getConnectionSide(),
 						 	 listener.getPacketsID());
+	}
+	
+	@Override
+	public void removePacketAdapters(Plugin plugin) {
+		
+		// Iterate through every packet listener
+		for (Object listener : packetListeners.toArray()) {
+			if (listener instanceof PacketAdapter) {
+				PacketAdapter adapter = (PacketAdapter) listener;
+				
+				// Remove the listener
+				if (adapter.getPlugin().equals(plugin)) {
+					packetListeners.remove(listener);
+				}
+			}
+		}
 	}
 	
 	/**
@@ -150,7 +175,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 */
 	private void enablePacketFilters(ConnectionSide side, Set<Integer> packets) {
 		if (side == null)
-			throw new NullArgumentException("side");
+			throw new IllegalArgumentException("side cannot be NULL.");
 		
 		for (int packetID : packets) {
 			if (side.isForServer())
@@ -167,7 +192,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 */
 	private void disablePacketFilters(ConnectionSide side, Set<Integer> packets) {
 		if (side == null)
-			throw new NullArgumentException("side");
+			throw new IllegalArgumentException("side cannot be NULL.");
 		
 		for (int packetID : packets) {
 			if (side.isForServer())
@@ -185,9 +210,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	@Override
 	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
 		if (reciever == null)
-			throw new NullArgumentException("reciever");
+			throw new IllegalArgumentException("reciever cannot be NULL.");
 		if (packet == null)
-			throw new NullArgumentException("packet");
+			throw new IllegalArgumentException("packet cannot be NULL.");
 		
 		getInjector(reciever).sendServerPacket(packet.getHandle(), filters);
 	}
@@ -201,9 +226,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters) throws IllegalAccessException, InvocationTargetException {
 		
 		if (sender == null)
-			throw new NullArgumentException("sender");
+			throw new IllegalArgumentException("sender cannot be NULL.");
 		if (packet == null)
-			throw new NullArgumentException("packet");
+			throw new IllegalArgumentException("packet cannot be NULL.");
 		
 		PlayerInjector injector = getInjector(sender);
 		Packet mcPacket = packet.getHandle();
@@ -277,18 +302,90 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param plugin - the parent plugin.
 	 */
 	public void registerEvents(PluginManager manager, Plugin plugin) {
-		manager.registerEvents(new Listener() {
+		
+		try {
+			manager.registerEvents(new Listener() {
+				
+				@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+			    public void onPlayerJoin(PlayerJoinEvent event) {
+					injectPlayer(event.getPlayer());
+			    }
+				
+				@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+			    public void onPlayerQuit(PlayerQuitEvent event) {
+					uninjectPlayer(event.getPlayer());
+			    }
+			}, plugin);
+		
+		} catch (NoSuchMethodError e) {
+			// Oh wow! We're running on 1.0.0 or older.
+			registerOld(manager, plugin);
+		}
+	}
+	
+	// Yes, this is crazy.
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void registerOld(PluginManager manager, Plugin plugin) {
+		
+		try {
+			ClassLoader loader = manager.getClass().getClassLoader();
 			
-			@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-		    public void onPlayerJoin(PlayerJoinEvent event) {
-				injectPlayer(event.getPlayer());
-		    }
+			// The different enums we are going to need
+			Class eventTypes = loader.loadClass("org.bukkit.event.Event$Type");
+			Class eventPriority = loader.loadClass("org.bukkit.event.Event$Priority");
 			
-			@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-		    public void onPlayerQuit(PlayerQuitEvent event) {
-				uninjectPlayer(event.getPlayer());
-		    }
-		}, plugin);
+			// Get the priority
+			Object priorityNormal = Enum.valueOf(eventPriority, "Normal");
+			
+			// Get event types
+			Object playerJoinType = Enum.valueOf(eventTypes, "PLAYER_JOIN");
+			Object playerQuitType = Enum.valueOf(eventTypes, "PLAYER_QUIT");
+			
+			// The player listener! Good times.
+			Class<?> playerListener = loader.loadClass("org.bukkit.event.player.PlayerListener");
+			
+			// Find the register event method
+			Method registerEvent = FuzzyReflection.fromObject(manager).getMethodByParameters("registerEvent", 
+					eventTypes, Listener.class, eventPriority, Plugin.class);
+			
+			Enhancer ex = new Enhancer();
+			ex.setSuperclass(playerListener);
+			ex.setClassLoader(classLoader);
+			ex.setCallback(new MethodInterceptor() {
+				@Override
+				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+					
+					// Must have a parameter
+					if (args.length == 1) {
+						Object event = args[0];
+						
+						// Check for the correct event
+						if (event instanceof PlayerJoinEvent)
+							injectPlayer(((PlayerJoinEvent) event).getPlayer());
+						else if (event instanceof PlayerQuitEvent)
+							injectPlayer(((PlayerQuitEvent) event).getPlayer());
+					}
+					
+					return null;
+				}
+			});
+			
+			// Create our listener
+			Object proxy = ex.create();
+			
+			registerEvent.invoke(manager, playerJoinType, proxy, priorityNormal, plugin);
+			registerEvent.invoke(manager, playerQuitType, proxy, priorityNormal, plugin);
+			
+			// A lot can go wrong
+		} catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private void uninjectPlayer(Player player) {

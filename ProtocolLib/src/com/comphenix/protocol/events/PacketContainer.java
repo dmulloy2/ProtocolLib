@@ -1,6 +1,5 @@
 package com.comphenix.protocol.events;
 
-import org.apache.commons.lang.NullArgumentException;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 
@@ -48,7 +47,7 @@ public class PacketContainer {
 	 */
 	public PacketContainer(int id, Packet handle, StructureModifier<Object> structure) {
 		if (handle == null)
-			throw new NullArgumentException("handle");
+			throw new IllegalArgumentException("handle cannot be null.");
 		
 		this.id = id;
 		this.handle = handle;

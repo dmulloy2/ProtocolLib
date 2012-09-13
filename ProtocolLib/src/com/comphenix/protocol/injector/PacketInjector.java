@@ -15,6 +15,7 @@ import net.sf.cglib.proxy.Enhancer;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 
 /**
@@ -49,10 +50,10 @@ class PacketInjector {
 	private void initialize() throws IllegalAccessException {
 		if (intHashMap == null) {
 			// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
-			Field intHashMapField = FuzzyReflection.fromClass(Packet.class).getFieldByType(FuzzyReflection.MINECRAFT_OBJECT);
+			Field intHashMapField = FuzzyReflection.fromClass(Packet.class, true).getFieldByType(FuzzyReflection.MINECRAFT_OBJECT);
 			
 			try {
-				intHashMap = intHashMapField.get(null);
+				intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);
 			} catch (IllegalArgumentException e) {
 				throw new RuntimeException("Minecraft is incompatible.", e);
 			}

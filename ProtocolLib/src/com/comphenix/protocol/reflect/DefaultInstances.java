@@ -6,11 +6,9 @@ import java.util.*;
 
 import javax.annotation.Nullable;
 
-import org.apache.commons.lang.ArrayUtils;
-
 import com.google.common.base.Defaults;
 import com.google.common.base.Function;
-import com.google.gson.internal.Primitives;
+import com.google.common.base.Objects;
 
 /**
  * Used to construct default instances of any type.
@@ -91,7 +89,7 @@ public class DefaultInstances {
 			// Note that we don't allow recursive types - that is, types that
 			// require itself in the constructor.
 			if (types.length < lastCount) {
-				if (!ArrayUtils.contains(types, type)) {
+				if (!contains(types, type)) {
 					minimum = candidate;
 					lastCount = types.length;
 					
@@ -124,6 +122,15 @@ public class DefaultInstances {
 		return null;
 	}
 	
+	private static <T> boolean contains(T[] elements, T elementToFind) {
+		// Search for the given element in the array
+		for (T element : elements) {
+			if (Objects.equal(elementToFind, element))
+				return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * Provides constructors for primtive types, wrappers, arrays and strings.
 	 * @author Kristian
@@ -133,10 +140,10 @@ public class DefaultInstances {
 		@Override
 		public Object apply(@Nullable Class<?> type) {
 			
-			if (Primitives.isPrimitive(type)) {
+			if (PrimitiveUtils.isPrimitive(type)) {
 				return Defaults.defaultValue(type);
-			} else if (Primitives.isWrapperType(type)) {
-				return Defaults.defaultValue(Primitives.unwrap(type));
+			} else if (PrimitiveUtils.isWrapperType(type)) {
+				return Defaults.defaultValue(PrimitiveUtils.unwrap(type));
 			} else if (type.isArray()) {
 				Class<?> arrayType = type.getComponentType();
 				return Array.newInstance(arrayType, 0);

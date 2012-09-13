@@ -4,12 +4,11 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.ObjectUtils;
-
 import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.google.common.base.Objects;
 
 /**
  * Static registries in Minecraft.
@@ -78,7 +77,7 @@ class MinecraftRegistry {
 
 		// Will most likely not be used
 		for (Map.Entry<Class, Integer> entry : getPacketToID().entrySet()) {
-			if (ObjectUtils.equals(entry.getValue(), packetID)) {
+			if (Objects.equal(entry.getValue(), packetID)) {
 				return entry.getKey();
 			}
 		}

@@ -11,7 +11,6 @@ import java.util.Set;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.gson.internal.Primitives;
 
 import net.minecraft.server.Packet;
 
@@ -287,7 +286,7 @@ public class StructureModifier<TField> {
 			Class<?> type = field.getType();
 			
 			// First, ignore primitive fields
-			if (!Primitives.isPrimitive(type)) {
+			if (!PrimitiveUtils.isPrimitive(type)) {
 				// Next, see if we actually can generate a default value
 				if (DefaultInstances.getDefault(type) != null) {
 					// If so, require it

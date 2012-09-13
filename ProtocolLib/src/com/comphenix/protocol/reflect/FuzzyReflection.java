@@ -2,11 +2,10 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.ArrayUtils;
 
 /**
  * Retrieves fields and methods by signature, not just name.
@@ -106,7 +105,7 @@ public class FuzzyReflection {
 		
 		// Find the correct method to call
 		for (Method method : getMethods()) {
-			if (ArrayUtils.isEquals(method.getParameterTypes(), args)) {
+			if (Arrays.equals(method.getParameterTypes(), args)) {
 				return method;
 			}
 		}

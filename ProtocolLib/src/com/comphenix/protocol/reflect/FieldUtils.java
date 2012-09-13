@@ -21,9 +21,9 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Iterator;
-
-import org.apache.commons.lang.ClassUtils;
+import java.util.List;
 
 /**
  * Utilities for working with fields by reflection. Adapted and refactored from
@@ -119,11 +119,11 @@ public class FieldUtils {
 			}
 		}
 		// check the public interface case. This must be manually searched for
-		// incase there is a public supersuperclass field hidden by a
+		// in case there is a public supersuperclass field hidden by a
 		// private/package
 		// superclass field.
 		Field match = null;
-		for (Iterator intf = ClassUtils.getAllInterfaces(cls).iterator(); intf.hasNext();) {
+		for (Iterator intf = getAllInterfaces(cls).iterator(); intf.hasNext();) {
 			try {
 				Field test = ((Class) intf.next()).getField(fieldName);
 				if (match != null) {
@@ -138,6 +138,44 @@ public class FieldUtils {
 		}
 		return match;
 	}
+	
+    /**
+     * <p>Gets a <code>List</code> of all interfaces implemented by the given
+     * class and its superclasses.</p>
+     *
+     * <p>The order is determined by looking through each interface in turn as
+     * declared in the source file and following its hierarchy up. Then each
+     * superclass is considered in the same way. Later duplicates are ignored,
+     * so the order is maintained.</p>
+     *
+     * @param cls  the class to look up, may be <code>null</code>
+     * @return the <code>List</code> of interfaces in order,
+     *  <code>null</code> if null input
+     */
+    private static List getAllInterfaces(Class cls) {
+        if (cls == null) {
+            return null;
+        }
+        List<Class> list = new ArrayList<Class>();
+        
+        while (cls != null) {
+            Class[] interfaces = cls.getInterfaces();
+            for (int i = 0; i < interfaces.length; i++) {
+                if (list.contains(interfaces[i]) == false) {
+                    list.add(interfaces[i]);
+                }
+                List superInterfaces = getAllInterfaces(interfaces[i]);
+                for (Iterator it = superInterfaces.iterator(); it.hasNext();) {
+                    Class intface = (Class) it.next();
+                    if (list.contains(intface) == false) {
+                        list.add(intface);
+                    }
+                }
+            }
+            cls = cls.getSuperclass();
+        }
+        return list;
+    }
 
 	/**
 	 * Read an accessible static Field.

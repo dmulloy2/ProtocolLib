@@ -2,9 +2,9 @@ package com.comphenix.protocol.events;
 
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.Plugin;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 /**
@@ -14,7 +14,7 @@ import com.google.common.collect.Sets;
  */
 public abstract class PacketAdapter implements PacketListener {
 	
-	protected JavaPlugin plugin;
+	protected Plugin plugin;
 	protected Set<Integer> packetsID;
 	protected ConnectionSide connectionSide;
 	
@@ -24,7 +24,7 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @param connectionSide - the packet type the listener is looking for.
 	 * @param packets - the packet IDs the listener is looking for.
 	 */
-	public PacketAdapter(JavaPlugin plugin, ConnectionSide connectionSide, Integer... packets) {
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, Integer... packets) {
 		this.plugin = plugin;
 		this.connectionSide = connectionSide;
 		this.packetsID = Sets.newHashSet(packets);
@@ -50,11 +50,28 @@ public abstract class PacketAdapter implements PacketListener {
 		return packetsID;
 	}
 	
+	/**
+	 * Retrieves the plugin associated with this listener.
+	 * @return The associated plugin.
+	 */
+	public Plugin getPlugin() {
+		return plugin;
+	}
+	
 	@Override
 	public String toString() {
+		String name = "";
+		
+		// Try to get the plugin name
+		try {
+			name = plugin.getName();
+		} catch (NoSuchMethodError e) {
+			name = plugin.toString();
+		}
+		
 		// This is used by the error reporter 
 		return String.format("PacketAdapter[plugin=%s, side=%s, packets=%s]", 
-				plugin.getName(), getConnectionSide().name(), 
-				StringUtils.join(packetsID, ", "));
+				name, getConnectionSide().name(), 
+				Joiner.on(", ").join(packetsID));
 	}
 }
