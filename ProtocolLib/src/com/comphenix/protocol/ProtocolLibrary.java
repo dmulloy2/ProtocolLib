@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.print.attribute.standard.Severity;
-
 import org.bukkit.Server;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.injector.PacketFilterManager;
-import com.comphenix.protocol.metrics.MetricsLite;
+import com.comphenix.protocol.metrics.Metrics;
 
 public class ProtocolLibrary extends JavaPlugin {
 	
@@ -22,7 +20,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private Logger logger;
 
 	// Metrics
-	private MetricsLite metrics;
+	private Metrics metrics;
 	
 	@Override
 	public void onLoad() {
@@ -30,7 +28,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		protocolManager = new PacketFilterManager(getClassLoader(), logger);
 		
 		try {
-			metrics = new MetricsLite(this);
+			metrics = new Metrics(this);
 			metrics.start();
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, "Unable to enable metrics.", e);
