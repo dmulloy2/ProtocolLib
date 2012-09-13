@@ -58,20 +58,24 @@ public abstract class PacketAdapter implements PacketListener {
 		return plugin;
 	}
 	
-	@Override
-	public String toString() {
-		String name = "";
-		
+	/**
+	 * Retrieves the name of the plugin that has been associated with the listener.
+	 * @return Name of the associated plugin.
+	 */
+	public String getPluginName() {
 		// Try to get the plugin name
 		try {
-			name = plugin.getName();
+			return plugin.getName();
 		} catch (NoSuchMethodError e) {
-			name = plugin.toString();
+			return plugin.toString();
 		}
-		
+	}
+	
+	@Override
+	public String toString() {		
 		// This is used by the error reporter 
 		return String.format("PacketAdapter[plugin=%s, side=%s, packets=%s]", 
-				name, getConnectionSide().name(), 
+				getPluginName(), getConnectionSide().name(), 
 				Joiner.on(", ").join(packetsID));
 	}
 }

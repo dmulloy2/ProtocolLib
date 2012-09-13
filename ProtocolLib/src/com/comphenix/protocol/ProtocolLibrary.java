@@ -10,6 +10,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Metrics;
+import com.comphenix.protocol.metrics.Metrics.Plotter;
+import com.comphenix.protocol.metrics.Statistics;
 
 public class ProtocolLibrary extends JavaPlugin {
 	
@@ -18,21 +20,14 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Error logger
 	private Logger logger;
-
-	// Metrics
-	private Metrics metrics;
+	
+	// Metrics and statistisc
+	private Statistics statistisc;
 	
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
 		protocolManager = new PacketFilterManager(getClassLoader(), logger);
-		
-		try {
-			metrics = new Metrics(this);
-			metrics.start();
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, "Unable to enable metrics.", e);
-		}
 	}
 	
 	@Override
@@ -43,20 +38,38 @@ public class ProtocolLibrary extends JavaPlugin {
 		// Player login and logout events
 		protocolManager.registerEvents(manager, this);
 		protocolManager.initializePlayers(server.getOnlinePlayers());
+		
+		// Try to enable statistics
+		try {
+			statistisc = new Statistics(this);
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, "Unable to enable metrics.", e);
+		} catch (Throwable e) {
+			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
+		}
 	}
 		
 	@Override
 	public void onDisable() {
 		protocolManager.close();
 		protocolManager = null;
+		statistisc = null;
 	}
-
+	
 	/**
 	 * Retrieves the packet protocol manager.
 	 * @return Packet protocol manager, or NULL if it has been disabled.
 	 */
 	public static ProtocolManager getProtocolManager() {
 		return protocolManager;
+	}
+	
+	/**
+	 * Retrieve the metrics instance used to measure users of this library.
+	 * @return Metrics instance container.
+	 */
+	public Statistics getStatistics() {
+		return statistisc;
 	}
 	
 	// Get the Bukkit logger first, before we try to create our own
