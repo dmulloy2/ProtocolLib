@@ -2,7 +2,6 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 
-
 /**
  * Represents a field that will revert to its original state when this class is garbaged collected.
  * 

@@ -36,8 +36,6 @@ public interface ProtocolManager {
 
 	/**
 	 * Removes every listener associated with the given plugin.
-	 * <p>
-	 * Note that this only works for listeners that derive from PacketAdapter.
 	 * @param plugin - the plugin to unload.
 	 */
 	public void removePacketListeners(Plugin plugin);
