@@ -71,31 +71,37 @@ public class StructureModifier<TField> {
 	 * Reads the value of a field given its index.
 	 * @param fieldIndex - index of the field.
 	 * @return Value of the field.
-	 * @throws IllegalAccessException If we're unable to read the field due to a security limitation.
+	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
 	@SuppressWarnings("unchecked")
-	public TField read(int fieldIndex) throws IllegalAccessException {
+	public TField read(int fieldIndex) throws FieldAccessException {
 		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new IllegalArgumentException("Field index must be within 0 - count");
+			throw new FieldAccessException("Field index must be within 0 - count", 
+					new IndexOutOfBoundsException("Out of bounds"));
 		if (target == null)
 			throw new IllegalStateException("Cannot read from a NULL target.");
 		
-		Object result = FieldUtils.readField(data.get(fieldIndex), target, true);
-		
-		// Use the converter, if we have it
-		if (converter != null)
-			return converter.getSpecific(result);
-		else
-			return (TField) result;
+		try {
+			Object result = FieldUtils.readField(data.get(fieldIndex), target, true);
+			
+			// Use the converter, if we have it
+			if (converter != null)
+				return converter.getSpecific(result);
+			else
+				return (TField) result;
+			
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Cannot read field due to a security limitation.", e);
+		}
 	}
 
 	/**
 	 * Reads the value of a field if and ONLY IF it exists.
 	 * @param fieldIndex - index of the field.
 	 * @return Value of the field, or NULL if it doesn't exist.
-	 * @throws IllegalAccessException If we're unable to read the field due to a security limitation.
+	 * @throws FieldAccessException The field cannot be accessed under the current security contraints.
 	 */
-	public TField readSafely(int fieldIndex) throws IllegalAccessException {
+	public TField readSafely(int fieldIndex) throws FieldAccessException {
 		if (fieldIndex >= 0 && fieldIndex < data.size()) {
 			return read(fieldIndex);
 		} else {
@@ -108,17 +114,23 @@ public class StructureModifier<TField> {
 	 * @param fieldIndex - index of the field.
 	 * @param value - new value of the field.
 	 * @return This structure modifier - for chaining.
-	 * @throws IllegalAccessException If we're unable to write to the field due to a security limitation.
+	 * @throws IllegalAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
-	public StructureModifier<TField> write(int fieldIndex, TField value) throws IllegalAccessException {
+	public StructureModifier<TField> write(int fieldIndex, TField value) throws FieldAccessException {
 		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new IllegalArgumentException("Field index must be within 0 - count");
+			throw new FieldAccessException("Field index must be within 0 - count", 
+					new IndexOutOfBoundsException("Out of bounds"));
 		if (target == null)
 			throw new IllegalStateException("Cannot write to a NULL target.");
 		
 		// Use the converter, if it exists
 		Object obj = converter != null ? converter.getGeneric(value) : value;
-		FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
+		
+		try {
+			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Cannot read field due to a security limitation.", e);
+		}
 		
 		// Make this method chainable
 		return this;
@@ -129,9 +141,9 @@ public class StructureModifier<TField> {
 	 * @param fieldIndex - index of the potential field.
 	 * @param value - new value of the field.
 	 * @return This structure modifer - for chaining.
-	 * @throws IllegalAccessException If we're unable to write to the field due to a security limitation.
+	 * @throws IllegalAccessException The field cannot be accessed under the current security contraints.
 	 */
-	public StructureModifier<TField> writeSafely(int fieldIndex, TField value) throws IllegalAccessException {
+	public StructureModifier<TField> writeSafely(int fieldIndex, TField value) throws FieldAccessException {
 		if (fieldIndex >= 0 && fieldIndex < data.size()) {
 			write(fieldIndex, value);
 		}
@@ -143,9 +155,9 @@ public class StructureModifier<TField> {
 	 * @param fieldIndex - index of the field to modify.
 	 * @param select - the function that modifies the field value.
 	 * @return This structure modifier - for chaining.
-	 * @throws IllegalAccessException
+	 * @throws IllegalAccessException The field cannot be accessed under the current security contraints.
 	 */
-	public StructureModifier<TField> modify(int fieldIndex, Function<TField, TField> select) throws IllegalAccessException {
+	public StructureModifier<TField> modify(int fieldIndex, Function<TField, TField> select) throws FieldAccessException {
 		TField value = read(fieldIndex);
 		return write(fieldIndex, select.apply(value));
 	}

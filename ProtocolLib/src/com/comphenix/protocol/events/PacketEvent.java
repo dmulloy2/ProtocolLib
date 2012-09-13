@@ -11,8 +11,8 @@ public class PacketEvent extends EventObject {
 	private static final long serialVersionUID = -5360289379097430620L;
 
 	private PacketContainer packet;
-	private Player sender;
-	private Player reciever;
+	private Player player;
+	private boolean serverPacket;
 	private boolean cancel;
 	
 	/**
@@ -23,11 +23,11 @@ public class PacketEvent extends EventObject {
 		super(source);
 	}
 
-	private PacketEvent(Object source, PacketContainer packet, Player sender, Player reciever) {
+	private PacketEvent(Object source, PacketContainer packet, Player player, boolean serverPacket) {
 		super(source);
 		this.packet = packet;
-		this.sender = sender;
-		this.reciever = reciever;
+		this.player = player;
+		this.serverPacket = serverPacket;
 	}
 
 	/**
@@ -38,7 +38,7 @@ public class PacketEvent extends EventObject {
 	 * @return The event.
 	 */
 	public static PacketEvent fromClient(Object source, PacketContainer packet, Player client) {
-		return new PacketEvent(source, packet, client, null);
+		return new PacketEvent(source, packet, client, false);
 	}
 	
 	/**
@@ -49,7 +49,7 @@ public class PacketEvent extends EventObject {
 	 * @return The event.
 	 */
 	public static PacketEvent fromServer(Object source,  PacketContainer packet, Player recipient) {
-		return new PacketEvent(source, packet, null, recipient);
+		return new PacketEvent(source, packet, recipient, true);
 	}
 	
 	/**
@@ -93,27 +93,18 @@ public class PacketEvent extends EventObject {
 	}
 
 	/**
-	 * Retrieves the player that has sent the packet.
-	 * @return The sender, or NULL if the server is sending the packet.
+	 * Retrieves the player that has sent the packet or is recieving it.
+	 * @return The player associated with this event.
 	 */
-	public Player getSender() {
-		return sender;
+	public Player getPlayer() {
+		return player;
 	}
 	
-	/**
-	 * Retrieves the player that will recieve the packet.
-	 * @return The reciever, or NULL if the server is recieving the packet.
-	 */
-	public Player getReciever() {
-		return reciever;
-	}
-	
-
 	/**
 	 * Whether or not this packet was created by the server.
 	 * @return TRUE if the packet was created by the server, FALSE if it was created by a client.
 	 */
 	public boolean isServerPacket() {
-		return getReciever() != null;
+		return serverPacket;
 	}
 }
