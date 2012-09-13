@@ -35,12 +35,17 @@ public class StructureModifier<TField> {
 	// Cache of previous types
 	private Map<Class, StructureModifier> subtypeCache;
 	
-	public StructureModifier(Class targetType, Class superclassExclude) {
+	/**
+	 * Creates a structure modifier.
+	 * @param targetType - the structure to modify.
+	 * @param superclassExclude - a superclass to exclude.
+	 * @param requireDefault - whether or not we will be using writeDefaults().
+	 */
+	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault) {
 		List<Field> fields = getFields(targetType, superclassExclude);
+		Set<Field> defaults = requireDefault ? generateDefaultFields(fields) : new HashSet<Field>();
 		
-		initialize(targetType, Object.class, 
-				fields, generateDefaultFields(fields), null, 
-				new HashMap<Class, StructureModifier>());
+		initialize(targetType, Object.class, fields, defaults, null, new HashMap<Class, StructureModifier>());
 	}
 	
 	private StructureModifier(StructureModifier<TField> other, Object target) {

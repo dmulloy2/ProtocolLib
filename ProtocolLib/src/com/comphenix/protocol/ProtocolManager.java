@@ -9,6 +9,10 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.google.common.collect.ImmutableSet;
 
+/**
+ * Represents an API for accessing the Minecraft protocol.
+ * @author Kristian
+ */
 public interface ProtocolManager {
 
 	/**

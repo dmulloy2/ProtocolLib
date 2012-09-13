@@ -15,7 +15,8 @@ public class StructureModifierTest {
 	public void test() throws IllegalAccessException {
 
 		Packet103SetSlot move = new Packet103SetSlot();
-		StructureModifier<Object> modifier = new StructureModifier<Object>(Packet103SetSlot.class, Packet.class);
+		StructureModifier<Object> modifier = new StructureModifier<Object>(
+				Packet103SetSlot.class, Packet.class, true);
 
 		move.a = 1;
 		int value = (Integer) modifier.withTarget(move).withType(int.class).read(0);

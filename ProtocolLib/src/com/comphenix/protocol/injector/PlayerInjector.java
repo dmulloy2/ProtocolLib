@@ -94,11 +94,13 @@ class PlayerInjector {
 			Object serverHandler = FieldUtils.readField(serverHandlerField, notchEntity);
 			
 			// Next, get the network manager 
-			if (networkManagerField == null) {
+			if (networkManagerField == null) 
 				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(".*NetworkManager");
-				networkModifier = new StructureModifier<Object>(networkManagerField.getType(), null);
-			}
 			networkManager = FieldUtils.readField(networkManagerField, serverHandler);
+			
+			// Create the network manager modifier from the actual object type
+			if (networkManager != null && networkModifier == null)
+				networkModifier = new StructureModifier<Object>(networkManager.getClass(), null, false);
 			
 			// And the queue method
 			if (queueMethod == null)
@@ -207,7 +209,7 @@ class PlayerInjector {
 
 			@SuppressWarnings("rawtypes")
 			StructureModifier<List> list = networkModifier.withType(List.class);
-			
+
 			// Subclass both send queues
 			for (Field field : list.getFields()) {
 				VolatileField overwriter = new VolatileField(field, networkManager, true);

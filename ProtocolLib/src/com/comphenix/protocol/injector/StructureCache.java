@@ -37,7 +37,9 @@ public class StructureCache {
 		
 		// Use the vanilla class definition
 		if (result == null) {
-			result = new StructureModifier<Object>(MinecraftRegistry.getPacketClassFromID(id, true), Packet.class);
+			result = new StructureModifier<Object>(
+					MinecraftRegistry.getPacketClassFromID(id, true), Packet.class, true);
+			
 			structureModifiers.put(id, result);
 		}
 		
