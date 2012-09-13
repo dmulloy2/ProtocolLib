@@ -12,7 +12,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 public class StructureModifierTest {
 
 	@Test
-	public void test() throws IllegalAccessException {
+	public void test() throws FieldAccessException {
 
 		Packet103SetSlot move = new Packet103SetSlot();
 		StructureModifier<Object> modifier = new StructureModifier<Object>(
