@@ -4,10 +4,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.internal.Primitives;
 
 import net.minecraft.server.Packet;
 
@@ -25,25 +29,38 @@ public class StructureModifier<TField> {
 	private Class fieldType;
 	private List<Field> data = new ArrayList<Field>();
 	
+	// Improved default values
+	private Set<Field> defaultFields;
+	
 	// Cache of previous types
 	private Map<Class, StructureModifier> subtypeCache;
 	
-	public StructureModifier(Class targetType) {
-		this(targetType, Object.class, getFields(targetType), null, new HashMap<Class, StructureModifier>());
-	}
-	
-	private StructureModifier(Class targetType, Class fieldType, List<Field> data, 
-							  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache) {
-		this.targetType = targetType;
-		this.fieldType = fieldType;
-		this.data = data;
-		this.converter = converter;
-		this.subtypeCache = subTypeCache;
+	public StructureModifier(Class targetType, Class superclassExclude) {
+		List<Field> fields = getFields(targetType, superclassExclude);
+		
+		initialize(targetType, Object.class, 
+				fields, generateDefaultFields(fields), null, 
+				new HashMap<Class, StructureModifier>());
 	}
 	
 	private StructureModifier(StructureModifier<TField> other, Object target) {
-		this(other.targetType, other.fieldType, other.data, other.converter, other.subtypeCache);
+		initialize(other.targetType, other.fieldType, other.data, other.defaultFields, other.converter, other.subtypeCache);
 		this.target = target;
+	}
+	
+	private StructureModifier() {
+		// Consumers of this method should call "initialize"
+	}
+	
+	private void initialize(Class targetType, Class fieldType, 
+			  List<Field> data, Set<Field> defaultFields,
+			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache) {
+		this.targetType = targetType;
+		this.fieldType = fieldType;
+		this.data = data;
+		this.defaultFields = defaultFields;
+		this.converter = converter;
+		this.subtypeCache = subTypeCache;
 	}
 	
 	/**
@@ -67,6 +84,20 @@ public class StructureModifier<TField> {
 		else
 			return (TField) result;
 	}
+
+	/**
+	 * Reads the value of a field if and ONLY IF it exists.
+	 * @param fieldIndex - index of the field.
+	 * @return Value of the field, or NULL if it doesn't exist.
+	 * @throws IllegalAccessException If we're unable to read the field due to a security limitation.
+	 */
+	public TField readSafely(int fieldIndex) throws IllegalAccessException {
+		if (fieldIndex >= 0 && fieldIndex < data.size()) {
+			return read(fieldIndex);
+		} else {
+			return null;
+		}
+	}
 	
 	/**
 	 * Writes the value of a field given its index.
@@ -86,6 +117,20 @@ public class StructureModifier<TField> {
 		FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
 		
 		// Make this method chainable
+		return this;
+	}
+	
+	/**
+	 * Writes the value of a given field IF and ONLY if it exists.
+	 * @param fieldIndex - index of the potential field.
+	 * @param value - new value of the field.
+	 * @return This structure modifer - for chaining.
+	 * @throws IllegalAccessException If we're unable to write to the field due to a security limitation.
+	 */
+	public StructureModifier<TField> writeSafely(int fieldIndex, TField value) throws IllegalAccessException {
+		if (fieldIndex >= 0 && fieldIndex < data.size()) {
+			write(fieldIndex, value);
+		}
 		return this;
 	}
 	
@@ -111,6 +156,22 @@ public class StructureModifier<TField> {
 	}
 	
 	/**
+	 * Sets all non-primitive fields to a more fitting default value. See {@link DefaultInstance}.
+	 * @return The current structure modifier - for chaining.
+	 * @throws IllegalAccessException If we're unable to write to the fields due to a security limitation.
+	 */
+	public StructureModifier<TField> writeDefaults() throws IllegalAccessException {
+		
+		// Write a default instance to every field
+		for (Field field : defaultFields) {
+			FieldUtils.writeField(field, target, 
+					DefaultInstances.getDefault(field.getType()), true);
+		}
+		
+		return this;
+	}
+	
+	/**
 	 * Retrieves a structure modifier that only reads and writes fields of a given type.
 	 * @param fieldType - the type, or supertype, of every field to modify.
 	 * @param converter - converts objects into the given type.
@@ -128,16 +189,21 @@ public class StructureModifier<TField> {
 			
 		} else if (result == null) {
 			List<Field> filtered = new ArrayList<Field>();
+			Set<Field> defaults = new HashSet<Field>();
 			
 			for (Field field : data) {
 				if (fieldType.isAssignableFrom(field.getType())) {
 					filtered.add(field);
+					
+					if (defaultFields.contains(field))
+						defaults.add(field);
 				}
 			}
 			
 			// Cache structure modifiers
-			result = new StructureModifier<T>(targetType, fieldType, filtered, 
-											  converter, new HashMap<Class, StructureModifier>());
+			result = new StructureModifier<T>();
+			result.initialize(targetType, fieldType, filtered, defaults, 
+							  converter, new HashMap<Class, StructureModifier>());
 			subtypeCache.put(fieldType, result);
 		}
 		
@@ -199,8 +265,37 @@ public class StructureModifier<TField> {
 		return copy;
 	}
 	
+	/**
+	 * Retrieves a list of the fields matching the constraints of this structure modifier.
+	 * @return List of fields.
+	 */
+	public List<Field> getFields() {
+		return ImmutableList.copyOf(data);
+	}
+	
+	// Used to generate plausible default values
+	private static Set<Field> generateDefaultFields(List<Field> fields) {
+		
+		Set<Field> requireDefaults = new HashSet<Field>();
+
+		for (Field field : fields) {
+			Class<?> type = field.getType();
+			
+			// First, ignore primitive fields
+			if (!Primitives.isPrimitive(type)) {
+				// Next, see if we actually can generate a default value
+				if (DefaultInstances.getDefault(type) != null) {
+					// If so, require it
+					requireDefaults.add(field);
+				}
+			}
+		}
+		
+		return requireDefaults;
+	}
+	
 	// Used to filter out irrelevant fields
-	private static List<Field> getFields(Class type) {
+	private static List<Field> getFields(Class type, Class superclassExclude) {
 		List<Field> result = new ArrayList<Field>();
 		
 		// Retrieve every private and public field
@@ -208,7 +303,10 @@ public class StructureModifier<TField> {
 			int mod = field.getModifiers();
 			
 			// Ignore static, final and "abstract packet" fields
-			if (!Modifier.isFinal(mod) && !Modifier.isStatic(mod) && !field.getDeclaringClass().equals(Packet.class)) {
+			if (!Modifier.isFinal(mod) && !Modifier.isStatic(mod) && (
+					superclassExclude == null || !field.getDeclaringClass().equals(Packet.class)
+				)) {
+				
 				result.add(field);
 			}
 		}

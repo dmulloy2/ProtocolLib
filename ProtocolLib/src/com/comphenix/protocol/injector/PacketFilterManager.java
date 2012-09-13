@@ -217,7 +217,23 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	@Override
 	public PacketContainer createPacket(int id) {
-		return new PacketContainer(id);
+		return createPacket(id, false);
+	}
+	
+	@Override
+	public PacketContainer createPacket(int id, boolean skipDefaults) {
+		PacketContainer packet = new PacketContainer(id);
+		
+		// Use any default values if possible
+		if (!skipDefaults) {
+			try {
+				packet.getModifier().writeDefaults();
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException("Security exception.", e);
+			}
+		}
+		
+		return packet;
 	}
 	
 	@Override
@@ -324,6 +340,8 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (packetInjector != null)
 			packetInjector.cleanupAll();
 		
+		// Remove listeners
+		packetListeners.clear();
 		playerInjection.clear();
 		connectionLookup.clear();
 		hasClosed = true;

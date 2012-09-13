@@ -75,6 +75,20 @@ public interface ProtocolManager {
 	 * @return New encapsulated Minecraft packet.
 	 */
 	public PacketContainer createPacket(int id);
+	
+	/**
+	 * Constructs a new encapsulated Minecraft packet with the given ID.
+	 * <p>
+	 * If set to true, the skip default option will prevent the system from assigning 
+	 * non-primitive fields in the packet to a new default instance. For instance, certain
+	 * packets - like Packet60Explosion - require a List or Set to be non-null. If the
+	 * skipDefaults option is false, the List or Set will be automatically created.
+	 * 
+	 * @param id - packet ID.
+	 * @param skipDefaults - TRUE to skip setting default values, FALSE otherwise.
+	 * @return New encapsulated Minecraft packet.
+	 */
+	public PacketContainer createPacket(int id, boolean skipDefaults);
 
 	/**
 	 * Retieves a set of every enabled packet.

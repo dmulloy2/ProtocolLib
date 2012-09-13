@@ -2,14 +2,19 @@ package com.comphenix.protocol.injector;
 
 import java.io.DataInputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -18,9 +23,19 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
+import com.google.common.collect.Sets;
 
 class PlayerInjector {
+	
+	/**
+	 * Marker interface that indicates a packet is fake and should not be processed.
+	 * @author Kristian
+	 */
+	public interface FakePacket {
+		// Nothing
+	}
 
 	// Cache previously retrieved fields
 	private static Field serverHandlerField;
@@ -28,15 +43,27 @@ class PlayerInjector {
 	private static Field inputField;
 	private static Field netHandlerField;
 	
+	// To add our injected array lists
+	private static StructureModifier<Object> networkModifier;
+	
 	// And methods
 	private static Method queueMethod;
 	private static Method processMethod;
 		
 	private Player player;
 	private boolean hasInitialized;
-
+	
 	// Reference to the player's network manager
-	private VolatileField networkManager;
+	private Object networkManager;
+	
+	// Current net handler
+	private Object netHandler;
+	
+	// Overridden fields
+	private List<VolatileField> overridenLists = new ArrayList<VolatileField>();
+	
+	// Packets to ignore
+	private Set<Packet> ignoredPackets = Sets.newSetFromMap(new ConcurrentHashMap<Packet, Boolean>());
 	
 	// The packet manager and filters
 	private PacketFilterManager manager;
@@ -44,9 +71,6 @@ class PlayerInjector {
 	
 	// Previous data input
 	private DataInputStream cachedInput;
-	
-	// Current net handler
-	private Object netHandler;
 
 	public PlayerInjector(Player player, PacketFilterManager manager, Set<Integer> packetFilters) throws IllegalAccessException {
 		this.player = player;
@@ -70,9 +94,11 @@ class PlayerInjector {
 			Object serverHandler = FieldUtils.readField(serverHandlerField, notchEntity);
 			
 			// Next, get the network manager 
-			if (networkManagerField == null)
+			if (networkManagerField == null) {
 				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(".*NetworkManager");
-			networkManager = new VolatileField(networkManagerField, serverHandler);
+				networkModifier = new StructureModifier<Object>(networkManagerField.getType(), null);
+			}
+			networkManager = FieldUtils.readField(networkManagerField, serverHandler);
 			
 			// And the queue method
 			if (queueMethod == null)
@@ -81,7 +107,7 @@ class PlayerInjector {
 			
 			// And the data input stream that we'll use to identify a player
 			if (inputField == null)
-				inputField = FuzzyReflection.fromObject(networkManager.getOldValue(), true).
+				inputField = FuzzyReflection.fromObject(networkManager, true).
 								getFieldByType("java\\.io\\.DataInputStream");
 		}
 	}
@@ -111,7 +137,7 @@ class PlayerInjector {
 		
 		// Get the handler
 		if (netHandler != null)
-			netHandler = FieldUtils.readField(netHandlerField, networkManager.getOldValue(), true);
+			netHandler = FieldUtils.readField(netHandlerField, networkManager, true);
 		return netHandler;
 	}
 	
@@ -152,12 +178,15 @@ class PlayerInjector {
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
 	public void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException {
-		Object networkDelegate = filtered ? networkManager.getValue() : networkManager.getOldValue();
 		
-		if (networkDelegate != null) {
+		if (networkManager != null) {
 			try {
+				if (!filtered) {
+					ignoredPackets.add(packet);
+				}
+				
 				// Note that invocation target exception is a wrapper for a checked exception
-				queueMethod.invoke(networkDelegate, packet);
+				queueMethod.invoke(networkManager, packet);
 				
 			} catch (IllegalArgumentException e) {
 				throw e;
@@ -171,45 +200,99 @@ class PlayerInjector {
 		}
 	}
 	
+	@SuppressWarnings("serial")
 	public void injectManager() {
 		
 		if (networkManager != null) {
-			final Class<?> networkInterface = networkManagerField.getType();
-			final Object networkDelegate = networkManager.getOldValue();
+
+			@SuppressWarnings("rawtypes")
+			StructureModifier<List> list = networkModifier.withType(List.class);
 			
-			// Create our proxy object
-			Object networkProxy = Proxy.newProxyInstance(networkInterface.getClassLoader(), 
-					new Class<?>[] { networkInterface }, new InvocationHandler() {
+			// Subclass both send queues
+			for (Field field : list.getFields()) {
+				VolatileField overwriter = new VolatileField(field, networkManager, true);
 				
-				@Override
-				public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-					// OH OH! The queue method!
-					if (method.equals(queueMethod)) {
-						Packet packet = (Packet) args[0];
-						
-						if (packet != null) {
+				overwriter.setValue(Collections.synchronizedList(new ArrayList<Packet>() {
+					@Override
+					public boolean add(Packet packet) {
+
+						// Check for fake packets and ignored packets
+						if (packet instanceof FakePacket) {
+							return true;
+						} else if (ignoredPackets.contains(packet)) {
+							ignoredPackets.remove(packet);
+						} else {
 							packet = handlePacketRecieved(packet);
+						}
+						
+						// A NULL packet indicate cancelling
+						try {
+							if (packet != null) {
+								super.add(packet);
+							} else {
+								// We'll use the FakePacket marker instead of preventing the filters
+								sendServerPacket(createNegativePacket(packet), true);
+							}
 							
-							// A NULL packet indicate cancelling
-							if (packet != null)
-								args[0] = packet;
-							else
-								return null;
+							// Collection.add contract
+							return true;
+							
+						} catch (InvocationTargetException e) {
+							throw new RuntimeException("Reverting cancelled packet failed.", e.getTargetException());
 						}
 					}
-					
-					// Delegate to our underlying class
-					try {
-						return method.invoke(networkDelegate, args);
-					} catch (InvocationTargetException e) {
-						throw e.getCause();
-					}
-				}
-			});
-		
-			// Inject it, if we can.
-			networkManager.setValue(networkProxy);
+				}));
+				overridenLists.add(overwriter);
+			}
 		}
+	}
+	
+	/**
+	 * Used by a hack that reverses the effect of a cancelled packet. Returns a packet
+	 * whereby every int method's return value is inverted (a => -a).
+	 * 
+	 * @param source - packet to invert.
+	 * @return The inverted packet.
+	 */
+	private Packet createNegativePacket(Packet source) {
+		Enhancer ex = new Enhancer();
+		Class<?> type = source.getClass();
+		
+		// We want to subtract the byte amount that were added to the running
+		// total of outstanding packets. Otherwise, cancelling too many packets
+		// might cause a "disconnect.overflow" error.
+		//
+		// We do that by constructing a special packet of the same type that returns 
+		// a negative integer for all zero-parameter integer methods. This includes the
+		// size() method, which is used by the queue method to count the number of
+		// bytes to add.
+		//
+		// Essentially, we have:
+		//
+		//   public class NegativePacket extends [a packet] {
+		//      @Override
+		//      public int size() {
+		//         return -super.size();
+		//      }
+		//   ect.
+		//   }
+		ex.setInterfaces(new Class[] { FakePacket.class } );
+		ex.setUseCache(true);
+		ex.setClassLoader(type.getClassLoader());
+		ex.setSuperclass(type);
+		ex.setCallback(new MethodInterceptor() {
+			@Override
+			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+				if (method.getReturnType().equals(int.class) && args.length == 0) {
+					Integer result = (Integer) proxy.invokeSuper(obj, args);
+					return -result;
+				} else {
+					return proxy.invokeSuper(obj, args);
+				}
+			}
+		});
+		
+		return (Packet) ex.create();
 	}
 	
 	/**
@@ -246,7 +329,7 @@ class PlayerInjector {
 				return cachedInput;
 			
 			// Save to cache
-			cachedInput = (DataInputStream) FieldUtils.readField(inputField, networkManager.getOldValue(), true);
+			cachedInput = (DataInputStream) FieldUtils.readField(inputField, networkManager, true);
 			return cachedInput;
 			
 		} catch (IllegalAccessException e) {
@@ -256,6 +339,9 @@ class PlayerInjector {
 	
 	public void cleanupAll() {
 		// Clean up
-		networkManager.revertValue();
+		for (VolatileField overriden : overridenLists) {
+			overriden.revertValue();
+		}
+		overridenLists.clear();
 	}
 }

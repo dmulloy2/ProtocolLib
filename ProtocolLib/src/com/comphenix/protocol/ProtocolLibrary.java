@@ -35,11 +35,12 @@ public class ProtocolLibrary extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		protocolManager.close();
+		protocolManager = null;
 	}
 
 	/**
 	 * Retrieves the packet protocol manager.
-	 * @return Packet protocol manager.
+	 * @return Packet protocol manager, or NULL if it has been disabled.
 	 */
 	public static ProtocolManager getProtocolManager() {
 		return protocolManager;
