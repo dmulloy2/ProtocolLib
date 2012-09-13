@@ -40,7 +40,7 @@ public interface ProtocolManager {
 	 * Note that this only works for listeners that derive from PacketAdapter.
 	 * @param plugin - the plugin to unload.
 	 */
-	public void removePacketAdapters(Plugin plugin);
+	public void removePacketListeners(Plugin plugin);
 	
 	/**
 	 * Send a packet to the given player.

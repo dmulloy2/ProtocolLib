@@ -9,8 +9,6 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.injector.PacketFilterManager;
-import com.comphenix.protocol.metrics.Metrics;
-import com.comphenix.protocol.metrics.Metrics.Plotter;
 import com.comphenix.protocol.metrics.Statistics;
 
 public class ProtocolLibrary extends JavaPlugin {

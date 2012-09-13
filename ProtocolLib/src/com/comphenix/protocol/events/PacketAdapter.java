@@ -50,10 +50,7 @@ public abstract class PacketAdapter implements PacketListener {
 		return packetsID;
 	}
 	
-	/**
-	 * Retrieves the plugin associated with this listener.
-	 * @return The associated plugin.
-	 */
+	@Override
 	public Plugin getPlugin() {
 		return plugin;
 	}
@@ -62,10 +59,17 @@ public abstract class PacketAdapter implements PacketListener {
 	 * Retrieves the name of the plugin that has been associated with the listener.
 	 * @return Name of the associated plugin.
 	 */
-	public String getPluginName() {
+	public static String getPluginName(PacketListener listener) {
+		
+		Plugin plugin = listener.getPlugin();
+		
 		// Try to get the plugin name
 		try {
-			return plugin.getName();
+			if (plugin == null)
+				return "UNKNOWN";
+			else
+				return plugin.getName();
+			
 		} catch (NoSuchMethodError e) {
 			return plugin.toString();
 		}
@@ -75,7 +79,7 @@ public abstract class PacketAdapter implements PacketListener {
 	public String toString() {		
 		// This is used by the error reporter 
 		return String.format("PacketAdapter[plugin=%s, side=%s, packets=%s]", 
-				getPluginName(), getConnectionSide().name(), 
+				getPluginName(this), getConnectionSide().name(), 
 				Joiner.on(", ").join(packetsID));
 	}
 }

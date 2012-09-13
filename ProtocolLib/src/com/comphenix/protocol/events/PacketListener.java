@@ -2,6 +2,8 @@ package com.comphenix.protocol.events;
 
 import java.util.Set;
 
+import org.bukkit.plugin.Plugin;
+
 
 public interface PacketListener {
 	
@@ -31,4 +33,10 @@ public interface PacketListener {
 	 * @return Packets IDs.
 	 */
 	public Set<Integer> getPacketsID();
+	
+	/**
+	 * Retrieve the plugin that created list packet listener.
+	 * @return The plugin, or NULL if not available.
+	 */
+	public Plugin getPlugin();
 }

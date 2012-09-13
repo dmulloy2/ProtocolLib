@@ -49,13 +49,7 @@ public class Statistics {
 			
 		for (PacketListener listener : manager.getPacketListeners()) {
 			
-			String name = "UNKNOWN";
-			
-			if (listener instanceof PacketAdapter) {
-				PacketAdapter adapter = (PacketAdapter) listener;
-				name = adapter.getPluginName();
-			}
-			
+			String name = PacketAdapter.getPluginName(listener);
 			
 			// Increment occurence
 			if (!users.containsKey(name)) {

@@ -27,11 +27,11 @@ import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -107,17 +107,15 @@ public final class PacketFilterManager implements ProtocolManager {
 	}
 	
 	@Override
-	public void removePacketAdapters(Plugin plugin) {
+	public void removePacketListeners(Plugin plugin) {
 		
 		// Iterate through every packet listener
-		for (Object listener : packetListeners.toArray()) {
-			if (listener instanceof PacketAdapter) {
-				PacketAdapter adapter = (PacketAdapter) listener;
-				
-				// Remove the listener
-				if (adapter.getPlugin().equals(plugin)) {
-					packetListeners.remove(listener);
-				}
+		for (Object element : packetListeners.toArray()) {			
+			PacketListener listener = (PacketListener) element;
+
+			// Remove the listener
+			if (Objects.equal(listener.getPlugin(), plugin)) {
+				packetListeners.remove(listener);
 			}
 		}
 	}
