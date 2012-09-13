@@ -82,7 +82,7 @@ import java.util.logging.Level;
  * void start(); <br/>
  * </code>
  */
-public class Metrics {
+class Metrics {
 
     /**
      * The current revision number

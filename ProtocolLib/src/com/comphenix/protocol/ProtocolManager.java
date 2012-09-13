@@ -125,7 +125,7 @@ public interface ProtocolManager {
 	public Set<Integer> getPacketFilters();
 
 	/**
-	 * Determines whether or not is protocol mananger has been disabled. 
+	 * Determines whether or not this protocol mananger has been disabled. 
 	 * @return TRUE if it has, FALSE otherwise.
 	 */
 	public boolean isClosed();

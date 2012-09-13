@@ -21,7 +21,10 @@ import java.util.Set;
 
 import org.bukkit.plugin.Plugin;
 
-
+/**
+ * Represents a listener that recieves notifications when packets are sent or recieved.
+ * @author Kristian
+ */
 public interface PacketListener {
 	
 	/**

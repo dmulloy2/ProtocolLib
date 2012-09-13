@@ -78,12 +78,4 @@ public class Statistics {
 		
 		return users;
 	}
-
-	/**
-	 * Retrieve the current metrics object.
-	 * @return Metrics object.
-	 */
-	public Metrics getMetrics() {
-		return metrics;
-	}
 }
