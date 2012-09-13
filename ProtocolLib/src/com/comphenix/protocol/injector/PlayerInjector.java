@@ -214,38 +214,54 @@ class PlayerInjector {
 			for (Field field : list.getFields()) {
 				VolatileField overwriter = new VolatileField(field, networkManager, true);
 				
-				overwriter.setValue(Collections.synchronizedList(new ArrayList<Packet>() {
-					@Override
-					public boolean add(Packet packet) {
-
-						Packet result = null;
-						
-						// Check for fake packets and ignored packets
-						if (packet instanceof FakePacket) {
-							return true;
-						} else if (ignoredPackets.contains(packet)) {
-							ignoredPackets.remove(packet);
-						} else {
-							result = handlePacketRecieved(packet);
-						}
-						
-						// A NULL packet indicate cancelling
-						try {
-							if (result != null) {
-								super.add(result);
+				@SuppressWarnings("unchecked")
+				List<Packet> minecraftList = (List<Packet>) overwriter.getOldValue();
+				
+				synchronized(minecraftList) {
+					// The list we'll be inserting
+					List<Packet> hackedList = new ArrayList<Packet>() {
+						@Override
+						public boolean add(Packet packet) {
+	
+							Packet result = null;
+							
+							// Check for fake packets and ignored packets
+							if (packet instanceof FakePacket) {
+								return true;
+							} else if (ignoredPackets.contains(packet)) {
+								ignoredPackets.remove(packet);
 							} else {
-								// We'll use the FakePacket marker instead of preventing the filters
-								sendServerPacket(createNegativePacket(packet), true);
+								result = handlePacketRecieved(packet);
 							}
 							
-							// Collection.add contract
-							return true;
-							
-						} catch (InvocationTargetException e) {
-							throw new RuntimeException("Reverting cancelled packet failed.", e.getTargetException());
+							// A NULL packet indicate cancelling
+							try {
+								if (result != null) {
+									super.add(result);
+								} else {
+									// We'll use the FakePacket marker instead of preventing the filters
+									sendServerPacket(createNegativePacket(packet), true);
+								}
+								
+								// Collection.add contract
+								return true;
+								
+							} catch (InvocationTargetException e) {
+								throw new RuntimeException("Reverting cancelled packet failed.", e.getTargetException());
+							}
 						}
+					};
+					
+					// Add every previously stored packet
+					for (Packet packet : minecraftList) {
+						hackedList.add(packet);
 					}
-				}));
+					
+					// Don' keep stale packets around
+					minecraftList.clear();
+					overwriter.setValue(Collections.synchronizedList(hackedList));
+				}
+				
 				overridenLists.add(overwriter);
 			}
 		}
@@ -341,10 +357,28 @@ class PlayerInjector {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void cleanupAll() {
 		// Clean up
 		for (VolatileField overriden : overridenLists) {
-			overriden.revertValue();
+			List<Packet> minecraftList = (List<Packet>) overriden.getOldValue();
+			List<Packet> hacketList = (List<Packet>) overriden.getValue();
+			
+			if (minecraftList == hacketList) {
+				return;
+			}
+	
+			// Get a lock before we modify the list
+			synchronized(hacketList) {
+				try {
+					// Copy over current packets
+					for (Packet packet : (List<Packet>) overriden.getValue()) {
+						minecraftList.add(packet);
+					}
+				} finally {
+					overriden.revertValue();
+				}
+			}
 		}
 		overridenLists.clear();
 	}
