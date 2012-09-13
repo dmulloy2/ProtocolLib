@@ -186,7 +186,7 @@ public class StructureModifier<TField> {
 		
 		StructureModifier<T> result = subtypeCache.get(fieldType);
 		
-		if (fieldType.equals(this.fieldType)) {
+		if (this.fieldType.equals(fieldType)) {
 			
 			// We're dealing with the exact field type.
 			return withConverter(converter);
@@ -196,7 +196,7 @@ public class StructureModifier<TField> {
 			Set<Field> defaults = new HashSet<Field>();
 			
 			for (Field field : data) {
-				if (fieldType.isAssignableFrom(field.getType())) {
+				if (fieldType != null && fieldType.isAssignableFrom(field.getType())) {
 					filtered.add(field);
 					
 					if (defaultFields.contains(field))
@@ -208,7 +208,9 @@ public class StructureModifier<TField> {
 			result = new StructureModifier<T>();
 			result.initialize(targetType, fieldType, filtered, defaults, 
 							  converter, new HashMap<Class, StructureModifier>());
-			subtypeCache.put(fieldType, result);
+			
+			if (fieldType != null)
+				subtypeCache.put(fieldType, result);
 		}
 		
 		// Add the target too
