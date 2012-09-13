@@ -131,7 +131,7 @@ public class StructureModifier<TField> {
 	 * @param fieldIndex - index of the field.
 	 * @param value - new value of the field.
 	 * @return This structure modifier - for chaining.
-	 * @throws IllegalAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
+	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
 	public StructureModifier<TField> write(int fieldIndex, TField value) throws FieldAccessException {
 		if (fieldIndex < 0 || fieldIndex >= data.size())
@@ -158,7 +158,7 @@ public class StructureModifier<TField> {
 	 * @param fieldIndex - index of the potential field.
 	 * @param value - new value of the field.
 	 * @return This structure modifer - for chaining.
-	 * @throws IllegalAccessException The field cannot be accessed under the current security contraints.
+	 * @throws FieldAccessException The field cannot be accessed under the current security contraints.
 	 */
 	public StructureModifier<TField> writeSafely(int fieldIndex, TField value) throws FieldAccessException {
 		if (fieldIndex >= 0 && fieldIndex < data.size()) {
@@ -172,7 +172,7 @@ public class StructureModifier<TField> {
 	 * @param fieldIndex - index of the field to modify.
 	 * @param select - the function that modifies the field value.
 	 * @return This structure modifier - for chaining.
-	 * @throws IllegalAccessException The field cannot be accessed under the current security contraints.
+	 * @throws FieldAccessException The field cannot be accessed under the current security contraints.
 	 */
 	public StructureModifier<TField> modify(int fieldIndex, Function<TField, TField> select) throws FieldAccessException {
 		TField value = read(fieldIndex);
@@ -189,16 +189,20 @@ public class StructureModifier<TField> {
 	}
 	
 	/**
-	 * Sets all non-primitive fields to a more fitting default value. See {@link DefaultInstance}.
+	 * Sets all non-primitive fields to a more fitting default value. See {@link DefaultInstances#getDefault(Class)}.
 	 * @return The current structure modifier - for chaining.
-	 * @throws IllegalAccessException If we're unable to write to the fields due to a security limitation.
+	 * @throws FieldAccessException If we're unable to write to the fields due to a security limitation.
 	 */
-	public StructureModifier<TField> writeDefaults() throws IllegalAccessException {
+	public StructureModifier<TField> writeDefaults() throws FieldAccessException {
 		
 		// Write a default instance to every field
 		for (Field field : defaultFields) {
-			FieldUtils.writeField(field, target, 
-					DefaultInstances.getDefault(field.getType()), true);
+			try {
+				FieldUtils.writeField(field, target, 
+						DefaultInstances.getDefault(field.getType()), true);
+			} catch (IllegalAccessException e) {
+				throw new FieldAccessException("Cannot write to field due to a security limitation.", e);
+			}
 		}
 		
 		return this;

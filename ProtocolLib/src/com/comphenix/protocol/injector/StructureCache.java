@@ -24,7 +24,11 @@ import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.reflect.StructureModifier;
 
-public class StructureCache {
+/**
+ * Caches structure modifiers.
+ * @author Kristian
+ */
+class StructureCache {
 	// Structure modifiers
 	private static Map<Integer, StructureModifier<Object>> structureModifiers = new HashMap<Integer, StructureModifier<Object>>();
 	
