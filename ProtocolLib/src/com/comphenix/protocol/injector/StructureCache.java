@@ -28,7 +28,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
  * Caches structure modifiers.
  * @author Kristian
  */
-class StructureCache {
+public class StructureCache {
 	// Structure modifiers
 	private static Map<Integer, StructureModifier<Object>> structureModifiers = new HashMap<Integer, StructureModifier<Object>>();
 	

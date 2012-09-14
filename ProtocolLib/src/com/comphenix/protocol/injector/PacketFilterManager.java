@@ -20,10 +20,12 @@ package com.comphenix.protocol.injector;
 import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,10 +45,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
@@ -57,14 +57,18 @@ public final class PacketFilterManager implements ProtocolManager {
 	private Set<PacketListener> packetListeners = new CopyOnWriteArraySet<PacketListener>();
 	
 	// Player injection
-	private Map<DataInputStream, Player> connectionLookup = new HashMap<DataInputStream, Player>();
+	private Map<DataInputStream, Player> connectionLookup = new ConcurrentHashMap<DataInputStream, Player>();
 	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
 	
 	// Packet injection
 	private PacketInjector packetInjector;
 	
 	// Enabled packet filters
-	private Set<Integer> packetFilters = new HashSet<Integer>();
+	private Set<Integer> sendingFilters = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+	
+	// The two listener containers
+	private ConcurrentListenerMultimap recievedListeners = new ConcurrentListenerMultimap();
+	private ConcurrentListenerMultimap sendingListeners = new ConcurrentListenerMultimap();
 	
 	// Whether or not this class has been closed
 	private boolean hasClosed;
@@ -107,10 +111,18 @@ public final class PacketFilterManager implements ProtocolManager {
 	public void addPacketListener(PacketListener listener) {
 		if (listener == null)
 			throw new IllegalArgumentException("listener cannot be NULL.");
-		
+
+		ConnectionSide side = listener.getConnectionSide();
 		packetListeners.add(listener);
-		enablePacketFilters(listener.getConnectionSide(), 
-							listener.getPacketsID());
+		
+		// Add listeners
+		if (side.isForServer())
+			sendingListeners.addListener(listener);
+		if (side.isForClient())
+			recievedListeners.addListener(listener);
+		
+		// Inform our injected hooks
+		enablePacketFilters(side, listener.getPacketsID());
 	}
 	
 	@Override
@@ -118,9 +130,24 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (listener == null)
 			throw new IllegalArgumentException("listener cannot be NULL");
 		
+		ConnectionSide side = listener.getConnectionSide();
+		List<Integer> sendingRemoved = null;
+		List<Integer> receivingRemoved = null;
+		
+		// Remove from the overal list of listeners
 		packetListeners.remove(listener);
-		disablePacketFilters(listener.getConnectionSide(),
-						 	 listener.getPacketsID());
+		
+		// Add listeners
+		if (side.isForServer())
+			sendingRemoved = sendingListeners.removeListener(listener);
+		if (side.isForClient())
+			receivingRemoved = recievedListeners.removeListener(listener);
+		
+		// Remove hooks, if needed
+		if (sendingRemoved != null && sendingRemoved.size() > 0)
+			disablePacketFilters(ConnectionSide.SERVER_SIDE, sendingRemoved);
+		if (receivingRemoved != null && receivingRemoved.size() > 0)
+			disablePacketFilters(ConnectionSide.CLIENT_SIDE, receivingRemoved);
 	}
 	
 	@Override
@@ -132,7 +159,7 @@ public final class PacketFilterManager implements ProtocolManager {
 
 			// Remove the listener
 			if (Objects.equal(listener.getPlugin(), plugin)) {
-				packetListeners.remove(listener);
+				removePacketListener(listener);
 			}
 		}
 	}
@@ -142,15 +169,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketRecieving(PacketEvent event) {
-		for (PacketListener listener : packetListeners) {
-			try {
-				if (canHandlePacket(listener, event))
-					listener.onPacketReceiving(event);
-			} catch (Exception e) {
-				// Minecraft doesn't want your Exception.
-				logger.log(Level.SEVERE, "Exception occured in onPacketReceiving() for " + listener.toString(), e);
-			}
-		}	
+		recievedListeners.invokePacketRecieving(logger, event);
 	}
 	
 	/**
@@ -158,26 +177,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketSending(PacketEvent event) {
-		for (PacketListener listener : packetListeners) {
-			try {
-				if (canHandlePacket(listener, event))
-					listener.onPacketSending(event);
-			} catch (Exception e) {
-				logger.log(Level.SEVERE, "Exception occured in onPacketReceiving() for " + listener.toString(), e);
-			}
-		}	
-	}
-	
-	private boolean canHandlePacket(PacketListener listener, PacketEvent event) {
-		// Make sure the listener is looking for this packet
-		if (!listener.getPacketsID().contains(event.getPacket().getID()))
-			return false;
-		
-		// And this type of packet
-		if (event.isServerPacket())
-			return listener.getConnectionSide().isForServer();
-		else
-			return listener.getConnectionSide().isForClient();
+		sendingListeners.invokePacketSending(logger, event);
 	}
 	
 	/**
@@ -188,13 +188,13 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param side - which side the event will arrive from.
 	 * @param packets - the packet id(s).
 	 */
-	private void enablePacketFilters(ConnectionSide side, Set<Integer> packets) {
+	private void enablePacketFilters(ConnectionSide side, Iterable<Integer> packets) {
 		if (side == null)
 			throw new IllegalArgumentException("side cannot be NULL.");
 		
 		for (int packetID : packets) {
-			if (side.isForServer())
-				packetFilters.add(packetID);
+			if (side.isForServer()) 
+				sendingFilters.add(packetID);
 			if (side.isForClient() && packetInjector != null)
 				packetInjector.addPacketHandler(packetID);
 		}
@@ -205,13 +205,13 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param packets - the packet id(s).
 	 * @param side - which side the event no longer should arrive from.
 	 */
-	private void disablePacketFilters(ConnectionSide side, Set<Integer> packets) {
+	private void disablePacketFilters(ConnectionSide side, Iterable<Integer> packets) {
 		if (side == null)
 			throw new IllegalArgumentException("side cannot be NULL.");
 		
 		for (int packetID : packets) {
 			if (side.isForServer())
-				packetFilters.remove(packetID);
+				sendingFilters.remove(packetID);
 			if (side.isForClient() && packetInjector != null) 
 				packetInjector.removePacketHandler(packetID);
 		}
@@ -268,7 +268,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (!skipDefaults) {
 			try {
 				packet.getModifier().writeDefaults();
-			} catch (IllegalAccessException e) {
+			} catch (FieldAccessException e) {
 				throw new RuntimeException("Security exception.", e);
 			}
 		}
@@ -279,9 +279,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	@Override
 	public Set<Integer> getPacketFilters() {
 		if (packetInjector != null)
-			return Sets.union(packetFilters, packetInjector.getPacketHandlers());
+			return Sets.union(sendingFilters, packetInjector.getPacketHandlers());
 		else
-			return packetFilters;
+			return sendingFilters;
 	}
 	
 	/**
@@ -297,7 +297,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		// Don't inject if the class has closed
 		if (!hasClosed && player != null && !playerInjection.containsKey(player)) {
 			try {
-				PlayerInjector injector = new PlayerInjector(player, this, packetFilters);
+				PlayerInjector injector = new PlayerInjector(player, this, sendingFilters);
 				
 				injector.injectManager();
 				playerInjection.put(player, injector);

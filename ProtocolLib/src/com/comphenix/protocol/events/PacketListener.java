@@ -49,6 +49,12 @@ public interface PacketListener {
 	public ConnectionSide getConnectionSide();
 	
 	/**
+	 * Retrieve the priority in the execution order of this packet listener. Highest priority will be executed last.
+	 * @return Execution order in terms of priority.
+	 */
+	public ListenerPriority getListenerPriority();
+	
+	/**
 	 * Set of packet ids we expect to recieve.
 	 * @return Packets IDs.
 	 */

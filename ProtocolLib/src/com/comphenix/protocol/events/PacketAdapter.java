@@ -34,6 +34,7 @@ public abstract class PacketAdapter implements PacketListener {
 	protected Plugin plugin;
 	protected Set<Integer> packetsID;
 	protected ConnectionSide connectionSide;
+	protected ListenerPriority listenerPriority;
 	
 	/**
 	 * Initialize a packet listener.
@@ -42,9 +43,21 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @param packets - the packet IDs the listener is looking for.
 	 */
 	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, Integer... packets) {
+		this(plugin, connectionSide, ListenerPriority.NORMAL, packets);
+	}
+	
+	/**
+	 * Initialize a packet listener.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param listenerPriority - the event priority.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, Integer... packets) {
 		this.plugin = plugin;
 		this.connectionSide = connectionSide;
 		this.packetsID = Sets.newHashSet(packets);
+		this.listenerPriority = listenerPriority;
 	}
 	
 	@Override
@@ -70,6 +83,11 @@ public abstract class PacketAdapter implements PacketListener {
 	@Override
 	public Plugin getPlugin() {
 		return plugin;
+	}
+	
+	@Override
+	public ListenerPriority getListenerPriority() {
+		return listenerPriority;
 	}
 	
 	/**

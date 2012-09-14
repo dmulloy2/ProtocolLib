@@ -84,15 +84,15 @@ class PlayerInjector {
 	
 	// The packet manager and filters
 	private PacketFilterManager manager;
-	private Set<Integer> packetFilters;
+	private Set<Integer> sendingFilters;
 	
 	// Previous data input
 	private DataInputStream cachedInput;
 
-	public PlayerInjector(Player player, PacketFilterManager manager, Set<Integer> packetFilters) throws IllegalAccessException {
+	public PlayerInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
 		this.player = player;
 		this.manager = manager;
-		this.packetFilters = packetFilters;
+		this.sendingFilters = sendingFilters;
 		initialize();
 	}
 
@@ -342,7 +342,7 @@ class PlayerInjector {
 		Integer id = MinecraftRegistry.getPacketToID().get(packet.getClass());
 
 		// Make sure we're listening
-		if (packetFilters.contains(id)) {	
+		if (sendingFilters.contains(id)) {	
 			// A packet has been sent guys!
 			PacketContainer container = new PacketContainer(id, packet);
 			PacketEvent event = PacketEvent.fromServer(manager, container, player);
