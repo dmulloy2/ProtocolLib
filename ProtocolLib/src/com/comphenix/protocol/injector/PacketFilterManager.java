@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,11 +49,12 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
 public final class PacketFilterManager implements ProtocolManager {
 
-	private Set<PacketListener> packetListeners = new CopyOnWriteArraySet<PacketListener>();
+	// Create a concurrent set
+	private Set<PacketListener> packetListeners = 
+			Collections.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
 	
 	// Player injection
 	private Map<DataInputStream, Player> connectionLookup = new ConcurrentHashMap<DataInputStream, Player>();
@@ -111,37 +111,52 @@ public final class PacketFilterManager implements ProtocolManager {
 	public void addPacketListener(PacketListener listener) {
 		if (listener == null)
 			throw new IllegalArgumentException("listener cannot be NULL.");
-
-		ConnectionSide side = listener.getConnectionSide();
-		packetListeners.add(listener);
 		
-		// Add listeners
-		if (side.isForServer())
-			sendingListeners.addListener(listener);
-		if (side.isForClient())
-			recievedListeners.addListener(listener);
+		// A listener can only be added once
+		if (packetListeners.contains(listener))
+			return;
 		
-		// Inform our injected hooks
-		enablePacketFilters(side, listener.getPacketsID());
+		ListeningWhitelist sending = listener.getSendingWhitelist();
+		ListeningWhitelist receiving = listener.getReceivingWhitelist();
+		boolean hasSending = sending != null && sending.isEnabled();
+		boolean hasReceiving = receiving != null && receiving.isEnabled();
+		
+		if (hasSending || hasReceiving) {
+			// Add listeners and hooks
+			if (hasSending) {
+				sendingListeners.addListener(listener, sending);
+				enablePacketFilters(ConnectionSide.SERVER_SIDE, sending.getWhitelist());
+			}
+			if (hasReceiving) {
+				recievedListeners.addListener(listener, receiving);
+				enablePacketFilters(ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
+			}
+			
+			// Inform our injected hooks
+			packetListeners.add(listener);
+		}
 	}
 	
 	@Override
 	public void removePacketListener(PacketListener listener) {
 		if (listener == null)
 			throw new IllegalArgumentException("listener cannot be NULL");
-		
-		ConnectionSide side = listener.getConnectionSide();
+
 		List<Integer> sendingRemoved = null;
 		List<Integer> receivingRemoved = null;
 		
+		ListeningWhitelist sending = listener.getSendingWhitelist();
+		ListeningWhitelist receiving = listener.getReceivingWhitelist();
+		
 		// Remove from the overal list of listeners
-		packetListeners.remove(listener);
+		if (!packetListeners.remove(listener))
+			return;
 		
 		// Add listeners
-		if (side.isForServer())
-			sendingRemoved = sendingListeners.removeListener(listener);
-		if (side.isForClient())
-			receivingRemoved = recievedListeners.removeListener(listener);
+		if (sending != null && sending.isEnabled())
+			sendingRemoved = sendingListeners.removeListener(listener, sending);
+		if (receiving != null && receiving.isEnabled())
+			receivingRemoved = recievedListeners.removeListener(listener, receiving);
 		
 		// Remove hooks, if needed
 		if (sendingRemoved != null && sendingRemoved.size() > 0)
@@ -154,9 +169,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	public void removePacketListeners(Plugin plugin) {
 		
 		// Iterate through every packet listener
-		for (Object element : packetListeners.toArray()) {			
-			PacketListener listener = (PacketListener) element;
-
+		for (PacketListener listener : packetListeners) {			
 			// Remove the listener
 			if (Objects.equal(listener.getPlugin(), plugin)) {
 				removePacketListener(listener);
@@ -277,11 +290,13 @@ public final class PacketFilterManager implements ProtocolManager {
 	}
 	
 	@Override
-	public Set<Integer> getPacketFilters() {
-		if (packetInjector != null)
-			return Sets.union(sendingFilters, packetInjector.getPacketHandlers());
-		else
-			return sendingFilters;
+	public Set<Integer> getSendingFilters() {
+		return ImmutableSet.copyOf(sendingFilters);
+	}
+	
+	@Override
+	public Set<Integer> getReceivingFilters() {
+		return ImmutableSet.copyOf(packetInjector.getPacketHandlers());
 	}
 	
 	/**
@@ -362,7 +377,7 @@ public final class PacketFilterManager implements ProtocolManager {
 			// Find the register event method
 			Method registerEvent = FuzzyReflection.fromObject(manager).getMethodByParameters("registerEvent", 
 					eventTypes, Listener.class, eventPriority, Plugin.class);
-			
+
 			Enhancer ex = new Enhancer();
 			ex.setSuperclass(playerListener);
 			ex.setClassLoader(classLoader);

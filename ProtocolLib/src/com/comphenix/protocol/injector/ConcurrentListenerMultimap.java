@@ -1,7 +1,6 @@
 package com.comphenix.protocol.injector;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,10 +8,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.google.common.base.Objects;
 import com.google.common.primitives.Ints;
 
 /**
@@ -23,36 +23,32 @@ import com.google.common.primitives.Ints;
 public class ConcurrentListenerMultimap {
 
 	// The core of our map
-	protected ConcurrentMap<Integer, SortedArrayList<PacketListener>> listeners = 
-		  new ConcurrentHashMap<Integer, SortedArrayList<PacketListener>>();
+	protected ConcurrentMap<Integer, SortedCopyOnWriteArray<PrioritizedListener>> listeners = 
+		  new ConcurrentHashMap<Integer, SortedCopyOnWriteArray<PrioritizedListener>>();
 	
 	/**
 	 * Adds a listener to its requested list of packet recievers.
 	 * @param listener - listener with a list of packets to recieve notifcations for.
 	 */
-	public void addListener(PacketListener listener) {
-		for (Integer packetID : listener.getPacketsID()) {
-			addListener(packetID, listener);
+	public void addListener(PacketListener listener, ListeningWhitelist whitelist) {
+		
+		PrioritizedListener prioritized = new PrioritizedListener(listener, whitelist.getPriority());
+		
+		for (Integer packetID : whitelist.getWhitelist()) {
+			addListener(packetID, prioritized);
 		}
 	}
 	
 	// Add the listener to a specific packet notifcation list
-	private void addListener(Integer packetID, PacketListener listener) {
+	private void addListener(Integer packetID, PrioritizedListener listener) {
 		
-		SortedArrayList<PacketListener> list = listeners.get(packetID);
+		SortedCopyOnWriteArray<PrioritizedListener> list = listeners.get(packetID);
 		
 		// We don't want to create this for every lookup
 		if (list == null) {
 			// It would be nice if we could use a PriorityBlockingQueue, but it doesn't preseve iterator order,
 			// which is a essential feature for our purposes.
-			final SortedArrayList<PacketListener> value = new SortedArrayList<PacketListener>(new Comparator<PacketListener>() {
-				@Override
-				public int compare(PacketListener o1, PacketListener o2) {
-					// This ensures that lower priority listeners are executed first
-					return Ints.compare(o1.getListenerPriority().getSlot(),
-							            o2.getListenerPriority().getSlot());
-				}
-			});
+			final SortedCopyOnWriteArray<PrioritizedListener> value = new SortedCopyOnWriteArray<PrioritizedListener>();
 			
 			list = listeners.putIfAbsent(packetID, value);
 			
@@ -74,21 +70,26 @@ public class ConcurrentListenerMultimap {
 	 * @param listener - listener to remove.
 	 * @return Every packet ID that was removed due to no listeners.
 	 */
-	public List<Integer> removeListener(PacketListener listener) {
+	public List<Integer> removeListener(PacketListener listener, ListeningWhitelist whitelist) {
 	
 		List<Integer> removedPackets = new ArrayList<Integer>();
 		
 		// Again, not terribly efficient. But adding or removing listeners should be a rare event.
-		for (Integer packetID : listener.getPacketsID()) {
+		for (Integer packetID : whitelist.getWhitelist()) {
 			
-			SortedArrayList<PacketListener> list = listeners.get(packetID);
+			SortedCopyOnWriteArray<PrioritizedListener> list = listeners.get(packetID);
 			
 			// Remove any listeners
 			if (list != null) {
 				synchronized(list) {
 					// Don't remove from newly created lists
 					if (list.size() > 0) {
-						list.removeAll(listener);
+						// Remove this listener
+						for (Iterator<PrioritizedListener> it = list.iterator(); it.hasNext(); ) {
+							if (it.next().getListener().equals(list)) {
+								it.remove();
+							}
+						}
 						
 						if (list.size() == 0) {
 							listeners.remove(packetID);
@@ -110,20 +111,21 @@ public class ConcurrentListenerMultimap {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketRecieving(Logger logger, PacketEvent event) {
-		SortedArrayList<PacketListener> list = listeners.get(event.getPacketID());
+		SortedCopyOnWriteArray<PrioritizedListener> list = listeners.get(event.getPacketID());
 		
 		if (list == null)
 			return;
 		
 		// We have to be careful. Cannot modify the underlying list when sending notifications.
 		synchronized (list) {
-			for (PacketListener listener : list) {
+			for (PrioritizedListener element : list) {
 				try {
-					listener.onPacketReceiving(event);
+					element.getListener().onPacketReceiving(event);
 				} catch (Exception e) {
 					// Minecraft doesn't want your Exception.
 					logger.log(Level.SEVERE, 
-							"Exception occured in onPacketReceiving() for " + PacketAdapter.getPluginName(listener), e);
+							"Exception occured in onPacketReceiving() for " + 
+								PacketAdapter.getPluginName(element.getListener()), e);
 				}
 			}
 		}
@@ -135,75 +137,50 @@ public class ConcurrentListenerMultimap {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketSending(Logger logger, PacketEvent event) {
-		SortedArrayList<PacketListener> list = listeners.get(event.getPacketID());
+		SortedCopyOnWriteArray<PrioritizedListener> list = listeners.get(event.getPacketID());
 		
 		if (list == null)
 			return;
 		
 		synchronized (list) {
-			for (PacketListener listener : list) {
+			for (PrioritizedListener element : list) {
 				try {
-					listener.onPacketSending(event);
+					element.getListener().onPacketSending(event);
 				} catch (Exception e) {
 					// Minecraft doesn't want your Exception.
 					logger.log(Level.SEVERE, 
-							"Exception occured in onPacketReceiving() for " + PacketAdapter.getPluginName(listener), e);
+							"Exception occured in onPacketReceiving() for " + 
+								PacketAdapter.getPluginName(element.getListener()), e);
 				}
 			}
 		}	
 	}
 	
 	/**
-	 * An implicitly sorted array list that preserves insertion order and maintains duplicates.
-	 * 
-	 * Note that only the {@link insertSorted} method will update the list correctly,
-	 * @param <T> - type of the sorted list.
+	 * A listener with an associated priority.
 	 */
-	private class SortedArrayList<T> implements Iterable<T> {
-
-		private Comparator<T> comparator;
-		private List<T> list = new ArrayList<T>();
+	private class PrioritizedListener implements Comparable<PrioritizedListener> {
+		private PacketListener listener;
+		private ListenerPriority priority;
 		
-		public SortedArrayList(Comparator<T> comparator) {
-			this.comparator = comparator;
+		public PrioritizedListener(PacketListener listener, ListenerPriority priority) {
+			this.listener = listener;
+			this.priority = priority;
 		}
-		
-		/**
-		 * Inserts the given element in the proper location.
-		 * @param value - element to insert.
-		 */
-	    public void insertSorted(T value) {
-	    	list.add(value);
-	        for (int i = list.size() - 1; i > 0 && comparator.compare(value, list.get(i-1)) < 0; i--) {
-	            T tmp = list.get(i);
-	            list.set(i, list.get(i-1));
-	            list.set(i-1, tmp);
-	        }
-	    }
-	    
-	    /**
-	     * Removes every instance of the given element.
-	     * @param element - element to remove.
-	     */
-	    public void removeAll(T element) {
-			for (Iterator<T> it = list.iterator(); it.hasNext(); ) {
-				if (Objects.equal(it.next(), element)) {
-					it.remove();
-				}
-			}
-	    }
-	    
-	    /**
-	     * Retrieve the size of the list.
-	     * @return Size of the list.
-	     */
-	    public int size() {
-	    	return list.size();
-	    }
 
 		@Override
-		public Iterator<T> iterator() {
-			return list.iterator();
+		public int compareTo(PrioritizedListener other) {
+			// This ensures that lower priority listeners are executed first
+			return Ints.compare(this.getPriority().getSlot(),
+					            other.getPriority().getSlot());
+		}
+		
+		public PacketListener getListener() {
+			return listener;
+		}
+
+		public ListenerPriority getPriority() {
+			return priority;
 		}
 	}
 }

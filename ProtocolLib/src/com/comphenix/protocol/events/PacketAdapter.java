@@ -17,12 +17,8 @@
 
 package com.comphenix.protocol.events;
 
-import java.util.Set;
-
 import org.bukkit.plugin.Plugin;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
 
 /**
  * Represents a packet listener with useful constructors.
@@ -32,10 +28,10 @@ import com.google.common.collect.Sets;
 public abstract class PacketAdapter implements PacketListener {
 	
 	protected Plugin plugin;
-	protected Set<Integer> packetsID;
 	protected ConnectionSide connectionSide;
-	protected ListenerPriority listenerPriority;
-	
+	protected ListeningWhitelist receivingWhitelist = ListeningWhitelist.EMPTY_WHITELIST;
+	protected ListeningWhitelist sendingWhitelist = ListeningWhitelist.EMPTY_WHITELIST;
+
 	/**
 	 * Initialize a packet listener.
 	 * @param plugin - the plugin that spawned this listener.
@@ -54,10 +50,23 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @param packets - the packet IDs the listener is looking for.
 	 */
 	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, Integer... packets) {
+		if (plugin == null)
+			throw new IllegalArgumentException("plugin cannot be null");
+		if (connectionSide == null)
+			throw new IllegalArgumentException("connectionSide cannot be null");
+		if (listenerPriority == null)
+			throw new IllegalArgumentException("listenerPriority cannot be null");
+		if (packets == null)
+			throw new IllegalArgumentException("packets cannot be null");
+		
+		// Add whitelists
+		if (connectionSide.isForServer())
+			sendingWhitelist = new ListeningWhitelist(listenerPriority, packets);
+		if (connectionSide.isForClient())
+			receivingWhitelist = new ListeningWhitelist(listenerPriority, packets);
+		
 		this.plugin = plugin;
 		this.connectionSide = connectionSide;
-		this.packetsID = Sets.newHashSet(packets);
-		this.listenerPriority = listenerPriority;
 	}
 	
 	@Override
@@ -71,23 +80,18 @@ public abstract class PacketAdapter implements PacketListener {
 	}
 	
 	@Override
-	public ConnectionSide getConnectionSide() {
-		return connectionSide;
+	public ListeningWhitelist getReceivingWhitelist() {
+		return receivingWhitelist;
 	}
 	
 	@Override
-	public Set<Integer> getPacketsID() {
-		return packetsID;
+	public ListeningWhitelist getSendingWhitelist() {
+		return sendingWhitelist;
 	}
 	
 	@Override
 	public Plugin getPlugin() {
 		return plugin;
-	}
-	
-	@Override
-	public ListenerPriority getListenerPriority() {
-		return listenerPriority;
 	}
 	
 	/**
@@ -113,8 +117,9 @@ public abstract class PacketAdapter implements PacketListener {
 	@Override
 	public String toString() {		
 		// This is used by the error reporter 
-		return String.format("PacketAdapter[plugin=%s, side=%s, packets=%s]", 
-				getPluginName(this), getConnectionSide().name(), 
-				Joiner.on(", ").join(packetsID));
+		return String.format("PacketAdapter[plugin=%s, sending=%s, receiving=%s]", 
+				getPluginName(this), 
+				sendingWhitelist,
+				receivingWhitelist);
 	}
 }

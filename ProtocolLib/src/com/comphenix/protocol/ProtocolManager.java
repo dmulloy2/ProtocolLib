@@ -119,11 +119,17 @@ public interface ProtocolManager {
 	public PacketContainer createPacket(int id, boolean skipDefaults);
 
 	/**
-	 * Retieves a set of every enabled packet.
-	 * @return Every packet filter.
+	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.
+	 * @return Every filtered server packet.
 	 */
-	public Set<Integer> getPacketFilters();
-
+	public Set<Integer> getSendingFilters();
+	
+	/**
+	 * Retrieves a immutable set containing the ID of the recieved client packets that will be observed by listeners.
+	 * @return Every filtered client packet.
+	 */
+	public Set<Integer> getReceivingFilters();
+	
 	/**
 	 * Determines whether or not this protocol mananger has been disabled. 
 	 * @return TRUE if it has, FALSE otherwise.

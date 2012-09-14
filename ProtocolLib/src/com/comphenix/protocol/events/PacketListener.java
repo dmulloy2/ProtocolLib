@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.events;
 
-import java.util.Set;
-
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -43,22 +41,16 @@ public interface PacketListener {
 	public void onPacketReceiving(PacketEvent event);
 	
 	/**
-	 * Retrieve whether or not we're listening for client or server packets.
-	 * @return The type of packets we expect.
+	 * Retrieve which packets sent by the server this listener will observe.
+	 * @return List of server packets to observe, along with the priority.
 	 */
-	public ConnectionSide getConnectionSide();
+	public ListeningWhitelist getSendingWhitelist();
 	
 	/**
-	 * Retrieve the priority in the execution order of this packet listener. Highest priority will be executed last.
-	 * @return Execution order in terms of priority.
+	 * Retrieve which packets sent by the client this listener will observe.
+	 * @return List of server packets to observe, along with the priority.
 	 */
-	public ListenerPriority getListenerPriority();
-	
-	/**
-	 * Set of packet ids we expect to recieve.
-	 * @return Packets IDs.
-	 */
-	public Set<Integer> getPacketsID();
+	public ListeningWhitelist getReceivingWhitelist();
 	
 	/**
 	 * Retrieve the plugin that created list packet listener.
