@@ -32,7 +32,7 @@ public class SortedCopyOnWriteArrayTest {
 		
 		// O(n^2) of course, so don't use too large numbers
 		for (int i = 0; i < MAX_NUMBER; i++) {
-			test.insertSorted(numbers.get(i));
+			test.add(numbers.get(i));
 		}
 		
 		// Check that everything is correct
@@ -48,9 +48,9 @@ public class SortedCopyOnWriteArrayTest {
 		PriorityStuff c = new PriorityStuff(ListenerPriority.NORMAL, 3);
 		SortedCopyOnWriteArray<PriorityStuff> test = new SortedCopyOnWriteArray<PriorityStuff>();
 		
-		test.insertSorted(a);
-		test.insertSorted(b);
-		test.insertSorted(c);
+		test.add(a);
+		test.add(b);
+		test.add(c);
 		
 		// Make sure the normal's are in the right order
 		assertEquals(2, test.get(0).id);

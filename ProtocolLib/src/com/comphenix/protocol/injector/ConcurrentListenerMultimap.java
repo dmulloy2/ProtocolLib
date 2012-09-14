@@ -1,7 +1,6 @@
 package com.comphenix.protocol.injector;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -13,6 +12,7 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.google.common.base.Objects;
 import com.google.common.primitives.Ints;
 
 /**
@@ -59,10 +59,8 @@ public class ConcurrentListenerMultimap {
 			}
 		}
 		
-		// Careful when modifying the set
-		synchronized(list) {
-			list.insertSorted(listener);
-		}
+		// Thread safe
+		list.add(listener);
 	}
 	
 	/**
@@ -81,20 +79,14 @@ public class ConcurrentListenerMultimap {
 			
 			// Remove any listeners
 			if (list != null) {
-				synchronized(list) {
-					// Don't remove from newly created lists
-					if (list.size() > 0) {
-						// Remove this listener
-						for (Iterator<PrioritizedListener> it = list.iterator(); it.hasNext(); ) {
-							if (it.next().getListener().equals(list)) {
-								it.remove();
-							}
-						}
-						
-						if (list.size() == 0) {
-							listeners.remove(packetID);
-							removedPackets.add(packetID);
-						}
+				// Don't remove from newly created lists
+				if (list.size() > 0) {
+					// Remove this listener. Note that priority is generally ignored.
+					list.remove(new PrioritizedListener(listener, whitelist.getPriority()));
+					
+					if (list.size() == 0) {
+						listeners.remove(packetID);
+						removedPackets.add(packetID);
 					}
 				}
 			}
@@ -173,6 +165,19 @@ public class ConcurrentListenerMultimap {
 			// This ensures that lower priority listeners are executed first
 			return Ints.compare(this.getPriority().getSlot(),
 					            other.getPriority().getSlot());
+		}
+		
+		// Note that this equals() method is NOT consistent with compareTo(). 
+		// But, it's a private class so who cares.
+		@Override
+		public boolean equals(Object obj) {
+			// We only care about the listener - priority itself should not make a difference
+		    if(obj instanceof PrioritizedListener){
+		        final PrioritizedListener other = (PrioritizedListener) obj;
+		        return Objects.equal(listener, other.listener);
+		    } else {
+		        return false;
+		    }
 		}
 		
 		public PacketListener getListener() {

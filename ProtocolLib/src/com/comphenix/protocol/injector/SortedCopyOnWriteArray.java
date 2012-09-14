@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Iterables;
+
 /**
  * An implicitly sorted array list that preserves insertion order and maintains duplicates.
- * 
- * Note that only the {@link insertSorted} method will update the list correctly,
- * @param <T> - type of the sorted list.
+ * @param <T> - type of the elements in the list.
  */
 class SortedCopyOnWriteArray<T> implements Iterable<T> {
 	// Prevent reordering
@@ -27,7 +28,7 @@ class SortedCopyOnWriteArray<T> implements Iterable<T> {
 	 * @param value - element to insert.
 	 */
     @SuppressWarnings("unchecked")
-	public synchronized void insertSorted(T value) {
+	public synchronized void add(T value) {
     	
     	// We use NULL as a special marker, so we don't allow it
     	if (value == null)
@@ -52,6 +53,43 @@ class SortedCopyOnWriteArray<T> implements Iterable<T> {
         list = copy;
     }
     
+    /**
+     * Removes from the list by making a new list with every element except the one given.
+     * <p>
+     * Objects will be compared using the given objects equals() method.
+     * @param value - value to remove.
+     */
+    public synchronized void remove(T value) {
+    	List<T> copy = new ArrayList<T>();
+    	
+    	// Copy every element except the one given to us
+    	for (T element : list) {
+    		if (value != null && !Objects.equal(value, element)) {
+    			copy.add(element);
+    			value = null;
+    		}
+    	}
+
+    	list = copy;
+    }
+    
+    /**
+     * Removes from the list by making a copy of every element except the one with the given index.
+     * @param index - index of the element to remove.
+     */
+    public synchronized void remove(int index) {
+    	
+    	List<T> copy = new ArrayList<T>(list);
+    	
+    	copy.remove(index);
+    	list = copy;
+    }
+    
+    /**
+     * Retrieves an element by index. 
+     * @param index - index of element to retrieve.
+     * @return The element at the given location.
+     */
     public T get(int index) {
     	return list.get(index);
     }
@@ -65,9 +103,10 @@ class SortedCopyOnWriteArray<T> implements Iterable<T> {
     }
 
     /**
-     * Retrieves an iterator over the elements in the given list.
+     * Retrieves an iterator over the elements in the given list. 
+     * Warning: No not attempt to remove elements using the iterator.
      */
 	public Iterator<T> iterator() {
-		return list.iterator();
+		return Iterables.unmodifiableIterable(list).iterator();
 	}
 }
