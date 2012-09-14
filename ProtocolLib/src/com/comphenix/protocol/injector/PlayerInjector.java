@@ -29,9 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -219,7 +216,6 @@ class PlayerInjector {
 		}
 	}
 	
-	@SuppressWarnings("serial")
 	public void injectManager() {
 		
 		if (networkManager != null) {
@@ -236,38 +232,7 @@ class PlayerInjector {
 				
 				synchronized(minecraftList) {
 					// The list we'll be inserting
-					List<Packet> hackedList = new ArrayList<Packet>() {
-						@Override
-						public boolean add(Packet packet) {
-	
-							Packet result = null;
-							
-							// Check for fake packets and ignored packets
-							if (packet instanceof FakePacket) {
-								return true;
-							} else if (ignoredPackets.contains(packet)) {
-								ignoredPackets.remove(packet);
-							} else {
-								result = handlePacketRecieved(packet);
-							}
-							
-							// A NULL packet indicate cancelling
-							try {
-								if (result != null) {
-									super.add(result);
-								} else {
-									// We'll use the FakePacket marker instead of preventing the filters
-									sendServerPacket(createNegativePacket(packet), true);
-								}
-								
-								// Collection.add contract
-								return true;
-								
-							} catch (InvocationTargetException e) {
-								throw new RuntimeException("Reverting cancelled packet failed.", e.getTargetException());
-							}
-						}
-					};
+					List<Packet> hackedList = new InjectedArrayList(manager.getClassLoader(), this, ignoredPackets);
 					
 					// Add every previously stored packet
 					for (Packet packet : minecraftList) {
@@ -282,54 +247,6 @@ class PlayerInjector {
 				overridenLists.add(overwriter);
 			}
 		}
-	}
-	
-	/**
-	 * Used by a hack that reverses the effect of a cancelled packet. Returns a packet
-	 * whereby every int method's return value is inverted (a => -a).
-	 * 
-	 * @param source - packet to invert.
-	 * @return The inverted packet.
-	 */
-	private Packet createNegativePacket(Packet source) {
-		Enhancer ex = new Enhancer();
-		Class<?> type = source.getClass();
-		
-		// We want to subtract the byte amount that were added to the running
-		// total of outstanding packets. Otherwise, cancelling too many packets
-		// might cause a "disconnect.overflow" error.
-		//
-		// We do that by constructing a special packet of the same type that returns 
-		// a negative integer for all zero-parameter integer methods. This includes the
-		// size() method, which is used by the queue method to count the number of
-		// bytes to add.
-		//
-		// Essentially, we have:
-		//
-		//   public class NegativePacket extends [a packet] {
-		//      @Override
-		//      public int size() {
-		//         return -super.size();
-		//      }
-		//   ect.
-		//   }
-		ex.setInterfaces(new Class[] { FakePacket.class } );
-		ex.setUseCache(true);
-		ex.setClassLoader(manager.getClassLoader());
-		ex.setSuperclass(type);
-		ex.setCallback(new MethodInterceptor() {
-			@Override
-			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-				if (method.getReturnType().equals(int.class) && args.length == 0) {
-					Integer result = (Integer) proxy.invokeSuper(obj, args);
-					return -result;
-				} else {
-					return proxy.invokeSuper(obj, args);
-				}
-			}
-		});
-		
-		return (Packet) ex.create();
 	}
 	
 	/**
