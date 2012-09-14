@@ -19,7 +19,6 @@ package com.comphenix.protocol.events;
 
 import org.bukkit.plugin.Plugin;
 
-
 /**
  * Represents a packet listener with useful constructors.
  * 
@@ -33,7 +32,7 @@ public abstract class PacketAdapter implements PacketListener {
 	protected ListeningWhitelist sendingWhitelist = ListeningWhitelist.EMPTY_WHITELIST;
 
 	/**
-	 * Initialize a packet listener.
+	 * Initialize a packet listener with default priority.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param connectionSide - the packet type the listener is looking for.
 	 * @param packets - the packet IDs the listener is looking for.
@@ -43,7 +42,7 @@ public abstract class PacketAdapter implements PacketListener {
 	}
 	
 	/**
-	 * Initialize a packet listener.
+	 * Initialize a packet listener for a single connection side.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param connectionSide - the packet type the listener is looking for.
 	 * @param listenerPriority - the event priority.

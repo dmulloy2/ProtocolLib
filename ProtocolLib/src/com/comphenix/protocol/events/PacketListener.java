@@ -21,6 +21,8 @@ import org.bukkit.plugin.Plugin;
 
 /**
  * Represents a listener that recieves notifications when packets are sent or recieved.
+ * <p>
+ * Use {@link PacketAdapter} for a simple wrapper around this interface.
  * @author Kristian
  */
 public interface PacketListener {

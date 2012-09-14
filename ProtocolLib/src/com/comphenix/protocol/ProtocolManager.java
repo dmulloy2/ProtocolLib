@@ -40,13 +40,19 @@ public interface ProtocolManager {
 	public ImmutableSet<PacketListener> getPacketListeners();
 
 	/**
-	 * Adds a packet listener.
+	 * Adds a packet listener. 
+	 * <p>
+	 * Adding an already registered listener has no effect. If you need to change the packets 
+	 * the current listener is observing, you must first remove the packet listener before you 
+	 * can register it again.
 	 * @param listener - new packet listener.
 	 */
 	public void addPacketListener(PacketListener listener);
 
 	/**
-	 * Removes a given packet listener.
+	 * Removes a given packet listener. 
+	 * <p>
+	 * Attempting to remove a listener that doesn't exist has no effect.
 	 * @param listener - the packet listener to remove.
 	 */
 	public void removePacketListener(PacketListener listener);
@@ -107,16 +113,16 @@ public interface ProtocolManager {
 	/**
 	 * Constructs a new encapsulated Minecraft packet with the given ID.
 	 * <p>
-	 * If set to true, the skip default option will prevent the system from assigning 
-	 * non-primitive fields in the packet to a new default instance. For instance, certain
+	 * If set to true, the <i>forceDefaults</i> option will force the system to automatically 
+	 * give non-primitive fields in the packet sensible default values. For instance, certain
 	 * packets - like Packet60Explosion - require a List or Set to be non-null. If the
-	 * skipDefaults option is false, the List or Set will be automatically created.
+	 * forceDefaults option is true, the List or Set will be automatically created.
 	 * 
 	 * @param id - packet ID.
-	 * @param skipDefaults - TRUE to skip setting default values, FALSE otherwise.
+	 * @param forceDefaults - TRUE to use sensible defaults in most fields, FALSE otherwise.
 	 * @return New encapsulated Minecraft packet.
 	 */
-	public PacketContainer createPacket(int id, boolean skipDefaults);
+	public PacketContainer createPacket(int id, boolean forceDefaults);
 
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.

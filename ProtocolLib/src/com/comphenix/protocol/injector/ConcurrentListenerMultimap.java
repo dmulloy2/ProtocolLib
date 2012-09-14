@@ -29,6 +29,7 @@ public class ConcurrentListenerMultimap {
 	/**
 	 * Adds a listener to its requested list of packet recievers.
 	 * @param listener - listener with a list of packets to recieve notifcations for.
+	 * @param whitelist - the packet whitelist to use.
 	 */
 	public void addListener(PacketListener listener, ListeningWhitelist whitelist) {
 		
@@ -66,6 +67,7 @@ public class ConcurrentListenerMultimap {
 	/**
 	 * Removes the given listener from the packet event list.
 	 * @param listener - listener to remove.
+	 * @param whitelist - the packet whitelist that was used.
 	 * @return Every packet ID that was removed due to no listeners.
 	 */
 	public List<Integer> removeListener(PacketListener listener, ListeningWhitelist whitelist) {
@@ -113,7 +115,7 @@ public class ConcurrentListenerMultimap {
 			for (PrioritizedListener element : list) {
 				try {
 					element.getListener().onPacketReceiving(event);
-				} catch (Exception e) {
+				} catch (Throwable e) {
 					// Minecraft doesn't want your Exception.
 					logger.log(Level.SEVERE, 
 							"Exception occured in onPacketReceiving() for " + 
@@ -138,7 +140,7 @@ public class ConcurrentListenerMultimap {
 			for (PrioritizedListener element : list) {
 				try {
 					element.getListener().onPacketSending(event);
-				} catch (Exception e) {
+				} catch (Throwable e) {
 					// Minecraft doesn't want your Exception.
 					logger.log(Level.SEVERE, 
 							"Exception occured in onPacketReceiving() for " + 

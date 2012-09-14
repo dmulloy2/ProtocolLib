@@ -81,6 +81,8 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	/**
 	 * Retrieve the metrics instance used to measure users of this library.
+	 * <p>
+	 * Note that this method may return NULL when the server is reloading or shutting down.
 	 * @return Metrics instance container.
 	 */
 	public Statistics getStatistics() {

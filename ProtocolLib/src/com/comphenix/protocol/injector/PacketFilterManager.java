@@ -40,6 +40,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
@@ -270,15 +271,15 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	@Override
 	public PacketContainer createPacket(int id) {
-		return createPacket(id, false);
+		return createPacket(id, true);
 	}
 	
 	@Override
-	public PacketContainer createPacket(int id, boolean skipDefaults) {
+	public PacketContainer createPacket(int id, boolean forceDefaults) {
 		PacketContainer packet = new PacketContainer(id);
 		
 		// Use any default values if possible
-		if (!skipDefaults) {
+		if (forceDefaults) {
 			try {
 				packet.getModifier().writeDefaults();
 			} catch (FieldAccessException e) {
@@ -331,7 +332,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param manager - Bukkit plugin manager that provides player join/leave events.
 	 * @param plugin - the parent plugin.
 	 */
-	public void registerEvents(PluginManager manager, Plugin plugin) {
+	public void registerEvents(PluginManager manager, final Plugin plugin) {
 		
 		try {
 			manager.registerEvents(new Listener() {
@@ -345,6 +346,15 @@ public final class PacketFilterManager implements ProtocolManager {
 			    public void onPlayerQuit(PlayerQuitEvent event) {
 					uninjectPlayer(event.getPlayer());
 			    }
+				
+				@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+			    public void onPluginDisabled(PluginDisableEvent event) {
+					// Clean up in case the plugin forgets
+					if (event.getPlugin() != plugin) {
+						removePacketListeners(event.getPlugin());
+					}
+			    }
+				
 			}, plugin);
 		
 		} catch (NoSuchMethodError e) {
@@ -370,6 +380,7 @@ public final class PacketFilterManager implements ProtocolManager {
 			// Get event types
 			Object playerJoinType = Enum.valueOf(eventTypes, "PLAYER_JOIN");
 			Object playerQuitType = Enum.valueOf(eventTypes, "PLAYER_QUIT");
+			Object pluginDisabledType = Enum.valueOf(eventTypes, "PLUGIN_DISABLE");
 			
 			// The player listener! Good times.
 			Class<?> playerListener = loader.loadClass("org.bukkit.event.player.PlayerListener");
@@ -394,6 +405,8 @@ public final class PacketFilterManager implements ProtocolManager {
 							injectPlayer(((PlayerJoinEvent) event).getPlayer());
 						else if (event instanceof PlayerQuitEvent)
 							injectPlayer(((PlayerQuitEvent) event).getPlayer());
+						else if (event instanceof PluginDisableEvent)
+							removePacketListeners(((PluginDisableEvent) event).getPlugin());
 					}
 					
 					return null;
@@ -405,6 +418,7 @@ public final class PacketFilterManager implements ProtocolManager {
 			
 			registerEvent.invoke(manager, playerJoinType, proxy, priorityNormal, plugin);
 			registerEvent.invoke(manager, playerQuitType, proxy, priorityNormal, plugin);
+			registerEvent.invoke(manager, pluginDisabledType, proxy, priorityNormal, plugin);
 			
 			// A lot can go wrong
 		} catch (ClassNotFoundException e1) {
