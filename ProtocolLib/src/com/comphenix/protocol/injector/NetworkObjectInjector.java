@@ -1,8 +1,10 @@
 package com.comphenix.protocol.injector;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,10 +62,10 @@ public class NetworkObjectInjector extends PlayerInjector {
 		
 		if (networkManager != null) {
 			final Object networkDelegate = networkManagerRef.getOldValue();
-
-			Enhancer ex = new Enhancer();
+			final Class<?> networkType = networkManager.getClass();
+			final Enhancer ex = new Enhancer();
 			
-			ex.setSuperclass(networkManager.getClass());
+			ex.setSuperclass(networkType);
 			ex.setClassLoader(manager.getClassLoader());
 			ex.setCallback(new MethodInterceptor() {
 				@Override
@@ -79,12 +81,12 @@ public class NetworkObjectInjector extends PlayerInjector {
 							System.out.println("[Thread " + current.getId() + "] I'm committing suicide!");
 							
 							// This is bad. Very bad. Thus, we prefer the NetworkFieldInjector ...
-							throw new Error("Killing current thread.");
+							throw new Error("Killing current thread. Ignore this.");
 						}
 					}
 					
 					// OH OH! The queue method!
-					if (method.equals(queueMethod)) {
+					if (isEquivalentMethod(method, queueMethod)) {
 						Packet packet = (Packet) args[0];
 						
 						if (packet != null) {
@@ -107,8 +109,8 @@ public class NetworkObjectInjector extends PlayerInjector {
 				}
 			});
 			
-			// Create instances of our network proxy.
-			DefaultInstances generator = DefaultInstances.fromArray(PrimitiveGenerator.INSTANCE, new InstanceProvider() {
+			// Hacks! Get your daily hack here!
+			DefaultInstances generator = new DefaultInstances(PrimitiveGenerator.INSTANCE, new InstanceProvider() {
 				@Override
 				public Object create(@Nullable Class<?> type) {
 					if (type.equals(Socket.class))
@@ -120,11 +122,22 @@ public class NetworkObjectInjector extends PlayerInjector {
 					else
 						return null;
 				}
-			});
+				
+			}) {
+				@SuppressWarnings("unchecked")
+				@Override
+				protected <T> T createInstance(Class<T> type, Constructor<T> constructor, 
+											   Class<?>[] types, Object[] params) {
+					// Use cglib instead of standard reflection
+					if (type.equals(networkType))
+						return (T) ex.create(types, params);
+					else
+						return super.createInstance(type, constructor, types, params);
+				}
+			};
 
 			// Create our proxy object
-			@SuppressWarnings("unchecked")
-			Object networkProxy = generator.getDefault(ex.createClass());
+			Object networkProxy = generator.getDefault(networkType);
 			
 			// Get the two threads we'll have to kill
 			try {
@@ -138,6 +151,12 @@ public class NetworkObjectInjector extends PlayerInjector {
 			// Inject it, if we can.
 			networkManagerRef.setValue(networkProxy);
 		}
+	}
+	
+	// See if the two methods are the same
+	private boolean isEquivalentMethod(Method a, Method b) {
+		return a.getName().equals(b.getName()) && 
+			   Arrays.equals(a.getParameterTypes(), b.getParameterTypes());
 	}
 	
 	@Override

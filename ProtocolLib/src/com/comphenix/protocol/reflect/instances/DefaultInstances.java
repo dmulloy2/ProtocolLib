@@ -60,10 +60,18 @@ public class DefaultInstances {
 	 * @param instaceProviders - array of instance providers.
 	 * @return An default instance generator.
 	 */
+	public DefaultInstances(InstanceProvider... instaceProviders) {
+		this(ImmutableList.copyOf(instaceProviders));
+	}
+	
+	/**
+	 * Construct a default instance generator using the given instance providers.
+	 * @param instaceProviders - array of instance providers.
+	 * @return An default instance generator.
+	 */
 	public static DefaultInstances fromArray(InstanceProvider... instaceProviders) {
 		return new DefaultInstances(ImmutableList.copyOf(instaceProviders));
 	}
-	
 	
 	/**
 	 * Retrieves a immutable list of every default object providers that generates instances.
@@ -131,7 +139,7 @@ public class DefaultInstances {
 				return (T) value;
 		}
 		
-		Constructor<?> minimum = null;
+		Constructor<T> minimum = null;
 		int lastCount = Integer.MAX_VALUE;
 		
 		// Find the constructor with the fewest parameters
@@ -142,7 +150,7 @@ public class DefaultInstances {
 			// require itself in the constructor.
 			if (types.length < lastCount) {
 				if (!contains(types, type)) {
-					minimum = candidate;
+					minimum = (Constructor<T>) candidate;
 					lastCount = types.length;
 					
 					// Don't loop again if we've already found the best possible constructor
@@ -163,7 +171,7 @@ public class DefaultInstances {
 					params[i] = getDefaultInternal(types[i], providers, recursionLevel + 1);
 				}
 				
-				return (T) minimum.newInstance(params);
+				return createInstance(type, minimum, types, params);
 			}
 			
 		} catch (Exception e) {
@@ -174,8 +182,26 @@ public class DefaultInstances {
 		return null;
 	}
 	
+	/**
+	 * Used by the default instance provider to create a class from a given constructor. 
+	 * The default method uses reflection.
+	 * @param type - the type to create.
+	 * @param constructor - the constructor to use.
+	 * @param types - type of each parameter in order.
+	 * @param params - value of each parameter in order.
+	 * @return The constructed instance.
+	 */
+	protected <T> T createInstance(Class<T> type, Constructor<T> constructor, Class<?>[] types, Object[] params) {
+		try {
+			return (T) constructor.newInstance(params);
+		} catch (Exception e) {
+			// Cannot create it
+			return null;
+		}
+	}
+	
 	// We avoid Apache's utility methods to stay backwards compatible
-	private <T> boolean contains(T[] elements, T elementToFind) {
+	protected <T> boolean contains(T[] elements, T elementToFind) {
 		// Search for the given element in the array
 		for (T element : elements) {
 			if (Objects.equal(elementToFind, element))
