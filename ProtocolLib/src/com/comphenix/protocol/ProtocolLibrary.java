@@ -78,8 +78,6 @@ public class ProtocolLibrary extends JavaPlugin {
 			if (manager.getPlugin(plugin) != null) {
 				// Check for versions, ect.
 				logger.severe("Detected incompatible plugin: " + plugin);
-				logger.info("Using woraround.");
-				protocolManager.setPlayerHook(PlayerInjectHooks.OVERRIDE_NETWORK_HANDLER);
 			}
 		}
 	}
