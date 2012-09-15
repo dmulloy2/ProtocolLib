@@ -15,17 +15,13 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.instances;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-import javax.annotation.Nullable;
-
-import com.google.common.base.Defaults;
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Used to construct default instances of any type.
@@ -34,29 +30,46 @@ import com.google.common.base.Objects;
  */
 public class DefaultInstances {
 
-	private static List<Function<Class<?>, Object>> registered = new ArrayList<Function<Class<?>, Object>>();
-	
 	/**
-	 * Default value for Strings.
+	 * Standard default instance provider.
 	 */
-	public final static String STRING_DEFAULT = "";
-	
+	public static DefaultInstances DEFAULT = DefaultInstances.fromArray(
+			PrimitiveGenerator.INSTANCE, CollectionGenerator.INSTANCE);
+		
 	/**
 	 * The maximum height of the hierachy of creates types. Used to prevent cycles.
 	 */
 	private final static int MAXIMUM_RECURSION = 20;
 	
-	// Provide default registrations
-	static {
-		registered.add(new PrimitiveGenerator());
-		registered.add(new CollectionGenerator());
+	/**
+	 * Ordered list of instance provider, from highest priority to lowest.
+	 */
+	private ImmutableList<InstanceProvider> registered;
+	
+	/**
+	 * Construct a default instance generator using the given instance providers.
+	 * @param registered - list of instance providers.
+	 * @param stringDefault - default string value.
+	 */
+	public DefaultInstances(ImmutableList<InstanceProvider> registered) {
+		this.registered = registered;
 	}
 	
 	/**
-	 * Retrieves the default object providers used to generate default values.
-	 * @return Table of object providers.
+	 * Construct a default instance generator using the given instance providers.
+	 * @param instaceProviders - array of instance providers.
+	 * @return An default instance generator.
 	 */
-	public static List<Function<Class<?>, Object>> getRegistered() {
+	public static DefaultInstances fromArray(InstanceProvider... instaceProviders) {
+		return new DefaultInstances(ImmutableList.copyOf(instaceProviders));
+	}
+	
+	
+	/**
+	 * Retrieves a immutable list of every default object providers that generates instances.
+	 * @return Table of instance providers.
+	 */
+	public ImmutableList<InstanceProvider> getRegistered() {
 		return registered;
 	}
 	
@@ -77,20 +90,42 @@ public class DefaultInstances {
 	 * @param type - the type to construct a default value.
 	 * @return A default value/instance, or NULL if not possible.
 	 */
-	public static <T> T getDefault(Class<T> type) {
-		return getDefaultInternal(type, 0);
+	public <T> T getDefault(Class<T> type) {
+		return getDefaultInternal(type, registered, 0);
+	}
+	
+	/**
+	 * Retrieves a default instance or value that is assignable to this type.
+	 * <p>
+	 * This includes, but isn't limited too:
+	 * <ul>
+	 *   <li>Primitive types. Returns either zero or null.</li>
+	 *   <li>Primitive wrappers.</li>
+	 *   <li>String types. Returns an empty string.</li>
+	 *   <li>Arrays. Returns a zero-length array of the same type.</li>
+	 *   <li>Enums. Returns the first declared element.</li>
+	 *   <li>Collection interfaces, such as List and Set. Returns the most appropriate empty container.</li>
+	 *   <li>Any type with a public constructor that has parameters with defaults.</li>
+	 *   </ul>
+	 * </ul>
+	 * @param type - the type to construct a default value.
+	 * @param providers - instance providers used during the 
+	 * @return A default value/instance, or NULL if not possible.
+	 */
+	public <T> T getDefault(Class<T> type, List<InstanceProvider> providers) {
+		return getDefaultInternal(type, providers, 0);
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <T> T getDefaultInternal(Class<T> type, int recursionLevel) {
+	private <T> T getDefaultInternal(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
 		
 		// Guard against recursion
 		if (recursionLevel > MAXIMUM_RECURSION) {
 			return null;
 		}
 		
-		for (Function<Class<?>, Object> generator : registered) {
-			Object value = generator.apply(type);
+		for (InstanceProvider generator : providers) {
+			Object value = generator.create(type);
 			
 			if (value != null)
 				return (T) value;
@@ -125,7 +160,7 @@ public class DefaultInstances {
 				
 				// Fill out 
 				for (int i = 0; i < lastCount; i++) {
-					params[i] = getDefaultInternal(types[i], recursionLevel + 1);
+					params[i] = getDefaultInternal(types[i], providers, recursionLevel + 1);
 				}
 				
 				return (T) minimum.newInstance(params);
@@ -139,70 +174,13 @@ public class DefaultInstances {
 		return null;
 	}
 	
-	private static <T> boolean contains(T[] elements, T elementToFind) {
+	// We avoid Apache's utility methods to stay backwards compatible
+	private <T> boolean contains(T[] elements, T elementToFind) {
 		// Search for the given element in the array
 		for (T element : elements) {
 			if (Objects.equal(elementToFind, element))
 				return true;
 		}
 		return false;
-	}
-	
-	/**
-	 * Provides constructors for primtive types, wrappers, arrays and strings.
-	 * @author Kristian
-	 */
-	private static class PrimitiveGenerator implements Function<Class<?>, Object> {
-		
-		@Override
-		public Object apply(@Nullable Class<?> type) {
-			
-			if (PrimitiveUtils.isPrimitive(type)) {
-				return Defaults.defaultValue(type);
-			} else if (PrimitiveUtils.isWrapperType(type)) {
-				return Defaults.defaultValue(PrimitiveUtils.unwrap(type));
-			} else if (type.isArray()) {
-				Class<?> arrayType = type.getComponentType();
-				return Array.newInstance(arrayType, 0);
-			} else if (type.isEnum()) {
-				Object[] values = type.getEnumConstants();
-				if (values != null && values.length > 0)
-					return values[0];
-			} else if (type.equals(String.class)) {
-				return STRING_DEFAULT;
-			} 
-			
-			// Cannot handle this type
-			return null;
-		}	
-	}
-	
-	/**
-	 * Provides simple constructors for collection interfaces.
-	 * @author Kristian
-	 */
-	private static class CollectionGenerator implements Function<Class<?>, Object> {
-
-		@Override
-		public Object apply(@Nullable Class<?> type) {
-			// Standard collection types
-			if (type.isInterface()) {
-				if (type.equals(Collection.class) || type.equals(List.class))
-					return new ArrayList<Object>();
-				else if (type.equals(Set.class))
-					return new HashSet<Object>();
-				else if (type.equals(Map.class))
-					return new HashMap<Object, Object>();
-				else if (type.equals(SortedSet.class))
-					return new TreeSet<Object>();
-				else if (type.equals(SortedMap.class))
-					return new TreeMap<Object, Object>();
-				else if (type.equals(Queue.class))
-					return new LinkedList<Object>();
-			}
-			
-			// Cannot provide an instance
-			return null;
-		}
 	}
 }

@@ -38,22 +38,6 @@ import com.comphenix.protocol.reflect.VolatileField;
 
 abstract class PlayerInjector {
 	
-	/**
-	 * Sets the inject hook type. Different types allow for maximum compatibility.
-	 * @author Kristian
-	 */
-	public enum InjectHooks {
-		/**
-		 * Override the packet queue lists in NetworkHandler.
-		 */
-		NETWORK_HANDLER_FIELDS,
-		
-		/**
-		 * Override the NetworkHandler itself, and it's sendPacket-method.
-		 */
-		OVERRIDE_NETWORK_HANDLER
-	}
-
 	// Cache previously retrieved fields
 	protected static Field serverHandlerField;
 	protected static Field networkManagerField;
@@ -97,7 +81,6 @@ abstract class PlayerInjector {
 		EntityPlayer notchEntity = craft.getHandle();
 		
 		Object serverHandler = null;
-		Object networkManager = null;
 		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception

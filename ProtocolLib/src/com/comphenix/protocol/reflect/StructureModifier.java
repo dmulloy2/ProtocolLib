@@ -26,10 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-
-import net.minecraft.server.Packet;
 
 @SuppressWarnings("rawtypes")
 public class StructureModifier<TField> {
@@ -195,11 +194,13 @@ public class StructureModifier<TField> {
 	 */
 	public StructureModifier<TField> writeDefaults() throws FieldAccessException {
 		
+		DefaultInstances generator = DefaultInstances.DEFAULT;
+		
 		// Write a default instance to every field
 		for (Field field : defaultFields) {
 			try {
 				FieldUtils.writeField(field, target, 
-						DefaultInstances.getDefault(field.getType()), true);
+						generator.getDefault(field.getType()), true);
 			} catch (IllegalAccessException e) {
 				throw new FieldAccessException("Cannot write to field due to a security limitation.", e);
 			}
@@ -312,18 +313,33 @@ public class StructureModifier<TField> {
 		return ImmutableList.copyOf(data);
 	}
 	
+	/**
+	 * Retrieve every value stored in the fields of the current type.
+	 * @return Every field value.
+	 * @throws FieldAccessException Unable to access one or all of the fields
+	 */
+	public List<TField> getValues() throws FieldAccessException {
+		List<TField> values = new ArrayList<TField>();
+		
+		for (int i = 0; i < size(); i++)
+			values.add(read(i));
+		
+		return values;
+	}
+	
 	// Used to generate plausible default values
 	private static Set<Field> generateDefaultFields(List<Field> fields) {
 		
 		Set<Field> requireDefaults = new HashSet<Field>();
-
+		DefaultInstances generator = DefaultInstances.DEFAULT;
+		
 		for (Field field : fields) {
 			Class<?> type = field.getType();
 			
 			// First, ignore primitive fields
 			if (!PrimitiveUtils.isPrimitive(type)) {
 				// Next, see if we actually can generate a default value
-				if (DefaultInstances.getDefault(type) != null) {
+				if (generator.getDefault(type) != null) {
 					// If so, require it
 					requireDefaults.add(field);
 				}
@@ -343,7 +359,7 @@ public class StructureModifier<TField> {
 			
 			// Ignore static, final and "abstract packet" fields
 			if (!Modifier.isFinal(mod) && !Modifier.isStatic(mod) && (
-					superclassExclude == null || !field.getDeclaringClass().equals(Packet.class)
+					superclassExclude == null || !field.getDeclaringClass().equals(superclassExclude)
 				)) {
 				
 				result.add(field);

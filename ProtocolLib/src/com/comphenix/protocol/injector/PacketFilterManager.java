@@ -53,6 +53,22 @@ import com.google.common.collect.ImmutableSet;
 
 public final class PacketFilterManager implements ProtocolManager {
 
+	/**
+	 * Sets the inject hook type. Different types allow for maximum compatibility.
+	 * @author Kristian
+	 */
+	public enum PlayerInjectHooks {
+		/**
+		 * Override the packet queue lists in NetworkHandler.
+		 */
+		NETWORK_HANDLER_FIELDS,
+		
+		/**
+		 * Override the NetworkHandler itself, and it's sendPacket-method.
+		 */
+		OVERRIDE_NETWORK_HANDLER
+	}
+	
 	// Create a concurrent set
 	private Set<PacketListener> packetListeners = 
 			Collections.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
@@ -60,6 +76,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	// Player injection
 	private Map<DataInputStream, Player> connectionLookup = new ConcurrentHashMap<DataInputStream, Player>();
 	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
+	
+	// Player injection type
+	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_HANDLER_FIELDS;
 	
 	// Packet injection
 	private PacketInjector packetInjector;
@@ -99,6 +118,22 @@ public final class PacketFilterManager implements ProtocolManager {
 		}
 	}
 	
+	/**
+	 * Retrieves how the server packets are read.
+	 * @return Injection method for reading server packets.
+	 */
+	public PlayerInjectHooks getPlayerHook() {
+		return playerHook;
+	}
+
+	/**
+	 * Sets how the server packets are read.
+	 * @param playerHook - the new injection method for reading server packets.
+	 */
+	public void setPlayerHook(PlayerInjectHooks playerHook) {
+		this.playerHook = playerHook;
+	}
+
 	public Logger getLogger() {
 		return logger;
 	}
@@ -309,12 +344,35 @@ public final class PacketFilterManager implements ProtocolManager {
 			injectPlayer(player);
 	}
 	
-	private void injectPlayer(Player player) {
+	/**
+	 * Used to construct a player hook.
+	 * @param player - the player to hook.
+	 * @return A new player hoook
+	 * @throws IllegalAccessException Unable to do our reflection magic.
+	 */
+	protected PlayerInjector getPlayerHookInstance(Player player) throws IllegalAccessException {
+		
+		// Construct the correct player hook
+		switch (playerHook) {
+		case NETWORK_HANDLER_FIELDS: 
+			return new NetworkFieldInjector(player, this, sendingFilters);
+		case OVERRIDE_NETWORK_HANDLER: 
+			return new NetworkObjectInjector(player, this, sendingFilters);
+		}
+		
+		throw new IllegalArgumentException("Cannot construct a player injector.");
+	}
+	
+	/**
+	 * Initialize a player hook, allowing us to read server packets.
+	 * @param player - player to hook.
+	 */
+	protected void injectPlayer(Player player) {
 		// Don't inject if the class has closed
 		if (!hasClosed && player != null && !playerInjection.containsKey(player)) {
 			try {
-				PlayerInjector injector = new PlayerInjector(player, this, sendingFilters);
-				
+				PlayerInjector injector = getPlayerHookInstance(player);
+
 				injector.injectManager();
 				playerInjection.put(player, injector);
 				connectionLookup.put(injector.getInputStream(false), player);
