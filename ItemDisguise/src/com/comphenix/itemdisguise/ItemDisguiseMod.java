@@ -37,7 +37,7 @@ public class ItemDisguiseMod extends JavaPlugin {
 	
 	@Override
 	public void onEnable() {
-		
+
 		logger = getLoggerSafely();
 		protocolManager = ProtocolLibrary.getProtocolManager();
 		
