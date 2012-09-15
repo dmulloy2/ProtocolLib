@@ -50,6 +50,22 @@ class PlayerInjector {
 	public interface FakePacket {
 		// Nothing
 	}
+	
+	/**
+	 * Sets the inject hook type. Different types allow for maximum compatibility.
+	 * @author Kristian
+	 */
+	public enum InjectHooks {
+		/**
+		 * Override the packet queue lists in NetworkHandler.
+		 */
+		NETWORK_HANDLER_FIELDS,
+		
+		/**
+		 * Override the NetworkHandler itself, and it's sendPacket-method.
+		 */
+		OVERRIDE_NETWORK_HANDLER
+	}
 
 	// Cache previously retrieved fields
 	private static Field serverHandlerField;
@@ -68,6 +84,7 @@ class PlayerInjector {
 	private boolean hasInitialized;
 	
 	// Reference to the player's network manager
+	private VolatileField networkManagerRef;
 	private Object networkManager;
 	
 	// Current net handler
@@ -98,6 +115,9 @@ class PlayerInjector {
 		CraftPlayer craft = (CraftPlayer) player;
 		EntityPlayer notchEntity = craft.getHandle();
 		
+		Object serverHandler = null;
+		Object networkManager = null;
+		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception
 			hasInitialized = true;
@@ -105,12 +125,13 @@ class PlayerInjector {
 			// Retrieve the server handler
 			if (serverHandlerField == null)
 				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(".*NetServerHandler");
-			Object serverHandler = FieldUtils.readField(serverHandlerField, notchEntity);
+			serverHandler = FieldUtils.readField(serverHandlerField, notchEntity);
 			
 			// Next, get the network manager 
 			if (networkManagerField == null) 
 				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(".*NetworkManager");
-			networkManager = FieldUtils.readField(networkManagerField, serverHandler);
+			networkManagerRef = new VolatileField(networkManagerField, serverHandler);
+			networkManager = networkManagerRef.getValue();
 			
 			// Create the network manager modifier from the actual object type
 			if (networkManager != null && networkModifier == null)
@@ -194,6 +215,8 @@ class PlayerInjector {
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
 	public void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException {
+		
+		
 		
 		if (networkManager != null) {
 			try {

@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.comphenix.protocol.concurrency.SortedCopyOnWriteArray;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.google.common.primitives.Ints;
 

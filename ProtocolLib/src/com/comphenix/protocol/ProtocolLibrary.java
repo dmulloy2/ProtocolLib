@@ -51,14 +51,14 @@ public class ProtocolLibrary extends JavaPlugin {
 		Server server = getServer();
 		PluginManager manager = server.getPluginManager();
 		
+		// Notify server managers of incompatible plugins
+		checkForIncompatibility(manager);
+		
 		// Player login and logout events
 		protocolManager.registerEvents(manager, this);
 		
 		// Inject our hook into already existing players
 		protocolManager.initializePlayers(server.getOnlinePlayers());
-		
-		// Notify server managers of incompatible plugins
-		checkForIncompatibility(manager);
 		
 		// Try to enable statistics
 		try {
@@ -77,7 +77,9 @@ public class ProtocolLibrary extends JavaPlugin {
 		for (String plugin : incompatiblePlugins) {
 			if (manager.getPlugin(plugin) != null) {
 				// Check for versions, ect.
-				logger.severe(ChatColor.RED + "Detected incompatible plugin: " + plugin);
+				logger.severe("Detected incompatible plugin: " + plugin);
+				logger.info("Using woraround.");
+				
 			}
 		}
 	}
