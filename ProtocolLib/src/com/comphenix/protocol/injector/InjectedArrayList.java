@@ -10,7 +10,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import com.comphenix.protocol.injector.PlayerInjector.FakePacket;
+import com.comphenix.protocol.injector.NetworkFieldInjector.FakePacket;
 
 /**
  * The array list that notifies when packets are sent by the server.

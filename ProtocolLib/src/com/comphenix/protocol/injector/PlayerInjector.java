@@ -21,11 +21,7 @@ import java.io.DataInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
@@ -39,17 +35,8 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
-import com.google.common.collect.Sets;
 
-class PlayerInjector {
-	
-	/**
-	 * Marker interface that indicates a packet is fake and should not be processed.
-	 * @author Kristian
-	 */
-	public interface FakePacket {
-		// Nothing
-	}
+abstract class PlayerInjector {
 	
 	/**
 	 * Sets the inject hook type. Different types allow for maximum compatibility.
@@ -68,40 +55,34 @@ class PlayerInjector {
 	}
 
 	// Cache previously retrieved fields
-	private static Field serverHandlerField;
-	private static Field networkManagerField;
-	private static Field inputField;
-	private static Field netHandlerField;
+	protected static Field serverHandlerField;
+	protected static Field networkManagerField;
+	protected static Field inputField;
+	protected static Field netHandlerField;
 	
 	// To add our injected array lists
-	private static StructureModifier<Object> networkModifier;
+	protected static StructureModifier<Object> networkModifier;
 	
 	// And methods
-	private static Method queueMethod;
-	private static Method processMethod;
+	protected static Method queueMethod;
+	protected static Method processMethod;
 		
-	private Player player;
-	private boolean hasInitialized;
+	protected Player player;
+	protected boolean hasInitialized;
 	
 	// Reference to the player's network manager
-	private VolatileField networkManagerRef;
-	private Object networkManager;
+	protected VolatileField networkManagerRef;
+	protected Object networkManager;
 	
 	// Current net handler
-	private Object netHandler;
-	
-	// Overridden fields
-	private List<VolatileField> overridenLists = new ArrayList<VolatileField>();
-	
-	// Packets to ignore
-	private Set<Packet> ignoredPackets = Sets.newSetFromMap(new ConcurrentHashMap<Packet, Boolean>());
+	protected Object netHandler;
 	
 	// The packet manager and filters
-	private PacketFilterManager manager;
-	private Set<Integer> sendingFilters;
+	protected PacketFilterManager manager;
+	protected Set<Integer> sendingFilters;
 	
 	// Previous data input
-	private DataInputStream cachedInput;
+	protected DataInputStream cachedInput;
 
 	public PlayerInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
 		this.player = player;
@@ -110,7 +91,7 @@ class PlayerInjector {
 		initialize();
 	}
 
-	private void initialize() throws IllegalAccessException {
+	protected void initialize() throws IllegalAccessException {
 	
 		CraftPlayer craft = (CraftPlayer) player;
 		EntityPlayer notchEntity = craft.getHandle();
@@ -214,63 +195,17 @@ class PlayerInjector {
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
-	public void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException {
-		
-		
-		
-		if (networkManager != null) {
-			try {
-				if (!filtered) {
-					ignoredPackets.add(packet);
-				}
-				
-				// Note that invocation target exception is a wrapper for a checked exception
-				queueMethod.invoke(networkManager, packet);
-				
-			} catch (IllegalArgumentException e) {
-				throw e;
-			} catch (InvocationTargetException e) {
-				throw e;
-			} catch (IllegalAccessException e) {
-				throw new IllegalStateException("Unable to access queue method.", e);
-			}
-		} else {
-			throw new IllegalStateException("Unable to load network mananager. Cannot send packet.");
-		}
-	}
+	public abstract void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException;
 	
-	public void injectManager() {
-		
-		if (networkManager != null) {
-
-			@SuppressWarnings("rawtypes")
-			StructureModifier<List> list = networkModifier.withType(List.class);
-
-			// Subclass both send queues
-			for (Field field : list.getFields()) {
-				VolatileField overwriter = new VolatileField(field, networkManager, true);
-				
-				@SuppressWarnings("unchecked")
-				List<Packet> minecraftList = (List<Packet>) overwriter.getOldValue();
-				
-				synchronized(minecraftList) {
-					// The list we'll be inserting
-					List<Packet> hackedList = new InjectedArrayList(manager.getClassLoader(), this, ignoredPackets);
-					
-					// Add every previously stored packet
-					for (Packet packet : minecraftList) {
-						hackedList.add(packet);
-					}
-					
-					// Don' keep stale packets around
-					minecraftList.clear();
-					overwriter.setValue(Collections.synchronizedList(hackedList));
-				}
-				
-				overridenLists.add(overwriter);
-			}
-		}
-	}
+	/**
+	 * Inject a hook to catch packets sent to the current player.
+	 */
+	public abstract void injectManager();
+	
+	/**
+	 * Remove all hooks and modifications.
+	 */
+	public abstract void cleanupAll();
 	
 	/**
 	 * Allows a packet to be recieved by the listeners.
@@ -299,6 +234,11 @@ class PlayerInjector {
 		return packet;
 	}
 	
+	/**
+	 * Retrieve the current player's input stream.
+	 * @param cache - whether or not to cache the result of this method.
+	 * @return The player's input stream.
+	 */
 	public DataInputStream getInputStream(boolean cache) {
 		// Get the associated input stream
 		try {
@@ -312,31 +252,5 @@ class PlayerInjector {
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException("Unable to read input stream.", e);
 		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	public void cleanupAll() {
-		// Clean up
-		for (VolatileField overriden : overridenLists) {
-			List<Packet> minecraftList = (List<Packet>) overriden.getOldValue();
-			List<Packet> hacketList = (List<Packet>) overriden.getValue();
-			
-			if (minecraftList == hacketList) {
-				return;
-			}
-	
-			// Get a lock before we modify the list
-			synchronized(hacketList) {
-				try {
-					// Copy over current packets
-					for (Packet packet : (List<Packet>) overriden.getValue()) {
-						minecraftList.add(packet);
-					}
-				} finally {
-					overriden.revertValue();
-				}
-			}
-		}
-		overridenLists.clear();
 	}
 }
