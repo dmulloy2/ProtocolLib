@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -52,7 +53,12 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Player login and logout events
 		protocolManager.registerEvents(manager, this);
+		
+		// Inject our hook into already existing players
 		protocolManager.initializePlayers(server.getOnlinePlayers());
+		
+		// Notify server managers of incompatible plugins
+		checkForIncompatibility(manager);
 		
 		// Try to enable statistics
 		try {
@@ -63,7 +69,19 @@ public class ProtocolLibrary extends JavaPlugin {
 			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
 		}
 	}
+	
+	private void checkForIncompatibility(PluginManager manager) {
+		// Plugin authors: Notify me to remove these
+		String[] incompatiblePlugins = { "TagAPI" };
 		
+		for (String plugin : incompatiblePlugins) {
+			if (manager.getPlugin(plugin) != null) {
+				// Check for versions, ect.
+				logger.severe(ChatColor.RED + "Detected incompatible plugin: " + plugin);
+			}
+		}
+	}
+	
 	@Override
 	public void onDisable() {
 		protocolManager.close();
