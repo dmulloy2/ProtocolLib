@@ -132,6 +132,26 @@ public class FuzzyReflection {
 	}
 	
 	/**
+	 * Retrieves a method by looking at the parameter types and return type only.
+	 * @param name - potential name of the method. Only used by the error mechanism.
+	 * @param returnType - return type of the method to find.
+	 * @param args - parameter types of the method to find.
+	 * @return The first method that satisfies the parameter types.
+	 */
+	public Method getMethodByParameters(String name, Class<?> returnType, Class<?>[] args) {
+	
+		// Find the correct method to call
+		for (Method method : getMethods()) {
+			if (method.getReturnType().equals(returnType) && Arrays.equals(method.getParameterTypes(), args)) {
+				return method;
+			}
+		}
+		
+		// That sucks
+		throw new RuntimeException("Unable to find " + name + " in " + source.getName());
+	}
+	
+	/**
 	 * Retrieves a field by name.
 	 * @param nameRegex - regular expression that will match a field name.
 	 * @return The first field to match the given expression.

@@ -17,12 +17,19 @@
 
 package com.comphenix.protocol.events;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import org.bukkit.World;
 import org.bukkit.WorldType;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 
 import net.minecraft.server.Packet;
@@ -39,9 +46,12 @@ public class PacketContainer {
 	
 	// Current structure modifier
 	protected StructureModifier<Object> structureModifier;
-	
+		
 	// Check whether or not certain classes exists
 	private static boolean hasWorldType = false;
+	
+	// The getEntity method
+	private static Method getEntity;
 	
 	static {
 		try {
@@ -188,6 +198,57 @@ public class PacketContainer {
 			public WorldType getSpecific(Object generic) {
 				net.minecraft.server.WorldType type = (net.minecraft.server.WorldType) generic;
 				return WorldType.getByName(type.name());
+			}
+		});
+	}
+	
+	/**
+	 * Retrieves a read/write structure for entity objects.
+	 * <p>
+	 * Note that entities are transmitted by integer ID, and the type may not be enough
+	 * to distinguish between entities and other values. Thus, this structure modifier
+	 * MAY return null or invalid entities for certain fields. Using the correct index 
+	 * is essential.
+	 * 
+	 * @return A modifier entity types.
+	 */
+	public StructureModifier<Entity> getEntityModifier(World world) {
+	
+		final Object worldServer = ((CraftWorld) world).getHandle();
+		final Class<?> nmsEntityClass = net.minecraft.server.Entity.class;
+		
+		if (getEntity == null)
+			getEntity = FuzzyReflection.fromObject(worldServer).getMethodByParameters(
+					"getEntity", nmsEntityClass, new Class[] { int.class });
+		
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.<Entity>withType(int.class, new EquivalentConverter<Entity>() {
+			@Override
+			public Object getGeneric(Entity specific) {
+				// Simple enough
+				return specific.getEntityId();
+			}
+			
+			@Override
+			public Entity getSpecific(Object generic) {
+				try {
+					net.minecraft.server.Entity nmsEntity = (net.minecraft.server.Entity) 
+							getEntity.invoke(worldServer, generic);
+					
+					// Attempt to get the Bukkit entity
+					if (nmsEntity != null) {
+						return nmsEntity.getBukkitEntity();
+					} else {
+						return null;
+					}
+					
+				} catch (IllegalArgumentException e) {
+					throw new RuntimeException("Incorrect arguments detected.", e);
+				} catch (IllegalAccessException e) {
+					throw new RuntimeException("Cannot read field due to a security limitation.", e);
+				} catch (InvocationTargetException e) {
+					throw new RuntimeException("Error occured in Minecraft method.", e.getCause());
+				}
 			}
 		});
 	}
