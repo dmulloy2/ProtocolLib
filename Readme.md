@@ -7,7 +7,7 @@ and outgoing [packets](http://www.wiki.vg/Protocol), or inject custom packets in
 stream. This is quite cumbersome to do, however, and most implementations will break 
 as soon as a new version of Minecraft has been released. Due to obfuscatio
 
-Critically, different plugins that use this approach may `hook` into the same classes, 
+Critically, different plugins that use this approach may _hook_ into the same classes, 
 with unpredictable outcomes. More than often this causes plugins to crash, but it may also 
 lead to more subtile bugs.
 
@@ -21,7 +21,7 @@ Resources
 A new API
 ---------
 
-'ProtocolLib' attempts to solve this problem by providing a event API, much like Bukkit, 
+__ProtocolLib__ attempts to solve this problem by providing a event API, much like Bukkit, 
 that allow plugins to monitor, modify or cancel packets sent and recieved. But more importantly, 
 the API also hides all the gritty, obfusctated classes with a simple index based read/write system. 
 You no longer have to reference CraftBukkit!
@@ -40,9 +40,7 @@ Then get a reference to ProtocolManager in onLoad() and you're good to go.
     private ProtocolManager protocolManager;
     
     public void onLoad() {
-		
         protocolManager = ProtocolLibrary.getProtocolManager();
-
     }
 
 To listen for packets sent by the server to a client, add a server-side listener:
@@ -91,7 +89,7 @@ censor by listening for Packet3Chat events:
 Sending packets
 ---------------
 
-Normally, you might have to use someting ugly like the following:
+Normally, you might have to do someting ugly like the following:
 
     Packet60Explosion fakeExplosion = new Packet60Explosion();
     	
