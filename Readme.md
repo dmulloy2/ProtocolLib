@@ -12,8 +12,7 @@ with unpredictable outcomes. More than often this causes plugins to crash, but i
 lead to more subtile bugs.
 
 
-Resources
---------
+### Resources
 
 * [JavaDoc](http://aadnk.github.com/ProtocolLib/Javadoc/) 
 
@@ -27,8 +26,7 @@ the API also hides all the gritty, obfusctated classes with a simple index based
 You no longer have to reference CraftBukkit!
 
 
-Using ProtocolLib
------------------
+### Using ProtocolLib
 
 To use the library, first add ProtocolLib.jar to your Java build path. Then, add ProtocolLib
 as a dependency (or soft-dependency, if you can live without it) to your plugin.yml file:
@@ -86,8 +84,7 @@ censor by listening for Packet3Chat events:
     });
 
 
-Sending packets
----------------
+### Sending packets
 
 Normally, you might have to do someting ugly like the following:
 
@@ -129,8 +126,7 @@ every field, method and class is deduced by looking at field types, package name
 types. It's remarkably consistent across different versions.
 
 
-Incompatiblity
---------------
+### Incompatiblity
 
 The following plugins (to be expanded) are not compatible with ProtocolLib:
 
