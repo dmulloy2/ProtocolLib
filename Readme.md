@@ -5,11 +5,11 @@ Certain tasks are impossible to perform with the standard Bukkit API, and may re
 working with and even modify Minecraft directly. A common technique is to modify incoming 
 and outgoing [packets](http://www.wiki.vg/Protocol), or inject custom packets into the
 stream. This is quite cumbersome to do, however, and most implementations will break 
-as soon as a new version of Minecraft has been released. Due to obfuscatio
+as soon as a new version of Minecraft has been released, mostly due to obfuscation.
 
 Critically, different plugins that use this approach may _hook_ into the same classes, 
 with unpredictable outcomes. More than often this causes plugins to crash, but it may also 
-lead to more subtile bugs.
+lead to more subtle bugs.
 
 
 ### Resources
@@ -21,8 +21,8 @@ A new API
 ---------
 
 __ProtocolLib__ attempts to solve this problem by providing a event API, much like Bukkit, 
-that allow plugins to monitor, modify or cancel packets sent and recieved. But more importantly, 
-the API also hides all the gritty, obfusctated classes with a simple index based read/write system. 
+that allow plugins to monitor, modify or cancel packets sent and received. But more importantly, 
+the API also hides all the gritty, obfuscated classes with a simple index based read/write system. 
 You no longer have to reference CraftBukkit!
 
 
@@ -86,7 +86,7 @@ censor by listening for Packet3Chat events:
 
 ### Sending packets
 
-Normally, you might have to do someting ugly like the following:
+Normally, you might have to do something ugly like the following:
 
     Packet60Explosion fakeExplosion = new Packet60Explosion();
     	
