@@ -23,7 +23,7 @@ import net.minecraft.server.Packet;
  * 
  * @author Kristian
  */
-public class NetworkFieldInjector extends PlayerInjector {
+class NetworkFieldInjector extends PlayerInjector {
 
 	/**
 	 * Marker interface that indicates a packet is fake and should not be processed.

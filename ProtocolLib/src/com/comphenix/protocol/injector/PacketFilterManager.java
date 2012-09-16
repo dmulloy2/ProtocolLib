@@ -63,6 +63,10 @@ public final class PacketFilterManager implements ProtocolManager {
 		 */
 		NETWORK_HANDLER_FIELDS,
 		
+		/**
+		 * Override the network handler object itself.
+		 */
+		NETWORK_MANAGER_OBJECT
 	}
 	
 	// Create a concurrent set
@@ -352,6 +356,8 @@ public final class PacketFilterManager implements ProtocolManager {
 		switch (playerHook) {
 		case NETWORK_HANDLER_FIELDS: 
 			return new NetworkFieldInjector(player, this, sendingFilters);
+		case NETWORK_MANAGER_OBJECT: 
+			return new NetworkObjectInjector(player, this, sendingFilters);
 		}
 		
 		throw new IllegalArgumentException("Cannot construct a player injector.");

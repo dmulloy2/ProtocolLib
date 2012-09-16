@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
  * 
  * @author Kristian
  */
-public class NetworkObjectInjector extends PlayerInjector {
+class NetworkObjectInjector extends PlayerInjector {
 	public NetworkObjectInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
 		super(player, manager, sendingFilters);
 	}
