@@ -436,18 +436,20 @@ public final class PacketFilterManager implements ProtocolManager {
 			
 			// The player listener! Good times.
 			Class<?> playerListener = loader.loadClass("org.bukkit.event.player.PlayerListener");
+			Class<?> serverListener = loader.loadClass("org.bukkit.event.server.ServerListener");
 			
 			// Find the register event method
 			Method registerEvent = FuzzyReflection.fromObject(manager).getMethodByParameters("registerEvent", 
 					eventTypes, Listener.class, eventPriority, Plugin.class);
 
-			Enhancer ex = new Enhancer();
-			ex.setSuperclass(playerListener);
-			ex.setClassLoader(classLoader);
-			ex.setCallback(new MethodInterceptor() {
+			Enhancer playerEx = new Enhancer();
+			Enhancer serverEx = new Enhancer();
+			
+			playerEx.setSuperclass(playerListener);
+			playerEx.setClassLoader(classLoader);
+			playerEx.setCallback(new MethodInterceptor() {
 				@Override
 				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-					
 					// Must have a parameter
 					if (args.length == 1) {
 						Object event = args[0];
@@ -457,20 +459,35 @@ public final class PacketFilterManager implements ProtocolManager {
 							injectPlayer(((PlayerJoinEvent) event).getPlayer());
 						else if (event instanceof PlayerQuitEvent)
 							injectPlayer(((PlayerQuitEvent) event).getPlayer());
-						else if (event instanceof PluginDisableEvent)
+					}
+					return null;
+				}
+			});
+			
+			serverEx.setSuperclass(serverListener);
+			serverEx.setClassLoader(classLoader);
+			serverEx.setCallback(new MethodInterceptor() {
+				@Override
+				public Object intercept(Object obj, Method method, Object[] args,
+						MethodProxy proxy) throws Throwable {
+					// Must have a parameter
+					if (args.length == 1) {
+						Object event = args[0];
+						
+						if (event instanceof PluginDisableEvent)
 							removePacketListeners(((PluginDisableEvent) event).getPlugin());
 					}
-					
 					return null;
 				}
 			});
 			
 			// Create our listener
-			Object proxy = ex.create();
+			Object playerProxy = playerEx.create();
+			Object serverProxy = serverEx.create();
 			
-			registerEvent.invoke(manager, playerJoinType, proxy, priorityNormal, plugin);
-			registerEvent.invoke(manager, playerQuitType, proxy, priorityNormal, plugin);
-			registerEvent.invoke(manager, pluginDisabledType, proxy, priorityNormal, plugin);
+			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityNormal, plugin);
+			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityNormal, plugin);
+			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityNormal, plugin);
 			
 			// A lot can go wrong
 		} catch (ClassNotFoundException e1) {
