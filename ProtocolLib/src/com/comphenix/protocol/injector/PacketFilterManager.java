@@ -326,6 +326,11 @@ public final class PacketFilterManager implements ProtocolManager {
 	}
 	
 	@Override
+	public PacketConstructor createPacketConstructor(int id, Class<?>[] argumentTypes) {
+		return PacketConstructor.DEFAUALT.withPacket(id, argumentTypes);
+	}
+	
+	@Override
 	public Set<Integer> getSendingFilters() {
 		return ImmutableSet.copyOf(sendingFilters);
 	}

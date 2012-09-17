@@ -25,6 +25,7 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.PacketConstructor;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -124,6 +125,14 @@ public interface ProtocolManager {
 	 */
 	public PacketContainer createPacket(int id, boolean forceDefaults);
 
+	/**
+	 * Construct a packet using the special builtin Minecraft constructors.
+	 * @param id - the packet ID.
+	 * @param argumentTypes - type of each argument to pass to Minecraft.
+	 * @return The packet constructor.
+	 */
+	public PacketConstructor createPacketConstructor(int id, Class<?>[] argumentTypes);
+	
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.
 	 * @return Every filtered server packet.
