@@ -131,7 +131,7 @@ public interface ProtocolManager {
 	 * @param argumentTypes - type of each argument to pass to Minecraft.
 	 * @return The packet constructor.
 	 */
-	public PacketConstructor createPacketConstructor(int id, Class<?>[] argumentTypes);
+	public PacketConstructor createPacketConstructor(int id, Class<?>... argumentTypes);
 	
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.
