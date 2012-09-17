@@ -156,7 +156,7 @@ public final class Packets {
 	 * A registry that parses between names and packet IDs.
 	 * @return The current client registry.
 	 */
-	public Server getServerRegistry() {
+	public static Server getServerRegistry() {
 		return Server.getRegistry();
 	}
 
