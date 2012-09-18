@@ -131,7 +131,7 @@ public interface ProtocolManager {
 	/**
 	 * Construct a packet using the special builtin Minecraft constructors.
 	 * @param id - the packet ID.
-	 * @param argumentTypes - arguments that will be passed to the constructor.
+	 * @param arguments - arguments that will be passed to the constructor.
 	 * @return The packet constructor.
 	 */
 	public PacketConstructor createPacketConstructor(int id, Object... arguments);

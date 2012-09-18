@@ -49,7 +49,6 @@ public class DefaultInstances {
 	/**
 	 * Construct a default instance generator using the given instance providers.
 	 * @param registered - list of instance providers.
-	 * @param stringDefault - default string value.
 	 */
 	public DefaultInstances(ImmutableList<InstanceProvider> registered) {
 		this.registered = registered;
@@ -58,7 +57,6 @@ public class DefaultInstances {
 	/**
 	 * Construct a default instance generator using the given instance providers.
 	 * @param instaceProviders - array of instance providers.
-	 * @return An default instance generator.
 	 */
 	public DefaultInstances(InstanceProvider... instaceProviders) {
 		this(ImmutableList.copyOf(instaceProviders));

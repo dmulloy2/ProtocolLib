@@ -62,7 +62,7 @@ public class PacketConstructor {
 	/**
 	 * Return a copy of the current constructor with a different list of unwrappers.
 	 * @param unwrappers - list of unwrappers that convert Bukkit wrappers into the equivalent NMS classes.
-	 * @return 
+	 * @return A constructor with a different set of unwrappers.
 	 */
 	public PacketConstructor withUnwrappers(List<Unwrapper> unwrappers) {
 		return new PacketConstructor(constructorMethod, unwrappers);

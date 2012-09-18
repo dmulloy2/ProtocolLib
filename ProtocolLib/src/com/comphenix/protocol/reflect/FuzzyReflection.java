@@ -208,7 +208,7 @@ public class FuzzyReflection {
 	 *     <li>net.comphenix.xp.ExperienceMod</li>
 	 * </ul>
 	 * @param typeRegex - regular expression that will match the field type.
-	 * @param ignoredTypes - types to ignore.
+	 * @param ignored - types to ignore.
 	 * @return The first field with a type that matches the given regular expression.
 	 */
 	@SuppressWarnings("rawtypes")

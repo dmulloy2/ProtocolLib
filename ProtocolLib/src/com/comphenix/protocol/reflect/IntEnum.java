@@ -52,7 +52,7 @@ public class IntEnum {
 	
 	/**
 	 * Determines whether or not the given member exists.
-	 * @param packetID - the ID of the member to find.
+	 * @param id - the ID of the member to find.
 	 * @return TRUE if a member with the given ID exists, FALSE otherwise.
 	 */
 	public boolean hasMember(int id) {
