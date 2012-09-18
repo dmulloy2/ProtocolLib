@@ -77,13 +77,14 @@ public class PacketConstructor {
 	 */
 	public PacketConstructor withPacket(int id, Class<?>[] types) {
 		
-		for (Unwrapper unwrapper : unwrappers) {
-			for (int i = 0; i < types.length; i++) {
+		for (int i = 0; i < types.length; i++) {
+			for (Unwrapper unwrapper : unwrappers) {
 				Class<?> result = unwrapper.unwrapType(types[i]);
 				
 				// Update type we're searching for
 				if (result != null) {
 					types[i] = result;
+					break;
 				}
 			}
 		}
@@ -117,6 +118,18 @@ public class PacketConstructor {
 	public PacketContainer createPacket(Object... values) throws FieldAccessException {
 		
 		try {
+			// Convert types
+			for (int i = 0; i < values.length; i++) {
+				for (Unwrapper unwrapper : unwrappers) {
+					Object converted = unwrapper.unwrapItem(values[i]);
+					
+					if (converted != null) {
+						values[i] = converted;
+						break;
+					}
+				}
+			}
+			
 			Packet nmsPacket = (Packet) constructorMethod.newInstance(values);
 			return new PacketContainer(packetID, nmsPacket);
 			
