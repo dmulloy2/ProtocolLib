@@ -26,7 +26,7 @@ public class PacketConstructor {
 	 * <p>
 	 * Remember to call withPacket().
 	 */
-	public static PacketConstructor DEFAUALT = new PacketConstructor(null);
+	public static PacketConstructor DEFAULT = new PacketConstructor(null);
 	
 	// The constructor method that's actually responsible for creating the packet
 	private Constructor<?> constructorMethod;
@@ -79,7 +79,7 @@ public class PacketConstructor {
 		
 		for (Unwrapper unwrapper : unwrappers) {
 			for (int i = 0; i < types.length; i++) {
-				Class<?> result  =unwrapper.unwrapType(types[i]);
+				Class<?> result = unwrapper.unwrapType(types[i]);
 				
 				// Update type we're searching for
 				if (result != null) {
@@ -141,9 +141,12 @@ public class PacketConstructor {
 					return false;
 				}
 			}
+			
+			return true;
 		}
 		
-		return true;
+		// Parameter count must match
+		return false;
 	}
 
 	public static class BukkitUnwrapper implements Unwrapper {

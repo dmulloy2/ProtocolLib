@@ -25,6 +25,7 @@ import org.bukkit.WorldType;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.StructureCache;
@@ -136,6 +137,11 @@ public class PacketContainer {
 			public ItemStack getSpecific(Object generic) {
 				return new CraftItemStack((net.minecraft.server.ItemStack) generic);
 			}
+			
+			@Override
+			public Class<ItemStack> getSpecificType() {
+				return ItemStack.class;
+			}
 		});
 	}
 	
@@ -170,6 +176,11 @@ public class PacketContainer {
 				}
 				return result;
 			}
+			
+			@Override
+			public Class<ItemStack[]> getSpecificType() {
+				return ItemStack[].class;
+			}
 		});
 	}
 	
@@ -199,6 +210,11 @@ public class PacketContainer {
 				net.minecraft.server.WorldType type = (net.minecraft.server.WorldType) generic;
 				return WorldType.getByName(type.name());
 			}
+			
+			@Override
+			public Class<WorldType> getSpecificType() {
+				return WorldType.class;
+			}
 		});
 	}
 	
@@ -216,6 +232,7 @@ public class PacketContainer {
 	
 		final Object worldServer = ((CraftWorld) world).getHandle();
 		final Class<?> nmsEntityClass = net.minecraft.server.Entity.class;
+		final World worldCopy = world;
 		
 		if (getEntity == null)
 			getEntity = FuzzyReflection.fromObject(worldServer).getMethodByParameters(
@@ -234,11 +251,20 @@ public class PacketContainer {
 				try {
 					net.minecraft.server.Entity nmsEntity = (net.minecraft.server.Entity) 
 							getEntity.invoke(worldServer, generic);
+					Integer id = (Integer) generic;
 					
 					// Attempt to get the Bukkit entity
 					if (nmsEntity != null) {
 						return nmsEntity.getBukkitEntity();
 					} else {
+						// Maybe it's a player that's just logged in? Try a search
+						for (Player player : worldCopy.getPlayers()) {
+							if (player.getEntityId() == id) {
+								return player;
+							}
+						}
+						
+						System.out.println("Entity doesn't exist.");
 						return null;
 					}
 					
@@ -249,6 +275,11 @@ public class PacketContainer {
 				} catch (InvocationTargetException e) {
 					throw new RuntimeException("Error occured in Minecraft method.", e.getCause());
 				}
+			}
+			
+			@Override
+			public Class<Entity> getSpecificType() {
+				return Entity.class;
 			}
 		});
 	}

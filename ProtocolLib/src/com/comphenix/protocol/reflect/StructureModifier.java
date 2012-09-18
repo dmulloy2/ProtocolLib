@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableList;
 
 @SuppressWarnings("rawtypes")
 public class StructureModifier<TField> {
-
+	
 	// Object and its type
 	private Class targetType;
 	private Object target;
@@ -220,12 +220,8 @@ public class StructureModifier<TField> {
 		
 		StructureModifier<T> result = subtypeCache.get(fieldType);
 		
-		if (this.fieldType.equals(fieldType)) {
-			
-			// We're dealing with the exact field type.
-			return withConverter(converter);
-			
-		} else if (result == null) {
+		// Do we need to update the cache?
+		if (result == null) {
 			List<Field> filtered = new ArrayList<Field>();
 			Set<Field> defaults = new HashSet<Field>();
 			
@@ -248,7 +244,24 @@ public class StructureModifier<TField> {
 		}
 		
 		// Add the target too
-		return result.withTarget(target);
+		result = result.withTarget(target);
+		
+		// And the converter, if it's needed
+		if (!sameConverter(result.converter, converter)) {
+			result = result.withConverter(converter);
+		}
+		
+		return result;
+	}
+	
+	private boolean sameConverter(EquivalentConverter<?> a, EquivalentConverter<?> b) {
+		// Compare the converter types
+		if (a == null)
+			return b == null;
+		else if (b == null)
+			return a == null;
+		else
+			return a.getSpecificType().equals(b.getSpecificType());
 	}
 	
 	/**

@@ -26,4 +26,5 @@ package com.comphenix.protocol.reflect;
 public interface EquivalentConverter<TType> {
 	public TType getSpecific(Object generic);
 	public Object getGeneric(TType specific);
+	public Class<TType> getSpecificType();
 }
