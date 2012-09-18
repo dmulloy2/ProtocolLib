@@ -42,7 +42,8 @@ public class PacketConstructor {
 		this.unwrappers = Lists.newArrayList((Unwrapper) new BukkitUnwrapper());
 	}
 	
-	private PacketConstructor(Constructor<?> constructorMethod, List<Unwrapper> unwrappers) {
+	private PacketConstructor(int packetID, Constructor<?> constructorMethod, List<Unwrapper> unwrappers) {
+		this.packetID = packetID;
 		this.constructorMethod = constructorMethod;
 		this.unwrappers = unwrappers;
 	}
@@ -65,7 +66,7 @@ public class PacketConstructor {
 	 * @return A constructor with a different set of unwrappers.
 	 */
 	public PacketConstructor withUnwrappers(List<Unwrapper> unwrappers) {
-		return new PacketConstructor(constructorMethod, unwrappers);
+		return new PacketConstructor(packetID, constructorMethod, unwrappers);
 	}
 
 	/**
@@ -75,17 +76,28 @@ public class PacketConstructor {
 	 * @return A packet constructor with these types.
 	 * @throws IllegalArgumentException If no packet constructor could be created with these types.
 	 */
-	public PacketConstructor withPacket(int id, Class<?>[] types) {
+	public PacketConstructor withPacket(int id, Object[] values) {
+		
+		Class<?>[] types = new Class<?>[values.length];
 		
 		for (int i = 0; i < types.length; i++) {
-			for (Unwrapper unwrapper : unwrappers) {
-				Class<?> result = unwrapper.unwrapType(types[i]);
+			// Default type
+			if (values[i] != null) {
+				types[i] = values[i].getClass();
 				
-				// Update type we're searching for
-				if (result != null) {
-					types[i] = result;
-					break;
+				for (Unwrapper unwrapper : unwrappers) {
+					Object result = unwrapper.unwrapItem(values[i]);
+					
+					// Update type we're searching for
+					if (result != null) {
+						types[i] = result.getClass();
+						break;
+					}
 				}
+			
+			} else {
+				// Try it
+				types[i] = Object.class;
 			}
 		}
 		
@@ -100,7 +112,7 @@ public class PacketConstructor {
 
 			if (isCompatible(types, params)) {
 				// Right, we've found our type
-				return new PacketConstructor(constructor, unwrappers);
+				return new PacketConstructor(id, constructor, unwrappers);
 			}
 		}
 		
@@ -189,21 +201,6 @@ public class PacketConstructor {
 				throw new RuntimeException("Minecraft error.", e);
 			}
 		}
-
-		@Override
-		public Class<?> unwrapType(Class<?> type) {
-			
-			if (type == null)
-				throw new IllegalArgumentException("type cannot be null.");
-			
-			Method unwrapped = initializeCache(type);
-			
-			// Determine the unwrapped type
-			if (unwrapped != null)
-				return unwrapped.getReturnType();
-			else
-				return null;
-		}
 		
 		private Method initializeCache(Class<?> type) {
 			
@@ -230,6 +227,5 @@ public class PacketConstructor {
 	
 	public static interface Unwrapper {
 		public Object unwrapItem(Object wrappedObject);
-		public Class<?> unwrapType(Class<?> type);
 	}
 }

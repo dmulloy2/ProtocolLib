@@ -328,14 +328,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	@Override
 	public PacketConstructor createPacketConstructor(int id, Object... arguments) {
-		Class<?>[] types = new Class<?>[arguments.length];
-		
-		// Initialize types
-		for (int i = 0; i < arguments.length; i++) {
-			types[i] = arguments[i] != null ? arguments[i].getClass() : Object.class;
-		}
-		
-		return PacketConstructor.DEFAULT.withPacket(id, types);
+		return PacketConstructor.DEFAULT.withPacket(id, arguments);
 	}
 
 	@Override
