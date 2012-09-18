@@ -200,6 +200,37 @@ public class FuzzyReflection {
 	}
 	
 	/**
+	 * Retrieves a field by type.
+	 * <p>
+	 * Note that the type is matched using the full canonical representation, i.e.: 
+	 * <ul>
+	 *     <li>java.util.List</li>
+	 *     <li>net.comphenix.xp.ExperienceMod</li>
+	 * </ul>
+	 * @param typeRegex - regular expression that will match the field type.
+	 * @param ignoredTypes - types to ignore.
+	 * @return The first field with a type that matches the given regular expression.
+	 */
+	@SuppressWarnings("rawtypes")
+	public Field getFieldByType(String typeRegex, Set<Class> ignored) {
+		
+		Pattern match = Pattern.compile(typeRegex);
+		
+		// Like above, only here we test the field type
+		for (Field field : getFields()) {
+			Class type = field.getType();
+			
+			if (!ignored.contains(type) && match.matcher(type.getName()).matches()) {
+				return field;
+			}
+		}
+		
+		// Looks like we're outdated. Too bad.
+		throw new RuntimeException("Unable to find a field with the type " + 
+									typeRegex + " in " + source.getName());
+	}
+	
+	/**
 	 * Retrieves all private and public fields in declared order (after JDK 1.5).
 	 * @return Every field.
 	 */

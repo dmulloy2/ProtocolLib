@@ -34,6 +34,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -336,7 +337,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		
 		return PacketConstructor.DEFAULT.withPacket(id, types);
 	}
-	
+
 	@Override
 	public Set<Integer> getSendingFilters() {
 		return ImmutableSet.copyOf(sendingFilters);
@@ -345,6 +346,11 @@ public final class PacketFilterManager implements ProtocolManager {
 	@Override
 	public Set<Integer> getReceivingFilters() {
 		return ImmutableSet.copyOf(packetInjector.getPacketHandlers());
+	}
+	
+	@Override
+	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
+		EntityUtilities.updateEntity(entity, observers);
 	}
 	
 	/**

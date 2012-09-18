@@ -18,14 +18,17 @@
 package com.comphenix.protocol;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Set;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -132,6 +135,13 @@ public interface ProtocolManager {
 	 * @return The packet constructor.
 	 */
 	public PacketConstructor createPacketConstructor(int id, Object... arguments);
+	
+	/**
+	 * Completely refresh all clients about an entity.
+	 * @param entity - entity to refresh.
+	 * @param observers - the clients to update.
+	 */
+	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException;
 	
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.
