@@ -34,21 +34,21 @@ import com.google.common.collect.ImmutableList;
 public class StructureModifier<TField> {
 	
 	// Object and its type
-	private Class targetType;
-	private Object target;
+	protected Class targetType;
+	protected Object target;
 	
 	// Converter. May be NULL.
-	private EquivalentConverter<TField> converter;
+	protected EquivalentConverter<TField> converter;
 	
 	// The fields to read in order
-	private Class fieldType;
-	private List<Field> data = new ArrayList<Field>();
+	protected Class fieldType;
+	protected List<Field> data = new ArrayList<Field>();
 	
 	// Improved default values
-	private Set<Field> defaultFields;
+	protected Set<Field> defaultFields;
 	
 	// Cache of previous types
-	private Map<Class, StructureModifier> subtypeCache;
+	protected Map<Class, StructureModifier> subtypeCache;
 	
 	/**
 	 * Creates a structure modifier.
@@ -63,16 +63,20 @@ public class StructureModifier<TField> {
 		initialize(targetType, Object.class, fields, defaults, null, new HashMap<Class, StructureModifier>());
 	}
 	
-	private StructureModifier(StructureModifier<TField> other, Object target) {
-		initialize(other.targetType, other.fieldType, other.data, other.defaultFields, other.converter, other.subtypeCache);
-		this.target = target;
-	}
-	
 	private StructureModifier() {
 		// Consumers of this method should call "initialize"
 	}
 	
-	private void initialize(Class targetType, Class fieldType, 
+	/**
+	 * Initialize every field of this class.
+	 * @param targetType - type of the object we're reading and writing from.
+	 * @param fieldType - the common type of the fields we're modifying.
+	 * @param data - list of fields to modify.
+	 * @param defaultFields - list of fields that will be automatically initialized.
+	 * @param converter - converts between the common field type and the actual type the consumer expects.
+	 * @param subTypeCache - a structure modifier cache.
+	 */
+	protected void initialize(Class targetType, Class fieldType, 
 			  List<Field> data, Set<Field> defaultFields,
 			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache) {
 		this.targetType = targetType;
@@ -235,9 +239,7 @@ public class StructureModifier<TField> {
 			}
 			
 			// Cache structure modifiers
-			result = new StructureModifier<T>();
-			result.initialize(targetType, fieldType, filtered, defaults, 
-							  converter, new HashMap<Class, StructureModifier>());
+			result = withFieldType(fieldType, filtered, defaults, converter);
 			
 			if (fieldType != null)
 				subtypeCache.put(fieldType, result);
@@ -297,12 +299,35 @@ public class StructureModifier<TField> {
 	}
 	
 	/**
+	 * Create a new structure modifier for the new field type.
+	 * @param fieldType - common type of each field.
+	 * @param filtered - list of fields after filtering the original modifier.
+	 * @param defaults - list of default values after filtering the original.
+	 * @param converter - the new converter.
+	 * @return A new structure modifier.
+	 */
+	protected <T> StructureModifier<T> withFieldType(
+			Class fieldType, List<Field> filtered, 
+			Set<Field> defaults, EquivalentConverter<T> converter) {
+		
+		StructureModifier<T> result = new StructureModifier<T>();
+		result.initialize(targetType, fieldType, filtered, defaults, 
+						  converter, new HashMap<Class, StructureModifier>());
+		return result;
+	}
+	
+	/**
 	 * Retrieves a structure modifier of the same type for a different object target.
 	 * @param target - different target of the same type.
 	 * @return Structure modifier with the new target.
 	 */
 	public StructureModifier<TField> withTarget(Object target) {
-		return new StructureModifier<TField>(this, target);
+		StructureModifier<TField> copy = new StructureModifier<TField>();
+		
+		// Create a new instance
+		copy.initialize(targetType, fieldType, data, defaultFields, converter, subtypeCache);
+		copy.target = target;
+		return copy;
 	}
 	
 	/**
@@ -312,10 +337,18 @@ public class StructureModifier<TField> {
 	 */
 	@SuppressWarnings("unchecked")
 	private <T> StructureModifier<T> withConverter(EquivalentConverter<T> converter) {
-		StructureModifier copy = new StructureModifier(this, target);
+		StructureModifier copy = withTarget(target);
 		
-		copy.converter = converter;
+		copy.setConverter(converter);
 		return copy;
+	}
+	
+	/**
+	 * Set the current object converter. Should only be called during construction.
+	 * @param converter - current object converter.
+	 */
+	protected void setConverter(EquivalentConverter<TField> converter) {
+		this.converter = converter;
 	}
 	
 	/**

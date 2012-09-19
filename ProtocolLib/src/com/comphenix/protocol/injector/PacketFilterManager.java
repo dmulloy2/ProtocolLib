@@ -343,8 +343,6 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	@Override
 	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
-		
-		
 		EntityUtilities.updateEntity(entity, observers);
 	}
 	

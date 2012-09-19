@@ -36,7 +36,7 @@ class EntityUtilities {
 	private static Method scanPlayersMethod;
 	
 	public static void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
-
+		
 		World world = entity.getWorld();
 		Object worldServer = ((CraftWorld) world).getHandle();
 
