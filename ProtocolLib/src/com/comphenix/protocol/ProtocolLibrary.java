@@ -71,7 +71,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	private void checkForIncompatibility(PluginManager manager) {
 		// Plugin authors: Notify me to remove these
-		String[] incompatiblePlugins = { "TagAPI" };
+		String[] incompatiblePlugins = {};
 		
 		for (String plugin : incompatiblePlugins) {
 			if (manager.getPlugin(plugin) != null) {
