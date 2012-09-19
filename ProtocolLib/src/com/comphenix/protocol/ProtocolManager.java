@@ -138,6 +138,9 @@ public interface ProtocolManager {
 	
 	/**
 	 * Completely refresh all clients about an entity.
+	 * <p>
+	 * Note that this method is NOT thread safe. If you call this method from anything 
+	 * but the main thread, it will throw an exception.
 	 * @param entity - entity to refresh.
 	 * @param observers - the clients to update.
 	 */
