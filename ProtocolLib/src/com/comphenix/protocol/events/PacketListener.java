@@ -31,6 +31,8 @@ public interface PacketListener {
 	 * Invoked right before a packet is transmitted from the server to the client.
 	 * <p>
 	 * Note that the packet may be replaced, if needed.
+	 * <p>
+	 * This method is executed on the main thread, and thus the Bukkit API is safe to use.
 	 * 
 	 * @param event - the packet that should be sent.
 	 */
@@ -38,6 +40,11 @@ public interface PacketListener {
 
 	/**
 	 * Invoked right before a recieved packet from a client is being processed.
+	 * <p>
+	 * <b>WARNING</b>: </br> 
+	 * This method will be called <i>asynchronously</i>! You should synchronize with the main 
+	 * thread using {@link org.bukkit.scheduler.BukkitScheduler#scheduleSyncDelayedTask(Plugin, Runnable, long) scheduleSyncDelayedTask} 
+	 * if you need to call the Bukkit API.
 	 * @param event - the packet that has been recieved.
 	 */
 	public void onPacketReceiving(PacketEvent event);
