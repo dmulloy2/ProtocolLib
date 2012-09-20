@@ -88,8 +88,8 @@ class MinecraftRegistry {
 		Map<Integer, Class> lookup = forceVanilla ? previousValues : overwrittenPackets;
 		
 		// Optimized lookup
-		if (lookup.containsKey(packetToID)) {
-			return lookup.get(packetToID);
+		if (lookup.containsKey(packetID)) {
+			return lookup.get(packetID);
 		}
 
 		// Will most likely not be used

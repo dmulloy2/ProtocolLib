@@ -62,7 +62,7 @@ public class ListeningWhitelist {
 	 * @return TRUE if there are any packets, FALSE otherwise.
 	 */
 	public boolean isEnabled() {
-		return whitelist != null || whitelist.size() > 0;
+		return whitelist != null && whitelist.size() > 0;
 	}
 	
 	/**

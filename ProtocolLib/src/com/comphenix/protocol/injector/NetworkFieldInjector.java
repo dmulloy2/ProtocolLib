@@ -48,7 +48,7 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@Override
-	protected void initialize() throws IllegalAccessException {
+	protected synchronized void initialize() throws IllegalAccessException {
 		super.initialize();
 	
 		// Get the sync field as well

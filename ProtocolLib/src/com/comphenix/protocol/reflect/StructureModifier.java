@@ -63,8 +63,20 @@ public class StructureModifier<TField> {
 		initialize(targetType, Object.class, fields, defaults, null, new HashMap<Class, StructureModifier>());
 	}
 	
-	private StructureModifier() {
-		// Consumers of this method should call "initialize"
+	/**
+	 * Consumers of this method should call "initialize".
+	 */
+	protected StructureModifier() {
+		
+	}
+	
+	/**
+	 * Initialize using the same field types.
+	 * @param other - information to set.
+	 */
+	protected void initialize(StructureModifier<TField> other) {
+		initialize(other.targetType, other.fieldType, other.data, 
+				   other.defaultFields, other.converter, other.subtypeCache);
 	}
 	
 	/**
@@ -358,7 +370,7 @@ public class StructureModifier<TField> {
 	public List<Field> getFields() {
 		return ImmutableList.copyOf(data);
 	}
-	
+
 	/**
 	 * Retrieve every value stored in the fields of the current type.
 	 * @return Every field value.
@@ -367,8 +379,9 @@ public class StructureModifier<TField> {
 	public List<TField> getValues() throws FieldAccessException {
 		List<TField> values = new ArrayList<TField>();
 		
-		for (int i = 0; i < size(); i++)
+		for (int i = 0; i < size(); i++) {
 			values.add(read(i));
+		}
 		
 		return values;
 	}

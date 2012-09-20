@@ -522,12 +522,12 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (!hasClosed && player != null) {
 			
 			PlayerInjector injector = playerInjection.get(player);
-			DataInputStream input = injector.getInputStream(true);
 			
 			if (injector != null) {
+				DataInputStream input = injector.getInputStream(true);
 				injector.cleanupAll();
 				
-				playerInjection.remove(injector);
+				playerInjection.remove(player);
 				connectionLookup.remove(input);
 			}
 		}	
