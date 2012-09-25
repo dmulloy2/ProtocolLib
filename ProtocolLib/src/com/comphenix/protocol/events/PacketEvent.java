@@ -145,7 +145,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 		
 	    if (offlinePlayer != null) {
 	    	// Better than nothing
-	    	player = offlinePlayer.getProxyPlayer();
+	    	player = offlinePlayer.getPlayer();
 	    }
 	}
 }
