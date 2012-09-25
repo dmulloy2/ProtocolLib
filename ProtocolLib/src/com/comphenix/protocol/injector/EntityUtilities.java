@@ -35,6 +35,37 @@ class EntityUtilities {
 	private static Method hashGetMethod;
 	private static Method scanPlayersMethod;
 	
+	/*
+	 * While this function may look pretty bad, it's essentially just a reflection-warped 
+	 * version of the following:
+	 * 
+	 *  	@SuppressWarnings("unchecked")
+	 *	 	public static void updateEntity2(Entity entity, List<Player> observers) {
+	 *
+	 *			World world = entity.getWorld();
+	 *			WorldServer worldServer = ((CraftWorld) world).getHandle();
+	 *
+	 *			EntityTracker tracker = worldServer.tracker;
+	 *			EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.get(entity.getEntityId());
+	 *
+	 *			List<EntityPlayer> nmsPlayers = getNmsPlayers(observers);
+	 *
+	 *			entry.trackedPlayers.removeAll(nmsPlayers);
+	 *			entry.scanPlayers(nmsPlayers);
+	 *		}
+	 *
+	 *		private static List<EntityPlayer> getNmsPlayers(List<Player> players) {
+	 *			List<EntityPlayer> nsmPlayers = new ArrayList<EntityPlayer>();
+	 *	
+	 *			for (Player bukkitPlayer : players) {
+	 *				CraftPlayer craftPlayer = (CraftPlayer) bukkitPlayer;
+	 *				nsmPlayers.add(craftPlayer.getHandle());
+	 *			}
+	 *	
+	 *			return nsmPlayers;
+	 *		}
+	 *
+	 */
 	public static void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
 		
 		World world = entity.getWorld();
