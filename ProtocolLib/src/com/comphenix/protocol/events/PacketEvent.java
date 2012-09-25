@@ -17,6 +17,9 @@
 
 package com.comphenix.protocol.events;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.EventObject;
 
 import org.bukkit.entity.Player;
@@ -28,11 +31,11 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	private static final long serialVersionUID = -5360289379097430620L;
 
+	private transient Player player;
 	private PacketContainer packet;
-	private Player player;
 	private boolean serverPacket;
 	private boolean cancel;
-	
+
 	/**
 	 * Use the static constructors to create instances of this event.
 	 * @param source - the event source.
@@ -124,5 +127,25 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public boolean isServerPacket() {
 		return serverPacket;
+	}
+	
+	private void writeObject(ObjectOutputStream output) throws IOException {
+	    // Default serialization 
+		output.defaultWriteObject();
+
+		// Write the name of the player (or NULL if it's not set)
+		output.writeObject(player != null ? new SerializedOfflinePlayer(player) : null);
+	}
+
+	private void readObject(ObjectInputStream input) throws ClassNotFoundException, IOException {
+	    // Default deserialization
+		input.defaultReadObject();
+
+		final SerializedOfflinePlayer offlinePlayer = (SerializedOfflinePlayer) input.readObject();
+		
+	    if (offlinePlayer != null) {
+	    	// Better than nothing
+	    	player = offlinePlayer.getProxyPlayer();
+	    }
 	}
 }
