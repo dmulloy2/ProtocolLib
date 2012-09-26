@@ -56,9 +56,11 @@ abstract class PlayerInjector {
 	
 	// Reference to the player's network manager
 	protected VolatileField networkManagerRef;
+	protected VolatileField serverHandlerRef;
 	protected Object networkManager;
 	
 	// Current net handler
+	protected Object serverHandler;
 	protected Object netHandler;
 	
 	// The packet manager and filters
@@ -75,12 +77,18 @@ abstract class PlayerInjector {
 		initialize();
 	}
 
+	/**
+	 * Retrieve the notch (NMS) entity player object.
+	 * @return Notch player object.
+	 */
+	protected EntityPlayer getEntityPlayer() {
+		CraftPlayer craft = (CraftPlayer) player;
+		return craft.getHandle();
+	}
+	
 	protected void initialize() throws IllegalAccessException {
 	
-		CraftPlayer craft = (CraftPlayer) player;
-		EntityPlayer notchEntity = craft.getHandle();
-		
-		Object serverHandler = null;
+		EntityPlayer notchEntity = getEntityPlayer();
 		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception
@@ -89,7 +97,8 @@ abstract class PlayerInjector {
 			// Retrieve the server handler
 			if (serverHandlerField == null)
 				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(".*NetServerHandler");
-			serverHandler = FieldUtils.readField(serverHandlerField, notchEntity);
+			serverHandlerRef = new VolatileField(serverHandlerField, notchEntity);
+			serverHandler = serverHandlerRef.getValue();
 			
 			// Next, get the network manager 
 			if (networkManagerField == null) 

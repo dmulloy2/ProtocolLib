@@ -60,14 +60,23 @@ public final class PacketFilterManager implements ProtocolManager {
 	 */
 	public enum PlayerInjectHooks {
 		/**
-		 * Override the packet queue lists in NetworkHandler.
+		 * Override the packet queue lists in NetworkHandler. 
+		 * <p>
+		 * Cannot intercept MapChunk packets. 
 		 */
 		NETWORK_HANDLER_FIELDS,
 		
 		/**
-		 * Override the network handler object itself.
+		 * Override the network handler object itself. Only works in 1.3.
+		 * <p>
+		 * Cannot intercept MapChunk packets. 
 		 */
 		NETWORK_MANAGER_OBJECT,
+		
+		/**
+		 * Override the server handler object. Versatile, but slow.
+		 */
+		NETWORK_SERVER_OBJECT;
 	}
 	
 	// Create a concurrent set
@@ -79,7 +88,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
 	
 	// Player injection type
-	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_HANDLER_FIELDS;
+	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
 	
 	// Packet injection
 	private PacketInjector packetInjector;
@@ -373,6 +382,8 @@ public final class PacketFilterManager implements ProtocolManager {
 			return new NetworkFieldInjector(player, this, sendingFilters);
 		case NETWORK_MANAGER_OBJECT: 
 			return new NetworkObjectInjector(player, this, sendingFilters);
+		case NETWORK_SERVER_OBJECT:
+			return new NetworkServerInjector(player, this, sendingFilters);
 		default:
 			throw new IllegalArgumentException("Cannot construct a player injector.");
 		}
