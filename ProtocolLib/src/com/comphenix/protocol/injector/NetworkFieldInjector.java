@@ -83,6 +83,13 @@ class NetworkFieldInjector extends PlayerInjector {
 		}
 	}
 	
+
+	@Override
+	public boolean canInject() {
+		// Probably
+		return true;
+	}
+	
 	@Override
 	public void injectManager() {
 		

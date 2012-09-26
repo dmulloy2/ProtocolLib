@@ -67,7 +67,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		/**
 		 * Override the network handler object itself.
 		 */
-		NETWORK_MANAGER_OBJECT
+		NETWORK_MANAGER_OBJECT,
 	}
 	
 	// Create a concurrent set
@@ -362,16 +362,20 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @throws IllegalAccessException Unable to do our reflection magic.
 	 */
 	protected PlayerInjector getPlayerHookInstance(Player player) throws IllegalAccessException {
-		
+		return getHookInstance(player, playerHook);
+	}
+	
+	// Helper
+	private PlayerInjector getHookInstance(Player player, PlayerInjectHooks hook) throws IllegalAccessException {
 		// Construct the correct player hook
-		switch (playerHook) {
+		switch (hook) {
 		case NETWORK_HANDLER_FIELDS: 
 			return new NetworkFieldInjector(player, this, sendingFilters);
 		case NETWORK_MANAGER_OBJECT: 
 			return new NetworkObjectInjector(player, this, sendingFilters);
+		default:
+			throw new IllegalArgumentException("Cannot construct a player injector.");
 		}
-		
-		throw new IllegalArgumentException("Cannot construct a player injector.");
 	}
 	
 	/**

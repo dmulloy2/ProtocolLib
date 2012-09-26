@@ -191,6 +191,12 @@ abstract class PlayerInjector {
 	public abstract void cleanupAll();
 	
 	/**
+	 * Determine if we actually can inject.
+	 * @return TRUE if this injector is compatible with the current CraftBukkit version, FALSE otherwise.
+	 */
+	public abstract boolean canInject();
+	
+	/**
 	 * Allows a packet to be recieved by the listeners.
 	 * @param packet - packet to recieve.
 	 * @return The given packet, or the packet replaced by the listeners.

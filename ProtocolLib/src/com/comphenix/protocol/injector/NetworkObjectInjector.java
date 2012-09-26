@@ -43,6 +43,14 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
+	public boolean canInject() {
+		// We only support 1.3.0 at the moment. Fixing it require us to
+		// add jMock, which would add another dependency.
+		return networkManager != null && 
+			   networkManagerField.getType().isInterface();
+	}
+	
+	@Override
 	public void injectManager() {
 		
 		if (networkManager != null) {
