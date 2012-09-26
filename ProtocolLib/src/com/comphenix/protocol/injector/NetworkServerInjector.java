@@ -12,6 +12,7 @@ import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.instances.CollectionGenerator;
@@ -66,6 +67,7 @@ public class NetworkServerInjector extends PlayerInjector {
 
 	@Override
 	public void injectManager() {
+		
 		if (serverHandlerRef == null)
 			throw new IllegalStateException("Cannot find server handler.");
 		// Don't inject twice
@@ -142,10 +144,9 @@ public class NetworkServerInjector extends PlayerInjector {
 			e.printStackTrace();
 		}
 	}
-
+	
 	@Override
-	public boolean canInject() {
-		// Probably always
-		return true;
+	public void checkListener(PacketListener listener) {
+		// We support everything
 	}
 }

@@ -31,6 +31,7 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -205,10 +206,12 @@ abstract class PlayerInjector {
 	public abstract void cleanupAll();
 	
 	/**
-	 * Determine if we actually can inject.
-	 * @return TRUE if this injector is compatible with the current CraftBukkit version, FALSE otherwise.
+	 * Invoked before a new listener is registered.
+	 * <p>
+	 * The player injector should throw an exception if this listener cannot be properly supplied with packet events. 
+	 * @param listener - the listener that is about to be registered.
 	 */
-	public abstract boolean canInject();
+	public abstract void checkListener(PacketListener listener);
 	
 	/**
 	 * Allows a packet to be recieved by the listeners.

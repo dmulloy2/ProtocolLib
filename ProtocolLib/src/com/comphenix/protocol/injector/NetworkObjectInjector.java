@@ -11,6 +11,10 @@ import java.util.Set;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.PacketListener;
+
 /**
  * Injection method that overrides the NetworkHandler itself, and it's sendPacket-method.
  * 
@@ -43,11 +47,12 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public boolean canInject() {
-		// We only support 1.3.0 at the moment. Fixing it require us to
-		// add jMock, which would add another dependency.
-		return networkManager != null && 
-			   networkManagerField.getType().isInterface();
+	public void checkListener(PacketListener listener) {
+		// Unfortunately, we don't support chunk packets
+		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), 
+				Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK)) {
+			throw new IllegalStateException("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.");
+		}
 	}
 	
 	@Override

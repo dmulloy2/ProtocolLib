@@ -86,6 +86,23 @@ public class ListeningWhitelist {
 	    return Objects.hashCode(priority, whitelist);
 	}
 
+	/**
+	 * Determine if any of the given IDs can be found in the whitelist.
+	 * @param whitelist - whitelist to test.
+	 * @param idList - list of packet IDs to find. 
+	 * @return TRUE if any of the packets in the list can be found in the whitelist, FALSE otherwise.
+	 */
+	public static boolean containsAny(ListeningWhitelist whitelist, int... idList) {
+		if (whitelist != null) {
+			for (int i = 0; i < idList.length; i++) {
+				if (whitelist.getWhitelist().contains(idList[i]))
+					return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	@Override
 	public boolean equals(final Object obj){
 	    if(obj instanceof ListeningWhitelist){

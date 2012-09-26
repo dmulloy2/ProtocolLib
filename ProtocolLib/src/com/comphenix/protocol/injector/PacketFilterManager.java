@@ -74,7 +74,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		NETWORK_MANAGER_OBJECT,
 		
 		/**
-		 * Override the server handler object. Versatile, but slow.
+		 * Override the server handler object. Versatile, but a tad slower.
 		 */
 		NETWORK_SERVER_OBJECT;
 	}
@@ -105,6 +105,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	// The default class loader
 	private ClassLoader classLoader;
+	
+	// The last successful player hook
+	private PlayerInjector lastSuccessfulHook;
 	
 	// Error logger
 	private Logger logger;
@@ -142,6 +145,13 @@ public final class PacketFilterManager implements ProtocolManager {
 	 */
 	public void setPlayerHook(PlayerInjectHooks playerHook) {
 		this.playerHook = playerHook;
+		
+		// Make sure the current listeners are compatible
+		if (lastSuccessfulHook != null) {
+			for (PacketListener listener : packetListeners) {
+				checkListener(listener);
+			}
+		}
 	}
 
 	public Logger getLogger() {
@@ -176,10 +186,27 @@ public final class PacketFilterManager implements ProtocolManager {
 			if (hasReceiving) {
 				recievedListeners.addListener(listener, receiving);
 				enablePacketFilters(ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
+				
+				// We don't know if we've hooked any players yet
+				checkListener(listener);
 			}
 			
 			// Inform our injected hooks
 			packetListeners.add(listener);
+		}
+	}
+	
+	/**
+	 * Determine if a listener is valid or not.
+	 * @param listener - listener to check.
+	 * @throws IllegalStateException If the given listener's whitelist cannot be fulfilled.
+	 */
+	public void checkListener(PacketListener listener) {
+		try {
+			if (lastSuccessfulHook != null)
+				lastSuccessfulHook.checkListener(listener);
+		} catch (Exception e) {
+			throw new IllegalStateException("Registering listener " + PacketAdapter.getPluginName(listener) + " failed", e);
 		}
 	}
 	
@@ -367,15 +394,11 @@ public final class PacketFilterManager implements ProtocolManager {
 	/**
 	 * Used to construct a player hook.
 	 * @param player - the player to hook.
+	 * @param hook - the hook type.
 	 * @return A new player hoook
 	 * @throws IllegalAccessException Unable to do our reflection magic.
 	 */
-	protected PlayerInjector getPlayerHookInstance(Player player) throws IllegalAccessException {
-		return getHookInstance(player, playerHook);
-	}
-	
-	// Helper
-	private PlayerInjector getHookInstance(Player player, PlayerInjectHooks hook) throws IllegalAccessException {
+	protected PlayerInjector getHookInstance(Player player, PlayerInjectHooks hook) throws IllegalAccessException {
 		// Construct the correct player hook
 		switch (hook) {
 		case NETWORK_HANDLER_FIELDS: 
@@ -394,20 +417,42 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param player - player to hook.
 	 */
 	protected void injectPlayer(Player player) {
+		
+		PlayerInjector injector = null;
+		PlayerInjectHooks currentHook = playerHook;
+		boolean firstPlayer = lastSuccessfulHook == null;
+		
 		// Don't inject if the class has closed
 		if (!hasClosed && player != null && !playerInjection.containsKey(player)) {
-			try {
-				PlayerInjector injector = getPlayerHookInstance(player);
-
-				injector.injectManager();
-				playerInjection.put(player, injector);
-				connectionLookup.put(injector.getInputStream(false), player);
-				
-			} catch (IllegalAccessException e) {
-				// Mark this injection attempt as a failure
-				playerInjection.put(player, null);
-				logger.log(Level.SEVERE, "Unable to access fields.", e);
+			while (true) {
+				try {
+					injector = getHookInstance(player, currentHook);
+					injector.injectManager();
+					playerInjection.put(player, injector);
+					connectionLookup.put(injector.getInputStream(false), player);
+					break;
+					
+				} catch (Exception e) {
+					// Mark this injection attempt as a failure
+					logger.log(Level.SEVERE, "Player hook " + currentHook.toString() + " failed.", e);
+					
+					if (currentHook.ordinal() > 0) {
+						// Choose the previous player hook type
+						currentHook = PlayerInjectHooks.values()[currentHook.ordinal() - 1];
+						logger.log(Level.INFO, "Switching to " + currentHook.toString() + " instead.");
+					} else {
+						// UTTER FAILURE
+						playerInjection.put(player, null);
+						return;
+					}
+				}
 			}
+			
+			// Update values
+			if (injector != null)
+				lastSuccessfulHook = injector;
+			if (currentHook != playerHook || firstPlayer) 
+				setPlayerHook(currentHook);
 		}
 	}
 	
