@@ -12,7 +12,12 @@ import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.instances.CollectionGenerator;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.reflect.instances.ExistingGenerator;
+import com.comphenix.protocol.reflect.instances.PrimitiveGenerator;
 
 /**
  * Represents a player hook into the NetServerHandler class. 
@@ -21,7 +26,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
  */
 public class NetworkServerInjector extends PlayerInjector {
 
-	private static Method sendPacket;
+	private static Method sendPacketMethod;
 	
 	public NetworkServerInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
 		super(player, manager, sendingFilters);
@@ -33,8 +38,8 @@ public class NetworkServerInjector extends PlayerInjector {
 		
 		// Get the send packet method!
 		if (hasInitialized) {
-			if (sendPacket == null)
-				sendPacket = FuzzyReflection.fromObject(serverHandler).getMethodByParameters("sendPacket", Packet.class);
+			if (sendPacketMethod == null)
+				sendPacketMethod = FuzzyReflection.fromObject(serverHandler).getMethodByName("sendPacket.*");
 		}
 	}
 
@@ -45,7 +50,7 @@ public class NetworkServerInjector extends PlayerInjector {
 		if (serverDeleage != null) {
 			try {
 				// Note that invocation target exception is a wrapper for a checked exception
-				sendPacket.invoke(serverDeleage, packet);
+				sendPacketMethod.invoke(serverDeleage, packet);
 				
 			} catch (IllegalArgumentException e) {
 				throw e;
@@ -67,14 +72,17 @@ public class NetworkServerInjector extends PlayerInjector {
 		if (serverHandlerRef.getValue() instanceof Factory)
 			return;
 		
+		Class<?> serverClass = serverHandler.getClass();
+		
 		Enhancer ex = new Enhancer();
 		ex.setClassLoader(manager.getClassLoader());
-		ex.setSuperclass(serverHandler.getClass());
+		ex.setSuperclass(serverClass);
 		ex.setCallback(new MethodInterceptor() {
 			@Override
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+				
 				// The send packet method!
-				if (method.equals(sendPacket)) {
+				if (method.equals(sendPacketMethod)) {
 					Packet packet = (Packet) args[0];
 					
 					if (packet != null) {
@@ -97,14 +105,39 @@ public class NetworkServerInjector extends PlayerInjector {
 			}
 		});
 		
+		// Use the existing field values when we create our copy
+		DefaultInstances serverInstances = DefaultInstances.fromArray(
+				ExistingGenerator.fromObjectFields(serverHandler),
+				PrimitiveGenerator.INSTANCE, 
+				CollectionGenerator.INSTANCE);
+
+		Object proxyObject = serverInstances.forEnhancer(ex).getDefault(serverClass);
+		
 		// Inject it now
-		serverHandlerRef.setValue(ex.create());
+		if (proxyObject != null) {
+			serverHandlerRef.setValue(proxyObject);
+		}
 	}
 
 	@Override
 	public void cleanupAll() {
-		if (serverHandlerRef != null)
+		if (serverHandlerRef != null) {
 			serverHandlerRef.revertValue();
+		}
+		
+		try {
+			if (getNetHandler() != null) {
+				// Restore packet listener
+				try {
+					FieldUtils.writeField(netHandlerField, networkManager, serverHandlerRef.getOldValue(), true);
+				} catch (IllegalAccessException e) {
+					// Oh well
+					e.printStackTrace();
+				}
+			}
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

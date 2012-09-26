@@ -490,7 +490,7 @@ public final class PacketFilterManager implements ProtocolManager {
 						if (event instanceof PlayerJoinEvent)
 							injectPlayer(((PlayerJoinEvent) event).getPlayer());
 						else if (event instanceof PlayerQuitEvent)
-							injectPlayer(((PlayerQuitEvent) event).getPlayer());
+							uninjectPlayer(((PlayerQuitEvent) event).getPlayer());
 					}
 					return null;
 				}

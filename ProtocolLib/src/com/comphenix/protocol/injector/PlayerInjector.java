@@ -127,7 +127,7 @@ abstract class PlayerInjector {
 	 * @return Current net handler.
 	 * @throws IllegalAccessException Unable to find or retrieve net handler.
 	 */
-	private Object getNetHandler() throws IllegalAccessException {
+	protected Object getNetHandler() throws IllegalAccessException {
 		
 		// What a mess
 		try {
