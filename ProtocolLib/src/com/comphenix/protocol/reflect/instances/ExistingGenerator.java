@@ -40,8 +40,9 @@ public class ExistingGenerator implements InstanceProvider {
 			try {
 				Object value = FieldUtils.readField(field, object, true);
 				
+				// Use the type of the field, not the object itself
 				if (value != null)
-					generator.addObject(value);
+					generator.addObject(field.getType(), value);
 				
 			} catch (Exception e) {
 				// Yes, swallow it. No, really.
@@ -72,6 +73,11 @@ public class ExistingGenerator implements InstanceProvider {
 		existingValues.put(value.getClass(), value);
 	}
 
+	private void addObject(Class<?> type, Object value) {
+		existingValues.put(type, value);
+	}
+
+	
 	@Override
 	public Object create(@Nullable Class<?> type) {
 		

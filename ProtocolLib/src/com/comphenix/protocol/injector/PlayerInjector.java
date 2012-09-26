@@ -132,21 +132,26 @@ abstract class PlayerInjector {
 		// What a mess
 		try {
 			if (netHandlerField == null)
-				netHandlerField = FuzzyReflection.fromClass(networkManagerField.getType(), true).
+				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
 									getFieldByType("net\\.minecraft\\.NetHandler");
 		} catch (RuntimeException e1) {
+			// Swallow it
+		}
+		
+		// Second attempt
+		if (netHandlerField == null) {
 			try {
 				// Well, that sucks. Try just Minecraft objects then.
-				netHandlerField = FuzzyReflection.fromClass(networkManagerField.getType(), true).
+				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
 									 getFieldByType(FuzzyReflection.MINECRAFT_OBJECT);
 				
 			} catch (RuntimeException e2) {
-				return new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());
+				throw new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());
 			}
 		}
 		
 		// Get the handler
-		if (netHandler != null)
+		if (netHandler == null)
 			netHandler = FieldUtils.readField(netHandlerField, networkManager, true);
 		return netHandler;
 	}

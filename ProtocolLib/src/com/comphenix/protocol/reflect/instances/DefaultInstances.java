@@ -20,8 +20,6 @@ package com.comphenix.protocol.reflect.instances;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-import javax.print.CancelablePrintJob;
-
 import net.sf.cglib.proxy.Enhancer;
 
 import com.google.common.base.Objects;

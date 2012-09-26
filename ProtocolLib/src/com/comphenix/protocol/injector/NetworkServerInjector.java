@@ -112,10 +112,13 @@ public class NetworkServerInjector extends PlayerInjector {
 				CollectionGenerator.INSTANCE);
 
 		Object proxyObject = serverInstances.forEnhancer(ex).getDefault(serverClass);
-		
+
 		// Inject it now
 		if (proxyObject != null) {
 			serverHandlerRef.setValue(proxyObject);
+		} else {
+			throw new RuntimeException(
+					"Cannot hook player: Unable to find a valid constructor for the NetServerHandler object.");
 		}
 	}
 
