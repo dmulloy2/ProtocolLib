@@ -42,7 +42,7 @@ import net.sf.cglib.asm.*;
 //			case 6: return (TField) (Object) target.g;
 //			case 7: return (TField) (Object) target.h;
 //			default:
-//				throw new IllegalArgumentException("Invalid index " + fieldIndex);
+//				throw new FieldAccessException("Invalid index " + fieldIndex);
 //			}
 //		}
 //	
@@ -61,7 +61,7 @@ import net.sf.cglib.asm.*;
 //			case 6: target.g = (Byte) value; break;
 //			case 7: target.h = (Integer) value; break;
 //			default:
-//				throw new IllegalArgumentException("Invalid index " + index);
+//				throw new FieldAccessException("Invalid index " + index);
 //			}
 //			
 //			// Chaining
@@ -180,6 +180,16 @@ public final class StructureCompiler {
 		String className = "CompiledStructure$" + targetType.getSimpleName() + source.getFieldType().getSimpleName();
 		String targetSignature = Type.getDescriptor(targetType);
 		String targetName = targetType.getName().replace('.', '/');
+		
+		try {
+			// This class might have been generated before. Try to load it.
+			Class<?> before = loader.loadClass(PACKAGE_NAME.replace('/', '.') + "." + className);
+			
+			if (before != null)
+				return before;
+		} catch (ClassNotFoundException e) {
+			// That's ok. 
+		}
 		
 		cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, PACKAGE_NAME + "/" + className, 
 				"<TField:Ljava/lang/Object;>L" + COMPILED_CLASS + "<TTField;>;", 
