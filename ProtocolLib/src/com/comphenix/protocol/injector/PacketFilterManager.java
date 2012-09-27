@@ -433,8 +433,17 @@ public final class PacketFilterManager implements ProtocolManager {
 					break;
 					
 				} catch (Exception e) {
+
 					// Mark this injection attempt as a failure
 					logger.log(Level.SEVERE, "Player hook " + currentHook.toString() + " failed.", e);
+					
+					// Clean up as much as possible
+					try {
+						if (injector != null)
+							injector.cleanupAll();
+					} catch (Exception e2) {
+						logger.log(Level.WARNING, "Cleaing up after player hook failed.", e);
+					}
 					
 					if (currentHook.ordinal() > 0) {
 						// Choose the previous player hook type
