@@ -1,4 +1,4 @@
-package com.comphenix.protocol.compiler;
+package com.comphenix.protocol.reflect.compiler;
 
 import net.sf.cglib.asm.*;
 

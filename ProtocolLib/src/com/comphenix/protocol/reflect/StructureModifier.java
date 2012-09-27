@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.comphenix.protocol.compiler.BackgroundCompiler;
+import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;

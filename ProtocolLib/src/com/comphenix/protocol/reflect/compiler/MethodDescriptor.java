@@ -1,4 +1,4 @@
-package com.comphenix.protocol.compiler;
+package com.comphenix.protocol.reflect.compiler;
 
 import java.util.HashMap;
 import java.util.Map;

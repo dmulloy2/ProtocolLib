@@ -1,4 +1,4 @@
-package com.comphenix.protocol.compiler;
+package com.comphenix.protocol.reflect.compiler;
 
 import java.lang.reflect.Field;
 import java.util.Map;

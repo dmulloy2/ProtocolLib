@@ -25,9 +25,9 @@ import org.bukkit.Server;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.comphenix.protocol.compiler.BackgroundCompiler;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
+import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 
 public class ProtocolLibrary extends JavaPlugin {
 	
