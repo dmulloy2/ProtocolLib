@@ -180,10 +180,12 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (hasSending || hasReceiving) {
 			// Add listeners and hooks
 			if (hasSending) {
+				verifyWhitelist(listener, sending);
 				sendingListeners.addListener(listener, sending);
 				enablePacketFilters(ConnectionSide.SERVER_SIDE, sending.getWhitelist());
 			}
 			if (hasReceiving) {
+				verifyWhitelist(listener, receiving);
 				recievedListeners.addListener(listener, receiving);
 				enablePacketFilters(ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
 				
@@ -193,6 +195,20 @@ public final class PacketFilterManager implements ProtocolManager {
 			
 			// Inform our injected hooks
 			packetListeners.add(listener);
+		}
+	}
+	
+	/**
+	 * Determine if the packet IDs in a whitelist is valid.
+	 * @param whitelist - whitelist of packet IDs.
+	 */
+	private void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist) {
+		for (Integer id : whitelist.getWhitelist()) {
+			if (id >= 256 || id < 0) {
+				throw new IllegalArgumentException(String.format("Invalid packet id %s in listener %s.", 
+							id, PacketAdapter.getPluginName(listener))
+				);
+			}
 		}
 	}
 	
