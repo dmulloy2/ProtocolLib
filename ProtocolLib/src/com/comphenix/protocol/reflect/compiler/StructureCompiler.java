@@ -116,6 +116,7 @@ public final class StructureCompiler {
 	private static String PACKAGE_NAME = "com/comphenix/protocol/reflect/compiler";
 	private static String SUPER_CLASS = "com/comphenix/protocol/reflect/StructureModifier";
 	private static String COMPILED_CLASS = PACKAGE_NAME + "/CompiledStructureModifier";
+	private static String FIELD_EXCEPTION_CLASS = "com/comphenix/protocol/reflect/FieldAccessException";
 	
 	/**
 	 * Construct a structure compiler.
@@ -254,7 +255,7 @@ public final class StructureCompiler {
 		String methodDescriptor = "(ILjava/lang/Object;)L" + SUPER_CLASS + ";";
 		String methodSignature = "(ITTField;)L" + SUPER_CLASS + "<TTField;>;";
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, "write", methodDescriptor, methodSignature, 
-									new String[] { "com/comphenix/protocol/reflect/FieldAccessException" });
+									new String[] { FIELD_EXCEPTION_CLASS });
 		BoxingHelper boxingHelper = new BoxingHelper(mv);
 		
 		mv.visitCode();
@@ -316,7 +317,7 @@ public final class StructureCompiler {
 		
 		mv.visitLabel(errorLabel);
 		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		mv.visitTypeInsn(Opcodes.NEW, "java/lang/IllegalArgumentException");
+		mv.visitTypeInsn(Opcodes.NEW, FIELD_EXCEPTION_CLASS);
 		mv.visitInsn(Opcodes.DUP);
 		mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
 		mv.visitInsn(Opcodes.DUP);
@@ -325,7 +326,7 @@ public final class StructureCompiler {
 		mv.visitVarInsn(Opcodes.ILOAD, 1);
 		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
 		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
 		mv.visitInsn(Opcodes.ATHROW);
 		
 		mv.visitLabel(returnLabel);
@@ -388,7 +389,7 @@ public final class StructureCompiler {
 
 		mv.visitLabel(errorLabel);
 		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		mv.visitTypeInsn(Opcodes.NEW, "java/lang/IllegalArgumentException");
+		mv.visitTypeInsn(Opcodes.NEW, FIELD_EXCEPTION_CLASS);
 		mv.visitInsn(Opcodes.DUP);
 		mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
 		mv.visitInsn(Opcodes.DUP);
@@ -397,7 +398,7 @@ public final class StructureCompiler {
 		mv.visitVarInsn(Opcodes.ILOAD, 1);
 		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
 		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
 		mv.visitInsn(Opcodes.ATHROW);
 		mv.visitMaxs(5, 3);
 		mv.visitEnd();
