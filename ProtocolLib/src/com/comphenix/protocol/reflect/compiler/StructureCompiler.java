@@ -113,7 +113,7 @@ public final class StructureCompiler {
 	private ClassLoader loader;
 	
 	// References to other classes
-	private static String PACKAGE_NAME = "com/comphenix/protocol/compiler";
+	private static String PACKAGE_NAME = "com/comphenix/protocol/reflect/compiler";
 	private static String SUPER_CLASS = "com/comphenix/protocol/reflect/StructureModifier";
 	private static String COMPILED_CLASS = PACKAGE_NAME + "/CompiledStructureModifier";
 	
