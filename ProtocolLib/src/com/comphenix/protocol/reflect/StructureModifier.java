@@ -21,15 +21,23 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.comphenix.protocol.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 
+/**
+ * Provides list-oriented access to the fields of a Minecraft packet.
+ * <p>
+ * Implemented by using reflection. Use a CompiledStructureModifier, if speed is essential.
+ * 
+ * @author Kristian
+ * @param <TField> Type of the fields to retrieve.
+ */
 @SuppressWarnings("rawtypes")
 public class StructureModifier<TField> {
 	
@@ -45,7 +53,7 @@ public class StructureModifier<TField> {
 	protected List<Field> data = new ArrayList<Field>();
 	
 	// Improved default values
-	protected Set<Field> defaultFields;
+	protected Map<Field, Integer> defaultFields;
 	
 	// Cache of previous types
 	protected Map<Class, StructureModifier> subtypeCache;
@@ -58,9 +66,9 @@ public class StructureModifier<TField> {
 	 */
 	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault) {
 		List<Field> fields = getFields(targetType, superclassExclude);
-		Set<Field> defaults = requireDefault ? generateDefaultFields(fields) : new HashSet<Field>();
+		Map<Field, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<Field, Integer>();
 		
-		initialize(targetType, Object.class, fields, defaults, null, new HashMap<Class, StructureModifier>());
+		initialize(targetType, Object.class, fields, defaults, null, new ConcurrentHashMap<Class, StructureModifier>());
 	}
 	
 	/**
@@ -89,7 +97,7 @@ public class StructureModifier<TField> {
 	 * @param subTypeCache - a structure modifier cache.
 	 */
 	protected void initialize(Class targetType, Class fieldType, 
-			  List<Field> data, Set<Field> defaultFields,
+			  List<Field> data, Map<Field, Integer> defaultFields,
 			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache) {
 		this.targetType = targetType;
 		this.fieldType = fieldType;
@@ -213,7 +221,7 @@ public class StructureModifier<TField> {
 		DefaultInstances generator = DefaultInstances.DEFAULT;
 		
 		// Write a default instance to every field
-		for (Field field : defaultFields) {
+		for (Field field : defaultFields.keySet()) {
 			try {
 				FieldUtils.writeField(field, target, 
 						generator.getDefault(field.getType()), true);
@@ -239,22 +247,32 @@ public class StructureModifier<TField> {
 		// Do we need to update the cache?
 		if (result == null) {
 			List<Field> filtered = new ArrayList<Field>();
-			Set<Field> defaults = new HashSet<Field>();
+			Map<Field, Integer> defaults = new HashMap<Field, Integer>();
+			int index = 0;
 			
 			for (Field field : data) {
 				if (fieldType != null && fieldType.isAssignableFrom(field.getType())) {
 					filtered.add(field);
 					
-					if (defaultFields.contains(field))
-						defaults.add(field);
+					// Don't use the original index
+					if (defaultFields.containsKey(field))
+						defaults.put(field, index);
 				}
+				
+				// Keep track of the field index
+				index++;
 			}
 			
 			// Cache structure modifiers
 			result = withFieldType(fieldType, filtered, defaults, converter);
 			
-			if (fieldType != null)
+			if (fieldType != null) {
 				subtypeCache.put(fieldType, result);
+				
+				// Automatically compile the structure modifier
+				if (BackgroundCompiler.getInstance() != null) 
+					BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
+			}
 		}
 		
 		// Add the target too
@@ -320,11 +338,11 @@ public class StructureModifier<TField> {
 	 */
 	protected <T> StructureModifier<T> withFieldType(
 			Class fieldType, List<Field> filtered, 
-			Set<Field> defaults, EquivalentConverter<T> converter) {
+			Map<Field, Integer> defaults, EquivalentConverter<T> converter) {
 		
 		StructureModifier<T> result = new StructureModifier<T>();
 		result.initialize(targetType, fieldType, filtered, defaults, 
-						  converter, new HashMap<Class, StructureModifier>());
+						  converter, new ConcurrentHashMap<Class, StructureModifier>());
 		return result;
 	}
 	
@@ -387,10 +405,11 @@ public class StructureModifier<TField> {
 	}
 	
 	// Used to generate plausible default values
-	private static Set<Field> generateDefaultFields(List<Field> fields) {
+	private static Map<Field, Integer> generateDefaultFields(List<Field> fields) {
 		
-		Set<Field> requireDefaults = new HashSet<Field>();
+		Map<Field, Integer> requireDefaults = new HashMap<Field, Integer>();
 		DefaultInstances generator = DefaultInstances.DEFAULT;
+		int index = 0;
 		
 		for (Field field : fields) {
 			Class<?> type = field.getType();
@@ -400,9 +419,12 @@ public class StructureModifier<TField> {
 				// Next, see if we actually can generate a default value
 				if (generator.getDefault(type) != null) {
 					// If so, require it
-					requireDefaults.add(field);
+					requireDefaults.put(field, index);
 				}
 			}
+			
+			// Increment field index
+			index++;
 		}
 		
 		return requireDefaults;

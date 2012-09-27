@@ -25,6 +25,7 @@ import org.bukkit.Server;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.comphenix.protocol.compiler.BackgroundCompiler;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 
@@ -39,6 +40,9 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Metrics and statistisc
 	private Statistics statistisc;
 	
+	// Structure compiler
+	private BackgroundCompiler backgroundCompiler;
+	
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
@@ -49,6 +53,12 @@ public class ProtocolLibrary extends JavaPlugin {
 	public void onEnable() {
 		Server server = getServer();
 		PluginManager manager = server.getPluginManager();
+		
+		// Initialize background compiler
+		if (backgroundCompiler == null) {
+			backgroundCompiler = new BackgroundCompiler(getClassLoader());
+			BackgroundCompiler.setInstance(backgroundCompiler);
+		}
 		
 		// Notify server managers of incompatible plugins
 		checkForIncompatibility(manager);
@@ -83,6 +93,13 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	@Override
 	public void onDisable() {
+		// Disable compiler
+		if (backgroundCompiler != null) {
+			backgroundCompiler.shutdownAll();
+			backgroundCompiler = null;
+			BackgroundCompiler.setInstance(null);
+		}
+		
 		protocolManager.close();
 		protocolManager = null;
 		statistisc = null;
