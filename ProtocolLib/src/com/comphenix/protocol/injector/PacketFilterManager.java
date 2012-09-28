@@ -97,8 +97,8 @@ public final class PacketFilterManager implements ProtocolManager {
 	private Set<Integer> sendingFilters = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
 	
 	// The two listener containers
-	private ConcurrentListenerMultimap recievedListeners = new ConcurrentListenerMultimap();
-	private ConcurrentListenerMultimap sendingListeners = new ConcurrentListenerMultimap();
+	private SortedPacketListenerList recievedListeners = new SortedPacketListenerList();
+	private SortedPacketListenerList sendingListeners = new SortedPacketListenerList();
 	
 	// Whether or not this class has been closed
 	private boolean hasClosed;
