@@ -137,10 +137,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		}
 	}
 	
-	/**
-	 * Retrieve the current async packet filter manager.
-	 * @return Async filter manager.
-	 */
+	@Override
 	public AsyncFilterManager getAsyncFilterManager() {
 		return asyncFilterManager;
 	}
@@ -313,9 +310,11 @@ public final class PacketFilterManager implements ProtocolManager {
 		// Process synchronous events
 		packetListeners.invokePacketRecieving(logger, event);
 		
-		// To cancel the asynchronous processing, use the async marker
+		// To cancel asynchronous processing, use the async marker
 		if (!event.isCancelled() && !hasAsyncCancelled(event.getAsyncMarker())) {
 			asyncFilterManager.enqueueSyncPacket(event, event.getAsyncMarker());
+
+			// The above makes a copy of the event, so it's safe to cancel it
 			event.setCancelled(true);
 		}
 	}

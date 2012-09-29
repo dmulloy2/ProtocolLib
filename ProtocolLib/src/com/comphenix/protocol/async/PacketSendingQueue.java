@@ -42,7 +42,7 @@ class PacketSendingQueue {
 				AsyncMarker marker = current.getAsyncMarker();
 				
 				if (marker.isProcessed() || marker.hasExpired()) {
-					if (marker.isProcessed())
+					if (marker.isProcessed() && !current.isCancelled())
 						sendPacket(current);
 					
 					sendingQueue.poll();

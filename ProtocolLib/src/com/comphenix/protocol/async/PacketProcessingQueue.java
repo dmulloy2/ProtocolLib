@@ -79,6 +79,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 				Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketID());
 				AsyncMarker marker = packet.getAsyncMarker();
 				
+				// Yes, removing the marker will cause the chain to stop
 				if (list != null) {
 					Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
 					
@@ -89,7 +90,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 					}
 				}
 				
-				// The packet has no listeners. Just send it.
+				// The packet has no further listeners. Just send it.
 				sendingQueue.signalPacketUpdate(packet);
 				signalProcessingDone();
 				

@@ -60,6 +60,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 		super(origial.source);
 		this.packet = origial.packet;
 		this.player = origial.player;
+		this.cancel = origial.cancel;
 		this.serverPacket = origial.serverPacket;
 		this.asyncMarker = asyncMarker;
 		this.asynchronous = true;
@@ -156,7 +157,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	/**
 	 * Retrieve the asynchronous marker.
 	 * <p>
-	 * If the packet is synchronous, this marker will be used to schedule an asynchronous event. In this
+	 * If the packet is synchronous, this marker will be used to schedule an asynchronous event. In the following
 	 * asynchronous event, the marker is used to correctly pass the packet around to the different threads.
 	 * <p>
 	 * Note that if there are no asynchronous events that can receive this packet, the marker is NULL.
@@ -164,19 +165,6 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public AsyncMarker getAsyncMarker() {
 		return asyncMarker;
-	}
-	
-	/**
-	 * Set the asynchronous marker. 
-	 * <p>
-	 * If the marker is non-null at the end of an synchronous event processing, the packet will be scheduled
-	 * to be processed asynchronously with the given settings.
-	 * <p>
-	 * Note that if there are no asynchronous events that can receive this packet, the marker should be NULL. 
-	 * @param asyncMarker - the new asynchronous marker, or NULL.
-	 */
-	public void setAsyncMarker(AsyncMarker asyncMarker) {
-		this.asyncMarker = asyncMarker;
 	}
 
 	/**
