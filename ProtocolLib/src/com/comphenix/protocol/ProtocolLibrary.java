@@ -25,6 +25,7 @@ import org.bukkit.Server;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
@@ -98,7 +99,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			asyncPacketTask = server.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
 				@Override
 				public void run() {
-					protocolManager.getAsyncFilterManager().sendProcessedPackets();
+					AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
+					manager.sendProcessedPackets();
 				}
 			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
 		

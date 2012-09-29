@@ -139,7 +139,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	}
 	
 	@Override
-	public AsynchronousManager getAsyncFilterManager() {
+	public AsynchronousManager getAsynchronousManager() {
 		return asyncFilterManager;
 	}
 	

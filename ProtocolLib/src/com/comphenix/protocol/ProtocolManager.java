@@ -127,5 +127,5 @@ public interface ProtocolManager extends PacketStream {
 	 * Retrieve the current asyncronous packet manager.
 	 * @return Asyncronous packet manager.
 	 */
-	public AsynchronousManager getAsyncFilterManager();
+	public AsynchronousManager getAsynchronousManager();
 }
