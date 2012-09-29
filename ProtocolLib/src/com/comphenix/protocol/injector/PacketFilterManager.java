@@ -44,6 +44,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.scheduler.BukkitScheduler;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.ProtocolManager;
@@ -121,7 +122,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Logger logger) {
+	public PacketFilterManager(ClassLoader classLoader, BukkitScheduler scheduler, Logger logger) {
 		if (logger == null)
 			throw new IllegalArgumentException("logger cannot be NULL.");
 		if (classLoader == null)
@@ -132,7 +133,7 @@ public final class PacketFilterManager implements ProtocolManager {
 			this.classLoader = classLoader;
 			this.logger = logger;
 			this.packetInjector = new PacketInjector(classLoader, this, connectionLookup);
-			this.asyncFilterManager = new AsyncFilterManager(logger, this);
+			this.asyncFilterManager = new AsyncFilterManager(logger, scheduler, this);
 		} catch (IllegalAccessException e) {
 			logger.log(Level.SEVERE, "Unable to initialize packet injector.", e);
 		}

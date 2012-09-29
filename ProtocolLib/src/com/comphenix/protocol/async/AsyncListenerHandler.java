@@ -8,6 +8,7 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 /**
  * Represents a handler for an asynchronous event.
@@ -179,5 +180,15 @@ public class AsyncListenerHandler {
 	 */
 	public Plugin getPlugin() {
 		return listener != null ? listener.getPlugin() : null;
+	}
+
+	/**
+	 * Start the asynchronous listener using the Bukkit scheduler.
+	 */
+	public void start() {
+		if (listener.getPlugin() == null)
+			throw new IllegalArgumentException("Cannot start task without a valid plugin.");
+		
+		filterManager.scheduleAsyncTask(listener.getPlugin(), getListenerLoop());
 	}
 }

@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitScheduler;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
@@ -35,20 +36,27 @@ public class AsyncFilterManager implements AsynchronousManager {
 	// The likely main thread
 	private Thread mainThread;
 	
+	// Default scheduler
+	private BukkitScheduler scheduler;
+	
 	// Current packet index
 	private AtomicInteger currentSendingIndex = new AtomicInteger();
 	
 	// Whether or not we're currently cleaning up
 	private volatile boolean cleaningUp;
 	
-	public AsyncFilterManager(Logger logger, PacketStream packetStream) {
+	public AsyncFilterManager(Logger logger, BukkitScheduler scheduler, PacketStream packetStream) {
+		
+		// Server packets are synchronized already
 		this.serverQueue = new PacketSendingQueue(false);
 		// Client packets must be synchronized
 		this.clientQueue = new PacketSendingQueue(true); 
 		
 		this.serverProcessingQueue = new PacketProcessingQueue(serverQueue);
 		this.clientProcessingQueue = new PacketProcessingQueue(clientQueue);
+		
 		this.packetStream = packetStream;
+		this.scheduler = scheduler;
 		
 		this.logger = logger;
 		this.mainThread = Thread.currentThread();
@@ -156,6 +164,15 @@ public class AsyncFilterManager implements AsynchronousManager {
 	@Override
 	public Set<Integer> getReceivingFilters() {
 		return clientProcessingQueue.keySet();
+	}
+	
+	/**
+	 * Used to create a default asynchronous task.
+	 * @param plugin - the calling plugin.
+	 * @param runnable - the runnable.
+	 */
+	public void scheduleAsyncTask(Plugin plugin, Runnable runnable) {
+		scheduler.scheduleAsyncDelayedTask(plugin, runnable);
 	}
 	
 	@Override
