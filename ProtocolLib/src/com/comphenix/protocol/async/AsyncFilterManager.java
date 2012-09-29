@@ -1,5 +1,6 @@
 package com.comphenix.protocol.async;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -177,7 +178,8 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	@Override
 	public boolean hasAsynchronousListeners(PacketEvent packet) {
-		return getProcessingQueue(packet).getListener(packet.getPacketID()).size() > 0;
+		 Collection<?> list = getProcessingQueue(packet).getListener(packet.getPacketID());
+		 return list != null && list.size() > 0;
 	}
 	
 	/**

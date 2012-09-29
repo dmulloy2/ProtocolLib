@@ -92,7 +92,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	private void createAsyncTask(Server server) {
 		try {
-			if (asyncPacketTask < 0)
+			if (asyncPacketTask >= 0)
 				throw new IllegalStateException("Async task has already been created");
 			
 			// Attempt to create task

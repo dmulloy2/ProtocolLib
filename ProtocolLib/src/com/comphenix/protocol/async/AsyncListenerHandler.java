@@ -8,7 +8,6 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 /**
  * Represents a handler for an asynchronous event.
