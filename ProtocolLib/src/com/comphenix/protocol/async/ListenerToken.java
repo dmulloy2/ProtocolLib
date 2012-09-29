@@ -95,7 +95,7 @@ class ListenerToken {
 			mainLoop:
 			while (!cancelled) {
 				PacketEvent packet = queuedPackets.take();
-				AsyncPacket marker = packet.getAsyncMarker();
+				AsyncMarker marker = packet.getAsyncMarker();
 				
 				// Handle cancel requests
 				if (packet == null || marker == null || !packet.isAsynchronous()) {

@@ -77,7 +77,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 			// Any packet queued?
 			if (packet != null) {
 				Collection<PrioritizedListener<ListenerToken>> list = getListener(packet.getPacketID());
-				AsyncPacket marker = packet.getAsyncMarker();
+				AsyncMarker marker = packet.getAsyncMarker();
 				
 				if (list != null) {
 					Iterator<PrioritizedListener<ListenerToken>> iterator = list.iterator();

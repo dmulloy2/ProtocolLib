@@ -27,7 +27,18 @@ class PacketSendingQueue {
 	public synchronized void signalPacketUpdate(PacketEvent packetUpdated) {
 		// Mark this packet as finished
 		packetUpdated.getAsyncMarker().setProcessed(true);
-		signalPacketUpdates();
+
+		// Transmit as many packets as we can
+		while (true) {
+			PacketEvent current = sendingQueue.peek();
+			
+			if (current != null && current.getAsyncMarker().isProcessed()) {
+				sendPacket(current);
+				sendingQueue.poll();
+			} else {
+				break;
+			}
+		}
 	}
 	
 	/**
@@ -38,12 +49,7 @@ class PacketSendingQueue {
 			PacketEvent current = sendingQueue.poll();
 			
 			if (current != null) {
-				// Just print the error
-				try {
-					current.getAsyncMarker().sendPacket(current);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				sendPacket(current);
 			} else {
 				break;
 			}
@@ -51,29 +57,23 @@ class PacketSendingQueue {
 	}
 	
 	/**
-	 * Invoked when potentially every packet is finished.
+	 * Transmit a packet, if it hasn't already.
+	 * @param event - the packet to transmit.
 	 */
-	private void signalPacketUpdates() {
-		// Transmit as many packets as we can
-		while (true) {
-			PacketEvent current = sendingQueue.peek();
-			
-			if (current != null && current.getAsyncMarker().isProcessed()) {
-				// Just print the error
-				try {
-					current.getAsyncMarker().sendPacket(current);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				
-				sendingQueue.poll();
-				
-			} else {
-				break;
-			}
-		}
+	private void sendPacket(PacketEvent event) {
 		
-		// And we're done
+		AsyncMarker marker = event.getAsyncMarker();
+		
+		try {
+			// Don't send a packet twice
+			if (marker != null && !marker.isTransmitted()) {
+				marker.sendPacket(event);
+			}
+			
+		} catch (IOException e) {
+			// Just print the error
+			e.printStackTrace();
+		}
 	}
 
 	/**

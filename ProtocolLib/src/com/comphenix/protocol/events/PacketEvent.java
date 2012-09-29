@@ -25,7 +25,7 @@ import java.util.EventObject;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
-import com.comphenix.protocol.async.AsyncPacket;
+import com.comphenix.protocol.async.AsyncMarker;
 
 public class PacketEvent extends EventObject implements Cancellable {
 	/**
@@ -38,7 +38,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	private boolean serverPacket;
 	private boolean cancel;
 	
-	private AsyncPacket asyncMarker;
+	private AsyncMarker asyncMarker;
 	private boolean asynchronous;
 	
 	/**
@@ -56,7 +56,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 		this.serverPacket = serverPacket;
 	}
 	
-	private PacketEvent(PacketEvent origial, AsyncPacket asyncMarker) {
+	private PacketEvent(PacketEvent origial, AsyncMarker asyncMarker) {
 		super(origial.source);
 		this.packet = origial.packet;
 		this.player = origial.player;
@@ -93,7 +93,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @param marker - the asynchronous marker.
 	 * @return The new packet event.
 	 */
-	public static PacketEvent fromSynchronous(PacketEvent event, AsyncPacket marker) {
+	public static PacketEvent fromSynchronous(PacketEvent event, AsyncMarker marker) {
 		return new PacketEvent(event, marker);
 	}
 	
@@ -160,7 +160,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * asynchronous event, the marker is used to correctly pass the packet around to the different threads.
 	 * @return The current asynchronous marker.
 	 */
-	public AsyncPacket getAsyncMarker() {
+	public AsyncMarker getAsyncMarker() {
 		return asyncMarker;
 	}
 
@@ -171,7 +171,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * to be processed asynchronously with the given settings. 
 	 * @param asyncMarker - the new asynchronous marker.
 	 */
-	public void setAsyncMarker(AsyncPacket asyncMarker) {
+	public void setAsyncMarker(AsyncMarker asyncMarker) {
 		this.asyncMarker = asyncMarker;
 	}
 

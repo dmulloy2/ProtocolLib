@@ -62,7 +62,7 @@ public class AsyncFilterManager {
 	 * @param syncPacket - synchronous packet event.
 	 * @param asyncMarker - the asynchronous marker to use.
 	 */
-	public void enqueueSyncPacket(PacketEvent syncPacket, AsyncPacket asyncMarker) {
+	public void enqueueSyncPacket(PacketEvent syncPacket, AsyncMarker asyncMarker) {
 		PacketEvent newEvent = PacketEvent.fromSynchronous(syncPacket, asyncMarker);
 		
 		// Start the process
@@ -76,14 +76,14 @@ public class AsyncFilterManager {
 	 * @param timeoutDelta - how long (in ms) until the packet expire.
 	 * @return An async marker.
 	 */
-	public AsyncPacket createAsyncMarker(long sendingDelta, long timeoutDelta) {
+	public AsyncMarker createAsyncMarker(long sendingDelta, long timeoutDelta) {
 		return createAsyncMarker(sendingDelta, timeoutDelta, 
 								 currentSendingIndex.incrementAndGet(), System.currentTimeMillis());
 	}
 	
 	// Helper method
-	private AsyncPacket createAsyncMarker(long sendingDelta, long timeoutDelta, long sendingIndex, long currentTime) {
-		return new AsyncPacket(packetStream, sendingIndex, sendingDelta, System.currentTimeMillis(), timeoutDelta);
+	private AsyncMarker createAsyncMarker(long sendingDelta, long timeoutDelta, long sendingIndex, long currentTime) {
+		return new AsyncMarker(packetStream, sendingIndex, sendingDelta, System.currentTimeMillis(), timeoutDelta);
 	}
 	
 	public PacketStream getPacketStream() {
