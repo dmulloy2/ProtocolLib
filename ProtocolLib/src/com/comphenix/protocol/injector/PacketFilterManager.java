@@ -47,6 +47,7 @@ import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -284,7 +285,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketRecieving(PacketEvent event) {
-		recievedListeners.invokePacketRecieving(logger, event);
+		handlePacket(recievedListeners, event);
 	}
 	
 	/**
@@ -292,7 +293,36 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketSending(PacketEvent event) {
-		sendingListeners.invokePacketSending(logger, event);
+		handlePacket(sendingListeners, event);
+	}
+	
+	/**
+	 * Handle a packet sending or receiving event.
+	 * <p>
+	 * Note that we also handle asynchronous events.
+	 * @param packetListeners - packet listeners that will receive this event.
+	 * @param event - the evnet to broadcast.
+	 */
+	private void handlePacket(SortedPacketListenerList packetListeners, PacketEvent event) {
+		
+		// By default, asynchronous packets are queued for processing
+		if (asyncFilterManager.hasAsynchronousListeners(event)) {
+			event.setAsyncMarker(asyncFilterManager.createAsyncMarker());
+		}
+		
+		// Process synchronous events
+		packetListeners.invokePacketRecieving(logger, event);
+		
+		// To cancel the asynchronous processing, use the async marker
+		if (!event.isCancelled() && !hasAsyncCancelled(event.getAsyncMarker())) {
+			asyncFilterManager.enqueueSyncPacket(event, event.getAsyncMarker());
+			event.setCancelled(true);
+		}
+	}
+	
+	// NULL marker mean we're dealing with no asynchronous listeners 
+	private boolean hasAsyncCancelled(AsyncMarker marker) {
+		return marker == null || marker.isAsyncCancelled();
 	}
 	
 	/**

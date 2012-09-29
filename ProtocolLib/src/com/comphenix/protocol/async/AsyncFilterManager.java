@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketStream;
+import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
@@ -16,8 +17,11 @@ import com.comphenix.protocol.events.PacketListener;
  */
 public class AsyncFilterManager {
 
-	private PacketProcessingQueue processingQueue;
-	private PacketSendingQueue sendingQueue;
+	private PacketProcessingQueue serverProcessingQueue;
+	private PacketSendingQueue serverQueue;
+	
+	private PacketProcessingQueue clientProcessingQueue;
+	private PacketSendingQueue clientQueue;
 	
 	private PacketStream packetStream;
 	private Logger logger;
@@ -29,8 +33,10 @@ public class AsyncFilterManager {
 	private AtomicInteger currentSendingIndex = new AtomicInteger();
 	
 	public AsyncFilterManager(Logger logger, PacketStream packetStream) {
-		this.sendingQueue = new PacketSendingQueue();
-		this.processingQueue = new PacketProcessingQueue(sendingQueue);
+		this.serverQueue = new PacketSendingQueue();
+		this.clientQueue = new PacketSendingQueue();
+		this.serverProcessingQueue = new PacketProcessingQueue(serverQueue);
+		this.clientProcessingQueue = new PacketProcessingQueue(clientQueue);
 		this.packetStream = packetStream;
 		
 		this.logger = logger;
@@ -40,10 +46,23 @@ public class AsyncFilterManager {
 	public ListenerToken registerAsyncHandler(Plugin plugin, PacketListener listener) {
 		ListenerToken token = new ListenerToken(plugin, mainThread, this, listener);
 		
-		processingQueue.addListener(token, listener.getSendingWhitelist());
+		// Add listener to either or both processing queue
+		if (hasValidWhitelist(listener.getSendingWhitelist()))
+			serverProcessingQueue.addListener(token, listener.getSendingWhitelist());
+		if (hasValidWhitelist(listener.getReceivingWhitelist()))
+			clientProcessingQueue.addListener(token, listener.getReceivingWhitelist());
+		
 		return token;
 	}
 	
+	private boolean hasValidWhitelist(ListeningWhitelist whitelist) {
+		return whitelist != null && whitelist.getWhitelist().size() > 0;
+	}
+	
+	/**
+	 * Unregisters and closes the given asynchronous handler.
+	 * @param listenerToken - asynchronous handler.
+	 */
 	public void unregisterAsyncHandler(ListenerToken listenerToken) {
 		if (listenerToken == null)
 			throw new IllegalArgumentException("listenerToken cannot be NULL");
@@ -53,8 +72,14 @@ public class AsyncFilterManager {
 	
 	// Called by ListenerToken
 	void unregisterAsyncHandlerInternal(ListenerToken listenerToken) {
-		// Just remove it from the queue
-		processingQueue.removeListener(listenerToken, listenerToken.getAsyncListener().getSendingWhitelist());
+		
+		PacketListener listener = listenerToken.getAsyncListener();
+		
+		// Just remove it from the queue(s)
+		if (hasValidWhitelist(listener.getSendingWhitelist()))
+			serverProcessingQueue.removeListener(listenerToken, listener.getSendingWhitelist());
+		if (hasValidWhitelist(listener.getReceivingWhitelist()))
+			clientProcessingQueue.removeListener(listenerToken, listener.getReceivingWhitelist());
 	}
 	
 	/**
@@ -66,8 +91,25 @@ public class AsyncFilterManager {
 		PacketEvent newEvent = PacketEvent.fromSynchronous(syncPacket, asyncMarker);
 		
 		// Start the process
-		sendingQueue.enqueue(newEvent);
-		processingQueue.enqueuePacket(newEvent);
+		getSendingQueue(syncPacket).enqueue(newEvent);
+		getProcessingQueue(syncPacket).enqueue(newEvent);
+	}
+	
+	/**
+	 * Determine if a given synchronous packet has asynchronous listeners.
+	 * @param packet - packet to test.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public boolean hasAsynchronousListeners(PacketEvent packet) {
+		return getProcessingQueue(packet).getListener(packet.getPacketID()).size() > 0;
+	}
+	
+	/**
+	 * Construct a asynchronous marker with all the default values.
+	 * @return Asynchronous marker.
+	 */
+	public AsyncMarker createAsyncMarker() {
+		return createAsyncMarker(AsyncMarker.DEFAULT_SENDING_DELTA, AsyncMarker.DEFAULT_TIMEOUT_DELTA);
 	}
 	
 	/**
@@ -86,27 +128,61 @@ public class AsyncFilterManager {
 		return new AsyncMarker(packetStream, sendingIndex, sendingDelta, System.currentTimeMillis(), timeoutDelta);
 	}
 	
+	/**
+	 * Retrieve the default packet stream.
+	 * @return Default packet stream.
+	 */
 	public PacketStream getPacketStream() {
 		return packetStream;
 	}
 
+	/**
+	 * Retrieve the default error logger.
+	 * @return Default logger.
+	 */
 	public Logger getLogger() {
 		return logger;
-	}
-
-	PacketProcessingQueue getProcessingQueue() {
-		return processingQueue;
-	}
-
-	PacketSendingQueue getSendingQueue() {
-		return sendingQueue;
 	}
 
 	/**
 	 * Remove listeners, close threads and transmit every delayed packet.
 	 */
 	public void cleanupAll() {
-		processingQueue.cleanupAll();
-		sendingQueue.cleanupAll();
+		serverProcessingQueue.cleanupAll();
+		serverQueue.cleanupAll();
+	}
+
+	/**
+	 * Signal that a packet is ready to be transmitted.
+	 * @param packet - packet to signal.
+	 */
+	public void signalPacketUpdate(PacketEvent packet) {
+		getSendingQueue(packet).signalPacketUpdate(packet);
+	}
+
+	/**
+	 * Retrieve the sending queue this packet belongs to.
+	 * @param packet - the packet.
+	 * @return The server or client sending queue the packet belongs to.
+	 */
+	private PacketSendingQueue getSendingQueue(PacketEvent packet) {
+		return packet.isServerPacket() ? serverQueue : clientQueue;
+	}
+	
+	/**
+	 * Signal that a packet has finished processing.
+	 * @param packet - packet to signal.
+	 */
+	public void signalProcessingDone(PacketEvent packet) {
+		getProcessingQueue(packet).signalProcessingDone();
+	}
+	
+	/**
+	 * Retrieve the processing queue this packet belongs to.
+	 * @param packet - the packet.
+	 * @return The server or client sending processing the packet belongs to.
+	 */
+	private PacketProcessingQueue getProcessingQueue(PacketEvent packet) {
+		return packet.isServerPacket() ? serverProcessingQueue : clientProcessingQueue;
 	}
 }

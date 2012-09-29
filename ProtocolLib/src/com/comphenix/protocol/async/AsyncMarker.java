@@ -28,6 +28,11 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	public static final int DEFAULT_TIMEOUT_DELTA = 60000;
 	
 	/**
+	 * Default number of packets to skip.
+	 */
+	public static final int DEFAULT_SENDING_DELTA = 0;
+	
+	/**
 	 * The packet stream responsible for transmitting the packet when it's done processing.
 	 */
 	private transient PacketStream packetStream;
@@ -48,8 +53,11 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	// Whether or not the packet has been processed by the listeners
 	private volatile boolean processed;
 	
-	// Whethre or not the packet has been sent
+	// Whether or not the packet has been sent
 	private volatile boolean transmitted;
+	
+	// Whether or not the asynchronous processing itself should be cancelled
+	private volatile boolean asyncCancelled;
 
 	/**
 	 * Create a container for asyncronous packets.
@@ -86,6 +94,14 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 		return timeout;
 	}
 	
+	/**
+	 * Set the time the packet will be forcefully rejected.
+	 * @param timeout - time to reject the packet, in milliseconds since 01.01.1970 00:00.
+	 */
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+
 	/**
 	 * Retrieve the order the packet was originally transmitted.
 	 * @return The original packet index.
@@ -154,6 +170,39 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 		return transmitted;
 	}
 
+	/**
+	 * Determine if this packet has expired.
+	 * @return TRUE if it has, FALSE otherwise.
+	 */
+	public boolean hasExpired() {
+		return hasExpired(System.currentTimeMillis());
+	}
+	
+	/**
+	 * Determine if this packet has expired given this time.
+	 * @param currentTime - the current time in milliseconds since 01.01.1970 00:00.
+	 * @return TRUE if it has, FALSE otherwise.
+	 */
+	public boolean hasExpired(long currentTime) {
+		return timeout < currentTime;
+	}
+	
+	/**
+	 * Determine if the asynchronous handling should be cancelled.
+	 * @return TRUE if it should, FALSE otherwise.
+	 */
+	public boolean isAsyncCancelled() {
+		return asyncCancelled;
+	}
+
+	/**
+	 * Set whether or not the asynchronous handling should be cancelled.
+	 * @param asyncCancelled - TRUE to cancel it, FALSE otherwise.
+	 */
+	public void setAsyncCancelled(boolean asyncCancelled) {
+		this.asyncCancelled = asyncCancelled;
+	}
+	
 	/**
 	 * Retrieve iterator for the next listener in line.
 	 * @return Next async packet listener iterator.

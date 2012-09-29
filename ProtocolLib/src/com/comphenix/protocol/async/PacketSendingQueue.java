@@ -32,12 +32,20 @@ class PacketSendingQueue {
 		while (true) {
 			PacketEvent current = sendingQueue.peek();
 			
-			if (current != null && current.getAsyncMarker().isProcessed()) {
-				sendPacket(current);
-				sendingQueue.poll();
-			} else {
-				break;
+			if (current != null) {
+				AsyncMarker marker = current.getAsyncMarker();
+				
+				if (marker.isProcessed() || marker.hasExpired()) {
+					if (marker.isProcessed())
+						sendPacket(current);
+					
+					sendingQueue.poll();
+					continue;
+				}
 			}
+			
+			// Only repeat when packets are removed
+			break;
 		}
 	}
 	

@@ -158,18 +158,22 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * <p>
 	 * If the packet is synchronous, this marker will be used to schedule an asynchronous event. In this
 	 * asynchronous event, the marker is used to correctly pass the packet around to the different threads.
-	 * @return The current asynchronous marker.
+	 * <p>
+	 * Note that if there are no asynchronous events that can receive this packet, the marker is NULL.
+	 * @return The current asynchronous marker, or NULL.
 	 */
 	public AsyncMarker getAsyncMarker() {
 		return asyncMarker;
 	}
-
+	
 	/**
 	 * Set the asynchronous marker. 
 	 * <p>
 	 * If the marker is non-null at the end of an synchronous event processing, the packet will be scheduled
-	 * to be processed asynchronously with the given settings. 
-	 * @param asyncMarker - the new asynchronous marker.
+	 * to be processed asynchronously with the given settings.
+	 * <p>
+	 * Note that if there are no asynchronous events that can receive this packet, the marker should be NULL. 
+	 * @param asyncMarker - the new asynchronous marker, or NULL.
 	 */
 	public void setAsyncMarker(AsyncMarker asyncMarker) {
 		this.asyncMarker = asyncMarker;
@@ -182,7 +186,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public boolean isAsynchronous() {
 		return asynchronous;
 	}
-
+	
 	private void writeObject(ObjectOutputStream output) throws IOException {
 	    // Default serialization 
 		output.defaultWriteObject();

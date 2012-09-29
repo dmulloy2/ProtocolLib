@@ -126,8 +126,8 @@ class ListenerToken {
 				}
 				
 				// There are no more listeners - queue the packet for transmission
-				filterManager.getSendingQueue().signalPacketUpdate(packet);
-				filterManager.getProcessingQueue().signalProcessingDone();
+				filterManager.signalPacketUpdate(packet);
+				filterManager.signalProcessingDone(packet);
 			}
 			
 		} catch (InterruptedException e) {

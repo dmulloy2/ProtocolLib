@@ -55,7 +55,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 	 * @param packet - packet to process.
 	 * @return TRUE if we sucessfully queued the packet, FALSE if the queue ran out if space.
 	 */
-	public boolean enqueuePacket(PacketEvent packet) {
+	public boolean enqueue(PacketEvent packet) {
 		try {
 			processingQueue.add(packet);
 			
