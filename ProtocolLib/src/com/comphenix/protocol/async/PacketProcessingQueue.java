@@ -117,9 +117,9 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	
 	public void cleanupAll() {
 		// Cancel all the threads and every listener
-		for (PrioritizedListener<AsyncListenerHandler> token : values()) {
-			if (token != null) {
-				token.getListener().cancel();
+		for (PrioritizedListener<AsyncListenerHandler> handler : values()) {
+			if (handler != null) {
+				handler.getListener().cancel();
 			}
 		}
 		

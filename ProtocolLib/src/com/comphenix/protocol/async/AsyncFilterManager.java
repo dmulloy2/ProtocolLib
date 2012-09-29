@@ -44,15 +44,15 @@ public class AsyncFilterManager {
 	}
 	
 	public AsyncListenerHandler registerAsyncHandler(Plugin plugin, PacketListener listener) {
-		AsyncListenerHandler token = new AsyncListenerHandler(plugin, mainThread, this, listener);
+		AsyncListenerHandler handler = new AsyncListenerHandler(plugin, mainThread, this, listener);
 		
 		// Add listener to either or both processing queue
 		if (hasValidWhitelist(listener.getSendingWhitelist()))
-			serverProcessingQueue.addListener(token, listener.getSendingWhitelist());
+			serverProcessingQueue.addListener(handler, listener.getSendingWhitelist());
 		if (hasValidWhitelist(listener.getReceivingWhitelist()))
-			clientProcessingQueue.addListener(token, listener.getReceivingWhitelist());
+			clientProcessingQueue.addListener(handler, listener.getReceivingWhitelist());
 		
-		return token;
+		return handler;
 	}
 	
 	private boolean hasValidWhitelist(ListeningWhitelist whitelist) {
@@ -61,25 +61,25 @@ public class AsyncFilterManager {
 	
 	/**
 	 * Unregisters and closes the given asynchronous handler.
-	 * @param listenerToken - asynchronous handler.
+	 * @param handler - asynchronous handler.
 	 */
-	public void unregisterAsyncHandler(AsyncListenerHandler listenerToken) {
-		if (listenerToken == null)
+	public void unregisterAsyncHandler(AsyncListenerHandler handler) {
+		if (handler == null)
 			throw new IllegalArgumentException("listenerToken cannot be NULL");
 		
-		listenerToken.cancel();	
+		handler.cancel();	
 	}
 	
-	// Called by ListenerToken
-	void unregisterAsyncHandlerInternal(AsyncListenerHandler listenerToken) {
+	// Called by AsyncListenerHandler
+	void unregisterAsyncHandlerInternal(AsyncListenerHandler handler) {
 		
-		PacketListener listener = listenerToken.getAsyncListener();
+		PacketListener listener = handler.getAsyncListener();
 		
 		// Just remove it from the queue(s)
 		if (hasValidWhitelist(listener.getSendingWhitelist()))
-			serverProcessingQueue.removeListener(listenerToken, listener.getSendingWhitelist());
+			serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
 		if (hasValidWhitelist(listener.getReceivingWhitelist()))
-			clientProcessingQueue.removeListener(listenerToken, listener.getReceivingWhitelist());
+			clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
 	}
 	
 	/**
