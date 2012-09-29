@@ -40,7 +40,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	/**
 	 * Current list of async packet listeners.
 	 */
-	private transient Iterator<PrioritizedListener<ListenerToken>> listenerTraversal;
+	private transient Iterator<PrioritizedListener<AsyncListenerHandler>> listenerTraversal;
 	
 	// Timeout handling
 	private long initialTime;
@@ -207,7 +207,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * Retrieve iterator for the next listener in line.
 	 * @return Next async packet listener iterator.
 	 */
-	public Iterator<PrioritizedListener<ListenerToken>> getListenerTraversal() {
+	public Iterator<PrioritizedListener<AsyncListenerHandler>> getListenerTraversal() {
 		return listenerTraversal;
 	}
 	
@@ -215,7 +215,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * Set the iterator for the next listener.
 	 * @param listenerTraversal - the new async packet listener iterator.
 	 */
-	void setListenerTraversal(Iterator<PrioritizedListener<ListenerToken>> listenerTraversal) {
+	void setListenerTraversal(Iterator<PrioritizedListener<AsyncListenerHandler>> listenerTraversal) {
 		this.listenerTraversal = listenerTraversal;
 	}
 	

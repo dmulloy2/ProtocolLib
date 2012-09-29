@@ -14,7 +14,7 @@ import com.comphenix.protocol.injector.PrioritizedListener;
  * 
  * @author Kristian
  */
-class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerToken> {
+class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncListenerHandler> {
 
 	/**
 	 * Default maximum number of packets to process concurrently.
@@ -76,11 +76,11 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 			
 			// Any packet queued?
 			if (packet != null) {
-				Collection<PrioritizedListener<ListenerToken>> list = getListener(packet.getPacketID());
+				Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketID());
 				AsyncMarker marker = packet.getAsyncMarker();
 				
 				if (list != null) {
-					Iterator<PrioritizedListener<ListenerToken>> iterator = list.iterator();
+					Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
 					
 					if (iterator.hasNext()) {
 						marker.setListenerTraversal(iterator);
@@ -117,7 +117,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 	
 	public void cleanupAll() {
 		// Cancel all the threads and every listener
-		for (PrioritizedListener<ListenerToken> token : values()) {
+		for (PrioritizedListener<AsyncListenerHandler> token : values()) {
 			if (token != null) {
 				token.getListener().cancel();
 			}

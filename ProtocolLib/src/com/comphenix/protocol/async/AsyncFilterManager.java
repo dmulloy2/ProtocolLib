@@ -43,8 +43,8 @@ public class AsyncFilterManager {
 		this.mainThread = Thread.currentThread();
 	}
 	
-	public ListenerToken registerAsyncHandler(Plugin plugin, PacketListener listener) {
-		ListenerToken token = new ListenerToken(plugin, mainThread, this, listener);
+	public AsyncListenerHandler registerAsyncHandler(Plugin plugin, PacketListener listener) {
+		AsyncListenerHandler token = new AsyncListenerHandler(plugin, mainThread, this, listener);
 		
 		// Add listener to either or both processing queue
 		if (hasValidWhitelist(listener.getSendingWhitelist()))
@@ -63,7 +63,7 @@ public class AsyncFilterManager {
 	 * Unregisters and closes the given asynchronous handler.
 	 * @param listenerToken - asynchronous handler.
 	 */
-	public void unregisterAsyncHandler(ListenerToken listenerToken) {
+	public void unregisterAsyncHandler(AsyncListenerHandler listenerToken) {
 		if (listenerToken == null)
 			throw new IllegalArgumentException("listenerToken cannot be NULL");
 		
@@ -71,7 +71,7 @@ public class AsyncFilterManager {
 	}
 	
 	// Called by ListenerToken
-	void unregisterAsyncHandlerInternal(ListenerToken listenerToken) {
+	void unregisterAsyncHandlerInternal(AsyncListenerHandler listenerToken) {
 		
 		PacketListener listener = listenerToken.getAsyncListener();
 		

@@ -8,7 +8,12 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
-class ListenerToken {
+/**
+ * Represents a handler for an asynchronous event.
+ * 
+ * @author Kristian
+ */
+public class AsyncListenerHandler {
 
 	/**
 	 * Signal an end to the packet processing.
@@ -36,7 +41,7 @@ class ListenerToken {
 	// Minecraft main thread
 	private Thread mainThread;
 	
-	public ListenerToken(Plugin plugin, Thread mainThread, AsyncFilterManager filterManager, PacketListener listener) {
+	public AsyncListenerHandler(Plugin plugin, Thread mainThread, AsyncFilterManager filterManager, PacketListener listener) {
 		if (filterManager == null)
 			throw new IllegalArgumentException("filterManager cannot be NULL");
 		if (listener == null)
@@ -117,7 +122,7 @@ class ListenerToken {
 				
 				// Now, get the next non-cancelled listener
 				for (; marker.getListenerTraversal().hasNext(); ) {
-					ListenerToken token = marker.getListenerTraversal().next().getListener();
+					AsyncListenerHandler token = marker.getListenerTraversal().next().getListener();
 					
 					if (!token.isCancelled()) {
 						token.enqueuePacket(packet);
