@@ -41,6 +41,11 @@ public class PrioritizedListener<TListener> implements Comparable<PrioritizedLis
 	    }
 	}
 	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(listener);
+	}
+	
 	/**
 	 * Retrieve the underlying listener.
 	 * @return Underlying listener.

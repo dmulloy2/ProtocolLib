@@ -206,11 +206,12 @@ public final class StructureCompiler {
 		// Call the define method
 		try {
 			if (defineMethod == null) {
-				defineMethod = ClassLoader.class.getDeclaredMethod("defineClass", 
+				Method defined = ClassLoader.class.getDeclaredMethod("defineClass", 
 					new Class<?>[] { String.class, byte[].class, int.class, int.class });
 			
 				// Awesome. Now, create and return it.
-				defineMethod.setAccessible(true);
+				defined.setAccessible(true);
+				defineMethod = defined;
 			}
 			
 			@SuppressWarnings("rawtypes")

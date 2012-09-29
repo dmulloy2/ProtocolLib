@@ -172,11 +172,11 @@ public class DefaultInstances {
 		}
 
 		Constructor<T> minimum = getMinimumConstructor(type);
-		int parameterCount = minimum.getParameterTypes().length;
 
 		// Create the type with this constructor using default values. This might fail, though.
 		try {
 			if (minimum != null) {
+				int parameterCount = minimum.getParameterTypes().length;
 				Object[] params = new Object[parameterCount];
 				Class<?>[] types = minimum.getParameterTypes();
 				
