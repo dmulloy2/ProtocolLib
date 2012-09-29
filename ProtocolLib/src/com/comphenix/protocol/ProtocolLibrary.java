@@ -44,12 +44,11 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Structure compiler
 	private BackgroundCompiler backgroundCompiler;
 	
-	// Used to (mostly) clean up packets that have expired
+	// Used to clean up server packets that have expired. 
+	// But mostly required to simulate recieving client packets.
 	private int asyncPacketTask = -1;
-	
-	// Number of ticks between each cleanup. We don't need to do this often,
-	// as it's only indeeded to detected timeouts.
-	private static final int ASYNC_PACKET_DELAY = 10;
+	private int tickCounter = 0;
+	private static final int ASYNC_PACKET_DELAY = 1;
 	
 	@Override
 	public void onLoad() {
@@ -100,7 +99,9 @@ public class ProtocolLibrary extends JavaPlugin {
 				@Override
 				public void run() {
 					AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
-					manager.sendProcessedPackets();
+					
+					// We KNOW we're on the main thread at the moment
+					manager.sendProcessedPackets(tickCounter++, true);
 				}
 			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
 		

@@ -42,8 +42,10 @@ public class AsyncFilterManager implements AsynchronousManager {
 	private volatile boolean cleaningUp;
 	
 	public AsyncFilterManager(Logger logger, PacketStream packetStream) {
-		this.serverQueue = new PacketSendingQueue();
-		this.clientQueue = new PacketSendingQueue();
+		this.serverQueue = new PacketSendingQueue(false);
+		// Client packets must be synchronized
+		this.clientQueue = new PacketSendingQueue(true); 
+		
 		this.serverProcessingQueue = new PacketProcessingQueue(serverQueue);
 		this.clientProcessingQueue = new PacketProcessingQueue(clientQueue);
 		this.packetStream = packetStream;
@@ -88,6 +90,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	void unregisterAsyncHandlerInternal(AsyncListenerHandler handler) {
 		
 		PacketListener listener = handler.getAsyncListener();
+		boolean synchronusOK = onMainThread();
 		
 		// Just remove it from the queue(s)
 		if (hasValidWhitelist(listener.getSendingWhitelist())) {
@@ -95,14 +98,22 @@ public class AsyncFilterManager implements AsynchronousManager {
 			
 			// We're already taking care of this, so don't do anything
 			if (!cleaningUp)
-				serverQueue.signalPacketUpdate(removed);
+				serverQueue.signalPacketUpdate(removed, synchronusOK);
 		}
 		if (hasValidWhitelist(listener.getReceivingWhitelist())) {
 			List<Integer> removed = clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
 			
 			if (!cleaningUp)
-				clientQueue.signalPacketUpdate(removed);
+				clientQueue.signalPacketUpdate(removed, synchronusOK);
 		}
+	}
+	
+	/**
+	 * Determine if we're running on the main thread.
+	 * @return TRUE if we are, FALSE otherwise.
+	 */
+	private boolean onMainThread() {
+		return Thread.currentThread().getId() == mainThread.getId();
 	}
 	
 	@Override
@@ -196,7 +207,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * @param packet - packet to signal.
 	 */
 	public void signalPacketUpdate(PacketEvent packet) {
-		getSendingQueue(packet).signalPacketUpdate(packet);
+		getSendingQueue(packet).signalPacketUpdate(packet, onMainThread());
 	}
 
 	/**
@@ -228,8 +239,13 @@ public class AsyncFilterManager implements AsynchronousManager {
 	/**
 	 * Send any due packets, or clean up packets that have expired.
 	 */
-	public void sendProcessedPackets() {
-		clientQueue.trySendPackets();
-		serverQueue.trySendPackets();
+	public void sendProcessedPackets(int tickCounter, boolean onMainThread) {
+		
+		// The server queue is unlikely to need checking that often
+		if (tickCounter % 10 == 0) {
+			serverQueue.trySendPackets(onMainThread);
+		}
+
+		clientQueue.trySendPackets(onMainThread);
 	}
 }

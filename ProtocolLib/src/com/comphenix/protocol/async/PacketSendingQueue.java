@@ -20,8 +20,12 @@ class PacketSendingQueue {
 	
 	private PriorityBlockingQueue<PacketEvent> sendingQueue;
 	
-	public PacketSendingQueue() {
-		sendingQueue = new PriorityBlockingQueue<PacketEvent>(INITIAL_CAPACITY, new Comparator<PacketEvent>() {
+	// Whether or not packet transmission can only occur on the main thread
+	private final boolean synchronizeMain;
+	
+	public PacketSendingQueue(boolean synchronizeMain) {
+		this.synchronizeMain = synchronizeMain;
+		this.sendingQueue = new PriorityBlockingQueue<PacketEvent>(INITIAL_CAPACITY, new Comparator<PacketEvent>() {
 			// Compare using the async marker
 			@Override
 			public int compare(PacketEvent o1, PacketEvent o2) {
@@ -43,13 +47,13 @@ class PacketSendingQueue {
 	/**
 	 * Invoked when one of the packets have finished processing.
 	 */
-	public synchronized void signalPacketUpdate(PacketEvent packetUpdated) {
+	public synchronized void signalPacketUpdate(PacketEvent packetUpdated, boolean onMainThread) {
 		// Mark this packet as finished
 		packetUpdated.getAsyncMarker().setProcessed(true);
-		trySendPackets();
+		trySendPackets(onMainThread);
 	}
 
-	public synchronized void signalPacketUpdate(List<Integer> packetsRemoved) {
+	public synchronized void signalPacketUpdate(List<Integer> packetsRemoved, boolean onMainThread) {
 		
 		Set<Integer> lookup = new HashSet<Integer>(packetsRemoved);
 		
@@ -60,14 +64,19 @@ class PacketSendingQueue {
 			}
 		}
 		
-		// This is likely to have changed the situation a bit 
-		trySendPackets();
+		// This is likely to have changed the situation a bit
+		trySendPackets(onMainThread);
 	}
 	
 	/**
 	 * Attempt to send any remaining packets.
 	 */
-	public synchronized void trySendPackets() {
+	public void trySendPackets(boolean onMainThread) {
+		
+		// Abort if we're not on the main thread
+		if (synchronizeMain && !onMainThread)
+			return;
+		
 		// Transmit as many packets as we can
 		while (true) {
 			PacketEvent current = sendingQueue.peek();
@@ -92,7 +101,7 @@ class PacketSendingQueue {
 	/**
 	 * Send every packet, regardless of the processing state.
 	 */
-	public synchronized void forceSend() {
+	private void forceSend() {
 		while (true) {
 			PacketEvent current = sendingQueue.poll();
 			
@@ -104,6 +113,14 @@ class PacketSendingQueue {
 		}
 	}
 	
+	/**
+	 * Whether or not the packet transmission must synchronize with the main thread.
+	 * @return TRUE if it must, FALSE otherwise.
+	 */
+	public boolean isSynchronizeMain() {
+		return synchronizeMain;
+	}
+
 	/**
 	 * Transmit a packet, if it hasn't already.
 	 * @param event - the packet to transmit.
@@ -128,6 +145,7 @@ class PacketSendingQueue {
 	 * Automatically transmits every delayed packet.
 	 */
 	public void cleanupAll() {
+		// Note that the cleanup itself will always occur on the main thread
 		forceSend();
 	}
 }
