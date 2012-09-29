@@ -6,6 +6,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
+import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
 
 /**
@@ -32,7 +33,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 	private Semaphore concurrentProcessing;
 	
 	// Queued packets for being processed
-	private ArrayBlockingQueue<AsyncPacket> processingQueue;
+	private ArrayBlockingQueue<PacketEvent> processingQueue;
 	
 	// Packets for sending
 	private PacketSendingQueue sendingQueue;
@@ -43,7 +44,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 	
 	public PacketProcessingQueue(PacketSendingQueue sendingQueue, int queueLimit, int maximumConcurrency) {
 		super();
-		this.processingQueue = new ArrayBlockingQueue<AsyncPacket>(queueLimit);
+		this.processingQueue = new ArrayBlockingQueue<PacketEvent>(queueLimit);
 		this.maximumConcurrency = maximumConcurrency;
 		this.concurrentProcessing = new Semaphore(maximumConcurrency);
 		this.sendingQueue = sendingQueue;
@@ -54,7 +55,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 	 * @param packet - packet to process.
 	 * @return TRUE if we sucessfully queued the packet, FALSE if the queue ran out if space.
 	 */
-	public boolean enqueuePacket(AsyncPacket packet) {
+	public boolean enqueuePacket(PacketEvent packet) {
 		try {
 			processingQueue.add(packet);
 			
@@ -71,17 +72,18 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 	 */
 	public void signalBeginProcessing() {
 		while (concurrentProcessing.tryAcquire()) {
-			AsyncPacket packet = processingQueue.poll();
+			PacketEvent packet = processingQueue.poll();
 			
 			// Any packet queued?
 			if (packet != null) {
 				Collection<PrioritizedListener<ListenerToken>> list = getListener(packet.getPacketID());
+				AsyncPacket marker = packet.getAsyncMarker();
 				
 				if (list != null) {
 					Iterator<PrioritizedListener<ListenerToken>> iterator = list.iterator();
 					
 					if (iterator.hasNext()) {
-						packet.setListenerTraversal(iterator);
+						marker.setListenerTraversal(iterator);
 						iterator.next().getListener().enqueuePacket(packet);
 						continue;
 					}
@@ -113,7 +115,15 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerT
 		return maximumConcurrency;
 	}
 	
-	public void removeListeners() {
-		for (PrioritizedListener<ListenerToken> token : )
+	public void cleanupAll() {
+		// Cancel all the threads and every listener
+		for (PrioritizedListener<ListenerToken> token : values()) {
+			if (token != null) {
+				token.getListener().cancel();
+			}
+		}
+		
+		// Remove the rest, just in case
+		clearListeners();
 	}
 }

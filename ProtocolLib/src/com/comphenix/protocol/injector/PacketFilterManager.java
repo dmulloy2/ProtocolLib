@@ -668,10 +668,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		for (PlayerInjector injection : playerInjection.values()) {
 			injection.cleanupAll();
 		}
-		
-		// Clean up async handlers
-		asyncFilterManager.cleanupAll();
-		
+
 		// Remove packet handlers
 		if (packetInjector != null)
 			packetInjector.cleanupAll();
@@ -681,6 +678,9 @@ public final class PacketFilterManager implements ProtocolManager {
 		playerInjection.clear();
 		connectionLookup.clear();
 		hasClosed = true;
+		
+		// Clean up async handlers. We have to do this last.
+		asyncFilterManager.cleanupAll();
 	}
 	
 	@Override

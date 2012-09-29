@@ -5,8 +5,16 @@ import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 
-public class ListenerToken {
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
 
+class ListenerToken {
+
+	/**
+	 * Signal an end to the packet processing.
+	 */
+	private static final PacketEvent INTERUPT_PACKET = new PacketEvent(new Object());
+	
 	// Default queue capacity
 	private static int DEFAULT_CAPACITY = 1024;
 	
@@ -14,7 +22,7 @@ public class ListenerToken {
 	private volatile boolean cancelled;
 	
 	// The packet listener
-	private AsyncListener listener;
+	private PacketListener listener;
 	
 	// The original plugin
 	private Plugin plugin;
@@ -23,12 +31,12 @@ public class ListenerToken {
 	private AsyncFilterManager filterManager;
 	
 	// List of queued packets
-	private ArrayBlockingQueue<AsyncPacket> queuedPackets = new ArrayBlockingQueue<AsyncPacket>(DEFAULT_CAPACITY);
+	private ArrayBlockingQueue<PacketEvent> queuedPackets = new ArrayBlockingQueue<PacketEvent>(DEFAULT_CAPACITY);
 
 	// Minecraft main thread
 	private Thread mainThread;
 	
-	public ListenerToken(Plugin plugin, Thread mainThread, AsyncFilterManager filterManager, AsyncListener listener) {
+	public ListenerToken(Plugin plugin, Thread mainThread, AsyncFilterManager filterManager, PacketListener listener) {
 		if (filterManager == null)
 			throw new IllegalArgumentException("filterManager cannot be NULL");
 		if (listener == null)
@@ -44,7 +52,7 @@ public class ListenerToken {
 		return cancelled;
 	}
 
-	public AsyncListener getAsyncListener() {
+	public PacketListener getAsyncListener() {
 		return listener;
 	}
 
@@ -57,7 +65,7 @@ public class ListenerToken {
 		
 		// Poison Pill Shutdown
 		queuedPackets.clear();
-		queuedPackets.add(AsyncPacket.INTERUPT_PACKET);
+		queuedPackets.add(INTERUPT_PACKET);
 	}
 	
 	/**
@@ -65,7 +73,7 @@ public class ListenerToken {
 	 * @param packet - a packet for processing.
 	 * @throws IllegalStateException If the underlying packet queue is full.
 	 */
-	public void enqueuePacket(AsyncPacket packet) {
+	public void enqueuePacket(PacketEvent packet) {
 		if (packet == null)
 			throw new IllegalArgumentException("packet is NULL");
 		
@@ -86,16 +94,21 @@ public class ListenerToken {
 		try {
 			mainLoop:
 			while (!cancelled) {
-				AsyncPacket packet = queuedPackets.take();
+				PacketEvent packet = queuedPackets.take();
+				AsyncPacket marker = packet.getAsyncMarker();
 				
 				// Handle cancel requests
-				if (packet == null || packet.isInteruptPacket()) {
+				if (packet == null || marker == null || !packet.isAsynchronous()) {
 					break;
 				}
 				
 				// Here's the core of the asynchronous processing
 				try {
-					listener.onAsyncPacket(packet);
+					if (packet.isServerPacket())
+						listener.onPacketSending(packet);
+					else
+						listener.onPacketReceiving(packet);
+					
 				} catch (Throwable e) {
 					// Minecraft doesn't want your Exception.
 					filterManager.getLogger().log(Level.SEVERE, 
@@ -103,8 +116,8 @@ public class ListenerToken {
 				}
 				
 				// Now, get the next non-cancelled listener
-				for (; packet.getListenerTraversal().hasNext(); ) {
-					ListenerToken token = packet.getListenerTraversal().next().getListener();
+				for (; marker.getListenerTraversal().hasNext(); ) {
+					ListenerToken token = marker.getListenerTraversal().next().getListener();
 					
 					if (!token.isCancelled()) {
 						token.enqueuePacket(packet);

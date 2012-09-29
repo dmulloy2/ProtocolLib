@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.injector.PrioritizedListener;
+import com.google.common.collect.Iterables;
 
 /**
  * A thread-safe implementation of a listener multimap.
@@ -102,5 +103,20 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	 */
 	public Collection<PrioritizedListener<TListener>> getListener(int packetID) {
 		return listeners.get(packetID);
+	}
+	
+	/**
+	 * Retrieve every listener.
+	 * @return Every listener.
+	 */
+	protected Iterable<PrioritizedListener<TListener>> values() {
+		return Iterables.concat(listeners.values());
+	}
+	
+	/**
+	 * Remove all packet listeners.
+	 */
+	protected void clearListeners() {
+		listeners.clear();
 	}
 }

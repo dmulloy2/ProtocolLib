@@ -7,6 +7,7 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
 
 /**
  * Represents a filter manager for asynchronous packets.
@@ -36,7 +37,7 @@ public class AsyncFilterManager {
 		this.mainThread = Thread.currentThread();
 	}
 	
-	public ListenerToken registerAsyncHandler(Plugin plugin, AsyncListener listener) {
+	public ListenerToken registerAsyncHandler(Plugin plugin, PacketListener listener) {
 		ListenerToken token = new ListenerToken(plugin, mainThread, this, listener);
 		
 		processingQueue.addListener(token, listener.getSendingWhitelist());
@@ -56,15 +57,33 @@ public class AsyncFilterManager {
 		processingQueue.removeListener(listenerToken, listenerToken.getAsyncListener().getSendingWhitelist());
 	}
 	
-	public void enqueueSyncPacket(PacketEvent syncPacket, int sendingDelta, long timeoutDelta) {
-		AsyncPacket asyncPacket = new AsyncPacket(packetStream, syncPacket, 
-				currentSendingIndex.getAndIncrement() + sendingDelta,
-				System.currentTimeMillis(),
-				timeoutDelta);
+	/**
+	 * Enqueue a packet for asynchronous processing.
+	 * @param syncPacket - synchronous packet event.
+	 * @param asyncMarker - the asynchronous marker to use.
+	 */
+	public void enqueueSyncPacket(PacketEvent syncPacket, AsyncPacket asyncMarker) {
+		PacketEvent newEvent = PacketEvent.fromSynchronous(syncPacket, asyncMarker);
 		
 		// Start the process
-		sendingQueue.enqueue(asyncPacket);
-		processingQueue.enqueuePacket(asyncPacket);
+		sendingQueue.enqueue(newEvent);
+		processingQueue.enqueuePacket(newEvent);
+	}
+	
+	/**
+	 * Construct an async marker with the given sending priority delta and timeout delta.
+	 * @param sendingDelta - how many packets we're willing to wait.
+	 * @param timeoutDelta - how long (in ms) until the packet expire.
+	 * @return An async marker.
+	 */
+	public AsyncPacket createAsyncMarker(long sendingDelta, long timeoutDelta) {
+		return createAsyncMarker(sendingDelta, timeoutDelta, 
+								 currentSendingIndex.incrementAndGet(), System.currentTimeMillis());
+	}
+	
+	// Helper method
+	private AsyncPacket createAsyncMarker(long sendingDelta, long timeoutDelta, long sendingIndex, long currentTime) {
+		return new AsyncPacket(packetStream, sendingIndex, sendingDelta, System.currentTimeMillis(), timeoutDelta);
 	}
 	
 	public PacketStream getPacketStream() {
@@ -83,9 +102,11 @@ public class AsyncFilterManager {
 		return sendingQueue;
 	}
 
+	/**
+	 * Remove listeners, close threads and transmit every delayed packet.
+	 */
 	public void cleanupAll() {
-		// Remove all listeners
-		
-		// We don't necessarily remove packets, as this might be a part of a server reload
+		processingQueue.cleanupAll();
+		sendingQueue.cleanupAll();
 	}
 }
