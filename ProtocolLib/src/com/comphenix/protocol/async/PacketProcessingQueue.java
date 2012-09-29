@@ -53,14 +53,15 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	/**
 	 * Enqueue a packet for processing by the asynchronous listeners.
 	 * @param packet - packet to process.
+	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 * @return TRUE if we sucessfully queued the packet, FALSE if the queue ran out if space.
 	 */
-	public boolean enqueue(PacketEvent packet) {
+	public boolean enqueue(PacketEvent packet, boolean onMainThread) {
 		try {
 			processingQueue.add(packet);
 			
 			// Begin processing packets
-			signalBeginProcessing();
+			signalBeginProcessing(onMainThread);
 			return true;
 		} catch (IllegalStateException e) {
 			return false;
@@ -69,8 +70,9 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	
 	/**
 	 * Called by the current method and each thread to signal that a packet might be ready for processing.
+	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
-	public void signalBeginProcessing() {
+	public void signalBeginProcessing(boolean onMainThread) {	
 		while (concurrentProcessing.tryAcquire()) {
 			PacketEvent packet = processingQueue.poll();
 			
@@ -91,7 +93,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 				}
 				
 				// The packet has no further listeners. Just send it.
-				sendingQueue.signalPacketUpdate(packet);
+				sendingQueue.signalPacketUpdate(packet, onMainThread);
 				signalProcessingDone();
 				
 			} else {

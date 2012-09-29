@@ -23,6 +23,10 @@ class PacketSendingQueue {
 	// Whether or not packet transmission can only occur on the main thread
 	private final boolean synchronizeMain;
 	
+	/**
+	 * Create a packet sending queue.
+	 * @param synchronizeMain - whether or not to synchronize with the main thread.
+	 */
 	public PacketSendingQueue(boolean synchronizeMain) {
 		this.synchronizeMain = synchronizeMain;
 		this.sendingQueue = new PriorityBlockingQueue<PacketEvent>(INITIAL_CAPACITY, new Comparator<PacketEvent>() {
@@ -46,6 +50,8 @@ class PacketSendingQueue {
 	
 	/**
 	 * Invoked when one of the packets have finished processing.
+	 * @param packetUpdated - the packet that has now been updated.
+	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
 	public synchronized void signalPacketUpdate(PacketEvent packetUpdated, boolean onMainThread) {
 		// Mark this packet as finished
@@ -53,6 +59,11 @@ class PacketSendingQueue {
 		trySendPackets(onMainThread);
 	}
 
+	/***
+	 * Invoked when a list of packet IDs are no longer associated with any listeners.
+	 * @param packetsRemoved - packets that no longer have any listeners.
+	 * @param onMainThread - whether or not this is occuring on the main thread.
+	 */
 	public synchronized void signalPacketUpdate(List<Integer> packetsRemoved, boolean onMainThread) {
 		
 		Set<Integer> lookup = new HashSet<Integer>(packetsRemoved);
@@ -70,6 +81,7 @@ class PacketSendingQueue {
 	
 	/**
 	 * Attempt to send any remaining packets.
+	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
 	public void trySendPackets(boolean onMainThread) {
 		

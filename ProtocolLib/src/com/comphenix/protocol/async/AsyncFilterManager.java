@@ -143,7 +143,9 @@ public class AsyncFilterManager implements AsynchronousManager {
 		
 		// Start the process
 		getSendingQueue(syncPacket).enqueue(newEvent);
-		getProcessingQueue(syncPacket).enqueue(newEvent);
+		
+		// We know this is occuring on the main thread, to pass TRUE
+		getProcessingQueue(syncPacket).enqueue(newEvent, true);
 	}
 	
 	@Override
