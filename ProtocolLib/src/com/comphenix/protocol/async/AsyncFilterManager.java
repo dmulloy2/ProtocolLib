@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
@@ -16,7 +17,7 @@ import com.comphenix.protocol.events.PacketListener;
  * 
  * @author Kristian
  */
-public class AsyncFilterManager {
+public class AsyncFilterManager implements AsynchronousManager {
 
 	private PacketProcessingQueue serverProcessingQueue;
 	private PacketSendingQueue serverQueue;
@@ -44,6 +45,7 @@ public class AsyncFilterManager {
 		this.mainThread = Thread.currentThread();
 	}
 	
+	@Override
 	public AsyncListenerHandler registerAsyncHandler(Plugin plugin, PacketListener listener) {
 		AsyncListenerHandler handler = new AsyncListenerHandler(plugin, mainThread, this, listener);
 		
@@ -60,10 +62,7 @@ public class AsyncFilterManager {
 		return whitelist != null && whitelist.getWhitelist().size() > 0;
 	}
 	
-	/**
-	 * Unregisters and closes the given asynchronous handler.
-	 * @param handler - asynchronous handler.
-	 */
+	@Override
 	public void unregisterAsyncHandler(AsyncListenerHandler handler) {
 		if (handler == null)
 			throw new IllegalArgumentException("listenerToken cannot be NULL");
@@ -96,29 +95,17 @@ public class AsyncFilterManager {
 		getProcessingQueue(syncPacket).enqueue(newEvent);
 	}
 	
-	/**
-	 * Retrieves a immutable set containing the ID of the sent server packets that will be 
-	 * observed by the asynchronous listeners.
-	 * @return Every filtered server packet.
-	 */
+	@Override
 	public Set<Integer> getSendingFilters() {
 		return serverProcessingQueue.keySet();
 	}
 	
-	/**
-	 * Retrieves a immutable set containing the ID of the recieved client packets that will be
-	 * observed by the asynchronous listeners.
-	 * @return Every filtered client packet.
-	 */
+	@Override
 	public Set<Integer> getReceivingFilters() {
 		return clientProcessingQueue.keySet();
 	}
 	
-	/**
-	 * Determine if a given synchronous packet has asynchronous listeners.
-	 * @param packet - packet to test.
-	 * @return TRUE if it does, FALSE otherwise.
-	 */
+	@Override
 	public boolean hasAsynchronousListeners(PacketEvent packet) {
 		return getProcessingQueue(packet).getListener(packet.getPacketID()).size() > 0;
 	}
@@ -147,25 +134,17 @@ public class AsyncFilterManager {
 		return new AsyncMarker(packetStream, sendingIndex, sendingDelta, System.currentTimeMillis(), timeoutDelta);
 	}
 	
-	/**
-	 * Retrieve the default packet stream.
-	 * @return Default packet stream.
-	 */
+	@Override
 	public PacketStream getPacketStream() {
 		return packetStream;
 	}
 
-	/**
-	 * Retrieve the default error logger.
-	 * @return Default logger.
-	 */
+	@Override
 	public Logger getLogger() {
 		return logger;
 	}
 
-	/**
-	 * Remove listeners, close threads and transmit every delayed packet.
-	 */
+	@Override
 	public void cleanupAll() {
 		serverProcessingQueue.cleanupAll();
 		serverQueue.cleanupAll();

@@ -24,7 +24,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -128,5 +127,5 @@ public interface ProtocolManager extends PacketStream {
 	 * Retrieve the current asyncronous packet manager.
 	 * @return Asyncronous packet manager.
 	 */
-	public AsyncFilterManager getAsyncFilterManager();
+	public AsynchronousManager getAsyncFilterManager();
 }

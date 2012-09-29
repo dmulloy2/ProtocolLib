@@ -45,6 +45,7 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
+import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
@@ -138,7 +139,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	}
 	
 	@Override
-	public AsyncFilterManager getAsyncFilterManager() {
+	public AsynchronousManager getAsyncFilterManager() {
 		return asyncFilterManager;
 	}
 	
