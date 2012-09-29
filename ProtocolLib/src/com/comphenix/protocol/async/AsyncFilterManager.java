@@ -1,5 +1,6 @@
 package com.comphenix.protocol.async;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -11,6 +12,9 @@ import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.injector.PrioritizedListener;
+import com.google.common.base.Objects;
 
 /**
  * Represents a filter manager for asynchronous packets.
@@ -34,6 +38,9 @@ public class AsyncFilterManager implements AsynchronousManager {
 	// Current packet index
 	private AtomicInteger currentSendingIndex = new AtomicInteger();
 	
+	// Whether or not we're currently cleaning up
+	private volatile boolean cleaningUp;
+	
 	public AsyncFilterManager(Logger logger, PacketStream packetStream) {
 		this.serverQueue = new PacketSendingQueue();
 		this.clientQueue = new PacketSendingQueue();
@@ -46,14 +53,21 @@ public class AsyncFilterManager implements AsynchronousManager {
 	}
 	
 	@Override
-	public AsyncListenerHandler registerAsyncHandler(Plugin plugin, PacketListener listener) {
-		AsyncListenerHandler handler = new AsyncListenerHandler(plugin, mainThread, this, listener);
+	public AsyncListenerHandler registerAsyncHandler(PacketListener listener) {
+		AsyncListenerHandler handler = new AsyncListenerHandler(mainThread, this, listener);
+		
+		ListeningWhitelist sendingWhitelist = listener.getSendingWhitelist();
+		ListeningWhitelist receivingWhitelist = listener.getReceivingWhitelist();
 		
 		// Add listener to either or both processing queue
-		if (hasValidWhitelist(listener.getSendingWhitelist()))
-			serverProcessingQueue.addListener(handler, listener.getSendingWhitelist());
-		if (hasValidWhitelist(listener.getReceivingWhitelist()))
-			clientProcessingQueue.addListener(handler, listener.getReceivingWhitelist());
+		if (hasValidWhitelist(sendingWhitelist)) {
+			PacketFilterManager.verifyWhitelist(listener, sendingWhitelist);
+			serverProcessingQueue.addListener(handler, sendingWhitelist);
+		}
+		if (hasValidWhitelist(receivingWhitelist)) {
+			PacketFilterManager.verifyWhitelist(listener, receivingWhitelist);
+			clientProcessingQueue.addListener(handler, receivingWhitelist);
+		}
 		
 		return handler;
 	}
@@ -76,10 +90,36 @@ public class AsyncFilterManager implements AsynchronousManager {
 		PacketListener listener = handler.getAsyncListener();
 		
 		// Just remove it from the queue(s)
-		if (hasValidWhitelist(listener.getSendingWhitelist()))
-			serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
-		if (hasValidWhitelist(listener.getReceivingWhitelist()))
-			clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
+		if (hasValidWhitelist(listener.getSendingWhitelist())) {
+			List<Integer> removed = serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
+			
+			// We're already taking care of this, so don't do anything
+			if (!cleaningUp)
+				serverQueue.signalPacketUpdate(removed);
+		}
+		if (hasValidWhitelist(listener.getReceivingWhitelist())) {
+			List<Integer> removed = clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
+			
+			if (!cleaningUp)
+				clientQueue.signalPacketUpdate(removed);
+		}
+	}
+	
+	@Override
+	public void unregisterAsyncHandlers(Plugin plugin) {
+		unregisterAsyncHandlers(serverProcessingQueue, plugin);
+		unregisterAsyncHandlers(clientProcessingQueue, plugin);
+	}
+	
+	private void unregisterAsyncHandlers(PacketProcessingQueue processingQueue, Plugin plugin) {
+		
+		// Iterate through every packet listener
+		for (PrioritizedListener<AsyncListenerHandler> listener : processingQueue.values()) {			
+			// Remove the listener
+			if (Objects.equal(listener.getListener().getPlugin(), plugin)) {
+				unregisterAsyncHandler(listener.getListener());
+			}
+		}
 	}
 	
 	/**
@@ -146,6 +186,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 
 	@Override
 	public void cleanupAll() {
+		cleaningUp = true;
 		serverProcessingQueue.cleanupAll();
 		serverQueue.cleanupAll();
 	}

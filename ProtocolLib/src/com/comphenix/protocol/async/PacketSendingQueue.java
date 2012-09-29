@@ -2,6 +2,9 @@ package com.comphenix.protocol.async;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import com.comphenix.protocol.events.PacketEvent;
@@ -46,6 +49,21 @@ class PacketSendingQueue {
 		trySendPackets();
 	}
 
+	public synchronized void signalPacketUpdate(List<Integer> packetsRemoved) {
+		
+		Set<Integer> lookup = new HashSet<Integer>(packetsRemoved);
+		
+		// Note that this is O(n), so it might be expensive
+		for (PacketEvent event : sendingQueue) {
+			if (lookup.contains(event.getPacketID())) {
+				event.getAsyncMarker().setProcessed(true);
+			}
+		}
+		
+		// This is likely to have changed the situation a bit 
+		trySendPackets();
+	}
+	
 	/**
 	 * Attempt to send any remaining packets.
 	 */

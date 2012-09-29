@@ -24,7 +24,7 @@ public interface AsynchronousManager {
 	 * @param listener - the packet listener that will recieve these asynchronous events.
 	 * @return An asynchrouns handler.
 	 */
-	public abstract AsyncListenerHandler registerAsyncHandler(Plugin plugin, PacketListener listener);
+	public abstract AsyncListenerHandler registerAsyncHandler(PacketListener listener);
 
 	/**
 	 * Unregisters and closes the given asynchronous handler.
@@ -32,6 +32,12 @@ public interface AsynchronousManager {
 	 */
 	public abstract void unregisterAsyncHandler(AsyncListenerHandler handler);
 
+	/**
+	 * Unregisters every asynchronous handler associated with this plugin.
+	 * @param plugin - the original plugin.
+	 */
+	public void unregisterAsyncHandlers(Plugin plugin);
+	
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be 
 	 * observed by the asynchronous listeners.

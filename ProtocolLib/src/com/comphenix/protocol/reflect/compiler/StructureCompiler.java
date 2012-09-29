@@ -104,7 +104,7 @@ public final class StructureCompiler {
 	}
 	
 	// Used to load classes
-	private static Method defineMethod;
+	private volatile static Method defineMethod;
 	
 	@SuppressWarnings("rawtypes")
 	private Map<StructureKey, Class> compiledCache = new HashMap<StructureKey, Class>();

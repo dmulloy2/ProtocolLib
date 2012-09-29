@@ -5,6 +5,7 @@ import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
@@ -31,10 +32,7 @@ public class AsyncListenerHandler {
 	
 	// The packet listener
 	private PacketListener listener;
-	
-	// The original plugin
-	private Plugin plugin;
-	
+
 	// The filter manager
 	private AsyncFilterManager filterManager;
 	
@@ -44,13 +42,12 @@ public class AsyncListenerHandler {
 	// Minecraft main thread
 	private Thread mainThread;
 	
-	public AsyncListenerHandler(Plugin plugin, Thread mainThread, AsyncFilterManager filterManager, PacketListener listener) {
+	public AsyncListenerHandler(Thread mainThread, AsyncFilterManager filterManager, PacketListener listener) {
 		if (filterManager == null)
 			throw new IllegalArgumentException("filterManager cannot be NULL");
 		if (listener == null)
 			throw new IllegalArgumentException("listener cannot be NULL");
-		
-		this.plugin = plugin;
+
 		this.mainThread = mainThread;
 		this.filterManager = filterManager;
 		this.listener = listener;
@@ -173,6 +170,14 @@ public class AsyncListenerHandler {
 	}
 	
 	private String getPluginName() {
-		return plugin != null ? plugin.getName() : "UNKNOWN";
+		return PacketAdapter.getPluginName(listener);
+	}
+
+	/**
+	 * Retrieve the plugin associated with this async listener.
+	 * @return The plugin.
+	 */
+	public Plugin getPlugin() {
+		return listener != null ? listener.getPlugin() : null;
 	}
 }

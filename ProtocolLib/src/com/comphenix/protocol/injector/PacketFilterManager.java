@@ -212,9 +212,11 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	/**
 	 * Determine if the packet IDs in a whitelist is valid.
+	 * @param listener - the listener that will be mentioned in the error.
 	 * @param whitelist - whitelist of packet IDs.
+	 * @throws IllegalArgumentException If the whitelist is illegal.
 	 */
-	private void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist) {
+	public static void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist) {
 		for (Integer id : whitelist.getWhitelist()) {
 			if (id >= 256 || id < 0) {
 				throw new IllegalArgumentException(String.format("Invalid packet id %s in listener %s.", 
@@ -276,6 +278,9 @@ public final class PacketFilterManager implements ProtocolManager {
 				removePacketListener(listener);
 			}
 		}
+		
+		// Do the same for the asynchronous events
+		asyncFilterManager.unregisterAsyncHandlers(plugin);
 	}
 	
 	/**
