@@ -1,5 +1,6 @@
 package com.comphenix.protocol.async;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -93,6 +94,24 @@ public class AsyncFilterManager {
 		// Start the process
 		getSendingQueue(syncPacket).enqueue(newEvent);
 		getProcessingQueue(syncPacket).enqueue(newEvent);
+	}
+	
+	/**
+	 * Retrieves a immutable set containing the ID of the sent server packets that will be 
+	 * observed by the asynchronous listeners.
+	 * @return Every filtered server packet.
+	 */
+	public Set<Integer> getSendingFilters() {
+		return serverProcessingQueue.keySet();
+	}
+	
+	/**
+	 * Retrieves a immutable set containing the ID of the recieved client packets that will be
+	 * observed by the asynchronous listeners.
+	 * @return Every filtered client packet.
+	 */
+	public Set<Integer> getReceivingFilters() {
+		return clientProcessingQueue.keySet();
 	}
 	
 	/**

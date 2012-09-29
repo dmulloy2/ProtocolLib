@@ -1,9 +1,11 @@
 package com.comphenix.protocol.async;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.google.common.collect.ComparisonChain;
 
 /**
  * Represents packets ready to be transmitted to a client.
@@ -11,7 +13,21 @@ import com.comphenix.protocol.events.PacketEvent;
  */
 class PacketSendingQueue {
 
+	private static final int INITIAL_CAPACITY = 64;
+	
 	private PriorityBlockingQueue<PacketEvent> sendingQueue;
+	
+	public PacketSendingQueue() {
+		sendingQueue = new PriorityBlockingQueue<PacketEvent>(INITIAL_CAPACITY, new Comparator<PacketEvent>() {
+			// Compare using the async marker
+			@Override
+			public int compare(PacketEvent o1, PacketEvent o2) {
+				return ComparisonChain.start().
+					   compare(o1.getAsyncMarker(), o2.getAsyncMarker()).
+					   result();
+			}
+		});
+	}
 	
 	/**
 	 * Enqueue a packet for sending. 

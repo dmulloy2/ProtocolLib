@@ -166,6 +166,21 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public AsyncMarker getAsyncMarker() {
 		return asyncMarker;
 	}
+	/**
+	 * Set the asynchronous marker. 
+	 * <p>
+	 * If the marker is non-null at the end of an synchronous event processing, the packet will be scheduled
+	 * to be processed asynchronously with the given settings.
+	 * <p>
+	 * Note that if there are no asynchronous events that can receive this packet, the marker should be NULL. 
+	 * @param asyncMarker - the new asynchronous marker, or NULL.
+	 * @throws IllegalStateException If the current event is asynchronous.
+	 */
+	public void setAsyncMarker(AsyncMarker asyncMarker) {
+		if (isAsynchronous())
+			throw new IllegalStateException("The marker is immutable for asynchronous events");
+		this.asyncMarker = asyncMarker;
+	}
 
 	/**
 	 * Determine if the packet event has been executed asynchronously or not.

@@ -3,6 +3,7 @@ package com.comphenix.protocol.concurrency;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -109,8 +110,16 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	 * Retrieve every listener.
 	 * @return Every listener.
 	 */
-	protected Iterable<PrioritizedListener<TListener>> values() {
+	public Iterable<PrioritizedListener<TListener>> values() {
 		return Iterables.concat(listeners.values());
+	}
+	
+	/**
+	 * Retrieve every registered packet ID:
+	 * @return Registered packet ID.
+	 */
+	public Set<Integer> keySet() {
+		return listeners.keySet();
 	}
 	
 	/**
