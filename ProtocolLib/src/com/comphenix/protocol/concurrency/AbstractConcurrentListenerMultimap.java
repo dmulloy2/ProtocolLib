@@ -1,6 +1,7 @@
 package com.comphenix.protocol.concurrency;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -16,8 +17,8 @@ import com.comphenix.protocol.injector.PrioritizedListener;
 public abstract class AbstractConcurrentListenerMultimap<TListener> {
 
 	// The core of our map
-	protected ConcurrentMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>> listeners = 
-		  new ConcurrentHashMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>>();
+	private ConcurrentMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>> listeners = 
+		new ConcurrentHashMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>>();
 	
 	/**
 	 * Adds a listener to its requested list of packet recievers.
@@ -90,5 +91,16 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 		}
 		
 		return removedPackets;
+	}
+	
+	/**
+	 * Retrieve the registered listeners, in order from the lowest to the highest priority.
+	 * <p>
+	 * The returned list is thread-safe and doesn't require synchronization.
+	 * @param packetID - packet ID.
+	 * @return Registered listeners.
+	 */
+	public Collection<PrioritizedListener<TListener>> getListener(int packetID) {
+		return listeners.get(packetID);
 	}
 }

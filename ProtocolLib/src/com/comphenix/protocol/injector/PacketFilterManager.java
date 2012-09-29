@@ -46,6 +46,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -112,6 +113,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	// Error logger
 	private Logger logger;
 	
+	// The async packet handler
+	private AsyncFilterManager asyncFilterManager;
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
@@ -126,9 +130,18 @@ public final class PacketFilterManager implements ProtocolManager {
 			this.classLoader = classLoader;
 			this.logger = logger;
 			this.packetInjector = new PacketInjector(classLoader, this, connectionLookup);
+			this.asyncFilterManager = new AsyncFilterManager(logger, this);
 		} catch (IllegalAccessException e) {
 			logger.log(Level.SEVERE, "Unable to initialize packet injector.", e);
 		}
+	}
+	
+	/**
+	 * Retrieve the current async packet filter manager.
+	 * @return Async filter manager.
+	 */
+	public AsyncFilterManager getAsyncFilterManager() {
+		return asyncFilterManager;
 	}
 	
 	/**
@@ -655,6 +668,9 @@ public final class PacketFilterManager implements ProtocolManager {
 		for (PlayerInjector injection : playerInjection.values()) {
 			injection.cleanupAll();
 		}
+		
+		// Clean up async handlers
+		asyncFilterManager.cleanupAll();
 		
 		// Remove packet handlers
 		if (packetInjector != null)

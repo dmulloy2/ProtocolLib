@@ -59,7 +59,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			backgroundCompiler = new BackgroundCompiler(getClassLoader());
 			BackgroundCompiler.setInstance(backgroundCompiler);
 		}
-		
+
 		// Notify server managers of incompatible plugins
 		checkForIncompatibility(manager);
 		

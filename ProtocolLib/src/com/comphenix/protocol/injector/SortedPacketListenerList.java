@@ -1,16 +1,16 @@
 package com.comphenix.protocol.injector;
 
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
-import com.comphenix.protocol.concurrency.SortedCopyOnWriteArray;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
 /**
- * A thread-safe implementation of a listener multimap.
+ * Registry of synchronous packet listeners.
  * 
  * @author Kristian
  */
@@ -22,22 +22,20 @@ class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<Packet
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketRecieving(Logger logger, PacketEvent event) {
-		SortedCopyOnWriteArray<PrioritizedListener<PacketListener>> list = listeners.get(event.getPacketID());
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
 		
 		if (list == null)
 			return;
-		
-		// We have to be careful. Cannot modify the underlying list when sending notifications.
-		synchronized (list) {
-			for (PrioritizedListener<PacketListener> element : list) {
-				try {
-					element.getListener().onPacketReceiving(event);
-				} catch (Throwable e) {
-					// Minecraft doesn't want your Exception.
-					logger.log(Level.SEVERE, 
-							"Exception occured in onPacketReceiving() for " + 
-								PacketAdapter.getPluginName(element.getListener()), e);
-				}
+
+		// The returned list is thread-safe
+		for (PrioritizedListener<PacketListener> element : list) {
+			try {
+				element.getListener().onPacketReceiving(event);
+			} catch (Throwable e) {
+				// Minecraft doesn't want your Exception.
+				logger.log(Level.SEVERE, 
+						"Exception occured in onPacketReceiving() for " + 
+							PacketAdapter.getPluginName(element.getListener()), e);
 			}
 		}
 	}
@@ -48,23 +46,21 @@ class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<Packet
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketSending(Logger logger, PacketEvent event) {
-		SortedCopyOnWriteArray<PrioritizedListener<PacketListener>> list = listeners.get(event.getPacketID());
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
 		
 		if (list == null)
 			return;
 		
-		synchronized (list) {
-			for (PrioritizedListener<PacketListener> element : list) {
-				try {
-					element.getListener().onPacketSending(event);
-				} catch (Throwable e) {
-					// Minecraft doesn't want your Exception.
-					logger.log(Level.SEVERE, 
-							"Exception occured in onPacketReceiving() for " + 
-								PacketAdapter.getPluginName(element.getListener()), e);
-				}
+		for (PrioritizedListener<PacketListener> element : list) {
+			try {
+				element.getListener().onPacketSending(event);
+			} catch (Throwable e) {
+				// Minecraft doesn't want your Exception.
+				logger.log(Level.SEVERE, 
+						"Exception occured in onPacketReceiving() for " + 
+							PacketAdapter.getPluginName(element.getListener()), e);
 			}
-		}	
+		}
 	}
 	
 }

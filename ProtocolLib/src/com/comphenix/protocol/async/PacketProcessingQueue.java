@@ -1,17 +1,19 @@
 package com.comphenix.protocol.async;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
-import com.comphenix.protocol.concurrency.SortedCopyOnWriteArray;
+import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
+import com.comphenix.protocol.injector.PrioritizedListener;
 
 /**
- * Handles the processing of a certain packet type.
+ * Handles the processing of every packet type.
  * 
  * @author Kristian
  */
-class PacketProcessingQueue {
-
+class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<ListenerToken> {
 
 	/**
 	 * Default maximum number of packets to process concurrently.
@@ -31,44 +33,87 @@ class PacketProcessingQueue {
 	
 	// Queued packets for being processed
 	private ArrayBlockingQueue<AsyncPacket> processingQueue;
-
-	// Packet listeners
-	private SortedCopyOnWriteArray<>
 	
-	public PacketProcessingQueue() {
-		this(DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
+	// Packets for sending
+	private PacketSendingQueue sendingQueue;
+
+	public PacketProcessingQueue(PacketSendingQueue sendingQueue) {
+		this(sendingQueue, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
 	}
 	
-	public PacketProcessingQueue(int queueLimit, int maximumConcurrency) {
+	public PacketProcessingQueue(PacketSendingQueue sendingQueue, int queueLimit, int maximumConcurrency) {
+		super();
 		this.processingQueue = new ArrayBlockingQueue<AsyncPacket>(queueLimit);
 		this.maximumConcurrency = maximumConcurrency;
 		this.concurrentProcessing = new Semaphore(maximumConcurrency);
+		this.sendingQueue = sendingQueue;
 	}
 	
-	public boolean queuePacket(AsyncPacket packet) {
+	/**
+	 * Enqueue a packet for processing by the asynchronous listeners.
+	 * @param packet - packet to process.
+	 * @return TRUE if we sucessfully queued the packet, FALSE if the queue ran out if space.
+	 */
+	public boolean enqueuePacket(AsyncPacket packet) {
 		try {
 			processingQueue.add(packet);
 			
 			// Begin processing packets
-			processPacket();
+			signalBeginProcessing();
 			return true;
 		} catch (IllegalStateException e) {
 			return false;
 		}
 	}
 	
-	public void processPacket() {
-		if (concurrentProcessing.tryAcquire()) {
+	/**
+	 * Called by the current method and each thread to signal that a packet might be ready for processing.
+	 */
+	public void signalBeginProcessing() {
+		while (concurrentProcessing.tryAcquire()) {
 			AsyncPacket packet = processingQueue.poll();
 			
 			// Any packet queued?
 			if (packet != null) {
+				Collection<PrioritizedListener<ListenerToken>> list = getListener(packet.getPacketID());
 				
+				if (list != null) {
+					Iterator<PrioritizedListener<ListenerToken>> iterator = list.iterator();
+					
+					if (iterator.hasNext()) {
+						packet.setListenerTraversal(iterator);
+						iterator.next().getListener().enqueuePacket(packet);
+						continue;
+					}
+				}
+				
+				// The packet has no listeners. Just send it.
+				sendingQueue.signalPacketUpdate(packet);
+				signalProcessingDone();
+				
+			} else {
+				// No more queued packets. 
+				return;
 			}
  		}
 	}
+	
+	/**
+	 * Called when a packet has been processed.
+	 */
+	public void signalProcessingDone() {
+		concurrentProcessing.release();
+	}
 
+	/**
+	 * Retrieve the maximum number of packets to process at any given time.
+	 * @return Number of simultaneous packet to process.
+	 */
 	public int getMaximumConcurrency() {
 		return maximumConcurrency;
+	}
+	
+	public void removeListeners() {
+		for (PrioritizedListener<ListenerToken> token : )
 	}
 }

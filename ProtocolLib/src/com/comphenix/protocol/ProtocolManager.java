@@ -17,7 +17,6 @@
 
 package com.comphenix.protocol;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Set;
 
@@ -35,7 +34,7 @@ import com.google.common.collect.ImmutableSet;
  * Represents an API for accessing the Minecraft protocol.
  * @author Kristian
  */
-public interface ProtocolManager {
+public interface ProtocolManager extends PacketStream {
 
 	/**
 	 * Retrieves a list of every registered packet listener.
@@ -66,46 +65,6 @@ public interface ProtocolManager {
 	 * @param plugin - the plugin to unload.
 	 */
 	public void removePacketListeners(Plugin plugin);
-	
-	/**
-	 * Send a packet to the given player.
-	 * @param reciever - the reciever.
-	 * @param packet - packet to send.
-	 * @throws InvocationTargetException - if an error occured when sending the packet.
-	 */
-	public void sendServerPacket(Player reciever, PacketContainer packet) 
-			throws InvocationTargetException;
-
-	/**
-	 * Send a packet to the given player.
-	 * @param reciever - the reciever.
-	 * @param packet - packet to send.
-	 * @param filters - whether or not to invoke any packet filters.
-	 * @throws InvocationTargetException - if an error occured when sending the packet.
-	 */
-	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters)
-			throws InvocationTargetException;
-
-	/**
-	 * Simulate recieving a certain packet from a given player.
-	 * @param sender - the sender.
-	 * @param packet - the packet that was sent.
-	 * @throws InvocationTargetException If the reflection machinery failed.
-	 * @throws IllegalAccessException If the underlying method caused an error.
-	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet) 
-			throws IllegalAccessException, InvocationTargetException;
-
-	/**
-	 * Simulate recieving a certain packet from a given player.
-	 * @param sender - the sender.
-	 * @param packet - the packet that was sent.
-	 * @param filters - whether or not to invoke any packet filters.
-	 * @throws InvocationTargetException If the reflection machinery failed.
-	 * @throws IllegalAccessException If the underlying method caused an error.
-	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters)
-			throws IllegalAccessException, InvocationTargetException;
 
 	/**
 	 * Constructs a new encapsulated Minecraft packet with the given ID.
