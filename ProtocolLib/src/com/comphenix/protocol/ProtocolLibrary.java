@@ -43,6 +43,13 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Structure compiler
 	private BackgroundCompiler backgroundCompiler;
 	
+	// Used to (mostly) clean up packets that have expired
+	private int asyncPacketTask = -1;
+	
+	// Number of ticks between each cleanup. We don't need to do this often,
+	// as it's only indeeded to detected timeouts.
+	private static final int ASYNC_PACKET_DELAY = 10;
+	
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
@@ -69,6 +76,9 @@ public class ProtocolLibrary extends JavaPlugin {
 		// Inject our hook into already existing players
 		protocolManager.initializePlayers(server.getOnlinePlayers());
 		
+		// Timeout
+		createAsyncTask(server);
+		
 		// Try to enable statistics
 		try {
 			statistisc = new Statistics(this);
@@ -76,6 +86,26 @@ public class ProtocolLibrary extends JavaPlugin {
 			logger.log(Level.SEVERE, "Unable to enable metrics.", e);
 		} catch (Throwable e) {
 			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
+		}
+	}
+	
+	private void createAsyncTask(Server server) {
+		try {
+			if (asyncPacketTask < 0)
+				throw new IllegalStateException("Async task has already been created");
+			
+			// Attempt to create task
+			asyncPacketTask = server.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+				@Override
+				public void run() {
+					protocolManager.getAsyncFilterManager().sendProcessedPackets();
+				}
+			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
+		
+		} catch (Throwable e) {
+			if (asyncPacketTask == -1) {
+				logger.log(Level.SEVERE, "Unable to create packet timeout task.", e);
+			}
 		}
 	}
 	
@@ -98,6 +128,12 @@ public class ProtocolLibrary extends JavaPlugin {
 			backgroundCompiler.shutdownAll();
 			backgroundCompiler = null;
 			BackgroundCompiler.setInstance(null);
+		}
+		
+		// Clean up
+		if (asyncPacketTask >= 0) {
+			getServer().getScheduler().cancelTask(asyncPacketTask);
+			asyncPacketTask = -1;
 		}
 		
 		protocolManager.close();

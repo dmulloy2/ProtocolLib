@@ -185,4 +185,12 @@ public class AsyncFilterManager {
 	private PacketProcessingQueue getProcessingQueue(PacketEvent packet) {
 		return packet.isServerPacket() ? serverProcessingQueue : clientProcessingQueue;
 	}
+
+	/**
+	 * Send any due packets, or clean up packets that have expired.
+	 */
+	public void sendProcessedPackets() {
+		clientQueue.trySendPackets();
+		serverQueue.trySendPackets();
+	}
 }

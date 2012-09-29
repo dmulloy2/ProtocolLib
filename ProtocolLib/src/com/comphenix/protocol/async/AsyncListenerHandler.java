@@ -26,6 +26,9 @@ public class AsyncListenerHandler {
 	// Cancel the async handler
 	private volatile boolean cancelled;
 	
+	// If we've started the listener loop before
+	private volatile boolean started;
+	
 	// The packet listener
 	private PacketListener listener;
 	
@@ -105,6 +108,13 @@ public class AsyncListenerHandler {
 		// Danger, danger!
 		if (Thread.currentThread().getId() == mainThread.getId()) 
 			throw new IllegalStateException("Do not call this method from the main thread.");
+		if (started) 
+			throw new IllegalStateException("A listener cannot be run by multiple threads. Create a new listener instead.");
+		if (cancelled)
+			throw new IllegalStateException("Listener has been cancelled. Create a new listener instead.");
+		
+		// Proceed
+		started = true;
 		
 		try {
 			mainLoop:
@@ -158,6 +168,7 @@ public class AsyncListenerHandler {
 		if (!cancelled) {
 			filterManager.unregisterAsyncHandlerInternal(this);
 			cancelled = true;
+			started = false;
 		}
 	}
 	
