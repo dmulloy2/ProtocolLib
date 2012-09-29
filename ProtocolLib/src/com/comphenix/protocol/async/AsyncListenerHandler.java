@@ -86,12 +86,22 @@ public class AsyncListenerHandler {
 	}
 	
 	/**
-	 * Entry point for the background thread that will be processing the packet asynchronously.
+	 * Create a runnable that will initiate the listener loop.
 	 * <p>
-	 * <b>WARNING:</b>
-	 * Never call this method from the main thread. Doing so will block Minecraft.
+	 * <b>Warning</b>: Never call the run() method in the main thread.
 	 */
-	public void listenerLoop() {
+	public Runnable getListenerLoop() {
+		return new Runnable() {
+			@Override
+			public void run() {
+				listenerLoop();
+			}
+		};
+	}
+	
+	// DO NOT call this method from the main thread
+	private void listenerLoop() {
+		
 		// Danger, danger!
 		if (Thread.currentThread().getId() == mainThread.getId()) 
 			throw new IllegalStateException("Do not call this method from the main thread.");

@@ -27,7 +27,13 @@ class PacketSendingQueue {
 	public synchronized void signalPacketUpdate(PacketEvent packetUpdated) {
 		// Mark this packet as finished
 		packetUpdated.getAsyncMarker().setProcessed(true);
+		trySendPackets();
+	}
 
+	/**
+	 * Attempt to send any remaining packets.
+	 */
+	public synchronized void trySendPackets() {
 		// Transmit as many packets as we can
 		while (true) {
 			PacketEvent current = sendingQueue.peek();
