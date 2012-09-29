@@ -35,6 +35,7 @@ public class AsyncListenerHandler {
 
 	// The filter manager
 	private AsyncFilterManager filterManager;
+	private NullPacketListener nullPacketListener;
 	
 	// List of queued packets
 	private ArrayBlockingQueue<PacketEvent> queuedPackets = new ArrayBlockingQueue<PacketEvent>(DEFAULT_CAPACITY);
@@ -61,6 +62,22 @@ public class AsyncListenerHandler {
 		return listener;
 	}
 
+	/**
+	 * Set the synchronized listener that has been automatically created.
+	 * @param nullPacketListener - automatically created listener.
+	 */
+	void setNullPacketListener(NullPacketListener nullPacketListener) {
+		this.nullPacketListener = nullPacketListener;
+	}
+
+	/**
+	 * Retrieve the synchronized listener that was automatically created.
+	 * @return Automatically created listener.
+	 */
+	PacketListener getNullPacketListener() {
+		return nullPacketListener;
+	}
+	
 	/**
 	 * Cancel the handler.
 	 */
