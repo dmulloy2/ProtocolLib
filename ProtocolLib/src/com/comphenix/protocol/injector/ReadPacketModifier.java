@@ -45,6 +45,23 @@ class ReadPacketModifier implements MethodInterceptor {
 		this.packetID = packetID;
 		this.packetInjector = packetInjector;
 	}
+	
+	/**
+	 * Remove any packet overrides.
+	 * @param packet - the packet to rever
+	 */
+	public void removeOverride(Packet packet) {
+		override.remove(packet);
+	}
+	
+	/**
+	 * Retrieve the packet that overrides the methods of the given packet.
+	 * @param packet - the given packet.
+	 * @return Overriden object.
+	 */
+	public Object getOverride(Packet packet) {
+		return override.get(packet);
+	}
 
 	@Override
 	public Object intercept(Object thisObj, Method method, Object[] args, MethodProxy proxy) throws Throwable {

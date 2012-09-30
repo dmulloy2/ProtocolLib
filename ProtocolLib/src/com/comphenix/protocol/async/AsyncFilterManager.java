@@ -74,22 +74,22 @@ public class AsyncFilterManager implements AsynchronousManager {
 		ListeningWhitelist receivingWhitelist = listener.getReceivingWhitelist();
 		
 		// We need a synchronized listener to get the ball rolling
-		boolean needNoOp = true;
+		boolean hasListener = true;
 		
 		// Add listener to either or both processing queue
 		if (hasValidWhitelist(sendingWhitelist)) {
 			PacketFilterManager.verifyWhitelist(listener, sendingWhitelist);
 			serverProcessingQueue.addListener(handler, sendingWhitelist);
-			needNoOp &= hasPacketListener(sendingWhitelist); 
+			hasListener &= hasPacketListener(sendingWhitelist); 
 		}
 		
 		if (hasValidWhitelist(receivingWhitelist)) {
 			PacketFilterManager.verifyWhitelist(listener, receivingWhitelist);
 			clientProcessingQueue.addListener(handler, receivingWhitelist);
-			needNoOp &= hasPacketListener(receivingWhitelist); 
+			hasListener &= hasPacketListener(receivingWhitelist); 
 		}
 		
-		if (needNoOp) {
+		if (!hasListener) {
 			handler.setNullPacketListener(new NullPacketListener(listener));
 			manager.addPacketListener(handler.getNullPacketListener());
 		}

@@ -399,6 +399,9 @@ public final class PacketFilterManager implements ProtocolManager {
 		PlayerInjector injector = getInjector(sender);
 		Packet mcPacket = packet.getHandle();
 		
+		// Make sure the packet isn't cancelled
+		packetInjector.undoCancel(packet.getID(), mcPacket);
+		
 		if (filters) {
 			mcPacket = injector.handlePacketRecieved(mcPacket);
 		}

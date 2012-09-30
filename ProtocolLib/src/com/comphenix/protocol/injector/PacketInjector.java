@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.entity.Player;
 
@@ -52,6 +53,9 @@ class PacketInjector {
 	// Allows us to determine the sender
 	private Map<DataInputStream, Player> playerLookup;
 	
+	// Allows us to look up read packet injectors
+	private Map<Integer, ReadPacketModifier> readModifier;
+	
 	// Class loader
 	private ClassLoader classLoader;
 			
@@ -61,7 +65,22 @@ class PacketInjector {
 		this.classLoader = classLoader;
 		this.manager = manager;
 		this.playerLookup = playerLookup;
+		this.readModifier = new ConcurrentHashMap<Integer, ReadPacketModifier>();
 		initialize();
+	}
+	
+	/**
+	 * Undo a packet cancel.
+	 * @param id - the id of the packet.
+	 * @param packet - packet to uncancel.
+	 */
+	public void undoCancel(Integer id, Packet packet) {
+		ReadPacketModifier modifier = readModifier.get(id);
+		
+		// Cancelled packets are represented with NULL
+		if (modifier != null && modifier.getOverride(packet) == null) {
+			modifier.removeOverride(packet);
+		}
 	}
 	
 	private void initialize() throws IllegalAccessException {
@@ -109,10 +128,12 @@ class PacketInjector {
 		ex.setClassLoader(classLoader);
 		Class proxy = ex.createClass();
 		
+		// Create the proxy handler
+		ReadPacketModifier modifier = new ReadPacketModifier(packetID, this);
+		readModifier.put(packetID, modifier);
+		
 		// Add a static reference
-		Enhancer.registerStaticCallbacks(proxy, new Callback[] { 
-				new ReadPacketModifier(packetID, this) 
-		});
+		Enhancer.registerStaticCallbacks(proxy, new Callback[] { modifier });
 		
 		try {
 			// Override values
@@ -147,6 +168,7 @@ class PacketInjector {
 			
 			putMethod.invoke(intHashMap, packetID, old);
 			previous.remove(packetID);
+			readModifier.remove(packetID);
 			registry.remove(proxy);
 			overwritten.remove(packetID);
 			return true;
