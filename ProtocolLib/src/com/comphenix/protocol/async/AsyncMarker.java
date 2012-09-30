@@ -256,7 +256,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 */
 	public boolean isMinecraftAsync(PacketEvent event) throws FieldAccessException {
 		
-		if (isMinecraftAsync == null) {
+		if (isMinecraftAsync == null && !alwaysSync) {
 			try {
 				isMinecraftAsync = FuzzyReflection.fromClass(Packet.class).getMethodByName("a_.*");
 			} catch (RuntimeException e) {
