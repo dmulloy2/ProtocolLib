@@ -105,7 +105,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	private SortedPacketListenerList sendingListeners = new SortedPacketListenerList();
 	
 	// Whether or not this class has been closed
-	private boolean hasClosed;
+	private volatile boolean hasClosed;
 	
 	// The default class loader
 	private ClassLoader classLoader;
@@ -700,23 +700,26 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	public void close() {
 		// Guard
-		if (hasClosed)
+		if (hasClosed || playerInjection == null)
 			return;
-		
+
 		// Remove everything
 		for (PlayerInjector injection : playerInjection.values()) {
-			injection.cleanupAll();
+			if (injection != null) {
+				injection.cleanupAll();
+			}
 		}
 
 		// Remove packet handlers
 		if (packetInjector != null)
 			packetInjector.cleanupAll();
 		
+		hasClosed = true;
+		
 		// Remove listeners
 		packetListeners.clear();
 		playerInjection.clear();
 		connectionLookup.clear();
-		hasClosed = true;
 		
 		// Clean up async handlers. We have to do this last.
 		asyncFilterManager.cleanupAll();

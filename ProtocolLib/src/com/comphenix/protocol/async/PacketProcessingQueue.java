@@ -97,7 +97,8 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 				signalProcessingDone();
 				
 			} else {
-				// No more queued packets. 
+				// No more queued packets.
+				signalProcessingDone();
 				return;
 			}
  		}
