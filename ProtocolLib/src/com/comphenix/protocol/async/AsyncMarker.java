@@ -3,11 +3,17 @@ package com.comphenix.protocol.async;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Iterator;
+import java.util.List;
+
+import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
+import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.primitives.Longs;
 
 /**
@@ -58,6 +64,10 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	
 	// Whether or not the asynchronous processing itself should be cancelled
 	private volatile boolean asyncCancelled;
+	
+	// Determine if Minecraft processes this packet asynchronously
+	private static Method isMinecraftAsync;
+	private static boolean alwaysSync;
 
 	/**
 	 * Create a container for asyncronous packets.
@@ -237,6 +247,49 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 			throw new IOException("Cannot send packet", e);
 		} catch (IllegalAccessException e) {
 			throw new IOException("Cannot send packet", e);
+		}
+	}
+	
+	/**
+	 * Determine if Minecraft allows asynchronous processing of this packet.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public boolean isMinecraftAsync(PacketEvent event) throws FieldAccessException {
+		
+		if (isMinecraftAsync == null) {
+			try {
+				isMinecraftAsync = FuzzyReflection.fromClass(Packet.class).getMethodByName("a_.*");
+			} catch (RuntimeException e) {
+				// This will occur in 1.2.5 (or possibly in later versions)
+				List<Method> methods = FuzzyReflection.fromClass(Packet.class).
+										getMethodListByParameters(boolean.class, new Class[] {});
+				
+				// Try to look for boolean methods
+				if (methods.size() == 2) {
+					isMinecraftAsync = methods.get(1);
+				} else if (methods.size() == 1) {
+					// We're in 1.2.5
+					alwaysSync = true;
+				} else {
+					System.err.println("Cannot determine asynchronous state of packets!");
+					alwaysSync = true;
+				}
+			}
+		}
+		
+		if (alwaysSync) {
+			return false;
+		} else {
+			try {
+				// Wrap exceptions 
+				return (Boolean) isMinecraftAsync.invoke(event.getPacket().getHandle());
+			} catch (IllegalArgumentException e) {
+				throw new FieldAccessException("Illegal argument", e);
+			} catch (IllegalAccessException e) {
+				throw new FieldAccessException("Unable to reflect method call 'a_', or: isAsyncPacket.", e);
+			} catch (InvocationTargetException e) {
+				throw new FieldAccessException("Minecraft error", e);
+			}
 		}
 	}
 	

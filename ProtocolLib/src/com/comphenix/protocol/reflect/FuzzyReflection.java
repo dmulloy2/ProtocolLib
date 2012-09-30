@@ -19,8 +19,10 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -96,6 +98,7 @@ public class FuzzyReflection {
 	 * Retrieves a method by looking at its name.
 	 * @param nameRegex -  regular expression that will match method names.
 	 * @return The first method that satisfies the regular expression.
+	 * @throws RuntimeException If the method cannot be found.
 	 */
 	public Method getMethodByName(String nameRegex) {
 		
@@ -149,6 +152,26 @@ public class FuzzyReflection {
 		
 		// That sucks
 		throw new RuntimeException("Unable to find " + name + " in " + source.getName());
+	}
+	
+	/**
+	 * Retrieves every method that has the given parameter types and return type.
+	 * @param returnType - return type of the method to find.
+	 * @param args - parameter types of the method to find.
+	 * @return Every method that satisfies the given constraints.
+	 */
+	public List<Method> getMethodListByParameters(Class<?> returnType, Class<?>[] args) {
+	
+		List<Method> methods = new ArrayList<Method>();
+		
+		// Find the correct method to call
+		for (Method method : getMethods()) {
+			if (method.getReturnType().equals(returnType) && Arrays.equals(method.getParameterTypes(), args)) {
+				methods.add(method);
+			}
+		}
+		
+		return methods;
 	}
 	
 	/**

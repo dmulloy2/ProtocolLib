@@ -77,9 +77,14 @@ class ReadPacketModifier implements MethodInterceptor {
 		if (override.containsKey(thisObj)) {
 			Object overridenObject = override.get(thisObj);
 			
-			// Cancel EVERYTHING, including "processPacket"
-			if (overridenObject == null)
-				return null;
+			// This packet has been cancelled
+			if (overridenObject == null) {
+				// So, cancel all void methods
+				if (method.getReturnType().equals(Void.TYPE))
+					return null;
+				else // Revert to normal for everything else
+					overridenObject = thisObj;
+			}
 			
 			returnValue = proxy.invokeSuper(overridenObject, args);
 		} else {

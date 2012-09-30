@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.google.common.collect.ComparisonChain;
 
 /**
@@ -84,17 +85,29 @@ class PacketSendingQueue {
 	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
 	public void trySendPackets(boolean onMainThread) {
-		
-		// Abort if we're not on the main thread
-		if (synchronizeMain && !onMainThread)
-			return;
-		
+				
 		// Transmit as many packets as we can
 		while (true) {
 			PacketEvent current = sendingQueue.peek();
-			
+					
 			if (current != null) {
 				AsyncMarker marker = current.getAsyncMarker();
+				
+				// Abort if we're not on the main thread
+				if (synchronizeMain) {
+					try {
+						boolean wantAsync = marker.isMinecraftAsync(current);
+						boolean wantSync = !wantAsync;
+						
+						// Quit if we haven't fulfilled our promise
+						if ((onMainThread && wantAsync) || (!onMainThread && wantSync))
+							return;
+						
+					} catch (FieldAccessException e) {
+						e.printStackTrace();
+						return;
+					}
+				}
 				
 				if (marker.isProcessed() || marker.hasExpired()) {
 					if (marker.isProcessed() && !current.isCancelled()) {
