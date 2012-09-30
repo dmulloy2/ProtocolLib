@@ -80,6 +80,27 @@ public class BackgroundCompiler {
 	@SuppressWarnings("rawtypes")
 	public void scheduleCompilation(final Map<Class, StructureModifier> cache, final Class key) {
 		
+		@SuppressWarnings("unchecked")
+		final StructureModifier<Object> uncompiled = cache.get(key);
+		
+		if (uncompiled != null) {
+			scheduleCompilation(uncompiled, new CompileListener<Object>() {
+				@Override
+				public void onCompiled(StructureModifier<Object> compiledModifier) {
+					// Update cache
+					cache.put(key, compiledModifier);
+				}
+			});
+		}
+	}
+	
+	/**
+	 * Ensure that the given structure modifier is eventually compiled.
+	 * @param uncompiled - structure modifier to compile.
+	 * @param listener - listener responsible for responding to the compilation.
+	 */
+	public <TKey> void scheduleCompilation(final StructureModifier<TKey> uncompiled, final CompileListener<TKey> listener) {
+
 		// Only schedule if we're enabled
 		if (enabled && !shuttingDown) {
 			
@@ -92,11 +113,11 @@ public class BackgroundCompiler {
 					@Override
 					public Object call() throws Exception {
 		
-						StructureModifier<?> modifier = cache.get(key);
+						StructureModifier<TKey> modifier = uncompiled;
 						
-						// Update the cache!
+						// Do our compilation
 						modifier = compiler.compile(modifier);
-						cache.put(key, modifier);
+						listener.onCompiled(modifier);
 						
 						// We'll also return the new structure modifier
 						return modifier;
