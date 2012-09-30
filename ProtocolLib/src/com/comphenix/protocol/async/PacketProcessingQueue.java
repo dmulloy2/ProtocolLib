@@ -19,7 +19,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	/**
 	 * Default maximum number of packets to process concurrently.
 	 */
-	public static final int DEFAULT_MAXIMUM_CONCURRENCY = 5;
+	public static final int DEFAULT_MAXIMUM_CONCURRENCY = 32;
 	
 	/**
 	 * Default maximum number of packets to queue for processing.
