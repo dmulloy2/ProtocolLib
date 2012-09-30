@@ -221,7 +221,6 @@ abstract class PlayerInjector {
 	Packet handlePacketRecieved(Packet packet) {
 		// Get the packet ID too
 		Integer id = MinecraftRegistry.getPacketToID().get(packet.getClass());
-		System.out.println(id);
 
 		// Make sure we're listening
 		if (id != null && sendingFilters.contains(id)) {	
