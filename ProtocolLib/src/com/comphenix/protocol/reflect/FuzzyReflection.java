@@ -142,16 +142,56 @@ public class FuzzyReflection {
 	 * @return The first method that satisfies the parameter types.
 	 */
 	public Method getMethodByParameters(String name, Class<?> returnType, Class<?>[] args) {
+		// Find the correct method to call
+		List<Method> methods = getMethodListByParameters(returnType, args);
+		
+		if (methods.size() > 0) {
+			return methods.get(0);
+		} else {
+			// That sucks
+			throw new RuntimeException("Unable to find " + name + " in " + source.getName());
+		}
+	}
 	
+	/**
+	 * Retrieves a method by looking at the parameter types and return type only.
+	 * @param name - potential name of the method. Only used by the error mechanism.
+	 * @param returnType - regular expression matching the return type of the method to find.
+	 * @param args - regular expressions of the matching parameter types.
+	 * @return The first method that satisfies the parameter types.
+	 */
+	public Method getMethodByParameters(String name, String returnTypeRegex, String[] argsRegex) {
+	
+		Pattern match = Pattern.compile(returnTypeRegex);
+		Pattern[] argMatch = new Pattern[argsRegex.length];
+		
+		for (int i = 0; i < argsRegex.length; i++) {
+			argMatch[i] = Pattern.compile(argsRegex[i]);
+		}
+		
 		// Find the correct method to call
 		for (Method method : getMethods()) {
-			if (method.getReturnType().equals(returnType) && Arrays.equals(method.getParameterTypes(), args)) {
-				return method;
+			if (match.matcher(method.getReturnType().getName()).matches()) {
+				if (matchParameters(argMatch, method.getParameterTypes()))
+					return method;
 			}
 		}
 		
 		// That sucks
 		throw new RuntimeException("Unable to find " + name + " in " + source.getName());
+	}
+	
+	private boolean matchParameters(Pattern[] parameterMatchers, Class<?>[] argTypes) {
+		if (parameterMatchers.length != argTypes.length)
+			throw new IllegalArgumentException("Arrays must have the same cardinality.");
+		
+		// Check types against the regular expressions
+		for (int i = 0; i < argTypes.length; i++) {
+			if (!parameterMatchers[i].matcher(argTypes[i].getName()).matches())
+				return false;
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -193,6 +233,46 @@ public class FuzzyReflection {
 		// Looks like we're outdated. Too bad.
 		throw new RuntimeException("Unable to find a field with the pattern " + 
 									nameRegex + " in " + source.getName());
+	}
+	
+	/**
+	 * Retrieves the first field with a type equal to or more specific to the given type.
+	 * @param name - name the field probably is given. This will only be used in the error message.
+	 * @param type - type of the field to find.
+	 * @return The first field with a type that is an instance of the given type.
+	 */
+	public Field getFieldByType(String name, Class<?> type) {
+		
+		List<Field> fields = getFieldListByType(type);
+		
+		if (fields.size() > 0) {
+			return fields.get(0);
+		} else {
+			// Looks like we're outdated. Too bad.
+			throw new RuntimeException(String.format("Unable to find a field %s with the type %s in %s",
+					name, type.getName(), source.getName())
+			);
+		}
+	}
+	
+	/**
+	 * Retrieves every field with a type equal to or more specific to the given type.
+	 * @param type - type of the fields to find.
+	 * @return Every field with a type that is an instance of the given type.
+	 */
+	public List<Field> getFieldListByType(Class<?> type) {
+		
+		List<Field> fields = new ArrayList<Field>();
+		
+		// Field with a compatible type
+		for (Field field : getFields()) {
+			// A assignable from B -> B instanceOf A
+			if (type.isAssignableFrom(field.getType())) {
+				fields.add(field);
+			}
+		}
+		
+		return fields;
 	}
 	
 	/**

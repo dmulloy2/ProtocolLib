@@ -53,8 +53,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
-		protocolManager = new PacketFilterManager(
-				getClassLoader(), getServer().getScheduler(), logger);
+		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), logger);
 	}
 	
 	@Override

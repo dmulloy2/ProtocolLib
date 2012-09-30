@@ -34,6 +34,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
+import org.bukkit.Server;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -44,7 +45,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.scheduler.BukkitScheduler;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.ProtocolManager;
@@ -92,10 +92,13 @@ public final class PacketFilterManager implements ProtocolManager {
 	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
 	
 	// Player injection type
-	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_HANDLER_FIELDS;
 	
 	// Packet injection
 	private PacketInjector packetInjector;
+	
+	// Server connection injection
+	private InjectedServerConnection serverInjection;
 	
 	// Enabled packet filters
 	private Set<Integer> sendingFilters = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
@@ -122,7 +125,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
-	public PacketFilterManager(ClassLoader classLoader, BukkitScheduler scheduler, Logger logger) {
+	public PacketFilterManager(ClassLoader classLoader, Server server, Logger logger) {
 		if (logger == null)
 			throw new IllegalArgumentException("logger cannot be NULL.");
 		if (classLoader == null)
@@ -133,7 +136,8 @@ public final class PacketFilterManager implements ProtocolManager {
 			this.classLoader = classLoader;
 			this.logger = logger;
 			this.packetInjector = new PacketInjector(classLoader, this, connectionLookup);
-			this.asyncFilterManager = new AsyncFilterManager(logger, scheduler, this);
+			this.asyncFilterManager = new AsyncFilterManager(logger, server.getScheduler(), this);
+			this.serverInjection = new InjectedServerConnection(logger, server);
 		} catch (IllegalAccessException e) {
 			logger.log(Level.SEVERE, "Unable to initialize packet injector.", e);
 		}
@@ -474,7 +478,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		case NETWORK_MANAGER_OBJECT: 
 			return new NetworkObjectInjector(player, this, sendingFilters);
 		case NETWORK_SERVER_OBJECT:
-			return new NetworkServerInjector(player, this, sendingFilters);
+			return new NetworkServerInjector(player, this, sendingFilters, serverInjection);
 		default:
 			throw new IllegalArgumentException("Cannot construct a player injector.");
 		}
@@ -714,6 +718,8 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (packetInjector != null)
 			packetInjector.cleanupAll();
 		
+		// Remove server handler
+		serverInjection.cleanupAll();
 		hasClosed = true;
 		
 		// Remove listeners

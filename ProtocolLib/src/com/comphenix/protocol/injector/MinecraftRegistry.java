@@ -49,7 +49,7 @@ class MinecraftRegistry {
 		// Initialize it, if we haven't already
 		if (packetToID == null) {
 			try {
-				Field packetsField = FuzzyReflection.fromClass(Packet.class, true).getFieldByType("java\\.util\\.Map");
+				Field packetsField = FuzzyReflection.fromClass(Packet.class, true).getFieldByType("packetsField", Map.class);
 				packetToID = (Map<Class, Integer>) FieldUtils.readStaticField(packetsField, true);
 				
 			} catch (IllegalAccessException e) {
