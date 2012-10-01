@@ -1,7 +1,9 @@
 com.comphenix.protocol
+com.comphenix.protocol.async
 com.comphenix.protocol.concurrency
 com.comphenix.protocol.events
 com.comphenix.protocol.injector
 com.comphenix.protocol.metrics
 com.comphenix.protocol.reflect
+com.comphenix.protocol.reflect.compiler
 com.comphenix.protocol.reflect.instances
