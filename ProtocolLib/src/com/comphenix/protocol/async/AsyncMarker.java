@@ -18,6 +18,8 @@ import com.google.common.primitives.Longs;
 
 /**
  * Contains information about the packet that is being processed by asynchronous listeners.
+ * <p>
+ * Asynchronous listeners can use this to set packet timeout or transmission order.
  * 
  * @author Kristian
  */
