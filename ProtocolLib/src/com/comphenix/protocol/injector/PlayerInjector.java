@@ -31,6 +31,7 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -56,9 +57,11 @@ abstract class PlayerInjector {
 	
 	// Reference to the player's network manager
 	protected VolatileField networkManagerRef;
+	protected VolatileField serverHandlerRef;
 	protected Object networkManager;
 	
 	// Current net handler
+	protected Object serverHandler;
 	protected Object netHandler;
 	
 	// The packet manager and filters
@@ -75,12 +78,18 @@ abstract class PlayerInjector {
 		initialize();
 	}
 
+	/**
+	 * Retrieve the notch (NMS) entity player object.
+	 * @return Notch player object.
+	 */
+	protected EntityPlayer getEntityPlayer() {
+		CraftPlayer craft = (CraftPlayer) player;
+		return craft.getHandle();
+	}
+	
 	protected void initialize() throws IllegalAccessException {
 	
-		CraftPlayer craft = (CraftPlayer) player;
-		EntityPlayer notchEntity = craft.getHandle();
-		
-		Object serverHandler = null;
+		EntityPlayer notchEntity = getEntityPlayer();
 		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception
@@ -89,7 +98,8 @@ abstract class PlayerInjector {
 			// Retrieve the server handler
 			if (serverHandlerField == null)
 				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(".*NetServerHandler");
-			serverHandler = FieldUtils.readField(serverHandlerField, notchEntity);
+			serverHandlerRef = new VolatileField(serverHandlerField, notchEntity);
+			serverHandler = serverHandlerRef.getValue();
 			
 			// Next, get the network manager 
 			if (networkManagerField == null) 
@@ -118,26 +128,31 @@ abstract class PlayerInjector {
 	 * @return Current net handler.
 	 * @throws IllegalAccessException Unable to find or retrieve net handler.
 	 */
-	private Object getNetHandler() throws IllegalAccessException {
+	protected Object getNetHandler() throws IllegalAccessException {
 		
 		// What a mess
 		try {
 			if (netHandlerField == null)
-				netHandlerField = FuzzyReflection.fromClass(networkManagerField.getType(), true).
+				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
 									getFieldByType("net\\.minecraft\\.NetHandler");
 		} catch (RuntimeException e1) {
+			// Swallow it
+		}
+		
+		// Second attempt
+		if (netHandlerField == null) {
 			try {
 				// Well, that sucks. Try just Minecraft objects then.
-				netHandlerField = FuzzyReflection.fromClass(networkManagerField.getType(), true).
+				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
 									 getFieldByType(FuzzyReflection.MINECRAFT_OBJECT);
 				
 			} catch (RuntimeException e2) {
-				return new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());
+				throw new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());
 			}
 		}
 		
 		// Get the handler
-		if (netHandler != null)
+		if (netHandler == null)
 			netHandler = FieldUtils.readField(netHandlerField, networkManager, true);
 		return netHandler;
 	}
@@ -191,6 +206,14 @@ abstract class PlayerInjector {
 	public abstract void cleanupAll();
 	
 	/**
+	 * Invoked before a new listener is registered.
+	 * <p>
+	 * The player injector should throw an exception if this listener cannot be properly supplied with packet events. 
+	 * @param listener - the listener that is about to be registered.
+	 */
+	public abstract void checkListener(PacketListener listener);
+	
+	/**
 	 * Allows a packet to be recieved by the listeners.
 	 * @param packet - packet to recieve.
 	 * @return The given packet, or the packet replaced by the listeners.
@@ -200,7 +223,7 @@ abstract class PlayerInjector {
 		Integer id = MinecraftRegistry.getPacketToID().get(packet.getClass());
 
 		// Make sure we're listening
-		if (sendingFilters.contains(id)) {	
+		if (id != null && sendingFilters.contains(id)) {
 			// A packet has been sent guys!
 			PacketContainer container = new PacketContainer(id, packet);
 			PacketEvent event = PacketEvent.fromServer(manager, container, player);

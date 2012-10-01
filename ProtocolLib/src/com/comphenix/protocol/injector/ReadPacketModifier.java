@@ -45,6 +45,23 @@ class ReadPacketModifier implements MethodInterceptor {
 		this.packetID = packetID;
 		this.packetInjector = packetInjector;
 	}
+	
+	/**
+	 * Remove any packet overrides.
+	 * @param packet - the packet to rever
+	 */
+	public void removeOverride(Packet packet) {
+		override.remove(packet);
+	}
+	
+	/**
+	 * Retrieve the packet that overrides the methods of the given packet.
+	 * @param packet - the given packet.
+	 * @return Overriden object.
+	 */
+	public Object getOverride(Packet packet) {
+		return override.get(packet);
+	}
 
 	@Override
 	public Object intercept(Object thisObj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
@@ -60,9 +77,14 @@ class ReadPacketModifier implements MethodInterceptor {
 		if (override.containsKey(thisObj)) {
 			Object overridenObject = override.get(thisObj);
 			
-			// Cancel EVERYTHING, including "processPacket"
-			if (overridenObject == null)
-				return null;
+			// This packet has been cancelled
+			if (overridenObject == null) {
+				// So, cancel all void methods
+				if (method.getReturnType().equals(Void.TYPE))
+					return null;
+				else // Revert to normal for everything else
+					overridenObject = thisObj;
+			}
 			
 			returnValue = proxy.invokeSuper(overridenObject, args);
 		} else {
@@ -75,7 +97,7 @@ class ReadPacketModifier implements MethodInterceptor {
 			
 			// We need this in order to get the correct player
 			DataInputStream input = (DataInputStream) args[0];
-			
+
 			// Let the people know
 			PacketContainer container = new PacketContainer(packetID, (Packet) thisObj);
 			PacketEvent event = packetInjector.packetRecieved(container, input);

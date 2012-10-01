@@ -17,12 +17,17 @@
 
 package com.comphenix.protocol.injector;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
+import com.comphenix.protocol.reflect.compiler.CompileListener;
+import com.comphenix.protocol.reflect.compiler.CompiledStructureModifier;
 
 /**
  * Caches structure modifiers.
@@ -30,7 +35,10 @@ import com.comphenix.protocol.reflect.StructureModifier;
  */
 public class StructureCache {
 	// Structure modifiers
-	private static Map<Integer, StructureModifier<Object>> structureModifiers = new HashMap<Integer, StructureModifier<Object>>();
+	private static ConcurrentMap<Integer, StructureModifier<Object>> structureModifiers = 
+			new ConcurrentHashMap<Integer, StructureModifier<Object>>();
+	
+	private static Set<Integer> compiling = new HashSet<Integer>();
 	
 	/**
 	 * Creates an empty Minecraft packet of the given ID.
@@ -53,15 +61,51 @@ public class StructureCache {
 	 * @return A structure modifier.
 	 */
 	public static StructureModifier<Object> getStructure(int id) {
+		// Compile structures by default
+		return getStructure(id, true);
+	}
+	
+	/**
+	 * Retrieve a cached structure modifier for the given packet id.
+	 * @param id - packet ID.
+	 * @param compile - whether or not to asynchronously compile the structure modifier.
+	 * @return A structure modifier.
+	 */
+	public static StructureModifier<Object> getStructure(int id, boolean compile) {
 		
 		StructureModifier<Object> result = structureModifiers.get(id);
-		
-		// Use the vanilla class definition
+
+		// We don't want to create this for every lookup
 		if (result == null) {
-			result = new StructureModifier<Object>(
+			// Use the vanilla class definition
+			final StructureModifier<Object> value = new StructureModifier<Object>(
 					MinecraftRegistry.getPacketClassFromID(id, true), Packet.class, true);
 			
-			structureModifiers.put(id, result);
+			result = structureModifiers.putIfAbsent(id, value);
+			
+			// We may end up creating multiple modifiers, but we'll agree on which to use
+			if (result == null) {
+				result = value;
+			}
+		}
+		
+		// Automatically compile the structure modifier
+		if (compile && !(result instanceof CompiledStructureModifier)) {
+			// Compilation is many orders of magnitude slower than synchronization
+			synchronized (compiling) {
+				final int idCopy = id;
+				final BackgroundCompiler compiler = BackgroundCompiler.getInstance();
+				
+				if (!compiling.contains(id) && compiler != null) {
+					compiler.scheduleCompilation(result, new CompileListener<Object>() {
+						@Override
+						public void onCompiled(StructureModifier<Object> compiledModifier) {
+							structureModifiers.put(idCopy, compiledModifier);
+						}
+					});
+					compiling.add(id);
+				}
+			}
 		}
 		
 		return result;

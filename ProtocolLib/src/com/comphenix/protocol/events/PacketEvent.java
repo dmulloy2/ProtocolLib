@@ -17,10 +17,15 @@
 
 package com.comphenix.protocol.events;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.EventObject;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+
+import com.comphenix.protocol.async.AsyncMarker;
 
 public class PacketEvent extends EventObject implements Cancellable {
 	/**
@@ -28,10 +33,13 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	private static final long serialVersionUID = -5360289379097430620L;
 
+	private transient Player player;
 	private PacketContainer packet;
-	private Player player;
 	private boolean serverPacket;
 	private boolean cancel;
+	
+	private AsyncMarker asyncMarker;
+	private boolean asynchronous;
 	
 	/**
 	 * Use the static constructors to create instances of this event.
@@ -46,6 +54,16 @@ public class PacketEvent extends EventObject implements Cancellable {
 		this.packet = packet;
 		this.player = player;
 		this.serverPacket = serverPacket;
+	}
+	
+	private PacketEvent(PacketEvent origial, AsyncMarker asyncMarker) {
+		super(origial.source);
+		this.packet = origial.packet;
+		this.player = origial.player;
+		this.cancel = origial.cancel;
+		this.serverPacket = origial.serverPacket;
+		this.asyncMarker = asyncMarker;
+		this.asynchronous = true;
 	}
 
 	/**
@@ -68,6 +86,16 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public static PacketEvent fromServer(Object source,  PacketContainer packet, Player recipient) {
 		return new PacketEvent(source, packet, recipient, true);
+	}
+	
+	/**
+	 * Create an asynchronous packet event from a synchronous event and a async marker.
+	 * @param event - the original synchronous event.
+	 * @param marker - the asynchronous marker.
+	 * @return The new packet event.
+	 */
+	public static PacketEvent fromSynchronous(PacketEvent event, AsyncMarker marker) {
+		return new PacketEvent(event, marker);
 	}
 	
 	/**
@@ -120,9 +148,67 @@ public class PacketEvent extends EventObject implements Cancellable {
 	
 	/**
 	 * Whether or not this packet was created by the server.
+	 * <p>
+	 * Most listeners can deduce this by noting which listener method was invoked.
 	 * @return TRUE if the packet was created by the server, FALSE if it was created by a client.
 	 */
 	public boolean isServerPacket() {
 		return serverPacket;
+	}
+	
+	/**
+	 * Retrieve the asynchronous marker.
+	 * <p>
+	 * If the packet is synchronous, this marker will be used to schedule an asynchronous event. In the following
+	 * asynchronous event, the marker is used to correctly pass the packet around to the different threads.
+	 * <p>
+	 * Note that if there are no asynchronous events that can receive this packet, the marker is NULL.
+	 * @return The current asynchronous marker, or NULL.
+	 */
+	public AsyncMarker getAsyncMarker() {
+		return asyncMarker;
+	}
+	/**
+	 * Set the asynchronous marker. 
+	 * <p>
+	 * If the marker is non-null at the end of an synchronous event processing, the packet will be scheduled
+	 * to be processed asynchronously with the given settings.
+	 * <p>
+	 * Note that if there are no asynchronous events that can receive this packet, the marker should be NULL. 
+	 * @param asyncMarker - the new asynchronous marker, or NULL.
+	 * @throws IllegalStateException If the current event is asynchronous.
+	 */
+	public void setAsyncMarker(AsyncMarker asyncMarker) {
+		if (isAsynchronous())
+			throw new IllegalStateException("The marker is immutable for asynchronous events");
+		this.asyncMarker = asyncMarker;
+	}
+
+	/**
+	 * Determine if the packet event has been executed asynchronously or not.
+	 * @return TRUE if this packet event is asynchronous, FALSE otherwise.
+	 */
+	public boolean isAsynchronous() {
+		return asynchronous;
+	}
+	
+	private void writeObject(ObjectOutputStream output) throws IOException {
+	    // Default serialization 
+		output.defaultWriteObject();
+
+		// Write the name of the player (or NULL if it's not set)
+		output.writeObject(player != null ? new SerializedOfflinePlayer(player) : null);
+	}
+
+	private void readObject(ObjectInputStream input) throws ClassNotFoundException, IOException {
+	    // Default deserialization
+		input.defaultReadObject();
+
+		final SerializedOfflinePlayer offlinePlayer = (SerializedOfflinePlayer) input.readObject();
+		
+	    if (offlinePlayer != null) {
+	    	// Better than nothing
+	    	player = offlinePlayer.getPlayer();
+	    }
 	}
 }

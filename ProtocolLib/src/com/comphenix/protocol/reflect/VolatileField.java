@@ -155,6 +155,13 @@ public class VolatileField {
 		}
 	}
 	
+	/**
+	 * Determine whether or not we'll need to revert the value.
+	 */
+	public boolean isCurrentSet() {
+		return currentSet;
+	}
+	
 	private void ensureLoaded() {
 		// Load the value if we haven't already
 		if (!previousLoaded) {

@@ -20,6 +20,8 @@ package com.comphenix.protocol.reflect.instances;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
+import net.sf.cglib.proxy.Enhancer;
+
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
@@ -101,6 +103,38 @@ public class DefaultInstances {
 	}
 	
 	/**
+	 * Retrieve the constructor with the fewest number of parameters.
+	 * @param type - type to construct.
+	 * @return A constructor with the fewest number of parameters, or NULL if the type has no constructors.
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> Constructor<T> getMinimumConstructor(Class<T> type) {
+		
+		Constructor<T> minimum = null;
+		int lastCount = Integer.MAX_VALUE;
+		
+		// Find the constructor with the fewest parameters
+		for (Constructor<?> candidate : type.getConstructors()) {
+			Class<?>[] types = candidate.getParameterTypes();
+			
+			// Note that we don't allow recursive types - that is, types that
+			// require itself in the constructor.
+			if (types.length < lastCount) {
+				if (!contains(types, type)) {
+					minimum = (Constructor<T>) candidate;
+					lastCount = types.length;
+					
+					// Don't loop again if we've already found the best possible constructor
+					if (lastCount == 0)
+						break;
+				}
+			}
+		}
+		
+		return minimum;
+	}
+	
+	/**
 	 * Retrieves a default instance or value that is assignable to this type.
 	 * <p>
 	 * This includes, but isn't limited too:
@@ -136,36 +170,18 @@ public class DefaultInstances {
 			if (value != null)
 				return (T) value;
 		}
-		
-		Constructor<T> minimum = null;
-		int lastCount = Integer.MAX_VALUE;
-		
-		// Find the constructor with the fewest parameters
-		for (Constructor<?> candidate : type.getConstructors()) {
-			Class<?>[] types = candidate.getParameterTypes();
-			
-			// Note that we don't allow recursive types - that is, types that
-			// require itself in the constructor.
-			if (types.length < lastCount) {
-				if (!contains(types, type)) {
-					minimum = (Constructor<T>) candidate;
-					lastCount = types.length;
-					
-					// Don't loop again if we've already found the best possible constructor
-					if (lastCount == 0)
-						break;
-				}
-			}
-		}
-		
+
+		Constructor<T> minimum = getMinimumConstructor(type);
+
 		// Create the type with this constructor using default values. This might fail, though.
 		try {
 			if (minimum != null) {
-				Object[] params = new Object[lastCount];
+				int parameterCount = minimum.getParameterTypes().length;
+				Object[] params = new Object[parameterCount];
 				Class<?>[] types = minimum.getParameterTypes();
 				
 				// Fill out 
-				for (int i = 0; i < lastCount; i++) {
+				for (int i = 0; i < parameterCount; i++) {
 					params[i] = getDefaultInternal(types[i], providers, recursionLevel + 1);
 				}
 				
@@ -178,6 +194,24 @@ public class DefaultInstances {
 		
 		// No suitable default value could be found
 		return null;
+	}
+	
+	/**
+	 * Construct default instances using the CGLIB enhancer object instead.
+	 * @param enhancer - a CGLIB enhancer to use.
+	 * @return A default instance generator that uses the CGLIB enhancer.
+	 */
+	public DefaultInstances forEnhancer(Enhancer enhancer) {
+		final Enhancer ex = enhancer;
+		
+		return new DefaultInstances(registered) {
+			@SuppressWarnings("unchecked")
+			@Override
+			protected <T> T createInstance(Class<T> type, Constructor<T> constructor, Class<?>[] types, Object[] params) {
+				// Use the enhancer instead
+				return (T) ex.create(types, params);
+			}
+		};
 	}
 	
 	/**

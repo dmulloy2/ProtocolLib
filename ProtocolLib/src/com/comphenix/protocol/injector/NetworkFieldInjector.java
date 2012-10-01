@@ -10,6 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -48,7 +51,7 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@Override
-	protected void initialize() throws IllegalAccessException {
+	protected synchronized void initialize() throws IllegalAccessException {
 		super.initialize();
 	
 		// Get the sync field as well
@@ -80,6 +83,15 @@ class NetworkFieldInjector extends PlayerInjector {
 			}
 		} else {
 			throw new IllegalStateException("Unable to load network mananager. Cannot send packet.");
+		}
+	}
+	
+	@Override
+	public void checkListener(PacketListener listener) {
+		// Unfortunately, we don't support chunk packets
+		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), 
+				Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK)) {
+			throw new IllegalStateException("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.");
 		}
 	}
 	

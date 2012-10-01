@@ -25,8 +25,10 @@ import org.bukkit.Server;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
+import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 
 public class ProtocolLibrary extends JavaPlugin {
 	
@@ -39,10 +41,19 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Metrics and statistisc
 	private Statistics statistisc;
 	
+	// Structure compiler
+	private BackgroundCompiler backgroundCompiler;
+	
+	// Used to clean up server packets that have expired. 
+	// But mostly required to simulate recieving client packets.
+	private int asyncPacketTask = -1;
+	private int tickCounter = 0;
+	private static final int ASYNC_PACKET_DELAY = 1;
+	
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
-		protocolManager = new PacketFilterManager(getClassLoader(), logger);
+		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), logger);
 	}
 	
 	@Override
@@ -50,6 +61,12 @@ public class ProtocolLibrary extends JavaPlugin {
 		Server server = getServer();
 		PluginManager manager = server.getPluginManager();
 		
+		// Initialize background compiler
+		if (backgroundCompiler == null) {
+			backgroundCompiler = new BackgroundCompiler(getClassLoader());
+			BackgroundCompiler.setInstance(backgroundCompiler);
+		}
+
 		// Notify server managers of incompatible plugins
 		checkForIncompatibility(manager);
 		
@@ -58,6 +75,9 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Inject our hook into already existing players
 		protocolManager.initializePlayers(server.getOnlinePlayers());
+		
+		// Timeout
+		createAsyncTask(server);
 		
 		// Try to enable statistics
 		try {
@@ -69,9 +89,32 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 	
+	private void createAsyncTask(Server server) {
+		try {
+			if (asyncPacketTask >= 0)
+				throw new IllegalStateException("Async task has already been created");
+			
+			// Attempt to create task
+			asyncPacketTask = server.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+				@Override
+				public void run() {
+					AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
+					
+					// We KNOW we're on the main thread at the moment
+					manager.sendProcessedPackets(tickCounter++, true);
+				}
+			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
+		
+		} catch (Throwable e) {
+			if (asyncPacketTask == -1) {
+				logger.log(Level.SEVERE, "Unable to create packet timeout task.", e);
+			}
+		}
+	}
+	
 	private void checkForIncompatibility(PluginManager manager) {
 		// Plugin authors: Notify me to remove these
-		String[] incompatiblePlugins = { "TagAPI" };
+		String[] incompatiblePlugins = {};
 		
 		for (String plugin : incompatiblePlugins) {
 			if (manager.getPlugin(plugin) != null) {
@@ -83,6 +126,19 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	@Override
 	public void onDisable() {
+		// Disable compiler
+		if (backgroundCompiler != null) {
+			backgroundCompiler.shutdownAll();
+			backgroundCompiler = null;
+			BackgroundCompiler.setInstance(null);
+		}
+		
+		// Clean up
+		if (asyncPacketTask >= 0) {
+			getServer().getScheduler().cancelTask(asyncPacketTask);
+			asyncPacketTask = -1;
+		}
+		
 		protocolManager.close();
 		protocolManager = null;
 		statistisc = null;
