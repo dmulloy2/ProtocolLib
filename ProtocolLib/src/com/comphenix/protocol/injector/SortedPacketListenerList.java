@@ -57,7 +57,7 @@ class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<Packet
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
 				logger.log(Level.SEVERE, 
-						"Exception occured in onPacketReceiving() for " + 
+						"Exception occured in onPacketSending() for " + 
 							PacketAdapter.getPluginName(element.getListener()), e);
 			}
 		}

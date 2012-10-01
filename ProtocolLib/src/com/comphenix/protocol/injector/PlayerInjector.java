@@ -223,7 +223,7 @@ abstract class PlayerInjector {
 		Integer id = MinecraftRegistry.getPacketToID().get(packet.getClass());
 
 		// Make sure we're listening
-		if (id != null && sendingFilters.contains(id)) {	
+		if (id != null && sendingFilters.contains(id)) {
 			// A packet has been sent guys!
 			PacketContainer container = new PacketContainer(id, packet);
 			PacketEvent event = PacketEvent.fromServer(manager, container, player);

@@ -148,6 +148,8 @@ public class PacketEvent extends EventObject implements Cancellable {
 	
 	/**
 	 * Whether or not this packet was created by the server.
+	 * <p>
+	 * Most listeners can deduce this by noting which listener method was invoked.
 	 * @return TRUE if the packet was created by the server, FALSE if it was created by a client.
 	 */
 	public boolean isServerPacket() {

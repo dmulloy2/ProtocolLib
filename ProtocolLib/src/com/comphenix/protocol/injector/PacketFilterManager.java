@@ -293,7 +293,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketRecieving(PacketEvent event) {
-		handlePacket(recievedListeners, event);
+		handlePacket(recievedListeners, event, false);
 	}
 	
 	/**
@@ -301,7 +301,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketSending(PacketEvent event) {
-		handlePacket(sendingListeners, event);
+		handlePacket(sendingListeners, event, true);
 	}
 	
 	/**
@@ -311,7 +311,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param packetListeners - packet listeners that will receive this event.
 	 * @param event - the evnet to broadcast.
 	 */
-	private void handlePacket(SortedPacketListenerList packetListeners, PacketEvent event) {
+	private void handlePacket(SortedPacketListenerList packetListeners, PacketEvent event, boolean sending) {
 		
 		// By default, asynchronous packets are queued for processing
 		if (asyncFilterManager.hasAsynchronousListeners(event)) {
@@ -319,7 +319,10 @@ public final class PacketFilterManager implements ProtocolManager {
 		}
 		
 		// Process synchronous events
-		packetListeners.invokePacketRecieving(logger, event);
+		if (sending)
+			packetListeners.invokePacketSending(logger, event);
+		else
+			packetListeners.invokePacketRecieving(logger, event);
 		
 		// To cancel asynchronous processing, use the async marker
 		if (!event.isCancelled() && !hasAsyncCancelled(event.getAsyncMarker())) {

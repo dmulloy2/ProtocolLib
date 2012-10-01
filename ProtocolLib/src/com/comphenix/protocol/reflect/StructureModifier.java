@@ -58,6 +58,9 @@ public class StructureModifier<TField> {
 	// Cache of previous types
 	protected Map<Class, StructureModifier> subtypeCache;
 	
+	// Whether or subclasses should handle conversion
+	protected boolean customConvertHandling;
+	
 	/**
 	 * Creates a structure modifier.
 	 * @param targetType - the structure to modify.
@@ -125,7 +128,7 @@ public class StructureModifier<TField> {
 			Object result = FieldUtils.readField(data.get(fieldIndex), target, true);
 			
 			// Use the converter, if we have it
-			if (converter != null)
+			if (needConversion())
 				return converter.getSpecific(result);
 			else
 				return (TField) result;
@@ -164,7 +167,7 @@ public class StructureModifier<TField> {
 			throw new IllegalStateException("Cannot write to a NULL target.");
 		
 		// Use the converter, if it exists
-		Object obj = converter != null ? converter.getGeneric(value) : value;
+		Object obj = needConversion() ? converter.getGeneric(value) : value;
 		
 		try {
 			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
@@ -174,6 +177,14 @@ public class StructureModifier<TField> {
 		
 		// Make this method chainable
 		return this;
+	}
+	
+	/**
+	 * Whether or not we should use the converter instance.
+	 * @return TRUE if we should, FALSE otherwise.
+	 */
+	private final boolean needConversion() {
+		return converter != null && !customConvertHandling;
 	}
 	
 	/**
@@ -362,7 +373,7 @@ public class StructureModifier<TField> {
 	
 	/**
 	 * Retrieves a structure modifier with the same type and target, but using a new object converter.
-	 * @param converter- the object converter to use.
+	 * @param converter - the object converter to use.
 	 * @return Structure modifier with the new converter.
 	 */
 	@SuppressWarnings("unchecked")

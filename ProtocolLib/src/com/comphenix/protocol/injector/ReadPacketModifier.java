@@ -97,7 +97,7 @@ class ReadPacketModifier implements MethodInterceptor {
 			
 			// We need this in order to get the correct player
 			DataInputStream input = (DataInputStream) args[0];
-			
+
 			// Let the people know
 			PacketContainer container = new PacketContainer(packetID, (Packet) thisObj);
 			PacketEvent event = packetInjector.packetRecieved(container, input);

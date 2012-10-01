@@ -14,40 +14,39 @@ import com.google.common.base.Objects;
 
 import net.sf.cglib.asm.*;
 
-// This class will automatically generate the following type of structure modifier:
-//
-//	public class CompiledStructure$Packet20NamedEntitySpawnObject<TField> extends CompiledStructureModifier<TField> {
+// public class CompiledStructureModifierPacket20<TField> extends CompiledStructureModifier<TField> {
 //	
 //		private Packet20NamedEntitySpawn typedTarget;
-//		
-//		public CompiledStructure$Packet20NamedEntitySpawnObject(StructureModifier<TField> other, StructureCompiler compiler) {
+//	
+//		public CompiledStructureModifierPacket20(StructureModifier<TField> other, StructureCompiler compiler) {
+//			super();
 //			initialize(other);
-//			this.typedTarget = (Packet20NamedEntitySpawn) other.getTarget();
+//			this.target = other.getTarget();
+//			this.typedTarget = (Packet20NamedEntitySpawn) target;
 //			this.compiler = compiler;
 //		}
 //	
-//		@SuppressWarnings("unchecked")
 //		@Override
-//		public TField read(int fieldIndex) throws FieldAccessException {
+//		protected Object readGenerated(int fieldIndex) throws FieldAccessException {
 //	
 //			Packet20NamedEntitySpawn target = typedTarget;
 //			
 //			switch (fieldIndex) {
-//			case 0: return (TField) (Object) target.a;
-//			case 1: return (TField) (Object) target.b;
-//			case 2: return (TField) (Object) target.c;
-//			case 3: return (TField) (Object) target.d;
-//			case 4: return (TField) (Object) target.e;
-//			case 5: return (TField) (Object) target.f;
-//			case 6: return (TField) (Object) target.g;
-//			case 7: return (TField) (Object) target.h;
+//			case 0: return (Object) target.a;
+//			case 1: return (Object) target.b;
+//			case 2: return (Object) target.c;
+//			case 3: return super.read(fieldIndex);
+//			case 4: return super.read(fieldIndex);
+//			case 5: return (Object) target.f;
+//			case 6: return (Object) target.g;
+//			case 7: return (Object) target.h;
 //			default:
 //				throw new FieldAccessException("Invalid index " + fieldIndex);
 //			}
 //		}
 //	
 //		@Override
-//		public StructureModifier<TField> write(int index, Object value) {
+//		protected StructureModifier<TField> writeGenerated(int index, Object value) throws FieldAccessException {
 //			
 //			Packet20NamedEntitySpawn target = typedTarget;
 //			
@@ -56,8 +55,8 @@ import net.sf.cglib.asm.*;
 //			case 1: target.b = (String) value; break;
 //			case 2: target.c = (Integer) value; break;
 //			case 3: target.d = (Integer) value; break;
-//			case 4: target.e = (Integer) value; break;
-//			case 5: target.f = (Byte) value; break;
+//			case 4: super.write(index, value); break;
+//			case 5: super.write(index, value); break;
 //			case 6: target.g = (Byte) value; break;
 //			case 7: target.h = (Integer) value; break;
 //			default:
@@ -265,7 +264,7 @@ public final class StructureCompiler {
 		
 		String methodDescriptor = "(ILjava/lang/Object;)L" + SUPER_CLASS + ";";
 		String methodSignature = "(ITTField;)L" + SUPER_CLASS + "<TTField;>;";
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, "write", methodDescriptor, methodSignature, 
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "writeGenerated", methodDescriptor, methodSignature, 
 									new String[] { FIELD_EXCEPTION_CLASS });
 		BoxingHelper boxingHelper = new BoxingHelper(mv);
 		
@@ -349,7 +348,7 @@ public final class StructureCompiler {
 	}
 
 	private void createReadMethod(ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, "read", "(I)Ljava/lang/Object;", "(I)TTField;", 
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "readGenerated", "(I)Ljava/lang/Object;", null, 
 									new String[] { "com/comphenix/protocol/reflect/FieldAccessException" });
 		BoxingHelper boxingHelper = new BoxingHelper(mv);
 		
