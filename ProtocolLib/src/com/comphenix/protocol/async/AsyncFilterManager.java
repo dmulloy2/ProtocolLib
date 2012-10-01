@@ -53,6 +53,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		
 		// Server packets are synchronized already
 		this.serverQueue = new PacketSendingQueue(false);
+		
 		// Client packets must be synchronized
 		this.clientQueue = new PacketSendingQueue(true); 
 		
