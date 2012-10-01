@@ -92,7 +92,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
 	
 	// Player injection type
-	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_HANDLER_FIELDS;
+	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
 	
 	// Packet injection
 	private PacketInjector packetInjector;
