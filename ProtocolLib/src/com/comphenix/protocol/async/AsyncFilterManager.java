@@ -68,42 +68,45 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	@Override
 	public AsyncListenerHandler registerAsyncHandler(PacketListener listener) {
+		return registerAsyncHandler(listener, true);
+	}
+	
+	/**
+	 * Registers an asynchronous packet handler.
+	 * <p>
+	 * To start listening asynchronously, pass the getListenerLoop() runnable to a different thread.
+	 * <p>
+	 * Asynchronous events will only be executed if a synchronous listener with the same packets is registered.
+	 * If you already have a synchronous event, call this method with autoInject set to FALSE.
+	 * 
+	 * @param listener - the packet listener that will recieve these asynchronous events.
+	 * @param autoInject - whether or not to automatically create the corresponding synchronous listener,
+	 * @return An asynchrouns handler.
+	 */
+	public AsyncListenerHandler registerAsyncHandler(PacketListener listener, boolean autoInject) {
 		AsyncListenerHandler handler = new AsyncListenerHandler(mainThread, this, listener);
 		
 		ListeningWhitelist sendingWhitelist = listener.getSendingWhitelist();
 		ListeningWhitelist receivingWhitelist = listener.getReceivingWhitelist();
 		
-		// We need a synchronized listener to get the ball rolling
-		boolean hasListener = true;
-		
 		// Add listener to either or both processing queue
 		if (hasValidWhitelist(sendingWhitelist)) {
 			PacketFilterManager.verifyWhitelist(listener, sendingWhitelist);
 			serverProcessingQueue.addListener(handler, sendingWhitelist);
-			hasListener &= hasPacketListener(sendingWhitelist); 
 		}
 		
 		if (hasValidWhitelist(receivingWhitelist)) {
 			PacketFilterManager.verifyWhitelist(listener, receivingWhitelist);
 			clientProcessingQueue.addListener(handler, receivingWhitelist);
-			hasListener &= hasPacketListener(receivingWhitelist); 
 		}
 		
-		if (!hasListener) {
+		// We need a synchronized listener to get the ball rolling
+		if (autoInject) {
 			handler.setNullPacketListener(new NullPacketListener(listener));
 			manager.addPacketListener(handler.getNullPacketListener());
 		}
 		
 		return handler;
-	}
-	
-	/**
-	 * Determine if the given packets are represented.
-	 * @param whitelist - list of packets.
-	 * @return TRUE if they are all registered, FALSE otherwise.
-	 */
-	private boolean hasPacketListener(ListeningWhitelist whitelist) {
-		return manager.getSendingFilters().containsAll(whitelist.getWhitelist());
 	}
 	
 	private boolean hasValidWhitelist(ListeningWhitelist whitelist) {

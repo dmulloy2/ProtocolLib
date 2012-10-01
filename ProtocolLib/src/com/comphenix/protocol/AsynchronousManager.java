@@ -20,7 +20,6 @@ public interface AsynchronousManager {
 	 * Registers an asynchronous packet handler.
 	 * <p>
 	 * To start listening asynchronously, pass the getListenerLoop() runnable to a different thread.
-	 * @param plugin - the plugin that is registering the handler.
 	 * @param listener - the packet listener that will recieve these asynchronous events.
 	 * @return An asynchrouns handler.
 	 */
