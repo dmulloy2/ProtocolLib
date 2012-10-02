@@ -403,8 +403,6 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
 		
-		sender.is
-		
 		PlayerInjector injector = getInjector(sender);
 		Packet mcPacket = packet.getHandle();
 		
