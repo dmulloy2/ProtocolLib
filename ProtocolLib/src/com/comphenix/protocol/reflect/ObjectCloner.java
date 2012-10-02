@@ -1,17 +1,15 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.reflect;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.StructureModifier;
 
 /**
  * Can copy an object field by field.
  * 
  * @author Kristian
  */
-class ObjectCloner {
+public class ObjectCloner {
 
 	// Cache structure modifiers
 	@SuppressWarnings("rawtypes")

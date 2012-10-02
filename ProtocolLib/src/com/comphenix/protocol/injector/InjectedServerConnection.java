@@ -13,6 +13,7 @@ import org.bukkit.Server;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.ObjectCloner;
 import com.comphenix.protocol.reflect.VolatileField;
 
 /**

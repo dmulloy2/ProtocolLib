@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.ObjectCloner;
 import com.comphenix.protocol.reflect.instances.CollectionGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;

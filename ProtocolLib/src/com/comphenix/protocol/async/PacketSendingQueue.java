@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.FieldAccessException;
 
@@ -112,7 +114,10 @@ class PacketSendingQueue {
 				
 				if (marker.isProcessed() || marker.hasExpired()) {
 					if (marker.isProcessed() && !current.isCancelled()) {
-						sendPacket(current);
+						// Silently skip players that have logged out
+						if (isOnline(current.getPlayer())) {
+							sendPacket(current);
+						}
 					}
 					
 					sendingQueue.poll();
@@ -123,6 +128,10 @@ class PacketSendingQueue {
 			// Only repeat when packets are removed
 			break;
 		}
+	}
+	
+	private boolean isOnline(Player player) {
+		return player != null && player.isOnline();
 	}
 	
 	/**

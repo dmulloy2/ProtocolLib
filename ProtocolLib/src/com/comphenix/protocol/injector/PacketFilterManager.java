@@ -403,6 +403,8 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
 		
+		sender.is
+		
 		PlayerInjector injector = getInjector(sender);
 		Packet mcPacket = packet.getHandle();
 		
@@ -503,9 +505,20 @@ public final class PacketFilterManager implements ProtocolManager {
 				try {
 					injector = getHookInstance(player, currentHook);
 					injector.injectManager();
+					
+					DataInputStream inputStream = injector.getInputStream(false);
+					
+					if (!player.isOnline() || inputStream == null) {
+						throw new PlayerLoggedOutException();
+					}
+					
 					playerInjection.put(player, injector);
-					connectionLookup.put(injector.getInputStream(false), player);
+					connectionLookup.put(inputStream, player);
 					break;
+					
+					
+				} catch (PlayerLoggedOutException e) {
+					throw e;
 					
 				} catch (Exception e) {
 
