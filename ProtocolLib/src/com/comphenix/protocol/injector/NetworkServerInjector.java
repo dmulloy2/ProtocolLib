@@ -5,10 +5,13 @@ import java.lang.reflect.Method;
 import java.util.Set;
 
 import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
+import net.sf.cglib.proxy.NoOp;
 
 import org.bukkit.entity.Player;
 
@@ -80,29 +83,38 @@ public class NetworkServerInjector extends PlayerInjector {
 		Class<?> serverClass = serverHandler.getClass();
 		
 		Enhancer ex = new Enhancer();
-		ex.setClassLoader(manager.getClassLoader());
-		ex.setSuperclass(serverClass);
-		ex.setCallback(new MethodInterceptor() {
+		Callback sendPacketCallback = new MethodInterceptor() {
 			@Override
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 				
-				// The send packet method!
-				if (method.equals(sendPacketMethod)) {
-					Packet packet = (Packet) args[0];
+				Packet packet = (Packet) args[0];
+				
+				if (packet != null) {
+					packet = handlePacketRecieved(packet);
 					
-					if (packet != null) {
-						packet = handlePacketRecieved(packet);
-						
-						// A NULL packet indicate cancelling
-						if (packet != null)
-							args[0] = packet;
-						else
-							return null;
-					}
+					// A NULL packet indicate cancelling
+					if (packet != null)
+						args[0] = packet;
+					else
+						return null;
 				}
 				
 				// Call the method directly
 				return proxy.invokeSuper(obj, args);
+			};
+		};
+		Callback noOpCallback = NoOp.INSTANCE;
+
+		ex.setClassLoader(manager.getClassLoader());
+		ex.setSuperclass(serverClass);
+		ex.setCallbacks(new Callback[] { sendPacketCallback, noOpCallback });
+		ex.setCallbackFilter(new CallbackFilter() {
+			@Override
+			public int accept(Method method) {
+				if (method.equals(sendPacketMethod))
+					return 0;
+				else
+					return 1;
 			}
 		});
 		
