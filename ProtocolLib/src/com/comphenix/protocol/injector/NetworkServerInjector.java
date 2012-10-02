@@ -13,10 +13,8 @@ import net.sf.cglib.proxy.MethodProxy;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.CollectionGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
@@ -30,8 +28,6 @@ import com.comphenix.protocol.reflect.instances.PrimitiveGenerator;
 public class NetworkServerInjector extends PlayerInjector {
 
 	private static Method sendPacketMethod;
-
-	private StructureModifier<Object> serverHandlerModifier;
 	private InjectedServerConnection serverInjection;
 	
 	public NetworkServerInjector(Player player, PacketFilterManager manager, 
@@ -48,8 +44,6 @@ public class NetworkServerInjector extends PlayerInjector {
 		if (hasInitialized) {
 			if (sendPacketMethod == null)
 				sendPacketMethod = FuzzyReflection.fromObject(serverHandler).getMethodByName("sendPacket.*");
-			if (serverHandlerModifier == null)
-				serverHandlerModifier = new StructureModifier<Object>(serverHandler.getClass(), null, false);
 		}
 	}
 
@@ -119,41 +113,23 @@ public class NetworkServerInjector extends PlayerInjector {
 				CollectionGenerator.INSTANCE);
 
 		Object proxyObject = serverInstances.forEnhancer(ex).getDefault(serverClass);
-		serverInjection.replaceServerHandler(serverHandler, proxyObject);
 		
 		// Inject it now
 		if (proxyObject != null) {
-			copyTo(serverHandler, proxyObject);
+			// This will be done by InjectedServerConnection instead
+			//copyTo(serverHandler, proxyObject);
+			serverInjection.replaceServerHandler(serverHandler, proxyObject);
 			serverHandlerRef.setValue(proxyObject);
 		} else {
 			throw new RuntimeException(
 					"Cannot hook player: Unable to find a valid constructor for the NetServerHandler object.");
 		}
 	}
-	
-	/**
-	 * Copy every field in server handler A to server handler B.
-	 * @param source - fields to copy.
-	 * @param destination - fields to copy to.
-	 */
-	private void copyTo(Object source, Object destination) {
-		StructureModifier<Object> modifierSource = serverHandlerModifier.withTarget(source);
-		StructureModifier<Object> modifierDest = serverHandlerModifier.withTarget(destination);
 		
-		// Copy every field
-		try {
-			for (int i = 0; i < modifierSource.size(); i++) {
-					modifierDest.write(i, modifierSource.read(i));
-			}
-		} catch (FieldAccessException e) {
-			throw new RuntimeException("Unable to copy fields from NetServerHandler.", e);
-		}
-	}
-	
 	@Override
 	public void cleanupAll() {
 		if (serverHandlerRef != null && serverHandlerRef.isCurrentSet()) {
-			copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue());
+			ObjectCloner.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
 			serverHandlerRef.revertValue();
 		}
 		

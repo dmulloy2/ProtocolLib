@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.sf.cglib.proxy.Factory;
+
 import org.bukkit.Server;
 
 import com.comphenix.protocol.reflect.FieldUtils;
@@ -134,10 +136,24 @@ class InjectedServerConnection {
 		if (list instanceof ReplacedArrayList) {
 			replacedLists.add((ReplacedArrayList<Object>) list);
 		} else {
-			replacedLists.add(new ReplacedArrayList<Object>(list));
+			replacedLists.add(createReplacement(list));
 			listFieldRef.setValue(replacedLists.get(0));
 			listFields.add(listFieldRef);
 		}
+	}
+	
+	// Hack to avoid the "moved to quickly" error
+	private ReplacedArrayList<Object> createReplacement(List<Object> list) {
+		return new ReplacedArrayList<Object>(list) {
+			@Override
+			protected void onReplacing(Object inserting, Object replacement) {
+				// Is this a normal Minecraft object?
+				if (!(inserting instanceof Factory)) {
+					// If so, copy the content of the old element to the new
+					ObjectCloner.copyTo(inserting, replacement, inserting.getClass());
+				}
+			}
+		};
 	}
 	
 	/**
@@ -146,6 +162,7 @@ class InjectedServerConnection {
 	 * @param newHandler - new, proxied server handler.
 	 */
 	public void replaceServerHandler(Object oldHandler, Object newHandler) {
+		
 		if (!hasAttempted) {
 			injectList();
 		}
