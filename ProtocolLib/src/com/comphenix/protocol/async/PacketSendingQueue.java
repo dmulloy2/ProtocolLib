@@ -23,6 +23,14 @@ class PacketSendingQueue {
 	private final boolean synchronizeMain;
 	
 	/**
+	 * Number of packet events in the queue.
+	 * @return The number of packet events in the queue.
+	 */
+	public int size() {
+		return sendingQueue.size();
+	}
+	
+	/**
 	 * Create a packet sending queue.
 	 * @param synchronizeMain - whether or not to synchronize with the main thread.
 	 */

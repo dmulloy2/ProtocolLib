@@ -69,13 +69,21 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	public boolean enqueue(PacketEvent packet, boolean onMainThread) {
 		try {
 			processingQueue.add(new PacketEventHolder(packet));
-			
+
 			// Begin processing packets
 			signalBeginProcessing(onMainThread);
 			return true;
 		} catch (IllegalStateException e) {
 			return false;
 		}
+	}
+	
+	/**
+	 * Number of packet events in the queue.
+	 * @return The number of packet events in the queue.
+	 */
+	public int size() {
+		return processingQueue.size();
 	}
 	
 	/**
