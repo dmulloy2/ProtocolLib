@@ -22,9 +22,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.logging.Level;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -40,7 +42,9 @@ import com.comphenix.protocol.reflect.VolatileField;
 abstract class PlayerInjector {
 	
 	// Cache previously retrieved fields
-	protected static Field serverHandlerField;
+	private static Field serverHandlerField;
+	private static Field proxyServerField;
+	
 	protected static Field networkManagerField;
 	protected static Field inputField;
 	protected static Field netHandlerField;
@@ -96,17 +100,26 @@ abstract class PlayerInjector {
 			hasInitialized = true;
 			
 			// Retrieve the server handler
-			if (serverHandlerField == null)
+			if (serverHandlerField == null) {
 				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(".*NetServerHandler");
-			serverHandlerRef = new VolatileField(serverHandlerField, notchEntity);
-			serverHandler = serverHandlerRef.getValue();
+				proxyServerField = getProxyField(notchEntity, serverHandlerField);
+			}
 			
+			// Yo dawg
+			if (proxyServerField != null) {
+				Object container = FieldUtils.readField(serverHandlerField, notchEntity, true);
+				serverHandlerRef = new VolatileField(proxyServerField, container);
+			} else {
+				serverHandlerRef = new VolatileField(serverHandlerField, notchEntity);
+			}
+			serverHandler = serverHandlerRef.getValue();
+
 			// Next, get the network manager 
 			if (networkManagerField == null) 
 				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(".*NetworkManager");
 			networkManagerRef = new VolatileField(networkManagerField, serverHandler);
 			networkManager = networkManagerRef.getValue();
-			
+
 			// Create the network manager modifier from the actual object type
 			if (networkManager != null && networkModifier == null)
 				networkModifier = new StructureModifier<Object>(networkManager.getClass(), null, false);
@@ -121,6 +134,38 @@ abstract class PlayerInjector {
 				inputField = FuzzyReflection.fromObject(networkManager, true).
 								getFieldByType("java\\.io\\.DataInputStream");
 		}
+	}
+	
+	private Field getProxyField(EntityPlayer notchEntity, Field serverField) {
+
+		try {
+			Object handler = FieldUtils.readField(serverHandlerField, notchEntity, true);
+			
+			// Is this a Minecraft hook?
+			if (handler != null && !handler.getClass().getName().startsWith("net.minecraft.server")) {
+				
+				// This is our proxy object
+				if (handler instanceof Factory)
+					return null;
+				
+				// No? Is it a Proxy type?
+				try {
+					FuzzyReflection reflection = FuzzyReflection.fromObject(handler, true);
+					
+					// It might be
+					return reflection.getFieldByType(".*NetServerHandler");
+					
+				} catch (RuntimeException e) {
+					manager.getLogger().log(Level.WARNING, "Server handler is a proxy type.", e);
+				}
+			}
+			
+		} catch (IllegalAccessException e) {
+			manager.getLogger().warning("Unable to load server handler from proxy type.");
+		}
+
+		// Nope, just go with it
+		return null;
 	}
 	
 	/**
@@ -246,6 +291,11 @@ abstract class PlayerInjector {
 	 * @return The player's input stream.
 	 */
 	public DataInputStream getInputStream(boolean cache) {
+		if (inputField == null)
+			throw new IllegalStateException("Input field is NULL.");
+		if (networkManager == null)
+				throw new IllegalStateException("Network manager is NULL.");
+		
 		// Get the associated input stream
 		try {
 			if (cache && cachedInput != null)

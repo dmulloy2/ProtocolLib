@@ -292,7 +292,9 @@ public class FuzzyReflection {
 		
 		// Like above, only here we test the field type
 		for (Field field : getFields()) {
-			if (match.matcher(field.getType().getName()).matches()) {
+			String name = field.getType().getName();
+			
+			if (match.matcher(name).matches()) {
 				return field;
 			}
 		}
