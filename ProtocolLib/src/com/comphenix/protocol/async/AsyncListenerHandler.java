@@ -1,6 +1,7 @@
 package com.comphenix.protocol.async;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
@@ -28,7 +29,7 @@ public class AsyncListenerHandler {
 	private volatile boolean cancelled;
 	
 	// If we've started the listener loop before
-	private volatile int started;
+	private AtomicInteger started = new AtomicInteger();
 	
 	// The packet listener
 	private PacketListener listener;
@@ -153,7 +154,7 @@ public class AsyncListenerHandler {
 			throw new IllegalStateException("Listener has been cancelled. Create a new listener instead.");
 		
 		// Proceed
-		started++;
+		started.incrementAndGet();
 		
 		try {
 			mainLoop:
@@ -198,7 +199,7 @@ public class AsyncListenerHandler {
 			// We're done
 		} finally {
 			// Clean up
-			started--;
+			started.decrementAndGet();
 			close();
 		}
 	}
@@ -221,7 +222,7 @@ public class AsyncListenerHandler {
 		// Poison Pill Shutdown
 		queuedPackets.clear();
 		
-		for (int i = 0; i < started; i++)
+		for (int i = 0; i < started.get(); i++)
 			queuedPackets.add(INTERUPT_PACKET);
 	}
 }
