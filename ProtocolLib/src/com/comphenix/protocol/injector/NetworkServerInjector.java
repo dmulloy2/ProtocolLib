@@ -19,10 +19,8 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectCloner;
-import com.comphenix.protocol.reflect.instances.CollectionGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
-import com.comphenix.protocol.reflect.instances.PrimitiveGenerator;
 
 /**
  * Represents a player hook into the NetServerHandler class. 
@@ -87,7 +85,7 @@ public class NetworkServerInjector extends PlayerInjector {
 		Callback sendPacketCallback = new MethodInterceptor() {
 			@Override
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-				
+
 				Packet packet = (Packet) args[0];
 				
 				if (packet != null) {
@@ -121,10 +119,10 @@ public class NetworkServerInjector extends PlayerInjector {
 		
 		// Use the existing field values when we create our copy
 		DefaultInstances serverInstances = DefaultInstances.fromArray(
-				ExistingGenerator.fromObjectFields(serverHandler),
-				PrimitiveGenerator.INSTANCE, 
-				CollectionGenerator.INSTANCE);
-
+				ExistingGenerator.fromObjectFields(serverHandler));
+		serverInstances.setNonNull(true);
+		serverInstances.setMaximumRecursion(1);
+		
 		Object proxyObject = serverInstances.forEnhancer(ex).getDefault(serverClass);
 		
 		// Inject it now
@@ -144,23 +142,23 @@ public class NetworkServerInjector extends PlayerInjector {
 		if (serverHandlerRef != null && serverHandlerRef.isCurrentSet()) {
 			ObjectCloner.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
 			serverHandlerRef.revertValue();
-		}
-		
-		serverInjection.revertServerHandler(serverHandler);
-		
-		try {
-			if (getNetHandler() != null) {
-				// Restore packet listener
-				try {
-					FieldUtils.writeField(netHandlerField, networkManager, serverHandlerRef.getOldValue(), true);
-				} catch (IllegalAccessException e) {
-					// Oh well
-					e.printStackTrace();
+			
+			try {
+				if (getNetHandler() != null) {
+					// Restore packet listener
+					try {
+						FieldUtils.writeField(netHandlerField, networkManager, serverHandlerRef.getOldValue(), true);
+					} catch (IllegalAccessException e) {
+						// Oh well
+						e.printStackTrace();
+					}
 				}
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
 			}
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
 		}
+
+		serverInjection.revertServerHandler(serverHandler);
 	}
 	
 	@Override
