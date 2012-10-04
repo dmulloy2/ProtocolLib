@@ -135,8 +135,9 @@ public class AsyncListenerHandler {
 	public AsyncRunnable getListenerLoop() {
 		return new AsyncRunnable() {
 
-			private final AtomicBoolean running = new AtomicBoolean();
-			private volatile int id;
+			private final AtomicBoolean firstRun = new AtomicBoolean();
+			private final AtomicBoolean finished = new AtomicBoolean();
+			private final int id = nextID.incrementAndGet();
 			
 			@Override
 			public int getID() {
@@ -146,18 +147,21 @@ public class AsyncListenerHandler {
 			@Override
 			public void run() {
 				// Careful now
-				if (running.compareAndSet(false, true)) {
-					id = nextID.incrementAndGet();
+				if (firstRun.compareAndSet(false, true)) {
 					listenerLoop(id);
 					
 					synchronized (stopLock) {
 						stoppedTasks.remove(id);
 						stopLock.notifyAll();
-						running.set(false);
+						finished.set(true);
 					}
 					
 				} else {
-					throw new IllegalStateException(
+					if (finished.get())
+						throw new IllegalStateException(
+							"This listener has already been run. Create a new instead.");
+					else
+						throw new IllegalStateException(
 							"This listener loop has already been started. Create a new instead.");
 				}
 			}
@@ -165,7 +169,7 @@ public class AsyncListenerHandler {
 			@Override
 			public boolean stop() throws InterruptedException {
 				synchronized (stopLock) {
-					if (!running.get())
+					if (!isRunning())
 						return false;
 
 					stoppedTasks.add(id);
@@ -175,6 +179,7 @@ public class AsyncListenerHandler {
 						queuedPackets.offer(WAKEUP_PACKET);
 					}
 					
+					finished.set(true);
 					waitForStops();
 					return true;
 				}
@@ -182,7 +187,12 @@ public class AsyncListenerHandler {
 
 			@Override
 			public boolean isRunning() {
-				return running.get();
+				return firstRun.get() && !finished.get();
+			}
+			
+			@Override
+			public boolean isFinished() {
+				return finished.get();
 			}
 		};
 	}

@@ -26,4 +26,10 @@ public interface AsyncRunnable extends Runnable {
 	 * @return TRUE if we're running, FALSE otherwise.
 	 */
 	public boolean isRunning();
+
+	/**
+	 * Determine if this runnable has already run its course.
+	 * @return TRUE if it has been stopped, FALSE otherwise.
+	 */
+	boolean isFinished();
 }
