@@ -166,7 +166,11 @@ public final class PacketFilterManager implements ProtocolManager {
 		// Make sure the current listeners are compatible
 		if (lastSuccessfulHook != null) {
 			for (PacketListener listener : packetListeners) {
-				checkListener(listener);
+				try {
+					checkListener(listener);
+				} catch (IllegalStateException e) {
+					logger.log(Level.WARNING, "Unsupported listener.", e);
+				}
 			}
 		}
 	}
