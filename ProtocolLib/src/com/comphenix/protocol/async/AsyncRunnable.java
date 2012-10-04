@@ -8,6 +8,12 @@ package com.comphenix.protocol.async;
 public interface AsyncRunnable extends Runnable {
 	
 	/**
+	 * Retrieve a unique worker ID.
+	 * @return Unique worker ID.
+	 */
+	public int getID();
+	
+	/**
 	 * Stop the given runnable.
 	 * <p>
 	 * This may not occur right away.

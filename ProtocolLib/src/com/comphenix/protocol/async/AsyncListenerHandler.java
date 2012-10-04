@@ -30,6 +30,9 @@ public class AsyncListenerHandler {
 	 */
 	private static final PacketEvent WAKEUP_PACKET = new PacketEvent(new Object());
 	
+	// Unique worker ID
+	private static final AtomicInteger nextID = new AtomicInteger();
+	
 	// Default queue capacity
 	private static int DEFAULT_CAPACITY = 1024;
 	
@@ -38,9 +41,6 @@ public class AsyncListenerHandler {
 	
 	// Number of worker threads
 	private final AtomicInteger started = new AtomicInteger();
-	
-	// Unique local worker ID
-	private final AtomicInteger nextID = new AtomicInteger();
 	
 	// The packet listener
 	private PacketListener listener;
@@ -132,11 +132,16 @@ public class AsyncListenerHandler {
 	 * <p>
 	 * <b>Warning</b>: Never call the run() method in the main thread.
 	 */
-	public Runnable getListenerLoop() {
+	public AsyncRunnable getListenerLoop() {
 		return new AsyncRunnable() {
 
 			private final AtomicBoolean running = new AtomicBoolean();
 			private volatile int id;
+			
+			@Override
+			public int getID() {
+				return id;
+			}
 			
 			@Override
 			public void run() {
@@ -271,7 +276,7 @@ public class AsyncListenerHandler {
 	}
 	
 	// DO NOT call this method from the main thread
-	private void listenerLoop(int taskID) {
+	private void listenerLoop(int workerID) {
 		
 		// Danger, danger!
 		if (Thread.currentThread().getId() == mainThread.getId()) 
@@ -302,7 +307,7 @@ public class AsyncListenerHandler {
 					// This is a bit slow, but it should be safe
 					synchronized (stopLock) {
 						// Are we the one who is supposed to stop?
-						if (stoppedTasks.contains(taskID)) 
+						if (stoppedTasks.contains(workerID)) 
 							return;
 						if (waitForStops())
 							return;
@@ -311,6 +316,9 @@ public class AsyncListenerHandler {
 				
 				// Here's the core of the asynchronous processing
 				try {
+					marker.setListenerHandler(this);
+					marker.setWorkerID(workerID);
+					
 					if (packet.isServerPacket())
 						listener.onPacketSending(packet);
 					else
