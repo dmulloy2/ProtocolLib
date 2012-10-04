@@ -17,13 +17,10 @@
 
 package com.comphenix.protocol.injector;
 
-import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -51,12 +48,13 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 
-public final class PacketFilterManager implements ProtocolManager {
+public final class PacketFilterManager implements ProtocolManager, ListenerInvoker {
 
 	/**
 	 * Sets the inject hook type. Different types allow for maximum compatibility.
@@ -86,22 +84,12 @@ public final class PacketFilterManager implements ProtocolManager {
 	// Create a concurrent set
 	private Set<PacketListener> packetListeners = 
 			Collections.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
-	
-	// Player injection
-	private Map<DataInputStream, Player> connectionLookup = new ConcurrentHashMap<DataInputStream, Player>();
-	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
-	
-	// Player injection type
-	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
-	
+		
 	// Packet injection
 	private PacketInjector packetInjector;
 	
-	// Server connection injection
-	private InjectedServerConnection serverInjection;
-	
-	// Enabled packet filters
-	private Set<Integer> sendingFilters = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+	// Player injection
+	private PlayerInjectionHandler playerInjection;
 	
 	// The two listener containers
 	private SortedPacketListenerList recievedListeners = new SortedPacketListenerList();
@@ -112,10 +100,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	// The default class loader
 	private ClassLoader classLoader;
-	
-	// The last successful player hook
-	private PlayerInjector lastSuccessfulHook;
-	
+		
 	// Error logger
 	private Logger logger;
 	
@@ -135,9 +120,9 @@ public final class PacketFilterManager implements ProtocolManager {
 			// Initialize values
 			this.classLoader = classLoader;
 			this.logger = logger;
-			this.packetInjector = new PacketInjector(classLoader, this, connectionLookup);
+			this.playerInjection = new PlayerInjectionHandler(classLoader, logger, this, server);
+			this.packetInjector = new PacketInjector(classLoader, this, playerInjection);
 			this.asyncFilterManager = new AsyncFilterManager(logger, server.getScheduler(), this);
-			this.serverInjection = new InjectedServerConnection(logger, server);
 		} catch (IllegalAccessException e) {
 			logger.log(Level.SEVERE, "Unable to initialize packet injector.", e);
 		}
@@ -153,7 +138,7 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @return Injection method for reading server packets.
 	 */
 	public PlayerInjectHooks getPlayerHook() {
-		return playerHook;
+		return playerInjection.getPlayerHook();
 	}
 
 	/**
@@ -161,18 +146,10 @@ public final class PacketFilterManager implements ProtocolManager {
 	 * @param playerHook - the new injection method for reading server packets.
 	 */
 	public void setPlayerHook(PlayerInjectHooks playerHook) {
-		this.playerHook = playerHook;
+		playerInjection.setPlayerHook(playerHook);
 		
 		// Make sure the current listeners are compatible
-		if (lastSuccessfulHook != null) {
-			for (PacketListener listener : packetListeners) {
-				try {
-					checkListener(listener);
-				} catch (IllegalStateException e) {
-					logger.log(Level.WARNING, "Unsupported listener.", e);
-				}
-			}
-		}
+		playerInjection.checkListener(packetListeners);
 	}
 
 	public Logger getLogger() {
@@ -204,14 +181,14 @@ public final class PacketFilterManager implements ProtocolManager {
 				verifyWhitelist(listener, sending);
 				sendingListeners.addListener(listener, sending);
 				enablePacketFilters(ConnectionSide.SERVER_SIDE, sending.getWhitelist());
+				
+				// Make sure this is possible
+				playerInjection.checkListener(listener);
 			}
 			if (hasReceiving) {
 				verifyWhitelist(listener, receiving);
 				recievedListeners.addListener(listener, receiving);
 				enablePacketFilters(ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
-				
-				// We don't know if we've hooked any players yet
-				checkListener(listener);
 			}
 			
 			// Inform our injected hooks
@@ -234,21 +211,7 @@ public final class PacketFilterManager implements ProtocolManager {
 			}
 		}
 	}
-	
-	/**
-	 * Determine if a listener is valid or not.
-	 * @param listener - listener to check.
-	 * @throws IllegalStateException If the given listener's whitelist cannot be fulfilled.
-	 */
-	public void checkListener(PacketListener listener) {
-		try {
-			if (lastSuccessfulHook != null)
-				lastSuccessfulHook.checkListener(listener);
-		} catch (Exception e) {
-			throw new IllegalStateException("Registering listener " + PacketAdapter.getPluginName(listener) + " failed", e);
-		}
-	}
-	
+		
 	@Override
 	public void removePacketListener(PacketListener listener) {
 		if (listener == null)
@@ -292,18 +255,12 @@ public final class PacketFilterManager implements ProtocolManager {
 		asyncFilterManager.unregisterAsyncHandlers(plugin);
 	}
 	
-	/**
-	 * Invokes the given packet event for every registered listener.
-	 * @param event - the packet event to invoke.
-	 */
+	@Override
 	public void invokePacketRecieving(PacketEvent event) {
 		handlePacket(recievedListeners, event, false);
 	}
-	
-	/**
-	 * Invokes the given packet event for every registered listener.
-	 * @param event - the packet event to invoke.
-	 */
+
+	@Override
 	public void invokePacketSending(PacketEvent event) {
 		handlePacket(sendingListeners, event, true);
 	}
@@ -356,8 +313,8 @@ public final class PacketFilterManager implements ProtocolManager {
 		
 		for (int packetID : packets) {
 			if (side.isForServer()) 
-				sendingFilters.add(packetID);
-			if (side.isForClient() && packetInjector != null)
+				playerInjection.addPacketHandler(packetID);
+			if (side.isForClient() && packetInjector != null) 
 				packetInjector.addPacketHandler(packetID);
 		}
 	}
@@ -373,7 +330,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		
 		for (int packetID : packets) {
 			if (side.isForServer())
-				sendingFilters.remove(packetID);
+				playerInjection.removePacketHandler(packetID);
 			if (side.isForClient() && packetInjector != null) 
 				packetInjector.removePacketHandler(packetID);
 		}
@@ -391,7 +348,7 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
 		
-		getInjector(reciever).sendServerPacket(packet.getHandle(), filters);
+		playerInjection.sendServerPacket(reciever, packet, filters);
 	}
 
 	@Override
@@ -407,17 +364,21 @@ public final class PacketFilterManager implements ProtocolManager {
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
 		
-		PlayerInjector injector = getInjector(sender);
 		Packet mcPacket = packet.getHandle();
 		
 		// Make sure the packet isn't cancelled
 		packetInjector.undoCancel(packet.getID(), mcPacket);
 		
 		if (filters) {
-			mcPacket = injector.handlePacketRecieved(mcPacket);
+			PacketEvent event  = packetInjector.packetRecieved(packet, sender);
+			
+			if (!event.isCancelled())
+				mcPacket = event.getPacket().getHandle();
+			else
+				return;
 		}
 		
-		injector.processPacket(mcPacket);
+		playerInjection.processPacket(sender, mcPacket);
 	}
 	
 	@Override
@@ -448,7 +409,7 @@ public final class PacketFilterManager implements ProtocolManager {
 
 	@Override
 	public Set<Integer> getSendingFilters() {
-		return ImmutableSet.copyOf(sendingFilters);
+		return playerInjection.getSendingFilters();
 	}
 	
 	@Override
@@ -467,94 +428,9 @@ public final class PacketFilterManager implements ProtocolManager {
 	 */
 	public void initializePlayers(Player[] players) {
 		for (Player player : players)
-			injectPlayer(player);
+			playerInjection.injectPlayer(player);
 	}
-	
-	/**
-	 * Used to construct a player hook.
-	 * @param player - the player to hook.
-	 * @param hook - the hook type.
-	 * @return A new player hoook
-	 * @throws IllegalAccessException Unable to do our reflection magic.
-	 */
-	protected PlayerInjector getHookInstance(Player player, PlayerInjectHooks hook) throws IllegalAccessException {
-		// Construct the correct player hook
-		switch (hook) {
-		case NETWORK_HANDLER_FIELDS: 
-			return new NetworkFieldInjector(player, this, sendingFilters);
-		case NETWORK_MANAGER_OBJECT: 
-			return new NetworkObjectInjector(player, this, sendingFilters);
-		case NETWORK_SERVER_OBJECT:
-			return new NetworkServerInjector(player, this, sendingFilters, serverInjection);
-		default:
-			throw new IllegalArgumentException("Cannot construct a player injector.");
-		}
-	}
-	
-	/**
-	 * Initialize a player hook, allowing us to read server packets.
-	 * @param player - player to hook.
-	 */
-	protected void injectPlayer(Player player) {
 		
-		PlayerInjector injector = null;
-		PlayerInjectHooks currentHook = playerHook;
-		boolean firstPlayer = lastSuccessfulHook == null;
-		
-		// Don't inject if the class has closed
-		if (!hasClosed && player != null && !playerInjection.containsKey(player)) {
-			while (true) {
-				try {
-					injector = getHookInstance(player, currentHook);
-					injector.injectManager();
-					
-					DataInputStream inputStream = injector.getInputStream(false);
-					
-					if (!player.isOnline() || inputStream == null) {
-						throw new PlayerLoggedOutException();
-					}
-					
-					playerInjection.put(player, injector);
-					connectionLookup.put(inputStream, player);
-					break;
-					
-					
-				} catch (PlayerLoggedOutException e) {
-					throw e;
-					
-				} catch (Exception e) {
-
-					// Mark this injection attempt as a failure
-					logger.log(Level.SEVERE, "Player hook " + currentHook.toString() + " failed.", e);
-					
-					// Clean up as much as possible
-					try {
-						if (injector != null)
-							injector.cleanupAll();
-					} catch (Exception e2) {
-						logger.log(Level.WARNING, "Cleaing up after player hook failed.", e);
-					}
-					
-					if (currentHook.ordinal() > 0) {
-						// Choose the previous player hook type
-						currentHook = PlayerInjectHooks.values()[currentHook.ordinal() - 1];
-						logger.log(Level.INFO, "Switching to " + currentHook.toString() + " instead.");
-					} else {
-						// UTTER FAILURE
-						playerInjection.put(player, null);
-						return;
-					}
-				}
-			}
-			
-			// Update values
-			if (injector != null)
-				lastSuccessfulHook = injector;
-			if (currentHook != playerHook || firstPlayer) 
-				setPlayerHook(currentHook);
-		}
-	}
-	
 	/**
 	 * Register this protocol manager on Bukkit.
 	 * @param manager - Bukkit plugin manager that provides player join/leave events.
@@ -567,12 +443,12 @@ public final class PacketFilterManager implements ProtocolManager {
 				
 				@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
-					injectPlayer(event.getPlayer());
+					playerInjection.injectPlayer(event.getPlayer());
 			    }
 				
 				@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 			    public void onPlayerQuit(PlayerQuitEvent event) {
-					uninjectPlayer(event.getPlayer());
+					playerInjection.uninjectPlayer(event.getPlayer());
 			    }
 				
 				@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -589,6 +465,14 @@ public final class PacketFilterManager implements ProtocolManager {
 			// Oh wow! We're running on 1.0.0 or older.
 			registerOld(manager, plugin);
 		}
+	}
+	
+	@Override
+	public int getPacketID(Packet packet) {
+		if (packet == null)
+			throw new IllegalArgumentException("Packet cannot be NULL.");
+		
+		return MinecraftRegistry.getPacketToID().get(packet.getClass());
 	}
 	
 	// Yes, this is crazy.
@@ -632,9 +516,9 @@ public final class PacketFilterManager implements ProtocolManager {
 						
 						// Check for the correct event
 						if (event instanceof PlayerJoinEvent)
-							injectPlayer(((PlayerJoinEvent) event).getPlayer());
+							playerInjection.injectPlayer(((PlayerJoinEvent) event).getPlayer());
 						else if (event instanceof PlayerQuitEvent)
-							uninjectPlayer(((PlayerQuitEvent) event).getPlayer());
+							playerInjection.uninjectPlayer(((PlayerQuitEvent) event).getPlayer());
 					}
 					return null;
 				}
@@ -676,37 +560,7 @@ public final class PacketFilterManager implements ProtocolManager {
 			e.printStackTrace();
 		}
 	}
-	
-	private void uninjectPlayer(Player player) {
-		if (!hasClosed && player != null) {
-			
-			PlayerInjector injector = playerInjection.get(player);
-			
-			if (injector != null) {
-				DataInputStream input = injector.getInputStream(true);
-				injector.cleanupAll();
-				
-				playerInjection.remove(player);
-				connectionLookup.remove(input);
-			}
-		}	
-	}
-	
-	private PlayerInjector getInjector(Player player) {
-		if (!playerInjection.containsKey(player)) {
-			// What? Try to inject again.
-			injectPlayer(player);
-		}
 		
-		PlayerInjector injector = playerInjection.get(player);
-		
-		// Check that the injector was sucessfully added
-		if (injector != null)
-			return injector;
-		else
-			throw new IllegalArgumentException("Player has no injected handler.");
-	}
-	
 	/**
 	 * Retrieves the current plugin class loader.
 	 * @return Class loader.
@@ -722,28 +576,19 @@ public final class PacketFilterManager implements ProtocolManager {
 	
 	public void close() {
 		// Guard
-		if (hasClosed || playerInjection == null)
+		if (hasClosed)
 			return;
-
-		// Remove everything
-		for (PlayerInjector injection : playerInjection.values()) {
-			if (injection != null) {
-				injection.cleanupAll();
-			}
-		}
 
 		// Remove packet handlers
 		if (packetInjector != null)
 			packetInjector.cleanupAll();
 		
 		// Remove server handler
-		serverInjection.cleanupAll();
+		playerInjection.close();
 		hasClosed = true;
 		
 		// Remove listeners
 		packetListeners.clear();
-		playerInjection.clear();
-		connectionLookup.clear();
 		
 		// Clean up async handlers. We have to do this last.
 		asyncFilterManager.cleanupAll();

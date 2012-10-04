@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

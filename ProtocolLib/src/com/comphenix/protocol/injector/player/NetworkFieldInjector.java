@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -7,12 +7,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -45,13 +47,28 @@ class NetworkFieldInjector extends PlayerInjector {
 	// Sync field
 	private static Field syncField;
 	private Object syncObject;
+
+	// Determine if we're listening
+	private Set<Integer> sendingFilters;
+
+	// Used to construct proxy objects
+	private ClassLoader classLoader;
 	
-	public NetworkFieldInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
-		super(player, manager, sendingFilters);
+	public NetworkFieldInjector(ClassLoader classLoader, Logger logger, Player player, 
+								ListenerInvoker manager, Set<Integer> sendingFilters) throws IllegalAccessException {
+		
+		super(logger, player, manager);
+		this.classLoader = classLoader;
+		this.sendingFilters = sendingFilters;
 	}
 	
 	@Override
-	protected synchronized void initialize() throws IllegalAccessException {
+	protected boolean hasListener(int packetID) {
+		return sendingFilters.contains(packetID);
+	}
+	
+	@Override
+	public synchronized void initialize() throws IllegalAccessException {
 		super.initialize();
 	
 		// Get the sync field as well
@@ -112,7 +129,7 @@ class NetworkFieldInjector extends PlayerInjector {
 				
 				synchronized(syncObject) {
 					// The list we'll be inserting
-					List<Packet> hackedList = new InjectedArrayList(manager.getClassLoader(), this, ignoredPackets);
+					List<Packet> hackedList = new InjectedArrayList(classLoader, this, ignoredPackets);
 					
 					// Add every previously stored packet
 					for (Packet packet : minecraftList) {
@@ -153,5 +170,10 @@ class NetworkFieldInjector extends PlayerInjector {
 			}
 		}
 		overridenLists.clear();
+	}
+
+	@Override
+	public boolean canInject() {
+		return true;
 	}
 }

@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.util.Collection;
 import java.util.List;

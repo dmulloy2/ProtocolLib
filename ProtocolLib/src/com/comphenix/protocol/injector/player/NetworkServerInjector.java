@@ -1,8 +1,9 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Callback;
@@ -16,6 +17,7 @@ import net.sf.cglib.proxy.NoOp;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectCloner;
@@ -32,14 +34,30 @@ public class NetworkServerInjector extends PlayerInjector {
 	private static Method sendPacketMethod;
 	private InjectedServerConnection serverInjection;
 	
-	public NetworkServerInjector(Player player, PacketFilterManager manager, 
-								 Set<Integer> sendingFilters, InjectedServerConnection serverInjection) throws IllegalAccessException {
-		super(player, manager, sendingFilters);
+	// Determine if we're listening
+	private Set<Integer> sendingFilters;
+	
+	// Used to create proxy objects
+	private ClassLoader classLoader;
+	
+	public NetworkServerInjector(
+			ClassLoader classLoader, Logger logger, Player player, 
+			ListenerInvoker invoker, Set<Integer> sendingFilters, 
+			InjectedServerConnection serverInjection) throws IllegalAccessException {
+		
+		super(logger, player, invoker);
+		this.classLoader = classLoader;
+		this.sendingFilters = sendingFilters;
 		this.serverInjection = serverInjection;
 	}
 	
 	@Override
-	protected void initialize() throws IllegalAccessException {
+	protected boolean hasListener(int packetID) {
+		return sendingFilters.contains(packetID);
+	}
+	
+	@Override
+	public void initialize() throws IllegalAccessException {
 		super.initialize();
 		
 		// Get the send packet method!
@@ -104,7 +122,7 @@ public class NetworkServerInjector extends PlayerInjector {
 		};
 		Callback noOpCallback = NoOp.INSTANCE;
 
-		ex.setClassLoader(manager.getClassLoader());
+		ex.setClassLoader(classLoader);
 		ex.setSuperclass(serverClass);
 		ex.setCallbacks(new Callback[] { sendPacketCallback, noOpCallback });
 		ex.setCallbackFilter(new CallbackFilter() {
@@ -164,5 +182,10 @@ public class NetworkServerInjector extends PlayerInjector {
 	@Override
 	public void checkListener(PacketListener listener) {
 		// We support everything
+	}
+
+	@Override
+	public boolean canInject() {
+		return true;
 	}
 }

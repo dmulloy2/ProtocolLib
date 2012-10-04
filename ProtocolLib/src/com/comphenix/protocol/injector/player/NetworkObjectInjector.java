@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -8,12 +8,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.ListenerInvoker;
 
 /**
  * Injection method that overrides the NetworkHandler itself, and it's sendPacket-method.
@@ -21,10 +23,19 @@ import com.comphenix.protocol.events.PacketListener;
  * @author Kristian
  */
 class NetworkObjectInjector extends PlayerInjector {
-	public NetworkObjectInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
-		super(player, manager, sendingFilters);
+	// Determine if we're listening
+	private Set<Integer> sendingFilters;
+	
+	public NetworkObjectInjector(Logger logger, Player player, ListenerInvoker invoker, Set<Integer> sendingFilters) throws IllegalAccessException {
+		super(logger, player, invoker);
+		this.sendingFilters = sendingFilters;
 	}
 
+	@Override
+	protected boolean hasListener(int packetID) {
+		return sendingFilters.contains(packetID);
+	}
+	
 	@Override
 	public void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException {
 		Object networkDelegate = filtered ? networkManagerRef.getValue() : networkManagerRef.getOldValue();
@@ -106,5 +117,10 @@ class NetworkObjectInjector extends PlayerInjector {
 	public void cleanupAll() {
 		// Clean up
 		networkManagerRef.revertValue();
+	}
+
+	@Override
+	public boolean canInject() {
+		return true;
 	}
 }

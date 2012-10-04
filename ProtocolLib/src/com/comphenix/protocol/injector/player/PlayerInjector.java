@@ -15,14 +15,14 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.io.DataInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
@@ -34,6 +34,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -69,17 +70,18 @@ abstract class PlayerInjector {
 	protected Object netHandler;
 	
 	// The packet manager and filters
-	protected PacketFilterManager manager;
-	protected Set<Integer> sendingFilters;
+	protected ListenerInvoker invoker;
 	
 	// Previous data input
 	protected DataInputStream cachedInput;
+	
+	// Handle errors
+	protected Logger logger;
 
-	public PlayerInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
+	public PlayerInjector(Logger logger, Player player, ListenerInvoker invoker) throws IllegalAccessException {
+		this.logger = logger;
 		this.player = player;
-		this.manager = manager;
-		this.sendingFilters = sendingFilters;
-		initialize();
+		this.invoker = invoker;
 	}
 
 	/**
@@ -91,7 +93,11 @@ abstract class PlayerInjector {
 		return craft.getHandle();
 	}
 	
-	protected void initialize() throws IllegalAccessException {
+	/**
+	 * Initialize all fields for this player injector, if it hasn't already.
+	 * @throws IllegalAccessException An error has occured.
+	 */
+	public void initialize() throws IllegalAccessException {
 	
 		EntityPlayer notchEntity = getEntityPlayer();
 		
@@ -156,12 +162,12 @@ abstract class PlayerInjector {
 					return reflection.getFieldByType(".*NetServerHandler");
 					
 				} catch (RuntimeException e) {
-					manager.getLogger().log(Level.WARNING, "Server handler is a proxy type.", e);
+					logger.log(Level.WARNING, "Server handler is a proxy type.", e);
 				}
 			}
 			
 		} catch (IllegalAccessException e) {
-			manager.getLogger().warning("Unable to load server handler from proxy type.");
+			logger.warning("Unable to load server handler from proxy type.");
 		}
 
 		// Nope, just go with it
@@ -251,6 +257,12 @@ abstract class PlayerInjector {
 	public abstract void cleanupAll();
 	
 	/**
+	 * Determine if this inject method can even be attempted.
+	 * @return TRUE if can be attempted, though possibly with failure, FALSE otherwise.
+	 */
+	public abstract boolean canInject();
+	
+	/**
 	 * Invoked before a new listener is registered.
 	 * <p>
 	 * The player injector should throw an exception if this listener cannot be properly supplied with packet events. 
@@ -263,16 +275,16 @@ abstract class PlayerInjector {
 	 * @param packet - packet to recieve.
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
-	Packet handlePacketRecieved(Packet packet) {
+	public Packet handlePacketRecieved(Packet packet) {
 		// Get the packet ID too
-		Integer id = MinecraftRegistry.getPacketToID().get(packet.getClass());
+		Integer id = invoker.getPacketID(packet);
 
 		// Make sure we're listening
-		if (id != null && sendingFilters.contains(id)) {
+		if (id != null && hasListener(id)) {
 			// A packet has been sent guys!
 			PacketContainer container = new PacketContainer(id, packet);
-			PacketEvent event = PacketEvent.fromServer(manager, container, player);
-			manager.invokePacketSending(event);
+			PacketEvent event = PacketEvent.fromServer(invoker, container, player);
+			invoker.invokePacketSending(event);
 			
 			// Cancelling is pretty simple. Just ignore the packet.
 			if (event.isCancelled())
@@ -284,6 +296,13 @@ abstract class PlayerInjector {
 		
 		return packet;
 	}
+	
+	/**
+	 * Determine if the given injector is listening for this packet ID.
+	 * @param packetID - packet ID to check.
+	 * @return TRUE if it is, FALSE oterhwise.
+	 */
+	protected abstract boolean hasListener(int packetID);
 	
 	/**
 	 * Retrieve the current player's input stream.
