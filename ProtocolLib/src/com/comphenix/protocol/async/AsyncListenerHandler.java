@@ -152,7 +152,7 @@ public class AsyncListenerHandler {
 					
 					synchronized (stopLock) {
 						stoppedTasks.remove(id);
-						notifyAll();
+						stopLock.notifyAll();
 						running.set(false);
 					}
 					
@@ -269,10 +269,12 @@ public class AsyncListenerHandler {
 	 * @throws InterruptedException - If the current thread was interrupted.
 	 */
 	private boolean waitForStops() throws InterruptedException {
-		while (stoppedTasks.size() > 0 && !cancelled) {
-			wait();
+		synchronized (stopLock) {
+			while (stoppedTasks.size() > 0 && !cancelled) {
+				stopLock.wait();
+			}
+			return cancelled;
 		}
-		return cancelled;
 	}
 	
 	// DO NOT call this method from the main thread
@@ -286,10 +288,8 @@ public class AsyncListenerHandler {
 
 		try {
 			// Wait if certain threads are stopping
-			synchronized (stopLock) {
-				if (waitForStops())
-					return;
-			}
+			if (waitForStops())
+				return;
 			
 			// Proceed
 			started.incrementAndGet();
@@ -375,7 +375,7 @@ public class AsyncListenerHandler {
 		
 		// Individual shut down is irrelevant now
 		synchronized (stopLock) {
-			notifyAll();
+			stopLock.notifyAll();
 		}
 	}
 }
