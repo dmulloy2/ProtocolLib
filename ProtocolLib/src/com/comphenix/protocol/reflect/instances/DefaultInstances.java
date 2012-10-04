@@ -235,8 +235,9 @@ public class DefaultInstances {
 					params[i] = getDefaultInternal(types[i], providers, recursionLevel + 1);
 					
 					// Did we break the non-null contract?
-					if (params[i] == null && nonNull)
+					if (params[i] == null && nonNull) {
 						return null;
+					}
 				}
 
 				return createInstance(type, minimum, types, params);
@@ -244,7 +245,6 @@ public class DefaultInstances {
 			
 		} catch (Exception e) {
 			// Nope, we couldn't create this type
-			e.printStackTrace();
 		}
 		
 		// No suitable default value could be found

@@ -33,13 +33,37 @@ public class ExistingGenerator implements InstanceProvider {
 	 * @return The instance generator.
 	 */
 	public static ExistingGenerator fromObjectFields(Object object) {
+		if (object == null)
+			throw new IllegalArgumentException("Object cannot be NULL.");
+		
+		return fromObjectFields(object, object.getClass());
+	}
+	
+	/**
+	 * Automatically create an instance provider from a objects public and private fields.
+	 * <p>
+	 * If two or more fields share the same type, the last declared non-null field will take
+	 * precedent.
+	 * @param object - object to create an instance generator from.
+	 * @param type - the type to cast the object.
+	 * @return The instance generator.
+	 */
+	public static ExistingGenerator fromObjectFields(Object object, Class<?> type) {
 		ExistingGenerator generator = new ExistingGenerator();
 		
+		// Possible errors
+		if (object == null)
+			throw new IllegalArgumentException("Object cannot be NULL.");
+		if (type == null)
+			throw new IllegalArgumentException("Type cannot be NULL.");
+		if (!type.isAssignableFrom(object.getClass()))
+			throw new IllegalArgumentException("Type must be a superclass or be the same type.");
+		
 		// Read instances from every field.
-		for (Field field : FuzzyReflection.fromObject(object, true).getFields()) {
+		for (Field field : FuzzyReflection.fromClass(type, true).getFields()) {
 			try {
 				Object value = FieldUtils.readField(field, object, true);
-				
+
 				// Use the type of the field, not the object itself
 				if (value != null)
 					generator.addObject(field.getType(), value);

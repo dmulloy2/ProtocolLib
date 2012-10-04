@@ -55,6 +55,14 @@ public class ObjectCloner {
 				// System.out.println(String.format("Writing value %s to %s", 
 				//		value, modifier.getFields().get(i).getName()));
 			}
+			
+			// Copy private fields underneath
+			Class<?> superclass = commonType.getSuperclass();
+			
+			if (!superclass.equals(Object.class)) {
+				copyTo(source, destination, superclass);
+			}
+			
 		} catch (FieldAccessException e) {
 			throw new RuntimeException("Unable to copy fields from " + commonType.getName(), e);
 		}

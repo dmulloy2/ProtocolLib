@@ -136,8 +136,17 @@ public class NetworkServerInjector extends PlayerInjector {
 		});
 		
 		// Use the existing field values when we create our copy
-		DefaultInstances serverInstances = DefaultInstances.fromArray(
+		DefaultInstances serverInstances = null;
+		
+		if (hasProxyServerHandler()) {
+			Class<?> minecraftSuperClass = getFirstMinecraftSuperClass(serverHandler.getClass());
+			serverInstances = DefaultInstances.fromArray(
+					ExistingGenerator.fromObjectFields(serverHandler, minecraftSuperClass));
+		} else {
+			serverInstances = DefaultInstances.fromArray(
 				ExistingGenerator.fromObjectFields(serverHandler));
+		}
+				
 		serverInstances.setNonNull(true);
 		serverInstances.setMaximumRecursion(1);
 		
@@ -153,6 +162,15 @@ public class NetworkServerInjector extends PlayerInjector {
 			throw new RuntimeException(
 					"Cannot hook player: Unable to find a valid constructor for the NetServerHandler object.");
 		}
+	}
+	
+	private Class<?> getFirstMinecraftSuperClass(Class<?> clazz) {
+		if (clazz.getName().startsWith("net.minecraft"))
+			return clazz;
+		else if (clazz.equals(Object.class))
+			return clazz;
+		else
+			return clazz.getSuperclass();
 	}
 		
 	@Override

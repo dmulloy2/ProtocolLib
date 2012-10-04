@@ -50,6 +50,9 @@ abstract class PlayerInjector {
 	protected static Field inputField;
 	protected static Field netHandlerField;
 	
+	// Whether or not we're using a proxy type
+	private static boolean hasProxyType;
+	
 	// To add our injected array lists
 	protected static StructureModifier<Object> networkModifier;
 	
@@ -142,6 +145,14 @@ abstract class PlayerInjector {
 		}
 	}
 	
+	/**
+	 * Retrieve whether or not the server handler is a proxy object.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	protected boolean hasProxyServerHandler() {
+		return hasProxyType;
+	}
+	
 	private Field getProxyField(EntityPlayer notchEntity, Field serverField) {
 
 		try {
@@ -154,6 +165,8 @@ abstract class PlayerInjector {
 				if (handler instanceof Factory)
 					return null;
 				
+				hasProxyType = true;
+				
 				// No? Is it a Proxy type?
 				try {
 					FuzzyReflection reflection = FuzzyReflection.fromObject(handler, true);
@@ -162,7 +175,7 @@ abstract class PlayerInjector {
 					return reflection.getFieldByType(".*NetServerHandler");
 					
 				} catch (RuntimeException e) {
-					logger.log(Level.WARNING, "Server handler is a proxy type.", e);
+					logger.log(Level.WARNING, "Detected server handler proxy type by another plugin. Conflict may occur!");
 				}
 			}
 			

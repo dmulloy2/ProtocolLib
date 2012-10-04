@@ -23,6 +23,11 @@ import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.google.common.collect.ImmutableSet;
 
+/**
+ * Responsible for injecting into a player's sendPacket method.
+ * 
+ * @author Kristian
+ */
 public class PlayerInjectionHandler {
 
 	// Server connection injection
