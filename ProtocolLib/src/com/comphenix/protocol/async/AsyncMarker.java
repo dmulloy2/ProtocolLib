@@ -67,6 +67,10 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	// Whether or not the asynchronous processing itself should be cancelled
 	private volatile boolean asyncCancelled;
 	
+	// Used to identify the asynchronous worker
+	private AsyncListenerHandler listenerHandler;
+	private int workerID;
+	
 	// Determine if Minecraft processes this packet asynchronously
 	private static Method isMinecraftAsync;
 	private static boolean alwaysSync;
@@ -214,12 +218,48 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	public void setAsyncCancelled(boolean asyncCancelled) {
 		this.asyncCancelled = asyncCancelled;
 	}
-	
+
+	/**
+	 * Retrieve the current asynchronous listener handler.
+	 * @return Asychronous listener handler, or NULL if this packet is not asynchronous.
+	 */
+	public AsyncListenerHandler getListenerHandler() {
+		return listenerHandler;
+	}
+
+	/**
+	 * Set the current asynchronous listener handler. 
+	 * <p>
+	 * Used by the worker to update the value.
+	 * @param listenerHandler - new listener handler.
+	 */
+	void setListenerHandler(AsyncListenerHandler listenerHandler) {
+		this.listenerHandler = listenerHandler;
+	}
+
+	/**
+	 * Retrieve the current worker ID.
+	 * @return Current worker ID.
+	 */
+	public int getWorkerID() {
+		return workerID;
+	}
+
+	/**
+	 * Set the current worker ID.
+	 * <p>
+	 * Used by the worker.
+	 * @param workerID - new worker ID.
+	 */
+	void setWorkerID(int workerID) {
+		this.workerID = workerID;
+	}
+
 	/**
 	 * Retrieve iterator for the next listener in line.
 	 * @return Next async packet listener iterator.
 	 */
-	public Iterator<PrioritizedListener<AsyncListenerHandler>> getListenerTraversal() {
+	Iterator<PrioritizedListener<AsyncListenerHandler>> getListenerTraversal() {
 		return listenerTraversal;
 	}
 	

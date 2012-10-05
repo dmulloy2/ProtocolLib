@@ -15,16 +15,18 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.io.DataInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -32,6 +34,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -41,9 +44,14 @@ abstract class PlayerInjector {
 	
 	// Cache previously retrieved fields
 	protected static Field serverHandlerField;
+	protected static Field proxyServerField;
+	
 	protected static Field networkManagerField;
 	protected static Field inputField;
 	protected static Field netHandlerField;
+	
+	// Whether or not we're using a proxy type
+	private static boolean hasProxyType;
 	
 	// To add our injected array lists
 	protected static StructureModifier<Object> networkModifier;
@@ -65,17 +73,18 @@ abstract class PlayerInjector {
 	protected Object netHandler;
 	
 	// The packet manager and filters
-	protected PacketFilterManager manager;
-	protected Set<Integer> sendingFilters;
+	protected ListenerInvoker invoker;
 	
 	// Previous data input
 	protected DataInputStream cachedInput;
+	
+	// Handle errors
+	protected Logger logger;
 
-	public PlayerInjector(Player player, PacketFilterManager manager, Set<Integer> sendingFilters) throws IllegalAccessException {
+	public PlayerInjector(Logger logger, Player player, ListenerInvoker invoker) throws IllegalAccessException {
+		this.logger = logger;
 		this.player = player;
-		this.manager = manager;
-		this.sendingFilters = sendingFilters;
-		initialize();
+		this.invoker = invoker;
 	}
 
 	/**
@@ -87,7 +96,11 @@ abstract class PlayerInjector {
 		return craft.getHandle();
 	}
 	
-	protected void initialize() throws IllegalAccessException {
+	/**
+	 * Initialize all fields for this player injector, if it hasn't already.
+	 * @throws IllegalAccessException An error has occured.
+	 */
+	public void initialize() throws IllegalAccessException {
 	
 		EntityPlayer notchEntity = getEntityPlayer();
 		
@@ -96,17 +109,21 @@ abstract class PlayerInjector {
 			hasInitialized = true;
 			
 			// Retrieve the server handler
-			if (serverHandlerField == null)
+			if (serverHandlerField == null) {
 				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(".*NetServerHandler");
+				proxyServerField = getProxyField(notchEntity, serverHandlerField);
+			}
+			
+			// Yo dawg
 			serverHandlerRef = new VolatileField(serverHandlerField, notchEntity);
 			serverHandler = serverHandlerRef.getValue();
-			
+
 			// Next, get the network manager 
 			if (networkManagerField == null) 
 				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(".*NetworkManager");
 			networkManagerRef = new VolatileField(networkManagerField, serverHandler);
 			networkManager = networkManagerRef.getValue();
-			
+
 			// Create the network manager modifier from the actual object type
 			if (networkManager != null && networkModifier == null)
 				networkModifier = new StructureModifier<Object>(networkManager.getClass(), null, false);
@@ -121,6 +138,49 @@ abstract class PlayerInjector {
 				inputField = FuzzyReflection.fromObject(networkManager, true).
 								getFieldByType("java\\.io\\.DataInputStream");
 		}
+	}
+	
+	/**
+	 * Retrieve whether or not the server handler is a proxy object.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	protected boolean hasProxyServerHandler() {
+		return hasProxyType;
+	}
+	
+	private Field getProxyField(EntityPlayer notchEntity, Field serverField) {
+
+		try {
+			Object handler = FieldUtils.readField(serverHandlerField, notchEntity, true);
+			
+			// Is this a Minecraft hook?
+			if (handler != null && !handler.getClass().getName().startsWith("net.minecraft.server")) {
+				
+				// This is our proxy object
+				if (handler instanceof Factory)
+					return null;
+				
+				hasProxyType = true;
+				logger.log(Level.WARNING, "Detected server handler proxy type by another plugin. Conflict may occur!");
+				
+				// No? Is it a Proxy type?
+				try {
+					FuzzyReflection reflection = FuzzyReflection.fromObject(handler, true);
+					
+					// It might be
+					return reflection.getFieldByType(".*NetServerHandler");
+					
+				} catch (RuntimeException e) {
+					// Damn
+				}
+			}
+			
+		} catch (IllegalAccessException e) {
+			logger.warning("Unable to load server handler from proxy type.");
+		}
+
+		// Nope, just go with it
+		return null;
 	}
 	
 	/**
@@ -206,6 +266,12 @@ abstract class PlayerInjector {
 	public abstract void cleanupAll();
 	
 	/**
+	 * Determine if this inject method can even be attempted.
+	 * @return TRUE if can be attempted, though possibly with failure, FALSE otherwise.
+	 */
+	public abstract boolean canInject();
+	
+	/**
 	 * Invoked before a new listener is registered.
 	 * <p>
 	 * The player injector should throw an exception if this listener cannot be properly supplied with packet events. 
@@ -218,16 +284,16 @@ abstract class PlayerInjector {
 	 * @param packet - packet to recieve.
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
-	Packet handlePacketRecieved(Packet packet) {
+	public Packet handlePacketRecieved(Packet packet) {
 		// Get the packet ID too
-		Integer id = MinecraftRegistry.getPacketToID().get(packet.getClass());
+		Integer id = invoker.getPacketID(packet);
 
 		// Make sure we're listening
-		if (id != null && sendingFilters.contains(id)) {
+		if (id != null && hasListener(id)) {
 			// A packet has been sent guys!
 			PacketContainer container = new PacketContainer(id, packet);
-			PacketEvent event = PacketEvent.fromServer(manager, container, player);
-			manager.invokePacketSending(event);
+			PacketEvent event = PacketEvent.fromServer(invoker, container, player);
+			invoker.invokePacketSending(event);
 			
 			// Cancelling is pretty simple. Just ignore the packet.
 			if (event.isCancelled())
@@ -241,11 +307,23 @@ abstract class PlayerInjector {
 	}
 	
 	/**
+	 * Determine if the given injector is listening for this packet ID.
+	 * @param packetID - packet ID to check.
+	 * @return TRUE if it is, FALSE oterhwise.
+	 */
+	protected abstract boolean hasListener(int packetID);
+	
+	/**
 	 * Retrieve the current player's input stream.
 	 * @param cache - whether or not to cache the result of this method.
 	 * @return The player's input stream.
 	 */
 	public DataInputStream getInputStream(boolean cache) {
+		if (inputField == null)
+			throw new IllegalStateException("Input field is NULL.");
+		if (networkManager == null)
+				throw new IllegalStateException("Network manager is NULL.");
+		
 		// Get the associated input stream
 		try {
 			if (cache && cachedInput != null)

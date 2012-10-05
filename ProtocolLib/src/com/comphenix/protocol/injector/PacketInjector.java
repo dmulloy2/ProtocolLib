@@ -33,6 +33,7 @@ import net.sf.cglib.proxy.Enhancer;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 
@@ -48,10 +49,10 @@ class PacketInjector {
 	private static Object intHashMap;
 	
 	// The packet filter manager
-	private PacketFilterManager manager;
+	private ListenerInvoker manager;
 	
 	// Allows us to determine the sender
-	private Map<DataInputStream, Player> playerLookup;
+	private PlayerInjectionHandler playerInjection;
 	
 	// Allows us to look up read packet injectors
 	private Map<Integer, ReadPacketModifier> readModifier;
@@ -59,12 +60,12 @@ class PacketInjector {
 	// Class loader
 	private ClassLoader classLoader;
 			
-	public PacketInjector(ClassLoader classLoader, PacketFilterManager manager, 
-						  Map<DataInputStream, Player> playerLookup) throws IllegalAccessException {
+	public PacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
+						  PlayerInjectionHandler playerInjection) throws IllegalAccessException {
 		
 		this.classLoader = classLoader;
 		this.manager = manager;
-		this.playerLookup = playerLookup;
+		this.playerInjection = playerInjection;
 		this.readModifier = new ConcurrentHashMap<Integer, ReadPacketModifier>();
 		initialize();
 	}
@@ -194,7 +195,18 @@ class PacketInjector {
 	// Called from the ReadPacketModified monitor
 	PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
 		
-		Player client = playerLookup.get(input);
+		Player client = playerInjection.getPlayerByConnection(input);
+		return packetRecieved(packet, client);
+	}
+	
+	/**
+	 * Let the packet listeners process the given packet.
+	 * @param packet - a packet to process.
+	 * @param client - the client that sent the packet.
+	 * @return The resulting packet event.
+	 */
+	public PacketEvent packetRecieved(PacketContainer packet, Player client) {
+	
 		PacketEvent event = PacketEvent.fromClient((Object) manager, packet, client);
 		
 		manager.invokePacketRecieving(event);

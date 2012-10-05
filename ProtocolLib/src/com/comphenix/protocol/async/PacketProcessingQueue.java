@@ -2,12 +2,14 @@ package com.comphenix.protocol.async;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
+import com.google.common.collect.MinMaxPriorityQueue;
+
 
 /**
  * Handles the processing of every packet type.
@@ -16,6 +18,9 @@ import com.comphenix.protocol.injector.PrioritizedListener;
  */
 class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncListenerHandler> {
 
+	// Initial number of elements
+	public static final int INITIAL_CAPACITY = 64;
+	
 	/**
 	 * Default maximum number of packets to process concurrently.
 	 */
@@ -33,18 +38,23 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	private Semaphore concurrentProcessing;
 	
 	// Queued packets for being processed
-	private ArrayBlockingQueue<PacketEvent> processingQueue;
+	private Queue<PacketEventHolder> processingQueue;
 	
 	// Packets for sending
 	private PacketSendingQueue sendingQueue;
 
 	public PacketProcessingQueue(PacketSendingQueue sendingQueue) {
-		this(sendingQueue, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
+		this(sendingQueue, INITIAL_CAPACITY, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
 	}
 	
-	public PacketProcessingQueue(PacketSendingQueue sendingQueue, int queueLimit, int maximumConcurrency) {
+	public PacketProcessingQueue(PacketSendingQueue sendingQueue, int initialSize, int maximumSize, int maximumConcurrency) {
 		super();
-		this.processingQueue = new ArrayBlockingQueue<PacketEvent>(queueLimit);
+
+		this.processingQueue = Synchronization.queue(MinMaxPriorityQueue.
+				expectedSize(initialSize).
+				maximumSize(maximumSize).
+				<PacketEventHolder>create(), null);
+				
 		this.maximumConcurrency = maximumConcurrency;
 		this.concurrentProcessing = new Semaphore(maximumConcurrency);
 		this.sendingQueue = sendingQueue;
@@ -58,8 +68,8 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	 */
 	public boolean enqueue(PacketEvent packet, boolean onMainThread) {
 		try {
-			processingQueue.add(packet);
-			
+			processingQueue.add(new PacketEventHolder(packet));
+
 			// Begin processing packets
 			signalBeginProcessing(onMainThread);
 			return true;
@@ -69,17 +79,26 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	}
 	
 	/**
+	 * Number of packet events in the queue.
+	 * @return The number of packet events in the queue.
+	 */
+	public int size() {
+		return processingQueue.size();
+	}
+	
+	/**
 	 * Called by the current method and each thread to signal that a packet might be ready for processing.
 	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
 	public void signalBeginProcessing(boolean onMainThread) {	
 		while (concurrentProcessing.tryAcquire()) {
-			PacketEvent packet = processingQueue.poll();
+			PacketEventHolder holder = processingQueue.poll();
 			
 			// Any packet queued?
-			if (packet != null) {
-				Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketID());
+			if (holder != null) {
+				PacketEvent packet = holder.getEvent();
 				AsyncMarker marker = packet.getAsyncMarker();
+				Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketID());
 				
 				// Yes, removing the marker will cause the chain to stop
 				if (list != null) {

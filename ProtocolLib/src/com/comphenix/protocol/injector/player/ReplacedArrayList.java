@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.util.Collection;
 import java.util.List;
@@ -24,10 +24,21 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 		this.underlyingList = underlyingList;
 	}
 	
+	/**
+	 * Invoked when a element inserted is replaced.
+	 * @param inserting - the element inserted.
+	 * @param replacement - the element that it should replace.
+	 */
+	protected void onReplacing(TKey inserting, TKey replacement) {
+		// Default is to do nothing.
+	}
+	
 	@Override
 	public boolean add(TKey element) {
 		if (replaceMap.containsKey(element)) {
-			return super.add(replaceMap.get(element));
+			TKey replacement = replaceMap.get(element);
+			onReplacing(element, replacement);
+			return super.add(replacement);
 		} else {
 			return super.add(element);
 		}
@@ -36,7 +47,9 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 	@Override
 	public void add(int index, TKey element) {
 		if (replaceMap.containsKey(element)) {
-			super.add(index, replaceMap.get(element));
+			TKey replacement = replaceMap.get(element);
+			onReplacing(element, replacement);
+			super.add(index, replacement);
 		} else {
 			super.add(index, element);
 		}
@@ -101,8 +114,10 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 	 */
 	public synchronized void replaceAll(TKey find, TKey replace) {
 		for (int i = 0; i < underlyingList.size(); i++) {
-			if (Objects.equal(underlyingList.get(i), find))
+			if (Objects.equal(underlyingList.get(i), find)) {
+				onReplacing(find, replace);
 				underlyingList.set(i, replace);
+			}
 		}
 	}
 	
@@ -121,7 +136,9 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 			TKey replaced = underlyingList.get(i);
 			
 			if (inverse.containsKey(replaced)) {
-				underlyingList.set(i, inverse.get(replaced));
+				TKey original = inverse.get(replaced);
+				onReplacing(replaced, original);
+				underlyingList.set(i, original);
 			}
 		}
 		

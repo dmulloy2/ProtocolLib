@@ -1,16 +1,16 @@
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
+
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-
-import com.comphenix.protocol.injector.NetworkFieldInjector.FakePacket;
 
 /**
  * The array list that notifies when packets are sent by the server.

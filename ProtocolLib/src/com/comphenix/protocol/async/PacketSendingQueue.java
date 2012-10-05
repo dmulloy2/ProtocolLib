@@ -1,15 +1,15 @@
 package com.comphenix.protocol.async;
 
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.FieldAccessException;
-import com.google.common.collect.ComparisonChain;
 
 /**
  * Represents packets ready to be transmitted to a client.
@@ -17,28 +17,28 @@ import com.google.common.collect.ComparisonChain;
  */
 class PacketSendingQueue {
 
-	private static final int INITIAL_CAPACITY = 64;
+	public static final int INITIAL_CAPACITY = 64;
 	
-	private PriorityBlockingQueue<PacketEvent> sendingQueue;
+	private PriorityBlockingQueue<PacketEventHolder> sendingQueue;
 	
 	// Whether or not packet transmission can only occur on the main thread
 	private final boolean synchronizeMain;
+	
+	/**
+	 * Number of packet events in the queue.
+	 * @return The number of packet events in the queue.
+	 */
+	public int size() {
+		return sendingQueue.size();
+	}
 	
 	/**
 	 * Create a packet sending queue.
 	 * @param synchronizeMain - whether or not to synchronize with the main thread.
 	 */
 	public PacketSendingQueue(boolean synchronizeMain) {
+		this.sendingQueue = new PriorityBlockingQueue<PacketEventHolder>(INITIAL_CAPACITY);
 		this.synchronizeMain = synchronizeMain;
-		this.sendingQueue = new PriorityBlockingQueue<PacketEvent>(INITIAL_CAPACITY, new Comparator<PacketEvent>() {
-			// Compare using the async marker
-			@Override
-			public int compare(PacketEvent o1, PacketEvent o2) {
-				return ComparisonChain.start().
-					   compare(o1.getAsyncMarker(), o2.getAsyncMarker()).
-					   result();
-			}
-		});
 	}
 	
 	/**
@@ -46,7 +46,7 @@ class PacketSendingQueue {
 	 * @param packet
 	 */
 	public void enqueue(PacketEvent packet) {
-		sendingQueue.add(packet);
+		sendingQueue.add(new PacketEventHolder(packet));
 	}
 	
 	/**
@@ -70,7 +70,9 @@ class PacketSendingQueue {
 		Set<Integer> lookup = new HashSet<Integer>(packetsRemoved);
 		
 		// Note that this is O(n), so it might be expensive
-		for (PacketEvent event : sendingQueue) {
+		for (PacketEventHolder holder : sendingQueue) {
+			PacketEvent event = holder.getEvent();
+			
 			if (lookup.contains(event.getPacketID())) {
 				event.getAsyncMarker().setProcessed(true);
 			}
@@ -88,9 +90,10 @@ class PacketSendingQueue {
 				
 		// Transmit as many packets as we can
 		while (true) {
-			PacketEvent current = sendingQueue.peek();
+			PacketEventHolder holder = sendingQueue.peek();
 					
-			if (current != null) {
+			if (holder != null) {
+				PacketEvent current = holder.getEvent();
 				AsyncMarker marker = current.getAsyncMarker();
 				
 				// Abort if we're not on the main thread
@@ -111,7 +114,10 @@ class PacketSendingQueue {
 				
 				if (marker.isProcessed() || marker.hasExpired()) {
 					if (marker.isProcessed() && !current.isCancelled()) {
-						sendPacket(current);
+						// Silently skip players that have logged out
+						if (isOnline(current.getPlayer())) {
+							sendPacket(current);
+						}
 					}
 					
 					sendingQueue.poll();
@@ -124,15 +130,19 @@ class PacketSendingQueue {
 		}
 	}
 	
+	private boolean isOnline(Player player) {
+		return player != null && player.isOnline();
+	}
+	
 	/**
 	 * Send every packet, regardless of the processing state.
 	 */
 	private void forceSend() {
 		while (true) {
-			PacketEvent current = sendingQueue.poll();
+			PacketEventHolder holder = sendingQueue.poll();
 			
-			if (current != null) {
-				sendPacket(current);
+			if (holder != null) {
+				sendPacket(holder.getEvent());
 			} else {
 				break;
 			}

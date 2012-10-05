@@ -41,7 +41,7 @@ public class DefaultInstances {
 	/**
 	 * The maximum height of the hierachy of creates types. Used to prevent cycles.
 	 */
-	private final static int MAXIMUM_RECURSION = 20;
+	private int maximumRecursion = 20;
 	
 	/**
 	 * Ordered list of instance provider, from highest priority to lowest.
@@ -49,11 +49,26 @@ public class DefaultInstances {
 	private ImmutableList<InstanceProvider> registered;
 	
 	/**
+	 * Whether or not the constructor must be non-null.
+	 */
+	private boolean nonNull;
+	
+	/**
 	 * Construct a default instance generator using the given instance providers.
 	 * @param registered - list of instance providers.
 	 */
 	public DefaultInstances(ImmutableList<InstanceProvider> registered) {
 		this.registered = registered;
+	}
+	
+	/**
+	 * Copy a given instance provider.
+	 * @param other - instance provider to copy.
+	 */
+	public DefaultInstances(DefaultInstances other) {
+		this.nonNull = other.nonNull;
+		this.maximumRecursion = other.maximumRecursion;
+		this.registered = other.registered;
 	}
 	
 	/**
@@ -82,6 +97,40 @@ public class DefaultInstances {
 	}
 	
 	/**
+	 * Retrieve whether or not the constructor's parameters must be non-null.
+	 * @return TRUE if they must be non-null, FALSE otherwise.
+	 */
+	public boolean isNonNull() {
+		return nonNull;
+	}
+
+	/**
+	 * Set whether or not the constructor's parameters must be non-null.
+	 * @param nonNull - TRUE if they must be non-null, FALSE otherwise.
+	 */
+	public void setNonNull(boolean nonNull) {
+		this.nonNull = nonNull;
+	}
+	
+	/**
+	 * Retrieve the the maximum height of the hierachy of creates types. 
+	 * @return Maximum height.
+	 */
+	public int getMaximumRecursion() {
+		return maximumRecursion;
+	}
+
+	/**
+	 * Set the maximum height of the hierachy of creates types. Used to prevent cycles.
+	 * @param maximumRecursion - maximum recursion height.
+	 */
+	public void setMaximumRecursion(int maximumRecursion) {
+		if (maximumRecursion < 1)
+			throw new IllegalArgumentException("Maxmimum recursion height must be one or higher.");
+		this.maximumRecursion = maximumRecursion;
+	}
+
+	/**
 	 * Retrieves a default instance or value that is assignable to this type.
 	 * <p>
 	 * This includes, but isn't limited too:
@@ -107,9 +156,12 @@ public class DefaultInstances {
 	 * @param type - type to construct.
 	 * @return A constructor with the fewest number of parameters, or NULL if the type has no constructors.
 	 */
-	@SuppressWarnings("unchecked")
 	public <T> Constructor<T> getMinimumConstructor(Class<T> type) {
-		
+		return getMinimumConstructor(type, registered, 0);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private <T> Constructor<T> getMinimumConstructor(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
 		Constructor<T> minimum = null;
 		int lastCount = Integer.MAX_VALUE;
 		
@@ -121,6 +173,13 @@ public class DefaultInstances {
 			// require itself in the constructor.
 			if (types.length < lastCount) {
 				if (!contains(types, type)) {
+					if (nonNull) {
+						// Make sure all of these types are non-null
+						if (isAnyNull(types, providers, recursionLevel)) {
+							continue;
+						}
+					}
+					
 					minimum = (Constructor<T>) candidate;
 					lastCount = types.length;
 					
@@ -132,6 +191,27 @@ public class DefaultInstances {
 		}
 		
 		return minimum;
+	}
+	
+	/**
+	 * Determine if any of the given types will be NULL once created.
+	 * <p>
+	 * Recursion level is the number of times the default method has been called.
+	 * @param types - types to check.
+	 * @param providers - instance providers.
+	 * @param recursionLevel - current recursion level.
+	 * @return
+	 */
+	private boolean isAnyNull(Class<?>[] types, List<InstanceProvider> providers, int recursionLevel) {
+		// Just check if any of them are NULL
+		for (Class<?> type : types) {
+			if (getDefaultInternal(type, providers, recursionLevel) == null) {
+				System.out.println(type.getName() + " is NULL!");
+				return true;
+			}
+		}	
+		
+		return false;
 	}
 	
 	/**
@@ -149,7 +229,7 @@ public class DefaultInstances {
 	 *   </ul>
 	 * </ul>
 	 * @param type - the type to construct a default value.
-	 * @param providers - instance providers used during the 
+	 * @param providers - instance providers used during the construction.
 	 * @return A default value/instance, or NULL if not possible.
 	 */
 	public <T> T getDefault(Class<T> type, List<InstanceProvider> providers) {
@@ -158,12 +238,8 @@ public class DefaultInstances {
 	
 	@SuppressWarnings("unchecked")
 	private <T> T getDefaultInternal(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
-		
-		// Guard against recursion
-		if (recursionLevel > MAXIMUM_RECURSION) {
-			return null;
-		}
-		
+			
+		// The instance providiers should protect themselves against recursion
 		for (InstanceProvider generator : providers) {
 			Object value = generator.create(type);
 			
@@ -171,7 +247,12 @@ public class DefaultInstances {
 				return (T) value;
 		}
 
-		Constructor<T> minimum = getMinimumConstructor(type);
+		// Guard against recursion
+		if (recursionLevel >= maximumRecursion) {
+			return null;
+		}
+		
+		Constructor<T> minimum = getMinimumConstructor(type, providers, recursionLevel + 1);
 
 		// Create the type with this constructor using default values. This might fail, though.
 		try {
@@ -183,8 +264,13 @@ public class DefaultInstances {
 				// Fill out 
 				for (int i = 0; i < parameterCount; i++) {
 					params[i] = getDefaultInternal(types[i], providers, recursionLevel + 1);
+					
+					// Did we break the non-null contract?
+					if (params[i] == null && nonNull) {
+						return null;
+					}
 				}
-				
+
 				return createInstance(type, minimum, types, params);
 			}
 			
@@ -204,7 +290,7 @@ public class DefaultInstances {
 	public DefaultInstances forEnhancer(Enhancer enhancer) {
 		final Enhancer ex = enhancer;
 		
-		return new DefaultInstances(registered) {
+		return new DefaultInstances(this) {
 			@SuppressWarnings("unchecked")
 			@Override
 			protected <T> T createInstance(Class<T> type, Constructor<T> constructor, Class<?>[] types, Object[] params) {
