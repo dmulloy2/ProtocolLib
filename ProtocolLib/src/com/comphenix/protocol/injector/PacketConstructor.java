@@ -72,7 +72,7 @@ public class PacketConstructor {
 	/**
 	 * Create a packet constructor that creates packets using the given types.
 	 * @param id - packet ID.
-	 * @param types - types to create.
+	 * @param values - types to create.
 	 * @return A packet constructor with these types.
 	 * @throws IllegalArgumentException If no packet constructor could be created with these types.
 	 */
