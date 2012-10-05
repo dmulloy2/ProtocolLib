@@ -43,8 +43,8 @@ import com.comphenix.protocol.reflect.VolatileField;
 abstract class PlayerInjector {
 	
 	// Cache previously retrieved fields
-	private static Field serverHandlerField;
-	private static Field proxyServerField;
+	protected static Field serverHandlerField;
+	protected static Field proxyServerField;
 	
 	protected static Field networkManagerField;
 	protected static Field inputField;
@@ -115,12 +115,7 @@ abstract class PlayerInjector {
 			}
 			
 			// Yo dawg
-			if (proxyServerField != null) {
-				Object container = FieldUtils.readField(serverHandlerField, notchEntity, true);
-				serverHandlerRef = new VolatileField(proxyServerField, container);
-			} else {
-				serverHandlerRef = new VolatileField(serverHandlerField, notchEntity);
-			}
+			serverHandlerRef = new VolatileField(serverHandlerField, notchEntity);
 			serverHandler = serverHandlerRef.getValue();
 
 			// Next, get the network manager 
@@ -166,6 +161,7 @@ abstract class PlayerInjector {
 					return null;
 				
 				hasProxyType = true;
+				logger.log(Level.WARNING, "Detected server handler proxy type by another plugin. Conflict may occur!");
 				
 				// No? Is it a Proxy type?
 				try {
@@ -175,7 +171,7 @@ abstract class PlayerInjector {
 					return reflection.getFieldByType(".*NetServerHandler");
 					
 				} catch (RuntimeException e) {
-					logger.log(Level.WARNING, "Detected server handler proxy type by another plugin. Conflict may occur!");
+					// Damn
 				}
 			}
 			

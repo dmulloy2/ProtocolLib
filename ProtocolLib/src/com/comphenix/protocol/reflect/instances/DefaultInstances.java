@@ -156,9 +156,12 @@ public class DefaultInstances {
 	 * @param type - type to construct.
 	 * @return A constructor with the fewest number of parameters, or NULL if the type has no constructors.
 	 */
-	@SuppressWarnings("unchecked")
 	public <T> Constructor<T> getMinimumConstructor(Class<T> type) {
-		
+		return getMinimumConstructor(type, registered, 0);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private <T> Constructor<T> getMinimumConstructor(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
 		Constructor<T> minimum = null;
 		int lastCount = Integer.MAX_VALUE;
 		
@@ -170,6 +173,13 @@ public class DefaultInstances {
 			// require itself in the constructor.
 			if (types.length < lastCount) {
 				if (!contains(types, type)) {
+					if (nonNull) {
+						// Make sure all of these types are non-null
+						if (isAnyNull(types, providers, recursionLevel)) {
+							continue;
+						}
+					}
+					
 					minimum = (Constructor<T>) candidate;
 					lastCount = types.length;
 					
@@ -181,6 +191,27 @@ public class DefaultInstances {
 		}
 		
 		return minimum;
+	}
+	
+	/**
+	 * Determine if any of the given types will be NULL once created.
+	 * <p>
+	 * Recursion level is the number of times the default method has been called.
+	 * @param types - types to check.
+	 * @param providers - instance providers.
+	 * @param recursionLevel - current recursion level.
+	 * @return
+	 */
+	private boolean isAnyNull(Class<?>[] types, List<InstanceProvider> providers, int recursionLevel) {
+		// Just check if any of them are NULL
+		for (Class<?> type : types) {
+			if (getDefaultInternal(type, providers, recursionLevel) == null) {
+				System.out.println(type.getName() + " is NULL!");
+				return true;
+			}
+		}	
+		
+		return false;
 	}
 	
 	/**
@@ -198,7 +229,7 @@ public class DefaultInstances {
 	 *   </ul>
 	 * </ul>
 	 * @param type - the type to construct a default value.
-	 * @param providers - instance providers used during the 
+	 * @param providers - instance providers used during the construction.
 	 * @return A default value/instance, or NULL if not possible.
 	 */
 	public <T> T getDefault(Class<T> type, List<InstanceProvider> providers) {
@@ -221,7 +252,7 @@ public class DefaultInstances {
 			return null;
 		}
 		
-		Constructor<T> minimum = getMinimumConstructor(type);
+		Constructor<T> minimum = getMinimumConstructor(type, providers, recursionLevel + 1);
 
 		// Create the type with this constructor using default values. This might fail, though.
 		try {

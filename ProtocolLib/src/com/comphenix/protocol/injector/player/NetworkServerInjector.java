@@ -21,6 +21,7 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectCloner;
+import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
 
@@ -97,6 +98,29 @@ public class NetworkServerInjector extends PlayerInjector {
 		if (serverHandlerRef.getValue() instanceof Factory)
 			return;
 		
+		if (!tryInjectManager()) {
+			
+			// Try to override the proxied object
+			if (proxyServerField != null) {
+				serverHandlerRef = new VolatileField(proxyServerField, serverHandler, true);
+				serverHandler = serverHandlerRef.getValue();
+				
+				if (serverHandler == null)
+					throw new RuntimeException("Cannot hook player: Inner proxy object is NULL.");
+				
+				// Try again
+				if (tryInjectManager()) {
+					// It worked - probably
+					return;
+				}
+			}
+			
+			throw new RuntimeException(
+					"Cannot hook player: Unable to find a valid constructor for the NetServerHandler object.");
+		}
+	}
+	
+	private boolean tryInjectManager() {
 		Class<?> serverClass = serverHandler.getClass();
 		
 		Enhancer ex = new Enhancer();
@@ -135,18 +159,22 @@ public class NetworkServerInjector extends PlayerInjector {
 			}
 		});
 		
-		// Use the existing field values when we create our copy
+		// Find the Minecraft NetServerHandler superclass
+		Class<?> minecraftSuperClass = getFirstMinecraftSuperClass(serverHandler.getClass());
+		ExistingGenerator generator = ExistingGenerator.fromObjectFields(serverHandler, minecraftSuperClass);
 		DefaultInstances serverInstances = null;
 		
-		if (hasProxyServerHandler()) {
-			Class<?> minecraftSuperClass = getFirstMinecraftSuperClass(serverHandler.getClass());
-			serverInstances = DefaultInstances.fromArray(
-					ExistingGenerator.fromObjectFields(serverHandler, minecraftSuperClass));
+		// Maybe the proxy instance can help?
+		Object proxyInstance = getProxyServerHandler();
+		
+		// Use the existing server proxy when we create one
+		if (proxyInstance != null && proxyInstance != serverHandler) {
+			serverInstances = DefaultInstances.fromArray(generator, 
+					ExistingGenerator.fromObjectArray(new Object[] { proxyInstance }));
 		} else {
-			serverInstances = DefaultInstances.fromArray(
-				ExistingGenerator.fromObjectFields(serverHandler));
+			serverInstances = DefaultInstances.fromArray(generator);
 		}
-				
+		
 		serverInstances.setNonNull(true);
 		serverInstances.setMaximumRecursion(1);
 		
@@ -158,19 +186,31 @@ public class NetworkServerInjector extends PlayerInjector {
 			//copyTo(serverHandler, proxyObject);
 			serverInjection.replaceServerHandler(serverHandler, proxyObject);
 			serverHandlerRef.setValue(proxyObject);
+			return true;
 		} else {
-			throw new RuntimeException(
-					"Cannot hook player: Unable to find a valid constructor for the NetServerHandler object.");
+			return false;
 		}
 	}
 	
+	private Object getProxyServerHandler() {
+		if (proxyServerField != null && !proxyServerField.equals(serverHandlerRef.getField())) {
+			try {
+				return FieldUtils.readField(proxyServerField, serverHandler, true);
+			} catch (Throwable e) {
+				// Oh well
+			}
+		}
+		
+		return null;
+	}
+	
 	private Class<?> getFirstMinecraftSuperClass(Class<?> clazz) {
-		if (clazz.getName().startsWith("net.minecraft"))
+		if (clazz.getName().startsWith("net.minecraft.server."))
 			return clazz;
 		else if (clazz.equals(Object.class))
 			return clazz;
 		else
-			return clazz.getSuperclass();
+			return getFirstMinecraftSuperClass(clazz.getSuperclass());
 	}
 		
 	@Override

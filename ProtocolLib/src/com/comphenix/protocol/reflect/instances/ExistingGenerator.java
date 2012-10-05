@@ -17,8 +17,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
  */
 public class ExistingGenerator implements InstanceProvider {
 
-	@SuppressWarnings("rawtypes")
-	private Map<Class, Object> existingValues = new HashMap<Class, Object>();
+	private Map<String, Object> existingValues = new HashMap<String, Object>();
 	
 	private ExistingGenerator() {
 		// Only accessible to the constructors
@@ -72,7 +71,7 @@ public class ExistingGenerator implements InstanceProvider {
 				// Yes, swallow it. No, really.
 			}
 		}
-		
+
 		return generator;
 	}
 	
@@ -94,19 +93,18 @@ public class ExistingGenerator implements InstanceProvider {
 		if (value == null)
 			throw new IllegalArgumentException("Value cannot be NULL.");
 		
-		existingValues.put(value.getClass(), value);
+		existingValues.put(value.getClass().getName(), value);
 	}
 
 	private void addObject(Class<?> type, Object value) {
-		existingValues.put(type, value);
+		existingValues.put(type.getName(), value);
 	}
-
 	
 	@Override
 	public Object create(@Nullable Class<?> type) {
 		
-		Object value = existingValues.get(type);
-		
+		Object value = existingValues.get(type.getName());
+
 		// NULL values indicate that the generator failed
 		return value;
 	}
