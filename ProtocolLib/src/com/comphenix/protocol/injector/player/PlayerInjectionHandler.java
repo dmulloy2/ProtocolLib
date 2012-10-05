@@ -124,7 +124,6 @@ public class PlayerInjectionHandler {
 	
 	/**
 	 * Initialize a player hook, allowing us to read server packets.
-	 * @param manager - the main packet filter manager.
 	 * @param player - player to hook.
 	 */
 	public void injectPlayer(Player player) {

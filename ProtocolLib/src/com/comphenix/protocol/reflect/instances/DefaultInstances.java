@@ -200,7 +200,7 @@ public class DefaultInstances {
 	 * @param types - types to check.
 	 * @param providers - instance providers.
 	 * @param recursionLevel - current recursion level.
-	 * @return
+	 * @return TRUE if any of the types will return NULL, FALSE otherwise.
 	 */
 	private boolean isAnyNull(Class<?>[] types, List<InstanceProvider> providers, int recursionLevel) {
 		// Just check if any of them are NULL

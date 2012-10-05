@@ -156,8 +156,8 @@ public class FuzzyReflection {
 	/**
 	 * Retrieves a method by looking at the parameter types and return type only.
 	 * @param name - potential name of the method. Only used by the error mechanism.
-	 * @param returnType - regular expression matching the return type of the method to find.
-	 * @param args - regular expressions of the matching parameter types.
+	 * @param returnTypeRegex - regular expression matching the return type of the method to find.
+	 * @param argsRegex - regular expressions of the matching parameter types.
 	 * @return The first method that satisfies the parameter types.
 	 */
 	public Method getMethodByParameters(String name, String returnTypeRegex, String[] argsRegex) {
