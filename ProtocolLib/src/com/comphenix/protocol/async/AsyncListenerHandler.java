@@ -9,9 +9,11 @@ import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.google.common.base.Joiner;
 
 /**
  * Represents a handler for an asynchronous event.
@@ -206,7 +208,47 @@ public class AsyncListenerHandler {
 		if (cancelled)
 			throw new IllegalStateException("Cannot start a worker when the listener is closing.");
 		
-		filterManager.scheduleAsyncTask(listener.getPlugin(), getListenerLoop());
+		final AsyncRunnable listenerLoop = getListenerLoop();
+		
+		filterManager.scheduleAsyncTask(listener.getPlugin(), new Runnable() {
+			@Override
+			public void run() {
+				String workerName = getFriendlyWorkerName(listenerLoop.getID());
+				
+				// Add the friendly worker name
+				Thread.currentThread().setName(workerName);
+				listenerLoop.run();
+			}
+		});
+	}
+	
+	/**
+	 * Create a friendly thread name using the following convention:
+	 * <p><code>
+	 * &nbsp;&nbsp;&nbsp;&nbsp;Protocol Worker {id} - {plugin} - [recv: {packets}, send: {packets}]
+	 * </code></p>
+	 * @param id - the worker ID.
+	 * @return A friendly thread name.
+	 */
+	public String getFriendlyWorkerName(int id) {
+		return String.format("Protocol Worker #%s - %s - [recv: %s, send: %s]", 
+				id, 
+				PacketAdapter.getPluginName(listener), 
+				fromWhitelist(listener.getReceivingWhitelist()),
+				fromWhitelist(listener.getSendingWhitelist())
+		);
+	}
+	
+	/**
+	 * Convert the given whitelist to a comma-separated list of packet IDs.
+	 * @param whitelist - the whitelist.
+	 * @return A comma separated list of packet IDs in the whitelist, or the emtpy string.
+	 */
+	private String fromWhitelist(ListeningWhitelist whitelist) {
+		if (whitelist == null)
+			return "";
+		else
+			return Joiner.on(", ").join(whitelist.getWhitelist());
 	}
 	
 	/**
