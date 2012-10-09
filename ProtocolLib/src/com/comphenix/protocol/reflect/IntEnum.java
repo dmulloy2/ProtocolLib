@@ -1,6 +1,7 @@
 package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
+import java.util.Set;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -75,5 +76,13 @@ public class IntEnum {
 	 */
 	public String getDeclaredName(Integer id) {
 		return members.get(id);
+	}
+	
+	/**
+	 * Retrieve the ID of every registered member.
+	 * @return Enumeration of every value.
+	 */
+	public Set<Integer> values() {
+		return members.keySet();
 	}
 }
