@@ -3,6 +3,7 @@ package com.comphenix.protocol.injector;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +12,7 @@ import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -178,9 +180,15 @@ public class PacketConstructor {
 	
 		private static Map<Class<?>, Method> cache = new ConcurrentHashMap<Class<?>, Method>();
 	
+		@SuppressWarnings("unchecked")
 		@Override
 		public Object unwrapItem(Object wrappedObject) {
 
+			// Special case
+			if (wrappedObject instanceof Collection) {
+				return handleCollection((Collection<Object>) wrappedObject);
+			}
+			
 			Class<?> currentClass = wrappedObject.getClass();
 			Method cachedMethod = initializeCache(currentClass);
 			
@@ -199,6 +207,24 @@ public class PacketConstructor {
 			} catch (InvocationTargetException e) {
 				// This is REALLY bad
 				throw new RuntimeException("Minecraft error.", e);
+			}
+		}
+		
+		private Object handleCollection(Collection<Object> wrappedObject) {
+			
+			@SuppressWarnings("unchecked")
+			Collection<Object> copy = DefaultInstances.DEFAULT.getDefault(wrappedObject.getClass());
+			
+			if (copy != null) {
+				// Unwrap every element
+				for (Object element : wrappedObject) {
+					copy.add(unwrapItem(element));
+				}
+				return copy;
+				
+			} else {
+				// Impossible
+				return null;
 			}
 		}
 		
