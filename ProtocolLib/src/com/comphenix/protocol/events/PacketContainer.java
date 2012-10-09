@@ -145,7 +145,7 @@ public class PacketContainer implements Serializable {
 		// Convert from and to the Bukkit wrapper
 		return structureModifier.<ItemStack>withType(net.minecraft.server.ItemStack.class, new EquivalentConverter<ItemStack>() {
 			public Object getGeneric(ItemStack specific) {
-				return ((CraftItemStack) specific).getHandle();
+				return toStackNMS(specific);
 			}
 			
 			@Override
@@ -175,7 +175,7 @@ public class PacketContainer implements Serializable {
 				
 				// Unwrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = ((CraftItemStack) specific[i]).getHandle();
+					result[i] = toStackNMS(specific[i]);
 				}
 				return result;
 			}
@@ -197,6 +197,20 @@ public class PacketContainer implements Serializable {
 				return ItemStack[].class;
 			}
 		});
+	}
+	
+	/**
+	 * Convert an item stack to the NMS equivalent.
+	 * @param stack - Bukkit stack to convert.
+	 * @return A bukkit stack.
+	 */
+	private net.minecraft.server.ItemStack toStackNMS(ItemStack stack) {
+		// We must be prepared for an object that simply implements ItemStcak
+		if (stack instanceof CraftItemStack) {
+			return ((CraftItemStack) stack).getHandle();
+		} else {
+			return (new CraftItemStack(stack)).getHandle();
+		}
 	}
 	
 	/**
