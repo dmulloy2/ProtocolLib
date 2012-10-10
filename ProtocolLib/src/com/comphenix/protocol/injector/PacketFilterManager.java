@@ -62,18 +62,18 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 */
 	public enum PlayerInjectHooks {
 		/**
-		 * Override the packet queue lists in NetworkHandler. 
-		 * <p>
-		 * Cannot intercept MapChunk packets. 
-		 */
-		NETWORK_HANDLER_FIELDS,
-		
-		/**
 		 * Override the network handler object itself. Only works in 1.3.
 		 * <p>
 		 * Cannot intercept MapChunk packets. 
 		 */
 		NETWORK_MANAGER_OBJECT,
+		
+		/**
+		 * Override the packet queue lists in NetworkHandler. 
+		 * <p>
+		 * Cannot intercept MapChunk packets. 
+		 */
+		NETWORK_HANDLER_FIELDS,
 		
 		/**
 		 * Override the server handler object. Versatile, but a tad slower.
