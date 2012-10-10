@@ -30,6 +30,11 @@ import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 
+/**
+ * The main entry point for ProtocolLib.
+ * 
+ * @author Kristian
+ */
 public class ProtocolLibrary extends JavaPlugin {
 	
 	// There should only be one protocol manager, so we'll make it static

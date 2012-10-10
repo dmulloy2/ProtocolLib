@@ -13,6 +13,7 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 
 /**
@@ -53,7 +54,7 @@ public class AsyncListenerHandler {
 	
 	// List of queued packets
 	private ArrayBlockingQueue<PacketEvent> queuedPackets = new ArrayBlockingQueue<PacketEvent>(DEFAULT_CAPACITY);
-
+	
 	// List of cancelled tasks
 	private final Set<Integer> stoppedTasks = new HashSet<Integer>();
 	private final Object stopLock = new Object();
@@ -200,7 +201,7 @@ public class AsyncListenerHandler {
 	}
 	
 	/**
-	 * Start a singler worker thread handling the asynchronous.
+	 * Start a singler worker thread handling the asynchronous listener.
 	 */
 	public synchronized void start() {
 		if (listener.getPlugin() == null)
@@ -213,11 +214,55 @@ public class AsyncListenerHandler {
 		filterManager.scheduleAsyncTask(listener.getPlugin(), new Runnable() {
 			@Override
 			public void run() {
-				String workerName = getFriendlyWorkerName(listenerLoop.getID());
+				Thread thread = Thread.currentThread();
 				
+				String previousName = thread.getName();
+				String workerName = getFriendlyWorkerName(listenerLoop.getID());
+
 				// Add the friendly worker name
-				Thread.currentThread().setName(workerName);
+				thread.setName(workerName);
 				listenerLoop.run();
+				thread.setName(previousName);
+			}
+		});
+	}
+	
+	/**
+	 * Start a singler worker thread handling the asynchronous listener.
+	 * <p>
+	 * This method is intended to allow callers to customize the thread priority
+	 * before the worker loop is actually called. This is simpler than to
+	 * schedule the worker threads manually.
+	 * <pre><code>
+	 * listenerHandler.start(new Function&lt;AsyncRunnable, Void&gt;() {
+	 *     &#64;Override
+	 *     public Void apply(&#64;Nullable AsyncRunnable workerLoop) {
+	 *         Thread thread = Thread.currentThread();
+	 *         int prevPriority = thread.getPriority();
+	 *	       
+	 *         thread.setPriority(Thread.MIN_PRIORITY);
+	 *         workerLoop.run();
+	 *         thread.setPriority(prevPriority);
+	 *         return null;
+	 *     }
+	 *   });
+	 * }
+	 * </code></pre>
+	 * @param executor - a method that will execute the given listener loop.
+	 */
+	public synchronized void start(Function<AsyncRunnable, Void> executor) {
+		if (listener.getPlugin() == null)
+			throw new IllegalArgumentException("Cannot start task without a valid plugin.");
+		if (cancelled)
+			throw new IllegalStateException("Cannot start a worker when the listener is closing.");
+		
+		final AsyncRunnable listenerLoop = getListenerLoop();
+		final Function<AsyncRunnable, Void> delegateCopy = executor;
+		
+		filterManager.scheduleAsyncTask(listener.getPlugin(), new Runnable() {
+			@Override
+			public void run() {
+				delegateCopy.apply(listenerLoop);
 			}
 		});
 	}
@@ -300,7 +345,7 @@ public class AsyncListenerHandler {
 				stop();
 			
 			// May happen if another thread is doing something similar to "setWorkers"
-			if ((System.currentTimeMillis() - time) > 1000)
+			if ((System.currentTimeMillis() - time) > 50)
 				throw new RuntimeException("Failed to set worker count.");
 		}
 	}

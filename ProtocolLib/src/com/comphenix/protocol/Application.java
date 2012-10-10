@@ -17,6 +17,11 @@
 
 package com.comphenix.protocol;
 
+/**
+ * Ignore this class.
+ * 
+ * @author Kristian
+ */
 public class Application {
 	public static void main(String[] args) {
 		// For now, though we might consider making a proper application
