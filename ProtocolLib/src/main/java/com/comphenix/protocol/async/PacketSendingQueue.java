@@ -9,6 +9,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.reflect.FieldAccessException;
 
 /**
@@ -184,6 +185,12 @@ class PacketSendingQueue {
 			if (marker != null && !marker.isTransmitted()) {
 				marker.sendPacket(event);
 			}
+		
+		} catch (PlayerLoggedOutException e) {
+			System.out.println(String.format(
+					"Warning: Dropped packet index %s of ID %s",
+					marker.getOriginalSendingIndex(), event.getPacketID()
+			));
 			
 		} catch (IOException e) {
 			// Just print the error
