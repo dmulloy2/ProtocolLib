@@ -12,13 +12,17 @@ import com.google.common.collect.ComparisonChain;
 class PacketEventHolder implements Comparable<PacketEventHolder> {
 
 	private PacketEvent event;
-
+	private long sendingIndex = 0;
+	
 	/**
 	 * A wrapper that ensures the packet event is ordered by sending index.
 	 * @param event - packet event to wrap.
 	 */
 	public PacketEventHolder(PacketEvent event) {
 		this.event = Preconditions.checkNotNull(event, "Event must be non-null");
+		
+		if (event.getAsyncMarker() != null)
+			this.sendingIndex = event.getAsyncMarker().getNewSendingIndex();
 	}
 
 	/**
@@ -31,10 +35,8 @@ class PacketEventHolder implements Comparable<PacketEventHolder> {
 	
 	@Override
 	public int compareTo(PacketEventHolder other) {
-		AsyncMarker marker = other != null ? other.getEvent().getAsyncMarker() : null;
-		
 		return ComparisonChain.start().
-			   compare(event.getAsyncMarker(), marker).
+			   compare(sendingIndex, other.sendingIndex).
 			   result();
 	}
 }

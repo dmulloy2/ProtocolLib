@@ -55,8 +55,22 @@ class PacketSendingQueue {
 	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
 	public synchronized void signalPacketUpdate(PacketEvent packetUpdated, boolean onMainThread) {
+		
+		AsyncMarker marker = packetUpdated.getAsyncMarker();
+		
+		// Should we reorder the event?
+		if (marker.getQueuedSendingIndex() != marker.getNewSendingIndex()) {
+			PacketEvent copy = PacketEvent.fromSynchronous(packetUpdated, marker);
+			
+			// "Cancel" the original event
+			packetUpdated.setCancelled(true);
+			
+			// Enqueue the copy with the new sending index
+			enqueue(copy);
+		}
+		
 		// Mark this packet as finished
-		packetUpdated.getAsyncMarker().setProcessed(true);
+		marker.setProcessed(true);
 		trySendPackets(onMainThread);
 	}
 

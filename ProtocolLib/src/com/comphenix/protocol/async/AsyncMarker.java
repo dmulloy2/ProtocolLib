@@ -59,17 +59,20 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	private long originalSendingIndex;
 	private long newSendingIndex;
 	
+	// Used to determine if a packet must be reordered in the sending queue
+	private Long queuedSendingIndex;
+	
 	// Whether or not the packet has been processed by the listeners
 	private volatile boolean processed;
-	
-	// Whether or not to delay processing
-	private AtomicInteger processingDelay = new AtomicInteger();
 	
 	// Whether or not the packet has been sent
 	private volatile boolean transmitted;
 	
 	// Whether or not the asynchronous processing itself should be cancelled
 	private volatile boolean asyncCancelled;
+	
+		// Whether or not to delay processing
+	private AtomicInteger processingDelay = new AtomicInteger();
 	
 	// Used to synchronize processing on the shared PacketEvent
 	private Object processingLock = new Object();
@@ -189,7 +192,8 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * Increment the number of times this packet must be signalled as done before its transmitted.
 	 * <p>
 	 * This is useful if an asynchronous listener is waiting for further information before the
-	 * packet can be sent to the user. A packet listener <b>MUST</b> eventually call signalPacketUpdate,
+	 * packet can be sent to the user. A packet listener <b>MUST</b> eventually call 
+	 * {@link AsyncFilterManager#signalPacketTransmission(PacketEvent)},
 	 * even if the packet is cancelled, after this method is called. 
 	 * <p>
 	 * It is recommended that processing outside a packet listener is wrapped in a synchronized block 
@@ -219,6 +223,30 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 		return processingDelay.get();
 	}
 	
+	/**
+	 * Whether or not this packet is or has been queued for processing.
+	 * @return TRUE if it has, FALSE otherwise.
+	 */
+	public boolean isQueued() {
+		return queuedSendingIndex != null;
+	}
+
+	/**
+	 * Retrieve the sending index when the packet was queued.
+	 * @return Queued sending index.
+	 */
+	public long getQueuedSendingIndex() {
+		return queuedSendingIndex != null ? queuedSendingIndex : 0;
+	}
+
+	/**
+	 * Set the sending index when the packet was queued.
+	 * @param queuedSendingIndex - sending index.
+	 */
+	void setQueuedSendingIndex(Long queuedSendingIndex) {
+		this.queuedSendingIndex = queuedSendingIndex;
+	}
+
 	/**
 	 * Processing lock used to synchronize access to the parent PacketEvent and PacketContainer.
 	 * <p>
@@ -269,6 +297,10 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 
 	/**
 	 * Set whether or not the asynchronous handling should be cancelled.
+	 * <p>
+	 * This is only relevant during the synchronous processing. Asynchronous
+	 * listeners should use the normal cancel-field to cancel a PacketEvent.
+	 * 
 	 * @param asyncCancelled - TRUE to cancel it, FALSE otherwise.
 	 */
 	public void setAsyncCancelled(boolean asyncCancelled) {

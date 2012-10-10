@@ -180,14 +180,18 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * @param syncPacket - synchronous packet event.
 	 * @param asyncMarker - the asynchronous marker to use.
 	 */
-	public void enqueueSyncPacket(PacketEvent syncPacket, AsyncMarker asyncMarker) {
+	public synchronized void enqueueSyncPacket(PacketEvent syncPacket, AsyncMarker asyncMarker) {
 		PacketEvent newEvent = PacketEvent.fromSynchronous(syncPacket, asyncMarker);
+		
+		if (asyncMarker.isQueued() || asyncMarker.isTransmitted())
+			throw new IllegalArgumentException("Cannot queue a packet that has already been queued.");
 		
 		// Start the process
 		getSendingQueue(syncPacket).enqueue(newEvent);
 		
 		// We know this is occuring on the main thread, so pass TRUE
 		getProcessingQueue(syncPacket).enqueue(newEvent, true);
+		asyncMarker.setQueuedSendingIndex(asyncMarker.getNewSendingIndex());
 	}
 	
 	@Override
@@ -267,12 +271,16 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * @param onMainThread - whether or not this method was run by the main thread.
 	 */
 	private void signalPacketTransmission(PacketEvent packet, boolean onMainThread) {
-		if (packet.getAsyncMarker() == null)
+		AsyncMarker marker = packet.getAsyncMarker();
+		if (marker == null)
 			throw new IllegalArgumentException(
 					"A sync packet cannot be transmitted by the asynchronous manager.");
+		if (!marker.isQueued())
+			throw new IllegalArgumentException(
+					"A packet must have been queued before it can be transmitted.");
 		
 		// Only send if the packet is ready
-		if (packet.getAsyncMarker().decrementProcessingDelay() == 0) {
+		if (marker.decrementProcessingDelay() == 0) {			
 			getSendingQueue(packet).signalPacketUpdate(packet, onMainThread);
 		}
 	}
