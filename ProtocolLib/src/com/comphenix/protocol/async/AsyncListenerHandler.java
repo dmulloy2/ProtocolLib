@@ -371,10 +371,12 @@ public class AsyncListenerHandler {
 					marker.setListenerHandler(this);
 					marker.setWorkerID(workerID);
 					
-					if (packet.isServerPacket())
-						listener.onPacketSending(packet);
-					else
-						listener.onPacketReceiving(packet);
+					synchronized (marker.getProcessingLock()) {
+						if (packet.isServerPacket())
+							listener.onPacketSending(packet);
+						else
+							listener.onPacketReceiving(packet);
+					}
 					
 				} catch (Throwable e) {
 					// Minecraft doesn't want your Exception.
@@ -393,8 +395,10 @@ public class AsyncListenerHandler {
 				}
 				
 				// There are no more listeners - queue the packet for transmission
-				filterManager.signalPacketUpdate(packet);
-				filterManager.signalProcessingDone(packet);
+				filterManager.signalFreeProcessingSlot(packet);
+				
+				// Note that listeners can opt to delay the packet transmission
+				filterManager.signalPacketTransmission(packet);
 			}
 			
 		} catch (InterruptedException e) {

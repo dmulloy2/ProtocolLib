@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.minecraft.server.Packet;
 
@@ -61,11 +62,17 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	// Whether or not the packet has been processed by the listeners
 	private volatile boolean processed;
 	
+	// Whether or not to delay processing
+	private AtomicInteger processingDelay = new AtomicInteger();
+	
 	// Whether or not the packet has been sent
 	private volatile boolean transmitted;
 	
 	// Whether or not the asynchronous processing itself should be cancelled
 	private volatile boolean asyncCancelled;
+	
+	// Used to synchronize processing on the shared PacketEvent
+	private Object processingLock = new Object();
 	
 	// Used to identify the asynchronous worker
 	private AsyncListenerHandler listenerHandler;
@@ -179,6 +186,55 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	}
 
 	/**
+	 * Increment the number of times this packet must be signalled as done before its transmitted.
+	 * <p>
+	 * This is useful if an asynchronous listener is waiting for further information before the
+	 * packet can be sent to the user. A packet listener <b>MUST</b> eventually call signalPacketUpdate,
+	 * even if the packet is cancelled, after this method is called. 
+	 * <p>
+	 * It is recommended that processing outside a packet listener is wrapped in a synchronized block 
+	 * using the {@link #getProcessingLock()} method.
+	 * <p>
+	 * To decrement the processing delay, call signalPacketUpdate. A thread that calls this method
+	 * multiple times must call signalPacketUpdate at least that many times.
+	 * @return The new processing delay.
+	 */
+	public int incrementProcessingDelay() {
+		return processingDelay.incrementAndGet();
+	}
+	
+	/**
+	 * Decrement the number of times this packet must be signalled as done before it's transmitted.
+	 * @return The new processing delay. If zero, the packet should be sent.
+	 */
+	int decrementProcessingDelay() {
+		return processingDelay.decrementAndGet();
+	}
+	
+	/**
+	 * Retrieve the number of times a packet must be signalled to be done before it's sent.
+	 * @return Number of processing delays.
+	 */
+	public int getProcessingDelay() {
+		return processingDelay.get();
+	}
+	
+	/**
+	 * Processing lock used to synchronize access to the parent PacketEvent and PacketContainer.
+	 * <p>
+	 * This lock is automatically acquired for every asynchronous packet listener. It should only be
+	 * used to synchronize access to a PacketEvent if it's processing has been delayed.
+	 * @return A processing lock.
+	 */
+	public Object getProcessingLock() {
+		return processingLock;
+	}
+
+	public void setProcessingLock(Object processingLock) {
+		this.processingLock = processingLock;
+	}
+
+	/**
 	 * Retrieve whether or not this packet has already been sent.
 	 * @return TRUE if it has been sent before, FALSE otherwise.
 	 */
@@ -276,7 +332,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * @param event - the packet to send.
 	 * @throws IOException If the packet couldn't be sent.
 	 */
-	public void sendPacket(PacketEvent event) throws IOException {
+	void sendPacket(PacketEvent event) throws IOException {
 		try {
 			if (event.isServerPacket()) {
 				packetStream.sendServerPacket(event.getPlayer(), event.getPacket(), false);

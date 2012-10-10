@@ -15,7 +15,6 @@ import com.comphenix.protocol.events.PacketListener;
  * @author Kristian
  */
 public interface AsynchronousManager {
-
 	/**
 	 * Registers an asynchronous packet handler.
 	 * <p>
@@ -74,4 +73,13 @@ public interface AsynchronousManager {
 	 * Remove listeners, close threads and transmit every delayed packet.
 	 */
 	public abstract void cleanupAll();
+
+	/**
+	 * Signal that a packet is ready to be transmitted.
+	 * <p>
+	 * This should only be called if {@link com.comphenix.protocol.async.AsyncMarker#incrementProcessingDelay() AsyncMarker.incrementProcessingDelay()}
+	 * has been called previously.
+	 * @param packet - packet to signal.
+	 */
+	public abstract void signalPacketTransmission(PacketEvent packet);
 }

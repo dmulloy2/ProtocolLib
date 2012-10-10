@@ -256,14 +256,27 @@ public class AsyncFilterManager implements AsynchronousManager {
 		serverQueue.cleanupAll();
 	}
 
+	@Override
+	public void signalPacketTransmission(PacketEvent packet) {
+		signalPacketTransmission(packet, onMainThread());
+	}
+
 	/**
 	 * Signal that a packet is ready to be transmitted.
 	 * @param packet - packet to signal.
+	 * @param onMainThread - whether or not this method was run by the main thread.
 	 */
-	public void signalPacketUpdate(PacketEvent packet) {
-		getSendingQueue(packet).signalPacketUpdate(packet, onMainThread());
+	private void signalPacketTransmission(PacketEvent packet, boolean onMainThread) {
+		if (packet.getAsyncMarker() == null)
+			throw new IllegalArgumentException(
+					"A sync packet cannot be transmitted by the asynchronous manager.");
+		
+		// Only send if the packet is ready
+		if (packet.getAsyncMarker().decrementProcessingDelay() == 0) {
+			getSendingQueue(packet).signalPacketUpdate(packet, onMainThread);
+		}
 	}
-
+	
 	/**
 	 * Retrieve the sending queue this packet belongs to.
 	 * @param packet - the packet.
@@ -277,7 +290,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * Signal that a packet has finished processing.
 	 * @param packet - packet to signal.
 	 */
-	public void signalProcessingDone(PacketEvent packet) {
+	public void signalFreeProcessingSlot(PacketEvent packet) {
 		getProcessingQueue(packet).signalProcessingDone();
 	}
 	

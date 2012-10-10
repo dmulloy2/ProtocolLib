@@ -100,6 +100,8 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 				AsyncMarker marker = packet.getAsyncMarker();
 				Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketID());
 				
+				marker.incrementProcessingDelay();
+				
 				// Yes, removing the marker will cause the chain to stop
 				if (list != null) {
 					Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
@@ -112,7 +114,8 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 				}
 				
 				// The packet has no further listeners. Just send it.
-				sendingQueue.signalPacketUpdate(packet, onMainThread);
+				if (marker.decrementProcessingDelay() == 0)
+					sendingQueue.signalPacketUpdate(packet, onMainThread);
 				signalProcessingDone();
 				
 			} else {

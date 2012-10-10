@@ -43,7 +43,7 @@ class PacketSendingQueue {
 	
 	/**
 	 * Enqueue a packet for sending. 
-	 * @param packet
+	 * @param packet - packet to queue.
 	 */
 	public void enqueue(PacketEvent packet) {
 		sendingQueue.add(new PacketEventHolder(packet));
