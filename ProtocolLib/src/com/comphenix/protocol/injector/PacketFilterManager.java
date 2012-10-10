@@ -475,18 +475,17 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			manager.registerEvents(new Listener() {
-				
-				@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
 					playerInjection.injectPlayer(event.getPlayer());
 			    }
 				
-				@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerQuit(PlayerQuitEvent event) {
 					playerInjection.uninjectPlayer(event.getPlayer());
 			    }
 				
-				@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPluginDisabled(PluginDisableEvent event) {
 					// Clean up in case the plugin forgets
 					if (event.getPlugin() != plugin) {
@@ -522,7 +521,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Class eventPriority = loader.loadClass("org.bukkit.event.Event$Priority");
 			
 			// Get the priority
-			Object priorityNormal = Enum.valueOf(eventPriority, "Highest");
+			Object priorityNormal = Enum.valueOf(eventPriority, "Monitor");
 			
 			// Get event types
 			Object playerJoinType = Enum.valueOf(eventTypes, "PLAYER_JOIN");
