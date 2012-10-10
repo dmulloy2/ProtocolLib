@@ -4,6 +4,11 @@ import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.events.PacketEvent;
 
+/**
+ * Represents an object that initiate the packet listeners.
+ * 
+ * @author Kristian
+ */
 public interface ListenerInvoker {
 
 	/**

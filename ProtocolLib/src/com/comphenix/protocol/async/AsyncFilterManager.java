@@ -186,12 +186,13 @@ public class AsyncFilterManager implements AsynchronousManager {
 		if (asyncMarker.isQueued() || asyncMarker.isTransmitted())
 			throw new IllegalArgumentException("Cannot queue a packet that has already been queued.");
 		
+		asyncMarker.setQueuedSendingIndex(asyncMarker.getNewSendingIndex());
+		
 		// Start the process
 		getSendingQueue(syncPacket).enqueue(newEvent);
 		
 		// We know this is occuring on the main thread, so pass TRUE
 		getProcessingQueue(syncPacket).enqueue(newEvent, true);
-		asyncMarker.setQueuedSendingIndex(asyncMarker.getNewSendingIndex());
 	}
 	
 	@Override
