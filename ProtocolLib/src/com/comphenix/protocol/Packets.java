@@ -1,5 +1,9 @@
 package com.comphenix.protocol;
 
+import java.util.Set;
+
+import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.IntEnum;
 
 /**
@@ -92,6 +96,25 @@ public final class Packets {
 			return INSTANCE;
 		}
 		
+		/**
+		 * Determine if the given packet is a valid server packet in the current version of Minecraft.
+		 * @param packetID - the packet to test.
+		 * @return TRUE if this packet is supported, FALSE otherwise.
+		 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
+		 */
+		public static boolean isSupported(int packetID) throws FieldAccessException {
+			return PacketFilterManager.getServerPackets().contains(packetID);
+		}
+		
+		/**
+		 * Retrieve every client packet the current version of Minecraft is aware of.
+		 * @return Every supported server packet.
+		 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
+		 */
+		public static Set<Integer> getSupported() throws FieldAccessException {
+			return PacketFilterManager.getServerPackets();
+		}
+		
 		// We only allow a single instance of this class
 	    private Server() {
 			super();
@@ -144,6 +167,25 @@ public final class Packets {
 		 */
 		public static Client getRegistry() {
 			return INSTANCE;
+		}
+		
+		/**
+		 * Determine if the given packet is a valid client packet in the current version of Minecraft.
+		 * @param packetID - the packet to test.
+		 * @return TRUE if this packet is supported, FALSE otherwise.
+		 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
+		 */
+		public static boolean isSupported(int packetID) throws FieldAccessException {
+			return PacketFilterManager.getClientPackets().contains(packetID);
+		}
+		
+		/**
+		 * Retrieve every client packet the current version of Minecraft is aware of.
+		 * @return Every supported client packet.
+		 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
+		 */
+		public static Set<Integer> getSupported() throws FieldAccessException {
+			return PacketFilterManager.getClientPackets();
 		}
 		
 		// Like above

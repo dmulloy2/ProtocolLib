@@ -107,6 +107,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// The async packet handler
 	private AsyncFilterManager asyncFilterManager;
 	
+	// Valid server and client packets
+	private Set<Integer> serverPackets;
+	private Set<Integer> clientPackets;
+	
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
@@ -123,6 +128,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			this.playerInjection = new PlayerInjectionHandler(classLoader, logger, this, server);
 			this.packetInjector = new PacketInjector(classLoader, this, playerInjection);
 			this.asyncFilterManager = new AsyncFilterManager(logger, server.getScheduler(), this);
+			
+			// Attempt to load the list of server and client packets
+			try {
+				this.serverPackets = MinecraftRegistry.getServerPackets();
+				this.clientPackets = MinecraftRegistry.getClientPackets();
+			} catch (FieldAccessException e) {
+				logger.log(Level.WARNING, "Cannot load server and client packet list.", e);
+			}
+
 		} catch (IllegalAccessException e) {
 			logger.log(Level.SEVERE, "Unable to initialize packet injector.", e);
 		}
@@ -180,7 +194,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			if (hasSending) {
 				verifyWhitelist(listener, sending);
 				sendingListeners.addListener(listener, sending);
-				enablePacketFilters(ConnectionSide.SERVER_SIDE, sending.getWhitelist());
+				enablePacketFilters(listener, ConnectionSide.SERVER_SIDE, sending.getWhitelist());
 				
 				// Make sure this is possible
 				playerInjection.checkListener(listener);
@@ -188,7 +202,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			if (hasReceiving) {
 				verifyWhitelist(listener, receiving);
 				recievedListeners.addListener(listener, receiving);
-				enablePacketFilters(ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
+				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
 			}
 			
 			// Inform our injected hooks
@@ -304,18 +318,39 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * <p>
 	 * Note that all packets are disabled by default.
 	 * 
+	 * @param listener - the listener that requested to enable these filters.
 	 * @param side - which side the event will arrive from.
 	 * @param packets - the packet id(s).
 	 */
-	private void enablePacketFilters(ConnectionSide side, Iterable<Integer> packets) {
+	private void enablePacketFilters(PacketListener listener, ConnectionSide side, Iterable<Integer> packets) {
 		if (side == null)
 			throw new IllegalArgumentException("side cannot be NULL.");
+
+		// Note the difference between unsupported and valid.
+		// Every packet ID between and including 0 - 255 is valid, but only a subset is supported.
 		
 		for (int packetID : packets) {
-			if (side.isForServer()) 
-				playerInjection.addPacketHandler(packetID);
-			if (side.isForClient() && packetInjector != null) 
-				packetInjector.addPacketHandler(packetID);
+			// Only register server packets that are actually supported by Minecraft
+			if (side.isForServer()) {
+				if (serverPackets != null && serverPackets.contains(packetID))
+					playerInjection.addPacketHandler(packetID);
+				else
+					logger.warning(String.format(
+							"[%s] Unsupported server packet ID in current Minecraft version: %s",
+							PacketAdapter.getPluginName(listener), packetID
+					));
+			}
+			
+			// As above, only for client packets
+			if (side.isForClient() && packetInjector != null) {
+				if (clientPackets != null && clientPackets.contains(packetID))
+					packetInjector.addPacketHandler(packetID);
+				else
+					logger.warning(String.format(
+							"[%s] Unsupported client packet ID in current Minecraft version: %s",
+							PacketAdapter.getPluginName(listener), packetID
+					));
+			}
 		}
 	}
 
@@ -560,7 +595,25 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			e.printStackTrace();
 		}
 	}
-		
+	
+	/**
+	 * Retrieve every known and supported server packet.
+	 * @return An immutable set of every known server packet.
+	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
+	 */
+	public static Set<Integer> getServerPackets() throws FieldAccessException {
+		return MinecraftRegistry.getServerPackets();
+	}
+	
+	/**
+	 * Retrieve every known and supported client packet.
+	 * @return An immutable set of every known client packet.
+	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
+	 */
+	public static Set<Integer> getClientPackets() throws FieldAccessException {
+		return MinecraftRegistry.getClientPackets();
+	}
+	
 	/**
 	 * Retrieves the current plugin class loader.
 	 * @return Class loader.
@@ -574,6 +627,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		return hasClosed;
 	}
 	
+	/**
+	 * Called when ProtocolLib is closing.
+	 */
 	public void close() {
 		// Guard
 		if (hasClosed)

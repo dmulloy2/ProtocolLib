@@ -117,6 +117,10 @@ class PacketInjector {
 		Map<Class, Integer> registry = MinecraftRegistry.getPacketToID();
 		Class old = MinecraftRegistry.getPacketClassFromID(packetID);
 		
+		// If this packet is not known
+		if (old == null) {
+			throw new IllegalStateException("Packet ID " + packetID + " is not a valid packet ID in this version.");
+		}
 		// Check for previous injections
 		if (!old.getName().startsWith("net.minecraft.")) {
 			throw new IllegalStateException("Packet " + packetID + " has already been injected.");

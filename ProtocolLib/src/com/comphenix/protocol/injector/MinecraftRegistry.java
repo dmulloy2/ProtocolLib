@@ -19,13 +19,17 @@ package com.comphenix.protocol.injector;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.minecraft.server.Packet;
 
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Static registries in Minecraft.
@@ -35,8 +39,15 @@ import com.google.common.base.Objects;
 @SuppressWarnings("rawtypes")
 class MinecraftRegistry {
 
+	// Fuzzy reflection
+	private static FuzzyReflection packetRegistry;
+	
 	// The packet class to packet ID translator
 	private static Map<Class, Integer> packetToID;
+	
+	// Whether or not certain packets are sent by the client or the server
+	private static Set<Integer> serverPackets;
+	private static Set<Integer> clientPackets;
 	
 	// New proxy values
 	private static Map<Integer, Class> overwrittenPackets = new HashMap<Integer, Class>();
@@ -49,7 +60,7 @@ class MinecraftRegistry {
 		// Initialize it, if we haven't already
 		if (packetToID == null) {
 			try {
-				Field packetsField = FuzzyReflection.fromClass(Packet.class, true).getFieldByType("packetsField", Map.class);
+				Field packetsField = getPacketRegistry().getFieldByType("packetsField", Map.class);
 				packetToID = (Map<Class, Integer>) FieldUtils.readStaticField(packetsField, true);
 				
 			} catch (IllegalAccessException e) {
@@ -60,12 +71,78 @@ class MinecraftRegistry {
 		return packetToID;
 	}
 	
+	/**
+	 * Retrieve the cached fuzzy reflection instance allowing access to the packet registry.
+	 * @return Reflected packet registry.
+	 */ 
+	private static FuzzyReflection getPacketRegistry() {
+		if (packetRegistry == null)
+			packetRegistry = FuzzyReflection.fromClass(Packet.class, true);
+		return packetRegistry;
+	}
+	
+	/**
+	 * Retrieve the injected proxy classes handlig each packet ID.
+	 * @return Injected classes.
+	 */
 	public static Map<Integer, Class> getOverwrittenPackets() {
 		return overwrittenPackets;
 	}
 	
+	/**
+	 * Retrieve the vanilla classes handling each packet ID.
+	 * @return Vanilla classes.
+	 */
 	public static Map<Integer, Class> getPreviousPackets() {
 		return previousValues;
+	}
+	
+	/**
+	 * Retrieve every known and supported server packet.
+	 * @return An immutable set of every known server packet.
+	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
+	 */
+	public static Set<Integer> getServerPackets() throws FieldAccessException {
+		initializeSets();
+		return serverPackets;
+	}
+	
+	/**
+	 * Retrieve every known and supported client packet.
+	 * @return An immutable set of every known client packet.
+	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
+	 */
+	public static Set<Integer> getClientPackets() throws FieldAccessException {
+		initializeSets();
+		return clientPackets;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static void initializeSets() throws FieldAccessException {
+		if (serverPackets == null || clientPackets == null) {
+			List<Field> sets = getPacketRegistry().getFieldListByType(Set.class);
+			
+			try {
+				if (sets.size() > 1) {
+					serverPackets = (Set<Integer>) FieldUtils.readStaticField(sets.get(0), true);
+					clientPackets = (Set<Integer>) FieldUtils.readStaticField(sets.get(1), true);
+					
+					// Impossible
+					if (serverPackets == null || clientPackets == null)
+						throw new FieldAccessException("Packet sets are in an illegal state.");
+					
+					// NEVER allow callers to modify the underlying sets
+					serverPackets = ImmutableSet.copyOf(serverPackets);
+					clientPackets = ImmutableSet.copyOf(clientPackets);
+					
+				} else {
+					throw new FieldAccessException("Cannot retrieve packet client/server sets.");
+				}
+				
+			} catch (IllegalAccessException e) {
+				throw new FieldAccessException("Cannot access field.", e);
+			}
+		}
 	}
 	
 	/**
