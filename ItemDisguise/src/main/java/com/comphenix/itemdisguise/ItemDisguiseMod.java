@@ -67,7 +67,7 @@ public class ItemDisguiseMod extends JavaPlugin {
 					    write(2, player.getLocation().getZ());
 					fakeExplosion.getSpecificModifier(float.class).
 						write(0, 3.0F);
-
+					
 					protocolManager.sendServerPacket(player, fakeExplosion);
 					
 				} catch (Exception e) {

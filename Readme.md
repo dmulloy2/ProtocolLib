@@ -19,7 +19,7 @@ lead to more subtle bugs.
 
 Building
 --------
-You can compile this project yourself by using the latest version of Maven. 
+You can compile this project yourself by using the latest version of Maven.
 
 
 A new API

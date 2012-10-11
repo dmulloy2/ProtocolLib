@@ -110,6 +110,9 @@ public class HideEnchantmentsListener {
 	}
 	
 	private void removeEnchantments(ItemStack stack) {
+		if (stack == null)
+			return;
+		
 		Object[] copy = stack.getEnchantments().keySet().toArray();
 		
 		for (Object enchantment : copy) {

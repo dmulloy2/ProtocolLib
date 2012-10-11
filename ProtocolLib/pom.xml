@@ -7,7 +7,7 @@
   <description>Provides read/write access to the Minecraft protocol.</description>
   
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
   </properties>
   
   <parent>

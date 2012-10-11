@@ -142,7 +142,7 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier for ItemStack fields.
 	 */
 	public StructureModifier<ItemStack> getItemModifier() {
-		// Convert from and to the Bukkit wrapper
+		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack>withType(net.minecraft.server.ItemStack.class, 
 				getIgnoreNull(new EquivalentConverter<ItemStack>() {
 			public Object getGeneric(ItemStack specific) {

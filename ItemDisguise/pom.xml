@@ -6,6 +6,10 @@
   <name>Item Disguise</name>
   <description>Change the appearance of inventory items.</description>
   
+  <properties>
+    <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
+  </properties>
+  
   <repositories>
     <repository>
       <id>bukkit-rep</id>
