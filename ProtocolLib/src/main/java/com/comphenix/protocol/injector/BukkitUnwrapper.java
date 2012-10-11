@@ -45,8 +45,10 @@ public class BukkitUnwrapper implements Unwrapper {
 	@Override
 	public Object unwrapItem(Object wrappedObject) {
 
-		// Special case
-		if (wrappedObject instanceof Collection) {
+		// Special cases
+		if (wrappedObject == null) {
+			return null;
+		} else if (wrappedObject instanceof Collection) {
 			return handleCollection((Collection<Object>) wrappedObject);
 		}
 		
