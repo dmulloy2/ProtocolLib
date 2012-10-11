@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.comphenix.ProtocolLib</groupId>
+  <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
   <name>ProtocolLib</name>
   <version>1.3.1</version>
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://dev.bukkit.org/server-mods/protocollib/</url>
+  <developers>
+    <developer>
+      <id>aadnk</id>
+      <name>Kristian S. Stangeland</name>
+      <email>kr_stang@hotmail.com</email>
+      <url>http://comphenix.net/</url>
+      <roles>
+        <role>developer</role>
+        <role>maintainer</role>
+      </roles>
+      <timezone>1</timezone>
+    </developer>
+  </developers>
   <licenses>
     <license>
       <name>GNU GENERAL PUBLIC LICENSE - Version 2, June 1991</name>
@@ -61,6 +74,52 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>release-sign-artifacts</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.9</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.4</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
   <dependencies>
     <dependency>
       <groupId>org.bukkit</groupId>
