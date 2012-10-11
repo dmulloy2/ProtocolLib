@@ -10,27 +10,21 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   
-  <distributionManagement>
-    <repository>
-      <id>comphenix-releases</id>
-      <name>Comphenix Maven Releases</name>
-      <url>http://comphenix.net/maven/content/repositories/releases/</url>
-    </repository>
-    <snapshotRepository>
-      <id>comphenix-snapshots</id>
-      <name>Comphenix Maven Snapshots</name>
-      <url>http://comphenix.net/maven/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
-  
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
+ 
   <repositories>
     <repository>
       <id>bukkit-rep</id>
       <url>http://repo.bukkit.org/content/groups/public</url>
     </repository>
   </repositories>
-  
+ 
   <build>
+    <defaultGoal>clean install</defaultGoal>
     <sourceDirectory>src/main/java</sourceDirectory>
     <testSourceDirectory>src/test/java</testSourceDirectory>
     <resources>
