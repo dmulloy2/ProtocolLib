@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <artifactId>oss-parent</artifactId>
-    <groupId>org.sonatype.oss</groupId>
-    <version>7</version>
-    <relativePath>../pom.xml/pom.xml</relativePath>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
@@ -126,11 +120,17 @@
       </build>
     </profile>
   </profiles>
+  <repositories>
+    <repository>
+      <id>bukkit-rep</id>
+      <url>http://repo.bukkit.org/content/groups/public</url>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>craftbukkit</artifactId>
-      <version>1.3.2-R1.1-SNAPSHOT</version>
+      <version>1.3.2-R1.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -146,6 +146,18 @@
       </exclusions>
     </dependency>
   </dependencies>
+  <distributionManagement>
+    <repository>
+      <id>comphenix-releases</id>
+      <name>Comphenix Maven Releases</name>
+      <url>http://comphenix.net/maven/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>comphenix-snapshots</id>
+      <name>Comphenix Maven Snapshots</name>
+      <url>http://comphenix.net/maven/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
