@@ -9,12 +9,19 @@
   <properties>
     <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
   </properties>
-  
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>7</version>
-  </parent>
+
+  <distributionManagement>
+    <repository>
+      <id>comphenix-releases</id>
+      <name>Comphenix Maven Releases</name>
+      <url>http://comphenix.net/maven/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>comphenix-snapshots</id>
+      <name>Comphenix Maven Snapshots</name>
+      <url>http://comphenix.net/maven/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
  
   <repositories>
     <repository>
