@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol.events;
 
+import java.util.Set;
+
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -39,6 +41,17 @@ public abstract class PacketAdapter implements PacketListener {
 	 */
 	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, Integer... packets) {
 		this(plugin, connectionSide, ListenerPriority.NORMAL, packets);
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param listenerPriority - the event priority.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, Set<Integer> packets) {
+		this(plugin, connectionSide, listenerPriority, packets.toArray(new Integer[0]));
 	}
 	
 	/**
