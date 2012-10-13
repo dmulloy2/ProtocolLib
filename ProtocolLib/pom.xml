@@ -14,12 +14,12 @@
     <repository>
       <id>comphenix-releases</id>
       <name>Comphenix Maven Releases</name>
-      <url>http://comphenix.net/maven/content/repositories/releases/</url>
+      <url>http://repo.comphenix.net/content/repositories/releases/</url>
     </repository>
     <snapshotRepository>
       <id>comphenix-snapshots</id>
       <name>Comphenix Maven Snapshots</name>
-      <url>http://comphenix.net/maven/content/repositories/snapshots/</url>
+      <url>http://repo.comphenix.net/content/repositories/snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
  
