@@ -32,6 +32,8 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -190,7 +192,13 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 
 	@Override
-	public boolean canInject() {
+	public boolean canInject(GamePhase phase) {
+		// All phases should work
 		return true;
+	}
+
+	@Override
+	public PlayerInjectHooks getHookType() {
+		return PlayerInjectHooks.NETWORK_HANDLER_FIELDS;
 	}
 }

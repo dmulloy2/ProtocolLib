@@ -33,6 +33,8 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
 
 /**
  * Injection method that overrides the NetworkHandler itself, and it's sendPacket-method.
@@ -137,7 +139,13 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 
 	@Override
-	public boolean canInject() {
+	public boolean canInject(GamePhase phase) {
+		// Works for all phases
 		return true;
+	}
+
+	@Override
+	public PlayerInjectHooks getHookType() {
+		return PlayerInjectHooks.NETWORK_MANAGER_OBJECT;
 	}
 }

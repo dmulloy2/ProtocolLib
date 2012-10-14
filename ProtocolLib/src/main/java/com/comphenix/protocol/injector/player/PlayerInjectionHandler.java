@@ -47,6 +47,16 @@ import com.google.common.collect.ImmutableSet;
  */
 public class PlayerInjectionHandler {
 
+	/**
+	 * The current player phase.
+	 * @author Kristian
+	 */
+	public enum GamePhase {
+		LOGIN,
+		PLAYING,
+		CLOSING,
+	}
+	
 	// Server connection injection
 	private InjectedServerConnection serverInjection;
 	
@@ -139,69 +149,94 @@ public class PlayerInjectionHandler {
 		return connectionLookup.get(inputStream);
 	}
 	
+	private PlayerInjectHooks getInjectorType(PlayerInjector injector) {
+		return injector != null ? injector.getHookType() : PlayerInjectHooks.NONE;
+	}
+	
 	/**
 	 * Initialize a player hook, allowing us to read server packets.
 	 * @param player - player to hook.
 	 */
-	public void injectPlayer(Player player) {
+	public void injectPlayer(Player player, GamePhase phase) {
 		
-		PlayerInjector injector = null;
-		PlayerInjectHooks currentHook = playerHook;
-		boolean firstPlayer = lastSuccessfulHook == null;
+		PlayerInjector injector = playerInjection.get(player);
+		PlayerInjectHooks tempHook = playerHook;
+		PlayerInjectHooks permanentHook = tempHook;
 		
+		// See if we need to inject something else
+		boolean invalidInjector = injector != null ? !injector.canInject(phase) : false;
+
 		// Don't inject if the class has closed
-		if (!hasClosed && player != null && !playerInjection.containsKey(player)) {
-			while (true) {
+		if (!hasClosed && player != null && (tempHook != getInjectorType(injector) || invalidInjector)) {
+			while (tempHook != PlayerInjectHooks.NONE) {
+				// Whether or not the current hook method failed completely
+				boolean hookFailed = false;
+
+				// Remove the previous hook, if any
+				cleanupHook(injector);
+				
 				try {
-					injector = getHookInstance(player, currentHook);
-					injector.initialize();
-					injector.injectManager();
+					injector = getHookInstance(player, tempHook);
 					
-					DataInputStream inputStream = injector.getInputStream(false);
-					
-					if (!player.isOnline() || inputStream == null) {
-						throw new PlayerLoggedOutException();
+					// Make sure this injection method supports the current game phase
+					if (injector.canInject(phase)) {
+						injector.initialize();
+						injector.injectManager();
+						
+						DataInputStream inputStream = injector.getInputStream(false);
+						
+						if (!player.isOnline() || inputStream == null) {
+							throw new PlayerLoggedOutException();
+						}
+						
+						connectionLookup.put(inputStream, player);
+						break;
 					}
-					
-					playerInjection.put(player, injector);
-					connectionLookup.put(inputStream, player);
-					break;
-					
 					
 				} catch (PlayerLoggedOutException e) {
 					throw e;
 					
 				} catch (Exception e) {
-
 					// Mark this injection attempt as a failure
-					logger.log(Level.SEVERE, "Player hook " + currentHook.toString() + " failed.", e);
-					
-					// Clean up as much as possible
-					try {
-						if (injector != null)
-							injector.cleanupAll();
-					} catch (Exception e2) {
-						logger.log(Level.WARNING, "Cleaing up after player hook failed.", e);
-					}
-					
-					if (currentHook.ordinal() > 0) {
-
-						// Choose the previous player hook type
-						currentHook = PlayerInjectHooks.values()[currentHook.ordinal() - 1];
-						logger.log(Level.INFO, "Switching to " + currentHook.toString() + " instead.");
-					} else {
-						// UTTER FAILURE
-						playerInjection.put(player, null);
-						return;
-					}
+					logger.log(Level.SEVERE, "Player hook " + tempHook.toString() + " failed.", e);
+					hookFailed = true;
+				}
+				
+				// Choose the previous player hook type
+				tempHook = PlayerInjectHooks.values()[tempHook.ordinal() - 1];
+				logger.log(Level.INFO, "Switching to " + tempHook.toString() + " instead.");
+				
+				// Check for UTTER FAILURE
+				if (tempHook == PlayerInjectHooks.NONE) {
+					cleanupHook(injector);
+					injector = null;
+					hookFailed = true;
+				}
+				
+				// Should we set the default hook method too?
+				if (hookFailed) {
+					permanentHook = tempHook;
 				}
 			}
 			
 			// Update values
 			if (injector != null)
 				lastSuccessfulHook = injector;
-			if (currentHook != playerHook || firstPlayer) 
-				setPlayerHook(currentHook);
+			if (permanentHook != playerHook) 
+				setPlayerHook(tempHook);
+			
+			// Save last injector
+			playerInjection.put(player, injector);
+		}
+	}
+	
+	private void cleanupHook(PlayerInjector injector) {
+		// Clean up as much as possible
+		try {
+			if (injector != null)
+				injector.cleanupAll();
+		} catch (Exception e2) {
+			logger.log(Level.WARNING, "Cleaing up after player hook failed.", e2);
 		}
 	}
 	

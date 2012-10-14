@@ -35,6 +35,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -269,7 +271,13 @@ abstract class PlayerInjector {
 	 * Determine if this inject method can even be attempted.
 	 * @return TRUE if can be attempted, though possibly with failure, FALSE otherwise.
 	 */
-	public abstract boolean canInject();
+	public abstract boolean canInject(GamePhase state);
+	
+	/**
+	 * Retrieve the hook type this class represents.
+	 * @return Hook type this class represents.
+	 */
+	public abstract PlayerInjectHooks getHookType();
 	
 	/**
 	 * Invoked before a new listener is registered.
