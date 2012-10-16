@@ -29,6 +29,7 @@ import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.MonitorAdapter;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.DelayedSingleTask;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
@@ -58,13 +59,17 @@ public class ProtocolLibrary extends JavaPlugin {
 	private int tickCounter = 0;
 	private static final int ASYNC_PACKET_DELAY = 1;
 	
+	// Used to unhook players after a delay
+	private DelayedSingleTask unhookTask;
+	
 	// Used for debugging
 	private boolean debugListener;
 	
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
-		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), logger);
+		unhookTask = new DelayedSingleTask(this);
+		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, logger);
 	}
 	
 	@Override
@@ -181,6 +186,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			asyncPacketTask = -1;
 		}
 		
+		unhookTask.close();
 		protocolManager.close();
 		protocolManager = null;
 		statistisc = null;

@@ -90,6 +90,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		NETWORK_SERVER_OBJECT;
 	}
 	
+	// The amount of time to wait until we actually unhook every player
+	private static final int TICKS_PER_SECOND = 20;
+	private static final int UNHOOK_DELAY = 5 * TICKS_PER_SECOND; 
+	
+	// Delayed unhook
+	private DelayedSingleTask unhookTask;
+	
 	// Create a concurrent set
 	private Set<PacketListener> packetListeners = 
 			Collections.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
@@ -129,12 +136,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
+	 * @param unhookTask 
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, Logger logger) {
+	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, Logger logger) {
 		if (logger == null)
 			throw new IllegalArgumentException("logger cannot be NULL.");
 		if (classLoader == null)
 			throw new IllegalArgumentException("classLoader cannot be NULL.");
+		
+		// Just boilerplate
+		final DelayedSingleTask finalUnhookTask = unhookTask;
+		
+		// References
+		this.unhookTask = unhookTask;
+		this.server = server;
+		this.classLoader = classLoader;
+		this.logger = logger;
 		
 		// Used to determine if injection is needed
 		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
@@ -144,17 +161,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				
 				if (phase.hasLogin())
 					result &= getPhaseLoginCount() > 0;
+				// Note that we will still hook players if the unhooking has been delayed
 				if (phase.hasPlaying())
-					result &= getPhasePlayingCount() > 0;
+					result &= getPhasePlayingCount() > 0 || finalUnhookTask.isRunning();
 				return result;
 			}
 		};
 		
 		try {
-			// Initialize values
-			this.server = server;
-			this.classLoader = classLoader;
-			this.logger = logger;
+			// Initialize injection mangers
 			this.playerInjection = new PlayerInjectionHandler(classLoader, logger, isInjectionNecessary, this, server);
 			this.packetInjector = new PacketInjector(classLoader, this, playerInjection);
 			this.asyncFilterManager = new AsyncFilterManager(logger, server.getScheduler(), this);
@@ -257,8 +272,12 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// We may have to inject into every current player
 		if (phase.hasPlaying()) {
 			if (phasePlayingCount.incrementAndGet() == 1) {
-				// Inject our hook into already existing players
-				initializePlayers(server.getOnlinePlayers());
+				// If we're about to uninitialize every player, cancel that instead
+				if (unhookTask.isRunning())
+					unhookTask.cancel();
+				else
+					// Inject our hook into already existing players
+					initializePlayers(server.getOnlinePlayers());
 			}
 		}
 	}
@@ -274,8 +293,14 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// We may have to inject into every current player
 		if (phase.hasPlaying()) {
 			if (phasePlayingCount.decrementAndGet() == 0) {
-				// Inject our hook into already existing players
-				uninitializePlayers(server.getOnlinePlayers());
+				// Schedule unhooking in the future
+				unhookTask.schedule(UNHOOK_DELAY, new Runnable() {
+					@Override
+					public void run() {
+						// Inject our hook into already existing players
+						uninitializePlayers(server.getOnlinePlayers());
+					}
+				});
 			}
 		}
 	}
