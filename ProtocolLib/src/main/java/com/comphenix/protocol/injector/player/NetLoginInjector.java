@@ -47,6 +47,7 @@ class NetLoginInjector {
 		try {
 			Player fakePlayer = tempPlayerFactory.createTemporaryPlayer(server);
 			PlayerInjector injector = injectionHandler.injectPlayer(fakePlayer, inserting, GamePhase.LOGIN);
+			injector.updateOnLogin = true;
 			
 			// Associate the injector too
 			InjectContainer container = (InjectContainer) fakePlayer;

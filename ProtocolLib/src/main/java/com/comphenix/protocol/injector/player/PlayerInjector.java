@@ -34,6 +34,7 @@ import net.sf.cglib.proxy.Factory;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
@@ -62,6 +63,8 @@ abstract class PlayerInjector {
 	protected static Field inputField;
 	protected static Field netHandlerField;
 	protected static Field socketField;
+	
+	private static Field entityPlayerField;
 	
 	// Whether or not we're using a proxy type
 	private static boolean hasProxyType;
@@ -100,6 +103,10 @@ abstract class PlayerInjector {
 
 	// Scheduled action on the next packet event
 	protected Runnable scheduledAction;
+
+	// Whether or not to update the current player on the first Packet1Login
+	boolean updateOnLogin;
+	Player updatedPlayer;
 	
 	public PlayerInjector(Logger logger, Player player, ListenerInvoker invoker) throws IllegalAccessException {
 		this.logger = logger;
@@ -363,6 +370,18 @@ abstract class PlayerInjector {
 	}
 	
 	/**
+	 * Retrieve the stored entity player from a given NetHandler.
+	 * @param netHandler - the nethandler to retrieve it from.
+	 * @return The stored entity player.
+	 * @throws IllegalAccessException If the reflection failed.
+	 */
+	private EntityPlayer getEntityPlayer(Object netHandler) throws IllegalAccessException {
+		if (entityPlayerField == null)
+			entityPlayerField = FuzzyReflection.fromObject(netHandler).getFieldByType(".*EntityPlayer");
+		return (EntityPlayer) FieldUtils.readField(entityPlayerField, netHandler);
+	}
+	
+	/**
 	 * Processes the given packet as if it was transmitted by the current player.
 	 * @param packet - packet to process.
 	 * @throws IllegalAccessException If the reflection machinery failed.
@@ -438,18 +457,33 @@ abstract class PlayerInjector {
 	public Packet handlePacketSending(Packet packet) {
 		// Get the packet ID too
 		Integer id = invoker.getPacketID(packet);
-
-		// Handle a single scheduled action
+		Player currentPlayer = player;
+		
+		// Hack #1: Handle a single scheduled action
 		if (scheduledAction != null) {
 			scheduledAction.run();
 			scheduledAction = null;
+		}
+		// Hack #2
+		if (updateOnLogin) {
+			if (id == Packets.Server.LOGIN) {
+				try {
+					updatedPlayer = getEntityPlayer(getNetHandler()).getBukkitEntity();
+				} catch (IllegalAccessException e) {
+					logger.log(Level.WARNING, "Cannot update player in PlayerEvent.", e);
+				}
+			}
+			
+			// This will only occur in the NetLoginHandler injection
+			if (updatedPlayer != null)
+				currentPlayer = updatedPlayer;
 		}
 		
 		// Make sure we're listening
 		if (id != null && hasListener(id)) {
 			// A packet has been sent guys!
 			PacketContainer container = new PacketContainer(id, packet);
-			PacketEvent event = PacketEvent.fromServer(invoker, container, player);
+			PacketEvent event = PacketEvent.fromServer(invoker, container, currentPlayer);
 			invoker.invokePacketSending(event);
 			
 			// Cancelling is pretty simple. Just ignore the packet.

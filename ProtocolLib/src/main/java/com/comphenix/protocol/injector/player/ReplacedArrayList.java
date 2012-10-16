@@ -154,6 +154,9 @@ class ReplacedArrayList<TKey> extends ArrayList<TKey> {
 
 	@Override
 	public void clear() {
+		for (TKey element : delegate())
+			onRemoved(element);
+		
 		delegate().clear();
 	}
 

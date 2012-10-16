@@ -239,10 +239,7 @@ public class PlayerInjectionHandler {
 						// Close any previously associated hooks before we proceed
 						if (previous != null) {
 							uninjectPlayer(previous.getPlayer());
-							
-							// Update the player object too
-							previous.setPlayer(player);
-							
+
 							// Remove the "hooked" network manager in our instance as well
 							if (previous instanceof NetworkObjectInjector) {
 								injector.setNetworkManager(previous.getNetworkManager(), true);
