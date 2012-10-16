@@ -86,9 +86,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Worker that ensures that async packets are eventually sent
 		createAsyncTask(server);
-		
-		addDebugListener();
-		
+
 		// Try to enable statistics
 		try {
 			statistisc = new Statistics(this);
@@ -97,20 +95,6 @@ public class ProtocolLibrary extends JavaPlugin {
 		} catch (Throwable e) {
 			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
 		}
-	}
-	
-	private void addDebugListener() {
-		// DEBUG DEBUG
-		protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH, logger) {
-			@Override
-			public void onPacketReceiving(PacketEvent event) {
-				System.out.println("RECEIVING " + event.getPacketID() + " from " + event.getPlayer().getName());
-			};
-			@Override
-			public void onPacketSending(PacketEvent event) {
-				System.out.println("SENDING " + event.getPacketID() + " to " + event.getPlayer().getName());
-			}
-		});
 	}
 	
 	private void createAsyncTask(Server server) {
