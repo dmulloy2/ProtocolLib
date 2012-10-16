@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.minecraft.server.NetLoginHandler;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.Server;
@@ -42,11 +43,16 @@ class InjectedServerConnection {
 	
 	private static Field listenerThreadField;
 	private static Field minecraftServerField;
-	private static Method serverConnectionMethod;
 	private static Field listField;
+	private static Field dedicatedThreadField;
+	
+	private static Method serverConnectionMethod;
 	
 	private List<VolatileField> listFields;
 	private List<ReplacedArrayList<Object>> replacedLists;
+
+	// Used to inject net handlers
+	private NetLoginInjector netLoginInjector;
 	
 	private Server server;
 	private Logger logger;
@@ -55,11 +61,12 @@ class InjectedServerConnection {
 	
 	private Object minecraftServer = null;
 	
-	public InjectedServerConnection(Logger logger, Server server) {
+	public InjectedServerConnection(Logger logger, Server server, NetLoginInjector netLoginInjector) {
 		this.listFields = new ArrayList<VolatileField>();
 		this.replacedLists = new ArrayList<ReplacedArrayList<Object>>();
 		this.logger = logger;
 		this.server = server;
+		this.netLoginInjector = netLoginInjector;
 	}
 
 	public void injectList() {
@@ -87,10 +94,16 @@ class InjectedServerConnection {
 			// We're using Minecraft 1.3.1
 			injectServerConnection();
 		
-		} catch (RuntimeException e) {
+		} catch (IllegalArgumentException e) {
+			// DEBUG
+			logger.log(Level.WARNING, "Reverting to old 1.2.5 server connection injection.", e);
 			
 			// Minecraft 1.2.5 or lower
 			injectListenerThread();
+			
+		} catch (Exception e) {
+			// Oh damn - inform the player
+			logger.log(Level.SEVERE, "Cannot inject into server connection. Bad things will happen.", e);
 		}
 	}
 	
@@ -99,10 +112,10 @@ class InjectedServerConnection {
 		try {
 		
 		if (listenerThreadField == null)
-			listenerThreadField = FuzzyReflection.fromClass(minecraftServerField.getType()).
+			listenerThreadField = FuzzyReflection.fromObject(minecraftServer).
 				getFieldByType(".*NetworkListenThread");
 		} catch (RuntimeException e) {
-			logger.log(Level.SEVERE, "Cannot find listener thread in MinecraftServer.");
+			logger.log(Level.SEVERE, "Cannot find listener thread in MinecraftServer.", e);
 			return;
 		}
 
@@ -112,17 +125,12 @@ class InjectedServerConnection {
 		try {
 			listenerThread = listenerThreadField.get(minecraftServer);
 		} catch (Exception e) {
-			logger.log(Level.WARNING, "Unable to read the listener thread.");
+			logger.log(Level.WARNING, "Unable to read the listener thread.", e);
 			return;
 		}
 		
-		// Ok, great. Get every list field
-		List<Field> lists = FuzzyReflection.fromClass(listenerThreadField.getType()).getFieldListByType(List.class);
-		
-		for (Field list : lists) {
-			injectIntoList(listenerThread, list);
-		}
-		
+		// Just inject every list field we can get
+		injectEveryListField(listenerThread, 1);
 		hasSuccess = true;
 	}
 	
@@ -140,22 +148,61 @@ class InjectedServerConnection {
 		
 		if (listField == null)
 			listField = FuzzyReflection.fromClass(serverConnectionMethod.getReturnType(), true).
-							getFieldByType("serverConnection", List.class);
+							getFieldByType("netServerHandlerList", List.class);
+		if (dedicatedThreadField == null) {
+			List<Field> matches = FuzzyReflection.fromObject(serverConnection, true).getFieldListByType(Thread.class);
+		
+			// Verify the field count
+			if (matches.size() != 1) 
+				logger.log(Level.WARNING, "Unexpected number of threads in " + serverConnection.getClass().getName());
+			else
+				dedicatedThreadField = matches.get(0);
+		}
+		
+		// Next, try to get the dedicated thread
+		try {
+			if (dedicatedThreadField != null)
+				injectEveryListField(FieldUtils.readField(dedicatedThreadField, serverConnection, true), 1);
+		} catch (IllegalAccessException e) {
+			logger.log(Level.WARNING, "Unable to retrieve net handler thread.", e);
+		}
+		
 		injectIntoList(serverConnection, listField);
 		hasSuccess = true;
 	}
 	
+	/**
+	 * Automatically inject into every List-compatible public or private field of the given object.
+	 * @param container - container object with the fields to inject.
+	 * @param minimum - the minimum number of fields we expect exists.
+	 */
+	private void injectEveryListField(Object container, int minimum) {
+		// Ok, great. Get every list field
+		List<Field> lists = FuzzyReflection.fromObject(container, true).getFieldListByType(List.class);
+		
+		for (Field list : lists) {
+			injectIntoList(container, list);
+		}
+		
+		// Warn about unexpected errors
+		if (lists.size() < minimum) {
+			logger.log(Level.WARNING, "Unable to inject " + minimum + " lists in " + container.getClass().getName());
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	private void injectIntoList(Object instance, Field field) {
-		VolatileField listFieldRef = new VolatileField(listField, instance, true);
+		VolatileField listFieldRef = new VolatileField(field, instance, true);
 		List<Object> list = (List<Object>) listFieldRef.getValue();
 
 		// Careful not to inject twice
 		if (list instanceof ReplacedArrayList) {
 			replacedLists.add((ReplacedArrayList<Object>) list);
 		} else {
-			replacedLists.add(createReplacement(list));
-			listFieldRef.setValue(replacedLists.get(0));
+			ReplacedArrayList<Object> injectedList = createReplacement(list);
+			
+			replacedLists.add(injectedList);
+			listFieldRef.setValue(injectedList);
 			listFields.add(listFieldRef);
 		}
 	}
@@ -171,6 +218,26 @@ class InjectedServerConnection {
 					ObjectCloner.copyTo(inserting, replacement, inserting.getClass());
 				}
 			}
+			
+			@Override
+			protected void onInserting(Object inserting) {
+				// Ready for some login handler injection?
+				if (inserting instanceof NetLoginHandler) {
+					Object replaced = netLoginInjector.onNetLoginCreated(inserting); 
+					
+					// Only replace if it has changed
+					if (inserting != replaced)
+						addMapping(inserting, replaced, true);
+				}
+			}
+			
+			@Override
+			protected void onRemoved(Object removing) {
+				// Clean up?
+				if (removing instanceof NetLoginHandler) {
+					netLoginInjector.cleanup(removing);
+				}
+			}
 		};
 	}
 	
@@ -180,7 +247,6 @@ class InjectedServerConnection {
 	 * @param newHandler - new, proxied server handler.
 	 */
 	public void replaceServerHandler(Object oldHandler, Object newHandler) {
-		
 		if (!hasAttempted) {
 			injectList();
 		}

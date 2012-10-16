@@ -62,7 +62,7 @@ class InjectedArrayList extends ArrayList<Packet> {
 		} else if (ignoredPackets.contains(packet)) {
 			ignoredPackets.remove(packet);
 		} else {
-			result = injector.handlePacketRecieved(packet);
+			result = injector.handlePacketSending(packet);
 		}
 		
 		// A NULL packet indicate cancelling

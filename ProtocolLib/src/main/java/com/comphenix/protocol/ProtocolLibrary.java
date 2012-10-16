@@ -26,6 +26,9 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.events.MonitorAdapter;
+import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
@@ -81,8 +84,10 @@ public class ProtocolLibrary extends JavaPlugin {
 		// Inject our hook into already existing players
 		protocolManager.initializePlayers(server.getOnlinePlayers());
 		
-		// Timeout
+		// Worker that ensures that async packets are eventually sent
 		createAsyncTask(server);
+		
+		addDebugListener();
 		
 		// Try to enable statistics
 		try {
@@ -92,6 +97,20 @@ public class ProtocolLibrary extends JavaPlugin {
 		} catch (Throwable e) {
 			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
 		}
+	}
+	
+	private void addDebugListener() {
+		// DEBUG DEBUG
+		protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH) {
+			@Override
+			public void onPacketReceiving(PacketEvent event) {
+				System.out.println("RECEIVING " + event.getPacketID() + " from " + event.getPlayer().getName());
+			};
+			@Override
+			public void onPacketSending(PacketEvent event) {
+				System.out.println("SENDING " + event.getPacketID() + " to " + event.getPlayer().getName());
+			}
+		});
 	}
 	
 	private void createAsyncTask(Server server) {

@@ -98,7 +98,7 @@ public class FuzzyReflection {
 	 * Retrieves a method by looking at its name.
 	 * @param nameRegex -  regular expression that will match method names.
 	 * @return The first method that satisfies the regular expression.
-	 * @throws RuntimeException If the method cannot be found.
+	 * @throws IllegalArgumentException If the method cannot be found.
 	 */
 	public Method getMethodByName(String nameRegex) {
 		
@@ -111,7 +111,7 @@ public class FuzzyReflection {
 			}
 		}
 
-		throw new RuntimeException("Unable to find a method with the pattern " + 
+		throw new IllegalArgumentException("Unable to find a method with the pattern " + 
 									nameRegex + " in " + source.getName());
 	}
 	
@@ -120,6 +120,7 @@ public class FuzzyReflection {
 	 * @param name - potential name of the method. Only used by the error mechanism.
 	 * @param args - parameter types of the method to find.
 	 * @return The first method that satisfies the parameter types.
+	 * @throws IllegalArgumentException If the method cannot be found.
 	 */
 	public Method getMethodByParameters(String name, Class<?>... args) {
 		
@@ -131,7 +132,7 @@ public class FuzzyReflection {
 		}
 		
 		// That sucks
-		throw new RuntimeException("Unable to find " + name + " in " + source.getName());
+		throw new IllegalArgumentException("Unable to find " + name + " in " + source.getName());
 	}
 	
 	/**
@@ -140,6 +141,7 @@ public class FuzzyReflection {
 	 * @param returnType - return type of the method to find.
 	 * @param args - parameter types of the method to find.
 	 * @return The first method that satisfies the parameter types.
+	 * @throws IllegalArgumentException If the method cannot be found.
 	 */
 	public Method getMethodByParameters(String name, Class<?> returnType, Class<?>[] args) {
 		// Find the correct method to call
@@ -149,7 +151,7 @@ public class FuzzyReflection {
 			return methods.get(0);
 		} else {
 			// That sucks
-			throw new RuntimeException("Unable to find " + name + " in " + source.getName());
+			throw new IllegalArgumentException("Unable to find " + name + " in " + source.getName());
 		}
 	}
 	
@@ -159,6 +161,7 @@ public class FuzzyReflection {
 	 * @param returnTypeRegex - regular expression matching the return type of the method to find.
 	 * @param argsRegex - regular expressions of the matching parameter types.
 	 * @return The first method that satisfies the parameter types.
+	 * @throws IllegalArgumentException If the method cannot be found.
 	 */
 	public Method getMethodByParameters(String name, String returnTypeRegex, String[] argsRegex) {
 	
@@ -178,7 +181,7 @@ public class FuzzyReflection {
 		}
 		
 		// That sucks
-		throw new RuntimeException("Unable to find " + name + " in " + source.getName());
+		throw new IllegalArgumentException("Unable to find " + name + " in " + source.getName());
 	}
 	
 	private boolean matchParameters(Pattern[] parameterMatchers, Class<?>[] argTypes) {
@@ -218,6 +221,7 @@ public class FuzzyReflection {
 	 * Retrieves a field by name.
 	 * @param nameRegex - regular expression that will match a field name.
 	 * @return The first field to match the given expression.
+	 * @throws IllegalArgumentException If the field cannot be found.
 	 */
 	public Field getFieldByName(String nameRegex) {
 		
@@ -231,7 +235,7 @@ public class FuzzyReflection {
 		}
 		
 		// Looks like we're outdated. Too bad.
-		throw new RuntimeException("Unable to find a field with the pattern " + 
+		throw new IllegalArgumentException("Unable to find a field with the pattern " + 
 									nameRegex + " in " + source.getName());
 	}
 	
@@ -249,7 +253,7 @@ public class FuzzyReflection {
 			return fields.get(0);
 		} else {
 			// Looks like we're outdated. Too bad.
-			throw new RuntimeException(String.format("Unable to find a field %s with the type %s in %s",
+			throw new IllegalArgumentException(String.format("Unable to find a field %s with the type %s in %s",
 					name, type.getName(), source.getName())
 			);
 		}
@@ -285,6 +289,7 @@ public class FuzzyReflection {
 	 * </ul>
 	 * @param typeRegex - regular expression that will match the field type.
 	 * @return The first field with a type that matches the given regular expression.
+	 * @throws IllegalArgumentException If the field cannot be found.
 	 */
 	public Field getFieldByType(String typeRegex) {
 		
@@ -300,8 +305,8 @@ public class FuzzyReflection {
 		}
 		
 		// Looks like we're outdated. Too bad.
-		throw new RuntimeException("Unable to find a field with the type " + 
-									typeRegex + " in " + source.getName());
+		throw new IllegalArgumentException("Unable to find a field with the type " + 
+										   typeRegex + " in " + source.getName());
 	}
 	
 	/**
@@ -315,6 +320,7 @@ public class FuzzyReflection {
 	 * @param typeRegex - regular expression that will match the field type.
 	 * @param ignored - types to ignore.
 	 * @return The first field with a type that matches the given regular expression.
+	 * @throws IllegalArgumentException If the field cannot be found.
 	 */
 	@SuppressWarnings("rawtypes")
 	public Field getFieldByType(String typeRegex, Set<Class> ignored) {
@@ -331,8 +337,8 @@ public class FuzzyReflection {
 		}
 		
 		// Looks like we're outdated. Too bad.
-		throw new RuntimeException("Unable to find a field with the type " + 
-									typeRegex + " in " + source.getName());
+		throw new IllegalArgumentException("Unable to find a field with the type " + 
+									       typeRegex + " in " + source.getName());
 	}
 	
 	/**

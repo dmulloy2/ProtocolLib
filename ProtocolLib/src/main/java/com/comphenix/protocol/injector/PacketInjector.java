@@ -218,16 +218,24 @@ class PacketInjector {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	public void cleanupAll() {
+	public synchronized void cleanupAll() {
 		Map<Integer, Class> overwritten = MinecraftRegistry.getOverwrittenPackets();
 		Map<Integer, Class> previous = MinecraftRegistry.getPreviousPackets();
 		
 		// Remove every packet handler
-		for (Integer id : previous.keySet()) {
+		for (Integer id : previous.keySet().toArray(new Integer[0])) {
 			removePacketHandler(id);
 		}
 		
 		overwritten.clear();
 		previous.clear();
+	}
+
+	/**
+	 * Inform the current PlayerInjector that it should update the DataInputStream next.
+	 * @param player - the player to update.
+	 */
+	public void scheduleDataInputRefresh(Player player) {
+		playerInjection.scheduleDataInputRefresh(player);
 	}
 }

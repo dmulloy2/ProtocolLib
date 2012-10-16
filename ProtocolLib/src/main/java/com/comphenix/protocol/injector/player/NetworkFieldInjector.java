@@ -87,9 +87,9 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public synchronized void initialize() throws IllegalAccessException {
-		super.initialize();
-	
+	public synchronized void initialize(Object injectionSource)  throws IllegalAccessException {
+		super.initialize(injectionSource);
+
 		// Get the sync field as well
 		if (hasInitialized) {
 			if (syncField == null)

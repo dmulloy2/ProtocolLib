@@ -75,11 +75,11 @@ public class NetworkServerInjector extends PlayerInjector {
 	protected boolean hasListener(int packetID) {
 		return sendingFilters.contains(packetID);
 	}
-	
+
 	@Override
-	public void initialize() throws IllegalAccessException {
-		super.initialize();
-		
+	public void initialize(Object injectionSource) throws IllegalAccessException {
+		super.initialize(injectionSource);
+
 		// Get the send packet method!
 		if (hasInitialized) {
 			if (sendPacketMethod == null)
@@ -150,7 +150,7 @@ public class NetworkServerInjector extends PlayerInjector {
 				Packet packet = (Packet) args[0];
 				
 				if (packet != null) {
-					packet = handlePacketRecieved(packet);
+					packet = handlePacketSending(packet);
 					
 					// A NULL packet indicate cancelling
 					if (packet != null)

@@ -18,13 +18,16 @@
 package com.comphenix.protocol.injector.player;
 
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.NetLoginHandler;
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Factory;
 
@@ -43,14 +46,22 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
 
 abstract class PlayerInjector {
+
+	// Net login handler stuff
+	private static Field netLoginNetworkField;
+	
+	// Different disconnect methods
+	private static Method loginDisconnect;
+	private static Method serverDisconnect;
 	
 	// Cache previously retrieved fields
 	protected static Field serverHandlerField;
 	protected static Field proxyServerField;
-	
+
 	protected static Field networkManagerField;
 	protected static Field inputField;
 	protected static Field netHandlerField;
+	protected static Field socketField;
 	
 	// Whether or not we're using a proxy type
 	private static boolean hasProxyType;
@@ -71,8 +82,12 @@ abstract class PlayerInjector {
 	protected Object networkManager;
 	
 	// Current net handler
+	protected Object loginHandler;
 	protected Object serverHandler;
 	protected Object netHandler;
+	
+	// Current socket
+	protected Socket socket;
 	
 	// The packet manager and filters
 	protected ListenerInvoker invoker;
@@ -83,6 +98,9 @@ abstract class PlayerInjector {
 	// Handle errors
 	protected Logger logger;
 
+	// Scheduled action on the next packet event
+	protected Runnable scheduledAction;
+	
 	public PlayerInjector(Logger logger, Player player, ListenerInvoker invoker) throws IllegalAccessException {
 		this.logger = logger;
 		this.player = player;
@@ -91,9 +109,10 @@ abstract class PlayerInjector {
 
 	/**
 	 * Retrieve the notch (NMS) entity player object.
+	 * @param player - the player to retrieve.
 	 * @return Notch player object.
 	 */
-	protected EntityPlayer getEntityPlayer() {
+	protected EntityPlayer getEntityPlayer(Player player) {
 		CraftPlayer craft = (CraftPlayer) player;
 		return craft.getHandle();
 	}
@@ -102,9 +121,26 @@ abstract class PlayerInjector {
 	 * Initialize all fields for this player injector, if it hasn't already.
 	 * @throws IllegalAccessException An error has occured.
 	 */
-	public void initialize() throws IllegalAccessException {
+	public void initialize(Object injectionSource) throws IllegalAccessException {
+		if (injectionSource == null)
+			throw new IllegalArgumentException("injectionSource cannot be NULL");
+		
+		//Dispatch to the correct injection method
+		if (injectionSource instanceof Player)
+			initializePlayer(injectionSource);
+		else if (injectionSource instanceof NetLoginHandler)
+			initializeLogin(injectionSource);
+		else 
+			throw new IllegalArgumentException("Cannot initialize a player hook using a " + injectionSource.getClass().getName());
+	}
 	
-		EntityPlayer notchEntity = getEntityPlayer();
+	/**
+	 * Initialize the player injector using an actual player instance.
+	 * @param player - the player to hook.
+	 */
+	public void initializePlayer(Object player) {
+		
+		EntityPlayer notchEntity = getEntityPlayer((Player) player);
 		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception
@@ -123,23 +159,47 @@ abstract class PlayerInjector {
 			// Next, get the network manager 
 			if (networkManagerField == null) 
 				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(".*NetworkManager");
-			networkManagerRef = new VolatileField(networkManagerField, serverHandler);
-			networkManager = networkManagerRef.getValue();
-
-			// Create the network manager modifier from the actual object type
-			if (networkManager != null && networkModifier == null)
-				networkModifier = new StructureModifier<Object>(networkManager.getClass(), null, false);
-			
-			// And the queue method
-			if (queueMethod == null)
-				queueMethod = FuzzyReflection.fromClass(networkManagerField.getType()).
-								getMethodByParameters("queue", Packet.class );
-			
-			// And the data input stream that we'll use to identify a player
-			if (inputField == null)
-				inputField = FuzzyReflection.fromObject(networkManager, true).
-								getFieldByType("java\\.io\\.DataInputStream");
+			initializeNetworkManager(networkManagerField, serverHandler);
 		}
+	}
+	
+	/**
+	 * Initialize the player injector for a NetLoginHandler instead.
+	 * @param netLoginHandler - the net login handler to inject.
+	 */
+	public void initializeLogin(Object netLoginHandler) {
+		if (!hasInitialized) {
+			hasInitialized = true;
+			loginHandler = netLoginHandler;
+			
+			if (netLoginNetworkField == null)
+				netLoginNetworkField =  FuzzyReflection.fromObject(netLoginHandler).getFieldByType(".*NetworkManager");
+			initializeNetworkManager(netLoginNetworkField, netLoginHandler);
+		}
+	}
+	
+	private void initializeNetworkManager(Field reference, Object container) {
+		networkManagerRef = new VolatileField(reference, container);
+		networkManager = networkManagerRef.getValue();
+		
+		// No, don't do it
+		if (networkManager instanceof Factory) {
+			return;
+		}
+		
+		// Create the network manager modifier from the actual object type
+		if (networkManager != null && networkModifier == null)
+			networkModifier = new StructureModifier<Object>(networkManager.getClass(), null, false);
+		
+		// And the queue method
+		if (queueMethod == null)
+			queueMethod = FuzzyReflection.fromClass(reference.getType()).
+							getMethodByParameters("queue", Packet.class );
+		
+		// And the data input stream that we'll use to identify a player
+		if (inputField == null)
+			inputField = FuzzyReflection.fromObject(networkManager, true).
+							getFieldByType("java\\.io\\.DataInputStream");
 	}
 	
 	/**
@@ -148,6 +208,89 @@ abstract class PlayerInjector {
 	 */
 	protected boolean hasProxyServerHandler() {
 		return hasProxyType;
+	}
+	
+	/**
+	 * Retrieve the current network manager.
+	 * @return Current network manager.
+	 */
+	public Object getNetworkManager() {
+		return networkManagerRef.getValue();
+	}
+	
+	/**
+	 * Set the current network manager.
+	 * @param value - new network manager.
+	 * @param force - whether or not to save this value.
+	 */
+	public void setNetworkManager(Object value, boolean force) {
+		networkManagerRef.setValue(value);
+		
+		if (force)
+			networkManagerRef.saveValue();
+		initializeNetworkManager(networkManagerField, serverHandler);
+	}
+	
+	/**
+	 * Retrieve the associated socket of this player.
+	 * @return The associated socket.
+	 * @throws IllegalAccessException If we're unable to read the socket field.
+	 */
+	public Socket getSocket() throws IllegalAccessException {
+		try {
+			if (socketField == null)
+				socketField = FuzzyReflection.fromObject(networkManager).getFieldListByType(Socket.class).get(0);
+			if (socket == null)
+				socket = (Socket) FieldUtils.readField(socketField, networkManager);
+			return socket;
+			
+		} catch (IndexOutOfBoundsException e) {
+			throw new IllegalAccessException("Unable to read the socket field.");
+		}
+	}
+	
+	/**
+	 * Attempt to disconnect the current client.
+	 * @param message - the message to display.
+	 * @throws InvocationTargetException If disconnection failed.
+	 */
+	public void disconnect(String message) throws InvocationTargetException {
+		// Get a non-null handler
+		boolean usingNetServer = serverHandler != null;
+		
+		Object handler = usingNetServer ? serverHandler : loginHandler;
+		Method disconnect = usingNetServer ? serverDisconnect : loginDisconnect;
+		
+		// Execute disconnect on it
+		if (handler != null) {
+			if (disconnect == null) {
+				disconnect = FuzzyReflection.fromObject(handler).getMethodByName("disconnect.*");
+				
+				// Save the method for later
+				if (usingNetServer)
+					serverDisconnect = disconnect;
+				else
+					loginDisconnect = disconnect;
+			}
+			
+			try {
+				disconnect.invoke(handler, message);
+				return;
+			} catch (IllegalArgumentException e) {
+				logger.log(Level.WARNING, "Invalid argument passed to disconnect method: " + message, e);
+			} catch (IllegalAccessException e) {
+				logger.log(Level.SEVERE, "Unable to access disconnect method.", e);
+			}
+		}
+			
+		// Fuck it
+		try {
+			getSocket().close();
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, "Unable to close socket.", e);
+		} catch (IllegalAccessException e) {
+			logger.log(Level.SEVERE, "Insufficient permissions. Cannot close socket.", e);
+		}
 	}
 	
 	private Field getProxyField(EntityPlayer notchEntity, Field serverField) {
@@ -288,14 +431,20 @@ abstract class PlayerInjector {
 	public abstract void checkListener(PacketListener listener);
 	
 	/**
-	 * Allows a packet to be recieved by the listeners.
-	 * @param packet - packet to recieve.
+	 * Allows a packet to be sent by the listeners.
+	 * @param packet - packet to sent.
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
-	public Packet handlePacketRecieved(Packet packet) {
+	public Packet handlePacketSending(Packet packet) {
 		// Get the packet ID too
 		Integer id = invoker.getPacketID(packet);
 
+		// Handle a single scheduled action
+		if (scheduledAction != null) {
+			scheduledAction.run();
+			scheduledAction = null;
+		}
+		
 		// Make sure we're listening
 		if (id != null && hasListener(id)) {
 			// A packet has been sent guys!
@@ -344,5 +493,28 @@ abstract class PlayerInjector {
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException("Unable to read input stream.", e);
 		}
+	}
+	
+	/**
+	 * Schedule an action to occur on the next sent packet.
+	 * @param action - action to execute.
+	 */
+	public void scheduleAction(Runnable action) {
+		scheduledAction = action;
+	}
+
+	/**
+	 * Retrieve the hooked player.
+	 */
+	public Player getPlayer() {
+		return player;
+	}
+
+	/**
+	 * Set the associated player.
+	 * @param player - associated player.
+	 */
+	public void setPlayer(Player player) {
+		this.player = player;
 	}
 }

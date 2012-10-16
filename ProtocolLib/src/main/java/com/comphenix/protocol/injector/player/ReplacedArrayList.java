@@ -50,8 +50,28 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 		// Default is to do nothing.
 	}
 	
+	/**
+	 * Invoked when an element is being inserted.
+	 * <p>
+	 * This should be used to add a "replace" map.
+	 * @param inserting - the element to insert.
+	 */
+	protected void onInserting(TKey inserting) {
+		// Default is again nothing
+	}
+	
+	/**
+	 * Invoksed when an element is being removed.
+	 * @param removing - the element being removed.
+	 */
+	protected void onRemoved(TKey removing) {
+		// Do nothing
+	}
+	
 	@Override
 	public boolean add(TKey element) {
+		onInserting(element);
+		
 		if (replaceMap.containsKey(element)) {
 			TKey replacement = replaceMap.get(element);
 			onReplacing(element, replacement);
@@ -63,6 +83,8 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 	
 	@Override
 	public void add(int index, TKey element) {
+		onInserting(element);
+		
 		if (replaceMap.containsKey(element)) {
 			TKey replacement = replaceMap.get(element);
 			onReplacing(element, replacement);
@@ -89,7 +111,36 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 			add(index++, element);
 		return size() != oldSize;
 	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean remove(Object object) {
+		boolean success = super.remove(object);
 	
+		if (success)
+			onRemoved((TKey) object);
+		return success;
+	}
+	
+	@Override
+	public TKey remove(int index) {
+		TKey removed = super.remove(index);
+		
+		if (removed != null)
+			onRemoved(removed);
+		return removed;
+	}
+	
+	@Override
+	public boolean removeAll(Collection<?> collection) {
+		int oldSize = size();
+		
+		// Use the remove method
+		for (Object element : collection)
+			remove(element);
+		return size() != oldSize;
+	}
+
 	@Override
 	protected List<TKey> delegate() {
 		return underlyingList;
@@ -103,10 +154,24 @@ class ReplacedArrayList<TKey> extends ForwardingList<TKey> {
 	 * @param replacement - instance to replace with.
 	 */
 	public synchronized void addMapping(TKey target, TKey replacement) {
+		addMapping(target, replacement, false);
+	}
+	
+	/**
+	 * Add a replace rule.
+	 * <p>
+	 * This automatically replaces every existing element.
+	 * @param target - instance to find.
+	 * @param replacement - instance to replace with.
+	 * @param ignoreExisting - whether or not to ignore the existing elements.
+	 */
+	public synchronized void addMapping(TKey target, TKey replacement, boolean ignoreExisting) {
 		replaceMap.put(target, replacement);
 
 		// Replace existing elements
-		replaceAll(target, replacement);
+		if (!ignoreExisting) {
+			replaceAll(target, replacement);
+		}
 	}
 	
 	/**

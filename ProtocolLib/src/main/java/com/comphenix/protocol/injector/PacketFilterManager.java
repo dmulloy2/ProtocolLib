@@ -38,7 +38,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
@@ -50,7 +49,6 @@ import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
@@ -470,7 +468,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 */
 	public void initializePlayers(Player[] players) {
 		for (Player player : players)
-			playerInjection.injectPlayer(player, GamePhase.PLAYING);
+			playerInjection.injectPlayer(player);
 	}
 		
 	/**
@@ -483,13 +481,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		try {
 			manager.registerEvents(new Listener() {
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-			    public void onPlayerLogin(PlayerLoginEvent event) {
-					playerInjection.injectPlayer(event.getPlayer(), GamePhase.LOGIN);
-			    }
-				
-				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
-					playerInjection.injectPlayer(event.getPlayer(), GamePhase.PLAYING);
+					playerInjection.injectPlayer(event.getPlayer());
 			    }
 				
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -536,7 +529,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Object priorityMonitor = Enum.valueOf(eventPriority, "Monitor");
 			
 			// Get event types
-			Object playerLoginType = Enum.valueOf(eventTypes, "PLAYER_LOGIN");
 			Object playerJoinType = Enum.valueOf(eventTypes, "PLAYER_JOIN");
 			Object playerQuitType = Enum.valueOf(eventTypes, "PLAYER_QUIT");
 			Object pluginDisabledType = Enum.valueOf(eventTypes, "PLUGIN_DISABLE");
@@ -562,10 +554,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 						Object event = args[0];
 						
 						// Check for the correct event
-						if (event instanceof PlayerLoginEvent)
-							playerInjection.injectPlayer(((PlayerJoinEvent) event).getPlayer(), GamePhase.LOGIN);
 						if (event instanceof PlayerJoinEvent)
-							playerInjection.injectPlayer(((PlayerJoinEvent) event).getPlayer(), GamePhase.PLAYING);
+							playerInjection.injectPlayer(((PlayerJoinEvent) event).getPlayer());
 						else if (event instanceof PlayerQuitEvent)
 							playerInjection.uninjectPlayer(((PlayerQuitEvent) event).getPlayer());
 					}
@@ -594,7 +584,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Object playerProxy = playerEx.create();
 			Object serverProxy = serverEx.create();
 			
-			registerEvent.invoke(manager, playerLoginType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityMonitor, plugin);

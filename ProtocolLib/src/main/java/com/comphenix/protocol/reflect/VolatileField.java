@@ -148,10 +148,16 @@ public class VolatileField {
 	 * Revert to the previously set value.
 	 */
 	public void revertValue() {
-		// Reset value.
+		// Reset value if it hasn't been changed by anyone else
 		if (currentSet) {
-			setValue(previous);
-			currentSet = false;
+			if (getValue() == current) {
+				setValue(previous);
+				currentSet = false;
+			} else {
+				// This can be a bad sign
+				System.out.println(String.format("[ProtocolLib] Unable to switch %s to %s. Expected %s but got %s.",
+						field.toGenericString(), previous, current, getValue()));
+			}
 		}
 	}
 	
