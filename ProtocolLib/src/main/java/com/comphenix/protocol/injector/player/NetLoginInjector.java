@@ -12,7 +12,12 @@ import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
 import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
 import com.google.common.collect.Maps;
 
-public class NetLoginInjector {
+/**
+ * Injects every NetLoginHandler created by the server.
+ * 
+ * @author Kristian
+ */
+class NetLoginInjector {
 
 	private ConcurrentMap<Object, PlayerInjector> injectedLogins = Maps.newConcurrentMap();
 	
