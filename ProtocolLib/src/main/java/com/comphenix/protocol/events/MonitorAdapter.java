@@ -9,8 +9,8 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.reflect.FieldAccessException;
 
 /**
@@ -38,14 +38,14 @@ public abstract class MonitorAdapter implements PacketListener {
 		// Recover in case something goes wrong
 		try {
 			if (side.isForServer())
-				this.sending = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Server.getSupported());
+				this.sending = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Server.getSupported(), GamePhase.BOTH);
 			if (side.isForClient())
-				this.receiving = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Client.getSupported());
+				this.receiving = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Client.getSupported(), GamePhase.BOTH);
 		} catch (FieldAccessException e) {
 			if (side.isForServer())
-				this.sending = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Server.getRegistry().values());
+				this.sending = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Server.getRegistry().values(), GamePhase.BOTH);
 			if (side.isForClient())
-				this.receiving = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Client.getRegistry().values());
+				this.receiving = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Client.getRegistry().values(), GamePhase.BOTH);
 			logger.log(Level.WARNING, "Defaulting to 1.3 packets.", e);
 		}
 	}
@@ -61,16 +61,6 @@ public abstract class MonitorAdapter implements PacketListener {
 		} catch (NoSuchMethodError e) {
 			return Logger.getLogger("Minecraft");
 		}
-	}
-	
-	@Override
-	public void onPacketReceiving(PacketEvent event) {
-		// Empty for now
-	}
-
-	@Override
-	public void onPacketSending(PacketEvent event) {
-		// Empty for now
 	}
 	
 	@Override

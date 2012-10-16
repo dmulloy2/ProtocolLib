@@ -36,9 +36,9 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
 
 /**
  * Injection method that overrides the NetworkHandler itself, and it's sendPacket-method.

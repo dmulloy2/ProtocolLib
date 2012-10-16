@@ -38,9 +38,11 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
@@ -51,16 +53,6 @@ import com.google.common.collect.Maps;
  */
 public class PlayerInjectionHandler {
 
-	/**
-	 * The current player phase.
-	 * @author Kristian
-	 */
-	enum GamePhase {
-		LOGIN,
-		PLAYING,
-		CLOSING,
-	}
-	
 	// Server connection injection
 	private InjectedServerConnection serverInjection;
 	
@@ -93,11 +85,17 @@ public class PlayerInjectionHandler {
 	// The class loader we're using
 	private ClassLoader classLoader;
 	
-	public PlayerInjectionHandler(ClassLoader classLoader, Logger logger, ListenerInvoker invoker, Server server) {
+	// Used to filter injection attempts
+	private Predicate<GamePhase> injectionFilter;
+	
+	public PlayerInjectionHandler(ClassLoader classLoader, Logger logger, Predicate<GamePhase> injectionFilter, 
+								  ListenerInvoker invoker, Server server) {
+		
 		this.classLoader = classLoader;
 		this.logger = logger;
 		this.invoker = invoker;
-		this.netLoginInjector = new NetLoginInjector(this, server);
+		this.injectionFilter = injectionFilter;
+		this.netLoginInjector = new NetLoginInjector(logger, this, server);
 		this.serverInjection = new InjectedServerConnection(logger, server, netLoginInjector);
 		serverInjection.injectList();
 	}
@@ -185,25 +183,43 @@ public class PlayerInjectionHandler {
 	
 	/**
 	 * Initialize a player hook, allowing us to read server packets.
+	 * <p>
+	 * This call will  be ignored if there's no listener that can receive the given events.
 	 * @param player - player to hook.
 	 */
 	public void injectPlayer(Player player) {
 		// Inject using the player instance itself
-		injectPlayer(player, player, GamePhase.PLAYING);
+		if (isInjectionNecessary(GamePhase.PLAYING)) {
+			injectPlayer(player, player, GamePhase.PLAYING);
+		}
+	}
+	
+	/**
+	 * Determine if it's truly necessary to perform the given player injection.
+	 * @param phase - current game phase.
+	 * @return TRUE if we should perform the injection, FALSE otherwise.
+	 */
+	public boolean isInjectionNecessary(GamePhase phase) {
+		return injectionFilter.apply(phase);
 	}
 	
 	/**
 	 * Initialize a player hook, allowing us to read server packets.
+	 * <p>
+	 * This method will always perform the instructed injection.
+	 * 
 	 * @param player - player to hook.
 	 * @param injectionPoint - the object to use during the injection process.
 	 * @param phase - the current game phase.
 	 * @return The resulting player injector, or NULL if the injection failed.
 	 */
 	PlayerInjector injectPlayer(Player player, Object injectionPoint, GamePhase phase) {
-
+		
 		PlayerInjector injector = playerInjection.get(player);
 		PlayerInjectHooks tempHook = playerHook;
 		PlayerInjectHooks permanentHook = tempHook;
+		
+		// The given player object may be fake, so be careful!
 		
 		// See if we need to inject something else
 		boolean invalidInjector = injector != null ? !injector.canInject(phase) : true;

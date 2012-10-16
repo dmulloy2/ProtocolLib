@@ -102,10 +102,11 @@ class ReadPacketModifier implements MethodInterceptor {
 			// Let the people know
 			PacketContainer container = new PacketContainer(packetID, (Packet) thisObj);
 			PacketEvent event = packetInjector.packetRecieved(container, input);
-			Packet result = event.getPacket().getHandle();
 			
 			// Handle override
 			if (event != null) {
+				Packet result = event.getPacket().getHandle();
+				
 				if (event.isCancelled()) {
 					override.put(thisObj, null);
 				} else if (!objectEquals(thisObj, result)) {

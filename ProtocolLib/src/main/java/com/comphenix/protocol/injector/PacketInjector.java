@@ -198,9 +198,13 @@ class PacketInjector {
 	
 	// Called from the ReadPacketModified monitor
 	PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
-		
 		Player client = playerInjection.getPlayerByConnection(input);
-		return packetRecieved(packet, client);
+		
+		// Never invoke a event if we don't know where it's from
+		if (client != null)
+			return packetRecieved(packet, client);
+		else
+			return null;
 	}
 	
 	/**

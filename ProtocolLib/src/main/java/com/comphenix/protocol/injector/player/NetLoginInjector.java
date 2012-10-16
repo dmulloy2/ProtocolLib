@@ -4,11 +4,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
 import com.google.common.collect.Maps;
 
@@ -25,12 +27,16 @@ class NetLoginInjector {
 	private PlayerInjectionHandler injectionHandler;
 	private Server server;
 	
+	// The current logger
+	private Logger logger;
+	
 	private ReadWriteLock injectionLock = new ReentrantReadWriteLock();
 	
 	// Used to create fake players
 	private TemporaryPlayerFactory tempPlayerFactory = new TemporaryPlayerFactory();
 	
-	public NetLoginInjector(PlayerInjectionHandler injectionHandler, Server server) {
+	public NetLoginInjector(Logger logger, PlayerInjectionHandler injectionHandler, Server server) {
+		this.logger = logger;
 		this.injectionHandler = injectionHandler;
 		this.server = server;
 	}
@@ -45,6 +51,10 @@ class NetLoginInjector {
 		injectionLock.writeLock().lock();
 		
 		try {
+			// Make sure we actually need to inject during this phase
+			if (!injectionHandler.isInjectionNecessary(GamePhase.LOGIN))
+				return inserting;
+			
 			Player fakePlayer = tempPlayerFactory.createTemporaryPlayer(server);
 			PlayerInjector injector = injectionHandler.injectPlayer(fakePlayer, inserting, GamePhase.LOGIN);
 			injector.updateOnLogin = true;
@@ -55,6 +65,11 @@ class NetLoginInjector {
 			
 			// NetServerInjector can never work (currently), so we don't need to replace the NetLoginHandler
 			return inserting;	
+			
+		} catch (Throwable e) {
+			// Minecraft can't handle this, so we'll deal with it here
+			logger.log(Level.WARNING, "Unable to hook NetLoginHandler.", e);
+			return inserting;
 			
 		} finally {
 			injectionLock.writeLock().unlock();

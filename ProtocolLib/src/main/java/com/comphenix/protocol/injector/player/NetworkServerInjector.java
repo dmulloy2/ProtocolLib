@@ -34,9 +34,9 @@ import net.sf.cglib.proxy.NoOp;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler.GamePhase;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectCloner;
@@ -264,7 +264,7 @@ public class NetworkServerInjector extends PlayerInjector {
 	@Override
 	public boolean canInject(GamePhase phase) {
 		// Doesn't work when logging in
-		return phase == GamePhase.PLAYING || phase == GamePhase.CLOSING;
+		return phase == GamePhase.PLAYING;
 	}
 
 	@Override

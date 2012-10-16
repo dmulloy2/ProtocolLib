@@ -58,6 +58,9 @@ public class ProtocolLibrary extends JavaPlugin {
 	private int tickCounter = 0;
 	private static final int ASYNC_PACKET_DELAY = 1;
 	
+	// Used for debugging
+	private boolean debugListener;
+	
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
@@ -80,14 +83,10 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Player login and logout events
 		protocolManager.registerEvents(manager, this);
-		
-		// Inject our hook into already existing players
-		protocolManager.initializePlayers(server.getOnlinePlayers());
-		
+				
 		// Worker that ensures that async packets are eventually sent
 		createAsyncTask(server);
-
-		addDebugListener();
+		//toggleDebugListener();
 		
 		// Try to enable statistics
 		try {
@@ -98,19 +97,38 @@ public class ProtocolLibrary extends JavaPlugin {
 			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
 		}
 	}
-	
-	private void addDebugListener() {
-		// DEBUG DEBUG
-		protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH, logger) {
-			@Override
-			public void onPacketReceiving(PacketEvent event) {
-				System.out.println("RECEIVING " + event.getPacketID() + " from " + event.getPlayer().getName());
-			};
-			@Override
-			public void onPacketSending(PacketEvent event) {
-				System.out.println("SENDING " + event.getPacketID() + " to " + event.getPlayer().getName());
-			}
-		});
+
+	/**
+	 * Toggle a listener that prints every sent and received packet.
+	 */
+	void toggleDebugListener() {
+		
+		if (debugListener) {
+			protocolManager.removePacketListeners(this);
+		} else {
+			// DEBUG DEBUG
+			protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH, logger) {
+				@Override
+				public void onPacketReceiving(PacketEvent event) {
+					Object handle = event.getPacket().getHandle();
+					
+					System.out.println(String.format(
+							"RECEIVING %s@%s from %s.",
+							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
+					));
+				};
+				@Override
+				public void onPacketSending(PacketEvent event) {
+					Object handle = event.getPacket().getHandle();
+					
+					System.out.println(String.format(
+							"SENDING %s@%s from %s.",
+							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
+					));
+				}
+			});
+		}
+		debugListener = !debugListener;
 	}
 	
 	private void createAsyncTask(Server server) {

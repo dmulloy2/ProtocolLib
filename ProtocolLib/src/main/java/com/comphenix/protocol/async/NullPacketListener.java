@@ -67,7 +67,7 @@ class NullPacketListener implements PacketListener {
 	
 	private ListeningWhitelist cloneWhitelist(ListenerPriority priority, ListeningWhitelist whitelist) {
 		if (whitelist != null) 
-			return new ListeningWhitelist(priority, whitelist.getWhitelist());
+			return new ListeningWhitelist(priority, whitelist.getWhitelist(), whitelist.getGamePhase());
 		else 
 			return null;
 	}
