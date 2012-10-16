@@ -327,6 +327,20 @@ public class PlayerInjectionHandler {
 	}
 	
 	/**
+	 * Unregisters a player by the given address.
+	 * @param address - address of the player to unregister.
+	 */
+	public void uninjectPlayer(InetSocketAddress address) {
+		if (!hasClosed && address != null) {
+			PlayerInjector injector = addressLookup.get(address);
+			
+			// Clean up
+			if (injector != null)
+				uninjectPlayer(injector.getPlayer());
+		}
+	}
+	
+	/**
 	 * Send the given packet to the given reciever.
 	 * @param reciever - the player receiver.
 	 * @param packet - the packet to send.

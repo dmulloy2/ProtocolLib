@@ -543,12 +543,15 @@ abstract class PlayerInjector {
 	public Player getPlayer() {
 		return player;
 	}
-
+	
 	/**
-	 * Set the associated player.
-	 * @param player - associated player.
+	 * Retrieve the hooked player object OR the more up-to-date player instance.
+	 * @return The hooked player, or a more up-to-date instance.
 	 */
-	public void setPlayer(Player player) {
-		this.player = player;
+	public Player getUpdatedPlayer() {
+		if (updatedPlayer != null)
+			return updatedPlayer;
+		else
+			return player;
 	}
 }

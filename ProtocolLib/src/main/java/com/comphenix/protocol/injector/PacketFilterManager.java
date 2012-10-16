@@ -480,6 +480,12 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			manager.registerEvents(new Listener() {
+				@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+			    public void onPrePlayerJoin(PlayerJoinEvent event) {
+					// Let's clean up the other injection first.
+					playerInjection.uninjectPlayer(event.getPlayer().getAddress());
+			    }
+				
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
 					playerInjection.injectPlayer(event.getPlayer());

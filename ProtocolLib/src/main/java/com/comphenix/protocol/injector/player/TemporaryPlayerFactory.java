@@ -80,7 +80,7 @@ class TemporaryPlayerFactory {
 				if (methodName.equalsIgnoreCase("getName"))
 					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
 				if (methodName.equalsIgnoreCase("getPlayer"))
-					return injector.getPlayer();
+					return injector.getUpdatedPlayer();
 				if (methodName.equalsIgnoreCase("getAddress")) 
 					return injector.getSocket().getRemoteSocketAddress();
 				if (methodName.equalsIgnoreCase("getServer"))
