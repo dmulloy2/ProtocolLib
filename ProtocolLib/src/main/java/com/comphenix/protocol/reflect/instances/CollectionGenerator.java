@@ -42,7 +42,7 @@ public class CollectionGenerator implements InstanceProvider {
 	/**
 	 * Shared instance of this generator.
 	 */
-	public static CollectionGenerator INSTANCE = new CollectionGenerator();
+	public static final CollectionGenerator INSTANCE = new CollectionGenerator();
 	
 	@Override
 	public Object create(@Nullable Class<?> type) {

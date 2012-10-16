@@ -36,7 +36,7 @@ public class FuzzyReflection {
 	/**
 	 * Matches a Minecraft object.
 	 */
-	public static String MINECRAFT_OBJECT = "net\\.minecraft(\\.\\w+)+";
+	public static final String MINECRAFT_OBJECT = "net\\.minecraft(\\.\\w+)+";
 	
 	// The class we're actually representing
 	private Class<?> source;

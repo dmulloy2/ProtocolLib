@@ -35,7 +35,7 @@ public class DefaultInstances {
 	/**
 	 * Standard default instance provider.
 	 */
-	public static DefaultInstances DEFAULT = DefaultInstances.fromArray(
+	public static final DefaultInstances DEFAULT = DefaultInstances.fromArray(
 			PrimitiveGenerator.INSTANCE, CollectionGenerator.INSTANCE);
 		
 	/**

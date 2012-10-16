@@ -33,7 +33,7 @@ public class ListeningWhitelist {
 	/**
 	 * A whitelist with no packets - indicates that the listener shouldn't observe any packets.
 	 */
-	public static ListeningWhitelist EMPTY_WHITELIST = new ListeningWhitelist(ListenerPriority.LOW);
+	public static final ListeningWhitelist EMPTY_WHITELIST = new ListeningWhitelist(ListenerPriority.LOW);
 	
 	private ListenerPriority priority;
 	private Set<Integer> whitelist;
