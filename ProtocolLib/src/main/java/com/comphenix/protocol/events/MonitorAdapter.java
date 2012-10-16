@@ -25,11 +25,14 @@ public abstract class MonitorAdapter implements PacketListener {
 	private ListeningWhitelist receiving = ListeningWhitelist.EMPTY_WHITELIST;
 
 	public MonitorAdapter(Plugin plugin, ConnectionSide side) {
-		this(plugin, side, plugin.getLogger());
+		initialize(plugin, side, getLogger(plugin));
 	}
 	
 	public MonitorAdapter(Plugin plugin, ConnectionSide side, Logger logger) {
-		super();
+		initialize(plugin, side, logger);
+	}
+	
+	private void initialize(Plugin plugin, ConnectionSide side, Logger logger) {
 		this.plugin = plugin;
 
 		// Recover in case something goes wrong
@@ -44,6 +47,19 @@ public abstract class MonitorAdapter implements PacketListener {
 			if (side.isForClient())
 				this.receiving = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Client.getRegistry().values());
 			logger.log(Level.WARNING, "Defaulting to 1.3 packets.", e);
+		}
+	}
+	
+	/**
+	 * Retrieve a logger, even if we're running in a CraftBukkit version that doesn't support it.
+	 * @param plugin - the plugin to retrieve.
+	 * @return The logger.
+	 */
+	private Logger getLogger(Plugin plugin) {
+		try {
+			return plugin.getLogger();
+		} catch (NoSuchMethodError e) {
+			return Logger.getLogger("Minecraft");
 		}
 	}
 	

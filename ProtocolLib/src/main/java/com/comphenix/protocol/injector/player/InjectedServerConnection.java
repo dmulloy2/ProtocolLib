@@ -210,6 +210,11 @@ class InjectedServerConnection {
 	// Hack to avoid the "moved to quickly" error
 	private ReplacedArrayList<Object> createReplacement(List<Object> list) {
 		return new ReplacedArrayList<Object>(list) {
+			/**
+			 * Shut up Eclipse!
+			 */
+			private static final long serialVersionUID = 2070481080950500367L;
+
 			@Override
 			protected void onReplacing(Object inserting, Object replacement) {
 				// Is this a normal Minecraft object?

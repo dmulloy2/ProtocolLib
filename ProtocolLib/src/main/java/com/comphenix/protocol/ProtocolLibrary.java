@@ -101,7 +101,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	private void addDebugListener() {
 		// DEBUG DEBUG
-		protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH) {
+		protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH, logger) {
 			@Override
 			public void onPacketReceiving(PacketEvent event) {
 				System.out.println("RECEIVING " + event.getPacketID() + " from " + event.getPlayer().getName());
