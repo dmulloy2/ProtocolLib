@@ -26,6 +26,10 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.events.MonitorAdapter;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.DelayedSingleTask;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
@@ -55,10 +59,17 @@ public class ProtocolLibrary extends JavaPlugin {
 	private int tickCounter = 0;
 	private static final int ASYNC_PACKET_DELAY = 1;
 	
+	// Used to unhook players after a delay
+	private DelayedSingleTask unhookTask;
+	
+	// Used for debugging
+	private boolean debugListener;
+	
 	@Override
 	public void onLoad() {
 		logger = getLoggerSafely();
-		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), logger);
+		unhookTask = new DelayedSingleTask(this);
+		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, logger);
 	}
 	
 	@Override
@@ -77,12 +88,10 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Player login and logout events
 		protocolManager.registerEvents(manager, this);
-		
-		// Inject our hook into already existing players
-		protocolManager.initializePlayers(server.getOnlinePlayers());
-		
-		// Timeout
+			
+		// Worker that ensures that async packets are eventually sent
 		createAsyncTask(server);
+		//toggleDebugListener();
 		
 		// Try to enable statistics
 		try {
@@ -92,6 +101,39 @@ public class ProtocolLibrary extends JavaPlugin {
 		} catch (Throwable e) {
 			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
 		}
+	}
+
+	/**
+	 * Toggle a listener that prints every sent and received packet.
+	 */
+	void toggleDebugListener() {
+		
+		if (debugListener) {
+			protocolManager.removePacketListeners(this);
+		} else {
+			// DEBUG DEBUG
+			protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH, logger) {
+				@Override
+				public void onPacketReceiving(PacketEvent event) {
+					Object handle = event.getPacket().getHandle();
+					
+					System.out.println(String.format(
+							"RECEIVING %s@%s from %s.",
+							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
+					));
+				};
+				@Override
+				public void onPacketSending(PacketEvent event) {
+					Object handle = event.getPacket().getHandle();
+					
+					System.out.println(String.format(
+							"SENDING %s@%s from %s.",
+							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
+					));
+				}
+			});
+		}
+		debugListener = !debugListener;
 	}
 	
 	private void createAsyncTask(Server server) {
@@ -144,6 +186,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			asyncPacketTask = -1;
 		}
 		
+		unhookTask.close();
 		protocolManager.close();
 		protocolManager = null;
 		statistisc = null;

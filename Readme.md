@@ -17,6 +17,11 @@ lead to more subtle bugs.
 * [JavaDoc](http://aadnk.github.com/ProtocolLib/Javadoc/) 
 
 
+Building
+--------
+You can compile this project yourself by using the latest version of Maven.
+
+
 A new API
 ---------
 
@@ -32,6 +37,9 @@ To use the library, first add ProtocolLib.jar to your Java build path. Then, add
 as a dependency (or soft-dependency, if you can live without it) to your plugin.yml file:
 
     depends: [ProtocolLib]
+
+Future versions will be available in a public Maven repository, possibly on Maven central. But it
+will always be possible to reference ProtocolLib manually.
 
 Then get a reference to ProtocolManager in onLoad() and you're good to go.
 
@@ -116,7 +124,7 @@ you don't have to create an ArrayList this version:
 Compatiblity
 ------------
 
-One of the main goals of this project was to achive maximum compatibility with craftBukkit. And the end
+One of the main goals of this project was to achieve maximum compatibility with CraftBukkit. And the end
 result is quite flexible - in tests I successfully ran an unmodified ProtocolLib on CraftBukkit 1.8.0, and
 it should be resiliant against future changes. It's likely that I won't have to update ProtocolLib for
 anything but bug and performance fixes. 

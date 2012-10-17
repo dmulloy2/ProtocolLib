@@ -198,9 +198,13 @@ class PacketInjector {
 	
 	// Called from the ReadPacketModified monitor
 	PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
-		
 		Player client = playerInjection.getPlayerByConnection(input);
-		return packetRecieved(packet, client);
+		
+		// Never invoke a event if we don't know where it's from
+		if (client != null)
+			return packetRecieved(packet, client);
+		else
+			return null;
 	}
 	
 	/**
@@ -218,16 +222,24 @@ class PacketInjector {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	public void cleanupAll() {
+	public synchronized void cleanupAll() {
 		Map<Integer, Class> overwritten = MinecraftRegistry.getOverwrittenPackets();
 		Map<Integer, Class> previous = MinecraftRegistry.getPreviousPackets();
 		
 		// Remove every packet handler
-		for (Integer id : previous.keySet()) {
+		for (Integer id : previous.keySet().toArray(new Integer[0])) {
 			removePacketHandler(id);
 		}
 		
 		overwritten.clear();
 		previous.clear();
+	}
+
+	/**
+	 * Inform the current PlayerInjector that it should update the DataInputStream next.
+	 * @param player - the player to update.
+	 */
+	public void scheduleDataInputRefresh(Player player) {
+		playerInjection.scheduleDataInputRefresh(player);
 	}
 }

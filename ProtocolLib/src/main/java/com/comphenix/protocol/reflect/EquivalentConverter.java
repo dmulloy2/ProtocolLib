@@ -28,3 +28,4 @@ public interface EquivalentConverter<TType> {
 	public Object getGeneric(TType specific);
 	public Class<TType> getSpecificType();
 }
+

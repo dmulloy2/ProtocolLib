@@ -19,6 +19,7 @@ package com.comphenix.protocol.events;
 
 import java.util.Set;
 
+import com.comphenix.protocol.injector.GamePhase;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 
@@ -32,10 +33,11 @@ public class ListeningWhitelist {
 	/**
 	 * A whitelist with no packets - indicates that the listener shouldn't observe any packets.
 	 */
-	public static ListeningWhitelist EMPTY_WHITELIST = new ListeningWhitelist(ListenerPriority.LOW);
+	public static final ListeningWhitelist EMPTY_WHITELIST = new ListeningWhitelist(ListenerPriority.LOW);
 	
 	private ListenerPriority priority;
 	private Set<Integer> whitelist;
+	private GamePhase gamePhase;
 
 	/**
 	 * Creates a packet whitelist for a given priority with a set of packet IDs.
@@ -43,8 +45,19 @@ public class ListeningWhitelist {
 	 * @param whitelist - set of IDs to observe/enable. 
 	 */
 	public ListeningWhitelist(ListenerPriority priority, Set<Integer> whitelist) {
+		this(priority, whitelist, GamePhase.PLAYING);
+	}
+	
+	/**
+	 * Creates a packet whitelist for a given priority with a set of packet IDs.
+	 * @param priority - the listener priority.
+	 * @param whitelist - set of IDs to observe/enable.
+	 * @param gamePhase - which game phase to receieve notifications on.
+	 */
+	public ListeningWhitelist(ListenerPriority priority, Set<Integer> whitelist, GamePhase gamePhase) {
 		this.priority = priority;
 		this.whitelist = whitelist;
+		this.gamePhase = gamePhase;
 	}
 	
 	/**
@@ -55,6 +68,19 @@ public class ListeningWhitelist {
 	public ListeningWhitelist(ListenerPriority priority, Integer... whitelist) {
 		this.priority = priority;
 		this.whitelist = Sets.newHashSet(whitelist);
+		this.gamePhase = GamePhase.PLAYING;
+	}
+	
+	/**
+	 * Creates a packet whitelist for a given priority with a set of packet IDs.
+	 * @param priority - the listener priority.
+	 * @param whitelist - list of packet IDs to observe/enable.
+	 * @param gamePhase - which game phase to receieve notifications on.
+	 */
+	public ListeningWhitelist(ListenerPriority priority, Integer[] whitelist, GamePhase gamePhase) {
+		this.priority = priority;
+		this.whitelist = Sets.newHashSet(whitelist);
+		this.gamePhase = gamePhase;
 	}
 	
 	/**
@@ -80,10 +106,18 @@ public class ListeningWhitelist {
 	public Set<Integer> getWhitelist() {
 		return whitelist;
 	}
+
+	/**
+	 * Retrieve which game phase this listener is active under.
+	 * @return The active game phase.
+	 */
+	public GamePhase getGamePhase() {
+		return gamePhase;
+	}
 	
 	@Override
 	public int hashCode(){
-	    return Objects.hashCode(priority, whitelist);
+	    return Objects.hashCode(priority, whitelist, gamePhase);
 	}
 
 	/**

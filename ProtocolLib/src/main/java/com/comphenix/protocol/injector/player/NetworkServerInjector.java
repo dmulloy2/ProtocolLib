@@ -19,7 +19,6 @@ package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
@@ -34,7 +33,9 @@ import net.sf.cglib.proxy.NoOp;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectCloner;
@@ -53,14 +54,14 @@ public class NetworkServerInjector extends PlayerInjector {
 	private InjectedServerConnection serverInjection;
 	
 	// Determine if we're listening
-	private Set<Integer> sendingFilters;
+	private IntegerSet sendingFilters;
 	
 	// Used to create proxy objects
 	private ClassLoader classLoader;
 	
 	public NetworkServerInjector(
 			ClassLoader classLoader, Logger logger, Player player, 
-			ListenerInvoker invoker, Set<Integer> sendingFilters, 
+			ListenerInvoker invoker, IntegerSet sendingFilters, 
 			InjectedServerConnection serverInjection) throws IllegalAccessException {
 		
 		super(logger, player, invoker);
@@ -73,11 +74,11 @@ public class NetworkServerInjector extends PlayerInjector {
 	protected boolean hasListener(int packetID) {
 		return sendingFilters.contains(packetID);
 	}
-	
+
 	@Override
-	public void initialize() throws IllegalAccessException {
-		super.initialize();
-		
+	public void initialize(Object injectionSource) throws IllegalAccessException {
+		super.initialize(injectionSource);
+
 		// Get the send packet method!
 		if (hasInitialized) {
 			if (sendPacketMethod == null)
@@ -148,7 +149,7 @@ public class NetworkServerInjector extends PlayerInjector {
 				Packet packet = (Packet) args[0];
 				
 				if (packet != null) {
-					packet = handlePacketRecieved(packet);
+					packet = handlePacketSending(packet);
 					
 					// A NULL packet indicate cancelling
 					if (packet != null)
@@ -260,7 +261,13 @@ public class NetworkServerInjector extends PlayerInjector {
 	}
 
 	@Override
-	public boolean canInject() {
-		return true;
+	public boolean canInject(GamePhase phase) {
+		// Doesn't work when logging in
+		return phase == GamePhase.PLAYING;
+	}
+
+	@Override
+	public PlayerInjectHooks getHookType() {
+		return PlayerInjectHooks.NETWORK_SERVER_OBJECT;
 	}
 }

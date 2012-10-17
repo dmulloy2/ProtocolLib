@@ -95,8 +95,8 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	private Object processingLock = new Object();
 	
 	// Used to identify the asynchronous worker
-	private AsyncListenerHandler listenerHandler;
-	private int workerID;
+	private transient AsyncListenerHandler listenerHandler;
+	private transient int workerID;
 	
 	// Determine if Minecraft processes this packet asynchronously
 	private static Method isMinecraftAsync;

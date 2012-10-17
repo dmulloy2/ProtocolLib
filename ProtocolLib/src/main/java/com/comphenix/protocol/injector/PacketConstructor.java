@@ -40,7 +40,7 @@ public class PacketConstructor {
 	 * <p>
 	 * Remember to call withPacket().
 	 */
-	public static PacketConstructor DEFAULT = new PacketConstructor(null);
+	public static final PacketConstructor DEFAULT = new PacketConstructor(null);
 	
 	// The constructor method that's actually responsible for creating the packet
 	private Constructor<?> constructorMethod;

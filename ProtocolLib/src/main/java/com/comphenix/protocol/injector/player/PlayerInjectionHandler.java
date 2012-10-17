@@ -19,11 +19,11 @@ package com.comphenix.protocol.injector.player;
 
 import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
-import java.util.HashMap;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,10 +35,12 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Maps;
 
 /**
  * Responsible for injecting into a player's sendPacket method.
@@ -46,19 +48,29 @@ import com.google.common.collect.ImmutableSet;
  * @author Kristian
  */
 public class PlayerInjectionHandler {
-
+	
+	/**
+	 * The highest possible packet ID. It's unlikely that this value will ever change.
+	 */
+	private static final int MAXIMUM_PACKET_ID = 255;
+	
 	// Server connection injection
 	private InjectedServerConnection serverInjection;
+	
+	// NetLogin injector
+	private NetLoginInjector netLoginInjector;
 	
 	// The last successful player hook
 	private PlayerInjector lastSuccessfulHook;
 	
 	// Player injection
-	private Map<DataInputStream, Player> connectionLookup = new ConcurrentHashMap<DataInputStream, Player>();
-	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
+	private Map<SocketAddress, PlayerInjector> addressLookup = Maps.newConcurrentMap();
+	private Map<DataInputStream, PlayerInjector> dataInputLookup = Maps.newConcurrentMap();
+	private Map<Player, PlayerInjector> playerInjection = Maps.newConcurrentMap();
 	
-	// Player injection type
-	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	// Player injection types
+	private volatile PlayerInjectHooks loginPlayerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	private volatile PlayerInjectHooks playingPlayerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
 	
 	// Error logger
 	private Logger logger;
@@ -70,16 +82,24 @@ public class PlayerInjectionHandler {
 	private ListenerInvoker invoker;
 	
 	// Enabled packet filters
-	private Set<Integer> sendingFilters = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+	private IntegerSet sendingFilters = new IntegerSet(MAXIMUM_PACKET_ID + 1);
 	
 	// The class loader we're using
 	private ClassLoader classLoader;
 	
-	public PlayerInjectionHandler(ClassLoader classLoader, Logger logger, ListenerInvoker invoker, Server server) {
+	// Used to filter injection attempts
+	private Predicate<GamePhase> injectionFilter;
+	
+	public PlayerInjectionHandler(ClassLoader classLoader, Logger logger, Predicate<GamePhase> injectionFilter, 
+								  ListenerInvoker invoker, Server server) {
+		
 		this.classLoader = classLoader;
 		this.logger = logger;
 		this.invoker = invoker;
-		this.serverInjection = new InjectedServerConnection(logger, server);
+		this.injectionFilter = injectionFilter;
+		this.netLoginInjector = new NetLoginInjector(logger, this, server);
+		this.serverInjection = new InjectedServerConnection(logger, server, netLoginInjector);
+		serverInjection.injectList();
 	}
 
 	/**
@@ -87,9 +107,45 @@ public class PlayerInjectionHandler {
 	 * @return Injection method for reading server packets.
 	 */
 	public PlayerInjectHooks getPlayerHook() {
-		return playerHook;
+		return getPlayerHook(GamePhase.PLAYING);
+	}
+	
+	/**
+	 * Retrieves how the server packets are read.
+	 * @param phase - the current game phase.
+	 * @return Injection method for reading server packets.
+	 */
+	public PlayerInjectHooks getPlayerHook(GamePhase phase) {
+		switch (phase) {
+		case LOGIN:
+			return loginPlayerHook;
+		case PLAYING:
+			return playingPlayerHook;
+		default: 
+			throw new IllegalArgumentException("Cannot retrieve injection hook for both phases at the same time.");
+		}
 	}
 
+	/**
+	 * Sets how the server packets are read.
+	 * @param playerHook - the new injection method for reading server packets.
+	 */
+	public void setPlayerHook(PlayerInjectHooks playerHook) {
+		setPlayerHook(GamePhase.PLAYING, playerHook);
+	}
+	
+	/**
+	 * Sets how the server packets are read.
+	 * @param phase - the current game phase.
+	 * @param playerHook - the new injection method for reading server packets.
+	 */
+	public void setPlayerHook(GamePhase phase, PlayerInjectHooks playerHook) {
+		if (phase.hasLogin())
+			loginPlayerHook = playerHook;
+		if (phase.hasPlaying())
+			playingPlayerHook = playerHook;
+	}
+	
 	/**
 	 * Add an underlying packet handler of the given ID.
 	 * @param packetID - packet ID to register.
@@ -105,15 +161,7 @@ public class PlayerInjectionHandler {
 	public void removePacketHandler(int packetID) {
 		sendingFilters.remove(packetID);
 	}
-	
-	/**
-	 * Sets how the server packets are read.
-	 * @param playerHook - the new injection method for reading server packets.
-	 */
-	public void setPlayerHook(PlayerInjectHooks playerHook) {
-		this.playerHook = playerHook;
-	}
-	
+
 	/**
 	 * Used to construct a player hook.
 	 * @param player - the player to hook.
@@ -127,7 +175,7 @@ public class PlayerInjectionHandler {
 		case NETWORK_HANDLER_FIELDS: 
 			return new NetworkFieldInjector(classLoader, logger, player, invoker, sendingFilters);
 		case NETWORK_MANAGER_OBJECT: 
-			return new NetworkObjectInjector(logger, player, invoker, sendingFilters);
+			return new NetworkObjectInjector(classLoader, logger, player, invoker, sendingFilters);
 		case NETWORK_SERVER_OBJECT:
 			return new NetworkServerInjector(classLoader, logger, player, invoker, sendingFilters, serverInjection);
 		default:
@@ -135,73 +183,177 @@ public class PlayerInjectionHandler {
 		}
 	}
 	
+	/**
+	 * Retrieve a player by its DataInput connection.
+	 * @param inputStream - the associated DataInput connection.
+	 * @return The player.
+	 */
 	public Player getPlayerByConnection(DataInputStream inputStream) {
-		return connectionLookup.get(inputStream);
+		try {
+			// Concurrency issue!
+			netLoginInjector.getReadLock().lock();
+			
+			PlayerInjector injector = dataInputLookup.get(inputStream);
+			
+			if (injector != null) {
+				return injector.getPlayer();
+			} else {
+				System.out.println("Unable to find stream: " + inputStream);
+				return null;
+			}
+			
+		} finally {
+			netLoginInjector.getReadLock().unlock();
+		}
+	}
+	
+	private PlayerInjectHooks getInjectorType(PlayerInjector injector) {
+		return injector != null ? injector.getHookType() : PlayerInjectHooks.NONE;
 	}
 	
 	/**
 	 * Initialize a player hook, allowing us to read server packets.
+	 * <p>
+	 * This call will  be ignored if there's no listener that can receive the given events.
 	 * @param player - player to hook.
 	 */
 	public void injectPlayer(Player player) {
+		// Inject using the player instance itself
+		if (isInjectionNecessary(GamePhase.PLAYING)) {
+			injectPlayer(player, player, GamePhase.PLAYING);
+		}
+	}
+	
+	/**
+	 * Determine if it's truly necessary to perform the given player injection.
+	 * @param phase - current game phase.
+	 * @return TRUE if we should perform the injection, FALSE otherwise.
+	 */
+	public boolean isInjectionNecessary(GamePhase phase) {
+		return injectionFilter.apply(phase);
+	}
+	
+	/**
+	 * Initialize a player hook, allowing us to read server packets.
+	 * <p>
+	 * This method will always perform the instructed injection.
+	 * 
+	 * @param player - player to hook.
+	 * @param injectionPoint - the object to use during the injection process.
+	 * @param phase - the current game phase.
+	 * @return The resulting player injector, or NULL if the injection failed.
+	 */
+	PlayerInjector injectPlayer(Player player, Object injectionPoint, GamePhase phase) {
+		// Unfortunately, due to NetLoginHandler, multiple threads may potentially call this method.
+		synchronized (player) {
+			return injectPlayerInternal(player, injectionPoint, phase);
+		}
+	}
+	
+	// Unsafe variant of the above
+	private PlayerInjector injectPlayerInternal(Player player, Object injectionPoint, GamePhase phase) {
 		
-		PlayerInjector injector = null;
-		PlayerInjectHooks currentHook = playerHook;
-		boolean firstPlayer = lastSuccessfulHook == null;
+		PlayerInjector injector = playerInjection.get(player);
+		PlayerInjectHooks tempHook = getPlayerHook(phase);
+		PlayerInjectHooks permanentHook = tempHook;
 		
+		// The given player object may be fake, so be careful!
+		
+		// See if we need to inject something else
+		boolean invalidInjector = injector != null ? !injector.canInject(phase) : true;
+
 		// Don't inject if the class has closed
-		if (!hasClosed && player != null && !playerInjection.containsKey(player)) {
-			while (true) {
+		if (!hasClosed && player != null && (tempHook != getInjectorType(injector) || invalidInjector)) {
+			while (tempHook != PlayerInjectHooks.NONE) {
+				// Whether or not the current hook method failed completely
+				boolean hookFailed = false;
+
+				// Remove the previous hook, if any
+				cleanupHook(injector);
+				
 				try {
-					injector = getHookInstance(player, currentHook);
-					injector.initialize();
-					injector.injectManager();
+					injector = getHookInstance(player, tempHook);
 					
-					DataInputStream inputStream = injector.getInputStream(false);
-					
-					if (!player.isOnline() || inputStream == null) {
-						throw new PlayerLoggedOutException();
+					// Make sure this injection method supports the current game phase
+					if (injector.canInject(phase)) {
+						injector.initialize(injectionPoint);
+						
+						DataInputStream inputStream = injector.getInputStream(false);
+
+						Socket socket = injector.getSocket();
+						SocketAddress address = socket.getRemoteSocketAddress();
+						
+						// Make sure the current player is not logged out
+						if (socket.isClosed()) {
+							throw new PlayerLoggedOutException();
+						}
+						
+						PlayerInjector previous = addressLookup.get(address);
+						
+						// Close any previously associated hooks before we proceed
+						if (previous != null) {
+							uninjectPlayer(previous.getPlayer());
+
+							// Remove the "hooked" network manager in our instance as well
+							if (previous instanceof NetworkObjectInjector) {
+								injector.setNetworkManager(previous.getNetworkManager(), true);
+							}
+						}
+
+						injector.injectManager();
+						dataInputLookup.put(inputStream, injector);
+						addressLookup.put(address, injector);
+						break;
 					}
-					
-					playerInjection.put(player, injector);
-					connectionLookup.put(inputStream, player);
-					break;
-					
 					
 				} catch (PlayerLoggedOutException e) {
 					throw e;
 					
 				} catch (Exception e) {
-
 					// Mark this injection attempt as a failure
-					logger.log(Level.SEVERE, "Player hook " + currentHook.toString() + " failed.", e);
-					
-					// Clean up as much as possible
-					try {
-						if (injector != null)
-							injector.cleanupAll();
-					} catch (Exception e2) {
-						logger.log(Level.WARNING, "Cleaing up after player hook failed.", e);
-					}
-					
-					if (currentHook.ordinal() > 0) {
-
-						// Choose the previous player hook type
-						currentHook = PlayerInjectHooks.values()[currentHook.ordinal() - 1];
-						logger.log(Level.INFO, "Switching to " + currentHook.toString() + " instead.");
-					} else {
-						// UTTER FAILURE
-						playerInjection.put(player, null);
-						return;
-					}
+					logger.log(Level.SEVERE, "Player hook " + tempHook.toString() + " failed.", e);
+					hookFailed = true;
+				}
+				
+				// Choose the previous player hook type
+				tempHook = PlayerInjectHooks.values()[tempHook.ordinal() - 1];
+				
+				if (hookFailed)
+					logger.log(Level.INFO, "Switching to " + tempHook.toString() + " instead.");
+				
+				// Check for UTTER FAILURE
+				if (tempHook == PlayerInjectHooks.NONE) {
+					cleanupHook(injector);
+					injector = null;
+					hookFailed = true;
+				}
+				
+				// Should we set the default hook method too?
+				if (hookFailed) {
+					permanentHook = tempHook;
 				}
 			}
 			
 			// Update values
 			if (injector != null)
 				lastSuccessfulHook = injector;
-			if (currentHook != playerHook || firstPlayer) 
-				setPlayerHook(currentHook);
+			if (permanentHook != getPlayerHook(phase)) 
+				setPlayerHook(phase, tempHook);
+			
+			// Save last injector
+			playerInjection.put(player, injector);
+		}
+		
+		return injector;
+	}
+	
+	private void cleanupHook(PlayerInjector injector) {
+		// Clean up as much as possible
+		try {
+			if (injector != null)
+				injector.cleanupAll();
+		} catch (Exception e2) {
+			logger.log(Level.WARNING, "Cleaing up after player hook failed.", e2);
 		}
 	}
 	
@@ -212,35 +364,83 @@ public class PlayerInjectionHandler {
 	public void uninjectPlayer(Player player) {
 		if (!hasClosed && player != null) {
 			
-			PlayerInjector injector = playerInjection.get(player);
-			
+			PlayerInjector injector = playerInjection.remove(player);
+
 			if (injector != null) {
 				DataInputStream input = injector.getInputStream(true);
+				InetSocketAddress address = player.getAddress();
 				injector.cleanupAll();
 				
-				playerInjection.remove(player);
-				connectionLookup.remove(input);
+				dataInputLookup.remove(input);
+				
+				if (address != null)
+					addressLookup.remove(address);
 			}
 		}	
 	}
 	
-	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
-		getInjector(reciever).sendServerPacket(packet.getHandle(), filters);
+	/**
+	 * Unregisters a player by the given address.
+	 * @param address - address of the player to unregister.
+	 */
+	public void uninjectPlayer(InetSocketAddress address) {
+		if (!hasClosed && address != null) {
+			PlayerInjector injector = addressLookup.get(address);
+			
+			// Clean up
+			if (injector != null)
+				uninjectPlayer(injector.getPlayer());
+		}
 	}
 	
-	private PlayerInjector getInjector(Player player) {
-		if (!playerInjection.containsKey(player)) {
-			// What? Try to inject again.
-			injectPlayer(player);
-		}
+	/**
+	 * Send the given packet to the given reciever.
+	 * @param reciever - the player receiver.
+	 * @param packet - the packet to send.
+	 * @param filters - whether or not to invoke the packet filters.
+	 * @throws InvocationTargetException If an error occured during sending.
+	 */
+	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
+		PlayerInjector injector = getInjector(reciever);
 		
-		PlayerInjector injector = playerInjection.get(player);
-		
-		// Check that the injector was sucessfully added
+		// Send the packet, or drop it completely
 		if (injector != null)
-			return injector;
+			injector.sendServerPacket(packet.getHandle(), filters);
 		else
-			throw new IllegalArgumentException("Player has no injected handler.");
+			logger.log(Level.WARNING, String.format(
+					"Unable to send packet %s (%s): Player %s has logged out.", 
+					packet.getID(), packet, reciever.getName()
+			));
+	}
+	
+	/**
+	 * Process a packet as if it were sent by the given player.
+	 * @param player - the sender.
+	 * @param mcPacket - the packet to process.
+	 * @throws IllegalAccessException If the reflection machinery failed.
+	 * @throws InvocationTargetException If the underlying method caused an error.
+	 */
+	public void processPacket(Player player, Packet mcPacket) throws IllegalAccessException, InvocationTargetException {
+		
+		PlayerInjector injector = getInjector(player);
+		
+		// Process the given packet, or simply give up
+		if (injector != null)
+			injector.processPacket(mcPacket);
+		else
+			logger.log(Level.WARNING, String.format(
+					"Unable to receieve packet %s. Player %s has logged out.", 
+					mcPacket, player.getName()
+			));
+	}
+	
+	/**
+	 * Retrieve the injector associated with this player.
+	 * @param player - the player to find.
+	 * @return The injector, or NULL if not found.
+	 */
+	private PlayerInjector getInjector(Player player) {
+		return playerInjection.get(player);
 	}
 	
 	/**
@@ -273,26 +473,13 @@ public class PlayerInjectionHandler {
 			throw new IllegalStateException("Registering listener " + PacketAdapter.getPluginName(listener) + " failed", e);
 		}
 	}
-
-	/**
-	 * Process a packet as if it were sent by the given player.
-	 * @param player - the sender.
-	 * @param mcPacket - the packet to process.
-	 * @throws IllegalAccessException If the reflection machinery failed.
-	 * @throws InvocationTargetException If the underlying method caused an error.
-	 */
-	public void processPacket(Player player, Packet mcPacket) throws IllegalAccessException, InvocationTargetException {
-		
-		PlayerInjector injector = getInjector(player);
-		injector.processPacket(mcPacket);
-	}
 	
 	/**
 	 * Retrieve the current list of registered sending listeners.
 	 * @return List of the sending listeners's packet IDs.
 	 */
 	public Set<Integer> getSendingFilters() {
-		return ImmutableSet.copyOf(sendingFilters);
+		return sendingFilters.toSet();
 	}
 	
 	/**
@@ -317,11 +504,37 @@ public class PlayerInjectionHandler {
 		}
 		
 		// Remove server handler
-		serverInjection.cleanupAll();
+		if (serverInjection != null)
+			serverInjection.cleanupAll();
+		if (netLoginInjector != null)
+			netLoginInjector.cleanupAll();
+		serverInjection = null;
+		netLoginInjector = null;
 		hasClosed = true;
 		
 		playerInjection.clear();
-		connectionLookup.clear();
+		dataInputLookup.clear();
+		addressLookup.clear();
 		invoker = null;
+	}
+
+	/**
+	 * Inform the current PlayerInjector that it should update the DataInputStream next.
+	 * @param player - the player to update.
+	 */
+	public void scheduleDataInputRefresh(Player player) {
+		final PlayerInjector injector = getInjector(player);
+		final DataInputStream old = injector.getInputStream(true);
+		
+		// Update the DataInputStream
+		if (injector != null) {
+			injector.scheduleAction(new Runnable() {
+				@Override
+				public void run() {
+					dataInputLookup.remove(old);
+					dataInputLookup.put(injector.getInputStream(false), injector);
+				}
+			});
+		}
 	}
 }

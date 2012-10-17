@@ -142,8 +142,9 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier for ItemStack fields.
 	 */
 	public StructureModifier<ItemStack> getItemModifier() {
-		// Convert from and to the Bukkit wrapper
-		return structureModifier.<ItemStack>withType(net.minecraft.server.ItemStack.class, new EquivalentConverter<ItemStack>() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.<ItemStack>withType(net.minecraft.server.ItemStack.class, 
+				getIgnoreNull(new EquivalentConverter<ItemStack>() {
 			public Object getGeneric(ItemStack specific) {
 				return toStackNMS(specific);
 			}
@@ -157,7 +158,7 @@ public class PacketContainer implements Serializable {
 			public Class<ItemStack> getSpecificType() {
 				return ItemStack.class;
 			}
-		});
+		}));
 	}
 	
 	/**
@@ -169,7 +170,10 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<ItemStack[]> getItemArrayModifier() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<ItemStack[]>withType(net.minecraft.server.ItemStack[].class, new EquivalentConverter<ItemStack[]>() {
+		return structureModifier.<ItemStack[]>withType(
+				net.minecraft.server.ItemStack[].class, 
+				getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
+					
 			public Object getGeneric(ItemStack[] specific) {
 				net.minecraft.server.ItemStack[] result = new net.minecraft.server.ItemStack[specific.length];
 				
@@ -196,7 +200,7 @@ public class PacketContainer implements Serializable {
 			public Class<ItemStack[]> getSpecificType() {
 				return ItemStack[].class;
 			}
-		});
+		}));
 	}
 	
 	/**
@@ -228,7 +232,10 @@ public class PacketContainer implements Serializable {
 		}
 		
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<WorldType>withType(net.minecraft.server.WorldType.class, new EquivalentConverter<WorldType>() {
+		return structureModifier.<WorldType>withType(
+				net.minecraft.server.WorldType.class, 
+				getIgnoreNull(new EquivalentConverter<WorldType>() {
+					
 			@Override
 			public Object getGeneric(WorldType specific) {
 				return net.minecraft.server.WorldType.getType(specific.getName());
@@ -244,7 +251,7 @@ public class PacketContainer implements Serializable {
 			public Class<WorldType> getSpecificType() {
 				return WorldType.class;
 			}
-		});
+		}));
 	}
 	
 	/**
@@ -268,7 +275,10 @@ public class PacketContainer implements Serializable {
 					"getEntity", nmsEntityClass, new Class[] { int.class });
 		
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<Entity>withType(int.class, new EquivalentConverter<Entity>() {
+		return structureModifier.<Entity>withType(
+				int.class, 
+				getIgnoreNull(new EquivalentConverter<Entity>() {
+					
 			@Override
 			public Object getGeneric(Entity specific) {
 				// Simple enough
@@ -310,9 +320,34 @@ public class PacketContainer implements Serializable {
 			public Class<Entity> getSpecificType() {
 				return Entity.class;
 			}
-		});
+		}));
 	}
 	
+	private <TType> EquivalentConverter<TType> getIgnoreNull(final EquivalentConverter<TType> delegate) {
+		// Automatically wrap all parameters to the delegate with a NULL check
+		return new EquivalentConverter<TType>() {
+			public Object getGeneric(TType specific) {
+				if (specific != null)
+					return delegate.getGeneric(specific);
+				else
+					return null;
+			}
+			
+			@Override
+			public TType getSpecific(Object generic) {
+				if (generic != null)
+					return delegate.getSpecific(generic);
+				else
+					return null;
+			}
+			
+			@Override
+			public Class<TType> getSpecificType() {
+				return delegate.getSpecificType();
+			}
+		};
+	}
+
 	/**
 	 * Retrieves the ID of this packet.
 	 * @return Packet ID.

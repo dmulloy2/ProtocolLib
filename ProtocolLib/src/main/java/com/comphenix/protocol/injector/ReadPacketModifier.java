@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.WeakHashMap;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 
@@ -101,14 +102,20 @@ class ReadPacketModifier implements MethodInterceptor {
 			// Let the people know
 			PacketContainer container = new PacketContainer(packetID, (Packet) thisObj);
 			PacketEvent event = packetInjector.packetRecieved(container, input);
-			Packet result = event.getPacket().getHandle();
 			
 			// Handle override
 			if (event != null) {
+				Packet result = event.getPacket().getHandle();
+				
 				if (event.isCancelled()) {
 					override.put(thisObj, null);
 				} else if (!objectEquals(thisObj, result)) {
 					override.put(thisObj, result);
+				}
+				
+				// Update DataInputStream next time
+				if (!event.isCancelled() && packetID == Packets.Server.KEY_RESPONSE) {
+					packetInjector.scheduleDataInputRefresh(event.getPlayer());
 				}
 			}
 		}

@@ -1,16 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <artifactId>oss-parent</artifactId>
-    <groupId>org.sonatype.oss</groupId>
-    <version>7</version>
-    <relativePath>../pom.xml/pom.xml</relativePath>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
   <name>ProtocolLib</name>
-  <version>1.3.1</version>
+  <version>1.4.0</version>
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://dev.bukkit.org/server-mods/protocollib/</url>
   <developers>
@@ -41,6 +35,7 @@
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <testSourceDirectory>src/test/java</testSourceDirectory>
+    <defaultGoal>clean install</defaultGoal>
     <resources>
       <resource>
         <directory>src/main/java</directory>
@@ -60,6 +55,14 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <relocations>
+                <relocation>
+                  <pattern>net.sf</pattern>
+                  <shadedPattern>com.comphenix.net.sf</shadedPattern>
+                </relocation>
+              </relocations>
               <artifactSet>
                 <excludes>
                   <exclude>org.bukkit:craftbukkit</exclude>
@@ -126,12 +129,18 @@
       </build>
     </profile>
   </profiles>
+  <repositories>
+    <repository>
+      <id>bukkit-rep</id>
+      <url>http://repo.bukkit.org/content/groups/public</url>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>craftbukkit</artifactId>
-      <version>1.3.2-R1.1-SNAPSHOT</version>
-      <scope>compile</scope>
+      <version>1.3.2-R1.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -146,8 +155,33 @@
       </exclusions>
     </dependency>
   </dependencies>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>2.5.2</version>
+        <configuration>
+          <threshold>High</threshold>
+          <effort>Default</effort>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+  <distributionManagement>
+    <repository>
+      <id>comphenix-releases</id>
+      <name>Comphenix Maven Releases</name>
+      <url>http://repo.comphenix.net/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>comphenix-snapshots</id>
+      <name>Comphenix Maven Snapshots</name>
+      <url>http://repo.comphenix.net/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
   </properties>
 </project>
 

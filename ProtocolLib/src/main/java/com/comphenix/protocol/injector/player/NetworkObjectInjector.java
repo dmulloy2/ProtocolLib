@@ -20,11 +20,14 @@ package com.comphenix.protocol.injector.player;
 import java.lang.reflect.InvocationTargetException;
 
 import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.CallbackFilter;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.LazyLoader;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.lang.reflect.Method;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
@@ -32,7 +35,9 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 
 /**
  * Injection method that overrides the NetworkHandler itself, and it's sendPacket-method.
@@ -41,11 +46,16 @@ import com.comphenix.protocol.injector.ListenerInvoker;
  */
 class NetworkObjectInjector extends PlayerInjector {
 	// Determine if we're listening
-	private Set<Integer> sendingFilters;
+	private IntegerSet sendingFilters;
 	
-	public NetworkObjectInjector(Logger logger, Player player, ListenerInvoker invoker, Set<Integer> sendingFilters) throws IllegalAccessException {
+	// Used to construct proxy objects
+	private ClassLoader classLoader;
+	
+	public NetworkObjectInjector(ClassLoader classLoader, Logger logger, Player player, 
+								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
 		super(logger, player, invoker);
 		this.sendingFilters = sendingFilters;
+		this.classLoader = classLoader;
 	}
 
 	@Override
@@ -87,7 +97,7 @@ class NetworkObjectInjector extends PlayerInjector {
 	public void injectManager() {
 		
 		if (networkManager != null) {
-			final Class<?> networkInterface = networkManagerField.getType();
+			final Class<?> networkInterface = networkManagerRef.getField().getType();
 			final Object networkDelegate = networkManagerRef.getOldValue();
 			
 			if (!networkInterface.isInterface()) {
@@ -95,49 +105,68 @@ class NetworkObjectInjector extends PlayerInjector {
 						"Must use CraftBukkit 1.3.0 or later to inject into into NetworkMananger.");
 			}
 			
-			// Create our proxy object
-			Object networkProxy = Proxy.newProxyInstance(networkInterface.getClassLoader(), 
-					new Class<?>[] { networkInterface }, new InvocationHandler() {
-				
+			Callback queueFilter = new MethodInterceptor() {
 				@Override
-				public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-					// OH OH! The queue method!
-					if (method.equals(queueMethod)) {
-						Packet packet = (Packet) args[0];
+				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+					Packet packet = (Packet) args[0];
+					
+					if (packet != null) {
+						packet = handlePacketSending(packet);
 						
-						if (packet != null) {
-							packet = handlePacketRecieved(packet);
-							
-							// A NULL packet indicate cancelling
-							if (packet != null)
-								args[0] = packet;
-							else
-								return null;
-						}
+						// A NULL packet indicate cancelling
+						if (packet != null)
+							args[0] = packet;
+						else
+							return null;
 					}
 					
 					// Delegate to our underlying class
-					try {
-						return method.invoke(networkDelegate, args);
-					} catch (InvocationTargetException e) {
-						throw e.getCause();
-					}
+					return proxy.invokeSuper(networkDelegate, args);
+				}
+			};
+			Callback dispatch = new LazyLoader() {
+				@Override
+				public Object loadObject() throws Exception {
+					return networkDelegate;
+				}
+			};
+			
+			// Create our proxy object
+			Enhancer ex = new Enhancer();
+			ex.setClassLoader(classLoader);
+			ex.setSuperclass(networkInterface);
+			ex.setCallbacks(new Callback[] { queueFilter, dispatch });
+			ex.setCallbackFilter(new CallbackFilter() {
+				@Override
+				public int accept(Method method) {
+					if (method.equals(queueMethod))
+						return 0;
+					else
+						return 1;
 				}
 			});
-		
+			
 			// Inject it, if we can.
-			networkManagerRef.setValue(networkProxy);
+			networkManagerRef.setValue(ex.create());
 		}
 	}
 	
 	@Override
 	public void cleanupAll() {
 		// Clean up
-		networkManagerRef.revertValue();
+		if (networkManagerRef != null && networkManagerRef.isCurrentSet()) {
+			networkManagerRef.revertValue();
+		}
 	}
 
 	@Override
-	public boolean canInject() {
+	public boolean canInject(GamePhase phase) {
+		// Works for all phases
 		return true;
+	}
+
+	@Override
+	public PlayerInjectHooks getHookType() {
+		return PlayerInjectHooks.NETWORK_MANAGER_OBJECT;
 	}
 }

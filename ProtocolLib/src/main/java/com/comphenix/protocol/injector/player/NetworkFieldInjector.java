@@ -31,7 +31,9 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -66,13 +68,13 @@ class NetworkFieldInjector extends PlayerInjector {
 	private Object syncObject;
 
 	// Determine if we're listening
-	private Set<Integer> sendingFilters;
+	private IntegerSet sendingFilters;
 
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
 	
 	public NetworkFieldInjector(ClassLoader classLoader, Logger logger, Player player, 
-								ListenerInvoker manager, Set<Integer> sendingFilters) throws IllegalAccessException {
+								ListenerInvoker manager, IntegerSet sendingFilters) throws IllegalAccessException {
 		
 		super(logger, player, manager);
 		this.classLoader = classLoader;
@@ -85,9 +87,9 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public synchronized void initialize() throws IllegalAccessException {
-		super.initialize();
-	
+	public synchronized void initialize(Object injectionSource)  throws IllegalAccessException {
+		super.initialize(injectionSource);
+
 		// Get the sync field as well
 		if (hasInitialized) {
 			if (syncField == null)
@@ -190,7 +192,13 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 
 	@Override
-	public boolean canInject() {
+	public boolean canInject(GamePhase phase) {
+		// All phases should work
 		return true;
+	}
+
+	@Override
+	public PlayerInjectHooks getHookType() {
+		return PlayerInjectHooks.NETWORK_HANDLER_FIELDS;
 	}
 }

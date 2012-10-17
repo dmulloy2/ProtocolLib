@@ -23,8 +23,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.annotation.Nullable;
 
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Enhancer;
@@ -52,6 +55,7 @@ import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 
 public final class PacketFilterManager implements ProtocolManager, ListenerInvoker {
@@ -61,6 +65,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @author Kristian
 	 */
 	public enum PlayerInjectHooks {
+		/**
+		 * The injection hook that does nothing. Set when every other inject hook fails.
+		 */
+		NONE,
+		
 		/**
 		 * Override the network handler object itself. Only works in 1.3.
 		 * <p>
@@ -81,6 +90,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		NETWORK_SERVER_OBJECT;
 	}
 	
+	// The amount of time to wait until we actually unhook every player
+	private static final int TICKS_PER_SECOND = 20;
+	private static final int UNHOOK_DELAY = 5 * TICKS_PER_SECOND; 
+	
+	// Delayed unhook
+	private DelayedSingleTask unhookTask;
+	
 	// Create a concurrent set
 	private Set<PacketListener> packetListeners = 
 			Collections.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
@@ -88,9 +104,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Packet injection
 	private PacketInjector packetInjector;
 	
-	// Player injection
+	// Different injection types per game phase
 	private PlayerInjectionHandler playerInjection;
-	
+
 	// The two listener containers
 	private SortedPacketListenerList recievedListeners = new SortedPacketListenerList();
 	private SortedPacketListenerList sendingListeners = new SortedPacketListenerList();
@@ -104,6 +120,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Error logger
 	private Logger logger;
 	
+	// The current server
+	private Server server;
+	
 	// The async packet handler
 	private AsyncFilterManager asyncFilterManager;
 	
@@ -111,21 +130,47 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	private Set<Integer> serverPackets;
 	private Set<Integer> clientPackets;
 	
+	// Ensure that we're not performing too may injections
+	private AtomicInteger phaseLoginCount = new AtomicInteger(0);
+	private AtomicInteger phasePlayingCount = new AtomicInteger(0);
 	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
+	 * @param unhookTask 
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, Logger logger) {
+	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, Logger logger) {
 		if (logger == null)
 			throw new IllegalArgumentException("logger cannot be NULL.");
 		if (classLoader == null)
 			throw new IllegalArgumentException("classLoader cannot be NULL.");
 		
+		// Just boilerplate
+		final DelayedSingleTask finalUnhookTask = unhookTask;
+		
+		// References
+		this.unhookTask = unhookTask;
+		this.server = server;
+		this.classLoader = classLoader;
+		this.logger = logger;
+		
+		// Used to determine if injection is needed
+		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
+			@Override
+			public boolean apply(@Nullable GamePhase phase) {
+				boolean result = true;
+				
+				if (phase.hasLogin())
+					result &= getPhaseLoginCount() > 0;
+				// Note that we will still hook players if the unhooking has been delayed
+				if (phase.hasPlaying())
+					result &= getPhasePlayingCount() > 0 || finalUnhookTask.isRunning();
+				return result;
+			}
+		};
+		
 		try {
-			// Initialize values
-			this.classLoader = classLoader;
-			this.logger = logger;
-			this.playerInjection = new PlayerInjectionHandler(classLoader, logger, this, server);
+			// Initialize injection mangers
+			this.playerInjection = new PlayerInjectionHandler(classLoader, logger, isInjectionNecessary, this, server);
 			this.packetInjector = new PacketInjector(classLoader, this, playerInjection);
 			this.asyncFilterManager = new AsyncFilterManager(logger, server.getScheduler(), this);
 			
@@ -205,8 +250,58 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
 			}
 			
+			// Increment phases too
+			if (hasSending)
+				incrementPhases(sending.getGamePhase());
+			if (hasReceiving)
+				incrementPhases(receiving.getGamePhase());
+			
 			// Inform our injected hooks
 			packetListeners.add(listener);
+		}
+	}
+	
+	/**
+	 * Invoked to handle the different game phases of a added listener.
+	 * @param phase - listener's game game phase.
+	 */
+	private void incrementPhases(GamePhase phase) {
+		if (phase.hasLogin())
+			phaseLoginCount.incrementAndGet();
+		
+		// We may have to inject into every current player
+		if (phase.hasPlaying()) {
+			if (phasePlayingCount.incrementAndGet() == 1) {
+				// If we're about to uninitialize every player, cancel that instead
+				if (unhookTask.isRunning())
+					unhookTask.cancel();
+				else
+					// Inject our hook into already existing players
+					initializePlayers(server.getOnlinePlayers());
+			}
+		}
+	}
+	
+	/**
+	 * Invoked to handle the different game phases of a removed listener.
+	 * @param phase - listener's game game phase.
+	 */
+	private void decrementPhases(GamePhase phase) {
+		if (phase.hasLogin())
+			phaseLoginCount.decrementAndGet();
+		
+		// We may have to inject into every current player
+		if (phase.hasPlaying()) {
+			if (phasePlayingCount.decrementAndGet() == 0) {
+				// Schedule unhooking in the future
+				unhookTask.schedule(UNHOOK_DELAY, new Runnable() {
+					@Override
+					public void run() {
+						// Inject our hook into already existing players
+						uninitializePlayers(server.getOnlinePlayers());
+					}
+				});
+			}
 		}
 	}
 	
@@ -241,11 +336,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (!packetListeners.remove(listener))
 			return;
 		
-		// Add listeners
-		if (sending != null && sending.isEnabled())
+		// Remove listeners and phases
+		if (sending != null && sending.isEnabled()) {
 			sendingRemoved = sendingListeners.removeListener(listener, sending);
-		if (receiving != null && receiving.isEnabled())
+			decrementPhases(sending.getGamePhase());
+		}
+		if (receiving != null && receiving.isEnabled()) {
 			receivingRemoved = recievedListeners.removeListener(listener, receiving);
+			decrementPhases(receiving.getGamePhase());
+		}
 		
 		// Remove hooks, if needed
 		if (sendingRemoved != null && sendingRemoved.size() > 0)
@@ -465,7 +564,16 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		for (Player player : players)
 			playerInjection.injectPlayer(player);
 	}
-		
+	
+	/**
+	 * Uninitialize the packet injection of every player.
+	 * @param players - list of players to uninject. 
+	 */
+	public void uninitializePlayers(Player[] players) {
+		for (Player player : players)
+			playerInjection.uninjectPlayer(player);
+	}
+	
 	/**
 	 * Register this protocol manager on Bukkit.
 	 * @param manager - Bukkit plugin manager that provides player join/leave events.
@@ -475,8 +583,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			manager.registerEvents(new Listener() {
+				@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+			    public void onPrePlayerJoin(PlayerJoinEvent event) {
+					// Let's clean up the other injection first.
+					playerInjection.uninjectPlayer(event.getPlayer().getAddress());
+			    }
+				
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
+					// This call will be ignored if no listeners are registered
 					playerInjection.injectPlayer(event.getPlayer());
 			    }
 				
@@ -501,6 +616,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		}
 	}
 	
+	/**
+	 * Retrieve the number of listeners that expect packets during playing.
+	 * @return Number of listeners.
+	 */
+	private int getPhasePlayingCount() {
+		return phasePlayingCount.get();
+	}
+	
+	/**
+	 * Retrieve the number of listeners that expect packets during login.
+	 * @return Number of listeners
+	 */
+	private int getPhaseLoginCount() {
+		return phaseLoginCount.get();
+	}
+	
 	@Override
 	public int getPacketID(Packet packet) {
 		if (packet == null)
@@ -521,7 +652,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Class eventPriority = loader.loadClass("org.bukkit.event.Event$Priority");
 			
 			// Get the priority
-			Object priorityNormal = Enum.valueOf(eventPriority, "Monitor");
+			Object priorityMonitor = Enum.valueOf(eventPriority, "Monitor");
 			
 			// Get event types
 			Object playerJoinType = Enum.valueOf(eventTypes, "PLAYER_JOIN");
@@ -579,9 +710,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Object playerProxy = playerEx.create();
 			Object serverProxy = serverEx.create();
 			
-			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityNormal, plugin);
-			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityNormal, plugin);
-			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityNormal, plugin);
+			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityMonitor, plugin);
+			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityMonitor, plugin);
+			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityMonitor, plugin);
 			
 			// A lot can go wrong
 		} catch (ClassNotFoundException e1) {

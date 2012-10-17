@@ -17,11 +17,16 @@
 
 package com.comphenix.protocol.events;
 
+import java.util.Set;
+
 import org.bukkit.plugin.Plugin;
+
+import com.comphenix.protocol.injector.GamePhase;
 
 /**
  * Represents a packet listener with useful constructors.
- * 
+ * <p>
+ * Remember to override onPacketReceiving() and onPacketSending(), depending on the ConnectionSide.
  * @author Kristian
  */
 public abstract class PacketAdapter implements PacketListener {
@@ -48,21 +53,87 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @param listenerPriority - the event priority.
 	 * @param packets - the packet IDs the listener is looking for.
 	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, Set<Integer> packets) {
+		this(plugin, connectionSide, listenerPriority, GamePhase.PLAYING, packets.toArray(new Integer[0]));
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * <p>
+	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param gamePhase - which game phase this listener is active under.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, GamePhase gamePhase, Set<Integer> packets) {
+		this(plugin, connectionSide, ListenerPriority.NORMAL, gamePhase, packets.toArray(new Integer[0]));
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * <p>
+	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param listenerPriority - the event priority.
+	 * @param gamePhase - which game phase this listener is active under.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, GamePhase gamePhase, Set<Integer> packets) {
+		this(plugin, connectionSide, listenerPriority, gamePhase, packets.toArray(new Integer[0]));
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param listenerPriority - the event priority.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
 	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, Integer... packets) {
+		this(plugin, connectionSide, listenerPriority, GamePhase.PLAYING, packets);
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param listenerPriority - the event priority.
+	 * @param gamePhase - which game phase this listener is active under.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, GamePhase gamePhase, Integer... packets) {
+		this(plugin, connectionSide, ListenerPriority.NORMAL, GamePhase.PLAYING, packets);
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * <p>
+	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param listenerPriority - the event priority.
+	 * @param gamePhase - which game phase this listener is active under.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, GamePhase gamePhase, Integer... packets) {
 		if (plugin == null)
 			throw new IllegalArgumentException("plugin cannot be null");
 		if (connectionSide == null)
 			throw new IllegalArgumentException("connectionSide cannot be null");
 		if (listenerPriority == null)
 			throw new IllegalArgumentException("listenerPriority cannot be null");
+		if (gamePhase == null)
+			throw new IllegalArgumentException("gamePhase cannot be NULL");
 		if (packets == null)
 			throw new IllegalArgumentException("packets cannot be null");
 		
 		// Add whitelists
 		if (connectionSide.isForServer())
-			sendingWhitelist = new ListeningWhitelist(listenerPriority, packets);
+			sendingWhitelist = new ListeningWhitelist(listenerPriority, packets, gamePhase);
 		if (connectionSide.isForClient())
-			receivingWhitelist = new ListeningWhitelist(listenerPriority, packets);
+			receivingWhitelist = new ListeningWhitelist(listenerPriority, packets, gamePhase);
 		
 		this.plugin = plugin;
 		this.connectionSide = connectionSide;
@@ -70,12 +141,14 @@ public abstract class PacketAdapter implements PacketListener {
 	
 	@Override
 	public void onPacketReceiving(PacketEvent event) {
-		// Default is to do nothing
+		// Lets prevent some bugs
+		throw new IllegalStateException("Override onPacketReceiving to get notifcations of received packets!");
 	}
 	
 	@Override
 	public void onPacketSending(PacketEvent event) {
-		// And here too
+		// Lets prevent some bugs
+		throw new IllegalStateException("Override onPacketSending to get notifcations of sent packets!");
 	}
 	
 	@Override
