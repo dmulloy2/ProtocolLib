@@ -55,6 +55,16 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+
+              <relocations>
+                <relocation>
+                  <pattern>net.sf</pattern>
+                  <shadedPattern>com.comphenix.net.sf</shadedPattern>
+                </relocation>
+              </relocations>
+              
               <artifactSet>
                 <excludes>
                   <exclude>org.bukkit:craftbukkit</exclude>
@@ -187,6 +197,7 @@
   		<groupId>cglib</groupId>
   		<artifactId>cglib-nodep</artifactId>
   		<version>2.2.2</version>
+  		<scope>compile</scope>
   	</dependency>
   	<dependency>
   		<groupId>org.bukkit</groupId>
