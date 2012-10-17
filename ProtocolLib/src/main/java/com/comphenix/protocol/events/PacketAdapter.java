@@ -63,7 +63,21 @@ public abstract class PacketAdapter implements PacketListener {
 	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param gamePhase - which game phase this listener is active under.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, GamePhase gamePhase, Set<Integer> packets) {
+		this(plugin, connectionSide, ListenerPriority.NORMAL, gamePhase, packets.toArray(new Integer[0]));
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * <p>
+	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
 	 * @param listenerPriority - the event priority.
+	 * @param gamePhase - which game phase this listener is active under.
 	 * @param packets - the packet IDs the listener is looking for.
 	 */
 	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, GamePhase gamePhase, Set<Integer> packets) {
@@ -79,6 +93,18 @@ public abstract class PacketAdapter implements PacketListener {
 	 */
 	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, Integer... packets) {
 		this(plugin, connectionSide, listenerPriority, GamePhase.PLAYING, packets);
+	}
+	
+	/**
+	 * Initialize a packet listener for a single connection side.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param connectionSide - the packet type the listener is looking for.
+	 * @param listenerPriority - the event priority.
+	 * @param gamePhase - which game phase this listener is active under.
+	 * @param packets - the packet IDs the listener is looking for.
+	 */
+	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, GamePhase gamePhase, Integer... packets) {
+		this(plugin, connectionSide, ListenerPriority.NORMAL, GamePhase.PLAYING, packets);
 	}
 	
 	/**

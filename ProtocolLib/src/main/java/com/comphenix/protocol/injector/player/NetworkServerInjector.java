@@ -19,7 +19,6 @@ package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
