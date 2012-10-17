@@ -335,8 +335,7 @@ public final class StructureCompiler {
 				mv.visitVarInsn(Opcodes.ALOAD, 0);
 				mv.visitVarInsn(Opcodes.ILOAD, 1);
 				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				mv.visitMethodInsn(Opcodes.INVOKESPECIAL, COMPILED_CLASS, "write", "(ILjava/lang/Object;)L" + SUPER_CLASS + ";");
-				mv.visitInsn(Opcodes.POP);
+				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, COMPILED_CLASS, "writeReflected", "(ILjava/lang/Object;)V;");
 			}
 		
 			mv.visitJumpInsn(Opcodes.GOTO, returnLabel);
@@ -408,7 +407,7 @@ public final class StructureCompiler {
 				// We have to use reflection for private and protected fields.
 				mv.visitVarInsn(Opcodes.ALOAD, 0);
 				mv.visitVarInsn(Opcodes.ILOAD, 1);
-				mv.visitMethodInsn(Opcodes.INVOKESPECIAL, COMPILED_CLASS, "read", "(I)Ljava/lang/Object;");
+				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, COMPILED_CLASS, "readReflected", "(I)Ljava/lang/Object;");
 			}
 			
 			mv.visitInsn(Opcodes.ARETURN);

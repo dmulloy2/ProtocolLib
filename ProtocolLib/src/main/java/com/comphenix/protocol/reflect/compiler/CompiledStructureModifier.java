@@ -67,6 +67,16 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 		else
 			return (TField) result;
 	}
+
+	/**
+	 * Read the given field index using reflection.
+	 * @param index - index of field.
+	 * @return Resulting value.
+	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
+	 */
+	protected Object readReflected(int index) throws FieldAccessException {
+		return super.read(index);
+	}
 	
 	protected abstract Object readGenerated(int fieldIndex) throws FieldAccessException;
 
@@ -76,6 +86,17 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 		if (converter != null)
 			value = converter.getGeneric((TField) value);
 		return writeGenerated(index, value);
+	}
+	
+	/**
+	 * Write the given field using reflection.
+	 * @param index - index of field.
+	 * @param value - new value.
+	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
+	 */ 
+	@SuppressWarnings("unchecked")
+	protected void writeReflected(int index, Object value) throws FieldAccessException {
+		super.write(index, (TField) value);
 	}
 	
 	protected abstract StructureModifier<TField> writeGenerated(int index, Object value) throws FieldAccessException;
