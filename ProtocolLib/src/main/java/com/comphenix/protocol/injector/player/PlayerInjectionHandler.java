@@ -23,7 +23,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,10 +64,11 @@ public class PlayerInjectionHandler {
 	// Player injection
 	private Map<SocketAddress, PlayerInjector> addressLookup = Maps.newConcurrentMap();
 	private Map<DataInputStream, PlayerInjector> dataInputLookup = Maps.newConcurrentMap();
-	private Map<Player, PlayerInjector> playerInjection = new HashMap<Player, PlayerInjector>();
+	private Map<Player, PlayerInjector> playerInjection = Maps.newConcurrentMap();
 	
-	// Player injection type
-	private PlayerInjectHooks playerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	// Player injection types
+	private volatile PlayerInjectHooks loginPlayerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	private volatile PlayerInjectHooks playingPlayerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
 	
 	// Error logger
 	private Logger logger;
@@ -105,9 +105,45 @@ public class PlayerInjectionHandler {
 	 * @return Injection method for reading server packets.
 	 */
 	public PlayerInjectHooks getPlayerHook() {
-		return playerHook;
+		return getPlayerHook(GamePhase.PLAYING);
+	}
+	
+	/**
+	 * Retrieves how the server packets are read.
+	 * @param phase - the current game phase.
+	 * @return Injection method for reading server packets.
+	 */
+	public PlayerInjectHooks getPlayerHook(GamePhase phase) {
+		switch (phase) {
+		case LOGIN:
+			return loginPlayerHook;
+		case PLAYING:
+			return playingPlayerHook;
+		default: 
+			throw new IllegalArgumentException("Cannot retrieve injection hook for both phases at the same time.");
+		}
 	}
 
+	/**
+	 * Sets how the server packets are read.
+	 * @param playerHook - the new injection method for reading server packets.
+	 */
+	public void setPlayerHook(PlayerInjectHooks playerHook) {
+		setPlayerHook(GamePhase.PLAYING, playerHook);
+	}
+	
+	/**
+	 * Sets how the server packets are read.
+	 * @param phase - the current game phase.
+	 * @param playerHook - the new injection method for reading server packets.
+	 */
+	public void setPlayerHook(GamePhase phase, PlayerInjectHooks playerHook) {
+		if (phase.hasLogin())
+			loginPlayerHook = playerHook;
+		if (phase.hasPlaying())
+			playingPlayerHook = playerHook;
+	}
+	
 	/**
 	 * Add an underlying packet handler of the given ID.
 	 * @param packetID - packet ID to register.
@@ -123,15 +159,7 @@ public class PlayerInjectionHandler {
 	public void removePacketHandler(int packetID) {
 		sendingFilters.remove(packetID);
 	}
-	
-	/**
-	 * Sets how the server packets are read.
-	 * @param playerHook - the new injection method for reading server packets.
-	 */
-	public void setPlayerHook(PlayerInjectHooks playerHook) {
-		this.playerHook = playerHook;
-	}
-	
+
 	/**
 	 * Used to construct a player hook.
 	 * @param player - the player to hook.
@@ -214,9 +242,17 @@ public class PlayerInjectionHandler {
 	 * @return The resulting player injector, or NULL if the injection failed.
 	 */
 	PlayerInjector injectPlayer(Player player, Object injectionPoint, GamePhase phase) {
+		// Unfortunately, due to NetLoginHandler, multiple threads may potentially call this method.
+		synchronized (player) {
+			return injectPlayerInternal(player, injectionPoint, phase);
+		}
+	}
+	
+	// Unsafe variant of the above
+	private PlayerInjector injectPlayerInternal(Player player, Object injectionPoint, GamePhase phase) {
 		
 		PlayerInjector injector = playerInjection.get(player);
-		PlayerInjectHooks tempHook = playerHook;
+		PlayerInjectHooks tempHook = getPlayerHook(phase);
 		PlayerInjectHooks permanentHook = tempHook;
 		
 		// The given player object may be fake, so be careful!
@@ -299,8 +335,8 @@ public class PlayerInjectionHandler {
 			// Update values
 			if (injector != null)
 				lastSuccessfulHook = injector;
-			if (permanentHook != playerHook) 
-				setPlayerHook(tempHook);
+			if (permanentHook != getPlayerHook(phase)) 
+				setPlayerHook(phase, tempHook);
 			
 			// Save last injector
 			playerInjection.put(player, injector);
@@ -326,14 +362,13 @@ public class PlayerInjectionHandler {
 	public void uninjectPlayer(Player player) {
 		if (!hasClosed && player != null) {
 			
-			PlayerInjector injector = playerInjection.get(player);
-			
+			PlayerInjector injector = playerInjection.remove(player);
+
 			if (injector != null) {
 				DataInputStream input = injector.getInputStream(true);
 				InetSocketAddress address = player.getAddress();
 				injector.cleanupAll();
 				
-				playerInjection.remove(player);
 				dataInputLookup.remove(input);
 				
 				if (address != null)

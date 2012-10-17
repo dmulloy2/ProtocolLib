@@ -88,7 +88,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Player login and logout events
 		protocolManager.registerEvents(manager, this);
-				
+			
 		// Worker that ensures that async packets are eventually sent
 		createAsyncTask(server);
 		//toggleDebugListener();

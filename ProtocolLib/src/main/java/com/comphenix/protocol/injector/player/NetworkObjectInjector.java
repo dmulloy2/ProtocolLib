@@ -98,7 +98,7 @@ class NetworkObjectInjector extends PlayerInjector {
 	public void injectManager() {
 		
 		if (networkManager != null) {
-			final Class<?> networkInterface = networkManagerField.getType();
+			final Class<?> networkInterface = networkManagerRef.getField().getType();
 			final Object networkDelegate = networkManagerRef.getOldValue();
 			
 			if (!networkInterface.isInterface()) {

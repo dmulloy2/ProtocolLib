@@ -104,9 +104,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Packet injection
 	private PacketInjector packetInjector;
 	
-	// Player injection
+	// Different injection types per game phase
 	private PlayerInjectionHandler playerInjection;
-	
+
 	// The two listener containers
 	private SortedPacketListenerList recievedListeners = new SortedPacketListenerList();
 	private SortedPacketListenerList sendingListeners = new SortedPacketListenerList();
