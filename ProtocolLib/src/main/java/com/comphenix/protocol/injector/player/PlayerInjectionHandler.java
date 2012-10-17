@@ -22,10 +22,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +40,6 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
 /**
@@ -51,7 +48,12 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public class PlayerInjectionHandler {
-
+	
+	/**
+	 * The highest possible packet ID. It's unlikely that this value will ever change.
+	 */
+	private static final int MAXIMUM_PACKET_ID = 255;
+	
 	// Server connection injection
 	private InjectedServerConnection serverInjection;
 	
@@ -80,7 +82,7 @@ public class PlayerInjectionHandler {
 	private ListenerInvoker invoker;
 	
 	// Enabled packet filters
-	private Set<Integer> sendingFilters = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+	private IntegerSet sendingFilters = new IntegerSet(MAXIMUM_PACKET_ID + 1);
 	
 	// The class loader we're using
 	private ClassLoader classLoader;
@@ -477,7 +479,7 @@ public class PlayerInjectionHandler {
 	 * @return List of the sending listeners's packet IDs.
 	 */
 	public Set<Integer> getSendingFilters() {
-		return ImmutableSet.copyOf(sendingFilters);
+		return sendingFilters.toSet();
 	}
 	
 	/**

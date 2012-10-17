@@ -55,14 +55,14 @@ public class NetworkServerInjector extends PlayerInjector {
 	private InjectedServerConnection serverInjection;
 	
 	// Determine if we're listening
-	private Set<Integer> sendingFilters;
+	private IntegerSet sendingFilters;
 	
 	// Used to create proxy objects
 	private ClassLoader classLoader;
 	
 	public NetworkServerInjector(
 			ClassLoader classLoader, Logger logger, Player player, 
-			ListenerInvoker invoker, Set<Integer> sendingFilters, 
+			ListenerInvoker invoker, IntegerSet sendingFilters, 
 			InjectedServerConnection serverInjection) throws IllegalAccessException {
 		
 		super(logger, player, invoker);

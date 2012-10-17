@@ -28,7 +28,6 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 import java.lang.reflect.Method;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
@@ -47,13 +46,13 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
  */
 class NetworkObjectInjector extends PlayerInjector {
 	// Determine if we're listening
-	private Set<Integer> sendingFilters;
+	private IntegerSet sendingFilters;
 	
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
 	
 	public NetworkObjectInjector(ClassLoader classLoader, Logger logger, Player player, 
-								 ListenerInvoker invoker, Set<Integer> sendingFilters) throws IllegalAccessException {
+								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
 		super(logger, player, invoker);
 		this.sendingFilters = sendingFilters;
 		this.classLoader = classLoader;

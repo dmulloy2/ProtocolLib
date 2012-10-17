@@ -68,13 +68,13 @@ class NetworkFieldInjector extends PlayerInjector {
 	private Object syncObject;
 
 	// Determine if we're listening
-	private Set<Integer> sendingFilters;
+	private IntegerSet sendingFilters;
 
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
 	
 	public NetworkFieldInjector(ClassLoader classLoader, Logger logger, Player player, 
-								ListenerInvoker manager, Set<Integer> sendingFilters) throws IllegalAccessException {
+								ListenerInvoker manager, IntegerSet sendingFilters) throws IllegalAccessException {
 		
 		super(logger, player, manager);
 		this.classLoader = classLoader;
