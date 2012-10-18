@@ -303,7 +303,6 @@ public class PacketContainer implements Serializable {
 							}
 						}
 						
-						System.out.println("Entity doesn't exist.");
 						return null;
 					}
 					
