@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -133,6 +134,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Ensure that we're not performing too may injections
 	private AtomicInteger phaseLoginCount = new AtomicInteger(0);
 	private AtomicInteger phasePlayingCount = new AtomicInteger(0);
+	
+	// Whether or not plugins are using the send/receive methods
+	private AtomicBoolean packetCreation = new AtomicBoolean();
 	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
@@ -481,6 +485,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			throw new IllegalArgumentException("reciever cannot be NULL.");
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
+		// We may have to enable player injection indefinitely after this
+		if (packetCreation.compareAndSet(false, true)) 
+			incrementPhases(GamePhase.PLAYING);
 		
 		playerInjection.sendServerPacket(reciever, packet, filters);
 	}
@@ -492,11 +499,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	@Override
 	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters) throws IllegalAccessException, InvocationTargetException {
-		
 		if (sender == null)
 			throw new IllegalArgumentException("sender cannot be NULL.");
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
+		// And here too
+		if (packetCreation.compareAndSet(false, true)) 
+			incrementPhases(GamePhase.PLAYING);
 		
 		Packet mcPacket = packet.getHandle();
 		
