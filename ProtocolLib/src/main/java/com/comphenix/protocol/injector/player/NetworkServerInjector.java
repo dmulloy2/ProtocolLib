@@ -232,7 +232,7 @@ public class NetworkServerInjector extends PlayerInjector {
 	}
 		
 	@Override
-	public void cleanupAll() {
+	protected void cleanHook() {
 		if (serverHandlerRef != null && serverHandlerRef.isCurrentSet()) {
 			ObjectCloner.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
 			serverHandlerRef.revertValue();

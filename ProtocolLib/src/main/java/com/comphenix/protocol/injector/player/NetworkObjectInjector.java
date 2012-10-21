@@ -152,7 +152,7 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void cleanupAll() {
+	protected void cleanHook() {
 		// Clean up
 		if (networkManagerRef != null && networkManagerRef.isCurrentSet()) {
 			networkManagerRef.revertValue();

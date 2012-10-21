@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,6 +105,9 @@ abstract class PlayerInjector {
 	// Scheduled action on the next packet event
 	protected Runnable scheduledAction;
 
+	// Whether or not the injector has been cleaned
+	private boolean clean;
+	
 	// Whether or not to update the current player on the first Packet1Login
 	boolean updateOnLogin;
 	Player updatedPlayer;
@@ -254,6 +258,21 @@ abstract class PlayerInjector {
 		} catch (IndexOutOfBoundsException e) {
 			throw new IllegalAccessException("Unable to read the socket field.");
 		}
+	}
+	
+	/**
+	 * Retrieve the associated address of this player.
+	 * @return The associated address.
+	 * @throws IllegalAccessException If we're unable to read the socket field.
+	 */
+	public SocketAddress getAddress() throws IllegalAccessException {
+		Socket socket = getSocket();
+		
+		// Guard against NULL
+		if (socket != null)
+			return socket.getRemoteSocketAddress();
+		else
+			return null;
 	}
 	
 	/**
@@ -427,7 +446,24 @@ abstract class PlayerInjector {
 	/**
 	 * Remove all hooks and modifications.
 	 */
-	public abstract void cleanupAll();
+	public final void cleanupAll() {
+		if (!clean)
+			cleanHook();
+		clean = true;
+	}
+	
+	/**
+	 * Override to add custom cleanup behavior.
+	 */
+	protected abstract void cleanHook();
+	
+	/**
+	 * Determine whether or not this hook has already been cleaned.
+	 * @return TRUE if it has, FALSE otherwise.
+	 */
+	public boolean isClean() {
+		return clean;
+	}
 	
 	/**
 	 * Determine if this inject method can even be attempted.

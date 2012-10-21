@@ -76,13 +76,16 @@ class TemporaryPlayerFactory {
 				String methodName = method.getName();
 				PlayerInjector injector = ((InjectContainer) obj).getInjector();
 				
+				if (injector == null)
+					throw new IllegalStateException("Unable to find injector.");
+				
 				// Use the socket to get the address
 				if (methodName.equalsIgnoreCase("getName"))
 					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
 				if (methodName.equalsIgnoreCase("getPlayer"))
 					return injector.getUpdatedPlayer();
 				if (methodName.equalsIgnoreCase("getAddress")) 
-					return injector.getSocket().getRemoteSocketAddress();
+					return injector.getAddress();
 				if (methodName.equalsIgnoreCase("getServer"))
 					return server;
 				

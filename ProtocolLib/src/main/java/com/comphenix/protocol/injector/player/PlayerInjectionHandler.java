@@ -281,28 +281,27 @@ public class PlayerInjectionHandler {
 						DataInputStream inputStream = injector.getInputStream(false);
 
 						Socket socket = injector.getSocket();
-						SocketAddress address = socket.getRemoteSocketAddress();
+						SocketAddress address = socket != null ? socket.getRemoteSocketAddress() : null;
 						
 						// Make sure the current player is not logged out
-						if (socket.isClosed()) {
+						if (socket != null && socket.isClosed()) {
 							throw new PlayerLoggedOutException();
 						}
 						
-						PlayerInjector previous = addressLookup.get(address);
+						// Guard against NPE here too
+						PlayerInjector previous = address != null ? addressLookup.get(address) : null;
 						
 						// Close any previously associated hooks before we proceed
 						if (previous != null) {
-							uninjectPlayer(previous.getPlayer());
-
-							// Remove the "hooked" network manager in our instance as well
-							if (previous instanceof NetworkObjectInjector) {
-								injector.setNetworkManager(previous.getNetworkManager(), true);
-							}
+							uninjectPlayer(previous.getPlayer(), false, true);
 						}
-
+	
 						injector.injectManager();
-						dataInputLookup.put(inputStream, injector);
-						addressLookup.put(address, injector);
+						
+						if (inputStream != null)
+							dataInputLookup.put(inputStream, injector);
+						if (address != null) 
+							addressLookup.put(address, injector);
 						break;
 					}
 					
@@ -362,8 +361,30 @@ public class PlayerInjectionHandler {
 	/**
 	 * Unregisters the given player.
 	 * @param player - player to unregister.
+	 * @return TRUE if a player has been uninjected, FALSE otherwise.
 	 */
-	public void uninjectPlayer(Player player) {
+	public boolean uninjectPlayer(Player player) {
+		return uninjectPlayer(player, true, false);
+	}
+	
+	/**
+	 * Unregisters the given player.
+	 * @param player - player to unregister.
+	 * @param removeAuxiliary - TRUE to remove auxiliary information, such as input stream and address.
+	 * @return TRUE if a player has been uninjected, FALSE otherwise.
+	 */
+	public boolean uninjectPlayer(Player player, boolean removeAuxiliary) {
+		return uninjectPlayer(player, removeAuxiliary, false);
+	}
+	
+	/**
+	 * Unregisters the given player.
+	 * @param player - player to unregister.
+	 * @param removeAuxiliary - TRUE to remove auxiliary information, such as input stream and address.
+	 * @param prepareNextHook - whether or not we need to fix any lingering hooks.
+	 * @return TRUE if a player has been uninjected, FALSE otherwise.
+	 */
+	private boolean uninjectPlayer(Player player, boolean removeAuxiliary, boolean prepareNextHook) {
 		if (!hasClosed && player != null) {
 			
 			PlayerInjector injector = playerInjection.remove(player);
@@ -373,26 +394,54 @@ public class PlayerInjectionHandler {
 				InetSocketAddress address = player.getAddress();
 				injector.cleanupAll();
 				
-				dataInputLookup.remove(input);
+				// Remove the "hooked" network manager in our instance as well
+				if (prepareNextHook && injector instanceof NetworkObjectInjector) {
+					try {
+						PlayerInjector dummyInjector = getHookInstance(player, PlayerInjectHooks.NETWORK_SERVER_OBJECT);
+						dummyInjector.initializePlayer(player);
+						dummyInjector.setNetworkManager(injector.getNetworkManager(), true);
+
+					} catch (IllegalAccessException e) {
+						// Let the user know
+						logger.log(Level.WARNING, "Unable to fully revert old injector. May cause conflicts.", e);
+					}
+				}
 				
-				if (address != null)
-					addressLookup.remove(address);
+				// Clean up
+				if (removeAuxiliary) {
+					if (input != null) 
+						dataInputLookup.remove(input);
+					if (address != null) 
+						addressLookup.remove(address);
+				}
+				return true;
 			}
-		}	
+		}
+		
+		return false;
 	}
 	
 	/**
 	 * Unregisters a player by the given address.
+	 * <p>
+	 * If the server handler has been created before we've gotten a chance to unject the player,
+	 * the method will try a workaround to remove the injected hook in the NetServerHandler.
+	 * 
 	 * @param address - address of the player to unregister.
+	 * @param serverHandler - whether or not the net server handler has already been created.
+	 * @return TRUE if a player has been uninjected, FALSE otherwise.
 	 */
-	public void uninjectPlayer(InetSocketAddress address) {
+	public boolean uninjectPlayer(InetSocketAddress address) {
 		if (!hasClosed && address != null) {
 			PlayerInjector injector = addressLookup.get(address);
 			
 			// Clean up
 			if (injector != null)
-				uninjectPlayer(injector.getPlayer());
+				uninjectPlayer(injector.getPlayer(), false, true);
+			return true;
 		}
+		
+		return false;
 	}
 	
 	/**
@@ -443,6 +492,26 @@ public class PlayerInjectionHandler {
 	 */
 	private PlayerInjector getInjector(Player player) {
 		return playerInjection.get(player);
+	}
+	
+	/**
+	 * Retrieve a player injector by looking for its NetworkManager.
+	 * @param networkManager - current network manager.
+	 * @return Related player injector.
+	 */
+	PlayerInjector getInjectorByNetworkHandler(Object networkManager) {
+		// That's not legal
+		if (networkManager == null)
+			return null;
+		
+		// O(n) is okay in this instance. This is only a backup solution.
+		for (PlayerInjector injector : playerInjection.values()) {
+			if (injector.getNetworkManager() == networkManager)
+				return injector;
+		}
+		
+		// None found
+		return null;
 	}
 	
 	/**

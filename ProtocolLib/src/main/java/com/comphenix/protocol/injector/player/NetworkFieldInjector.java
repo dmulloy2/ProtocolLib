@@ -166,7 +166,7 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void cleanupAll() {
+	protected void cleanHook() {
 		// Clean up
 		for (VolatileField overriden : overridenLists) {
 			List<Packet> minecraftList = (List<Packet>) overriden.getOldValue();
