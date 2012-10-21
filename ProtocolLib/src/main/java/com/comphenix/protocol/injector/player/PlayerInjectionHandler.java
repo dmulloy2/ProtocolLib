@@ -340,8 +340,10 @@ public class PlayerInjectionHandler {
 			if (permanentHook != getPlayerHook(phase)) 
 				setPlayerHook(phase, tempHook);
 			
-			// Save last injector
-			playerInjection.put(player, injector);
+			// Save injector
+			if (injector != null) {
+				playerInjection.put(player, injector);
+			}
 		}
 		
 		return injector;
