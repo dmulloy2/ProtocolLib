@@ -25,6 +25,7 @@ import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.PrimitiveUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -176,7 +177,17 @@ public class PacketConstructor {
 		// Determine if the types are similar
 		if (params.length == types.length) {
 			for (int i = 0; i < params.length; i++) {
-				if (!params[i].isAssignableFrom(types[i])) {
+				Class<?> inputType = types[i];
+				Class<?> paramType = params[i];
+				
+				// The input type is always wrapped
+				if (PrimitiveUtils.isPrimitive(paramType)) {
+					// Wrap it
+					paramType = PrimitiveUtils.wrap(paramType);
+				}
+				
+				// Compare assignability
+				if (!paramType.isAssignableFrom(inputType)) {
 					return false;
 				}
 			}
