@@ -20,6 +20,8 @@ package com.comphenix.protocol.injector;
 import java.io.DataInputStream;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import com.comphenix.protocol.Packets;
@@ -35,12 +37,15 @@ class ReadPacketModifier implements MethodInterceptor {
 	@SuppressWarnings("rawtypes")
 	private static Class[] parameters = { DataInputStream.class };
 
+	// A cancel marker
+	private static final Object CANCEL_MARKER = new Object();
+	
 	// Common for all packets of the same type
 	private PacketInjector packetInjector;
 	private int packetID;
 	
 	// Whether or not a packet has been cancelled
-	private static WeakHashMap<Object, Object> override = new WeakHashMap<Object, Object>();
+	private static Map<Object, Object> override = Collections.synchronizedMap(new WeakHashMap<Object, Object>());
 	
 	public ReadPacketModifier(int packetID, PacketInjector packetInjector) {
 		this.packetID = packetID;
@@ -75,11 +80,12 @@ class ReadPacketModifier implements MethodInterceptor {
 			return proxy.invokeSuper(thisObj, args);
 		}
 		
-		if (override.containsKey(thisObj)) {
-			Object overridenObject = override.get(thisObj);
-			
+		// Atomic retrieval
+		Object overridenObject = override.get(thisObj);
+		
+		if (overridenObject != null) {
 			// This packet has been cancelled
-			if (overridenObject == null) {
+			if (overridenObject == CANCEL_MARKER) {
 				// So, cancel all void methods
 				if (method.getReturnType().equals(Void.TYPE))
 					return null;
@@ -108,7 +114,7 @@ class ReadPacketModifier implements MethodInterceptor {
 				Packet result = event.getPacket().getHandle();
 				
 				if (event.isCancelled()) {
-					override.put(thisObj, null);
+					override.put(thisObj, CANCEL_MARKER);
 				} else if (!objectEquals(thisObj, result)) {
 					override.put(thisObj, result);
 				}
