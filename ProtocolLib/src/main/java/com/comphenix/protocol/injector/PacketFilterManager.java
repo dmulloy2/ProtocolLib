@@ -606,6 +606,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerQuit(PlayerQuitEvent event) {
+					playerInjection.handleDisconnect(event.getPlayer());
 					playerInjection.uninjectPlayer(event.getPlayer());
 			    }
 				
@@ -689,10 +690,14 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 						Object event = args[0];
 						
 						// Check for the correct event
-						if (event instanceof PlayerJoinEvent)
-							playerInjection.injectPlayer(((PlayerJoinEvent) event).getPlayer());
-						else if (event instanceof PlayerQuitEvent)
-							playerInjection.uninjectPlayer(((PlayerQuitEvent) event).getPlayer());
+						if (event instanceof PlayerJoinEvent) {
+							Player player = ((PlayerJoinEvent) event).getPlayer();
+							playerInjection.injectPlayer(player);
+						} else if (event instanceof PlayerQuitEvent) {
+							Player player = ((PlayerQuitEvent) event).getPlayer();
+							playerInjection.handleDisconnect(player);
+							playerInjection.uninjectPlayer(player);
+						}
 					}
 					return null;
 				}

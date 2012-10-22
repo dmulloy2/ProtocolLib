@@ -192,6 +192,11 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 
 	@Override
+	public void handleDisconnect() {
+		// No need to do anything
+	}
+	
+	@Override
 	public boolean canInject(GamePhase phase) {
 		// All phases should work
 		return true;

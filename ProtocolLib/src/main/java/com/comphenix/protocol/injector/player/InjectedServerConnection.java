@@ -241,7 +241,7 @@ class InjectedServerConnection {
 				// Clean up?
 				if (removing instanceof NetLoginHandler) {
 					netLoginInjector.cleanup(removing);
-				}
+				} 
 			}
 		};
 	}

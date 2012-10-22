@@ -68,7 +68,7 @@ class ReplacedArrayList<TKey> extends ArrayList<TKey> {
 	}
 	
 	/**
-	 * Invoksed when an element is being removed.
+	 * Invoked when an element is being removed.
 	 * @param removing - the element being removed.
 	 */
 	protected void onRemoved(TKey removing) {
@@ -265,6 +265,15 @@ class ReplacedArrayList<TKey> extends ArrayList<TKey> {
 	}
 	
 	/**
+	 * Retrieve the old value, if it exists.
+	 * @param target - the key.
+	 * @return The value that was replaced, or NULL.
+	 */
+	public TKey getMapping(TKey target) {
+		return replaceMap.get(target);
+	}
+	
+	/**
 	 * Add a replace rule.
 	 * <p>
 	 * This automatically replaces every existing element.
@@ -284,8 +293,9 @@ class ReplacedArrayList<TKey> extends ArrayList<TKey> {
 	/**
 	 * Revert the given mapping.
 	 * @param target - the instance we replaced.
+	 * @return The old mapped value, or NULL if nothing was replaced.
 	 */
-	public synchronized void removeMapping(TKey target) {
+	public synchronized TKey removeMapping(TKey target) {
 		// Make sure the mapping exist
 		if (replaceMap.containsKey(target)) {
 			TKey replacement = replaceMap.get(target);
@@ -293,7 +303,25 @@ class ReplacedArrayList<TKey> extends ArrayList<TKey> {
 	
 			// Revert existing elements
 			replaceAll(replacement, target);
+			return replacement;
 		}
+		return null;
+	}
+	
+	/**
+	 * Swap the new replaced value with its old value.
+	 * @param target - the instance we replaced.
+	 * @param The old mapped value, or NULL if nothing was swapped.
+	 */
+	public synchronized TKey swapMapping(TKey target) {
+		// Make sure the mapping exist
+		TKey replacement = removeMapping(target);
+		
+		// Add the reverse
+		if (replacement != null) {
+			replaceMap.put(replacement, target);
+		}
+		return replacement;
 	}
 	
 	/**

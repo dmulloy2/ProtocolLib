@@ -359,6 +359,18 @@ public class PlayerInjectionHandler {
 	}
 	
 	/**
+	 * Invoke special routines for handling disconnect before a player is uninjected.
+	 * @param player - player to process.
+	 */
+	public void handleDisconnect(Player player) {
+		PlayerInjector injector = getInjector(player);
+		
+		if (injector != null) {
+			injector.handleDisconnect();
+		}
+	}
+	
+	/**
 	 * Unregisters the given player.
 	 * @param player - player to unregister.
 	 * @return TRUE if a player has been uninjected, FALSE otherwise.

@@ -451,6 +451,11 @@ abstract class PlayerInjector {
 			cleanHook();
 		clean = true;
 	}
+
+	/**
+	 * Clean up after the player has disconnected.
+	 */
+	public abstract void handleDisconnect();
 	
 	/**
 	 * Override to add custom cleanup behavior.

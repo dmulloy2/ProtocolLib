@@ -17,8 +17,10 @@
 
 package com.comphenix.protocol.injector.player;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
@@ -50,6 +52,7 @@ import com.comphenix.protocol.reflect.instances.ExistingGenerator;
  */
 public class NetworkServerInjector extends PlayerInjector {
 
+	private static Field disconnectField;
 	private static Method sendPacketMethod;
 	private InjectedServerConnection serverInjection;
 	
@@ -58,6 +61,9 @@ public class NetworkServerInjector extends PlayerInjector {
 	
 	// Used to create proxy objects
 	private ClassLoader classLoader;
+	
+	// Whether or not the player has disconnected
+	private boolean hasDisconnected;
 	
 	public NetworkServerInjector(
 			ClassLoader classLoader, Logger logger, Player player, 
@@ -250,9 +256,40 @@ public class NetworkServerInjector extends PlayerInjector {
 			} catch (IllegalAccessException e) {
 				e.printStackTrace();
 			}
+			
+			// Prevent the PlayerQuitEvent from being sent twice
+			if (hasDisconnected) {
+				setDisconnect(serverHandlerRef.getValue(), true);
+			}
 		}
 
 		serverInjection.revertServerHandler(serverHandler);
+	}
+	
+	@Override
+	public void handleDisconnect() {
+		hasDisconnected = true;
+	}
+	
+	/**
+	 * Set the disconnected field in a NetServerHandler.
+	 * @param handler - the NetServerHandler.
+	 * @param value - the new value.
+	 */
+	private void setDisconnect(Object handler, boolean value) {
+		// Set it 
+		try {
+			// Load the field
+			if (disconnectField == null) {
+				disconnectField = FuzzyReflection.fromObject(handler).getFieldByName("disconnected.*");
+			}
+			FieldUtils.writeField(disconnectField, handler, value);
+		
+		} catch (IllegalArgumentException e) {
+			logger.log(Level.WARNING, "Unable to find disconnect field. Is ProtocolLib up to date?");
+		} catch (IllegalAccessException e) {
+			logger.log(Level.WARNING, "Unable to update disconnected field. Player quit event may be sent twice.");
+		}
 	}
 	
 	@Override
