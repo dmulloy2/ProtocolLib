@@ -117,7 +117,7 @@ public class ProtocolLibrary extends JavaPlugin {
 				public void onPacketReceiving(PacketEvent event) {
 					Object handle = event.getPacket().getHandle();
 					
-					System.out.println(String.format(
+					logger.info(String.format(
 							"RECEIVING %s@%s from %s.",
 							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
 					));
@@ -126,7 +126,7 @@ public class ProtocolLibrary extends JavaPlugin {
 				public void onPacketSending(PacketEvent event) {
 					Object handle = event.getPacket().getHandle();
 					
-					System.out.println(String.format(
+					logger.info(String.format(
 							"SENDING %s@%s from %s.",
 							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
 					));

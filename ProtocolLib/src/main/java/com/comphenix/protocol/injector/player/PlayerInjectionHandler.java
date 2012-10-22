@@ -198,7 +198,7 @@ public class PlayerInjectionHandler {
 			if (injector != null) {
 				return injector.getPlayer();
 			} else {
-				System.out.println("Unable to find stream: " + inputStream);
+				logger.warning("Unable to find stream: " + inputStream);
 				return null;
 			}
 			

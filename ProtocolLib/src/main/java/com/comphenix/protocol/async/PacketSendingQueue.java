@@ -205,7 +205,7 @@ class PacketSendingQueue {
 		
 		} catch (PlayerLoggedOutException e) {
 			System.out.println(String.format(
-					"Warning: Dropped packet index %s of ID %s",
+					"[ProtocolLib] Warning: Dropped packet index %s of ID %s",
 					marker.getOriginalSendingIndex(), event.getPacketID()
 			));
 			
