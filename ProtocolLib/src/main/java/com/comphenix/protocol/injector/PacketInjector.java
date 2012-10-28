@@ -129,7 +129,6 @@ class PacketInjector {
 		// Subclass the specific packet class
 		ex.setSuperclass(old);
 		ex.setCallbackType(ReadPacketModifier.class);
-		ex.setUseCache(false);
 		ex.setClassLoader(classLoader);
 		Class proxy = ex.createClass();
 		
