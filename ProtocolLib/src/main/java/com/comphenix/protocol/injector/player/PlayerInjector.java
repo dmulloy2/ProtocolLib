@@ -24,8 +24,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NetLoginHandler;
@@ -36,6 +34,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
@@ -100,7 +99,7 @@ abstract class PlayerInjector {
 	protected DataInputStream cachedInput;
 	
 	// Handle errors
-	protected Logger logger;
+	protected ErrorReporter reporter;
 
 	// Scheduled action on the next packet event
 	protected Runnable scheduledAction;
@@ -112,8 +111,8 @@ abstract class PlayerInjector {
 	boolean updateOnLogin;
 	Player updatedPlayer;
 	
-	public PlayerInjector(Logger logger, Player player, ListenerInvoker invoker) throws IllegalAccessException {
-		this.logger = logger;
+	public PlayerInjector(ErrorReporter reporter, Player player, ListenerInvoker invoker) throws IllegalAccessException {
+		this.reporter = reporter;
 		this.player = player;
 		this.invoker = invoker;
 	}
@@ -303,19 +302,24 @@ abstract class PlayerInjector {
 				disconnect.invoke(handler, message);
 				return;
 			} catch (IllegalArgumentException e) {
-				logger.log(Level.WARNING, "Invalid argument passed to disconnect method: " + message, e);
+				reporter.reportDetailed(this, "Invalid argument passed to disconnect method: " + message, e, handler);
 			} catch (IllegalAccessException e) {
-				logger.log(Level.SEVERE, "Unable to access disconnect method.", e);
+				reporter.reportWarning(this, "Unable to access disconnect method.", e);
 			}
 		}
-			
+		
 		// Fuck it
 		try {
-			getSocket().close();
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, "Unable to close socket.", e);
+			Socket socket = getSocket();
+			
+			try {
+				socket.close();
+			} catch (IOException e) {
+				reporter.reportDetailed(this, "Unable to close socket.", e, socket);
+			}
+			
 		} catch (IllegalAccessException e) {
-			logger.log(Level.SEVERE, "Insufficient permissions. Cannot close socket.", e);
+			reporter.reportWarning(this, "Insufficient permissions. Cannot close socket.", e);
 		}
 	}
 	
@@ -332,7 +336,7 @@ abstract class PlayerInjector {
 					return null;
 				
 				hasProxyType = true;
-				logger.log(Level.WARNING, "Detected server handler proxy type by another plugin. Conflict may occur!");
+				reporter.reportWarning(this, "Detected server handler proxy type by another plugin. Conflict may occur!");
 				
 				// No? Is it a Proxy type?
 				try {
@@ -347,7 +351,7 @@ abstract class PlayerInjector {
 			}
 			
 		} catch (IllegalAccessException e) {
-			logger.warning("Unable to load server handler from proxy type.");
+			reporter.reportWarning(this, "Unable to load server handler from proxy type.");
 		}
 
 		// Nope, just go with it
@@ -511,7 +515,7 @@ abstract class PlayerInjector {
 				try {
 					updatedPlayer = getEntityPlayer(getNetHandler()).getBukkitEntity();
 				} catch (IllegalAccessException e) {
-					logger.log(Level.WARNING, "Cannot update player in PlayerEvent.", e);
+					reporter.reportDetailed(this, "Cannot update player in PlayerEvent.", e, packet);
 				}
 			}
 			

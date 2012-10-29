@@ -24,11 +24,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
@@ -73,10 +73,10 @@ class NetworkFieldInjector extends PlayerInjector {
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
 	
-	public NetworkFieldInjector(ClassLoader classLoader, Logger logger, Player player, 
+	public NetworkFieldInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								ListenerInvoker manager, IntegerSet sendingFilters) throws IllegalAccessException {
 		
-		super(logger, player, manager);
+		super(reporter, player, manager);
 		this.classLoader = classLoader;
 		this.sendingFilters = sendingFilters;
 	}

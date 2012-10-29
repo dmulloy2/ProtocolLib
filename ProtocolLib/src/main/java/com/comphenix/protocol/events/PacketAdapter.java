@@ -168,12 +168,20 @@ public abstract class PacketAdapter implements PacketListener {
 	
 	/**
 	 * Retrieves the name of the plugin that has been associated with the listener.
+	 * @param listener - the listener.
 	 * @return Name of the associated plugin.
 	 */
 	public static String getPluginName(PacketListener listener) {
-		
-		Plugin plugin = listener.getPlugin();
-		
+		return getPluginName(listener.getPlugin());
+	}
+	
+	/**
+	 * Retrieves the name of the given plugin.
+	 * @param plugin - the plugin.
+	 * @return Name of the given plugin.
+	 */
+	public static String getPluginName(Plugin plugin) {
+
 		// Try to get the plugin name
 		try {
 			if (plugin == null)

@@ -28,11 +28,11 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
@@ -54,9 +54,9 @@ class NetworkObjectInjector extends PlayerInjector {
 	// Shared callback filter - avoid creating a new class every time
 	private static CallbackFilter callbackFilter;
 	
-	public NetworkObjectInjector(ClassLoader classLoader, Logger logger, Player player, 
+	public NetworkObjectInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
-		super(logger, player, invoker);
+		super(reporter, player, invoker);
 		this.sendingFilters = sendingFilters;
 		this.classLoader = classLoader;
 	}

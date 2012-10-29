@@ -24,14 +24,13 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
@@ -72,8 +71,8 @@ public class PlayerInjectionHandler {
 	private volatile PlayerInjectHooks loginPlayerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
 	private volatile PlayerInjectHooks playingPlayerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
 	
-	// Error logger
-	private Logger logger;
+	// Error reporter
+	private ErrorReporter reporter;
 	
 	// Whether or not we're closing
 	private boolean hasClosed;
@@ -90,15 +89,15 @@ public class PlayerInjectionHandler {
 	// Used to filter injection attempts
 	private Predicate<GamePhase> injectionFilter;
 	
-	public PlayerInjectionHandler(ClassLoader classLoader, Logger logger, Predicate<GamePhase> injectionFilter, 
+	public PlayerInjectionHandler(ClassLoader classLoader, ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
 								  ListenerInvoker invoker, Server server) {
 		
 		this.classLoader = classLoader;
-		this.logger = logger;
+		this.reporter = reporter;
 		this.invoker = invoker;
 		this.injectionFilter = injectionFilter;
-		this.netLoginInjector = new NetLoginInjector(logger, this, server);
-		this.serverInjection = new InjectedServerConnection(logger, server, netLoginInjector);
+		this.netLoginInjector = new NetLoginInjector(reporter, this, server);
+		this.serverInjection = new InjectedServerConnection(reporter, server, netLoginInjector);
 		serverInjection.injectList();
 	}
 
@@ -173,11 +172,11 @@ public class PlayerInjectionHandler {
 		// Construct the correct player hook
 		switch (hook) {
 		case NETWORK_HANDLER_FIELDS: 
-			return new NetworkFieldInjector(classLoader, logger, player, invoker, sendingFilters);
+			return new NetworkFieldInjector(classLoader, reporter, player, invoker, sendingFilters);
 		case NETWORK_MANAGER_OBJECT: 
-			return new NetworkObjectInjector(classLoader, logger, player, invoker, sendingFilters);
+			return new NetworkObjectInjector(classLoader, reporter, player, invoker, sendingFilters);
 		case NETWORK_SERVER_OBJECT:
-			return new NetworkServerInjector(classLoader, logger, player, invoker, sendingFilters, serverInjection);
+			return new NetworkServerInjector(classLoader, reporter, player, invoker, sendingFilters, serverInjection);
 		default:
 			throw new IllegalArgumentException("Cannot construct a player injector.");
 		}
@@ -198,7 +197,7 @@ public class PlayerInjectionHandler {
 			if (injector != null) {
 				return injector.getPlayer();
 			} else {
-				logger.warning("Unable to find stream: " + inputStream);
+				reporter.reportWarning(this, "Unable to find stream: " + inputStream);
 				return null;
 			}
 			
@@ -310,7 +309,8 @@ public class PlayerInjectionHandler {
 					
 				} catch (Exception e) {
 					// Mark this injection attempt as a failure
-					logger.log(Level.SEVERE, "Player hook " + tempHook.toString() + " failed.", e);
+					reporter.reportDetailed(this, "Player hook " + tempHook.toString() + " failed.", 
+											 e, player, injectionPoint, phase);
 					hookFailed = true;
 				}
 				
@@ -318,7 +318,7 @@ public class PlayerInjectionHandler {
 				tempHook = PlayerInjectHooks.values()[tempHook.ordinal() - 1];
 				
 				if (hookFailed)
-					logger.log(Level.INFO, "Switching to " + tempHook.toString() + " instead.");
+					reporter.reportWarning(this, "Switching to " + tempHook.toString() + " instead.");
 				
 				// Check for UTTER FAILURE
 				if (tempHook == PlayerInjectHooks.NONE) {
@@ -353,8 +353,8 @@ public class PlayerInjectionHandler {
 		try {
 			if (injector != null)
 				injector.cleanupAll();
-		} catch (Exception e2) {
-			logger.log(Level.WARNING, "Cleaing up after player hook failed.", e2);
+		} catch (Exception ex) {
+			reporter.reportDetailed(this, "Cleaing up after player hook failed.", ex, injector);
 		}
 	}
 	
@@ -415,7 +415,7 @@ public class PlayerInjectionHandler {
 
 					} catch (IllegalAccessException e) {
 						// Let the user know
-						logger.log(Level.WARNING, "Unable to fully revert old injector. May cause conflicts.", e);
+						reporter.reportWarning(this, "Unable to fully revert old injector. May cause conflicts.", e);
 					}
 				}
 				
@@ -470,7 +470,7 @@ public class PlayerInjectionHandler {
 		if (injector != null)
 			injector.sendServerPacket(packet.getHandle(), filters);
 		else
-			logger.log(Level.WARNING, String.format(
+			reporter.reportWarning(this, String.format(
 					"Unable to send packet %s (%s): Player %s has logged out.", 
 					packet.getID(), packet, reciever.getName()
 			));
@@ -491,7 +491,7 @@ public class PlayerInjectionHandler {
 		if (injector != null)
 			injector.processPacket(mcPacket);
 		else
-			logger.log(Level.WARNING, String.format(
+			reporter.reportWarning(this, String.format(
 					"Unable to receieve packet %s. Player %s has logged out.", 
 					mcPacket, player.getName()
 			));
@@ -537,7 +537,7 @@ public class PlayerInjectionHandler {
 				try {
 					checkListener(listener);
 				} catch (IllegalStateException e) {
-					logger.log(Level.WARNING, "Unsupported listener.", e);
+					reporter.reportWarning(this, "Unsupported listener.", e);
 				}
 			}
 		}
@@ -565,14 +565,6 @@ public class PlayerInjectionHandler {
 		return sendingFilters.toSet();
 	}
 	
-	/**
-	 * Retrieve the current logger.
-	 * @return Error logger.
-	 */
-	public Logger getLogger() {
-		return logger;
-	}
-
 	public void close() {
 		
 		// Guard

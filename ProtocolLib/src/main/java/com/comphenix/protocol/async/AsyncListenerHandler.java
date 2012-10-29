@@ -442,8 +442,7 @@ public class AsyncListenerHandler {
 					
 				} catch (Throwable e) {
 					// Minecraft doesn't want your Exception.
-					filterManager.getLogger().log(Level.SEVERE, 
-							"Unhandled exception occured in onAsyncPacket() for " + getPluginName(), e);
+					filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), "onAsyncPacket()", e);
 				}
 				
 				// Now, get the next non-cancelled listener

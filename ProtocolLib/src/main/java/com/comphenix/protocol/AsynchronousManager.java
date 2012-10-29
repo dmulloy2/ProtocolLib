@@ -18,11 +18,11 @@
 package com.comphenix.protocol;
 
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.async.AsyncListenerHandler;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
@@ -81,10 +81,10 @@ public interface AsynchronousManager {
 	public abstract PacketStream getPacketStream();
 
 	/**
-	 * Retrieve the default error logger.
-	 * @return Default logger.
+	 * Retrieve the default error reporter.
+	 * @return Default reporter.
 	 */
-	public abstract Logger getLogger();
+	public abstract ErrorReporter getErrorReporter();
 
 	/**
 	 * Remove listeners, close threads and transmit every delayed packet.

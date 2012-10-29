@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -29,6 +28,7 @@ import org.bukkit.scheduler.BukkitScheduler;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
@@ -49,7 +49,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	private PacketProcessingQueue clientProcessingQueue;
 	private PacketSendingQueue clientQueue;
 	
-	private Logger logger;
+	private ErrorReporter reporter;
 	
 	// The likely main thread
 	private Thread mainThread;
@@ -66,7 +66,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	// Whether or not we're currently cleaning up
 	private volatile boolean cleaningUp;
 	
-	public AsyncFilterManager(Logger logger, BukkitScheduler scheduler, ProtocolManager manager) {
+	public AsyncFilterManager(ErrorReporter reporter, BukkitScheduler scheduler, ProtocolManager manager) {
 		
 		// Server packets are synchronized already
 		this.serverQueue = new PacketSendingQueue(false);
@@ -80,7 +80,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		this.scheduler = scheduler;
 		this.manager = manager;
 		
-		this.logger = logger;
+		this.reporter = reporter;
 		this.mainThread = Thread.currentThread();
 	}
 	
@@ -267,10 +267,10 @@ public class AsyncFilterManager implements AsynchronousManager {
 	}
 
 	@Override
-	public Logger getLogger() {
-		return logger;
+	public ErrorReporter getErrorReporter() {
+		return reporter;
 	}
-
+	
 	@Override
 	public void cleanupAll() {
 		cleaningUp = true;

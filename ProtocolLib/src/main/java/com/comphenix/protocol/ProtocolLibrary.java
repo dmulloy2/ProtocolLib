@@ -18,7 +18,6 @@
 package com.comphenix.protocol;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Server;
@@ -26,6 +25,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.error.DetailedErrorReporter;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.MonitorAdapter;
 import com.comphenix.protocol.events.PacketEvent;
@@ -44,8 +45,11 @@ public class ProtocolLibrary extends JavaPlugin {
 	// There should only be one protocol manager, so we'll make it static
 	private static PacketFilterManager protocolManager;
 	
-	// Error logger
+	// Information logger
 	private Logger logger;
+	
+	// Error reporter
+	private ErrorReporter reporter;
 	
 	// Metrics and statistisc
 	private Statistics statistisc;
@@ -67,39 +71,55 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	@Override
 	public void onLoad() {
-		logger = getLoggerSafely();
-		unhookTask = new DelayedSingleTask(this);
-		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, logger);
+		// Add global parameters
+		DetailedErrorReporter reporter = new DetailedErrorReporter();
+		
+		try {
+			logger = getLoggerSafely();
+			unhookTask = new DelayedSingleTask(this);
+			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, reporter);
+			reporter.addGlobalParameter("manager", protocolManager);
+			
+		} catch (Throwable e) {
+			reporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
+		}
 	}
 	
 	@Override
 	public void onEnable() {
-		Server server = getServer();
-		PluginManager manager = server.getPluginManager();
-
-		// Initialize background compiler
-		if (backgroundCompiler == null) {
-			backgroundCompiler = new BackgroundCompiler(getClassLoader());
-			BackgroundCompiler.setInstance(backgroundCompiler);
-		}
-
-		// Notify server managers of incompatible plugins
-		checkForIncompatibility(manager);
-		
-		// Player login and logout events
-		protocolManager.registerEvents(manager, this);
+		try {
+			Server server = getServer();
+			PluginManager manager = server.getPluginManager();
+	
+			// Initialize background compiler
+			if (backgroundCompiler == null) {
+				backgroundCompiler = new BackgroundCompiler(getClassLoader());
+				BackgroundCompiler.setInstance(backgroundCompiler);
+			}
+	
+			// Notify server managers of incompatible plugins
+			checkForIncompatibility(manager);
 			
-		// Worker that ensures that async packets are eventually sent
-		createAsyncTask(server);
-		//toggleDebugListener();
+			// Player login and logout events
+			protocolManager.registerEvents(manager, this);
+				
+			// Worker that ensures that async packets are eventually sent
+			createAsyncTask(server);
+			//toggleDebugListener();
+		
+		} catch (Throwable e) {
+			reporter.reportDetailed(this, "Cannot enable ProtocolLib.", e);
+			disablePlugin();
+			return;
+		}
 		
 		// Try to enable statistics
 		try {
 			statistisc = new Statistics(this);
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, "Unable to enable metrics.", e);
+			reporter.reportDetailed(this, "Unable to enable metrics.", e, statistisc);
 		} catch (Throwable e) {
-			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
+			reporter.reportDetailed(this, "Metrics cannot be enabled. Incompatible Bukkit version.", e, statistisc);
 		}
 	}
 
@@ -136,6 +156,13 @@ public class ProtocolLibrary extends JavaPlugin {
 		debugListener = !debugListener;
 	}
 	
+	/**
+	 * Disable the current plugin.
+	 */
+	private void disablePlugin() {
+		getServer().getPluginManager().disablePlugin(this);
+	}
+	
 	private void createAsyncTask(Server server) {
 		try {
 			if (asyncPacketTask >= 0)
@@ -154,7 +181,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		} catch (Throwable e) {
 			if (asyncPacketTask == -1) {
-				logger.log(Level.SEVERE, "Unable to create packet timeout task.", e);
+				reporter.reportDetailed(this, "Unable to create packet timeout task.", e);
 			}
 		}
 	}
@@ -166,7 +193,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		for (String plugin : incompatiblePlugins) {
 			if (manager.getPlugin(plugin) != null) {
 				// Check for versions, ect.
-				logger.severe("Detected incompatible plugin: " + plugin);
+				reporter.reportWarning(this, "Detected incompatible plugin: " + plugin);
 			}
 		}
 	}
@@ -192,7 +219,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		statistisc = null;
 		
 		// Leaky ClassLoader begone!
-		CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), logger);
+		CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), reporter);
 		cleanup.resetAll();
 	}
 	

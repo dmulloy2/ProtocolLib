@@ -18,11 +18,9 @@
 package com.comphenix.protocol.injector;
 
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
-import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
@@ -35,10 +33,10 @@ class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<Packet
 	
 	/**
 	 * Invokes the given packet event for every registered listener.
-	 * @param logger - the logger that will be used to inform about listener exceptions.
+	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
 	 * @param event - the packet event to invoke.
 	 */
-	public void invokePacketRecieving(Logger logger, PacketEvent event) {
+	public void invokePacketRecieving(ErrorReporter reporter, PacketEvent event) {
 		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
 		
 		if (list == null)
@@ -50,19 +48,17 @@ class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<Packet
 				element.getListener().onPacketReceiving(event);
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
-				logger.log(Level.SEVERE, 
-						"Exception occured in onPacketReceiving() for " + 
-							PacketAdapter.getPluginName(element.getListener()), e);
+				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving()", e);
 			}
 		}
 	}
 	
 	/**
 	 * Invokes the given packet event for every registered listener.
-	 * @param logger - the logger that will be used to inform about listener exceptions.
+	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
 	 * @param event - the packet event to invoke.
 	 */
-	public void invokePacketSending(Logger logger, PacketEvent event) {
+	public void invokePacketSending(ErrorReporter reporter, PacketEvent event) {
 		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
 		
 		if (list == null)
@@ -73,9 +69,7 @@ class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<Packet
 				element.getListener().onPacketSending(event);
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
-				logger.log(Level.SEVERE, 
-						"Exception occured in onPacketSending() for " + 
-							PacketAdapter.getPluginName(element.getListener()), e);
+				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending()", e);
 			}
 		}
 	}

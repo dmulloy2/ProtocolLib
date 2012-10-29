@@ -20,8 +20,6 @@ package com.comphenix.protocol.injector.player;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Callback;
@@ -34,6 +32,7 @@ import net.sf.cglib.proxy.NoOp;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -68,11 +67,11 @@ public class NetworkServerInjector extends PlayerInjector {
 	private boolean hasDisconnected;
 	
 	public NetworkServerInjector(
-			ClassLoader classLoader, Logger logger, Player player, 
+			ClassLoader classLoader, ErrorReporter reporter, Player player, 
 			ListenerInvoker invoker, IntegerSet sendingFilters, 
 			InjectedServerConnection serverInjection) throws IllegalAccessException {
 		
-		super(logger, player, invoker);
+		super(reporter, player, invoker);
 		this.classLoader = classLoader;
 		this.sendingFilters = sendingFilters;
 		this.serverInjection = serverInjection;
@@ -295,9 +294,9 @@ public class NetworkServerInjector extends PlayerInjector {
 			FieldUtils.writeField(disconnectField, handler, value);
 		
 		} catch (IllegalArgumentException e) {
-			logger.log(Level.WARNING, "Unable to find disconnect field. Is ProtocolLib up to date?");
+			reporter.reportDetailed(this, "Unable to find disconnect field. Is ProtocolLib up to date?", e, handler);
 		} catch (IllegalAccessException e) {
-			logger.log(Level.WARNING, "Unable to update disconnected field. Player quit event may be sent twice.");
+			reporter.reportWarning(this, "Unable to update disconnected field. Player quit event may be sent twice.");
 		}
 	}
 	

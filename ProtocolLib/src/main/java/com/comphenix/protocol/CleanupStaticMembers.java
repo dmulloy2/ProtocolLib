@@ -4,10 +4,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.comphenix.protocol.async.AsyncListenerHandler;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
@@ -30,11 +29,11 @@ import com.comphenix.protocol.reflect.instances.PrimitiveGenerator;
 class CleanupStaticMembers {
 
 	private ClassLoader loader;
-	private Logger logger;
+	private ErrorReporter reporter;
 
-	public CleanupStaticMembers(ClassLoader loader, Logger logger) {
+	public CleanupStaticMembers(ClassLoader loader, ErrorReporter reporter) {
 		this.loader = loader;
-		this.logger = logger;
+		this.reporter = reporter;
 	}
 	
 	/**
@@ -90,8 +89,8 @@ class CleanupStaticMembers {
 				try {
 					setFinalStatic(field, null);
 				} catch (IllegalAccessException e) {
-					// Just inform us
-					logger.warning("Unable to reset field " + field.getName() + ": " + e.getMessage());
+					// Just inform the player
+					reporter.reportWarning(this, "Unable to reset field " + field.getName() + ": " + e.getMessage(), e);
 				}
 			}
 		}
@@ -126,7 +125,7 @@ class CleanupStaticMembers {
 				output.add(loader.loadClass(name));
 			} catch (ClassNotFoundException e) {
 				// Warn the user
-				logger.log(Level.WARNING, "Unable to unload class " + name, e);
+				reporter.reportWarning(this, "Unable to unload class " + name, e);
 			}
 		}
 		

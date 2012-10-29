@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
 
@@ -51,6 +49,8 @@ import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
+import com.comphenix.protocol.error.DetailedErrorReporter;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -118,8 +118,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// The default class loader
 	private ClassLoader classLoader;
 		
-	// Error logger
-	private Logger logger;
+	// Error repoter
+	private ErrorReporter reporter;
 	
 	// The current server
 	private Server server;
@@ -142,9 +142,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * Only create instances of this class if protocol lib is disabled.
 	 * @param unhookTask 
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, Logger logger) {
-		if (logger == null)
-			throw new IllegalArgumentException("logger cannot be NULL.");
+	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, DetailedErrorReporter reporter) {
+		if (reporter == null)
+			throw new IllegalArgumentException("reporter cannot be NULL.");
 		if (classLoader == null)
 			throw new IllegalArgumentException("classLoader cannot be NULL.");
 		
@@ -155,7 +155,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		this.unhookTask = unhookTask;
 		this.server = server;
 		this.classLoader = classLoader;
-		this.logger = logger;
+		this.reporter = reporter;
 		
 		// Used to determine if injection is needed
 		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
@@ -174,20 +174,20 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			// Initialize injection mangers
-			this.playerInjection = new PlayerInjectionHandler(classLoader, logger, isInjectionNecessary, this, server);
+			this.playerInjection = new PlayerInjectionHandler(classLoader, reporter, isInjectionNecessary, this, server);
 			this.packetInjector = new PacketInjector(classLoader, this, playerInjection);
-			this.asyncFilterManager = new AsyncFilterManager(logger, server.getScheduler(), this);
+			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
 			
 			// Attempt to load the list of server and client packets
 			try {
 				this.serverPackets = MinecraftRegistry.getServerPackets();
 				this.clientPackets = MinecraftRegistry.getClientPackets();
 			} catch (FieldAccessException e) {
-				logger.log(Level.WARNING, "Cannot load server and client packet list.", e);
+				reporter.reportWarning(this, "Cannot load server and client packet list.", e);
 			}
 
 		} catch (IllegalAccessException e) {
-			logger.log(Level.SEVERE, "Unable to initialize packet injector.", e);
+			reporter.reportWarning(this, "Unable to initialize packet injector.", e);
 		}
 	}
 	
@@ -215,10 +215,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		playerInjection.checkListener(packetListeners);
 	}
 
-	public Logger getLogger() {
-		return logger;
-	}
-	
 	@Override
 	public ImmutableSet<PacketListener> getPacketListeners() {
 		return ImmutableSet.copyOf(packetListeners);
@@ -398,9 +394,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// Process synchronous events
 		if (sending)
-			packetListeners.invokePacketSending(logger, event);
+			packetListeners.invokePacketSending(reporter, event);
 		else
-			packetListeners.invokePacketRecieving(logger, event);
+			packetListeners.invokePacketRecieving(reporter, event);
 		
 		// To cancel asynchronous processing, use the async marker
 		if (!event.isCancelled() && !hasAsyncCancelled(event.getAsyncMarker())) {
@@ -438,7 +434,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				if (serverPackets != null && serverPackets.contains(packetID))
 					playerInjection.addPacketHandler(packetID);
 				else
-					logger.warning(String.format(
+					reporter.reportWarning(this, String.format(
 							"[%s] Unsupported server packet ID in current Minecraft version: %s",
 							PacketAdapter.getPluginName(listener), packetID
 					));
@@ -449,7 +445,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				if (clientPackets != null && clientPackets.contains(packetID))
 					packetInjector.addPacketHandler(packetID);
 				else
-					logger.warning(String.format(
+					reporter.reportWarning(this, String.format(
 							"[%s] Unsupported client packet ID in current Minecraft version: %s",
 							PacketAdapter.getPluginName(listener), packetID
 					));
