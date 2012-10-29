@@ -77,6 +77,8 @@ public class ProtocolLibrary extends JavaPlugin {
 		Server server = getServer();
 		PluginManager manager = server.getPluginManager();
 		
+		System.out.println("Created using ClassLoader " + getClassLoader().hashCode());
+		
 		// Initialize background compiler
 		if (backgroundCompiler == null) {
 			backgroundCompiler = new BackgroundCompiler(getClassLoader());
