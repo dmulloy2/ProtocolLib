@@ -502,43 +502,48 @@ abstract class PlayerInjector {
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
 	public Packet handlePacketSending(Packet packet) {
-		// Get the packet ID too
-		Integer id = invoker.getPacketID(packet);
-		Player currentPlayer = player;
-		
-		// Hack #1: Handle a single scheduled action
-		if (scheduledAction != null) {
-			scheduledAction.run();
-			scheduledAction = null;
-		}
-		// Hack #2
-		if (updateOnLogin) {
-			if (id == Packets.Server.LOGIN) {
-				try {
-					updatedPlayer = getEntityPlayer(getNetHandler()).getBukkitEntity();
-				} catch (IllegalAccessException e) {
-					reporter.reportDetailed(this, "Cannot update player in PlayerEvent.", e, packet);
+		try {
+			// Get the packet ID too
+			Integer id = invoker.getPacketID(packet);
+			Player currentPlayer = player;
+			
+			// Hack #1: Handle a single scheduled action
+			if (scheduledAction != null) {
+				scheduledAction.run();
+				scheduledAction = null;
+			}
+			// Hack #2
+			if (updateOnLogin) {
+				if (id == Packets.Server.LOGIN) {
+					try {
+						updatedPlayer = getEntityPlayer(getNetHandler()).getBukkitEntity();
+					} catch (IllegalAccessException e) {
+						reporter.reportDetailed(this, "Cannot update player in PlayerEvent.", e, packet);
+					}
 				}
+				
+				// This will only occur in the NetLoginHandler injection
+				if (updatedPlayer != null)
+					currentPlayer = updatedPlayer;
 			}
 			
-			// This will only occur in the NetLoginHandler injection
-			if (updatedPlayer != null)
-				currentPlayer = updatedPlayer;
-		}
-		
-		// Make sure we're listening
-		if (id != null && hasListener(id)) {
-			// A packet has been sent guys!
-			PacketContainer container = new PacketContainer(id, packet);
-			PacketEvent event = PacketEvent.fromServer(invoker, container, currentPlayer);
-			invoker.invokePacketSending(event);
+			// Make sure we're listening
+			if (id != null && hasListener(id)) {
+				// A packet has been sent guys!
+				PacketContainer container = new PacketContainer(id, packet);
+				PacketEvent event = PacketEvent.fromServer(invoker, container, currentPlayer);
+				invoker.invokePacketSending(event);
+				
+				// Cancelling is pretty simple. Just ignore the packet.
+				if (event.isCancelled())
+					return null;
+				
+				// Right, remember to replace the packet again
+				return event.getPacket().getHandle();
+			}
 			
-			// Cancelling is pretty simple. Just ignore the packet.
-			if (event.isCancelled())
-				return null;
-			
-			// Right, remember to replace the packet again
-			return event.getPacket().getHandle();
+		} catch (Throwable e) {
+			reporter.reportDetailed(this, "Cannot handle server packet.", e, packet);
 		}
 		
 		return packet;

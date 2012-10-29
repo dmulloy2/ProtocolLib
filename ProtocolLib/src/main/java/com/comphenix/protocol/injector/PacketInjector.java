@@ -31,6 +31,7 @@ import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
 
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
@@ -51,6 +52,9 @@ class PacketInjector {
 	// The packet filter manager
 	private ListenerInvoker manager;
 	
+	// Error reporter
+	private ErrorReporter reporter;
+	
 	// Allows us to determine the sender
 	private PlayerInjectionHandler playerInjection;
 	
@@ -61,11 +65,12 @@ class PacketInjector {
 	private ClassLoader classLoader;
 			
 	public PacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
-						  PlayerInjectionHandler playerInjection) throws IllegalAccessException {
+						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws IllegalAccessException {
 		
 		this.classLoader = classLoader;
 		this.manager = manager;
 		this.playerInjection = playerInjection;
+		this.reporter = reporter;
 		this.readModifier = new ConcurrentHashMap<Integer, ReadPacketModifier>();
 		initialize();
 	}
@@ -133,7 +138,7 @@ class PacketInjector {
 		Class proxy = ex.createClass();
 		
 		// Create the proxy handler
-		ReadPacketModifier modifier = new ReadPacketModifier(packetID, this);
+		ReadPacketModifier modifier = new ReadPacketModifier(packetID, this, reporter);
 		readModifier.put(packetID, modifier);
 		
 		// Add a static reference

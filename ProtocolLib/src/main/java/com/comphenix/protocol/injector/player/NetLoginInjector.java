@@ -95,30 +95,34 @@ class NetLoginInjector {
 		PlayerInjector injected = injectedLogins.get(removing);
 		
 		if (injected != null) {
-			PlayerInjector newInjector = null;
-			Player player = injected.getPlayer();
-			
-			// Clean up list
-			injectedLogins.remove(removing);
-			
-			// No need to clean up twice
-			if (injected.isClean())
-				return;
-			
-			// Hack to clean up other references
-			newInjector = injectionHandler.getInjectorByNetworkHandler(injected.getNetworkManager());
-			
-			// Update NetworkManager
-			if (newInjector == null) {
-				injectionHandler.uninjectPlayer(player);
-			} else {
-				injectionHandler.uninjectPlayer(player, false);
+			try {
+				PlayerInjector newInjector = null;
+				Player player = injected.getPlayer();
 				
-				if (injected instanceof NetworkObjectInjector)
-					newInjector.setNetworkManager(injected.getNetworkManager(), true);
+				// Clean up list
+				injectedLogins.remove(removing);
+				
+				// No need to clean up twice
+				if (injected.isClean())
+					return;
+				
+				// Hack to clean up other references
+				newInjector = injectionHandler.getInjectorByNetworkHandler(injected.getNetworkManager());
+				
+				// Update NetworkManager
+				if (newInjector == null) {
+					injectionHandler.uninjectPlayer(player);
+				} else {
+					injectionHandler.uninjectPlayer(player, false);
+					
+					if (injected instanceof NetworkObjectInjector)
+						newInjector.setNetworkManager(injected.getNetworkManager(), true);
+				}
+				
+			} catch (Throwable e) {
+				// Don't leak this to Minecraft
+				reporter.reportDetailed(this, "Cannot cleanup NetLoginHandler.", e, removing);
 			}
-			
-			//logger.warning("Using alternative cleanup method.");
 		}
 	}
 	

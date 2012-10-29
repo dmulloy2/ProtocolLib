@@ -49,7 +49,6 @@ import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
-import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
@@ -142,7 +141,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * Only create instances of this class if protocol lib is disabled.
 	 * @param unhookTask 
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, DetailedErrorReporter reporter) {
+	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, ErrorReporter reporter) {
 		if (reporter == null)
 			throw new IllegalArgumentException("reporter cannot be NULL.");
 		if (classLoader == null)
@@ -175,7 +174,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		try {
 			// Initialize injection mangers
 			this.playerInjection = new PlayerInjectionHandler(classLoader, reporter, isInjectionNecessary, this, packetListeners, server);
-			this.packetInjector = new PacketInjector(classLoader, this, playerInjection);
+			this.packetInjector = new PacketInjector(classLoader, this, playerInjection, reporter);
 			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
 			
 			// Attempt to load the list of server and client packets

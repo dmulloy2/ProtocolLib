@@ -217,7 +217,12 @@ class InjectedServerConnection {
 				// Is this a normal Minecraft object?
 				if (!(inserting instanceof Factory)) {
 					// If so, copy the content of the old element to the new
-					ObjectCloner.copyTo(inserting, replacement, inserting.getClass());
+					try {
+						ObjectCloner.copyTo(inserting, replacement, inserting.getClass());
+					} catch (Throwable e) {
+						reporter.reportDetailed(InjectedServerConnection.this, "Cannot copy old " + inserting + 
+								 				" to new.", e, inserting, replacement);
+					}
 				}
 			}
 			
