@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 
@@ -112,10 +111,6 @@ public class AsyncListenerHandler {
 	 */
 	PacketListener getNullPacketListener() {
 		return nullPacketListener;
-	}
-	
-	private String getPluginName() {
-		return PacketAdapter.getPluginName(listener);
 	}
 
 	/**

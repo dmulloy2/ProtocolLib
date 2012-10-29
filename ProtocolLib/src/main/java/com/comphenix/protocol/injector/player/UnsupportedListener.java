@@ -9,7 +9,7 @@ import com.google.common.base.Joiner;
  * 
  * @author Kristian
  */
-public class UnsupportedListener {
+class UnsupportedListener {
 	private String message;
 	private int[] packets;
 	

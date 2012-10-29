@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 
