@@ -190,6 +190,10 @@ public class ProtocolLibrary extends JavaPlugin {
 		protocolManager.close();
 		protocolManager = null;
 		statistisc = null;
+		
+		// Leaky ClassLoader begone!
+		CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), logger);
+		cleanup.resetAll();
 	}
 	
 	/**

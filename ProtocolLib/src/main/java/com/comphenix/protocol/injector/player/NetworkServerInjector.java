@@ -52,6 +52,8 @@ import com.comphenix.protocol.reflect.instances.ExistingGenerator;
  */
 public class NetworkServerInjector extends PlayerInjector {
 
+	private volatile static CallbackFilter callbackFilter;
+	
 	private static Field disconnectField;
 	private static Method sendPacketMethod;
 	private InjectedServerConnection serverInjection;
@@ -170,18 +172,24 @@ public class NetworkServerInjector extends PlayerInjector {
 		};
 		Callback noOpCallback = NoOp.INSTANCE;
 
+		// Share callback filter - that way, we avoid generating a new class for 
+		// every logged in player.
+		if (callbackFilter == null) {
+			callbackFilter = new CallbackFilter() {
+				@Override
+				public int accept(Method method) {
+					if (method.equals(sendPacketMethod))
+						return 0;
+					else
+						return 1;
+				}
+			};
+		}
+		
 		ex.setClassLoader(classLoader);
 		ex.setSuperclass(serverClass);
 		ex.setCallbacks(new Callback[] { sendPacketCallback, noOpCallback });
-		ex.setCallbackFilter(new CallbackFilter() {
-			@Override
-			public int accept(Method method) {
-				if (method.equals(sendPacketMethod))
-					return 0;
-				else
-					return 1;
-			}
-		});
+		ex.setCallbackFilter(callbackFilter);
 		
 		// Find the Minecraft NetServerHandler superclass
 		Class<?> minecraftSuperClass = getFirstMinecraftSuperClass(serverHandler.getClass());
@@ -208,6 +216,7 @@ public class NetworkServerInjector extends PlayerInjector {
 		if (proxyObject != null) {
 			// This will be done by InjectedServerConnection instead
 			//copyTo(serverHandler, proxyObject);
+			
 			serverInjection.replaceServerHandler(serverHandler, proxyObject);
 			serverHandlerRef.setValue(proxyObject);
 			return true;

@@ -50,6 +50,9 @@ class NetworkObjectInjector extends PlayerInjector {
 	
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
+
+	// Shared callback filter - avoid creating a new class every time
+	private static CallbackFilter callbackFilter;
 	
 	public NetworkObjectInjector(ClassLoader classLoader, Logger logger, Player player, 
 								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
@@ -131,20 +134,25 @@ class NetworkObjectInjector extends PlayerInjector {
 				}
 			};
 			
+			// Share callback filter - that way, we avoid generating a new class every time.
+			if (callbackFilter == null) {
+				callbackFilter = new CallbackFilter() {
+					@Override
+					public int accept(Method method) {
+						if (method.equals(queueMethod))
+							return 0;
+						else
+							return 1;
+					}
+				};
+			}
+			
 			// Create our proxy object
 			Enhancer ex = new Enhancer();
 			ex.setClassLoader(classLoader);
 			ex.setSuperclass(networkInterface);
 			ex.setCallbacks(new Callback[] { queueFilter, dispatch });
-			ex.setCallbackFilter(new CallbackFilter() {
-				@Override
-				public int accept(Method method) {
-					if (method.equals(queueMethod))
-						return 0;
-					else
-						return 1;
-				}
-			});
+			ex.setCallbackFilter(callbackFilter);
 			
 			// Inject it, if we can.
 			networkManagerRef.setValue(ex.create());

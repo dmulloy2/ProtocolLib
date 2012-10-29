@@ -54,7 +54,7 @@ public class AsyncListenerHandler {
 	private static final AtomicInteger nextID = new AtomicInteger();
 	
 	// Default queue capacity
-	private static int DEFAULT_CAPACITY = 1024;
+	private static final int DEFAULT_CAPACITY = 1024;
 	
 	// Cancel the async handler
 	private volatile boolean cancelled;
