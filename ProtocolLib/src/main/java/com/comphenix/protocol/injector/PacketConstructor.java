@@ -25,9 +25,9 @@ import net.minecraft.server.Packet;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.PrimitiveUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Primitives;
 
 /**
  * A packet constructor that uses an internal Minecraft.
@@ -181,9 +181,9 @@ public class PacketConstructor {
 				Class<?> paramType = params[i];
 				
 				// The input type is always wrapped
-				if (PrimitiveUtils.isPrimitive(paramType)) {
+				if (paramType.isPrimitive()) {
 					// Wrap it
-					paramType = PrimitiveUtils.wrap(paramType);
+					paramType = Primitives.wrap(paramType);
 				}
 				
 				// Compare assignability

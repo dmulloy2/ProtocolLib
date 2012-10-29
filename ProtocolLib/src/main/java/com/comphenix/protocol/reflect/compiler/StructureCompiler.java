@@ -25,9 +25,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.comphenix.protocol.reflect.PrimitiveUtils;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.base.Objects;
+import com.google.common.primitives.Primitives;
 
 import net.sf.cglib.asm.*;
 
@@ -306,7 +306,7 @@ public final class StructureCompiler {
 		for (int i = 0; i < fields.size(); i++) {
 			
 			Class<?> outputType = fields.get(i).getType();
-			Class<?> inputType = PrimitiveUtils.wrap(outputType);
+			Class<?> inputType = Primitives.wrap(outputType);
 			String typeDescriptor = Type.getDescriptor(outputType);
 			String inputPath = inputType.getName().replace('.', '/');
 			
@@ -323,7 +323,7 @@ public final class StructureCompiler {
 				mv.visitVarInsn(Opcodes.ALOAD, 3);
 				mv.visitVarInsn(Opcodes.ALOAD, 2);
 				
-				if (!PrimitiveUtils.isPrimitive(outputType))
+				if (!outputType.isPrimitive())
 					mv.visitTypeInsn(Opcodes.CHECKCAST, inputPath);
 				else
 					boxingHelper.unbox(Type.getType(outputType));

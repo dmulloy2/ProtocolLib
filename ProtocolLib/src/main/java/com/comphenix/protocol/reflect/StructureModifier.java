@@ -426,7 +426,7 @@ public class StructureModifier<TField> {
 			Class<?> type = field.getType();
 			
 			// First, ignore primitive fields
-			if (!PrimitiveUtils.isPrimitive(type)) {
+			if (!type.isPrimitive()) {
 				// Next, see if we actually can generate a default value
 				if (generator.getDefault(type) != null) {
 					// If so, require it
