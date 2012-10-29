@@ -590,27 +590,43 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			manager.registerEvents(new Listener() {
 				@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 			    public void onPrePlayerJoin(PlayerJoinEvent event) {
-					// Let's clean up the other injection first.
-					playerInjection.uninjectPlayer(event.getPlayer().getAddress());
+					try {
+						// Let's clean up the other injection first.
+						playerInjection.uninjectPlayer(event.getPlayer().getAddress());
+					} catch (Exception e) {
+						reporter.reportDetailed(PacketFilterManager.this, "Unable to uninject net handler for player.", e, event);
+					}
 			    }
 				
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
-					// This call will be ignored if no listeners are registered
-					playerInjection.injectPlayer(event.getPlayer());
+					try {
+						// This call will be ignored if no listeners are registered
+						playerInjection.injectPlayer(event.getPlayer());
+					} catch (Exception e) {
+						reporter.reportDetailed(PacketFilterManager.this, "Unable to inject player.", e, event);
+					}
 			    }
 				
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPlayerQuit(PlayerQuitEvent event) {
-					playerInjection.handleDisconnect(event.getPlayer());
-					playerInjection.uninjectPlayer(event.getPlayer());
+					try {
+						playerInjection.handleDisconnect(event.getPlayer());
+						playerInjection.uninjectPlayer(event.getPlayer());
+					} catch (Exception e) {
+						reporter.reportDetailed(PacketFilterManager.this, "Unable to uninject logged off player.", e, event);
+					}
 			    }
 				
 				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 			    public void onPluginDisabled(PluginDisableEvent event) {
-					// Clean up in case the plugin forgets
-					if (event.getPlugin() != plugin) {
-						removePacketListeners(event.getPlugin());
+					try {
+						// Clean up in case the plugin forgets
+						if (event.getPlugin() != plugin) {
+							removePacketListeners(event.getPlugin());
+						}
+					} catch (Exception e) {
+						reporter.reportDetailed(PacketFilterManager.this, "Unable handle disabled plugin.", e, event);
 					}
 			    }
 				
