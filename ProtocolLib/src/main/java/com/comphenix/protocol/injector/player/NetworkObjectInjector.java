@@ -88,11 +88,14 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void checkListener(PacketListener listener) {
+	public UnsupportedListener checkListener(PacketListener listener) {
+		int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
+		
 		// Unfortunately, we don't support chunk packets
-		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), 
-				Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK)) {
-			throw new IllegalStateException("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.");
+		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), unsupported)) {
+			return new UnsupportedListener("The NETWORK_OBJECT_INJECTOR hook doesn't support map chunk listeners.", unsupported);
+		} else {
+			return null;
 		}
 	}
 	

@@ -301,8 +301,9 @@ public class NetworkServerInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void checkListener(PacketListener listener) {
+	public UnsupportedListener checkListener(PacketListener listener) {
 		// We support everything
+		return null;
 	}
 
 	@Override

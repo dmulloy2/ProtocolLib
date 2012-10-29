@@ -489,10 +489,12 @@ abstract class PlayerInjector {
 	/**
 	 * Invoked before a new listener is registered.
 	 * <p>
-	 * The player injector should throw an exception if this listener cannot be properly supplied with packet events. 
+	 * The player injector should only return a non-null value if some or all of the packet IDs are unsupported.
+	 * 
 	 * @param listener - the listener that is about to be registered.
+	 * @return A error message with the unsupported packet IDs, or NULL if this listener is valid.
 	 */
-	public abstract void checkListener(PacketListener listener);
+	public abstract UnsupportedListener checkListener(PacketListener listener);
 	
 	/**
 	 * Allows a packet to be sent by the listeners.
@@ -587,6 +589,14 @@ abstract class PlayerInjector {
 	 */
 	public Player getPlayer() {
 		return player;
+	}
+	
+	/**
+	 * Object that can invoke the packet events.
+	 * @return Packet event invoker.
+	 */
+	public ListenerInvoker getInvoker() {
+		return invoker;
 	}
 	
 	/**

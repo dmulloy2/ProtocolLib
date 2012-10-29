@@ -46,4 +46,25 @@ public interface ListenerInvoker {
 	 * @return The packet ID.
 	 */
 	public abstract int getPacketID(Packet packet);
+
+	/**
+	 * Associate a given class with the given packet ID. Internal method.
+	 * @param clazz - class to associate.
+	 * @param packetID - the packet ID.
+	 */
+	public abstract void unregisterPacketClass(Class<?> clazz);
+
+	/**
+	 * Remove a given class from the packet registry. Internal method.
+	 * @param clazz - class to remove.
+	 */
+	public abstract void registerPacketClass(Class<?> clazz, int packetID);
+
+	/**
+	 * Retrieves the correct packet class from a given packet ID.
+	 * @param packetID - the packet ID.
+ 	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
+	 * @return The associated class.
+	 */
+	public abstract Class<?> getPacketClassFromID(int packetID, boolean forceVanilla);
 }

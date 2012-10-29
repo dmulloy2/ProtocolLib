@@ -83,6 +83,9 @@ public class PlayerInjectionHandler {
 	// Enabled packet filters
 	private IntegerSet sendingFilters = new IntegerSet(MAXIMUM_PACKET_ID + 1);
 	
+	// List of packet listeners
+	private Set<PacketListener> packetListeners;
+	
 	// The class loader we're using
 	private ClassLoader classLoader;
 	
@@ -90,12 +93,13 @@ public class PlayerInjectionHandler {
 	private Predicate<GamePhase> injectionFilter;
 	
 	public PlayerInjectionHandler(ClassLoader classLoader, ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
-								  ListenerInvoker invoker, Server server) {
+								  ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server) {
 		
 		this.classLoader = classLoader;
 		this.reporter = reporter;
 		this.invoker = invoker;
 		this.injectionFilter = injectionFilter;
+		this.packetListeners = packetListeners;
 		this.netLoginInjector = new NetLoginInjector(reporter, this, server);
 		this.serverInjection = new InjectedServerConnection(reporter, server, netLoginInjector);
 		serverInjection.injectList();
@@ -143,6 +147,9 @@ public class PlayerInjectionHandler {
 			loginPlayerHook = playerHook;
 		if (phase.hasPlaying())
 			playingPlayerHook = playerHook;
+		
+		// Make sure the current listeners are compatible
+		checkListener(packetListeners);
 	}
 	
 	/**
@@ -534,26 +541,30 @@ public class PlayerInjectionHandler {
 		// Make sure the current listeners are compatible
 		if (lastSuccessfulHook != null) {
 			for (PacketListener listener : listeners) {
-				try {
-					checkListener(listener);
-				} catch (IllegalStateException e) {
-					reporter.reportWarning(this, "Unsupported listener.", e);
-				}
+				checkListener(listener);
 			}
 		}
 	}
 	
 	/**
 	 * Determine if a listener is valid or not.
+	 * <p>
+	 * If not, a warning will be printed to the console. 
 	 * @param listener - listener to check.
-	 * @throws IllegalStateException If the given listener's whitelist cannot be fulfilled.
 	 */
 	public void checkListener(PacketListener listener) {
-		try {
-			if (lastSuccessfulHook != null)
-				lastSuccessfulHook.checkListener(listener);
-		} catch (Exception e) {
-			throw new IllegalStateException("Registering listener " + PacketAdapter.getPluginName(listener) + " failed", e);
+		if (lastSuccessfulHook != null) {
+			UnsupportedListener result = lastSuccessfulHook.checkListener(listener);
+
+			// We won't prevent the listener, as it may still have valid packets
+			if (result != null) {
+				reporter.reportWarning(this, "Cannot fully register listener for " + 
+						  PacketAdapter.getPluginName(listener) + ": " + result.toString());
+				
+				// These are illegal
+				for (int packetID : result.getPackets())
+					removePacketHandler(packetID);
+			}
 		}
 	}
 	

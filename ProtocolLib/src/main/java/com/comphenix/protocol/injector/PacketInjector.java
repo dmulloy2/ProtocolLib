@@ -141,10 +141,10 @@ class PacketInjector {
 		
 		try {
 			// Override values
-			putMethod.invoke(intHashMap, packetID, proxy);
 			previous.put(packetID, old);
 			registry.put(proxy, packetID);
 			overwritten.put(packetID, proxy);
+			putMethod.invoke(intHashMap, packetID, proxy);
 			return true;
 			
 		} catch (IllegalArgumentException e) {

@@ -174,7 +174,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			// Initialize injection mangers
-			this.playerInjection = new PlayerInjectionHandler(classLoader, reporter, isInjectionNecessary, this, server);
+			this.playerInjection = new PlayerInjectionHandler(classLoader, reporter, isInjectionNecessary, this, packetListeners, server);
 			this.packetInjector = new PacketInjector(classLoader, this, playerInjection);
 			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
 			
@@ -210,9 +210,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 */
 	public void setPlayerHook(PlayerInjectHooks playerHook) {
 		playerInjection.setPlayerHook(playerHook);
-		
-		// Make sure the current listeners are compatible
-		playerInjection.checkListener(packetListeners);
 	}
 
 	@Override
@@ -660,6 +657,21 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			throw new IllegalArgumentException("Packet cannot be NULL.");
 		
 		return MinecraftRegistry.getPacketToID().get(packet.getClass());
+	}
+	
+	@Override
+	public void registerPacketClass(Class<?> clazz, int packetID) {
+		MinecraftRegistry.getPacketToID().put(clazz, packetID);
+	}
+	
+	@Override
+	public void unregisterPacketClass(Class<?> clazz) {
+		MinecraftRegistry.getPacketToID().remove(clazz);
+	}
+
+	@Override
+	public Class<?> getPacketClassFromID(int packetID, boolean forceVanilla) {
+		return MinecraftRegistry.getPacketClassFromID(packetID, forceVanilla);
 	}
 	
 	// Yes, this is crazy.

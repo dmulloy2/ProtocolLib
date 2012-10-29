@@ -43,7 +43,7 @@ class CleanupStaticMembers {
 		// This list must always be updated
 		Class<?>[] publicClasses = { 
 				AsyncListenerHandler.class, ListeningWhitelist.class, PacketContainer.class, 
-				BukkitUnwrapper.class, CollectionGenerator.class, DefaultInstances.class, 
+				BukkitUnwrapper.class, DefaultInstances.class, CollectionGenerator.class,
 				PrimitiveGenerator.class, FuzzyReflection.class, MethodUtils.class, 
 				BackgroundCompiler.class, StructureCompiler.class,
 				ObjectCloner.class, PrimitiveUtils.class, Packets.Server.class, 
