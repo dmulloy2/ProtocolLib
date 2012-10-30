@@ -289,11 +289,6 @@ public class PlayerInjectionHandler {
 						Socket socket = injector.getSocket();
 						SocketAddress address = socket != null ? socket.getRemoteSocketAddress() : null;
 						
-						// Make sure the current player is not logged out
-						if (socket != null && socket.isClosed()) {
-							throw new PlayerLoggedOutException();
-						}
-						
 						// Guard against NPE here too
 						PlayerInjector previous = address != null ? addressLookup.get(address) : null;
 						
