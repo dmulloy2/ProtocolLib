@@ -26,6 +26,8 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -268,8 +270,7 @@ public class PacketContainer implements Serializable {
 	
 		final Object worldServer = ((CraftWorld) world).getHandle();
 		final Class<?> nmsEntityClass = net.minecraft.server.Entity.class;
-		final World worldCopy = world;
-		
+
 		if (getEntity == null)
 			getEntity = FuzzyReflection.fromObject(worldServer).getMethodByParameters(
 					"getEntity", nmsEntityClass, new Class[] { int.class });
@@ -296,10 +297,14 @@ public class PacketContainer implements Serializable {
 					if (nmsEntity != null) {
 						return nmsEntity.getBukkitEntity();
 					} else {
-						// Maybe it's a player that's just logged in? Try a search
-						for (Player player : worldCopy.getPlayers()) {
-							if (player.getEntityId() == id) {
-								return player;
+						Server server = Bukkit.getServer();
+						
+						// Maybe it's a player that has just logged in? Try a search
+						if (server != null) {
+							for (Player player : server.getOnlinePlayers()) {
+								if (player.getEntityId() == id) {
+									return player;
+								}
 							}
 						}
 						
