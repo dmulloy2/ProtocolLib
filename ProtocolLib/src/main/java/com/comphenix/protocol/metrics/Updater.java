@@ -12,12 +12,17 @@ import java.net.URLConnection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
+
+import org.bukkit.Server;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
@@ -38,21 +43,33 @@ import org.bukkit.plugin.Plugin;
  */
 public class Updater 
 {
+	// If the version number contains one of these, don't update.
+    private static final String[] noUpdateTag = {"-DEV", "-PRE", "-SNAPSHOT"}; 
+	
+    // Slugs will be appended to this to get to the project's RSS feed
+    private static final String DBOUrl = "http://dev.bukkit.org/server-mods/"; 
+    private static final int BYTE_SIZE = 1024; // Used for downloading files
+    
     private Plugin plugin;
     private UpdateType type;
+    private String downloadedVersion;
     private String versionTitle;
     private String versionLink;
     private long totalSize; // Holds the total size of the file
-    //private double downloadedSize; TODO: Holds the number of bytes downloaded
     private int sizeLine; // Used for detecting file size
     private int multiplier; // Used for determining when to broadcast download updates
     private boolean announce; // Whether to announce file downloads
     private URL url; // Connecting to RSS
-    private static final String DBOUrl = "http://dev.bukkit.org/server-mods/"; // Slugs will be appended to this to get to the project's RSS feed
-    private String [] noUpdateTag = {"-DEV","-PRE"}; // If the version number contains one of these, don't update.
-    private static final int BYTE_SIZE = 1024; // Used for downloading files
+
     private String updateFolder = YamlConfiguration.loadConfiguration(new File("bukkit.yml")).getString("settings.update-folder"); // The folder that downloads will be placed in
-    private Updater.UpdateResult result = Updater.UpdateResult.SUCCESS; // Used for determining the outcome of the update process
+    
+    // Used for determining the outcome of the update process
+    private Updater.UpdateResult result = Updater.UpdateResult.SUCCESS; 
+	private String slug;
+	private File file;
+
+	// Used to announce progress
+	private Logger logger;
     
     // Strings for reading RSS
     private static final String TITLE = "title";
@@ -174,34 +191,79 @@ public class Updater
      *            The dev.bukkit.org slug of the project (http://dev.bukkit.org/server-mods/SLUG_IS_HERE)
      * @param file
      *            The file that the plugin is running from, get this by doing this.getFile() from within your main class.
+     * @param permission
+     *            Permission needed to read the output of the update process.
+     */ 
+    public Updater(Plugin plugin, String slug, File file, String permission)
+    {
+        this.plugin = plugin;
+        this.file = file;
+        this.slug = slug;
+        
+        // Prevent issues with older versions of Bukkit
+        try {
+        	logger = plugin.getLogger();
+        	logger.getLevel();
+        } catch (Throwable e) {
+        	logger = Logger.getLogger("Minecraft");
+        }
+        
+        broadcastUsers(plugin.getServer(), permission);
+    }
+    
+    private void broadcastUsers(final Server server, final String permission) {
+        // Broadcast information to every user too
+        logger.addHandler(new Handler() {
+			@Override
+			public void publish(LogRecord record) {
+				server.broadcast(record.getMessage(), permission);
+			}
+			
+			@Override
+			public void flush() {
+				// Not needed.
+			}
+			
+			@Override
+			public void close() throws SecurityException {
+				// Do nothing.
+			}
+		});
+    }
+
+    /**
+     * Update the plugin.
+     * 
      * @param type
      *            Specify the type of update this will be. See {@link UpdateType}
      * @param announce
      *            True if the program should announce the progress of new updates in console
+     * @return The result of the update process.
      */ 
-    public Updater(Plugin plugin, String slug, File file, UpdateType type, boolean announce)
+    public UpdateResult update(UpdateType type, boolean announce) 
     {
-        this.plugin = plugin;
-        this.type = type;
-        this.announce = announce;
+    	this.type = type;
+    	this.announce = announce;
+    	
         try 
         {
             // Obtain the results of the project's file feed
+        	url = null;
             url = new URL(DBOUrl + slug + "/files.rss");
         } 
         catch (MalformedURLException ex) 
         {
             // The slug doesn't exist
-            plugin.getLogger().warning("The author of this plugin has misconfigured their Auto Update system");
-            plugin.getLogger().warning("The project slug added ('" + slug + "') is invalid, and does not exist on dev.bukkit.org");
+            logger.warning("The author of this plugin has misconfigured their Auto Update system");
+            logger.warning("The project slug added ('" + slug + "') is invalid, and does not exist on dev.bukkit.org");
             result = Updater.UpdateResult.FAIL_BADSLUG; // Bad slug! Bad!
         }
-        if(url != null)
+        if (url != null)
         {
             // Obtain the results of the project's file feed
             readFeed();
             if(versionCheck(versionTitle))
-            {
+            {            	
                 String fileLink = getFile(versionLink);
                 if(fileLink != null && type != UpdateType.NO_DOWNLOAD)
                 {
@@ -212,7 +274,16 @@ public class Updater
                         String [] split = fileLink.split("/");
                         name = split[split.length-1];
                     }
-                    saveFile(new File("plugins/" + updateFolder), name, fileLink);
+                    
+                    // Never download the same file twice
+                    if (!downloadedVersion.equalsIgnoreCase(versionLink)) {
+                    	saveFile(new File("plugins/" + updateFolder), name, fileLink);
+                        downloadedVersion = versionLink;
+                        result = UpdateResult.SUCCESS;
+                        
+                    } else {
+                        result = UpdateResult.UPDATE_AVAILABLE;
+                    }
                 }
                 else
                 {
@@ -220,8 +291,10 @@ public class Updater
                 }
             }
         }
+        
+        return result;
     }
-
+    
     /**
      * Get the result of the update process.
      */     
@@ -267,7 +340,7 @@ public class Updater
 
             byte[] data = new byte[BYTE_SIZE];
             int count;
-            if(announce) plugin.getLogger().info("About to download a new update: " + versionTitle);
+            if(announce) logger.info("About to download a new update: " + versionTitle);
             long downloaded = 0;
             while ((count = in.read(data, 0, BYTE_SIZE)) != -1)
             {
@@ -276,7 +349,7 @@ public class Updater
                 int percent = (int) (downloaded * 100 / fileLength);
                 if(announce & (percent % 10 == 0))
                 {
-                    plugin.getLogger().info("Downloading update: " + percent + "% of " + fileLength + " bytes.");
+                    logger.info("Downloading update: " + percent + "% of " + fileLength + " bytes.");
                 }
             }
             //Just a quick check to make sure we didn't leave any files from last time...
@@ -294,11 +367,11 @@ public class Updater
                 // Unzip
                 unzip(dFile.getCanonicalPath());
             }
-            if(announce) plugin.getLogger().info("Finished updating.");
+            if(announce) logger.info("Finished updating.");
         }
         catch (Exception ex)
         {
-            plugin.getLogger().warning("The auto-updater tried to download a new update, but was unsuccessful."); 
+            logger.warning("The auto-updater tried to download a new update, but was unsuccessful."); 
             result = Updater.UpdateResult.FAIL_DOWNLOAD;
         }
         finally
@@ -407,7 +480,7 @@ public class Updater
         catch(IOException ex)
         {
             ex.printStackTrace();
-            plugin.getLogger().warning("The auto-updater tried to unzip a new update file, but was unsuccessful."); 
+            logger.warning("The auto-updater tried to unzip a new update file, but was unsuccessful."); 
             result = Updater.UpdateResult.FAIL_DOWNLOAD;     
         } 
         new File(file).delete();
@@ -474,7 +547,7 @@ public class Updater
         catch (Exception ex)
         {
             ex.printStackTrace();
-            plugin.getLogger().warning("The auto-updater tried to contact dev.bukkit.org, but was unsuccessful.");
+            logger.warning("The auto-updater tried to contact dev.bukkit.org, but was unsuccessful.");
             result = Updater.UpdateResult.FAIL_DBO;
             return null;            
         }
@@ -486,7 +559,7 @@ public class Updater
      */
     private boolean versionCheck(String title)
     {
-        if(type != UpdateType.NO_VERSION_CHECK)
+        if (type != UpdateType.NO_VERSION_CHECK)
         {
             String version = plugin.getDescription().getVersion();
             if(title.split("v").length == 2)
@@ -512,9 +585,9 @@ public class Updater
             else
             {
                 // The file's name did not contain the string 'vVersion'
-                plugin.getLogger().warning("The author of this plugin has misconfigured their Auto Update system");
-                plugin.getLogger().warning("Files uploaded to BukkitDev should contain the version number, seperated from the name by a 'v', such as PluginName v1.0");
-                plugin.getLogger().warning("Please notify the author (" + plugin.getDescription().getAuthors().get(0) + ") of this error.");
+                logger.warning("The author of this plugin has misconfigured their Auto Update system");
+                logger.warning("Files uploaded to BukkitDev should contain the version number, seperated from the name by a 'v', such as PluginName v1.0");
+                logger.warning("Please notify the author (" + plugin.getDescription().getAuthors().get(0) + ") of this error.");
                 result = Updater.UpdateResult.FAIL_NOVERSION;
                 return false;
             }
