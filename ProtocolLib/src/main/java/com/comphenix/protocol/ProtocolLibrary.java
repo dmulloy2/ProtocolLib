@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -80,8 +81,17 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Load configuration
 		updater = new Updater(this, "protocollib", getFile(), "protocol.info");
-		config = new ProtocolConfig(this);
-				
+		
+		try {
+			config = new ProtocolConfig(this);
+		} catch (Exception e) {
+			reporter.reportWarning(this, "Cannot load configuration", e);
+			
+			// Load it again
+			deleteConfig();
+			config = new ProtocolConfig(this);
+		}
+		
 		try {
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, reporter);
@@ -95,6 +105,13 @@ public class ProtocolLibrary extends JavaPlugin {
 			reporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
 			disablePlugin();
 		}
+	}
+	
+	private void deleteConfig() {
+		File configFile = new File(getDataFolder(), "config.yml");
+		
+		// Delete the file
+		configFile.delete();
 	}
 	
 	@Override

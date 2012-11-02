@@ -5,6 +5,6 @@ global:
     download: true
     
     # Number of seconds to wait until a new update is downloaded
-    delay = 43200 # 12 hours
+    delay: 43200 # 12 hours
     # Last update time
-    last = 0
+    last: 0

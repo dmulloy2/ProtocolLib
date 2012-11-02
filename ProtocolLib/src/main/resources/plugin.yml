@@ -14,7 +14,7 @@ commands:
     permission: experiencemod.admin
     permission-message: You don't have <permission>
   packet:
-    description: Adds or removes a simple packet listener.
+    description: Add or remove a simple packet listener.
     usage: /<command> add|remove client|server|both [ID start] [ID stop] [detailed]
     permission: experiencemod.admin
     permission-message: You don't have <permission>

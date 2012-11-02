@@ -51,7 +51,8 @@ class ProtocolConfig {
 		
 		// Automatically copy defaults
 		if (copyDefaults && (global == null || updater == null)) {
-			config.options().copyDefaults(true);
+			plugin.saveDefaultConfig();
+			config = plugin.getConfig();
 			loadSections(false);
 		}
 	}
