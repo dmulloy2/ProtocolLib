@@ -38,7 +38,7 @@
     <defaultGoal>clean install</defaultGoal>
     <resources>
       <resource>
-        <directory>src/main/java</directory>
+        <directory>src/main/resources</directory>
         <excludes>
           <exclude>**/*.java</exclude>
         </excludes>

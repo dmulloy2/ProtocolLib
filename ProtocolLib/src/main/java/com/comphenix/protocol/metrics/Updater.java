@@ -50,26 +50,31 @@ public class Updater
     private static final String DBOUrl = "http://dev.bukkit.org/server-mods/"; 
     private static final int BYTE_SIZE = 1024; // Used for downloading files
     
-    private Plugin plugin;
-    private UpdateType type;
-    private String downloadedVersion;
-    private String versionTitle;
-    private String versionLink;
-    private long totalSize; // Holds the total size of the file
-    private int sizeLine; // Used for detecting file size
-    private int multiplier; // Used for determining when to broadcast download updates
-    private boolean announce; // Whether to announce file downloads
-    private URL url; // Connecting to RSS
+    private final Plugin plugin;
+    private final String slug;
 
-    private String updateFolder = YamlConfiguration.loadConfiguration(new File("bukkit.yml")).getString("settings.update-folder"); // The folder that downloads will be placed in
+    private volatile long totalSize; // Holds the total size of the file
+    private volatile int sizeLine; // Used for detecting file size
+    private volatile int multiplier; // Used for determining when to broadcast download updates
+   
+    private volatile URL url; // Connecting to RSS
+
+    private volatile String updateFolder = YamlConfiguration.loadConfiguration(new File("bukkit.yml")).getString("settings.update-folder"); // The folder that downloads will be placed in
     
     // Used for determining the outcome of the update process
-    private Updater.UpdateResult result = Updater.UpdateResult.SUCCESS; 
-	private String slug;
-	private File file;
+    private volatile Updater.UpdateResult result = Updater.UpdateResult.SUCCESS;
+    
+    // Whether to announce file downloads
+    private volatile boolean announce;
+    
+    private volatile UpdateType type;
+    private volatile String downloadedVersion;
+    private volatile String versionTitle;
+    private volatile String versionLink;
+	private volatile File file;
 
 	// Used to announce progress
-	private Logger logger;
+	private volatile Logger logger;
     
     // Strings for reading RSS
     private static final String TITLE = "title";
@@ -84,38 +89,46 @@ public class Updater
         /**
         * The updater found an update, and has readied it to be loaded the next time the server restarts/reloads.
         */        
-        SUCCESS(1),
+        SUCCESS(1, "The updater found an update, and has readied it to be loaded the next time the server restarts/reloads."),
+        
         /**
         * The updater did not find an update, and nothing was downloaded.
         */        
-        NO_UPDATE(2),
+        NO_UPDATE(2, "The updater did not find an update, and nothing was downloaded."),
+        
         /**
         * The updater found an update, but was unable to download it.
         */        
-        FAIL_DOWNLOAD(3),
+        FAIL_DOWNLOAD(3, "The updater found an update, but was unable to download it."),
+        
         /**
         * For some reason, the updater was unable to contact dev.bukkit.org to download the file.
         */        
-        FAIL_DBO(4),
+        FAIL_DBO(4, "For some reason, the updater was unable to contact dev.bukkit.org to download the file."),
+        
         /**
         * When running the version check, the file on DBO did not contain the a version in the format 'vVersion' such as 'v1.0'.
         */        
-        FAIL_NOVERSION(5),
+        FAIL_NOVERSION(5, "When running the version check, the file on DBO did not contain the a version in the format 'vVersion' such as 'v1.0'."),
+        
         /**
         * The slug provided by the plugin running the updater was invalid and doesn't exist on DBO.
         */        
-        FAIL_BADSLUG(6),
+        FAIL_BADSLUG(6, "The slug provided by the plugin running the updater was invalid and doesn't exist on DBO."),
+        
         /**
         * The updater found an update, but because of the UpdateType being set to NO_DOWNLOAD, it wasn't downloaded.
         */        
-        UPDATE_AVAILABLE(7);        
+        UPDATE_AVAILABLE(7, "The updater found an update, but because of the UpdateType being set to NO_DOWNLOAD, it wasn't downloaded.");        
         
         private static final Map<Integer, Updater.UpdateResult> valueList = new HashMap<Integer, Updater.UpdateResult>();
         private final int value;
+        private final String description;
         
-        private UpdateResult(int value)
+        private UpdateResult(int value, String description)
         {
             this.value = value;
+            this.description = description;
         }
         
         public int getValue()
@@ -126,6 +139,11 @@ public class Updater
         public static Updater.UpdateResult getResult(int value)
         {
             return valueList.get(value);
+        }
+        
+        @Override
+        public String toString() {
+        	return description;
         }
         
         static
@@ -240,7 +258,7 @@ public class Updater
      *            True if the program should announce the progress of new updates in console
      * @return The result of the update process.
      */ 
-    public UpdateResult update(UpdateType type, boolean announce) 
+    public synchronized UpdateResult update(UpdateType type, boolean announce) 
     {
     	this.type = type;
     	this.announce = announce;

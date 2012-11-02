@@ -27,12 +27,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.MonitorAdapter;
-import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.DelayedSingleTask;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
+import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 
 /**
@@ -42,11 +40,10 @@ import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
  */
 public class ProtocolLibrary extends JavaPlugin {
 	
+	private static final long MILLI_PER_SECOND = 1000;
+	
 	// There should only be one protocol manager, so we'll make it static
 	private static PacketFilterManager protocolManager;
-	
-	// Information logger
-	private Logger logger;
 	
 	// Error reporter
 	private ErrorReporter reporter;
@@ -66,23 +63,45 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Used to unhook players after a delay
 	private DelayedSingleTask unhookTask;
 	
-	// Used for debugging
-	private boolean debugListener;
+	// Settings/options
+	private ProtocolConfig config;
+	
+	// Updater
+	private Updater updater;
+	
+	// Commands
+	private CommandProtocol commandProtocol;
+	private CommandPacket commandPacket;
 	
 	@Override
 	public void onLoad() {
 		// Add global parameters
 		DetailedErrorReporter reporter = new DetailedErrorReporter();
 		
+		// Load configuration
+		updater = new Updater(this, "protocollib", getFile(), "protocol.info");
+		config = new ProtocolConfig(this);
+				
 		try {
-			logger = getLoggerSafely();
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, reporter);
 			reporter.addGlobalParameter("manager", protocolManager);
 			
+			// Initialize command handlers
+			commandProtocol = new CommandProtocol(this, updater);
+			commandPacket = new CommandPacket(this, getLoggerSafely(), protocolManager);
+			
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
+			disablePlugin();
 		}
+	}
+	
+	@Override
+	public void reloadConfig() {
+		super.reloadConfig();
+		// Reload configuration
+		config = new ProtocolConfig(this);
 	}
 	
 	@Override
@@ -90,12 +109,20 @@ public class ProtocolLibrary extends JavaPlugin {
 		try {
 			Server server = getServer();
 			PluginManager manager = server.getPluginManager();
-	
+			
+			// Don't do anything else!
+			if (manager == null)
+				return;
+			
 			// Initialize background compiler
 			if (backgroundCompiler == null) {
 				backgroundCompiler = new BackgroundCompiler(getClassLoader());
 				BackgroundCompiler.setInstance(backgroundCompiler);
 			}
+			
+			// Set up command handlers
+			getCommand(CommandProtocol.NAME).setExecutor(commandProtocol);
+			getCommand(CommandPacket.NAME).setExecutor(commandPacket);
 	
 			// Notify server managers of incompatible plugins
 			checkForIncompatibility(manager);
@@ -104,8 +131,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			protocolManager.registerEvents(manager, this);
 				
 			// Worker that ensures that async packets are eventually sent
+			// It also performs the update check.
 			createAsyncTask(server);
-			//toggleDebugListener();
 		
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, "Cannot enable ProtocolLib.", e);
@@ -121,39 +148,6 @@ public class ProtocolLibrary extends JavaPlugin {
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, "Metrics cannot be enabled. Incompatible Bukkit version.", e, statistisc);
 		}
-	}
-
-	/**
-	 * Toggle a listener that prints every sent and received packet.
-	 */
-	void toggleDebugListener() {
-		
-		if (debugListener) {
-			protocolManager.removePacketListeners(this);
-		} else {
-			// DEBUG DEBUG
-			protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH, logger) {
-				@Override
-				public void onPacketReceiving(PacketEvent event) {
-					Object handle = event.getPacket().getHandle();
-					
-					logger.info(String.format(
-							"RECEIVING %s@%s from %s.",
-							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
-					));
-				};
-				@Override
-				public void onPacketSending(PacketEvent event) {
-					Object handle = event.getPacket().getHandle();
-					
-					logger.info(String.format(
-							"SENDING %s@%s from %s.",
-							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
-					));
-				}
-			});
-		}
-		debugListener = !debugListener;
 	}
 	
 	/**
@@ -176,6 +170,9 @@ public class ProtocolLibrary extends JavaPlugin {
 					
 					// We KNOW we're on the main thread at the moment
 					manager.sendProcessedPackets(tickCounter++, true);
+					
+					// Check for updates too
+					checkUpdates();
 				}
 			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
 		
@@ -183,6 +180,24 @@ public class ProtocolLibrary extends JavaPlugin {
 			if (asyncPacketTask == -1) {
 				reporter.reportDetailed(this, "Unable to create packet timeout task.", e);
 			}
+		}
+	}
+	
+	private void checkUpdates() {
+		// Ignore milliseconds - it's pointless
+		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
+		
+		// Should we update?
+		if (currentTime < config.getAutoLastTime() + config.getAutoDelay()) {
+			// Great. Save this check.
+			config.setAutoLastTime(currentTime);
+			config.saveAll();
+			
+			// Initiate the update from the console
+			if (config.isAutoDownload())
+				commandProtocol.updateVersion(getServer().getConsoleSender());
+			else if (config.isAutoNotify())
+				commandProtocol.checkVersion(getServer().getConsoleSender());
 		}
 	}
 	
@@ -223,6 +238,20 @@ public class ProtocolLibrary extends JavaPlugin {
 		cleanup.resetAll();
 	}
 	
+	// Get the Bukkit logger first, before we try to create our own
+	private Logger getLoggerSafely() {
+		Logger log = null;
+
+		try {
+			log = getLogger();
+		} catch (Throwable e) { }
+
+		// Use the default logger instead
+		if (log == null)
+			log = Logger.getLogger("Minecraft");
+		return log;
+	}
+	
 	/**
 	 * Retrieves the packet protocol manager.
 	 * @return Packet protocol manager, or NULL if it has been disabled.
@@ -239,21 +268,5 @@ public class ProtocolLibrary extends JavaPlugin {
 	 */
 	public Statistics getStatistics() {
 		return statistisc;
-	}
-	
-	// Get the Bukkit logger first, before we try to create our own
-	private Logger getLoggerSafely() {
-		
-		Logger log = null;
-	
-		try {
-			log = getLogger();
-		} catch (Throwable e) {
-			// We'll handle it
-		}
-		
-		if (log == null)
-			log = Logger.getLogger("Minecraft");
-		return log;
 	}
 }

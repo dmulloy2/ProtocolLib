@@ -10,12 +10,12 @@ database: false
 commands:
   protocol:
     description: Performs administrative tasks regarding ProtocolLib.
-    usage: /<command> [reload|update]
+    usage: /<command> config|check|update
     permission: experiencemod.admin
     permission-message: You don't have <permission>
   packet:
     description: Adds or removes a simple packet listener.
-    usage: /<command> [add|remove|clear] [ID start] [ID stop]
+    usage: /<command> add|remove client|server|both [ID start] [ID stop] [detailed]
     permission: experiencemod.admin
     permission-message: You don't have <permission>
 
@@ -29,5 +29,5 @@ permissions:
     description: Able to initiate the update process, and can configure debug mode.
     default: op
   protocol.info:
-    description: Can read update notifications, debug messages and error reports.
+    description: Can read update notifications and error reports.
     default: op

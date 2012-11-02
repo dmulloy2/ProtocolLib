@@ -28,6 +28,9 @@ public class DetailedErrorReporter implements ErrorReporter {
 	public static final String DEFAULT_SUPPORT_URL = "http://dev.bukkit.org/server-mods/protocollib/";
 	public static final String PLUGIN_NAME = "ProtocolLib";
 	
+	// Users that are informed about errors in the chat
+	public static final String ERROR_PERMISSION = "protocol.info";
+	
 	// We don't want to spam the server
 	public static final int DEFAULT_MAX_ERROR_COUNT = 20;
 	
@@ -158,8 +161,16 @@ public class DetailedErrorReporter implements ErrorReporter {
 		if (Bukkit.getServer() != null) {
 			writer.println("Server:");
 			writer.println(addPrefix(Bukkit.getServer().getVersion(), SECOND_LEVEL_PREFIX));
+			
+			// Inform of this occurrence
+			if (ERROR_PERMISSION != null) {	
+				Bukkit.getServer().broadcast(
+						String.format("Error %s (%s) occured in %s.", message, error, sender),
+						ERROR_PERMISSION
+				);
+			}
 		}
-				
+		
 		// Make sure it is reported
 		logger.severe(addPrefix(text.toString(), prefix));
 	}
