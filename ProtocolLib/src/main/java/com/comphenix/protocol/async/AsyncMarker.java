@@ -51,7 +51,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	/**
 	 * Default number of milliseconds until a packet will rejected.
 	 */
-	public static final int DEFAULT_TIMEOUT_DELTA = 60000;
+	public static final int DEFAULT_TIMEOUT_DELTA = 120000;
 	
 	/**
 	 * Default number of packets to skip.
