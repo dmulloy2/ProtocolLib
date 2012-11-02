@@ -6,3 +6,28 @@ website: http://www.comphenix.net/ProtocolLib
 
 main: com.comphenix.protocol.ProtocolLibrary
 database: false
+
+commands:
+  protocol:
+    description: Performs administrative tasks regarding ProtocolLib.
+    usage: /<command> [reload|update]
+    permission: experiencemod.admin
+    permission-message: You don't have <permission>
+  packet:
+    description: Adds or removes a simple packet listener.
+    usage: /<command> [add|remove|clear] [ID start] [ID stop]
+    permission: experiencemod.admin
+    permission-message: You don't have <permission>
+
+permissions:
+  protocol.*:
+    description: Gives access to everything.
+    children:
+      protocol.admin: true
+      protocol.info: true
+  protocol.admin:
+    description: Able to initiate the update process, and can configure debug mode.
+    default: op
+  protocol.info:
+    description: Can read update notifications, debug messages and error reports.
+    default: op
