@@ -286,7 +286,7 @@ class CommandPacket implements CommandExecutor {
 					start = i;
 				}
 			} else {
-				if (start > 0) {
+				if (start >= 0) {
 					result.add(Ranges.closed(start, i - 1));
 					start = -1;
 				}
