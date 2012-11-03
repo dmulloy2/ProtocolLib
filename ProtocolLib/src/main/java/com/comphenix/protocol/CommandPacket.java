@@ -204,10 +204,14 @@ class CommandPacket implements CommandExecutor {
 					sendMessageSilently(sender, ChatColor.BLUE + "Fully removed " + count + " listeners.");
 				} else if (subCommand == SubCommand.NAMES) {
 					
+					Set<Integer> named = getNamedPackets(side);
+					
 					// Print the equivalent name of every given ID
 					for (Range<Integer> range : ranges) {
 						for (int id : range.asSet(DiscreteDomains.integers())) {
-							sendMessageSilently(sender, ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
+							if (named.contains(id)) {
+								sendMessageSilently(sender, ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
+							}
 						}
 					}
 				}
@@ -368,6 +372,30 @@ class CommandPacket implements CommandExecutor {
 			throw new IllegalArgumentException("Illegal side: " + side);
 	}
 	
+	private Set<Integer> getNamedPackets(ConnectionSide side) {
+		
+		Set<Integer> valids = null;
+		Set<Integer> result = null;
+		
+		try {
+			valids = getValidPackets(side);
+		} catch (FieldAccessException e) {
+			valids = Ranges.closed(0, 255).asSet(DiscreteDomains.integers());
+		}
+		
+		// Check connection side
+		if (side.isForClient())
+			result = Packets.Client.getRegistry().values();
+		else if (side.isForServer())
+			result = Packets.Server.getRegistry().values();
+		else
+			throw new IllegalArgumentException("Illegal side: " + side);
+		
+		// Remove invalid packets
+		result.retainAll(valids);
+		return result;
+	}
+		
 	public DetailedPacketListener createPacketListener(final ConnectionSide side, int idStart, int idStop, final boolean detailed) {
 		
 		Set<Integer> range = Ranges.closed(idStart, idStop).asSet(DiscreteDomains.integers());

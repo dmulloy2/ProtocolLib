@@ -18,6 +18,7 @@
 package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Set;
 
 import com.google.common.collect.BiMap;
@@ -100,6 +101,6 @@ public class IntEnum {
 	 * @return Enumeration of every value.
 	 */
 	public Set<Integer> values() {
-		return members.keySet();
+		return new HashSet<Integer>(members.keySet());
 	}
 }
