@@ -154,15 +154,17 @@ public class PrettyPrinter {
 		// Just print primitive types
 		if (value == null) {
 			output.append("NULL");
-		} else if (type.isPrimitive() || Primitives.isWrapperType(type) || type == String.class || hierachyIndex <= 0) {
+		} else if (type.isPrimitive() || Primitives.isWrapperType(type)) {
 			output.append(value);
+		} else if (type == String.class || hierachyIndex <= 0) {
+			output.append("\"" + value + "\"");
 		} else if (type.isArray()) {
 			printArray(output, value, type, stop, previous, hierachyIndex);
 		} else if (Iterable.class.isAssignableFrom(type)) {
 			printIterables(output, (Iterable) value, type, stop, previous, hierachyIndex);
 		} else if (ClassLoader.class.isAssignableFrom(type) || previous.contains(value)) {
 			// Don't print previous objects
-			output.append(value);
+			output.append("\"" + value + "\"");
 		} else {
 			output.append("{ ");
 			printObject(output, value, value.getClass(), stop, previous, hierachyIndex);
