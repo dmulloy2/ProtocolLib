@@ -209,7 +209,7 @@ class CommandPacket extends CommandBase {
 			ConnectionSide side = parseSide(args, 1, ConnectionSide.BOTH);
 			
 			Integer lastIndex = args.length - 1;
-			Boolean detailed = parseBoolean(args, lastIndex);
+			Boolean detailed = parseBoolean(args, "detailed", lastIndex);
 
 			// See if the last element is a boolean
 			if (detailed == null) {
@@ -495,9 +495,11 @@ class CommandPacket extends CommandBase {
 	}
 		
 	// Parse a boolean
-	private Boolean parseBoolean(String[] args, int index) {
+	private Boolean parseBoolean(String[] args, String parameterName, int index) {
 		if (index < args.length) {
 			if (args[index].equalsIgnoreCase("true"))
+				return true;
+			else if (args[index].equalsIgnoreCase(parameterName))
 				return true;
 			else if (args[index].equalsIgnoreCase("false"))
 				return false;
