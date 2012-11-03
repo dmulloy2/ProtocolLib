@@ -6,8 +6,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
 
@@ -35,11 +33,18 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	 */
 	public class Entry implements Map.Entry<Range<TKey>, TValue> {
 		private final Range<TKey> key;
-		private final TValue value;
-		
-		public Entry(Range<TKey> key, TValue value) {
+		private EndPoint left;
+		private EndPoint right;
+
+		Entry(Range<TKey> key, EndPoint left, EndPoint right) {
+			if (left == null)
+				throw new IllegalAccessError("left cannot be NUll");
+			if (right == null)
+				throw new IllegalAccessError("right cannot be NUll");
+			
 			this.key = key;
-			this.value = value;
+			this.left = left;
+			this.right = right;
 		}
 
 		@Override
@@ -49,12 +54,17 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 
 		@Override
 		public TValue getValue() {
-			return value;
+			return left.value;
 		}
 
 		@Override
 		public TValue setValue(TValue value) {
-			throw new NotImplementedException();
+			TValue old = left.value;
+			
+			// Set both end points
+			left.value = value;
+			right.value = value;
+			return old;
 		}
 	}
 	
@@ -83,8 +93,8 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	 * @param lowerBound - lowest value to remove.
 	 * @param upperBound - highest value to remove.
 	 */
-	public void remove(TKey lowerBound, TKey upperBound) {
-		remove(lowerBound, upperBound, false);
+	public Set<Entry> remove(TKey lowerBound, TKey upperBound) {
+		return remove(lowerBound, upperBound, false);
 	}
 
 	/**
@@ -93,13 +103,13 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	 * @param upperBound - highest value to remove.
 	 * @param preserveOutside - whether or not to preserve the intervals that are partially outside.
 	 */
-	public void remove(TKey lowerBound, TKey upperBound, boolean preserveDifference) {
+	public Set<Entry> remove(TKey lowerBound, TKey upperBound, boolean preserveDifference) {
 		checkBounds(lowerBound, upperBound);
 		NavigableMap<TKey, EndPoint> range = bounds.subMap(lowerBound, true, upperBound, true);
 		
 		boolean emptyRange = range.isEmpty();
-		TKey first = emptyRange ? range.firstKey() : null;
-		TKey last = emptyRange ? range.lastKey() : null;
+		TKey first = !emptyRange ? range.firstKey() : null;
+		TKey last = !emptyRange ? range.lastKey() : null;
 
 		Set<Entry> resized = new HashSet<Entry>();
 		Set<Entry> removed = new HashSet<Entry>();
@@ -136,6 +146,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 		
 		// Remove the range as well
 		range.clear();
+		return removed;
 	}
 	
 	// Helper
@@ -154,7 +165,8 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 		if (endPoint != null) {
 			endPoint.state = State.BOTH;
 		} else {
-			endPoint = bounds.put(key, new EndPoint(state, value));
+			endPoint = new EndPoint(state, value);
+			bounds.put(key, endPoint);
 		}
 		return endPoint;
 	}
@@ -184,11 +196,11 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	private Entry putUnsafe(TKey lowerBound, TKey upperBound, TValue value) {
 		// OK. Add the end points now
 		if (value != null) {
-			addEndPoint(lowerBound, value, State.OPEN);
-			addEndPoint(upperBound, value, State.CLOSE);
+			EndPoint left = addEndPoint(lowerBound, value, State.OPEN);
+			EndPoint right = addEndPoint(upperBound, value, State.CLOSE);
 			
 			Range<TKey> range = Ranges.closed(lowerBound, upperBound);
-			return new Entry(range, value);
+			return new Entry(range, left, right);
 		} else {
 			return null;
 		}
@@ -248,11 +260,12 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 		for (Map.Entry<TKey, EndPoint> entry : bounds.entrySet()) {
 			switch (entry.getValue().state) {
 			case BOTH:
-				destination.add(new Entry(Ranges.singleton(entry.getKey()), entry.getValue().value));
+				EndPoint point = entry.getValue();
+				destination.add(new Entry(Ranges.singleton(entry.getKey()), point, point));
 				break;
 			case CLOSE:
 				Range<TKey> range = Ranges.closed(last.getKey(), entry.getKey());
-				destination.add(new Entry(range, entry.getValue().value));
+				destination.add(new Entry(range, last.getValue(), entry.getValue()));
 				break;
 			case OPEN:
 				// We don't know the full range yet
@@ -271,7 +284,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	public void putAll(AbstractIntervalTree<TKey, TValue> other) {
 		// Naively copy every range.
 		for (Entry entry : other.entrySet()) {
-			put(entry.key.lowerEndpoint(), entry.key.upperEndpoint(), entry.value);
+			put(entry.key.lowerEndpoint(), entry.key.upperEndpoint(), entry.getValue());
 		}
 	}
 	

@@ -19,6 +19,8 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.bukkit.Server;
@@ -42,6 +44,7 @@ import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 public class ProtocolLibrary extends JavaPlugin {
 	
 	private static final long MILLI_PER_SECOND = 1000;
+	private static final String PERMISSION_INFO = "protocol.info";
 	
 	// There should only be one protocol manager, so we'll make it static
 	private static PacketFilterManager protocolManager;
@@ -70,17 +73,21 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Updater
 	private Updater updater;
 	
+	// Logger
+	private Logger logger;
+	
 	// Commands
 	private CommandProtocol commandProtocol;
 	private CommandPacket commandPacket;
 	
 	@Override
 	public void onLoad() {
+		// Load configuration
+		logger = getLoggerSafely();
+		
 		// Add global parameters
 		DetailedErrorReporter reporter = new DetailedErrorReporter();
-		
-		// Load configuration
-		updater = new Updater(this, "protocollib", getFile(), "protocol.info");
+		updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 		
 		try {
 			config = new ProtocolConfig(this);
@@ -99,7 +106,10 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			// Initialize command handlers
 			commandProtocol = new CommandProtocol(this, updater);
-			commandPacket = new CommandPacket(this, getLoggerSafely(), protocolManager);
+			commandPacket = new CommandPacket(this, logger, reporter, protocolManager);
+			
+			// Send logging information to player listeners too
+			broadcastUsers(PERMISSION_INFO);
 			
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
@@ -120,6 +130,26 @@ public class ProtocolLibrary extends JavaPlugin {
 		// Reload configuration
 		config = new ProtocolConfig(this);
 	}
+	
+    private void broadcastUsers(final String permission) {
+        // Broadcast information to every user too
+        logger.addHandler(new Handler() {
+			@Override
+			public void publish(LogRecord record) {
+				commandPacket.broadcastMessageSilently(record.getMessage(), permission);
+			}
+			
+			@Override
+			public void flush() {
+				// Not needed.
+			}
+			
+			@Override
+			public void close() throws SecurityException {
+				// Do nothing.
+			}
+		});
+    }
 	
 	@Override
 	public void onEnable() {

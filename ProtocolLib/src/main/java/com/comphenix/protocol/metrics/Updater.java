@@ -212,43 +212,14 @@ public class Updater
      * @param permission
      *            Permission needed to read the output of the update process.
      */ 
-    public Updater(Plugin plugin, String slug, File file, String permission)
+    public Updater(Plugin plugin, Logger logger, String slug, File file, String permission)
     {
         this.plugin = plugin;
         this.file = file;
         this.slug = slug;
-        
-        // Prevent issues with older versions of Bukkit
-        try {
-        	logger = plugin.getLogger();
-        	logger.getLevel();
-        } catch (Throwable e) {
-        	logger = Logger.getLogger("Minecraft");
-        }
-        
-        broadcastUsers(plugin.getServer(), permission);
+        this.logger = logger;
     }
     
-    private void broadcastUsers(final Server server, final String permission) {
-        // Broadcast information to every user too
-        logger.addHandler(new Handler() {
-			@Override
-			public void publish(LogRecord record) {
-				server.broadcast(record.getMessage(), permission);
-			}
-			
-			@Override
-			public void flush() {
-				// Not needed.
-			}
-			
-			@Override
-			public void close() throws SecurityException {
-				// Do nothing.
-			}
-		});
-    }
-
     /**
      * Update the plugin.
      * 
