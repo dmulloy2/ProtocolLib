@@ -116,7 +116,7 @@ public class PacketConstructor {
 			}
 		}
 		
-		Class<?> packetType = MinecraftRegistry.getPacketClassFromID(id);
+		Class<?> packetType = MinecraftRegistry.getPacketClassFromID(id, true);
 		
 		if (packetType == null)
 			throw new IllegalArgumentException("Could not find a packet by the id " + id);
