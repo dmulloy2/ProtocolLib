@@ -4,7 +4,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +15,7 @@ import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.concurrency.AbstractIntervalTree;
@@ -26,7 +29,6 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
-import com.google.common.base.Strings;
 import com.google.common.collect.DiscreteDomains;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
@@ -47,7 +49,7 @@ class CommandPacket extends CommandBase {
 	}
 	
 	private enum SubCommand {
-		ADD, REMOVE, NAMES;
+		ADD, REMOVE, NAMES, PAGE;
 	}
 	
 	/**
@@ -56,9 +58,9 @@ class CommandPacket extends CommandBase {
 	public static final String NAME = "packet";
 
 	/**
-	 * Default width of the chat window.
+	 * Number of lines per page.
 	 */
-	private static final int CHAT_WIDTH = 90;
+	public static final int PAGE_LINE_COUNT = 9;
 	
 	private Plugin plugin;
 	private Logger logger;
@@ -67,12 +69,15 @@ class CommandPacket extends CommandBase {
 		
 	private ChatExtensions chatter;
 	
+	// Paged message
+	private Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<CommandSender, List<String>>();
+	
 	// Registered packet listeners
 	private AbstractIntervalTree<Integer, DetailedPacketListener> clientListeners = createTree(ConnectionSide.CLIENT_SIDE);
 	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
 	
 	public CommandPacket(Plugin plugin, Logger logger, ErrorReporter reporter, ProtocolManager manager) {
-		super(CommandBase.PERMISSION_ADMIN, NAME, 1);
+		super(CommandBase.PERMISSION_ADMIN, NAME, 2);
 		this.plugin = plugin;
 		this.logger = logger;
 		this.reporter = reporter;
@@ -158,6 +163,29 @@ class CommandPacket extends CommandBase {
 		}
 	}
 	
+	private void printPage(CommandSender sender, int pageIndex) {
+		List<String> paged = pagedMessage.get(sender);
+		
+		// Make sure the player has any pages
+		if (paged != null) {
+			int lastPage = ((paged.size() - 1) / PAGE_LINE_COUNT) + 1;
+			
+			for (int i = PAGE_LINE_COUNT * (pageIndex - 1); i < PAGE_LINE_COUNT * pageIndex; i++) {
+				if (i < paged.size()) {
+					sendMessageSilently(sender, " " + paged.get(i));
+				}
+			}
+			
+			// More data?
+			if (pageIndex < lastPage) {
+				sendMessageSilently(sender, "Send /packet page " + (pageIndex + 1) + " for the next page.");
+			}
+			
+		} else {
+			sendMessageSilently(sender, ChatColor.RED + "No pages found.");
+		}
+	}
+	
 	/*
 	 * Description: Adds or removes a simple packet listener.
        Usage:       /<command> add|remove client|server|both [ID start] [ID stop] [detailed] 
@@ -166,6 +194,18 @@ class CommandPacket extends CommandBase {
 	protected boolean handleCommand(CommandSender sender, String[] args) {
 		try {
 			SubCommand subCommand = parseCommand(args, 0);
+			
+			// Commands with different parameters
+			if (subCommand == SubCommand.PAGE) {
+				int page = Integer.parseInt(args[1]);
+				
+				if (page > 0)
+					printPage(sender, page);
+				else
+					sendMessageSilently(sender, ChatColor.RED + "Page index must be greater than zero.");
+				return true;
+			}
+			
 			ConnectionSide side = parseSide(args, 1, ConnectionSide.BOTH);
 			
 			Integer lastIndex = args.length - 1;
@@ -230,38 +270,24 @@ class CommandPacket extends CommandBase {
 		for (Range<Integer> range : ranges) {
 			for (int id : range.asSet(DiscreteDomains.integers())) {
 				if (named.contains(id)) {
-					messages.add(ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
+					messages.add(ChatColor.WHITE + "" + id + ": " + ChatColor.BLUE + Packets.getDeclaredName(id));
 				}
 			}
 		}
 		
-		// Convert to two rows
-		messages = getMessagesInRows(messages, 2, CHAT_WIDTH);
-		
-		// Print that
-		for (String message : messages) {
-			sendMessageSilently(sender, message);
+		if (sender instanceof Player && messages.size() > 0 && messages.size() > PAGE_LINE_COUNT) {
+			// Divide the messages into chuncks
+			pagedMessage.put(sender, messages);
+			printPage(sender, 1);
+			
+		} else {
+			// Just print the damn thing
+			for (String message : messages) {
+				sendMessageSilently(sender, message);
+			}
 		}
 	}
 
-	private List<String> getMessagesInRows(List<String> messages, int rows, int totalWidth) {
-		List<String> output = new ArrayList<String>();
-		int columnWidth = totalWidth / rows;
-		
-		for (int i = 0; i < messages.size(); i++) {
-			int mapped = i / rows;
-			
-			// Either create a new row, or add to an existing row
-			if (mapped < output.size()) {
-				output.set(mapped, Strings.padEnd(output.get(mapped), columnWidth, ' ') + messages.get(i));
-			} else {
-				output.add(messages.get(i));
-			}
-		}
-		
-		return output;
-	}
-		
 	/**
 	 * Retrieve whitelist information about a given listener.
 	 * @param listener - the given listener.
@@ -445,6 +471,8 @@ class CommandPacket extends CommandBase {
 			return SubCommand.REMOVE;
 		else if ("names".startsWith(text)) 
 			return SubCommand.NAMES;
+		else if ("page".startsWith(text)) 
+			return SubCommand.PAGE;
 		else
 			throw new IllegalArgumentException(text + " is not a valid sub command. Must be add or remove.");
 	}
