@@ -15,7 +15,7 @@ commands:
     permission-message: You don't have <permission>
   packet:
     description: Add or remove a simple packet listener.
-    usage: /<command> add|remove client|server [ID start]-[ID stop] [detailed]
+    usage: /<command> add|remove|names client|server [ID start]-[ID stop] [detailed]
     permission: experiencemod.admin
     permission-message: You don't have <permission>
 

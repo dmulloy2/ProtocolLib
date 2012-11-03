@@ -47,7 +47,7 @@ class CommandPacket implements CommandExecutor {
 	}
 	
 	private enum SubCommand {
-		ADD, REMOVE;
+		ADD, REMOVE, NAMES;
 	}
 	
 	/**
@@ -202,7 +202,15 @@ class CommandPacket implements CommandExecutor {
 					}
 					
 					sendMessageSilently(sender, ChatColor.BLUE + "Fully removed " + count + " listeners.");
-				} 
+				} else if (subCommand == SubCommand.NAMES) {
+					
+					// Print the equivalent name of every given ID
+					for (Range<Integer> range : ranges) {
+						for (int id : range.asSet(DiscreteDomains.integers())) {
+							sendMessageSilently(sender, ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
+						}
+					}
+				}
 				
 			} catch (NumberFormatException e) {
 				sendMessageSilently(sender, ChatColor.RED + "Cannot parse number: " + e.getMessage());
@@ -489,6 +497,8 @@ class CommandPacket implements CommandExecutor {
 			return SubCommand.ADD;
 		else if ("remove".startsWith(text))
 			return SubCommand.REMOVE;
+		else if ("names".startsWith(text)) 
+			return SubCommand.NAMES;
 		else
 			throw new IllegalArgumentException(text + " is not a valid sub command. Must be add or remove.");
 	}
