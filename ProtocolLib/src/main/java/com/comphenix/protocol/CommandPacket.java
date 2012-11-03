@@ -28,6 +28,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
+import com.google.common.base.Strings;
 import com.google.common.collect.DiscreteDomains;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
@@ -54,6 +55,11 @@ class CommandPacket implements CommandExecutor {
 	 * Name of this command.
 	 */
 	public static final String NAME = "packet";
+
+	/**
+	 * Default width of the chat window.
+	 */
+	private static final int CHAT_WIDTH = 90;
 	
 	private Plugin plugin;
 	private Logger logger;
@@ -127,7 +133,7 @@ class CommandPacket implements CommandExecutor {
 	
 	/**
 	 * Send a message without invoking the packet listeners.
-	 * @param player - the player to send it to.
+	 * @param receiver - the player to send it to.
 	 * @param message - the message to send.
 	 * @return TRUE if the message was sent successfully, FALSE otherwise.
 	 */
@@ -205,14 +211,23 @@ class CommandPacket implements CommandExecutor {
 				} else if (subCommand == SubCommand.NAMES) {
 					
 					Set<Integer> named = getNamedPackets(side);
+					List<String> messages = new ArrayList<String>();
 					
 					// Print the equivalent name of every given ID
 					for (Range<Integer> range : ranges) {
 						for (int id : range.asSet(DiscreteDomains.integers())) {
 							if (named.contains(id)) {
-								sendMessageSilently(sender, ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
+								messages.add(ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
 							}
 						}
+					}
+					
+					// Convert to two rows
+					messages = getMessagesInRows(messages, 2, CHAT_WIDTH);
+					
+					// Print that
+					for (String message : messages) {
+						sendMessageSilently(sender, message);
 					}
 				}
 				
@@ -226,6 +241,24 @@ class CommandPacket implements CommandExecutor {
 		}
 		
 		return false;
+	}
+	
+	private List<String> getMessagesInRows(List<String> messages, int rows, int totalWidth) {
+		List<String> output = new ArrayList<String>();
+		int columnWidth = totalWidth / rows;
+		
+		for (int i = 0; i < messages.size(); i++) {
+			int mapped = i / rows;
+			
+			// Either create a new row, or add to an existing row
+			if (mapped < output.size()) {
+				output.set(mapped, Strings.padEnd(output.get(mapped), columnWidth, ' ') + messages.get(i));
+			} else {
+				output.add(messages.get(i));
+			}
+		}
+		
+		return output;
 	}
 	
 	/**

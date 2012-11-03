@@ -28,7 +28,7 @@ public class ChatExtensions {
 	
 	/**
 	 * Send a message without invoking the packet listeners.
-	 * @param player - the player to send it to.
+	 * @param receiver - the receiver.
 	 * @param message - the message to send.
 	 * @return TRUE if the message was sent successfully, FALSE otherwise.
 	 * @throws InvocationTargetException If we were unable to send the message.
