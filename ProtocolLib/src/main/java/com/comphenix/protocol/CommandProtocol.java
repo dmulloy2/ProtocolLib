@@ -1,8 +1,6 @@
 package com.comphenix.protocol;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
@@ -15,7 +13,7 @@ import com.comphenix.protocol.metrics.Updater.UpdateType;
  * 
  * @author Kristian
  */
-class CommandProtocol implements CommandExecutor {
+class CommandProtocol extends CommandBase {
 	/**
 	 * Name of this command.
 	 */
@@ -25,33 +23,25 @@ class CommandProtocol implements CommandExecutor {
 	private Updater updater;
 	
 	public CommandProtocol(Plugin plugin, Updater updater) {
+		super(CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
 		this.updater = updater;
 	}
 	
 	@Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		// Make sure we're dealing with the correct command
-		if (!command.getName().equalsIgnoreCase(NAME))
+	protected boolean handleCommand(CommandSender sender, String[] args) {
+		String subCommand = args[0];
+		
+		// Only return TRUE if we executed the correct command
+		if (subCommand.equalsIgnoreCase("config"))
+			reloadConfiguration(sender);
+		else if (subCommand.equalsIgnoreCase("check"))
+			checkVersion(sender);
+		else if (subCommand.equalsIgnoreCase("update"))
+			updateVersion(sender);
+		else
 			return false;
-		
-		// We need one argument (the sub-command)
-		if (args != null && args.length == 1) {
-			String subCommand = args[0];
-			
-			// Only return TRUE if we executed the correct command
-			if (subCommand.equalsIgnoreCase("config"))
-				reloadConfiguration(sender);
-			else if (subCommand.equalsIgnoreCase("check"))
-				checkVersion(sender);
-			else if (subCommand.equalsIgnoreCase("update"))
-				updateVersion(sender);
-			else
-				return false;
-			return true;
-		}
-		
-		return false;
+		return true;
 	}
 	
 	public void checkVersion(final CommandSender sender) {

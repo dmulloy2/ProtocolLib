@@ -12,8 +12,6 @@ import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
@@ -38,7 +36,8 @@ import com.google.common.collect.Ranges;
  * 
  * @author Kristian
  */
-class CommandPacket implements CommandExecutor {
+class CommandPacket extends CommandBase {
+	
 	private interface DetailedPacketListener extends PacketListener {
 		/**
 		 * Determine whether or not the given packet listener is detailed or not.
@@ -73,6 +72,7 @@ class CommandPacket implements CommandExecutor {
 	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
 	
 	public CommandPacket(Plugin plugin, Logger logger, ErrorReporter reporter, ProtocolManager manager) {
+		super(CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
 		this.logger = logger;
 		this.reporter = reporter;
@@ -163,86 +163,87 @@ class CommandPacket implements CommandExecutor {
        Usage:       /<command> add|remove client|server|both [ID start] [ID stop] [detailed] 
 	 */
 	@Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		// Make sure we're dealing with the correct command
-		if (!command.getName().equalsIgnoreCase(NAME))
-			return false;
-		
-		// We need at least one argument
-		if (args != null && args.length > 0) {
-			try {
-				SubCommand subCommand = parseCommand(args, 0);
-				ConnectionSide side = parseSide(args, 1, ConnectionSide.BOTH);
-				
-				Integer lastIndex = args.length - 1;
-				Boolean detailed = parseBoolean(args, lastIndex);
+	protected boolean handleCommand(CommandSender sender, String[] args) {
+		try {
+			SubCommand subCommand = parseCommand(args, 0);
+			ConnectionSide side = parseSide(args, 1, ConnectionSide.BOTH);
+			
+			Integer lastIndex = args.length - 1;
+			Boolean detailed = parseBoolean(args, lastIndex);
 
-				// See if the last element is a boolean
-				if (detailed == null) {
-					detailed = false;
-				} else {
-					lastIndex--;
-				}
-				
-				// Make sure the packet IDs are valid
-				List<Range<Integer>> ranges = getRanges(args, 2, lastIndex, Ranges.closed(0, 255));
-
-				if (ranges.isEmpty()) {
-					// Use every packet ID
-					ranges.add(Ranges.closed(0, 255));
-				}
-				
-				// Perform command
-				if (subCommand == SubCommand.ADD) {
-					for (Range<Integer> range : ranges) {
-						DetailedPacketListener listener = addPacketListeners(side, range.lowerEndpoint(), range.upperEndpoint(), detailed);
-						sendMessageSilently(sender, ChatColor.BLUE + "Added listener " + getWhitelistInfo(listener));
-					}
-					
-				} else if (subCommand == SubCommand.REMOVE) {
-					int count = 0; 
-					
-					// Remove each packet listener
-					for (Range<Integer> range : ranges) {
-						count += removePacketListeners(side, range.lowerEndpoint(), range.upperEndpoint(), detailed).size();
-					}
-					
-					sendMessageSilently(sender, ChatColor.BLUE + "Fully removed " + count + " listeners.");
-				} else if (subCommand == SubCommand.NAMES) {
-					
-					Set<Integer> named = getNamedPackets(side);
-					List<String> messages = new ArrayList<String>();
-					
-					// Print the equivalent name of every given ID
-					for (Range<Integer> range : ranges) {
-						for (int id : range.asSet(DiscreteDomains.integers())) {
-							if (named.contains(id)) {
-								messages.add(ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
-							}
-						}
-					}
-					
-					// Convert to two rows
-					messages = getMessagesInRows(messages, 2, CHAT_WIDTH);
-					
-					// Print that
-					for (String message : messages) {
-						sendMessageSilently(sender, message);
-					}
-				}
-				
-			} catch (NumberFormatException e) {
-				sendMessageSilently(sender, ChatColor.RED + "Cannot parse number: " + e.getMessage());
-			} catch (IllegalArgumentException e) {
-				sendMessageSilently(sender, ChatColor.RED + e.getMessage());
+			// See if the last element is a boolean
+			if (detailed == null) {
+				detailed = false;
+			} else {
+				lastIndex--;
 			}
 			
-			return true;
+			// Make sure the packet IDs are valid
+			List<Range<Integer>> ranges = RangeParser.getRanges(args, 2, lastIndex, Ranges.closed(0, 255));
+
+			if (ranges.isEmpty()) {
+				// Use every packet ID
+				ranges.add(Ranges.closed(0, 255));
+			}
+			
+			// Perform commands
+			if (subCommand == SubCommand.ADD) {
+				executeAddCommand(sender, side, detailed, ranges);
+			} else if (subCommand == SubCommand.REMOVE) {
+				executeRemoveCommand(sender, side, detailed, ranges);
+			} else if (subCommand == SubCommand.NAMES) {
+				executeNamesCommand(sender, side, ranges);
+			}
+			
+		} catch (NumberFormatException e) {
+			sendMessageSilently(sender, ChatColor.RED + "Cannot parse number: " + e.getMessage());
+		} catch (IllegalArgumentException e) {
+			sendMessageSilently(sender, ChatColor.RED + e.getMessage());
 		}
 		
-		return false;
+		return true;
+	}
+
+	private void executeAddCommand(CommandSender sender, ConnectionSide side, Boolean detailed, List<Range<Integer>> ranges) {
+		for (Range<Integer> range : ranges) {
+			DetailedPacketListener listener = addPacketListeners(side, range.lowerEndpoint(), range.upperEndpoint(), detailed);
+			sendMessageSilently(sender, ChatColor.BLUE + "Added listener " + getWhitelistInfo(listener));
+		}
 	}
 	
+	private void executeRemoveCommand(CommandSender sender, ConnectionSide side, Boolean detailed, List<Range<Integer>> ranges) {
+		int count = 0; 
+		
+		// Remove each packet listener
+		for (Range<Integer> range : ranges) {
+			count += removePacketListeners(side, range.lowerEndpoint(), range.upperEndpoint(), detailed).size();
+		}
+		
+		sendMessageSilently(sender, ChatColor.BLUE + "Fully removed " + count + " listeners.");
+	}
+	
+	private void executeNamesCommand(CommandSender sender, ConnectionSide side, List<Range<Integer>> ranges) {
+		Set<Integer> named = getNamedPackets(side);
+		List<String> messages = new ArrayList<String>();
+		
+		// Print the equivalent name of every given ID
+		for (Range<Integer> range : ranges) {
+			for (int id : range.asSet(DiscreteDomains.integers())) {
+				if (named.contains(id)) {
+					messages.add(ChatColor.BLUE + "" + id + ": " + Packets.getDeclaredName(id));
+				}
+			}
+		}
+		
+		// Convert to two rows
+		messages = getMessagesInRows(messages, 2, CHAT_WIDTH);
+		
+		// Print that
+		for (String message : messages) {
+			sendMessageSilently(sender, message);
+		}
+	}
+
 	private List<String> getMessagesInRows(List<String> messages, int rows, int totalWidth) {
 		List<String> output = new ArrayList<String>();
 		int columnWidth = totalWidth / rows;
@@ -260,123 +261,7 @@ class CommandPacket implements CommandExecutor {
 		
 		return output;
 	}
-	
-	/**
-	 * Parse ranges from an array of tokens.
-	 * @param args - array of tokens.
-	 * @param offset - beginning offset.
-	 * @param legalRange - range of legal values.
-	 * @return The parsed ranges.
-	 */
-	public static List<Range<Integer>> getRanges(String[] args, int offset, int lastIndex, Range<Integer> legalRange) {
-		List<String> tokens = tokenizeInput(args, offset, lastIndex);
-		List<Range<Integer>> ranges = new ArrayList<Range<Integer>>();
 		
-		for (int i = 0; i < tokens.size(); i++) {
-			Range<Integer> range;
-			String current = tokens.get(i);
-			String next = i + 1 < tokens.size() ? tokens.get(i + 1) : null;
-			
-			// Yoda equality is done for null-safety
-			if ("-".equals(current)) {
-				throw new IllegalArgumentException("A hyphen must appear between two numbers.");
-			} else if ("-".equals(next)) {
-				if (i + 2 >= tokens.size())
-					throw new IllegalArgumentException("Cannot form a range without a upper limit.");
-
-				// This is a proper range
-				range = Ranges.closed(Integer.parseInt(current), Integer.parseInt(tokens.get(i + 2)));
-				ranges.add(range);
-				
-				// Skip the two next tokens
-				i += 2;
-				
-			} else {
-				// Just a single number
-				range = Ranges.singleton(Integer.parseInt(current));
-				ranges.add(range);
-			}
-			
-			// Validate ranges
-			if (!legalRange.encloses(range)) {
-				throw new IllegalArgumentException(range + " is not in the range " + range.toString());
-			}
-		}
-		
-		return simplify(ranges, legalRange.upperEndpoint());
-	}
-	
-	/**
-	 * Simplify a list of ranges by assuming a maximum value.
-	 * @param ranges - the list of ranges to simplify.
-	 * @param maximum - the maximum value (minimum value is always 0).
-	 * @return A simplified list of ranges.
-	 */
-	private static List<Range<Integer>> simplify(List<Range<Integer>> ranges, int maximum) {
-		List<Range<Integer>> result = new ArrayList<Range<Integer>>();
-		boolean[] set = new boolean[maximum + 1];
-		int start = -1;
-		
-		// Set every ID
-		for (Range<Integer> range : ranges) {
-			for (int id : range.asSet(DiscreteDomains.integers())) {
-				set[id] = true;
-			}
-		}
-		
-		// Generate ranges from this set
-		for (int i = 0; i <= set.length; i++) {
-			if (i < set.length && set[i]) {
-				if (start < 0) {
-					start = i;
-				}
-			} else {
-				if (start >= 0) {
-					result.add(Ranges.closed(start, i - 1));
-					start = -1;
-				}
-			}
-		}
-		
-		return result;
-	}
-	
-	private static List<String> tokenizeInput(String[] args, int offset, int lastIndex) {
-		List<String> tokens = new ArrayList<String>();
-		
-		// Tokenize the input
-		for (int i = offset; i <= lastIndex; i++) {
-			String text = args[i];
-			StringBuilder number = new StringBuilder();
-			
-			for (int j = 0; j < text.length(); j++) {
-				char current = text.charAt(j);
-				
-				if (Character.isDigit(current)) {
-					number.append(current);
-				} else if (Character.isWhitespace(current)) {
-					// That's ok
-				} else if (current == '-') {
-					// Add the number token first
-					if (number.length() > 0) {
-						tokens.add(number.toString());
-						number.setLength(0);
-					}
-					
-					tokens.add(Character.toString(current));
-				} else {
-					throw new IllegalArgumentException("Illegal character '" + current + "' found.");
-				}
-			}
-			
-			// Add the number token, if it hasn't already
-			if (number.length() > 0)
-				tokens.add(number.toString());
-		}
-		
-		return tokens;
-	}
-	
 	/**
 	 * Retrieve whitelist information about a given listener.
 	 * @param listener - the given listener.
