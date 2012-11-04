@@ -8,3 +8,5 @@ global:
     delay: 43200 # 12 hours
     # Last update time
     last: 0
+ 
+  metrics: true

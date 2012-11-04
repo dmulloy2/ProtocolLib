@@ -189,7 +189,9 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Try to enable statistics
 		try {
-			statistisc = new Statistics(this);
+			if (config.isMetricsEnabled()) {
+				statistisc = new Statistics(this);
+			}
 		} catch (IOException e) {
 			reporter.reportDetailed(this, "Unable to enable metrics.", e, statistisc);
 		} catch (Throwable e) {
@@ -310,7 +312,8 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * Retrieve the metrics instance used to measure users of this library.
 	 * <p>
-	 * Note that this method may return NULL when the server is reloading or shutting down.
+	 * Note that this method may return NULL when the server is reloading or shutting down. It is also
+	 * NULL if metrics has been disabled.
 	 * @return Metrics instance container.
 	 */
 	public Statistics getStatistics() {

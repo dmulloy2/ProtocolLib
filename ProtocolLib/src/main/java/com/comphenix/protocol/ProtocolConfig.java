@@ -14,6 +14,8 @@ class ProtocolConfig {
 	private static final String SECTION_GLOBAL = "global";
 	private static final String SECTION_AUTOUPDATER = "auto updater";
 	
+	private static final String METRICS_ENABLED = "metrics";
+	
 	private static final String UPDATER_NOTIFY = "notify";
 	private static final String UPDATER_DOWNLAD = "download";
 	private static final String UPDATER_DELAY = "delay";
@@ -117,6 +119,25 @@ class ProtocolConfig {
 	 */
 	public long getAutoLastTime() {
 		return updater.getLong(UPDATER_LAST_TIME, 0);
+	}
+	
+	/**
+	 * Retrieve whether or not metrics is enabled.
+	 * @return TRUE if metrics is enabled, FALSE otherwise.
+	 */
+	public boolean isMetricsEnabled() {
+		return global.getBoolean(METRICS_ENABLED, true);
+	}
+	
+	/**
+	 * Set whether or not metrics is enabled.
+	 * <p>
+	 * This setting will take effect next time ProtocolLib is started.
+	 * 
+	 * @param enabled - whether or not metrics is enabled.
+	 */
+	public void setMetricsEnabled(boolean enabled) {
+		global.set(METRICS_ENABLED, enabled);
 	}
 	
 	/**
