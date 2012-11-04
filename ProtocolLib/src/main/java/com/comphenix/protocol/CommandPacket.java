@@ -76,11 +76,10 @@ class CommandPacket extends CommandBase {
 	private AbstractIntervalTree<Integer, DetailedPacketListener> clientListeners = createTree(ConnectionSide.CLIENT_SIDE);
 	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
 	
-	public CommandPacket(Plugin plugin, Logger logger, ErrorReporter reporter, ProtocolManager manager) {
-		super(CommandBase.PERMISSION_ADMIN, NAME, 2);
+	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, ProtocolManager manager) {
+		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 2);
 		this.plugin = plugin;
 		this.logger = logger;
-		this.reporter = reporter;
 		this.manager = manager;
 		this.chatter = new ChatExtensions(manager);
 	}

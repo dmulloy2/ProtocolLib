@@ -75,6 +75,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Updater
 	private Updater updater;
+	private boolean updateDisabled;
 	
 	// Logger
 	private Logger logger;
@@ -108,8 +109,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			reporter.addGlobalParameter("manager", protocolManager);
 			
 			// Initialize command handlers
-			commandProtocol = new CommandProtocol(this, updater, config);
-			commandPacket = new CommandPacket(this, logger, reporter, protocolManager);
+			commandProtocol = new CommandProtocol(reporter, this, updater, config);
+			commandPacket = new CommandPacket(reporter, this, logger, protocolManager);
 			
 			// Send logging information to player listeners too
 			broadcastUsers(PERMISSION_INFO);
@@ -223,7 +224,9 @@ public class ProtocolLibrary extends JavaPlugin {
 					manager.sendProcessedPackets(tickCounter++, true);
 					
 					// Check for updates too
-					checkUpdates();
+					if (!updateDisabled) {
+						checkUpdates();
+					}
 				}
 			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
 		
@@ -238,15 +241,20 @@ public class ProtocolLibrary extends JavaPlugin {
 		// Ignore milliseconds - it's pointless
 		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
 		
-		// Should we update?
-		if (currentTime > config.getAutoLastTime() + config.getAutoDelay()) {			
-			// Initiate the update as if it came from the console
-			if (config.isAutoDownload())
-				commandProtocol.updateVersion(getServer().getConsoleSender());
-			else if (config.isAutoNotify())
-				commandProtocol.checkVersion(getServer().getConsoleSender());
-			else 
-				commandProtocol.updateFinished();
+		try {
+			// Should we update?
+			if (currentTime > config.getAutoLastTime() + config.getAutoDelay()) {			
+				// Initiate the update as if it came from the console
+				if (config.isAutoDownload())
+					commandProtocol.updateVersion(getServer().getConsoleSender());
+				else if (config.isAutoNotify())
+					commandProtocol.checkVersion(getServer().getConsoleSender());
+				else 
+					commandProtocol.updateFinished();
+			}
+		} catch (Exception e) {
+			reporter.reportDetailed(this, "Cannot perform automatic updates.", e);
+			updateDisabled = true;
 		}
 	}
 	
