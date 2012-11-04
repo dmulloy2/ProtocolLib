@@ -547,11 +547,13 @@ public class Updater
     {
         if (type != UpdateType.NO_VERSION_CHECK)
         {
+        	String[] parts = title.split(" ");
             String version = plugin.getDescription().getVersion();
-            if(title.split("v").length == 2)
+            
+            if(parts.length == 2)
             {
-                String remoteVersion = title.split("v")[1].split(" ")[0]; // Get the newest file's version number
-                int remVer = -1,curVer=0;
+                String remoteVersion = parts[1].split(" ")[0]; // Get the newest file's version number
+                int remVer = -1, curVer=0;
                 try
                 {
                     remVer = calVer(remoteVersion);
@@ -559,8 +561,9 @@ public class Updater
                 }
                 catch(NumberFormatException nfe)
                 {
-                remVer=-1;
+                	remVer=-1;
                 }
+                
                 if(hasTag(version)||version.equalsIgnoreCase(remoteVersion)||curVer>=remVer)
                 {
                     // We already have the latest version, or this build is tagged for no-update

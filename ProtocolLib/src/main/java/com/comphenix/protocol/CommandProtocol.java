@@ -21,11 +21,13 @@ class CommandProtocol extends CommandBase {
 	
 	private Plugin plugin;
 	private Updater updater;
+	private ProtocolConfig config;
 	
-	public CommandProtocol(Plugin plugin, Updater updater) {
+	public CommandProtocol(Plugin plugin, Updater updater, ProtocolConfig config) {
 		super(CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
 		this.updater = updater;
+		this.config = config;
 	}
 	
 	@Override
@@ -50,9 +52,11 @@ class CommandProtocol extends CommandBase {
 			@Override
 			public void run() {
 				UpdateResult result = updater.update(UpdateType.NO_DOWNLOAD, true);
-				sender.sendMessage(ChatColor.DARK_BLUE + "Version check: " + result.toString());
+				sender.sendMessage(ChatColor.BLUE + "Version check: " + result.toString());
 			}
 		});
+		
+		updateFinished();
 	}
 	
 	public void updateVersion(final CommandSender sender) {
@@ -61,14 +65,24 @@ class CommandProtocol extends CommandBase {
 			@Override
 			public void run() {
 				UpdateResult result = updater.update(UpdateType.DEFAULT, true);
-				sender.sendMessage(ChatColor.DARK_BLUE + "Update: " + result.toString());
+				sender.sendMessage(ChatColor.BLUE + "Update: " + result.toString());
 			}
 		});
+		
+		updateFinished();
+	}
+	
+	/**
+	 * Prevent further automatic updates until the next delay.
+	 */
+	public void updateFinished() {
+		config.setAutoLastTime(System.currentTimeMillis());
+		config.saveAll();
 	}
 	
 	public void reloadConfiguration(CommandSender sender) {
 		plugin.saveConfig();
 		plugin.reloadConfig();
-		sender.sendMessage(ChatColor.DARK_BLUE + "Reloaded configuration!");
+		sender.sendMessage(ChatColor.BLUE + "Reloaded configuration!");
 	}
 }

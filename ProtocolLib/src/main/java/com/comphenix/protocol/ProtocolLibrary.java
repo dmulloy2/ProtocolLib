@@ -105,7 +105,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			reporter.addGlobalParameter("manager", protocolManager);
 			
 			// Initialize command handlers
-			commandProtocol = new CommandProtocol(this, updater);
+			commandProtocol = new CommandProtocol(this, updater, config);
 			commandPacket = new CommandPacket(this, logger, reporter, protocolManager);
 			
 			// Send logging information to player listeners too
@@ -237,16 +237,14 @@ public class ProtocolLibrary extends JavaPlugin {
 		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
 		
 		// Should we update?
-		if (currentTime < config.getAutoLastTime() + config.getAutoDelay()) {
-			// Great. Save this check.
-			config.setAutoLastTime(currentTime);
-			config.saveAll();
-			
-			// Initiate the update from the console
+		if (currentTime < config.getAutoLastTime() + config.getAutoDelay()) {			
+			// Initiate the update as if it came from the console
 			if (config.isAutoDownload())
 				commandProtocol.updateVersion(getServer().getConsoleSender());
 			else if (config.isAutoNotify())
 				commandProtocol.checkVersion(getServer().getConsoleSender());
+			else 
+				commandProtocol.updateFinished();
 		}
 	}
 	
