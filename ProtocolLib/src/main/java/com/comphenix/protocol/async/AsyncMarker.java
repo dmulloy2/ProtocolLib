@@ -418,7 +418,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 					// We're in 1.2.5
 					alwaysSync = true;
 				} else {
-					System.err.println("Cannot determine asynchronous state of packets!");
+					System.err.println("[ProtocolLib] Cannot determine asynchronous state of packets!");
 					alwaysSync = true;
 				}
 			}

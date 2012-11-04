@@ -29,7 +29,7 @@ import com.comphenix.protocol.events.PacketListener;
  * 
  * @author Kristian
  */
-class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<PacketListener> {
+public final class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<PacketListener> {
 	
 	/**
 	 * Invokes the given packet event for every registered listener.

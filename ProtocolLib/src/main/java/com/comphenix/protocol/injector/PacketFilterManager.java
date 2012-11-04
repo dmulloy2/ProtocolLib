@@ -108,8 +108,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	private PlayerInjectionHandler playerInjection;
 
 	// The two listener containers
-	private SortedPacketListenerList recievedListeners = new SortedPacketListenerList();
-	private SortedPacketListenerList sendingListeners = new SortedPacketListenerList();
+	private SortedPacketListenerList recievedListeners;
+	private SortedPacketListenerList sendingListeners;
 	
 	// Whether or not this class has been closed
 	private volatile boolean hasClosed;
@@ -149,6 +149,10 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// Just boilerplate
 		final DelayedSingleTask finalUnhookTask = unhookTask;
+		
+		// Listener containers
+		this.recievedListeners = new SortedPacketListenerList();
+		this.sendingListeners = new SortedPacketListenerList();
 		
 		// References
 		this.unhookTask = unhookTask;
@@ -366,12 +370,16 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	@Override
 	public void invokePacketRecieving(PacketEvent event) {
-		handlePacket(recievedListeners, event, false);
+		if (!hasClosed) {
+			handlePacket(recievedListeners, event, false);
+		}
 	}
 
 	@Override
 	public void invokePacketSending(PacketEvent event) {
-		handlePacket(sendingListeners, event, true);
+		if (!hasClosed) {
+			handlePacket(sendingListeners, event, true);
+		}
 	}
 	
 	/**
@@ -812,6 +820,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// Remove listeners
 		packetListeners.clear();
+		recievedListeners = null;
+		sendingListeners = null;
 		
 		// Clean up async handlers. We have to do this last.
 		asyncFilterManager.cleanupAll();

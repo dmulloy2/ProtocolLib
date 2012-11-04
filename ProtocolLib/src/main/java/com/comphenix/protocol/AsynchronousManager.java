@@ -99,4 +99,22 @@ public interface AsynchronousManager {
 	 * @param packet - packet to signal.
 	 */
 	public abstract void signalPacketTransmission(PacketEvent packet);
+
+	/**
+	 * Register a synchronous listener that handles packets when they time out.
+	 * @param listener - synchronous listener that will handle timed out packets.
+	 */
+	public abstract void registerTimeoutHandler(PacketListener listener);
+	
+	/**
+	 * Unregisters a given timeout listener.
+	 * @param listener - the timeout listener to unregister.
+	 */
+	public abstract void unregisterTimeoutHandler(PacketListener listener);
+
+	/**
+	 * Get a immutable list of every registered timeout handler.
+	 * @return List of every registered timeout handler.
+	 */
+	public abstract Set<PacketListener> getTimeoutHandlers();
 }

@@ -20,6 +20,7 @@ package com.comphenix.protocol.async;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bukkit.plugin.Plugin;
@@ -34,7 +35,10 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PrioritizedListener;
+import com.comphenix.protocol.injector.SortedPacketListenerList;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 /**
  * Represents a filter manager for asynchronous packets.
@@ -43,8 +47,13 @@ import com.google.common.base.Objects;
  */
 public class AsyncFilterManager implements AsynchronousManager {
 
+	private SortedPacketListenerList serverTimeoutListeners;
+	private SortedPacketListenerList clientTimeoutListeners;
+	private Set<PacketListener> timeoutListeners;
+	
 	private PacketProcessingQueue serverProcessingQueue;
 	private PacketSendingQueue serverQueue;
+	
 	
 	private PacketProcessingQueue clientProcessingQueue;
 	private PacketSendingQueue clientQueue;
@@ -68,11 +77,30 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	public AsyncFilterManager(ErrorReporter reporter, BukkitScheduler scheduler, ProtocolManager manager) {
 		
+		// Initialize timeout listeners
+		serverTimeoutListeners = new SortedPacketListenerList();
+		clientTimeoutListeners = new SortedPacketListenerList();
+		timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
+		
 		// Server packets are synchronized already
-		this.serverQueue = new PacketSendingQueue(false);
+		this.serverQueue = new PacketSendingQueue(false) {
+			@Override
+			protected void onPacketTimeout(PacketEvent event) {
+				if (!cleaningUp) {
+					serverTimeoutListeners.invokePacketSending(AsyncFilterManager.this.reporter, event);
+				}
+			}
+		};
 		
 		// Client packets must be synchronized
-		this.clientQueue = new PacketSendingQueue(true); 
+		this.clientQueue = new PacketSendingQueue(true) {
+			@Override
+			protected void onPacketTimeout(PacketEvent event) {
+				if (!cleaningUp) {
+					clientTimeoutListeners.invokePacketSending(AsyncFilterManager.this.reporter, event);
+				}
+			}
+		};
 		
 		this.serverProcessingQueue = new PacketProcessingQueue(serverQueue);
 		this.clientProcessingQueue = new PacketProcessingQueue(clientQueue);
@@ -87,6 +115,27 @@ public class AsyncFilterManager implements AsynchronousManager {
 	@Override
 	public AsyncListenerHandler registerAsyncHandler(PacketListener listener) {
 		return registerAsyncHandler(listener, true);
+	}
+	
+	@Override
+	public void registerTimeoutHandler(PacketListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener cannot be NULL.");
+		if (!timeoutListeners.add(listener))
+			return;
+		
+		ListeningWhitelist sending = listener.getSendingWhitelist();
+		ListeningWhitelist receiving = listener.getReceivingWhitelist();
+		
+		if (!ListeningWhitelist.isEmpty(sending))
+			serverTimeoutListeners.addListener(listener, sending);
+		if (!ListeningWhitelist.isEmpty(receiving))
+			serverTimeoutListeners.addListener(listener, receiving);
+	}
+
+	@Override
+	public Set<PacketListener> getTimeoutHandlers() {
+		return ImmutableSet.copyOf(timeoutListeners);
 	}
 	
 	/**
@@ -129,6 +178,21 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	private boolean hasValidWhitelist(ListeningWhitelist whitelist) {
 		return whitelist != null && whitelist.getWhitelist().size() > 0;
+	}
+	
+	@Override
+	public void unregisterTimeoutHandler(PacketListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener cannot be NULL.");
+		
+		ListeningWhitelist sending = listener.getSendingWhitelist();
+		ListeningWhitelist receiving = listener.getReceivingWhitelist();
+		
+		// Do it in the opposite order
+		if (serverTimeoutListeners.removeListener(listener, sending).size() > 0 ||
+			clientTimeoutListeners.removeListener(listener, receiving).size() > 0) {
+			timeoutListeners.remove(listener);
+		}
 	}
 	
 	@Override
@@ -276,6 +340,10 @@ public class AsyncFilterManager implements AsynchronousManager {
 		cleaningUp = true;
 		serverProcessingQueue.cleanupAll();
 		serverQueue.cleanupAll();
+		
+		timeoutListeners.clear();
+		serverTimeoutListeners = null;
+		clientTimeoutListeners = null;
 	}
 
 	@Override
@@ -333,7 +401,6 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * Send any due packets, or clean up packets that have expired.
 	 */
 	public void sendProcessedPackets(int tickCounter, boolean onMainThread) {
-		
 		// The server queue is unlikely to need checking that often
 		if (tickCounter % 10 == 0) {
 			serverQueue.trySendPackets(onMainThread);

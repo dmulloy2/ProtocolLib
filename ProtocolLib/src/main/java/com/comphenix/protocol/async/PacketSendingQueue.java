@@ -27,13 +27,14 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
+import com.comphenix.protocol.injector.SortedPacketListenerList;
 import com.comphenix.protocol.reflect.FieldAccessException;
 
 /**
  * Represents packets ready to be transmitted to a client.
  * @author Kristian
  */
-class PacketSendingQueue {
+abstract class PacketSendingQueue {
 
 	public static final int INITIAL_CAPACITY = 64;
 	
@@ -77,7 +78,7 @@ class PacketSendingQueue {
 		AsyncMarker marker = packetUpdated.getAsyncMarker();
 		
 		// Should we reorder the event?
-		if (marker.getQueuedSendingIndex() != marker.getNewSendingIndex()) {
+		if (marker.getQueuedSendingIndex() != marker.getNewSendingIndex() && !marker.hasExpired()) {
 			PacketEvent copy = PacketEvent.fromSynchronous(packetUpdated, marker);
 			
 			// "Cancel" the original event
@@ -127,6 +128,7 @@ class PacketSendingQueue {
 			if (holder != null) {
 				PacketEvent current = holder.getEvent();
 				AsyncMarker marker = current.getAsyncMarker();
+				boolean hasExpired = marker.hasExpired();
 				
 				// Abort if we're not on the main thread
 				if (synchronizeMain) {
@@ -144,8 +146,16 @@ class PacketSendingQueue {
 					}
 				}
 				
-				if (marker.isProcessed() || marker.hasExpired()) {
-					if (marker.isProcessed() && !current.isCancelled()) {
+				if (marker.isProcessed() || hasExpired) {
+					if (hasExpired) {
+						// Notify timeout listeners
+						onPacketTimeout(current);
+						
+						// Recompute
+						marker = current.getAsyncMarker();
+						hasExpired = marker.hasExpired();
+					} 
+					if (marker.isProcessed() && !current.isCancelled() && !hasExpired) {
 						// Silently skip players that have logged out
 						if (isOnline(current.getPlayer())) {
 							sendPacket(current);
@@ -161,6 +171,12 @@ class PacketSendingQueue {
 			break;
 		}
 	}
+	
+	/**
+	 * Invoked when a packet has timed out.
+	 * @param event - the timed out packet.
+	 */
+	protected abstract void onPacketTimeout(PacketEvent event);
 	
 	private boolean isOnline(Player player) {
 		return player != null && player.isOnline();
