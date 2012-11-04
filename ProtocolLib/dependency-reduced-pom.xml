@@ -4,7 +4,7 @@
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
   <name>ProtocolLib</name>
-  <version>1.5.1</version>
+  <version>1.5.2-SNAPSHOT</version>
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://dev.bukkit.org/server-mods/protocollib/</url>
   <developers>

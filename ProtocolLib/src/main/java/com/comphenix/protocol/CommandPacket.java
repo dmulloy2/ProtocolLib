@@ -377,10 +377,10 @@ class CommandPacket extends CommandBase {
 			}
 			
 			private void printInformation(PacketEvent event) {
-				String verb = side.isForClient() ? "Received" : "Sent";
-				String shortDescription = String.format(
-						"%s %s (%s) from %s",
-						verb, 
+				String format = side.isForClient() ? 
+						"Received %s (%s) from %s" : 
+						"Sent %s (%s) to %s";
+				String shortDescription = String.format(format,
 						Packets.getDeclaredName(event.getPacketID()),
 						event.getPacketID(),
 						event.getPlayer().getName()
