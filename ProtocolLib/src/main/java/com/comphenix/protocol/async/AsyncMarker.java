@@ -51,7 +51,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	/**
 	 * Default number of milliseconds until a packet will rejected.
 	 */
-	public static final int DEFAULT_TIMEOUT_DELTA = 60000;
+	public static final int DEFAULT_TIMEOUT_DELTA = 1800 * 1000;
 	
 	/**
 	 * Default number of packets to skip.
@@ -418,7 +418,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 					// We're in 1.2.5
 					alwaysSync = true;
 				} else {
-					System.err.println("Cannot determine asynchronous state of packets!");
+					System.err.println("[ProtocolLib] Cannot determine asynchronous state of packets!");
 					alwaysSync = true;
 				}
 			}

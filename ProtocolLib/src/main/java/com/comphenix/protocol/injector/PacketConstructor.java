@@ -27,6 +27,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Primitives;
 
 /**
  * A packet constructor that uses an internal Minecraft.
@@ -40,7 +41,7 @@ public class PacketConstructor {
 	 * <p>
 	 * Remember to call withPacket().
 	 */
-	public static final PacketConstructor DEFAULT = new PacketConstructor(null);
+	public static PacketConstructor DEFAULT = new PacketConstructor(null);
 	
 	// The constructor method that's actually responsible for creating the packet
 	private Constructor<?> constructorMethod;
@@ -115,7 +116,7 @@ public class PacketConstructor {
 			}
 		}
 		
-		Class<?> packetType = MinecraftRegistry.getPacketClassFromID(id);
+		Class<?> packetType = MinecraftRegistry.getPacketClassFromID(id, true);
 		
 		if (packetType == null)
 			throw new IllegalArgumentException("Could not find a packet by the id " + id);
@@ -176,7 +177,17 @@ public class PacketConstructor {
 		// Determine if the types are similar
 		if (params.length == types.length) {
 			for (int i = 0; i < params.length; i++) {
-				if (!params[i].isAssignableFrom(types[i])) {
+				Class<?> inputType = types[i];
+				Class<?> paramType = params[i];
+				
+				// The input type is always wrapped
+				if (paramType.isPrimitive()) {
+					// Wrap it
+					paramType = Primitives.wrap(paramType);
+				}
+				
+				// Compare assignability
+				if (!paramType.isAssignableFrom(inputType)) {
 					return false;
 				}
 			}

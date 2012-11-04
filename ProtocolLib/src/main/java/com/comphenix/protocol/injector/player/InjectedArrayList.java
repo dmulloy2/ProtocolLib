@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 
 import net.minecraft.server.Packet;
@@ -73,7 +74,7 @@ class InjectedArrayList extends ArrayList<Packet> {
 				// We'll use the FakePacket marker instead of preventing the filters
 				injector.sendServerPacket(createNegativePacket(packet), true);
 			}
-			
+
 			// Collection.add contract
 			return true;
 			
@@ -90,8 +91,10 @@ class InjectedArrayList extends ArrayList<Packet> {
 	 * @return The inverted packet.
 	 */
 	Packet createNegativePacket(Packet source) {
-		Enhancer ex = new Enhancer();
-		Class<?> type = source.getClass();
+		ListenerInvoker invoker = injector.getInvoker();
+		
+		int packetID = invoker.getPacketID(source);
+		Class<?> type = invoker.getPacketClassFromID(packetID, true);
 		
 		// We want to subtract the byte amount that were added to the running
 		// total of outstanding packets. Otherwise, cancelling too many packets
@@ -111,22 +114,38 @@ class InjectedArrayList extends ArrayList<Packet> {
 		//      }
 		//   ect.
 		//   }
+		Enhancer ex = new Enhancer();
+		ex.setSuperclass(type);
 		ex.setInterfaces(new Class[] { FakePacket.class } );
 		ex.setUseCache(true);
 		ex.setClassLoader(classLoader);
-		ex.setSuperclass(type);
-		ex.setCallback(new MethodInterceptor() {
-			@Override
-			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-				if (method.getReturnType().equals(int.class) && args.length == 0) {
-					Integer result = (Integer) proxy.invokeSuper(obj, args);
-					return -result;
-				} else {
-					return proxy.invokeSuper(obj, args);
-				}
-			}
-		});
+		ex.setCallbackType(InvertedIntegerCallback.class);
+
+		Class<?> proxyClass = ex.createClass();
+
+		// Temporarily associate the fake packet class
+		invoker.registerPacketClass(proxyClass, packetID);
+
+		Packet fake = (Packet) Enhancer.create(proxyClass, new InvertedIntegerCallback());
 		
-		return (Packet) ex.create();
+		// Remove this association
+		invoker.unregisterPacketClass(proxyClass);
+		return fake;
+	}
+	
+	/**
+	 * Inverts the integer result of every integer method.
+	 * @author Kristian
+	 */
+	private class InvertedIntegerCallback implements MethodInterceptor {
+		@Override
+		public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+			if (method.getReturnType().equals(int.class) && args.length == 0) {
+				Integer result = (Integer) proxy.invokeSuper(obj, args);
+				return -result;
+			} else {
+				return proxy.invokeSuper(obj, args);
+			}
+		}
 	}
 }

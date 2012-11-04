@@ -137,6 +137,20 @@ public class ListeningWhitelist {
 		return false;
 	}
 	
+	/**
+	 * Determine if the given whitelist is empty or not.
+	 * @param whitelist - the whitelist to test.
+	 * @return TRUE if the whitelist is empty, FALSE otherwise.
+	 */
+	public static boolean isEmpty(ListeningWhitelist whitelist) {
+		if (whitelist == EMPTY_WHITELIST)
+			return true;
+		else if (whitelist == null)
+			return true;
+		else
+			return whitelist.getWhitelist().isEmpty();
+	}
+	
 	@Override
 	public boolean equals(final Object obj){
 	    if(obj instanceof ListeningWhitelist){
@@ -157,5 +171,4 @@ public class ListeningWhitelist {
 				.add("priority", priority)
 				.add("packets", whitelist).toString();
 	}
-	
 }

@@ -36,10 +36,11 @@ public class Statistics {
 	
 	public Statistics(Plugin plugin) throws IOException {
 		metrics = new Metrics(plugin);
-		metrics.start();
 		
 		// Determine who is using this library
 		addPluginUserGraph(metrics);
+		
+		metrics.start();
 	}
 	
 	private void addPluginUserGraph(Metrics metrics) {

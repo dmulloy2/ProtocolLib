@@ -42,6 +42,9 @@ class TemporaryPlayerFactory {
 	// Helpful constructors
 	private final PacketConstructor chatPacket;
 	
+	// Prevent too many class creations
+	private static CallbackFilter callbackFilter;
+	
 	public TemporaryPlayerFactory() {
 		chatPacket =  PacketConstructor.DEFAULT.withPacket(3, new Object[] { "DEMO" });
 	}
@@ -76,13 +79,16 @@ class TemporaryPlayerFactory {
 				String methodName = method.getName();
 				PlayerInjector injector = ((InjectContainer) obj).getInjector();
 				
+				if (injector == null)
+					throw new IllegalStateException("Unable to find injector.");
+				
 				// Use the socket to get the address
 				if (methodName.equalsIgnoreCase("getName"))
 					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
 				if (methodName.equalsIgnoreCase("getPlayer"))
 					return injector.getUpdatedPlayer();
 				if (methodName.equalsIgnoreCase("getAddress")) 
-					return injector.getSocket().getRemoteSocketAddress();
+					return injector.getAddress();
 				if (methodName.equalsIgnoreCase("getServer"))
 					return server;
 				
@@ -117,22 +123,27 @@ class TemporaryPlayerFactory {
 			}
     	};
 		
+		// Shared callback filter
+		if (callbackFilter == null) {
+			callbackFilter = new CallbackFilter() {
+				@Override
+				public int accept(Method method) {
+					// Do not override the object method or the superclass methods
+					if (method.getDeclaringClass().equals(Object.class) ||
+						method.getDeclaringClass().equals(InjectContainer.class))
+						return 0;
+					else 
+						return 1;
+				}
+			};
+		}
+    	
 		// CGLib is amazing
     	Enhancer ex = new Enhancer();
     	ex.setSuperclass(InjectContainer.class);
     	ex.setInterfaces(new Class[] { Player.class });
 		ex.setCallbacks(new Callback[] { NoOp.INSTANCE, implementation });
-		ex.setCallbackFilter(new CallbackFilter() {
-			@Override
-			public int accept(Method method) {
-				// Do not override the object method or the superclass methods
-				if (method.getDeclaringClass().equals(Object.class) ||
-					method.getDeclaringClass().equals(InjectContainer.class))
-					return 0;
-				else 
-					return 1;
-			}
-		});
+		ex.setCallbackFilter(callbackFilter);
     	
     	return (Player) ex.create();
 	}

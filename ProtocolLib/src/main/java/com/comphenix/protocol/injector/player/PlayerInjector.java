@@ -23,8 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.net.SocketAddress;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NetLoginHandler;
@@ -35,6 +34,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
@@ -99,17 +99,20 @@ abstract class PlayerInjector {
 	protected DataInputStream cachedInput;
 	
 	// Handle errors
-	protected Logger logger;
+	protected ErrorReporter reporter;
 
 	// Scheduled action on the next packet event
 	protected Runnable scheduledAction;
 
+	// Whether or not the injector has been cleaned
+	private boolean clean;
+	
 	// Whether or not to update the current player on the first Packet1Login
 	boolean updateOnLogin;
 	Player updatedPlayer;
 	
-	public PlayerInjector(Logger logger, Player player, ListenerInvoker invoker) throws IllegalAccessException {
-		this.logger = logger;
+	public PlayerInjector(ErrorReporter reporter, Player player, ListenerInvoker invoker) throws IllegalAccessException {
+		this.reporter = reporter;
 		this.player = player;
 		this.invoker = invoker;
 	}
@@ -257,6 +260,21 @@ abstract class PlayerInjector {
 	}
 	
 	/**
+	 * Retrieve the associated address of this player.
+	 * @return The associated address.
+	 * @throws IllegalAccessException If we're unable to read the socket field.
+	 */
+	public SocketAddress getAddress() throws IllegalAccessException {
+		Socket socket = getSocket();
+		
+		// Guard against NULL
+		if (socket != null)
+			return socket.getRemoteSocketAddress();
+		else
+			return null;
+	}
+	
+	/**
 	 * Attempt to disconnect the current client.
 	 * @param message - the message to display.
 	 * @throws InvocationTargetException If disconnection failed.
@@ -284,19 +302,24 @@ abstract class PlayerInjector {
 				disconnect.invoke(handler, message);
 				return;
 			} catch (IllegalArgumentException e) {
-				logger.log(Level.WARNING, "Invalid argument passed to disconnect method: " + message, e);
+				reporter.reportDetailed(this, "Invalid argument passed to disconnect method: " + message, e, handler);
 			} catch (IllegalAccessException e) {
-				logger.log(Level.SEVERE, "Unable to access disconnect method.", e);
+				reporter.reportWarning(this, "Unable to access disconnect method.", e);
 			}
 		}
-			
+		
 		// Fuck it
 		try {
-			getSocket().close();
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, "Unable to close socket.", e);
+			Socket socket = getSocket();
+			
+			try {
+				socket.close();
+			} catch (IOException e) {
+				reporter.reportDetailed(this, "Unable to close socket.", e, socket);
+			}
+			
 		} catch (IllegalAccessException e) {
-			logger.log(Level.SEVERE, "Insufficient permissions. Cannot close socket.", e);
+			reporter.reportWarning(this, "Insufficient permissions. Cannot close socket.", e);
 		}
 	}
 	
@@ -313,7 +336,7 @@ abstract class PlayerInjector {
 					return null;
 				
 				hasProxyType = true;
-				logger.log(Level.WARNING, "Detected server handler proxy type by another plugin. Conflict may occur!");
+				reporter.reportWarning(this, "Detected server handler proxy type by another plugin. Conflict may occur!");
 				
 				// No? Is it a Proxy type?
 				try {
@@ -328,7 +351,7 @@ abstract class PlayerInjector {
 			}
 			
 		} catch (IllegalAccessException e) {
-			logger.warning("Unable to load server handler from proxy type.");
+			reporter.reportWarning(this, "Unable to load server handler from proxy type.");
 		}
 
 		// Nope, just go with it
@@ -427,7 +450,29 @@ abstract class PlayerInjector {
 	/**
 	 * Remove all hooks and modifications.
 	 */
-	public abstract void cleanupAll();
+	public final void cleanupAll() {
+		if (!clean)
+			cleanHook();
+		clean = true;
+	}
+
+	/**
+	 * Clean up after the player has disconnected.
+	 */
+	public abstract void handleDisconnect();
+	
+	/**
+	 * Override to add custom cleanup behavior.
+	 */
+	protected abstract void cleanHook();
+	
+	/**
+	 * Determine whether or not this hook has already been cleaned.
+	 * @return TRUE if it has, FALSE otherwise.
+	 */
+	public boolean isClean() {
+		return clean;
+	}
 	
 	/**
 	 * Determine if this inject method can even be attempted.
@@ -444,10 +489,12 @@ abstract class PlayerInjector {
 	/**
 	 * Invoked before a new listener is registered.
 	 * <p>
-	 * The player injector should throw an exception if this listener cannot be properly supplied with packet events. 
+	 * The player injector should only return a non-null value if some or all of the packet IDs are unsupported.
+	 * 
 	 * @param listener - the listener that is about to be registered.
+	 * @return A error message with the unsupported packet IDs, or NULL if this listener is valid.
 	 */
-	public abstract void checkListener(PacketListener listener);
+	public abstract UnsupportedListener checkListener(PacketListener listener);
 	
 	/**
 	 * Allows a packet to be sent by the listeners.
@@ -455,43 +502,48 @@ abstract class PlayerInjector {
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
 	public Packet handlePacketSending(Packet packet) {
-		// Get the packet ID too
-		Integer id = invoker.getPacketID(packet);
-		Player currentPlayer = player;
-		
-		// Hack #1: Handle a single scheduled action
-		if (scheduledAction != null) {
-			scheduledAction.run();
-			scheduledAction = null;
-		}
-		// Hack #2
-		if (updateOnLogin) {
-			if (id == Packets.Server.LOGIN) {
-				try {
-					updatedPlayer = getEntityPlayer(getNetHandler()).getBukkitEntity();
-				} catch (IllegalAccessException e) {
-					logger.log(Level.WARNING, "Cannot update player in PlayerEvent.", e);
+		try {
+			// Get the packet ID too
+			Integer id = invoker.getPacketID(packet);
+			Player currentPlayer = player;
+			
+			// Hack #1: Handle a single scheduled action
+			if (scheduledAction != null) {
+				scheduledAction.run();
+				scheduledAction = null;
+			}
+			// Hack #2
+			if (updateOnLogin) {
+				if (id == Packets.Server.LOGIN) {
+					try {
+						updatedPlayer = getEntityPlayer(getNetHandler()).getBukkitEntity();
+					} catch (IllegalAccessException e) {
+						reporter.reportDetailed(this, "Cannot update player in PlayerEvent.", e, packet);
+					}
 				}
+				
+				// This will only occur in the NetLoginHandler injection
+				if (updatedPlayer != null)
+					currentPlayer = updatedPlayer;
 			}
 			
-			// This will only occur in the NetLoginHandler injection
-			if (updatedPlayer != null)
-				currentPlayer = updatedPlayer;
-		}
-		
-		// Make sure we're listening
-		if (id != null && hasListener(id)) {
-			// A packet has been sent guys!
-			PacketContainer container = new PacketContainer(id, packet);
-			PacketEvent event = PacketEvent.fromServer(invoker, container, currentPlayer);
-			invoker.invokePacketSending(event);
+			// Make sure we're listening
+			if (id != null && hasListener(id)) {
+				// A packet has been sent guys!
+				PacketContainer container = new PacketContainer(id, packet);
+				PacketEvent event = PacketEvent.fromServer(invoker, container, currentPlayer);
+				invoker.invokePacketSending(event);
+				
+				// Cancelling is pretty simple. Just ignore the packet.
+				if (event.isCancelled())
+					return null;
+				
+				// Right, remember to replace the packet again
+				return event.getPacket().getHandle();
+			}
 			
-			// Cancelling is pretty simple. Just ignore the packet.
-			if (event.isCancelled())
-				return null;
-			
-			// Right, remember to replace the packet again
-			return event.getPacket().getHandle();
+		} catch (Throwable e) {
+			reporter.reportDetailed(this, "Cannot handle server packet.", e, packet);
 		}
 		
 		return packet;
@@ -542,6 +594,14 @@ abstract class PlayerInjector {
 	 */
 	public Player getPlayer() {
 		return player;
+	}
+	
+	/**
+	 * Object that can invoke the packet events.
+	 * @return Packet event invoker.
+	 */
+	public ListenerInvoker getInvoker() {
+		return invoker;
 	}
 	
 	/**

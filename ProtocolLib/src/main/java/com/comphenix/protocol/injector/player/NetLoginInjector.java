@@ -4,12 +4,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
 import com.google.common.collect.Maps;
@@ -27,16 +26,16 @@ class NetLoginInjector {
 	private PlayerInjectionHandler injectionHandler;
 	private Server server;
 	
-	// The current logger
-	private Logger logger;
+	// The current error rerporter
+	private ErrorReporter reporter;
 	
 	private ReadWriteLock injectionLock = new ReentrantReadWriteLock();
 	
 	// Used to create fake players
 	private TemporaryPlayerFactory tempPlayerFactory = new TemporaryPlayerFactory();
 	
-	public NetLoginInjector(Logger logger, PlayerInjectionHandler injectionHandler, Server server) {
-		this.logger = logger;
+	public NetLoginInjector(ErrorReporter reporter, PlayerInjectionHandler injectionHandler, Server server) {
+		this.reporter = reporter;
 		this.injectionHandler = injectionHandler;
 		this.server = server;
 	}
@@ -63,12 +62,15 @@ class NetLoginInjector {
 			InjectContainer container = (InjectContainer) fakePlayer;
 			container.setInjector(injector);
 			
+			// Save the login
+			injectedLogins.putIfAbsent(inserting, injector);
+			
 			// NetServerInjector can never work (currently), so we don't need to replace the NetLoginHandler
 			return inserting;	
 			
 		} catch (Throwable e) {
 			// Minecraft can't handle this, so we'll deal with it here
-			logger.log(Level.WARNING, "Unable to hook NetLoginHandler.", e);
+			reporter.reportDetailed(this, "Unable to hook NetLoginHandler.", e, inserting);
 			return inserting;
 			
 		} finally {
@@ -93,8 +95,34 @@ class NetLoginInjector {
 		PlayerInjector injected = injectedLogins.get(removing);
 		
 		if (injected != null) {
-			injected.cleanupAll();
-			injectedLogins.remove(removing);
+			try {
+				PlayerInjector newInjector = null;
+				Player player = injected.getPlayer();
+				
+				// Clean up list
+				injectedLogins.remove(removing);
+				
+				// No need to clean up twice
+				if (injected.isClean())
+					return;
+				
+				// Hack to clean up other references
+				newInjector = injectionHandler.getInjectorByNetworkHandler(injected.getNetworkManager());
+				
+				// Update NetworkManager
+				if (newInjector == null) {
+					injectionHandler.uninjectPlayer(player);
+				} else {
+					injectionHandler.uninjectPlayer(player, false);
+					
+					if (injected instanceof NetworkObjectInjector)
+						newInjector.setNetworkManager(injected.getNetworkManager(), true);
+				}
+				
+			} catch (Throwable e) {
+				// Don't leak this to Minecraft
+				reporter.reportDetailed(this, "Cannot cleanup NetLoginHandler.", e, removing);
+			}
 		}
 	}
 	

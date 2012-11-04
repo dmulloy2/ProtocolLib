@@ -24,11 +24,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
@@ -73,10 +73,10 @@ class NetworkFieldInjector extends PlayerInjector {
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
 	
-	public NetworkFieldInjector(ClassLoader classLoader, Logger logger, Player player, 
+	public NetworkFieldInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								ListenerInvoker manager, IntegerSet sendingFilters) throws IllegalAccessException {
 		
-		super(logger, player, manager);
+		super(reporter, player, manager);
 		this.classLoader = classLoader;
 		this.sendingFilters = sendingFilters;
 	}
@@ -123,11 +123,14 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void checkListener(PacketListener listener) {
+	public UnsupportedListener checkListener(PacketListener listener) {
+		int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
+		
 		// Unfortunately, we don't support chunk packets
-		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), 
-				Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK)) {
-			throw new IllegalStateException("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.");
+		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), unsupported)) {
+			return new UnsupportedListener("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.", unsupported);
+		} else {
+			return null;
 		}
 	}
 	
@@ -166,7 +169,7 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void cleanupAll() {
+	protected void cleanHook() {
 		// Clean up
 		for (VolatileField overriden : overridenLists) {
 			List<Packet> minecraftList = (List<Packet>) overriden.getOldValue();
@@ -191,6 +194,11 @@ class NetworkFieldInjector extends PlayerInjector {
 		overridenLists.clear();
 	}
 
+	@Override
+	public void handleDisconnect() {
+		// No need to do anything
+	}
+	
 	@Override
 	public boolean canInject(GamePhase phase) {
 		// All phases should work

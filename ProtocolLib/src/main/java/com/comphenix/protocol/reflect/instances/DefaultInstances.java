@@ -206,7 +206,6 @@ public class DefaultInstances {
 		// Just check if any of them are NULL
 		for (Class<?> type : types) {
 			if (getDefaultInternal(type, providers, recursionLevel) == null) {
-				System.out.println(type.getName() + " is NULL!");
 				return true;
 			}
 		}	

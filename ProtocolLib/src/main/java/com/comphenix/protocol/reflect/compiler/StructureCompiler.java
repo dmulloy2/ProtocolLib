@@ -25,9 +25,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.comphenix.protocol.reflect.PrimitiveUtils;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.base.Objects;
+import com.google.common.primitives.Primitives;
 
 import net.sf.cglib.asm.*;
 
@@ -306,7 +306,7 @@ public final class StructureCompiler {
 		for (int i = 0; i < fields.size(); i++) {
 			
 			Class<?> outputType = fields.get(i).getType();
-			Class<?> inputType = PrimitiveUtils.wrap(outputType);
+			Class<?> inputType = Primitives.wrap(outputType);
 			String typeDescriptor = Type.getDescriptor(outputType);
 			String inputPath = inputType.getName().replace('.', '/');
 			
@@ -323,7 +323,7 @@ public final class StructureCompiler {
 				mv.visitVarInsn(Opcodes.ALOAD, 3);
 				mv.visitVarInsn(Opcodes.ALOAD, 2);
 				
-				if (!PrimitiveUtils.isPrimitive(outputType))
+				if (!outputType.isPrimitive())
 					mv.visitTypeInsn(Opcodes.CHECKCAST, inputPath);
 				else
 					boxingHelper.unbox(Type.getType(outputType));
@@ -335,8 +335,7 @@ public final class StructureCompiler {
 				mv.visitVarInsn(Opcodes.ALOAD, 0);
 				mv.visitVarInsn(Opcodes.ILOAD, 1);
 				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				mv.visitMethodInsn(Opcodes.INVOKESPECIAL, COMPILED_CLASS, "write", "(ILjava/lang/Object;)L" + SUPER_CLASS + ";");
-				mv.visitInsn(Opcodes.POP);
+				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, COMPILED_CLASS, "writeReflected", "(ILjava/lang/Object;)V;");
 			}
 		
 			mv.visitJumpInsn(Opcodes.GOTO, returnLabel);
@@ -408,7 +407,7 @@ public final class StructureCompiler {
 				// We have to use reflection for private and protected fields.
 				mv.visitVarInsn(Opcodes.ALOAD, 0);
 				mv.visitVarInsn(Opcodes.ILOAD, 1);
-				mv.visitMethodInsn(Opcodes.INVOKESPECIAL, COMPILED_CLASS, "read", "(I)Ljava/lang/Object;");
+				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, COMPILED_CLASS, "readReflected", "(I)Ljava/lang/Object;");
 			}
 			
 			mv.visitInsn(Opcodes.ARETURN);

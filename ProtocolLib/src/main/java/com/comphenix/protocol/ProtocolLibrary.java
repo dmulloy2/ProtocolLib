@@ -18,7 +18,8 @@
 package com.comphenix.protocol;
 
 import java.io.IOException;
-import java.util.logging.Level;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.bukkit.Server;
@@ -26,12 +27,12 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.MonitorAdapter;
-import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.error.DetailedErrorReporter;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.DelayedSingleTask;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
+import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 
 /**
@@ -41,11 +42,18 @@ import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
  */
 public class ProtocolLibrary extends JavaPlugin {
 	
+	/**
+	 * The number of milliseconds per second.
+	 */
+	static final long MILLI_PER_SECOND = 1000;
+	
+	private static final String PERMISSION_INFO = "protocol.info";
+	
 	// There should only be one protocol manager, so we'll make it static
 	private static PacketFilterManager protocolManager;
 	
-	// Error logger
-	private Logger logger;
+	// Error reporter
+	private ErrorReporter reporter;
 	
 	// Metrics and statistisc
 	private Statistics statistisc;
@@ -62,78 +70,142 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Used to unhook players after a delay
 	private DelayedSingleTask unhookTask;
 	
-	// Used for debugging
-	private boolean debugListener;
+	// Settings/options
+	private ProtocolConfig config;
+	
+	// Updater
+	private Updater updater;
+	
+	// Logger
+	private Logger logger;
+	
+	// Commands
+	private CommandProtocol commandProtocol;
+	private CommandPacket commandPacket;
 	
 	@Override
 	public void onLoad() {
+		// Load configuration
 		logger = getLoggerSafely();
-		unhookTask = new DelayedSingleTask(this);
-		protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, logger);
+		
+		// Add global parameters
+		DetailedErrorReporter reporter = new DetailedErrorReporter();
+		updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
+		
+		try {
+			config = new ProtocolConfig(this);
+		} catch (Exception e) {
+			reporter.reportWarning(this, "Cannot load configuration", e);
+
+			// Load it again
+			deleteConfig();
+			config = new ProtocolConfig(this);
+		}
+		
+		try {
+			unhookTask = new DelayedSingleTask(this);
+			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, reporter);
+			reporter.addGlobalParameter("manager", protocolManager);
+			
+			// Initialize command handlers
+			commandProtocol = new CommandProtocol(this, updater, config);
+			commandPacket = new CommandPacket(this, logger, reporter, protocolManager);
+			
+			// Send logging information to player listeners too
+			broadcastUsers(PERMISSION_INFO);
+			
+		} catch (Throwable e) {
+			reporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
+			disablePlugin();
+		}
+	}
+	
+	private void deleteConfig() {
+		config.getFile().delete();
 	}
 	
 	@Override
-	public void onEnable() {
-		Server server = getServer();
-		PluginManager manager = server.getPluginManager();
-		
-		// Initialize background compiler
-		if (backgroundCompiler == null) {
-			backgroundCompiler = new BackgroundCompiler(getClassLoader());
-			BackgroundCompiler.setInstance(backgroundCompiler);
+	public void reloadConfig() {
+		super.reloadConfig();
+		// Reload configuration
+		if (config != null) {
+			config.reloadConfig();
 		}
-
-		// Notify server managers of incompatible plugins
-		checkForIncompatibility(manager);
-		
-		// Player login and logout events
-		protocolManager.registerEvents(manager, this);
+	}
+	
+    private void broadcastUsers(final String permission) {
+        // Broadcast information to every user too
+        logger.addHandler(new Handler() {
+			@Override
+			public void publish(LogRecord record) {
+				commandPacket.broadcastMessageSilently(record.getMessage(), permission);
+			}
 			
-		// Worker that ensures that async packets are eventually sent
-		createAsyncTask(server);
-		//toggleDebugListener();
+			@Override
+			public void flush() {
+				// Not needed.
+			}
+			
+			@Override
+			public void close() throws SecurityException {
+				// Do nothing.
+			}
+		});
+    }
+	
+	@Override
+	public void onEnable() {
+		try {
+			Server server = getServer();
+			PluginManager manager = server.getPluginManager();
+			
+			// Don't do anything else!
+			if (manager == null)
+				return;
+			
+			// Initialize background compiler
+			if (backgroundCompiler == null) {
+				backgroundCompiler = new BackgroundCompiler(getClassLoader());
+				BackgroundCompiler.setInstance(backgroundCompiler);
+			}
+			
+			// Set up command handlers
+			getCommand(CommandProtocol.NAME).setExecutor(commandProtocol);
+			getCommand(CommandPacket.NAME).setExecutor(commandPacket);
+	
+			// Notify server managers of incompatible plugins
+			checkForIncompatibility(manager);
+			
+			// Player login and logout events
+			protocolManager.registerEvents(manager, this);
+				
+			// Worker that ensures that async packets are eventually sent
+			// It also performs the update check.
+			createAsyncTask(server);
+		
+		} catch (Throwable e) {
+			reporter.reportDetailed(this, "Cannot enable ProtocolLib.", e);
+			disablePlugin();
+			return;
+		}
 		
 		// Try to enable statistics
 		try {
-			statistisc = new Statistics(this);
+			if (config.isMetricsEnabled()) {
+				statistisc = new Statistics(this);
+			}
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, "Unable to enable metrics.", e);
+			reporter.reportDetailed(this, "Unable to enable metrics.", e, statistisc);
 		} catch (Throwable e) {
-			logger.log(Level.SEVERE, "Metrics cannot be enabled. Incompatible Bukkit version.", e);
+			reporter.reportDetailed(this, "Metrics cannot be enabled. Incompatible Bukkit version.", e, statistisc);
 		}
 	}
-
+	
 	/**
-	 * Toggle a listener that prints every sent and received packet.
+	 * Disable the current plugin.
 	 */
-	void toggleDebugListener() {
-		
-		if (debugListener) {
-			protocolManager.removePacketListeners(this);
-		} else {
-			// DEBUG DEBUG
-			protocolManager.addPacketListener(new MonitorAdapter(this, ConnectionSide.BOTH, logger) {
-				@Override
-				public void onPacketReceiving(PacketEvent event) {
-					Object handle = event.getPacket().getHandle();
-					
-					System.out.println(String.format(
-							"RECEIVING %s@%s from %s.",
-							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
-					));
-				};
-				@Override
-				public void onPacketSending(PacketEvent event) {
-					Object handle = event.getPacket().getHandle();
-					
-					System.out.println(String.format(
-							"SENDING %s@%s from %s.",
-							handle.getClass().getSimpleName(), handle.hashCode(), event.getPlayer().getName()
-					));
-				}
-			});
-		}
-		debugListener = !debugListener;
+	private void disablePlugin() {
+		getServer().getPluginManager().disablePlugin(this);
 	}
 	
 	private void createAsyncTask(Server server) {
@@ -149,13 +221,32 @@ public class ProtocolLibrary extends JavaPlugin {
 					
 					// We KNOW we're on the main thread at the moment
 					manager.sendProcessedPackets(tickCounter++, true);
+					
+					// Check for updates too
+					checkUpdates();
 				}
 			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
 		
 		} catch (Throwable e) {
 			if (asyncPacketTask == -1) {
-				logger.log(Level.SEVERE, "Unable to create packet timeout task.", e);
+				reporter.reportDetailed(this, "Unable to create packet timeout task.", e);
 			}
+		}
+	}
+	
+	private void checkUpdates() {
+		// Ignore milliseconds - it's pointless
+		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
+		
+		// Should we update?
+		if (currentTime > config.getAutoLastTime() + config.getAutoDelay()) {			
+			// Initiate the update as if it came from the console
+			if (config.isAutoDownload())
+				commandProtocol.updateVersion(getServer().getConsoleSender());
+			else if (config.isAutoNotify())
+				commandProtocol.checkVersion(getServer().getConsoleSender());
+			else 
+				commandProtocol.updateFinished();
 		}
 	}
 	
@@ -166,7 +257,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		for (String plugin : incompatiblePlugins) {
 			if (manager.getPlugin(plugin) != null) {
 				// Check for versions, ect.
-				logger.severe("Detected incompatible plugin: " + plugin);
+				reporter.reportWarning(this, "Detected incompatible plugin: " + plugin);
 			}
 		}
 	}
@@ -190,6 +281,24 @@ public class ProtocolLibrary extends JavaPlugin {
 		protocolManager.close();
 		protocolManager = null;
 		statistisc = null;
+		
+		// Leaky ClassLoader begone!
+		CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), reporter);
+		cleanup.resetAll();
+	}
+	
+	// Get the Bukkit logger first, before we try to create our own
+	private Logger getLoggerSafely() {
+		Logger log = null;
+
+		try {
+			log = getLogger();
+		} catch (Throwable e) { }
+
+		// Use the default logger instead
+		if (log == null)
+			log = Logger.getLogger("Minecraft");
+		return log;
 	}
 	
 	/**
@@ -203,26 +312,11 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * Retrieve the metrics instance used to measure users of this library.
 	 * <p>
-	 * Note that this method may return NULL when the server is reloading or shutting down.
+	 * Note that this method may return NULL when the server is reloading or shutting down. It is also
+	 * NULL if metrics has been disabled.
 	 * @return Metrics instance container.
 	 */
 	public Statistics getStatistics() {
 		return statistisc;
-	}
-	
-	// Get the Bukkit logger first, before we try to create our own
-	private Logger getLoggerSafely() {
-		
-		Logger log = null;
-	
-		try {
-			log = getLogger();
-		} catch (Throwable e) {
-			// We'll handle it
-		}
-		
-		if (log == null)
-			log = Logger.getLogger("Minecraft");
-		return log;
 	}
 }

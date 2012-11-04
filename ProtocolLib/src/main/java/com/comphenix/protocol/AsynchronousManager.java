@@ -18,11 +18,11 @@
 package com.comphenix.protocol;
 
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.async.AsyncListenerHandler;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
@@ -81,10 +81,10 @@ public interface AsynchronousManager {
 	public abstract PacketStream getPacketStream();
 
 	/**
-	 * Retrieve the default error logger.
-	 * @return Default logger.
+	 * Retrieve the default error reporter.
+	 * @return Default reporter.
 	 */
-	public abstract Logger getLogger();
+	public abstract ErrorReporter getErrorReporter();
 
 	/**
 	 * Remove listeners, close threads and transmit every delayed packet.
@@ -99,4 +99,22 @@ public interface AsynchronousManager {
 	 * @param packet - packet to signal.
 	 */
 	public abstract void signalPacketTransmission(PacketEvent packet);
+
+	/**
+	 * Register a synchronous listener that handles packets when they time out.
+	 * @param listener - synchronous listener that will handle timed out packets.
+	 */
+	public abstract void registerTimeoutHandler(PacketListener listener);
+	
+	/**
+	 * Unregisters a given timeout listener.
+	 * @param listener - the timeout listener to unregister.
+	 */
+	public abstract void unregisterTimeoutHandler(PacketListener listener);
+
+	/**
+	 * Get a immutable list of every registered timeout handler.
+	 * @return List of every registered timeout handler.
+	 */
+	public abstract Set<PacketListener> getTimeoutHandlers();
 }

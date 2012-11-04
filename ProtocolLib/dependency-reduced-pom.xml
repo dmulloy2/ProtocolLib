@@ -4,7 +4,7 @@
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
   <name>ProtocolLib</name>
-  <version>1.4.0</version>
+  <version>1.5.1</version>
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://dev.bukkit.org/server-mods/protocollib/</url>
   <developers>
@@ -38,7 +38,7 @@
     <defaultGoal>clean install</defaultGoal>
     <resources>
       <resource>
-        <directory>src/main/java</directory>
+        <directory>src/main/resources</directory>
         <excludes>
           <exclude>**/*.java</exclude>
         </excludes>

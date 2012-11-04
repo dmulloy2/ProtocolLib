@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 
@@ -54,7 +53,7 @@ public class AsyncListenerHandler {
 	private static final AtomicInteger nextID = new AtomicInteger();
 	
 	// Default queue capacity
-	private static int DEFAULT_CAPACITY = 1024;
+	private static final int DEFAULT_CAPACITY = 1024;
 	
 	// Cancel the async handler
 	private volatile boolean cancelled;
@@ -112,10 +111,6 @@ public class AsyncListenerHandler {
 	 */
 	PacketListener getNullPacketListener() {
 		return nullPacketListener;
-	}
-	
-	private String getPluginName() {
-		return PacketAdapter.getPluginName(listener);
 	}
 
 	/**
@@ -442,17 +437,18 @@ public class AsyncListenerHandler {
 					
 				} catch (Throwable e) {
 					// Minecraft doesn't want your Exception.
-					filterManager.getLogger().log(Level.SEVERE, 
-							"Unhandled exception occured in onAsyncPacket() for " + getPluginName(), e);
+					filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), "onAsyncPacket()", e);
 				}
 				
 				// Now, get the next non-cancelled listener
-				for (; marker.getListenerTraversal().hasNext(); ) {
-					AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
-					
-					if (!handler.isCancelled()) {
-						handler.enqueuePacket(packet);
-						continue mainLoop;
+				if (!marker.hasExpired()) {
+					for (; marker.getListenerTraversal().hasNext(); ) {
+						AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
+						
+						if (!handler.isCancelled()) {
+							handler.enqueuePacket(packet);
+							continue mainLoop;
+						}
 					}
 				}
 				

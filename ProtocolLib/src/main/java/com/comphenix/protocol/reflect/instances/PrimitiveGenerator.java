@@ -21,8 +21,8 @@ import java.lang.reflect.Array;
 
 import javax.annotation.Nullable;
 
-import com.comphenix.protocol.reflect.PrimitiveUtils;
 import com.google.common.base.Defaults;
+import com.google.common.primitives.Primitives;
 
 /**
  * Provides constructors for primtive types, wrappers, arrays and strings.
@@ -58,10 +58,10 @@ public class PrimitiveGenerator implements InstanceProvider {
 	@Override
 	public Object create(@Nullable Class<?> type) {
 		
-		if (PrimitiveUtils.isPrimitive(type)) {
+		if (type.isPrimitive()) {
 			return Defaults.defaultValue(type);
-		} else if (PrimitiveUtils.isWrapperType(type)) {
-			return Defaults.defaultValue(PrimitiveUtils.unwrap(type));
+		} else if (Primitives.isWrapperType(type)) {
+			return Defaults.defaultValue(Primitives.unwrap(type));
 		} else if (type.isArray()) {
 			Class<?> arrayType = type.getComponentType();
 			return Array.newInstance(arrayType, 0);

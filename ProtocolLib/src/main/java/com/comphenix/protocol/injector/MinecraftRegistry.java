@@ -157,7 +157,7 @@ class MinecraftRegistry {
 	/**
 	 * Retrieves the correct packet class from a given packet ID.
 	 * @param packetID - the packet ID.
- 	 * @param vanilla - whether or not to look for vanilla classes, not injected classes.
+ 	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
 	 * @return The associated class.
 	 */
 	public static Class getPacketClassFromID(int packetID, boolean forceVanilla) {
@@ -172,7 +172,9 @@ class MinecraftRegistry {
 		// Will most likely not be used
 		for (Map.Entry<Class, Integer> entry : getPacketToID().entrySet()) {
 			if (Objects.equal(entry.getValue(), packetID)) {
-				return entry.getKey();
+				// Attempt to get the vanilla class here too
+				if (!forceVanilla || entry.getKey().getName().startsWith("net.minecraft.server"))
+					return entry.getKey();
 			}
 		}
 		

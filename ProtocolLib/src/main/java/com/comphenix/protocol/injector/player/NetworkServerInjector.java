@@ -17,9 +17,9 @@
 
 package com.comphenix.protocol.injector.player;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Callback;
@@ -32,6 +32,7 @@ import net.sf.cglib.proxy.NoOp;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -50,6 +51,9 @@ import com.comphenix.protocol.reflect.instances.ExistingGenerator;
  */
 public class NetworkServerInjector extends PlayerInjector {
 
+	private volatile static CallbackFilter callbackFilter;
+	
+	private static Field disconnectField;
 	private static Method sendPacketMethod;
 	private InjectedServerConnection serverInjection;
 	
@@ -59,12 +63,15 @@ public class NetworkServerInjector extends PlayerInjector {
 	// Used to create proxy objects
 	private ClassLoader classLoader;
 	
+	// Whether or not the player has disconnected
+	private boolean hasDisconnected;
+	
 	public NetworkServerInjector(
-			ClassLoader classLoader, Logger logger, Player player, 
+			ClassLoader classLoader, ErrorReporter reporter, Player player, 
 			ListenerInvoker invoker, IntegerSet sendingFilters, 
 			InjectedServerConnection serverInjection) throws IllegalAccessException {
 		
-		super(logger, player, invoker);
+		super(reporter, player, invoker);
 		this.classLoader = classLoader;
 		this.sendingFilters = sendingFilters;
 		this.serverInjection = serverInjection;
@@ -164,18 +171,24 @@ public class NetworkServerInjector extends PlayerInjector {
 		};
 		Callback noOpCallback = NoOp.INSTANCE;
 
+		// Share callback filter - that way, we avoid generating a new class for 
+		// every logged in player.
+		if (callbackFilter == null) {
+			callbackFilter = new CallbackFilter() {
+				@Override
+				public int accept(Method method) {
+					if (method.equals(sendPacketMethod))
+						return 0;
+					else
+						return 1;
+				}
+			};
+		}
+		
 		ex.setClassLoader(classLoader);
 		ex.setSuperclass(serverClass);
 		ex.setCallbacks(new Callback[] { sendPacketCallback, noOpCallback });
-		ex.setCallbackFilter(new CallbackFilter() {
-			@Override
-			public int accept(Method method) {
-				if (method.equals(sendPacketMethod))
-					return 0;
-				else
-					return 1;
-			}
-		});
+		ex.setCallbackFilter(callbackFilter);
 		
 		// Find the Minecraft NetServerHandler superclass
 		Class<?> minecraftSuperClass = getFirstMinecraftSuperClass(serverHandler.getClass());
@@ -202,6 +215,7 @@ public class NetworkServerInjector extends PlayerInjector {
 		if (proxyObject != null) {
 			// This will be done by InjectedServerConnection instead
 			//copyTo(serverHandler, proxyObject);
+			
 			serverInjection.replaceServerHandler(serverHandler, proxyObject);
 			serverHandlerRef.setValue(proxyObject);
 			return true;
@@ -232,7 +246,7 @@ public class NetworkServerInjector extends PlayerInjector {
 	}
 		
 	@Override
-	public void cleanupAll() {
+	protected void cleanHook() {
 		if (serverHandlerRef != null && serverHandlerRef.isCurrentSet()) {
 			ObjectCloner.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
 			serverHandlerRef.revertValue();
@@ -250,14 +264,46 @@ public class NetworkServerInjector extends PlayerInjector {
 			} catch (IllegalAccessException e) {
 				e.printStackTrace();
 			}
+			
+			// Prevent the PlayerQuitEvent from being sent twice
+			if (hasDisconnected) {
+				setDisconnect(serverHandlerRef.getValue(), true);
+			}
 		}
 
 		serverInjection.revertServerHandler(serverHandler);
 	}
 	
 	@Override
-	public void checkListener(PacketListener listener) {
+	public void handleDisconnect() {
+		hasDisconnected = true;
+	}
+	
+	/**
+	 * Set the disconnected field in a NetServerHandler.
+	 * @param handler - the NetServerHandler.
+	 * @param value - the new value.
+	 */
+	private void setDisconnect(Object handler, boolean value) {
+		// Set it 
+		try {
+			// Load the field
+			if (disconnectField == null) {
+				disconnectField = FuzzyReflection.fromObject(handler).getFieldByName("disconnected.*");
+			}
+			FieldUtils.writeField(disconnectField, handler, value);
+		
+		} catch (IllegalArgumentException e) {
+			reporter.reportDetailed(this, "Unable to find disconnect field. Is ProtocolLib up to date?", e, handler);
+		} catch (IllegalAccessException e) {
+			reporter.reportWarning(this, "Unable to update disconnected field. Player quit event may be sent twice.");
+		}
+	}
+	
+	@Override
+	public UnsupportedListener checkListener(PacketListener listener) {
 		// We support everything
+		return null;
 	}
 
 	@Override

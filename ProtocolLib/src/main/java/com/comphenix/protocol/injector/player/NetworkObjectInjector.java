@@ -28,11 +28,11 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
@@ -50,10 +50,13 @@ class NetworkObjectInjector extends PlayerInjector {
 	
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
+
+	// Shared callback filter - avoid creating a new class every time
+	private static CallbackFilter callbackFilter;
 	
-	public NetworkObjectInjector(ClassLoader classLoader, Logger logger, Player player, 
+	public NetworkObjectInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
-		super(logger, player, invoker);
+		super(reporter, player, invoker);
 		this.sendingFilters = sendingFilters;
 		this.classLoader = classLoader;
 	}
@@ -85,11 +88,14 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void checkListener(PacketListener listener) {
+	public UnsupportedListener checkListener(PacketListener listener) {
+		int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
+		
 		// Unfortunately, we don't support chunk packets
-		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), 
-				Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK)) {
-			throw new IllegalStateException("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.");
+		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), unsupported)) {
+			return new UnsupportedListener("The NETWORK_OBJECT_INJECTOR hook doesn't support map chunk listeners.", unsupported);
+		} else {
+			return null;
 		}
 	}
 	
@@ -131,20 +137,25 @@ class NetworkObjectInjector extends PlayerInjector {
 				}
 			};
 			
+			// Share callback filter - that way, we avoid generating a new class every time.
+			if (callbackFilter == null) {
+				callbackFilter = new CallbackFilter() {
+					@Override
+					public int accept(Method method) {
+						if (method.equals(queueMethod))
+							return 0;
+						else
+							return 1;
+					}
+				};
+			}
+			
 			// Create our proxy object
 			Enhancer ex = new Enhancer();
 			ex.setClassLoader(classLoader);
 			ex.setSuperclass(networkInterface);
 			ex.setCallbacks(new Callback[] { queueFilter, dispatch });
-			ex.setCallbackFilter(new CallbackFilter() {
-				@Override
-				public int accept(Method method) {
-					if (method.equals(queueMethod))
-						return 0;
-					else
-						return 1;
-				}
-			});
+			ex.setCallbackFilter(callbackFilter);
 			
 			// Inject it, if we can.
 			networkManagerRef.setValue(ex.create());
@@ -152,13 +163,18 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void cleanupAll() {
+	protected void cleanHook() {
 		// Clean up
 		if (networkManagerRef != null && networkManagerRef.isCurrentSet()) {
 			networkManagerRef.revertValue();
 		}
 	}
 
+	@Override
+	public void handleDisconnect() {
+		// No need to do anything
+	}
+	
 	@Override
 	public boolean canInject(GamePhase phase) {
 		// Works for all phases
