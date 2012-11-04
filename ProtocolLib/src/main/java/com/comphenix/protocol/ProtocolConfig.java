@@ -1,5 +1,7 @@
 package com.comphenix.protocol;
 
+import java.io.File;
+
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
@@ -26,6 +28,7 @@ class ProtocolConfig {
 	
 	private Plugin plugin;
 	private Configuration config;
+	private boolean loadingSections;
 	
 	private ConfigurationSection global;
 	private ConfigurationSection updater;
@@ -35,28 +38,56 @@ class ProtocolConfig {
 	}
 	
 	public ProtocolConfig(Plugin plugin, Configuration config) {
-		this.config = config;
+		this.plugin = plugin;
+		reloadConfig();
+	}
+	
+	/**
+	 * Reload configuration file.
+	 */
+	public void reloadConfig() {
+		this.config = plugin.getConfig();
 		loadSections(true);
 	}
-
+	
 	/**
 	 * Load data sections.
 	 * @param copyDefaults - whether or not to copy configuration defaults.
 	 */
 	private void loadSections(boolean copyDefaults) {
+		if (loadingSections)
+			return;
+		
 		if (config != null) {
 			global = config.getConfigurationSection(SECTION_GLOBAL);
 		}
 		if (global != null) {
 			updater = global.getConfigurationSection(SECTION_AUTOUPDATER);
 		}
-		
+
 		// Automatically copy defaults
-		if (copyDefaults && (global == null || updater == null)) {
+		if (copyDefaults && (!getFile().exists() || global == null || updater == null)) {
+			loadingSections = true;
+			
+			if (config != null)
+				config.options().copyDefaults(true);
 			plugin.saveDefaultConfig();
 			config = plugin.getConfig();
+		
+			loadingSections = false;	
 			loadSections(false);
+			
+			// Inform the user
+			System.out.println("[ProtocolLib] Created default configuration.");
 		}
+	}
+
+	/**
+	 * Retrieve a reference to the configuration file.
+	 * @return Configuration file on disk.
+	 */
+	public File getFile() {
+		return new File(plugin.getDataFolder(), "config.yml");
 	}
 	
 	/**

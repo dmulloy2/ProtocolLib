@@ -35,7 +35,7 @@ class CommandProtocol extends CommandBase {
 		String subCommand = args[0];
 		
 		// Only return TRUE if we executed the correct command
-		if (subCommand.equalsIgnoreCase("config"))
+		if (subCommand.equalsIgnoreCase("config") || subCommand.equalsIgnoreCase("reload"))
 			reloadConfiguration(sender);
 		else if (subCommand.equalsIgnoreCase("check"))
 			checkVersion(sender);
@@ -52,7 +52,7 @@ class CommandProtocol extends CommandBase {
 			@Override
 			public void run() {
 				UpdateResult result = updater.update(UpdateType.NO_DOWNLOAD, true);
-				sender.sendMessage(ChatColor.BLUE + "Version check: " + result.toString());
+				sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 			}
 		});
 		
@@ -65,7 +65,7 @@ class CommandProtocol extends CommandBase {
 			@Override
 			public void run() {
 				UpdateResult result = updater.update(UpdateType.DEFAULT, true);
-				sender.sendMessage(ChatColor.BLUE + "Update: " + result.toString());
+				sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 			}
 		});
 		
@@ -76,12 +76,13 @@ class CommandProtocol extends CommandBase {
 	 * Prevent further automatic updates until the next delay.
 	 */
 	public void updateFinished() {
-		config.setAutoLastTime(System.currentTimeMillis());
+		long currentTime = System.currentTimeMillis() / ProtocolLibrary.MILLI_PER_SECOND;
+		
+		config.setAutoLastTime(currentTime);
 		config.saveAll();
 	}
 	
 	public void reloadConfiguration(CommandSender sender) {
-		plugin.saveConfig();
 		plugin.reloadConfig();
 		sender.sendMessage(ChatColor.BLUE + "Reloaded configuration!");
 	}

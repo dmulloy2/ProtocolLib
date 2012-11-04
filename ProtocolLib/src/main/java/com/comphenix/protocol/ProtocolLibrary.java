@@ -17,7 +17,6 @@
 
 package com.comphenix.protocol;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -43,7 +42,11 @@ import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
  */
 public class ProtocolLibrary extends JavaPlugin {
 	
-	private static final long MILLI_PER_SECOND = 1000;
+	/**
+	 * The number of milliseconds per second.
+	 */
+	static final long MILLI_PER_SECOND = 1000;
+	
 	private static final String PERMISSION_INFO = "protocol.info";
 	
 	// There should only be one protocol manager, so we'll make it static
@@ -93,7 +96,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			config = new ProtocolConfig(this);
 		} catch (Exception e) {
 			reporter.reportWarning(this, "Cannot load configuration", e);
-			
+
 			// Load it again
 			deleteConfig();
 			config = new ProtocolConfig(this);
@@ -118,17 +121,16 @@ public class ProtocolLibrary extends JavaPlugin {
 	}
 	
 	private void deleteConfig() {
-		File configFile = new File(getDataFolder(), "config.yml");
-		
-		// Delete the file
-		configFile.delete();
+		config.getFile().delete();
 	}
 	
 	@Override
 	public void reloadConfig() {
 		super.reloadConfig();
 		// Reload configuration
-		config = new ProtocolConfig(this);
+		if (config != null) {
+			config.reloadConfig();
+		}
 	}
 	
     private void broadcastUsers(final String permission) {
@@ -237,7 +239,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
 		
 		// Should we update?
-		if (currentTime < config.getAutoLastTime() + config.getAutoDelay()) {			
+		if (currentTime > config.getAutoLastTime() + config.getAutoDelay()) {			
 			// Initiate the update as if it came from the console
 			if (config.isAutoDownload())
 				commandProtocol.updateVersion(getServer().getConsoleSender());
