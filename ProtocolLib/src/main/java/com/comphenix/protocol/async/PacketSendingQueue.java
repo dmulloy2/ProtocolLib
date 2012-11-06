@@ -27,7 +27,6 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
-import com.comphenix.protocol.injector.SortedPacketListenerList;
 import com.comphenix.protocol.reflect.FieldAccessException;
 
 /**

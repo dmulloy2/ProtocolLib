@@ -86,7 +86,7 @@ class CommandProtocol extends CommandBase {
 	 */
 	public void updateFinished() {
 		long currentTime = System.currentTimeMillis() / ProtocolLibrary.MILLI_PER_SECOND;
-		
+
 		config.setAutoLastTime(currentTime);
 		config.saveAll();
 	}

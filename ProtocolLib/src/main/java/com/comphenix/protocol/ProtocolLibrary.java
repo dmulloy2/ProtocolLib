@@ -128,6 +128,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	@Override
 	public void reloadConfig() {
 		super.reloadConfig();
+		
 		// Reload configuration
 		if (config != null) {
 			config.reloadConfig();
@@ -242,8 +243,10 @@ public class ProtocolLibrary extends JavaPlugin {
 		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
 		
 		try {
+			long updateTime = config.getAutoLastTime() + config.getAutoDelay();
+
 			// Should we update?
-			if (currentTime > config.getAutoLastTime() + config.getAutoDelay()) {			
+			if (currentTime > updateTime) {		
 				// Initiate the update as if it came from the console
 				if (config.isAutoDownload())
 					commandProtocol.updateVersion(getServer().getConsoleSender());
