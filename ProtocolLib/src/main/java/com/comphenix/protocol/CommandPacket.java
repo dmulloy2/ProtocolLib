@@ -77,7 +77,7 @@ class CommandPacket extends CommandBase {
 	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
 	
 	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, ProtocolManager manager) {
-		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 2);
+		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
 		this.logger = logger;
 		this.manager = manager;
@@ -227,6 +227,12 @@ class CommandPacket extends CommandBase {
 			
 			// Perform commands
 			if (subCommand == SubCommand.ADD) {
+				// The add command is dangerous - don't default on the connection side
+				if (args.length == 1) {
+					sender.sendMessage(ChatColor.RED + "Please specify a connectionn side.");
+					return false;
+				}
+				
 				executeAddCommand(sender, side, detailed, ranges);
 			} else if (subCommand == SubCommand.REMOVE) {
 				executeRemoveCommand(sender, side, detailed, ranges);
@@ -437,7 +443,13 @@ class CommandPacket extends CommandBase {
 		
 		// The trees will manage the listeners for us
 		if (listener != null) {
-			getListenerTree(side).put(idStart, idStop, listener);
+			if (side.isForClient())
+				clientListeners.put(idStart, idStop, listener);
+			else if (side.isForServer())
+				serverListeners.put(idStart, idStop, listener);
+			else
+				throw new IllegalArgumentException("Not a legal connection side.");
+			
 			return listener;
 		} else {
 			throw new IllegalArgumentException("No packets found in the range " + idStart + " - " + idStop + ".");
@@ -448,18 +460,14 @@ class CommandPacket extends CommandBase {
 			ConnectionSide side, int idStart, int idStop, boolean detailed) {
 		
 		// The interval tree will automatically remove the listeners for us
-		return getListenerTree(side).remove(idStart, idStop);
-	}
-	
-	private AbstractIntervalTree<Integer, DetailedPacketListener> getListenerTree(ConnectionSide side) {
 		if (side.isForClient())
-			return clientListeners;
+			return clientListeners.remove(idStart, idStop);
 		else if (side.isForServer())
-			return serverListeners;
+			return serverListeners.remove(idStart, idStop);
 		else
 			throw new IllegalArgumentException("Not a legal connection side.");
 	}
-
+	
 	private SubCommand parseCommand(String[] args, int index) {
 		String text = args[index].toLowerCase();
 		
