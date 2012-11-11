@@ -25,6 +25,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
@@ -40,6 +43,8 @@ import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.wrappers.ChunkPosition;
 
 import net.minecraft.server.Packet;
 
@@ -325,6 +330,91 @@ public class PacketContainer implements Serializable {
 				return Entity.class;
 			}
 		}));
+	}
+	
+	/**
+	 * Retrieves a read/write structure for chunk positions.
+	 * @return A modifier for a ChunkPosition.
+	 */
+	public StructureModifier<ChunkPosition> getPositionModifier() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.withType(
+				net.minecraft.server.ChunkPosition.class,
+				ChunkPosition.getConverter());
+	}
+	
+	/**
+	 * Retrieves a read/write structure for collections of chunk positions.
+	 * <p>
+	 * This modifier will automatically marshall between the visible ProtocolLib ChunkPosition and the
+	 * internal Minecraft ChunkPosition.
+	 * @return A modifier for ChunkPosition array fields.
+	 */
+	public StructureModifier<List<ChunkPosition>> getPositionCollectionModifier() {
+		final EquivalentConverter<ChunkPosition> converter = ChunkPosition.getConverter();
+
+		// Convert to and from the ProtocolLib wrapper
+		final StructureModifier<List<ChunkPosition>> modifier = structureModifier.withType(
+			Collection.class,
+			getIgnoreNull(new EquivalentConverter<List<ChunkPosition>>() {
+				private Class<?> collectionType;
+				
+				@SuppressWarnings("unchecked")
+				@Override
+				public List<ChunkPosition> getSpecific(Object generic) {
+					if (generic instanceof Collection) {
+						List<ChunkPosition> positions = new ArrayList<ChunkPosition>();
+					
+						// Save the type
+						collectionType = generic.getClass();
+						
+						// Copy everything to a new list
+						for (Object item : (Collection<Object>) generic) {
+							ChunkPosition result = converter.getSpecific(item);
+							
+							if (item != null)
+								positions.add(result);
+						}
+						return positions;
+					}
+					
+					// Not valid
+					return null;
+				}
+
+				@SuppressWarnings("unchecked")
+				@Override
+				public Object getGeneric(List<ChunkPosition> specific) {
+					// Just go by the first field 
+					if (collectionType == null) {
+						collectionType = structureModifier.withType(Collection.class).getFields().get(0).getType();
+					}
+					
+					Collection<Object> newContainer = (Collection<Object>) DefaultInstances.DEFAULT.getDefault(collectionType);
+					
+					// Convert each object
+					for (ChunkPosition position : specific) {
+						Object converted = converter.getGeneric(position);
+						
+						if (position == null)
+							newContainer.add(null);
+						else if (converted != null)
+							newContainer.add(converted);
+					}
+					return newContainer;
+				}
+
+				@SuppressWarnings("unchecked")
+				@Override
+				public Class<List<ChunkPosition>> getSpecificType() {
+					// Damn you Java
+					Class<?> dummy = List.class;
+					return (Class<List<ChunkPosition>>) dummy;
+				}
+			}
+		));
+		
+		return modifier;
 	}
 	
 	private <TType> EquivalentConverter<TType> getIgnoreNull(final EquivalentConverter<TType> delegate) {
