@@ -104,7 +104,7 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @param packets - the packet IDs the listener is looking for.
 	 */
 	public PacketAdapter(Plugin plugin, ConnectionSide connectionSide, GamePhase gamePhase, Integer... packets) {
-		this(plugin, connectionSide, ListenerPriority.NORMAL, GamePhase.PLAYING, packets);
+		this(plugin, connectionSide, ListenerPriority.NORMAL, gamePhase, packets);
 	}
 	
 	/**
