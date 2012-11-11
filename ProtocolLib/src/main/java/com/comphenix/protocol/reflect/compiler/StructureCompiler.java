@@ -272,6 +272,10 @@ public final class StructureCompiler {
 		return Modifier.isPublic(field.getModifiers());
 	}
 	
+	private boolean isNonFinal(Field field) {
+		return !Modifier.isFinal(field.getModifiers());
+	}
+	
 	private void createFields(ClassWriter cw, String targetSignature) {
 		FieldVisitor typedField = cw.visitField(Opcodes.ACC_PRIVATE, "typedTarget", targetSignature, null, null);
 		typedField.visitEnd();
@@ -305,7 +309,8 @@ public final class StructureCompiler {
 		
 		for (int i = 0; i < fields.size(); i++) {
 			
-			Class<?> outputType = fields.get(i).getType();
+			Field field = fields.get(i);
+			Class<?> outputType = field.getType();
 			Class<?> inputType = Primitives.wrap(outputType);
 			String typeDescriptor = Type.getDescriptor(outputType);
 			String inputPath = inputType.getName().replace('.', '/');
@@ -318,8 +323,8 @@ public final class StructureCompiler {
 			else
 				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
 			
-			// Only write to public fields
-			if (isPublic(fields.get(i))) {
+			// Only write to public non-final fields
+			if (isPublic(field) && isNonFinal(field)) {
 				mv.visitVarInsn(Opcodes.ALOAD, 3);
 				mv.visitVarInsn(Opcodes.ALOAD, 2);
 				
@@ -328,7 +333,7 @@ public final class StructureCompiler {
 				else
 					boxingHelper.unbox(Type.getType(outputType));
 				
-				mv.visitFieldInsn(Opcodes.PUTFIELD, targetName, fields.get(i).getName(), typeDescriptor);
+				mv.visitFieldInsn(Opcodes.PUTFIELD, targetName, field.getName(), typeDescriptor);
 			
 			} else {
 				// Use reflection. We don't have a choice, unfortunately.
@@ -386,7 +391,9 @@ public final class StructureCompiler {
 		mv.visitTableSwitchInsn(0, fields.size() - 1, errorLabel, labels);
 		
 		for (int i = 0; i < fields.size(); i++) {
-			Class<?> outputType = fields.get(i).getType();
+			
+			Field field = fields.get(i);
+			Class<?> outputType = field.getType();
 			String typeDescriptor = Type.getDescriptor(outputType);
 			
 			mv.visitLabel(labels[i]);
@@ -398,9 +405,9 @@ public final class StructureCompiler {
 				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
 			
 			// Note that byte code cannot access non-public fields
-			if (isPublic(fields.get(i))) {
+			if (isPublic(field)) {
 				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				mv.visitFieldInsn(Opcodes.GETFIELD, targetName, fields.get(i).getName(), typeDescriptor);
+				mv.visitFieldInsn(Opcodes.GETFIELD, targetName, field.getName(), typeDescriptor);
 				
 				boxingHelper.box(Type.getType(outputType));
 			} else {

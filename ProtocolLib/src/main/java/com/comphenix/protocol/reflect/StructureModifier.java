@@ -153,6 +153,18 @@ public class StructureModifier<TField> {
 	}
 	
 	/**
+	 * Determine whether or not a field is read-only (final).
+	 * @param fieldIndex - index of the field.
+	 * @return TRUE if the field by the given index is read-only, FALSE otherwise.
+	 */
+	public boolean isReadOnly(int fieldIndex) {
+		if (fieldIndex < 0 || fieldIndex >= data.size())
+			new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
+		
+		return Modifier.isFinal(data.get(fieldIndex).getModifiers());
+	}
+	
+	/**
 	 * Writes the value of a field given its index.
 	 * @param fieldIndex - index of the field.
 	 * @param value - new value of the field.
@@ -424,9 +436,10 @@ public class StructureModifier<TField> {
 		
 		for (Field field : fields) {
 			Class<?> type = field.getType();
+			int modifier = field.getModifiers();
 			
-			// First, ignore primitive fields
-			if (!type.isPrimitive()) {
+			// First, ignore primitive fields and final fields
+			if (!type.isPrimitive() && !Modifier.isFinal(modifier)) {
 				// Next, see if we actually can generate a default value
 				if (generator.getDefault(type) != null) {
 					// If so, require it
@@ -449,9 +462,9 @@ public class StructureModifier<TField> {
 		for (Field field : FuzzyReflection.fromClass(type, true).getFields()) {
 			int mod = field.getModifiers();
 			
-			// Ignore static, final and "abstract packet" fields
-			if (!Modifier.isFinal(mod) && !Modifier.isStatic(mod) && (
-					superclassExclude == null || !field.getDeclaringClass().equals(superclassExclude)
+			// Ignore static and "abstract packet" fields
+			if (!Modifier.isStatic(mod) && 
+					(superclassExclude == null || !field.getDeclaringClass().equals(superclassExclude)
 				)) {
 				
 				result.add(field);
