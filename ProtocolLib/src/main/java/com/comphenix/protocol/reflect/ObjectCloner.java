@@ -66,8 +66,10 @@ public class ObjectCloner {
 		// Copy every field
 		try {
 			for (int i = 0; i < modifierSource.size(); i++) {
-				Object value = modifierSource.read(i);
-				modifierDest.write(i, value);
+				if (!modifierDest.isReadOnly(i)) {
+					Object value = modifierSource.read(i);
+					modifierDest.write(i, value);
+				}
 				
 				// System.out.println(String.format("Writing value %s to %s", 
 				//		value, modifier.getFields().get(i).getName()));

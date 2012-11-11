@@ -30,7 +30,6 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.google.common.collect.DiscreteDomains;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
 import com.google.common.collect.Sets;
