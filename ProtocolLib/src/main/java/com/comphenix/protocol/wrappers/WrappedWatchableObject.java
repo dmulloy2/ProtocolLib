@@ -53,7 +53,7 @@ public class WrappedWatchableObject {
 	 * @return Super type.
 	 * @throws FieldAccessException Unable to read values.
 	 */
-	public Class<?> getValueType() throws FieldAccessException {
+	public Class<?> getType() throws FieldAccessException {
 		if (typeClass == null) {
 			typeClass = WrappedDataWatcher.getTypeClass(getTypeID());
 			
@@ -120,8 +120,8 @@ public class WrappedWatchableObject {
 		// Verify a few quick things
 		if (newValue == null)
 			throw new IllegalArgumentException("Cannot watch a NULL value.");
-		if (!getValueType().isAssignableFrom(newValue.getClass()))
-			throw new IllegalArgumentException("Object " + newValue +  " must be of type " + getValueType().getName());
+		if (!getType().isAssignableFrom(newValue.getClass()))
+			throw new IllegalArgumentException("Object " + newValue +  " must be of type " + getType().getName());
 		
 		// See if we should update the client to
 		if (updateClient)

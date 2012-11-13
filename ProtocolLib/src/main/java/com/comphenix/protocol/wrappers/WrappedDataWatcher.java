@@ -3,6 +3,7 @@ package com.comphenix.protocol.wrappers;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -41,6 +43,9 @@ public class WrappedDataWatcher {
 	private static Method createKeyValueMethod;
 	private static Method updateKeyValueMethod;
 	private static Method getKeyValueMethod;
+	
+	// Entity methods
+	private static Field entityDataField;
 	
 	/**
 	 * Whether or not this class has already been initialized.
@@ -77,6 +82,20 @@ public class WrappedDataWatcher {
 			initialize();
 		} catch (FieldAccessException e) {
 			throw new RuntimeException("Cannot initialize wrapper.", e);
+		}
+	}
+	
+	/**
+	 * Create a new data watcher from a list of watchable objects.
+	 * @param watchableObjects - list of watchable objects that will be copied.
+	 * @throws FieldAccessException Unable to read watchable objects.
+	 */
+	public WrappedDataWatcher(List<WrappedWatchableObject> watchableObjects) throws FieldAccessException {
+		this();
+		
+		// Fill the underlying map
+		for (WrappedWatchableObject watched : watchableObjects) {
+			setObject(watched.getIndex(), watched.getValue());
 		}
 	}
 	
@@ -224,6 +243,32 @@ public class WrappedDataWatcher {
     }
     
     /**
+     * Retrieve every watchable object in this watcher.
+     * @return Every watchable object.
+     * @throws FieldAccessException If reflection failed.
+     */
+	public List<WrappedWatchableObject> getWatchableObjects() throws FieldAccessException {
+    	try {
+    		getReadWriteLock().readLock().lock();
+    		
+    		List<WrappedWatchableObject> result = new ArrayList<WrappedWatchableObject>();
+    		
+    		// Add each watchable object to the list
+    		for (Object watchable : getWatchableObjectMap().values()) {
+    			if (watchable != null) {
+    				result.add(new WrappedWatchableObject((WatchableObject) watchable));
+    			} else {
+    				result.add(null);
+    			}
+    		}
+    		return result;
+    		
+    	} finally {
+    		getReadWriteLock().readLock().unlock();
+    	}
+    }
+
+    /**
      * Retrieve a copy of every index associated with a watched object.
      * @return Every watched object index.
      * @throws FieldAccessException If we're unable to read the underlying object.
@@ -359,6 +404,29 @@ public class WrappedDataWatcher {
 			}
 		}
 		return watchableObjects;
+	}
+	
+	/**
+	 * Retrieve the data watcher associated with an entity.
+	 * @param entity - the entity to read from.
+	 * @return Associated data watcher.
+	 * @throws FieldAccessException Reflection failed.
+	 */
+	public static WrappedDataWatcher getEntityWatcher(Entity entity) throws FieldAccessException {
+		if (entityDataField == null)
+			entityDataField = FuzzyReflection.fromClass(Entity.class, true).getFieldByType("datawatcher", DataWatcher.class);
+
+		try {
+			Object nsmWatcher = FieldUtils.readField(entityDataField, entity, true);
+			
+			if (nsmWatcher != null) 
+				return new WrappedDataWatcher((DataWatcher) nsmWatcher);
+			else 
+				return null;
+			
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Cannot access DataWatcher field.", e);
+		}
 	}
 	
 	/**
