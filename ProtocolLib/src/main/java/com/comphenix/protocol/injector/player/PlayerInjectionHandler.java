@@ -442,7 +442,6 @@ public class PlayerInjectionHandler {
 	 * the method will try a workaround to remove the injected hook in the NetServerHandler.
 	 * 
 	 * @param address - address of the player to unregister.
-	 * @param serverHandler - whether or not the net server handler has already been created.
 	 * @return TRUE if a player has been uninjected, FALSE otherwise.
 	 */
 	public boolean uninjectPlayer(InetSocketAddress address) {

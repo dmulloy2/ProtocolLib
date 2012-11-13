@@ -73,7 +73,7 @@ public class WrappedDataWatcher {
 	
 	/**
 	 * Create a wrapper for a given data watcher.
-	 * @param dataWatcher - the data watcher to wrap.
+	 * @param handle - the data watcher to wrap.
 	 * @throws FieldAccessException If we're unable to wrap a DataWatcher.
 	 */
 	public WrappedDataWatcher(DataWatcher handle) {

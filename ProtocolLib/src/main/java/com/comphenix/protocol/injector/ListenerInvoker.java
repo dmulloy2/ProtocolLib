@@ -50,7 +50,6 @@ public interface ListenerInvoker {
 	/**
 	 * Associate a given class with the given packet ID. Internal method.
 	 * @param clazz - class to associate.
-	 * @param packetID - the packet ID.
 	 */
 	public abstract void unregisterPacketClass(Class<?> clazz);
 
