@@ -18,10 +18,42 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	
 	protected ChunkCoordinates handle;
 
+	/**
+	 * Create a new empty wrapper.
+	 */
+	public WrappedChunkCoordinate() {
+		this(new ChunkCoordinates());
+	}
+	
+	/**
+	 * Create a wrapper for a specific chunk coordinates.
+	 * @param handle - the NMS chunk coordinates.
+	 */
 	public WrappedChunkCoordinate(ChunkCoordinates handle) {
 		if (handle == null)
 			throw new IllegalArgumentException("handle cannot be NULL");
 		this.handle = handle;
+	}
+	
+	/**
+	 * Create a wrapper with specific values.
+	 * @param x - the x coordinate.
+	 * @param y - the y coordinate.
+	 * @param z - the z coordinate.
+	 */
+	public WrappedChunkCoordinate(int x, int y, int z) {
+		this();
+		setX(x);
+		setY(y);
+		setZ(z);
+	}
+	
+	/**
+	 * Create a chunk coordinate wrapper from a given position.
+	 * @param position - the given position.
+	 */
+	public WrappedChunkCoordinate(ChunkPosition position) {
+		this(position.getX(), position.getY(), position.getZ());
 	}
 	
 	public ChunkCoordinates getHandle() {
@@ -66,6 +98,14 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 */
 	public int getZ() {
 		return handle.z;
+	}
+	
+	/**
+	 * Create an immutable chunk position from this coordinate.
+	 * @return The new immutable chunk position.
+	 */
+	public ChunkPosition toPosition() {
+		return new ChunkPosition(getX(), getY(), getZ());
 	}
 	
 	/**
