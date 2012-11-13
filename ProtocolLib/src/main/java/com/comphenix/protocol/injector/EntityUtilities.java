@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import net.minecraft.server.EntityTrackerEntry;
+
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Entity;
@@ -83,8 +85,51 @@ class EntityUtilities {
 	 *
 	 */
 	public static void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
-		
-		World world = entity.getWorld();
+		try {
+			//EntityTrackerEntry trackEntity = (EntityTrackerEntry) tracker.trackedEntities.get(entity.getEntityId());
+			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
+
+			if (trackedPlayersField == null) {
+				// This one is fairly easy
+				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
+			}
+			
+			// Phew, finally there.
+			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
+			List<Object> nmsPlayers = unwrapBukkit(observers);
+			
+			// trackEntity.trackedPlayers.clear();
+			trackedPlayers.removeAll(nmsPlayers);
+			
+			// We have to rely on a NAME once again. Damn it.
+			if (scanPlayersMethod == null) {
+				scanPlayersMethod = trackerEntry.getClass().getMethod("scanPlayers", List.class);
+			}
+			
+			//trackEntity.scanPlayers(server.players);
+			scanPlayersMethod.invoke(trackerEntry, nmsPlayers);
+			
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Security limitation prevents access to 'get' method in IntHashMap", e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Exception occurred in Minecraft.", e);
+		} catch (SecurityException e) {
+			throw new FieldAccessException("Security limitation prevents access to 'scanPlayers' method in trackerEntry.", e);
+		} catch (NoSuchMethodException e) {
+			throw new FieldAccessException("Canot find 'scanPlayers' method. Is ProtocolLib up to date?", e);
+		}
+	}
+	
+	/**
+	 * Retrieve the entity tracker entry given a ID.
+	 * @param world - world server.
+	 * @param entityID - entity ID.
+	 * @return The entity tracker entry.
+	 * @throws FieldAccessException 
+	 */
+	private static Object getEntityTrackerEntry(World world, int entityID) throws FieldAccessException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		Object worldServer = ((CraftWorld) world).getHandle();
 
 		// We have to rely on the class naming here.
@@ -148,41 +193,37 @@ class EntityUtilities {
 				}
 			}
 		}
-	
+		
+		// Wrap exceptions
 		try {
-			//EntityTrackerEntry trackEntity = (EntityTrackerEntry) tracker.trackedEntities.get(entity.getEntityId());
-			 Object trackerEntry = hashGetMethod.invoke(trackedEntities, entity.getEntityId());
-
-			if (trackedPlayersField == null) {
-				// This one is fairly easy
-				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
-			}
-			
-			// Phew, finally there.
-			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
-			List<Object> nmsPlayers = unwrapBukkit(observers);
-			
-			// trackEntity.trackedPlayers.clear();
-			trackedPlayers.removeAll(nmsPlayers);
-			
-			// We have to rely on a NAME once again. Damn it.
-			if (scanPlayersMethod == null) {
-				scanPlayersMethod = trackerEntry.getClass().getMethod("scanPlayers", List.class);
-			}
-			
-			//trackEntity.scanPlayers(server.players);
-			scanPlayersMethod.invoke(trackerEntry, nmsPlayers);
-			
+			return hashGetMethod.invoke(trackedEntities, entityID);
 		} catch (IllegalArgumentException e) {
 			throw e;
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Security limitation prevents access to 'get' method in IntHashMap", e);
 		} catch (InvocationTargetException e) {
 			throw new RuntimeException("Exception occurred in Minecraft.", e);
-		} catch (SecurityException e) {
-			throw new FieldAccessException("Security limitation prevents access to 'scanPlayers' method in trackerEntry.", e);
-		} catch (NoSuchMethodException e) {
-			throw new FieldAccessException("Canot find 'scanPlayers' method. Is ProtocolLib up to date?", e);
+		}
+	}
+	
+	/**
+	 * Retrieve entity from a ID, even it it's newly created.
+	 * @return The asssociated entity.
+	 * @throws FieldAccessException Reflection error.
+	 */
+	public static Entity getEntityFromID(World world, int entityID) throws FieldAccessException {
+		try {
+			EntityTrackerEntry trackerEntry = (EntityTrackerEntry) getEntityTrackerEntry(world, entityID);
+			
+			// Handle NULL cases
+			if (trackerEntry != null && trackerEntry.tracker != null) {
+				return trackerEntry.tracker.getBukkitEntity();
+			} else {
+				return null;
+			}
+			
+		} catch (Exception e) {
+			throw new FieldAccessException("Cannot find entity from ID.", e);
 		}
 	}
 	

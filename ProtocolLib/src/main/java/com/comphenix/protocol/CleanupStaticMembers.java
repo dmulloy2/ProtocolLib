@@ -19,7 +19,6 @@ import com.comphenix.protocol.reflect.compiler.StructureCompiler;
 import com.comphenix.protocol.reflect.instances.CollectionGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.PrimitiveGenerator;
-import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
@@ -50,8 +49,7 @@ class CleanupStaticMembers {
 				PrimitiveGenerator.class, FuzzyReflection.class, MethodUtils.class, 
 				BackgroundCompiler.class, StructureCompiler.class,
 				ObjectCloner.class, Packets.Server.class, Packets.Client.class, 
-				ChunkPosition.class, WrappedDataWatcher.class, WrappedWatchableObject.class,
-				BukkitConverters.class
+				ChunkPosition.class, WrappedDataWatcher.class, WrappedWatchableObject.class
 		};
 							   			
 		String[] internalClasses = {

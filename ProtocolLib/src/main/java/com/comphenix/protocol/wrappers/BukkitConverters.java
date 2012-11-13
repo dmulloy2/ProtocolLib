@@ -1,7 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -9,18 +8,16 @@ import java.util.List;
 import net.minecraft.server.DataWatcher;
 import net.minecraft.server.WatchableObject;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.WorldType;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 
 /**
@@ -31,9 +28,6 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
 public class BukkitConverters {
 	// Check whether or not certain classes exists
 	private static boolean hasWorldType = false;
-	
-	// The getEntity method
-	private static Method getEntity;
 	
 	static {
 		try {
@@ -183,13 +177,10 @@ public class BukkitConverters {
 	 * @return A converter between the underlying NMS entity and Bukkit's wrapper.
 	 */
 	public static EquivalentConverter<Entity> getEntityConverter(World world) {
-		final Object worldServer = ((CraftWorld) world).getHandle();
-		final Class<?> nmsEntityClass = net.minecraft.server.Entity.class;
+		final World container = world;
+		final WeakReference<ProtocolManager> managerRef = 
+				new WeakReference<ProtocolManager>(ProtocolLibrary.getProtocolManager());
 
-		if (getEntity == null)
-			getEntity = FuzzyReflection.fromObject(worldServer).getMethodByParameters(
-					"getEntity", nmsEntityClass, new Class[] { int.class });
-		
 		return getIgnoreNull(new EquivalentConverter<Entity>() {
 			
 			@Override
@@ -201,34 +192,17 @@ public class BukkitConverters {
 			@Override
 			public Entity getSpecific(Object generic) {
 				try {
-					net.minecraft.server.Entity nmsEntity = (net.minecraft.server.Entity) 
-							getEntity.invoke(worldServer, generic);
 					Integer id = (Integer) generic;
 					
-					// Attempt to get the Bukkit entity
-					if (nmsEntity != null) {
-						return nmsEntity.getBukkitEntity();
+					// Use the 
+					if (id != null && managerRef.get() != null) {
+						return managerRef.get().getEntityFromID(container, id);
 					} else {
-						Server server = Bukkit.getServer();
-						
-						// Maybe it's a player that has just logged in? Try a search
-						if (server != null) {
-							for (Player player : server.getOnlinePlayers()) {
-								if (player.getEntityId() == id) {
-									return player;
-								}
-							}
-						}
-						
 						return null;
 					}
 					
-				} catch (IllegalArgumentException e) {
-					throw new RuntimeException("Incorrect arguments detected.", e);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException("Cannot read field due to a security limitation.", e);
-				} catch (InvocationTargetException e) {
-					throw new RuntimeException("Error occured in Minecraft method.", e.getCause());
+				} catch (FieldAccessException e) {
+					throw new RuntimeException("Cannot retrieve entity from ID.", e);
 				}
 			}
 			

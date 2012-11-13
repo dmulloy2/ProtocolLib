@@ -20,6 +20,7 @@ package com.comphenix.protocol;
 import java.util.List;
 import java.util.Set;
 
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -104,6 +105,15 @@ public interface ProtocolManager extends PacketStream {
 	 * @param observers - the clients to update.
 	 */
 	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException;
+	
+	/**
+	 * Retrieve the associated entity.
+	 * @param container - the world the entity belongs to.
+	 * @param id - the unique ID of the entity.
+	 * @return The associated entity.
+	 * @throws FieldAccessException Reflection failed.
+	 */
+	public Entity getEntityFromID(World container, int id) throws FieldAccessException;
 	
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.

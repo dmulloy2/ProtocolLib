@@ -14,6 +14,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
+import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -414,10 +415,13 @@ public class WrappedDataWatcher {
 	 */
 	public static WrappedDataWatcher getEntityWatcher(Entity entity) throws FieldAccessException {
 		if (entityDataField == null)
-			entityDataField = FuzzyReflection.fromClass(Entity.class, true).getFieldByType("datawatcher", DataWatcher.class);
+			entityDataField = FuzzyReflection.fromClass(net.minecraft.server.Entity.class, true).
+				getFieldByType("datawatcher", DataWatcher.class);
 
+		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
+		
 		try {
-			Object nsmWatcher = FieldUtils.readField(entityDataField, entity, true);
+			Object nsmWatcher = FieldUtils.readField(entityDataField, unwrapper.unwrapItem(entity), true);
 			
 			if (nsmWatcher != null) 
 				return new WrappedDataWatcher((DataWatcher) nsmWatcher);
