@@ -10,3 +10,4 @@ com.comphenix.protocol.reflect
 com.comphenix.protocol.reflect.compiler
 com.comphenix.protocol.reflect.instances
 com.comphenix.protocol.utility
+com.comphenix.protocol.wrappers
