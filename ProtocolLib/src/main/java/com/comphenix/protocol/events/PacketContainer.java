@@ -179,6 +179,22 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
+	 * Retrieves a read/write structure for every String array field.
+	 * @return A modifier for every String array field.
+	 */
+	public StructureModifier<String[]> getStringArrays() {
+		return structureModifier.withType(String[].class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every byte array field.
+	 * @return A modifier for every byte array field.
+	 */
+	public StructureModifier<byte[]> getByteArrays() {
+		return structureModifier.withType(byte[].class);
+	}
+	
+	/**
 	 * Retrieves a read/write structure for ItemStack.
 	 * <p>
 	 * This modifier will automatically marshall between the Bukkit ItemStack and the
