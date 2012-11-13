@@ -124,6 +124,61 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
+	 * Retrieves a read/write structure for every byte field.
+	 * @return A modifier for every byte field.
+	 */
+	public StructureModifier<Byte> getBytes() {
+		return structureModifier.withType(byte.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every short field.
+	 * @return A modifier for every short field.
+	 */
+	public StructureModifier<Short> getShorts() {
+		return structureModifier.withType(short.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every integer field.
+	 * @return A modifier for every integer field.
+	 */
+	public StructureModifier<Integer> getIntegers() {
+		return structureModifier.withType(int.class);
+	}
+	/**
+	 * Retrieves a read/write structure for every long field.
+	 * @return A modifier for every long field.
+	 */
+	public StructureModifier<Long> getLongs() {
+		return structureModifier.withType(long.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every float field.
+	 * @return A modifier for every float field.
+	 */
+	public StructureModifier<Float> getFloat() {
+		return structureModifier.withType(float.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every double field.
+	 * @return A modifier for every double field.
+	 */
+	public StructureModifier<Double> getDoubles() {
+		return structureModifier.withType(double.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every String field.
+	 * @return A modifier for every String field.
+	 */
+	public StructureModifier<String> getStrings() {
+		return structureModifier.withType(String.class);
+	}
+	
+	/**
 	 * Retrieves a read/write structure for ItemStack.
 	 * <p>
 	 * This modifier will automatically marshall between the Bukkit ItemStack and the
