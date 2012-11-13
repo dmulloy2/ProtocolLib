@@ -99,7 +99,6 @@ public abstract class PacketAdapter implements PacketListener {
 	 * Initialize a packet listener for a single connection side.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param connectionSide - the packet type the listener is looking for.
-	 * @param listenerPriority - the event priority.
 	 * @param gamePhase - which game phase this listener is active under.
 	 * @param packets - the packet IDs the listener is looking for.
 	 */

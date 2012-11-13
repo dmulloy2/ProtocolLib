@@ -87,7 +87,7 @@ public class StructureModifier<TField> {
 	 * @param targetType - the structure to modify.
 	 * @param superclassExclude - a superclass to exclude.
 	 * @param requireDefault - whether or not we will be using writeDefaults().
-	 * @param useStructureModifier - whether or not to automatically compile this structure modifier.
+	 * @param useStructureCompiler - whether or not to automatically compile this structure modifier.
 	 */
 	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault, boolean useStructureCompiler) {
 		List<Field> fields = getFields(targetType, superclassExclude);
@@ -137,7 +137,7 @@ public class StructureModifier<TField> {
 	 * @param defaultFields - list of fields that will be automatically initialized.
 	 * @param converter - converts between the common field type and the actual type the consumer expects.
 	 * @param subTypeCache - a structure modifier cache.
-	 * @param useStructureModifier - whether or not to automatically compile this structure modifier.
+	 * @param useStructureCompiler - whether or not to automatically compile this structure modifier.
 	 */
 	protected void initialize(Class targetType, Class fieldType, 
 			  List<Field> data, Map<Field, Integer> defaultFields,

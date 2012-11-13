@@ -35,7 +35,6 @@ public class PrettyPrinter {
 	 * Print the content of an object.
 	 * @param object - the object to serialize.
 	 * @param stop - superclass that will stop the process.
-	 * @param depth - how far in the hierachy until we stop.
 	 * @return String representation of the class.
 	 * @throws IllegalAccessException 
 	 */

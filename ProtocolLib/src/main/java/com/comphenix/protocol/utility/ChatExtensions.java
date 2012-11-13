@@ -30,7 +30,6 @@ public class ChatExtensions {
 	 * Send a message without invoking the packet listeners.
 	 * @param receiver - the receiver.
 	 * @param message - the message to send.
-	 * @return TRUE if the message was sent successfully, FALSE otherwise.
 	 * @throws InvocationTargetException If we were unable to send the message.
 	 */
 	public void sendMessageSilently(CommandSender receiver, String message) throws InvocationTargetException { 
