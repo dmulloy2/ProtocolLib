@@ -108,7 +108,7 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 	@Override
 	public StructureModifier<TField> write(int index, Object value) throws FieldAccessException {
 		if (converter != null)
-			value = converter.getGeneric((TField) value);
+			value = converter.getGeneric(getFieldType(index), (TField) value);
 		return writeGenerated(index, value);
 	}
 	

@@ -256,7 +256,7 @@ public class StructureModifier<TField> {
 			throw new IllegalStateException("Cannot write to a NULL target.");
 		
 		// Use the converter, if it exists
-		Object obj = needConversion() ? converter.getGeneric(value) : value;
+		Object obj = needConversion() ? converter.getGeneric(getFieldType(fieldIndex), value) : value;
 		
 		try {
 			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
@@ -266,6 +266,15 @@ public class StructureModifier<TField> {
 		
 		// Make this method chainable
 		return this;
+	}
+	
+	/**
+	 * Retrieve the type of a specified field.
+	 * @param index - the index.
+	 * @return The type of the given field.
+	 */
+	protected Class<?> getFieldType(int index) {
+		return data.get(index).getType();
 	}
 	
 	/**

@@ -8,11 +8,17 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.base.Objects;
 
 /**
- * Wraps a immutable net.minecraft.server.ChunkPosition, which represents a integer 3D vector.
+ * Copies a immutable net.minecraft.server.ChunkPosition, which represents a integer 3D vector.
  * 
  * @author Kristian
  */
 public class ChunkPosition {
+	
+	/**
+	 * Represents the null (0, 0, 0) origin.
+	 */
+	public static ChunkPosition ORIGIN = new ChunkPosition(0, 0, 0);
+	
 	// Use protected members, like Bukkit
 	protected final int x;
 	protected final int y;
@@ -75,13 +81,55 @@ public class ChunkPosition {
 	}
 	
 	/**
+	 * Adds the current position and a given position together, producing a result position.
+	 * @param other - the other position.
+	 * @return The new result position.
+	 */
+	public ChunkPosition add(ChunkPosition other) {
+		if (other == null)
+			throw new IllegalArgumentException("other cannot be NULL");
+		return new ChunkPosition(x + other.x, y + other.y, z + other.z);
+	}
+	
+	/**
+	 * Adds the current position and a given position together, producing a result position.
+	 * @param other - the other position.
+	 * @return The new result position.
+	 */
+	public ChunkPosition subtract(ChunkPosition other) {
+		if (other == null)
+			throw new IllegalArgumentException("other cannot be NULL");
+		return new ChunkPosition(x - other.x, y - other.y, z - other.z);
+	}
+	
+	/**
+	 * Multiply each dimension in the current position by the given factor.
+	 * @param factor - multiplier.
+	 * @return The new result.
+	 */
+	public ChunkPosition multiply(int factor) {
+		return new ChunkPosition(x * factor, y * factor, z * factor);
+	}
+	
+	/**
+	 * Divide each dimension in the current position by the given divisor.
+	 * @param divisor - the divisor.
+	 * @return The new result.
+	 */
+	public ChunkPosition divide(int divisor) {
+		if (divisor == 0)
+			throw new IllegalArgumentException("Cannot divide by null.");
+		return new ChunkPosition(x / divisor, y / divisor, z / divisor);
+	}
+	
+	/**
 	 * Used to convert between NMS ChunkPosition and the wrapper instance.
-	 * @return
+	 * @return A new converter.
 	 */
 	public static EquivalentConverter<ChunkPosition> getConverter() {
 		return new EquivalentConverter<ChunkPosition>() {
 			@Override
-			public Object getGeneric(ChunkPosition specific) {
+			public Object getGeneric(Class<?> genericType, ChunkPosition specific) {
 				return new net.minecraft.server.ChunkPosition(specific.x, specific.z, specific.z);
 			}
 			
