@@ -1,5 +1,5 @@
 name: ProtocolLib
-version: 1.5.1
+version: 1.6.0
 description: Provides read/write access to the Minecraft protocol.
 author: Comphenix
 website: http://www.comphenix.net/ProtocolLib
@@ -11,12 +11,12 @@ commands:
   protocol:
     description: Performs administrative tasks regarding ProtocolLib.
     usage: /<command> config|check|update
-    permission: experiencemod.admin
+    permission: protocol.admin
     permission-message: You don't have <permission>
   packet:
     description: Add or remove a simple packet listener.
     usage: /<command> add|remove|names client|server [ID start]-[ID stop] [detailed]
-    permission: experiencemod.admin
+    permission: protocol.admin
     permission-message: You don't have <permission>
 
 permissions:

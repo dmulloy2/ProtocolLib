@@ -24,7 +24,7 @@ class ProtocolConfig {
 	private static final String UPDATER_LAST_TIME = "last";
 	
 	// Defaults
-	private static final long DEFAULT_UPDATER_DELAY = 60;
+	private static final long DEFAULT_UPDATER_DELAY = 43200;
 	
 	private Plugin plugin;
 	private Configuration config;
@@ -47,7 +47,7 @@ class ProtocolConfig {
 	 */
 	public void reloadConfig() {
 		this.config = plugin.getConfig();
-		loadSections(true);
+		loadSections(!loadingSections);
 	}
 	
 	/**
@@ -55,9 +55,6 @@ class ProtocolConfig {
 	 * @param copyDefaults - whether or not to copy configuration defaults.
 	 */
 	private void loadSections(boolean copyDefaults) {
-		if (loadingSections)
-			return;
-		
 		if (config != null) {
 			global = config.getConfigurationSection(SECTION_GLOBAL);
 		}
@@ -72,10 +69,8 @@ class ProtocolConfig {
 			if (config != null)
 				config.options().copyDefaults(true);
 			plugin.saveDefaultConfig();
-			config = plugin.getConfig();
-		
+			plugin.reloadConfig();
 			loadingSections = false;	
-			loadSections(false);
 			
 			// Inform the user
 			System.out.println("[ProtocolLib] Created default configuration.");

@@ -61,6 +61,17 @@ public class StructureModifier<TField> {
 	// Whether or subclasses should handle conversion
 	protected boolean customConvertHandling;
 	
+	// Whether or not to automatically compile the structure modifier
+	protected boolean useStructureCompiler;
+
+	/**
+	 * Creates a structure modifier.
+	 * @param targetType - the structure to modify.
+	 */
+	public StructureModifier(Class targetType) {
+		this(targetType, null, true);
+	}
+	
 	/**
 	 * Creates a structure modifier.
 	 * @param targetType - the structure to modify.
@@ -68,10 +79,22 @@ public class StructureModifier<TField> {
 	 * @param requireDefault - whether or not we will be using writeDefaults().
 	 */
 	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault) {
+		this(targetType, superclassExclude, requireDefault, true);
+	}
+	
+	/**
+	 * Creates a structure modifier.
+	 * @param targetType - the structure to modify.
+	 * @param superclassExclude - a superclass to exclude.
+	 * @param requireDefault - whether or not we will be using writeDefaults().
+	 * @param useStructureModifier - whether or not to automatically compile this structure modifier.
+	 */
+	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault, boolean useStructureCompiler) {
 		List<Field> fields = getFields(targetType, superclassExclude);
 		Map<Field, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<Field, Integer>();
 		
-		initialize(targetType, Object.class, fields, defaults, null, new ConcurrentHashMap<Class, StructureModifier>());
+		initialize(targetType, Object.class, fields, defaults, null, 
+				   new ConcurrentHashMap<Class, StructureModifier>(), useStructureCompiler);
 	}
 	
 	/**
@@ -87,7 +110,8 @@ public class StructureModifier<TField> {
 	 */
 	protected void initialize(StructureModifier<TField> other) {
 		initialize(other.targetType, other.fieldType, other.data, 
-				   other.defaultFields, other.converter, other.subtypeCache);
+				   other.defaultFields, other.converter, other.subtypeCache, 
+				   other.useStructureCompiler);
 	}
 	
 	/**
@@ -102,12 +126,31 @@ public class StructureModifier<TField> {
 	protected void initialize(Class targetType, Class fieldType, 
 			  List<Field> data, Map<Field, Integer> defaultFields,
 			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache) {
+		initialize(targetType, fieldType, data, defaultFields, converter, subTypeCache, true);
+	}
+	
+	/**
+	 * Initialize every field of this class.
+	 * @param targetType - type of the object we're reading and writing from.
+	 * @param fieldType - the common type of the fields we're modifying.
+	 * @param data - list of fields to modify.
+	 * @param defaultFields - list of fields that will be automatically initialized.
+	 * @param converter - converts between the common field type and the actual type the consumer expects.
+	 * @param subTypeCache - a structure modifier cache.
+	 * @param useStructureModifier - whether or not to automatically compile this structure modifier.
+	 */
+	protected void initialize(Class targetType, Class fieldType, 
+			  List<Field> data, Map<Field, Integer> defaultFields,
+			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache,
+			  boolean useStructureCompiler) {
+		
 		this.targetType = targetType;
 		this.fieldType = fieldType;
 		this.data = data;
 		this.defaultFields = defaultFields;
 		this.converter = converter;
 		this.subtypeCache = subTypeCache;
+		this.useStructureCompiler = useStructureCompiler;
 	}
 	
 	/**
@@ -153,6 +196,52 @@ public class StructureModifier<TField> {
 	}
 	
 	/**
+	 * Determine whether or not a field is read-only (final).
+	 * @param fieldIndex - index of the field.
+	 * @return TRUE if the field by the given index is read-only, FALSE otherwise.
+	 */
+	public boolean isReadOnly(int fieldIndex) {
+		if (fieldIndex < 0 || fieldIndex >= data.size())
+			new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
+		
+		return Modifier.isFinal(data.get(fieldIndex).getModifiers());
+	}
+	
+	/**
+	 * Set whether or not a field should be treated as read only.
+	 * <p>
+	 * Note that changing the read-only state to TRUE will only work if the current
+	 * field was recently read-only or the current structure modifier hasn't been compiled yet.
+	 * 
+	 * @param fieldIndex - index of the field.
+	 * @param value - TRUE if this field should be read only, FALSE otherwise.
+	 * @throws FieldAccessException If we cannot modify the read-only status.
+	 */
+	public void setReadOnly(int fieldIndex, boolean value) throws FieldAccessException {
+		if (fieldIndex < 0 || fieldIndex >= data.size())
+			new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
+
+		try {
+			StructureModifier.setFinalState(data.get(fieldIndex), value);
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Cannot write read only status due to a security limitation.", e);
+		}
+	}
+	
+	/**
+	 * Alter the final status of a field.
+	 * @param field - the field to change.
+	 * @param isReadOnly - TRUE if the field should be read only, FALSE otherwise.
+	 * @throws IllegalAccessException If an error occured.
+	 */
+	protected static void setFinalState(Field field, boolean isReadOnly) throws IllegalAccessException {
+	    if (isReadOnly)
+	    	FieldUtils.writeField((Object) field, "modifiers", field.getModifiers() | Modifier.FINAL, true);
+	    else
+	    	FieldUtils.writeField((Object) field, "modifiers", field.getModifiers() & ~Modifier.FINAL, true);
+	}
+	
+	/**
 	 * Writes the value of a field given its index.
 	 * @param fieldIndex - index of the field.
 	 * @param value - new value of the field.
@@ -167,7 +256,7 @@ public class StructureModifier<TField> {
 			throw new IllegalStateException("Cannot write to a NULL target.");
 		
 		// Use the converter, if it exists
-		Object obj = needConversion() ? converter.getGeneric(value) : value;
+		Object obj = needConversion() ? converter.getGeneric(getFieldType(fieldIndex), value) : value;
 		
 		try {
 			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
@@ -177,6 +266,15 @@ public class StructureModifier<TField> {
 		
 		// Make this method chainable
 		return this;
+	}
+	
+	/**
+	 * Retrieve the type of a specified field.
+	 * @param index - the index.
+	 * @return The type of the given field.
+	 */
+	protected Class<?> getFieldType(int index) {
+		return data.get(index).getType();
 	}
 	
 	/**
@@ -281,7 +379,7 @@ public class StructureModifier<TField> {
 				subtypeCache.put(fieldType, result);
 				
 				// Automatically compile the structure modifier
-				if (BackgroundCompiler.getInstance() != null) 
+				if (useStructureCompiler && BackgroundCompiler.getInstance() != null) 
 					BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
 			}
 		}
@@ -353,7 +451,8 @@ public class StructureModifier<TField> {
 		
 		StructureModifier<T> result = new StructureModifier<T>();
 		result.initialize(targetType, fieldType, filtered, defaults, 
-						  converter, new ConcurrentHashMap<Class, StructureModifier>());
+						  converter, new ConcurrentHashMap<Class, StructureModifier>(), 
+						  useStructureCompiler);
 		return result;
 	}
 	
@@ -366,7 +465,7 @@ public class StructureModifier<TField> {
 		StructureModifier<TField> copy = new StructureModifier<TField>();
 		
 		// Create a new instance
-		copy.initialize(targetType, fieldType, data, defaultFields, converter, subtypeCache);
+		copy.initialize(this);
 		copy.target = target;
 		return copy;
 	}
@@ -424,9 +523,10 @@ public class StructureModifier<TField> {
 		
 		for (Field field : fields) {
 			Class<?> type = field.getType();
+			int modifier = field.getModifiers();
 			
-			// First, ignore primitive fields
-			if (!type.isPrimitive()) {
+			// First, ignore primitive fields and final fields
+			if (!type.isPrimitive() && !Modifier.isFinal(modifier)) {
 				// Next, see if we actually can generate a default value
 				if (generator.getDefault(type) != null) {
 					// If so, require it
@@ -449,9 +549,9 @@ public class StructureModifier<TField> {
 		for (Field field : FuzzyReflection.fromClass(type, true).getFields()) {
 			int mod = field.getModifiers();
 			
-			// Ignore static, final and "abstract packet" fields
-			if (!Modifier.isFinal(mod) && !Modifier.isStatic(mod) && (
-					superclassExclude == null || !field.getDeclaringClass().equals(superclassExclude)
+			// Ignore static and "abstract packet" fields
+			if (!Modifier.isStatic(mod) && 
+					(superclassExclude == null || !field.getDeclaringClass().equals(superclassExclude)
 				)) {
 				
 				result.add(field);

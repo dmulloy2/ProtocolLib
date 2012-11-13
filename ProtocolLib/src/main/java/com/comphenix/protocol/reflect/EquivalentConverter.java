@@ -24,8 +24,25 @@ package com.comphenix.protocol.reflect;
  * @param <TType> The specific type.
  */
 public interface EquivalentConverter<TType> {
+	/**
+	 * Retrieve a copy of the specific type using an instance of the generic type.
+	 * @param generic - the generic type.
+	 * @return The new specific type.
+	 */
 	public TType getSpecific(Object generic);
-	public Object getGeneric(TType specific);
+	
+	/**
+	 * Retrieve a copy of the generic type from a specific type.
+	 * @param genericType - class or super class of the generic type.
+	 * @param specific - the specific type we need to copy.
+	 * @return A copy of the specific type.
+	 */
+	public Object getGeneric(Class<?> genericType, TType specific);
+	
+	/**
+	 * Due to type erasion, we need to explicitly keep a reference to the specific type.
+	 * @return The specific type.
+	 */
 	public Class<TType> getSpecificType();
 }
 

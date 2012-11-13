@@ -25,21 +25,22 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.WorldType;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.ChunkPosition;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 
 import net.minecraft.server.Packet;
 
@@ -61,24 +62,10 @@ public class PacketContainer implements Serializable {
 	// Current structure modifier
 	protected transient StructureModifier<Object> structureModifier;
 		
-	// Check whether or not certain classes exists
-	private static boolean hasWorldType = false;
-	
-	// The getEntity method
-	private static Method getEntity;
-	
 	// Support for serialization
 	private static Method writeMethod;
 	private static Method readMethod;
-	
-	static {
-		try {
-			Class.forName("net.minecraft.server.WorldType");
-			hasWorldType = true;
-		} catch (ClassNotFoundException e) {
-		}
-	}
-	
+		
 	/**
 	 * Creates a packet container for a new packet.
 	 * @param id - ID of the packet to create.
@@ -137,6 +124,77 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
+	 * Retrieves a read/write structure for every byte field.
+	 * @return A modifier for every byte field.
+	 */
+	public StructureModifier<Byte> getBytes() {
+		return structureModifier.withType(byte.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every short field.
+	 * @return A modifier for every short field.
+	 */
+	public StructureModifier<Short> getShorts() {
+		return structureModifier.withType(short.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every integer field.
+	 * @return A modifier for every integer field.
+	 */
+	public StructureModifier<Integer> getIntegers() {
+		return structureModifier.withType(int.class);
+	}
+	/**
+	 * Retrieves a read/write structure for every long field.
+	 * @return A modifier for every long field.
+	 */
+	public StructureModifier<Long> getLongs() {
+		return structureModifier.withType(long.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every float field.
+	 * @return A modifier for every float field.
+	 */
+	public StructureModifier<Float> getFloat() {
+		return structureModifier.withType(float.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every double field.
+	 * @return A modifier for every double field.
+	 */
+	public StructureModifier<Double> getDoubles() {
+		return structureModifier.withType(double.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every String field.
+	 * @return A modifier for every String field.
+	 */
+	public StructureModifier<String> getStrings() {
+		return structureModifier.withType(String.class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every String array field.
+	 * @return A modifier for every String array field.
+	 */
+	public StructureModifier<String[]> getStringArrays() {
+		return structureModifier.withType(String[].class);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for every byte array field.
+	 * @return A modifier for every byte array field.
+	 */
+	public StructureModifier<byte[]> getByteArrays() {
+		return structureModifier.withType(byte[].class);
+	}
+	
+	/**
 	 * Retrieves a read/write structure for ItemStack.
 	 * <p>
 	 * This modifier will automatically marshall between the Bukkit ItemStack and the
@@ -145,22 +203,8 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<ItemStack> getItemModifier() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<ItemStack>withType(net.minecraft.server.ItemStack.class, 
-				getIgnoreNull(new EquivalentConverter<ItemStack>() {
-			public Object getGeneric(ItemStack specific) {
-				return toStackNMS(specific);
-			}
-			
-			@Override
-			public ItemStack getSpecific(Object generic) {
-				return new CraftItemStack((net.minecraft.server.ItemStack) generic);
-			}
-			
-			@Override
-			public Class<ItemStack> getSpecificType() {
-				return ItemStack.class;
-			}
-		}));
+		return structureModifier.<ItemStack>withType(
+				net.minecraft.server.ItemStack.class, BukkitConverters.getItemStackConverter());
 	}
 	
 	/**
@@ -171,17 +215,21 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier for ItemStack array fields.
 	 */
 	public StructureModifier<ItemStack[]> getItemArrayModifier() {
+		
+		final EquivalentConverter<ItemStack> stackConverter = BukkitConverters.getItemStackConverter();
+		
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack[]>withType(
 				net.minecraft.server.ItemStack[].class, 
-				getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
+				BukkitConverters.getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
 					
-			public Object getGeneric(ItemStack[] specific) {
+			public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
 				net.minecraft.server.ItemStack[] result = new net.minecraft.server.ItemStack[specific.length];
 				
 				// Unwrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = toStackNMS(specific[i]);
+					result[i] = (net.minecraft.server.ItemStack) stackConverter.getGeneric(
+							net.minecraft.server.ItemStack.class, specific[i]); 
 				}
 				return result;
 			}
@@ -193,7 +241,7 @@ public class PacketContainer implements Serializable {
 				
 				// Add the wrapper
 				for (int i = 0; i < result.length; i++) {
-					result[i] = new CraftItemStack(input[i]);
+					result[i] = stackConverter.getSpecific(input[i]);
 				}
 				return result;
 			}
@@ -206,20 +254,6 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Convert an item stack to the NMS equivalent.
-	 * @param stack - Bukkit stack to convert.
-	 * @return A bukkit stack.
-	 */
-	private net.minecraft.server.ItemStack toStackNMS(ItemStack stack) {
-		// We must be prepared for an object that simply implements ItemStcak
-		if (stack instanceof CraftItemStack) {
-			return ((CraftItemStack) stack).getHandle();
-		} else {
-			return (new CraftItemStack(stack)).getHandle();
-		}
-	}
-	
-	/**
 	 * Retrieves a read/write structure for the world type enum.
 	 * <p>
 	 * This modifier will automatically marshall between the Bukkit world type and the
@@ -227,33 +261,21 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier for world type fields.
 	 */
 	public StructureModifier<WorldType> getWorldTypeModifier() {
-	
-		if (!hasWorldType) {
-			// We couldn't find the Minecraft equivalent
-			return structureModifier.withType(null);
-		}
-		
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WorldType>withType(
 				net.minecraft.server.WorldType.class, 
-				getIgnoreNull(new EquivalentConverter<WorldType>() {
-					
-			@Override
-			public Object getGeneric(WorldType specific) {
-				return net.minecraft.server.WorldType.getType(specific.getName());
-			}
-			
-			@Override
-			public WorldType getSpecific(Object generic) {
-				net.minecraft.server.WorldType type = (net.minecraft.server.WorldType) generic;
-				return WorldType.getByName(type.name());
-			}
-			
-			@Override
-			public Class<WorldType> getSpecificType() {
-				return WorldType.class;
-			}
-		}));
+				BukkitConverters.getWorldTypeConverter());
+	}
+	
+	/**
+	 * Retrieves a read/write structure for data watchers.
+	 * @return A modifier for data watchers.
+	 */
+	public StructureModifier<WrappedDataWatcher> getDataWatcherModifier() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.<WrappedDataWatcher>withType(
+				net.minecraft.server.DataWatcher.class, 
+				BukkitConverters.getDataWatcherConverter());
 	}
 	
 	/**
@@ -267,91 +289,56 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier entity types.
 	 */
 	public StructureModifier<Entity> getEntityModifier(World world) {
-	
-		final Object worldServer = ((CraftWorld) world).getHandle();
-		final Class<?> nmsEntityClass = net.minecraft.server.Entity.class;
-
-		if (getEntity == null)
-			getEntity = FuzzyReflection.fromObject(worldServer).getMethodByParameters(
-					"getEntity", nmsEntityClass, new Class[] { int.class });
-		
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<Entity>withType(
-				int.class, 
-				getIgnoreNull(new EquivalentConverter<Entity>() {
-					
-			@Override
-			public Object getGeneric(Entity specific) {
-				// Simple enough
-				return specific.getEntityId();
-			}
-			
-			@Override
-			public Entity getSpecific(Object generic) {
-				try {
-					net.minecraft.server.Entity nmsEntity = (net.minecraft.server.Entity) 
-							getEntity.invoke(worldServer, generic);
-					Integer id = (Integer) generic;
-					
-					// Attempt to get the Bukkit entity
-					if (nmsEntity != null) {
-						return nmsEntity.getBukkitEntity();
-					} else {
-						Server server = Bukkit.getServer();
-						
-						// Maybe it's a player that has just logged in? Try a search
-						if (server != null) {
-							for (Player player : server.getOnlinePlayers()) {
-								if (player.getEntityId() == id) {
-									return player;
-								}
-							}
-						}
-						
-						return null;
-					}
-					
-				} catch (IllegalArgumentException e) {
-					throw new RuntimeException("Incorrect arguments detected.", e);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException("Cannot read field due to a security limitation.", e);
-				} catch (InvocationTargetException e) {
-					throw new RuntimeException("Error occured in Minecraft method.", e.getCause());
-				}
-			}
-			
-			@Override
-			public Class<Entity> getSpecificType() {
-				return Entity.class;
-			}
-		}));
+				int.class, BukkitConverters.getEntityConverter(world));
 	}
 	
-	private <TType> EquivalentConverter<TType> getIgnoreNull(final EquivalentConverter<TType> delegate) {
-		// Automatically wrap all parameters to the delegate with a NULL check
-		return new EquivalentConverter<TType>() {
-			public Object getGeneric(TType specific) {
-				if (specific != null)
-					return delegate.getGeneric(specific);
-				else
-					return null;
-			}
-			
-			@Override
-			public TType getSpecific(Object generic) {
-				if (generic != null)
-					return delegate.getSpecific(generic);
-				else
-					return null;
-			}
-			
-			@Override
-			public Class<TType> getSpecificType() {
-				return delegate.getSpecificType();
-			}
-		};
+	/**
+	 * Retrieves a read/write structure for chunk positions.
+	 * @return A modifier for a ChunkPosition.
+	 */
+	public StructureModifier<ChunkPosition> getPositionModifier() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.withType(
+				net.minecraft.server.ChunkPosition.class,
+				ChunkPosition.getConverter());
 	}
-
+	
+	/**
+	 * Retrieves a read/write structure for collections of chunk positions.
+	 * <p>
+	 * This modifier will automatically marshall between the visible ProtocolLib ChunkPosition and the
+	 * internal Minecraft ChunkPosition.
+	 * @return A modifier for ChunkPosition list fields.
+	 */
+	public StructureModifier<List<ChunkPosition>> getPositionCollectionModifier() {
+		// Convert to and from the ProtocolLib wrapper
+		return structureModifier.withType(
+			Collection.class,
+			BukkitConverters.getListConverter(
+					net.minecraft.server.ChunkPosition.class, 
+					ChunkPosition.getConverter())
+		);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for collections of watchable objects.
+	 * <p>
+	 * This modifier will automatically marshall between the visible WrappedWatchableObject and the
+	 * internal Minecraft WatchableObject.
+	 * @return A modifier for watchable object list fields.
+	 */
+	public StructureModifier<List<WrappedWatchableObject>> getWatchableCollectionModifier() {
+		// Convert to and from the ProtocolLib wrapper
+		return structureModifier.withType(
+			Collection.class,
+			BukkitConverters.getListConverter(
+					net.minecraft.server.WatchableObject.class, 
+					BukkitConverters.getWatchableObjectConverter())
+		);
+	}
+	
 	/**
 	 * Retrieves the ID of this packet.
 	 * @return Packet ID.

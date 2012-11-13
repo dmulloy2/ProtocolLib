@@ -19,6 +19,9 @@ import com.comphenix.protocol.reflect.compiler.StructureCompiler;
 import com.comphenix.protocol.reflect.instances.CollectionGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.PrimitiveGenerator;
+import com.comphenix.protocol.wrappers.ChunkPosition;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 
 /**
  * Used to fix ClassLoader leaks that may lead to filling up the permanent generation.
@@ -45,7 +48,8 @@ class CleanupStaticMembers {
 				BukkitUnwrapper.class, DefaultInstances.class, CollectionGenerator.class,
 				PrimitiveGenerator.class, FuzzyReflection.class, MethodUtils.class, 
 				BackgroundCompiler.class, StructureCompiler.class,
-				ObjectCloner.class, Packets.Server.class, Packets.Client.class 
+				ObjectCloner.class, Packets.Server.class, Packets.Client.class, 
+				ChunkPosition.class, WrappedDataWatcher.class, WrappedWatchableObject.class
 		};
 							   			
 		String[] internalClasses = {

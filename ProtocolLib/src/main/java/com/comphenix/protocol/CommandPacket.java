@@ -32,6 +32,7 @@ import com.comphenix.protocol.utility.ChatExtensions;
 import com.google.common.collect.DiscreteDomains;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
+import com.google.common.collect.Sets;
 
 /**
  * Handles the "packet" debug command.
@@ -76,11 +77,10 @@ class CommandPacket extends CommandBase {
 	private AbstractIntervalTree<Integer, DetailedPacketListener> clientListeners = createTree(ConnectionSide.CLIENT_SIDE);
 	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
 	
-	public CommandPacket(Plugin plugin, Logger logger, ErrorReporter reporter, ProtocolManager manager) {
-		super(CommandBase.PERMISSION_ADMIN, NAME, 2);
+	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, ProtocolManager manager) {
+		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
 		this.logger = logger;
-		this.reporter = reporter;
 		this.manager = manager;
 		this.chatter = new ChatExtensions(manager);
 	}
@@ -228,6 +228,12 @@ class CommandPacket extends CommandBase {
 			
 			// Perform commands
 			if (subCommand == SubCommand.ADD) {
+				// The add command is dangerous - don't default on the connection side
+				if (args.length == 1) {
+					sender.sendMessage(ChatColor.RED + "Please specify a connectionn side.");
+					return false;
+				}
+				
 				executeAddCommand(sender, side, detailed, ranges);
 			} else if (subCommand == SubCommand.REMOVE) {
 				executeRemoveCommand(sender, side, detailed, ranges);
@@ -308,18 +314,19 @@ class CommandPacket extends CommandBase {
 	}
 	
 	private Set<Integer> getValidPackets(ConnectionSide side) throws FieldAccessException {
+		HashSet<Integer> supported = Sets.newHashSet();
+		
 		if (side.isForClient())
-			return Packets.Client.getSupported();
+			supported.addAll(Packets.Client.getSupported());
 		else if (side.isForServer())
-			return Packets.Server.getSupported();
-		else
-			throw new IllegalArgumentException("Illegal side: " + side);
+			supported.addAll(Packets.Server.getSupported());
+		return supported;
 	}
 	
 	private Set<Integer> getNamedPackets(ConnectionSide side) {
 		
 		Set<Integer> valids = null;
-		Set<Integer> result = null;
+		Set<Integer> result = Sets.newHashSet();
 		
 		try {
 			valids = getValidPackets(side);
@@ -329,11 +336,9 @@ class CommandPacket extends CommandBase {
 		
 		// Check connection side
 		if (side.isForClient())
-			result = Packets.Client.getRegistry().values();
-		else if (side.isForServer())
-			result = Packets.Server.getRegistry().values();
-		else
-			throw new IllegalArgumentException("Illegal side: " + side);
+			result.addAll(Packets.Client.getRegistry().values());
+		if (side.isForServer())
+			result.addAll(Packets.Server.getRegistry().values());
 		
 		// Remove invalid packets
 		result.retainAll(valids);
@@ -378,10 +383,10 @@ class CommandPacket extends CommandBase {
 			}
 			
 			private void printInformation(PacketEvent event) {
-				String verb = side.isForClient() ? "Received" : "Sent";
-				String shortDescription = String.format(
-						"%s %s (%s) from %s",
-						verb, 
+				String format = side.isForClient() ? 
+						"Received %s (%s) from %s" : 
+						"Sent %s (%s) to %s";
+				String shortDescription = String.format(format,
 						Packets.getDeclaredName(event.getPacketID()),
 						event.getPacketID(),
 						event.getPlayer().getName()
@@ -438,7 +443,10 @@ class CommandPacket extends CommandBase {
 		
 		// The trees will manage the listeners for us
 		if (listener != null) {
-			getListenerTree(side).put(idStart, idStop, listener);
+			if (side.isForClient())
+				clientListeners.put(idStart, idStop, listener);
+			if (side.isForServer())
+				serverListeners.put(idStart, idStop, listener);
 			return listener;
 		} else {
 			throw new IllegalArgumentException("No packets found in the range " + idStart + " - " + idStop + ".");
@@ -448,17 +456,14 @@ class CommandPacket extends CommandBase {
 	public Set<AbstractIntervalTree<Integer, DetailedPacketListener>.Entry> removePacketListeners(
 			ConnectionSide side, int idStart, int idStop, boolean detailed) {
 		
+		HashSet<AbstractIntervalTree<Integer, DetailedPacketListener>.Entry> result = Sets.newHashSet();
+		
 		// The interval tree will automatically remove the listeners for us
-		return getListenerTree(side).remove(idStart, idStop);
-	}
-	
-	private AbstractIntervalTree<Integer, DetailedPacketListener> getListenerTree(ConnectionSide side) {
 		if (side.isForClient())
-			return clientListeners;
-		else if (side.isForServer())
-			return serverListeners;
-		else
-			throw new IllegalArgumentException("Not a legal connection side.");
+			result.addAll(clientListeners.remove(idStart, idStop));
+		if (side.isForServer())
+			result.addAll(serverListeners.remove(idStart, idStop));
+		return result;
 	}
 
 	private SubCommand parseCommand(String[] args, int index) {

@@ -19,10 +19,12 @@ package com.comphenix.protocol.reflect.compiler;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Set;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.google.common.collect.Sets;
 
 /**
  * Represents a compiled structure modifier.
@@ -34,9 +36,31 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 	// Used to compile instances of structure modifiers
 	protected StructureCompiler compiler;
 	
+	// Fields that originally were read only
+	private Set<Integer> exempted;
+	
 	public CompiledStructureModifier() {
 		super();
 		customConvertHandling = true;
+	}
+	
+	@Override
+	public void setReadOnly(int fieldIndex, boolean value) throws FieldAccessException {
+		// We can remove the read-only status
+		if (isReadOnly(fieldIndex) && !value) {
+			if (exempted == null)
+				exempted = Sets.newHashSet();
+			exempted.add(fieldIndex);
+		}
+		
+		// We can only make a certain kind of field read only
+		if (!isReadOnly(fieldIndex) && value) {
+			if (exempted == null || !exempted.contains(fieldIndex)) {
+				throw new IllegalStateException("Cannot make compiled field " + fieldIndex + " read only.");
+			}
+		}
+		
+		super.setReadOnly(fieldIndex, value);
 	}
 	
 	// Speed up the default writer
@@ -84,7 +108,7 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 	@Override
 	public StructureModifier<TField> write(int index, Object value) throws FieldAccessException {
 		if (converter != null)
-			value = converter.getGeneric((TField) value);
+			value = converter.getGeneric(getFieldType(index), (TField) value);
 		return writeGenerated(index, value);
 	}
 	

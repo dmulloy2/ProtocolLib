@@ -34,6 +34,7 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -563,6 +564,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	@Override
 	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
 		EntityUtilities.updateEntity(entity, observers);
+	}
+	
+	@Override
+	public Entity getEntityFromID(World container, int id) throws FieldAccessException {
+		return EntityUtilities.getEntityFromID(container, id);
 	}
 	
 	/**
