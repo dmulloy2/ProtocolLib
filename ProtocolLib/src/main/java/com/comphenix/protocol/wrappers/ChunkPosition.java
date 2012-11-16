@@ -130,7 +130,7 @@ public class ChunkPosition {
 		return new EquivalentConverter<ChunkPosition>() {
 			@Override
 			public Object getGeneric(Class<?> genericType, ChunkPosition specific) {
-				return new net.minecraft.server.ChunkPosition(specific.x, specific.z, specific.z);
+				return new net.minecraft.server.ChunkPosition(specific.x, specific.y, specific.z);
 			}
 			
 			@Override
