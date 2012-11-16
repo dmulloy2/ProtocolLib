@@ -257,7 +257,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	private void getEntries(Set<Entry> destination, NavigableMap<TKey, EndPoint> map) {
 		Map.Entry<TKey, EndPoint> last = null;
 		
-		for (Map.Entry<TKey, EndPoint> entry : bounds.entrySet()) {
+		for (Map.Entry<TKey, EndPoint> entry : map.entrySet()) {
 			switch (entry.getValue().state) {
 			case BOTH:
 				EndPoint point = entry.getValue();

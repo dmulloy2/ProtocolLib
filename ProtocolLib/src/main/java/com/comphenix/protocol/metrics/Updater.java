@@ -23,6 +23,8 @@ import javax.xml.stream.events.XMLEvent;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Check dev.bukkit.org to find updates for a given plugin, and download the updates if needed.
  * <p>
@@ -211,6 +213,13 @@ public class Updater
      */ 
     public Updater(Plugin plugin, Logger logger, String slug, File file, String permission)
     {
+    	// I hate NULL
+    	Preconditions.checkNotNull(plugin, "plugin");
+    	Preconditions.checkNotNull(logger, "logger");
+    	Preconditions.checkNotNull(slug, "slug");
+    	Preconditions.checkNotNull(file, "file");
+    	Preconditions.checkNotNull(permission, "permission");
+    	
         this.plugin = plugin;
         this.file = file;
         this.slug = slug;
