@@ -22,11 +22,16 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Nullable;
+
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Compiles structure modifiers on a background thread.
@@ -37,6 +42,11 @@ import com.comphenix.protocol.reflect.StructureModifier;
  */
 public class BackgroundCompiler {
 
+	/**
+	 * The default format for the name of new worker threads.
+	 */
+	public static final String THREAD_FORMAT = "ProtocolLib-StructureCompiler %s";
+	
 	// How long to wait for a shutdown
 	public static final int SHUTDOWN_DELAY_MS = 2000;
 	
@@ -48,6 +58,7 @@ public class BackgroundCompiler {
 	private boolean shuttingDown;
 	
 	private ExecutorService executor;
+	private ErrorReporter reporter;
 	
 	/**
 	 * Retrieves the current background compiler.
@@ -64,27 +75,41 @@ public class BackgroundCompiler {
 	public static void setInstance(BackgroundCompiler backgroundCompiler) {
 		BackgroundCompiler.backgroundCompiler = backgroundCompiler;
 	}
-	
+
 	/**
 	 * Initialize a background compiler.
+	 * <p>
+	 * Uses the default {@link #THREAD_FORMAT} to name worker threads.
 	 * @param loader - class loader from Bukkit.
+	 * @param reporter - current error reporter.
 	 */
-	public BackgroundCompiler(ClassLoader loader) {
-		this(loader, Executors.newSingleThreadExecutor());
+	public BackgroundCompiler(ClassLoader loader, ErrorReporter reporter) {
+		ThreadFactory factory = new ThreadFactoryBuilder().
+			setDaemon(true).
+			setNameFormat(THREAD_FORMAT).
+			build();
+		initializeCompiler(loader, reporter, Executors.newSingleThreadExecutor(factory));
 	}
-
+	
 	/**
 	 * Initialize a background compiler utilizing the given thread pool.
 	 * @param loader - class loader from Bukkit.
+	 * @param reporter - current error reporter.
 	 * @param executor - thread pool we'll use.
 	 */
-	public BackgroundCompiler(ClassLoader loader, ExecutorService executor) {
+	public BackgroundCompiler(ClassLoader loader, ErrorReporter reporter, ExecutorService executor) {
+		initializeCompiler(loader, reporter, executor);
+	}
+
+	// Avoid "Constructor call must be the first statement".
+	private void initializeCompiler(ClassLoader loader, @Nullable ErrorReporter reporter, ExecutorService executor) {
 		if (loader == null)
 			throw new IllegalArgumentException("loader cannot be NULL");
 		if (executor == null)
 			throw new IllegalArgumentException("executor cannot be NULL");
 		
 		this.compiler = new StructureCompiler(loader);
+		this.reporter = reporter;
 		this.executor = executor;
 		this.enabled = true;
 	}
@@ -129,15 +154,30 @@ public class BackgroundCompiler {
 				executor.submit(new Callable<Object>() {
 					@Override
 					public Object call() throws Exception {
-		
 						StructureModifier<TKey> modifier = uncompiled;
 						
 						// Do our compilation
-						modifier = compiler.compile(modifier);
-						listener.onCompiled(modifier);
+						try {
+							modifier = compiler.compile(modifier);
+							listener.onCompiled(modifier);
+
+						} catch (Throwable e) {
+							// Disable future compilations!
+							setEnabled(false);
+							
+							// Inform about this error as best as we can
+							if (reporter != null) {
+								reporter.reportDetailed(BackgroundCompiler.this, 
+										"Cannot compile structure. Disabing compiler.", e, uncompiled);
+							} else {
+								System.err.println("Exception occured in structure compiler: ");
+								e.printStackTrace();
+							}
+						}
 						
 						// We'll also return the new structure modifier
 						return modifier;
+						
 					}
 				});
 			} catch (RejectedExecutionException e) {

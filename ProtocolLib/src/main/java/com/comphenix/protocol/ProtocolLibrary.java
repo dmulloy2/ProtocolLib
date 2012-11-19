@@ -90,13 +90,14 @@ public class ProtocolLibrary extends JavaPlugin {
 		logger = getLoggerSafely();
 		
 		// Add global parameters
-		DetailedErrorReporter reporter = new DetailedErrorReporter(this);
+		DetailedErrorReporter detailedReporter = new DetailedErrorReporter(this);
 		updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
+		reporter = detailedReporter;
 		
 		try {
 			config = new ProtocolConfig(this);
 		} catch (Exception e) {
-			reporter.reportWarning(this, "Cannot load configuration", e);
+			detailedReporter.reportWarning(this, "Cannot load configuration", e);
 
 			// Load it again
 			deleteConfig();
@@ -105,18 +106,18 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		try {
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, reporter);
-			reporter.addGlobalParameter("manager", protocolManager);
+			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, detailedReporter);
+			detailedReporter.addGlobalParameter("manager", protocolManager);
 			
 			// Initialize command handlers
-			commandProtocol = new CommandProtocol(reporter, this, updater, config);
-			commandPacket = new CommandPacket(reporter, this, logger, protocolManager);
+			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
+			commandPacket = new CommandPacket(detailedReporter, this, logger, protocolManager);
 			
 			// Send logging information to player listeners too
 			broadcastUsers(PERMISSION_INFO);
 			
 		} catch (Throwable e) {
-			reporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
+			detailedReporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
 			disablePlugin();
 		}
 	}
@@ -167,8 +168,12 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			// Initialize background compiler
 			if (backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
-				backgroundCompiler = new BackgroundCompiler(getClassLoader());
+				backgroundCompiler = new BackgroundCompiler(getClassLoader(), reporter);
 				BackgroundCompiler.setInstance(backgroundCompiler);
+				
+				logger.info("Started structure compiler thread.");
+			} else {
+				logger.info("Structure compiler thread has been disabled.");
 			}
 			
 			// Set up command handlers

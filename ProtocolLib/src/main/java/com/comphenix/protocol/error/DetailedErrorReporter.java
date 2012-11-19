@@ -170,7 +170,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 		if (pluginReference.get() != null) {
 			Plugin plugin = pluginReference.get();
 			writer.println("Version:");
-			writer.println(addPrefix(plugin.toString() + "-" + plugin.getDescription().getVersion(), SECOND_LEVEL_PREFIX));
+			writer.println(addPrefix(plugin.toString(), SECOND_LEVEL_PREFIX));
 		}
 		
 		// Add the server version too
