@@ -2,6 +2,7 @@ package com.comphenix.protocol.error;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +41,8 @@ public class DetailedErrorReporter implements ErrorReporter {
 	protected int errorCount;
 	protected int maxErrorCount;
 	protected Logger logger;
+	
+	protected WeakReference<Plugin> pluginReference;
 
 	// Whether or not Apache Commons is not present
 	protected boolean apacheCommonsMissing;
@@ -50,17 +53,18 @@ public class DetailedErrorReporter implements ErrorReporter {
 	/**
 	 * Create a default error reporting system.
 	 */
-	public DetailedErrorReporter() {
-		this(DEFAULT_PREFIX, DEFAULT_SUPPORT_URL);
+	public DetailedErrorReporter(Plugin plugin) {
+		this(plugin, DEFAULT_PREFIX, DEFAULT_SUPPORT_URL);
 	}
 	
 	/**
 	 * Create a central error reporting system.
+	 * @param plugin - the plugin owner.
 	 * @param prefix - default line prefix.
 	 * @param supportURL - URL to report the error.
 	 */
-	public DetailedErrorReporter(String prefix, String supportURL) {
-		this(prefix, supportURL, DEFAULT_MAX_ERROR_COUNT, getBukkitLogger());
+	public DetailedErrorReporter(Plugin plugin, String prefix, String supportURL) {
+		this(plugin, prefix, supportURL, DEFAULT_MAX_ERROR_COUNT, getBukkitLogger());
 	}
 	
 	// Attempt to get the logger.
@@ -74,12 +78,17 @@ public class DetailedErrorReporter implements ErrorReporter {
 
 	/**
 	 * Create a central error reporting system.
+	 * @param plugin - the plugin owner.
 	 * @param prefix - default line prefix.
 	 * @param supportURL - URL to report the error.
 	 * @param maxErrorCount - number of errors to print before giving up.
 	 * @param logger - current logger.
 	 */
-	public DetailedErrorReporter(String prefix, String supportURL, int maxErrorCount, Logger logger) {
+	public DetailedErrorReporter(Plugin plugin, String prefix, String supportURL, int maxErrorCount, Logger logger) {
+		if (plugin == null)
+			throw new IllegalArgumentException("Plugin cannot be NULL.");
+		
+		this.pluginReference = new WeakReference<Plugin>(plugin);
 		this.prefix = prefix;
 		this.supportURL = supportURL;
 		this.maxErrorCount = maxErrorCount;
@@ -156,6 +165,13 @@ public class DetailedErrorReporter implements ErrorReporter {
 		// Now, for the sender itself
 		writer.println("Sender:");
 		writer.println(addPrefix(getStringDescription(sender), SECOND_LEVEL_PREFIX));
+		
+		// And plugin
+		if (pluginReference.get() != null) {
+			Plugin plugin = pluginReference.get();
+			writer.println("Version:");
+			writer.println(addPrefix(plugin.toString() + "-" + plugin.getDescription().getVersion(), SECOND_LEVEL_PREFIX));
+		}
 		
 		// Add the server version too
 		if (Bukkit.getServer() != null) {

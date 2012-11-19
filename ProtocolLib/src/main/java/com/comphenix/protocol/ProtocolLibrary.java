@@ -90,7 +90,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		logger = getLoggerSafely();
 		
 		// Add global parameters
-		DetailedErrorReporter reporter = new DetailedErrorReporter();
+		DetailedErrorReporter reporter = new DetailedErrorReporter(this);
 		updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 		
 		try {
