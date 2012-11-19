@@ -166,7 +166,7 @@ public class ProtocolLibrary extends JavaPlugin {
 				return;
 			
 			// Initialize background compiler
-			if (backgroundCompiler == null) {
+			if (backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
 				backgroundCompiler = new BackgroundCompiler(getClassLoader());
 				BackgroundCompiler.setInstance(backgroundCompiler);
 			}

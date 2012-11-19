@@ -10,3 +10,6 @@ global:
     last: 0
  
   metrics: true
+  
+  # Automatically compile structure modifiers 
+  background compiler: true
