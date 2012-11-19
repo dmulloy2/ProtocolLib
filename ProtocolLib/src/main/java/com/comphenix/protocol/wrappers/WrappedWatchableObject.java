@@ -1,8 +1,11 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
 
+import net.minecraft.server.ItemStack;
 import net.minecraft.server.WatchableObject;
 
 /**
@@ -156,5 +159,36 @@ public class WrappedWatchableObject {
 	 */
 	public boolean getDirtyState() throws FieldAccessException {
 		return modifier.<Boolean>withType(boolean.class).read(0);
+	}
+	
+	/**
+	 * Clone the current wrapped watchable object, along with any contained objects.
+	 * @return A deep clone of the current watchable object.
+	 * @throws FieldAccessException If we're unable to use reflection.
+	 */
+	public WrappedWatchableObject deepClone() throws FieldAccessException {
+		WrappedWatchableObject clone = new WrappedWatchableObject(DefaultInstances.DEFAULT.getDefault(WatchableObject.class));
+		
+		clone.setDirtyState(getDirtyState());
+		clone.setIndex(getIndex());
+		clone.setTypeID(getTypeID());
+		clone.setValue(getClonedValue(), false);
+		return clone;
+	}
+	
+	// Helper
+	private Object getClonedValue() throws FieldAccessException {
+		Object value = getValue();
+		
+		// Only a limited set of references types are supported
+		if (value instanceof net.minecraft.server.ChunkPosition) {
+			EquivalentConverter<ChunkPosition> converter = ChunkPosition.getConverter();
+			return converter.getGeneric(net.minecraft.server.ChunkPosition.class, converter.getSpecific(value));
+		} else if (value instanceof ItemStack) {
+			return ((ItemStack) value).cloneItemStack();
+		} else {
+			// A string or primitive wrapper, which are all immutable.
+			return value;
+		}
 	}
 }
