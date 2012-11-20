@@ -35,7 +35,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
  */
 abstract class PacketSendingQueue {
 
-	public static final int INITIAL_CAPACITY = 64;
+	public static final int INITIAL_CAPACITY = 10;
 	
 	private PriorityBlockingQueue<PacketEventHolder> sendingQueue;
 	
