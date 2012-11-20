@@ -56,29 +56,36 @@ public class AsyncFilterManager implements AsynchronousManager {
 	private PacketProcessingQueue clientProcessingQueue;
 
 	// Sending queues
-	private PlayerSendingHandler playerSendingHandler;
+	private final PlayerSendingHandler playerSendingHandler;
 	
 	// Report exceptions
-	private ErrorReporter reporter;
+	private final ErrorReporter reporter;
 	
 	// The likely main thread
-	private Thread mainThread;
+	private final Thread mainThread;
 	
 	// Default scheduler
-	private BukkitScheduler scheduler;
+	private final BukkitScheduler scheduler;
 	
 	// Our protocol manager
-	private ProtocolManager manager;
+	private final ProtocolManager manager;
 	
 	// Current packet index
-	private AtomicInteger currentSendingIndex = new AtomicInteger();
+	private final AtomicInteger currentSendingIndex = new AtomicInteger();
 	
+	/**
+	 * Initialize a asynchronous filter manager.
+	 * <p>
+	 * <b>Internal method</b>. Retrieve the global asynchronous manager from the protocol manager instead. 
+	 * @param reporter - desired error reporter.
+	 * @param scheduler - task scheduler.
+	 * @param manager - protocol manager.
+	 */
 	public AsyncFilterManager(ErrorReporter reporter, BukkitScheduler scheduler, ProtocolManager manager) {
-		
 		// Initialize timeout listeners
-		serverTimeoutListeners = new SortedPacketListenerList();
-		clientTimeoutListeners = new SortedPacketListenerList();
-		timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
+		this.serverTimeoutListeners = new SortedPacketListenerList();
+		this.clientTimeoutListeners = new SortedPacketListenerList();
+		this.timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
 
 		this.playerSendingHandler = new PlayerSendingHandler(reporter, serverTimeoutListeners, clientTimeoutListeners);
 		this.serverProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
@@ -263,12 +270,11 @@ public class AsyncFilterManager implements AsynchronousManager {
 	}
 	
 	/**
-	 * Used to create a default asynchronous task.
-	 * @param plugin - the calling plugin.
-	 * @param runnable - the runnable.
+	 * Retrieve the current task scheduler.
+	 * @return Current task scheduler.
 	 */
-	public void scheduleAsyncTask(Plugin plugin, Runnable runnable) {
-		scheduler.scheduleAsyncDelayedTask(plugin, runnable);
+	public BukkitScheduler getScheduler() {
+		return scheduler;
 	}
 	
 	@Override
