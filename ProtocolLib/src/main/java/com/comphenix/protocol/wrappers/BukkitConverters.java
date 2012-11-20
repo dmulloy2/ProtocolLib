@@ -193,10 +193,11 @@ public class BukkitConverters {
 			public Entity getSpecific(Object generic) {
 				try {
 					Integer id = (Integer) generic;
+					ProtocolManager manager = managerRef.get();
 					
 					// Use the 
-					if (id != null && managerRef.get() != null) {
-						return managerRef.get().getEntityFromID(container, id);
+					if (id != null && manager != null) {
+						return manager.getEntityFromID(container, id);
 					} else {
 						return null;
 					}

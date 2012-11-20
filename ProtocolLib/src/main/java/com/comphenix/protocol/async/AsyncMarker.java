@@ -99,8 +99,8 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	private transient int workerID;
 	
 	// Determine if Minecraft processes this packet asynchronously
-	private static Method isMinecraftAsync;
-	private static boolean alwaysSync;
+	private volatile static Method isMinecraftAsync;
+	private volatile static boolean alwaysSync;
 
 	/**
 	 * Create a container for asyncronous packets.

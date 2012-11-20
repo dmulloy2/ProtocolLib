@@ -53,8 +53,8 @@ public class NetworkServerInjector extends PlayerInjector {
 
 	private volatile static CallbackFilter callbackFilter;
 	
-	private static Field disconnectField;
-	private static Method sendPacketMethod;
+	private volatile static Field disconnectField;
+	private volatile static Method sendPacketMethod;
 	private InjectedServerConnection serverInjection;
 	
 	// Determine if we're listening

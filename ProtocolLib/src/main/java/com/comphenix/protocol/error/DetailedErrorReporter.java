@@ -121,6 +121,8 @@ public class DetailedErrorReporter implements ErrorReporter {
 	@Override
 	public void reportDetailed(Object sender, String message, Throwable error, Object... parameters) {
 
+		final Plugin plugin = pluginReference.get();
+		
 		// Do not overtly spam the server!
 		if (++errorCount > maxErrorCount) {
 			String maxReached = String.format("Reached maxmimum error count. Cannot pass error %s from %s.", error, sender);
@@ -167,8 +169,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 		writer.println(addPrefix(getStringDescription(sender), SECOND_LEVEL_PREFIX));
 		
 		// And plugin
-		if (pluginReference.get() != null) {
-			Plugin plugin = pluginReference.get();
+		if (plugin != null) {
 			writer.println("Version:");
 			writer.println(addPrefix(plugin.toString(), SECOND_LEVEL_PREFIX));
 		}

@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -46,7 +47,7 @@ public class WrappedDataWatcher {
 	private static Method getKeyValueMethod;
 	
 	// Entity methods
-	private static Field entityDataField;
+	private volatile static Field entityDataField;
 	
 	/**
 	 * Whether or not this class has already been initialized.
@@ -275,12 +276,13 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException If we're unable to read the underlying object.
      */
     public Set<Integer> indexSet() throws FieldAccessException {
+    	Lock readLock = getReadWriteLock().readLock();
+		readLock.lock();
+		
     	try {
-    		getReadWriteLock().readLock().lock();
     		return new HashSet<Integer>(getWatchableObjectMap().keySet());
-    		
     	} finally {
-    		getReadWriteLock().readLock().unlock();
+    		readLock.unlock();
     	}
     }
     
@@ -290,12 +292,13 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException If we're unable to read the underlying object.
      */
     public int size() throws FieldAccessException {
+    	Lock readLock = getReadWriteLock().readLock();
+    	readLock.lock();
+    	
     	try {
-    		getReadWriteLock().readLock().lock();
     		return getWatchableObjectMap().size();
-    		
     	} finally {
-    		getReadWriteLock().readLock().unlock();
+    		readLock.unlock();
     	}
     }
     
@@ -337,18 +340,18 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException Cannot read underlying field.
      */
     private void setObjectRaw(int index, Object newValue, boolean update) throws FieldAccessException {
-    	WatchableObject watchable;
+    	// Aquire write lock
+    	Lock writeLock = getReadWriteLock().writeLock();
+    	writeLock.lock();
     	
     	try {
-    		// Aquire write lock
-    		getReadWriteLock().writeLock().lock();
-    		watchable = getWatchedObject(index);
+    		WatchableObject watchable = getWatchedObject(index);
 	    	
 	    	if (watchable != null) {
 	    		new WrappedWatchableObject(watchable).setValue(newValue, update);
 	    	}
     	} finally {
-    		getReadWriteLock().writeLock().unlock();
+    		writeLock.unlock();
     	}
     }
         
