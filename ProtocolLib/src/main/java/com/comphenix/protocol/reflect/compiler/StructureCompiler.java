@@ -186,6 +186,15 @@ public final class StructureCompiler {
 		}
 	}
 	
+	/**
+	 * Retrieve a variable identifier that can uniquely represent the given type.
+	 * @param type - a type.
+	 * @return A unique and legal identifier for the given type.
+	 */
+	private String getSafeTypeName(Class<?> type) {
+		return type.getCanonicalName().replace("[]", "Array").replace(".", "_");
+	}
+	
 	private <TField> Class<?> generateClass(StructureModifier<TField> source) {
 		
 		ClassWriter cw = new ClassWriter(0);
@@ -193,7 +202,9 @@ public final class StructureCompiler {
 		@SuppressWarnings("rawtypes")
 		Class targetType = source.getTargetType();
 		
-		String className = "CompiledStructure$" + targetType.getSimpleName() + source.getFieldType().getSimpleName();
+		String className = "CompiledStructure$" + 
+				getSafeTypeName(targetType) + "$" + 
+				getSafeTypeName(source.getFieldType());
 		String targetSignature = Type.getDescriptor(targetType);
 		String targetName = targetType.getName().replace('.', '/');
 		
