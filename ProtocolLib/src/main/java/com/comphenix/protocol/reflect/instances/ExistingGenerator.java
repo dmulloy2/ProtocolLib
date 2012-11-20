@@ -119,7 +119,6 @@ public class ExistingGenerator implements InstanceProvider {
 	
 	@Override
 	public Object create(@Nullable Class<?> type) {
-		
 		Object value = existingValues.get(type.getName());
 
 		// NULL values indicate that the generator failed

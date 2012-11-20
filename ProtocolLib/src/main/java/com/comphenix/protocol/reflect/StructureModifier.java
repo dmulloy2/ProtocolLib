@@ -400,7 +400,7 @@ public class StructureModifier<TField> {
 		if (a == null)
 			return b == null;
 		else if (b == null)
-			return a == null;
+			return false;
 		else
 			return a.getSpecificType().equals(b.getSpecificType());
 	}

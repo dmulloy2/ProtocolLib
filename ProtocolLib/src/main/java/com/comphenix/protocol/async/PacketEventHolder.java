@@ -20,6 +20,7 @@ package com.comphenix.protocol.async;
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.primitives.Longs;
 
 /**
  * Provides a comparable to a packet event.
@@ -55,5 +56,21 @@ class PacketEventHolder implements Comparable<PacketEventHolder> {
 		return ComparisonChain.start().
 			   compare(sendingIndex, other.sendingIndex).
 			   result();
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		// Standard equals
+		if (other == this)
+			return true;
+		if (other instanceof PacketEventHolder)
+			return sendingIndex == ((PacketEventHolder) other).sendingIndex;
+		else
+			return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Longs.hashCode(sendingIndex);
 	}
 }

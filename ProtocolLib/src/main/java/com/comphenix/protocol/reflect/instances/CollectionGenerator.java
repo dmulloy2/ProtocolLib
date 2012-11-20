@@ -47,7 +47,7 @@ public class CollectionGenerator implements InstanceProvider {
 	@Override
 	public Object create(@Nullable Class<?> type) {
 		// Standard collection types
-		if (type.isInterface()) {
+		if (type != null && type.isInterface()) {
 			if (type.equals(Collection.class) || type.equals(List.class))
 				return new ArrayList<Object>();
 			else if (type.equals(Set.class))

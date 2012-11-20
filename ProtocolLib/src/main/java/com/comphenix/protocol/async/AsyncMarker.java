@@ -32,7 +32,6 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.google.common.base.Objects;
 import com.google.common.primitives.Longs;
 
 /**
@@ -454,12 +453,10 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 		// Standard equals
 		if (other == this)
 			return true;
-		if (other == null)
-			return false;
 		if (other instanceof AsyncMarker)
-			return Objects.equal(getNewSendingIndex(), ((AsyncMarker) other).getNewSendingIndex());
-		
-		return false;
+			return getNewSendingIndex() == ((AsyncMarker) other).getNewSendingIndex();
+		else
+			return false;
 	}
 	
 	@Override

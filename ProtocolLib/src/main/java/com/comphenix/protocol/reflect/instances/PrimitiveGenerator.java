@@ -57,8 +57,9 @@ public class PrimitiveGenerator implements InstanceProvider {
 
 	@Override
 	public Object create(@Nullable Class<?> type) {
-		
-		if (type.isPrimitive()) {
+		if (type == null) {
+			return null;
+		} else if (type.isPrimitive()) {
 			return Defaults.defaultValue(type);
 		} else if (Primitives.isWrapperType(type)) {
 			return Defaults.defaultValue(Primitives.unwrap(type));
