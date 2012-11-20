@@ -65,7 +65,6 @@ class CommandPacket extends CommandBase {
 	
 	private Plugin plugin;
 	private Logger logger;
-	private ErrorReporter reporter;
 	private ProtocolManager manager;
 		
 	private ChatExtensions chatter;
