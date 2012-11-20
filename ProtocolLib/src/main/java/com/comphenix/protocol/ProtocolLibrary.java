@@ -79,6 +79,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Logger
 	private Logger logger;
+	private Handler redirectHandler;
 	
 	// Commands
 	private CommandProtocol commandProtocol;
@@ -137,8 +138,12 @@ public class ProtocolLibrary extends JavaPlugin {
 	}
 	
     private void broadcastUsers(final String permission) {
-        // Broadcast information to every user too
-        logger.addHandler(new Handler() {
+    	// Guard against multiple calls
+    	if (redirectHandler != null)
+    		return;
+    	
+    	// Broadcast information to every user too
+    	redirectHandler = new Handler() {
 			@Override
 			public void publish(LogRecord record) {
 				commandPacket.broadcastMessageSilently(record.getMessage(), permission);
@@ -153,7 +158,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			public void close() throws SecurityException {
 				// Do nothing.
 			}
-		});
+		};
+
+        logger.addHandler(redirectHandler);
     }
 	
 	@Override
@@ -291,6 +298,11 @@ public class ProtocolLibrary extends JavaPlugin {
 		if (asyncPacketTask >= 0) {
 			getServer().getScheduler().cancelTask(asyncPacketTask);
 			asyncPacketTask = -1;
+		}
+		
+		// And redirect handler too
+		if (redirectHandler != null) {
+			logger.removeHandler(redirectHandler);
 		}
 		
 		unhookTask.close();
