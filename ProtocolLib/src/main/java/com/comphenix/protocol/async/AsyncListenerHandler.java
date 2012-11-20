@@ -540,7 +540,7 @@ public class AsyncListenerHandler {
 					return;
 				}
 				
-				if (packet != null && packet.getAsyncMarker() == null) {
+				if (packet != null && packet.getAsyncMarker() != null) {
 					processPacket(workerID, packet, "onAsyncPacket()");
 				}
 			}
