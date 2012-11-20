@@ -99,10 +99,14 @@ class PlayerSendingHandler {
 		
 		// Safe concurrent initialization
 		if (queues == null && createNew) {
-			QueueContainer previous = playerSendingQueues.putIfAbsent(name, new QueueContainer());
+			final QueueContainer newContainer = new QueueContainer();
+
+			// Attempt to map the queue
+			queues = playerSendingQueues.putIfAbsent(name, newContainer);
 			
-			if (previous != null)
-				queues = previous;
+			if (queues == null) {
+				queues = newContainer;
+			}
 		}
 		
 		// Check for NULL again
