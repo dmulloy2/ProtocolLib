@@ -101,8 +101,11 @@ public class ProtocolLibrary extends JavaPlugin {
 			detailedReporter.reportWarning(this, "Cannot load configuration", e);
 
 			// Load it again
-			deleteConfig();
-			config = new ProtocolConfig(this);
+			if (deleteConfig()) {
+				config = new ProtocolConfig(this);
+			} else {
+				reporter.reportWarning(this, "Cannot delete old ProtocolLib configuration.");
+			}
 		}
 		
 		try {
@@ -123,8 +126,8 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 	
-	private void deleteConfig() {
-		config.getFile().delete();
+	private boolean deleteConfig() {
+		return config.getFile().delete();
 	}
 	
 	@Override
