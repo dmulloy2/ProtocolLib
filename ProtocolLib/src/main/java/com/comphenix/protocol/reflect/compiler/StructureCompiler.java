@@ -52,8 +52,8 @@ import net.sf.cglib.asm.*;
 //			case 0: return (Object) target.a;
 //			case 1: return (Object) target.b;
 //			case 2: return (Object) target.c;
-//			case 3: return super.read(fieldIndex);
-//			case 4: return super.read(fieldIndex);
+//			case 3: return super.readReflected(fieldIndex);
+//			case 4: return super.readReflected(fieldIndex);
 //			case 5: return (Object) target.f;
 //			case 6: return (Object) target.g;
 //			case 7: return (Object) target.h;
@@ -72,8 +72,8 @@ import net.sf.cglib.asm.*;
 //			case 1: target.b = (String) value; break;
 //			case 2: target.c = (Integer) value; break;
 //			case 3: target.d = (Integer) value; break;
-//			case 4: super.write(index, value); break;
-//			case 5: super.write(index, value); break;
+//			case 4: super.writeReflected(index, value); break;
+//			case 5: super.writeReflected(index, value); break;
 //			case 6: target.g = (Byte) value; break;
 //			case 7: target.h = (Integer) value; break;
 //			default:
@@ -138,7 +138,7 @@ public final class StructureCompiler {
 	 * Construct a structure compiler.
 	 * @param loader - main class loader.
 	 */
-	public StructureCompiler(ClassLoader loader) {
+	StructureCompiler(ClassLoader loader) {
 		this.loader = loader;
 	}
 	
