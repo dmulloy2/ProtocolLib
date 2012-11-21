@@ -43,19 +43,19 @@ abstract class PacketSendingQueue {
 	// Asynchronous packet sending
 	private Executor asynchronousSender;
 	
-	// Whether or not packet transmission can only occur on the main thread
-	private final boolean synchronizeMain;
+	// Whether or not packet transmission must occur on a specific thread
+	private final boolean notThreadSafe;
 
 	// Whether or not we've run the cleanup procedure
 	private boolean cleanedUp = false;
 	
 	/**
 	 * Create a packet sending queue.
-	 * @param synchronizeMain - whether or not to synchronize with the main thread.
+	 * @param notThreadSafe - whether or not to synchronize with the main thread or a background thread.
 	 */
-	public PacketSendingQueue(boolean synchronizeMain, Executor asynchronousSender) {
+	public PacketSendingQueue(boolean notThreadSafe, Executor asynchronousSender) {
 		this.sendingQueue = new PriorityBlockingQueue<PacketEventHolder>(INITIAL_CAPACITY);
-		this.synchronizeMain = synchronizeMain;
+		this.notThreadSafe = notThreadSafe;
 		this.asynchronousSender = asynchronousSender;
 	}
 	
@@ -177,7 +177,7 @@ abstract class PacketSendingQueue {
 			} 
 			
 			// Abort if we're not on the main thread
-			if (synchronizeMain && !hasExpired) {
+			if (notThreadSafe && !hasExpired) {
 				try {
 					boolean wantAsync = marker.isMinecraftAsync(current);
 					boolean wantSync = !wantAsync;
@@ -253,7 +253,7 @@ abstract class PacketSendingQueue {
 	 * @return TRUE if it must, FALSE otherwise.
 	 */
 	public boolean isSynchronizeMain() {
-		return synchronizeMain;
+		return notThreadSafe;
 	}
 
 	/**

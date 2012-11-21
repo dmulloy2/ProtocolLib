@@ -44,7 +44,7 @@ class PlayerSendingHandler {
 		private PacketSendingQueue clientQueue;
 		
 		public QueueContainer() {
-			// Server packets are synchronized already
+			// Server packets can be sent concurrently
 			serverQueue = new PacketSendingQueue(false, asynchronousSender) {
 				@Override
 				protected void onPacketTimeout(PacketEvent event) {
