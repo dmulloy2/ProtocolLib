@@ -176,7 +176,7 @@ abstract class PacketSendingQueue {
 				hasExpired = marker.hasExpired();
 				
 				// Could happen due to the timeout listeners
-				if (!marker.isProcessed()) {
+				if (!marker.isProcessed() && !hasExpired) {
 					return false;
 				}
 			}
