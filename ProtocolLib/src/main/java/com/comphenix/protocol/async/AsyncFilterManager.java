@@ -90,6 +90,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		this.playerSendingHandler = new PlayerSendingHandler(reporter, serverTimeoutListeners, clientTimeoutListeners);
 		this.serverProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
 		this.clientProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
+		this.playerSendingHandler.initializeScheduler();
 		
 		this.scheduler = scheduler;
 		this.manager = manager;

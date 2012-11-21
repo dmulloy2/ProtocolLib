@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import org.bukkit.entity.Player;
@@ -39,8 +40,24 @@ abstract class PacketSendingQueue {
 	
 	private PriorityBlockingQueue<PacketEventHolder> sendingQueue;
 	
+	// Asynchronous packet sending
+	private Executor asynchronousSender;
+	
 	// Whether or not packet transmission can only occur on the main thread
 	private final boolean synchronizeMain;
+
+	// Whether or not we've run the cleanup procedure
+	private boolean cleanedUp = false;
+	
+	/**
+	 * Create a packet sending queue.
+	 * @param synchronizeMain - whether or not to synchronize with the main thread.
+	 */
+	public PacketSendingQueue(boolean synchronizeMain, Executor asynchronousSender) {
+		this.sendingQueue = new PriorityBlockingQueue<PacketEventHolder>(INITIAL_CAPACITY);
+		this.synchronizeMain = synchronizeMain;
+		this.asynchronousSender = asynchronousSender;
+	}
 	
 	/**
 	 * Number of packet events in the queue.
@@ -48,15 +65,6 @@ abstract class PacketSendingQueue {
 	 */
 	public int size() {
 		return sendingQueue.size();
-	}
-	
-	/**
-	 * Create a packet sending queue.
-	 * @param synchronizeMain - whether or not to synchronize with the main thread.
-	 */
-	public PacketSendingQueue(boolean synchronizeMain) {
-		this.sendingQueue = new PriorityBlockingQueue<PacketEventHolder>(INITIAL_CAPACITY);
-		this.synchronizeMain = synchronizeMain;
 	}
 	
 	/**
@@ -119,55 +127,99 @@ abstract class PacketSendingQueue {
 	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
 	public void trySendPackets(boolean onMainThread) {
-				
+		// Whether or not to continue sending packets
+		boolean sending = true;
+		
 		// Transmit as many packets as we can
-		while (true) {
-			PacketEventHolder holder = sendingQueue.peek();
-					
+		while (sending) {
+			PacketEventHolder holder = sendingQueue.poll();
+			
 			if (holder != null) {
-				PacketEvent current = holder.getEvent();
-				AsyncMarker marker = current.getAsyncMarker();
-				boolean hasExpired = marker.hasExpired();
-				
-				// Abort if we're not on the main thread
-				if (synchronizeMain) {
-					try {
-						boolean wantAsync = marker.isMinecraftAsync(current);
-						boolean wantSync = !wantAsync;
-						
-						// Quit if we haven't fulfilled our promise
-						if ((onMainThread && wantAsync) || (!onMainThread && wantSync))
-							return;
-						
-					} catch (FieldAccessException e) {
-						e.printStackTrace();
-						return;
-					}
+				sending = processPacketHolder(onMainThread, holder);
+					
+				if (!sending) {
+					// Add it back again
+					sendingQueue.add(holder);
 				}
 				
-				if (marker.isProcessed() || hasExpired) {
-					if (hasExpired) {
-						// Notify timeout listeners
-						onPacketTimeout(current);
-						
-						// Recompute
-						marker = current.getAsyncMarker();
-						hasExpired = marker.hasExpired();
-					} 
-					if (marker.isProcessed() && !current.isCancelled() && !hasExpired) {
-						// Silently skip players that have logged out
-						if (isOnline(current.getPlayer())) {
-							sendPacket(current);
-						}
+			} else {
+				// No more packets to send
+				sending = false;
+			}
+		}
+	}
+	
+	/**
+	 * Invoked when a packet might be ready for transmission.
+	 * @param onMainThread - TRUE if we're on the main thread, FALSE otherwise.
+	 * @param holder - packet container.
+	 * @return TRUE to continue sending packets, FALSE otherwise.
+	 */
+	private boolean processPacketHolder(boolean onMainThread, final PacketEventHolder holder) {
+		PacketEvent current = holder.getEvent();
+		AsyncMarker marker = current.getAsyncMarker();
+		boolean hasExpired = marker.hasExpired();
+		
+		// Guard in cause the queue is closed
+		if (cleanedUp) {
+			return true;
+		}
+				
+		// End condition?
+		if (marker.isProcessed() || hasExpired) {
+			if (hasExpired) {
+				// Notify timeout listeners
+				onPacketTimeout(current);
+				
+				// Recompute
+				marker = current.getAsyncMarker();
+				hasExpired = marker.hasExpired();
+			} 
+			
+			// Abort if we're not on the main thread
+			if (synchronizeMain && !hasExpired) {
+				try {
+					boolean wantAsync = marker.isMinecraftAsync(current);
+					boolean wantSync = !wantAsync;
+					
+					// Wait for the next main thread heartbeat if we haven't fulfilled our promise
+					if (!onMainThread && wantSync) {
+						return false;
 					}
 					
-					sendingQueue.poll();
-					continue;
+					// Let's give it what it wants, then
+					if (onMainThread && wantAsync) {
+						asynchronousSender.execute(new Runnable() {
+							@Override
+							public void run() {
+								// We know this isn't on the main thread
+								processPacketHolder(false, holder);
+							}
+						});
+						
+						// The executor will take it from here
+						return true;
+					}
+					
+				} catch (FieldAccessException e) {
+					e.printStackTrace();
+					// Skip this packet
+					return true;
 				}
 			}
 			
-			// Only repeat when packets are removed
-			break;
+			if (marker.isProcessed() && !current.isCancelled() && !hasExpired) {
+				// Silently skip players that have logged out
+				if (isOnline(current.getPlayer())) {
+					sendPacket(current);
+				}
+			}
+			
+			return true;
+			
+		} else {
+			// Add it back and stop sending
+			return false;
 		}
 	}
 	
@@ -234,7 +286,12 @@ abstract class PacketSendingQueue {
 	 * Automatically transmits every delayed packet.
 	 */
 	public void cleanupAll() {
-		// Note that the cleanup itself will always occur on the main thread
-		forceSend();
+		if (!cleanedUp) {
+			// Note that the cleanup itself will always occur on the main thread
+			forceSend();
+			
+			// And we're done
+			cleanedUp = true;
+		}
 	}
 }

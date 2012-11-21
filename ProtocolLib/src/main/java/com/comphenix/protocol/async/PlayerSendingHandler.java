@@ -3,12 +3,16 @@ package com.comphenix.protocol.async;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.SortedPacketListenerList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Contains every sending queue for every player.
@@ -24,6 +28,9 @@ class PlayerSendingHandler {
 	private SortedPacketListenerList serverTimeoutListeners;
 	private SortedPacketListenerList clientTimeoutListeners;
 	
+	// Asynchronous packet sending
+	private Executor asynchronousSender;
+	
 	// Whether or not we're currently cleaning up
 	private volatile boolean cleaningUp;
 	
@@ -38,7 +45,7 @@ class PlayerSendingHandler {
 		
 		public QueueContainer() {
 			// Server packets are synchronized already
-			serverQueue = new PacketSendingQueue(false) {
+			serverQueue = new PacketSendingQueue(false, asynchronousSender) {
 				@Override
 				protected void onPacketTimeout(PacketEvent event) {
 					if (!cleaningUp) {
@@ -48,7 +55,7 @@ class PlayerSendingHandler {
 			};
 			
 			// Client packets must be synchronized
-			clientQueue = new PacketSendingQueue(true) {
+			clientQueue = new PacketSendingQueue(true, asynchronousSender) {
 				@Override
 				protected void onPacketTimeout(PacketEvent event) {
 					if (!cleaningUp) {
@@ -67,6 +74,12 @@ class PlayerSendingHandler {
 		}
 	}
 	
+	/**
+	 * Initialize a packet sending handler.
+	 * @param reporter - error reporter.
+	 * @param serverTimeoutListeners - set of server timeout listeners.
+	 * @param clientTimeoutListeners - set of client timeout listeners.
+	 */
 	public PlayerSendingHandler(ErrorReporter reporter, 
 			SortedPacketListenerList serverTimeoutListeners, SortedPacketListenerList clientTimeoutListeners) {
 		
@@ -75,7 +88,20 @@ class PlayerSendingHandler {
 		this.clientTimeoutListeners = clientTimeoutListeners;
 		
 		// Initialize storage of queues
-		playerSendingQueues = new ConcurrentHashMap<String, QueueContainer>();
+		this.playerSendingQueues = new ConcurrentHashMap<String, QueueContainer>();
+	}
+	
+	/**
+	 * Start the asynchronous packet sender.
+	 */
+	public synchronized void initializeScheduler() {
+		if (asynchronousSender == null) {
+			ThreadFactory factory = new ThreadFactoryBuilder().
+				setDaemon(true).
+				setNameFormat("ProtocolLib-AsyncSender %s").
+				build();
+			asynchronousSender = Executors.newSingleThreadExecutor(factory);
+		}
 	}
 
 	/**
@@ -202,10 +228,12 @@ class PlayerSendingHandler {
 	 * Send all pending packets and clean up queues.
 	 */
 	public void cleanupAll() {
-		cleaningUp = true;
-		
-		sendAllPackets();
-		playerSendingQueues.clear();
+		if (!cleaningUp) {
+			cleaningUp = true;
+			
+			sendAllPackets();
+			playerSendingQueues.clear();
+		}
 	}
 
 	/**
