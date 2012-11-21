@@ -19,7 +19,8 @@ abstract class CommandBase implements CommandExecutor {
 	private String permission;
 	private String name;
 	private int minimumArgumentCount;
-	private ErrorReporter reporter;
+	
+	protected ErrorReporter reporter;
 	
 	public CommandBase(ErrorReporter reporter, String permission, String name) {
 		this(reporter, permission, name, 0);

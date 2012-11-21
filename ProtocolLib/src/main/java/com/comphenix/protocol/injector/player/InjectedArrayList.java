@@ -42,9 +42,9 @@ class InjectedArrayList extends ArrayList<Packet> {
 	 */
 	private static final long serialVersionUID = -1173865905404280990L;
 	
-	private PlayerInjector injector;
-	private Set<Packet> ignoredPackets;
-	private ClassLoader classLoader;
+	private transient PlayerInjector injector;
+	private transient Set<Packet> ignoredPackets;
+	private transient ClassLoader classLoader;
 	
 	public InjectedArrayList(ClassLoader classLoader, PlayerInjector injector, Set<Packet> ignoredPackets) {
 		this.classLoader = classLoader;

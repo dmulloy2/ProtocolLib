@@ -99,8 +99,8 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	private transient int workerID;
 	
 	// Determine if Minecraft processes this packet asynchronously
-	private static Method isMinecraftAsync;
-	private static boolean alwaysSync;
+	private volatile static Method isMinecraftAsync;
+	private volatile static boolean alwaysSync;
 
 	/**
 	 * Create a container for asyncronous packets.
@@ -206,7 +206,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	}
 
 	/**
-	 * Increment the number of times this packet must be signalled as done before its transmitted.
+	 * Increment the number of times the current packet must be signalled as done before its transmitted.
 	 * <p>
 	 * This is useful if an asynchronous listener is waiting for further information before the
 	 * packet can be sent to the user. A packet listener <b>MUST</b> eventually call 
@@ -215,9 +215,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * <p>
 	 * It is recommended that processing outside a packet listener is wrapped in a synchronized block 
 	 * using the {@link #getProcessingLock()} method.
-	 * <p>
-	 * To decrement the processing delay, call signalPacketUpdate. A thread that calls this method
-	 * multiple times must call signalPacketUpdate at least that many times.
+	 * 
 	 * @return The new processing delay.
 	 */
 	public int incrementProcessingDelay() {
@@ -446,5 +444,21 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 			return 1;
 		else
 			return Longs.compare(getNewSendingIndex(), o.getNewSendingIndex());
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		// Standard equals
+		if (other == this)
+			return true;
+		if (other instanceof AsyncMarker)
+			return getNewSendingIndex() == ((AsyncMarker) other).getNewSendingIndex();
+		else
+			return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Longs.hashCode(getNewSendingIndex());
 	}
 }

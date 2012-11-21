@@ -58,13 +58,13 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	private Queue<PacketEventHolder> processingQueue;
 	
 	// Packets for sending
-	private PacketSendingQueue sendingQueue;
-
-	public PacketProcessingQueue(PacketSendingQueue sendingQueue) {
-		this(sendingQueue, INITIAL_CAPACITY, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
+	private PlayerSendingHandler sendingHandler;
+	
+	public PacketProcessingQueue(PlayerSendingHandler sendingHandler) {
+		this(sendingHandler, INITIAL_CAPACITY, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
 	}
 	
-	public PacketProcessingQueue(PacketSendingQueue sendingQueue, int initialSize, int maximumSize, int maximumConcurrency) {
+	public PacketProcessingQueue(PlayerSendingHandler sendingHandler, int initialSize, int maximumSize, int maximumConcurrency) {
 		super();
 
 		this.processingQueue = Synchronization.queue(MinMaxPriorityQueue.
@@ -74,7 +74,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 				
 		this.maximumConcurrency = maximumConcurrency;
 		this.concurrentProcessing = new Semaphore(maximumConcurrency);
-		this.sendingQueue = sendingQueue;
+		this.sendingHandler = sendingHandler;
 	}
 	
 	/**
@@ -131,8 +131,13 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 				}
 				
 				// The packet has no further listeners. Just send it.
-				if (marker.decrementProcessingDelay() == 0)
-					sendingQueue.signalPacketUpdate(packet, onMainThread);
+				if (marker.decrementProcessingDelay() == 0) {
+					PacketSendingQueue sendingQueue = sendingHandler.getSendingQueue(packet, false);
+					
+					// In case the player has logged out
+					if (sendingQueue != null)
+						sendingQueue.signalPacketUpdate(packet, onMainThread);
+				}
 				signalProcessingDone();
 				
 			} else {
@@ -168,5 +173,8 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 		
 		// Remove the rest, just in case
 		clearListeners();
+		
+		// Remove every packet in the queue
+		processingQueue.clear();
 	}
 }

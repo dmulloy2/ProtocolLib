@@ -18,6 +18,8 @@ class ProtocolConfig {
 	
 	private static final String METRICS_ENABLED = "metrics";
 	
+	private static final String BACKGROUND_COMPILER_ENABLED = "background compiler";
+	
 	private static final String UPDATER_NOTIFY = "notify";
 	private static final String UPDATER_DOWNLAD = "download";
 	private static final String UPDATER_DELAY = "delay";
@@ -164,6 +166,25 @@ class ProtocolConfig {
 	 */
 	public void setMetricsEnabled(boolean enabled) {
 		global.set(METRICS_ENABLED, enabled);
+	}
+	
+	/**
+	 * Retrieve whether or not the background compiler for structure modifiers is enabled or not.
+	 * @return TRUE if it is enabled, FALSE otherwise.
+	 */
+	public boolean isBackgroundCompilerEnabled() {
+		return global.getBoolean(BACKGROUND_COMPILER_ENABLED, true);
+	}
+	
+	/**
+	 * Set whether or not the background compiler for structure modifiers is enabled or not.
+	 * <p>
+	 * This setting will take effect next time ProtocolLib is started.
+	 * 
+	 * @param enabled - TRUE if is enabled/running, FALSE otherwise.
+	 */
+	public void setBackgroundCompilerEnabled(boolean enabled) {
+		global.set(BACKGROUND_COMPILER_ENABLED, enabled);
 	}
 	
 	/**

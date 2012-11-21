@@ -30,9 +30,8 @@ import com.google.common.collect.Sets;
  * Represents a compiled structure modifier.
  * 
  * @author Kristian
- * @param <TField> Field type.
  */
-public abstract class CompiledStructureModifier<TField> extends StructureModifier<TField> {
+public abstract class CompiledStructureModifier extends StructureModifier<Object> {
 	// Used to compile instances of structure modifiers
 	protected StructureCompiler compiler;
 	
@@ -64,9 +63,8 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 	}
 	
 	// Speed up the default writer
-	@SuppressWarnings("unchecked")
 	@Override
-	public StructureModifier<TField> writeDefaults() throws FieldAccessException {
+	public StructureModifier<Object> writeDefaults() throws FieldAccessException {
 		
 		DefaultInstances generator = DefaultInstances.DEFAULT;
 		
@@ -75,21 +73,20 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 			Integer index = entry.getValue();
 			Field field = entry.getKey();
 			
-			write(index, (TField) generator.getDefault(field.getType()));
+			write(index, (Object) generator.getDefault(field.getType()));
 		}
 		
 		return this;
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
-	public final TField read(int fieldIndex) throws FieldAccessException {
+	public final Object read(int fieldIndex) throws FieldAccessException {
 		Object result = readGenerated(fieldIndex);
 		
 		if (converter != null)
 			return converter.getSpecific(result);
 		else
-			return (TField) result;
+			return result;
 	}
 
 	/**
@@ -104,11 +101,10 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 	
 	protected abstract Object readGenerated(int fieldIndex) throws FieldAccessException;
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public StructureModifier<TField> write(int index, Object value) throws FieldAccessException {
+	public StructureModifier<Object> write(int index, Object value) throws FieldAccessException {
 		if (converter != null)
-			value = converter.getGeneric(getFieldType(index), (TField) value);
+			value = converter.getGeneric(getFieldType(index), value);
 		return writeGenerated(index, value);
 	}
 	
@@ -118,15 +114,14 @@ public abstract class CompiledStructureModifier<TField> extends StructureModifie
 	 * @param value - new value.
 	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */ 
-	@SuppressWarnings("unchecked")
 	protected void writeReflected(int index, Object value) throws FieldAccessException {
-		super.write(index, (TField) value);
+		super.write(index, value);
 	}
 	
-	protected abstract StructureModifier<TField> writeGenerated(int index, Object value) throws FieldAccessException;
+	protected abstract StructureModifier<Object> writeGenerated(int index, Object value) throws FieldAccessException;
 	
 	@Override
-	public StructureModifier<TField> withTarget(Object target) {
+	public StructureModifier<Object> withTarget(Object target) {
 		if (compiler != null)
 			return compiler.compile(super.withTarget(target));
 		else

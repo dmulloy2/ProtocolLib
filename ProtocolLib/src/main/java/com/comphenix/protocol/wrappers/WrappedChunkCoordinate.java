@@ -61,7 +61,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	}
 	
 	/**
-	 * Retrieve the x coordinate of the underlying coordiate.
+	 * Retrieve the x coordinate of the underlying coordinate.
 	 * @return The x coordinate.
 	 */
 	public int getX() {
@@ -69,7 +69,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	}
 	
 	/**
-	 * Set the x coordinate of the underlying coordiate.
+	 * Set the x coordinate of the underlying coordinate.
 	 * @param newX - the new x coordinate.
 	 */
 	public void setX(int newX) {
@@ -77,7 +77,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	}
 	
 	/**
-	 * Retrieve the y coordinate of the underlying coordiate.
+	 * Retrieve the y coordinate of the underlying coordinate.
 	 * @return The y coordinate.
 	 */
 	public int getY() {
@@ -85,7 +85,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	}
 	
 	/**
-	 * Set the y coordinate of the underlying coordiate.
+	 * Set the y coordinate of the underlying coordinate.
 	 * @param newY - the new y coordinate.
 	 */
 	public void setY(int newY) {
@@ -93,7 +93,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	}
 	
 	/**
-	 * Retrieve the z coordinate of the underlying coordiate.
+	 * Retrieve the z coordinate of the underlying coordinate.
 	 * @return The z coordinate.
 	 */
 	public int getZ() {

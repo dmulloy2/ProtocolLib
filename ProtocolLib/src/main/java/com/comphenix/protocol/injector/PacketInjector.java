@@ -83,8 +83,8 @@ class PacketInjector {
 	public void undoCancel(Integer id, Packet packet) {
 		ReadPacketModifier modifier = readModifier.get(id);
 		
-		// Cancelled packets are represented with NULL
-		if (modifier != null && modifier.getOverride(packet) == null) {
+		// See if this packet has been cancelled before
+		if (modifier != null && modifier.hasCancelled(packet)) {
 			modifier.removeOverride(packet);
 		}
 	}

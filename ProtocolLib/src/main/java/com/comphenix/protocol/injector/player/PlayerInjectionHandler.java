@@ -604,10 +604,11 @@ public class PlayerInjectionHandler {
 	 */
 	public void scheduleDataInputRefresh(Player player) {
 		final PlayerInjector injector = getInjector(player);
-		final DataInputStream old = injector.getInputStream(true);
-		
+
 		// Update the DataInputStream
 		if (injector != null) {
+			final DataInputStream old = injector.getInputStream(true);
+
 			injector.scheduleAction(new Runnable() {
 				@Override
 				public void run() {

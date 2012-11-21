@@ -598,46 +598,21 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			manager.registerEvents(new Listener() {
-				@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+				@EventHandler(priority = EventPriority.LOWEST)
 			    public void onPrePlayerJoin(PlayerJoinEvent event) {
-					try {
-						// Let's clean up the other injection first.
-						playerInjection.uninjectPlayer(event.getPlayer().getAddress());
-					} catch (Exception e) {
-						reporter.reportDetailed(PacketFilterManager.this, "Unable to uninject net handler for player.", e, event);
-					}
+					PacketFilterManager.this.onPrePlayerJoin(event);
 			    }
-				
-				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+				@EventHandler(priority = EventPriority.MONITOR)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
-					try {
-						// This call will be ignored if no listeners are registered
-						playerInjection.injectPlayer(event.getPlayer());
-					} catch (Exception e) {
-						reporter.reportDetailed(PacketFilterManager.this, "Unable to inject player.", e, event);
-					}
+					PacketFilterManager.this.onPlayerJoin(event);
 			    }
-				
-				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+				@EventHandler(priority = EventPriority.MONITOR)
 			    public void onPlayerQuit(PlayerQuitEvent event) {
-					try {
-						playerInjection.handleDisconnect(event.getPlayer());
-						playerInjection.uninjectPlayer(event.getPlayer());
-					} catch (Exception e) {
-						reporter.reportDetailed(PacketFilterManager.this, "Unable to uninject logged off player.", e, event);
-					}
+					PacketFilterManager.this.onPlayerQuit(event);
 			    }
-				
-				@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+				@EventHandler(priority = EventPriority.MONITOR)
 			    public void onPluginDisabled(PluginDisableEvent event) {
-					try {
-						// Clean up in case the plugin forgets
-						if (event.getPlugin() != plugin) {
-							removePacketListeners(event.getPlugin());
-						}
-					} catch (Exception e) {
-						reporter.reportDetailed(PacketFilterManager.this, "Unable handle disabled plugin.", e, event);
-					}
+					PacketFilterManager.this.onPluginDisabled(event, plugin);
 			    }
 				
 			}, plugin);
@@ -648,6 +623,47 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		}
 	}
 	
+    private void onPrePlayerJoin(PlayerJoinEvent event) {
+		try {
+			// Let's clean up the other injection first.
+			playerInjection.uninjectPlayer(event.getPlayer().getAddress());
+		} catch (Exception e) {
+			reporter.reportDetailed(PacketFilterManager.this, "Unable to uninject net handler for player.", e, event);
+		}
+    }
+	
+    private void onPlayerJoin(PlayerJoinEvent event) {
+		try {
+			// This call will be ignored if no listeners are registered
+			playerInjection.injectPlayer(event.getPlayer());
+		} catch (Exception e) {
+			reporter.reportDetailed(PacketFilterManager.this, "Unable to inject player.", e, event);
+		}
+    }
+    
+    private void onPlayerQuit(PlayerQuitEvent event) {
+		try {
+			Player player = event.getPlayer();
+
+			asyncFilterManager.removePlayer(player);
+			playerInjection.handleDisconnect(player);
+			playerInjection.uninjectPlayer(player);
+		} catch (Exception e) {
+			reporter.reportDetailed(PacketFilterManager.this, "Unable to uninject logged off player.", e, event);
+		}
+    }
+    
+    private void onPluginDisabled(PluginDisableEvent event, Plugin protocolLibrary) {
+		try {
+			// Clean up in case the plugin forgets
+			if (event.getPlugin() != protocolLibrary) {
+				removePacketListeners(event.getPlugin());
+			}
+		} catch (Exception e) {
+			reporter.reportDetailed(PacketFilterManager.this, "Unable handle disabled plugin.", e, event);
+		}
+    }
+    
 	/**
 	 * Retrieve the number of listeners that expect packets during playing.
 	 * @return Number of listeners.
@@ -689,7 +705,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	// Yes, this is crazy.
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void registerOld(PluginManager manager, Plugin plugin) {
+	private void registerOld(PluginManager manager, final Plugin plugin) {
 		
 		try {
 			ClassLoader loader = manager.getClass().getClassLoader();
@@ -699,6 +715,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Class eventPriority = loader.loadClass("org.bukkit.event.Event$Priority");
 			
 			// Get the priority
+			Object priorityLowest = Enum.valueOf(eventPriority, "Lowest");
 			Object priorityMonitor = Enum.valueOf(eventPriority, "Monitor");
 			
 			// Get event types
@@ -714,26 +731,40 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Method registerEvent = FuzzyReflection.fromObject(manager).getMethodByParameters("registerEvent", 
 					eventTypes, Listener.class, eventPriority, Plugin.class);
 
+			Enhancer playerLow = new Enhancer();
 			Enhancer playerEx = new Enhancer();
 			Enhancer serverEx = new Enhancer();
 			
-			playerEx.setSuperclass(playerListener);
-			playerEx.setClassLoader(classLoader);
-			playerEx.setCallback(new MethodInterceptor() {
+			playerLow.setSuperclass(playerListener);
+			playerLow.setClassLoader(classLoader);
+			playerLow.setCallback(new MethodInterceptor() {
 				@Override
 				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 					// Must have a parameter
 					if (args.length == 1) {
 						Object event = args[0];
 						
+						if (event instanceof PlayerJoinEvent) {
+							onPrePlayerJoin((PlayerJoinEvent) event);
+						}
+					}
+					return null;
+				}
+			});
+			
+			playerEx.setSuperclass(playerListener);
+			playerEx.setClassLoader(classLoader);
+			playerEx.setCallback(new MethodInterceptor() {
+				@Override
+				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+					if (args.length == 1) {
+						Object event = args[0];
+						
 						// Check for the correct event
 						if (event instanceof PlayerJoinEvent) {
-							Player player = ((PlayerJoinEvent) event).getPlayer();
-							playerInjection.injectPlayer(player);
+							onPlayerJoin((PlayerJoinEvent) event);
 						} else if (event instanceof PlayerQuitEvent) {
-							Player player = ((PlayerQuitEvent) event).getPlayer();
-							playerInjection.handleDisconnect(player);
-							playerInjection.uninjectPlayer(player);
+							onPlayerQuit((PlayerQuitEvent) event);
 						}
 					}
 					return null;
@@ -751,16 +782,18 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 						Object event = args[0];
 						
 						if (event instanceof PluginDisableEvent)
-							removePacketListeners(((PluginDisableEvent) event).getPlugin());
+							onPluginDisabled((PluginDisableEvent) event, plugin);
 					}
 					return null;
 				}
 			});
 			
 			// Create our listener
+			Object playerProxyLow = playerLow.create();
 			Object playerProxy = playerEx.create();
 			Object serverProxy = serverEx.create();
 			
+			registerEvent.invoke(manager, playerJoinType, playerProxyLow, priorityLowest, plugin);
 			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityMonitor, plugin);

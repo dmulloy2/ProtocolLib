@@ -65,7 +65,6 @@ class CommandPacket extends CommandBase {
 	
 	private Plugin plugin;
 	private Logger logger;
-	private ErrorReporter reporter;
 	private ProtocolManager manager;
 		
 	private ChatExtensions chatter;
@@ -460,9 +459,9 @@ class CommandPacket extends CommandBase {
 		
 		// The interval tree will automatically remove the listeners for us
 		if (side.isForClient())
-			result.addAll(clientListeners.remove(idStart, idStop));
+			result.addAll(clientListeners.remove(idStart, idStop, true));
 		if (side.isForServer())
-			result.addAll(serverListeners.remove(idStart, idStop));
+			result.addAll(serverListeners.remove(idStart, idStop, true));
 		return result;
 	}
 

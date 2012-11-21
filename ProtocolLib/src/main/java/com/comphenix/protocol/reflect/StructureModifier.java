@@ -202,7 +202,7 @@ public class StructureModifier<TField> {
 	 */
 	public boolean isReadOnly(int fieldIndex) {
 		if (fieldIndex < 0 || fieldIndex >= data.size())
-			new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
+			throw new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
 		
 		return Modifier.isFinal(data.get(fieldIndex).getModifiers());
 	}
@@ -219,7 +219,7 @@ public class StructureModifier<TField> {
 	 */
 	public void setReadOnly(int fieldIndex, boolean value) throws FieldAccessException {
 		if (fieldIndex < 0 || fieldIndex >= data.size())
-			new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
+			throw new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
 
 		try {
 			StructureModifier.setFinalState(data.get(fieldIndex), value);
@@ -400,7 +400,7 @@ public class StructureModifier<TField> {
 		if (a == null)
 			return b == null;
 		else if (b == null)
-			return a == null;
+			return false;
 		else
 			return a.getSpecificType().equals(b.getSpecificType());
 	}

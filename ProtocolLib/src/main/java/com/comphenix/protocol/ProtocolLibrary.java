@@ -79,6 +79,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Logger
 	private Logger logger;
+	private Handler redirectHandler;
 	
 	// Commands
 	private CommandProtocol commandProtocol;
@@ -90,39 +91,43 @@ public class ProtocolLibrary extends JavaPlugin {
 		logger = getLoggerSafely();
 		
 		// Add global parameters
-		DetailedErrorReporter reporter = new DetailedErrorReporter();
+		DetailedErrorReporter detailedReporter = new DetailedErrorReporter(this);
 		updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
+		reporter = detailedReporter;
 		
 		try {
 			config = new ProtocolConfig(this);
 		} catch (Exception e) {
-			reporter.reportWarning(this, "Cannot load configuration", e);
+			detailedReporter.reportWarning(this, "Cannot load configuration", e);
 
 			// Load it again
-			deleteConfig();
-			config = new ProtocolConfig(this);
+			if (deleteConfig()) {
+				config = new ProtocolConfig(this);
+			} else {
+				reporter.reportWarning(this, "Cannot delete old ProtocolLib configuration.");
+			}
 		}
 		
 		try {
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, reporter);
-			reporter.addGlobalParameter("manager", protocolManager);
+			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, detailedReporter);
+			detailedReporter.addGlobalParameter("manager", protocolManager);
 			
 			// Initialize command handlers
-			commandProtocol = new CommandProtocol(reporter, this, updater, config);
-			commandPacket = new CommandPacket(reporter, this, logger, protocolManager);
+			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
+			commandPacket = new CommandPacket(detailedReporter, this, logger, protocolManager);
 			
 			// Send logging information to player listeners too
 			broadcastUsers(PERMISSION_INFO);
 			
 		} catch (Throwable e) {
-			reporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
+			detailedReporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
 			disablePlugin();
 		}
 	}
 	
-	private void deleteConfig() {
-		config.getFile().delete();
+	private boolean deleteConfig() {
+		return config.getFile().delete();
 	}
 	
 	@Override
@@ -136,8 +141,12 @@ public class ProtocolLibrary extends JavaPlugin {
 	}
 	
     private void broadcastUsers(final String permission) {
-        // Broadcast information to every user too
-        logger.addHandler(new Handler() {
+    	// Guard against multiple calls
+    	if (redirectHandler != null)
+    		return;
+    	
+    	// Broadcast information to every user too
+    	redirectHandler = new Handler() {
 			@Override
 			public void publish(LogRecord record) {
 				commandPacket.broadcastMessageSilently(record.getMessage(), permission);
@@ -152,7 +161,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			public void close() throws SecurityException {
 				// Do nothing.
 			}
-		});
+		};
+
+        logger.addHandler(redirectHandler);
     }
 	
 	@Override
@@ -166,9 +177,13 @@ public class ProtocolLibrary extends JavaPlugin {
 				return;
 			
 			// Initialize background compiler
-			if (backgroundCompiler == null) {
-				backgroundCompiler = new BackgroundCompiler(getClassLoader());
+			if (backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
+				backgroundCompiler = new BackgroundCompiler(getClassLoader(), reporter);
 				BackgroundCompiler.setInstance(backgroundCompiler);
+				
+				logger.info("Started structure compiler thread.");
+			} else {
+				logger.info("Structure compiler thread has been disabled.");
 			}
 			
 			// Set up command handlers
@@ -286,6 +301,11 @@ public class ProtocolLibrary extends JavaPlugin {
 		if (asyncPacketTask >= 0) {
 			getServer().getScheduler().cancelTask(asyncPacketTask);
 			asyncPacketTask = -1;
+		}
+		
+		// And redirect handler too
+		if (redirectHandler != null) {
+			logger.removeHandler(redirectHandler);
 		}
 		
 		unhookTask.close();

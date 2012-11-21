@@ -58,7 +58,7 @@ public class SortedCopyOnWriteArrayTest {
 		assertEquals(3, test.get(1).id);
 	}
 	
-	private class PriorityStuff implements Comparable<PriorityStuff> {
+	private static class PriorityStuff implements Comparable<PriorityStuff> {
 		public ListenerPriority priority;
 		public int id;
 

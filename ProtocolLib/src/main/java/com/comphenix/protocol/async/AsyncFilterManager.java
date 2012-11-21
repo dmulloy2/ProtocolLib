@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
@@ -42,7 +43,9 @@ import com.google.common.collect.Sets;
 
 /**
  * Represents a filter manager for asynchronous packets.
- * 
+ * <p>
+ * By using {@link AsyncMarker#incrementProcessingDelay()}, a packet can be delayed without having to block the
+ * processing thread.
  * @author Kristian
  */
 public class AsyncFilterManager implements AsynchronousManager {
@@ -52,58 +55,44 @@ public class AsyncFilterManager implements AsynchronousManager {
 	private Set<PacketListener> timeoutListeners;
 	
 	private PacketProcessingQueue serverProcessingQueue;
-	private PacketSendingQueue serverQueue;
-	
-	
 	private PacketProcessingQueue clientProcessingQueue;
-	private PacketSendingQueue clientQueue;
+
+	// Sending queues
+	private final PlayerSendingHandler playerSendingHandler;
 	
-	private ErrorReporter reporter;
+	// Report exceptions
+	private final ErrorReporter reporter;
 	
 	// The likely main thread
-	private Thread mainThread;
+	private final Thread mainThread;
 	
 	// Default scheduler
-	private BukkitScheduler scheduler;
+	private final BukkitScheduler scheduler;
 	
 	// Our protocol manager
-	private ProtocolManager manager;
+	private final ProtocolManager manager;
 	
 	// Current packet index
-	private AtomicInteger currentSendingIndex = new AtomicInteger();
+	private final AtomicInteger currentSendingIndex = new AtomicInteger();
 	
-	// Whether or not we're currently cleaning up
-	private volatile boolean cleaningUp;
-	
+	/**
+	 * Initialize a asynchronous filter manager.
+	 * <p>
+	 * <b>Internal method</b>. Retrieve the global asynchronous manager from the protocol manager instead. 
+	 * @param reporter - desired error reporter.
+	 * @param scheduler - task scheduler.
+	 * @param manager - protocol manager.
+	 */
 	public AsyncFilterManager(ErrorReporter reporter, BukkitScheduler scheduler, ProtocolManager manager) {
-		
 		// Initialize timeout listeners
-		serverTimeoutListeners = new SortedPacketListenerList();
-		clientTimeoutListeners = new SortedPacketListenerList();
-		timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
-		
-		// Server packets are synchronized already
-		this.serverQueue = new PacketSendingQueue(false) {
-			@Override
-			protected void onPacketTimeout(PacketEvent event) {
-				if (!cleaningUp) {
-					serverTimeoutListeners.invokePacketSending(AsyncFilterManager.this.reporter, event);
-				}
-			}
-		};
-		
-		// Client packets must be synchronized
-		this.clientQueue = new PacketSendingQueue(true) {
-			@Override
-			protected void onPacketTimeout(PacketEvent event) {
-				if (!cleaningUp) {
-					clientTimeoutListeners.invokePacketSending(AsyncFilterManager.this.reporter, event);
-				}
-			}
-		};
-		
-		this.serverProcessingQueue = new PacketProcessingQueue(serverQueue);
-		this.clientProcessingQueue = new PacketProcessingQueue(clientQueue);
+		this.serverTimeoutListeners = new SortedPacketListenerList();
+		this.clientTimeoutListeners = new SortedPacketListenerList();
+		this.timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
+
+		this.playerSendingHandler = new PlayerSendingHandler(reporter, serverTimeoutListeners, clientTimeoutListeners);
+		this.serverProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
+		this.clientProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
+		this.playerSendingHandler.initializeScheduler();
 		
 		this.scheduler = scheduler;
 		this.manager = manager;
@@ -140,6 +129,8 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	/**
 	 * Registers an asynchronous packet handler.
+	 * <p>
+	 * Use {@link AsyncMarker#incrementProcessingDelay()} to delay a packet until its ready to be transmitted.
 	 * <p>
 	 * To start listening asynchronously, pass the getListenerLoop() runnable to a different thread.
 	 * <p>
@@ -219,15 +210,12 @@ public class AsyncFilterManager implements AsynchronousManager {
 			List<Integer> removed = serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
 			
 			// We're already taking care of this, so don't do anything
-			if (!cleaningUp)
-				serverQueue.signalPacketUpdate(removed, synchronusOK);
+			playerSendingHandler.sendServerPackets(removed, synchronusOK);
 		}
 		
 		if (hasValidWhitelist(listener.getReceivingWhitelist())) {
 			List<Integer> removed = clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
-			
-			if (!cleaningUp)
-				clientQueue.signalPacketUpdate(removed, synchronusOK);
+			playerSendingHandler.sendClientPackets(removed, synchronusOK);
 		}
 	}
 	
@@ -287,12 +275,11 @@ public class AsyncFilterManager implements AsynchronousManager {
 	}
 	
 	/**
-	 * Used to create a default asynchronous task.
-	 * @param plugin - the calling plugin.
-	 * @param runnable - the runnable.
+	 * Retrieve the current task scheduler.
+	 * @return Current task scheduler.
 	 */
-	public void scheduleAsyncTask(Plugin plugin, Runnable runnable) {
-		scheduler.scheduleAsyncDelayedTask(plugin, runnable);
+	public BukkitScheduler getScheduler() {
+		return scheduler;
 	}
 	
 	@Override
@@ -337,15 +324,14 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	@Override
 	public void cleanupAll() {
-		cleaningUp = true;
 		serverProcessingQueue.cleanupAll();
-		serverQueue.cleanupAll();
-		
+		playerSendingHandler.cleanupAll();
 		timeoutListeners.clear();
+		
 		serverTimeoutListeners = null;
 		clientTimeoutListeners = null;
 	}
-
+	
 	@Override
 	public void signalPacketTransmission(PacketEvent packet) {
 		signalPacketTransmission(packet, onMainThread());
@@ -366,8 +352,12 @@ public class AsyncFilterManager implements AsynchronousManager {
 					"A packet must have been queued before it can be transmitted.");
 		
 		// Only send if the packet is ready
-		if (marker.decrementProcessingDelay() == 0) {			
-			getSendingQueue(packet).signalPacketUpdate(packet, onMainThread);
+		if (marker.decrementProcessingDelay() == 0) {
+			PacketSendingQueue queue = getSendingQueue(packet, false);
+			
+			// No need to create a new queue if the player has logged out
+			if (queue != null)
+				queue.signalPacketUpdate(packet, onMainThread);
 		}
 	}
 	
@@ -376,8 +366,27 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * @param packet - the packet.
 	 * @return The server or client sending queue the packet belongs to.
 	 */
-	private PacketSendingQueue getSendingQueue(PacketEvent packet) {
-		return packet.isServerPacket() ? serverQueue : clientQueue;
+	public PacketSendingQueue getSendingQueue(PacketEvent packet) {
+		return playerSendingHandler.getSendingQueue(packet);
+	}
+	
+	/**
+	 * Retrieve the sending queue this packet belongs to.
+	 * @param packet - the packet.
+	 * @param createNew - if TRUE, create a new queue if it hasn't already been created.
+	 * @return The server or client sending queue the packet belongs to.
+	 */
+	public PacketSendingQueue getSendingQueue(PacketEvent packet, boolean createNew) {
+		return playerSendingHandler.getSendingQueue(packet, createNew);
+	}
+	
+	/**
+	 * Retrieve the processing queue this packet belongs to.
+	 * @param packet - the packet.
+	 * @return The server or client sending processing the packet belongs to.
+	 */
+	public PacketProcessingQueue getProcessingQueue(PacketEvent packet) {
+		return packet.isServerPacket() ? serverProcessingQueue : clientProcessingQueue;
 	}
 	
 	/**
@@ -389,23 +398,22 @@ public class AsyncFilterManager implements AsynchronousManager {
 	}
 	
 	/**
-	 * Retrieve the processing queue this packet belongs to.
-	 * @param packet - the packet.
-	 * @return The server or client sending processing the packet belongs to.
-	 */
-	private PacketProcessingQueue getProcessingQueue(PacketEvent packet) {
-		return packet.isServerPacket() ? serverProcessingQueue : clientProcessingQueue;
-	}
-
-	/**
 	 * Send any due packets, or clean up packets that have expired.
 	 */
 	public void sendProcessedPackets(int tickCounter, boolean onMainThread) {
 		// The server queue is unlikely to need checking that often
 		if (tickCounter % 10 == 0) {
-			serverQueue.trySendPackets(onMainThread);
+			playerSendingHandler.trySendServerPackets(onMainThread);
 		}
+		
+		playerSendingHandler.trySendClientPackets(onMainThread);
+	}
 
-		clientQueue.trySendPackets(onMainThread);
+	/**
+	 * Clean up after a given player has logged out.
+	 * @param player - the player that has just logged out.
+	 */
+	public void removePlayer(Player player) {
+		playerSendingHandler.removePlayer(player);
 	}
 }

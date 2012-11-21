@@ -74,6 +74,15 @@ class ReadPacketModifier implements MethodInterceptor {
 		return override.get(packet);
 	}
 
+	/**
+	 * Determine if the given packet has been cancelled before.
+	 * @param packet - the packet to check.
+	 * @return TRUE if it has been cancelled, FALSE otherwise.
+	 */
+	public boolean hasCancelled(Packet packet) {
+		return getOverride(packet) == CANCEL_MARKER;
+	}
+	
 	@Override
 	public Object intercept(Object thisObj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 		

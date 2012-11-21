@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -37,6 +39,37 @@ import com.google.common.collect.ImmutableSet;
  */
 public interface ProtocolManager extends PacketStream {
 
+	/**
+	 * Send a packet to the given player.
+	 * <p>
+	 * Re-sending a previously cancelled packet is discuraged. Use {@link AsyncMarker#incrementProcessingDelay()} 
+	 * to delay a packet until a certain condition has been met.
+	 * 
+	 * @param reciever - the reciever.
+	 * @param packet - packet to send.
+	 * @param filters - whether or not to invoke any packet filters.
+	 * @throws InvocationTargetException - if an error occured when sending the packet.
+	 */
+	@Override
+	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) 
+			throws InvocationTargetException;
+	
+	/**
+	 * Simulate recieving a certain packet from a given player.
+	 * <p>
+	 * Receiving a previously cancelled packet is discuraged. Use {@link AsyncMarker#incrementProcessingDelay()} 
+	 * to delay a packet until a certain condition has been met.
+	 * 
+	 * @param sender - the sender.
+	 * @param packet - the packet that was sent.
+	 * @param filters - whether or not to invoke any packet filters.
+	 * @throws InvocationTargetException If the reflection machinery failed.
+	 * @throws IllegalAccessException If the underlying method caused an error.
+	 */
+	@Override
+	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters) 
+			throws IllegalAccessException, InvocationTargetException;
+	
 	/**
 	 * Retrieves a list of every registered packet listener.
 	 * @return Every registered packet listener.

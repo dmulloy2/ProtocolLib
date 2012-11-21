@@ -1,5 +1,8 @@
 package com.comphenix.protocol.metrics;
 
+// EXTENSIVELY MODIFIED BY AADNK/COMPHENIX
+// CHECK GIT FOR DETAILS
+
 /*
  * Updater for Bukkit.
  *
@@ -9,12 +12,10 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -22,6 +23,8 @@ import javax.xml.stream.events.XMLEvent;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Check dev.bukkit.org to find updates for a given plugin, and download the updates if needed.
@@ -211,6 +214,13 @@ public class Updater
      */ 
     public Updater(Plugin plugin, Logger logger, String slug, File file, String permission)
     {
+    	// I hate NULL
+    	Preconditions.checkNotNull(plugin, "plugin");
+    	Preconditions.checkNotNull(logger, "logger");
+    	Preconditions.checkNotNull(slug, "slug");
+    	Preconditions.checkNotNull(file, "file");
+    	Preconditions.checkNotNull(permission, "permission");
+    	
         this.plugin = plugin;
         this.file = file;
         this.slug = slug;
@@ -253,19 +263,29 @@ public class Updater
                 String fileLink = getFile(versionLink);
                 if(fileLink != null && type != UpdateType.NO_DOWNLOAD)
                 {
-                    String name = file.getName();
-                    // If it's a zip file, it shouldn't be downloaded as the plugin's name
-                    if(fileLink.endsWith(".zip"))
-                    {
-                        String [] split = fileLink.split("/");
-                        name = split[split.length-1];
-                    }
+                    String [] split = fileLink.split("/");
+                    String name = split[split.length-1];
                     
+                    logger.info("Downloading " + fileLink);
+
                     // Never download the same file twice
-                    if (!downloadedVersion.equalsIgnoreCase(versionLink)) {
-                    	saveFile(new File("plugins/" + updateFolder), name, fileLink);
+                    if (downloadedVersion == null || !downloadedVersion.equalsIgnoreCase(versionLink)) {
+                    	File path = new File("plugins/");
+                    	
+                    	// We can update the JAR in place as we're using different JAR file names
+                    	saveFile(path, name, fileLink);
                         downloadedVersion = versionLink;
                         result = UpdateResult.SUCCESS;
+                        
+                        // ProtocolLib - try to remove the current version
+                        try {
+                        	if (!file.delete()) {
+                            	File zeroCurrentJar = new File(path, updateFolder + "/" + file.getName());
+    							zeroCurrentJar.createNewFile();
+                        	}
+						} catch (IOException e) {
+							logger.warning("Cannot delete old ProtocolLib version: " + file.getName());
+						}
                         
                     } else {
                         result = UpdateResult.UPDATE_AVAILABLE;
@@ -338,26 +358,14 @@ public class Updater
                     logger.info("Downloading update: " + percent + "% of " + fileLength + " bytes.");
                 }
             }
-            //Just a quick check to make sure we didn't leave any files from last time...
-            for(File xFile : new File("plugins/" + updateFolder).listFiles())
-            {
-                if(xFile.getName().endsWith(".zip"))
-                {
-                    xFile.delete();
-                }
-            }
-            // Check to see if it's a zip file, if it is, unzip it.
-            File dFile = new File(folder.getAbsolutePath() + "/" + file);
-            if(dFile.getName().endsWith(".zip"))
-            {
-                // Unzip
-                unzip(dFile.getCanonicalPath());
-            }
-            if(announce) logger.info("Finished updating.");
+
+            if(announce) 
+            	logger.info("Finished updating.");
         }
         catch (Exception ex)
         {
-            logger.warning("The auto-updater tried to download a new update, but was unsuccessful."); 
+            logger.warning("The auto-updater tried to download a new update, but was unsuccessful.");
+            logger.log(Level.INFO, "Error message to submit as a ticket.", ex);
             result = Updater.UpdateResult.FAIL_DOWNLOAD;
         }
         finally
@@ -378,99 +386,6 @@ public class Updater
             }
         }
     }
-    
-    /**
-     * Part of Zip-File-Extractor, modified by H31IX for use with Bukkit
-     */      
-    private void unzip(String file) 
-    {
-        try
-        {
-            File fSourceZip = new File(file);
-            String zipPath = file.substring(0, file.length()-4);
-            ZipFile zipFile = new ZipFile(fSourceZip);
-            Enumeration<? extends ZipEntry> e = zipFile.entries();
-            while(e.hasMoreElements())
-            {
-                ZipEntry entry = (ZipEntry)e.nextElement();
-                File destinationFilePath = new File(zipPath,entry.getName());
-                destinationFilePath.getParentFile().mkdirs();
-                if(entry.isDirectory())
-                {
-                    continue;
-                }
-                else
-                {
-                    BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));                     
-                    int b;
-                    byte buffer[] = new byte[BYTE_SIZE];
-                    FileOutputStream fos = new FileOutputStream(destinationFilePath);
-                    BufferedOutputStream bos = new BufferedOutputStream(fos, BYTE_SIZE);
-                    while((b = bis.read(buffer, 0, BYTE_SIZE)) != -1) 
-                    {
-                        bos.write(buffer, 0, b);
-                    }
-                    bos.flush();
-                    bos.close();
-                    bis.close();
-                    String name = destinationFilePath.getName();
-                    if(name.endsWith(".jar") && pluginFile(name))
-                    {
-                        destinationFilePath.renameTo(new File("plugins/" + updateFolder + "/" + name));
-                    }
-                }
-                entry = null;
-                destinationFilePath = null;
-            }
-            e = null;
-            zipFile.close();
-            zipFile = null;
-            // Move any plugin data folders that were included to the right place, Bukkit won't do this for us.
-            for(File dFile : new File(zipPath).listFiles())
-            {
-                if(dFile.isDirectory())
-                {
-                    if(pluginFile(dFile.getName()))
-                    {
-                        File oFile = new File("plugins/" + dFile.getName()); // Get current dir
-                        File [] contents = oFile.listFiles(); // List of existing files in the current dir
-                        for(File cFile : dFile.listFiles()) // Loop through all the files in the new dir
-                        {
-                            boolean found = false;
-                            for(File xFile : contents) // Loop through contents to see if it exists
-                            {
-                                if(xFile.getName().equals(cFile.getName()))
-                                {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if(!found)
-                            {
-                                // Move the new file into the current dir
-                                cFile.renameTo(new File(oFile.getCanonicalFile() + "/" + cFile.getName()));
-                            }
-                            else
-                            {
-                                // This file already exists, so we don't need it anymore.
-                                cFile.delete();
-                            }
-                        }
-                    }
-                }
-                dFile.delete();
-            }
-            new File(zipPath).delete();
-            fSourceZip.delete();
-        }
-        catch(IOException ex)
-        {
-            ex.printStackTrace();
-            logger.warning("The auto-updater tried to unzip a new update file, but was unsuccessful."); 
-            result = Updater.UpdateResult.FAIL_DOWNLOAD;     
-        } 
-        new File(file).delete();
-    } 
     
     /**
      * Check if the name of a jar is one of the plugins currently installed, used for extracting the correct files out of a zip.
