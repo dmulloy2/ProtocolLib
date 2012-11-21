@@ -174,53 +174,60 @@ abstract class PacketSendingQueue {
 				// Recompute
 				marker = current.getAsyncMarker();
 				hasExpired = marker.hasExpired();
-			} 
-			
-			// Abort if we're not on the main thread
-			if (notThreadSafe && !hasExpired) {
-				try {
-					boolean wantAsync = marker.isMinecraftAsync(current);
-					boolean wantSync = !wantAsync;
-					
-					// Wait for the next main thread heartbeat if we haven't fulfilled our promise
-					if (!onMainThread && wantSync) {
-						return false;
-					}
-					
-					// Let's give it what it wants, then
-					if (onMainThread && wantAsync) {
-						asynchronousSender.execute(new Runnable() {
-							@Override
-							public void run() {
-								// We know this isn't on the main thread
-								processPacketHolder(false, holder);
-							}
-						});
-						
-						// The executor will take it from here
-						return true;
-					}
-					
-				} catch (FieldAccessException e) {
-					e.printStackTrace();
-					// Skip this packet
-					return true;
+				
+				// Could happen due to the timeout listeners
+				if (!marker.isProcessed()) {
+					return false;
 				}
 			}
 			
-			if (marker.isProcessed() && !current.isCancelled() && !hasExpired) {
+			// Is it okay to send the packet?
+			if (!current.isCancelled() && !hasExpired) {
+				// Make sure we're on the main thread
+				if (notThreadSafe) {
+					try {
+						boolean wantAsync = marker.isMinecraftAsync(current);
+						boolean wantSync = !wantAsync;
+						
+						// Wait for the next main thread heartbeat if we haven't fulfilled our promise
+						if (!onMainThread && wantSync) {
+							return false;
+						}
+						
+						// Let's give it what it wants
+						if (onMainThread && wantAsync) {
+							asynchronousSender.execute(new Runnable() {
+								@Override
+								public void run() {
+									// We know this isn't on the main thread
+									processPacketHolder(false, holder);
+								}
+							});
+							
+							// Scheduler will do the rest
+							return true;
+						}
+						
+					} catch (FieldAccessException e) {
+						e.printStackTrace();
+						
+						// Just drop the packet
+						return true;
+					}
+				} 
+				
 				// Silently skip players that have logged out
 				if (isOnline(current.getPlayer())) {
 					sendPacket(current);
 				}
-			}
+			} 
 			
+			// Drop the packet
 			return true;
-			
-		} else {
-			// Add it back and stop sending
-			return false;
 		}
+		
+		// Add it back and stop sending
+		return false;
 	}
 	
 	/**
