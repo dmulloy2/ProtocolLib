@@ -22,6 +22,7 @@ import java.util.Set;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.async.AsyncListenerHandler;
+import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
@@ -34,6 +35,8 @@ import com.comphenix.protocol.events.PacketListener;
 public interface AsynchronousManager {
 	/**
 	 * Registers an asynchronous packet handler.
+	 * <p>
+	 * Use {@link AsyncMarker#incrementProcessingDelay()} to delay a packet until its ready to be transmitted.
 	 * <p>
 	 * To start listening asynchronously, pass the getListenerLoop() runnable to a different thread.
 	 * @param listener - the packet listener that will recieve these asynchronous events.

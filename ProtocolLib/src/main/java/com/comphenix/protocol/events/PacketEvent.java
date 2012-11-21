@@ -134,7 +134,16 @@ public class PacketEvent extends EventObject implements Cancellable {
 	}
 
 	/**
-	 * Sets whether or not the packet should be cancelled.
+	 * Sets whether or not the packet should be cancelled. Uncancelling is possible.
+	 * <p>
+	 * <b>Warning</b>: A cancelled packet should never be re-transmitted. Use the asynchronous
+	 * packet manager if you need to perform extensive processing. It should also be used
+	 * if you need to synchronize with the main thread.
+	 * <p>
+	 * This ensures that other plugins can work with the same packet.
+	 * <p>
+	 * An asynchronous listener can also delay a packet indefinitely without having to block its thread.
+	 * 
 	 * @param cancel - TRUE if it should be cancelled, FALSE otherwise.
 	 */
 	public void setCancelled(boolean cancel) {

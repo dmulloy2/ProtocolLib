@@ -35,7 +35,8 @@ import com.google.common.base.Joiner;
 
 /**
  * Represents a handler for an asynchronous event.
- * 
+ * <p>
+ * Use {@link AsyncMarker#incrementProcessingDelay()} to delay a packet until a certain condition has been met.
  * @author Kristian
  */
 public class AsyncListenerHandler {

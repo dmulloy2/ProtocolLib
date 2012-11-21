@@ -43,7 +43,9 @@ import com.google.common.collect.Sets;
 
 /**
  * Represents a filter manager for asynchronous packets.
- * 
+ * <p>
+ * By using {@link AsyncMarker#incrementProcessingDelay()}, a packet can be delayed without having to block the
+ * processing thread.
  * @author Kristian
  */
 public class AsyncFilterManager implements AsynchronousManager {
@@ -127,6 +129,8 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	/**
 	 * Registers an asynchronous packet handler.
+	 * <p>
+	 * Use {@link AsyncMarker#incrementProcessingDelay()} to delay a packet until its ready to be transmitted.
 	 * <p>
 	 * To start listening asynchronously, pass the getListenerLoop() runnable to a different thread.
 	 * <p>
