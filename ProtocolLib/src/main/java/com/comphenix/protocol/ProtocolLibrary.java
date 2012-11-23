@@ -23,6 +23,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.bukkit.Server;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -187,8 +189,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			}
 			
 			// Set up command handlers
-			getCommand(CommandProtocol.NAME).setExecutor(commandProtocol);
-			getCommand(CommandPacket.NAME).setExecutor(commandPacket);
+			registerCommand(CommandProtocol.NAME, commandProtocol);
+			registerCommand(CommandPacket.NAME, commandPacket);
 	
 			// Notify server managers of incompatible plugins
 			checkForIncompatibility(manager);
@@ -215,6 +217,24 @@ public class ProtocolLibrary extends JavaPlugin {
 			reporter.reportDetailed(this, "Unable to enable metrics.", e, statistisc);
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, "Metrics cannot be enabled. Incompatible Bukkit version.", e, statistisc);
+		}
+	}
+
+	private void registerCommand(String name, CommandExecutor executor) {
+		try {
+			if (executor == null) 
+				throw new RuntimeException("Executor was NULL.");
+			
+			PluginCommand command = getCommand(name);
+			
+			// Try to load the command
+			if (command != null)
+				command.setExecutor(executor);
+			else
+				throw new RuntimeException("plugin.yml might be corrupt.");
+		
+		} catch (RuntimeException e) {
+			reporter.reportWarning(this, "Cannot register command " + name + ": " + e.getMessage());
 		}
 	}
 	
