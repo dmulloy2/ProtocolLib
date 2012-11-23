@@ -216,7 +216,7 @@ public class PlayerInjectionHandler {
 	 * @throws InterruptedException If the thread was interrupted during the wait.
 	 */
 	public Player getPlayerByConnection(DataInputStream inputStream, long playerTimeout, TimeUnit unit) throws InterruptedException {
-		
+		// Wait until the connection owner has been established
 		PlayerInjector injector = dataInputLookup.get(inputStream, playerTimeout, unit);
 		
 		if (injector != null) {
