@@ -212,7 +212,8 @@ class PacketInjector {
 				return null;
 			
 		} catch (InterruptedException e) {
-			reporter.reportDetailed(this, "Thread was interrupted.", e, packet, input);
+			// We will ignore this - it occurs when a player disconnects
+			//reporter.reportDetailed(this, "Thread was interrupted.", e, packet, input);
 			return null;
 		}
 	}
