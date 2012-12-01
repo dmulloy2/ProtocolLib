@@ -5,6 +5,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 
+import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.WatchableObject;
 
@@ -27,7 +28,35 @@ public class WrappedWatchableObject {
 	// Type of the stored value
 	private Class<?> typeClass;
 	
+	/**
+	 * Wrap a given raw Minecraft watchable object.
+	 * @param handle - the raw watchable object to wrap.
+	 */
 	public WrappedWatchableObject(WatchableObject handle) {
+		load(handle);
+	}
+	
+	/**
+	 * Construct a watchable object from an index and a given value.
+	 * @param index - the index.
+	 * @param value - non-null value of specific types.
+	 */
+	public WrappedWatchableObject(int index, Object value) {
+		if (value == null)
+			throw new IllegalArgumentException("Value cannot be NULL.");
+		
+		// Get the correct type ID
+		Integer typeID = WrappedDataWatcher.getTypeID(value.getClass());
+		
+		if (typeID != null) {
+			load(new WatchableObject(typeID, index, getUnwrapped(value)));
+		} else {
+			throw new IllegalArgumentException("Cannot watch the type " + value.getClass());
+		}
+	}
+	
+	// Wrap a NMS object
+	private void load(WatchableObject handle) {
 		initialize();
 		this.handle = handle;
 		this.modifier = baseModifier.withTarget(handle);
@@ -57,6 +86,15 @@ public class WrappedWatchableObject {
 	 * @throws FieldAccessException Unable to read values.
 	 */
 	public Class<?> getType() throws FieldAccessException {
+		return getWrappedType(getTypeRaw());
+	}
+	
+	/**
+	 * Retrieve the correct super type of the current value, given the raw NMS object.
+	 * @return Super type.
+	 * @throws FieldAccessException Unable to read values.
+	 */
+	private Class<?> getTypeRaw() throws FieldAccessException {
 		if (typeClass == null) {
 			typeClass = WrappedDataWatcher.getTypeClass(getTypeID());
 			
@@ -131,7 +169,7 @@ public class WrappedWatchableObject {
 			setDirtyState(true);
 		
 		// Use the modifier to set the value
-		modifier.withType(Object.class).write(0, newValue);
+		modifier.withType(Object.class).write(0, getUnwrapped(newValue));
 	}
 	
 	/**
@@ -140,7 +178,7 @@ public class WrappedWatchableObject {
 	 * @throws FieldAccessException Unable to use reflection. 
 	 */
 	public Object getValue() throws FieldAccessException {
-		return modifier.withType(Object.class).read(0);
+		return getWrapped(modifier.withType(Object.class).read(0));
 	}
 	
 	/**
@@ -159,6 +197,66 @@ public class WrappedWatchableObject {
 	 */
 	public boolean getDirtyState() throws FieldAccessException {
 		return modifier.<Boolean>withType(boolean.class).read(0);
+	}
+	
+	/**
+	 * Retrieve the wrapped object value, if needed.
+	 * @param value - the raw NMS object to wrap.
+	 * @return The wrapped object.
+	 */
+	static Object getWrapped(Object value) {
+    	// Handle the special cases
+    	if (value instanceof net.minecraft.server.ItemStack) {
+    		return BukkitConverters.getItemStackConverter().getSpecific(value);
+    	} else if (value instanceof ChunkCoordinates) {
+    		return new WrappedChunkCoordinate((ChunkCoordinates) value);
+    	} else {
+    		return value;
+    	}
+	}
+	
+	/**
+	 * Retrieve the wrapped type, if needed.
+	 * @param wrapped - the wrapped class type.
+	 * @return The wrapped class type.
+	 */
+	static Class<?> getWrappedType(Class<?> unwrapped) {
+		if (unwrapped.equals(net.minecraft.server.ChunkPosition.class))
+			return ChunkPosition.class;
+		else if (unwrapped.equals(ChunkCoordinates.class))
+			return WrappedChunkCoordinate.class;
+		else
+			return unwrapped;
+	}
+	
+	/**
+	 * Retrieve the raw NMS value.
+	 * @param wrapped - the wrapped position.
+	 * @return The raw NMS object.
+	 */
+	static Object getUnwrapped(Object wrapped) {
+    	// Convert special cases
+    	if (wrapped instanceof WrappedChunkCoordinate)
+    		return ((WrappedChunkCoordinate) wrapped).getHandle();
+    	else if (wrapped instanceof ItemStack)
+    		return BukkitConverters.getItemStackConverter().getGeneric(
+    				net.minecraft.server.ItemStack.class, (org.bukkit.inventory.ItemStack) wrapped);
+    	else
+    		return wrapped;	
+	}
+	
+	/**
+	 * Retrieve the unwrapped type, if needed.
+	 * @param wrapped - the unwrapped class type.
+	 * @return The unwrapped class type.
+	 */
+	static Class<?> getUnwrappedType(Class<?> wrapped) {
+		if (wrapped.equals(ChunkPosition.class))
+			return net.minecraft.server.ChunkPosition.class; 
+		else if (wrapped.equals(WrappedChunkCoordinate.class))
+			return ChunkCoordinates.class;
+		else
+			return wrapped;
 	}
 	
 	/**
