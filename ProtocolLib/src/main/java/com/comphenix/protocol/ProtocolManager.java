@@ -130,7 +130,7 @@ public interface ProtocolManager extends PacketStream {
 	public PacketConstructor createPacketConstructor(int id, Object... arguments);
 	
 	/**
-	 * Completely refresh all clients about an entity.
+	 * Completely resend an entity to a list of clients.
 	 * <p>
 	 * Note that this method is NOT thread safe. If you call this method from anything 
 	 * but the main thread, it will throw an exception.
@@ -147,6 +147,14 @@ public interface ProtocolManager extends PacketStream {
 	 * @throws FieldAccessException Reflection failed.
 	 */
 	public Entity getEntityFromID(World container, int id) throws FieldAccessException;
+	
+	/**
+	 * Retrieve every client that is receiving information about a given entity.
+	 * @param entity - the entity that is being tracked.
+	 * @return Every client/player that is tracking the given entity.
+	 * @throws FieldAccessException If reflection failed.
+	 */
+	public List<Player> getEntityTrackers(Entity entity) throws FieldAccessException;
 	
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.

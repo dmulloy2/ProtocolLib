@@ -55,6 +55,7 @@ import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
@@ -569,6 +570,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	@Override
 	public Entity getEntityFromID(World container, int id) throws FieldAccessException {
 		return EntityUtilities.getEntityFromID(container, id);
+	}
+	
+	@Override
+	public List<Player> getEntityTrackers(Entity entity) throws FieldAccessException {
+		return EntityUtilities.getEntityTrackers(entity);
 	}
 	
 	/**
