@@ -1,9 +1,6 @@
 package com.comphenix.protocol.injector.player;
 
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
@@ -29,8 +26,6 @@ class NetLoginInjector {
 	// The current error rerporter
 	private ErrorReporter reporter;
 	
-	private ReadWriteLock injectionLock = new ReentrantReadWriteLock();
-	
 	// Used to create fake players
 	private TemporaryPlayerFactory tempPlayerFactory = new TemporaryPlayerFactory();
 	
@@ -46,9 +41,6 @@ class NetLoginInjector {
 	 * @return An injected NetLoginHandler, or the original object.
 	 */
 	public Object onNetLoginCreated(Object inserting) {
-		
-		injectionLock.writeLock().lock();
-		
 		try {
 			// Make sure we actually need to inject during this phase
 			if (!injectionHandler.isInjectionNecessary(GamePhase.LOGIN))
@@ -73,17 +65,7 @@ class NetLoginInjector {
 			reporter.reportDetailed(this, "Unable to hook NetLoginHandler.", e, inserting);
 			return inserting;
 			
-		} finally {
-			injectionLock.writeLock().unlock();
 		}
-	}
-	
-	/**
-	 * Retrieve the lock used for reading.
-	 * @return Reading lock.
-	 */
-	public Lock getReadLock() {
-		return injectionLock.readLock();
 	}
 	
 	/**

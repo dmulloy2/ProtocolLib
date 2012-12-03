@@ -1,6 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
 
-import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.DataWatcher;
 import net.minecraft.server.WatchableObject;
 
@@ -116,8 +116,7 @@ public class WrappedDataWatcher {
 	 */
 	public static Integer getTypeID(Class<?> clazz) throws FieldAccessException {
 		initialize();
-		
-		return typeMap.get(clazz);
+		return typeMap.get(WrappedWatchableObject.getUnwrappedType(clazz));
 	}
 	
 	/**
@@ -145,7 +144,7 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException Cannot read underlying field.
      */
     public Byte getByte(int index) throws FieldAccessException {
-    	return (Byte) getObjectRaw(index);
+    	return (Byte) getObject(index);
     }
     
     /**
@@ -155,7 +154,7 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException Cannot read underlying field.
      */
     public Short getShort(int index) throws FieldAccessException {
-    	return (Short) getObjectRaw(index);
+    	return (Short) getObject(index);
     }
     
     /**
@@ -165,7 +164,7 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException Cannot read underlying field.
      */
     public Integer getInteger(int index) throws FieldAccessException {
-    	return (Integer) getObjectRaw(index);
+    	return (Integer) getObject(index);
     }
     
     /**
@@ -175,7 +174,7 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException Cannot read underlying field.
      */
     public Float getFloat(int index) throws FieldAccessException {
-    	return (Float) getObjectRaw(index);
+    	return (Float) getObject(index);
     }
     
     /**
@@ -185,7 +184,7 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException Cannot read underlying field.
      */
     public String getString(int index) throws FieldAccessException {
-    	return (String) getObjectRaw(index);
+    	return (String) getObject(index);
     }
     
     /**
@@ -215,25 +214,6 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException Cannot read underlying field.
      */
     public Object getObject(int index) throws FieldAccessException {
-    	Object result = getObjectRaw(index);
-    	
-    	// Handle the special cases too
-    	if (result instanceof net.minecraft.server.ItemStack) {
-    		return BukkitConverters.getItemStackConverter().getSpecific(result);
-    	} else if (result instanceof ChunkCoordinates) {
-    		return new WrappedChunkCoordinate((ChunkCoordinates) result);
-    	} else {
-    		return result;
-    	}
-    }
-    
-    /**
-     * Retrieve a watchable object by index.
-     * @param index - index of the object to retrieve.
-     * @return The watched object.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    private Object getObjectRaw(int index) throws FieldAccessException {
     	// The get method will take care of concurrency
     	WatchableObject watchable = getWatchedObject(index);
 
@@ -319,27 +299,7 @@ public class WrappedDataWatcher {
      * @param update - whether or not to refresh every listening clients.
      * @throws FieldAccessException Cannot read underlying field.
      */
-    public void setObject(int index, Object newValue, boolean update) throws FieldAccessException {
-    	// Convert special cases
-    	if (newValue instanceof WrappedChunkCoordinate)
-    		newValue = ((WrappedChunkCoordinate) newValue).getHandle();
-    	if (newValue instanceof ItemStack)
-    		newValue = BukkitConverters.getItemStackConverter().getGeneric(
-    				net.minecraft.server.ItemStack.class, (ItemStack) newValue);
-    	
-    	// Next, set the object
-    	setObjectRaw(index, newValue, update);
-    }
-    
-    /**
-     * Set a watchable object by index.
-     * @param index - index of the object to retrieve.
-     * @param newValue - the new watched value.
-     * @param update - whether or not to refresh every listening clients.
-     * @return The watched object.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    private void setObjectRaw(int index, Object newValue, boolean update) throws FieldAccessException {
+    public void setObject(int index, Object newValue, boolean update) throws FieldAccessException {    	
     	// Aquire write lock
     	Lock writeLock = getReadWriteLock().writeLock();
     	writeLock.lock();
@@ -349,12 +309,22 @@ public class WrappedDataWatcher {
 	    	
 	    	if (watchable != null) {
 	    		new WrappedWatchableObject(watchable).setValue(newValue, update);
+	    	} else {
+	    		createKeyValueMethod.invoke(handle, index, WrappedWatchableObject.getUnwrapped(newValue));
 	    	}
-    	} finally {
+	    	
+	    	// Handle invoking the method
+    	} catch (IllegalArgumentException e) {
+    		throw new FieldAccessException("Cannot convert arguments.", e);
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Illegal access.", e);
+		} catch (InvocationTargetException e) {
+			throw new FieldAccessException("Checked exception in Minecraft.", e);
+		} finally {
     		writeLock.unlock();
     	}
     }
-        
+    
     private WatchableObject getWatchedObject(int index) throws FieldAccessException {
     	// We use the get-method first and foremost
     	if (getKeyValueMethod != null) {

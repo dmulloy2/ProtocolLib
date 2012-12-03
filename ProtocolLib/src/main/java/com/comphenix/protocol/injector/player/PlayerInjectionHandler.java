@@ -24,12 +24,14 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import net.minecraft.server.Packet;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.concurrency.BlockingHashMap;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
@@ -47,6 +49,10 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public class PlayerInjectionHandler {
+	/**
+	 * The maximum number of milliseconds to wait until a player can be looked up by connection.
+	 */
+	private static final long TIMEOUT_PLAYER_LOOKUP = 1000; // ms
 	
 	/**
 	 * The highest possible packet ID. It's unlikely that this value will ever change.
@@ -64,8 +70,10 @@ public class PlayerInjectionHandler {
 	
 	// Player injection
 	private Map<SocketAddress, PlayerInjector> addressLookup = Maps.newConcurrentMap();
-	private Map<DataInputStream, PlayerInjector> dataInputLookup = Maps.newConcurrentMap();
 	private Map<Player, PlayerInjector> playerInjection = Maps.newConcurrentMap();
+	
+	// Lookup player by connection
+	private BlockingHashMap<DataInputStream, PlayerInjector> dataInputLookup = BlockingHashMap.create();
 	
 	// Player injection types
 	private volatile PlayerInjectHooks loginPlayerHook = PlayerInjectHooks.NETWORK_SERVER_OBJECT;
@@ -193,26 +201,37 @@ public class PlayerInjectionHandler {
 	 * Retrieve a player by its DataInput connection.
 	 * @param inputStream - the associated DataInput connection.
 	 * @return The player.
+	 * @throws InterruptedException If the thread was interrupted during the wait.
 	 */
-	public Player getPlayerByConnection(DataInputStream inputStream) {
-		try {
-			// Concurrency issue!
-			netLoginInjector.getReadLock().lock();
-			
-			PlayerInjector injector = dataInputLookup.get(inputStream);
-			
-			if (injector != null) {
-				return injector.getPlayer();
-			} else {
-				reporter.reportWarning(this, "Unable to find stream: " + inputStream);
-				return null;
-			}
-			
-		} finally {
-			netLoginInjector.getReadLock().unlock();
+	public Player getPlayerByConnection(DataInputStream inputStream) throws InterruptedException {
+		return getPlayerByConnection(inputStream, TIMEOUT_PLAYER_LOOKUP, TimeUnit.MILLISECONDS);
+	}
+	
+	/**
+	 * Retrieve a player by its DataInput connection.
+	 * @param inputStream - the associated DataInput connection.
+	 * @param playerTimeout - the amount of time to wait for a result.
+	 * @param unit - unit of playerTimeout.
+	 * @return The player. 
+	 * @throws InterruptedException If the thread was interrupted during the wait.
+	 */
+	public Player getPlayerByConnection(DataInputStream inputStream, long playerTimeout, TimeUnit unit) throws InterruptedException {
+		// Wait until the connection owner has been established
+		PlayerInjector injector = dataInputLookup.get(inputStream, playerTimeout, unit);
+		
+		if (injector != null) {
+			return injector.getPlayer();
+		} else {
+			reporter.reportWarning(this, "Unable to find stream: " + inputStream);
+			return null;
 		}
 	}
 	
+	/**
+	 * Helper function that retrieves the injector type of a given player injector.
+	 * @param injector - injector type.
+	 * @return The injector type.
+	 */
 	private PlayerInjectHooks getInjectorType(PlayerInjector injector) {
 		return injector != null ? injector.getHookType() : PlayerInjectHooks.NONE;
 	}
@@ -404,7 +423,6 @@ public class PlayerInjectionHandler {
 			PlayerInjector injector = playerInjection.remove(player);
 
 			if (injector != null) {
-				DataInputStream input = injector.getInputStream(true);
 				InetSocketAddress address = player.getAddress();
 				injector.cleanupAll();
 				
@@ -423,8 +441,7 @@ public class PlayerInjectionHandler {
 				
 				// Clean up
 				if (removeAuxiliary) {
-					if (input != null) 
-						dataInputLookup.remove(input);
+					// Note that the dataInputLookup will clean itself
 					if (address != null) 
 						addressLookup.remove(address);
 				}
@@ -571,7 +588,6 @@ public class PlayerInjectionHandler {
 	}
 	
 	public void close() {
-		
 		// Guard
 		if (hasClosed || playerInjection == null)
 			return;
@@ -593,7 +609,6 @@ public class PlayerInjectionHandler {
 		hasClosed = true;
 		
 		playerInjection.clear();
-		dataInputLookup.clear();
 		addressLookup.clear();
 		invoker = null;
 	}
@@ -607,12 +622,9 @@ public class PlayerInjectionHandler {
 
 		// Update the DataInputStream
 		if (injector != null) {
-			final DataInputStream old = injector.getInputStream(true);
-
 			injector.scheduleAction(new Runnable() {
 				@Override
 				public void run() {
-					dataInputLookup.remove(old);
 					dataInputLookup.put(injector.getInputStream(false), injector);
 				}
 			});

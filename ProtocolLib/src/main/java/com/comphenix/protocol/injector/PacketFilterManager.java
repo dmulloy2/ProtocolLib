@@ -571,6 +571,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		return EntityUtilities.getEntityFromID(container, id);
 	}
 	
+	@Override
+	public List<Player> getEntityTrackers(Entity entity) throws FieldAccessException {
+		return EntityUtilities.getEntityTrackers(entity);
+	}
+	
 	/**
 	 * Initialize the packet injection for every player.
 	 * @param players - list of players to inject. 

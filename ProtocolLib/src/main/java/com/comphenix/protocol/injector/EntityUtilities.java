@@ -21,12 +21,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTrackerEntry;
 
 import org.bukkit.World;
@@ -118,7 +120,39 @@ class EntityUtilities {
 		} catch (SecurityException e) {
 			throw new FieldAccessException("Security limitation prevents access to 'scanPlayers' method in trackerEntry.", e);
 		} catch (NoSuchMethodException e) {
-			throw new FieldAccessException("Canot find 'scanPlayers' method. Is ProtocolLib up to date?", e);
+			throw new FieldAccessException("Cannot find 'scanPlayers' method. Is ProtocolLib up to date?", e);
+		}
+	}
+
+	/**
+	 * Retrieve every client that is receiving information about a given entity.
+	 * @param entity - the entity that is being tracked.
+	 * @return Every client/player that is tracking the given entity.
+	 * @throws FieldAccessException If reflection failed.
+	 */
+	public static List<Player> getEntityTrackers(Entity entity) {
+		try {
+			List<Player> result = new ArrayList<Player>();
+			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
+
+			if (trackedPlayersField == null) 
+				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
+			
+			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
+			
+			// Wrap every player - we also ensure that the underlying tracker list is immutable
+			for (Object tracker : trackedPlayers) {
+				if (tracker instanceof EntityPlayer) {
+					EntityPlayer nmsPlayer = (EntityPlayer) tracker;
+					result.add(nmsPlayer.getBukkitEntity());
+				}
+			}
+			return result;
+			
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Security limitation prevented access to the list of tracked players.", e);
+		} catch (InvocationTargetException e) {
+			throw new FieldAccessException("Exception occurred in Minecraft.", e);
 		}
 	}
 	
