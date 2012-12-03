@@ -43,7 +43,6 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
-import com.google.common.io.Closeables;
 
 import net.minecraft.server.Packet;
 
@@ -195,6 +194,14 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<byte[]> getByteArrays() {
 		return structureModifier.withType(byte[].class);
+	}
+
+	/**
+	 * Retrieves a read/write structure for every int array field.
+	 * @return A modifier for every int array field.
+	 */
+	public StructureModifier<int[]> getIntegerArrays() {
+		return structureModifier.withType(int[].class);
 	}
 	
 	/**
