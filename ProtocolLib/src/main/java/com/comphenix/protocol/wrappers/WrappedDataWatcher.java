@@ -22,7 +22,6 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Objects;
 
-import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.DataWatcher;
 import net.minecraft.server.WatchableObject;
 
