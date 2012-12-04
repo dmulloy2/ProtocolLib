@@ -27,6 +27,7 @@ import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
@@ -95,7 +96,7 @@ class InjectedArrayList extends ArrayList<Packet> {
 		
 		int packetID = invoker.getPacketID(source);
 		Class<?> type = invoker.getPacketClassFromID(packetID, true);
-		
+
 		// We want to subtract the byte amount that were added to the running
 		// total of outstanding packets. Otherwise, cancelling too many packets
 		// might cause a "disconnect.overflow" error.
