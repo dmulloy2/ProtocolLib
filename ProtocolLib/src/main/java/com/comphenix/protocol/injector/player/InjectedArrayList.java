@@ -27,7 +27,6 @@ import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 
 import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 

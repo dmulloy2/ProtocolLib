@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 import org.bukkit.World;
 import org.bukkit.WorldType;
@@ -43,6 +44,7 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.google.common.collect.Maps;
 
 import net.minecraft.server.Packet;
 
@@ -63,11 +65,11 @@ public class PacketContainer implements Serializable {
 
 	// Current structure modifier
 	protected transient StructureModifier<Object> structureModifier;
-		
+
 	// Support for serialization
-	private static Method writeMethod;
-	private static Method readMethod;
-		
+	private static ConcurrentMap<Class<?>, Method> writeMethods = Maps.newConcurrentMap();
+	private static ConcurrentMap<Class<?>, Method> readMethods = Maps.newConcurrentMap();
+	
 	/**
 	 * Creates a packet container for a new packet.
 	 * @param id - ID of the packet to create.
@@ -98,6 +100,12 @@ public class PacketContainer implements Serializable {
 		this.id = id;
 		this.handle = handle;
 		this.structureModifier = structure;
+	}
+	
+	/**
+	 * For serialization.
+	 */
+	protected PacketContainer() {
 	}
 	
 	/**
@@ -399,14 +407,12 @@ public class PacketContainer implements Serializable {
 
 		// We'll take care of NULL packets as well
 		output.writeBoolean(handle != null);
-		
-		// Retrieve the write method by reflection
-		if (writeMethod == null)
-			writeMethod = FuzzyReflection.fromObject(handle).getMethodByParameters("write", DataOutputStream.class);
-		
+
 		try {
 			// Call the write-method
-			writeMethod.invoke(handle, new DataOutputStream(output));
+			getMethodLazily(writeMethods, handle.getClass(), "write", DataOutputStream.class).
+				invoke(handle, new DataOutputStream(output));
+			
 		} catch (IllegalArgumentException e) {
 			throw new IOException("Minecraft packet doesn't support DataOutputStream", e);
 		} catch (IllegalAccessException e) {
@@ -429,13 +435,11 @@ public class PacketContainer implements Serializable {
 	    	// Create a default instance of the packet
 	    	handle = StructureCache.newPacket(id);
 	    	
-			// Retrieve the read method by reflection
-			if (readMethod == null)
-				readMethod = FuzzyReflection.fromObject(handle).getMethodByParameters("read", DataInputStream.class);
-	    	
 			// Call the read method
 			try {
-				readMethod.invoke(handle, new DataInputStream(input));
+				getMethodLazily(readMethods, handle.getClass(), "read", DataInputStream.class).
+					invoke(handle, new DataInputStream(input));
+				
 			} catch (IllegalArgumentException e) {
 				throw new IOException("Minecraft packet doesn't support DataInputStream", e);
 			} catch (IllegalAccessException e) {
@@ -447,5 +451,31 @@ public class PacketContainer implements Serializable {
 			// And we're done
 			structureModifier = structureModifier.withTarget(handle);
 	    }
+	}
+	
+	/**
+	 * Retrieve the cached method concurrently.
+	 * @param lookup - a lazy lookup cache.
+	 * @param handleClass - class type of the current packet.
+	 * @param methodName - name of method to retrieve.
+	 * @param parameterClass - the one parameter type in the method.
+	 * @return Reflected method.
+	 */
+	private Method getMethodLazily(ConcurrentMap<Class<?>, Method> lookup, 
+								   Class<?> handleClass, String methodName, Class<?> parameterClass) {
+		Method method = lookup.get(handleClass);
+		
+		// Atomic operation
+		if (method == null) {
+			Method initialized = FuzzyReflection.fromClass(handleClass).getMethodByParameters(methodName, parameterClass);
+			method = lookup.putIfAbsent(handleClass, initialized);
+			
+			// Use our version if we succeeded
+			if (method == null) {
+				method = initialized;
+			}
+		}
+		
+		return method;
 	}
 }
