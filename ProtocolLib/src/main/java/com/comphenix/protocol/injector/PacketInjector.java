@@ -37,6 +37,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * This class is responsible for adding or removing proxy objects that intercepts recieved packets.
@@ -92,7 +93,8 @@ class PacketInjector {
 	private void initialize() throws IllegalAccessException {
 		if (intHashMap == null) {
 			// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
-			Field intHashMapField = FuzzyReflection.fromClass(Packet.class, true).getFieldByType(FuzzyReflection.MINECRAFT_OBJECT);
+			Field intHashMapField = FuzzyReflection.fromClass(Packet.class, true).
+					getFieldByType(MinecraftReflection.MINECRAFT_OBJECT);
 			
 			try {
 				intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);

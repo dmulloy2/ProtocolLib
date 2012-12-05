@@ -25,9 +25,6 @@ import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
 
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.NetLoginHandler;
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -45,6 +42,7 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 abstract class PlayerInjector {
 
@@ -122,7 +120,7 @@ abstract class PlayerInjector {
 	 * @param player - the player to retrieve.
 	 * @return Notch player object.
 	 */
-	protected EntityPlayer getEntityPlayer(Player player) {
+	protected Object getEntityPlayer(Player player) {
 		CraftPlayer craft = (CraftPlayer) player;
 		return craft.getHandle();
 	}
@@ -379,7 +377,7 @@ abstract class PlayerInjector {
 			try {
 				// Well, that sucks. Try just Minecraft objects then.
 				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
-									 getFieldByType(FuzzyReflection.MINECRAFT_OBJECT);
+									 getFieldByType(MinecraftReflection.MINECRAFT_OBJECT);
 				
 			} catch (RuntimeException e2) {
 				throw new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());

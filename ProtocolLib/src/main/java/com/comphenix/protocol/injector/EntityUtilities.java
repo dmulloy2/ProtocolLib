@@ -39,6 +39,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
 /**
@@ -193,7 +194,7 @@ class EntityUtilities {
 			
 			// The Minecraft field that's NOT filled in by the constructor
 			trackedEntitiesField = FuzzyReflection.fromObject(tracker, true).
-						getFieldByType(FuzzyReflection.MINECRAFT_OBJECT, ignoredTypes);
+						getFieldByType(MinecraftReflection.MINECRAFT_OBJECT, ignoredTypes);
 		}
 		
 		// Read the entity hashmap
