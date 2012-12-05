@@ -26,6 +26,7 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 
 import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -46,10 +47,13 @@ class InjectedArrayList extends ArrayList<Packet> {
 	private transient Set<Packet> ignoredPackets;
 	private transient ClassLoader classLoader;
 	
+	private transient InvertedIntegerCallback callback;
+	
 	public InjectedArrayList(ClassLoader classLoader, PlayerInjector injector, Set<Packet> ignoredPackets) {
 		this.classLoader = classLoader;
 		this.injector = injector;
 		this.ignoredPackets = ignoredPackets;
+		this.callback = new InvertedIntegerCallback();
 	}
 
 	@Override
@@ -96,6 +100,8 @@ class InjectedArrayList extends ArrayList<Packet> {
 		int packetID = invoker.getPacketID(source);
 		Class<?> type = invoker.getPacketClassFromID(packetID, true);
 
+		System.out.println(type.getName());
+		
 		// We want to subtract the byte amount that were added to the running
 		// total of outstanding packets. Otherwise, cancelling too many packets
 		// might cause a "disconnect.overflow" error.
@@ -122,15 +128,20 @@ class InjectedArrayList extends ArrayList<Packet> {
 		ex.setCallbackType(InvertedIntegerCallback.class);
 
 		Class<?> proxyClass = ex.createClass();
-
-		// Temporarily associate the fake packet class
-		invoker.registerPacketClass(proxyClass, packetID);
-
-		Packet fake = (Packet) Enhancer.create(proxyClass, new InvertedIntegerCallback());
+		Enhancer.registerCallbacks(proxyClass, new Callback[] { callback });
 		
-		// Remove this association
-		invoker.unregisterPacketClass(proxyClass);
-		return fake;
+		try {
+			// Temporarily associate the fake packet class
+			invoker.registerPacketClass(proxyClass, packetID);
+			return (Packet) proxyClass.newInstance();
+			
+		} catch (Exception e) {
+			// Don't pollute the throws tree
+			throw new RuntimeException("Cannot create fake class.", e);
+		} finally {
+			// Remove this association
+			invoker.unregisterPacketClass(proxyClass);
+		}
 	}
 	
 	/**
