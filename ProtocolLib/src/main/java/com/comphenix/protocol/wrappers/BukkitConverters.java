@@ -1,16 +1,13 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import net.minecraft.server.DataWatcher;
-import net.minecraft.server.WatchableObject;
-
 import org.bukkit.World;
 import org.bukkit.WorldType;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
@@ -19,6 +16,7 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
@@ -29,9 +27,13 @@ public class BukkitConverters {
 	// Check whether or not certain classes exists
 	private static boolean hasWorldType = false;
 	
+	// Used to access the world type
+	private static Method worldTypeName;
+	private static Method worldTypeGetType;
+	
 	static {
 		try {
-			Class.forName("net.minecraft.server.WorldType");
+			Class.forName(MinecraftReflection.getMinecraftPackage() + ".WorldType");
 			hasWorldType = true;
 		} catch (ClassNotFoundException e) {
 		}
@@ -100,8 +102,8 @@ public class BukkitConverters {
 			}
 			
 			public WrappedWatchableObject getSpecific(Object generic) {
-				if (generic instanceof WatchableObject)
-					return new WrappedWatchableObject((WatchableObject) generic);
+				if (MinecraftReflection.isWatchableObject(generic))
+					return new WrappedWatchableObject(generic);
 				else if (generic instanceof WrappedWatchableObject)
 					return (WrappedWatchableObject) generic;
 				else
@@ -128,8 +130,8 @@ public class BukkitConverters {
 			
 			@Override
 			public WrappedDataWatcher getSpecific(Object generic) {
-				if (generic instanceof DataWatcher)
-					return new WrappedDataWatcher((DataWatcher) generic);
+				if (MinecraftReflection.isDataWatcher(generic))
+					return new WrappedDataWatcher(generic);
 				else if (generic instanceof WrappedDataWatcher)
 					return (WrappedDataWatcher) generic;
 				else
@@ -153,15 +155,35 @@ public class BukkitConverters {
 			return null;
 		
 		return getIgnoreNull(new EquivalentConverter<WorldType>() {
+			@SuppressWarnings("unchecked")
 			@Override
 			public Object getGeneric(Class<?> genericType, WorldType specific) {
-				return net.minecraft.server.WorldType.getType(specific.getName());
+				try {
+					if (worldTypeGetType == null)
+						worldTypeGetType = MinecraftReflection.getWorldTypeClass().getMethod("getType", String.class);
+					
+					// Convert to the Bukkit world type
+					return worldTypeGetType.invoke(this, specific.getName());
+					
+				} catch (Exception e) {
+					throw new FieldAccessException("Cannot find the WorldType.getType() method.", e);
+				}	
 			}
 			
+			@SuppressWarnings("unchecked")
 			@Override
 			public WorldType getSpecific(Object generic) {
-				net.minecraft.server.WorldType type = (net.minecraft.server.WorldType) generic;
-				return WorldType.getByName(type.name());
+				try {
+					if (worldTypeName == null)
+						worldTypeName = MinecraftReflection.getWorldTypeClass().getMethod("name");
+					
+					// Dynamically call the namne method
+					String name = (String) worldTypeName.invoke(generic);
+					return WorldType.getByName(name);
+					
+				} catch (Exception e) {
+					throw new FieldAccessException("Cannot call the name method in WorldType.", e);
+				}
 			}
 			
 			@Override
@@ -221,12 +243,12 @@ public class BukkitConverters {
 	public static EquivalentConverter<ItemStack> getItemStackConverter() {
 		return getIgnoreNull(new EquivalentConverter<ItemStack>() {
 			public Object getGeneric(Class<?> genericType, ItemStack specific) {
-				return toStackNMS(specific);
+				return MinecraftReflection.getMinecraftItemStack(specific);
 			}
 			
 			@Override
 			public ItemStack getSpecific(Object generic) {
-				return new CraftItemStack((net.minecraft.server.ItemStack) generic);
+				return MinecraftReflection.getBukkitItemStack(generic);
 			}
 			
 			@Override
@@ -234,20 +256,6 @@ public class BukkitConverters {
 				return ItemStack.class;
 			}
 		});
-	}
-	
-	/**
-	 * Convert an item stack to the NMS equivalent.
-	 * @param stack - Bukkit stack to convert.
-	 * @return A bukkit stack.
-	 */
-	private static net.minecraft.server.ItemStack toStackNMS(ItemStack stack) {
-		// We must be prepared for an object that simply implements ItemStcak
-		if (stack instanceof CraftItemStack) {
-			return ((CraftItemStack) stack).getHandle();
-		} else {
-			return (new CraftItemStack(stack)).getHandle();
-		}
 	}
 	
 	/**

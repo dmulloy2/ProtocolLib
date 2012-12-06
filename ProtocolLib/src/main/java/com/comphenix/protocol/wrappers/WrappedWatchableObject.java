@@ -1,13 +1,14 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
+
+import org.bukkit.inventory.ItemStack;
+
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
-
-import net.minecraft.server.ChunkCoordinates;
-import net.minecraft.server.ItemStack;
-import net.minecraft.server.WatchableObject;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Represents a watchable object.
@@ -22,7 +23,10 @@ public class WrappedWatchableObject {
 	// The field containing the value itself
 	private static StructureModifier<Object> baseModifier;
 	
-	protected WatchableObject handle;
+	// Used to create new watchable objects
+	private static Constructor<?> watchableConstructor;
+	
+	protected Object handle;
 	protected StructureModifier<Object> modifier;
 	
 	// Type of the stored value
@@ -32,7 +36,7 @@ public class WrappedWatchableObject {
 	 * Wrap a given raw Minecraft watchable object.
 	 * @param handle - the raw watchable object to wrap.
 	 */
-	public WrappedWatchableObject(WatchableObject handle) {
+	public WrappedWatchableObject(Object handle) {
 		load(handle);
 	}
 	
@@ -41,6 +45,7 @@ public class WrappedWatchableObject {
 	 * @param index - the index.
 	 * @param value - non-null value of specific types.
 	 */
+	@SuppressWarnings("unchecked")
 	public WrappedWatchableObject(int index, Object value) {
 		if (value == null)
 			throw new IllegalArgumentException("Value cannot be NULL.");
@@ -49,14 +54,28 @@ public class WrappedWatchableObject {
 		Integer typeID = WrappedDataWatcher.getTypeID(value.getClass());
 		
 		if (typeID != null) {
-			load(new WatchableObject(typeID, index, getUnwrapped(value)));
+			if (watchableConstructor == null) {
+				try {
+					watchableConstructor = MinecraftReflection.getWatchableObjectClass().
+											getConstructor(int.class, int.class, Object.class);
+				} catch (Exception e) {
+					throw new RuntimeException("Cannot get the WatchableObject(int, int, Object) constructor.", e); 
+				}
+			}
+			
+			// Create the object
+			try {
+				load(watchableConstructor.newInstance(typeID, index, getUnwrapped(value)));
+			} catch (Exception e) {
+				throw new RuntimeException("Cannot construct underlying WatchableObject.", e);
+			}
 		} else {
 			throw new IllegalArgumentException("Cannot watch the type " + value.getClass());
 		}
 	}
 	
 	// Wrap a NMS object
-	private void load(WatchableObject handle) {
+	private void load(Object handle) {
 		initialize();
 		this.handle = handle;
 		this.modifier = baseModifier.withTarget(handle);
@@ -66,7 +85,7 @@ public class WrappedWatchableObject {
 	 * Retrieves the underlying watchable object.
 	 * @return The underlying watchable object.
 	 */
-	public WatchableObject getHandle() {
+	public Object getHandle() {
 		return handle;
 	}
 	
@@ -76,7 +95,7 @@ public class WrappedWatchableObject {
 	private static void initialize() {
 		if (!hasInitialized) {
 			hasInitialized = true;
-			baseModifier = new StructureModifier<Object>(WatchableObject.class, null, false);
+			baseModifier = new StructureModifier<Object>(MinecraftReflection.getWatchableObjectClass(), null, false);
 		}
 	}
 	
@@ -204,12 +223,13 @@ public class WrappedWatchableObject {
 	 * @param value - the raw NMS object to wrap.
 	 * @return The wrapped object.
 	 */
+	@SuppressWarnings("rawtypes")
 	static Object getWrapped(Object value) {
     	// Handle the special cases
-    	if (value instanceof net.minecraft.server.ItemStack) {
+    	if (MinecraftReflection.isItemStack(value)) {
     		return BukkitConverters.getItemStackConverter().getSpecific(value);
-    	} else if (value instanceof ChunkCoordinates) {
-    		return new WrappedChunkCoordinate((ChunkCoordinates) value);
+    	} else if (MinecraftReflection.isChunkCoordinates(value)) {
+    		return new WrappedChunkCoordinate((Comparable) value);
     	} else {
     		return value;
     	}
@@ -221,9 +241,9 @@ public class WrappedWatchableObject {
 	 * @return The wrapped class type.
 	 */
 	static Class<?> getWrappedType(Class<?> unwrapped) {
-		if (unwrapped.equals(net.minecraft.server.ChunkPosition.class))
+		if (unwrapped.equals(MinecraftReflection.getChunkPositionClass()))
 			return ChunkPosition.class;
-		else if (unwrapped.equals(ChunkCoordinates.class))
+		else if (unwrapped.equals(MinecraftReflection.getChunkCoordinatesClass()))
 			return WrappedChunkCoordinate.class;
 		else
 			return unwrapped;
@@ -240,7 +260,7 @@ public class WrappedWatchableObject {
     		return ((WrappedChunkCoordinate) wrapped).getHandle();
     	else if (wrapped instanceof ItemStack)
     		return BukkitConverters.getItemStackConverter().getGeneric(
-    				net.minecraft.server.ItemStack.class, (org.bukkit.inventory.ItemStack) wrapped);
+    				MinecraftReflection.getItemStackClass(), (ItemStack) wrapped);
     	else
     		return wrapped;	
 	}
@@ -252,9 +272,9 @@ public class WrappedWatchableObject {
 	 */
 	static Class<?> getUnwrappedType(Class<?> wrapped) {
 		if (wrapped.equals(ChunkPosition.class))
-			return net.minecraft.server.ChunkPosition.class; 
+			return MinecraftReflection.getChunkPositionClass(); 
 		else if (wrapped.equals(WrappedChunkCoordinate.class))
-			return ChunkCoordinates.class;
+			return MinecraftReflection.getChunkCoordinatesClass();
 		else
 			return wrapped;
 	}
@@ -265,7 +285,8 @@ public class WrappedWatchableObject {
 	 * @throws FieldAccessException If we're unable to use reflection.
 	 */
 	public WrappedWatchableObject deepClone() throws FieldAccessException {
-		WrappedWatchableObject clone = new WrappedWatchableObject(DefaultInstances.DEFAULT.getDefault(WatchableObject.class));
+		@SuppressWarnings("unchecked")
+		WrappedWatchableObject clone = new WrappedWatchableObject(DefaultInstances.DEFAULT.getDefault(MinecraftReflection.getWatchableObjectClass()));
 		
 		clone.setDirtyState(getDirtyState());
 		clone.setIndex(getIndex());
@@ -279,11 +300,11 @@ public class WrappedWatchableObject {
 		Object value = getValue();
 		
 		// Only a limited set of references types are supported
-		if (value instanceof net.minecraft.server.ChunkPosition) {
+		if (MinecraftReflection.isChunkPosition(value)) {
 			EquivalentConverter<ChunkPosition> converter = ChunkPosition.getConverter();
-			return converter.getGeneric(net.minecraft.server.ChunkPosition.class, converter.getSpecific(value));
-		} else if (value instanceof ItemStack) {
-			return ((ItemStack) value).cloneItemStack();
+			return converter.getGeneric(MinecraftReflection.getChunkPositionClass(), converter.getSpecific(value));
+		} else if (MinecraftReflection.isItemStack(value)) {
+			return MinecraftReflection.getMinecraftItemStack(MinecraftReflection.getBukkitItemStack(value).clone());
 		} else {
 			// A string or primitive wrapper, which are all immutable.
 			return value;

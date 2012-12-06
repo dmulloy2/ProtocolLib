@@ -27,14 +27,15 @@ import java.net.SocketAddress;
 
 import net.sf.cglib.proxy.Factory;
 
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitWorker;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
@@ -121,8 +122,8 @@ abstract class PlayerInjector {
 	 * @return Notch player object.
 	 */
 	protected Object getEntityPlayer(Player player) {
-		CraftPlayer craft = (CraftPlayer) player;
-		return craft.getHandle();
+		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
+		return unwrapper.unwrapItem(player);
 	}
 	
 	/**
@@ -136,7 +137,7 @@ abstract class PlayerInjector {
 		//Dispatch to the correct injection method
 		if (injectionSource instanceof Player)
 			initializePlayer(injectionSource);
-		else if (injectionSource instanceof NetLoginHandler)
+		else if (MinecraftReflection.isLoginHandler(injectionSource))
 			initializeLogin(injectionSource);
 		else 
 			throw new IllegalArgumentException("Cannot initialize a player hook using a " + injectionSource.getClass().getName());
@@ -148,7 +149,7 @@ abstract class PlayerInjector {
 	 */
 	public void initializePlayer(Object player) {
 		
-		EntityPlayer notchEntity = getEntityPlayer((Player) player);
+		Object notchEntity = getEntityPlayer((Player) player);
 		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception
@@ -202,7 +203,7 @@ abstract class PlayerInjector {
 		// And the queue method
 		if (queueMethod == null)
 			queueMethod = FuzzyReflection.fromClass(reference.getType()).
-							getMethodByParameters("queue", Packet.class );
+							getMethodByParameters("queue", MinecraftReflection.getPacketClass());
 		
 		// And the data input stream that we'll use to identify a player
 		if (inputField == null)
@@ -321,7 +322,7 @@ abstract class PlayerInjector {
 		}
 	}
 	
-	private Field getProxyField(EntityPlayer notchEntity, Field serverField) {
+	private Field getProxyField(Object notchEntity, Field serverField) {
 
 		try {
 			Object handler = FieldUtils.readField(serverHandlerField, notchEntity, true);
@@ -396,10 +397,10 @@ abstract class PlayerInjector {
 	 * @return The stored entity player.
 	 * @throws IllegalAccessException If the reflection failed.
 	 */
-	private EntityPlayer getEntityPlayer(Object netHandler) throws IllegalAccessException {
+	private Object getEntityPlayer(Object netHandler) throws IllegalAccessException {
 		if (entityPlayerField == null)
 			entityPlayerField = FuzzyReflection.fromObject(netHandler).getFieldByType(".*EntityPlayer");
-		return (EntityPlayer) FieldUtils.readField(entityPlayerField, netHandler);
+		return FieldUtils.readField(entityPlayerField, netHandler);
 	}
 	
 	/**
@@ -408,15 +409,15 @@ abstract class PlayerInjector {
 	 * @throws IllegalAccessException If the reflection machinery failed.
 	 * @throws InvocationTargetException If the underlying method caused an error.
 	 */
-	public void processPacket(Packet packet) throws IllegalAccessException, InvocationTargetException {
+	public void processPacket(Object packet) throws IllegalAccessException, InvocationTargetException {
 		
 		Object netHandler = getNetHandler();
 		
 		// Get the process method
 		if (processMethod == null) {
 			try {
-				processMethod = FuzzyReflection.fromClass(Packet.class).
-						getMethodByParameters("processPacket", netHandlerField.getType());
+				processMethod = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
+								  getMethodByParameters("processPacket", netHandlerField.getType());
 			} catch (RuntimeException e) {
 				throw new IllegalArgumentException("Cannot locate process packet method: " + e.getMessage());
 			}
@@ -438,7 +439,7 @@ abstract class PlayerInjector {
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
-	public abstract void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException;
+	public abstract void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException;
 	
 	/**
 	 * Inject a hook to catch packets sent to the current player.
@@ -499,7 +500,7 @@ abstract class PlayerInjector {
 	 * @param packet - packet to sent.
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
-	public Packet handlePacketSending(Packet packet) {
+	public Object handlePacketSending(Object packet) {
 		try {
 			// Get the packet ID too
 			Integer id = invoker.getPacketID(packet);
@@ -514,7 +515,7 @@ abstract class PlayerInjector {
 			if (updateOnLogin) {
 				if (id == Packets.Server.LOGIN) {
 					try {
-						updatedPlayer = getEntityPlayer(getNetHandler()).getBukkitEntity();
+						updatedPlayer = (Player) MinecraftReflection.getBukkitEntity(getEntityPlayer(getNetHandler()));
 					} catch (IllegalAccessException e) {
 						reporter.reportDetailed(this, "Cannot update player in PlayerEvent.", e, packet);
 					}

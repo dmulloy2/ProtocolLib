@@ -29,7 +29,6 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
@@ -61,7 +60,7 @@ class ReadPacketModifier implements MethodInterceptor {
 	 * Remove any packet overrides.
 	 * @param packet - the packet to rever
 	 */
-	public void removeOverride(Packet packet) {
+	public void removeOverride(Object packet) {
 		override.remove(packet);
 	}
 	
@@ -70,7 +69,7 @@ class ReadPacketModifier implements MethodInterceptor {
 	 * @param packet - the given packet.
 	 * @return Overriden object.
 	 */
-	public Object getOverride(Packet packet) {
+	public Object getOverride(Object packet) {
 		return override.get(packet);
 	}
 
@@ -79,7 +78,7 @@ class ReadPacketModifier implements MethodInterceptor {
 	 * @param packet - the packet to check.
 	 * @return TRUE if it has been cancelled, FALSE otherwise.
 	 */
-	public boolean hasCancelled(Packet packet) {
+	public boolean hasCancelled(Object packet) {
 		return getOverride(packet) == CANCEL_MARKER;
 	}
 	
@@ -121,12 +120,12 @@ class ReadPacketModifier implements MethodInterceptor {
 				DataInputStream input = (DataInputStream) args[0];
 	
 				// Let the people know
-				PacketContainer container = new PacketContainer(packetID, (Packet) thisObj);
+				PacketContainer container = new PacketContainer(packetID, thisObj);
 				PacketEvent event = packetInjector.packetRecieved(container, input);
 				
 				// Handle override
 				if (event != null) {
-					Packet result = event.getPacket().getHandle();
+					Object result = event.getPacket().getHandle();
 					
 					if (event.isCancelled()) {
 						override.put(thisObj, CANCEL_MARKER);

@@ -40,8 +40,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.google.common.collect.Sets;
 
-import net.minecraft.server.Packet;
-
 /**
  * Injection hook that overrides the packet queue lists in NetworkHandler.
  * 
@@ -58,7 +56,7 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	// Packets to ignore
-	private Set<Packet> ignoredPackets = Sets.newSetFromMap(new ConcurrentHashMap<Packet, Boolean>());
+	private Set<Object> ignoredPackets = Sets.newSetFromMap(new ConcurrentHashMap<Object, Boolean>());
 	
 	// Overridden fields
 	private List<VolatileField> overridenLists = new ArrayList<VolatileField>();
@@ -99,7 +97,7 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 
 	@Override
-	public void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException {
+	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
 		
 		if (networkManager != null) {
 			try {
@@ -147,14 +145,14 @@ class NetworkFieldInjector extends PlayerInjector {
 				VolatileField overwriter = new VolatileField(field, networkManager, true);
 				
 				@SuppressWarnings("unchecked")
-				List<Packet> minecraftList = (List<Packet>) overwriter.getOldValue();
+				List<Object> minecraftList = (List<Object>) overwriter.getOldValue();
 				
 				synchronized(syncObject) {
 					// The list we'll be inserting
-					List<Packet> hackedList = new InjectedArrayList(classLoader, this, ignoredPackets);
+					List<Object> hackedList = new InjectedArrayList(classLoader, this, ignoredPackets);
 					
 					// Add every previously stored packet
-					for (Packet packet : minecraftList) {
+					for (Object packet : minecraftList) {
 						hackedList.add(packet);
 					}
 					
@@ -172,8 +170,8 @@ class NetworkFieldInjector extends PlayerInjector {
 	protected void cleanHook() {
 		// Clean up
 		for (VolatileField overriden : overridenLists) {
-			List<Packet> minecraftList = (List<Packet>) overriden.getOldValue();
-			List<Packet> hacketList = (List<Packet>) overriden.getValue();
+			List<Object> minecraftList = (List<Object>) overriden.getOldValue();
+			List<Object> hacketList = (List<Object>) overriden.getValue();
 			
 			if (minecraftList == hacketList) {
 				return;
@@ -183,7 +181,7 @@ class NetworkFieldInjector extends PlayerInjector {
 			synchronized(syncObject) {
 				try {
 					// Copy over current packets
-					for (Packet packet : (List<Packet>) overriden.getValue()) {
+					for (Object packet : (List<Object>) overriden.getValue()) {
 						minecraftList.add(packet);
 					}
 				} finally {

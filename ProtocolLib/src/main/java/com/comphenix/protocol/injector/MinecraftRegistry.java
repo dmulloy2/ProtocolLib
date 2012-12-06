@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Factory;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 
@@ -78,7 +78,7 @@ class MinecraftRegistry {
 	 */ 
 	private static FuzzyReflection getPacketRegistry() {
 		if (packetRegistry == null)
-			packetRegistry = FuzzyReflection.fromClass(Packet.class, true);
+			packetRegistry = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true);
 		return packetRegistry;
 	}
 	

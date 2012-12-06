@@ -19,7 +19,6 @@ package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.InvocationTargetException;
 
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
@@ -67,7 +66,7 @@ class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException {
+	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
 		Object networkDelegate = filtered ? networkManagerRef.getValue() : networkManagerRef.getOldValue();
 		
 		if (networkDelegate != null) {
@@ -114,7 +113,7 @@ class NetworkObjectInjector extends PlayerInjector {
 			Callback queueFilter = new MethodInterceptor() {
 				@Override
 				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-					Packet packet = (Packet) args[0];
+					Object packet = args[0];
 					
 					if (packet != null) {
 						packet = handlePacketSending(packet);

@@ -20,10 +20,8 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
-
-import net.minecraft.server.DataWatcher;
-import net.minecraft.server.WatchableObject;
 
 /**
  * Wraps a DataWatcher that is used to transmit arbitrary key-value pairs with a given entity.
@@ -55,7 +53,7 @@ public class WrappedDataWatcher {
 	private static boolean hasInitialized;
 	
 	// The underlying DataWatcher we're modifying
-	protected DataWatcher handle;
+	protected Object handle;
 	
 	// Lock
 	private ReadWriteLock readWriteLock;
@@ -69,7 +67,13 @@ public class WrappedDataWatcher {
 	 */
 	public WrappedDataWatcher() {
 		// Just create a new watcher
-		this(new DataWatcher());
+		try {
+			this.handle = MinecraftReflection.getDataWatcherClass().newInstance();
+			initialize();
+			
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to construct DataWatcher.", e);
+		}
 	}
 	
 	/**
@@ -77,14 +81,14 @@ public class WrappedDataWatcher {
 	 * @param handle - the data watcher to wrap.
 	 * @throws FieldAccessException If we're unable to wrap a DataWatcher.
 	 */
-	public WrappedDataWatcher(DataWatcher handle) {
-		this.handle = handle;
+	public WrappedDataWatcher(Object handle) {
+		if (handle == null)
+			throw new IllegalArgumentException("Handle cannot be NULL.");
+		if (!MinecraftReflection.isDataWatcher(handle))
+			throw new IllegalArgumentException("The value " + handle + " is not a DataWatcher.");
 		
-		try {
-			initialize();
-		} catch (FieldAccessException e) {
-			throw new RuntimeException("Cannot initialize wrapper.", e);
-		}
+		this.handle = handle;
+		initialize();
 	}
 	
 	/**
@@ -105,7 +109,7 @@ public class WrappedDataWatcher {
 	 * Retrieves the underlying data watcher.
 	 * @return The underlying data watcher.
 	 */
-	public DataWatcher getHandle() {
+	public Object getHandle() {
 		return handle;
 	}
 	
@@ -215,7 +219,7 @@ public class WrappedDataWatcher {
      */
     public Object getObject(int index) throws FieldAccessException {
     	// The get method will take care of concurrency
-    	WatchableObject watchable = getWatchedObject(index);
+    	Object watchable = getWatchedObject(index);
 
     	if (watchable != null) {
     		return new WrappedWatchableObject(watchable).getValue();
@@ -238,7 +242,7 @@ public class WrappedDataWatcher {
     		// Add each watchable object to the list
     		for (Object watchable : getWatchableObjectMap().values()) {
     			if (watchable != null) {
-    				result.add(new WrappedWatchableObject((WatchableObject) watchable));
+    				result.add(new WrappedWatchableObject(watchable));
     			} else {
     				result.add(null);
     			}
@@ -305,7 +309,7 @@ public class WrappedDataWatcher {
     	writeLock.lock();
     	
     	try {
-    		WatchableObject watchable = getWatchedObject(index);
+    		Object watchable = getWatchedObject(index);
 	    	
 	    	if (watchable != null) {
 	    		new WrappedWatchableObject(watchable).setValue(newValue, update);
@@ -325,18 +329,18 @@ public class WrappedDataWatcher {
     	}
     }
     
-    private WatchableObject getWatchedObject(int index) throws FieldAccessException {
+    private Object getWatchedObject(int index) throws FieldAccessException {
     	// We use the get-method first and foremost
     	if (getKeyValueMethod != null) {
 			try {
-				return (WatchableObject) getKeyValueMethod.invoke(handle, index);
+				return getKeyValueMethod.invoke(handle, index);
 			} catch (Exception e) {
 				throw new FieldAccessException("Cannot invoke get key method for index " + index, e);
 			}
     	} else {
     		try {
     			getReadWriteLock().readLock().lock();
-    			return (WatchableObject) getWatchableObjectMap().get(index);
+    			return getWatchableObjectMap().get(index);
     			
     		} finally {
     			getReadWriteLock().readLock().unlock();
@@ -388,8 +392,8 @@ public class WrappedDataWatcher {
 	 */
 	public static WrappedDataWatcher getEntityWatcher(Entity entity) throws FieldAccessException {
 		if (entityDataField == null)
-			entityDataField = FuzzyReflection.fromClass(net.minecraft.server.Entity.class, true).
-				getFieldByType("datawatcher", DataWatcher.class);
+			entityDataField = FuzzyReflection.fromClass(MinecraftReflection.getEntityClass(), true).
+				getFieldByType("datawatcher", MinecraftReflection.getDataWatcherClass());
 
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		
@@ -397,7 +401,7 @@ public class WrappedDataWatcher {
 			Object nsmWatcher = FieldUtils.readField(entityDataField, unwrapper.unwrapItem(entity), true);
 			
 			if (nsmWatcher != null) 
-				return new WrappedDataWatcher((DataWatcher) nsmWatcher);
+				return new WrappedDataWatcher(nsmWatcher);
 			else 
 				return null;
 			
@@ -417,7 +421,7 @@ public class WrappedDataWatcher {
 		else
 			return;
 		
-		FuzzyReflection fuzzy = FuzzyReflection.fromClass(DataWatcher.class, true);
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getDataWatcherClass(), true);
 		
 		for (Field lookup : fuzzy.getFieldListByType(Map.class)) {
 			if (Modifier.isStatic(lookup.getModifiers())) {

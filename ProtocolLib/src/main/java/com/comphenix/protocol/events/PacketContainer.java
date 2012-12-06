@@ -40,13 +40,12 @@ import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.google.common.collect.Maps;
-
-import net.minecraft.server.Packet;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -61,7 +60,7 @@ public class PacketContainer implements Serializable {
 	private static final long serialVersionUID = 2074805748222377230L;
 	
 	protected int id;
-	protected transient Packet handle;
+	protected transient Object handle;
 
 	// Current structure modifier
 	protected transient StructureModifier<Object> structureModifier;
@@ -83,7 +82,7 @@ public class PacketContainer implements Serializable {
 	 * @param id - ID of the given packet.
 	 * @param handle - contained packet.
 	 */
-	public PacketContainer(int id, Packet handle) {
+	public PacketContainer(int id, Object handle) {
 		this(id, handle, StructureCache.getStructure(id).withTarget(handle));
 	}
 	
@@ -93,7 +92,7 @@ public class PacketContainer implements Serializable {
 	 * @param handle - contained packet.
 	 * @param structure - structure modifier.
 	 */
-	public PacketContainer(int id, Packet handle, StructureModifier<Object> structure) {
+	public PacketContainer(int id, Object handle, StructureModifier<Object> structure) {
 		if (handle == null)
 			throw new IllegalArgumentException("handle cannot be null.");
 		
@@ -112,7 +111,7 @@ public class PacketContainer implements Serializable {
 	 * Retrieves the underlying Minecraft packet. 
 	 * @return Underlying Minecraft packet.
 	 */
-	public Packet getHandle() {
+	public Object getHandle() {
 		return handle;
 	}
 	
@@ -222,7 +221,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<ItemStack> getItemModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack>withType(
-				net.minecraft.server.ItemStack.class, BukkitConverters.getItemStackConverter());
+				MinecraftReflection.getItemStackClass(), BukkitConverters.getItemStackConverter());
 	}
 	
 	/**
@@ -238,23 +237,23 @@ public class PacketContainer implements Serializable {
 		
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack[]>withType(
-				net.minecraft.server.ItemStack[].class, 
+				MinecraftReflection.getItemStackArrayClass(), 
 				BukkitConverters.getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
 					
 			public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
-				net.minecraft.server.ItemStack[] result = new net.minecraft.server.ItemStack[specific.length];
+				Object[] result = new Object[specific.length];
 				
 				// Unwrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = (net.minecraft.server.ItemStack) stackConverter.getGeneric(
-							net.minecraft.server.ItemStack.class, specific[i]); 
+					result[i] = stackConverter.getGeneric(
+							MinecraftReflection.getItemStackClass(), specific[i]); 
 				}
 				return result;
 			}
 			
 			@Override
 			public ItemStack[] getSpecific(Object generic) {
-				net.minecraft.server.ItemStack[] input = (net.minecraft.server.ItemStack[]) generic;
+				Object[] input = (Object[]) generic;
 				ItemStack[] result = new ItemStack[input.length];
 				
 				// Add the wrapper
@@ -281,7 +280,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WorldType> getWorldTypeModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WorldType>withType(
-				net.minecraft.server.WorldType.class, 
+				MinecraftReflection.getWorldTypeClass(), 
 				BukkitConverters.getWorldTypeConverter());
 	}
 	
@@ -292,7 +291,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WrappedDataWatcher> getDataWatcherModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedDataWatcher>withType(
-				net.minecraft.server.DataWatcher.class, 
+				MinecraftReflection.getDataWatcherClass(), 
 				BukkitConverters.getDataWatcherConverter());
 	}
 	
@@ -319,7 +318,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<ChunkPosition> getPositionModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.withType(
-				net.minecraft.server.ChunkPosition.class,
+				MinecraftReflection.getChunkPositionClass(),
 				ChunkPosition.getConverter());
 	}
 	
@@ -335,7 +334,7 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					net.minecraft.server.ChunkPosition.class, 
+					MinecraftReflection.getChunkPositionClass(), 
 					ChunkPosition.getConverter())
 		);
 	}
@@ -352,7 +351,7 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					net.minecraft.server.WatchableObject.class, 
+					MinecraftReflection.getWatchableObjectClass(), 
 					BukkitConverters.getWatchableObjectConverter())
 		);
 	}

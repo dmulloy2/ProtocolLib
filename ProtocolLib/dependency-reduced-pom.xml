@@ -139,7 +139,7 @@
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>craftbukkit</artifactId>
-      <version>1.3.2-R1.0</version>
+      <version>1.4.5-R0.3-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
