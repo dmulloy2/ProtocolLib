@@ -28,7 +28,6 @@ import java.net.SocketAddress;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitWorker;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
