@@ -6,12 +6,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.annotation.Nullable;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
@@ -21,14 +24,16 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
+import com.google.common.collect.Iterators;
 
 /**
  * Wraps a DataWatcher that is used to transmit arbitrary key-value pairs with a given entity.
  * 
  * @author Kristian
  */
-public class WrappedDataWatcher {
+public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 
 	/**
 	 * Used to assign integer IDs to given types.
@@ -92,16 +97,31 @@ public class WrappedDataWatcher {
 	}
 	
 	/**
-	 * Create a new data watcher from a list of watchable objects.
+	 * Create a new data watcher for a list of watchable objects.
+	 * <p>
+	 * Note that the watchable objects are not cloned, and will be modified in place. Use "deepClone" if 
+	 * that is not desirable.
+	 * <p>
+	 * The {@link #removeObject(int)} method will not modify the given list, however.
+	 * 
 	 * @param watchableObjects - list of watchable objects that will be copied.
 	 * @throws FieldAccessException Unable to read watchable objects.
 	 */
 	public WrappedDataWatcher(List<WrappedWatchableObject> watchableObjects) throws FieldAccessException {
 		this();
+
+		Lock writeLock = getReadWriteLock().writeLock();
+		Map<Integer, Object> map = getWatchableObjectMap();
 		
-		// Fill the underlying map
-		for (WrappedWatchableObject watched : watchableObjects) {
-			setObject(watched.getIndex(), watched.getValue());
+		writeLock.lock();
+		
+		try {
+			// Add the watchable objects by reference
+			for (WrappedWatchableObject watched : watchableObjects) {
+				map.put(watched.getIndex(), watched.handle);
+			}			
+		} finally {
+			writeLock.unlock();
 		}
 	}
 	
@@ -234,9 +254,10 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException If reflection failed.
      */
 	public List<WrappedWatchableObject> getWatchableObjects() throws FieldAccessException {
+		Lock readLock = getReadWriteLock().readLock();
+		readLock.lock();
+		
     	try {
-    		getReadWriteLock().readLock().lock();
-    		
     		List<WrappedWatchableObject> result = new ArrayList<WrappedWatchableObject>();
     		
     		// Add each watchable object to the list
@@ -250,7 +271,7 @@ public class WrappedDataWatcher {
     		return result;
     		
     	} finally {
-    		getReadWriteLock().readLock().unlock();
+    		readLock.unlock();
     	}
     }
 
@@ -271,6 +292,20 @@ public class WrappedDataWatcher {
     }
     
     /**
+     * Clone the content of the current DataWatcher.
+     * @return A cloned data watcher.
+     */
+    public WrappedDataWatcher deepClone() {
+    	WrappedDataWatcher clone = new WrappedDataWatcher();
+    	
+    	// Make a new copy instead
+    	for (WrappedWatchableObject watchable : this) {
+    		clone.setObject(watchable.getIndex(), watchable.getValue());
+    	}
+    	return clone;
+    }
+    
+    /**
      * Retrieve the number of watched objects.
      * @return Watched object count.
      * @throws FieldAccessException If we're unable to read the underlying object.
@@ -283,6 +318,23 @@ public class WrappedDataWatcher {
     		return getWatchableObjectMap().size();
     	} finally {
     		readLock.unlock();
+    	}
+    }
+    
+    /**
+     * Remove a given object from the underlying DataWatcher.
+     * @param index - index of the object to remove.
+     * @return The watchable object that was removed, or NULL If none could be found.
+     */
+    public WrappedWatchableObject removeObject(int index) {
+    	Lock writeLock = getReadWriteLock().writeLock();
+    	writeLock.lock();
+    	
+    	try {
+    		Object removed = getWatchableObjectMap().remove(index);
+    		return removed != null ? new WrappedWatchableObject(removed) : null;
+    	} finally {
+    		writeLock.unlock();
     	}
     }
     
@@ -479,5 +531,21 @@ public class WrappedDataWatcher {
 		} catch (IllegalArgumentException e) {
 			// Use fallback method
 		}
+	}
+
+	@Override
+	public Iterator<WrappedWatchableObject> iterator() {
+		// We'll wrap the iterator instead of creating a new list every time 
+		return Iterators.transform(getWatchableObjectMap().values().iterator(), 
+				new Function<Object, WrappedWatchableObject>() {
+			
+			@Override
+			public WrappedWatchableObject apply(@Nullable Object item) {
+				if (item != null)
+					return new WrappedWatchableObject(item);
+				else
+					return null;
+			}
+		});
 	}
 }

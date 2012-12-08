@@ -9,6 +9,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.base.Objects;
 
 /**
  * Represents a watchable object.
@@ -25,6 +26,9 @@ public class WrappedWatchableObject {
 	
 	// Used to create new watchable objects
 	private static Constructor<?> watchableConstructor;
+	
+	// The watchable object class type
+	private static Class<?> watchableObjectClass;
 	
 	protected Object handle;
 	protected StructureModifier<Object> modifier;
@@ -79,6 +83,12 @@ public class WrappedWatchableObject {
 		initialize();
 		this.handle = handle;
 		this.modifier = baseModifier.withTarget(handle);
+		
+		// Make sure the type is correct
+		if (!watchableObjectClass.isAssignableFrom(handle.getClass())) {
+			throw new ClassCastException("Cannot cast the class " + handle.getClass().getName() +
+										 " to " + watchableObjectClass.getName());
+		}
 	}
 	
 	/**
@@ -95,7 +105,8 @@ public class WrappedWatchableObject {
 	private static void initialize() {
 		if (!hasInitialized) {
 			hasInitialized = true;
-			baseModifier = new StructureModifier<Object>(MinecraftReflection.getWatchableObjectClass(), null, false);
+			watchableObjectClass = MinecraftReflection.getWatchableObjectClass();
+			baseModifier = new StructureModifier<Object>(watchableObjectClass, null, false);
 		}
 	}
 	
@@ -309,5 +320,35 @@ public class WrappedWatchableObject {
 			// A string or primitive wrapper, which are all immutable.
 			return value;
 		}
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		// Quick checks
+		if (obj == this)
+			return true;
+		if (obj == null)
+			return false;
+		
+		if (obj instanceof WrappedWatchableObject) {
+			WrappedWatchableObject other = (WrappedWatchableObject) obj;
+			
+			return Objects.equal(getIndex(), other.getIndex()) &&
+				   Objects.equal(getTypeID(), other.getTypeID()) &&
+				   Objects.equal(getValue(), other.getValue());
+		}
+		
+		// No, this is not equivalent
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(getIndex(), getTypeID(), getValue());
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("[%s: %s (%s)]", getIndex(), getValue(), getType().getSimpleName());
 	}
 }

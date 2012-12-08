@@ -79,6 +79,16 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Used during debugging and testing.
+	 * @param minecraftPackage - the current Minecraft package.
+	 * @param craftBukkitPackage - the current CraftBukkit package.
+	 */
+	public static void setMinecraftPackage(String minecraftPackage, String craftBukkitPackage) {
+		MINECRAFT_FULL_PACKAGE = minecraftPackage;
+		CRAFTBUKKIT_PACKAGE = craftBukkitPackage;
+	}
+	
+	/**
 	 * Retrieve the name of the root CraftBukkit package.
 	 * @return Full canonical name of the root CraftBukkit package.
 	 */
