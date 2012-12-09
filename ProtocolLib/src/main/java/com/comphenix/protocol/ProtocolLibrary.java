@@ -235,9 +235,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			MinecraftVersion minimum = new MinecraftVersion(MINIMUM_MINECRAFT_VERSION);
 			MinecraftVersion maximum = new MinecraftVersion(MAXIMUM_MINECRAFT_VERSION);
 			MinecraftVersion current = new MinecraftVersion(getServer());
-			
+
 			// Skip certain versions
-			if (!config.getIgnoreVersionCheck().equals(current.toString())) {
+			if (!config.getIgnoreVersionCheck().equals(current.getVersion())) {
 				// We'll just warn the user for now
 				if (current.compareTo(minimum) < 0)
 					logger.warning("Version " + current + " is lower than the minimum " + minimum);

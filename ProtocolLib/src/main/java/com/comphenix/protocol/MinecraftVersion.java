@@ -93,6 +93,14 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 		return build;
 	}
 	
+	/**
+	 * Retrieve the version String (major.minor.build) only.
+	 * @return A normal version string.
+	 */
+	public String getVersion() {
+		return String.format("%s.%s.%s", major, minor, build);
+	}
+	
 	@Override
 	public int compareTo(MinecraftVersion o) {
 		if (o == null)
@@ -131,7 +139,7 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	@Override
 	public String toString() {
 		// Convert to a String that we can parse back again
-		return String.format("(MC: %s.%s.%s)", major, minor, build);
+		return String.format("(MC: %s)", getVersion());
 	}
 	
 	/**
