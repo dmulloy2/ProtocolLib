@@ -26,8 +26,8 @@ public class MinecraftReflection {
 	/**
 	 * The package name of all the classes that belongs to the native code in Minecraft.
 	 */
-	private static String MINECRAFT_SERVER_PACKAGE = "net.minecraft.server";
-	
+	private static String MINECRAFT_PREFIX_PACKAGE = "net.minecraft.server";
+
 	private static String MINECRAFT_FULL_PACKAGE = null;
 	private static String CRAFTBUKKIT_PACKAGE = null;
 	
@@ -74,7 +74,7 @@ public class MinecraftReflection {
 			}
 			
 		} else {
-			throw new IllegalStateException("Cannot find Bukkit. Is it running?");
+			throw new IllegalStateException("Could not find Bukkit. Is it running?");
 		}
 	}
 	
@@ -117,7 +117,7 @@ public class MinecraftReflection {
 			throw new IllegalArgumentException("Cannot determine the type of a null object.");
 		
 		// Doesn't matter if we don't check for the version here
-		return obj.getClass().getName().startsWith(MINECRAFT_SERVER_PACKAGE);
+		return obj.getClass().getName().startsWith(MINECRAFT_PREFIX_PACKAGE);
 	}
 
 	/**
@@ -131,7 +131,7 @@ public class MinecraftReflection {
 			throw new IllegalArgumentException("Cannot determine the type of a null object.");
 		
 		String javaName = obj.getClass().getName();
-		return javaName.startsWith(MINECRAFT_SERVER_PACKAGE) && javaName.endsWith(className);
+		return javaName.startsWith(MINECRAFT_PREFIX_PACKAGE) && javaName.endsWith(className);
  	}
 		
 	/**

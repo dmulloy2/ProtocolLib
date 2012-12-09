@@ -43,6 +43,15 @@ import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
  * @author Kristian
  */
 public class ProtocolLibrary extends JavaPlugin {
+	/**
+	 * The minimum version ProtocolLib has been tested with.
+	 */
+	private static final String MINIMUM_MINECRAFT_VERSION = "1.0.0";
+	
+	/**
+	 * The maximum version ProtocolLib has been tested with,
+	 */
+	private static final String MAXIMUM_MINECRAFT_VERSION = "1.4.5";
 	
 	/**
 	 * The number of milliseconds per second.
@@ -188,13 +197,13 @@ public class ProtocolLibrary extends JavaPlugin {
 				logger.info("Structure compiler thread has been disabled.");
 			}
 			
+			// Handle unexpected Minecraft versions
+			verifyMinecraftVersion();
+			
 			// Set up command handlers
 			registerCommand(CommandProtocol.NAME, commandProtocol);
 			registerCommand(CommandPacket.NAME, commandPacket);
 	
-			// Notify server managers of incompatible plugins
-			checkForIncompatibility(manager);
-			
 			// Player login and logout events
 			protocolManager.registerEvents(manager, this);
 				
@@ -220,6 +229,26 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 
+	// Used to check Minecraft version
+	private void verifyMinecraftVersion() {
+		try {
+			MinecraftVersion minimum = new MinecraftVersion(MINIMUM_MINECRAFT_VERSION);
+			MinecraftVersion maximum = new MinecraftVersion(MAXIMUM_MINECRAFT_VERSION);
+			MinecraftVersion current = new MinecraftVersion(getServer());
+			
+			// Skip certain versions
+			if (!config.getIgnoreVersionCheck().equals(current.toString())) {
+				// We'll just warn the user for now
+				if (current.compareTo(minimum) < 0)
+					reporter.reportWarning(this, "Version " + current + " is lower than the minimum " + minimum);
+				if (current.compareTo(maximum) > 0)
+					reporter.reportWarning(this, "Version " + current + " has not yet been tested! Proceed with caution.");
+	 		}
+		} catch (Exception e) {
+			reporter.reportWarning(this, "Unable to retrieve current Minecraft version.", e);
+		}
+	}
+		
 	private void registerCommand(String name, CommandExecutor executor) {
 		try {
 			if (executor == null) 
@@ -293,18 +322,6 @@ public class ProtocolLibrary extends JavaPlugin {
 		} catch (Exception e) {
 			reporter.reportDetailed(this, "Cannot perform automatic updates.", e);
 			updateDisabled = true;
-		}
-	}
-	
-	private void checkForIncompatibility(PluginManager manager) {
-		// Plugin authors: Notify me to remove these
-		String[] incompatiblePlugins = {};
-		
-		for (String plugin : incompatiblePlugins) {
-			if (manager.getPlugin(plugin) != null) {
-				// Check for versions, ect.
-				reporter.reportWarning(this, "Detected incompatible plugin: " + plugin);
-			}
 		}
 	}
 	
