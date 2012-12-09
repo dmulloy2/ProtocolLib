@@ -48,7 +48,8 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 				element.getListener().onPacketReceiving(event);
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving()", e);
+				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
+						event.getPacket().getHandle());
 			}
 		}
 	}
@@ -69,7 +70,8 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 				element.getListener().onPacketSending(event);
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending()", e);
+				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending(PacketEvent)", e, 
+						event.getPacket().getHandle());
 			}
 		}
 	}

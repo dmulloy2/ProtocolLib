@@ -52,7 +52,7 @@ class EntityUtilities {
 	
 	private static Method hashGetMethod;
 	private static Method scanPlayersMethod;
-	
+
 	/*
 	 * While this function may look pretty bad, it's essentially just a reflection-warped 
 	 * version of the following:
@@ -246,20 +246,23 @@ class EntityUtilities {
 	public static Entity getEntityFromID(World world, int entityID) throws FieldAccessException {
 		try {
 			Object trackerEntry = getEntityTrackerEntry(world, entityID);
-			
-			if (trackerField == null)
-				trackerField = trackerEntry.getClass().getField("tracker");
-			Object tracker = FieldUtils.readField(trackerField, trackerEntry, true);
-			
+			Object tracker = null;
+
 			// Handle NULL cases
-			if (trackerEntry != null && tracker != null) {
-				return (Entity) MinecraftReflection.getBukkitEntity(tracker);
-			} else {
-				return null;
+			if (trackerEntry != null) {
+				if (trackerField == null)
+					trackerField = trackerEntry.getClass().getField("tracker");
+				tracker = FieldUtils.readField(trackerField, trackerEntry, true);
 			}
 			
+			// If the tracker is NULL, we'll just assume this entity doesn't exist
+			if (tracker != null)
+				return (Entity) MinecraftReflection.getBukkitEntity(tracker);
+			else
+				return null;
+			
 		} catch (Exception e) {
-			throw new FieldAccessException("Cannot find entity from ID.", e);
+			throw new FieldAccessException("Cannot find entity from ID " + entityID + ".", e);
 		}
 	}
 	
