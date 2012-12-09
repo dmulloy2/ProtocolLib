@@ -240,9 +240,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			if (!config.getIgnoreVersionCheck().equals(current.toString())) {
 				// We'll just warn the user for now
 				if (current.compareTo(minimum) < 0)
-					reporter.reportWarning(this, "Version " + current + " is lower than the minimum " + minimum);
+					logger.warning("Version " + current + " is lower than the minimum " + minimum);
 				if (current.compareTo(maximum) > 0)
-					reporter.reportWarning(this, "Version " + current + " has not yet been tested! Proceed with caution.");
+					logger.warning("Version " + current + " has not yet been tested! Proceed with caution.");
 	 		}
 		} catch (Exception e) {
 			reporter.reportWarning(this, "Unable to retrieve current Minecraft version.", e);
