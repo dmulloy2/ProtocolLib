@@ -10,7 +10,6 @@ import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.ChatColor;
@@ -29,6 +28,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.DiscreteDomains;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
@@ -394,7 +394,7 @@ class CommandPacket extends CommandBase {
 				// Detailed will print the packet's content too
 				if (detailed) {
 					try {
-						Packet packet = event.getPacket().getHandle();
+						Object packet = event.getPacket().getHandle();
 						Class<?> clazz = packet.getClass();
 						
 						// Get the first Minecraft super class
@@ -404,7 +404,7 @@ class CommandPacket extends CommandBase {
 						}
 						
 						logger.info(shortDescription + ":\n" +
-							PrettyPrinter.printObject(packet, clazz, Packet.class)
+							PrettyPrinter.printObject(packet, clazz, MinecraftReflection.getPacketClass())
 						);
 						
 					} catch (IllegalAccessException e) {

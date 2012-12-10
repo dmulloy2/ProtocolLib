@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 import org.bukkit.World;
 import org.bukkit.WorldType;
@@ -39,12 +40,12 @@ import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
-
-import net.minecraft.server.Packet;
+import com.google.common.collect.Maps;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -59,15 +60,15 @@ public class PacketContainer implements Serializable {
 	private static final long serialVersionUID = 2074805748222377230L;
 	
 	protected int id;
-	protected transient Packet handle;
+	protected transient Object handle;
 
 	// Current structure modifier
 	protected transient StructureModifier<Object> structureModifier;
-		
+
 	// Support for serialization
-	private static Method writeMethod;
-	private static Method readMethod;
-		
+	private static ConcurrentMap<Class<?>, Method> writeMethods = Maps.newConcurrentMap();
+	private static ConcurrentMap<Class<?>, Method> readMethods = Maps.newConcurrentMap();
+	
 	/**
 	 * Creates a packet container for a new packet.
 	 * @param id - ID of the packet to create.
@@ -81,7 +82,7 @@ public class PacketContainer implements Serializable {
 	 * @param id - ID of the given packet.
 	 * @param handle - contained packet.
 	 */
-	public PacketContainer(int id, Packet handle) {
+	public PacketContainer(int id, Object handle) {
 		this(id, handle, StructureCache.getStructure(id).withTarget(handle));
 	}
 	
@@ -91,7 +92,7 @@ public class PacketContainer implements Serializable {
 	 * @param handle - contained packet.
 	 * @param structure - structure modifier.
 	 */
-	public PacketContainer(int id, Packet handle, StructureModifier<Object> structure) {
+	public PacketContainer(int id, Object handle, StructureModifier<Object> structure) {
 		if (handle == null)
 			throw new IllegalArgumentException("handle cannot be null.");
 		
@@ -101,10 +102,16 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
+	 * For serialization.
+	 */
+	protected PacketContainer() {
+	}
+	
+	/**
 	 * Retrieves the underlying Minecraft packet. 
 	 * @return Underlying Minecraft packet.
 	 */
-	public Packet getHandle() {
+	public Object getHandle() {
 		return handle;
 	}
 	
@@ -214,7 +221,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<ItemStack> getItemModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack>withType(
-				net.minecraft.server.ItemStack.class, BukkitConverters.getItemStackConverter());
+				MinecraftReflection.getItemStackClass(), BukkitConverters.getItemStackConverter());
 	}
 	
 	/**
@@ -230,23 +237,23 @@ public class PacketContainer implements Serializable {
 		
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack[]>withType(
-				net.minecraft.server.ItemStack[].class, 
+				MinecraftReflection.getItemStackArrayClass(), 
 				BukkitConverters.getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
 					
 			public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
-				net.minecraft.server.ItemStack[] result = new net.minecraft.server.ItemStack[specific.length];
+				Object[] result = new Object[specific.length];
 				
 				// Unwrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = (net.minecraft.server.ItemStack) stackConverter.getGeneric(
-							net.minecraft.server.ItemStack.class, specific[i]); 
+					result[i] = stackConverter.getGeneric(
+							MinecraftReflection.getItemStackClass(), specific[i]); 
 				}
 				return result;
 			}
 			
 			@Override
 			public ItemStack[] getSpecific(Object generic) {
-				net.minecraft.server.ItemStack[] input = (net.minecraft.server.ItemStack[]) generic;
+				Object[] input = (Object[]) generic;
 				ItemStack[] result = new ItemStack[input.length];
 				
 				// Add the wrapper
@@ -273,7 +280,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WorldType> getWorldTypeModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WorldType>withType(
-				net.minecraft.server.WorldType.class, 
+				MinecraftReflection.getWorldTypeClass(), 
 				BukkitConverters.getWorldTypeConverter());
 	}
 	
@@ -284,7 +291,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WrappedDataWatcher> getDataWatcherModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedDataWatcher>withType(
-				net.minecraft.server.DataWatcher.class, 
+				MinecraftReflection.getDataWatcherClass(), 
 				BukkitConverters.getDataWatcherConverter());
 	}
 	
@@ -311,7 +318,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<ChunkPosition> getPositionModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.withType(
-				net.minecraft.server.ChunkPosition.class,
+				MinecraftReflection.getChunkPositionClass(),
 				ChunkPosition.getConverter());
 	}
 	
@@ -327,7 +334,7 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					net.minecraft.server.ChunkPosition.class, 
+					MinecraftReflection.getChunkPositionClass(), 
 					ChunkPosition.getConverter())
 		);
 	}
@@ -344,7 +351,7 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					net.minecraft.server.WatchableObject.class, 
+					MinecraftReflection.getWatchableObjectClass(), 
 					BukkitConverters.getWatchableObjectConverter())
 		);
 	}
@@ -399,14 +406,12 @@ public class PacketContainer implements Serializable {
 
 		// We'll take care of NULL packets as well
 		output.writeBoolean(handle != null);
-		
-		// Retrieve the write method by reflection
-		if (writeMethod == null)
-			writeMethod = FuzzyReflection.fromObject(handle).getMethodByParameters("write", DataOutputStream.class);
-		
+
 		try {
 			// Call the write-method
-			writeMethod.invoke(handle, new DataOutputStream(output));
+			getMethodLazily(writeMethods, handle.getClass(), "write", DataOutputStream.class).
+				invoke(handle, new DataOutputStream(output));
+			
 		} catch (IllegalArgumentException e) {
 			throw new IOException("Minecraft packet doesn't support DataOutputStream", e);
 		} catch (IllegalAccessException e) {
@@ -429,13 +434,11 @@ public class PacketContainer implements Serializable {
 	    	// Create a default instance of the packet
 	    	handle = StructureCache.newPacket(id);
 	    	
-			// Retrieve the read method by reflection
-			if (readMethod == null)
-				readMethod = FuzzyReflection.fromObject(handle).getMethodByParameters("read", DataInputStream.class);
-	    	
 			// Call the read method
 			try {
-				readMethod.invoke(handle, new DataInputStream(input));
+				getMethodLazily(readMethods, handle.getClass(), "read", DataInputStream.class).
+					invoke(handle, new DataInputStream(input));
+				
 			} catch (IllegalArgumentException e) {
 				throw new IOException("Minecraft packet doesn't support DataInputStream", e);
 			} catch (IllegalAccessException e) {
@@ -447,5 +450,31 @@ public class PacketContainer implements Serializable {
 			// And we're done
 			structureModifier = structureModifier.withTarget(handle);
 	    }
+	}
+	
+	/**
+	 * Retrieve the cached method concurrently.
+	 * @param lookup - a lazy lookup cache.
+	 * @param handleClass - class type of the current packet.
+	 * @param methodName - name of method to retrieve.
+	 * @param parameterClass - the one parameter type in the method.
+	 * @return Reflected method.
+	 */
+	private Method getMethodLazily(ConcurrentMap<Class<?>, Method> lookup, 
+								   Class<?> handleClass, String methodName, Class<?> parameterClass) {
+		Method method = lookup.get(handleClass);
+		
+		// Atomic operation
+		if (method == null) {
+			Method initialized = FuzzyReflection.fromClass(handleClass).getMethodByParameters(methodName, parameterClass);
+			method = lookup.putIfAbsent(handleClass, initialized);
+			
+			// Use our version if we succeeded
+			if (method == null) {
+				method = initialized;
+			}
+		}
+		
+		return method;
 	}
 }

@@ -6,12 +6,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.annotation.Nullable;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
@@ -20,17 +23,17 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
-
-import net.minecraft.server.DataWatcher;
-import net.minecraft.server.WatchableObject;
+import com.google.common.collect.Iterators;
 
 /**
  * Wraps a DataWatcher that is used to transmit arbitrary key-value pairs with a given entity.
  * 
  * @author Kristian
  */
-public class WrappedDataWatcher {
+public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 
 	/**
 	 * Used to assign integer IDs to given types.
@@ -55,7 +58,7 @@ public class WrappedDataWatcher {
 	private static boolean hasInitialized;
 	
 	// The underlying DataWatcher we're modifying
-	protected DataWatcher handle;
+	protected Object handle;
 	
 	// Lock
 	private ReadWriteLock readWriteLock;
@@ -69,7 +72,13 @@ public class WrappedDataWatcher {
 	 */
 	public WrappedDataWatcher() {
 		// Just create a new watcher
-		this(new DataWatcher());
+		try {
+			this.handle = MinecraftReflection.getDataWatcherClass().newInstance();
+			initialize();
+			
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to construct DataWatcher.", e);
+		}
 	}
 	
 	/**
@@ -77,27 +86,42 @@ public class WrappedDataWatcher {
 	 * @param handle - the data watcher to wrap.
 	 * @throws FieldAccessException If we're unable to wrap a DataWatcher.
 	 */
-	public WrappedDataWatcher(DataWatcher handle) {
-		this.handle = handle;
+	public WrappedDataWatcher(Object handle) {
+		if (handle == null)
+			throw new IllegalArgumentException("Handle cannot be NULL.");
+		if (!MinecraftReflection.isDataWatcher(handle))
+			throw new IllegalArgumentException("The value " + handle + " is not a DataWatcher.");
 		
-		try {
-			initialize();
-		} catch (FieldAccessException e) {
-			throw new RuntimeException("Cannot initialize wrapper.", e);
-		}
+		this.handle = handle;
+		initialize();
 	}
 	
 	/**
-	 * Create a new data watcher from a list of watchable objects.
+	 * Create a new data watcher for a list of watchable objects.
+	 * <p>
+	 * Note that the watchable objects are not cloned, and will be modified in place. Use "deepClone" if 
+	 * that is not desirable.
+	 * <p>
+	 * The {@link #removeObject(int)} method will not modify the given list, however.
+	 * 
 	 * @param watchableObjects - list of watchable objects that will be copied.
 	 * @throws FieldAccessException Unable to read watchable objects.
 	 */
 	public WrappedDataWatcher(List<WrappedWatchableObject> watchableObjects) throws FieldAccessException {
 		this();
+
+		Lock writeLock = getReadWriteLock().writeLock();
+		Map<Integer, Object> map = getWatchableObjectMap();
 		
-		// Fill the underlying map
-		for (WrappedWatchableObject watched : watchableObjects) {
-			setObject(watched.getIndex(), watched.getValue());
+		writeLock.lock();
+		
+		try {
+			// Add the watchable objects by reference
+			for (WrappedWatchableObject watched : watchableObjects) {
+				map.put(watched.getIndex(), watched.handle);
+			}			
+		} finally {
+			writeLock.unlock();
 		}
 	}
 	
@@ -105,7 +129,7 @@ public class WrappedDataWatcher {
 	 * Retrieves the underlying data watcher.
 	 * @return The underlying data watcher.
 	 */
-	public DataWatcher getHandle() {
+	public Object getHandle() {
 		return handle;
 	}
 	
@@ -215,7 +239,7 @@ public class WrappedDataWatcher {
      */
     public Object getObject(int index) throws FieldAccessException {
     	// The get method will take care of concurrency
-    	WatchableObject watchable = getWatchedObject(index);
+    	Object watchable = getWatchedObject(index);
 
     	if (watchable != null) {
     		return new WrappedWatchableObject(watchable).getValue();
@@ -230,15 +254,16 @@ public class WrappedDataWatcher {
      * @throws FieldAccessException If reflection failed.
      */
 	public List<WrappedWatchableObject> getWatchableObjects() throws FieldAccessException {
+		Lock readLock = getReadWriteLock().readLock();
+		readLock.lock();
+		
     	try {
-    		getReadWriteLock().readLock().lock();
-    		
     		List<WrappedWatchableObject> result = new ArrayList<WrappedWatchableObject>();
     		
     		// Add each watchable object to the list
     		for (Object watchable : getWatchableObjectMap().values()) {
     			if (watchable != null) {
-    				result.add(new WrappedWatchableObject((WatchableObject) watchable));
+    				result.add(new WrappedWatchableObject(watchable));
     			} else {
     				result.add(null);
     			}
@@ -246,7 +271,7 @@ public class WrappedDataWatcher {
     		return result;
     		
     	} finally {
-    		getReadWriteLock().readLock().unlock();
+    		readLock.unlock();
     	}
     }
 
@@ -267,6 +292,20 @@ public class WrappedDataWatcher {
     }
     
     /**
+     * Clone the content of the current DataWatcher.
+     * @return A cloned data watcher.
+     */
+    public WrappedDataWatcher deepClone() {
+    	WrappedDataWatcher clone = new WrappedDataWatcher();
+    	
+    	// Make a new copy instead
+    	for (WrappedWatchableObject watchable : this) {
+    		clone.setObject(watchable.getIndex(), watchable.getClonedValue());
+    	}
+    	return clone;
+    }
+    
+    /**
      * Retrieve the number of watched objects.
      * @return Watched object count.
      * @throws FieldAccessException If we're unable to read the underlying object.
@@ -279,6 +318,23 @@ public class WrappedDataWatcher {
     		return getWatchableObjectMap().size();
     	} finally {
     		readLock.unlock();
+    	}
+    }
+    
+    /**
+     * Remove a given object from the underlying DataWatcher.
+     * @param index - index of the object to remove.
+     * @return The watchable object that was removed, or NULL If none could be found.
+     */
+    public WrappedWatchableObject removeObject(int index) {
+    	Lock writeLock = getReadWriteLock().writeLock();
+    	writeLock.lock();
+    	
+    	try {
+    		Object removed = getWatchableObjectMap().remove(index);
+    		return removed != null ? new WrappedWatchableObject(removed) : null;
+    	} finally {
+    		writeLock.unlock();
     	}
     }
     
@@ -305,7 +361,7 @@ public class WrappedDataWatcher {
     	writeLock.lock();
     	
     	try {
-    		WatchableObject watchable = getWatchedObject(index);
+    		Object watchable = getWatchedObject(index);
 	    	
 	    	if (watchable != null) {
 	    		new WrappedWatchableObject(watchable).setValue(newValue, update);
@@ -325,18 +381,18 @@ public class WrappedDataWatcher {
     	}
     }
     
-    private WatchableObject getWatchedObject(int index) throws FieldAccessException {
+    private Object getWatchedObject(int index) throws FieldAccessException {
     	// We use the get-method first and foremost
     	if (getKeyValueMethod != null) {
 			try {
-				return (WatchableObject) getKeyValueMethod.invoke(handle, index);
+				return getKeyValueMethod.invoke(handle, index);
 			} catch (Exception e) {
 				throw new FieldAccessException("Cannot invoke get key method for index " + index, e);
 			}
     	} else {
     		try {
     			getReadWriteLock().readLock().lock();
-    			return (WatchableObject) getWatchableObjectMap().get(index);
+    			return getWatchableObjectMap().get(index);
     			
     		} finally {
     			getReadWriteLock().readLock().unlock();
@@ -388,8 +444,8 @@ public class WrappedDataWatcher {
 	 */
 	public static WrappedDataWatcher getEntityWatcher(Entity entity) throws FieldAccessException {
 		if (entityDataField == null)
-			entityDataField = FuzzyReflection.fromClass(net.minecraft.server.Entity.class, true).
-				getFieldByType("datawatcher", DataWatcher.class);
+			entityDataField = FuzzyReflection.fromClass(MinecraftReflection.getEntityClass(), true).
+				getFieldByType("datawatcher", MinecraftReflection.getDataWatcherClass());
 
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		
@@ -397,7 +453,7 @@ public class WrappedDataWatcher {
 			Object nsmWatcher = FieldUtils.readField(entityDataField, unwrapper.unwrapItem(entity), true);
 			
 			if (nsmWatcher != null) 
-				return new WrappedDataWatcher((DataWatcher) nsmWatcher);
+				return new WrappedDataWatcher(nsmWatcher);
 			else 
 				return null;
 			
@@ -417,7 +473,7 @@ public class WrappedDataWatcher {
 		else
 			return;
 		
-		FuzzyReflection fuzzy = FuzzyReflection.fromClass(DataWatcher.class, true);
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getDataWatcherClass(), true);
 		
 		for (Field lookup : fuzzy.getFieldListByType(Map.class)) {
 			if (Modifier.isStatic(lookup.getModifiers())) {
@@ -475,5 +531,21 @@ public class WrappedDataWatcher {
 		} catch (IllegalArgumentException e) {
 			// Use fallback method
 		}
+	}
+
+	@Override
+	public Iterator<WrappedWatchableObject> iterator() {
+		// We'll wrap the iterator instead of creating a new list every time 
+		return Iterators.transform(getWatchableObjectMap().values().iterator(), 
+				new Function<Object, WrappedWatchableObject>() {
+			
+			@Override
+			public WrappedWatchableObject apply(@Nullable Object item) {
+				if (item != null)
+					return new WrappedWatchableObject(item);
+				else
+					return null;
+			}
+		});
 	}
 }

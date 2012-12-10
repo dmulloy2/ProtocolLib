@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.injector;
 
-import net.minecraft.server.Packet;
-
 import com.comphenix.protocol.events.PacketEvent;
 
 /**
@@ -45,7 +43,7 @@ public interface ListenerInvoker {
 	 * @param packet - the packet.
 	 * @return The packet ID.
 	 */
-	public abstract int getPacketID(Packet packet);
+	public abstract int getPacketID(Object packet);
 
 	/**
 	 * Associate a given class with the given packet ID. Internal method.

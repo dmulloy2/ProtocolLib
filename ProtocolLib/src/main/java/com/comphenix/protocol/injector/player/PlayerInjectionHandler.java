@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import net.minecraft.server.Packet;
-
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -501,7 +499,7 @@ public class PlayerInjectionHandler {
 	 * @throws IllegalAccessException If the reflection machinery failed.
 	 * @throws InvocationTargetException If the underlying method caused an error.
 	 */
-	public void processPacket(Player player, Packet mcPacket) throws IllegalAccessException, InvocationTargetException {
+	public void processPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
 		
 		PlayerInjector injector = getInjector(player);
 		

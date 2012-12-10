@@ -25,13 +25,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.minecraft.server.Packet;
-
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.primitives.Longs;
 
 /**
@@ -403,10 +402,10 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 		
 		if (isMinecraftAsync == null && !alwaysSync) {
 			try {
-				isMinecraftAsync = FuzzyReflection.fromClass(Packet.class).getMethodByName("a_.*");
+				isMinecraftAsync = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethodByName("a_.*");
 			} catch (RuntimeException e) {
 				// This will occur in 1.2.5 (or possibly in later versions)
-				List<Method> methods = FuzzyReflection.fromClass(Packet.class).
+				List<Method> methods = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
 										getMethodListByParameters(boolean.class, new Class[] {});
 				
 				// Try to look for boolean methods

@@ -28,17 +28,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.EntityTrackerEntry;
-
 import org.bukkit.World;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
 /**
@@ -51,10 +48,11 @@ class EntityUtilities {
 	private static Field entityTrackerField;
 	private static Field trackedEntitiesField;
 	private static Field trackedPlayersField;
+	private static Field trackerField;
 	
 	private static Method hashGetMethod;
 	private static Method scanPlayersMethod;
-	
+
 	/*
 	 * While this function may look pretty bad, it's essentially just a reflection-warped 
 	 * version of the following:
@@ -142,9 +140,8 @@ class EntityUtilities {
 			
 			// Wrap every player - we also ensure that the underlying tracker list is immutable
 			for (Object tracker : trackedPlayers) {
-				if (tracker instanceof EntityPlayer) {
-					EntityPlayer nmsPlayer = (EntityPlayer) tracker;
-					result.add(nmsPlayer.getBukkitEntity());
+				if (MinecraftReflection.isMinecraftPlayer(tracker)) {
+					result.add((Player) MinecraftReflection.getBukkitEntity(tracker));
 				}
 			}
 			return result;
@@ -164,7 +161,8 @@ class EntityUtilities {
 	 * @throws FieldAccessException 
 	 */
 	private static Object getEntityTrackerEntry(World world, int entityID) throws FieldAccessException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
-		Object worldServer = ((CraftWorld) world).getHandle();
+		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
+		Object worldServer = unwrapper.unwrapItem(world);
 
 		// We have to rely on the class naming here.
 		if (entityTrackerField == null)
@@ -193,7 +191,7 @@ class EntityUtilities {
 			
 			// The Minecraft field that's NOT filled in by the constructor
 			trackedEntitiesField = FuzzyReflection.fromObject(tracker, true).
-						getFieldByType(FuzzyReflection.MINECRAFT_OBJECT, ignoredTypes);
+						getFieldByType(MinecraftReflection.MINECRAFT_OBJECT, ignoredTypes);
 		}
 		
 		// Read the entity hashmap
@@ -247,17 +245,24 @@ class EntityUtilities {
 	 */
 	public static Entity getEntityFromID(World world, int entityID) throws FieldAccessException {
 		try {
-			EntityTrackerEntry trackerEntry = (EntityTrackerEntry) getEntityTrackerEntry(world, entityID);
-			
+			Object trackerEntry = getEntityTrackerEntry(world, entityID);
+			Object tracker = null;
+
 			// Handle NULL cases
-			if (trackerEntry != null && trackerEntry.tracker != null) {
-				return trackerEntry.tracker.getBukkitEntity();
-			} else {
-				return null;
+			if (trackerEntry != null) {
+				if (trackerField == null)
+					trackerField = trackerEntry.getClass().getField("tracker");
+				tracker = FieldUtils.readField(trackerField, trackerEntry, true);
 			}
 			
+			// If the tracker is NULL, we'll just assume this entity doesn't exist
+			if (tracker != null)
+				return (Entity) MinecraftReflection.getBukkitEntity(tracker);
+			else
+				return null;
+			
 		} catch (Exception e) {
-			throw new FieldAccessException("Cannot find entity from ID.", e);
+			throw new FieldAccessException("Cannot find entity from ID " + entityID + ".", e);
 		}
 	}
 	

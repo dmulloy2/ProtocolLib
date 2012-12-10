@@ -1,8 +1,8 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
-
-import net.minecraft.server.ChunkCoordinates;
 
 /**
  * Allows access to a chunk coordinate.
@@ -16,23 +16,42 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 */
 	private static final boolean LARGER_THAN_NULL = true;
 	
-	protected ChunkCoordinates handle;
+	@SuppressWarnings("rawtypes")
+	protected Comparable handle;
 
+	// Used to access a ChunkCoordinate
+	private static StructureModifier<Integer> intModifier;
+	
 	/**
 	 * Create a new empty wrapper.
 	 */
+	@SuppressWarnings("rawtypes")
 	public WrappedChunkCoordinate() {
-		this(new ChunkCoordinates());
+		try {
+			this.handle = (Comparable) MinecraftReflection.getChunkCoordinatesClass().newInstance();
+			initializeModifier();
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot construct chunk coordinate.");
+		}
 	}
 	
 	/**
 	 * Create a wrapper for a specific chunk coordinates.
 	 * @param handle - the NMS chunk coordinates.
 	 */
-	public WrappedChunkCoordinate(ChunkCoordinates handle) {
+	@SuppressWarnings("rawtypes")
+	public WrappedChunkCoordinate(Comparable handle) {
 		if (handle == null)
 			throw new IllegalArgumentException("handle cannot be NULL");
 		this.handle = handle;
+		initializeModifier();
+	}
+
+	// Ensure that the structure modifier is initialized
+	private void initializeModifier() {
+		if (intModifier == null) {
+			intModifier = new StructureModifier<Object>(handle.getClass(), null, false).withType(int.class);
+		}
 	}
 	
 	/**
@@ -56,7 +75,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 		this(position.getX(), position.getY(), position.getZ());
 	}
 	
-	public ChunkCoordinates getHandle() {
+	public Object getHandle() {
 		return handle;
 	}
 	
@@ -65,7 +84,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @return The x coordinate.
 	 */
 	public int getX() {
-		return handle.x;
+		return intModifier.read(0);
 	}
 	
 	/**
@@ -73,7 +92,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @param newX - the new x coordinate.
 	 */
 	public void setX(int newX) {
-		handle.x = newX;
+		intModifier.write(0, newX);
 	}
 	
 	/**
@@ -81,7 +100,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @return The y coordinate.
 	 */
 	public int getY() {
-		return handle.y;
+		return intModifier.read(1);
 	}
 	
 	/**
@@ -89,7 +108,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @param newY - the new y coordinate.
 	 */
 	public void setY(int newY) {
-		handle.y = newY;
+		intModifier.write(1, newY);
 	}
 	
 	/**
@@ -97,7 +116,15 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @return The z coordinate.
 	 */
 	public int getZ() {
-		return handle.z;
+		return intModifier.read(2);
+	}
+	
+	/**
+	 * Set the z coordinate of the underlying coordiate.
+	 * @param newZ - the new z coordinate.
+	 */
+	public void setZ(int newZ) {
+		intModifier.write(2, newZ);
 	}
 	
 	/**
@@ -108,14 +135,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 		return new ChunkPosition(getX(), getY(), getZ());
 	}
 	
-	/**
-	 * Set the z coordinate of the underlying coordiate.
-	 * @param newZ - the new z coordinate.
-	 */
-	public void setZ(int newZ) {
-		handle.z = newZ;
-	}
-
+	@SuppressWarnings("unchecked")
 	@Override
 	public int compareTo(WrappedChunkCoordinate other) {
 		// We'll handle NULL objects too, unlike ChunkCoordinates

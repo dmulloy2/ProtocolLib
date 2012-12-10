@@ -47,6 +47,7 @@ class CommandProtocol extends CommandBase {
 		return true;
 	}
 	
+	@SuppressWarnings("deprecation")
 	public void checkVersion(final CommandSender sender) {
 		// Perform on an async thread
 		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {
@@ -64,6 +65,7 @@ class CommandProtocol extends CommandBase {
 		updateFinished();
 	}
 	
+	@SuppressWarnings("deprecation")
 	public void updateVersion(final CommandSender sender) {
 		// Perform on an async thread
 		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {

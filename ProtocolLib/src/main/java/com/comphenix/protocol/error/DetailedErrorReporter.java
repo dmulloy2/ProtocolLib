@@ -96,6 +96,21 @@ public class DetailedErrorReporter implements ErrorReporter {
 	}
 
 	@Override
+	public void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters) {
+		reportMinimal(sender, methodName, error);
+		
+		// Print parameters, if they are given
+		if (parameters != null && parameters.length > 0) {
+			logger.log(Level.SEVERE, "  Parameters:");
+			
+			// Print each parameter
+			for (Object parameter : parameters) {
+				logger.log(Level.SEVERE, "    " + getStringDescription(parameter));
+			}
+		}
+	}
+	
+	@Override
 	public void reportMinimal(Plugin sender, String methodName, Throwable error) {
 		logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception occured in " + methodName + " for " + 
 					PacketAdapter.getPluginName(sender), error);

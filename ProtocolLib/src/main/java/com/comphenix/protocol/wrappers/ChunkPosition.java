@@ -1,10 +1,13 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
+
 import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
 
 /**
@@ -19,6 +22,8 @@ public class ChunkPosition {
 	 */
 	public static ChunkPosition ORIGIN = new ChunkPosition(0, 0, 0);
 	
+	private static Constructor<?> chunkPositionConstructor;
+
 	// Use protected members, like Bukkit
 	protected final int x;
 	protected final int y;
@@ -128,27 +133,35 @@ public class ChunkPosition {
 	 */
 	public static EquivalentConverter<ChunkPosition> getConverter() {
 		return new EquivalentConverter<ChunkPosition>() {
+			@SuppressWarnings("unchecked")
 			@Override
 			public Object getGeneric(Class<?> genericType, ChunkPosition specific) {
-				return new net.minecraft.server.ChunkPosition(specific.x, specific.y, specific.z);
+				if (chunkPositionConstructor == null) {
+					try {
+						chunkPositionConstructor = MinecraftReflection.getChunkPositionClass().
+							getConstructor(int.class, int.class, int.class);
+					} catch (Exception e) {
+						throw new RuntimeException("Cannot find chunk position constructor.", e);
+					}
+				}
+				
+				// Construct the underlying ChunkPosition
+				try {
+					return chunkPositionConstructor.newInstance(specific.x, specific.y, specific.z);
+				} catch (Exception e) {
+					throw new RuntimeException("Cannot construct ChunkPosition.", e);
+				}
 			}
 			
 			@Override
 			public ChunkPosition getSpecific(Object generic) {
-				if (generic instanceof net.minecraft.server.ChunkPosition) {
-					net.minecraft.server.ChunkPosition other = (net.minecraft.server.ChunkPosition) generic;
+				if (MinecraftReflection.isChunkPosition(generic)) {
+					// Use a structure modifier 
+					intModifier = new StructureModifier<Object>(generic.getClass(), null, false).withType(int.class);
 					
-					try {
-						if (intModifier == null)
-							return new ChunkPosition(other.x, other.y, other.z);
-					} catch (LinkageError e) {
-						// It could happen. If it does, use a structure modifier instead
-						intModifier = new StructureModifier<Object>(other.getClass(), null, false).withType(int.class);
-						
-						// Damn it all
-						if (intModifier.size() < 3) {
-							throw new IllegalStateException("Cannot read class " + other.getClass() + " for its integer fields.");
-						}
+					// Damn it all
+					if (intModifier.size() < 3) {
+						throw new IllegalStateException("Cannot read class " + generic.getClass() + " for its integer fields.");
 					}
 					
 					if (intModifier.size() >= 3) {

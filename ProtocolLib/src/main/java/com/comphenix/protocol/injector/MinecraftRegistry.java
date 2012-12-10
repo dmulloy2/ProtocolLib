@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.server.Packet;
+import net.sf.cglib.proxy.Factory;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 
@@ -77,7 +78,7 @@ class MinecraftRegistry {
 	 */ 
 	private static FuzzyReflection getPacketRegistry() {
 		if (packetRegistry == null)
-			packetRegistry = FuzzyReflection.fromClass(Packet.class, true);
+			packetRegistry = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true);
 		return packetRegistry;
 	}
 	
@@ -166,7 +167,7 @@ class MinecraftRegistry {
 		
 		// Optimized lookup
 		if (lookup.containsKey(packetID)) {
-			return lookup.get(packetID);
+			return removeEnhancer(lookup.get(packetID), forceVanilla);
 		}
 
 		// Will most likely not be used
@@ -174,10 +175,27 @@ class MinecraftRegistry {
 			if (Objects.equal(entry.getValue(), packetID)) {
 				// Attempt to get the vanilla class here too
 				if (!forceVanilla || entry.getKey().getName().startsWith("net.minecraft.server"))
-					return entry.getKey();
+					return removeEnhancer(entry.getKey(), forceVanilla);
 			}
 		}
 		
 		throw new IllegalArgumentException("The packet ID " + packetID + " is not registered.");
+	}
+	
+	/**
+	 * Find the first superclass that is not a CBLib proxy object.
+	 * @param clazz - the class whose hierachy we're going to search through.
+	 * @param remove - whether or not to skip enhanced (proxy) classes.
+	 * @return If remove is TRUE, the first superclass that is not a proxy.
+	 */
+	private static Class removeEnhancer(Class clazz, boolean remove) {
+		if (remove) {
+			// Get the underlying vanilla class
+			while (Factory.class.isAssignableFrom(clazz) && !clazz.equals(Object.class)) {
+				clazz = clazz.getSuperclass();
+			}
+		}
+		
+		return clazz;
 	}
 }

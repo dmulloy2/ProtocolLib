@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.server.NetLoginHandler;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.Server;
@@ -32,6 +31,7 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectCloner;
 import com.comphenix.protocol.reflect.VolatileField;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Used to ensure that the 1.3 server is referencing the correct server handler.
@@ -229,7 +229,7 @@ class InjectedServerConnection {
 			@Override
 			protected void onInserting(Object inserting) {
 				// Ready for some login handler injection?
-				if (inserting instanceof NetLoginHandler) {
+				if (MinecraftReflection.isLoginHandler(inserting)) {
 					Object replaced = netLoginInjector.onNetLoginCreated(inserting); 
 					
 					// Only replace if it has changed
@@ -241,7 +241,7 @@ class InjectedServerConnection {
 			@Override
 			protected void onRemoved(Object removing) {
 				// Clean up?
-				if (removing instanceof NetLoginHandler) {
+				if (MinecraftReflection.isLoginHandler(removing)) {
 					netLoginInjector.cleanup(removing);
 				} 
 			}

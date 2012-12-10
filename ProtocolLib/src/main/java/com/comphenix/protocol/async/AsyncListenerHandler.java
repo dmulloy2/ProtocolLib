@@ -242,7 +242,7 @@ public class AsyncListenerHandler {
 		
 		final AsyncRunnable listenerLoop = getListenerLoop();
 		
-		filterManager.getScheduler().scheduleAsyncDelayedTask(listener.getPlugin(), new Runnable() {
+		scheduleAsync(new Runnable() {
 			@Override
 			public void run() {
 				Thread thread = Thread.currentThread();
@@ -290,12 +290,17 @@ public class AsyncListenerHandler {
 		final AsyncRunnable listenerLoop = getListenerLoop();
 		final Function<AsyncRunnable, Void> delegateCopy = executor;
 		
-		filterManager.getScheduler().scheduleAsyncDelayedTask(listener.getPlugin(), new Runnable() {
+		scheduleAsync(new Runnable() {
 			@Override
 			public void run() {
 				delegateCopy.apply(listenerLoop);
 			}
 		});
+	}
+	
+	@SuppressWarnings("deprecation")
+	private void scheduleAsync(Runnable runnable) {
+		filterManager.getScheduler().scheduleAsyncDelayedTask(listener.getPlugin(), runnable);
 	}
 	
 	/**

@@ -21,7 +21,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
@@ -43,6 +42,7 @@ import com.comphenix.protocol.reflect.ObjectCloner;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Represents a player hook into the NetServerHandler class. 
@@ -94,7 +94,7 @@ public class NetworkServerInjector extends PlayerInjector {
 	}
 
 	@Override
-	public void sendServerPacket(Packet packet, boolean filtered) throws InvocationTargetException {
+	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
 		Object serverDeleage = filtered ? serverHandlerRef.getValue() : serverHandlerRef.getOldValue();
 		
 		if (serverDeleage != null) {
@@ -152,8 +152,7 @@ public class NetworkServerInjector extends PlayerInjector {
 		Callback sendPacketCallback = new MethodInterceptor() {
 			@Override
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-
-				Packet packet = (Packet) args[0];
+				Object packet = args[0];
 				
 				if (packet != null) {
 					packet = handlePacketSending(packet);
@@ -237,7 +236,7 @@ public class NetworkServerInjector extends PlayerInjector {
 	}
 	
 	private Class<?> getFirstMinecraftSuperClass(Class<?> clazz) {
-		if (clazz.getName().startsWith("net.minecraft.server."))
+		if (clazz.getName().startsWith(MinecraftReflection.getMinecraftPackage()))
 			return clazz;
 		else if (clazz.equals(Object.class))
 			return clazz;

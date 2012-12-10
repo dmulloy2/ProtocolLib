@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.entity.Player;
 
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
 
@@ -37,6 +36,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * This class is responsible for adding or removing proxy objects that intercepts recieved packets.
@@ -80,7 +80,7 @@ class PacketInjector {
 	 * @param id - the id of the packet.
 	 * @param packet - packet to uncancel.
 	 */
-	public void undoCancel(Integer id, Packet packet) {
+	public void undoCancel(Integer id, Object packet) {
 		ReadPacketModifier modifier = readModifier.get(id);
 		
 		// See if this packet has been cancelled before
@@ -92,7 +92,8 @@ class PacketInjector {
 	private void initialize() throws IllegalAccessException {
 		if (intHashMap == null) {
 			// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
-			Field intHashMapField = FuzzyReflection.fromClass(Packet.class, true).getFieldByType(FuzzyReflection.MINECRAFT_OBJECT);
+			Field intHashMapField = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).
+					getFieldByType(MinecraftReflection.MINECRAFT_OBJECT);
 			
 			try {
 				intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);

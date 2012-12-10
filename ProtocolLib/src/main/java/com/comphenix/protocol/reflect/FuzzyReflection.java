@@ -32,11 +32,6 @@ import java.util.regex.Pattern;
  * @author Kristian
  */
 public class FuzzyReflection {
-
-	/**
-	 * Matches a Minecraft object.
-	 */
-	public static final String MINECRAFT_OBJECT = "net\\.minecraft(\\.\\w+)+";
 	
 	// The class we're actually representing
 	private Class<?> source;

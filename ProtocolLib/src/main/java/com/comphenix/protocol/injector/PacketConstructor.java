@@ -21,8 +21,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import net.minecraft.server.Packet;
-
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.google.common.collect.ImmutableList;
@@ -157,7 +155,7 @@ public class PacketConstructor {
 				}
 			}
 			
-			Packet nmsPacket = (Packet) constructorMethod.newInstance(values);
+			Object nmsPacket = constructorMethod.newInstance(values);
 			return new PacketContainer(packetID, nmsPacket);
 			
 		} catch (IllegalArgumentException e) {

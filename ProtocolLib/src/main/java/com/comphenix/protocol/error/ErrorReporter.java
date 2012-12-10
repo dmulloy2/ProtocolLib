@@ -13,6 +13,15 @@ public interface ErrorReporter {
 	public abstract void reportMinimal(Plugin sender, String methodName, Throwable error);
 
 	/**
+	 * Prints a small minimal error report about an exception from another plugin.
+	 * @param sender - the other plugin.
+	 * @param methodName - name of the caller method.
+	 * @param error - the exception itself.
+	 * @param parameters - any relevant parameters to print.
+	 */
+	public abstract void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters);
+	
+	/**
 	 * Prints a warning message from the current plugin.
 	 * @param sender - the object containing the caller method. 
 	 * @param message - error message. 

@@ -18,6 +18,8 @@ class ProtocolConfig {
 	
 	private static final String METRICS_ENABLED = "metrics";
 	
+	private static final String IGNORE_VERSION_CHECK = "ignore version check";
+	
 	private static final String BACKGROUND_COMPILER_ENABLED = "background compiler";
 	
 	private static final String UPDATER_NOTIFY = "notify";
@@ -147,6 +149,26 @@ class ProtocolConfig {
 	 */
 	public long getAutoLastTime() {
 		return updater.getLong(UPDATER_LAST_TIME, 0);
+	}
+
+	/**
+	 * The version of Minecraft to ignore the built-in safety feature.
+	 * @return The version to ignore ProtocolLib's satefy.
+	 */
+	public String getIgnoreVersionCheck() {
+		return global.getString(IGNORE_VERSION_CHECK, "");
+	}
+	
+	/**
+	 * Sets under which version of Minecraft the version safety feature will be ignored.
+	 * <p>
+	 * This is useful if a server operator has tested and verified that a version of ProtocolLib works,
+	 * but doesn't want or can't upgrade to a newer version.
+	 * 
+	 * @param ignoreVersion - the version of Minecraft where the satefy will be disabled.
+	 */
+	public void setIgnoreVersionCheck(String ignoreVersion) {
+		global.set(IGNORE_VERSION_CHECK, ignoreVersion);
 	}
 	
 	/**

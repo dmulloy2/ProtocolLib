@@ -22,12 +22,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import net.minecraft.server.Packet;
-
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.compiler.CompileListener;
 import com.comphenix.protocol.reflect.compiler.CompiledStructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Caches structure modifiers.
@@ -45,9 +44,9 @@ public class StructureCache {
 	 * @param id - packet ID.
 	 * @return Created packet.
 	 */
-	public static Packet newPacket(int id) {
+	public static Object newPacket(int id) {
 		try {
-			return (Packet) MinecraftRegistry.getPacketClassFromID(id, true).newInstance();
+			return MinecraftRegistry.getPacketClassFromID(id, true).newInstance();
 		} catch (InstantiationException e) {
 			return null;
 		} catch (IllegalAccessException e) {
@@ -79,7 +78,7 @@ public class StructureCache {
 		if (result == null) {
 			// Use the vanilla class definition
 			final StructureModifier<Object> value = new StructureModifier<Object>(
-					MinecraftRegistry.getPacketClassFromID(id, true), Packet.class, true);
+					MinecraftRegistry.getPacketClassFromID(id, true), MinecraftReflection.getPacketClass(), true);
 			
 			result = structureModifiers.putIfAbsent(id, value);
 			

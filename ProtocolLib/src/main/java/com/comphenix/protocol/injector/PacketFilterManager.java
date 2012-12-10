@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.server.Packet;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -55,6 +54,7 @@ import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
@@ -508,7 +508,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (packetCreation.compareAndSet(false, true)) 
 			incrementPhases(GamePhase.PLAYING);
 		
-		Packet mcPacket = packet.getHandle();
+		Object mcPacket = packet.getHandle();
 		
 		// Make sure the packet isn't cancelled
 		packetInjector.undoCancel(packet.getID(), mcPacket);
@@ -686,9 +686,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
-	public int getPacketID(Packet packet) {
+	public int getPacketID(Object packet) {
 		if (packet == null)
 			throw new IllegalArgumentException("Packet cannot be NULL.");
+		if (!MinecraftReflection.isPacketClass(packet))
+			throw new IllegalArgumentException("The given object " + packet + " is not a packet.");
 		
 		return MinecraftRegistry.getPacketToID().get(packet.getClass());
 	}
