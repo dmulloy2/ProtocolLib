@@ -307,7 +307,7 @@ public class WrappedWatchableObject {
 	}
 	
 	// Helper
-	private Object getClonedValue() throws FieldAccessException {
+	Object getClonedValue() throws FieldAccessException {
 		Object value = getValue();
 		
 		// Only a limited set of references types are supported

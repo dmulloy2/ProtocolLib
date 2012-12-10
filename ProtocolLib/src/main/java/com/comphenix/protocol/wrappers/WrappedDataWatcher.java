@@ -300,7 +300,7 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
     	
     	// Make a new copy instead
     	for (WrappedWatchableObject watchable : this) {
-    		clone.setObject(watchable.getIndex(), watchable.getValue());
+    		clone.setObject(watchable.getIndex(), watchable.getClonedValue());
     	}
     	return clone;
     }
