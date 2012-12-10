@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 
 import java.io.IOException;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
@@ -129,7 +130,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			commandPacket = new CommandPacket(detailedReporter, this, logger, protocolManager);
 			
 			// Send logging information to player listeners too
-			broadcastUsers(PERMISSION_INFO);
+			setupBroadcastUsers(PERMISSION_INFO);
 			
 		} catch (Throwable e) {
 			detailedReporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
@@ -151,7 +152,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 	
-    private void broadcastUsers(final String permission) {
+    private void setupBroadcastUsers(final String permission) {
     	// Guard against multiple calls
     	if (redirectHandler != null)
     		return;
@@ -160,7 +161,10 @@ public class ProtocolLibrary extends JavaPlugin {
     	redirectHandler = new Handler() {
 			@Override
 			public void publish(LogRecord record) {
-				commandPacket.broadcastMessageSilently(record.getMessage(), permission);
+				// Only display warnings and above
+				if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
+					commandPacket.broadcastMessageSilently(record.getMessage(), permission);
+				}
 			}
 			
 			@Override
