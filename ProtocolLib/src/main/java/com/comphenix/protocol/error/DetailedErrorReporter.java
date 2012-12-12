@@ -6,6 +6,9 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +37,9 @@ public class DetailedErrorReporter implements ErrorReporter {
 	
 	// We don't want to spam the server
 	public static final int DEFAULT_MAX_ERROR_COUNT = 20;
+	
+	// Prevent spam per plugin too
+	private ConcurrentMap<String, AtomicInteger> warningCount = new ConcurrentHashMap<String, AtomicInteger>();
 	
 	protected String prefix;
 	protected String supportURL;
@@ -97,23 +103,65 @@ public class DetailedErrorReporter implements ErrorReporter {
 
 	@Override
 	public void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters) {
-		reportMinimal(sender, methodName, error);
-		
-		// Print parameters, if they are given
-		if (parameters != null && parameters.length > 0) {
-			logger.log(Level.SEVERE, "  Parameters:");
-			
-			// Print each parameter
-			for (Object parameter : parameters) {
-				logger.log(Level.SEVERE, "    " + getStringDescription(parameter));
+		if (reportMinimalNoSpam(sender, methodName, error)) {
+			// Print parameters, if they are given
+			if (parameters != null && parameters.length > 0) {
+				logger.log(Level.SEVERE, "  Parameters:");
+				
+				// Print each parameter
+				for (Object parameter : parameters) {
+					logger.log(Level.SEVERE, "    " + getStringDescription(parameter));
+				}
 			}
 		}
 	}
 	
 	@Override
 	public void reportMinimal(Plugin sender, String methodName, Throwable error) {
-		logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception occured in " + methodName + " for " + 
-					PacketAdapter.getPluginName(sender), error);
+		reportMinimalNoSpam(sender, methodName, error);
+	}
+	
+	public boolean reportMinimalNoSpam(Plugin sender, String methodName, Throwable error) {
+		String pluginName = PacketAdapter.getPluginName(sender);
+		AtomicInteger counter = warningCount.get(pluginName);
+		
+		// Thread safe pattern
+		if (counter == null) {
+			AtomicInteger created = new AtomicInteger();
+			counter = warningCount.putIfAbsent(pluginName, created);
+			
+			if (counter == null) {
+				counter = created;
+			}
+		}
+		
+		final int errorCount = counter.incrementAndGet();
+		
+		// See if we should print the full error
+		if (errorCount < getMaxErrorCount()) {
+			logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception occured in " +
+					 methodName + " for " + pluginName, error);
+			return true;
+			
+		} else {
+			// Nope - only print the error count occationally
+			if (isPowerOfTwo(errorCount)) {
+				logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception number " + errorCount + " occured in " +
+						 methodName + " for " + pluginName);
+			}
+			return false;
+		}
+	}
+	
+	/**
+	 * Determine if a given number is a power of two.
+	 * <p>
+	 * That is, if there exists an N such that 2^N = number.
+	 * @param number - the number to check.
+	 * @return TRUE if the given number is a power of two, FALSE otherwise.
+	 */
+	private boolean isPowerOfTwo(int number) {
+	    return (number & (number - 1)) == 0;
 	}
 	
 	@Override
