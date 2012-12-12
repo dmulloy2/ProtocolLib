@@ -147,7 +147,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 			// Nope - only print the error count occationally
 			if (isPowerOfTwo(errorCount)) {
 				logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception number " + errorCount + " occured in " +
-						 methodName + " for " + pluginName);
+						 methodName + " for " + pluginName, error);
 			}
 			return false;
 		}
