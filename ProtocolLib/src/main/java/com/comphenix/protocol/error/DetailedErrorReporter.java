@@ -44,7 +44,8 @@ public class DetailedErrorReporter implements ErrorReporter {
 	protected String prefix;
 	protected String supportURL;
 	
-	protected int errorCount;
+	protected AtomicInteger internalErrorCount = new AtomicInteger();
+	
 	protected int maxErrorCount;
 	protected Logger logger;
 	
@@ -185,12 +186,18 @@ public class DetailedErrorReporter implements ErrorReporter {
 	public void reportDetailed(Object sender, String message, Throwable error, Object... parameters) {
 
 		final Plugin plugin = pluginReference.get();
+		final int errorCount = internalErrorCount.incrementAndGet();
 		
 		// Do not overtly spam the server!
-		if (++errorCount > maxErrorCount) {
-			String maxReached = String.format("Reached maxmimum error count. Cannot pass error %s from %s.", error, sender);
-			logger.severe(maxReached);
-			return;
+		if (errorCount > getMaxErrorCount()) {
+			// Only allow the error count at rare occations
+			if (isPowerOfTwo(errorCount)) {
+				// Permit it - but print the number of exceptions first
+				reportWarning(this, "Internal exception count: " + errorCount + "!");
+			} else {
+				// NEVER SPAM THE CONSOLE
+				return;
+			}
 		}
 		
 		StringWriter text = new StringWriter();
@@ -297,11 +304,11 @@ public class DetailedErrorReporter implements ErrorReporter {
 	}
 	
 	public int getErrorCount() {
-		return errorCount;
+		return internalErrorCount.get();
 	}
 
 	public void setErrorCount(int errorCount) {
-		this.errorCount = errorCount;
+		internalErrorCount.set(errorCount);
 	}
 
 	public int getMaxErrorCount() {
