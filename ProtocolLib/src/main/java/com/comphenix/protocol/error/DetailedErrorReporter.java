@@ -18,6 +18,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.google.common.primitives.Primitives;
 
 /**
@@ -285,12 +286,15 @@ public class DetailedErrorReporter implements ErrorReporter {
 					return (ToStringBuilder.reflectionToString(value, ToStringStyle.MULTI_LINE_STYLE, false, null));
 			} catch (Throwable ex) {
 				// Apache is probably missing
-				logger.warning("Cannot find Apache Commons. Object introspection disabled.");
 				apacheCommonsMissing = true;
 			}
 			
-			// Just use toString()
-			return String.format("%s", value);
+			// Use our custom object printer instead
+			try {
+				return PrettyPrinter.printObject(value, value.getClass(), Object.class);
+			} catch (IllegalAccessException e) {
+				return "[Error: " + e.getMessage() + "]";
+			}
 		}
 	}
 	
