@@ -166,7 +166,8 @@ public class ChunkPosition {
 					
 					if (intModifier.size() >= 3) {
 						try {
-							return new ChunkPosition(intModifier.read(0), intModifier.read(1), intModifier.read(2));
+							StructureModifier<Integer> instance = intModifier.withTarget(generic);
+							return new ChunkPosition(instance.read(0), instance.read(1), instance.read(2));
 						} catch (FieldAccessException e) {
 							// This is an exeptional work-around, so we don't want to burden the caller with the messy details
 							throw new RuntimeException("Field access error.", e);
