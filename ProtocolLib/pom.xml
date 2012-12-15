@@ -55,6 +55,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <minimizeJar>true</minimizeJar>
               <shadedArtifactAttached>false</shadedArtifactAttached>
               <createDependencyReducedPom>true</createDependencyReducedPom>
 
