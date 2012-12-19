@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 
@@ -107,8 +108,10 @@ public class BukkitUnwrapper implements Unwrapper {
 			return find;
 			
 		} catch (SecurityException e) {
+			ProtocolLibrary.getErrorReporter().reportDetailed(this, "Security limitation.", e, type);
 			return null;
 		} catch (NoSuchMethodException e) {
+			ProtocolLibrary.getErrorReporter().reportDetailed(this, "Cannot unwrap object.", e, type);
 			return null;
 		}
 	}

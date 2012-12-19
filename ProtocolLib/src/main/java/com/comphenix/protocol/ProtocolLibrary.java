@@ -65,7 +65,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private static PacketFilterManager protocolManager;
 	
 	// Error reporter
-	private ErrorReporter reporter;
+	private static ErrorReporter reporter;
 	
 	// Metrics and statistisc
 	private Statistics statistisc;
@@ -353,6 +353,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		protocolManager.close();
 		protocolManager = null;
 		statistisc = null;
+		reporter = null;
 		
 		// Leaky ClassLoader begone!
 		CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), reporter);
@@ -371,6 +372,14 @@ public class ProtocolLibrary extends JavaPlugin {
 		if (log == null)
 			log = Logger.getLogger("Minecraft");
 		return log;
+	}
+	
+	/**
+	 * Retrieve the current error reporter.
+	 * @return Current error reporter.
+	 */
+	public static ErrorReporter getErrorReporter() {
+		return reporter;
 	}
 	
 	/**
