@@ -35,9 +35,13 @@ public class MinecraftReflection {
 	private static CachedPackage craftbukkitPackage;
 	
 	// org.bukkit.craftbukkit
-	private static Class<?> craftItemStackClass;
 	private static Constructor<?> craftNMSConstructor;
 	private static Constructor<?> craftBukkitConstructor;
+	
+	// New in 1.4.5
+	private static Method craftNMSMethod;
+	private static Method craftBukkitMethod;
+	private static boolean craftItemStackFailed;
 	
 	// net.minecraft.server
 	private static Class<?> itemStackArrayClass;
@@ -370,9 +374,7 @@ public class MinecraftReflection {
 	 */
 	@SuppressWarnings("rawtypes")
 	public static Class getCraftItemStackClass() {
-		if (craftItemStackClass == null)
-			craftItemStackClass = getCraftBukkitClass("inventory.CraftItemStack");
-		return craftItemStackClass;
+		return getCraftBukkitClass("inventory.CraftItemStack");
 	}
 		
 	/**
@@ -382,10 +384,18 @@ public class MinecraftReflection {
 	 */
 	@SuppressWarnings("unchecked")
 	public static ItemStack getBukkitItemStack(ItemStack bukkitItemStack) {
+		// Delegate this task to the method that can execute it
+		if (craftBukkitMethod != null)
+			return getBukkitItemByMethod(bukkitItemStack);
+		
 		if (craftBukkitConstructor == null) {
 			try {
 				craftBukkitConstructor = getCraftItemStackClass().getConstructor(ItemStack.class);
 			} catch (Exception e) {
+				// See if this method works
+				if (!craftItemStackFailed)
+					return getBukkitItemByMethod(bukkitItemStack);
+		
 				throw new RuntimeException("Cannot find CraftItemStack(org.bukkit.inventory.ItemStack).", e);
 			}
 		}
@@ -397,7 +407,26 @@ public class MinecraftReflection {
 			throw new RuntimeException("Cannot construct CraftItemStack.", e);
 		}
 	}
-	
+
+	@SuppressWarnings("unchecked")
+	private static ItemStack getBukkitItemByMethod(ItemStack bukkitItemStack) {
+		if (craftBukkitMethod == null) {
+			try {
+				craftBukkitMethod = getCraftItemStackClass().getMethod("asCraftCopy", ItemStack.class);
+			} catch (Exception e) {
+				craftItemStackFailed = true;
+				throw new RuntimeException("Cannot find CraftItemStack.asCraftCopy(org.bukkit.inventory.ItemStack).", e);
+			}
+		}
+		
+		// Next, construct it
+		try {
+			return (ItemStack) craftBukkitMethod.invoke(null, bukkitItemStack);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot construct CraftItemStack.", e);
+		}
+	}
+
 	/**
 	 * Retrieve the Bukkit ItemStack from a given net.minecraft.server ItemStack.
 	 * @param minecraftItemStack - the NMS ItemStack to wrap.
@@ -405,10 +434,18 @@ public class MinecraftReflection {
 	 */
 	@SuppressWarnings("unchecked")
 	public static ItemStack getBukkitItemStack(Object minecraftItemStack) {
+		// Delegate this task to the method that can execute it
+		if (craftNMSMethod != null)
+			return getBukkitItemByMethod(minecraftItemStack);
+		
 		if (craftNMSConstructor == null) {
 			try {
 				craftNMSConstructor = getCraftItemStackClass().getConstructor(minecraftItemStack.getClass());
 			} catch (Exception e) {
+				// Give it a try
+				if (!craftItemStackFailed)
+					return getBukkitItemByMethod(minecraftItemStack);
+				
 				throw new RuntimeException("Cannot find CraftItemStack(net.mineraft.server.ItemStack).", e);
 			}
 		}
@@ -421,6 +458,25 @@ public class MinecraftReflection {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	private static ItemStack getBukkitItemByMethod(Object minecraftItemStack) {
+		if (craftNMSMethod == null) {
+			try {
+				craftNMSMethod = getCraftItemStackClass().getMethod("asCraftMirror", minecraftItemStack.getClass());
+			} catch (Exception e) {
+				craftItemStackFailed = true;
+				throw new RuntimeException("Cannot find CraftItemStack.asCraftMirror(net.mineraft.server.ItemStack).", e);
+			}
+		}
+		
+		// Next, construct it
+		try {
+			return (ItemStack) craftNMSMethod.invoke(null, minecraftItemStack);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot construct CraftItemStack.", e);
+		}
+	}
+	
 	/**
 	 * Retrieve the net.minecraft.server ItemStack from a Bukkit ItemStack.
 	 * @param stack - the Bukkit ItemStack to convert.
