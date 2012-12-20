@@ -141,7 +141,8 @@ public class NetworkServerInjector extends PlayerInjector {
 			}
 			
 			throw new RuntimeException(
-					"Cannot hook player: Unable to find a valid constructor for the NetServerHandler object.");
+					"Cannot hook player: Unable to find a valid constructor for the " 
+						+ MinecraftReflection.getNetServerHandlerClass().getName() + " object.");
 		}
 	}
 	

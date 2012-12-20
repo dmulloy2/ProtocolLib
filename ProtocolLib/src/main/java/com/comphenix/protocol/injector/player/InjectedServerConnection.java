@@ -77,7 +77,8 @@ class InjectedServerConnection {
 			return;
 		
 		if (minecraftServerField == null)
-			minecraftServerField = FuzzyReflection.fromObject(server, true).getFieldByType(".*MinecraftServer");
+			minecraftServerField = FuzzyReflection.fromObject(server, true).
+				getFieldByType("MinecraftServer", MinecraftReflection.getMinecraftServerClass());
 
 		try {
 			minecraftServer = FieldUtils.readField(minecraftServerField, server, true);

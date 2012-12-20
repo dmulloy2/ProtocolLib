@@ -19,6 +19,16 @@ class CachedPackage {
 	}
 	
 	/**
+	 * Associate a given class with a class name.
+	 * @param className - class name.
+	 * @param clazz - type of class.
+	 */
+	@SuppressWarnings("rawtypes")
+	public void setPackageClass(String className, Class clazz) {
+		cache.put(className, clazz);
+	}
+	
+	/**
 	 * Retrieve the class object of a specific class in the current package.
 	 * @param className - the specific class.
 	 * @return Class object.

@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
 /**
@@ -62,9 +63,9 @@ class NetLoginInjector {
 			
 		} catch (Throwable e) {
 			// Minecraft can't handle this, so we'll deal with it here
-			reporter.reportDetailed(this, "Unable to hook NetLoginHandler.", e, inserting);
+			reporter.reportDetailed(this, "Unable to hook " + 
+						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting);
 			return inserting;
-			
 		}
 	}
 	
@@ -103,7 +104,8 @@ class NetLoginInjector {
 				
 			} catch (Throwable e) {
 				// Don't leak this to Minecraft
-				reporter.reportDetailed(this, "Cannot cleanup NetLoginHandler.", e, removing);
+				reporter.reportDetailed(this, "Cannot cleanup " + 
+						MinecraftReflection.getNetLoginHandlerName() + ".", e, removing);
 			}
 		}
 	}

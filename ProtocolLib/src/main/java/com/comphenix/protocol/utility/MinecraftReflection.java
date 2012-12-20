@@ -11,6 +11,7 @@ import org.bukkit.Server;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.google.common.base.Joiner;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -289,7 +290,31 @@ public class MinecraftReflection {
 	 */
 	@SuppressWarnings("rawtypes")
 	public static Class getNetLoginHandlerClass() {
-		return getMinecraftClass("NetLoginHandler");
+		return getMinecraftClass("NetLoginHandler", "PendingConnection");
+	}
+	
+	/**
+	 * Retrieve the NetServerHandler class.
+	 * @return The NetServerHandler class.
+	 */
+	public static Class<?> getNetServerHandlerClass() {
+		return getMinecraftClass("NetServerHandler", "PlayerConnection");
+	}
+	
+	/**
+	 * Retrieve the NetworkManager class.
+	 * @return The NetworkManager class.
+	 */
+	public static Class<?> getNetworkManagerClass() {
+		return getMinecraftClass("NetworkManager");
+	}
+	
+	/**
+	 * Retrieve the NetHandler class.
+	 * @return The NetHandler class.
+	 */
+	public static Class<?> getNetHandlerClass() {
+		return getMinecraftClass("NetHandler");
 	}
 	
 	/**
@@ -308,6 +333,14 @@ public class MinecraftReflection {
 	@SuppressWarnings("rawtypes")
 	public static Class getWorldTypeClass() {
 		return getMinecraftClass("WorldType");
+	}
+	
+	/**
+	 * Retrieve the MinecraftServer class.
+	 * @return MinecraftServer class.
+	 */
+	public static Class<?> getMinecraftServerClass() {
+		return getMinecraftClass("MinecraftServer");
 	}
 	
 	/**
@@ -515,5 +548,60 @@ public class MinecraftReflection {
 		if (minecraftPackage == null)
 			minecraftPackage = new CachedPackage(getMinecraftPackage());
 		return minecraftPackage.getPackageClass(className);
+	}
+	
+	/**
+	 * Retrieve the first class that matches a specified Minecraft name.
+	 * @param classes - the specific Minecraft class.
+	 * @return Class object.
+	 * @throws RuntimeException If we are unable to find any of the given classes.
+	 */
+	@SuppressWarnings("rawtypes")
+	public static Class getMinecraftClass(String className, String... aliases) {
+		try {
+			// Try the main class first
+			return getMinecraftClass(className);
+		} catch (RuntimeException e1) {
+			Class success = null;
+			
+			// Try every alias too
+			for (String alias : aliases) {
+				try {
+					success = getMinecraftClass(alias);
+					break;
+				} catch (RuntimeException e2) {
+					// Swallov
+				}
+			}
+			
+			if (success != null) {
+				// Save it for later
+				minecraftPackage.setPackageClass(className, success);
+				return success;
+			} else {
+				// Hack failed
+				throw new RuntimeException(
+					String.format("Unable to find %s (%s)",
+								  className,
+								  Joiner.on(", ").join(aliases))
+					);
+			}
+		}
+	}
+
+	/**
+	 * Dynamically retrieve the NetworkManager name.
+	 * @return Name of the NetworkManager class.
+	 */
+	public static String getNetworkManagerName() {
+		return getNetworkManagerClass().getSimpleName();
+	}
+
+	/**
+	 * Dynamically retrieve the name of the current NetLoginHandler.
+	 * @return Name of the NetLoginHandler class.
+	 */
+	public static String getNetLoginHandlerName() {
+		return getNetLoginHandlerClass().getSimpleName();
 	}
 }
