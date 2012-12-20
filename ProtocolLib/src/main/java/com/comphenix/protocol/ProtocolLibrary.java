@@ -52,7 +52,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The maximum version ProtocolLib has been tested with,
 	 */
-	private static final String MAXIMUM_MINECRAFT_VERSION = "1.4.5";
+	private static final String MAXIMUM_MINECRAFT_VERSION = "1.4.6";
 	
 	/**
 	 * The number of milliseconds per second.
