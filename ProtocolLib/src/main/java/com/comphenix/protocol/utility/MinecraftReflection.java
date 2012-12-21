@@ -314,12 +314,12 @@ public class MinecraftReflection {
 	 * @return The NetHandler class.
 	 */
 	public static Class<?> getNetHandlerClass() {
-		return getMinecraftClass("NetHandler");
+		return getMinecraftClass("NetHandler", "Connection");
 	}
 	
 	/**
-	 * Retrieve the NetLoginHandler class.
-	 * @return The NetLoginHandler class.
+	 * Retrieve the NMS ItemStack class.
+	 * @return The ItemStack class.
 	 */
 	@SuppressWarnings("rawtypes")
 	public static Class getItemStackClass() {

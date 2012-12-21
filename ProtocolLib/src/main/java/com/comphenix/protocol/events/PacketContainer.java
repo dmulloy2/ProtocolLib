@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -241,12 +242,12 @@ public class PacketContainer implements Serializable {
 				BukkitConverters.getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
 					
 			public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
-				Object[] result = new Object[specific.length];
+				Class<?> nmsStack = MinecraftReflection.getItemStackClass();
+				Object[] result = (Object[]) Array.newInstance(nmsStack, specific.length);
 				
 				// Unwrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = stackConverter.getGeneric(
-							MinecraftReflection.getItemStackClass(), specific[i]); 
+					result[i] = stackConverter.getGeneric(nmsStack, specific[i]); 
 				}
 				return result;
 			}
