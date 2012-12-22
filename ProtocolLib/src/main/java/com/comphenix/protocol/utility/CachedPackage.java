@@ -23,8 +23,7 @@ class CachedPackage {
 	 * @param className - class name.
 	 * @param clazz - type of class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public void setPackageClass(String className, Class clazz) {
+	public void setPackageClass(String className, Class<?> clazz) {
 		cache.put(className, clazz);
 	}
 	
@@ -34,10 +33,9 @@ class CachedPackage {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public Class getPackageClass(String className) {
+	public Class<?> getPackageClass(String className) {
 		try {
-			Class result = cache.get(className);
+			Class<?> result = cache.get(className);
 			
 			// Concurrency is not a problem - we don't care if we look up a class twice
 			if (result == null) {

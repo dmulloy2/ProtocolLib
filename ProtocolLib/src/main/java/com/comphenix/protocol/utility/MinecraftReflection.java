@@ -162,7 +162,6 @@ public class MinecraftReflection {
 	 * @param obj - the object to test.
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isChunkPosition(Object obj) {
 		return getChunkPositionClass().isAssignableFrom(obj.getClass());
 	}
@@ -172,7 +171,6 @@ public class MinecraftReflection {
 	 * @param obj - the object to test.
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isChunkCoordinates(Object obj) {
 		return getChunkCoordinatesClass().isAssignableFrom(obj.getClass());
 	}
@@ -182,7 +180,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isPacketClass(Object obj) {
 		return getPacketClass().isAssignableFrom(obj.getClass());
 	}
@@ -192,7 +189,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isLoginHandler(Object obj) {
 		return getNetLoginHandlerClass().isAssignableFrom(obj.getClass());
 	}
@@ -202,7 +198,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isMinecraftEntity(Object obj) {
 		return getEntityClass().isAssignableFrom(obj.getClass());
 	}
@@ -212,7 +207,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isItemStack(Object value) {
 		return getItemStackClass().isAssignableFrom(value.getClass());
 	}
@@ -222,7 +216,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isMinecraftPlayer(Object obj) {
 		return getEntityPlayerClass().isAssignableFrom(obj.getClass());
 	}
@@ -232,7 +225,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isWatchableObject(Object obj) {
 		return getWatchableObjectClass().isAssignableFrom(obj.getClass());
 	}
@@ -242,7 +234,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isDataWatcher(Object obj) {
 		return getDataWatcherClass().isAssignableFrom(obj.getClass());
 	}
@@ -252,7 +243,6 @@ public class MinecraftReflection {
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	@SuppressWarnings("unchecked")
 	public static boolean isCraftItemStack(Object obj) {
 		return getCraftItemStackClass().isAssignableFrom(obj.getClass());
 	}
@@ -261,8 +251,7 @@ public class MinecraftReflection {
 	 * Retrieve the EntityPlayer (NMS) class.
 	 * @return The entity class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getEntityPlayerClass() {
+	public static Class<?> getEntityPlayerClass() {
 		return getMinecraftClass("EntityPlayer");
 	}
 	
@@ -270,8 +259,7 @@ public class MinecraftReflection {
 	 * Retrieve the entity (NMS) class.
 	 * @return The entity class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getEntityClass() {
+	public static Class<?> getEntityClass() {
 		return getMinecraftClass("Entity");
 	}
 	
@@ -279,8 +267,7 @@ public class MinecraftReflection {
 	 * Retrieve the packet class.
 	 * @return The packet class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getPacketClass() {
+	public static Class<?> getPacketClass() {
 		return getMinecraftClass("Packet");
 	}
 	
@@ -288,8 +275,7 @@ public class MinecraftReflection {
 	 * Retrieve the NetLoginHandler class.
 	 * @return The NetLoginHandler class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getNetLoginHandlerClass() {
+	public static Class<?> getNetLoginHandlerClass() {
 		return getMinecraftClass("NetLoginHandler", "PendingConnection");
 	}
 	
@@ -321,8 +307,7 @@ public class MinecraftReflection {
 	 * Retrieve the NMS ItemStack class.
 	 * @return The ItemStack class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getItemStackClass() {
+	public static Class<?> getItemStackClass() {
 		return getMinecraftClass("ItemStack");
 	}
 		
@@ -330,8 +315,7 @@ public class MinecraftReflection {
 	 * Retrieve the WorldType class.
 	 * @return The WorldType class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getWorldTypeClass() {
+	public static Class<?> getWorldTypeClass() {
 		return getMinecraftClass("WorldType");
 	}
 	
@@ -347,8 +331,7 @@ public class MinecraftReflection {
 	 * Retrieve the DataWatcher class.
 	 * @return The DataWatcher class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getDataWatcherClass() {
+	public static Class<?> getDataWatcherClass() {
 		return getMinecraftClass("DataWatcher");
 	}
 	
@@ -356,8 +339,7 @@ public class MinecraftReflection {
 	 * Retrieve the ChunkPosition class.
 	 * @return The ChunkPosition class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getChunkPositionClass() {
+	public static Class<?> getChunkPositionClass() {
 		return getMinecraftClass("ChunkPosition");
 	}
 	
@@ -365,8 +347,7 @@ public class MinecraftReflection {
 	 * Retrieve the ChunkPosition class.
 	 * @return The ChunkPosition class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getChunkCoordinatesClass() {
+	public static Class<?> getChunkCoordinatesClass() {
 		return getMinecraftClass("ChunkCoordinates");
 	}
 	
@@ -374,8 +355,7 @@ public class MinecraftReflection {
 	 * Retrieve the WatchableObject class.
 	 * @return The WatchableObject class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getWatchableObjectClass() {
+	public static Class<?> getWatchableObjectClass() {
 		return getMinecraftClass("WatchableObject");
 	}
 	
@@ -383,8 +363,7 @@ public class MinecraftReflection {
 	 * Retrieve the ItemStack[] class.
 	 * @return The ItemStack[] class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getItemStackArrayClass() {
+	public static Class<?> getItemStackArrayClass() {
 		if (itemStackArrayClass == null)
 			itemStackArrayClass = getArrayClass(getItemStackClass());
 		return itemStackArrayClass;
@@ -395,8 +374,7 @@ public class MinecraftReflection {
 	 * @param componentType - type of each element in the array.
 	 * @return The class of the array.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getArrayClass(Class componentType) {
+	public static Class<?> getArrayClass(Class<?> componentType) {
 		// Bit of a hack, but it works
 		return Array.newInstance(componentType, 0).getClass();
 	}
@@ -405,8 +383,7 @@ public class MinecraftReflection {
 	 * Retrieve the CraftItemStack class.
 	 * @return The CraftItemStack class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getCraftItemStackClass() {
+	public static Class<?> getCraftItemStackClass() {
 		return getCraftBukkitClass("inventory.CraftItemStack");
 	}
 		
@@ -415,7 +392,6 @@ public class MinecraftReflection {
 	 * @param bukkitItemStack - the Bukkit ItemStack to convert.
 	 * @return A CraftItemStack as an ItemStack.
 	 */
-	@SuppressWarnings("unchecked")
 	public static ItemStack getBukkitItemStack(ItemStack bukkitItemStack) {
 		// Delegate this task to the method that can execute it
 		if (craftBukkitMethod != null)
@@ -441,7 +417,6 @@ public class MinecraftReflection {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private static ItemStack getBukkitItemByMethod(ItemStack bukkitItemStack) {
 		if (craftBukkitMethod == null) {
 			try {
@@ -465,7 +440,6 @@ public class MinecraftReflection {
 	 * @param minecraftItemStack - the NMS ItemStack to wrap.
 	 * @return The wrapped ItemStack.
 	 */
-	@SuppressWarnings("unchecked")
 	public static ItemStack getBukkitItemStack(Object minecraftItemStack) {
 		// Delegate this task to the method that can execute it
 		if (craftNMSMethod != null)
@@ -491,7 +465,6 @@ public class MinecraftReflection {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private static ItemStack getBukkitItemByMethod(Object minecraftItemStack) {
 		if (craftNMSMethod == null) {
 			try {
@@ -543,8 +516,7 @@ public class MinecraftReflection {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getMinecraftClass(String className) {
+	public static Class<?> getMinecraftClass(String className) {
 		if (minecraftPackage == null)
 			minecraftPackage = new CachedPackage(getMinecraftPackage());
 		return minecraftPackage.getPackageClass(className);
@@ -556,13 +528,12 @@ public class MinecraftReflection {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find any of the given classes.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getMinecraftClass(String className, String... aliases) {
+	public static Class<?> getMinecraftClass(String className, String... aliases) {
 		try {
 			// Try the main class first
 			return getMinecraftClass(className);
 		} catch (RuntimeException e1) {
-			Class success = null;
+			Class<?> success = null;
 			
 			// Try every alias too
 			for (String alias : aliases) {
