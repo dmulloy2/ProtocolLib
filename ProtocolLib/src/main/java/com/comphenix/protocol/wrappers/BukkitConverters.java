@@ -155,7 +155,6 @@ public class BukkitConverters {
 			return null;
 		
 		return getIgnoreNull(new EquivalentConverter<WorldType>() {
-			@SuppressWarnings("unchecked")
 			@Override
 			public Object getGeneric(Class<?> genericType, WorldType specific) {
 				try {
@@ -169,8 +168,7 @@ public class BukkitConverters {
 					throw new FieldAccessException("Cannot find the WorldType.getType() method.", e);
 				}	
 			}
-			
-			@SuppressWarnings("unchecked")
+
 			@Override
 			public WorldType getSpecific(Object generic) {
 				try {

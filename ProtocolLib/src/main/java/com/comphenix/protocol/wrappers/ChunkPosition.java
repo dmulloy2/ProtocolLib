@@ -133,7 +133,6 @@ public class ChunkPosition {
 	 */
 	public static EquivalentConverter<ChunkPosition> getConverter() {
 		return new EquivalentConverter<ChunkPosition>() {
-			@SuppressWarnings("unchecked")
 			@Override
 			public Object getGeneric(Class<?> genericType, ChunkPosition specific) {
 				if (chunkPositionConstructor == null) {

@@ -49,7 +49,6 @@ public class WrappedWatchableObject {
 	 * @param index - the index.
 	 * @param value - non-null value of specific types.
 	 */
-	@SuppressWarnings("unchecked")
 	public WrappedWatchableObject(int index, Object value) {
 		if (value == null)
 			throw new IllegalArgumentException("Value cannot be NULL.");
@@ -296,8 +295,8 @@ public class WrappedWatchableObject {
 	 * @throws FieldAccessException If we're unable to use reflection.
 	 */
 	public WrappedWatchableObject deepClone() throws FieldAccessException {
-		@SuppressWarnings("unchecked")
-		WrappedWatchableObject clone = new WrappedWatchableObject(DefaultInstances.DEFAULT.getDefault(MinecraftReflection.getWatchableObjectClass()));
+		WrappedWatchableObject clone = new WrappedWatchableObject(
+				DefaultInstances.DEFAULT.getDefault(MinecraftReflection.getWatchableObjectClass()));
 		
 		clone.setDirtyState(getDirtyState());
 		clone.setIndex(getIndex());
