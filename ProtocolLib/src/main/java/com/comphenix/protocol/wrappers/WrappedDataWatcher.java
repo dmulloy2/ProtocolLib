@@ -275,6 +275,37 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
     	}
     }
 
+	@Override
+	public boolean equals(Object obj) {
+		// Quick checks
+		if (obj == this)
+			return true;
+		if (obj == null)
+			return false;
+		
+		if (obj instanceof WrappedDataWatcher) {
+			WrappedDataWatcher other = (WrappedDataWatcher) obj;
+			Iterator<WrappedWatchableObject> first = iterator(), second = other.iterator();
+			
+			// Make sure they're the same size
+			if (size() != other.size())
+				return false;
+			
+			for (; first.hasNext() && second.hasNext(); ) {
+				// See if the two elements are equal
+				if (!first.next().equals(second.next()))
+					return false;
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return getWatchableObjects().hashCode();
+	}
+	
     /**
      * Retrieve a copy of every index associated with a watched object.
      * @return Every watched object index.
