@@ -13,7 +13,7 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodUtils;
-import com.comphenix.protocol.reflect.ObjectCloner;
+import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.compiler.StructureCompiler;
 import com.comphenix.protocol.reflect.instances.CollectionGenerator;
@@ -48,7 +48,7 @@ class CleanupStaticMembers {
 				BukkitUnwrapper.class, DefaultInstances.class, CollectionGenerator.class,
 				PrimitiveGenerator.class, FuzzyReflection.class, MethodUtils.class, 
 				BackgroundCompiler.class, StructureCompiler.class,
-				ObjectCloner.class, Packets.Server.class, Packets.Client.class, 
+				ObjectWriter.class, Packets.Server.class, Packets.Client.class, 
 				ChunkPosition.class, WrappedDataWatcher.class, WrappedWatchableObject.class
 		};
 							   			

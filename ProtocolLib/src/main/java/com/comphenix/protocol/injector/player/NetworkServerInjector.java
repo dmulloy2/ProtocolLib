@@ -38,7 +38,7 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.ObjectCloner;
+import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
@@ -248,7 +248,7 @@ public class NetworkServerInjector extends PlayerInjector {
 	@Override
 	protected void cleanHook() {
 		if (serverHandlerRef != null && serverHandlerRef.isCurrentSet()) {
-			ObjectCloner.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
+			ObjectWriter.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
 			serverHandlerRef.revertValue();
 			
 			try {

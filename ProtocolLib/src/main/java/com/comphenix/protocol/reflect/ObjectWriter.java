@@ -20,13 +20,12 @@ package com.comphenix.protocol.reflect;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
 /**
  * Can copy an object field by field.
  * 
  * @author Kristian
  */
-public class ObjectCloner {
+public class ObjectWriter {
 
 	// Cache structure modifiers
 	@SuppressWarnings("rawtypes")
@@ -34,7 +33,7 @@ public class ObjectCloner {
 			new ConcurrentHashMap<Class, StructureModifier<Object>>();
 	
 	/**
-	 * Copy every field in object A to object B.
+	 * Copy every field in object A to object B. Each value is copied directly, and is not cloned.
 	 * <p>
 	 * The two objects must have the same number of fields of the same type.
 	 * @param source - fields to copy.

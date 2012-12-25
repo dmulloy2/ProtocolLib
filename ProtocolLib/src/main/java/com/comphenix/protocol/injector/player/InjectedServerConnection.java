@@ -29,7 +29,7 @@ import org.bukkit.Server;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.ObjectCloner;
+import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
@@ -219,7 +219,7 @@ class InjectedServerConnection {
 				if (!(inserting instanceof Factory)) {
 					// If so, copy the content of the old element to the new
 					try {
-						ObjectCloner.copyTo(inserting, replacement, inserting.getClass());
+						ObjectWriter.copyTo(inserting, replacement, inserting.getClass());
 					} catch (Throwable e) {
 						reporter.reportDetailed(InjectedServerConnection.this, "Cannot copy old " + inserting + 
 								 				" to new.", e, inserting, replacement);
