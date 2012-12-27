@@ -1,3 +1,20 @@
+/*
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2012 Kristian S. Stangeland
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the 
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; 
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  02111-1307 USA
+ */
+
 package com.comphenix.protocol.injector.player;
 
 import java.util.concurrent.ConcurrentMap;
@@ -8,6 +25,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
 /**
@@ -62,9 +80,9 @@ class NetLoginInjector {
 			
 		} catch (Throwable e) {
 			// Minecraft can't handle this, so we'll deal with it here
-			reporter.reportDetailed(this, "Unable to hook NetLoginHandler.", e, inserting);
+			reporter.reportDetailed(this, "Unable to hook " + 
+						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting);
 			return inserting;
-			
 		}
 	}
 	
@@ -103,7 +121,8 @@ class NetLoginInjector {
 				
 			} catch (Throwable e) {
 				// Don't leak this to Minecraft
-				reporter.reportDetailed(this, "Cannot cleanup NetLoginHandler.", e, removing);
+				reporter.reportDetailed(this, "Cannot cleanup " + 
+						MinecraftReflection.getNetLoginHandlerName() + ".", e, removing);
 			}
 		}
 	}

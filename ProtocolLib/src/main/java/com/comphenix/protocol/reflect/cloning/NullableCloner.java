@@ -15,50 +15,35 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector.player;
-
-import java.util.Arrays;
-
-import com.google.common.base.Joiner;
+package com.comphenix.protocol.reflect.cloning;
 
 /**
- * Represents an error message from a player injector.
+ * Creates a cloner wrapper that accepts and clones NULL values.
  * 
  * @author Kristian
  */
-class UnsupportedListener {
-	private String message;
-	private int[] packets;
+public class NullableCloner implements Cloner {
+	protected Cloner wrapped;
 	
-	/**
-	 * Create a new error message.
-	 * @param message - the message.
-	 * @param packets - unsupported packets.
-	 */
-	public UnsupportedListener(String message, int[] packets) {
-		super();
-		this.message = message;
-		this.packets = packets;
+	public NullableCloner(Cloner wrapped) {
+		this.wrapped = wrapped;
 	}
 
-	/**
-	 * Retrieve the error message.
-	 * @return Error message.
-	 */
-	public String getMessage() {
-		return message;
-	}
-	
-	/**
-	 * Retrieve all unsupported packets.
-	 * @return Unsupported packets.
-	 */
-	public int[] getPackets() {
-		return packets;
-	}
-	
 	@Override
-	public String toString() {
-		return String.format("%s (%s)", message, Joiner.on(", ").join(Arrays.asList(packets)));
+	public boolean canClone(Object source) {
+		return true;
+	}
+
+	@Override
+	public Object clone(Object source) {
+		// Don't pass the NULL value to the cloner
+		if (source == null)
+			return null;
+		else
+			return wrapped.clone(source);
+	}
+
+	public Cloner getWrapped() {
+		return wrapped;
 	}
 }

@@ -1,3 +1,20 @@
+/*
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2012 Kristian S. Stangeland
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the 
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; 
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  02111-1307 USA
+ */
+
 package com.comphenix.protocol.error;
 
 import java.io.PrintWriter;
@@ -6,6 +23,9 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,6 +35,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.google.common.primitives.Primitives;
 
 /**
@@ -35,10 +56,14 @@ public class DetailedErrorReporter implements ErrorReporter {
 	// We don't want to spam the server
 	public static final int DEFAULT_MAX_ERROR_COUNT = 20;
 	
+	// Prevent spam per plugin too
+	private ConcurrentMap<String, AtomicInteger> warningCount = new ConcurrentHashMap<String, AtomicInteger>();
+	
 	protected String prefix;
 	protected String supportURL;
 	
-	protected int errorCount;
+	protected AtomicInteger internalErrorCount = new AtomicInteger();
+	
 	protected int maxErrorCount;
 	protected Logger logger;
 	
@@ -97,23 +122,65 @@ public class DetailedErrorReporter implements ErrorReporter {
 
 	@Override
 	public void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters) {
-		reportMinimal(sender, methodName, error);
-		
-		// Print parameters, if they are given
-		if (parameters != null && parameters.length > 0) {
-			logger.log(Level.SEVERE, "  Parameters:");
-			
-			// Print each parameter
-			for (Object parameter : parameters) {
-				logger.log(Level.SEVERE, "    " + getStringDescription(parameter));
+		if (reportMinimalNoSpam(sender, methodName, error)) {
+			// Print parameters, if they are given
+			if (parameters != null && parameters.length > 0) {
+				logger.log(Level.SEVERE, "  Parameters:");
+				
+				// Print each parameter
+				for (Object parameter : parameters) {
+					logger.log(Level.SEVERE, "    " + getStringDescription(parameter));
+				}
 			}
 		}
 	}
 	
 	@Override
 	public void reportMinimal(Plugin sender, String methodName, Throwable error) {
-		logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception occured in " + methodName + " for " + 
-					PacketAdapter.getPluginName(sender), error);
+		reportMinimalNoSpam(sender, methodName, error);
+	}
+	
+	public boolean reportMinimalNoSpam(Plugin sender, String methodName, Throwable error) {
+		String pluginName = PacketAdapter.getPluginName(sender);
+		AtomicInteger counter = warningCount.get(pluginName);
+		
+		// Thread safe pattern
+		if (counter == null) {
+			AtomicInteger created = new AtomicInteger();
+			counter = warningCount.putIfAbsent(pluginName, created);
+			
+			if (counter == null) {
+				counter = created;
+			}
+		}
+		
+		final int errorCount = counter.incrementAndGet();
+		
+		// See if we should print the full error
+		if (errorCount < getMaxErrorCount()) {
+			logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception occured in " +
+					 methodName + " for " + pluginName, error);
+			return true;
+			
+		} else {
+			// Nope - only print the error count occationally
+			if (isPowerOfTwo(errorCount)) {
+				logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception number " + errorCount + " occured in " +
+						 methodName + " for " + pluginName, error);
+			}
+			return false;
+		}
+	}
+	
+	/**
+	 * Determine if a given number is a power of two.
+	 * <p>
+	 * That is, if there exists an N such that 2^N = number.
+	 * @param number - the number to check.
+	 * @return TRUE if the given number is a power of two, FALSE otherwise.
+	 */
+	private boolean isPowerOfTwo(int number) {
+	    return (number & (number - 1)) == 0;
 	}
 	
 	@Override
@@ -137,12 +204,18 @@ public class DetailedErrorReporter implements ErrorReporter {
 	public void reportDetailed(Object sender, String message, Throwable error, Object... parameters) {
 
 		final Plugin plugin = pluginReference.get();
+		final int errorCount = internalErrorCount.incrementAndGet();
 		
 		// Do not overtly spam the server!
-		if (++errorCount > maxErrorCount) {
-			String maxReached = String.format("Reached maxmimum error count. Cannot pass error %s from %s.", error, sender);
-			logger.severe(maxReached);
-			return;
+		if (errorCount > getMaxErrorCount()) {
+			// Only allow the error count at rare occations
+			if (isPowerOfTwo(errorCount)) {
+				// Permit it - but print the number of exceptions first
+				reportWarning(this, "Internal exception count: " + errorCount + "!");
+			} else {
+				// NEVER SPAM THE CONSOLE
+				return;
+			}
 		}
 		
 		StringWriter text = new StringWriter();
@@ -230,12 +303,15 @@ public class DetailedErrorReporter implements ErrorReporter {
 					return (ToStringBuilder.reflectionToString(value, ToStringStyle.MULTI_LINE_STYLE, false, null));
 			} catch (Throwable ex) {
 				// Apache is probably missing
-				logger.warning("Cannot find Apache Commons. Object introspection disabled.");
 				apacheCommonsMissing = true;
 			}
 			
-			// Just use toString()
-			return String.format("%s", value);
+			// Use our custom object printer instead
+			try {
+				return PrettyPrinter.printObject(value, value.getClass(), Object.class);
+			} catch (IllegalAccessException e) {
+				return "[Error: " + e.getMessage() + "]";
+			}
 		}
 	}
 	
@@ -249,11 +325,11 @@ public class DetailedErrorReporter implements ErrorReporter {
 	}
 	
 	public int getErrorCount() {
-		return errorCount;
+		return internalErrorCount.get();
 	}
 
 	public void setErrorCount(int errorCount) {
-		this.errorCount = errorCount;
+		internalErrorCount.set(errorCount);
 	}
 
 	public int getMaxErrorCount() {

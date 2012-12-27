@@ -17,14 +17,18 @@
 
 package com.comphenix.protocol.injector;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.google.common.primitives.Primitives;
 
 /**
  * Represents an object capable of converting wrapped Bukkit objects into NMS objects.
@@ -38,41 +42,33 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
  * @author Kristian
  */
 public class BukkitUnwrapper implements Unwrapper {
+	private static Map<Class<?>, Unwrapper> unwrapperCache = new ConcurrentHashMap<Class<?>, Unwrapper>();
 	
-	private static Map<Class<?>, Method> cache = new ConcurrentHashMap<Class<?>, Method>();
-
 	@SuppressWarnings("unchecked")
 	@Override
 	public Object unwrapItem(Object wrappedObject) {
-
-		// Special cases
-		if (wrappedObject == null) {
+		// Special case
+		if (wrappedObject == null) 
 			return null;
-		} else if (wrappedObject instanceof Collection) {
-			return handleCollection((Collection<Object>) wrappedObject);
-		}
-		
 		Class<?> currentClass = wrappedObject.getClass();
-		Method cachedMethod = initializeCache(currentClass);
 		
-		try {
-			// Retrieve the handle
-			if (cachedMethod != null)
-				return cachedMethod.invoke(wrappedObject);
-			else
-				return null;
-			
-		} catch (IllegalArgumentException e) {
-			// Impossible
+		// Next, check for types that doesn't have a getHandle()
+		if (wrappedObject instanceof Collection) {
+			return handleCollection((Collection<Object>) wrappedObject);
+		} else if (Primitives.isWrapperType(currentClass) || wrappedObject instanceof String) {
 			return null;
-		} catch (IllegalAccessException e) {
-			return null;
-		} catch (InvocationTargetException e) {
-			// This is REALLY bad
-			throw new RuntimeException("Minecraft error.", e);
 		}
+		
+		Unwrapper specificUnwrapper = getSpecificUnwrapper(currentClass);
+		
+		// Retrieve the handle
+		if (specificUnwrapper != null)
+			return specificUnwrapper.unwrapItem(wrappedObject);
+		else
+			return null;
 	}
 	
+	// Handle a collection of items
 	private Object handleCollection(Collection<Object> wrappedObject) {
 		
 		@SuppressWarnings("unchecked")
@@ -91,24 +87,94 @@ public class BukkitUnwrapper implements Unwrapper {
 		}
 	}
 	
-	private Method initializeCache(Class<?> type) {
-		
+	/**
+	 * Retrieve a cached class unwrapper for the given class.
+	 * @param type - the type of the class.
+	 * @return An unwrapper for the given class.
+	 */
+	private Unwrapper getSpecificUnwrapper(Class<?> type) {
 		// See if we're already determined this
-		if (cache.containsKey(type)) {
+		if (unwrapperCache.containsKey(type)) {
 			// We will never remove from the cache, so this ought to be thread safe
-			return cache.get(type);
+			return unwrapperCache.get(type);
 		}
 		
 		try {
-			Method find = type.getMethod("getHandle");
+			final Method find = type.getMethod("getHandle");
 			
 			// It's thread safe, as getMethod should return the same handle 
-			cache.put(type, find);
-			return find;
+			Unwrapper methodUnwrapper = new Unwrapper() {
+				@Override
+				public Object unwrapItem(Object wrappedObject) {
+					
+					try {
+						return find.invoke(wrappedObject);
+						
+					} catch (IllegalArgumentException e) {
+						ProtocolLibrary.getErrorReporter().reportDetailed(
+								this, "Illegal argument.", e, wrappedObject, find);
+					} catch (IllegalAccessException e) {
+						// Should not occur either
+						return null;
+					} catch (InvocationTargetException e) {
+						// This is really bad
+						throw new RuntimeException("Minecraft error.", e);
+					}
+					
+					return null;
+				}
+			};
+			
+			unwrapperCache.put(type, methodUnwrapper);
+			return methodUnwrapper;
 			
 		} catch (SecurityException e) {
-			return null;
+			ProtocolLibrary.getErrorReporter().reportDetailed(this, "Security limitation.", e, type.getName());
 		} catch (NoSuchMethodException e) {
+			// Try getting the field unwrapper too
+			Unwrapper fieldUnwrapper = getFieldUnwrapper(type);
+			
+			if (fieldUnwrapper != null)
+				return fieldUnwrapper;
+			else
+				ProtocolLibrary.getErrorReporter().reportDetailed(this, "Cannot find method.", e, type.getName());
+		}
+		
+		// Default method
+		return null;
+	}
+	
+	/**
+	 * Retrieve a cached unwrapper using the handle field.
+	 * @param type - a cached field unwrapper.
+	 * @return The cached field unwrapper.
+	 */
+	private Unwrapper getFieldUnwrapper(Class<?> type) {
+		final Field find = FieldUtils.getField(type, "handle", true);
+		
+		// See if we succeeded
+		if (find != null) {
+			Unwrapper fieldUnwrapper = new Unwrapper() {
+				@Override
+				public Object unwrapItem(Object wrappedObject) {
+					try {
+						return FieldUtils.readField(find, wrappedObject, true);
+					} catch (IllegalAccessException e) {
+						ProtocolLibrary.getErrorReporter().reportDetailed(
+								this, "Cannot read field 'handle'.", e, wrappedObject, find.getName());
+						return null;
+					}
+				}
+			};
+			
+			unwrapperCache.put(type, fieldUnwrapper);
+			return fieldUnwrapper;
+			
+		} else {
+			// Inform about this too
+			ProtocolLibrary.getErrorReporter().reportDetailed(
+					this, "Could not find field 'handle'.", 
+					new Exception("Unable to find 'handle'"), type.getName());
 			return null;
 		}
 	}

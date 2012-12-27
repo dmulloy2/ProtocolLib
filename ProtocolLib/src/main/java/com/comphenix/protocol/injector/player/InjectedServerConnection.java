@@ -29,7 +29,7 @@ import org.bukkit.Server;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.ObjectCloner;
+import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
@@ -77,7 +77,8 @@ class InjectedServerConnection {
 			return;
 		
 		if (minecraftServerField == null)
-			minecraftServerField = FuzzyReflection.fromObject(server, true).getFieldByType(".*MinecraftServer");
+			minecraftServerField = FuzzyReflection.fromObject(server, true).
+				getFieldByType("MinecraftServer", MinecraftReflection.getMinecraftServerClass());
 
 		try {
 			minecraftServer = FieldUtils.readField(minecraftServerField, server, true);
@@ -211,6 +212,9 @@ class InjectedServerConnection {
 			 * Shut up Eclipse!
 			 */
 			private static final long serialVersionUID = 2070481080950500367L;
+			
+			// Object writer we'll use
+			private final ObjectWriter writer = new ObjectWriter();
 
 			@Override
 			protected void onReplacing(Object inserting, Object replacement) {
@@ -218,7 +222,7 @@ class InjectedServerConnection {
 				if (!(inserting instanceof Factory)) {
 					// If so, copy the content of the old element to the new
 					try {
-						ObjectCloner.copyTo(inserting, replacement, inserting.getClass());
+						writer.copyTo(inserting, replacement, inserting.getClass());
 					} catch (Throwable e) {
 						reporter.reportDetailed(InjectedServerConnection.this, "Cannot copy old " + inserting + 
 								 				" to new.", e, inserting, replacement);

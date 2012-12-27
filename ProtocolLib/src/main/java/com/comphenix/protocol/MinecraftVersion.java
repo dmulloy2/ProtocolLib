@@ -1,3 +1,20 @@
+/*
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2012 Kristian S. Stangeland
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the 
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; 
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  02111-1307 USA
+ */
+
 package com.comphenix.protocol;
 
 import java.util.regex.Matcher;
@@ -7,6 +24,7 @@ import org.bukkit.Server;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 
 /**
  * Determine the current Minecraft version.
@@ -22,6 +40,9 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	private final int major;
 	private final int minor;
 	private final int build;
+	
+	// The development stage
+	private final String development;
 
 	/**
 	 * Determine the current Minecraft version.
@@ -36,11 +57,13 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	 * @param versionOnly - the version in text form.
 	 */
 	public MinecraftVersion(String versionOnly) {
-		int[] numbers = parseVersion(versionOnly);
+		String[] section = versionOnly.split("-");
+		int[] numbers = parseVersion(section[0]);
 		
 		this.major = numbers[0];
 		this.minor = numbers[1];
 		this.build = numbers[2];
+		this.development = section.length > 1 ? section[1] : null;
 	}
 	
 	/**
@@ -50,9 +73,21 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	 * @param build - build version number.
 	 */
 	public MinecraftVersion(int major, int minor, int build) {
+		this(major, minor, build, null);
+	}
+	
+	/**
+	 * Construct a version object directly.
+	 * @param major - major version number.
+	 * @param minor - minor version number.
+	 * @param build - build version number.
+	 * @param development - development stage.
+	 */
+	public MinecraftVersion(int major, int minor, int build, String development) {
 		this.major = major;
 		this.minor = minor;
 		this.build = build;
+		this.development = development;
 	}
 
 	private int[] parseVersion(String version) {
@@ -65,7 +100,7 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	
 		// The String 1 or 1.2 is interpreted as 1.0.0 and 1.2.0 respectively.
 		for (int i = 0; i < Math.min(numbers.length, elements.length); i++)
-			numbers[i] = Integer.parseInt(elements[i].trim());	
+			numbers[i] = Integer.parseInt(elements[i].trim());
 		return numbers;
 	}
 	
@@ -94,11 +129,22 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	}
 	
 	/**
+	 * Retrieve the development stage.
+	 * @return Development stage, or NULL if this is a release.
+	 */
+	public String getDevelopmentStage() {
+		return development;
+	}
+	
+	/**
 	 * Retrieve the version String (major.minor.build) only.
 	 * @return A normal version string.
 	 */
 	public String getVersion() {
-		return String.format("%s.%s.%s", major, minor, build);
+		if (development == null)
+			return String.format("%s.%s.%s", major, minor, build);
+		else
+			return String.format("%s.%s.%s-%s", major, minor, build, development);
 	}
 	
 	@Override
@@ -110,6 +156,8 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 					compare(major, o.major).
 					compare(minor, o.minor).
 					compare(build, o.build).
+					// No development String means it's a release
+					compare(development, o.development, Ordering.natural().nullsLast()).
 					result();
 	}
 	
@@ -125,7 +173,8 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 			
 			return major == other.major && 
 				   minor == other.minor && 
-				   build == other.build;
+				   build == other.build &&
+				   Objects.equal(development, other.development);
 		}
 		
 		return false;

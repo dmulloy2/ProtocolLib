@@ -15,50 +15,28 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector.player;
-
-import java.util.Arrays;
-
-import com.google.common.base.Joiner;
+package com.comphenix.protocol.reflect.cloning;
 
 /**
- * Represents an error message from a player injector.
+ * Represents an object that is capable of cloning other objects.
  * 
  * @author Kristian
  */
-class UnsupportedListener {
-	private String message;
-	private int[] packets;
+public interface Cloner {
+	/**
+	 * Determine whether or not the current cloner can clone the given object.
+	 * @param source - the object that is being considered.
+	 * @return TRUE if this cloner can actually clone the given object, FALSE otherwise.
+	 */
+	public boolean canClone(Object source);
 	
 	/**
-	 * Create a new error message.
-	 * @param message - the message.
-	 * @param packets - unsupported packets.
+	 * Perform the clone. 
+	 * <p>
+	 * This method should never be called unless a corresponding {@link #canClone(Object)} returns TRUE.
+	 * @param source - the value to clone.
+	 * @return A cloned value.
+	 * @throws IllegalArgumentException If this cloner cannot perform the clone.
 	 */
-	public UnsupportedListener(String message, int[] packets) {
-		super();
-		this.message = message;
-		this.packets = packets;
-	}
-
-	/**
-	 * Retrieve the error message.
-	 * @return Error message.
-	 */
-	public String getMessage() {
-		return message;
-	}
-	
-	/**
-	 * Retrieve all unsupported packets.
-	 * @return Unsupported packets.
-	 */
-	public int[] getPackets() {
-		return packets;
-	}
-	
-	@Override
-	public String toString() {
-		return String.format("%s (%s)", message, Joiner.on(", ").join(Arrays.asList(packets)));
-	}
+	public Object clone(Object source);
 }

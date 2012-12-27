@@ -1,3 +1,20 @@
+/*
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2012 Kristian S. Stangeland
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the 
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; 
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  02111-1307 USA
+ */
+
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
@@ -49,7 +66,6 @@ public class WrappedWatchableObject {
 	 * @param index - the index.
 	 * @param value - non-null value of specific types.
 	 */
-	@SuppressWarnings("unchecked")
 	public WrappedWatchableObject(int index, Object value) {
 		if (value == null)
 			throw new IllegalArgumentException("Value cannot be NULL.");
@@ -296,8 +312,8 @@ public class WrappedWatchableObject {
 	 * @throws FieldAccessException If we're unable to use reflection.
 	 */
 	public WrappedWatchableObject deepClone() throws FieldAccessException {
-		@SuppressWarnings("unchecked")
-		WrappedWatchableObject clone = new WrappedWatchableObject(DefaultInstances.DEFAULT.getDefault(MinecraftReflection.getWatchableObjectClass()));
+		WrappedWatchableObject clone = new WrappedWatchableObject(
+				DefaultInstances.DEFAULT.getDefault(MinecraftReflection.getWatchableObjectClass()));
 		
 		clone.setDirtyState(getDirtyState());
 		clone.setIndex(getIndex());

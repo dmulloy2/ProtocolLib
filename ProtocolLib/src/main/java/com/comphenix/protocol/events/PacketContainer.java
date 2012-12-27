@@ -17,19 +17,20 @@
 
 package com.comphenix.protocol.events;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+
+import javax.annotation.Nullable;
 
 import org.bukkit.World;
 import org.bukkit.WorldType;
@@ -39,12 +40,22 @@ import org.bukkit.inventory.ItemStack;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.cloning.AggregateCloner;
+import com.comphenix.protocol.reflect.cloning.BukkitCloner;
+import com.comphenix.protocol.reflect.cloning.Cloner;
+import com.comphenix.protocol.reflect.cloning.CollectionCloner;
+import com.comphenix.protocol.reflect.cloning.FieldCloner;
+import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
+import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 
 /**
@@ -68,6 +79,28 @@ public class PacketContainer implements Serializable {
 	// Support for serialization
 	private static ConcurrentMap<Class<?>, Method> writeMethods = Maps.newConcurrentMap();
 	private static ConcurrentMap<Class<?>, Method> readMethods = Maps.newConcurrentMap();
+	
+	// Used to clone packets
+	private static final AggregateCloner DEEP_CLONER = AggregateCloner.newBuilder().
+			instanceProvider(DefaultInstances.DEFAULT).
+			andThen(BukkitCloner.class).
+			andThen(ImmutableDetector.class).
+			andThen(CollectionCloner.class).
+			andThen(getSpecializedDeepClonerFactory()).
+			build();
+	
+	private static final AggregateCloner SHALLOW_CLONER = AggregateCloner.newBuilder().
+			instanceProvider(DefaultInstances.DEFAULT).
+			andThen(new Function<BuilderParameters, Cloner>() {
+						@Override
+						public Cloner apply(@Nullable BuilderParameters param) {
+							return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
+								// Use a default writer with no concept of cloning
+								writer = new ObjectWriter();
+							}};
+						}
+					}).
+			build();
 	
 	/**
 	 * Creates a packet container for a new packet.
@@ -241,12 +274,12 @@ public class PacketContainer implements Serializable {
 				BukkitConverters.getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
 					
 			public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
-				Object[] result = new Object[specific.length];
+				Class<?> nmsStack = MinecraftReflection.getItemStackClass();
+				Object[] result = (Object[]) Array.newInstance(nmsStack, specific.length);
 				
 				// Unwrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = stackConverter.getGeneric(
-							MinecraftReflection.getItemStackClass(), specific[i]); 
+					result[i] = stackConverter.getGeneric(nmsStack, specific[i]); 
 				}
 				return result;
 			}
@@ -365,39 +398,53 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
+	 * Create a shallow copy of the current packet.
+	 * <p>
+	 * This merely writes the content of each field to the new class directly,
+	 * without performing any expensive copies. 
+	 * 
+	 * @return A shallow copy of the current packet.
+	 */
+	public PacketContainer shallowClone() {
+		Object clonedPacket = SHALLOW_CLONER.clone(getHandle());
+		return new PacketContainer(getID(), clonedPacket);
+	}
+	
+	/**
 	 * Create a deep copy of the current packet.
+	 * <p>
+	 * This will perform a full copy of the entire object tree, only skipping
+	 * known immutable objects and primitive types.
+	 * <p>
+	 * Note that the inflated buffers in packet 51 and 56 will be copied directly to save memory.
+	 * 
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
-		ObjectOutputStream output = null;
-		ObjectInputStream input = null;
-		
-		try {
-			// Use a small buffer of 32 bytes initially.
-			ByteArrayOutputStream bufferOut = new ByteArrayOutputStream(); 
-			output = new ObjectOutputStream(bufferOut);
-			output.writeObject(this);
-			
-			ByteArrayInputStream bufferIn = new ByteArrayInputStream(bufferOut.toByteArray());
-			input = new ObjectInputStream(bufferIn);
-			return (PacketContainer) input.readObject();
-			
-		} catch (IOException e) {
-			throw new IllegalStateException("Unexpected error occured during object cloning.", e);
-		} catch (ClassNotFoundException e) {
-			// Cannot happen
-			throw new IllegalStateException("Unexpected failure with serialization.", e);
-		} finally {
-			try {
-				if (output != null)
-					output.close();
-				if (input != null)
-					input.close();
-				
-			} catch (IOException e) {
-				// STOP IT
+		Object clonedPacket = DEEP_CLONER.clone(getHandle());
+		return new PacketContainer(getID(), clonedPacket);
+	}
+	
+	// To save space, we'll skip copying the inflated buffers in packet 51 and 56
+	private static Function<BuilderParameters, Cloner> getSpecializedDeepClonerFactory() {
+		// Look at what you've made me do Java, look at it!! 
+		return new Function<BuilderParameters, Cloner>() {
+			@Override
+			public Cloner apply(@Nullable BuilderParameters param) {
+				return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
+					this.writer = new ObjectWriter() {
+						protected void transformField(StructureModifier<Object> modifierSource, 
+													  StructureModifier<Object> modifierDest, int fieldIndex) {
+							// No need to clone inflated buffers
+							if (modifierSource.getField(fieldIndex).getName().startsWith("inflatedBuffer"))
+								modifierDest.write(fieldIndex, modifierSource.read(fieldIndex));
+							else
+								defaultTransform(modifierSource, modifierDest, getDefaultCloner(), fieldIndex);
+						};
+					};
+				}};
 			}
-		}
+		};
 	}
 	
 	private void writeObject(ObjectOutputStream output) throws IOException {

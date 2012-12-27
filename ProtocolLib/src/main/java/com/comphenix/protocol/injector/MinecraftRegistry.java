@@ -183,6 +183,22 @@ class MinecraftRegistry {
 	}
 	
 	/**
+	 * Retrieve the packet ID of a given packet.
+	 * @param packet - the type of packet to check.
+	 * @return The ID of the given packet.
+	 * @throws IllegalArgumentException If this is not a valid packet.
+	 */
+	public static int getPacketID(Class<?> packet) {
+		if (packet == null)
+			throw new IllegalArgumentException("Packet type class cannot be NULL.");
+		if (!MinecraftReflection.getPacketClass().isAssignableFrom(packet))
+			throw new IllegalArgumentException("Type must be a packet.");
+		
+		// The registry contains both the overridden and original packets
+		return getPacketToID().get(packet);
+	}
+	
+	/**
 	 * Find the first superclass that is not a CBLib proxy object.
 	 * @param clazz - the class whose hierachy we're going to search through.
 	 * @param remove - whether or not to skip enhanced (proxy) classes.

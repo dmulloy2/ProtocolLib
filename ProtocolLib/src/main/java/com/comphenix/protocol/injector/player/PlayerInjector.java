@@ -156,7 +156,8 @@ abstract class PlayerInjector {
 			
 			// Retrieve the server handler
 			if (serverHandlerField == null) {
-				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(".*NetServerHandler");
+				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(
+									  "NetServerHandler", MinecraftReflection.getNetServerHandlerClass());
 				proxyServerField = getProxyField(notchEntity, serverHandlerField);
 			}
 			
@@ -166,7 +167,8 @@ abstract class PlayerInjector {
 
 			// Next, get the network manager 
 			if (networkManagerField == null) 
-				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(".*NetworkManager");
+				networkManagerField = FuzzyReflection.fromObject(serverHandler).
+										getFieldByType(".*" + MinecraftReflection.getNetworkManagerName());
 			initializeNetworkManager(networkManagerField, serverHandler);
 		}
 	}
@@ -181,7 +183,8 @@ abstract class PlayerInjector {
 			loginHandler = netLoginHandler;
 			
 			if (netLoginNetworkField == null)
-				netLoginNetworkField =  FuzzyReflection.fromObject(netLoginHandler).getFieldByType(".*NetworkManager");
+				netLoginNetworkField =  FuzzyReflection.fromObject(netLoginHandler).
+										  getFieldByType(".*" + MinecraftReflection.getNetworkManagerName());
 			initializeNetworkManager(netLoginNetworkField, netLoginHandler);
 		}
 	}
@@ -341,7 +344,7 @@ abstract class PlayerInjector {
 					FuzzyReflection reflection = FuzzyReflection.fromObject(handler, true);
 					
 					// It might be
-					return reflection.getFieldByType(".*NetServerHandler");
+					return reflection.getFieldByType("NetServerHandler", MinecraftReflection.getNetServerHandlerClass());
 					
 				} catch (RuntimeException e) {
 					// Damn
@@ -367,7 +370,7 @@ abstract class PlayerInjector {
 		try {
 			if (netHandlerField == null)
 				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
-									getFieldByType("net\\.minecraft\\.NetHandler");
+									getFieldByType("NetHandler", MinecraftReflection.getNetHandlerClass());
 		} catch (RuntimeException e1) {
 			// Swallow it
 		}
@@ -398,7 +401,8 @@ abstract class PlayerInjector {
 	 */
 	private Object getEntityPlayer(Object netHandler) throws IllegalAccessException {
 		if (entityPlayerField == null)
-			entityPlayerField = FuzzyReflection.fromObject(netHandler).getFieldByType(".*EntityPlayer");
+			entityPlayerField = FuzzyReflection.fromObject(netHandler).getFieldByType(
+								 "EntityPlayer", MinecraftReflection.getEntityPlayerClass());
 		return FieldUtils.readField(entityPlayerField, netHandler);
 	}
 	
