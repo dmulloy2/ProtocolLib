@@ -14,7 +14,7 @@ import com.google.common.collect.Ordering;
  * 
  * @author Kristian
  */
-public class MinecraftVersion implements Comparable<MinecraftVersion> {
+class MinecraftVersion implements Comparable<MinecraftVersion> {
 	/**
 	 * Regular expression used to parse version strings.
 	 */
