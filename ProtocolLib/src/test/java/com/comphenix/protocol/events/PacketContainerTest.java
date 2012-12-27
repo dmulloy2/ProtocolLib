@@ -367,14 +367,16 @@ public class PacketContainerTest {
 	 * @return An object array.
 	 */
 	private Object[] getArray(Object val) {
-	    if (val instanceof Object[])
-	        return (Object[]) val;
-	    
-	     int arrlength = Array.getLength(val);
-	     Object[] outputArray = new Object[arrlength];
-	     
-	     for (int i = 0; i < arrlength; ++i)
-	        outputArray[i] = Array.get(val, i);
-	     return outputArray;
+		if (val instanceof Object[])
+			return (Object[]) val;
+		if (val == null)
+			return null;
+
+		int arrlength = Array.getLength(val);
+		Object[] outputArray = new Object[arrlength];
+ 
+		for (int i = 0; i < arrlength; ++i)
+			outputArray[i] = Array.get(val, i);
+		return outputArray;
 	}
 }

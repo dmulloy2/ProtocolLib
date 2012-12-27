@@ -1,6 +1,7 @@
 package com.comphenix.protocol.reflect.cloning;
 
 import com.comphenix.protocol.reflect.ObjectWriter;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
 
 /**
@@ -12,6 +13,9 @@ public class FieldCloner implements Cloner {
 	private final Cloner defaultCloner;
 	private final InstanceProvider instanceProvider;
 	
+	// Used to clone objects
+	private final ObjectWriter writer;
+	
 	/**
 	 * Constructs a field cloner that copies objects by reading and writing the internal fields directly.
 	 * @param defaultCloner - the default cloner used while copying fields.
@@ -20,6 +24,16 @@ public class FieldCloner implements Cloner {
 	public FieldCloner(Cloner defaultCloner, InstanceProvider instanceProvider) {
 		this.defaultCloner = defaultCloner;
 		this.instanceProvider = instanceProvider;
+		
+		// Remember to clone the value too
+		this.writer = new ObjectWriter() {
+			@Override
+			protected void transformField(StructureModifier<Object> modifierSource,
+					StructureModifier<Object> modifierDest, int fieldIndex) {
+				Object value = modifierSource.read(fieldIndex);
+				modifierDest.write(fieldIndex, getDefaultCloner().clone(value));
+			}
+		};
 	}
 
 	@Override
@@ -38,8 +52,8 @@ public class FieldCloner implements Cloner {
 		
 		Object copy = instanceProvider.create(source.getClass());
 		
-		// Copy public and private fields alike. Skip static and transient fields.
-		ObjectWriter.copyTo(source, copy, source.getClass(), defaultCloner);
+		// Copy public and private fields alike. Skip static fields.
+		writer.copyTo(source, copy, source.getClass());
 		return copy;
 	}
 	

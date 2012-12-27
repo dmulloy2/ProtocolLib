@@ -66,6 +66,9 @@ public class NetworkServerInjector extends PlayerInjector {
 	// Whether or not the player has disconnected
 	private boolean hasDisconnected;
 	
+	// Used to copy fields
+	private final ObjectWriter writer = new ObjectWriter();
+	
 	public NetworkServerInjector(
 			ClassLoader classLoader, ErrorReporter reporter, Player player, 
 			ListenerInvoker invoker, IntegerSet sendingFilters, 
@@ -248,7 +251,7 @@ public class NetworkServerInjector extends PlayerInjector {
 	@Override
 	protected void cleanHook() {
 		if (serverHandlerRef != null && serverHandlerRef.isCurrentSet()) {
-			ObjectWriter.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
+			writer.copyTo(serverHandlerRef.getValue(), serverHandlerRef.getOldValue(), serverHandler.getClass());
 			serverHandlerRef.revertValue();
 			
 			try {

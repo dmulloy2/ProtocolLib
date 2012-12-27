@@ -212,6 +212,9 @@ class InjectedServerConnection {
 			 * Shut up Eclipse!
 			 */
 			private static final long serialVersionUID = 2070481080950500367L;
+			
+			// Object writer we'll use
+			private final ObjectWriter writer = new ObjectWriter();
 
 			@Override
 			protected void onReplacing(Object inserting, Object replacement) {
@@ -219,7 +222,7 @@ class InjectedServerConnection {
 				if (!(inserting instanceof Factory)) {
 					// If so, copy the content of the old element to the new
 					try {
-						ObjectWriter.copyTo(inserting, replacement, inserting.getClass());
+						writer.copyTo(inserting, replacement, inserting.getClass());
 					} catch (Throwable e) {
 						reporter.reportDetailed(InjectedServerConnection.this, "Cannot copy old " + inserting + 
 								 				" to new.", e, inserting, replacement);

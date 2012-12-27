@@ -23,8 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.comphenix.protocol.injector.StructureCache;
-import com.comphenix.protocol.reflect.cloning.Cloner;
-import com.comphenix.protocol.reflect.cloning.IdentityCloner;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
@@ -39,18 +37,13 @@ public class ObjectWriter {
 			new ConcurrentHashMap<Class, StructureModifier<Object>>();
 	
 	/**
-	 * The default value cloner to use.
-	 */
-	private static final Cloner DEFAULT_CLONER = new IdentityCloner();
-	
-	/**
 	 * Retrieve a usable structure modifier for the given object type.
 	 * <p>
 	 * Will attempt to reuse any other structure modifiers we have cached.
 	 * @param type - the type of the object we are modifying.
 	 * @return A structure modifier for the given type.
 	 */
-	private static StructureModifier<Object> getModifier(Class<?> type) {
+	private StructureModifier<Object> getModifier(Class<?> type) {
 		Class<?> packetClass = MinecraftReflection.getPacketClass();
 		
 		// Handle subclasses of the packet class with our custom structure cache
@@ -82,26 +75,24 @@ public class ObjectWriter {
 	 * @param destination - fields to copy to.
 	 * @param commonType - type containing each field to copy.
 	 */
-	public static void copyTo(Object source, Object destination, Class<?> commonType) {
+	public void copyTo(Object source, Object destination, Class<?> commonType) {
 		// Note that we indicate that public fields will be copied the first time around
-		copyToInternal(source, destination, commonType, DEFAULT_CLONER, true);
+		copyToInternal(source, destination, commonType, true);
 	}
 
 	/**
-	 * Copy every field in object A to object B. Each value is copied using the supplied cloner.
-	 * <p>
-	 * The two objects must have the same number of fields of the same type.
-	 * @param source - fields to copy.
-	 * @param destination - fields to copy to.
-	 * @param commonType - type containing each field to copy.
-	 * @param valueCloner - a object responsible for copying the content of each field.
+	 * Called for every non-static field that will be copied.
+	 * @param modifierSource - modifier for the original object.
+	 * @param modifierDest - modifier for the new cloned object.
+	 * @param fieldIndex - the current field index.
 	 */
-	public static void copyTo(Object source, Object destination, Class<?> commonType, Cloner valueCloner) {
-		copyToInternal(source, destination, commonType, valueCloner, true);
+	protected void transformField(StructureModifier<Object> modifierSource, StructureModifier<Object> modifierDest, int fieldIndex) {
+		Object value = modifierSource.read(fieldIndex);
+		modifierDest.write(fieldIndex, value);
 	}
 	
 	// Internal method that will actually implement the recursion
-	private static void copyToInternal(Object source, Object destination, Class<?> commonType, Cloner valueCloner, boolean copyPublic) {
+	private void copyToInternal(Object source, Object destination, Class<?> commonType, boolean copyPublic) {
 		if (source == null)
 			throw new IllegalArgumentException("Source cannot be NULL");
 		if (destination == null)
@@ -119,10 +110,9 @@ public class ObjectWriter {
 				Field field = modifierSource.getField(i);
 				int mod = field.getModifiers();
 				
-				// Skip static fields. We also get the "public" field fairly often, so we'll skip that.
+				// Skip static fields. We also get the "public" fields fairly often, so we'll skip that.
 				if (!Modifier.isStatic(mod) && (!Modifier.isPublic(mod) || copyPublic)) {
-					Object value = modifierSource.read(i);
-					modifierDest.write(i, valueCloner.clone(value));
+					transformField(modifierSource, modifierDest, i);
 				}
 			}
 			
@@ -130,7 +120,7 @@ public class ObjectWriter {
 			Class<?> superclass = commonType.getSuperclass();
 			
 			if (!superclass.equals(Object.class)) {
-				copyToInternal(source, destination, superclass, valueCloner, false);
+				copyToInternal(source, destination, superclass, false);
 			}
 			
 		} catch (FieldAccessException e) {
