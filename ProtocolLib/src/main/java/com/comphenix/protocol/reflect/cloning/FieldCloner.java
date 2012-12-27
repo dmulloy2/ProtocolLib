@@ -1,0 +1,61 @@
+package com.comphenix.protocol.reflect.cloning;
+
+import com.comphenix.protocol.reflect.ObjectWriter;
+import com.comphenix.protocol.reflect.instances.InstanceProvider;
+
+/**
+ * Represents a class capable of cloning objects by deeply copying its fields.
+ * 
+ * @author Kristian
+ */
+public class FieldCloner implements Cloner {
+	private final Cloner defaultCloner;
+	private final InstanceProvider instanceProvider;
+	
+	/**
+	 * Constructs a field cloner that copies objects by reading and writing the internal fields directly.
+	 * @param defaultCloner - the default cloner used while copying fields.
+	 * @param instanceProvider - used to construct new, empty copies of a given type.
+	 */
+	public FieldCloner(Cloner defaultCloner, InstanceProvider instanceProvider) {
+		this.defaultCloner = defaultCloner;
+		this.instanceProvider = instanceProvider;
+	}
+
+	@Override
+	public boolean canClone(Object source) {
+		if (source == null)
+			return false;
+		
+		// Attempt to create the type
+		return instanceProvider.create(source.getClass()) != null;
+	}
+
+	@Override
+	public Object clone(Object source) {
+		if (source == null)
+			throw new IllegalArgumentException("source cannot be NULL.");
+		
+		Object copy = instanceProvider.create(source.getClass());
+		
+		// Copy public and private fields alike. Skip static and transient fields.
+		ObjectWriter.copyTo(source, copy, source.getClass(), defaultCloner);
+		return copy;
+	}
+	
+	/**
+	 * Retrieve the default cloner used to clone the content of each field.
+	 * @return Cloner used to clone fields.
+	 */
+	public Cloner getDefaultCloner() {
+		return defaultCloner;
+	}
+
+	/**
+	 * Retrieve the instance provider this cloner is using to create new, empty classes.
+	 * @return The instance provider in use.
+	 */
+	public InstanceProvider getInstanceProvider() {
+		return instanceProvider;
+	}
+}

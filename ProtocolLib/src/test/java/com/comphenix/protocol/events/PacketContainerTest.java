@@ -5,6 +5,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Array;
 import java.util.List;
 
 // Will have to be updated for every version though
@@ -23,12 +24,15 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
@@ -36,6 +40,9 @@ import com.google.common.collect.Lists;
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
+	// Helper converters
+	private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
+	private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
 	
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {
@@ -203,23 +210,15 @@ public class PacketContainerTest {
 	}
 	
 	private boolean equivalentItem(ItemStack first, ItemStack second) {
-		if (first == null)
+		if (first == null) {
 			return second == null;
-		else if (second == null)
+		} else if (second == null) {
 			return false;
-		else
+		} else {
 			return first.getType().equals(second.getType());
+		}
 	}
 	
-	private boolean equivalentPacket(PacketContainer first, PacketContainer second) {
-		if (first == null)
-			return second == null;
-		else if (second == null)
-			return false;
-		else
-			return first.getModifier().getValues().equals(second.getModifier().getValues());
-	}
-
 	@Test
 	public void testGetWorldTypeModifier() {
 		PacketContainer loginPacket = new PacketContainer(Packets.Server.LOGIN);
@@ -324,7 +323,16 @@ public class PacketContainerTest {
 				PacketContainer cloned = constructed.deepClone();
 				
 				// Make sure they're equivalent
-				assertTrue("Packet " + id + " could not be cloned.", equivalentPacket(constructed, cloned));
+				StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
+				assertEquals(firstMod.size(), secondMod.size());
+
+				// Make sure all the fields are equivalent
+				for (int i = 0; i < firstMod.size(); i++) {
+					if (firstMod.getField(i).getType().isArray())
+						assertArrayEquals(getArray(firstMod.read(i)), getArray(secondMod.read(i)));
+					else
+						testEquality(firstMod.read(i), secondMod.read(i));
+				}
 				
 			} catch (IllegalArgumentException e) {
 				if (!registered) {
@@ -336,5 +344,37 @@ public class PacketContainerTest {
 				}
 			}
 		}
+	}
+	
+	// Convert to objects that support equals()
+	private void testEquality(Object a, Object b) {
+		if (a != null && b != null) {
+			if (MinecraftReflection.isDataWatcher(a)) {
+				a = watchConvert.getSpecific(a);
+				b = watchConvert.getSpecific(b);
+			} else if (MinecraftReflection.isItemStack(a)) {
+				a = itemConvert.getSpecific(a);
+				b = itemConvert.getSpecific(b);
+			}
+		}
+		
+		assertEquals(a, b);
+	}
+	
+	/**
+	 * Get the underlying array as an object array.
+	 * @param val - array wrapped as an Object.
+	 * @return An object array.
+	 */
+	private Object[] getArray(Object val) {
+	    if (val instanceof Object[])
+	        return (Object[]) val;
+	    
+	     int arrlength = Array.getLength(val);
+	     Object[] outputArray = new Object[arrlength];
+	     
+	     for (int i = 0; i < arrlength; ++i)
+	        outputArray[i] = Array.get(val, i);
+	     return outputArray;
 	}
 }

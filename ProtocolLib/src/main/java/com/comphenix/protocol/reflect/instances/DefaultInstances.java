@@ -20,6 +20,8 @@ package com.comphenix.protocol.reflect.instances;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
+import javax.annotation.Nullable;
+
 import net.sf.cglib.proxy.Enhancer;
 
 import com.google.common.base.Objects;
@@ -30,7 +32,7 @@ import com.google.common.collect.ImmutableList;
  * @author Kristian
  *
  */
-public class DefaultInstances {
+public class DefaultInstances implements InstanceProvider {
 
 	/**
 	 * Standard default instance provider.
@@ -325,5 +327,10 @@ public class DefaultInstances {
 				return true;
 		}
 		return false;
+	}
+
+	@Override
+	public Object create(@Nullable Class<?> type) {
+		return getDefault(type);
 	}
 }

@@ -201,10 +201,16 @@ public class StructureModifier<TField> {
 	 * @return TRUE if the field by the given index is read-only, FALSE otherwise.
 	 */
 	public boolean isReadOnly(int fieldIndex) {
-		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
-		
-		return Modifier.isFinal(data.get(fieldIndex).getModifiers());
+		return Modifier.isFinal(getField(fieldIndex).getModifiers());
+	}
+	
+	/**
+	 * Determine if a given field is public or not.
+	 * @param fieldIndex - field index.
+	 * @return TRUE if the field is public, FALSE otherwise.
+	 */
+	public boolean isPublic(int fieldIndex) {
+		return Modifier.isPublic(getField(fieldIndex).getModifiers());
 	}
 	
 	/**
@@ -500,6 +506,19 @@ public class StructureModifier<TField> {
 	}
 
 	/**
+	 * Retrieve a field by index.
+	 * @param fieldIndex - index of the field to retrieve.
+	 * @return The field represented with the given index.
+	 * @throws IllegalArgumentException If no field with the given index can be found.
+	 */
+	public Field getField(int fieldIndex) {
+		if (fieldIndex < 0 || fieldIndex >= data.size())
+			throw new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
+		
+		return data.get(fieldIndex);
+	}
+	
+	/**
 	 * Retrieve every value stored in the fields of the current type.
 	 * @return Every field value.
 	 * @throws FieldAccessException Unable to access one or all of the fields
@@ -560,4 +579,6 @@ public class StructureModifier<TField> {
 		
 		return result;
 	}
+
+
 }

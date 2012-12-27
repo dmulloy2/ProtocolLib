@@ -18,13 +18,16 @@
 package com.comphenix.protocol.reflect.instances;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.google.common.collect.Lists;
 
 /**
  * Provides instance constructors using a list of existing values.
@@ -33,8 +36,52 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
  * @author Kristian
  */
 public class ExistingGenerator implements InstanceProvider {
+	/**
+	 * Represents a single node in the tree of possible values.
+	 * 
+	 * @author Kristian
+	 */
+	private static final class Node {
+		private Map<Class<?>, Node> children;
+		private Class<?> key;
+		private Object value;
+		private int level;
+		
+		public Node(Class<?> key, Object value, int level) {
+			this.children = new HashMap<Class<?>, Node>();
+			this.key = key;
+			this.value = value;
+			this.level = level;
+		}
 
-	private Map<String, Object> existingValues = new HashMap<String, Object>();
+		public Node addChild(Node node) {
+			children.put(node.key, node);
+			return node;
+		}
+		
+		public int getLevel() {
+			return level;
+		}
+
+		public Collection<Node> getChildren() {
+			return children.values();
+		}
+		
+		public Object getValue() {
+			return value;
+		}
+
+		public void setValue(Object value) {
+			this.value = value;
+		}
+		
+		public Node getChild(Class<?> clazz) {
+			return children.get(clazz);
+		}
+	}
+	
+	// Represents the root node
+	private Node root = new Node(null, null, 0);
 	
 	private ExistingGenerator() {
 		// Only accessible to the constructors
@@ -110,18 +157,94 @@ public class ExistingGenerator implements InstanceProvider {
 		if (value == null)
 			throw new IllegalArgumentException("Value cannot be NULL.");
 		
-		existingValues.put(value.getClass().getName(), value);
-	}
-
-	private void addObject(Class<?> type, Object value) {
-		existingValues.put(type.getName(), value);
+		addObject(value.getClass(), value);
 	}
 	
+	private void addObject(Class<?> type, Object value) {
+		Node node = getLeafNode(root, type, false);
+		
+		// Set the value
+		node.setValue(value);
+	}
+	
+	private Node getLeafNode(final Node start, Class<?> type, boolean readOnly) {
+		Class<?>[] path = getHierachy(type);
+		Node current = start;
+		
+		for (int i = 0; i < path.length; i++) {
+			Node next = getNext(current, path[i], readOnly);
+			
+			// Try every interface too
+			if (next == null && readOnly) {
+				current = null;
+				break;
+			}
+
+			current = next;
+		}
+		
+		// And we're done
+		return current;
+	}
+
+	private Node getNext(Node current, Class<?> clazz, boolean readOnly) {
+		Node next = current.getChild(clazz);
+		
+		// Add a new node if needed
+		if (next == null && !readOnly) {
+			next = current.addChild(new Node(clazz, null, current.getLevel() + 1));
+		}
+		
+		// Add interfaces
+		if (next != null && !readOnly && !clazz.isInterface()) {
+			for (Class<?> clazzInterface : clazz.getInterfaces()) {
+				getLeafNode(root, clazzInterface, readOnly).addChild(next);
+			}
+		}
+		return next;
+	}
+	
+	private Node getLowestLeaf(Node current) {
+		Node candidate = current;
+		
+		// Depth-first search
+		for (Node child : current.getChildren()) {
+			Node subtree = getLowestLeaf(child);
+			
+			// Get the lowest node
+			if (subtree.getValue() != null && candidate.getLevel() < subtree.getLevel()) {
+				candidate = subtree;
+			}
+		}
+		
+		return candidate;
+	}
+	
+	private Class<?>[] getHierachy(Class<?> type) {
+		LinkedList<Class<?>> levels = Lists.newLinkedList();
+		
+		// Add each class from the hierachy
+		for (; type != null; type = type.getSuperclass()) {
+			levels.addFirst(type);
+		}
+		
+		return levels.toArray(new Class<?>[0]);
+	}
+
 	@Override
 	public Object create(@Nullable Class<?> type) {
-		Object value = existingValues.get(type.getName());
-
+		// Locate the type in the hierachy
+		Node node = getLeafNode(root, type, true);
+		
+		// Next, get the lowest leaf node
+		if (node != null) {
+			node = getLowestLeaf(node);
+		}
+			
 		// NULL values indicate that the generator failed
-		return value;
+		if (node != null)
+			return node.getValue();
+		else
+			return null;
 	}
 }

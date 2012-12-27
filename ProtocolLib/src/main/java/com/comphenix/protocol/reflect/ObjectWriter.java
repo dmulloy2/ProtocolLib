@@ -17,8 +17,15 @@
 
 package com.comphenix.protocol.reflect;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import com.comphenix.protocol.injector.StructureCache;
+import com.comphenix.protocol.reflect.cloning.Cloner;
+import com.comphenix.protocol.reflect.cloning.IdentityCloner;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Can copy an object field by field.
@@ -26,11 +33,46 @@ import java.util.concurrent.ConcurrentMap;
  * @author Kristian
  */
 public class ObjectWriter {
-
 	// Cache structure modifiers
 	@SuppressWarnings("rawtypes")
 	private static ConcurrentMap<Class, StructureModifier<Object>> cache =
 			new ConcurrentHashMap<Class, StructureModifier<Object>>();
+	
+	/**
+	 * The default value cloner to use.
+	 */
+	private static final Cloner DEFAULT_CLONER = new IdentityCloner();
+	
+	/**
+	 * Retrieve a usable structure modifier for the given object type.
+	 * <p>
+	 * Will attempt to reuse any other structure modifiers we have cached.
+	 * @param type - the type of the object we are modifying.
+	 * @return A structure modifier for the given type.
+	 */
+	private static StructureModifier<Object> getModifier(Class<?> type) {
+		Class<?> packetClass = MinecraftReflection.getPacketClass();
+		
+		// Handle subclasses of the packet class with our custom structure cache
+		if (!type.equals(packetClass) && packetClass.isAssignableFrom(type)) {
+			// Delegate to our already existing registry of structure modifiers
+			return StructureCache.getStructure(type);
+		}
+		
+		StructureModifier<Object> modifier = cache.get(type);
+		
+		// Create the structure modifier if we haven't already
+		if (modifier == null) {
+			StructureModifier<Object> value = new StructureModifier<Object>(type, null, false);
+			modifier = cache.putIfAbsent(type, value);
+			
+			if (modifier == null)
+				modifier = value;
+		}
+		
+		// And we're done
+		return modifier;
+	}
 	
 	/**
 	 * Copy every field in object A to object B. Each value is copied directly, and is not cloned.
@@ -41,22 +83,31 @@ public class ObjectWriter {
 	 * @param commonType - type containing each field to copy.
 	 */
 	public static void copyTo(Object source, Object destination, Class<?> commonType) {
-		
+		// Note that we indicate that public fields will be copied the first time around
+		copyToInternal(source, destination, commonType, DEFAULT_CLONER, true);
+	}
+
+	/**
+	 * Copy every field in object A to object B. Each value is copied using the supplied cloner.
+	 * <p>
+	 * The two objects must have the same number of fields of the same type.
+	 * @param source - fields to copy.
+	 * @param destination - fields to copy to.
+	 * @param commonType - type containing each field to copy.
+	 * @param valueCloner - a object responsible for copying the content of each field.
+	 */
+	public static void copyTo(Object source, Object destination, Class<?> commonType, Cloner valueCloner) {
+		copyToInternal(source, destination, commonType, valueCloner, true);
+	}
+	
+	// Internal method that will actually implement the recursion
+	private static void copyToInternal(Object source, Object destination, Class<?> commonType, Cloner valueCloner, boolean copyPublic) {
 		if (source == null)
 			throw new IllegalArgumentException("Source cannot be NULL");
 		if (destination == null)
 			throw new IllegalArgumentException("Destination cannot be NULL");
 		
-		StructureModifier<Object> modifier = cache.get(commonType);
-
-		// Create the structure modifier if we haven't already
-		if (modifier == null) {
-			StructureModifier<Object> value = new StructureModifier<Object>(commonType, null, false);
-			modifier = cache.putIfAbsent(commonType, value);
-			
-			if (modifier == null)
-				modifier = value;
-		}
+		StructureModifier<Object> modifier = getModifier(commonType);
 		
 		// Add target
 		StructureModifier<Object> modifierSource = modifier.withTarget(source);
@@ -65,20 +116,21 @@ public class ObjectWriter {
 		// Copy every field
 		try {
 			for (int i = 0; i < modifierSource.size(); i++) {
-				if (!modifierDest.isReadOnly(i)) {
-					Object value = modifierSource.read(i);
-					modifierDest.write(i, value);
-				}
+				Field field = modifierSource.getField(i);
+				int mod = field.getModifiers();
 				
-				// System.out.println(String.format("Writing value %s to %s", 
-				//		value, modifier.getFields().get(i).getName()));
+				// Skip static fields. We also get the "public" field fairly often, so we'll skip that.
+				if (!Modifier.isStatic(mod) && (!Modifier.isPublic(mod) || copyPublic)) {
+					Object value = modifierSource.read(i);
+					modifierDest.write(i, valueCloner.clone(value));
+				}
 			}
 			
 			// Copy private fields underneath
 			Class<?> superclass = commonType.getSuperclass();
 			
 			if (!superclass.equals(Object.class)) {
-				copyTo(source, destination, superclass);
+				copyToInternal(source, destination, superclass, valueCloner, false);
 			}
 			
 		} catch (FieldAccessException e) {

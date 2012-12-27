@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.events;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -41,6 +39,7 @@ import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.cloning.AggregateCloner;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
@@ -370,35 +369,8 @@ public class PacketContainer implements Serializable {
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
-		ObjectOutputStream output = null;
-		ObjectInputStream input = null;
-		
-		try {
-			// Use a small buffer of 32 bytes initially.
-			ByteArrayOutputStream bufferOut = new ByteArrayOutputStream(); 
-			output = new ObjectOutputStream(bufferOut);
-			output.writeObject(this);
-			
-			ByteArrayInputStream bufferIn = new ByteArrayInputStream(bufferOut.toByteArray());
-			input = new ObjectInputStream(bufferIn);
-			return (PacketContainer) input.readObject();
-			
-		} catch (IOException e) {
-			throw new IllegalStateException("Unexpected error occured during object cloning.", e);
-		} catch (ClassNotFoundException e) {
-			// Cannot happen
-			throw new IllegalStateException("Unexpected failure with serialization.", e);
-		} finally {
-			try {
-				if (output != null)
-					output.close();
-				if (input != null)
-					input.close();
-				
-			} catch (IOException e) {
-				// STOP IT
-			}
-		}
+		Object clonedPacket = AggregateCloner.DEFAULT.clone(getHandle());
+		return new PacketContainer(getID(), clonedPacket);
 	}
 	
 	private void writeObject(ObjectOutputStream output) throws IOException {

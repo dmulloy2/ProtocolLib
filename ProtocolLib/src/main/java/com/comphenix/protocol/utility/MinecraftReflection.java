@@ -113,6 +113,24 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Dynamically retrieve the Bukkit entity from a given entity.
+	 * @param nmsObject - the NMS entity.
+	 * @return A bukkit entity.
+	 * @throws RuntimeException If we were unable to retrieve the Bukkit entity.
+	 */
+	public static Object getBukkitEntity(Object nmsObject) {
+		if (nmsObject == null)
+			return null;
+		
+		// We will have to do this dynamically, unfortunately
+		try {
+			return nmsObject.getClass().getMethod("getBukkitEntity").invoke(nmsObject);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot get Bukkit entity from " + nmsObject, e);
+		}
+	}
+	
+	/**
 	 * Determine if a given object can be found within the package net.minecraft.server.
 	 * @param obj - the object to test.
 	 * @return TRUE if it can, FALSE otherwise.
@@ -138,25 +156,7 @@ public class MinecraftReflection {
 		String javaName = obj.getClass().getName();
 		return javaName.startsWith(MINECRAFT_PREFIX_PACKAGE) && javaName.endsWith(className);
  	}
-		
-	/**
-	 * Dynamically retrieve the Bukkit entity from a given entity.
-	 * @param nmsObject - the NMS entity.
-	 * @return A bukkit entity.
-	 * @throws RuntimeException If we were unable to retrieve the Bukkit entity.
-	 */
-	public static Object getBukkitEntity(Object nmsObject) {
-		if (nmsObject == null)
-			return null;
-		
-		// We will have to do this dynamically, unfortunately
-		try {
-			return nmsObject.getClass().getMethod("getBukkitEntity").invoke(nmsObject);
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot get Bukkit entity from " + nmsObject, e);
-		}
-	}
-	
+			
 	/**
 	 * Determine if a given object is a ChunkPosition.
 	 * @param obj - the object to test.

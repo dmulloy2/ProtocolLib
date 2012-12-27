@@ -65,6 +65,27 @@ public class StructureCache {
 	}
 	
 	/**
+	 * Retrieve a cached structure modifier given a packet type.
+	 * @param packetType - packet type.
+	 * @return A structure modifier.
+	 */
+	public static StructureModifier<Object> getStructure(Class<?> packetType) {
+		// Compile structures by default
+		return getStructure(packetType, true);
+	}
+	
+	/**
+	 * Retrieve a cached structure modifier given a packet type.
+	 * @param packetType - packet type.
+	 * @param compile - whether or not to asynchronously compile the structure modifier.
+	 * @return A structure modifier.
+	 */
+	public static StructureModifier<Object> getStructure(Class<?> packetType, boolean compile) {
+		// Get the ID from the class
+		return getStructure(MinecraftRegistry.getPacketID(packetType), compile);
+	}
+	
+	/**
 	 * Retrieve a cached structure modifier for the given packet id.
 	 * @param id - packet ID.
 	 * @param compile - whether or not to asynchronously compile the structure modifier.
