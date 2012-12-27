@@ -7,13 +7,14 @@ import org.bukkit.Server;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 
 /**
  * Determine the current Minecraft version.
  * 
  * @author Kristian
  */
-class MinecraftVersion implements Comparable<MinecraftVersion> {
+public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	/**
 	 * Regular expression used to parse version strings.
 	 */
@@ -22,6 +23,9 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	private final int major;
 	private final int minor;
 	private final int build;
+	
+	// The development stage
+	private final String development;
 
 	/**
 	 * Determine the current Minecraft version.
@@ -36,11 +40,13 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	 * @param versionOnly - the version in text form.
 	 */
 	public MinecraftVersion(String versionOnly) {
-		int[] numbers = parseVersion(versionOnly);
+		String[] section = versionOnly.split("-");
+		int[] numbers = parseVersion(section[0]);
 		
 		this.major = numbers[0];
 		this.minor = numbers[1];
 		this.build = numbers[2];
+		this.development = section.length > 1 ? section[1] : null;
 	}
 	
 	/**
@@ -50,9 +56,21 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	 * @param build - build version number.
 	 */
 	public MinecraftVersion(int major, int minor, int build) {
+		this(major, minor, build, null);
+	}
+	
+	/**
+	 * Construct a version object directly.
+	 * @param major - major version number.
+	 * @param minor - minor version number.
+	 * @param build - build version number.
+	 * @param development - development stage.
+	 */
+	public MinecraftVersion(int major, int minor, int build, String development) {
 		this.major = major;
 		this.minor = minor;
 		this.build = build;
+		this.development = development;
 	}
 
 	private int[] parseVersion(String version) {
@@ -65,7 +83,7 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	
 		// The String 1 or 1.2 is interpreted as 1.0.0 and 1.2.0 respectively.
 		for (int i = 0; i < Math.min(numbers.length, elements.length); i++)
-			numbers[i] = Integer.parseInt(elements[i].trim());	
+			numbers[i] = Integer.parseInt(elements[i].trim());
 		return numbers;
 	}
 	
@@ -94,11 +112,22 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 	}
 	
 	/**
+	 * Retrieve the development stage.
+	 * @return Development stage, or NULL if this is a release.
+	 */
+	public String getDevelopmentStage() {
+		return development;
+	}
+	
+	/**
 	 * Retrieve the version String (major.minor.build) only.
 	 * @return A normal version string.
 	 */
 	public String getVersion() {
-		return String.format("%s.%s.%s", major, minor, build);
+		if (development == null)
+			return String.format("%s.%s.%s", major, minor, build);
+		else
+			return String.format("%s.%s.%s-%s", major, minor, build, development);
 	}
 	
 	@Override
@@ -110,6 +139,8 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 					compare(major, o.major).
 					compare(minor, o.minor).
 					compare(build, o.build).
+					// No development String means it's a release
+					compare(development, o.development, Ordering.natural().nullsLast()).
 					result();
 	}
 	
@@ -125,7 +156,8 @@ class MinecraftVersion implements Comparable<MinecraftVersion> {
 			
 			return major == other.major && 
 				   minor == other.minor && 
-				   build == other.build;
+				   build == other.build &&
+				   Objects.equal(development, other.development);
 		}
 		
 		return false;

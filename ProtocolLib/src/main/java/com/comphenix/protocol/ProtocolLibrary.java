@@ -17,11 +17,14 @@
 
 package com.comphenix.protocol;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
@@ -97,6 +100,9 @@ public class ProtocolLibrary extends JavaPlugin {
 	private CommandProtocol commandProtocol;
 	private CommandPacket commandPacket;
 	
+	// Whether or not disable is not needed
+	private boolean skipDisable;
+	
 	@Override
 	public void onLoad() {
 		// Load configuration
@@ -104,7 +110,6 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Add global parameters
 		DetailedErrorReporter detailedReporter = new DetailedErrorReporter(this);
-		updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 		reporter = detailedReporter;
 		
 		try {
@@ -121,6 +126,12 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 		
 		try {
+			// Check for other versions
+			checkConflictingVersions();
+			
+			// Set updater
+			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
+			
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, detailedReporter);
 			detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -252,6 +263,45 @@ public class ProtocolLibrary extends JavaPlugin {
 			reporter.reportWarning(this, "Unable to retrieve current Minecraft version.", e);
 		}
 	}
+	
+	private void checkConflictingVersions() {
+		Pattern ourPlugin = Pattern.compile("ProtocolLib-(.*)\\.jar");
+		MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
+		MinecraftVersion newestVersion = null;
+		
+		try {
+			// Scan the plugin folder for newer versions of ProtocolLib
+			File pluginFolder = new File("plugins/");
+			
+			for (File candidate : pluginFolder.listFiles()) {
+				if (candidate.isFile()) {
+					Matcher match = ourPlugin.matcher(candidate.getName());
+					
+					if (match.matches()) {
+						MinecraftVersion version = new MinecraftVersion(match.group(1));
+
+						if (newestVersion == null || newestVersion.compareTo(version) < 0) {
+							newestVersion = version;
+						}
+					}
+				}
+			}
+
+		} catch (Exception e) {
+			reporter.reportWarning(this, "Unable to detect conflicting plugin versions.", e);
+		}
+		
+		// See if the newest version is actually higher
+		if (newestVersion != null && currentVersion.compareTo(newestVersion) < 0) {
+			// We don't need to set internal classes or instances to NULL - that would break the other loaded plugin
+			skipDisable = true;
+			
+			throw new IllegalStateException(
+					String.format("Detected a newer version of ProtocolLib (%s) in plugin folder than the current (%s). Disabling.", 
+							newestVersion.getVersion(), currentVersion.getVersion())
+			);
+		}
+	}
 		
 	private void registerCommand(String name, CommandExecutor executor) {
 		try {
@@ -331,6 +381,10 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	@Override
 	public void onDisable() {
+		if (skipDisable) {
+			return;
+		}
+		
 		// Disable compiler
 		if (backgroundCompiler != null) {
 			backgroundCompiler.shutdownAll();
