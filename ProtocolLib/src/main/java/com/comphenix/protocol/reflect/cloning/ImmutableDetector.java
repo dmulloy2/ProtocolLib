@@ -24,8 +24,11 @@ import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.security.PublicKey;
 import java.util.Locale;
 import java.util.UUID;
+
+import javax.crypto.SecretKey;
 
 import com.google.common.primitives.Primitives;
 
@@ -42,7 +45,8 @@ public class ImmutableDetector implements Cloner {
 		StackTraceElement.class, BigDecimal.class, 
 		BigInteger.class, Locale.class, UUID.class, 
 		URL.class, URI.class, Inet4Address.class, 
-		Inet6Address.class, InetSocketAddress.class
+		Inet6Address.class, InetSocketAddress.class,
+		SecretKey.class, PublicKey.class
 	};
 	
 	@Override
