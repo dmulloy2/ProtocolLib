@@ -47,6 +47,11 @@ public class AggregateCloner implements Cloner {
 		}
 	}
 	
+	/**
+	 * Represents a builder for aggregate (combined) cloners.
+	 * 
+	 * @author Kristian
+	 */
 	public static class Builder {
 		private List<Function<BuilderParameters, Cloner>> factories = Lists.newArrayList();
 		private BuilderParameters parameters;
@@ -75,7 +80,7 @@ public class AggregateCloner implements Cloner {
 		 */
 		public Builder andThen(final Class<? extends Cloner> type) {
 			// Use reflection to generate a factory on the fly
-			return orCloner(new Function<BuilderParameters, Cloner>() {
+			return andThen(new Function<BuilderParameters, Cloner>() {
 				@Override
 				public Cloner apply(@Nullable BuilderParameters param) {
 					Object result = param.typeConstructor.create(type);
@@ -97,7 +102,7 @@ public class AggregateCloner implements Cloner {
 		 * @param factory - factory constructing the next cloner.
 		 * @return This builder.
 		 */
-		public Builder orCloner(Function<BuilderParameters, Cloner> factory) {
+		public Builder andThen(Function<BuilderParameters, Cloner> factory) {
 			factories.add(factory);
 			return this;
 		}

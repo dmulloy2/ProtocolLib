@@ -10,11 +10,11 @@ import com.comphenix.protocol.reflect.instances.InstanceProvider;
  * @author Kristian
  */
 public class FieldCloner implements Cloner {
-	private final Cloner defaultCloner;
-	private final InstanceProvider instanceProvider;
+	protected Cloner defaultCloner;
+	protected InstanceProvider instanceProvider;
 	
 	// Used to clone objects
-	private final ObjectWriter writer;
+	protected ObjectWriter writer;
 	
 	/**
 	 * Constructs a field cloner that copies objects by reading and writing the internal fields directly.
