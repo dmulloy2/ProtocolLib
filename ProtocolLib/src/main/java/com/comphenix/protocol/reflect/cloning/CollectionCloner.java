@@ -20,6 +20,8 @@ package com.comphenix.protocol.reflect.cloning;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Attempts to clone collection and array classes.
@@ -43,9 +45,9 @@ public class CollectionCloner implements Cloner {
 			return false;
 		
 		Class<?> clazz = source.getClass();
-		return Collection.class.isAssignableFrom(clazz) || clazz.isArray();
+		return Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz) || clazz.isArray();
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public Object clone(Object source) {
@@ -55,31 +57,32 @@ public class CollectionCloner implements Cloner {
 		Class<?> clazz = source.getClass();
 		
 		if (source instanceof Collection) {
-			Collection<Object> copy = null; 
-			
-			// Not all collections implement "clone", but most *do* implement the "copy constructor" pattern
-			try {
-				Constructor<?> constructCopy = clazz.getConstructor(Collection.class);
-				copy = (Collection<Object>) constructCopy.newInstance(source);
-			} catch (NoSuchMethodException e) {
-				copy = (Collection<Object>) cloneObject(clazz, source);
-			} catch (Exception e) {
-				throw new RuntimeException("Cannot construct collection.", e);
-			}
+			Collection<Object> copy = cloneConstructor(Collection.class, clazz, source);
 			
 			// Next, clone each element in the collection
 			copy.clear();
 			
 			for (Object element : (Collection<Object>) source) {
-				if (defaultCloner.canClone(element))
-					copy.add(defaultCloner.clone(element));
-				else
-					throw new IllegalArgumentException("Cannot clone " + element + " in collection " + source);
+				copy.add(getClone(element, source));
 			}
 			
 			return copy;
 			
-			// Second possibility
+		} else if (source instanceof Map) {
+			
+			Map<Object, Object> copy = cloneConstructor(Map.class, clazz, source);
+			
+			// Next, clone each element in the collection
+			copy.clear();
+			
+			for (Entry<Object, Object> element : ((Map<Object, Object>) source).entrySet()) {
+				Object key = getClone(element.getKey(), source);
+				Object value = getClone(element.getValue(), source);
+				copy.put(key, value);
+			}
+			
+			return copy;
+			
 		} else if (clazz.isArray()) {
 			// Get the length
 			int lenght = Array.getLength(source);
@@ -111,6 +114,19 @@ public class CollectionCloner implements Cloner {
 	}
 	
 	/**
+	 * Clone an element using the default cloner.
+	 * @param element - the element to clone.
+	 * @param container - where the element is stored.
+	 * @return The cloned element.
+	 */
+	private Object getClone(Object element, Object container) {
+		if (defaultCloner.canClone(element))
+			return defaultCloner.clone(element);
+		else
+			throw new IllegalArgumentException("Cannot clone " + element + " in container " + container);
+	}
+	
+	/**
 	 * Clone a primitive or immutable array by calling its clone method.
 	 * @param component - the component type of the array.
 	 * @param source - the array itself.
@@ -136,6 +152,27 @@ public class CollectionCloner implements Cloner {
 			return ((boolean[]) source).clone();
 		else
 			return ((Object[]) source).clone();
+	}
+	
+	/**
+	 * Clone an object by calling its clone constructor, or alternatively, a "clone" method.
+	 * @param superclass - the superclass we expect in the clone constructor.
+	 * @param clazz - the class of the object.
+	 * @param source - the object itself.
+	 * @return A cloned object.
+	 */
+	@SuppressWarnings("unchecked")
+	private <T> T cloneConstructor(Class<?> superclass, Class<?> clazz, Object source) {
+		
+		// Not all collections or maps implement "clone", but most *do* implement the "copy constructor" pattern
+		try {
+			Constructor<?> constructCopy = clazz.getConstructor(Collection.class);
+			return (T) constructCopy.newInstance(source);
+		} catch (NoSuchMethodException e) {
+			return (T) cloneObject(clazz, source);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot construct collection.", e);
+		}
 	}
 	
 	/**
