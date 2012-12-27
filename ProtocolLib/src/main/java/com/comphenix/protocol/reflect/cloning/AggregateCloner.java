@@ -35,6 +35,11 @@ import com.google.common.collect.Lists;
  * @author Kristian
  */
 public class AggregateCloner implements Cloner {
+	/**
+	 * Supplies the cloner factories with necessary parameters.
+	 * 
+	 * @author Kristian
+	 */
 	public static class BuilderParameters {
 		// Can only be modified by the builder
 		private InstanceProvider instanceProvider;

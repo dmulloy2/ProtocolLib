@@ -47,12 +47,25 @@ public class FieldCloner implements Cloner {
 			@Override
 			protected void transformField(StructureModifier<Object> modifierSource,
 					StructureModifier<Object> modifierDest, int fieldIndex) {
-				Object value = modifierSource.read(fieldIndex);
-				modifierDest.write(fieldIndex, getDefaultCloner().clone(value));
+				defaultTransform(modifierDest, modifierDest, getDefaultCloner(), fieldIndex);
 			}
 		};
 	}
 
+	/**
+	 * Default implementation of the field transform. Applies a clone operation before a field value is written.
+	 * @param modifierSource - modifier for the original object.
+	 * @param modifierDest - modifier for the new cloned object.
+	 * @param defaultCloner - cloner to use.
+	 * @param fieldIndex - the current field index.
+	 */
+	protected void defaultTransform(StructureModifier<Object> modifierSource, 
+									StructureModifier<Object> modifierDest, Cloner defaultCloner, int fieldIndex) {
+		
+		Object value = modifierSource.read(fieldIndex);
+		modifierDest.write(fieldIndex, defaultCloner.clone(value));
+	}
+	
 	@Override
 	public boolean canClone(Object source) {
 		if (source == null)

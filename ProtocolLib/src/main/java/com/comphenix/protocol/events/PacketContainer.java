@@ -43,8 +43,11 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner;
+import com.comphenix.protocol.reflect.cloning.BukkitCloner;
 import com.comphenix.protocol.reflect.cloning.Cloner;
+import com.comphenix.protocol.reflect.cloning.CollectionCloner;
 import com.comphenix.protocol.reflect.cloning.FieldCloner;
+import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -78,7 +81,14 @@ public class PacketContainer implements Serializable {
 	private static ConcurrentMap<Class<?>, Method> readMethods = Maps.newConcurrentMap();
 	
 	// Used to clone packets
-	private static final AggregateCloner DEEP_CLONER = AggregateCloner.DEFAULT;
+	private static final AggregateCloner DEEP_CLONER = AggregateCloner.newBuilder().
+			instanceProvider(DefaultInstances.DEFAULT).
+			andThen(BukkitCloner.class).
+			andThen(ImmutableDetector.class).
+			andThen(CollectionCloner.class).
+			andThen(getSpecializedDeepClonerFactory()).
+			build();
+	
 	private static final AggregateCloner SHALLOW_CLONER = AggregateCloner.newBuilder().
 			instanceProvider(DefaultInstances.DEFAULT).
 			andThen(new Function<BuilderParameters, Cloner>() {
@@ -405,12 +415,36 @@ public class PacketContainer implements Serializable {
 	 * <p>
 	 * This will perform a full copy of the entire object tree, only skipping
 	 * known immutable objects and primitive types.
+	 * <p>
+	 * Note that the inflated buffers in packet 51 and 56 will be copied directly to save memory.
 	 * 
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
 		Object clonedPacket = DEEP_CLONER.clone(getHandle());
 		return new PacketContainer(getID(), clonedPacket);
+	}
+	
+	// To save space, we'll skip copying the inflated buffers in packet 51 and 56
+	private static Function<BuilderParameters, Cloner> getSpecializedDeepClonerFactory() {
+		// Look at what you've made me do Java, look at it!! 
+		return new Function<BuilderParameters, Cloner>() {
+			@Override
+			public Cloner apply(@Nullable BuilderParameters param) {
+				return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
+					this.writer = new ObjectWriter() {
+						protected void transformField(StructureModifier<Object> modifierSource, 
+													  StructureModifier<Object> modifierDest, int fieldIndex) {
+							// No need to clone inflated buffers
+							if (modifierSource.getField(fieldIndex).getName().startsWith("inflatedBuffer"))
+								modifierDest.write(fieldIndex, modifierSource.read(fieldIndex));
+							else
+								defaultTransform(modifierSource, modifierDest, getDefaultCloner(), fieldIndex);
+						};
+					};
+				}};
+			}
+		};
 	}
 	
 	private void writeObject(ObjectOutputStream output) throws IOException {
