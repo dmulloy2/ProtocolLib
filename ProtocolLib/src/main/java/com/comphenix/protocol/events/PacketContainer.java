@@ -51,6 +51,7 @@ import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -234,6 +235,14 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<byte[]> getByteArrays() {
 		return structureModifier.withType(byte[].class);
+	}
+	
+	/**
+	 * Retrieve a serializer for reading and writing ItemStacks stored in a byte array.
+	 * @return A instance of the serializer.
+	 */
+	public StreamSerializer getByteArraySerializer() {
+		return new StreamSerializer();
 	}
 
 	/**
