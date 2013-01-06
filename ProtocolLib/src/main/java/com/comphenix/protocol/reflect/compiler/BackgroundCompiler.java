@@ -150,41 +150,59 @@ public class BackgroundCompiler {
 			if (executor == null || executor.isShutdown())
 				return;
 			
-			try {
-				executor.submit(new Callable<Object>() {
-					@Override
-					public Object call() throws Exception {
-						StructureModifier<TKey> modifier = uncompiled;
-						
-						// Do our compilation
-						try {
-							modifier = compiler.compile(modifier);
-							listener.onCompiled(modifier);
+			// Create the worker that will compile our modifier
+			Callable<?> worker = new Callable<Object>() {
+				@Override
+				public Object call() throws Exception {
+					StructureModifier<TKey> modifier = uncompiled;
+					
+					// Do our compilation
+					try {
+						modifier = compiler.compile(modifier);
+						listener.onCompiled(modifier);
 
-						} catch (Throwable e) {
-							// Disable future compilations!
-							setEnabled(false);
-							
-							// Inform about this error as best as we can
-							if (reporter != null) {
-								reporter.reportDetailed(BackgroundCompiler.this, 
-										"Cannot compile structure. Disabing compiler.", e, uncompiled);
-							} else {
-								System.err.println("Exception occured in structure compiler: ");
-								e.printStackTrace();
-							}
+					} catch (Throwable e) {
+						// Disable future compilations!
+						setEnabled(false);
+						
+						// Inform about this error as best as we can
+						if (reporter != null) {
+							reporter.reportDetailed(BackgroundCompiler.this, 
+									"Cannot compile structure. Disabing compiler.", e, uncompiled);
+						} else {
+							System.err.println("Exception occured in structure compiler: ");
+							e.printStackTrace();
 						}
-						
-						// We'll also return the new structure modifier
-						return modifier;
-						
 					}
-				});
+					
+					// We'll also return the new structure modifier
+					return modifier;
+					
+				}
+			};
+			
+			try {
+				// Lookup the previous class name on the main thread.
+				// This is necessary as the Bukkit class loaders are not thread safe
+				if (compiler.lookupClassLoader(uncompiled)) {
+					try {
+						worker.call();
+					} catch (Exception e) {
+						// Impossible!
+						e.printStackTrace();
+					}
+					
+				} else {
+					
+					// Perform the compilation on a seperate thread
+					executor.submit(worker);
+				}
+				
 			} catch (RejectedExecutionException e) {
 				// Occures when the underlying queue is overflowing. Since the compilation  
 				// is only an optmization and not really essential we'll just log this failure 
 				// and move on.
-				Logger.getLogger("Minecraft").log(Level.WARNING, "Unable to schedule compilation task.", e);
+				reporter.reportWarning(this, "Unable to schedule compilation task.", e);
 			}
 		}
 	}
@@ -209,7 +227,7 @@ public class BackgroundCompiler {
 		try {
 			executor.awaitTermination(timeout, unit);
 		} catch (InterruptedException e) {
-			// Unlikely to ever occur.
+			// Unlikely to ever occur - it's the main thread
 			e.printStackTrace();
 		}
 	}

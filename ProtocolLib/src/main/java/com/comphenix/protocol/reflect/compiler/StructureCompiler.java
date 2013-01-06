@@ -21,9 +21,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.base.Objects;
@@ -98,6 +98,10 @@ public final class StructureCompiler {
 		private Class targetType;
 		private Class fieldType;
 		
+		public StructureKey(StructureModifier<?> source) {
+			this(source.getTargetType(), source.getFieldType());
+		}
+		
 		public StructureKey(Class targetType, Class fieldType) {
 			this.targetType = targetType;
 			this.fieldType = fieldType;
@@ -123,7 +127,7 @@ public final class StructureCompiler {
 	private volatile static Method defineMethod;
 	
 	@SuppressWarnings("rawtypes")
-	private Map<StructureKey, Class> compiledCache = new HashMap<StructureKey, Class>();
+	private Map<StructureKey, Class> compiledCache = new ConcurrentHashMap<StructureKey, Class>();
 	
 	// The class loader we'll store our classes
 	private ClassLoader loader;
@@ -143,6 +147,37 @@ public final class StructureCompiler {
 	}
 	
 	/**
+	 * Lookup the current class loader for any previously generated classes before we attempt to generate something.
+	 * @param source - the structure modifier to look up.
+	 * @return TRUE if we successfully found a previously generated class, FALSE otherwise.
+	 */
+	public <TField> boolean lookupClassLoader(StructureModifier<TField> source) {
+		StructureKey key = new StructureKey(source);
+		
+		// See if there's a need to lookup the class name
+		if (compiledCache.containsKey(key)) {
+			return true;
+		}
+		
+		try {
+			String className = getCompiledName(source);
+			
+			// This class might have been generated before. Try to load it.
+			Class<?> before = loader.loadClass(PACKAGE_NAME.replace('/', '.') + "." + className);
+			
+			if (before != null) {
+				compiledCache.put(key, before);
+				return true;
+			}
+		} catch (ClassNotFoundException e) {
+			// That's ok. 
+		}
+		
+		// We need to compile the class
+		return false;
+	}
+	
+	/**
 	 * Compiles the given structure modifier.
 	 * <p>
 	 * WARNING: Do NOT call this method in the main thread. Compiling may easily take 10 ms, which is already 
@@ -158,7 +193,7 @@ public final class StructureCompiler {
 			return source;
 		}
 		
-		StructureKey key = new StructureKey(source.getTargetType(), source.getFieldType());
+		StructureKey key = new StructureKey(source);
 		Class<?> compiledClass = compiledCache.get(key);
 		
 		if (!compiledCache.containsKey(key)) {
@@ -195,29 +230,35 @@ public final class StructureCompiler {
 		return type.getCanonicalName().replace("[]", "Array").replace(".", "_");
 	}
 	
+	/**
+	 * Retrieve the compiled name of a given structure modifier.
+	 * @param source - the structure modifier.
+	 * @return The unique, compiled name of a compiled structure modifier.
+	 */
+	private String getCompiledName(StructureModifier<?> source) {
+		Class<?> targetType = source.getTargetType();
+	
+		// Concat class and field type
+		return "CompiledStructure$" + 
+				getSafeTypeName(targetType) + "$" + 
+				getSafeTypeName(source.getFieldType());
+	}
+	
+	/**
+	 * Compile a structure modifier.
+	 * @param source - structure modifier.
+	 * @return The compiled structure modifier.
+	 */
 	private <TField> Class<?> generateClass(StructureModifier<TField> source) {
 		
 		ClassWriter cw = new ClassWriter(0);
-
-		@SuppressWarnings("rawtypes")
-		Class targetType = source.getTargetType();
+		Class<?> targetType = source.getTargetType();
 		
-		String className = "CompiledStructure$" + 
-				getSafeTypeName(targetType) + "$" + 
-				getSafeTypeName(source.getFieldType());
+		String className = getCompiledName(source);
 		String targetSignature = Type.getDescriptor(targetType);
 		String targetName = targetType.getName().replace('.', '/');
 		
-		try {
-			// This class might have been generated before. Try to load it.
-			Class<?> before = loader.loadClass(PACKAGE_NAME.replace('/', '.') + "." + className);
-			
-			if (before != null)
-				return before;
-		} catch (ClassNotFoundException e) {
-			// That's ok. 
-		}
-		
+		// Define class
 		cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, PACKAGE_NAME + "/" + className, 
 				 null, COMPILED_CLASS, null);
 
