@@ -36,10 +36,10 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * @param list - the list of elements to add.
 	 * @return The new wrapped NBT compound.
 	 */
-	public static <T> NbtCompound fromList(String name, Collection<? extends NbtBase<T>> list) {
-		NbtCompound copy = new NbtCompound(name);
+	public static NbtCompound fromList(String name, Collection<? extends NbtBase<?>> list) {
+		NbtCompound copy = fromName(name);
 		
-		for (NbtBase<T> base : list)
+		for (NbtBase<?> base : list)
 			copy.getValue().put(base.getName(), base);
 		return copy;
 	}
@@ -80,14 +80,6 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 		return getValue().keySet();
 	}
 	
-	/**
-	 * Retrieve a Collection view of the entries in this compound. 
-	 * @return A view of each NBT tag in this compound.
-	 */
-	public Collection<NbtBase<?>> asCollection(){
-		return getValue().values();
-	}
-
 	@Override
 	public Map<String, NbtBase<?>> getValue() {
 		// Return a wrapper map

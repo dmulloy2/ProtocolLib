@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.primitives.Primitives;
+
 /**
  * Represents all the element types 
  * 
@@ -88,6 +90,11 @@ public enum NbtType {
 		for (NbtType type : values) {
 			lookup[type.getRawID()] = type;
 			classLookup.put(type.getValueType(), type);
+			
+			// Add a wrapper type
+			if (type.getValueType().isPrimitive()) {
+				classLookup.put(Primitives.wrap(type.getValueType()), type);
+			}
 		}
 	}
 	

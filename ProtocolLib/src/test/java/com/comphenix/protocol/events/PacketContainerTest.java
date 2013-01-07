@@ -32,6 +32,8 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -233,6 +235,22 @@ public class PacketContainerTest {
 		assertEquals(testValue, worldAccess.read(0));
 	}
 
+	@Test
+	public void testGetNbtModifier() {
+		PacketContainer updateTileEntity = new PacketContainer(132);
+		
+		NbtCompound compound = NbtFactory.ofCompound("test");
+		compound.put("test", "name");
+		compound.put(NbtFactory.ofList("ages", 1, 2, 3));
+		
+		updateTileEntity.getNbtModifier().write(0, compound);
+		
+		NbtCompound result = (NbtCompound) updateTileEntity.getNbtModifier().read(0);
+		
+		assertEquals(compound.getString("test"), result.getString("test"));
+		assertEquals(compound.getList("ages"), result.getList("ages"));
+	}
+	
 	@Test
 	public void testGetDataWatcherModifier() {
 		PacketContainer mobSpawnPacket = new PacketContainer(Packets.Server.MOB_SPAWN);

@@ -165,8 +165,17 @@ public class NbtFactory {
 	 * @param list - the list of elements to add.
 	 * @return The new wrapped NBT compound.
 	 */
-	public static <T> NbtCompound ofCompound(String name, Collection<? extends NbtBase<T>> list) {
+	public static NbtCompound ofCompound(String name, Collection<? extends NbtBase<?>> list) {
 		return NbtCompound.fromList(name, list);
+	}
+	
+	/**
+	 * Construct a new NBT compound wrapper.
+	 * @param name - the name of the compound wrapper. 
+	 * @return The new wrapped NBT compound.
+	 */
+	public static NbtCompound ofCompound(String name) {
+		return NbtCompound.fromName(name);
 	}
 	
 	/**
