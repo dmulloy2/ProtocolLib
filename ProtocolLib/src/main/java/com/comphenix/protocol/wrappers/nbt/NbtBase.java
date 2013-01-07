@@ -48,5 +48,5 @@ public interface NbtBase<TType> {
 	 * Clone the current NBT tag.
 	 * @return The cloned tag.
 	 */
-	public abstract NbtBase<TType> clone();
+	public abstract NbtBase<TType> deepClone();
 }

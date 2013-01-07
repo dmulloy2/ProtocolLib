@@ -141,8 +141,8 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	}
 	
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public NbtBase<Map<String, NbtBase<?>>> clone() {
-		return (NbtBase) container.clone();
+	public NbtBase<Map<String, NbtBase<?>>> deepClone() {
+		return (NbtBase) container.deepClone();
 	}
 	
 	/**

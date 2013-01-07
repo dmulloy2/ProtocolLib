@@ -19,13 +19,13 @@ import com.google.common.base.Objects;
  */
 public class NbtElement<TType> implements NbtWrapper<TType> {	
 	// Structure modifier for the base class 
-	private static StructureModifier<Object> baseModifier;
+	private static volatile StructureModifier<Object> baseModifier;
 	
 	// For retrieving the current type ID
-	private static Method methodGetTypeID;
+	private static volatile Method methodGetTypeID;
 	
 	// For cloning handles
-	private static Method methodClone;
+	private static volatile Method methodClone;
 	
 	// Structure modifiers for the different NBT elements
 	private static StructureModifier<?>[] modifiers = new StructureModifier<?>[NbtType.values().length];
@@ -154,7 +154,7 @@ public class NbtElement<TType> implements NbtWrapper<TType> {
 	}
 	
 	@Override
-	public NbtBase<TType> clone() {
+	public NbtBase<TType> deepClone() {
 		if (methodClone == null) {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
 			

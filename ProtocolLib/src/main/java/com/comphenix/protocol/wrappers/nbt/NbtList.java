@@ -176,8 +176,8 @@ public class NbtList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterabl
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public NbtBase<List<NbtBase<TType>>> clone() {
-		return (NbtBase) container.clone();
+	public NbtBase<List<NbtBase<TType>>> deepClone() {
+		return (NbtBase) container.deepClone();
 	}
 	
 	public void add(NbtBase<TType> element) {
