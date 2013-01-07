@@ -377,6 +377,14 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the NBT base class.
+	 * @return The NBT base class.
+	 */
+	public static Class<?> getNBTBaseClass() {
+		return getMinecraftClass("NBTBase");
+	}
+	
+	/**
 	 * Retrieve the ItemStack[] class.
 	 * @return The ItemStack[] class.
 	 */

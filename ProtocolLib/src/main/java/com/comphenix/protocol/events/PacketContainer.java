@@ -56,6 +56,7 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 
@@ -362,6 +363,17 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 				MinecraftReflection.getChunkPositionClass(),
 				ChunkPosition.getConverter());
+	}
+	
+	/**
+	 * Retrieves a read/write structure for NBT classes.
+	 * @return A modifier for NBT classes.
+	 */
+	public StructureModifier<NbtWrapper<?>> getNbtModifier() {
+		// Allow access to the NBT class in packet 130
+		return structureModifier.withType(
+				MinecraftReflection.getNBTBaseClass(),
+				BukkitConverters.getNbtConverter());
 	}
 	
 	/**
