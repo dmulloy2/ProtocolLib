@@ -111,27 +111,33 @@ public class NbtList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterabl
 	public List<NbtBase<TType>> getValue() {
 		if (savedList == null) {
 			savedList = new ConvertedList<Object, NbtBase<TType>>(container.getValue()) {
+				// Check and see if the element is valid
+				private void verifyElement(NbtBase<TType> element) {
+					if (element == null)
+						throw new IllegalArgumentException("Cannot store NULL elements in list.");
+					if (!element.getName().equals(EMPTY_NAME))
+						throw new IllegalArgumentException("Cannot add a the named NBT tag " + element + " to a list.");
+					
+					// Check element type
+					if (size() > 0) {
+						if (!element.getType().equals(getElementType())) {
+							throw new IllegalArgumentException(
+									"Cannot add " + element + " of " + element.getType() + " to a list of type " + getElementType());
+						}
+					} else {
+						container.setSubType(element.getType());
+					}
+				}
+				
 				@Override
 				public boolean add(NbtBase<TType> e) {
-					if (e == null)
-						throw new IllegalArgumentException("Cannot store NULL elements in list.");
-					if (!e.getName().equals(EMPTY_NAME))
-						throw new IllegalArgumentException("Cannot add a named NBT tag " + e + " to a list.");
-					if (size() == 0)
-						container.setSubType(e.getType());
-
+					verifyElement(e);
 					return super.add(e);
 				}
 				
 				@Override
 				public void add(int index, NbtBase<TType> element) {
-					if (element == null)
-						throw new IllegalArgumentException("Cannot store NULL elements in list.");
-					if (!element.getName().equals(EMPTY_NAME))
-						throw new IllegalArgumentException("Cannot add a the named NBT tag " + element + " to a list.");
-					if (index == 0)
-						container.setSubType(element.getType());
-					
+					verifyElement(element);
 					super.add(index, element);
 				}
 				
