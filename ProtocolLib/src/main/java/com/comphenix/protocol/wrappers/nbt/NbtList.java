@@ -300,6 +300,7 @@ public class NbtList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterabl
 	
 	@Override
 	public String toString() {
+		// Essentially JSON
 		StringBuilder builder = new StringBuilder();
 		
 		builder.append("{\"name\": \"" + getName() + "\", \"value\": [");

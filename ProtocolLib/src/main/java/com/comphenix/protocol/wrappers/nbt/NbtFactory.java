@@ -7,9 +7,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.inventory.ItemStack;
+
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 
 /**
  * Factory methods for creating NBT elements, lists and compounds.
@@ -23,6 +27,39 @@ public class NbtFactory {
 	// Used to read and write NBT
 	private static Method methodWrite;
 	private static Method methodLoad;
+	
+	// Item stack trickery
+	private static StructureModifier<Object> itemStackModifier;
+	
+	/**
+	 * Attempt to cast this wrapper as a compund.
+	 * @return This instance as a compound.
+	 * @throws UnsupportedOperationException If this is not a compound.
+	 */
+	public static NbtCompound asCompound(NbtWrapper<?> wrapper) {
+		if (wrapper instanceof NbtCompound)
+			return (NbtCompound) wrapper;
+		else if (wrapper != null)
+			throw new UnsupportedOperationException(
+					"Cannot cast a " + wrapper.getClass() + "( " + wrapper.getType() + ") to TAG_COMPUND.");
+		else
+			throw new IllegalArgumentException("Wrapper cannot be NULL.");
+	}
+	
+	/**
+	 * Attempt to cast this wrapper as a list.
+	 * @return This instance as a list.
+	 * @throws UnsupportedOperationException If this is not a list.
+	 */
+	public static NbtList<?> asList(NbtWrapper<?> wrapper) {
+		if (wrapper instanceof NbtList)
+			return (NbtList<?>) wrapper;
+		else if (wrapper != null)
+			throw new UnsupportedOperationException(
+					"Cannot cast a " + wrapper.getClass() + "( " + wrapper.getType() + ") to TAG_LIST.");
+		else
+			throw new IllegalArgumentException("Wrapper cannot be NULL.");
+	}
 	
 	/**
 	 * Get a NBT wrapper from a NBT base.
@@ -62,7 +99,39 @@ public class NbtFactory {
 			}
 		}
 	}
+	
+	/**
+	 * Construct a wrapper for an NBT tag stored (in memory) in an item stack.
+	 * <p>
+	 * The item stack must be a wrapper for a CraftItemStack. Use 
+	 * {@link MinecraftReflection#getBukkitItemStack(ItemStack)} if not.
+	 * @param stack - the item stack.
+	 * @return A wrapper for its NBT tag.
+	 */
+	public static NbtWrapper<?> fromItemStack(ItemStack stack) {
+		if (!MinecraftReflection.isCraftItemStack(stack))
+			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
 		
+		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
+		
+		if (itemStackModifier == null) {
+			itemStackModifier = new StructureModifier<Object>(nmsStack.getClass(), Object.class, false);
+		}
+		
+		// Use the first and best NBT tag
+		StructureModifier<NbtWrapper<?>> modifier = itemStackModifier.
+				withTarget(nmsStack).
+				withType(MinecraftReflection.getNBTBaseClass(), BukkitConverters.getNbtConverter());
+		NbtWrapper<?> result = modifier.read(0);
+		
+		// Create the tag if it doesn't exist
+		if (result == null) {
+			result = NbtFactory.ofCompound("tag");
+			modifier.write(0, result);
+		}
+		return result;
+	}
+	
 	/**
 	 * Initialize a NBT wrapper.
 	 * @param handle - the underlying net.minecraft.server object to wrap.

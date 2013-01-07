@@ -73,6 +73,15 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	}
 	
 	/**
+	 * Determine if an entry with the given key exists or not.
+	 * @param key - the key to lookup. 
+	 * @return TRUE if an entry with the given key exists, FALSE otherwise.
+	 */
+	public boolean containsKey(String key) {
+		return getValue().containsKey(key);
+	}
+	
+	/**
 	 * Retrieve a Set view of the keys of each entry in this compound. 
 	 * @return The keys of each entry.
 	 */
@@ -118,7 +127,7 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	/**
 	 * Retrieve the value of a given entry.
 	 * @param key - key of the entry to retrieve.
-	 * @return The value of this entry.
+	 * @return The value of this entry, or NULL if not found.
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> NbtBase<T> getValue(String key) {
@@ -126,9 +135,28 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	}
 	
 	/**
+	 * Retrieve a value by its key, or assign and return a new NBT element if it doesn't exist.
+	 * @param key - the key of the entry to find or create.
+	 * @param type - the NBT element we will create if not found.
+	 * @return The value that was retrieved or just created.
+	 */
+	public NbtBase<?> getValueOrDefault(String key, NbtType type) {
+		NbtBase<?> nbt = getValue(key);
+
+		// Create or get a compound
+		if (nbt == null) 
+			put(nbt = NbtFactory.ofType(type, key));
+		else if (nbt.getType() != type) 
+			throw new IllegalArgumentException("Cannot get tag " + nbt + ": Not a " + type);
+		
+		return nbt;
+	}
+	
+	/**
 	 * Retrieve a value, or throw an exception.
 	 * @param key - the key to retrieve.
 	 * @return The value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
 	private <T> NbtBase<T> getValueExact(String key) {
 		NbtBase<T> value = getValue(key);
@@ -159,9 +187,19 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the string value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The string value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
 	public String getString(String key) {
 		return (String) getValueExact(key).getValue();
+	}
+	
+	/**
+	 * Retrieve the string value of an existing entry, or from a new default entry if it doesn't exist.
+	 * @param key - the key of the entry.
+	 * @return The value that was retrieved or just created.
+	 */
+	public String getStringOrDefault(String key) {
+		return (String) getValueOrDefault(key, NbtType.TAG_STRING).getValue();
 	}
 	
 	/**
@@ -179,9 +217,19 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the byte value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The byte value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public Byte getByte(String key) {
+	public byte getByte(String key) {
 		return (Byte) getValueExact(key).getValue();
+	}
+	
+	/**
+	 * Retrieve the byte value of an existing entry, or from a new default entry if it doesn't exist.
+	 * @param key - the key of the entry.
+	 * @return The value that was retrieved or just created.
+	 */
+	public byte getByteOrDefault(String key) {
+		return (Byte) getValueOrDefault(key, NbtType.TAG_BYTE).getValue();
 	}
 	
 	/**
@@ -199,9 +247,19 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the short value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The short value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
 	public Short getShort(String key) {
 		return (Short) getValueExact(key).getValue();
+	}
+	
+	/**
+	 * Retrieve the short value of an existing entry, or from a new default entry if it doesn't exist.
+	 * @param key - the key of the entry.
+	 * @return The value that was retrieved or just created.
+	 */
+	public short getShortOrDefault(String key) {
+		return (Short) getValueOrDefault(key, NbtType.TAG_SHORT).getValue();
 	}
 	
 	/**
@@ -219,9 +277,19 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the integer value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The integer value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public Integer getInteger(String key) {
+	public int getInteger(String key) {
 		return (Integer) getValueExact(key).getValue();
+	}
+	
+	/**
+	 * Retrieve the integer value of an existing entry, or from a new default entry if it doesn't exist.
+	 * @param key - the key of the entry.
+	 * @return The value that was retrieved or just created.
+	 */
+	public int getIntegerOrDefault(String key) {
+		return (Integer) getValueOrDefault(key, NbtType.TAG_INT).getValue();
 	}
 	
 	/**
@@ -239,9 +307,19 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the long value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The long value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public Long getLong(String key) {
+	public long getLong(String key) {
 		return (Long) getValueExact(key).getValue();
+	}
+	
+	/**
+	 * Retrieve the long value of an existing entry, or from a new default entry if it doesn't exist.
+	 * @param key - the key of the entry.
+	 * @return The value that was retrieved or just created.
+	 */
+	public long getLongOrDefault(String key) {
+		return (Long) getValueOrDefault(key, NbtType.TAG_LONG).getValue();
 	}
 	
 	/**
@@ -259,9 +337,19 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the float value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The float value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public Float getFloat(String key) {
+	public float getFloat(String key) {
 		return (Float) getValueExact(key).getValue();
+	}
+	
+	/**
+	 * Retrieve the float value of an existing entry, or from a new default entry if it doesn't exist.
+	 * @param key - the key of the entry.
+	 * @return The value that was retrieved or just created.
+	 */
+	public float getFloatOrDefault(String key) {
+		return (Float) getValueOrDefault(key, NbtType.TAG_FLOAT).getValue();
 	}
 	
 	/**
@@ -279,9 +367,19 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the double value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The double value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public Double getDouble(String key) {
+	public double getDouble(String key) {
 		return (Double) getValueExact(key).getValue();
+	}
+	
+	/**
+	 * Retrieve the double value of an existing entry, or from a new default entry if it doesn't exist.
+	 * @param key - the key of the entry.
+	 * @return The value that was retrieved or just created.
+	 */
+	public double getDoubleOrDefault(String key) {
+		return (Double) getValueOrDefault(key, NbtType.TAG_DOUBlE).getValue();
 	}
 	
 	/**
@@ -299,6 +397,7 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the byte array value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The byte array value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
 	public byte[] getByteArray(String key) {
 		return (byte[]) getValueExact(key).getValue();
@@ -319,6 +418,7 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the integer array value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The integer array value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
 	public int[] getIntegerArray(String key) {
 		return (int[]) getValueExact(key).getValue();
@@ -339,12 +439,22 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the compound (map) value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The compound value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
 	@SuppressWarnings("rawtypes")
 	public NbtCompound getCompound(String key) {
 		return (NbtCompound) ((NbtBase) getValueExact(key));
 	}
 	
+	/**
+	 * Retrieve a compound (map) value by its key, or create a new compound if it doesn't exist.
+	 * @param key - the key of the entry to find or create.
+	 * @return The compound value that was retrieved or just created.
+	 */
+	public NbtCompound getCompoundOrDefault(String key) {
+		return (NbtCompound) getValueOrDefault(key, NbtType.TAG_COMPOUND);
+	}
+		
 	/**
 	 * Associate a NBT compound with its name as key.
 	 * @param compound - the compound value.
@@ -359,10 +469,21 @@ public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterabl
 	 * Retrieve the NBT list value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The NBT list value of the entry.
+	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public <T> NbtList<T> getList(String key) {
 		return (NbtList) getValueExact(key);
+	}
+	
+	/**
+	 * Retrieve a NBT list value by its key, or create a new list if it doesn't exist.
+	 * @param key - the key of the entry to find or create.
+	 * @return The compound value that was retrieved or just created.
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> NbtList<T> getListOrDefault(String key) {
+		return (NbtList<T>) getValueOrDefault(key, NbtType.TAG_LIST);
 	}
 	
 	/**
