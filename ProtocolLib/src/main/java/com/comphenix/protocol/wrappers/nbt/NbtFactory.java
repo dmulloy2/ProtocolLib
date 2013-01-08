@@ -192,38 +192,92 @@ public class NbtFactory {
 		}
 	}
 	
+	/**
+	 * Constructs a NBT tag of type string.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<String> of(String name, String value) {
 		return ofType(NbtType.TAG_STRING, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type byte.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<Byte> of(String name, byte value) {
 		return ofType(NbtType.TAG_BYTE, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type short.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<Short> of(String name, short value) {
 		return ofType(NbtType.TAG_SHORT, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type int.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<Integer> of(String name, int value) {
 		return ofType(NbtType.TAG_INT, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type long.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<Long> of(String name, long value) {
 		return ofType(NbtType.TAG_LONG, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type float.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<Float> of(String name, float value) {
 		return ofType(NbtType.TAG_FLOAT, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type double.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<Double> of(String name, double value) {
 		return ofType(NbtType.TAG_DOUBlE, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type byte array.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<byte[]> of(String name, byte[] value) {
 		return ofType(NbtType.TAG_BYTE_ARRAY, name, value);
 	}
 	
+	/**
+	 * Constructs a NBT tag of type int array.
+	 * @param name - name of the tag.
+	 * @param value - value of the tag. 
+	 * @return The constructed NBT tag.
+	 */
 	public static NbtBase<int[]> of(String name, int[] value) {
 		return ofType(NbtType.TAG_INT_ARRAY, name, value);
 	}

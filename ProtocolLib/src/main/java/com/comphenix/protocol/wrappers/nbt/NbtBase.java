@@ -34,6 +34,8 @@ public interface NbtBase<TType> {
 
 	/**
 	 * Retrieve the value of this NBT tag.
+	 * <p>
+	 * Is either a primitive wrapper, a list or a map.
 	 * @return Value of this tag.
 	 */
 	public abstract TType getValue();

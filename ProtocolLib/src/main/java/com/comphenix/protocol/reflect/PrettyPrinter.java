@@ -44,7 +44,24 @@ public class PrettyPrinter {
 	 * @return String representation of the class.
 	 * @throws IllegalAccessException 
 	 */
+	public static String printObject(Object object) throws IllegalAccessException {
+		if (object == null)
+			throw new IllegalArgumentException("object cannot be NULL.");
+		
+		return printObject(object, object.getClass(), Object.class);
+	}
+	
+	/**
+	 * Print the content of an object.
+	 * @param object - the object to serialize.
+	 * @param stop - superclass that will stop the process.
+	 * @return String representation of the class.
+	 * @throws IllegalAccessException 
+	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop) throws IllegalAccessException {
+		if (object == null)
+			throw new IllegalArgumentException("object cannot be NULL.");
+		
 		return printObject(object, start, stop, RECURSE_DEPTH);
 	}
 	
@@ -56,6 +73,9 @@ public class PrettyPrinter {
 	 * @throws IllegalAccessException 
 	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop, int hierachyDepth) throws IllegalAccessException {
+		if (object == null)
+			throw new IllegalArgumentException("object cannot be NULL.");
+		
 		StringBuilder output = new StringBuilder();
 		Set<Object> previous = new HashSet<Object>();
 		
