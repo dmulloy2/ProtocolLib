@@ -34,7 +34,7 @@ public class NbtCompoundTest {
 	public void testCustomTags() {
 		NbtCustomTag<Integer> test = new NbtCustomTag<Integer>("hello", 12);
 
-		NbtCompound map = NbtCompound.fromName("test");
+		WrappedCompound map = WrappedCompound.fromName("test");
 		map.put(test);
 		
 		// Note that the custom tag will be cloned

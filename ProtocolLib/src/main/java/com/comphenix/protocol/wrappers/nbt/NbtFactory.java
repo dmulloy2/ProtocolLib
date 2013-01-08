@@ -85,16 +85,16 @@ public class NbtFactory {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> NbtWrapper<T> fromBase(NbtBase<T> base) {
-		if (base instanceof NbtElement) {
-			return (NbtElement<T>) base;
-		} else if (base instanceof NbtCompound) {
+		if (base instanceof WrappedElement) {
+			return (WrappedElement<T>) base;
+		} else if (base instanceof WrappedCompound) {
 			return (NbtWrapper<T>) base;
-		} else if (base instanceof NbtList) {
+		} else if (base instanceof WrappedList) {
 			return (NbtWrapper<T>) base;
 		} else {
 			if (base.getType() == NbtType.TAG_COMPOUND) {
 				// Load into a NBT-backed wrapper
-				NbtCompound copy = NbtCompound.fromName(base.getName());
+				WrappedCompound copy = WrappedCompound.fromName(base.getName());
 				T value = base.getValue();
 				
 				copy.setValue((Map<String, NbtBase<?>>) value);
@@ -102,7 +102,7 @@ public class NbtFactory {
 			
 			} else if (base.getType() == NbtType.TAG_LIST) {
 				// As above
-				NbtList<T> copy = NbtList.fromName(base.getName());
+				WrappedList<T> copy = WrappedList.fromName(base.getName());
 				
 				copy.setValue((List<NbtBase<T>>) base.getValue());
 				return (NbtWrapper<T>) copy;
@@ -156,13 +156,13 @@ public class NbtFactory {
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <T> NbtWrapper<T> fromNMS(Object handle) {
-		NbtElement<T> partial = new NbtElement<T>(handle);
+		WrappedElement<T> partial = new WrappedElement<T>(handle);
 		
 		// See if this is actually a compound tag
 		if (partial.getType() == NbtType.TAG_COMPOUND)
-			return (NbtWrapper<T>) new NbtCompound(handle);
+			return (NbtWrapper<T>) new WrappedCompound(handle);
 		else if (partial.getType() == NbtType.TAG_LIST)
-			return new NbtList(handle);
+			return new WrappedList(handle);
 		else
 			return partial;
 	}
@@ -306,7 +306,7 @@ public class NbtFactory {
 	 * @return The new wrapped NBT compound.
 	 */
 	public static NbtCompound ofCompound(String name, Collection<? extends NbtBase<?>> list) {
-		return NbtCompound.fromList(name, list);
+		return WrappedCompound.fromList(name, list);
 	}
 	
 	/**
@@ -314,8 +314,8 @@ public class NbtFactory {
 	 * @param name - the name of the compound wrapper. 
 	 * @return The new wrapped NBT compound.
 	 */
-	public static NbtCompound ofCompound(String name) {
-		return NbtCompound.fromName(name);
+	public static WrappedCompound ofCompound(String name) {
+		return WrappedCompound.fromName(name);
 	}
 	
 	/**
@@ -325,7 +325,7 @@ public class NbtFactory {
 	 * @return The new filled NBT list.
 	 */
 	public static <T> NbtList<T> ofList(String name, T... elements) {
-		return NbtList.fromArray(name, elements);
+		return WrappedList.fromArray(name, elements);
 	}
 	
 	/**
@@ -354,11 +354,11 @@ public class NbtFactory {
 			Object handle = methodCreateTag.invoke(null, (byte) type.getRawID(), name);
 			
 			if (type == NbtType.TAG_COMPOUND)
-				return (NbtWrapper<T>) new NbtCompound(handle);
+				return (NbtWrapper<T>) new WrappedCompound(handle);
 			else if (type == NbtType.TAG_LIST)
-				return (NbtWrapper<T>) new NbtList(handle);
+				return (NbtWrapper<T>) new WrappedList(handle);
 			else
-				return new NbtElement<T>(handle);
+				return new WrappedElement<T>(handle);
 			
 		} catch (Exception e) {
 			// Inform the caller

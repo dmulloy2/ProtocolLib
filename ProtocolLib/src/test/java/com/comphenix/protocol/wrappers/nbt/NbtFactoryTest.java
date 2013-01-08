@@ -40,7 +40,7 @@ public class NbtFactoryTest {
 	
 	@Test
 	public void testFromStream() {
-		NbtCompound compound = NbtCompound.fromName("tag");
+		WrappedCompound compound = WrappedCompound.fromName("tag");
 		
 		compound.put("name", "Test Testerson");
 		compound.put("age", 42);

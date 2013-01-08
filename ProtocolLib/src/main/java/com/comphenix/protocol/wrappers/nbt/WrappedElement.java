@@ -34,7 +34,7 @@ import com.google.common.base.Objects;
  *
  * @param <TType> - type of the value field.
  */
-public class NbtElement<TType> implements NbtWrapper<TType> {	
+public class WrappedElement<TType> implements NbtWrapper<TType> {	
 	// Structure modifier for the base class 
 	private static volatile StructureModifier<Object> baseModifier;
 	
@@ -57,7 +57,7 @@ public class NbtElement<TType> implements NbtWrapper<TType> {
 	 * Initialize a NBT wrapper for a generic element.
 	 * @param handle - the NBT element to wrap.
 	 */
-	NbtElement(Object handle) {
+	WrappedElement(Object handle) {
 		this.handle = handle;
 	}
 		

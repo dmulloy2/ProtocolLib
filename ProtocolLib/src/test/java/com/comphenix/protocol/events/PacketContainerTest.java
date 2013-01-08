@@ -50,6 +50,7 @@ import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.WrappedCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
 import com.google.common.collect.Iterables;
@@ -256,7 +257,7 @@ public class PacketContainerTest {
 	public void testGetNbtModifier() {
 		PacketContainer updateTileEntity = new PacketContainer(132);
 		
-		NbtCompound compound = NbtFactory.ofCompound("test");
+		WrappedCompound compound = NbtFactory.ofCompound("test");
 		compound.put("test", "name");
 		compound.put(NbtFactory.ofList("ages", 1, 2, 3));
 		

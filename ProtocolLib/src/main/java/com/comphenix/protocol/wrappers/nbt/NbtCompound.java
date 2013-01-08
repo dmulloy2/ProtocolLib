@@ -1,23 +1,5 @@
-/*
- *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2012 Kristian S. Stangeland
- *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
- *  the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
- *  See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
- *  02111-1307 USA
- */
-
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.io.DataOutput;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,541 +12,290 @@ import java.util.Set;
  * 
  * @author Kristian
  */
-public class NbtCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>> {
-	// A list container
-	private NbtElement<Map<String, Object>> container;
-	
-	// Saved wrapper map
-	private ConvertedMap<String, Object, NbtBase<?>> savedMap;
-	
-	/**
-	 * Construct a new NBT compound wrapper.
-	 * @param name - the name of the wrapper.
-	 * @return The wrapped NBT compound.
-	 */
-	public static NbtCompound fromName(String name) {
-		// Simplify things for the caller
-		return (NbtCompound) NbtFactory.<Map<String, NbtBase<?>>>ofType(NbtType.TAG_COMPOUND, name);
-	}
-	
-	/**
-	 * Construct a new NBT compound wrapper initialized with a given list of NBT values.
-	 * @param name - the name of the compound wrapper. 
-	 * @param list - the list of elements to add.
-	 * @return The new wrapped NBT compound.
-	 */
-	public static NbtCompound fromList(String name, Collection<? extends NbtBase<?>> list) {
-		NbtCompound copy = fromName(name);
-		
-		for (NbtBase<?> base : list)
-			copy.getValue().put(base.getName(), base);
-		return copy;
-	}
-	
-	/**
-	 * Construct a wrapped compound from a given NMS handle.
-	 * @param handle - the NMS handle.
-	 */
-	NbtCompound(Object handle) {
-		this.container = new NbtElement<Map<String,Object>>(handle);
-	}
-
-	@Override
-	public Object getHandle() {
-		return container.getHandle();
-	}
-	
-	@Override
-	public NbtType getType() {
-		return NbtType.TAG_COMPOUND;
-	}
-
-	@Override
-	public String getName() {
-		return container.getName();
-	}
-
-	@Override
-	public void setName(String name) {
-		container.setName(name);
-	}
-	
+public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>> {
 	/**
 	 * Determine if an entry with the given key exists or not.
 	 * @param key - the key to lookup. 
 	 * @return TRUE if an entry with the given key exists, FALSE otherwise.
 	 */
-	public boolean containsKey(String key) {
-		return getValue().containsKey(key);
-	}
-	
+	public abstract boolean containsKey(String key);
+
 	/**
 	 * Retrieve a Set view of the keys of each entry in this compound. 
 	 * @return The keys of each entry.
 	 */
-	public Set<String> getKeys() {
-		return getValue().keySet();
-	}
-	
-	@Override
-	public Map<String, NbtBase<?>> getValue() {
-		// Return a wrapper map
-		if (savedMap == null) {
-			savedMap = new ConvertedMap<String, Object, NbtBase<?>>(container.getValue()) {
-				@Override
-				protected Object toInner(NbtBase<?> outer) {
-					if (outer == null)
-						return null;
-					return NbtFactory.fromBase(outer).getHandle();
-				}
-				
-				protected NbtBase<?> toOuter(Object inner) {
-					if (inner == null)
-						return null;
-					return NbtFactory.fromNMS(inner);
-				};
-				
-				@Override
-				public String toString() {
-					return NbtCompound.this.toString();
-				}
-			};
-		}
-		return savedMap;
-	}
+	public abstract Set<String> getKeys();
 
-	@Override
-	public void setValue(Map<String, NbtBase<?>> newValue) {
-		// Write all the entries
-		for (Map.Entry<String, NbtBase<?>> entry : newValue.entrySet()) {
-			put(entry.getValue());
-		}
-	}
-	
 	/**
 	 * Retrieve the value of a given entry.
 	 * @param key - key of the entry to retrieve.
 	 * @return The value of this entry, or NULL if not found.
 	 */
-	@SuppressWarnings("unchecked")
-	public <T> NbtBase<T> getValue(String key) {
-		return (NbtBase<T>) getValue().get(key);
-	}
-	
+	public abstract <T> NbtBase<T> getValue(String key);
+
 	/**
 	 * Retrieve a value by its key, or assign and return a new NBT element if it doesn't exist.
 	 * @param key - the key of the entry to find or create.
 	 * @param type - the NBT element we will create if not found.
 	 * @return The value that was retrieved or just created.
 	 */
-	public NbtBase<?> getValueOrDefault(String key, NbtType type) {
-		NbtBase<?> nbt = getValue(key);
+	public abstract NbtBase<?> getValueOrDefault(String key, NbtType type);
 
-		// Create or get a compound
-		if (nbt == null) 
-			put(nbt = NbtFactory.ofType(type, key));
-		else if (nbt.getType() != type) 
-			throw new IllegalArgumentException("Cannot get tag " + nbt + ": Not a " + type);
-		
-		return nbt;
-	}
-	
-	/**
-	 * Retrieve a value, or throw an exception.
-	 * @param key - the key to retrieve.
-	 * @return The value of the entry.
-	 * @throws IllegalArgumentException If the key doesn't exist.
-	 */
-	private <T> NbtBase<T> getValueExact(String key) {
-		NbtBase<T> value = getValue(key);
-		
-		// Only return a legal key
-		if (value != null)
-			return value;
-		else
-			throw new IllegalArgumentException("Cannot find key " + key);
-	}
-	
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	public NbtBase<Map<String, NbtBase<?>>> deepClone() {
-		return (NbtBase) container.deepClone();
-	}
-	
 	/**
 	 * Set a entry based on its name.
 	 * @param entry - entry with a name and value.
 	 * @return This compound, for chaining.
 	 */
-	public <T> NbtCompound put(NbtBase<T> entry) {
-		getValue().put(entry.getName(), entry);
-		return this;
-	}
-	
+	public abstract <T> NbtCompound put(NbtBase<T> entry);
+
 	/**
 	 * Retrieve the string value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The string value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public String getString(String key) {
-		return (String) getValueExact(key).getValue();
-	}
-	
+	public abstract String getString(String key);
+
 	/**
 	 * Retrieve the string value of an existing entry, or from a new default entry if it doesn't exist.
 	 * @param key - the key of the entry.
 	 * @return The value that was retrieved or just created.
 	 */
-	public String getStringOrDefault(String key) {
-		return (String) getValueOrDefault(key, NbtType.TAG_STRING).getValue();
-	}
-	
+	public abstract String getStringOrDefault(String key);
+
 	/**
 	 * Associate a NBT string value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, String value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, String value);
+
 	/**
 	 * Retrieve the byte value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The byte value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public byte getByte(String key) {
-		return (Byte) getValueExact(key).getValue();
-	}
-	
+	public abstract byte getByte(String key);
+
 	/**
 	 * Retrieve the byte value of an existing entry, or from a new default entry if it doesn't exist.
 	 * @param key - the key of the entry.
 	 * @return The value that was retrieved or just created.
 	 */
-	public byte getByteOrDefault(String key) {
-		return (Byte) getValueOrDefault(key, NbtType.TAG_BYTE).getValue();
-	}
-	
+	public abstract byte getByteOrDefault(String key);
+
 	/**
 	 * Associate a NBT byte value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, byte value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, byte value);
+
 	/**
 	 * Retrieve the short value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The short value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public Short getShort(String key) {
-		return (Short) getValueExact(key).getValue();
-	}
-	
+	public abstract Short getShort(String key);
+
 	/**
 	 * Retrieve the short value of an existing entry, or from a new default entry if it doesn't exist.
 	 * @param key - the key of the entry.
 	 * @return The value that was retrieved or just created.
 	 */
-	public short getShortOrDefault(String key) {
-		return (Short) getValueOrDefault(key, NbtType.TAG_SHORT).getValue();
-	}
-	
+	public abstract short getShortOrDefault(String key);
+
 	/**
 	 * Associate a NBT short value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, short value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, short value);
+
 	/**
 	 * Retrieve the integer value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The integer value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public int getInteger(String key) {
-		return (Integer) getValueExact(key).getValue();
-	}
-	
+	public abstract int getInteger(String key);
+
 	/**
 	 * Retrieve the integer value of an existing entry, or from a new default entry if it doesn't exist.
 	 * @param key - the key of the entry.
 	 * @return The value that was retrieved or just created.
 	 */
-	public int getIntegerOrDefault(String key) {
-		return (Integer) getValueOrDefault(key, NbtType.TAG_INT).getValue();
-	}
-	
+	public abstract int getIntegerOrDefault(String key);
+
 	/**
 	 * Associate a NBT integer value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, int value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, int value);
+
 	/**
 	 * Retrieve the long value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The long value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public long getLong(String key) {
-		return (Long) getValueExact(key).getValue();
-	}
-	
+	public abstract long getLong(String key);
+
 	/**
 	 * Retrieve the long value of an existing entry, or from a new default entry if it doesn't exist.
 	 * @param key - the key of the entry.
 	 * @return The value that was retrieved or just created.
 	 */
-	public long getLongOrDefault(String key) {
-		return (Long) getValueOrDefault(key, NbtType.TAG_LONG).getValue();
-	}
-	
+	public abstract long getLongOrDefault(String key);
+
 	/**
 	 * Associate a NBT long value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, long value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, long value);
+
 	/**
 	 * Retrieve the float value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The float value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public float getFloat(String key) {
-		return (Float) getValueExact(key).getValue();
-	}
-	
+	public abstract float getFloat(String key);
+
 	/**
 	 * Retrieve the float value of an existing entry, or from a new default entry if it doesn't exist.
 	 * @param key - the key of the entry.
 	 * @return The value that was retrieved or just created.
 	 */
-	public float getFloatOrDefault(String key) {
-		return (Float) getValueOrDefault(key, NbtType.TAG_FLOAT).getValue();
-	}
-	
+	public abstract float getFloatOrDefault(String key);
+
 	/**
 	 * Associate a NBT float value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, float value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, float value);
+
 	/**
 	 * Retrieve the double value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The double value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public double getDouble(String key) {
-		return (Double) getValueExact(key).getValue();
-	}
-	
+	public abstract double getDouble(String key);
+
 	/**
 	 * Retrieve the double value of an existing entry, or from a new default entry if it doesn't exist.
 	 * @param key - the key of the entry.
 	 * @return The value that was retrieved or just created.
 	 */
-	public double getDoubleOrDefault(String key) {
-		return (Double) getValueOrDefault(key, NbtType.TAG_DOUBlE).getValue();
-	}
-	
+	public abstract double getDoubleOrDefault(String key);
+
 	/**
 	 * Associate a NBT double value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, double value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, double value);
+
 	/**
 	 * Retrieve the byte array value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The byte array value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public byte[] getByteArray(String key) {
-		return (byte[]) getValueExact(key).getValue();
-	}
-	
+	public abstract byte[] getByteArray(String key);
+
 	/**
 	 * Associate a NBT byte array value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, byte[] value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, byte[] value);
+
 	/**
 	 * Retrieve the integer array value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The integer array value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	public int[] getIntegerArray(String key) {
-		return (int[]) getValueExact(key).getValue();
-	}
-	
+	public abstract int[] getIntegerArray(String key);
+
 	/**
 	 * Associate a NBT integer array value with the given key.
 	 * @param key - the key and NBT name.
 	 * @param value - the value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(String key, int[] value) {
-		getValue().put(key, NbtFactory.of(key, value));
-		return this;
-	}
-	
+	public abstract NbtCompound put(String key, int[] value);
+
 	/**
 	 * Retrieve the compound (map) value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The compound value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	@SuppressWarnings("rawtypes")
-	public NbtCompound getCompound(String key) {
-		return (NbtCompound) ((NbtBase) getValueExact(key));
-	}
-	
+	public abstract NbtCompound getCompound(String key);
+
 	/**
 	 * Retrieve a compound (map) value by its key, or create a new compound if it doesn't exist.
 	 * @param key - the key of the entry to find or create.
 	 * @return The compound value that was retrieved or just created.
 	 */
-	public NbtCompound getCompoundOrDefault(String key) {
-		return (NbtCompound) getValueOrDefault(key, NbtType.TAG_COMPOUND);
-	}
-		
+	public abstract NbtCompound getCompoundOrDefault(String key);
+
 	/**
 	 * Associate a NBT compound with its name as key.
 	 * @param compound - the compound value.
 	 * @return This current compound, for chaining.
 	 */
-	public NbtCompound put(NbtCompound compound) {
-		getValue().put(compound.getName(), compound);
-		return this;
-	}
-	
+	public abstract NbtCompound put(WrappedCompound compound);
+
 	/**
 	 * Retrieve the NBT list value of an entry identified by a given key.
 	 * @param key - the key of the entry.
 	 * @return The NBT list value of the entry.
 	 * @throws IllegalArgumentException If the key doesn't exist.
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	public <T> NbtList<T> getList(String key) {
-		return (NbtList) getValueExact(key);
-	}
-	
+	public abstract <T> NbtList<T> getList(String key);
+
 	/**
 	 * Retrieve a NBT list value by its key, or create a new list if it doesn't exist.
 	 * @param key - the key of the entry to find or create.
 	 * @return The compound value that was retrieved or just created.
 	 */
-	@SuppressWarnings("unchecked")
-	public <T> NbtList<T> getListOrDefault(String key) {
-		return (NbtList<T>) getValueOrDefault(key, NbtType.TAG_LIST);
-	}
-	
+	public abstract <T> NbtList<T> getListOrDefault(String key);
+
 	/**
 	 * Associate a NBT list with the given key.
 	 * @param list - the list value.
 	 * @return This current compound, for chaining.
 	 */
-	public <T> NbtCompound put(NbtList<T> list) {
-		getValue().put(list.getName(), list);
-		return this;
-	}
-	
+	public abstract <T> NbtCompound put(WrappedList<T> list);
+
 	/**
 	 * Associate a new NBT list with the given key.
 	 * @param key - the key and name of the new NBT list.
 	 * @param list - the list of NBT elements.
 	 * @return This current compound, for chaining.
 	 */
-	public <T> NbtCompound put(String key, Collection<? extends NbtBase<T>> list) {
-		return put(NbtList.fromList(key, list));
-	}
-	
-	@Override
-	public void write(DataOutput destination) {
-		NbtFactory.toStream(container, destination);
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof NbtCompound) {
-			NbtCompound other = (NbtCompound) obj;
-			return container.equals(other.container);
-		}
-		return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return container.hashCode();
-	}
+	public abstract <T> NbtCompound put(String key, Collection<? extends NbtBase<T>> list);
 
-	@Override
-	public Iterator<NbtBase<?>> iterator() {
-		return getValue().values().iterator();
-	}
-	
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		
-		builder.append("{");
-		builder.append("\"name\": \"" + getName() + "\"");
-		
-		for (NbtBase<?> element : this) {
-			builder.append(", ");
-			
-			// Wrap in quotation marks
-			if (element.getType() == NbtType.TAG_STRING)
-				builder.append("\"" + element.getName() + "\": \"" + element.getValue() + "\"");
-			else
-				builder.append("\"" + element.getName() + "\": " + element.getValue());
-		}
-		
-		builder.append("}");
-		return builder.toString();
-	}
+	/**
+	 * Retrieve an iterator view of the NBT tags stored in this compound.
+	 * @return The tags stored in this compound.
+	 */
+	public abstract Iterator<NbtBase<?>> iterator();
 }
