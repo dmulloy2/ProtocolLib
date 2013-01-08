@@ -22,8 +22,10 @@ import com.comphenix.protocol.wrappers.nbt.NbtType;
 
 /**
  * Represents a generic container for an NBT element.
- * @author Kristian
+ * <p>
+ * Use {@link NbtFactory} to load or create an instance.
  *
+ * @author Kristian
  * @param <TType> - type of the value that is stored.
  */
 public interface NbtBase<TType> {
@@ -52,7 +54,13 @@ public interface NbtBase<TType> {
 	/**
 	 * Retrieve the value of this NBT tag.
 	 * <p>
-	 * Is either a primitive wrapper, a list or a map.
+	 * Is either a primitive {@link java.lang.Number wrapper}, {@link java.lang.String String}, 
+	 * {@link java.util.List List} or a {@link java.util.Map Map}. 
+	 * <p>
+	 * All operations that modify collections directly, such as {@link java.util.List#add(Object) List.add(Object)} or 
+	 * {@link java.util.Map#clear() Map.clear()}, are considered optional. This also include members in {@link java.util.Iterator Iterator} and 
+	 * {@link java.util.ListIterator ListIterator}. Operations that are not implemented throw a 
+	 * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.
 	 * @return Value of this tag.
 	 */
 	public abstract TType getValue();

@@ -49,47 +49,47 @@ public class NbtFactory {
 	private static StructureModifier<Object> itemStackModifier;
 	
 	/**
-	 * Attempt to cast this wrapper as a compund.
+	 * Attempt to cast this NBT tag as a compund.
+	 * @param tag - the NBT tag to cast.
 	 * @return This instance as a compound.
 	 * @throws UnsupportedOperationException If this is not a compound.
 	 */
-	public static NbtCompound asCompound(NbtWrapper<?> wrapper) {
-		if (wrapper instanceof NbtCompound)
-			return (NbtCompound) wrapper;
-		else if (wrapper != null)
+	public static NbtCompound asCompound(NbtBase<?> tag) {
+		if (tag instanceof NbtCompound)
+			return (NbtCompound) tag;
+		else if (tag != null)
 			throw new UnsupportedOperationException(
-					"Cannot cast a " + wrapper.getClass() + "( " + wrapper.getType() + ") to TAG_COMPUND.");
+					"Cannot cast a " + tag.getClass() + "( " + tag.getType() + ") to TAG_COMPUND.");
 		else
-			throw new IllegalArgumentException("Wrapper cannot be NULL.");
+			throw new IllegalArgumentException("Tag cannot be NULL.");
 	}
 	
 	/**
-	 * Attempt to cast this wrapper as a list.
+	 * Attempt to cast this NBT tag as a list.
+	 * @param tag - the NBT tag to cast.
 	 * @return This instance as a list.
 	 * @throws UnsupportedOperationException If this is not a list.
 	 */
-	public static NbtList<?> asList(NbtWrapper<?> wrapper) {
-		if (wrapper instanceof NbtList)
-			return (NbtList<?>) wrapper;
-		else if (wrapper != null)
+	public static NbtList<?> asList(NbtBase<?> tag) {
+		if (tag instanceof NbtList)
+			return (NbtList<?>) tag;
+		else if (tag != null)
 			throw new UnsupportedOperationException(
-					"Cannot cast a " + wrapper.getClass() + "( " + wrapper.getType() + ") to TAG_LIST.");
+					"Cannot cast a " + tag.getClass() + "( " + tag.getType() + ") to TAG_LIST.");
 		else
-			throw new IllegalArgumentException("Wrapper cannot be NULL.");
+			throw new IllegalArgumentException("Tag cannot be NULL.");
 	}
 	
 	/**
 	 * Get a NBT wrapper from a NBT base.
+	 * <p>
+	 * This may clone the content if the NbtBase is not a NbtWrapper.
 	 * @param base - the base class.
 	 * @return A NBT wrapper.
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> NbtWrapper<T> fromBase(NbtBase<T> base) {
-		if (base instanceof WrappedElement) {
-			return (WrappedElement<T>) base;
-		} else if (base instanceof WrappedCompound) {
-			return (NbtWrapper<T>) base;
-		} else if (base instanceof WrappedList) {
+		if (base instanceof NbtWrapper) {
 			return (NbtWrapper<T>) base;
 		} else {
 			if (base.getType() == NbtType.TAG_COMPOUND) {
@@ -109,7 +109,7 @@ public class NbtFactory {
 				
 			} else {
 				// Copy directly
-				NbtWrapper<T> copy = ofType(base.getType(), base.getName());
+				NbtWrapper<T> copy = ofWrapper(base.getType(), base.getName());
 				
 				copy.setValue(base.getValue());
 				return copy;
@@ -136,17 +136,17 @@ public class NbtFactory {
 		}
 		
 		// Use the first and best NBT tag
-		StructureModifier<NbtWrapper<?>> modifier = itemStackModifier.
+		StructureModifier<NbtBase<?>> modifier = itemStackModifier.
 				withTarget(nmsStack).
 				withType(MinecraftReflection.getNBTBaseClass(), BukkitConverters.getNbtConverter());
-		NbtWrapper<?> result = modifier.read(0);
+		NbtBase<?> result = modifier.read(0);
 		
 		// Create the tag if it doesn't exist
 		if (result == null) {
 			result = NbtFactory.ofCompound("tag");
 			modifier.write(0, result);
 		}
-		return result;
+		return fromBase(result);
 	}
 	
 	/**
@@ -215,8 +215,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<String> of(String name, String value) {
-		return ofType(NbtType.TAG_STRING, name, value);
+	public static NbtBase<String> of(String name, String value) {
+		return ofWrapper(NbtType.TAG_STRING, name, value);
 	}
 	
 	/**
@@ -225,8 +225,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<Byte> of(String name, byte value) {
-		return ofType(NbtType.TAG_BYTE, name, value);
+	public static NbtBase<Byte> of(String name, byte value) {
+		return ofWrapper(NbtType.TAG_BYTE, name, value);
 	}
 	
 	/**
@@ -235,8 +235,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<Short> of(String name, short value) {
-		return ofType(NbtType.TAG_SHORT, name, value);
+	public static NbtBase<Short> of(String name, short value) {
+		return ofWrapper(NbtType.TAG_SHORT, name, value);
 	}
 	
 	/**
@@ -245,8 +245,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<Integer> of(String name, int value) {
-		return ofType(NbtType.TAG_INT, name, value);
+	public static NbtBase<Integer> of(String name, int value) {
+		return ofWrapper(NbtType.TAG_INT, name, value);
 	}
 	
 	/**
@@ -255,8 +255,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<Long> of(String name, long value) {
-		return ofType(NbtType.TAG_LONG, name, value);
+	public static NbtBase<Long> of(String name, long value) {
+		return ofWrapper(NbtType.TAG_LONG, name, value);
 	}
 	
 	/**
@@ -265,8 +265,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<Float> of(String name, float value) {
-		return ofType(NbtType.TAG_FLOAT, name, value);
+	public static NbtBase<Float> of(String name, float value) {
+		return ofWrapper(NbtType.TAG_FLOAT, name, value);
 	}
 	
 	/**
@@ -275,8 +275,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<Double> of(String name, double value) {
-		return ofType(NbtType.TAG_DOUBlE, name, value);
+	public static NbtBase<Double> of(String name, double value) {
+		return ofWrapper(NbtType.TAG_DOUBlE, name, value);
 	}
 	
 	/**
@@ -285,8 +285,8 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<byte[]> of(String name, byte[] value) {
-		return ofType(NbtType.TAG_BYTE_ARRAY, name, value);
+	public static NbtBase<byte[]> of(String name, byte[] value) {
+		return ofWrapper(NbtType.TAG_BYTE_ARRAY, name, value);
 	}
 	
 	/**
@@ -295,12 +295,12 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtWrapper<int[]> of(String name, int[] value) {
-		return ofType(NbtType.TAG_INT_ARRAY, name, value);
+	public static NbtBase<int[]> of(String name, int[] value) {
+		return ofWrapper(NbtType.TAG_INT_ARRAY, name, value);
 	}
 	
 	/**
-	 * Construct a new NBT compound wrapper initialized with a given list of NBT values.
+	 * Construct a new NBT compound initialized with a given list of NBT values.
 	 * @param name - the name of the compound wrapper. 
 	 * @param list - the list of elements to add.
 	 * @return The new wrapped NBT compound.
@@ -314,7 +314,7 @@ public class NbtFactory {
 	 * @param name - the name of the compound wrapper. 
 	 * @return The new wrapped NBT compound.
 	 */
-	public static WrappedCompound ofCompound(String name) {
+	public static NbtCompound ofCompound(String name) {
 		return WrappedCompound.fromName(name);
 	}
 	
@@ -329,6 +329,16 @@ public class NbtFactory {
 	}
 	
 	/**
+	 * Construct a NBT list of out a list of values.
+	 * @param name - name of this list.
+	 * @param elements - elements to add.
+	 * @return The new filled NBT list.
+	 */
+	public static <T> NbtList<T> ofList(String name, Collection<? extends T> elements) {
+		return WrappedList.fromList(name, elements);
+	}
+	
+	/**
 	 * Create a new NBT wrapper from a given type.
 	 * @param type - the NBT type.
 	 * @param name - the name of the NBT tag.
@@ -336,7 +346,7 @@ public class NbtFactory {
 	 * @throws FieldAccessException If we're unable to create the underlying tag.
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static <T> NbtWrapper<T> ofType(NbtType type, String name) {
+	public static <T> NbtWrapper<T> ofWrapper(NbtType type, String name) {
 		if (type == null)
 			throw new IllegalArgumentException("type cannot be NULL.");
 		if (type == NbtType.TAG_END)
@@ -376,8 +386,8 @@ public class NbtFactory {
 	 * @return The new wrapped NBT tag.
 	 * @throws FieldAccessException If we're unable to create the underlying tag.
 	 */
-	public static <T> NbtWrapper<T> ofType(NbtType type, String name, T value) {
-		NbtWrapper<T> created = ofType(type, name);
+	public static <T> NbtWrapper<T> ofWrapper(NbtType type, String name, T value) {
+		NbtWrapper<T> created = ofWrapper(type, name);
 		
 		// Update the value
 		created.setValue(value);
@@ -393,7 +403,7 @@ public class NbtFactory {
 	 * @throws FieldAccessException If we're unable to create the underlying tag.
 	 * @throws IllegalArgumentException If the given class type is not valid NBT.
 	 */
-	public static <T> NbtWrapper<T> ofType(Class<?> type, String name, T value) {
-		return ofType(NbtType.getTypeFromClass(type), name, value);
+	public static <T> NbtWrapper<T> ofWrapper(Class<?> type, String name, T value) {
+		return ofWrapper(NbtType.getTypeFromClass(type), name, value);
 	}
 }

@@ -9,6 +9,9 @@ import java.util.Set;
  * Represents a mapping of arbitrary NBT elements and their unique names.
  * <p>
  * Use {@link NbtFactory} to load or create an instance.
+ * <p>
+ * The {@link NbtBase#getValue()} method returns a {@link java.util.Map} that will correctly return the content
+ * of this NBT compound, but may throw an {@link UnsupportedOperationException} for any of the write operations.
  * 
  * @author Kristian
  */

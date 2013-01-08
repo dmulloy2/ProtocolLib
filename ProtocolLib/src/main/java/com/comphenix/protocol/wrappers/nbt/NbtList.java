@@ -8,6 +8,9 @@ import java.util.List;
  * Represents a list of NBT tags of the same type without names.
  * <p>
  * Use {@link NbtFactory} to load or create an instance.
+ * <p>
+ * The {@link NbtBase#getValue()} method returns a {@link java.util.List} that will correctly return the content
+ * of this NBT list, but may throw an {@link UnsupportedOperationException} for any of the write operations.
  * 
  * @author Kristian
  *

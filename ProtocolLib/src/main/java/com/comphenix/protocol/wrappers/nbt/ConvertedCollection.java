@@ -25,6 +25,14 @@ import java.util.List;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+/**
+ * Represents a collection that wraps another collection by transforming the elements going in and out.
+ * 
+ * @author Kristian
+ *
+ * @param <VInner> - type of the element in the inner invisible collection.
+ * @param <VOuter> - type of the elements publically accessible in the outer collection.
+ */
 abstract class ConvertedCollection<VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Collection<VOuter> {
 	// Inner collection
 	private Collection<VInner> inner;

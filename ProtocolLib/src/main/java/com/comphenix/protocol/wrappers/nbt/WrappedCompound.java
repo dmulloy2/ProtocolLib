@@ -28,7 +28,7 @@ import java.util.Set;
  * 
  * @author Kristian
  */
-public class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>>, NbtCompound {
+class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>>, NbtCompound {
 	// A list container
 	private WrappedElement<Map<String, Object>> container;
 	
@@ -42,7 +42,7 @@ public class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Ite
 	 */
 	public static WrappedCompound fromName(String name) {
 		// Simplify things for the caller
-		return (WrappedCompound) NbtFactory.<Map<String, NbtBase<?>>>ofType(NbtType.TAG_COMPOUND, name);
+		return (WrappedCompound) NbtFactory.<Map<String, NbtBase<?>>>ofWrapper(NbtType.TAG_COMPOUND, name);
 	}
 	
 	/**
@@ -63,7 +63,7 @@ public class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Ite
 	 * Construct a wrapped compound from a given NMS handle.
 	 * @param handle - the NMS handle.
 	 */
-	WrappedCompound(Object handle) {
+	public WrappedCompound(Object handle) {
 		this.container = new WrappedElement<Map<String,Object>>(handle);
 	}
 
@@ -164,7 +164,7 @@ public class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Ite
 
 		// Create or get a compound
 		if (nbt == null) 
-			put(nbt = NbtFactory.ofType(type, key));
+			put(nbt = NbtFactory.ofWrapper(type, key));
 		else if (nbt.getType() != type) 
 			throw new IllegalArgumentException("Cannot get tag " + nbt + ": Not a " + type);
 		

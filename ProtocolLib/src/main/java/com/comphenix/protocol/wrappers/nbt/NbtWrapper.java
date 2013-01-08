@@ -21,6 +21,8 @@ import java.io.DataOutput;
 
 /**
  * Indicates that this NBT wraps an underlying net.minecraft.server instance.
+ * <p>
+ * Use {@link NbtFactory} to load or create instances.
  * 
  * @author Kristian
  * 

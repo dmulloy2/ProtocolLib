@@ -34,7 +34,7 @@ import com.google.common.collect.Iterables;
  *
  * @param <TType> - the type of the value in each NBT sub element.
  */
-public class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<TType>, NbtList<TType> {	
+class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<TType>, NbtList<TType> {	
 	// A list container
 	private WrappedElement<List<Object>> container;
 	
@@ -47,7 +47,7 @@ public class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Ite
 	 * @return The new empty NBT list.
 	 */
 	public static <T> WrappedList<T> fromName(String name) {
-		return (WrappedList<T>) NbtFactory.<List<NbtBase<T>>>ofType(NbtType.TAG_LIST, name);
+		return (WrappedList<T>) NbtFactory.<List<NbtBase<T>>>ofWrapper(NbtType.TAG_LIST, name);
 	}
 	
 	/**
@@ -62,7 +62,7 @@ public class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Ite
 		for (T element : elements) {
 			if (element == null)
 				throw new IllegalArgumentException("An NBT list cannot contain a null element!");
-			result.add(NbtFactory.ofType(element.getClass(), EMPTY_NAME, element));
+			result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
 		}
 		return result;
 	}
@@ -79,7 +79,7 @@ public class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Ite
 		for (T element : elements) {
 			if (element == null)
 				throw new IllegalArgumentException("An NBT list cannot contain a null element!");
-			result.add(NbtFactory.ofType(element.getClass(), EMPTY_NAME, element));
+			result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
 		}
 		return result;
 	}

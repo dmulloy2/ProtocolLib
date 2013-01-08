@@ -21,6 +21,14 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Represents a map that wraps another map by transforming the entries going in and out.
+ * 
+ * @author Kristian
+ *
+ * @param <VInner> - type of the value in the entries in the inner invisible map.
+ * @param <VOuter> - type of the value in the entries publically accessible in the outer map.
+ */
 abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Map<Key, VOuter> {
 	// Inner map
 	private Map<Key, VInner> inner;

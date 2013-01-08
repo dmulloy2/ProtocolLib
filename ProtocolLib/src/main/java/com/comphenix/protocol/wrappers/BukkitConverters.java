@@ -34,8 +34,8 @@ import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
@@ -214,24 +214,24 @@ public class BukkitConverters {
 	 * Retrieve an equivalent converter for net.minecraft.server NBT classes and their wrappers.
 	 * @return An equivalent converter for NBT.
 	 */
-	public static EquivalentConverter<NbtWrapper<?>> getNbtConverter() {
-		return getIgnoreNull(new EquivalentConverter<NbtWrapper<?>>() {
+	public static EquivalentConverter<NbtBase<?>> getNbtConverter() {
+		return getIgnoreNull(new EquivalentConverter<NbtBase<?>>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, NbtWrapper<?> specific) {
-				return specific.getHandle();
+			public Object getGeneric(Class<?> genericType, NbtBase<?> specific) {
+				return NbtFactory.fromBase(specific).getHandle();
 			}
 			
 			@Override
-			public NbtWrapper<?> getSpecific(Object generic) {
+			public NbtBase<?> getSpecific(Object generic) {
 				return NbtFactory.fromNMS(generic);
 			}
 			
 			@Override
 			@SuppressWarnings("unchecked")
-			public Class<NbtWrapper<?>> getSpecificType() {
+			public Class<NbtBase<?>> getSpecificType() {
 				// Damn you Java AGAIN
-				Class<?> dummy = NbtWrapper.class;
-				return (Class<NbtWrapper<?>>) dummy;
+				Class<?> dummy = NbtBase.class;
+				return (Class<NbtBase<?>>) dummy;
 			}
 		});
 	}

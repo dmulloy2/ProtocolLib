@@ -21,6 +21,14 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
 
+/**
+ * Represents an object that transform elements of type VInner to type VOuter and back again.
+ * 
+ * @author Kristian
+ *
+ * @param <VInner> - the first type.
+ * @param <VOuter> - the second type.
+ */
 abstract class AbstractConverted<VInner, VOuter> {
 	/**
 	 * Convert a value from the inner map to the outer visible map.

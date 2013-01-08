@@ -27,14 +27,12 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
 
 /**
- * Represents an arbitrary NBT tag element, composite or not.
- * <p>
- * Use {@link NbtFactory} to load or create an instance.
- * @author Kristian
+ * Represents a wrapped NBT tag element, composite or not.
  *
+ * @author Kristian
  * @param <TType> - type of the value field.
  */
-public class WrappedElement<TType> implements NbtWrapper<TType> {	
+class WrappedElement<TType> implements NbtWrapper<TType> {	
 	// Structure modifier for the base class 
 	private static volatile StructureModifier<Object> baseModifier;
 	
@@ -57,7 +55,7 @@ public class WrappedElement<TType> implements NbtWrapper<TType> {
 	 * Initialize a NBT wrapper for a generic element.
 	 * @param handle - the NBT element to wrap.
 	 */
-	WrappedElement(Object handle) {
+	public WrappedElement(Object handle) {
 		this.handle = handle;
 	}
 		
@@ -135,12 +133,20 @@ public class WrappedElement<TType> implements NbtWrapper<TType> {
 		return type;
 	}
 	
-	NbtType getSubType() {
+	/**
+	 * Retrieve the sub element type of the underlying NMS NBT list.
+	 * @return The NBT sub type.
+	 */
+	public NbtType getSubType() {
 		int subID = getCurrentBaseModifier().<Byte>withType(byte.class).withTarget(handle).read(0);
 		return NbtType.getTypeFromID(subID);
 	}
 	
-	void setSubType(NbtType type) {
+	/**
+	 * Set the sub element type of the underlying NMS NBT list.
+	 * @param type - the new sub element type.
+	 */
+	public void setSubType(NbtType type) {
 		byte subID = (byte) type.getRawID();
 		getCurrentBaseModifier().<Byte>withType(byte.class).withTarget(handle).write(0, subID);
 	}

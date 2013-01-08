@@ -21,6 +21,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 
+/**
+ * Represents a list that wraps another list by transforming the items going in and out.
+ * 
+ * @author Kristian
+ *
+ * @param <VInner> - type of the items in the inner invisible list.
+ * @param <VOuter> - type of the items publically accessible in the outer list.
+ */
 abstract class ConvertedList<VInner, VOuter> extends ConvertedCollection<VInner, VOuter> implements List<VOuter> {
 	private List<VInner> inner;
 	
