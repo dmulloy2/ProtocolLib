@@ -172,7 +172,7 @@ public class NbtFactory {
 	 * @param value - the NBT tag to write.
 	 * @param destination - the destination stream.
 	 */
-	public static <TType> void toStream(NbtBase<TType> value, DataOutput destination) {
+	public static <TType> void toStream(NbtWrapper<TType> value, DataOutput destination) {
 		if (methodWrite == null) {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
 			
@@ -193,7 +193,7 @@ public class NbtFactory {
 	 * @param source - the input stream.
 	 * @return An NBT tag.
 	 */
-	public static NbtBase<?> fromStream(DataInput source) {
+	public static NbtWrapper<?> fromStream(DataInput source) {
 		if (methodLoad == null) {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
 			
@@ -215,7 +215,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<String> of(String name, String value) {
+	public static NbtWrapper<String> of(String name, String value) {
 		return ofType(NbtType.TAG_STRING, name, value);
 	}
 	
@@ -225,7 +225,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<Byte> of(String name, byte value) {
+	public static NbtWrapper<Byte> of(String name, byte value) {
 		return ofType(NbtType.TAG_BYTE, name, value);
 	}
 	
@@ -235,7 +235,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<Short> of(String name, short value) {
+	public static NbtWrapper<Short> of(String name, short value) {
 		return ofType(NbtType.TAG_SHORT, name, value);
 	}
 	
@@ -245,7 +245,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<Integer> of(String name, int value) {
+	public static NbtWrapper<Integer> of(String name, int value) {
 		return ofType(NbtType.TAG_INT, name, value);
 	}
 	
@@ -255,7 +255,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<Long> of(String name, long value) {
+	public static NbtWrapper<Long> of(String name, long value) {
 		return ofType(NbtType.TAG_LONG, name, value);
 	}
 	
@@ -265,7 +265,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<Float> of(String name, float value) {
+	public static NbtWrapper<Float> of(String name, float value) {
 		return ofType(NbtType.TAG_FLOAT, name, value);
 	}
 	
@@ -275,7 +275,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<Double> of(String name, double value) {
+	public static NbtWrapper<Double> of(String name, double value) {
 		return ofType(NbtType.TAG_DOUBlE, name, value);
 	}
 	
@@ -285,7 +285,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<byte[]> of(String name, byte[] value) {
+	public static NbtWrapper<byte[]> of(String name, byte[] value) {
 		return ofType(NbtType.TAG_BYTE_ARRAY, name, value);
 	}
 	
@@ -295,7 +295,7 @@ public class NbtFactory {
 	 * @param value - value of the tag. 
 	 * @return The constructed NBT tag.
 	 */
-	public static NbtBase<int[]> of(String name, int[] value) {
+	public static NbtWrapper<int[]> of(String name, int[] value) {
 		return ofType(NbtType.TAG_INT_ARRAY, name, value);
 	}
 	

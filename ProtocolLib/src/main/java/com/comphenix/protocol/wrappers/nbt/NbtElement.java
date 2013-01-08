@@ -41,7 +41,7 @@ public class NbtElement<TType> implements NbtWrapper<TType> {
 	// For retrieving the current type ID
 	private static volatile Method methodGetTypeID;
 	
-	// For cloning handles
+	// For handling cloning
 	private static volatile Method methodClone;
 	
 	// Structure modifiers for the different NBT elements
