@@ -12,3 +12,5 @@ com.comphenix.protocol.reflect.compiler
 com.comphenix.protocol.reflect.instances
 com.comphenix.protocol.utility
 com.comphenix.protocol.wrappers
+com.comphenix.protocol.wrappers.nbt
+com.comphenix.protocol.wrappers.nbt.io
