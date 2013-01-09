@@ -1,5 +1,7 @@
 package com.comphenix.protocol.wrappers.nbt.io;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -129,10 +131,10 @@ public class NbtConfigurationSerializer {
 					String name = getEncodedName(node, listIndex);
 					
 					// Save member
-					current.set(name, node.getValue());
+					current.set(name, fromNodeValue(node));
 					
 				} else {
-					currentList.add(node.getValue());
+					currentList.add(fromNodeValue(node));
 				}
 				return true;
 			}
@@ -261,7 +263,7 @@ public class NbtConfigurationSerializer {
 				list.setElementType(type);
 				
 				for (Object value : (List<Object>) node) {
-					list.addClosest(value);
+					list.addClosest(toNodeValue(value, type));
 				}
 				
 				// Add the list
@@ -269,7 +271,7 @@ public class NbtConfigurationSerializer {
 			
 			} else {
 				// Normal node
-				return NbtFactory.ofWrapper(type, decoded[0], node);
+				return NbtFactory.ofWrapper(type, decoded[0], toNodeValue(node, type));
 			}
 		}
 	}
@@ -290,7 +292,51 @@ public class NbtConfigurationSerializer {
 		return sorted;
 	}
 	
-	private String[] getDecodedName(String nodeName) {
+	// Ensure that int arrays are converted to byte arrays
+	private Object fromNodeValue(NbtBase<?> base) {
+		if (base.getType() == NbtType.TAG_INT_ARRAY)
+			return toByteArray((int[]) base.getValue());
+		else
+			return base.getValue();
+	}
+	
+	// Convert them back
+	public Object toNodeValue(Object value, NbtType type) {
+		if (type == NbtType.TAG_INT_ARRAY)
+			return toIntegerArray((byte[]) value);
+		else
+			return value;
+	}
+	
+	/**
+	 * Convert an integer array to an equivalent byte array.
+	 * @param data - the integer array with the data.
+	 * @return An equivalent byte array.
+	 */
+	private static byte[] toByteArray(int[] data) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);        
+        IntBuffer intBuffer = byteBuffer.asIntBuffer();
+        
+        intBuffer.put(data);
+        return byteBuffer.array();
+	}
+	
+	/**
+	 * Convert a byte array to the equivalent integer array.
+	 * <p>
+	 * Note that the number of byte elements are only perserved if the byte size is a multiple of four.
+	 * @param data - the byte array to convert.
+	 * @return The equivalent integer array.
+	 */
+	private static int[] toIntegerArray(byte[] data) {
+		IntBuffer source = ByteBuffer.wrap(data).asIntBuffer();
+		IntBuffer copy = IntBuffer.allocate(source.capacity());
+		
+		copy.put(source);
+		return copy.array();
+	}
+	
+	private static String[] getDecodedName(String nodeName) {
 		int delimiter = nodeName.lastIndexOf('$');
 		
 		if (delimiter > 0)
