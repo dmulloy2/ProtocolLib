@@ -112,14 +112,16 @@ public class NbtFactory {
 	}
 	
 	/**
-	 * Construct a wrapper for an NBT tag stored (in memory) in an item stack.
+	 * Construct a wrapper for an NBT tag stored (in memory) in an item stack. This is where
+	 * auxillary data such as enchanting, name and lore is stored. It doesn't include the items
+	 * material, damage value or count.
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use 
 	 * {@link MinecraftReflection#getBukkitItemStack(ItemStack)} if not.
 	 * @param stack - the item stack.
 	 * @return A wrapper for its NBT tag.
 	 */
-	public static NbtWrapper<?> fromItemStack(ItemStack stack) {
+	public static NbtWrapper<?> fromItemTag(ItemStack stack) {
 		if (!MinecraftReflection.isCraftItemStack(stack))
 			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
 		
