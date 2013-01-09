@@ -6,9 +6,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
-
 import org.bukkit.inventory.ItemStack;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
 
@@ -50,21 +49,15 @@ public class StreamSerializer {
 	}
 	
 	/**
-	 * Deserialize an item stack from a base-32 encoded string.
-	 * @param input - base-32 encoded string.
+	 * Deserialize an item stack from a base-64 encoded string.
+	 * @param input - base-64 encoded string.
 	 * @return A deserialized item stack.
 	 * @throws IOException If the operation failed due to reflection or corrupt data.
 	 */
 	public ItemStack deserializeItemStack(String input) throws IOException {
-		try {
-			BigInteger base32 = new BigInteger(input, 32);
-			ByteArrayInputStream inputStream = new ByteArrayInputStream(base32.toByteArray());
-			
-			return deserializeItemStack(new DataInputStream(inputStream));
-			
-		} catch (NumberFormatException e) {
-			throw new IOException("Input is not valid base 32.", e);
-		}
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(input));
+		
+		return deserializeItemStack(new DataInputStream(inputStream));
 	}
 	
 	/**
@@ -93,9 +86,9 @@ public class StreamSerializer {
 	}
 	
 	/**
-	 * Serialize an item stack as a base-32 encoded string.
+	 * Serialize an item stack as a base-64 encoded string.
 	 * @param stack - the item stack to serialize.
-	 * @return A base-32 representation of the given item stack.
+	 * @return A base-64 representation of the given item stack.
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public String serializeItemStack(ItemStack stack) throws IOException {
@@ -105,6 +98,6 @@ public class StreamSerializer {
 		 serializeItemStack(dataOutput, stack);
 		 
 		 // Serialize that array
-		 return new BigInteger(1, outputStream.toByteArray()).toString(32);
+		return Base64Coder.encodeLines(outputStream.toByteArray());
 	}
 }

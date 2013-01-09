@@ -5,7 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
+
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -13,36 +14,28 @@ import com.comphenix.protocol.wrappers.nbt.NbtList;
 import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
 
 /**
- * Serializes NBT to a base N (default 32) encoded string and back.
+ * Serializes NBT to a base-64 encoded string and back.
  * 
  * @author Kristian
  */
 public class NbtTextSerializer {
-	/**
-	 * The default radix to use while converting to text.
-	 */
-	public static final int STANDARD_BASE = 32;
-	
 	/**
 	 * A default instance of this serializer.
 	 */
 	public static final NbtTextSerializer DEFAULT = new NbtTextSerializer();
 	
 	private NbtBinarySerializer binarySerializer;
-	private int baseRadix;
 	
 	public NbtTextSerializer() {
-		this(new NbtBinarySerializer(), STANDARD_BASE);
+		this(new NbtBinarySerializer());
 	}
 	
 	/**
-	 * Construct a serializer with a custom binary serializer and base radix.
+	 * Construct a serializer with a custom binary serializer.
 	 * @param binary - binary serializer.
-	 * @param baseRadix - base radix in the range 2 - 32.
 	 */
-	public NbtTextSerializer(NbtBinarySerializer binary, int baseRadix) {
+	public NbtTextSerializer(NbtBinarySerializer binary) {
 		this.binarySerializer = binary;
-		this.baseRadix = baseRadix;
 	}
 
 	/**
@@ -54,17 +47,9 @@ public class NbtTextSerializer {
 	}
 
 	/**
-	 * Retrieve the base radix.
-	 * @return The base radix.
-	 */
-	public int getBaseRadix() {
-		return baseRadix;
-	}
-
-	/**
-	 * Serialize a NBT tag to a String.
+	 * Serialize a NBT tag to a base-64 encoded string.
 	 * @param value - the NBT tag to serialize.
-	 * @return The NBT tag in base N form.
+	 * @return The NBT tag in base-64 form.
 	 */
 	public <TType> String serialize(NbtBase<TType> value) {
 		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -73,30 +58,24 @@ public class NbtTextSerializer {
 		 binarySerializer.serialize(value, dataOutput);
 		 
 		 // Serialize that array
-		 return new BigInteger(1, outputStream.toByteArray()).toString(baseRadix);
+		 return Base64Coder.encodeLines(outputStream.toByteArray());
 	}
 	
 	/**
-	 * Deserialize a NBT tag from a base N encoded string.
-	 * @param input - the base N string.
+	 * Deserialize a NBT tag from a base-64 encoded string.
+	 * @param input - the base-64 string.
 	 * @return The NBT tag contained in the string.
 	 * @throws IOException If we are unable to parse the input.
 	 */
 	public <TType> NbtWrapper<TType> deserialize(String input) throws IOException {
-		try {
-			BigInteger baseN = new BigInteger(input, baseRadix);
-			ByteArrayInputStream inputStream = new ByteArrayInputStream(baseN.toByteArray());
-			
-			return binarySerializer.deserialize(new DataInputStream(inputStream));
-			
-		} catch (NumberFormatException e) {
-			throw new IOException("Input is not valid base " + baseRadix + ".", e);
-		}
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(input));
+		
+		return binarySerializer.deserialize(new DataInputStream(inputStream));
 	}
 	
 	/**
-	 * Deserialize a NBT compound from a base N encoded string.
-	 * @param input - the base N string.
+	 * Deserialize a NBT compound from a base-64 encoded string.
+	 * @param input - the base-64 string.
 	 * @return The NBT tag contained in the string.
 	 * @throws IOException If we are unable to parse the input.
 	 */
@@ -107,8 +86,8 @@ public class NbtTextSerializer {
 	}
 	
 	/**
-	 * Deserialize a NBT list from a base N encoded string.
-	 * @param input - the base N string.
+	 * Deserialize a NBT list from a base-64 encoded string.
+	 * @param input - the base-64 string.
 	 * @return The NBT tag contained in the string.
 	 * @throws IOException If we are unable to parse the input.
 	 */
