@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+
 /**
  * A concrete implementation of an NbtCompound that wraps an underlying NMS Compound.
  * 
@@ -65,6 +67,19 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	 */
 	public WrappedCompound(Object handle) {
 		this.container = new WrappedElement<Map<String,Object>>(handle);
+	}
+	
+	@Override
+	public boolean accept(NbtVisitor visitor) {
+		// Enter this node?
+		if (visitor.visitEnter(this)) {
+			for (NbtBase<?> node : this) {
+				if (!node.accept(visitor))
+					break;
+			}
+		}
+		
+		return visitor.visitLeave(this);
 	}
 
 	@Override
@@ -420,7 +435,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	 */
 	@Override
 	public double getDoubleOrDefault(String key) {
-		return (Double) getValueOrDefault(key, NbtType.TAG_DOUBlE).getValue();
+		return (Double) getValueOrDefault(key, NbtType.TAG_DOUBLE).getValue();
 	}
 	
 	/**
@@ -543,9 +558,18 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	 * @return This current compound, for chaining.
 	 */
 	@Override
-	public <T> NbtCompound put(WrappedList<T> list) {
+	public <T> NbtCompound put(NbtList<T> list) {
 		getValue().put(list.getName(), list);
 		return this;
+	}
+	
+	@Override
+	public NbtCompound put(String key, NbtBase<?> entry) {
+		// Don't modify the original NBT
+		NbtBase<?> clone = entry.deepClone();
+		
+		clone.setName(key);
+		return put(clone);
 	}
 	
 	/**
@@ -561,7 +585,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	
 	@Override
 	public void write(DataOutput destination) {
-		NbtFactory.toStream(container, destination);
+		NbtBinarySerializer.DEFAULT.serialize(container, destination);
 	}
 	
 	@Override

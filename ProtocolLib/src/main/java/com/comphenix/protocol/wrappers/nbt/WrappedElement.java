@@ -24,6 +24,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import com.google.common.base.Objects;
 
 /**
@@ -106,6 +107,11 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 		return modifier;
 	}
 	
+	@Override
+	public boolean accept(NbtVisitor visitor) {
+		return visitor.visit(this);
+	}
+	
 	/**
 	 * Retrieve the underlying NBT tag object.
 	 * @return The underlying Minecraft tag object.
@@ -173,7 +179,8 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 	
 	@Override
 	public void write(DataOutput destination) {
-		NbtFactory.toStream(this, destination);
+		// No need to cache this object
+		NbtBinarySerializer.DEFAULT.serialize(this, destination);
 	}
 	
 	@Override

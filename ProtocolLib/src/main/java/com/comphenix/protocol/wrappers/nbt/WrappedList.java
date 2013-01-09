@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
@@ -41,13 +42,17 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 	// Saved wrapper list
 	private ConvertedList<Object, NbtBase<TType>> savedList;
 	
+	// Element type
+	private NbtType elementType = NbtType.TAG_END;
+	
 	/**
 	 * Construct a new empty NBT list.
 	 * @param name - name of this list.
 	 * @return The new empty NBT list.
 	 */
-	public static <T> WrappedList<T> fromName(String name) {
-		return (WrappedList<T>) NbtFactory.<List<NbtBase<T>>>ofWrapper(NbtType.TAG_LIST, name);
+	@SuppressWarnings("unchecked")
+	public static <T> NbtList<T> fromName(String name) {
+		return (NbtList<T>) NbtFactory.<List<NbtBase<T>>>ofWrapper(NbtType.TAG_LIST, name);
 	}
 	
 	/**
@@ -56,13 +61,18 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 	 * @param elements - values to add.
 	 * @return The new filled NBT list.
 	 */
-	public static <T> WrappedList<T> fromArray(String name, T... elements) {
-		WrappedList<T> result = fromName(name);
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static <T> NbtList<T> fromArray(String name, T... elements) {
+		NbtList<T> result = fromName(name);
 		
 		for (T element : elements) {
 			if (element == null)
 				throw new IllegalArgumentException("An NBT list cannot contain a null element!");
-			result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
+			
+			if (element instanceof NbtBase) 
+				result.add((NbtBase) element);
+			else
+				result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
 		}
 		return result;
 	}
@@ -73,21 +83,44 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 	 * @param elements - elements to add.
 	 * @return The new filled NBT list.
 	 */
-	public static <T> WrappedList<T> fromList(String name, Collection<? extends T> elements) {
-		WrappedList<T> result = fromName(name);
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static <T> NbtList<T> fromList(String name, Collection<? extends T> elements) {
+		NbtList<T> result = fromName(name);
 
 		for (T element : elements) {
 			if (element == null)
 				throw new IllegalArgumentException("An NBT list cannot contain a null element!");
-			result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
+			
+			if (element instanceof NbtBase) 
+				result.add((NbtBase) element);
+			else
+				result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
 		}
 		return result;
 	}
 	
+	/**
+	 * Construct a list from an NMS instance.
+	 * @param handle - NMS instance.
+	 */
 	public WrappedList(Object handle) {
 		this.container = new WrappedElement<List<Object>>(handle);
+		this.elementType = container.getSubType();
 	}
 
+	@Override
+	public boolean accept(NbtVisitor visitor) {
+		// Enter this node?
+		if (visitor.visitEnter(this)) {
+			for (NbtBase<TType> node : getValue()) {
+				if (!node.accept(visitor))
+					break;
+			}
+		}
+		
+		return visitor.visitLeave(this);
+	}
+	
 	@Override
 	public Object getHandle() {
 		return container.getHandle();
@@ -98,15 +131,17 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 		return NbtType.TAG_LIST;
 	}
 	
-	/**
-	 * Get the type of each element.
-	 * @return Element type.
-	 */
 	@Override
 	public NbtType getElementType() {
-		return container.getSubType();
+		return elementType;
 	}
 	
+	@Override
+	public void setElementType(NbtType type) {
+		this.elementType = type;
+		container.setSubType(type);
+	}
+
 	@Override
 	public String getName() {
 		return container.getName();
@@ -129,7 +164,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 						throw new IllegalArgumentException("Cannot add a the named NBT tag " + element + " to a list.");
 					
 					// Check element type
-					if (size() > 0) {
+					if (getElementType() != NbtType.TAG_END) {
 						if (!element.getType().equals(getElementType())) {
 							throw new IllegalArgumentException(
 									"Cannot add " + element + " of " + element.getType() + " to a list of type " + getElementType());
@@ -153,17 +188,11 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 				
 				@Override
 				public boolean addAll(Collection<? extends NbtBase<TType>> c) {
-					boolean empty = size() == 0;
 					boolean result = false;
 					
 					for (NbtBase<TType> element : c) {
 						add(element);
 						result = true;
-					}
-					
-					// See if we now added our first object(s)
-					if (empty && result) {
-						container.setSubType(get(0).getType());
 					}
 					return result;
 				}
@@ -195,6 +224,38 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public NbtBase<List<NbtBase<TType>>> deepClone() {
 		return (NbtBase) container.deepClone();
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public void addClosest(Object value) {
+		if (getElementType() == NbtType.TAG_END)
+			throw new IllegalStateException("This list has not been typed yet.");
+		
+		if (value instanceof Number) {
+			Number number = (Number) value;
+			
+			// Convert the number
+			switch (getElementType()) {
+				case TAG_BYTE: add(number.byteValue()); break;
+				case TAG_SHORT: add(number.shortValue()); break;
+				case TAG_INT: add(number.intValue()); break;
+				case TAG_LONG: add(number.longValue()); break;
+				case TAG_FLOAT: add(number.floatValue()); break;
+				case TAG_DOUBLE: add(number.doubleValue()); break;
+				case TAG_STRING: add(number.toString()); break;
+				default: 
+					throw new IllegalArgumentException("Cannot convert " + value + " to " + getType());
+			}
+			
+		} else if (value instanceof NbtBase) {
+			// Add the element itself
+			add((NbtBase<TType>) value);
+			
+		} else {
+			// Just add it
+			add((NbtBase<TType>) NbtFactory.ofWrapper(getElementType(), EMPTY_NAME, value));
+		}
 	}
 	
 	@Override
@@ -293,7 +354,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 	
 	@Override
 	public void write(DataOutput destination) {
-		NbtFactory.toStream(container, destination);
+		NbtBinarySerializer.DEFAULT.serialize(container, destination);
 	}
 	
 	@Override

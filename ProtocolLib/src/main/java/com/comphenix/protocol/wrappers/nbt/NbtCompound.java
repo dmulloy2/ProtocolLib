@@ -10,7 +10,7 @@ import java.util.Set;
  * <p>
  * Use {@link NbtFactory} to load or create an instance.
  * <p>
- * The {@link NbtBase#getValue()} method returns a {@link java.util.Map} that will correctly return the content
+ * The {@link NbtBase#getValue()} method returns a {@link java.util.Map} that will return the full content
  * of this NBT compound, but may throw an {@link UnsupportedOperationException} for any of the write operations.
  * 
  * @author Kristian
@@ -73,6 +73,14 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * @return This current compound, for chaining.
 	 */
 	public abstract NbtCompound put(String key, String value);
+	
+	/**
+	 * Inserts an entry after cloning it and renaming it to "key".
+	 * @param key - the name of the entry.
+	 * @param entry - the entry to insert.
+	 * @return This current compound, for chaining.
+	 */
+	public abstract NbtCompound put(String key, NbtBase<?> entry);
 
 	/**
 	 * Retrieve the byte value of an entry identified by a given key.
@@ -286,7 +294,7 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * @param list - the list value.
 	 * @return This current compound, for chaining.
 	 */
-	public abstract <T> NbtCompound put(WrappedList<T> list);
+	public abstract <T> NbtCompound put(NbtList<T> list);
 
 	/**
 	 * Associate a new NBT list with the given key.

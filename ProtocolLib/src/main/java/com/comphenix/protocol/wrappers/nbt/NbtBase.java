@@ -30,6 +30,13 @@ import com.comphenix.protocol.wrappers.nbt.NbtType;
  */
 public interface NbtBase<TType> {
 	/**
+	 * Accepts a NBT visitor.
+	 * @param visitor - the hierarchical NBT visitor.
+	 * @return TRUE if the parent should continue processing children at the current level, FALSE otherwise.
+	 */
+	public abstract boolean accept(NbtVisitor visitor);
+	
+	/**
 	 * Retrieve the type of this NBT element.
 	 * @return The type of this NBT element.
 	 */

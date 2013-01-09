@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
 public class NbtFactoryTest {
 	@BeforeClass
@@ -54,7 +55,7 @@ public class NbtFactoryTest {
 		ByteArrayInputStream source = new ByteArrayInputStream(buffer.toByteArray());
 		DataInput input = new DataInputStream(source);
 		
-		NbtCompound cloned = (NbtCompound) NbtFactory.fromStream(input);
+		NbtCompound cloned = NbtBinarySerializer.DEFAULT.deserializeCompound(input);
 		
 		assertEquals(compound.getString("name"), cloned.getString("name"));
 		assertEquals(compound.getInteger("age"), cloned.getInteger("age"));

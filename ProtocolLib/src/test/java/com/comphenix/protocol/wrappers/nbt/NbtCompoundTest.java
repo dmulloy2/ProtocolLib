@@ -90,6 +90,11 @@ public class NbtCompoundTest {
 		@Override
 		public NbtBase<TValue> deepClone() {
 			return new NbtCustomTag<TValue>(name, value);
+		}
+
+		@Override
+		public boolean accept(NbtVisitor visitor) {
+			return visitor.visit(this);
 		}	
 	}
 }

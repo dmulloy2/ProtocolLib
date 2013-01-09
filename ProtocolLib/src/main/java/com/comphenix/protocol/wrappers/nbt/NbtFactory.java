@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -40,11 +38,7 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 public class NbtFactory {
 	// Used to create the underlying tag
 	private static Method methodCreateTag;
-	
-	// Used to read and write NBT
-	private static Method methodWrite;
-	private static Method methodLoad;
-	
+		
 	// Item stack trickery
 	private static StructureModifier<Object> itemStackModifier;
 	
@@ -102,7 +96,7 @@ public class NbtFactory {
 			
 			} else if (base.getType() == NbtType.TAG_LIST) {
 				// As above
-				WrappedList<T> copy = WrappedList.fromName(base.getName());
+				NbtList<T> copy = WrappedList.fromName(base.getName());
 				
 				copy.setValue((List<NbtBase<T>>) base.getValue());
 				return (NbtWrapper<T>) copy;
@@ -166,49 +160,7 @@ public class NbtFactory {
 		else
 			return partial;
 	}
-	
-	/**
-	 * Write the content of a wrapped NBT tag to a stream.
-	 * @param value - the NBT tag to write.
-	 * @param destination - the destination stream.
-	 */
-	public static <TType> void toStream(NbtWrapper<TType> value, DataOutput destination) {
-		if (methodWrite == null) {
-			Class<?> base = MinecraftReflection.getNBTBaseClass();
-			
-			// Use the base class
-			methodWrite = FuzzyReflection.fromClass(base).
-					getMethodByParameters("writeNBT", base, DataOutput.class);
-		}
 		
-		try {
-			methodWrite.invoke(null, fromBase(value).getHandle(), destination);
-		} catch (Exception e) {
-			throw new FieldAccessException("Unable to write NBT " + value, e);
-		}
-	}
-
-	/**
-	 * Load an NBT tag from a stream.
-	 * @param source - the input stream.
-	 * @return An NBT tag.
-	 */
-	public static NbtWrapper<?> fromStream(DataInput source) {
-		if (methodLoad == null) {
-			Class<?> base = MinecraftReflection.getNBTBaseClass();
-			
-			// Use the base class
-			methodLoad = FuzzyReflection.fromClass(base).
-					getMethodByParameters("load", base, new Class<?>[] { DataInput.class });
-		}
-		
-		try {
-			return fromNMS(methodLoad.invoke(null, source));
-		} catch (Exception e) {
-			throw new FieldAccessException("Unable to read NBT from " + source, e);
-		}
-	}
-	
 	/**
 	 * Constructs a NBT tag of type string.
 	 * @param name - name of the tag.
@@ -276,7 +228,7 @@ public class NbtFactory {
 	 * @return The constructed NBT tag.
 	 */
 	public static NbtBase<Double> of(String name, double value) {
-		return ofWrapper(NbtType.TAG_DOUBlE, name, value);
+		return ofWrapper(NbtType.TAG_DOUBLE, name, value);
 	}
 	
 	/**

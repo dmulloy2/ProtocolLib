@@ -62,7 +62,7 @@ public enum NbtType {
 	/**
 	 * A signed 8 byte floating point type.
 	 */
-	TAG_DOUBlE(6, double.class),
+	TAG_DOUBLE(6, double.class),
 	
 	/**
 	 * An array of bytes.
@@ -113,13 +113,25 @@ public enum NbtType {
 				classLookup.put(Primitives.wrap(type.getValueType()), type);
 			}
 		}
+		
+		// Additional lookup
+		classLookup.put(NbtList.class, TAG_LIST);
+		classLookup.put(NbtCompound.class, TAG_COMPOUND);
 	}
 	
 	private NbtType(int rawID, Class<?> valueType) {
 		this.rawID = rawID;
 		this.valueType = valueType;
 	}
-			
+	
+	/**
+	 * Determine if the given NBT can store multiple children NBT tags.
+	 * @return TRUE if this is a composite NBT tag, FALSE otherwise.
+	 */
+	public boolean isComposite() {
+		return this == TAG_COMPOUND || this == TAG_LIST;
+	}
+	
 	/**
 	 * Retrieves the raw unique integer that identifies the type of the parent NBT element.
 	 * @return Integer that uniquely identifying the type.
@@ -157,9 +169,16 @@ public enum NbtType {
 		NbtType result = classLookup.get(clazz);
 		
 		// Try to lookup this value
-		if (result != null)
+		if (result != null) {
 			return result;
-		else
+		} else { 
+			// Look for interfaces
+			for (Class<?> implemented : clazz.getInterfaces()) {
+				if (classLookup.containsKey(implemented))
+					return classLookup.get(implemented);
+			}
+			
 			throw new IllegalArgumentException("No NBT tag can represent a " + clazz);
+		}
 	}
 }

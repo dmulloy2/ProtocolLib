@@ -23,11 +23,27 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
 	public static String EMPTY_NAME = "";
 	
 	/**
-	 * Get the type of each element.
+	 * Get the type of each element. 
+	 * <p>
+	 * This will be {@link NbtType#TAG_END TAG_END} if the NBT list has just been created.
 	 * @return Element type.
 	 */
 	public abstract NbtType getElementType();
 
+	/**
+	 * Set the type of each element.
+	 * @param type - type of each element.
+	 */
+	public abstract void setElementType(NbtType type);
+	
+	/**
+	 * Add a value to a typed list by attempting to convert it to the nearest value.
+	 * <p>
+	 * Note that the list must be typed by setting {@link #setElementType(NbtType)} before calling this function.
+	 * @param value - the value to add.
+	 */
+	public abstract void addClosest(Object value);
+	
 	/**
 	 * Add a NBT list or NBT compound to the list.
 	 * @param element
