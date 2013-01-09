@@ -34,6 +34,8 @@ import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.nbt.NbtBase;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
@@ -204,6 +206,32 @@ public class BukkitConverters {
 			@Override
 			public Class<WorldType> getSpecificType() {
 				return WorldType.class;
+			}
+		});
+	}
+	
+	/**
+	 * Retrieve an equivalent converter for net.minecraft.server NBT classes and their wrappers.
+	 * @return An equivalent converter for NBT.
+	 */
+	public static EquivalentConverter<NbtBase<?>> getNbtConverter() {
+		return getIgnoreNull(new EquivalentConverter<NbtBase<?>>() {
+			@Override
+			public Object getGeneric(Class<?> genericType, NbtBase<?> specific) {
+				return NbtFactory.fromBase(specific).getHandle();
+			}
+			
+			@Override
+			public NbtBase<?> getSpecific(Object generic) {
+				return NbtFactory.fromNMS(generic);
+			}
+			
+			@Override
+			@SuppressWarnings("unchecked")
+			public Class<NbtBase<?>> getSpecificType() {
+				// Damn you Java AGAIN
+				Class<?> dummy = NbtBase.class;
+				return (Class<NbtBase<?>>) dummy;
 			}
 		});
 	}

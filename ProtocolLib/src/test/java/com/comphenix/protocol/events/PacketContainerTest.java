@@ -1,3 +1,20 @@
+/*
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2012 Kristian S. Stangeland
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the 
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program; 
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  02111-1307 USA
+ */
+
 package com.comphenix.protocol.events;
 
 import static org.junit.Assert.*;
@@ -32,6 +49,8 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -233,6 +252,22 @@ public class PacketContainerTest {
 		assertEquals(testValue, worldAccess.read(0));
 	}
 
+	@Test
+	public void testGetNbtModifier() {
+		PacketContainer updateTileEntity = new PacketContainer(132);
+		
+		NbtCompound compound = NbtFactory.ofCompound("test");
+		compound.put("test", "name");
+		compound.put(NbtFactory.ofList("ages", 1, 2, 3));
+		
+		updateTileEntity.getNbtModifier().write(0, compound);
+		
+		NbtCompound result = (NbtCompound) updateTileEntity.getNbtModifier().read(0);
+		
+		assertEquals(compound.getString("test"), result.getString("test"));
+		assertEquals(compound.getList("ages"), result.getList("ages"));
+	}
+	
 	@Test
 	public void testGetDataWatcherModifier() {
 		PacketContainer mobSpawnPacket = new PacketContainer(Packets.Server.MOB_SPAWN);
