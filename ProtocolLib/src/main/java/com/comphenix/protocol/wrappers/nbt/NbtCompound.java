@@ -272,7 +272,7 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * @param compound - the compound value.
 	 * @return This current compound, for chaining.
 	 */
-	public abstract NbtCompound put(WrappedCompound compound);
+	public abstract NbtCompound put(NbtCompound compound);
 
 	/**
 	 * Retrieve the NBT list value of an entry identified by a given key.
