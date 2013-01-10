@@ -176,6 +176,14 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
+	 * Retrieves a read/write structure for every boolean field.
+	 * @return A modifier for every boolean field.
+	 */
+	public StructureModifier<Boolean> getBooleans() {
+		return structureModifier.withType(boolean.class);
+	}
+	
+	/**
 	 * Retrieves a read/write structure for every short field.
 	 * @return A modifier for every short field.
 	 */
