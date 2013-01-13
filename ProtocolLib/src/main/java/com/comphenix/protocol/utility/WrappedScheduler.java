@@ -1,4 +1,4 @@
-package com.comphenix.protocol.metrics;
+package com.comphenix.protocol.utility;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -9,7 +9,7 @@ import org.bukkit.scheduler.BukkitTask;
  * 
  * @author Kristian
  */
-class Scheduling {
+public class WrappedScheduler {
 	/**
 	 * Represents a backwards compatible Bukkit task.
 	 */
