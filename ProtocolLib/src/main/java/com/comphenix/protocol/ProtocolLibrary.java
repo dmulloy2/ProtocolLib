@@ -37,6 +37,7 @@ import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.DelayedSingleTask;
 import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
@@ -138,7 +139,13 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			// Update injection hook
 			try {
-				protocolManager.setPlayerHook(config.getInjectionMethod());
+				PlayerInjectHooks hook = config.getInjectionMethod();
+				
+				// Only update the hook if it's different
+				if (protocolManager.getPlayerHook().equals(hook)) {
+					protocolManager.setPlayerHook(hook);
+					logger.info("Changing player hook to " + hook);
+				}
 			} catch (IllegalArgumentException e) {
 				detailedReporter.reportWarning(config, "Cannot parse injection method. Using default.", e);
 			}
