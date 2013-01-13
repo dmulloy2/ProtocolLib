@@ -239,7 +239,7 @@ public class Metrics {
             }
 
             // Begin hitting the server with glorious data
-            task = WrappedScheduler.runAsynchronously(plugin, new Runnable() {
+            task = WrappedScheduler.runAsynchronouslyRepeat(plugin, new Runnable() {
 
                 private boolean firstPost = true;
 

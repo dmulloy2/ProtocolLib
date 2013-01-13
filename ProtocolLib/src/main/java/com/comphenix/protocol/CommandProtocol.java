@@ -25,6 +25,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.metrics.Updater.UpdateType;
+import com.comphenix.protocol.utility.WrappedScheduler;
 
 /**
  * Handles the "protocol" administration command.
@@ -64,10 +65,9 @@ class CommandProtocol extends CommandBase {
 		return true;
 	}
 	
-	@SuppressWarnings("deprecation")
 	public void checkVersion(final CommandSender sender) {
 		// Perform on an async thread
-		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {
+		 WrappedScheduler.runAsynchronouslyOnce(plugin, new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -77,15 +77,14 @@ class CommandProtocol extends CommandBase {
 					getReporter().reportDetailed(this, "Cannot check updates for ProtocolLib.", e, sender);
 				}
 			}
-		});
+		}, 0L);
 		
 		updateFinished();
 	}
 	
-	@SuppressWarnings("deprecation")
 	public void updateVersion(final CommandSender sender) {
 		// Perform on an async thread
-		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {
+		WrappedScheduler.runAsynchronouslyOnce(plugin, new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -95,7 +94,7 @@ class CommandProtocol extends CommandBase {
 					getReporter().reportDetailed(this, "Cannot update ProtocolLib.", e, sender);
 				}
 			}
-		});
+		}, 0L);
 		
 		updateFinished();
 	}
