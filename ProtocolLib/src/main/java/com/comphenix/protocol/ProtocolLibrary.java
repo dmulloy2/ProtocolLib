@@ -136,6 +136,13 @@ public class ProtocolLibrary extends JavaPlugin {
 			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, detailedReporter);
 			detailedReporter.addGlobalParameter("manager", protocolManager);
 			
+			// Update injection hook
+			try {
+				protocolManager.setPlayerHook(config.getInjectionMethod());
+			} catch (IllegalArgumentException e) {
+				detailedReporter.reportWarning(config, "Cannot parse injection method. Using default.", e);
+			}
+			
 			// Initialize command handlers
 			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
 			commandPacket = new CommandPacket(detailedReporter, this, logger, protocolManager);

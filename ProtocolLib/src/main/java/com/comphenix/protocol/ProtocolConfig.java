@@ -23,6 +23,8 @@ import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+
 /**
  * Represents the configuration of ProtocolLib.
  * 
@@ -35,9 +37,10 @@ class ProtocolConfig {
 	
 	private static final String METRICS_ENABLED = "metrics";
 	
-	private static final String IGNORE_VERSION_CHECK = "ignore version check";
-	
+	private static final String IGNORE_VERSION_CHECK = "ignore version check";	
 	private static final String BACKGROUND_COMPILER_ENABLED = "background compiler";
+
+	private static final String INJECTION_METHOD = "injection method";
 	
 	private static final String UPDATER_NOTIFY = "notify";
 	private static final String UPDATER_DOWNLAD = "download";
@@ -232,6 +235,38 @@ class ProtocolConfig {
 	 */
 	public void setAutoLastTime(long lastTimeSeconds) { 
 		updater.set(UPDATER_LAST_TIME, lastTimeSeconds);
+	}
+	
+	/**
+	 * Retrieve the default injection method.
+	 * @return Default method.
+	 */
+	public PlayerInjectHooks getDefaultMethod() {
+		return PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	}
+	
+	/**
+	 * Retrieve the injection method that has been set in the configuration, or use a default value.
+	 * @return Injection method to use.
+	 * @throws IllegalArgumentException If the configuration option is malformed.
+	 */
+	public PlayerInjectHooks getInjectionMethod() throws IllegalArgumentException {
+		String text = global.getString(INJECTION_METHOD);
+		
+		// Default hook if nothing has been set
+		PlayerInjectHooks hook = getDefaultMethod();
+		
+		if (text != null) 
+			hook = PlayerInjectHooks.valueOf(text.toUpperCase().replace(" ", "_"));
+		return hook;
+	}
+	
+	/**
+	 * Set the starting injection method to use.
+	 * @return Injection method.
+	 */
+	public void setInjectionMethod(PlayerInjectHooks hook) {
+		global.set(INJECTION_METHOD, hook.name());
 	}
 	
 	/**
