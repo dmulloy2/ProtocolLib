@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol;
 
+import java.io.IOException;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -74,7 +76,11 @@ class CommandProtocol extends CommandBase {
 					UpdateResult result = updater.update(UpdateType.NO_DOWNLOAD, true);
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
-					getReporter().reportDetailed(this, "Cannot check updates for ProtocolLib.", e, sender);
+					if (isHttpError(e)) {
+						getReporter().reportWarning(this, "Http error: " + e.getCause().getMessage());
+					} else {
+						getReporter().reportDetailed(this, "Cannot check updates for ProtocolLib.", e, sender);
+					}
 				}
 			}
 		}, 0L);
@@ -91,12 +97,27 @@ class CommandProtocol extends CommandBase {
 					UpdateResult result = updater.update(UpdateType.DEFAULT, true);
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
-					getReporter().reportDetailed(this, "Cannot update ProtocolLib.", e, sender);
+					if (isHttpError(e)) {
+						getReporter().reportWarning(this, "Http error: " + e.getCause().getMessage());
+					} else {
+						getReporter().reportDetailed(this, "Cannot update ProtocolLib.", e, sender);
+					}
 				}
 			}
 		}, 0L);
 		
 		updateFinished();
+	}
+	
+	private boolean isHttpError(Exception e) { 
+		Throwable cause = e.getCause();
+		
+		if (cause instanceof IOException) {
+			// Thanks for making the message a part of the API ...
+			return cause.getMessage().contains("HTTP response");
+		} else {
+			return false;
+		}
 	}
 	
 	/**
