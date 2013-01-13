@@ -219,6 +219,14 @@ public class WrappedWatchableObject {
 	}
 	
 	/**
+	 * Read the underlying value field.
+	 * @return The underlying value.
+	 */
+	private Object getNMSValue() {
+		return modifier.withType(Object.class).read(0);
+	}
+	
+	/**
 	 * Read the value field.
 	 * @return The watched value.
 	 * @throws FieldAccessException Unable to use reflection. 
@@ -324,7 +332,7 @@ public class WrappedWatchableObject {
 	
 	// Helper
 	Object getClonedValue() throws FieldAccessException {
-		Object value = getValue();
+		Object value = getNMSValue();
 		
 		// Only a limited set of references types are supported
 		if (MinecraftReflection.isChunkPosition(value)) {
