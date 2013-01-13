@@ -142,9 +142,9 @@ public class ProtocolLibrary extends JavaPlugin {
 				PlayerInjectHooks hook = config.getInjectionMethod();
 				
 				// Only update the hook if it's different
-				if (protocolManager.getPlayerHook().equals(hook)) {
+				if (!protocolManager.getPlayerHook().equals(hook)) {
+					logger.info("Changing player hook from " + protocolManager.getPlayerHook() + " to " + hook);
 					protocolManager.setPlayerHook(hook);
-					logger.info("Changing player hook to " + hook);
 				}
 			} catch (IllegalArgumentException e) {
 				detailedReporter.reportWarning(config, "Cannot parse injection method. Using default.", e);
