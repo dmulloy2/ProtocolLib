@@ -119,7 +119,12 @@ public class Updater
         /**
         * The updater found an update, but because of the UpdateType being set to NO_DOWNLOAD, it wasn't downloaded.
         */        
-        UPDATE_AVAILABLE(7, "The updater found an update, but because of the UpdateType being set to NO_DOWNLOAD, it wasn't downloaded.");        
+        UPDATE_AVAILABLE(7, "The updater found an update, but because of the UpdateType being set to NO_DOWNLOAD, it wasn't downloaded."), 
+        
+        /**
+         * Updating SNAPSHOT versions are not supported. Please perform a manual upgrade.
+         */
+        NOT_SUPPORTED(8, "Updating SNAPSHOT versions are not supported. Please perform a manual upgrade.");        
         
         private static final Map<Integer, Updater.UpdateResult> valueList = new HashMap<Integer, Updater.UpdateResult>();
         private final int value;
@@ -479,7 +484,12 @@ public class Updater
                 	remVer=-1;
                 }
                 
-                if(hasTag(version)||version.equalsIgnoreCase(remoteVersion)||curVer>=remVer)
+                if (hasTag(version)) 
+                {
+                    result = Updater.UpdateResult.NOT_SUPPORTED;
+                    return false;
+                } 
+                else if (version.equalsIgnoreCase(remoteVersion) || curVer>=remVer)
                 {
                     // We already have the latest version, or this build is tagged for no-update
                     result = Updater.UpdateResult.NO_UPDATE;
