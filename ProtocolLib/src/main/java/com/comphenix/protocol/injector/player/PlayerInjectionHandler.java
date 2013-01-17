@@ -486,7 +486,7 @@ public class PlayerInjectionHandler {
 		if (injector != null)
 			injector.sendServerPacket(packet.getHandle(), filters);
 		else
-			reporter.reportWarning(this, String.format(
+			throw new PlayerLoggedOutException(String.format(
 					"Unable to send packet %s (%s): Player %s has logged out.", 
 					packet.getID(), packet, reciever.getName()
 			));
@@ -507,7 +507,7 @@ public class PlayerInjectionHandler {
 		if (injector != null)
 			injector.processPacket(mcPacket);
 		else
-			reporter.reportWarning(this, String.format(
+			throw new PlayerLoggedOutException(String.format(
 					"Unable to receieve packet %s. Player %s has logged out.", 
 					mcPacket, player.getName()
 			));
