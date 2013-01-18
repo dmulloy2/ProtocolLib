@@ -28,15 +28,13 @@ import java.io.DataOutputStream;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
 public class NbtFactoryTest {
 	@BeforeClass
-	public static void initializeBukkit() {
-		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_4_6", "org.bukkit.craftbukkit.v1_4_6");
+	public static void initializeBukkit() throws IllegalAccessException {
+		BukkitInitialization.initializePackage();
 	}
 	
 	@Test

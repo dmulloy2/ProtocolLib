@@ -30,7 +30,6 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.google.common.primitives.Ints;
 
 public class SortedCopyOnWriteArrayTest {
-
 	@Test
 	public void testInsertion() {
 		

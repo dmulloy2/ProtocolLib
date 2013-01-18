@@ -18,31 +18,23 @@
 package com.comphenix.protocol.events;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.lang.reflect.Array;
 import java.util.List;
 
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_4_6.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_4_R1.inventory.CraftItemFactory;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.Server;
 import org.bukkit.WorldType;
-import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
+import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -65,22 +57,7 @@ public class PacketContainerTest {
 	
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {
-		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_4_6", "org.bukkit.craftbukkit.v1_4_6");
-		
-		// Mock the server object
-		Server mockedServer = mock(Server.class);
-		ItemFactory mockedFactory = mock(CraftItemFactory.class);
-		ItemMeta mockedMeta = mock(ItemMeta.class);
-
-		when(mockedServer.getItemFactory()).thenReturn(mockedFactory);
-		when(mockedFactory.getItemMeta(any(Material.class))).thenReturn(mockedMeta);
-
-		// Inject this fake server
-		FieldUtils.writeStaticField(Bukkit.class, "server", mockedServer, true);
-		
-		// And the fake item factory
-		FieldUtils.writeStaticField(CraftItemFactory.class, "instance", mockedFactory, true);
+		BukkitInitialization.initializeItemMeta();
 	}
 	
 	private <T> void testPrimitive(StructureModifier<T> modifier, int index, T initialValue, T testValue) {
