@@ -50,7 +50,7 @@ public class PlayerInjectionHandler {
 	/**
 	 * The maximum number of milliseconds to wait until a player can be looked up by connection.
 	 */
-	private static final long TIMEOUT_PLAYER_LOOKUP = 1000; // ms
+	private static final long TIMEOUT_PLAYER_LOOKUP = 2000; // ms
 	
 	/**
 	 * The highest possible packet ID. It's unlikely that this value will ever change.
