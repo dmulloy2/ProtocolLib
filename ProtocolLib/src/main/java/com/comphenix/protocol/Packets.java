@@ -162,7 +162,13 @@ public final class Packets {
 		public static final int HANDSHAKE = 2;
 		public static final int CHAT = 3;
 		public static final int USE_ENTITY = 7;
+		
+		/**
+		 * Since 1.3.1, the client no longer sends a respawn packet. Moved to CLIENT_COMMAND.
+		 */
+		@Deprecated
 		public static final int RESPAWN = 9;
+		
 		public static final int FLYING = 10;
 		public static final int PLAYER_POSITION = 11;
 		public static final int PLAYER_LOOK = 12;
