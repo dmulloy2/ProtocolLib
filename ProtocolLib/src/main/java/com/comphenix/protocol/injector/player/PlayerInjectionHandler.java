@@ -50,7 +50,7 @@ public class PlayerInjectionHandler {
 	/**
 	 * The maximum number of milliseconds to wait until a player can be looked up by connection.
 	 */
-	private static final long TIMEOUT_PLAYER_LOOKUP = 1000; // ms
+	private static final long TIMEOUT_PLAYER_LOOKUP = 2000; // ms
 	
 	/**
 	 * The highest possible packet ID. It's unlikely that this value will ever change.
@@ -486,7 +486,7 @@ public class PlayerInjectionHandler {
 		if (injector != null)
 			injector.sendServerPacket(packet.getHandle(), filters);
 		else
-			reporter.reportWarning(this, String.format(
+			throw new PlayerLoggedOutException(String.format(
 					"Unable to send packet %s (%s): Player %s has logged out.", 
 					packet.getID(), packet, reciever.getName()
 			));
@@ -507,7 +507,7 @@ public class PlayerInjectionHandler {
 		if (injector != null)
 			injector.processPacket(mcPacket);
 		else
-			reporter.reportWarning(this, String.format(
+			throw new PlayerLoggedOutException(String.format(
 					"Unable to receieve packet %s. Player %s has logged out.", 
 					mcPacket, player.getName()
 			));

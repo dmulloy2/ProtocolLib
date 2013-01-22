@@ -114,7 +114,10 @@ public class BlockingHashMap<TKey, TValue> {
 					if (remainingTime > 0) {
 						TimeUnit.NANOSECONDS.timedWait(lock, remainingTime);
 						value = backingMap.get(key);
-					} 
+					} else {
+						// Timeout elapsed
+						break;
+					}
 				}
 			}
 		}

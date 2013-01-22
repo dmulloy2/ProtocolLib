@@ -15,4 +15,8 @@ global:
   background compiler: true
   
   # Disable version checking for the given Minecraft version. Backup your world first!
-  ignore version check:  
+  ignore version check: 
+  
+  # Override the starting injecting method
+  injection method: 
+ 

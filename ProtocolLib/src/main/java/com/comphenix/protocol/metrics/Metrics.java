@@ -51,6 +51,8 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 
+import com.comphenix.protocol.utility.WrappedScheduler;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -136,7 +138,7 @@ public class Metrics {
     /**
      * The scheduled task
      */
-    private volatile Scheduling.TaskWrapper task = null;
+    private volatile WrappedScheduler.TaskWrapper task = null;
 
     public Metrics(final Plugin plugin) throws IOException {
         if (plugin == null) {
@@ -237,7 +239,7 @@ public class Metrics {
             }
 
             // Begin hitting the server with glorious data
-            task = Scheduling.runAsynchronously(plugin, new Runnable() {
+            task = WrappedScheduler.runAsynchronouslyRepeat(plugin, new Runnable() {
 
                 private boolean firstPost = true;
 

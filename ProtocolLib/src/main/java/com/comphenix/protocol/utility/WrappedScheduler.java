@@ -1,4 +1,4 @@
-package com.comphenix.protocol.metrics;
+package com.comphenix.protocol.utility;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -9,7 +9,7 @@ import org.bukkit.scheduler.BukkitTask;
  * 
  * @author Kristian
  */
-class Scheduling {
+public class WrappedScheduler {
 	/**
 	 * Represents a backwards compatible Bukkit task.
 	 */
@@ -21,15 +21,26 @@ class Scheduling {
 	}
 	
 	/**
-	 * Schedule a given task for asynchronous execution.
+	 * Schedule a given task for a single asynchronous execution.
+	 * @param plugin - the owner plugin.
+	 * @param runnable - the task to run.
+	 * @param firstDelay - the amount of time to wait until executing the task.
+	 * @return A cancel token.
+	 */
+	public static TaskWrapper runAsynchronouslyOnce(final Plugin plugin, Runnable runnable, long firstDelay) {
+		return runAsynchronouslyRepeat(plugin, plugin.getServer().getScheduler(), runnable, firstDelay, -1L);
+	}
+	
+	/**
+	 * Schedule a given task for multiple asynchronous executions.
 	 * @param plugin - the owner plugin.
 	 * @param runnable - the task to run.
 	 * @param firstDelay - the amount of time to wait until executing the task for the first time.
 	 * @param repeatDelay - the amount of time inbetween each execution. If less than zero, the task is only executed once.
 	 * @return A cancel token.
 	 */
-	public static TaskWrapper runAsynchronously(final Plugin plugin, Runnable runnable, long firstDelay, long repeatDelay) {
-		return runAsynchronously(plugin, plugin.getServer().getScheduler(), runnable, firstDelay, repeatDelay);
+	public static TaskWrapper runAsynchronouslyRepeat(final Plugin plugin, Runnable runnable, long firstDelay, long repeatDelay) {
+		return runAsynchronouslyRepeat(plugin, plugin.getServer().getScheduler(), runnable, firstDelay, repeatDelay);
 	}
 	
 	/**
@@ -41,7 +52,7 @@ class Scheduling {
 	 * @param repeatDelay - the amount of time inbetween each execution. If less than zero, the task is only executed once.
 	 * @return A cancel token.
 	 */
-	public static TaskWrapper runAsynchronously(final Plugin plugin, final BukkitScheduler scheduler, Runnable runnable, long firstDelay, long repeatDelay) {
+	public static TaskWrapper runAsynchronouslyRepeat(final Plugin plugin, final BukkitScheduler scheduler, Runnable runnable, long firstDelay, long repeatDelay) {
 		try {
 			@SuppressWarnings("deprecation")
 			final int taskID = scheduler.scheduleAsyncRepeatingTask(plugin, runnable, firstDelay, repeatDelay);

@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol;
 
+import java.io.IOException;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -25,6 +27,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.metrics.Updater.UpdateType;
+import com.comphenix.protocol.utility.WrappedScheduler;
 
 /**
  * Handles the "protocol" administration command.
@@ -64,40 +67,57 @@ class CommandProtocol extends CommandBase {
 		return true;
 	}
 	
-	@SuppressWarnings("deprecation")
 	public void checkVersion(final CommandSender sender) {
 		// Perform on an async thread
-		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {
+		 WrappedScheduler.runAsynchronouslyOnce(plugin, new Runnable() {
 			@Override
 			public void run() {
 				try {
 					UpdateResult result = updater.update(UpdateType.NO_DOWNLOAD, true);
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
-					getReporter().reportDetailed(this, "Cannot check updates for ProtocolLib.", e, sender);
+					if (isHttpError(e)) {
+						getReporter().reportWarning(this, "Http error: " + e.getCause().getMessage());
+					} else {
+						getReporter().reportDetailed(this, "Cannot check updates for ProtocolLib.", e, sender);
+					}
 				}
 			}
-		});
+		}, 0L);
 		
 		updateFinished();
 	}
 	
-	@SuppressWarnings("deprecation")
 	public void updateVersion(final CommandSender sender) {
 		// Perform on an async thread
-		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable() {
+		WrappedScheduler.runAsynchronouslyOnce(plugin, new Runnable() {
 			@Override
 			public void run() {
 				try {
 					UpdateResult result = updater.update(UpdateType.DEFAULT, true);
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
-					getReporter().reportDetailed(this, "Cannot update ProtocolLib.", e, sender);
+					if (isHttpError(e)) {
+						getReporter().reportWarning(this, "Http error: " + e.getCause().getMessage());
+					} else {
+						getReporter().reportDetailed(this, "Cannot update ProtocolLib.", e, sender);
+					}
 				}
 			}
-		});
+		}, 0L);
 		
 		updateFinished();
+	}
+	
+	private boolean isHttpError(Exception e) { 
+		Throwable cause = e.getCause();
+		
+		if (cause instanceof IOException) {
+			// Thanks for making the message a part of the API ...
+			return cause.getMessage().contains("HTTP response");
+		} else {
+			return false;
+		}
 	}
 	
 	/**

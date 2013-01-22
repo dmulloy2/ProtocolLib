@@ -37,6 +37,7 @@ import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.DelayedSingleTask;
 import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
@@ -55,7 +56,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The maximum version ProtocolLib has been tested with,
 	 */
-	private static final String MAXIMUM_MINECRAFT_VERSION = "1.4.6";
+	private static final String MAXIMUM_MINECRAFT_VERSION = "1.4.7";
 	
 	/**
 	 * The number of milliseconds per second.
@@ -135,6 +136,19 @@ public class ProtocolLibrary extends JavaPlugin {
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, detailedReporter);
 			detailedReporter.addGlobalParameter("manager", protocolManager);
+			
+			// Update injection hook
+			try {
+				PlayerInjectHooks hook = config.getInjectionMethod();
+				
+				// Only update the hook if it's different
+				if (!protocolManager.getPlayerHook().equals(hook)) {
+					logger.info("Changing player hook from " + protocolManager.getPlayerHook() + " to " + hook);
+					protocolManager.setPlayerHook(hook);
+				}
+			} catch (IllegalArgumentException e) {
+				detailedReporter.reportWarning(config, "Cannot parse injection method. Using default.", e);
+			}
 			
 			// Initialize command handlers
 			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
@@ -269,12 +283,15 @@ public class ProtocolLibrary extends JavaPlugin {
 		MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
 		MinecraftVersion newestVersion = null;
 		
+		// Skip the file that contains this current instance however
+		File loadedFile = getFile();
+		
 		try {
 			// Scan the plugin folder for newer versions of ProtocolLib
 			File pluginFolder = new File("plugins/");
 			
 			for (File candidate : pluginFolder.listFiles()) {
-				if (candidate.isFile()) {
+				if (candidate.isFile() && !candidate.equals(loadedFile)) {
 					Matcher match = ourPlugin.matcher(candidate.getName());
 					
 					if (match.matches()) {

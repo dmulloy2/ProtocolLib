@@ -21,13 +21,12 @@ import static org.junit.Assert.*;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.BukkitInitialization;
 
 public class NbtCompoundTest {
 	@BeforeClass
-	public static void setupBukkit() {
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_4_6", "org.bukkit.craftbukkit.v1_4_6");
+	public static void initializeBukkit() throws IllegalAccessException {
+		BukkitInitialization.initializePackage();
 	}
 	
 	@Test

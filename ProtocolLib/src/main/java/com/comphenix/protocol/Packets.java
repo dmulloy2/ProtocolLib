@@ -52,9 +52,18 @@ public final class Packets {
 		public static final int PLAYER_POSITION = 11;
 		public static final int PLAYER_LOOK = 12;
 		public static final int PLAYER_LOOK_MOVE = 13;
+		/**
+		 * Made bi-directional in 1.4.6.
+		 */
+		public static final int BLOCK_ITEM_SWITCH = 16;
 		public static final int ENTITY_LOCATION_ACTION = 17;
 		public static final int ARM_ANIMATION = 18;
 		public static final int NAMED_ENTITY_SPAWN = 20;
+		/**
+		 * Removed in 1.4.6 and replaced with {@link VEHICLE_SPAWN}. 
+		 * @see <a href="http://www.wiki.vg/Protocol_History#2012-12-20">Protocol History - MinecraftCoalition</a>
+		 */
+		@Deprecated()
 		public static final int PICKUP_SPAWN = 21;
 		public static final int COLLECT = 22;
 		public static final int VEHICLE_SPAWN = 23;
@@ -153,7 +162,13 @@ public final class Packets {
 		public static final int HANDSHAKE = 2;
 		public static final int CHAT = 3;
 		public static final int USE_ENTITY = 7;
+		
+		/**
+		 * Since 1.3.1, the client no longer sends a respawn packet. Moved to CLIENT_COMMAND.
+		 */
+		@Deprecated
 		public static final int RESPAWN = 9;
+		
 		public static final int FLYING = 10;
 		public static final int PLAYER_POSITION = 11;
 		public static final int PLAYER_LOOK = 12;

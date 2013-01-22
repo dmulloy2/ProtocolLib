@@ -30,6 +30,7 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.utility.WrappedScheduler;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 
@@ -298,9 +299,9 @@ public class AsyncListenerHandler {
 		});
 	}
 	
-	@SuppressWarnings("deprecation")
 	private void scheduleAsync(Runnable runnable) {
-		filterManager.getScheduler().scheduleAsyncDelayedTask(listener.getPlugin(), runnable);
+		// Handle deprecation
+		WrappedScheduler.runAsynchronouslyRepeat(listener.getPlugin(), filterManager.getScheduler(), runnable, 0L, -1L);
 	}
 	
 	/**

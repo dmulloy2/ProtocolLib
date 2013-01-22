@@ -524,7 +524,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	 * @return This current compound, for chaining.
 	 */
 	@Override
-	public NbtCompound put(WrappedCompound compound) {
+	public NbtCompound put(NbtCompound compound) {
 		getValue().put(compound.getName(), compound);
 		return this;
 	}
