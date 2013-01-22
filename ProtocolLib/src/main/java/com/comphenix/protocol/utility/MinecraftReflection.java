@@ -221,7 +221,7 @@ public class MinecraftReflection {
 	
 	/**
 	 * Determine if the given object is a NMS ItemStack.
-	 * @param obj - the given object.
+	 * @param value - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isItemStack(Object value) {
@@ -549,7 +549,8 @@ public class MinecraftReflection {
 	
 	/**
 	 * Retrieve the first class that matches a specified Minecraft name.
-	 * @param classes - the specific Minecraft class.
+	 * @param className - the specific Minecraft class.
+	 * @param aliases - alternative names for this Minecraft class.
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find any of the given classes.
 	 */
