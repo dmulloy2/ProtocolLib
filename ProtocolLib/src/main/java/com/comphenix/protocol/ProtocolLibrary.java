@@ -283,12 +283,15 @@ public class ProtocolLibrary extends JavaPlugin {
 		MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
 		MinecraftVersion newestVersion = null;
 		
+		// Skip the file that contains this current instance however
+		File loadedFile = getFile();
+		
 		try {
 			// Scan the plugin folder for newer versions of ProtocolLib
 			File pluginFolder = new File("plugins/");
 			
 			for (File candidate : pluginFolder.listFiles()) {
-				if (candidate.isFile()) {
+				if (candidate.isFile() && !candidate.equals(loadedFile)) {
 					Matcher match = ourPlugin.matcher(candidate.getName());
 					
 					if (match.matches()) {
