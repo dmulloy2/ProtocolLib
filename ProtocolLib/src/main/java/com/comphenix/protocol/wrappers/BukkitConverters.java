@@ -36,6 +36,7 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.google.common.base.Objects;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
@@ -58,12 +59,104 @@ public class BukkitConverters {
 		}
 	}
 	
+	/**
+	 * Represents a typical equivalence converter.
+	 * 
+	 * @author Kristian
+	 * @param <T> - type that can be converted.
+	 */
+	private static abstract class IgnoreNullConverter<TType> implements EquivalentConverter<TType> {
+		public final Object getGeneric(Class<?> genericType, TType specific) {
+			if (specific != null)
+				return getGenericValue(genericType, specific);
+			else
+				return null;
+		}
+		
+		/**
+		 * Retrieve a copy of the actual generic value.
+		 * @param genericType - generic type.
+		 * @param specific - the specific type-
+		 * @return A copy of the specific type.
+		 */
+		protected abstract Object getGenericValue(Class<?> genericType, TType specific);
+		
+		@Override
+		public final TType getSpecific(Object generic) {
+			if (generic != null)
+				return getSpecificValue(generic);
+			else
+				return null;
+		}
+		
+		/**
+		 * Retrieve a copy of the specific type using an instance of the generic type.
+		 * @param generic - generic type.
+		 * @return A copy of the specific type.
+		 */
+		protected abstract TType getSpecificValue(Object generic);
+		
+		@Override
+		public boolean equals(Object obj) {
+			// Very short
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			
+			// See if they're equivalent
+			if (obj instanceof EquivalentConverter) {
+				@SuppressWarnings("rawtypes")
+				EquivalentConverter other = (EquivalentConverter) obj;
+				return Objects.equal(this.getSpecificType(), other.getSpecificType());
+			}
+			return false;
+		}
+	}
+	
+	/**
+	 * Represents a converter that is only valid in a given world.
+	 * 
+	 * @author Kristian
+	 * @param <TType> - instance types it converts.
+	 */
+	private static abstract class WorldSpecificConverter<TType> extends IgnoreNullConverter<TType> {
+		protected World world;
+
+		/**
+		 * Initialize a new world-specificn converter.
+		 * @param world - the given world.
+		 */
+		public WorldSpecificConverter(World world) {
+			super();
+			this.world = world;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			// More shortcuts
+			if (obj == this)
+				return true;
+			if (obj == null)
+				return false;
+			
+			// Add another constraint
+			if (obj instanceof WorldSpecificConverter && super.equals(obj)) {
+				@SuppressWarnings("rawtypes")
+				WorldSpecificConverter other = (WorldSpecificConverter) obj;
+				
+				return Objects.equal(world, other.world);
+			}
+			return false;
+		}
+	}
+	
 	public static <T> EquivalentConverter<List<T>> getListConverter(final Class<?> genericItemType, final EquivalentConverter<T> itemConverter) {
 		// Convert to and from the wrapper
-		return getIgnoreNull(new EquivalentConverter<List<T>>() {
+		return new IgnoreNullConverter<List<T>>() {
 				@SuppressWarnings("unchecked")
 				@Override
-				public List<T> getSpecific(Object generic) {
+				protected List<T> getSpecificValue(Object generic) {
 					if (generic instanceof Collection) {
 						List<T> items = new ArrayList<T>();
 					
@@ -83,7 +176,7 @@ public class BukkitConverters {
 
 				@SuppressWarnings("unchecked")
 				@Override
-				public Object getGeneric(Class<?> genericType, List<T> specific) {
+				protected Object getGenericValue(Class<?> genericType, List<T> specific) {
 					Collection<Object> newContainer = (Collection<Object>) DefaultInstances.DEFAULT.getDefault(genericType);
 					
 					// Convert each object
@@ -105,8 +198,7 @@ public class BukkitConverters {
 					Class<?> dummy = List.class;
 					return (Class<List<T>>) dummy;
 				}
-			}
-		);
+			};
 	}
 	
 	/**
@@ -114,13 +206,13 @@ public class BukkitConverters {
 	 * @return A watchable object converter.
 	 */
 	public static EquivalentConverter<WrappedWatchableObject> getWatchableObjectConverter() {
-		return getIgnoreNull(new EquivalentConverter<WrappedWatchableObject>() {
+		return new IgnoreNullConverter<WrappedWatchableObject>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, WrappedWatchableObject specific) {
+			protected Object getGenericValue(Class<?> genericType, WrappedWatchableObject specific) {
 				return specific.getHandle();
 			}
 			
-			public WrappedWatchableObject getSpecific(Object generic) {
+			protected WrappedWatchableObject getSpecificValue(Object generic) {
 				if (MinecraftReflection.isWatchableObject(generic))
 					return new WrappedWatchableObject(generic);
 				else if (generic instanceof WrappedWatchableObject)
@@ -133,7 +225,7 @@ public class BukkitConverters {
 			public Class<WrappedWatchableObject> getSpecificType() {
 				return WrappedWatchableObject.class;
 			}
-		});
+		};
 	}
 	
 	/**
@@ -141,14 +233,14 @@ public class BukkitConverters {
 	 * @return A DataWatcher converter.
 	 */
 	public static EquivalentConverter<WrappedDataWatcher> getDataWatcherConverter() {
-		return getIgnoreNull(new EquivalentConverter<WrappedDataWatcher>() {
+		return new IgnoreNullConverter<WrappedDataWatcher>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, WrappedDataWatcher specific) {
+			protected Object getGenericValue(Class<?> genericType, WrappedDataWatcher specific) {
 				return specific.getHandle();
 			}
 			
 			@Override
-			public WrappedDataWatcher getSpecific(Object generic) {
+			protected WrappedDataWatcher getSpecificValue(Object generic) {
 				if (MinecraftReflection.isDataWatcher(generic))
 					return new WrappedDataWatcher(generic);
 				else if (generic instanceof WrappedDataWatcher)
@@ -161,7 +253,7 @@ public class BukkitConverters {
 			public Class<WrappedDataWatcher> getSpecificType() {
 				return WrappedDataWatcher.class;
 			}
-		});
+		};
 	}
 	
 	/**
@@ -173,9 +265,9 @@ public class BukkitConverters {
 		if (!hasWorldType)
 			return null;
 		
-		return getIgnoreNull(new EquivalentConverter<WorldType>() {
+		return new IgnoreNullConverter<WorldType>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, WorldType specific) {
+			protected Object getGenericValue(Class<?> genericType, WorldType specific) {
 				try {
 					if (worldTypeGetType == null)
 						worldTypeGetType = MinecraftReflection.getWorldTypeClass().getMethod("getType", String.class);
@@ -189,7 +281,7 @@ public class BukkitConverters {
 			}
 
 			@Override
-			public WorldType getSpecific(Object generic) {
+			protected WorldType getSpecificValue(Object generic) {
 				try {
 					if (worldTypeName == null)
 						worldTypeName = MinecraftReflection.getWorldTypeClass().getMethod("name");
@@ -207,7 +299,7 @@ public class BukkitConverters {
 			public Class<WorldType> getSpecificType() {
 				return WorldType.class;
 			}
-		});
+		};
 	}
 	
 	/**
@@ -215,14 +307,14 @@ public class BukkitConverters {
 	 * @return An equivalent converter for NBT.
 	 */
 	public static EquivalentConverter<NbtBase<?>> getNbtConverter() {
-		return getIgnoreNull(new EquivalentConverter<NbtBase<?>>() {
+		return new IgnoreNullConverter<NbtBase<?>>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, NbtBase<?> specific) {
+			protected Object getGenericValue(Class<?> genericType, NbtBase<?> specific) {
 				return NbtFactory.fromBase(specific).getHandle();
 			}
 			
 			@Override
-			public NbtBase<?> getSpecific(Object generic) {
+			protected NbtBase<?> getSpecificValue(Object generic) {
 				return NbtFactory.fromNMS(generic);
 			}
 			
@@ -233,7 +325,7 @@ public class BukkitConverters {
 				Class<?> dummy = NbtBase.class;
 				return (Class<NbtBase<?>>) dummy;
 			}
-		});
+		};
 	}
 	
 	/**
@@ -242,27 +334,25 @@ public class BukkitConverters {
 	 * @return A converter between the underlying NMS entity and Bukkit's wrapper.
 	 */
 	public static EquivalentConverter<Entity> getEntityConverter(World world) {
-		final World container = world;
 		final WeakReference<ProtocolManager> managerRef = 
 				new WeakReference<ProtocolManager>(ProtocolLibrary.getProtocolManager());
 
-		return getIgnoreNull(new EquivalentConverter<Entity>() {
-			
+		return new WorldSpecificConverter<Entity>(world) {
 			@Override
-			public Object getGeneric(Class<?> genericType, Entity specific) {
+			public Object getGenericValue(Class<?> genericType, Entity specific) {
 				// Simple enough
 				return specific.getEntityId();
 			}
 			
 			@Override
-			public Entity getSpecific(Object generic) {
+			public Entity getSpecificValue(Object generic) {
 				try {
 					Integer id = (Integer) generic;
 					ProtocolManager manager = managerRef.get();
 					
-					// Use the 
+					// Use the entity ID to get a reference to the entity
 					if (id != null && manager != null) {
-						return manager.getEntityFromID(container, id);
+						return manager.getEntityFromID(world, id);
 					} else {
 						return null;
 					}
@@ -276,7 +366,7 @@ public class BukkitConverters {
 			public Class<Entity> getSpecificType() {
 				return Entity.class;
 			}
-		});
+		};
 	}
 	
 	/**
@@ -284,13 +374,14 @@ public class BukkitConverters {
 	 * @return Item stack converter.
 	 */
 	public static EquivalentConverter<ItemStack> getItemStackConverter() {
-		return getIgnoreNull(new EquivalentConverter<ItemStack>() {
-			public Object getGeneric(Class<?> genericType, ItemStack specific) {
+		return new IgnoreNullConverter<ItemStack>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, ItemStack specific) {
 				return MinecraftReflection.getMinecraftItemStack(specific);
 			}
 			
 			@Override
-			public ItemStack getSpecific(Object generic) {
+			protected ItemStack getSpecificValue(Object generic) {
 				return MinecraftReflection.getBukkitItemStack(generic);
 			}
 			
@@ -298,7 +389,7 @@ public class BukkitConverters {
 			public Class<ItemStack> getSpecificType() {
 				return ItemStack.class;
 			}
-		});
+		};
 	}
 	
 	/**
@@ -308,20 +399,15 @@ public class BukkitConverters {
 	 */
 	public static <TType> EquivalentConverter<TType> getIgnoreNull(final EquivalentConverter<TType> delegate) {
 		// Automatically wrap all parameters to the delegate with a NULL check
-		return new EquivalentConverter<TType>() {
-			public Object getGeneric(Class<?> genericType, TType specific) {
-				if (specific != null)
-					return delegate.getGeneric(genericType, specific);
-				else
-					return null;
+		return new IgnoreNullConverter<TType>() {
+			@Override
+			public Object getGenericValue(Class<?> genericType, TType specific) {
+				return delegate.getGeneric(genericType, specific);
 			}
 			
 			@Override
-			public TType getSpecific(Object generic) {
-				if (generic != null)
-					return delegate.getSpecific(generic);
-				else
-					return null;
+			public TType getSpecificValue(Object generic) {
+				return delegate.getSpecific(generic);
 			}
 			
 			@Override

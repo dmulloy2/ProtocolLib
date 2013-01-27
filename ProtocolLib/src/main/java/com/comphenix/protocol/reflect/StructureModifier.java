@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.google.common.base.Function;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -394,21 +395,11 @@ public class StructureModifier<TField> {
 		result = result.withTarget(target);
 		
 		// And the converter, if it's needed
-		if (!sameConverter(result.converter, converter)) {
+		if (!Objects.equal(result.converter, converter)) {
 			result = result.withConverter(converter);
 		}
 		
 		return result;
-	}
-	
-	private boolean sameConverter(EquivalentConverter<?> a, EquivalentConverter<?> b) {
-		// Compare the converter types
-		if (a == null)
-			return b == null;
-		else if (b == null)
-			return false;
-		else
-			return a.getSpecificType().equals(b.getSpecificType());
 	}
 	
 	/**
