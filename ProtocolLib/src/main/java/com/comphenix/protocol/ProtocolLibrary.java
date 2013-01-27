@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -41,6 +42,7 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
+import com.google.common.collect.Lists;
 
 /**
  * The main entry point for ProtocolLib.
@@ -282,7 +284,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		Pattern ourPlugin = Pattern.compile("ProtocolLib-(.*)\\.jar");
 		MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
 		MinecraftVersion newestVersion = null;
-		
+
 		// Skip the file that contains this current instance however
 		File loadedFile = getFile();
 		
@@ -297,7 +299,10 @@ public class ProtocolLibrary extends JavaPlugin {
 					if (match.matches()) {
 						MinecraftVersion version = new MinecraftVersion(match.group(1));
 
-						if (newestVersion == null || newestVersion.compareTo(version) < 0) {
+						if (candidate.length() == 0) {
+							// Delete and inform the user
+							logger.info((candidate.delete() ? "Deleted " : "Could not delete ") + candidate);
+						} else if (newestVersion == null || newestVersion.compareTo(version) < 0) {
 							newestVersion = version;
 						}
 					}
