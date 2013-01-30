@@ -15,8 +15,9 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	// Accessibility matchers
 	private int modifiersRequired;
 	private int modifiersBanned;
+	
 	private Pattern nameRegex;
-	private ClassMatcher declaringMatcher = ClassMatcher.MATCH_ALL;
+	private AbstractFuzzyMatcher<Class<?>> declaringMatcher = ExactClassMatcher.MATCH_ALL;
 	
 	/**
 	 * Whether or not this contract can be modified.
@@ -31,37 +32,94 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	public static abstract class Builder<T extends AbstractFuzzyMember<?>> {
 		protected T member = initialMember();
 
+		/**
+		 * Add a given bit-field of required modifiers for every matching member.
+		 * @param modifier - bit-field of modifiers that are required.
+		 * @return This builder, for chaining.
+		 */
 		public Builder<T> requireModifier(int modifier) {
 			member.modifiersRequired |= modifier;
 			return this;
 		}
 		
+		/**
+		 * Add a given bit-field of modifers that will skip or ignore members.
+		 * @param modifier - bit-field of modifiers to skip or ignore.
+		 * @return This builder, for chaining.
+		 */
 		public Builder<T> banModifier(int modifier) {
 			member.modifiersBanned |= modifier;
 			return this;
 		}
 		
+		/**
+		 * Set the regular expresson that matches a members name.
+		 * @param regex - new regular expression of valid names.
+		 * @return This builder, for chaining.
+		 */
 		public Builder<T> nameRegex(String regex) {
 			member.nameRegex = Pattern.compile(regex);
 			return this;
 		}
 		
+		/**
+		 * Set the regular expression pattern that matches a members name.
+		 * @param pattern - regular expression pattern for a valid name.
+		 * @return This builder, for chaining.
+		 */
 		public Builder<T> nameRegex(Pattern pattern) {
 			member.nameRegex = pattern;
 			return this;
 		}
 		
+		/**
+		 * Set the exact name of the member we are matching.
+		 * <p<
+		 * This will overwrite the regular expression rule.
+		 * @param name - exact name.
+		 * @return This builder, for chaining.
+		 */
 		public Builder<T> nameExact(String name) {
 			return nameRegex(Pattern.quote(name));
 		}
 		
+		/**
+		 * Require that a member is defined by this exact class.
+		 * @param declaringClass - the declaring class of any matching member.
+		 * @return This builder, for chaining.
+		 */
 		public Builder<T> declaringClassExactType(Class<?> declaringClass) {
-			member.declaringMatcher = new ClassMatcher(declaringClass, false);
+			member.declaringMatcher = ExactClassMatcher.matchExact(declaringClass);
 			return this;
 		}
 		
-		public Builder<T> declaringClassCanHold(Class<?> declaringClass) {
-			member.declaringMatcher = new ClassMatcher(declaringClass, true);
+		/**
+		 * Require that a member is defined by this exact class, or any super class.
+		 * @param declaringClass - the declaring class.
+		 * @return This builder, for chaining.
+		 */
+		public Builder<T> declaringClassSuperOf(Class<?> declaringClass) {
+			member.declaringMatcher = ExactClassMatcher.matchSuper(declaringClass);
+			return this;
+		}
+		
+		/**
+		 * Require that a member is defined by this exact class, or any super class.
+		 * @param declaringClass - the declaring class.
+		 * @return This builder, for chaining.
+		 */
+		public Builder<T> declaringClassDerivedOf(Class<?> declaringClass) {
+			member.declaringMatcher = ExactClassMatcher.matchDerived(declaringClass);
+			return this;
+		}
+		
+		/**
+		 * Require that a member is defined by a class that matches the given matcher.
+		 * @param classMatcher - class matcher.
+		 * @return This builder, for chaining.
+		 */
+		public Builder<T> declaringClassMatching(AbstractFuzzyMatcher<Class<?>> classMatcher) {
+			member.declaringMatcher = classMatcher;
 			return this;
 		}
 		
@@ -107,13 +165,13 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	}
 
 	@Override
-	public boolean isMatch(T value) {
+	public boolean isMatch(T value, Object parent) {
 		int mods = value.getModifiers();
 		
 		// Match accessibility and name
 		return (mods & modifiersRequired) != 0 &&
 			   (mods & modifiersBanned) == 0 &&
-			   declaringMatcher.isClassEqual(value.getDeclaringClass()) &&
+			   declaringMatcher.isMatch(value.getDeclaringClass(), value) &&
 			   isNameMatch(value.getName());
 	}
 	
@@ -131,6 +189,6 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 			throw new IllegalStateException("Cannot calculate round number during construction.");
 		
 		// NULL is zero
-		return -declaringMatcher.getClassNumber();
+		return declaringMatcher.getRoundNumber();
 	}
 }

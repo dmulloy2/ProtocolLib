@@ -1,6 +1,7 @@
 package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -107,6 +108,32 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 	}
 	
 	/**
+	 * Match the parent class of a method, field or constructor.
+	 * @return Parent matcher.
+	 */
+	public static AbstractFuzzyMatcher<Class<?>> matchParent() {
+		return new AbstractFuzzyMatcher<Class<?>>() {
+			@Override
+			public boolean isMatch(Class<?> value, Object parent) {
+				if (parent instanceof Member) {
+					return ((Member) parent).getDeclaringClass().equals(value);
+				} else if (parent instanceof Class) {
+					return parent.equals(value);
+				} else {
+					// Can't be a match
+					return false;
+				}
+			}
+			
+			@Override
+			protected int calculateRoundNumber() {
+				// We match a very specific type
+				return -100;
+			}
+		};
+	}
+	
+	/**
 	 * Constructs a new fuzzy class contract with the given contracts.
 	 * @param fieldContracts - field contracts.
 	 * @param methodContracts - method contracts.
@@ -169,22 +196,22 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 	}
 
 	@Override
-	public boolean isMatch(Class<?> value) {
+	public boolean isMatch(Class<?> value, Object parent) {
 		FuzzyReflection reflection = FuzzyReflection.fromClass(value);
 		
 		// Make sure all the contracts are valid
-		return processContracts(reflection.getFields(), fieldContracts) &&
-			   processContracts(MethodInfo.fromMethods(reflection.getMethods()), methodContracts) &&
-			   processContracts(MethodInfo.fromConstructors(value.getDeclaredConstructors()), constructorContracts);
+		return processContracts(reflection.getFields(), value, fieldContracts) &&
+			   processContracts(MethodInfo.fromMethods(reflection.getMethods()), value, methodContracts) &&
+			   processContracts(MethodInfo.fromConstructors(value.getDeclaredConstructors()), value, constructorContracts);
 	}
 
-	private <T> boolean processContracts(Collection<T> values, List<AbstractFuzzyMatcher<T>> matchers) {
+	private <T> boolean processContracts(Collection<T> values, Class<?> parent, List<AbstractFuzzyMatcher<T>> matchers) {
 		boolean[] accepted = new boolean[matchers.size()];
 		int count = accepted.length;
 
 		// Process every value in turn
 		for (T value : values) {
-			int index = processValue(value, accepted, matchers);
+			int index = processValue(value, parent, accepted, matchers);
 			
 			// See if this worked
 			if (index >= 0) {
@@ -199,14 +226,14 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 		return count == 0;
 	}
 	
-	private <T> int processValue(T value, boolean accepted[], List<AbstractFuzzyMatcher<T>> matchers) {
+	private <T> int processValue(T value, Class<?> parent, boolean accepted[], List<AbstractFuzzyMatcher<T>> matchers) {
 		// The order matters
 		for (int i = 0; i < matchers.size(); i++) {
 			if (!accepted[i]) {
 				AbstractFuzzyMatcher<T> matcher = matchers.get(i);
 				
 				// Mark this as detected
-				if (matcher.isMatch(value)) {
+				if (matcher.isMatch(value, parent)) {
 					return i;
 				}
 			}

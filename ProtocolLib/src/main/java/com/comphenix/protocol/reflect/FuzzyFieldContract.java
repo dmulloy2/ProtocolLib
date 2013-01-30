@@ -11,29 +11,34 @@ import javax.annotation.Nonnull;
  * @author Kristian
  */
 public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
-	private ClassMatcher typeMatcher = ClassMatcher.MATCH_ALL;
+	private AbstractFuzzyMatcher<Class<?>> typeMatcher = ExactClassMatcher.MATCH_ALL;
 	
 	public static class Builder extends AbstractFuzzyMember.Builder<FuzzyFieldContract> {
+		@Override
 		public Builder requireModifier(int modifier) {
 			super.requireModifier(modifier); 
 			return this;
 		}
 		
+		@Override
 		public Builder banModifier(int modifier) {
 			super.banModifier(modifier); 
 			return this;
 		}
 		
+		@Override
 		public Builder nameRegex(String regex) {
 			super.nameRegex(regex); 
 			return this;
 		}
 		
+		@Override
 		public Builder nameRegex(Pattern pattern) {
 			super.nameRegex(pattern); 
 			return this;
 		}
 		
+		@Override
 		public Builder nameExact(String name) {
 			super.nameExact(name); 
 			return this;
@@ -44,8 +49,21 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 			return this;
 		}
 		
-		public Builder declaringClassCanHold(Class<?> declaringClass) {
-			super.declaringClassCanHold(declaringClass); 
+		@Override
+		public Builder declaringClassSuperOf(Class<?> declaringClass) {
+			super.declaringClassSuperOf(declaringClass); 
+			return this;
+		}
+		
+		@Override
+		public Builder declaringClassDerivedOf(Class<?> declaringClass) {
+			super.declaringClassDerivedOf(declaringClass); 
+			return this;
+		}
+		
+		@Override
+		public Builder declaringClassMatching(AbstractFuzzyMatcher<Class<?>> classMatcher) {
+			super.declaringClassMatching(classMatcher); 
 			return this;
 		}
 		
@@ -56,12 +74,12 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 		}
 		
 		public Builder typeExact(Class<?> type) {
-			member.typeMatcher = new ClassMatcher(type, false);
+			member.typeMatcher = ExactClassMatcher.matchExact(type);
 			return this;
 		}
 		
-		public Builder typeCanHold(Class<?> type) {
-			member.typeMatcher = new ClassMatcher(type, true);
+		public Builder typeSuperOf(Class<?> type) {
+			member.typeMatcher = ExactClassMatcher.matchSuper(type);
 			return this;
 		}
 
@@ -91,9 +109,9 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 	}
 	
 	@Override
-	public boolean isMatch(Field value) {
-		if (super.isMatch(value)) {
-			return typeMatcher.isClassEqual(value.getType());
+	public boolean isMatch(Field value, Object parent) {
+		if (super.isMatch(value, parent)) {
+			return typeMatcher.isMatch(value.getType(), value);
 		}
 		// No match
 		return false;
@@ -101,8 +119,8 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 	
 	@Override
 	protected int calculateRoundNumber() {
-		int current = -typeMatcher.getClassNumber();
-		
-		return combineRounds(super.calculateRoundNumber(), current);
+		// Combine the two
+		return combineRounds(super.calculateRoundNumber(), 
+							 typeMatcher.calculateRoundNumber());
 	}
 }

@@ -121,7 +121,7 @@ public class FuzzyReflection {
 		
 		// Add all matching fields to the list
 		for (Method method : getMethods()) {
-			if (matcher.isMatch(MethodInfo.fromMethod(method))) {
+			if (matcher.isMatch(MethodInfo.fromMethod(method), source)) {
 				methods.add(method);
 			}
 		}
@@ -338,7 +338,7 @@ public class FuzzyReflection {
 		
 		// Add all matching fields to the list
 		for (Field field : getFields()) {
-			if (matcher.isMatch(field)) {
+			if (matcher.isMatch(field, source)) {
 				fields.add(field);
 			}
 		}
@@ -436,7 +436,7 @@ public class FuzzyReflection {
 		
 		// Add all matching fields to the list
 		for (Constructor<?> constructor : getConstructors()) {
-			if (matcher.isMatch(MethodInfo.fromConstructor(constructor))) {
+			if (matcher.isMatch(MethodInfo.fromConstructor(constructor), source)) {
 				constructors.add(constructor);
 			}
 		}
