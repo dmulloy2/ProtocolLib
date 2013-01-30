@@ -191,7 +191,7 @@ class EntityUtilities {
 			
 			// The Minecraft field that's NOT filled in by the constructor
 			trackedEntitiesField = FuzzyReflection.fromObject(tracker, true).
-						getFieldByType(MinecraftReflection.MINECRAFT_OBJECT, ignoredTypes);
+						getFieldByType(MinecraftReflection.getMinecraftObjectMatcher(), ignoredTypes);
 		}
 		
 		// Read the entity hashmap

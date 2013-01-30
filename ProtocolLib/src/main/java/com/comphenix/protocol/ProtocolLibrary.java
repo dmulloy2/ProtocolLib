@@ -19,7 +19,6 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -42,7 +41,6 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
-import com.google.common.collect.Lists;
 
 /**
  * The main entry point for ProtocolLib.

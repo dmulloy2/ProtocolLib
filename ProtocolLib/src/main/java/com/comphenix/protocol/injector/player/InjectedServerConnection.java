@@ -90,7 +90,8 @@ class InjectedServerConnection {
 		try {
 			if (serverConnectionMethod == null)
 				serverConnectionMethod = FuzzyReflection.fromClass(minecraftServerField.getType()).
-											getMethodByParameters("getServerConnection", ".*ServerConnection", new String[] {});
+											getMethodByParameters("getServerConnection", 
+													MinecraftReflection.getServerConnectionClass(), new Class[] {});
 			// We're using Minecraft 1.3.1
 			injectServerConnection();
 		

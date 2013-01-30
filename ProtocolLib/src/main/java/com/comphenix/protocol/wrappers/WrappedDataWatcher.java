@@ -574,7 +574,7 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 		// Load the get-method
 		try {
 			getKeyValueMethod = fuzzy.getMethodByParameters(
-					"getWatchableObject", ".*WatchableObject", new String[] { int.class.getName() });
+					"getWatchableObject", MinecraftReflection.getWatchableObjectClass(), new Class[] { int.class });
 			getKeyValueMethod.setAccessible(true);
 		} catch (IllegalArgumentException e) {
 			// Use fallback method

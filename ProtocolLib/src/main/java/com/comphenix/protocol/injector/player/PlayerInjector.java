@@ -330,7 +330,7 @@ abstract class PlayerInjector {
 			Object handler = FieldUtils.readField(serverHandlerField, notchEntity, true);
 			
 			// Is this a Minecraft hook?
-			if (handler != null && !handler.getClass().getName().startsWith("net.minecraft.server")) {
+			if (handler != null && !MinecraftReflection.isMinecraftObject(handler)) {
 				
 				// This is our proxy object
 				if (handler instanceof Factory)
@@ -380,7 +380,7 @@ abstract class PlayerInjector {
 			try {
 				// Well, that sucks. Try just Minecraft objects then.
 				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
-									 getFieldByType(MinecraftReflection.MINECRAFT_OBJECT);
+									 getFieldByType(MinecraftReflection.getMinecraftObjectMatcher());
 				
 			} catch (RuntimeException e2) {
 				throw new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());

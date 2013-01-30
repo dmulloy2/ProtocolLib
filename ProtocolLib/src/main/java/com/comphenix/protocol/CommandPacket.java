@@ -415,7 +415,7 @@ class CommandPacket extends CommandBase {
 						Class<?> clazz = packet.getClass();
 						
 						// Get the first Minecraft super class
-						while ((!clazz.getName().startsWith("net.minecraft.server") || 
+						while ((!MinecraftReflection.isMinecraftClass(clazz) || 
 								 Factory.class.isAssignableFrom(clazz)) && clazz != Object.class) {
 							clazz = clazz.getSuperclass();
 						}

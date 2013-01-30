@@ -174,7 +174,7 @@ class MinecraftRegistry {
 		for (Map.Entry<Class, Integer> entry : getPacketToID().entrySet()) {
 			if (Objects.equal(entry.getValue(), packetID)) {
 				// Attempt to get the vanilla class here too
-				if (!forceVanilla || entry.getKey().getName().startsWith("net.minecraft.server"))
+				if (!forceVanilla || MinecraftReflection.isMinecraftClass(entry.getKey()))
 					return removeEnhancer(entry.getKey(), forceVanilla);
 			}
 		}

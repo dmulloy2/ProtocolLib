@@ -20,6 +20,7 @@ package com.comphenix.protocol.utility;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
@@ -38,8 +39,16 @@ import com.google.common.base.Joiner;
 public class MinecraftReflection {
 	/**
 	 * Regular expression that matches a Minecraft object.
+	 * <p>
+	 * Replaced by the method {@link #getMinecraftObjectMatcher()}.
 	 */
+	@Deprecated
 	public static final String MINECRAFT_OBJECT = "net\\.minecraft(\\.\\w+)+";
+	
+	/**
+	 * Regular expression computed dynamically.
+	 */
+	private static String DYNAMIC_PACKAGE_MATCHER = null;
 	
 	/**
 	 * The package name of all the classes that belongs to the native code in Minecraft.
@@ -64,6 +73,20 @@ public class MinecraftReflection {
 	// net.minecraft.server
 	private static Class<?> itemStackArrayClass;
 
+	private MinecraftReflection() {
+		// No need to make this constructable.
+	}
+	
+	/**
+	 * Retrieve a regular expression that can match Minecraft package objects.
+	 * @return Minecraft package matcher.
+	 */
+	public static String getMinecraftObjectMatcher() {
+		if (DYNAMIC_PACKAGE_MATCHER == null)
+			getMinecraftPackage();
+		return DYNAMIC_PACKAGE_MATCHER;
+	}
+	
 	/**
 	 * Retrieve the name of the Minecraft server package.
 	 * @return Full canonical name of the Minecraft server package.
@@ -87,6 +110,21 @@ public class MinecraftReflection {
 				// The return type will tell us the full package, regardless of formating
 				CRAFTBUKKIT_PACKAGE = getPackage(craftClass.getCanonicalName());
 				MINECRAFT_FULL_PACKAGE = getPackage(returnName);
+				
+				// Pretty important invariant
+				if (!MINECRAFT_FULL_PACKAGE.startsWith(MINECRAFT_PREFIX_PACKAGE)) {
+					// Assume they're the same instead
+					MINECRAFT_PREFIX_PACKAGE = MINECRAFT_FULL_PACKAGE;
+					
+					// The package is usualy flat, so go with that assumtion
+					DYNAMIC_PACKAGE_MATCHER = 
+							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? 
+									Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + "\\w+";
+				} else {
+					// Use the standard matcher
+					DYNAMIC_PACKAGE_MATCHER = MINECRAFT_OBJECT;
+				}
+				
 				return MINECRAFT_FULL_PACKAGE;
 						
 			} catch (SecurityException e) {
@@ -126,7 +164,12 @@ public class MinecraftReflection {
 	 * @return The package name.
 	 */
 	private static String getPackage(String fullName) {
-		return fullName.substring(0, fullName.lastIndexOf("."));
+		int index = fullName.lastIndexOf(".");
+		
+		if (index > 0)
+			return fullName.substring(0, index);
+		else
+			return ""; // Default package
 	}
 	
 	/**
@@ -160,6 +203,19 @@ public class MinecraftReflection {
 		return obj.getClass().getName().startsWith(MINECRAFT_PREFIX_PACKAGE);
 	}
 
+	/**
+	 * Determine if the given class is found within the package net.minecraft.server, or any equivalent package.
+	 * @param clazz - the class to test.
+	 * @return TRUE if it can, FALSE otherwise.
+	 */
+	public static boolean isMinecraftClass(@Nonnull Class<?> clazz) {
+		if (clazz == null)
+			throw new IllegalArgumentException("Class cannot be NULL.");
+		
+		// Doesn't matter if we don't check for the version here
+		return clazz.getName().startsWith(MINECRAFT_PREFIX_PACKAGE);
+	}
+	
 	/**
 	 * Determine if a given object is found in net.minecraft.server, and has the given name.
 	 * @param obj - the object to test.
@@ -289,7 +345,15 @@ public class MinecraftReflection {
 	}
 	
 	/**
-	 * Retrieve the NetLoginHandler class.
+	 * Retrieve the player list class (or ServerConfigurationManager),
+	 * @return The player list class.
+	 */
+	public static Class<?> getPlayerListClass() {
+		return getMinecraftClass("ServerConfigurationManager", "PlayerList");
+	}
+	
+	/**
+	 * Retrieve the NetLoginHandler class (or PendingConnection)
 	 * @return The NetLoginHandler class.
 	 */
 	public static Class<?> getNetLoginHandlerClass() {
@@ -297,7 +361,7 @@ public class MinecraftReflection {
 	}
 	
 	/**
-	 * Retrieve the NetServerHandler class.
+	 * Retrieve the NetServerHandler class (or PlayerConnection)
 	 * @return The NetServerHandler class.
 	 */
 	public static Class<?> getNetServerHandlerClass() {
@@ -313,7 +377,7 @@ public class MinecraftReflection {
 	}
 	
 	/**
-	 * Retrieve the NetHandler class.
+	 * Retrieve the NetHandler class (or Connection)
 	 * @return The NetHandler class.
 	 */
 	public static Class<?> getNetHandlerClass() {
@@ -374,6 +438,14 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getWatchableObjectClass() {
 		return getMinecraftClass("WatchableObject");
+	}
+	
+	/**
+	 * Retrieve the ServerConnection abstract class.
+	 * @return The ServerConnection class.
+	 */
+	public static Class<?> getServerConnectionClass() {
+		return getMinecraftClass("ServerConnection");
 	}
 	
 	/**
