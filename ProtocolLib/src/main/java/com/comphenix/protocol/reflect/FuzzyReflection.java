@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.reflect;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import com.google.common.collect.Lists;
 
 /**
  * Retrieves fields and methods by signature, not just name.
@@ -90,13 +93,48 @@ public class FuzzyReflection {
 	}
 	
 	/**
+	 * Retrieve the first method that matches.
+	 * <p>
+	 * ForceAccess must be TRUE in order for this method to access private, protected and package level method.
+	 * @param matcher - the matcher to use.
+	 * @return The first method that satisfies the given matcher.
+	 * @throws IllegalArgumentException If the method cannot be found.
+	 */
+	public Method getMethod(AbstractFuzzyMatcher<MethodInfo> matcher) {
+		List<Method> result = getMethodList(matcher);
+		
+		if (result.size() > 0)
+			return result.get(0);
+		else
+			throw new IllegalArgumentException("Unable to find a method that matches " + matcher);
+	}
+	
+	/**
+	 * Retrieve a list of every method that matches the given matcher.
+	 * <p>
+	 * ForceAccess must be TRUE in order for this method to access private, protected and package level methods.
+	 * @param matcher - the matcher to apply.
+	 * @return List of found methods.
+	 */
+	public List<Method> getMethodList(AbstractFuzzyMatcher<MethodInfo> matcher) {
+		List<Method> methods = Lists.newArrayList();
+		
+		// Add all matching fields to the list
+		for (Method method : getMethods()) {
+			if (matcher.isMatch(MethodInfo.fromMethod(method))) {
+				methods.add(method);
+			}
+		}
+		return methods;
+	}
+	
+	/**
 	 * Retrieves a method by looking at its name.
 	 * @param nameRegex -  regular expression that will match method names.
 	 * @return The first method that satisfies the regular expression.
 	 * @throws IllegalArgumentException If the method cannot be found.
 	 */
 	public Method getMethodByName(String nameRegex) {
-		
 		Pattern match = Pattern.compile(nameRegex);
 		
 		for (Method method : getMethods()) {
@@ -118,7 +156,6 @@ public class FuzzyReflection {
 	 * @throws IllegalArgumentException If the method cannot be found.
 	 */
 	public Method getMethodByParameters(String name, Class<?>... args) {
-		
 		// Find the correct method to call
 		for (Method method : getMethods()) {
 			if (Arrays.equals(method.getParameterTypes(), args)) {
@@ -159,7 +196,6 @@ public class FuzzyReflection {
 	 * @throws IllegalArgumentException If the method cannot be found.
 	 */
 	public Method getMethodByParameters(String name, String returnTypeRegex, String[] argsRegex) {
-	
 		Pattern match = Pattern.compile(returnTypeRegex);
 		Pattern[] argMatch = new Pattern[argsRegex.length];
 		
@@ -199,7 +235,6 @@ public class FuzzyReflection {
 	 * @return Every method that satisfies the given constraints.
 	 */
 	public List<Method> getMethodListByParameters(Class<?> returnType, Class<?>[] args) {
-	
 		List<Method> methods = new ArrayList<Method>();
 		
 		// Find the correct method to call
@@ -275,6 +310,42 @@ public class FuzzyReflection {
 	}
 	
 	/**
+	 * Retrieve the first field that matches.
+	 * <p>
+	 * ForceAccess must be TRUE in order for this method to access private, protected and package level fields.
+	 * @param matcher - the matcher to use.
+	 * @return The first method that satisfies the given matcher.
+	 * @throws IllegalArgumentException If the method cannot be found.
+	 */
+	public Field getField(AbstractFuzzyMatcher<Field> matcher) {
+		List<Field> result = getFieldList(matcher);
+		
+		if (result.size() > 0)
+			return result.get(0);
+		else
+			throw new IllegalArgumentException("Unable to find a field that matches " + matcher);
+	}
+	
+	/**
+	 * Retrieve a list of every field that matches the given matcher.
+	 * <p>
+	 * ForceAccess must be TRUE in order for this method to access private, protected and package level fields.
+	 * @param matcher - the matcher to apply.
+	 * @return List of found fields.
+	 */
+	public List<Field> getFieldList(AbstractFuzzyMatcher<Field> matcher) {
+		List<Field> fields = Lists.newArrayList();
+		
+		// Add all matching fields to the list
+		for (Field field : getFields()) {
+			if (matcher.isMatch(field)) {
+				fields.add(field);
+			}
+		}
+		return fields;
+	}
+	
+	/**
 	 * Retrieves a field by type.
 	 * <p>
 	 * Note that the type is matched using the full canonical representation, i.e.: 
@@ -337,7 +408,45 @@ public class FuzzyReflection {
 	}
 	
 	/**
+	 * Retrieve the first constructor that matches.
+	 * <p>
+	 * ForceAccess must be TRUE in order for this method to access private, protected and package level constructors.
+	 * @param matcher - the matcher to use.
+	 * @return The first constructor that satisfies the given matcher.
+	 * @throws IllegalArgumentException If the constructor cannot be found.
+	 */
+	public Constructor<?> getConstructor(AbstractFuzzyMatcher<MethodInfo> matcher) {
+		List<Constructor<?>> result = getConstructorList(matcher);
+		
+		if (result.size() > 0)
+			return result.get(0);
+		else
+			throw new IllegalArgumentException("Unable to find a method that matches " + matcher);
+	}
+	
+	/**
+	 * Retrieve a list of every constructor that matches the given matcher.
+	 * <p>
+	 * ForceAccess must be TRUE in order for this method to access private, protected and package level constructors.
+	 * @param matcher - the matcher to apply.
+	 * @return List of found constructors.
+	 */
+	public List<Constructor<?>> getConstructorList(AbstractFuzzyMatcher<MethodInfo> matcher) {
+		List<Constructor<?>> constructors = Lists.newArrayList();
+		
+		// Add all matching fields to the list
+		for (Constructor<?> constructor : getConstructors()) {
+			if (matcher.isMatch(MethodInfo.fromConstructor(constructor))) {
+				constructors.add(constructor);
+			}
+		}
+		return constructors;
+	}
+	
+	/**
 	 * Retrieves all private and public fields in declared order (after JDK 1.5).
+	 * <p>
+	 * Private, protected and package fields are ignored if forceAccess is FALSE.
 	 * @return Every field.
 	 */
 	public Set<Field> getFields() {
@@ -350,6 +459,8 @@ public class FuzzyReflection {
 	
 	/**
 	 * Retrieves all private and public methods in declared order (after JDK 1.5).
+	 * <p>
+	 * Private, protected and package methods are ignored if forceAccess is FALSE.
 	 * @return Every method.
 	 */
 	public Set<Method> getMethods() {
@@ -358,6 +469,19 @@ public class FuzzyReflection {
 			return setUnion(source.getDeclaredMethods(), source.getMethods());
 		else
 			return setUnion(source.getMethods());
+	}
+	
+	/**
+	 * Retrieves all private and public constructors in declared order (after JDK 1.5).
+	 * <p>
+	 * Private, protected and package constructors are ignored if forceAccess is FALSE.
+	 * @return Every constructor.
+	 */
+	public Set<Constructor<?>> getConstructors() {
+		if (forceAccess)
+			return setUnion(source.getDeclaredConstructors());
+		else
+			return setUnion(source.getConstructors());
 	}
 	
 	// Prevent duplicate fields
