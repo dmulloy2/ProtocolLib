@@ -20,7 +20,8 @@ package com.comphenix.protocol.injector.player;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
+import java.util.List;
+import java.util.Map;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
@@ -43,6 +44,7 @@ import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.collect.Maps;
 
 /**
  * Represents a player hook into the NetServerHandler class. 
@@ -91,9 +93,59 @@ public class NetworkServerInjector extends PlayerInjector {
 
 		// Get the send packet method!
 		if (hasInitialized) {
-			if (sendPacketMethod == null)
-				sendPacketMethod = FuzzyReflection.fromObject(serverHandler).getMethodByName("sendPacket.*");
+			if (sendPacketMethod == null) {
+				try {
+					sendPacketMethod = FuzzyReflection.fromObject(serverHandler).getMethodByName("sendPacket.*");
+				} catch (IllegalArgumentException e) {
+					Map<String, Method> netServer = getMethodList(
+							MinecraftReflection.getNetServerHandlerClass(), MinecraftReflection.getPacketClass());
+					Map<String, Method> netHandler = getMethodList(
+							MinecraftReflection.getNetHandlerClass(), MinecraftReflection.getPacketClass());
+					
+					// Remove every method in net handler from net server
+					for (String methodName : netHandler.keySet()) {
+						netServer.remove(methodName);
+					}
+					
+					// The remainder is the send packet method
+					if (netServer.size() ==  1) {
+						Method[] methods = netServer.values().toArray(new Method[0]);
+						sendPacketMethod = methods[0];
+					} else {
+						throw new IllegalArgumentException("Unable to find the sendPacket method in NetServerHandler/PlayerConnection.");
+					}
+				}
+			}
 		}
+	}
+	
+	/**
+	 * Retrieve a method mapped list of every method with the given signature.
+	 * @param source - class source.
+	 * @param params - parameters.
+	 * @return Method mapped list.
+	 */
+	private Map<String, Method> getMethodList(Class<?> source, Class<?>... params) {
+		return getMappedMethods(
+					FuzzyReflection.fromClass(source, true).
+					getMethodListByParameters(Void.TYPE, params)
+			   );
+	}
+	
+	/**
+	 * Retrieve every method as a map over names. 
+	 * <p>
+	 * Note that overloaded methods will only occur once in the resulting map.
+	 * @param methods - every method.
+	 * @return A map over every given method.
+	 */
+	private Map<String, Method> getMappedMethods(List<Method> methods) {
+		Map<String, Method> map = Maps.newHashMap();
+		
+		for (Method method : methods) {
+			map.put(method.getName(), method);
+		}
+		return map;
 	}
 
 	@Override
@@ -296,8 +348,22 @@ public class NetworkServerInjector extends PlayerInjector {
 			}
 			FieldUtils.writeField(disconnectField, handler, value);
 		
-		} catch (IllegalArgumentException e) {
-			reporter.reportDetailed(this, "Unable to find disconnect field. Is ProtocolLib up to date?", e, handler);
+		} catch (IllegalArgumentException e) {			
+			// Assume it's the first ...
+			if (disconnectField == null) {
+				disconnectField = FuzzyReflection.fromObject(handler).getFieldByType("disconnected", boolean.class);
+				reporter.reportWarning(this, "Unable to find 'disconnected' field. Assuming " + disconnectField);
+				
+				// Try again
+				if (disconnectField != null) {
+					setDisconnect(handler, value);
+					return;
+				}
+			}
+			
+			// This is really bad
+			reporter.reportDetailed(this, "Cannot find disconnected field. Is ProtocolLib up to date?", e);
+				
 		} catch (IllegalAccessException e) {
 			reporter.reportWarning(this, "Unable to update disconnected field. Player quit event may be sent twice.");
 		}

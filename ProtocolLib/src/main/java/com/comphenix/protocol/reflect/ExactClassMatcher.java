@@ -35,37 +35,11 @@ class ExactClassMatcher extends AbstractFuzzyMatcher<Class<?>> {
 	private final Options option;
 	
 	/**
-	 * Construct a class matcher that matches types exactly.
-	 * @param matcher - the matching class.
-	 */
-	public static ExactClassMatcher matchExact(Class<?> matcher) {
-		return new ExactClassMatcher(matcher, Options.MATCH_EXACT);
-	}
-	
-	/**
-	 * Construct a class matcher that matches super types of the given class.
-	 * @param matcher - the matching type must be a super class of this type.
-	 * @return A new class mathcher.
-	 */
-	public static ExactClassMatcher matchSuper(Class<?> matcher) {
-		return new ExactClassMatcher(matcher, Options.MATCH_SUPER);
-	}
-	
-	/**
-	 * Construct a class matcher that matches derived types of the given class.
-	 * @param matcher - the matching type must be a derived class of this type.
-	 * @return A new class mathcher.
-	 */
-	public static ExactClassMatcher matchDerived(Class<?> matcher) {
-		return new ExactClassMatcher(matcher, Options.MATCH_DERIVED);
-	}
-	
-	/**
 	 * Constructs a new class matcher.
 	 * @param matcher - the matching class, or NULL to represent anything. 
 	 * @param option - options specifying the matching rules.
 	 */
-	private ExactClassMatcher(Class<?> matcher, Options option) {
+	ExactClassMatcher(Class<?> matcher, Options option) {
 		this.matcher = matcher;
 		this.option = option;
 	}

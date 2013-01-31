@@ -13,6 +13,11 @@ import javax.annotation.Nonnull;
 public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 	private AbstractFuzzyMatcher<Class<?>> typeMatcher = ExactClassMatcher.MATCH_ALL;
 	
+	/**
+	 * Represents a builder for a field matcher.
+	 * 
+	 * @author Kristian
+	 */
 	public static class Builder extends AbstractFuzzyMember.Builder<FuzzyFieldContract> {
 		@Override
 		public Builder requireModifier(int modifier) {
@@ -74,12 +79,22 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 		}
 		
 		public Builder typeExact(Class<?> type) {
-			member.typeMatcher = ExactClassMatcher.matchExact(type);
+			member.typeMatcher = FuzzyMatchers.matchExact(type);
 			return this;
 		}
 		
 		public Builder typeSuperOf(Class<?> type) {
-			member.typeMatcher = ExactClassMatcher.matchSuper(type);
+			member.typeMatcher = FuzzyMatchers.matchSuper(type);
+			return this;
+		}
+		
+		public Builder typeDerivedOf(Class<?> type) {
+			member.typeMatcher = FuzzyMatchers.matchDerived(type);
+			return this;
+		}
+		
+		public Builder typeMatches(AbstractFuzzyMatcher<Class<?>> matcher) {
+			member.typeMatcher = matcher;
 			return this;
 		}
 
@@ -90,6 +105,10 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 		}
 	}
 
+	/**
+	 * Return a new fuzzy field contract builder.
+	 * @return New fuzzy field contract builder.
+	 */
 	public static Builder newBuilder() {
 		return new Builder();
 	}

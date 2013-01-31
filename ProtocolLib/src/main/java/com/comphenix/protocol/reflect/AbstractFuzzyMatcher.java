@@ -72,4 +72,64 @@ public abstract class AbstractFuzzyMatcher<T> implements Comparable<AbstractFuzz
 		// No match
 		return -1;
 	}
+
+	/**
+	 * Create a fuzzy matcher that returns the opposite result of the current matcher.
+	 * @return An inverted fuzzy matcher.
+	 */
+	public AbstractFuzzyMatcher<T> inverted() {
+		return new AbstractFuzzyMatcher<T>() {
+			@Override
+			public boolean isMatch(T value, Object parent) {
+				return !AbstractFuzzyMatcher.this.isMatch(value, parent);
+			}
+			
+			@Override
+			protected int calculateRoundNumber() {
+				return -2;
+			}
+		};
+	}
+	
+	/**
+	 * Require that this and the given matcher be TRUE.
+	 * @param other - the other fuzzy matcher.
+	 * @return A combined fuzzy matcher.
+	 */
+	public AbstractFuzzyMatcher<T> and(final AbstractFuzzyMatcher<T> other) {
+		return new AbstractFuzzyMatcher<T>() {
+			@Override
+			public boolean isMatch(T value, Object parent) {
+				// They both have to be true
+				return AbstractFuzzyMatcher.this.isMatch(value, parent) &&
+									       other.isMatch(value, parent);
+			}
+			
+			@Override
+			protected int calculateRoundNumber() {
+				return combineRounds(AbstractFuzzyMatcher.this.getRoundNumber(), other.getRoundNumber());
+			}
+		};
+	}
+	
+	/**
+	 * Require that either this or the other given matcher be TRUE.
+	 * @param other - the other fuzzy matcher.
+	 * @return A combined fuzzy matcher.
+	 */
+	public AbstractFuzzyMatcher<T> or(final AbstractFuzzyMatcher<T> other) {
+		return new AbstractFuzzyMatcher<T>() {
+			@Override
+			public boolean isMatch(T value, Object parent) {
+				// Either can be true
+				return AbstractFuzzyMatcher.this.isMatch(value, parent) ||
+									       other.isMatch(value, parent);
+			}
+			
+			@Override
+			protected int calculateRoundNumber() {
+				return combineRounds(AbstractFuzzyMatcher.this.getRoundNumber(), other.getRoundNumber());
+			}
+		};
+	}
 }

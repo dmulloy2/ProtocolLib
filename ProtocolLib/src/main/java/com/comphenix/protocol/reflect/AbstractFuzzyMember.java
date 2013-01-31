@@ -13,11 +13,11 @@ import javax.annotation.Nonnull;
  */
 public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzzyMatcher<T> {
 	// Accessibility matchers
-	private int modifiersRequired;
-	private int modifiersBanned;
+	protected int modifiersRequired;
+	protected int modifiersBanned;
 	
-	private Pattern nameRegex;
-	private AbstractFuzzyMatcher<Class<?>> declaringMatcher = ExactClassMatcher.MATCH_ALL;
+	protected Pattern nameRegex;
+	protected AbstractFuzzyMatcher<Class<?>> declaringMatcher = ExactClassMatcher.MATCH_ALL;
 	
 	/**
 	 * Whether or not this contract can be modified.
@@ -89,7 +89,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		 * @return This builder, for chaining.
 		 */
 		public Builder<T> declaringClassExactType(Class<?> declaringClass) {
-			member.declaringMatcher = ExactClassMatcher.matchExact(declaringClass);
+			member.declaringMatcher = FuzzyMatchers.matchExact(declaringClass);
 			return this;
 		}
 		
@@ -99,7 +99,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		 * @return This builder, for chaining.
 		 */
 		public Builder<T> declaringClassSuperOf(Class<?> declaringClass) {
-			member.declaringMatcher = ExactClassMatcher.matchSuper(declaringClass);
+			member.declaringMatcher = FuzzyMatchers.matchSuper(declaringClass);
 			return this;
 		}
 		
@@ -109,7 +109,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		 * @return This builder, for chaining.
 		 */
 		public Builder<T> declaringClassDerivedOf(Class<?> declaringClass) {
-			member.declaringMatcher = ExactClassMatcher.matchDerived(declaringClass);
+			member.declaringMatcher = FuzzyMatchers.matchDerived(declaringClass);
 			return this;
 		}
 		

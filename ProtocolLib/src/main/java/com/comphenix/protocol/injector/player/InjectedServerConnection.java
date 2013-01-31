@@ -107,12 +107,10 @@ class InjectedServerConnection {
 	}
 	
 	private void injectListenerThread() {
-	
 		try {
-		
-		if (listenerThreadField == null)
-			listenerThreadField = FuzzyReflection.fromObject(minecraftServer).
-				getFieldByType(".*NetworkListenThread");
+			if (listenerThreadField == null)
+				listenerThreadField = FuzzyReflection.fromObject(minecraftServer).
+										getFieldByType("networkListenThread", MinecraftReflection.getNetworkListenThreadClass());
 		} catch (RuntimeException e) {
 			reporter.reportDetailed(this, "Cannot find listener thread in MinecraftServer.", e, minecraftServer);
 			return;

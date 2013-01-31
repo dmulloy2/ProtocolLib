@@ -167,8 +167,8 @@ abstract class PlayerInjector {
 
 			// Next, get the network manager 
 			if (networkManagerField == null) 
-				networkManagerField = FuzzyReflection.fromObject(serverHandler).
-										getFieldByType(".*" + MinecraftReflection.getNetworkManagerName());
+				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(
+									   "networkManager", MinecraftReflection.getNetworkManagerClass());
 			initializeNetworkManager(networkManagerField, serverHandler);
 		}
 	}
@@ -184,7 +184,7 @@ abstract class PlayerInjector {
 			
 			if (netLoginNetworkField == null)
 				netLoginNetworkField =  FuzzyReflection.fromObject(netLoginHandler).
-										  getFieldByType(".*" + MinecraftReflection.getNetworkManagerName());
+										  getFieldByType("networkManager", MinecraftReflection.getNetworkManagerClass());
 			initializeNetworkManager(netLoginNetworkField, netLoginHandler);
 		}
 	}
@@ -290,7 +290,13 @@ abstract class PlayerInjector {
 		// Execute disconnect on it
 		if (handler != null) {
 			if (disconnect == null) {
-				disconnect = FuzzyReflection.fromObject(handler).getMethodByName("disconnect.*");
+				try {
+					disconnect = FuzzyReflection.fromObject(handler).getMethodByName("disconnect.*");
+				} catch (IllegalArgumentException e) {
+					// Just assume it's the first String method
+					disconnect = FuzzyReflection.fromObject(handler).getMethodByParameters("disconnect", String.class);
+					reporter.reportWarning(this, "Cannot find disconnect method by name. Assuming " + disconnect);
+				}
 				
 				// Save the method for later
 				if (usingNetServer)
@@ -380,7 +386,7 @@ abstract class PlayerInjector {
 			try {
 				// Well, that sucks. Try just Minecraft objects then.
 				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
-									 getFieldByType(MinecraftReflection.getMinecraftObjectMatcher());
+									 getFieldByType(MinecraftReflection.getMinecraftObjectRegex());
 				
 			} catch (RuntimeException e2) {
 				throw new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());

@@ -254,7 +254,6 @@ public class FuzzyReflection {
 	 * @throws IllegalArgumentException If the field cannot be found.
 	 */
 	public Field getFieldByName(String nameRegex) {
-		
 		Pattern match = Pattern.compile(nameRegex);
 		
 		for (Field field : getFields()) {
@@ -276,7 +275,6 @@ public class FuzzyReflection {
 	 * @return The first field with a type that is an instance of the given type.
 	 */
 	public Field getFieldByType(String name, Class<?> type) {
-		
 		List<Field> fields = getFieldListByType(type);
 		
 		if (fields.size() > 0) {
@@ -295,7 +293,6 @@ public class FuzzyReflection {
 	 * @return Every field with a type that is an instance of the given type.
 	 */
 	public List<Field> getFieldListByType(Class<?> type) {
-		
 		List<Field> fields = new ArrayList<Field>();
 		
 		// Field with a compatible type

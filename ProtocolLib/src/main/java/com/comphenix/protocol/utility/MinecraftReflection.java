@@ -17,9 +17,17 @@
 
 package com.comphenix.protocol.utility;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.net.ServerSocket;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
@@ -29,6 +37,13 @@ import org.bukkit.Server;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.comphenix.protocol.reflect.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.FuzzyClassContract;
+import com.comphenix.protocol.reflect.FuzzyMatchers;
+import com.comphenix.protocol.reflect.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.FuzzyMethodContract;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.google.common.base.Joiner;
 
 /**
@@ -40,7 +55,7 @@ public class MinecraftReflection {
 	/**
 	 * Regular expression that matches a Minecraft object.
 	 * <p>
-	 * Replaced by the method {@link #getMinecraftObjectMatcher()}.
+	 * Replaced by the method {@link #getMinecraftObjectRegex()}.
 	 */
 	@Deprecated
 	public static final String MINECRAFT_OBJECT = "net\\.minecraft(\\.\\w+)+";
@@ -81,10 +96,18 @@ public class MinecraftReflection {
 	 * Retrieve a regular expression that can match Minecraft package objects.
 	 * @return Minecraft package matcher.
 	 */
-	public static String getMinecraftObjectMatcher() {
+	public static String getMinecraftObjectRegex() {
 		if (DYNAMIC_PACKAGE_MATCHER == null)
 			getMinecraftPackage();
 		return DYNAMIC_PACKAGE_MATCHER;
+	}
+	
+	/**
+	 * Retrieve a abstract fuzzy class matcher for Minecraft objects.
+	 * @return A matcher for Minecraft objects.
+	 */
+	public static AbstractFuzzyMatcher<Class<?>> getMinecraftObjectMatcher() {
+		return FuzzyMatchers.matchRegex(getMinecraftObjectRegex(), 50);
 	}
 	
 	/**
@@ -120,6 +143,10 @@ public class MinecraftReflection {
 					DYNAMIC_PACKAGE_MATCHER = 
 							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? 
 									Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + "\\w+";
+					
+					// We'll still accept the default location, however
+					DYNAMIC_PACKAGE_MATCHER = "(" + DYNAMIC_PACKAGE_MATCHER + ")|(" + MINECRAFT_OBJECT + ")";
+					
 				} else {
 					// Use the standard matcher
 					DYNAMIC_PACKAGE_MATCHER = MINECRAFT_OBJECT;
@@ -146,6 +173,9 @@ public class MinecraftReflection {
 	public static void setMinecraftPackage(String minecraftPackage, String craftBukkitPackage) {
 		MINECRAFT_FULL_PACKAGE = minecraftPackage;
 		CRAFTBUKKIT_PACKAGE = craftBukkitPackage;
+		
+		// Standard matcher
+		DYNAMIC_PACKAGE_MATCHER = MINECRAFT_OBJECT;
 	}
 	
 	/**
@@ -325,7 +355,22 @@ public class MinecraftReflection {
 	 * @return The entity class.
 	 */
 	public static Class<?> getEntityPlayerClass() {
-		return getMinecraftClass("EntityPlayer");
+		try {
+			return getMinecraftClass("EntityPlayer");
+		} catch (RuntimeException e) {
+			try {
+				// A fairly stable method
+				Method detect = FuzzyReflection.fromClass(getCraftBukkitClass("CraftServer")).
+									getMethodByName("detectListNameConflict");
+				
+				// EntityPlayer is then the first parameter
+				return detect.getParameterTypes()[0];
+				
+			} catch (IllegalArgumentException ex) {
+				// Last resort
+				return fallbackMethodReturn("EntityPlayer", "entity.CraftPlayer", "getHandle");
+			}
+		}
 	}
 	
 	/**
@@ -333,7 +378,38 @@ public class MinecraftReflection {
 	 * @return The entity class.
 	 */
 	public static Class<?> getEntityClass() {
+		try {
 		return getMinecraftClass("Entity");
+		} catch (RuntimeException e) {
+			return fallbackMethodReturn("Entity", "entity.CraftEntity", "getHandle");
+		}
+	}
+	
+	/**
+	 * Retrieve the WorldServer (NMS) class.
+	 * @return The WorldServer class.
+	 */
+	public static Class<?> getWorldServerClass() {
+		try {
+			return getMinecraftClass("WorldServer");
+		} catch (RuntimeException e) {
+			return fallbackMethodReturn("WorldServer", "CraftWorld", "getHandle");
+		}
+	}
+	
+	/**
+	 * Fallback on the return value of a named method in order to get a NMS class.
+	 * @param nmsClass - the expected name of the Minecraft class.
+	 * @param craftClass - a CraftBukkit class to look at.
+	 * @param methodName - the method we will use.
+	 * @return The return value of this method, which will be saved to the package cache.
+	 */
+	private static Class<?> fallbackMethodReturn(String nmsClass, String craftClass, String methodName) {
+		Class<?> result = FuzzyReflection.fromClass(getCraftBukkitClass(craftClass)).
+			    			getMethodByName(methodName).getReturnType();
+		
+		// Save the result
+		return setMinecraftClass(nmsClass, result);
 	}
 	
 	/**
@@ -341,15 +417,89 @@ public class MinecraftReflection {
 	 * @return The packet class.
 	 */
 	public static Class<?> getPacketClass() {
-		return getMinecraftClass("Packet");
+		try {
+			return getMinecraftClass("Packet");
+		} catch (RuntimeException e) {
+			// What kind of class we're looking for (sanity check)
+			FuzzyClassContract paketContract = 
+					FuzzyClassContract.newBuilder().
+						field(FuzzyFieldContract.newBuilder().
+								typeDerivedOf(Map.class).
+								requireModifier(Modifier.STATIC)).
+						field(FuzzyFieldContract.newBuilder().
+								typeDerivedOf(Set.class).
+								requireModifier(Modifier.STATIC)).
+						method(FuzzyMethodContract.newBuilder().
+							    parameterSuperOf(DataInputStream.class).
+							    returnTypeVoid()).
+					build();
+																	
+			// Select a method with one Minecraft object parameter
+			Method selected = FuzzyReflection.fromClass(getNetHandlerClass()).
+					getMethod(FuzzyMethodContract.newBuilder().
+							parameterMatches(paketContract, 0).
+							parameterCount(1).
+							build()
+					);
+		
+			// Save and return
+			Class<?> clazz = getTopmostClass(selected.getParameterTypes()[0]);
+			return setMinecraftClass("Packet", clazz);
+		}
 	}
 	
+	/**
+	 * Retrieve the least derived class, except Object.
+	 * @return Least derived super class.
+	 */
+	private static Class<?> getTopmostClass(Class<?> clazz) {
+		while (true) {
+			Class<?> superClass = clazz.getSuperclass();
+			
+			if (superClass == Object.class || superClass == null)
+				return clazz;
+			else
+				clazz = superClass;
+		}
+	}
+	
+	
+	/**
+	 * Retrieve the MinecraftServer class.
+	 * @return MinecraftServer class.
+	 */
+	public static Class<?> getMinecraftServerClass() {
+		try {
+			return getMinecraftClass("MinecraftServer");
+		} catch (RuntimeException e) {
+			// Get the first constructor that matches CraftServer(MINECRAFT_OBJECT, ANY)
+			Constructor<?> selected = FuzzyReflection.fromClass(getCraftBukkitClass("CraftServer")).
+					getConstructor(FuzzyMethodContract.newBuilder().
+							parameterMatches(getMinecraftObjectMatcher(), 0).
+							parameterCount(2).
+							build()
+					);
+			Class<?>[] params = selected.getParameterTypes();
+			
+			// Jackpot - two classes at the same time!
+			setMinecraftClass("MinecraftServer", params[0]);
+			setMinecraftClass("ServerConfigurationManager", params[1]);
+			return params[0];
+		}
+	}
+
 	/**
 	 * Retrieve the player list class (or ServerConfigurationManager),
 	 * @return The player list class.
 	 */
 	public static Class<?> getPlayerListClass() {
-		return getMinecraftClass("ServerConfigurationManager", "PlayerList");
+		try {
+			return getMinecraftClass("ServerConfigurationManager", "PlayerList");
+		} catch (RuntimeException e) {
+			// Try again
+			getMinecraftServerClass();
+			return getMinecraftClass("ServerConfigurationManager");
+		}
 	}
 	
 	/**
@@ -357,7 +507,22 @@ public class MinecraftReflection {
 	 * @return The NetLoginHandler class.
 	 */
 	public static Class<?> getNetLoginHandlerClass() {
-		return getMinecraftClass("NetLoginHandler", "PendingConnection");
+		try {
+			return getMinecraftClass("NetLoginHandler", "PendingConnection");
+		} catch (RuntimeException e) {
+			Method selected = FuzzyReflection.fromClass(getPlayerListClass()).
+					getMethod(FuzzyMethodContract.newBuilder().
+					   parameterMatches(
+							   FuzzyMatchers.matchExact(getEntityPlayerClass()).inverted(), 0
+					   ).
+					   parameterExactType(String.class, 1).
+					   parameterExactType(String.class, 2).
+					   build()
+					);
+			
+			// Save the pending connection reference
+			return setMinecraftClass("NetLoginHandler", selected.getParameterTypes()[0]);
+		}
 	}
 	
 	/**
@@ -365,15 +530,35 @@ public class MinecraftReflection {
 	 * @return The NetServerHandler class.
 	 */
 	public static Class<?> getNetServerHandlerClass() {
-		return getMinecraftClass("NetServerHandler", "PlayerConnection");
+		try  {
+			return getMinecraftClass("NetServerHandler", "PlayerConnection");
+		} catch (RuntimeException e) {
+			// Use the player connection field
+			return setMinecraftClass("NetLoginHandler", 
+						FuzzyReflection.fromClass(getEntityPlayerClass()).
+						getFieldByType("playerConnection", getNetHandlerClass()).getType()
+				   );
+		}
 	}
 	
 	/**
-	 * Retrieve the NetworkManager class.
-	 * @return The NetworkManager class.
+	 * Retrieve the NetworkManager class or its interface.
+	 * @return The NetworkManager class or its interface.
 	 */
 	public static Class<?> getNetworkManagerClass() {
-		return getMinecraftClass("NetworkManager");
+		try {
+			return getMinecraftClass("INetworkManager", "NetworkManager");
+		} catch (RuntimeException e) {
+			Constructor<?> selected = FuzzyReflection.fromClass(getNetServerHandlerClass()).
+					getConstructor(FuzzyMethodContract.newBuilder().
+							parameterSuperOf(getMinecraftServerClass(), 0).
+							parameterSuperOf(getEntityPlayerClass(), 2).
+							build()
+				   );
+		
+			// And we're done
+			return setMinecraftClass("INetworkManager", selected.getParameterTypes()[1]);
+		}
 	}
 	
 	/**
@@ -381,7 +566,11 @@ public class MinecraftReflection {
 	 * @return The NetHandler class.
 	 */
 	public static Class<?> getNetHandlerClass() {
-		return getMinecraftClass("NetHandler", "Connection");
+		try {
+			return getMinecraftClass("NetHandler", "Connection");
+		} catch (RuntimeException e) {
+			return setMinecraftClass("NetHandler", getNetLoginHandlerClass().getSuperclass());
+		}
 	}
 	
 	/**
@@ -389,7 +578,13 @@ public class MinecraftReflection {
 	 * @return The ItemStack class.
 	 */
 	public static Class<?> getItemStackClass() {
-		return getMinecraftClass("ItemStack");
+		try {
+			return getMinecraftClass("ItemStack");
+		} catch (RuntimeException e) {
+			// Use the handle reference
+			return setMinecraftClass("ItemStack", 
+					FuzzyReflection.fromClass(getCraftItemStackClass(), true).getFieldByName("handle").getType());
+		}
 	}
 		
 	/**
@@ -397,15 +592,21 @@ public class MinecraftReflection {
 	 * @return The WorldType class.
 	 */
 	public static Class<?> getWorldTypeClass() {
-		return getMinecraftClass("WorldType");
-	}
-	
-	/**
-	 * Retrieve the MinecraftServer class.
-	 * @return MinecraftServer class.
-	 */
-	public static Class<?> getMinecraftServerClass() {
-		return getMinecraftClass("MinecraftServer");
+		try {
+			return getMinecraftClass("WorldType");
+		} catch (RuntimeException e) {
+			// Get the first constructor that matches CraftServer(MINECRAFT_OBJECT, ANY)
+			Method selected = FuzzyReflection.fromClass(getMinecraftServerClass(), true).
+					getMethod(FuzzyMethodContract.newBuilder().
+							parameterExactType(String.class, 0).
+							parameterExactType(String.class, 1).
+							parameterMatches(getMinecraftObjectMatcher()).
+							parameterExactType(String.class, 4).
+							parameterCount(5).
+							build()
+										);
+			return setMinecraftClass("WorldType", selected.getParameterTypes()[3]);
+		}
 	}
 	
 	/**
@@ -413,7 +614,33 @@ public class MinecraftReflection {
 	 * @return The DataWatcher class.
 	 */
 	public static Class<?> getDataWatcherClass() {
-		return getMinecraftClass("DataWatcher");
+		try {
+			return getMinecraftClass("DataWatcher");
+		} catch (RuntimeException e) {
+			// Describe the DataWatcher 
+			FuzzyClassContract dataWatcherContract = FuzzyClassContract.newBuilder().
+				   field(FuzzyFieldContract.newBuilder().
+						 requireModifier(Modifier.STATIC).
+						 typeDerivedOf(Map.class)).
+				   field(FuzzyFieldContract.newBuilder().
+					     banModifier(Modifier.STATIC).
+						 typeDerivedOf(Map.class)).
+				   method(FuzzyMethodContract.newBuilder().
+						 parameterExactType(int.class).
+						 parameterExactType(Object.class).
+						 returnTypeVoid()).
+				  build();
+			FuzzyFieldContract fieldContract = FuzzyFieldContract.newBuilder().
+					typeMatches(dataWatcherContract).
+					build();
+			
+			// Get such a field and save the result
+			return setMinecraftClass("DataWatcher",
+						FuzzyReflection.fromClass(getEntityClass(), true).
+						getField(fieldContract).
+						getType()
+				   );
+		}
 	}
 	
 	/**
@@ -421,7 +648,25 @@ public class MinecraftReflection {
 	 * @return The ChunkPosition class.
 	 */
 	public static Class<?> getChunkPositionClass() {
-		return getMinecraftClass("ChunkPosition");
+		try {
+			return getMinecraftClass("ChunkPosition");
+		} catch (RuntimeException e) {
+			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
+			
+			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
+			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder().
+					 banModifier(Modifier.STATIC).
+					 parameterMatches(getMinecraftObjectMatcher(), 0).
+					 parameterExactType(String.class, 1).
+					 parameterExactType(int.class, 2).
+					 parameterExactType(int.class, 3).
+					 parameterExactType(int.class, 4).
+				    build();
+			
+			return setMinecraftClass("ChunkPosition", 
+						FuzzyReflection.fromClass(normalChunkGenerator).
+						 getMethod(selected).getReturnType());
+		}
 	}
 	
 	/**
@@ -429,7 +674,11 @@ public class MinecraftReflection {
 	 * @return The ChunkPosition class.
 	 */
 	public static Class<?> getChunkCoordinatesClass() {
-		return getMinecraftClass("ChunkCoordinates");
+		try {
+			return getMinecraftClass("ChunkCoordinates");
+		} catch (RuntimeException e) {
+			return setMinecraftClass("ChunkCoordinates", WrappedDataWatcher.getTypeClass(6));
+		}
 	}
 	
 	/**
@@ -437,7 +686,19 @@ public class MinecraftReflection {
 	 * @return The WatchableObject class.
 	 */
 	public static Class<?> getWatchableObjectClass() {
-		return getMinecraftClass("WatchableObject");
+		try {
+			return getMinecraftClass("WatchableObject");
+		} catch (RuntimeException e) {					
+			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
+					getMethod(FuzzyMethodContract.newBuilder().
+							 requireModifier(Modifier.STATIC).
+							 parameterSuperOf(DataOutputStream.class, 0).
+							 parameterMatches(getMinecraftObjectMatcher(), 1).
+						    build());
+		
+			// Use the second parameter
+			return setMinecraftClass("WatchableObject", selected.getParameterTypes()[1]);
+		}
 	}
 	
 	/**
@@ -445,7 +706,26 @@ public class MinecraftReflection {
 	 * @return The ServerConnection class.
 	 */
 	public static Class<?> getServerConnectionClass() {
-		return getMinecraftClass("ServerConnection");
+		try {
+			return getMinecraftClass("ServerConnection");
+		} catch (RuntimeException e) {
+			FuzzyClassContract serverConnectionContract = FuzzyClassContract.newBuilder().
+					constructor(FuzzyMethodContract.newBuilder().
+							parameterExactType(getMinecraftServerClass()).
+							parameterCount(1)).
+					method(FuzzyMethodContract.newBuilder().
+							parameterExactType(getNetServerHandlerClass())).
+					build();
+			
+			Method selected = FuzzyReflection.fromClass(getMinecraftServerClass()).
+								getMethod(FuzzyMethodContract.newBuilder().
+										requireModifier(Modifier.ABSTRACT).
+										returnTypeMatches(serverConnectionContract).
+								build());
+			
+			// Use the return type
+			return setMinecraftClass("ServerConnection", selected.getReturnType());
+		}
 	}
 	
 	/**
@@ -453,7 +733,95 @@ public class MinecraftReflection {
 	 * @return The NBT base class.
 	 */
 	public static Class<?> getNBTBaseClass() {
-		return getMinecraftClass("NBTBase");
+		try {
+			return getMinecraftClass("NBTBase");
+		} catch (RuntimeException e) {
+			FuzzyClassContract tagCompoundContract = FuzzyClassContract.newBuilder().
+					constructor(FuzzyMethodContract.newBuilder().
+								  parameterExactType(String.class).
+								  parameterCount(1)).
+					field(FuzzyFieldContract.newBuilder().
+							typeDerivedOf(Map.class)).
+			build();
+			
+			Method selected = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
+					getMethod(FuzzyMethodContract.newBuilder().
+								requireModifier(Modifier.STATIC).
+								parameterSuperOf(DataInputStream.class).
+								parameterCount(1).
+								returnTypeMatches(tagCompoundContract).
+								build()					
+							 );
+			
+			// Use the return type here too
+			return setMinecraftClass("NBTBase", selected.getReturnType());
+		}
+ 	}
+
+	/**
+	 * Retrieve the EntityTracker (NMS) class.
+	 * @return EntityTracker class.
+	 */
+	public static Class<?> getEntityTrackerClass() {
+		try {
+			return getMinecraftClass("EntityTracker");
+		} catch (RuntimeException e) {
+			FuzzyClassContract entityTrackerContract = FuzzyClassContract.newBuilder().
+					field(FuzzyFieldContract.newBuilder().
+						  typeDerivedOf(Set.class)).
+				    method(FuzzyMethodContract.newBuilder().
+				    	  parameterSuperOf(MinecraftReflection.getEntityClass()).
+				    	  parameterCount(1).
+				    	  returnTypeVoid()).
+				    method(FuzzyMethodContract.newBuilder().
+						  parameterSuperOf(MinecraftReflection.getEntityClass(), 0).
+						  parameterSuperOf(int.class, 1).
+						  parameterSuperOf(int.class, 2).
+						  parameterCount(3).
+						  returnTypeVoid()).
+			build();
+			
+			Field selected = FuzzyReflection.fromClass(MinecraftReflection.getWorldServerClass(), true).
+					getField(FuzzyFieldContract.newBuilder().
+							   typeMatches(entityTrackerContract).
+							   build()					
+					);
+			
+			// Go by the defined type of this field
+			return setMinecraftClass("EntityTracker", selected.getType());
+		}
+	}
+	
+	/**
+	 * Retrieve the NetworkListenThread class (NMS).
+	 * <p>
+	 * Note that this class was removed after Minecraft 1.3.1.
+	 * @return NetworkListenThread class.
+	 */
+	public static Class<?> getNetworkListenThreadClass() {
+		try {
+			return getMinecraftClass("NetworkListenThread");
+		} catch (RuntimeException e) {
+			FuzzyClassContract networkListenContract = FuzzyClassContract.newBuilder().
+					field(FuzzyFieldContract.newBuilder().
+						  typeDerivedOf(ServerSocket.class)).
+					field(FuzzyFieldContract.newBuilder().
+						  typeDerivedOf(Thread.class)).
+					field(FuzzyFieldContract.newBuilder().
+						  typeDerivedOf(List.class)).
+					method(FuzzyMethodContract.newBuilder().
+						  parameterExactType(getNetServerHandlerClass())).
+			build();
+			
+			Field selected = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftServerClass(), true).
+					getField(FuzzyFieldContract.newBuilder().
+							   typeMatches(networkListenContract).
+							   build()					
+					);
+			
+			// Go by the defined type of this field
+			return setMinecraftClass("NetworkListenThread", selected.getType());
+		}
 	}
 	
 	/**
@@ -617,6 +985,19 @@ public class MinecraftReflection {
 		if (minecraftPackage == null)
 			minecraftPackage = new CachedPackage(getMinecraftPackage());
 		return minecraftPackage.getPackageClass(className);
+	}
+	
+	/**
+	 * Set the class object for the specific Minecraft class.
+	 * @param className - name of the Minecraft class.
+	 * @param clazz - the new class object.
+	 * @return The provided clazz object.
+	 */
+	private static Class<?> setMinecraftClass(String className, Class<?> clazz) {
+		if (minecraftPackage == null)
+			minecraftPackage = new CachedPackage(getMinecraftPackage());
+		minecraftPackage.setPackageClass(className, clazz);
+		return clazz;
 	}
 	
 	/**

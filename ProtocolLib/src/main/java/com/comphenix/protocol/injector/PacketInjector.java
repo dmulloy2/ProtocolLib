@@ -93,7 +93,7 @@ class PacketInjector {
 		if (intHashMap == null) {
 			// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
 			Field intHashMapField = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).
-					getFieldByType(MinecraftReflection.getMinecraftObjectMatcher());
+					getFieldByType(MinecraftReflection.getMinecraftObjectRegex());
 			
 			try {
 				intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);

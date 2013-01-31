@@ -1,10 +1,10 @@
 package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Member;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -108,32 +108,6 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 	}
 	
 	/**
-	 * Match the parent class of a method, field or constructor.
-	 * @return Parent matcher.
-	 */
-	public static AbstractFuzzyMatcher<Class<?>> matchParent() {
-		return new AbstractFuzzyMatcher<Class<?>>() {
-			@Override
-			public boolean isMatch(Class<?> value, Object parent) {
-				if (parent instanceof Member) {
-					return ((Member) parent).getDeclaringClass().equals(value);
-				} else if (parent instanceof Class) {
-					return parent.equals(value);
-				} else {
-					// Can't be a match
-					return false;
-				}
-			}
-			
-			@Override
-			protected int calculateRoundNumber() {
-				// We match a very specific type
-				return -100;
-			}
-		};
-	}
-	
-	/**
 	 * Constructs a new fuzzy class contract with the given contracts.
 	 * @param fieldContracts - field contracts.
 	 * @param methodContracts - method contracts.
@@ -197,7 +171,7 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 
 	@Override
 	public boolean isMatch(Class<?> value, Object parent) {
-		FuzzyReflection reflection = FuzzyReflection.fromClass(value);
+		FuzzyReflection reflection = FuzzyReflection.fromClass(value, true);
 		
 		// Make sure all the contracts are valid
 		return processContracts(reflection.getFields(), value, fieldContracts) &&
