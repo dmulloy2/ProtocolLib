@@ -86,8 +86,17 @@ public class DefaultInstances implements InstanceProvider {
 	 * @param instaceProviders - array of instance providers.
 	 * @return An default instance generator.
 	 */
-	public static DefaultInstances fromArray(InstanceProvider... instaceProviders) {
-		return new DefaultInstances(ImmutableList.copyOf(instaceProviders));
+	public static DefaultInstances fromArray(InstanceProvider... instanceProviders) {
+		return new DefaultInstances(ImmutableList.copyOf(instanceProviders));
+	}
+	
+	/**
+	 * Construct a default instance generator using the given instance providers.
+	 * @param instaceProviders - collection of instance providers.
+	 * @return An default instance generator.
+	 */
+	public static DefaultInstances fromCollection(Collection<InstanceProvider> instanceProviders) {
+		return new DefaultInstances(ImmutableList.copyOf(instanceProviders));
 	}
 	
 	/**
@@ -241,11 +250,15 @@ public class DefaultInstances implements InstanceProvider {
 	private <T> T getDefaultInternal(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
 			
 		// The instance providiers should protect themselves against recursion
-		for (InstanceProvider generator : providers) {
-			Object value = generator.create(type);
-			
-			if (value != null)
-				return (T) value;
+		try {
+			for (InstanceProvider generator : providers) {
+				Object value = generator.create(type);
+				
+				if (value != null)
+					return (T) value;
+			}
+		} catch (NotConstructableException e) {
+			return null;
 		}
 
 		// Guard against recursion
@@ -276,7 +289,7 @@ public class DefaultInstances implements InstanceProvider {
 			}
 			
 		} catch (Exception e) {
-			// Nope, we couldn't create this type
+			// Nope, we couldn't create this type. Might for instance be NotConstructableException.
 		}
 		
 		// No suitable default value could be found

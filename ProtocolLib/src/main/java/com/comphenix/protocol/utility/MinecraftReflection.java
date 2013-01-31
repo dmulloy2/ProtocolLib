@@ -25,6 +25,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.ServerSocket;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -584,6 +585,36 @@ public class MinecraftReflection {
 			// Use the handle reference
 			return setMinecraftClass("ItemStack", 
 					FuzzyReflection.fromClass(getCraftItemStackClass(), true).getFieldByName("handle").getType());
+		}
+	}
+	
+	/**
+	 * Retrieve the Block (NMS) class.
+	 * @return Block (NMS) class.
+	 */
+	public static Class<?> getBlockClass() {
+		try {
+			return getMinecraftClass("Block");
+		} catch (RuntimeException e) {
+			FuzzyReflection reflect = FuzzyReflection.fromClass(getItemStackClass());
+			Set<Class<?>> candidates = new HashSet<Class<?>>();
+			
+			// Minecraft objects in the constructor
+			for (Constructor<?> constructor : reflect.getConstructors()) {
+				for (Class<?> clazz : constructor.getParameterTypes()) {
+					if (isMinecraftClass(clazz)) {
+						candidates.add(clazz);
+					}
+				}
+			}
+			
+			// Useful constructors
+			Method selected = 
+						reflect.getMethod(FuzzyMethodContract.newBuilder().
+							parameterMatches(FuzzyMatchers.matchAnyOf(candidates)).
+							returnTypeExact(float.class).
+						build());
+			return setMinecraftClass("Block", selected.getParameterTypes()[0]);
 		}
 	}
 		

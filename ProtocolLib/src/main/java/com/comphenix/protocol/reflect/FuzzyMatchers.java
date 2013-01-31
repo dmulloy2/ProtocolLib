@@ -1,7 +1,10 @@
 package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Member;
+import java.util.Set;
 import java.util.regex.Pattern;
+
+import com.google.common.collect.Sets;
 
 /**
  * Contains factory methods for matching classes.
@@ -16,9 +19,44 @@ public class FuzzyMatchers {
 	/**
 	 * Construct a class matcher that matches types exactly.
 	 * @param matcher - the matching class.
+	 * @return A new class mathcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchExact(Class<?> matcher) {
 		return new ExactClassMatcher(matcher, ExactClassMatcher.Options.MATCH_EXACT);
+	}
+	
+	/**
+	 * Construct a class matcher that matches any of the given classes exactly.
+	 * @param classes - list of classes to match.
+	 * @return A new class mathcher.
+	 */
+	public static AbstractFuzzyMatcher<Class<?>> matchAnyOf(Class<?>... classes) {
+		return matchAnyOf(Sets.newHashSet(classes));
+	}
+	
+	/**
+	 * Construct a class matcher that matches any of the given classes exactly.
+	 * @param classes - set of classes to match.
+	 * @return A new class mathcher.
+	 */
+	public static AbstractFuzzyMatcher<Class<?>> matchAnyOf(final Set<Class<?>> classes) {
+		return new AbstractFuzzyMatcher<Class<?>>() {
+			@Override
+			public boolean isMatch(Class<?> value, Object parent) {
+				return classes.contains(value);
+			}
+			
+			@Override
+			protected int calculateRoundNumber() {
+				int roundNumber = 0;
+				
+				// The highest round number (except zero).
+				for (Class<?> clazz : classes) {
+					roundNumber = combineRounds(roundNumber, -ExactClassMatcher.getClassNumber(clazz));
+				}
+				return roundNumber;
+			}
+		};
 	}
 
 	/**
@@ -38,7 +76,7 @@ public class FuzzyMatchers {
 	public static AbstractFuzzyMatcher<Class<?>> matchDerived(Class<?> matcher) {
 		return new ExactClassMatcher(matcher, ExactClassMatcher.Options.MATCH_DERIVED);
 	}
-
+	
 	/**
 	 * Construct a class matcher based on the canonical names of classes.
 	 * @param regex - regular expression pattern matching class names.
