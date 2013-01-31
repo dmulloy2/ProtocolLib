@@ -175,7 +175,7 @@ class CommandPacket extends CommandBase {
 		try {
 			chatter.broadcastMessageSilently(message, permission);
 		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, "Cannot send chat message.", e, message, message);
+			reporter.reportDetailed(this, "Cannot send chat message.", e, message, permission);
 		}
 	}
 	

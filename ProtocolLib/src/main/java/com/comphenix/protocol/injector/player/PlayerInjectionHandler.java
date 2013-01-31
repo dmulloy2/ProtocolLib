@@ -38,6 +38,8 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 
@@ -483,13 +485,14 @@ public class PlayerInjectionHandler {
 		PlayerInjector injector = getInjector(reciever);
 		
 		// Send the packet, or drop it completely
-		if (injector != null)
+		if (injector != null) {
 			injector.sendServerPacket(packet.getHandle(), filters);
-		else
+		} else {
 			throw new PlayerLoggedOutException(String.format(
 					"Unable to send packet %s (%s): Player %s has logged out.", 
 					packet.getID(), packet, reciever.getName()
 			));
+		}
 	}
 	
 	/**
@@ -519,7 +522,32 @@ public class PlayerInjectionHandler {
 	 * @return The injector, or NULL if not found.
 	 */
 	private PlayerInjector getInjector(Player player) {
-		return playerInjection.get(player);
+		PlayerInjector injector = playerInjection.get(player);
+		
+		if (injector == null) {
+			// Try getting it from the player itself
+			if (player instanceof InjectContainer)
+				return ((InjectContainer) player).getInjector();
+			else
+				return searchAddressLookup(player);
+		} else {
+			return injector;
+		}
+	}
+	
+	/**
+	 * Find an injector by looking through the address map.
+	 * @param player - player to find.
+	 * @return The injector, or NULL if not found.
+	 */
+	private PlayerInjector searchAddressLookup(Player player) {
+		// See if we can find it anywhere
+		for (PlayerInjector injector : addressLookup.values()) {
+			if (player.equals(injector.getUpdatedPlayer())) {
+				return injector;
+			}
+		}
+		return null;
 	}
 	
 	/**

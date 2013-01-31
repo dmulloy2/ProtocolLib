@@ -316,6 +316,15 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Determine if the given object is a CraftPlayer class.
+	 * @param value - the given object.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public static boolean isCraftPlayer(Object value) {
+		return getCraftPlayerClass().isAssignableFrom(value.getClass());
+	}
+	
+	/**
 	 * Determine if the given object is a Minecraft player entity.
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
@@ -881,6 +890,14 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getCraftItemStackClass() {
 		return getCraftBukkitClass("inventory.CraftItemStack");
+	}
+	
+	/**
+	 * Retrieve the CraftPlayer class.
+	 * @return CraftPlayer class.
+	 */
+	public static Class<?> getCraftPlayerClass() { 
+		return getCraftBukkitClass("entity.CraftPlayer");
 	}
 		
 	/**

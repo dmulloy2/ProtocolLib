@@ -150,12 +150,12 @@ public class NetworkServerInjector extends PlayerInjector {
 
 	@Override
 	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
-		Object serverDeleage = filtered ? serverHandlerRef.getValue() : serverHandlerRef.getOldValue();
+		Object serverDelegate = filtered ? serverHandlerRef.getValue() : serverHandlerRef.getOldValue();
 		
-		if (serverDeleage != null) {
+		if (serverDelegate != null) {
 			try {
 				// Note that invocation target exception is a wrapper for a checked exception
-				sendPacketMethod.invoke(serverDeleage, packet);
+				sendPacketMethod.invoke(serverDelegate, packet);
 				
 			} catch (IllegalArgumentException e) {
 				throw e;

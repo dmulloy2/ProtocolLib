@@ -22,6 +22,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 
@@ -64,7 +66,8 @@ class InjectedArrayList extends ArrayList<Object> {
 		if (packet instanceof FakePacket) {
 			return true;
 		} else if (ignoredPackets.contains(packet)) {
-			ignoredPackets.remove(packet);
+			// Don't send it to the filters
+			result = ignoredPackets.remove(packet);
 		} else {
 			result = injector.handlePacketSending(packet);
 		}
@@ -82,7 +85,18 @@ class InjectedArrayList extends ArrayList<Object> {
 			return true;
 			
 		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Reverting cancelled packet failed.", e.getTargetException());
+			ErrorReporter reporter = ProtocolLibrary.getErrorReporter();
+			
+			// Prefer to report this to the user, instead of risking sending it to Minecraft
+			if (reporter != null) {
+				reporter.reportDetailed(this, "Reverting cancelled packet failed.", e, packet);
+			} else {
+				System.out.println("[ProtocolLib] Reverting cancelled packet failed.");
+				e.printStackTrace();
+			}
+			
+			// Failure
+			return false;
 		}
 	}
 	
