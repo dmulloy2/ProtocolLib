@@ -74,6 +74,9 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 					maximumSize(maximumSize).
 					<PacketEventHolder>create(), null);
 		} catch (IncompatibleClassChangeError e) {
+			System.out.println("[ProtocolLib] Guava is either missing or corrupt. Reverting to PriorityQueue.");
+			e.printStackTrace();
+			
 			// It's a Beta class after all
 			this.processingQueue = Synchronization.queue(
 					new PriorityQueue<PacketEventHolder>(), null);
