@@ -1,9 +1,12 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
 import java.lang.reflect.Member;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents a matcher that matches members.
@@ -201,12 +204,17 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		int mods = value.getModifiers();
 		
 		// Match accessibility and name
-		return (mods & modifiersRequired) != 0 &&
+		return (mods & modifiersRequired) == modifiersRequired &&
 			   (mods & modifiersBanned) == 0 &&
 			   declaringMatcher.isMatch(value.getDeclaringClass(), value) &&
 			   isNameMatch(value.getName());
 	}
 	
+	/**
+	 * Determine if a given name matches the current member matcher.
+	 * @param name - the name to match.
+	 * @return TRUE if the name matches, FALSE otherwise.
+	 */
 	private boolean isNameMatch(String name) {
 		if (nameRegex == null)
 			return true;
@@ -222,5 +230,45 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		
 		// NULL is zero
 		return declaringMatcher.getRoundNumber();
+	}
+	
+	@Override
+	public String toString() {
+		return getKeyValueView().toString();
+	}
+	
+	/**
+	 * Generate a view of this matcher as a key-value map.
+	 * <p>
+	 * Used by {@link #toString()} to print a representation of this object.
+	 * @return A modifiable key-value view.
+	 */
+	protected Map<String, Object> getKeyValueView() {
+		Map<String, Object> map = Maps.newLinkedHashMap();
+		
+		// Build our representation
+		if (modifiersRequired != Integer.MAX_VALUE || modifiersBanned != 0) {
+			map.put("modifiers", String.format("[required: %s, banned: %s]", 
+				   getBitView(modifiersRequired, 16),
+				   getBitView(modifiersBanned, 16))
+			);
+		}
+		if (nameRegex != null) {
+			map.put("name", nameRegex.pattern());
+		}
+		if (declaringMatcher != ExactClassMatcher.MATCH_ALL) {
+			map.put("declaring", declaringMatcher);
+		}
+		
+		return map;
+	}
+	
+	private static String getBitView(int value, int bits) {
+		if (bits < 0 || bits > 31)
+			throw new IllegalArgumentException("Bits must be a value between 0 and 32");
+		
+		// Extract our needed bits
+		int snipped = value & ((1 << bits) - 1);
+		return Integer.toBinaryString(snipped);
 	}
 }

@@ -4,6 +4,7 @@ import java.lang.reflect.Member;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 /**
@@ -56,6 +57,11 @@ public class FuzzyMatchers {
 				}
 				return roundNumber;
 			}
+			
+			@Override
+			public String toString() {
+				return String.format("match any: %s", Joiner.on(",").join(classes));
+			}
 		};
 	}
 
@@ -97,6 +103,11 @@ public class FuzzyMatchers {
 			protected int calculateRoundNumber() {
 				return -priority;
 			}
+			
+			@Override
+			public String toString() {
+				return "class name of " + regex.toString();
+			}
 		};
 	}
 	
@@ -132,6 +143,11 @@ public class FuzzyMatchers {
 			protected int calculateRoundNumber() {
 				// We match a very specific type
 				return -100;
+			}
+			
+			@Override
+			public String toString() {
+				return "match parent class";
 			}
 		};
 	}

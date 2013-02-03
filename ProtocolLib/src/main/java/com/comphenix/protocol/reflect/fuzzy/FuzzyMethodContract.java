@@ -2,6 +2,7 @@ package com.comphenix.protocol.reflect.fuzzy;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
@@ -492,5 +493,25 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 		}
 		
 		return combineRounds(super.calculateRoundNumber(), current);
+	}
+	
+	@Override
+	protected Map<String, Object> getKeyValueView() {
+		Map<String, Object> member = super.getKeyValueView();
+		
+		// Only add fields that are actual contraints
+		if (returnMatcher != ExactClassMatcher.MATCH_ALL) {
+			member.put("return", returnMatcher);
+		}
+		if (paramMatchers.size() > 0) {
+			member.put("params", paramMatchers);
+		}
+		if (exceptionMatchers.size() > 0) {
+			member.put("exceptions", exceptionMatchers);
+		}
+		if (paramCount != null) {
+			member.put("paramCount", paramCount);
+		}
+		return member;
 	}
 }

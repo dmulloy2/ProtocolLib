@@ -39,7 +39,6 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
-import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 

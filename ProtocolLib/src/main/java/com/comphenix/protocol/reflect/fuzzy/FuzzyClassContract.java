@@ -4,11 +4,14 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * Determine if a given class implements a given fuzzy (duck typed) contract.
@@ -217,5 +220,21 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 		
 		// Failure
 		return -1;
+	}
+	
+	@Override
+	public String toString() {
+		Map<String, Object> params = Maps.newLinkedHashMap();
+		
+		if (fieldContracts.size() > 0) {
+			params.put("fields", fieldContracts);
+		}
+		if (methodContracts.size() > 0) {
+			params.put("methods", methodContracts);
+		}
+		if (constructorContracts.size() > 0) {
+			params.put("constructors", constructorContracts);
+		}
+		return "{\n  " + Joiner.on(", \n  ").join(params.entrySet()) + "\n}";
 	}
 }

@@ -1,6 +1,7 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
@@ -149,5 +150,15 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 		// Combine the two
 		return combineRounds(super.calculateRoundNumber(), 
 							 typeMatcher.calculateRoundNumber());
+	}
+	
+	@Override
+	protected Map<String, Object> getKeyValueView() {
+		Map<String, Object> member = super.getKeyValueView();
+		
+		if (typeMatcher != ExactClassMatcher.MATCH_ALL) {
+			member.put("type", typeMatcher);
+		}
+		return member;
 	}
 }
