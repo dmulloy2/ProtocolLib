@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.packet;
 
 import java.io.DataInputStream;
 import java.lang.reflect.Method;

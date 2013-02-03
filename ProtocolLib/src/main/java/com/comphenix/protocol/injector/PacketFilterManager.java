@@ -51,6 +51,8 @@ import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -184,8 +186,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			
 			// Attempt to load the list of server and client packets
 			try {
-				this.serverPackets = MinecraftRegistry.getServerPackets();
-				this.clientPackets = MinecraftRegistry.getClientPackets();
+				this.serverPackets = PacketRegistry.getServerPackets();
+				this.clientPackets = PacketRegistry.getClientPackets();
 			} catch (FieldAccessException e) {
 				reporter.reportWarning(this, "Cannot load server and client packet list.", e);
 			}
@@ -692,22 +694,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (!MinecraftReflection.isPacketClass(packet))
 			throw new IllegalArgumentException("The given object " + packet + " is not a packet.");
 		
-		return MinecraftRegistry.getPacketToID().get(packet.getClass());
+		return PacketRegistry.getPacketToID().get(packet.getClass());
 	}
 	
 	@Override
 	public void registerPacketClass(Class<?> clazz, int packetID) {
-		MinecraftRegistry.getPacketToID().put(clazz, packetID);
+		PacketRegistry.getPacketToID().put(clazz, packetID);
 	}
 	
 	@Override
 	public void unregisterPacketClass(Class<?> clazz) {
-		MinecraftRegistry.getPacketToID().remove(clazz);
+		PacketRegistry.getPacketToID().remove(clazz);
 	}
 
 	@Override
 	public Class<?> getPacketClassFromID(int packetID, boolean forceVanilla) {
-		return MinecraftRegistry.getPacketClassFromID(packetID, forceVanilla);
+		return PacketRegistry.getPacketClassFromID(packetID, forceVanilla);
 	}
 	
 	// Yes, this is crazy.
@@ -823,7 +825,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
 	 */
 	public static Set<Integer> getServerPackets() throws FieldAccessException {
-		return MinecraftRegistry.getServerPackets();
+		return PacketRegistry.getServerPackets();
 	}
 	
 	/**
@@ -832,7 +834,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
 	 */
 	public static Set<Integer> getClientPackets() throws FieldAccessException {
-		return MinecraftRegistry.getClientPackets();
+		return PacketRegistry.getClientPackets();
 	}
 	
 	/**

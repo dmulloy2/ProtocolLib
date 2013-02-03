@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.compiler.CompileListener;
@@ -46,7 +47,7 @@ public class StructureCache {
 	 */
 	public static Object newPacket(int id) {
 		try {
-			return MinecraftRegistry.getPacketClassFromID(id, true).newInstance();
+			return PacketRegistry.getPacketClassFromID(id, true).newInstance();
 		} catch (InstantiationException e) {
 			return null;
 		} catch (IllegalAccessException e) {
@@ -82,7 +83,7 @@ public class StructureCache {
 	 */
 	public static StructureModifier<Object> getStructure(Class<?> packetType, boolean compile) {
 		// Get the ID from the class
-		return getStructure(MinecraftRegistry.getPacketID(packetType), compile);
+		return getStructure(PacketRegistry.getPacketID(packetType), compile);
 	}
 	
 	/**
@@ -99,7 +100,7 @@ public class StructureCache {
 		if (result == null) {
 			// Use the vanilla class definition
 			final StructureModifier<Object> value = new StructureModifier<Object>(
-					MinecraftRegistry.getPacketClassFromID(id, true), MinecraftReflection.getPacketClass(), true);
+					PacketRegistry.getPacketClassFromID(id, true), MinecraftReflection.getPacketClass(), true);
 			
 			result = structureModifiers.putIfAbsent(id, value);
 			
