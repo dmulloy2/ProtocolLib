@@ -128,7 +128,7 @@ class PacketInjector {
 			throw new IllegalStateException("Packet ID " + packetID + " is not a valid packet ID in this version.");
 		}
 		// Check for previous injections
-		if (!old.getName().startsWith("net.minecraft.")) {
+		if (!MinecraftReflection.isMinecraftClass(old)) {
 			throw new IllegalStateException("Packet " + packetID + " has already been injected.");
 		}
 		
@@ -202,7 +202,7 @@ class PacketInjector {
 	}
 	
 	// Called from the ReadPacketModified monitor
-	PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
+	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
 		try {
 			Player client = playerInjection.getPlayerByConnection(input);
 			
@@ -226,7 +226,6 @@ class PacketInjector {
 	 * @return The resulting packet event.
 	 */
 	public PacketEvent packetRecieved(PacketContainer packet, Player client) {
-	
 		PacketEvent event = PacketEvent.fromClient((Object) manager, packet, client);
 		
 		manager.invokePacketRecieving(event);
