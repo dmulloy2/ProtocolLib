@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang.NotImplementedException;
 
 import com.comphenix.protocol.reflect.MethodInfo;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -79,7 +80,7 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 	}
 	
 	// Match return value
-	private AbstractFuzzyMatcher<Class<?>> returnMatcher = ExactClassMatcher.MATCH_ALL;
+	private AbstractFuzzyMatcher<Class<?>> returnMatcher = ClassExactMatcher.MATCH_ALL;
 	
 	// Handle parameters and exceptions
 	private List<ParameterClassMatcher> paramMatchers;
@@ -500,7 +501,7 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 		Map<String, Object> member = super.getKeyValueView();
 		
 		// Only add fields that are actual contraints
-		if (returnMatcher != ExactClassMatcher.MATCH_ALL) {
+		if (returnMatcher != ClassExactMatcher.MATCH_ALL) {
 			member.put("return", returnMatcher);
 		}
 		if (paramMatchers.size() > 0) {
@@ -513,5 +514,26 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 			member.put("paramCount", paramCount);
 		}
 		return member;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(returnMatcher, paramMatchers, exceptionMatchers, paramCount, super.hashCode());
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		// Use the member equals method
+		if (this == obj) {
+			return true;
+		} else if (obj instanceof FuzzyMethodContract && super.equals(obj)) {
+			FuzzyMethodContract other = (FuzzyMethodContract) obj;
+			
+			return Objects.equal(paramCount, other.paramCount) && 
+				   Objects.equal(returnMatcher, other.returnMatcher) &&
+				   Objects.equal(paramMatchers, other.paramMatchers) &&
+				   Objects.equal(exceptionMatchers, other.exceptionMatchers);
+		}
+		return true;
 	}
 }

@@ -6,13 +6,15 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
+import com.google.common.base.Objects;
+
 /**
  * Represents a field matcher.
  * 
  * @author Kristian
  */
 public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
-	private AbstractFuzzyMatcher<Class<?>> typeMatcher = ExactClassMatcher.MATCH_ALL;
+	private AbstractFuzzyMatcher<Class<?>> typeMatcher = ClassExactMatcher.MATCH_ALL;
 	
 	/**
 	 * Represents a builder for a field matcher.
@@ -156,9 +158,25 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 	protected Map<String, Object> getKeyValueView() {
 		Map<String, Object> member = super.getKeyValueView();
 		
-		if (typeMatcher != ExactClassMatcher.MATCH_ALL) {
+		if (typeMatcher != ClassExactMatcher.MATCH_ALL) {
 			member.put("type", typeMatcher);
 		}
 		return member;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(typeMatcher, super.hashCode());
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		// Use the member equals method
+		if (this == obj) {
+			return true;
+		} else if (obj instanceof FuzzyFieldContract && super.equals(obj)) {
+			return Objects.equal(typeMatcher, ((FuzzyFieldContract) obj).typeMatcher);
+		}
+		return true;
 	}
 }

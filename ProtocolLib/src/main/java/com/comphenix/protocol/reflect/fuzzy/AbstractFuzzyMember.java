@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 
 /**
@@ -20,7 +21,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	protected int modifiersBanned;
 	
 	protected Pattern nameRegex;
-	protected AbstractFuzzyMatcher<Class<?>> declaringMatcher = ExactClassMatcher.MATCH_ALL;
+	protected AbstractFuzzyMatcher<Class<?>> declaringMatcher = ClassExactMatcher.MATCH_ALL;
 	
 	/**
 	 * Whether or not this contract can be modified.
@@ -256,7 +257,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		if (nameRegex != null) {
 			map.put("name", nameRegex.pattern());
 		}
-		if (declaringMatcher != ExactClassMatcher.MATCH_ALL) {
+		if (declaringMatcher != ClassExactMatcher.MATCH_ALL) {
 			map.put("declaring", declaringMatcher);
 		}
 		
@@ -270,5 +271,28 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		// Extract our needed bits
 		int snipped = value & ((1 << bits) - 1);
 		return Integer.toBinaryString(snipped);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		// Immutablity is awesome
+		if (this == obj) {
+			return true;
+		} else if (obj instanceof AbstractFuzzyMember) {
+			@SuppressWarnings("unchecked")
+			AbstractFuzzyMember<T> other = (AbstractFuzzyMember<T>) obj;
+			
+			return modifiersBanned == other.modifiersBanned &&
+				   modifiersRequired == other.modifiersRequired &&
+				   FuzzyMatchers.checkPattern(nameRegex, other.nameRegex) &&
+				   Objects.equal(declaringMatcher, other.declaringMatcher);
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(modifiersBanned, modifiersRequired, 
+					nameRegex != null ? nameRegex.pattern() : null, declaringMatcher);
 	}
 }

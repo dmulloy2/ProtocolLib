@@ -1,11 +1,13 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
+import com.google.common.base.Objects;
+
 /**
  * Used to check class equality.
  * 
  * @author Kristian
  */
-class ExactClassMatcher extends AbstractFuzzyMatcher<Class<?>> {
+class ClassExactMatcher extends AbstractFuzzyMatcher<Class<?>> {
 	/**
 	 * Different matching rules.
 	 */
@@ -29,7 +31,7 @@ class ExactClassMatcher extends AbstractFuzzyMatcher<Class<?>> {
 	/**
 	 * Match any class.
 	 */
-	public static final ExactClassMatcher MATCH_ALL = new ExactClassMatcher(null, Options.MATCH_SUPER);
+	public static final ClassExactMatcher MATCH_ALL = new ClassExactMatcher(null, Options.MATCH_SUPER);
 	
 	private final Class<?> matcher;
 	private final Options option;
@@ -39,7 +41,7 @@ class ExactClassMatcher extends AbstractFuzzyMatcher<Class<?>> {
 	 * @param matcher - the matching class, or NULL to represent anything. 
 	 * @param option - options specifying the matching rules.
 	 */
-	ExactClassMatcher(Class<?> matcher, Options option) {
+	ClassExactMatcher(Class<?> matcher, Options option) {
 		this.matcher = matcher;
 		this.option = option;
 	}
@@ -115,5 +117,23 @@ class ExactClassMatcher extends AbstractFuzzyMatcher<Class<?>> {
 			return "input instanceof " + matcher;
 		else
 			return "Exact " + matcher;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(matcher, option);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		} else if (obj instanceof ClassExactMatcher) {
+			ClassExactMatcher other = (ClassExactMatcher) obj;
+			
+			return Objects.equal(matcher, other.matcher) && 
+					Objects.equal(option, other.option);
+		}
+		return false;
 	}
 }

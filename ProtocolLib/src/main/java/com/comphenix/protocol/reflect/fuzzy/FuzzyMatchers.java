@@ -4,7 +4,6 @@ import java.lang.reflect.Member;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 /**
@@ -23,7 +22,7 @@ public class FuzzyMatchers {
 	 * @return A new class mathcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchExact(Class<?> matcher) {
-		return new ExactClassMatcher(matcher, ExactClassMatcher.Options.MATCH_EXACT);
+		return new ClassExactMatcher(matcher, ClassExactMatcher.Options.MATCH_EXACT);
 	}
 	
 	/**
@@ -40,29 +39,8 @@ public class FuzzyMatchers {
 	 * @param classes - set of classes to match.
 	 * @return A new class mathcher.
 	 */
-	public static AbstractFuzzyMatcher<Class<?>> matchAnyOf(final Set<Class<?>> classes) {
-		return new AbstractFuzzyMatcher<Class<?>>() {
-			@Override
-			public boolean isMatch(Class<?> value, Object parent) {
-				return classes.contains(value);
-			}
-			
-			@Override
-			protected int calculateRoundNumber() {
-				int roundNumber = 0;
-				
-				// The highest round number (except zero).
-				for (Class<?> clazz : classes) {
-					roundNumber = combineRounds(roundNumber, -ExactClassMatcher.getClassNumber(clazz));
-				}
-				return roundNumber;
-			}
-			
-			@Override
-			public String toString() {
-				return String.format("match any: %s", Joiner.on(",").join(classes));
-			}
-		};
+	public static AbstractFuzzyMatcher<Class<?>> matchAnyOf(Set<Class<?>> classes) {
+		return new ClassSetMatcher(classes);
 	}
 
 	/**
@@ -71,7 +49,7 @@ public class FuzzyMatchers {
 	 * @return A new class mathcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchSuper(Class<?> matcher) {
-		return new ExactClassMatcher(matcher, ExactClassMatcher.Options.MATCH_SUPER);
+		return new ClassExactMatcher(matcher, ClassExactMatcher.Options.MATCH_SUPER);
 	}
 
 	/**
@@ -80,7 +58,7 @@ public class FuzzyMatchers {
 	 * @return A new class mathcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchDerived(Class<?> matcher) {
-		return new ExactClassMatcher(matcher, ExactClassMatcher.Options.MATCH_DERIVED);
+		return new ClassExactMatcher(matcher, ClassExactMatcher.Options.MATCH_DERIVED);
 	}
 	
 	/**
@@ -90,25 +68,7 @@ public class FuzzyMatchers {
 	 * @return A fuzzy class matcher based on name.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchRegex(final Pattern regex, final int priority) {
-		return new AbstractFuzzyMatcher<Class<?>>() {
-			@Override
-			public boolean isMatch(Class<?> value, Object parent) {
-				if (value != null)
-					return regex.matcher(value.getCanonicalName()).matches();
-				else
-					return false;
-			}
-			
-			@Override
-			protected int calculateRoundNumber() {
-				return -priority;
-			}
-			
-			@Override
-			public String toString() {
-				return "class name of " + regex.toString();
-			}
-		};
+		return new ClassRegexMatcher(regex, priority);
 	}
 	
 	/**
@@ -149,6 +109,34 @@ public class FuzzyMatchers {
 			public String toString() {
 				return "match parent class";
 			}
+			
+			@Override
+			public int hashCode() {
+				return 0;
+			}
+			
+			@Override
+			public boolean equals(Object obj) {
+				// If they're the same type, then yes
+				return obj != null && obj.getClass() == this.getClass();
+			}
 		};
+	}
+	
+	/**
+	 * Determine if two patterns are the same. 
+	 * <p>
+	 * Note that two patterns may be functionally the same, but nevertheless be different.
+	 * @param a - the first pattern.
+	 * @param b - the second pattern.
+	 * @return TRUE if they are compiled from the same pattern, FALSE otherwise.
+	 */
+	static boolean checkPattern(Pattern a, Pattern b) {
+		if (a == null)
+			return b == null;
+		else if (b == null)
+			return false;
+		else
+			return a.pattern().equals(b.pattern());
 	}
 }
