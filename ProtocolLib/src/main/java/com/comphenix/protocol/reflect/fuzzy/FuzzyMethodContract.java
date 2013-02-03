@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang.NotImplementedException;
 
 import com.comphenix.protocol.reflect.MethodInfo;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 /**
@@ -80,8 +81,8 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 	private AbstractFuzzyMatcher<Class<?>> returnMatcher = ExactClassMatcher.MATCH_ALL;
 	
 	// Handle parameters and exceptions
-	private List<ParameterClassMatcher> paramMatchers = Lists.newArrayList();
-	private List<ParameterClassMatcher> exceptionMatchers = Lists.newArrayList();
+	private List<ParameterClassMatcher> paramMatchers;
+	private List<ParameterClassMatcher> exceptionMatchers;
 	
 	// Expected parameter count
 	private Integer paramCount;
@@ -326,13 +327,14 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 		@Override
 		@Nonnull
 		protected FuzzyMethodContract initialMember() {
+			// With mutable lists
 			return new FuzzyMethodContract();
 		}
 
 		@Override
 		public FuzzyMethodContract build() {
 			member.prepareBuild();
-			return new FuzzyMethodContract(member);
+			return immutableCopy(member);
 		}
 	}
 	
@@ -346,8 +348,10 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 	
 	private FuzzyMethodContract() {
 		// Only allow construction from the builder
+		paramMatchers = Lists.newArrayList();
+		exceptionMatchers = Lists.newArrayList();
 	}
-
+	
 	private FuzzyMethodContract(FuzzyMethodContract other) {
 		super(other);
 		this.returnMatcher = other.returnMatcher;
@@ -356,6 +360,58 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 		this.paramCount = other.paramCount;
 	}
 	
+	/**
+	 * Construct a new immutable copy of the given method contract.
+	 * @param other - the contract to clone.
+	 * @return A immutable copy of the given contract.
+	 */
+	private static FuzzyMethodContract immutableCopy(FuzzyMethodContract other) {
+		FuzzyMethodContract copy = new FuzzyMethodContract(other);
+	
+		// Ensure that the lists are immutable
+		copy.paramMatchers = ImmutableList.copyOf(copy.paramMatchers);
+		copy.exceptionMatchers = ImmutableList.copyOf(copy.exceptionMatchers);
+		return copy;
+	}
+
+	/**
+	 * Retrieve the class matcher for the return type.
+	 * @return Class matcher for the return type.
+	 */
+	public AbstractFuzzyMatcher<Class<?>> getReturnMatcher() {
+		return returnMatcher;
+	}
+
+	/**
+	 * Retrieve an immutable list of every parameter matcher for this method.
+	 * @return Immutable list of every parameter matcher. 
+	 */
+	public ImmutableList<ParameterClassMatcher> getParamMatchers() {
+		if (paramMatchers instanceof ImmutableList)
+			return (ImmutableList<ParameterClassMatcher>) paramMatchers;
+		else
+			throw new IllegalStateException("Lists haven't been sealed yet.");
+	}
+
+	/**
+	 * Retrieve an immutable list of every exception matcher for this method.
+	 * @return Immutable list of every exception matcher. 
+	 */
+	public List<ParameterClassMatcher> getExceptionMatchers() {
+		if (exceptionMatchers instanceof ImmutableList)
+			return exceptionMatchers;
+		else
+			throw new IllegalStateException("Lists haven't been sealed yet.");
+	}
+
+	/**
+	 * Retrieve the expected parameter count for this method.
+	 * @return Expected parameter count, or NULL if anyting goes.
+	 */
+	public Integer getParamCount() {
+		return paramCount;
+	}
+
 	@Override
 	protected void prepareBuild() {
 		super.prepareBuild();

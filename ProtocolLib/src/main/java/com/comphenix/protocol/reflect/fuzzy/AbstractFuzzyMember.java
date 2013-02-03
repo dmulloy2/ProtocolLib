@@ -164,6 +164,38 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		this.sealed = true;
 	}
 
+	/**
+	 * Retrieve a bit field of every {@link java.lang.reflect.Modifier Modifier} that is required for the member to match.
+	 * @return A required modifier bit field.
+	 */
+	public int getModifiersRequired() {
+		return modifiersRequired;
+	}
+
+	/**
+	 * Retrieve a bit field of every {@link java.lang.reflect.Modifier Modifier} that must not be present for the member to match.
+	 * @return A banned modifier bit field.
+	 */
+	public int getModifiersBanned() {
+		return modifiersBanned;
+	}
+
+	/**
+	 * Retrieve the regular expression pattern that is used to match the name of a member.
+	 * @return The regex matching a name, or NULL if everything matches.
+	 */
+	public Pattern getNameRegex() {
+		return nameRegex;
+	}
+
+	/**
+	 * Retrieve a class matcher for the declaring class of the member.
+	 * @return An object matching the declaring class.
+	 */
+	public AbstractFuzzyMatcher<Class<?>> getDeclaringMatcher() {
+		return declaringMatcher;
+	}
+
 	@Override
 	public boolean isMatch(T value, Object parent) {
 		int mods = value.getModifiers();

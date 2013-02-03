@@ -119,6 +119,14 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 	}
 	
 	/**
+	 * Retrieve the class matcher that matches the type of a field.
+	 * @return The class matcher.
+	 */
+	public AbstractFuzzyMatcher<Class<?>> getTypeMatcher() {
+		return typeMatcher;
+	}
+
+	/**
 	 * Create a new field contract from the given contract.
 	 * @param other - the contract to clone.
 	 */
