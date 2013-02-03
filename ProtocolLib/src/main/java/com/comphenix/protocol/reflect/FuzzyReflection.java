@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.google.common.collect.Lists;
 
 /**

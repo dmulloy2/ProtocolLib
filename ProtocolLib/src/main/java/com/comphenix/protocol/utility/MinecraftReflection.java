@@ -38,12 +38,12 @@ import org.bukkit.Server;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
-import com.comphenix.protocol.reflect.AbstractFuzzyMatcher;
-import com.comphenix.protocol.reflect.FuzzyClassContract;
-import com.comphenix.protocol.reflect.FuzzyMatchers;
-import com.comphenix.protocol.reflect.FuzzyFieldContract;
-import com.comphenix.protocol.reflect.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.google.common.base.Joiner;
 

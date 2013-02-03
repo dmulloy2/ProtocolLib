@@ -1,4 +1,4 @@
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.fuzzy;
 
 /**
  * Used to check class equality.

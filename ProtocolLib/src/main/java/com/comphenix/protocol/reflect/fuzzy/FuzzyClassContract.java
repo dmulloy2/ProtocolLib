@@ -1,10 +1,12 @@
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.fuzzy;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.MethodInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 

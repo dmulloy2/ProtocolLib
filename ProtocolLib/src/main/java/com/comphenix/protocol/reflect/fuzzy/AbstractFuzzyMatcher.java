@@ -1,4 +1,4 @@
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.fuzzy;
 
 import com.google.common.primitives.Ints;
 

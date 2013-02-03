@@ -1,4 +1,4 @@
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.fuzzy;
 
 import java.util.Collections;
 import java.util.List;
@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
 
 import org.apache.commons.lang.NotImplementedException;
 
+import com.comphenix.protocol.reflect.MethodInfo;
 import com.google.common.collect.Lists;
 
 /**

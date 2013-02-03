@@ -1,4 +1,4 @@
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.fuzzy;
 
 import java.lang.reflect.Field;
 import java.util.regex.Pattern;

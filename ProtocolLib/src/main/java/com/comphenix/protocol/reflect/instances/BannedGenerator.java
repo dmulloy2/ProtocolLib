@@ -2,8 +2,8 @@ package com.comphenix.protocol.reflect.instances;
 
 import javax.annotation.Nullable;
 
-import com.comphenix.protocol.reflect.AbstractFuzzyMatcher;
-import com.comphenix.protocol.reflect.FuzzyMatchers;
+import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 
 /**
  * Generator that ensures certain types will never be created.
