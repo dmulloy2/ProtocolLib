@@ -51,8 +51,9 @@ import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.*;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.packet.PacketInjector;
+import com.comphenix.protocol.injector.packet.InjectorFactory;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -180,8 +181,10 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			// Initialize injection mangers
-			this.playerInjection = new PlayerInjectionHandler(classLoader, reporter, isInjectionNecessary, this, packetListeners, server);
-			this.packetInjector = new PacketInjector(classLoader, this, playerInjection, reporter);
+			this.playerInjection = new PlayerInjectionHandler(
+					classLoader, reporter, isInjectionNecessary, this, packetListeners, server);
+			this.packetInjector = InjectorFactory.getInstance().createProxyInjector(
+					classLoader, this, playerInjection, reporter);
 			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
 			
 			// Attempt to load the list of server and client packets

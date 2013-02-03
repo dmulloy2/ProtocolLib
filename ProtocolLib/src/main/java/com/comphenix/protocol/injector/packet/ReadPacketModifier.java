@@ -41,7 +41,7 @@ class ReadPacketModifier implements MethodInterceptor {
 	private static final Object CANCEL_MARKER = new Object();
 	
 	// Common for all packets of the same type
-	private PacketInjector packetInjector;
+	private ProxyPacketInjector packetInjector;
 	private int packetID;
 	
 	// Report errors
@@ -50,7 +50,7 @@ class ReadPacketModifier implements MethodInterceptor {
 	// Whether or not a packet has been cancelled
 	private static Map<Object, Object> override = Collections.synchronizedMap(new WeakHashMap<Object, Object>());
 	
-	public ReadPacketModifier(int packetID, PacketInjector packetInjector, ErrorReporter reporter) {
+	public ReadPacketModifier(int packetID, ProxyPacketInjector packetInjector, ErrorReporter reporter) {
 		this.packetID = packetID;
 		this.packetInjector = packetInjector;
 		this.reporter = reporter;
