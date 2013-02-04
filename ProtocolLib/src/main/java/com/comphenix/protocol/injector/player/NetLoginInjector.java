@@ -38,7 +38,7 @@ class NetLoginInjector {
 	private ConcurrentMap<Object, PlayerInjector> injectedLogins = Maps.newConcurrentMap();
 	
 	// Handles every hook
-	private PlayerInjectionHandler injectionHandler;
+	private ProxyPlayerInjectionHandler injectionHandler;
 	private Server server;
 	
 	// The current error rerporter
@@ -47,7 +47,7 @@ class NetLoginInjector {
 	// Used to create fake players
 	private TemporaryPlayerFactory tempPlayerFactory = new TemporaryPlayerFactory();
 	
-	public NetLoginInjector(ErrorReporter reporter, PlayerInjectionHandler injectionHandler, Server server) {
+	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, Server server) {
 		this.reporter = reporter;
 		this.injectionHandler = injectionHandler;
 		this.server = server;

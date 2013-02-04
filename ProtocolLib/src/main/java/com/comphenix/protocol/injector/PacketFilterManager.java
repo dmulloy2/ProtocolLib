@@ -52,9 +52,10 @@ import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.packet.PacketInjector;
-import com.comphenix.protocol.injector.packet.InjectorFactory;
+import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -181,10 +182,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			// Initialize injection mangers
-			this.playerInjection = new PlayerInjectionHandler(
-					classLoader, reporter, isInjectionNecessary, this, packetListeners, server);
-			this.packetInjector = InjectorFactory.getInstance().createProxyInjector(
-					classLoader, this, playerInjection, reporter);
+			this.playerInjection = PlayerInjectorBuilder.newBuilder().
+					invoker(this).
+					server(server).
+					reporter(reporter).
+					classLoader(classLoader).
+					packetListeners(packetListeners).
+					injectionFilter(isInjectionNecessary).
+					buildHandler();
+		
+			this.packetInjector = PacketInjectorBuilder.newBuilder().
+					invoker(this).
+					reporter(reporter).
+					classLoader(classLoader).
+					playerInjection(playerInjection).
+					buildInjector();
+
 			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
 			
 			// Attempt to load the list of server and client packets
