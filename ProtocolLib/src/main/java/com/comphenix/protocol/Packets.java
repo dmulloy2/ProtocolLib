@@ -31,6 +31,11 @@ import com.comphenix.protocol.reflect.IntEnum;
 public final class Packets {
 	
 	/**
+	 * The highest possible packet ID. It's unlikely that this value will ever change.
+	 */
+	public static final int MAXIMUM_PACKET_ID = 255;
+	
+	/**
 	 * List of packets sent only by the server.
 	 * @author Kristian
 	 */

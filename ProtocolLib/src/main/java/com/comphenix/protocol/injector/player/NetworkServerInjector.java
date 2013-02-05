@@ -32,6 +32,7 @@ import net.sf.cglib.proxy.NoOp;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;

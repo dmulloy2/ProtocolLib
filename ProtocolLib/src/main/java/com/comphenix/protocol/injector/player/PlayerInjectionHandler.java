@@ -80,13 +80,6 @@ public interface PlayerInjectionHandler {
 	public abstract void injectPlayer(Player player);
 
 	/**
-	 * Determine if it's truly necessary to perform the given player injection.
-	 * @param phase - current game phase.
-	 * @return TRUE if we should perform the injection, FALSE otherwise.
-	 */
-	public abstract boolean isInjectionNecessary(GamePhase phase);
-
-	/**
 	 * Invoke special routines for handling disconnect before a player is uninjected.
 	 * @param player - player to process.
 	 */
@@ -98,14 +91,6 @@ public interface PlayerInjectionHandler {
 	 * @return TRUE if a player has been uninjected, FALSE otherwise.
 	 */
 	public abstract boolean uninjectPlayer(Player player);
-
-	/**
-	 * Unregisters the given player.
-	 * @param player - player to unregister.
-	 * @param removeAuxiliary - TRUE to remove auxiliary information, such as input stream and address.
-	 * @return TRUE if a player has been uninjected, FALSE otherwise.
-	 */
-	public abstract boolean uninjectPlayer(Player player, boolean removeAuxiliary);
 
 	/**
 	 * Unregisters a player by the given address.

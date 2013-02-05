@@ -29,7 +29,9 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.BlockingHashMap;
+import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
@@ -52,12 +54,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 * The maximum number of milliseconds to wait until a player can be looked up by connection.
 	 */
 	private static final long TIMEOUT_PLAYER_LOOKUP = 2000; // ms
-	
-	/**
-	 * The highest possible packet ID. It's unlikely that this value will ever change.
-	 */
-	private static final int MAXIMUM_PACKET_ID = 255;
-	
+		
 	// Server connection injection
 	private InjectedServerConnection serverInjection;
 	
@@ -88,7 +85,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private ListenerInvoker invoker;
 	
 	// Enabled packet filters
-	private IntegerSet sendingFilters = new IntegerSet(MAXIMUM_PACKET_ID + 1);
+	private IntegerSet sendingFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
 	
 	// List of packet listeners
 	private Set<PacketListener> packetListeners;
@@ -262,7 +259,6 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 * @param phase - current game phase.
 	 * @return TRUE if we should perform the injection, FALSE otherwise.
 	 */
-	@Override
 	public boolean isInjectionNecessary(GamePhase phase) {
 		return injectionFilter.apply(phase);
 	}
@@ -417,7 +413,6 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 * @param removeAuxiliary - TRUE to remove auxiliary information, such as input stream and address.
 	 * @return TRUE if a player has been uninjected, FALSE otherwise.
 	 */
-	@Override
 	public boolean uninjectPlayer(Player player, boolean removeAuxiliary) {
 		return uninjectPlayer(player, removeAuxiliary, false);
 	}

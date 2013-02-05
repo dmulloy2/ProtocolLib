@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketListener;

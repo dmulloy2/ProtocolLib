@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.concurrency;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -27,7 +27,7 @@ import java.util.Set;
  * This class is intentionally missing a size method. 
  * @author Kristian
  */
-class IntegerSet {
+public class IntegerSet {
 	private final boolean[] array;
 
 	/**
