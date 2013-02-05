@@ -9,7 +9,12 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 
-public class DummyPacketInjector implements PacketInjector {
+/**
+ * Dummy packet injector that simply delegates to its parent Spigot packet injector or receiving filters.
+ * 
+ * @author Kristian
+ */
+class DummyPacketInjector implements PacketInjector {
 	private SpigotPacketInjector injector;
 	private IntegerSet reveivedFilters;
 
