@@ -135,7 +135,7 @@ abstract class PlayerInjector {
 		
 		//Dispatch to the correct injection method
 		if (injectionSource instanceof Player)
-			initializePlayer(injectionSource);
+			initializePlayer((Player) injectionSource);
 		else if (MinecraftReflection.isLoginHandler(injectionSource))
 			initializeLogin(injectionSource);
 		else 
@@ -146,9 +146,11 @@ abstract class PlayerInjector {
 	 * Initialize the player injector using an actual player instance.
 	 * @param player - the player to hook.
 	 */
-	public void initializePlayer(Object player) {
-		
+	public void initializePlayer(Player player) {
 		Object notchEntity = getEntityPlayer((Player) player);
+		
+		// Save the player too
+		this.player = player;
 		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception
@@ -174,11 +176,16 @@ abstract class PlayerInjector {
 	}
 	
 	/**
-	 * Initialize the player injector for a NetLoginHandler instead.
+	 * Initialize the player injector from a NetLoginHandler.
 	 * @param netLoginHandler - the net login handler to inject.
 	 */
 	public void initializeLogin(Object netLoginHandler) {
 		if (!hasInitialized) {
+			// Just in case
+			if (!MinecraftReflection.isLoginHandler(netLoginHandler))
+				throw new IllegalArgumentException("netLoginHandler (" + netLoginHandler + ") is not a " + 
+							MinecraftReflection.getNetLoginHandlerName());
+			
 			hasInitialized = true;
 			loginHandler = netLoginHandler;
 			

@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.spigot;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -29,6 +30,7 @@ import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.player.NetworkObjectInjector;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -43,6 +45,9 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	// Lazily retrieve the spigot listener class
 	private static volatile Class<?> spigotListenerClass;
 	private static volatile boolean classChecked;
+	
+	// Retrieve the entity player from a PlayerConnection
+	private static Field playerConnectionPlayer;
 	
 	// Packets that are not to be processed by the filters
 	private Set<Object> ignoredPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
@@ -255,8 +260,22 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			try {
 				NetworkObjectInjector created = new NetworkObjectInjector(classLoader, reporter, null, invoker, null);
 				
-				created.initializeLogin(connection);
-				created.setPlayer(created.createTemporaryPlayer(server));
+				if (MinecraftReflection.isLoginHandler(connection)) {
+					created.initialize(connection);
+					created.setPlayer(created.createTemporaryPlayer(server));
+				} else if (MinecraftReflection.isServerHandler(connection)) {
+					// Get the player instead
+					if (playerConnectionPlayer == null)
+						playerConnectionPlayer = FuzzyReflection.fromObject(connection).
+								getFieldByType("player", MinecraftReflection.getEntityPlayerClass());
+					Object entityPlayer = playerConnectionPlayer.get(connection);
+					
+					created.initialize(MinecraftReflection.getBukkitEntity(entityPlayer));
+					
+				} else {
+					throw new IllegalArgumentException("Unregonized connection in NetworkManager.");
+				}
+				
 				dummyInjector = saveInjector(networkManager, created);
 				
 			} catch (IllegalAccessException e) {

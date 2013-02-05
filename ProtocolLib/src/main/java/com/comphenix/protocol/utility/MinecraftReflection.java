@@ -289,12 +289,21 @@ public class MinecraftReflection {
 	}
 	
 	/**
-	 * Determine if the given object is a NetLoginHandler.
+	 * Determine if the given object is a NetLoginHandler (PendingConnection)
 	 * @param obj - the given object.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isLoginHandler(Object obj) {
 		return getNetLoginHandlerClass().isAssignableFrom(obj.getClass());
+	}
+	
+	/**
+	 * Determine if the given object is assignable to a NetServerHandler (PlayerConnection)
+	 * @param obj - the given object.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public static boolean isServerHandler(Object obj) {
+		return getNetServerHandlerClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -1102,4 +1111,6 @@ public class MinecraftReflection {
 	public static String getNetLoginHandlerName() {
 		return getNetLoginHandlerClass().getSimpleName();
 	}
+
+
 }
