@@ -42,7 +42,7 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
 
 /**
- * Injection method that overrides the NetworkHandler itself, and it's queue-method.
+ * Injection method that overrides the NetworkHandler itself, and its queue-method.
  * 
  * @author Kristian
  */
@@ -59,6 +59,17 @@ public class NetworkObjectInjector extends PlayerInjector {
 	// Temporary player factory
 	private static volatile TemporaryPlayerFactory tempPlayerFactory;
 	
+	/**
+	 * Create a new network object injector.
+	 * <p>
+	 * Note: This class is intended to be internal. Do not use.
+	 * @param classLoader - the class loader.
+	 * @param reporter - the error reporter.
+	 * @param player - the player Bukkit entity.
+	 * @param invoker - the packet invoker.
+	 * @param sendingFilters - list of permitted packet IDs.
+	 * @throws IllegalAccessException If reflection failed.
+	 */
 	public NetworkObjectInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
 		super(reporter, player, invoker);

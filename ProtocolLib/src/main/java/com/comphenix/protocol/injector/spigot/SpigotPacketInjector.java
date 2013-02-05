@@ -141,6 +141,11 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		this.reveivedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
 	}
 	
+	/**
+	 * Register the Spigot packet injector.
+	 * @param plugin - the parent plugin.
+	 * @return TRUE if we registered the plugin, FALSE otherwise.
+	 */
 	public boolean register(Plugin plugin) {
 		if (hasRegistered())
 			return false;
@@ -225,14 +230,26 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			isMatch(MethodInfo.fromMethod(method), null);
 	}
 	
+	/**
+	 * Determine if the Spigot packet listener has been registered.
+	 * @return TRUE if it has, FALSE otherwise.
+	 */
 	public boolean hasRegistered() {
 		return dynamicListener != null;
 	}
 	
+	/**
+	 * Retrieve the dummy player injection handler.
+	 * @return Dummy player injection handler.
+	 */
 	public PlayerInjectionHandler getPlayerHandler() {
 		return new DummyPlayerHandler(this, queuedFilters);
 	}
 	
+	/**
+	 * Retrieve the dummy packet injection handler.
+	 * @return Dummy packet injection handler.
+	 */
 	public PacketInjector getPacketInjector() {
 		return new DummyPacketInjector(this, reveivedFilters);
 	}
