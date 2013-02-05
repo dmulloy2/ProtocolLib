@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.packet;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -33,12 +33,12 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * Static registries in Minecraft.
+ * Static packet registry in Minecraft.
  * 
  * @author Kristian
  */
 @SuppressWarnings("rawtypes")
-class MinecraftRegistry {
+public class PacketRegistry {
 
 	// Fuzzy reflection
 	private static FuzzyReflection packetRegistry;
@@ -174,7 +174,7 @@ class MinecraftRegistry {
 		for (Map.Entry<Class, Integer> entry : getPacketToID().entrySet()) {
 			if (Objects.equal(entry.getValue(), packetID)) {
 				// Attempt to get the vanilla class here too
-				if (!forceVanilla || entry.getKey().getName().startsWith("net.minecraft.server"))
+				if (!forceVanilla || MinecraftReflection.isMinecraftClass(entry.getKey()))
 					return removeEnhancer(entry.getKey(), forceVanilla);
 			}
 		}

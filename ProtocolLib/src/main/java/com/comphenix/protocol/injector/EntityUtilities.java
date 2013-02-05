@@ -164,9 +164,9 @@ class EntityUtilities {
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		Object worldServer = unwrapper.unwrapItem(world);
 
-		// We have to rely on the class naming here.
 		if (entityTrackerField == null)
-			entityTrackerField = FuzzyReflection.fromObject(worldServer).getFieldByType(".*Tracker");
+			entityTrackerField = FuzzyReflection.fromObject(worldServer).
+									getFieldByType("tracker", MinecraftReflection.getEntityTrackerClass());
 		
 		// Get the tracker
 		Object tracker = null;
@@ -191,7 +191,7 @@ class EntityUtilities {
 			
 			// The Minecraft field that's NOT filled in by the constructor
 			trackedEntitiesField = FuzzyReflection.fromObject(tracker, true).
-						getFieldByType(MinecraftReflection.MINECRAFT_OBJECT, ignoredTypes);
+						getFieldByType(MinecraftReflection.getMinecraftObjectRegex(), ignoredTypes);
 		}
 		
 		// Read the entity hashmap
@@ -250,8 +250,16 @@ class EntityUtilities {
 
 			// Handle NULL cases
 			if (trackerEntry != null) {
-				if (trackerField == null)
-					trackerField = trackerEntry.getClass().getField("tracker");
+				if (trackerField == null) {
+					try {
+						trackerField = trackerEntry.getClass().getField("tracker");
+					} catch (NoSuchFieldException e) {
+						// Assume it's the first public entity field then
+						trackerField = FuzzyReflection.fromObject(trackerEntry).getFieldByType(
+								"tracker", MinecraftReflection.getEntityClass());
+					}
+				}
+				
 				tracker = FieldUtils.readField(trackerField, trackerEntry, true);
 			}
 			

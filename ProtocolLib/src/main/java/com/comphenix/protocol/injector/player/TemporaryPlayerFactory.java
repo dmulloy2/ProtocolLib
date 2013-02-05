@@ -81,7 +81,7 @@ class TemporaryPlayerFactory {
 	 * </ul>
 	 * <p>
 	 * Note that the player a player has not been assigned a name yet, and thus cannot be
-	 * uniquely identified. Use the 
+	 * uniquely identified. Use the address instead.
 	 * @param injector - the player injector used.
 	 * @param server - the current server.
 	 * @return A temporary player instance.

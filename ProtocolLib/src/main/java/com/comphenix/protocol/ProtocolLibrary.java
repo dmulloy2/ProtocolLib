@@ -282,7 +282,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		Pattern ourPlugin = Pattern.compile("ProtocolLib-(.*)\\.jar");
 		MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
 		MinecraftVersion newestVersion = null;
-		
+
 		// Skip the file that contains this current instance however
 		File loadedFile = getFile();
 		
@@ -297,7 +297,10 @@ public class ProtocolLibrary extends JavaPlugin {
 					if (match.matches()) {
 						MinecraftVersion version = new MinecraftVersion(match.group(1));
 
-						if (newestVersion == null || newestVersion.compareTo(version) < 0) {
+						if (candidate.length() == 0) {
+							// Delete and inform the user
+							logger.info((candidate.delete() ? "Deleted " : "Could not delete ") + candidate);
+						} else if (newestVersion == null || newestVersion.compareTo(version) < 0) {
 							newestVersion = version;
 						}
 					}

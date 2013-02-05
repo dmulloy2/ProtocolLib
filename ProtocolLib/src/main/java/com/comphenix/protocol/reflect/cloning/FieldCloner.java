@@ -20,6 +20,7 @@ package com.comphenix.protocol.reflect.cloning;
 import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
+import com.comphenix.protocol.reflect.instances.NotConstructableException;
 
 /**
  * Represents a class capable of cloning objects by deeply copying its fields.
@@ -72,7 +73,11 @@ public class FieldCloner implements Cloner {
 			return false;
 		
 		// Attempt to create the type
-		return instanceProvider.create(source.getClass()) != null;
+		try {
+			return instanceProvider.create(source.getClass()) != null;
+		} catch (NotConstructableException e) {
+			return false;
+		}
 	}
 
 	@Override

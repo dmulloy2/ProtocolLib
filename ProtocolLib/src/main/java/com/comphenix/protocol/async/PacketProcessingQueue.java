@@ -19,6 +19,7 @@ package com.comphenix.protocol.async;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
@@ -67,10 +68,19 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	public PacketProcessingQueue(PlayerSendingHandler sendingHandler, int initialSize, int maximumSize, int maximumConcurrency) {
 		super();
 
-		this.processingQueue = Synchronization.queue(MinMaxPriorityQueue.
-				expectedSize(initialSize).
-				maximumSize(maximumSize).
-				<PacketEventHolder>create(), null);
+		try {
+			this.processingQueue = Synchronization.queue(MinMaxPriorityQueue.
+					expectedSize(initialSize).
+					maximumSize(maximumSize).
+					<PacketEventHolder>create(), null);
+		} catch (IncompatibleClassChangeError e) {
+			System.out.println("[ProtocolLib] Guava is either missing or corrupt. Reverting to PriorityQueue.");
+			e.printStackTrace();
+			
+			// It's a Beta class after all
+			this.processingQueue = Synchronization.queue(
+					new PriorityQueue<PacketEventHolder>(), null);
+		}
 				
 		this.maximumConcurrency = maximumConcurrency;
 		this.concurrentProcessing = new Semaphore(maximumConcurrency);

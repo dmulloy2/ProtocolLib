@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.concurrency;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -27,7 +27,7 @@ import java.util.Set;
  * This class is intentionally missing a size method. 
  * @author Kristian
  */
-class IntegerSet {
+public class IntegerSet {
 	private final boolean[] array;
 
 	/**
@@ -44,7 +44,7 @@ class IntegerSet {
 	
 	/**
 	 * Determine whether or not the given element exists in the set.
-	 * @param value - the element to check. Must be in the range [0, count).
+	 * @param element - the element to check. Must be in the range [0, count).
 	 * @return TRUE if the given element exists, FALSE otherwise.
 	 */
 	public boolean contains(int element) {

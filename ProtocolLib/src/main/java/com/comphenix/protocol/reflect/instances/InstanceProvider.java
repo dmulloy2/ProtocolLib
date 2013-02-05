@@ -25,11 +25,11 @@ import javax.annotation.Nullable;
  * @author Kristian
  */
 public interface InstanceProvider {
-
 	/**
 	 * Create an instance given a type, if possible.
 	 * @param type - type to create.
 	 * @return The instance, or NULL if the type cannot be created.
+	 * @throws NotConstructableException Thrown to indicate that this type cannot or should never be constructed.
 	 */
 	public abstract Object create(@Nullable Class<?> type);
 }

@@ -78,9 +78,9 @@ class CleanupStaticMembers {
 			 "com.comphenix.protocol.injector.player.PlayerInjector",
 			 "com.comphenix.protocol.injector.player.TemporaryPlayerFactory",
 			 "com.comphenix.protocol.injector.EntityUtilities",
-			 "com.comphenix.protocol.injector.MinecraftRegistry",
-			 "com.comphenix.protocol.injector.PacketInjector",
-			 "com.comphenix.protocol.injector.ReadPacketModifier",
+			 "com.comphenix.protocol.injector.packet.PacketRegistry",
+			 "com.comphenix.protocol.injector.packet.PacketInjector",
+			 "com.comphenix.protocol.injector.packet.ReadPacketModifier",
 			 "com.comphenix.protocol.injector.StructureCache",
 			 "com.comphenix.protocol.reflect.compiler.BoxingHelper",
 			 "com.comphenix.protocol.reflect.compiler.MethodDescriptor"

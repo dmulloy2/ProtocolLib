@@ -26,9 +26,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
+import com.comphenix.protocol.reflect.instances.BannedGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.reflect.instances.InstanceProvider;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Function;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
@@ -63,7 +68,19 @@ public class StructureModifier<TField> {
 	
 	// Whether or not to automatically compile the structure modifier
 	protected boolean useStructureCompiler;
+	
+	// Instance generator we wil use
+	private static DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
 
+	private static DefaultInstances getDefaultGenerator() {
+		List<InstanceProvider> providers = Lists.newArrayList();
+		
+		// Prevent certain classes from being generated
+		providers.add(new BannedGenerator(MinecraftReflection.getItemStackClass(), MinecraftReflection.getBlockClass()));
+		providers.addAll(DefaultInstances.DEFAULT.getRegistered());
+		return DefaultInstances.fromCollection(providers);
+	}
+			
 	/**
 	 * Creates a structure modifier.
 	 * @param targetType - the structure to modify.
@@ -394,21 +411,11 @@ public class StructureModifier<TField> {
 		result = result.withTarget(target);
 		
 		// And the converter, if it's needed
-		if (!sameConverter(result.converter, converter)) {
+		if (!Objects.equal(result.converter, converter)) {
 			result = result.withConverter(converter);
 		}
 		
 		return result;
-	}
-	
-	private boolean sameConverter(EquivalentConverter<?> a, EquivalentConverter<?> b) {
-		// Compare the converter types
-		if (a == null)
-			return b == null;
-		else if (b == null)
-			return false;
-		else
-			return a.getSpecificType().equals(b.getSpecificType());
 	}
 	
 	/**
@@ -537,7 +544,7 @@ public class StructureModifier<TField> {
 	private static Map<Field, Integer> generateDefaultFields(List<Field> fields) {
 		
 		Map<Field, Integer> requireDefaults = new HashMap<Field, Integer>();
-		DefaultInstances generator = DefaultInstances.DEFAULT;
+		DefaultInstances generator = DEFAULT_GENERATOR;
 		int index = 0;
 		
 		for (Field field : fields) {

@@ -410,7 +410,7 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
     	
     	try {
     		Object watchable = getWatchedObject(index);
-	    	
+
 	    	if (watchable != null) {
 	    		new WrappedWatchableObject(watchable).setValue(newValue, update);
 	    	} else {
@@ -551,8 +551,17 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 		List<Method> candidates = fuzzy.getMethodListByParameters(Void.TYPE, 
 				  					new Class<?>[] { int.class, Object.class});
 		
-		for (Method method : candidates) {
+		// Load the get-method
+		try {
+			getKeyValueMethod = fuzzy.getMethodByParameters(
+					"getWatchableObject", MinecraftReflection.getWatchableObjectClass(), new Class[] { int.class });
+			getKeyValueMethod.setAccessible(true);
 			
+		} catch (IllegalArgumentException e) {
+			// Use the fallback method
+		}
+		
+		for (Method method : candidates) {
 			if (!method.getName().startsWith("watch")) {
 				createKeyValueMethod = method;
 			} else {
@@ -569,15 +578,21 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 			} else {
 				throw new IllegalStateException("Unable to find create and update watchable object. Update ProtocolLib.");
 			}
-		}
-		
-		// Load the get-method
-		try {
-			getKeyValueMethod = fuzzy.getMethodByParameters(
-					"getWatchableObject", ".*WatchableObject", new String[] { int.class.getName() });
-			getKeyValueMethod.setAccessible(true);
-		} catch (IllegalArgumentException e) {
-			// Use fallback method
+			
+			// Be a little scientist - see if this in fact IS the right way around
+			try {
+				WrappedDataWatcher watcher = new WrappedDataWatcher();
+				watcher.setObject(0, 0);
+				watcher.setObject(0, 1);
+				
+				if (watcher.getInteger(0) != 1) {
+					throw new IllegalStateException("This cannot be!");
+				}
+			} catch (Exception e) {
+				// Nope
+				updateKeyValueMethod = candidates.get(0);
+				createKeyValueMethod = candidates.get(1);
+			}
 		}
 	}
 

@@ -58,10 +58,10 @@ abstract class PlayerInjector {
 	protected static Field proxyServerField;
 
 	protected static Field networkManagerField;
-	protected static Field inputField;
 	protected static Field netHandlerField;
 	protected static Field socketField;
 	
+	private static Field inputField;
 	private static Field entityPlayerField;
 	
 	// Whether or not we're using a proxy type
@@ -135,7 +135,7 @@ abstract class PlayerInjector {
 		
 		//Dispatch to the correct injection method
 		if (injectionSource instanceof Player)
-			initializePlayer(injectionSource);
+			initializePlayer((Player) injectionSource);
 		else if (MinecraftReflection.isLoginHandler(injectionSource))
 			initializeLogin(injectionSource);
 		else 
@@ -146,9 +146,11 @@ abstract class PlayerInjector {
 	 * Initialize the player injector using an actual player instance.
 	 * @param player - the player to hook.
 	 */
-	public void initializePlayer(Object player) {
-		
+	public void initializePlayer(Player player) {
 		Object notchEntity = getEntityPlayer((Player) player);
+		
+		// Save the player too
+		this.player = player;
 		
 		if (!hasInitialized) {
 			// Do this first, in case we encounter an exception
@@ -167,24 +169,29 @@ abstract class PlayerInjector {
 
 			// Next, get the network manager 
 			if (networkManagerField == null) 
-				networkManagerField = FuzzyReflection.fromObject(serverHandler).
-										getFieldByType(".*" + MinecraftReflection.getNetworkManagerName());
+				networkManagerField = FuzzyReflection.fromObject(serverHandler).getFieldByType(
+									   "networkManager", MinecraftReflection.getNetworkManagerClass());
 			initializeNetworkManager(networkManagerField, serverHandler);
 		}
 	}
 	
 	/**
-	 * Initialize the player injector for a NetLoginHandler instead.
+	 * Initialize the player injector from a NetLoginHandler.
 	 * @param netLoginHandler - the net login handler to inject.
 	 */
 	public void initializeLogin(Object netLoginHandler) {
 		if (!hasInitialized) {
+			// Just in case
+			if (!MinecraftReflection.isLoginHandler(netLoginHandler))
+				throw new IllegalArgumentException("netLoginHandler (" + netLoginHandler + ") is not a " + 
+							MinecraftReflection.getNetLoginHandlerName());
+			
 			hasInitialized = true;
 			loginHandler = netLoginHandler;
 			
 			if (netLoginNetworkField == null)
 				netLoginNetworkField =  FuzzyReflection.fromObject(netLoginHandler).
-										  getFieldByType(".*" + MinecraftReflection.getNetworkManagerName());
+										  getFieldByType("networkManager", MinecraftReflection.getNetworkManagerClass());
 			initializeNetworkManager(netLoginNetworkField, netLoginHandler);
 		}
 	}
@@ -206,11 +213,6 @@ abstract class PlayerInjector {
 		if (queueMethod == null)
 			queueMethod = FuzzyReflection.fromClass(reference.getType()).
 							getMethodByParameters("queue", MinecraftReflection.getPacketClass());
-		
-		// And the data input stream that we'll use to identify a player
-		if (inputField == null)
-			inputField = FuzzyReflection.fromObject(networkManager, true).
-							getFieldByType("java\\.io\\.DataInputStream");
 	}
 	
 	/**
@@ -250,9 +252,9 @@ abstract class PlayerInjector {
 	public Socket getSocket() throws IllegalAccessException {
 		try {
 			if (socketField == null)
-				socketField = FuzzyReflection.fromObject(networkManager).getFieldListByType(Socket.class).get(0);
+				socketField = FuzzyReflection.fromObject(networkManager, true).getFieldListByType(Socket.class).get(0);
 			if (socket == null)
-				socket = (Socket) FieldUtils.readField(socketField, networkManager);
+				socket = (Socket) FieldUtils.readField(socketField, networkManager, true);
 			return socket;
 			
 		} catch (IndexOutOfBoundsException e) {
@@ -290,7 +292,13 @@ abstract class PlayerInjector {
 		// Execute disconnect on it
 		if (handler != null) {
 			if (disconnect == null) {
-				disconnect = FuzzyReflection.fromObject(handler).getMethodByName("disconnect.*");
+				try {
+					disconnect = FuzzyReflection.fromObject(handler).getMethodByName("disconnect.*");
+				} catch (IllegalArgumentException e) {
+					// Just assume it's the first String method
+					disconnect = FuzzyReflection.fromObject(handler).getMethodByParameters("disconnect", String.class);
+					reporter.reportWarning(this, "Cannot find disconnect method by name. Assuming " + disconnect);
+				}
 				
 				// Save the method for later
 				if (usingNetServer)
@@ -330,7 +338,7 @@ abstract class PlayerInjector {
 			Object handler = FieldUtils.readField(serverHandlerField, notchEntity, true);
 			
 			// Is this a Minecraft hook?
-			if (handler != null && !handler.getClass().getName().startsWith("net.minecraft.server")) {
+			if (handler != null && !MinecraftReflection.isMinecraftObject(handler)) {
 				
 				// This is our proxy object
 				if (handler instanceof Factory)
@@ -380,7 +388,7 @@ abstract class PlayerInjector {
 			try {
 				// Well, that sucks. Try just Minecraft objects then.
 				netHandlerField = FuzzyReflection.fromClass(networkManager.getClass(), true).
-									 getFieldByType(MinecraftReflection.MINECRAFT_OBJECT);
+									 getFieldByType(MinecraftReflection.getMinecraftObjectRegex());
 				
 			} catch (RuntimeException e2) {
 				throw new IllegalAccessException("Cannot locate net handler. " + e2.getMessage());
@@ -564,11 +572,13 @@ abstract class PlayerInjector {
 	 * @return The player's input stream.
 	 */
 	public DataInputStream getInputStream(boolean cache) {
-		if (inputField == null)
-			throw new IllegalStateException("Input field is NULL.");
+		// And the data input stream that we'll use to identify a player
 		if (networkManager == null)
-				throw new IllegalStateException("Network manager is NULL.");
-		
+			throw new IllegalStateException("Network manager is NULL.");
+		if (inputField == null)
+			inputField = FuzzyReflection.fromObject(networkManager, true).
+							getFieldByType("java\\.io\\.DataInputStream");
+
 		// Get the associated input stream
 		try {
 			if (cache && cachedInput != null)
@@ -599,6 +609,16 @@ abstract class PlayerInjector {
 	}
 	
 	/**
+	 * Set the hooked player.
+	 * <p>
+	 * Should only be called during the creation of the injector.
+	 * @param player - the new hooked player.
+	 */
+	public void setPlayer(Player player) {
+		this.player = player;
+	}
+	
+	/**
 	 * Object that can invoke the packet events.
 	 * @return Packet event invoker.
 	 */
@@ -615,5 +635,13 @@ abstract class PlayerInjector {
 			return updatedPlayer;
 		else
 			return player;
+	}
+	
+	/**
+	 * Set the real Bukkit player that we will use.
+	 * @param updatedPlayer - the real Bukkit player.
+	 */
+	public void setUpdatedPlayer(Player updatedPlayer) {
+		this.updatedPlayer = updatedPlayer;
 	}
 }

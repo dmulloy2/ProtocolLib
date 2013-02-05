@@ -22,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -114,7 +115,7 @@ public class PacketConstructor {
 			}
 		}
 		
-		Class<?> packetType = MinecraftRegistry.getPacketClassFromID(id, true);
+		Class<?> packetType = PacketRegistry.getPacketClassFromID(id, true);
 		
 		if (packetType == null)
 			throw new IllegalArgumentException("Could not find a packet by the id " + id);

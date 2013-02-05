@@ -31,6 +31,11 @@ import com.comphenix.protocol.reflect.IntEnum;
 public final class Packets {
 	
 	/**
+	 * The highest possible packet ID. It's unlikely that this value will ever change.
+	 */
+	public static final int MAXIMUM_PACKET_ID = 255;
+	
+	/**
 	 * List of packets sent only by the server.
 	 * @author Kristian
 	 */
@@ -60,7 +65,7 @@ public final class Packets {
 		public static final int ARM_ANIMATION = 18;
 		public static final int NAMED_ENTITY_SPAWN = 20;
 		/**
-		 * Removed in 1.4.6 and replaced with {@link VEHICLE_SPAWN}. 
+		 * Removed in 1.4.6 and replaced with VEHICLE_SPAWN. 
 		 * @see <a href="http://www.wiki.vg/Protocol_History#2012-12-20">Protocol History - MinecraftCoalition</a>
 		 */
 		@Deprecated()

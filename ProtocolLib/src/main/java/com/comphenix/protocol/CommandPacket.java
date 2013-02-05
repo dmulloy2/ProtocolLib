@@ -175,7 +175,7 @@ class CommandPacket extends CommandBase {
 		try {
 			chatter.broadcastMessageSilently(message, permission);
 		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, "Cannot send chat message.", e, message, message);
+			reporter.reportDetailed(this, "Cannot send chat message.", e, message, permission);
 		}
 	}
 	
@@ -415,7 +415,7 @@ class CommandPacket extends CommandBase {
 						Class<?> clazz = packet.getClass();
 						
 						// Get the first Minecraft super class
-						while ((!clazz.getName().startsWith("net.minecraft.server") || 
+						while ((!MinecraftReflection.isMinecraftClass(clazz) || 
 								 Factory.class.isAssignableFrom(clazz)) && clazz != Object.class) {
 							clazz = clazz.getSuperclass();
 						}

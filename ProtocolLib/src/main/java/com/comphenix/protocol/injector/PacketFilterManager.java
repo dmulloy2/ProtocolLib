@@ -51,7 +51,12 @@ import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.injector.packet.PacketInjector;
+import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
+import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -138,6 +143,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Whether or not plugins are using the send/receive methods
 	private AtomicBoolean packetCreation = new AtomicBoolean();
 	
+	// Spigot listener, if in use
+	private SpigotPacketInjector spigotInjector;
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 * @param unhookTask 
@@ -177,15 +185,37 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		};
 		
 		try {
-			// Initialize injection mangers
-			this.playerInjection = new PlayerInjectionHandler(classLoader, reporter, isInjectionNecessary, this, packetListeners, server);
-			this.packetInjector = new PacketInjector(classLoader, this, playerInjection, reporter);
+			// Spigot
+			if (SpigotPacketInjector.canUseSpigotListener()) {
+				spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
+				this.playerInjection = spigotInjector.getPlayerHandler();
+				this.packetInjector = spigotInjector.getPacketInjector();
+				
+			} else {
+				// Initialize standard injection mangers
+				this.playerInjection = PlayerInjectorBuilder.newBuilder().
+						invoker(this).
+						server(server).
+						reporter(reporter).
+						classLoader(classLoader).
+						packetListeners(packetListeners).
+						injectionFilter(isInjectionNecessary).
+						buildHandler();
+			
+				this.packetInjector = PacketInjectorBuilder.newBuilder().
+						invoker(this).
+						reporter(reporter).
+						classLoader(classLoader).
+						playerInjection(playerInjection).
+						buildInjector();
+			}
+
 			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
 			
 			// Attempt to load the list of server and client packets
 			try {
-				this.serverPackets = MinecraftRegistry.getServerPackets();
-				this.clientPackets = MinecraftRegistry.getClientPackets();
+				this.serverPackets = PacketRegistry.getServerPackets();
+				this.clientPackets = PacketRegistry.getClientPackets();
 			} catch (FieldAccessException e) {
 				reporter.reportWarning(this, "Cannot load server and client packet list.", e);
 			}
@@ -600,6 +630,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param plugin - the parent plugin.
 	 */
 	public void registerEvents(PluginManager manager, final Plugin plugin) {
+		if (spigotInjector != null && !spigotInjector.register(plugin))
+			throw new IllegalArgumentException("Spigot has already been registered.");
 		
 		try {
 			manager.registerEvents(new Listener() {
@@ -692,22 +724,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (!MinecraftReflection.isPacketClass(packet))
 			throw new IllegalArgumentException("The given object " + packet + " is not a packet.");
 		
-		return MinecraftRegistry.getPacketToID().get(packet.getClass());
+		return PacketRegistry.getPacketToID().get(packet.getClass());
 	}
 	
 	@Override
 	public void registerPacketClass(Class<?> clazz, int packetID) {
-		MinecraftRegistry.getPacketToID().put(clazz, packetID);
+		PacketRegistry.getPacketToID().put(clazz, packetID);
 	}
 	
 	@Override
 	public void unregisterPacketClass(Class<?> clazz) {
-		MinecraftRegistry.getPacketToID().remove(clazz);
+		PacketRegistry.getPacketToID().remove(clazz);
 	}
 
 	@Override
 	public Class<?> getPacketClassFromID(int packetID, boolean forceVanilla) {
-		return MinecraftRegistry.getPacketClassFromID(packetID, forceVanilla);
+		return PacketRegistry.getPacketClassFromID(packetID, forceVanilla);
 	}
 	
 	// Yes, this is crazy.
@@ -823,7 +855,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
 	 */
 	public static Set<Integer> getServerPackets() throws FieldAccessException {
-		return MinecraftRegistry.getServerPackets();
+		return PacketRegistry.getServerPackets();
 	}
 	
 	/**
@@ -832,7 +864,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
 	 */
 	public static Set<Integer> getClientPackets() throws FieldAccessException {
-		return MinecraftRegistry.getClientPackets();
+		return PacketRegistry.getClientPackets();
 	}
 	
 	/**

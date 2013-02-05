@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector;
+package com.comphenix.protocol.injector.packet;
 
 import java.io.DataInputStream;
 import java.lang.reflect.Field;
@@ -33,6 +33,7 @@ import net.sf.cglib.proxy.Enhancer;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -43,7 +44,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * 
  * @author Kristian
  */
-class PacketInjector {
+class ProxyPacketInjector implements PacketInjector {
 
 	// The "put" method that associates a packet ID with a packet class
 	private static Method putMethod;
@@ -64,7 +65,7 @@ class PacketInjector {
 	// Class loader
 	private ClassLoader classLoader;
 			
-	public PacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
+	public ProxyPacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
 						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws IllegalAccessException {
 		
 		this.classLoader = classLoader;
@@ -80,6 +81,7 @@ class PacketInjector {
 	 * @param id - the id of the packet.
 	 * @param packet - packet to uncancel.
 	 */
+	@Override
 	public void undoCancel(Integer id, Object packet) {
 		ReadPacketModifier modifier = readModifier.get(id);
 		
@@ -93,7 +95,7 @@ class PacketInjector {
 		if (intHashMap == null) {
 			// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
 			Field intHashMapField = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).
-					getFieldByType(MinecraftReflection.MINECRAFT_OBJECT);
+					getFieldByType(MinecraftReflection.getMinecraftObjectRegex());
 			
 			try {
 				intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);
@@ -106,6 +108,7 @@ class PacketInjector {
 		}
 	}
 	
+	@Override
 	@SuppressWarnings("rawtypes")
 	public boolean addPacketHandler(int packetID) {
 		if (hasPacketHandler(packetID))
@@ -118,17 +121,17 @@ class PacketInjector {
 		//   * Object removeObject(int par1)
 		
 		// So, we'll use the classMapToInt registry instead.
-		Map<Integer, Class> overwritten = MinecraftRegistry.getOverwrittenPackets();
-		Map<Integer, Class> previous = MinecraftRegistry.getPreviousPackets();
-		Map<Class, Integer> registry = MinecraftRegistry.getPacketToID();
-		Class old = MinecraftRegistry.getPacketClassFromID(packetID);
+		Map<Integer, Class> overwritten = PacketRegistry.getOverwrittenPackets();
+		Map<Integer, Class> previous = PacketRegistry.getPreviousPackets();
+		Map<Class, Integer> registry = PacketRegistry.getPacketToID();
+		Class old = PacketRegistry.getPacketClassFromID(packetID);
 		
 		// If this packet is not known
 		if (old == null) {
 			throw new IllegalStateException("Packet ID " + packetID + " is not a valid packet ID in this version.");
 		}
 		// Check for previous injections
-		if (!old.getName().startsWith("net.minecraft.")) {
+		if (!MinecraftReflection.isMinecraftClass(old)) {
 			throw new IllegalStateException("Packet " + packetID + " has already been injected.");
 		}
 		
@@ -162,19 +165,20 @@ class PacketInjector {
 		}
 	}
 	
+	@Override
 	@SuppressWarnings("rawtypes")
 	public boolean removePacketHandler(int packetID) {
 		if (!hasPacketHandler(packetID))
 			return false;
 		
-		Map<Class, Integer> registry = MinecraftRegistry.getPacketToID();
-		Map<Integer, Class> previous = MinecraftRegistry.getPreviousPackets();
-		Map<Integer, Class> overwritten = MinecraftRegistry.getOverwrittenPackets();
+		Map<Class, Integer> registry = PacketRegistry.getPacketToID();
+		Map<Integer, Class> previous = PacketRegistry.getPreviousPackets();
+		Map<Integer, Class> overwritten = PacketRegistry.getOverwrittenPackets();
 		
 		// Use the old class definition
 		try {
 			Class old = previous.get(packetID);
-			Class proxy = MinecraftRegistry.getPacketClassFromID(packetID);
+			Class proxy = PacketRegistry.getPacketClassFromID(packetID);
 			
 			putMethod.invoke(intHashMap, packetID, old);
 			previous.remove(packetID);
@@ -193,16 +197,18 @@ class PacketInjector {
 		}
 	}
 	
+	@Override
 	public boolean hasPacketHandler(int packetID) {
-		return MinecraftRegistry.getPreviousPackets().containsKey(packetID);
+		return PacketRegistry.getPreviousPackets().containsKey(packetID);
 	}
 	
+	@Override
 	public Set<Integer> getPacketHandlers() {
-		return MinecraftRegistry.getPreviousPackets().keySet();
+		return PacketRegistry.getPreviousPackets().keySet();
 	}
 	
 	// Called from the ReadPacketModified monitor
-	PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
+	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
 		try {
 			Player client = playerInjection.getPlayerByConnection(input);
 			
@@ -225,18 +231,19 @@ class PacketInjector {
 	 * @param client - the client that sent the packet.
 	 * @return The resulting packet event.
 	 */
+	@Override
 	public PacketEvent packetRecieved(PacketContainer packet, Player client) {
-	
 		PacketEvent event = PacketEvent.fromClient((Object) manager, packet, client);
 		
 		manager.invokePacketRecieving(event);
 		return event;
 	}
 	
+	@Override
 	@SuppressWarnings("rawtypes")
 	public synchronized void cleanupAll() {
-		Map<Integer, Class> overwritten = MinecraftRegistry.getOverwrittenPackets();
-		Map<Integer, Class> previous = MinecraftRegistry.getPreviousPackets();
+		Map<Integer, Class> overwritten = PacketRegistry.getOverwrittenPackets();
+		Map<Integer, Class> previous = PacketRegistry.getPreviousPackets();
 		
 		// Remove every packet handler
 		for (Integer id : previous.keySet().toArray(new Integer[0])) {
