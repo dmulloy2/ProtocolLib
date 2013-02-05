@@ -15,6 +15,11 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 
+/**
+ * Dummy player handler that simply delegates to its parent Spigot packet injector.
+ * 
+ * @author Kristian
+ */
 class DummyPlayerHandler implements PlayerInjectionHandler {
 	private SpigotPacketInjector injector;
 	private IntegerSet sendingFilters;
