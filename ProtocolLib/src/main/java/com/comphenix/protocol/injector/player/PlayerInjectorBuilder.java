@@ -138,7 +138,8 @@ public class PlayerInjectorBuilder {
 		// Fill any default fields
 		initializeDefaults();
 		
-		return new ProxyPlayerInjectionHandler(classLoader, reporter, injectionFilter, invoker,
-				packetListeners, server);
+		return new ProxyPlayerInjectionHandler(
+				classLoader, reporter, injectionFilter, 
+				invoker, packetListeners, server);
 	}
 }

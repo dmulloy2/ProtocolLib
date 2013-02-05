@@ -153,10 +153,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	 * Use this to prepare any special values.
 	 */
 	protected void prepareBuild() {
-		// Permit any modifier if we havent's specified anything
-		if (modifiersRequired == 0) {
-			modifiersRequired = Integer.MAX_VALUE;
-		}
+		// No need to prepare anything
 	}
 	
 	// Clone a given contract

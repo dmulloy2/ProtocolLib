@@ -44,7 +44,7 @@ public class IntegerSet {
 	
 	/**
 	 * Determine whether or not the given element exists in the set.
-	 * @param value - the element to check. Must be in the range [0, count).
+	 * @param element - the element to check. Must be in the range [0, count).
 	 * @return TRUE if the given element exists, FALSE otherwise.
 	 */
 	public boolean contains(int element) {

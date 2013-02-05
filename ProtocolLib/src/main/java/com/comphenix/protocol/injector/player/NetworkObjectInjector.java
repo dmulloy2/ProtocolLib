@@ -28,6 +28,7 @@ import net.sf.cglib.proxy.MethodProxy;
 
 import java.lang.reflect.Method;
 
+import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
@@ -38,13 +39,14 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
 
 /**
- * Injection method that overrides the NetworkHandler itself, and it's sendPacket-method.
+ * Injection method that overrides the NetworkHandler itself, and it's queue-method.
  * 
  * @author Kristian
  */
-class NetworkObjectInjector extends PlayerInjector {
+public class NetworkObjectInjector extends PlayerInjector {
 	// Determine if we're listening
 	private IntegerSet sendingFilters;
 	
@@ -53,6 +55,9 @@ class NetworkObjectInjector extends PlayerInjector {
 
 	// Shared callback filter - avoid creating a new class every time
 	private static CallbackFilter callbackFilter;
+	
+	// Temporary player factory
+	private static volatile TemporaryPlayerFactory tempPlayerFactory;
 	
 	public NetworkObjectInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
@@ -64,6 +69,21 @@ class NetworkObjectInjector extends PlayerInjector {
 	@Override
 	protected boolean hasListener(int packetID) {
 		return sendingFilters.contains(packetID);
+	}
+	
+	/**
+	 * Create a temporary player for use during login.
+	 * @param server - Bukkit server.
+	 * @return The temporary player.
+	 */
+	public Player createTemporaryPlayer(Server server) {
+		if (tempPlayerFactory == null)
+			tempPlayerFactory = new TemporaryPlayerFactory();
+		
+		// Create and associate this fake player with this network injector
+		Player player = tempPlayerFactory.createTemporaryPlayer(server);
+		((InjectContainer) player).setInjector(this);
+		return player;
 	}
 	
 	@Override

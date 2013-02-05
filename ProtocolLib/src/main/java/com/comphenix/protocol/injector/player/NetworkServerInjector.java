@@ -52,7 +52,7 @@ import com.google.common.collect.Maps;
  * 
  * @author Kristian
  */
-public class NetworkServerInjector extends PlayerInjector {
+class NetworkServerInjector extends PlayerInjector {
 
 	private volatile static CallbackFilter callbackFilter;
 	

@@ -58,10 +58,10 @@ abstract class PlayerInjector {
 	protected static Field proxyServerField;
 
 	protected static Field networkManagerField;
-	protected static Field inputField;
 	protected static Field netHandlerField;
 	protected static Field socketField;
 	
+	private static Field inputField;
 	private static Field entityPlayerField;
 	
 	// Whether or not we're using a proxy type
@@ -206,11 +206,6 @@ abstract class PlayerInjector {
 		if (queueMethod == null)
 			queueMethod = FuzzyReflection.fromClass(reference.getType()).
 							getMethodByParameters("queue", MinecraftReflection.getPacketClass());
-		
-		// And the data input stream that we'll use to identify a player
-		if (inputField == null)
-			inputField = FuzzyReflection.fromObject(networkManager, true).
-							getFieldByType("java\\.io\\.DataInputStream");
 	}
 	
 	/**
@@ -250,9 +245,9 @@ abstract class PlayerInjector {
 	public Socket getSocket() throws IllegalAccessException {
 		try {
 			if (socketField == null)
-				socketField = FuzzyReflection.fromObject(networkManager).getFieldListByType(Socket.class).get(0);
+				socketField = FuzzyReflection.fromObject(networkManager, true).getFieldListByType(Socket.class).get(0);
 			if (socket == null)
-				socket = (Socket) FieldUtils.readField(socketField, networkManager);
+				socket = (Socket) FieldUtils.readField(socketField, networkManager, true);
 			return socket;
 			
 		} catch (IndexOutOfBoundsException e) {
@@ -570,11 +565,13 @@ abstract class PlayerInjector {
 	 * @return The player's input stream.
 	 */
 	public DataInputStream getInputStream(boolean cache) {
-		if (inputField == null)
-			throw new IllegalStateException("Input field is NULL.");
+		// And the data input stream that we'll use to identify a player
 		if (networkManager == null)
-				throw new IllegalStateException("Network manager is NULL.");
-		
+			throw new IllegalStateException("Network manager is NULL.");
+		if (inputField == null)
+			inputField = FuzzyReflection.fromObject(networkManager, true).
+							getFieldByType("java\\.io\\.DataInputStream");
+
 		// Get the associated input stream
 		try {
 			if (cache && cachedInput != null)
@@ -605,6 +602,16 @@ abstract class PlayerInjector {
 	}
 	
 	/**
+	 * Set the hooked player.
+	 * <p>
+	 * Should only be called during the creation of the injector.
+	 * @param player - the new hooked player.
+	 */
+	public void setPlayer(Player player) {
+		this.player = player;
+	}
+	
+	/**
 	 * Object that can invoke the packet events.
 	 * @return Packet event invoker.
 	 */
@@ -621,5 +628,13 @@ abstract class PlayerInjector {
 			return updatedPlayer;
 		else
 			return player;
+	}
+	
+	/**
+	 * Set the real Bukkit player that we will use.
+	 * @param updatedPlayer - the real Bukkit player.
+	 */
+	public void setUpdatedPlayer(Player updatedPlayer) {
+		this.updatedPlayer = updatedPlayer;
 	}
 }

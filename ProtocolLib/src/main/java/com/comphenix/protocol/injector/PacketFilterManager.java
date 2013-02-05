@@ -56,6 +56,7 @@ import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
+import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -142,6 +143,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Whether or not plugins are using the send/receive methods
 	private AtomicBoolean packetCreation = new AtomicBoolean();
 	
+	// Spigot listener, if in use
+	private SpigotPacketInjector spigotInjector;
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 * @param unhookTask 
@@ -181,22 +185,30 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		};
 		
 		try {
-			// Initialize injection mangers
-			this.playerInjection = PlayerInjectorBuilder.newBuilder().
-					invoker(this).
-					server(server).
-					reporter(reporter).
-					classLoader(classLoader).
-					packetListeners(packetListeners).
-					injectionFilter(isInjectionNecessary).
-					buildHandler();
-		
-			this.packetInjector = PacketInjectorBuilder.newBuilder().
-					invoker(this).
-					reporter(reporter).
-					classLoader(classLoader).
-					playerInjection(playerInjection).
-					buildInjector();
+			// Spigot
+			if (SpigotPacketInjector.canUseSpigotListener()) {
+				spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
+				this.playerInjection = spigotInjector.getPlayerHandler();
+				this.packetInjector = spigotInjector.getPacketInjector();
+				
+			} else {
+				// Initialize standard injection mangers
+				this.playerInjection = PlayerInjectorBuilder.newBuilder().
+						invoker(this).
+						server(server).
+						reporter(reporter).
+						classLoader(classLoader).
+						packetListeners(packetListeners).
+						injectionFilter(isInjectionNecessary).
+						buildHandler();
+			
+				this.packetInjector = PacketInjectorBuilder.newBuilder().
+						invoker(this).
+						reporter(reporter).
+						classLoader(classLoader).
+						playerInjection(playerInjection).
+						buildInjector();
+			}
 
 			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
 			
@@ -618,6 +630,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param plugin - the parent plugin.
 	 */
 	public void registerEvents(PluginManager manager, final Plugin plugin) {
+		if (spigotInjector != null && !spigotInjector.register(plugin))
+			throw new IllegalArgumentException("Spigot has already been registered.");
 		
 		try {
 			manager.registerEvents(new Listener() {
