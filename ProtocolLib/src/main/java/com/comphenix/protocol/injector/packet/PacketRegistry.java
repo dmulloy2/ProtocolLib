@@ -47,8 +47,12 @@ public class PacketRegistry {
 	private static Map<Class, Integer> packetToID;
 	
 	// Whether or not certain packets are sent by the client or the server
-	private static Set<Integer> serverPackets;
-	private static Set<Integer> clientPackets;
+	private static ImmutableSet<Integer> serverPackets;
+	private static ImmutableSet<Integer> clientPackets;
+	
+	// The underlying sets
+	private static Set<Integer> serverPacketsRef;
+	private static Set<Integer> clientPacketsRef;
 	
 	// New proxy values
 	private static Map<Integer, Class> overwrittenPackets = new HashMap<Integer, Class>();
@@ -120,21 +124,21 @@ public class PacketRegistry {
 	
 	@SuppressWarnings("unchecked")
 	private static void initializeSets() throws FieldAccessException {
-		if (serverPackets == null || clientPackets == null) {
+		if (serverPacketsRef == null || clientPacketsRef == null) {
 			List<Field> sets = getPacketRegistry().getFieldListByType(Set.class);
 			
 			try {
 				if (sets.size() > 1) {
-					serverPackets = (Set<Integer>) FieldUtils.readStaticField(sets.get(0), true);
-					clientPackets = (Set<Integer>) FieldUtils.readStaticField(sets.get(1), true);
+					serverPacketsRef = (Set<Integer>) FieldUtils.readStaticField(sets.get(0), true);
+					clientPacketsRef = (Set<Integer>) FieldUtils.readStaticField(sets.get(1), true);
 					
 					// Impossible
-					if (serverPackets == null || clientPackets == null)
+					if (serverPacketsRef == null || clientPacketsRef == null)
 						throw new FieldAccessException("Packet sets are in an illegal state.");
 					
 					// NEVER allow callers to modify the underlying sets
-					serverPackets = ImmutableSet.copyOf(serverPackets);
-					clientPackets = ImmutableSet.copyOf(clientPackets);
+					serverPackets = ImmutableSet.copyOf(serverPacketsRef);
+					clientPackets = ImmutableSet.copyOf(clientPacketsRef);
 					
 				} else {
 					throw new FieldAccessException("Cannot retrieve packet client/server sets.");
@@ -143,6 +147,13 @@ public class PacketRegistry {
 			} catch (IllegalAccessException e) {
 				throw new FieldAccessException("Cannot access field.", e);
 			}
+			
+		} else {
+			// Copy over again if it has changed
+			if (serverPacketsRef != null && serverPacketsRef.size() != serverPackets.size())
+				serverPackets = ImmutableSet.copyOf(serverPacketsRef);
+			if (clientPacketsRef != null && clientPacketsRef.size() != clientPackets.size())
+				clientPackets = ImmutableSet.copyOf(clientPacketsRef);
 		}
 	}
 	

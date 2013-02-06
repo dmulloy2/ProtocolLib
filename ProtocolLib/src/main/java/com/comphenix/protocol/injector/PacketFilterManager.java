@@ -133,8 +133,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	private AsyncFilterManager asyncFilterManager;
 	
 	// Valid server and client packets
-	private Set<Integer> serverPackets;
-	private Set<Integer> clientPackets;
+	private boolean knowsServerPackets;
+	private boolean knowsClientPackets;
 	
 	// Ensure that we're not performing too may injections
 	private AtomicInteger phaseLoginCount = new AtomicInteger(0);
@@ -214,8 +214,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			
 			// Attempt to load the list of server and client packets
 			try {
-				this.serverPackets = PacketRegistry.getServerPackets();
-				this.clientPackets = PacketRegistry.getClientPackets();
+				knowsServerPackets = PacketRegistry.getServerPackets() != null;
+				knowsClientPackets = PacketRegistry.getClientPackets() != null;
 			} catch (FieldAccessException e) {
 				reporter.reportWarning(this, "Cannot load server and client packet list.", e);
 			}
@@ -466,7 +466,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		for (int packetID : packets) {
 			// Only register server packets that are actually supported by Minecraft
 			if (side.isForServer()) {
-				if (serverPackets != null && serverPackets.contains(packetID))
+				// Note that we may update the packet list here
+				if (!knowsServerPackets || PacketRegistry.getServerPackets().contains(packetID))
 					playerInjection.addPacketHandler(packetID);
 				else
 					reporter.reportWarning(this, String.format(
@@ -477,7 +478,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			
 			// As above, only for client packets
 			if (side.isForClient() && packetInjector != null) {
-				if (clientPackets != null && clientPackets.contains(packetID))
+				if (!knowsClientPackets || PacketRegistry.getClientPackets().contains(packetID))
 					packetInjector.addPacketHandler(packetID);
 				else
 					reporter.reportWarning(this, String.format(
