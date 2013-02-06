@@ -553,7 +553,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("NetServerHandler", "PlayerConnection");
 		} catch (RuntimeException e) {
 			// Use the player connection field
-			return setMinecraftClass("NetLoginHandler", 
+			return setMinecraftClass("NetServerHandler", 
 						FuzzyReflection.fromClass(getEntityPlayerClass()).
 						getFieldByType("playerConnection", getNetHandlerClass()).getType()
 				   );
