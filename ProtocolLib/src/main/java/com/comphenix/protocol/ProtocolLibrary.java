@@ -40,6 +40,7 @@ import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.metrics.Updater;
+import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 
 /**
@@ -430,8 +431,10 @@ public class ProtocolLibrary extends JavaPlugin {
 		reporter = null;
 		
 		// Leaky ClassLoader begone!
-		CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), reporter);
-		cleanup.resetAll();
+		if (updater == null || updater.getResult() != UpdateResult.SUCCESS) {
+			CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), reporter);
+			cleanup.resetAll();
+		}
 	}
 	
 	// Get the Bukkit logger first, before we try to create our own
