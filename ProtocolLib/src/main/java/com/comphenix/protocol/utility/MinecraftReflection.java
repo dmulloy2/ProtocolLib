@@ -73,7 +73,7 @@ public class MinecraftReflection {
 
 	private static String MINECRAFT_FULL_PACKAGE = null;
 	private static String CRAFTBUKKIT_PACKAGE = null;
-	
+
 	private static CachedPackage minecraftPackage;
 	private static CachedPackage craftbukkitPackage;
 	
@@ -125,15 +125,15 @@ public class MinecraftReflection {
 		// This server should have a "getHandle" method that we can use
 		if (craftServer != null) {
 			try {
-				Class<?> craftClass = craftServer.getClass();
-				Method getHandle = craftClass.getMethod("getHandle");
-				
-				Class<?> returnType = getHandle.getReturnType();
-				String returnName = returnType.getCanonicalName();
-				
 				// The return type will tell us the full package, regardless of formating
+				Class<?> craftClass = craftServer.getClass();
 				CRAFTBUKKIT_PACKAGE = getPackage(craftClass.getCanonicalName());
-				MINECRAFT_FULL_PACKAGE = getPackage(returnName);
+				
+				// Next, do the same for CraftEntity.getHandle() in order to get the correct Minecraft package
+				Class<?> craftEntity = getCraftEntityClass();
+				Method getHandle = craftEntity.getMethod("getHandle");
+				
+				MINECRAFT_FULL_PACKAGE = getPackage(getHandle.getReturnType().getCanonicalName());
 				
 				// Pretty important invariant
 				if (!MINECRAFT_FULL_PACKAGE.startsWith(MINECRAFT_PREFIX_PACKAGE)) {
@@ -165,7 +165,7 @@ public class MinecraftReflection {
 			throw new IllegalStateException("Could not find Bukkit. Is it running?");
 		}
 	}
-	
+
 	/**
 	 * Used during debugging and testing.
 	 * @param minecraftPackage - the current Minecraft package.
@@ -185,7 +185,8 @@ public class MinecraftReflection {
 	 */
 	public static String getCraftBukkitPackage() {
 		// Ensure it has been initialized
-		getMinecraftPackage();
+		if (CRAFTBUKKIT_PACKAGE == null)
+			getMinecraftPackage();
 		return CRAFTBUKKIT_PACKAGE;
 	}
 	
@@ -490,21 +491,28 @@ public class MinecraftReflection {
 	public static Class<?> getMinecraftServerClass() {
 		try {
 			return getMinecraftClass("MinecraftServer");
-		} catch (RuntimeException e) {
-			// Get the first constructor that matches CraftServer(MINECRAFT_OBJECT, ANY)
-			Constructor<?> selected = FuzzyReflection.fromClass(getCraftBukkitClass("CraftServer")).
-					getConstructor(FuzzyMethodContract.newBuilder().
-							parameterMatches(getMinecraftObjectMatcher(), 0).
-							parameterCount(2).
-							build()
-					);
-			Class<?>[] params = selected.getParameterTypes();
-			
-			// Jackpot - two classes at the same time!
-			setMinecraftClass("MinecraftServer", params[0]);
-			setMinecraftClass("ServerConfigurationManager", params[1]);
-			return params[0];
+		} catch (RuntimeException e) {		
+			useFallbackServer();
+			return getMinecraftClass("MinecraftServer");
 		}
+	}
+	
+	/**
+	 * Fallback method that can determine the MinecraftServer and the ServerConfigurationManager.
+	 */
+	private static void useFallbackServer() {
+		// Get the first constructor that matches CraftServer(MINECRAFT_OBJECT, ANY)
+		Constructor<?> selected = FuzzyReflection.fromClass(getCraftBukkitClass("CraftServer")).
+				getConstructor(FuzzyMethodContract.newBuilder().
+						parameterMatches(getMinecraftObjectMatcher(), 0).
+						parameterCount(2).
+						build()
+				);
+		Class<?>[] params = selected.getParameterTypes();
+		
+		// Jackpot - two classes at the same time!
+		setMinecraftClass("MinecraftServer", params[0]);
+		setMinecraftClass("ServerConfigurationManager", params[1]);
 	}
 
 	/**
@@ -516,7 +524,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("ServerConfigurationManager", "PlayerList");
 		} catch (RuntimeException e) {
 			// Try again
-			getMinecraftServerClass();
+			useFallbackServer();
 			return getMinecraftClass("ServerConfigurationManager");
 		}
 	}
@@ -907,6 +915,14 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getCraftPlayerClass() { 
 		return getCraftBukkitClass("entity.CraftPlayer");
+	}
+	
+	/**
+	 * Retrieve the CraftEntity class.
+	 * @return CraftEntity class.
+	 */
+	public static Class<?> getCraftEntityClass() { 
+		return getCraftBukkitClass("entity.CraftEntity");
 	}
 		
 	/**
