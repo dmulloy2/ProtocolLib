@@ -427,7 +427,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	void uninjectPlayer(Player player) {
 		final NetworkObjectInjector injector = getInjector(player);
 		
-		if (player != null) {
+		if (player != null && injector != null) {
 			Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 				@Override
 				public void run() {
