@@ -95,7 +95,7 @@ public final class StructureCompiler {
 
 	// Used to store generated classes of different types
 	@SuppressWarnings("rawtypes")
-	private static class StructureKey {
+	static class StructureKey {
 		private Class targetType;
 		private Class fieldType;
 		
