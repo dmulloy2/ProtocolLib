@@ -24,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.concurrent.Callable;
 
 import net.sf.cglib.proxy.Factory;
 
@@ -100,7 +101,7 @@ abstract class PlayerInjector {
 	protected ErrorReporter reporter;
 
 	// Scheduled action on the next packet event
-	protected Runnable scheduledAction;
+	protected Callable<Boolean> scheduledAction;
 
 	// Whether or not the injector has been cleaned
 	private boolean clean;
@@ -519,9 +520,16 @@ abstract class PlayerInjector {
 			
 			// Hack #1: Handle a single scheduled action
 			if (scheduledAction != null) {
-				scheduledAction.run();
-				scheduledAction = null;
+				try {
+					if (scheduledAction.call()) {
+						scheduledAction = null;
+					}
+				} catch (Exception e) {
+					reporter.reportDetailed(this, "Cannot perform hack #1.", e, scheduledAction, packet);
+					scheduledAction = null;
+				}
 			}
+			
 			// Hack #2
 			if (updateOnLogin) {
 				if (id == Packets.Server.LOGIN) {
@@ -595,9 +603,11 @@ abstract class PlayerInjector {
 	
 	/**
 	 * Schedule an action to occur on the next sent packet.
+	 * <p>
+	 * If the callable returns TRUE, the action is removed.
 	 * @param action - action to execute.
 	 */
-	public void scheduleAction(Runnable action) {
+	public void scheduleAction(Callable<Boolean> action) {
 		scheduledAction = action;
 	}
 

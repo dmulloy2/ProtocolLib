@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Server;
@@ -663,10 +664,17 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 
 		// Update the DataInputStream
 		if (injector != null) {
-			injector.scheduleAction(new Runnable() {
+			injector.scheduleAction(new Callable<Boolean>() {
 				@Override
-				public void run() {
-					dataInputLookup.put(injector.getInputStream(false), injector);
+				public Boolean call() throws Exception {
+					DataInputStream inputStream = injector.getInputStream(false);
+					
+					if (inputStream != null) {
+						dataInputLookup.put(inputStream, injector);
+						return true;
+					} 
+					// Try again
+					return false;
 				}
 			});
 		}
