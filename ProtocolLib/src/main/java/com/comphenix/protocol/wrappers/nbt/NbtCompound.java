@@ -16,6 +16,10 @@ import java.util.Set;
  * @author Kristian
  */
 public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>> {
+	@Override
+	@Deprecated()
+	public Map<String, NbtBase<?>> getValue();
+	
 	/**
 	 * Determine if an entry with the given key exists or not.
 	 * @param key - the key to lookup. 
@@ -304,6 +308,13 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 */
 	public abstract <T> NbtCompound put(String key, Collection<? extends NbtBase<T>> list);
 
+	/**
+	 * Remove the NBT element that is associated with the given key.
+	 * @param key - the key of the element to remove.
+	 * @return The removed element, or NULL if no such element was found.
+	 */
+	public abstract <T> NbtBase<?> remove(String key);
+	
 	/**
 	 * Retrieve an iterator view of the NBT tags stored in this compound.
 	 * @return The tags stored in this compound.

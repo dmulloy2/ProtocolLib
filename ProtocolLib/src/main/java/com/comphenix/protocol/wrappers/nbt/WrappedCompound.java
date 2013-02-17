@@ -215,6 +215,9 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	 */
 	@Override
 	public <T> NbtCompound put(NbtBase<T> entry) {
+		if (entry == null)
+			throw new IllegalArgumentException("Entry cannot be NULL.");
+		
 		getValue().put(entry.getName(), entry);
 		return this;
 	}
@@ -565,6 +568,9 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	
 	@Override
 	public NbtCompound put(String key, NbtBase<?> entry) {
+		if (entry == null)
+			throw new IllegalArgumentException("Entry cannot be NULL.");
+		
 		// Don't modify the original NBT
 		NbtBase<?> clone = entry.deepClone();
 		
@@ -581,6 +587,11 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	@Override
 	public <T> NbtCompound put(String key, Collection<? extends NbtBase<T>> list) {
 		return put(WrappedList.fromList(key, list));
+	}
+	
+	@Override
+	public <T> NbtBase<?> remove(String key) {
+		return getValue().remove(key);
 	}
 	
 	@Override
