@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 /**
  * Represents a mapping of arbitrary NBT elements and their unique names.
  * <p>
@@ -52,8 +54,9 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * Set a entry based on its name.
 	 * @param entry - entry with a name and value.
 	 * @return This compound, for chaining.
+	 * @throws IllegalArgumentException If entry is NULL.
 	 */
-	public abstract <T> NbtCompound put(NbtBase<T> entry);
+	public abstract <T> NbtCompound put(@Nonnull NbtBase<T> entry);
 
 	/**
 	 * Retrieve the string value of an entry identified by a given key.
@@ -255,7 +258,18 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * @return This current compound, for chaining.
 	 */
 	public abstract NbtCompound put(String key, int[] value);
-
+	
+	/**
+	 * Associates a given Java primitive value, list, map or NbtBase<?> with a certain key.
+	 * <p>
+	 * If the value is NULL, the corresponding key is removed.
+	 * 
+	 * @param key - the name of the new entry,
+	 * @param value - the value of the new entry, or NULL to remove the current value.
+	 * @return This current compound, for chaining.
+	 */
+	public abstract NbtCompound putObject(String key, Object value);
+	
 	/**
 	 * Retrieve the compound (map) value of an entry identified by a given key.
 	 * @param key - the key of the entry.

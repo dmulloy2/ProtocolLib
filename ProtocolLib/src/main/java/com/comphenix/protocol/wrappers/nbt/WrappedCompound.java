@@ -152,7 +152,13 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	public void setValue(Map<String, NbtBase<?>> newValue) {
 		// Write all the entries
 		for (Map.Entry<String, NbtBase<?>> entry : newValue.entrySet()) {
-			put(entry.getValue());
+			Object value = entry.getValue();
+			
+			// We don't really know
+			if (value instanceof NbtBase)
+				put(entry.getValue());
+			else
+				putObject(entry.getKey(), entry.getValue());
 		}
 	}
 	
@@ -252,6 +258,19 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	@Override
 	public NbtCompound put(String key, String value) {
 		getValue().put(key, NbtFactory.of(key, value));
+		return this;
+	}
+	
+	@Override
+	public NbtCompound putObject(String key, Object value) {
+		if (value == null) {
+			remove(key);
+		} else if (value instanceof NbtBase) {
+			put(key, (NbtBase<?>) value);
+		} else {
+			NbtBase<?> base = new MemoryElement<Object>(key, value);
+			put(base);
+		}
 		return this;
 	}
 	
