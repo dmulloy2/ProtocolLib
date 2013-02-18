@@ -274,6 +274,16 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 		return this;
 	}
 	
+	@Override
+	public Object getObject(String key) {
+		NbtBase<?> base = getValue(key);
+		
+		if (base != null && base.getType() != NbtType.TAG_LIST && base.getType() != NbtType.TAG_COMPOUND)
+			return base.getValue();
+		else
+			return base;
+	}
+	
 	/**
 	 * Retrieve the byte value of an entry identified by a given key.
 	 * @param key - the key of the entry.

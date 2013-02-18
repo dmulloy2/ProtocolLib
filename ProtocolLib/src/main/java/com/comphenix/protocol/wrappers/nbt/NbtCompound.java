@@ -262,13 +262,21 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	/**
 	 * Associates a given Java primitive value, list, map or NbtBase<?> with a certain key.
 	 * <p>
-	 * If the value is NULL, the corresponding key is removed.
+	 * If the value is NULL, the corresponding key is removed. Any Map or List will be converted
+	 * to a corresponding NbtCompound or NbtList.
 	 * 
 	 * @param key - the name of the new entry,
 	 * @param value - the value of the new entry, or NULL to remove the current value.
 	 * @return This current compound, for chaining.
 	 */
 	public abstract NbtCompound putObject(String key, Object value);
+	
+	/**
+	 * Retrieve the primitive object, NbtList or NbtCompound associated with the given key.
+	 * @param key - the key of the object to find.
+	 * @return The object with this key, or NULL if we couldn't find anything.
+	 */
+	public abstract Object getObject(String key);
 	
 	/**
 	 * Retrieve the compound (map) value of an entry identified by a given key.
