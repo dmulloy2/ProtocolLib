@@ -96,6 +96,9 @@ public class PacketContainer implements Serializable {
 			andThen(new Function<BuilderParameters, Cloner>() {
 						@Override
 						public Cloner apply(@Nullable BuilderParameters param) {
+							if (param == null)
+								throw new IllegalArgumentException("Cannot be NULL.");
+							
 							return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
 								// Use a default writer with no concept of cloning
 								writer = new ObjectWriter();

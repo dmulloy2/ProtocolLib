@@ -54,7 +54,7 @@ public class NetworkObjectInjector extends PlayerInjector {
 	private ClassLoader classLoader;
 
 	// Shared callback filter - avoid creating a new class every time
-	private static CallbackFilter callbackFilter;
+	private volatile static CallbackFilter callbackFilter;
 	
 	// Temporary player factory
 	private static volatile TemporaryPlayerFactory tempPlayerFactory;
