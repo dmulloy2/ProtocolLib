@@ -42,6 +42,7 @@ import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
+import com.comphenix.protocol.utility.ChatExtensions;
 
 /**
  * The main entry point for ProtocolLib.
@@ -216,6 +217,21 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Don't do anything else!
 			if (manager == null)
 				return;
+			// Silly plugin reloaders!
+			if (protocolManager == null) {
+				Logger directLogging = Logger.getLogger("Minecraft");
+				String[] message = new String[] { 
+						" PROTOCOLLIB DOES NOT SUPPORT PLUGIN RELOADERS. ",
+						" PLEASE USE THE BUILT-IN RELOAD COMMAND. ",
+				};
+				
+				// Print as severe
+				for (String line : ChatExtensions.toFlowerBox(message, "*", 3, 1)) {
+					directLogging.severe(line);
+				}
+				disablePlugin();
+				return;
+			}
 			
 			// Perform logic when the world has loaded
 			protocolManager.postWorldLoaded();
@@ -261,7 +277,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			reporter.reportDetailed(this, "Metrics cannot be enabled. Incompatible Bukkit version.", e, statistisc);
 		}
 	}
-
+	
 	// Used to check Minecraft version
 	private void verifyMinecraftVersion() {
 		try {
@@ -426,9 +442,13 @@ public class ProtocolLibrary extends JavaPlugin {
 		if (redirectHandler != null) {
 			logger.removeHandler(redirectHandler);
 		}
-		
-		unhookTask.close();
-		protocolManager.close();
+		if (protocolManager != null) 
+			protocolManager.close();
+		else
+			return; // Plugin reloaders!
+	
+		if (unhookTask != null) 
+			unhookTask.close();
 		protocolManager = null;
 		statistisc = null;
 		reporter = null;
