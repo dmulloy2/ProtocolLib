@@ -36,7 +36,9 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
-import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
+import com.comphenix.protocol.injector.server.InjectedServerSocket;
+import com.comphenix.protocol.injector.server.SocketInjector;
+import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 
@@ -104,7 +106,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	public void postWorldLoaded() {
 		// This will actually create a socket and a seperate thread ...
 		if (serverSocket != null) {
-			serverSocket.cycleServerPorts();
+			serverSocket.postWorldLoaded();
 		}
 	}
 
@@ -498,16 +500,13 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		
 		if (injector == null) {
 			// Try getting it from the player itself
-			if (player instanceof InjectContainer) {
-				SocketInjector socket = ((InjectContainer) player).getInjector();
-				
-				// It may be a player injector too
-				if (socket instanceof PlayerInjector)
-					return (PlayerInjector) socket;
+			SocketInjector socket = TemporaryPlayerFactory.getInjectorFromPlayer(player);
+			
+			// Only accept it if it's a player injector
+			if (!(socket instanceof PlayerInjector)) {
+				socket = serverSocket.getSocketInjector(player.getAddress());
 			}
-			
-			SocketInjector socket = serverSocket.getSocketInjector(player.getAddress());
-			
+
 			// Ensure that it is a player injector
 			if (socket instanceof PlayerInjector)
 				return (PlayerInjector) socket;

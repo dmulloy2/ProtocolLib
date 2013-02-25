@@ -27,6 +27,7 @@ import net.sf.cglib.proxy.Factory;
 import org.bukkit.Server;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.injector.server.InjectedServerSocket;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;

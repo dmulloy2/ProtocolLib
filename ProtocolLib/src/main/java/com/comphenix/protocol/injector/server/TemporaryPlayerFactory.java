@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.injector.server;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -36,25 +36,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 /**
  * Create fake player instances that represents pre-authenticated clients.
  */
-class TemporaryPlayerFactory {
-	/**
-	 * Able to store a socket injector.
-	 * <p>
-	 * A necessary hack.
-	 * @author Kristian
-	 */
-	public static class InjectContainer {
-		private SocketInjector injector;
-
-		public SocketInjector getInjector() {
-			return injector;
-		}
-
-		public void setInjector(SocketInjector injector) {
-			this.injector = injector;
-		}
-	}
-	
+public class TemporaryPlayerFactory {
 	// Helpful constructors
 	private final PacketConstructor chatPacket;
 	
@@ -63,6 +45,18 @@ class TemporaryPlayerFactory {
 	
 	public TemporaryPlayerFactory() {
 		chatPacket =  PacketConstructor.DEFAULT.withPacket(3, new Object[] { "DEMO" });
+	}
+	
+	/**
+	 * Retrieve the injector from a given player if it contains one.
+	 * @param player - the player that may contain a reference to a player injector.
+	 * @return The referenced player injector, or NULL if none can be found.
+	 */
+	public static SocketInjector getInjectorFromPlayer(Player player) {
+		if (player instanceof InjectContainer) {
+			return ((InjectContainer) player).getInjector();
+		} 
+		return null;
 	}
 	
 	/**
@@ -162,6 +156,19 @@ class TemporaryPlayerFactory {
 		ex.setCallbackFilter(callbackFilter);
     	
     	return (Player) ex.create();
+	}
+	
+	/**
+	 * Construct a temporary player with the given associated socket injector.
+	 * @param server - the parent server.
+	 * @param injector - the referenced socket injector.
+	 * @return The temporary player.
+	 */
+	public Player createTemporaryPlayer(Server server, SocketInjector injector) {
+		Player temporary = createTemporaryPlayer(server);
+		
+		((InjectContainer) temporary).setInjector(injector);
+		return temporary;
 	}
 	
 	/**

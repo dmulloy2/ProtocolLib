@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.injector.server;
 
 import java.io.IOException;
 import java.io.InputStream;

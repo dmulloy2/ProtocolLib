@@ -25,6 +25,8 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
+import com.comphenix.protocol.injector.server.InjectedServerSocket;
+import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;

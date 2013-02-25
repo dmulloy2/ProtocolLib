@@ -37,6 +37,7 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;

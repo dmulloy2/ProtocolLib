@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.injector.server;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -23,7 +23,6 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -235,11 +234,18 @@ public class InjectedServerSocket {
 	}
 	
 	/**
+	 * Invoked when the world has loaded.
+	 */
+	public void postWorldLoaded() {
+		cycleServerPorts();
+	}
+	
+	/**
 	 * Invoked when we need to cycle the injected server port. 
 	 * <p>
 	 * This uses a fairly significant hack - we connect to our own server.
 	 */
-	public void cycleServerPorts() {
+	private void cycleServerPorts() {
 		final ServerSocket serverSocket = (ServerSocket) injectedServerSocket.getValue();
 		final SocketAddress address = new InetSocketAddress("127.0.0.1", serverSocket.getLocalPort());
 
@@ -423,7 +429,7 @@ public class InjectedServerSocket {
 			injectedServerSocket.revertValue();
 			
 			// This is going to suck
-			//cycleServerPorts();
+			cycleServerPorts();
 		}
 	}
 }

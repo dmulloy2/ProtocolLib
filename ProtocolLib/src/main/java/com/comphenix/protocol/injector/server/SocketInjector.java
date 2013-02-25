@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.injector.server;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
  * 
  * @author Kristian
  */
-interface SocketInjector {
+public interface SocketInjector {
 	/**
 	 * Retrieve the associated socket of this player.
 	 * @return The associated socket.

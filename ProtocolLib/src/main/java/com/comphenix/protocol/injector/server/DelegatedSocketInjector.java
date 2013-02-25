@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.injector.server;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
