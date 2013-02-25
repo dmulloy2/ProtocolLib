@@ -36,7 +36,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
-import com.comphenix.protocol.injector.server.InjectedServerSocket;
+import com.comphenix.protocol.injector.server.InputStreamPlayerLookup;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.google.common.base.Predicate;
@@ -52,7 +52,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private InjectedServerConnection serverInjection;
 	
 	// Server socket injection
-	private InjectedServerSocket serverSocket;
+	private InputStreamPlayerLookup serverSocket;
 	
 	// NetLogin injector
 	private NetLoginInjector netLoginInjector;
@@ -96,7 +96,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		this.invoker = invoker;
 		this.injectionFilter = injectionFilter;
 		this.packetListeners = packetListeners;
-		this.serverSocket = new InjectedServerSocket(reporter, server);
+		this.serverSocket = new InputStreamPlayerLookup(reporter, server);
 		this.netLoginInjector = new NetLoginInjector(reporter, this, serverSocket);
 		this.serverInjection = new InjectedServerConnection(reporter, serverSocket, server, netLoginInjector);
 		serverInjection.injectList();

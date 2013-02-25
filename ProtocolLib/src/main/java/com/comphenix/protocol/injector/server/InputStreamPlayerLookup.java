@@ -34,7 +34,7 @@ import com.google.common.collect.MapMaker;
  *  
  * @author Kristian
  */
-public class InjectedServerSocket {
+public class InputStreamPlayerLookup {
 	/**
 	 * The read and connect timeout for our built-in MOTD reader.
 	 */
@@ -162,7 +162,7 @@ public class InjectedServerSocket {
 	// Used to create fake players
 	private TemporaryPlayerFactory tempPlayerFactory = new TemporaryPlayerFactory();
 
-	public InjectedServerSocket(ErrorReporter reporter, Server server) {
+	public InputStreamPlayerLookup(ErrorReporter reporter, Server server) {
 		this.reporter = reporter;
 		this.server = server;
 	}

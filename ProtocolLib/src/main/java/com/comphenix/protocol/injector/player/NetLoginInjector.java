@@ -25,7 +25,7 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
-import com.comphenix.protocol.injector.server.InjectedServerSocket;
+import com.comphenix.protocol.injector.server.InputStreamPlayerLookup;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -45,12 +45,12 @@ class NetLoginInjector {
 	private ProxyPlayerInjectionHandler injectionHandler;
 	
 	// Associate input streams and injectors
-	private InjectedServerSocket serverSocket;
+	private InputStreamPlayerLookup serverSocket;
 	
 	// The current error rerporter
 	private ErrorReporter reporter;
 	
-	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, InjectedServerSocket serverSocket) {
+	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, InputStreamPlayerLookup serverSocket) {
 		this.reporter = reporter;
 		this.injectionHandler = injectionHandler;
 		this.serverSocket = serverSocket;
