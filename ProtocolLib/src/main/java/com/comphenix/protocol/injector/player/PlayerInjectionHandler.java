@@ -4,8 +4,6 @@ import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -60,16 +58,6 @@ public interface PlayerInjectionHandler {
 	 */
 	public abstract Player getPlayerByConnection(DataInputStream inputStream)
 			throws InterruptedException;
-
-	/**
-	 * Retrieve a player by its DataInput connection.
-	 * @param inputStream - the associated DataInput connection.
-	 * @param playerTimeout - the amount of time to wait for a result.
-	 * @param unit - unit of playerTimeout.
-	 * @return The player. 
-	 * @throws InterruptedException If the thread was interrupted during the wait.
-	 */
-	public abstract Player getPlayerByConnection(DataInputStream inputStream, long playerTimeout, TimeUnit unit) throws InterruptedException;
 
 	/**
 	 * Initialize a player hook, allowing us to read server packets.
@@ -149,8 +137,7 @@ public interface PlayerInjectionHandler {
 	public abstract void close();
 
 	/**
-	 * Inform the current PlayerInjector that it should update the DataInputStream next.
-	 * @param player - the player to update.
+	 * Perform any action that must be delayed until the world(s) has loaded.
 	 */
-	public abstract void scheduleDataInputRefresh(Player player);
+	public abstract void postWorldLoaded();
 }

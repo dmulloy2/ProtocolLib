@@ -217,6 +217,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			if (manager == null)
 				return;
 			
+			// Perform logic when the world has loaded
+			protocolManager.postWorldLoaded();
+			
 			// Initialize background compiler
 			if (backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
 				backgroundCompiler = new BackgroundCompiler(getClassLoader(), reporter);

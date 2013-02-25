@@ -53,6 +53,9 @@ class InjectedServerConnection {
 	// Used to inject net handlers
 	private NetLoginInjector netLoginInjector;
 	
+	// Inject server connections
+	private InjectedServerSocket socketInjector; 
+	
 	private Server server;
 	private ErrorReporter reporter;
 	private boolean hasAttempted;
@@ -60,11 +63,12 @@ class InjectedServerConnection {
 	
 	private Object minecraftServer = null;
 	
-	public InjectedServerConnection(ErrorReporter reporter, Server server, NetLoginInjector netLoginInjector) {
+	public InjectedServerConnection(ErrorReporter reporter, InjectedServerSocket socketInjector, Server server, NetLoginInjector netLoginInjector) {
 		this.listFields = new ArrayList<VolatileField>();
 		this.replacedLists = new ArrayList<ReplacedArrayList<Object>>();
 		this.reporter = reporter;
 		this.server = server;
+		this.socketInjector = socketInjector;
 		this.netLoginInjector = netLoginInjector;
 	}
 
@@ -126,6 +130,9 @@ class InjectedServerConnection {
 			return;
 		}
 		
+		// Inject the server socket too
+		injectServerSocket(listenerThread);
+		
 		// Just inject every list field we can get
 		injectEveryListField(listenerThread, 1);
 		hasSuccess = true;
@@ -147,7 +154,8 @@ class InjectedServerConnection {
 			listField = FuzzyReflection.fromClass(serverConnectionMethod.getReturnType(), true).
 							getFieldByType("netServerHandlerList", List.class);
 		if (dedicatedThreadField == null) {
-			List<Field> matches = FuzzyReflection.fromObject(serverConnection, true).getFieldListByType(Thread.class);
+			List<Field> matches = FuzzyReflection.fromObject(serverConnection, true).
+								   getFieldListByType(Thread.class);
 		
 			// Verify the field count
 			if (matches.size() != 1) 
@@ -158,8 +166,13 @@ class InjectedServerConnection {
 		
 		// Next, try to get the dedicated thread
 		try {
-			if (dedicatedThreadField != null)
-				injectEveryListField(FieldUtils.readField(dedicatedThreadField, serverConnection, true), 1);
+			if (dedicatedThreadField != null) {
+				Object dedicatedThread = FieldUtils.readField(dedicatedThreadField, serverConnection, true);
+				
+				// Inject server socket and NetServerHandlers.
+				injectServerSocket(dedicatedThread);
+				injectEveryListField(dedicatedThread, 1);
+			}
 		} catch (IllegalAccessException e) {
 			reporter.reportWarning(this, "Unable to retrieve net handler thread.", e);
 		}
@@ -168,6 +181,10 @@ class InjectedServerConnection {
 		hasSuccess = true;
 	}
 	
+	private void injectServerSocket(Object container) {
+		socketInjector.inject(container);
+	}
+
 	/**
 	 * Automatically inject into every List-compatible public or private field of the given object.
 	 * @param container - container object with the fields to inject.

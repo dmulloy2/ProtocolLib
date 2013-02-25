@@ -17,14 +17,15 @@
 
 package com.comphenix.protocol.injector.player;
 
+import java.lang.reflect.Method;
+import java.net.Socket;
 import java.util.concurrent.ConcurrentMap;
 
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
-import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
@@ -34,23 +35,23 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class NetLoginInjector {
-
 	private ConcurrentMap<Object, PlayerInjector> injectedLogins = Maps.newConcurrentMap();
+	
+	private static Method getSocketMethod;
 	
 	// Handles every hook
 	private ProxyPlayerInjectionHandler injectionHandler;
-	private Server server;
+	
+	// Associate input streams and injectors
+	private InjectedServerSocket serverSocket;
 	
 	// The current error rerporter
 	private ErrorReporter reporter;
 	
-	// Used to create fake players
-	private TemporaryPlayerFactory tempPlayerFactory = new TemporaryPlayerFactory();
-	
-	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, Server server) {
+	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, InjectedServerSocket serverSocket) {
 		this.reporter = reporter;
 		this.injectionHandler = injectionHandler;
-		this.server = server;
+		this.serverSocket = serverSocket;
 	}
 
 	/**
@@ -64,16 +65,23 @@ class NetLoginInjector {
 			if (!injectionHandler.isInjectionNecessary(GamePhase.LOGIN))
 				return inserting;
 			
-			Player fakePlayer = tempPlayerFactory.createTemporaryPlayer(server);
-			PlayerInjector injector = injectionHandler.injectPlayer(fakePlayer, inserting, GamePhase.LOGIN);
-			injector.updateOnLogin = true;
+			if (getSocketMethod == null) {
+				getSocketMethod = FuzzyReflection.fromObject(inserting).
+					getMethodByParameters("getSocket", Socket.class, new Class<?>[0]);
+			}
+
+			// Get the underlying socket
+			Socket socket = (Socket) getSocketMethod.invoke(inserting);
+			SocketInjector socketInjector = serverSocket.getSocketInjector(socket);
 			
-			// Associate the injector too
-			InjectContainer container = (InjectContainer) fakePlayer;
-			container.setInjector(injector);
-			
-			// Save the login
-			injectedLogins.putIfAbsent(inserting, injector);
+			// This is the case if we're dealing with a connection initiated by the injected server socket
+			if (socketInjector != null) {
+				PlayerInjector injector = injectionHandler.injectPlayer(socketInjector.getPlayer(), inserting, GamePhase.LOGIN);
+				injector.updateOnLogin = true;
+	
+				// Save the login
+				injectedLogins.putIfAbsent(inserting, injector);
+			}
 			
 			// NetServerInjector can never work (currently), so we don't need to replace the NetLoginHandler
 			return inserting;	
@@ -108,15 +116,13 @@ class NetLoginInjector {
 				
 				// Hack to clean up other references
 				newInjector = injectionHandler.getInjectorByNetworkHandler(injected.getNetworkManager());
+				injectionHandler.uninjectPlayer(player);
 				
 				// Update NetworkManager
-				if (newInjector == null) {
-					injectionHandler.uninjectPlayer(player);
-				} else {
-					injectionHandler.uninjectPlayer(player, false);
-					
-					if (injected instanceof NetworkObjectInjector)
+				if (newInjector != null) {
+					if (injected instanceof NetworkObjectInjector) {
 						newInjector.setNetworkManager(injected.getNetworkManager(), true);
+					}
 				}
 				
 			} catch (Throwable e) {

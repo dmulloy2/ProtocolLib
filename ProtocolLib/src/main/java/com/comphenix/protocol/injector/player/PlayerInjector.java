@@ -24,8 +24,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.concurrent.Callable;
-
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.entity.Player;
@@ -45,7 +43,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
-abstract class PlayerInjector {
+abstract class PlayerInjector implements SocketInjector {
 
 	// Net login handler stuff
 	private static Field netLoginNetworkField;
@@ -99,9 +97,6 @@ abstract class PlayerInjector {
 	
 	// Handle errors
 	protected ErrorReporter reporter;
-
-	// Scheduled action on the next packet event
-	protected Callable<Boolean> scheduledAction;
 
 	// Whether or not the injector has been cleaned
 	private boolean clean;
@@ -250,6 +245,7 @@ abstract class PlayerInjector {
 	 * @return The associated socket.
 	 * @throws IllegalAccessException If we're unable to read the socket field.
 	 */
+	@Override
 	public Socket getSocket() throws IllegalAccessException {
 		try {
 			if (socketField == null)
@@ -268,6 +264,7 @@ abstract class PlayerInjector {
 	 * @return The associated address.
 	 * @throws IllegalAccessException If we're unable to read the socket field.
 	 */
+	@Override
 	public SocketAddress getAddress() throws IllegalAccessException {
 		Socket socket = getSocket();
 		
@@ -283,6 +280,7 @@ abstract class PlayerInjector {
 	 * @param message - the message to display.
 	 * @throws InvocationTargetException If disconnection failed.
 	 */
+	@Override
 	public void disconnect(String message) throws InvocationTargetException {
 		// Get a non-null handler
 		boolean usingNetServer = serverHandler != null;
@@ -451,6 +449,7 @@ abstract class PlayerInjector {
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
+	@Override
 	public abstract void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException;
 	
 	/**
@@ -518,19 +517,7 @@ abstract class PlayerInjector {
 			Integer id = invoker.getPacketID(packet);
 			Player currentPlayer = player;
 			
-			// Hack #1: Handle a single scheduled action
-			if (scheduledAction != null) {
-				try {
-					if (scheduledAction.call()) {
-						scheduledAction = null;
-					}
-				} catch (Exception e) {
-					reporter.reportDetailed(this, "Cannot perform hack #1.", e, scheduledAction, packet);
-					scheduledAction = null;
-				}
-			}
-			
-			// Hack #2
+			// Hack #1
 			if (updateOnLogin) {
 				if (id == Packets.Server.LOGIN) {
 					try {
@@ -602,18 +589,9 @@ abstract class PlayerInjector {
 	}
 	
 	/**
-	 * Schedule an action to occur on the next sent packet.
-	 * <p>
-	 * If the callable returns TRUE, the action is removed.
-	 * @param action - action to execute.
-	 */
-	public void scheduleAction(Callable<Boolean> action) {
-		scheduledAction = action;
-	}
-
-	/**
 	 * Retrieve the hooked player.
 	 */
+	@Override
 	public Player getPlayer() {
 		return player;
 	}
@@ -640,11 +618,17 @@ abstract class PlayerInjector {
 	 * Retrieve the hooked player object OR the more up-to-date player instance.
 	 * @return The hooked player, or a more up-to-date instance.
 	 */
+	@Override
 	public Player getUpdatedPlayer() {
 		if (updatedPlayer != null)
 			return updatedPlayer;
 		else
 			return player;
+	}
+	
+	@Override
+	public void transferState(SocketInjector delegate) {
+		// Do nothing
 	}
 	
 	/**

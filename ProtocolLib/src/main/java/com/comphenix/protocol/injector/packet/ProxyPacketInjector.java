@@ -30,6 +30,7 @@ import org.bukkit.entity.Player;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -211,18 +212,22 @@ class ProxyPacketInjector implements PacketInjector {
 	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
 		try {
 			Player client = playerInjection.getPlayerByConnection(input);
-			
+
 			// Never invoke a event if we don't know where it's from
-			if (client != null)
+			if (client != null) {
 				return packetRecieved(packet, client);
-			else
+			} else {
+				// Hack #2 - Caused by our server socket injector
+				if (packet.getID() != Packets.Client.GET_INFO)
+					System.out.println("[ProtocolLib] Unknown origin " + input + " for packet " + packet.getID());
 				return null;
+			}
 			
 		} catch (InterruptedException e) {
 			// We will ignore this - it occurs when a player disconnects
 			//reporter.reportDetailed(this, "Thread was interrupted.", e, packet, input);
 			return null;
-		}
+		} 
 	}
 	
 	/**
@@ -252,13 +257,5 @@ class ProxyPacketInjector implements PacketInjector {
 		
 		overwritten.clear();
 		previous.clear();
-	}
-
-	/**
-	 * Inform the current PlayerInjector that it should update the DataInputStream next.
-	 * @param player - the player to update.
-	 */
-	public void scheduleDataInputRefresh(Player player) {
-		playerInjection.scheduleDataInputRefresh(player);
 	}
 }

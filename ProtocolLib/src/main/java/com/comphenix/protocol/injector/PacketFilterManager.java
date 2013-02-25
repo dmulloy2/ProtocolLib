@@ -225,6 +225,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		}
 	}
 	
+	/**
+	 * Initiate logic that is performed after the world has loaded.
+	 */
+	public void postWorldLoaded() {
+		playerInjection.postWorldLoaded();
+	}
+	
 	@Override
 	public AsynchronousManager getAsynchronousManager() {
 		return asyncFilterManager;
@@ -275,15 +282,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				// Make sure this is possible
 				playerInjection.checkListener(listener);
 			}
+			if (hasSending)
+				incrementPhases(sending.getGamePhase());
+			
+			// Handle receivers after senders
 			if (hasReceiving) {
 				verifyWhitelist(listener, receiving);
 				recievedListeners.addListener(listener, receiving);
 				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
 			}
-			
-			// Increment phases too
-			if (hasSending)
-				incrementPhases(sending.getGamePhase());
 			if (hasReceiving)
 				incrementPhases(receiving.getGamePhase());
 			

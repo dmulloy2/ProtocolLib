@@ -37,21 +37,20 @@ import com.comphenix.protocol.reflect.FieldAccessException;
  * Create fake player instances that represents pre-authenticated clients.
  */
 class TemporaryPlayerFactory {
-	
 	/**
-	 * Able to store a PlayerInjector.
+	 * Able to store a socket injector.
 	 * <p>
 	 * A necessary hack.
 	 * @author Kristian
 	 */
 	public static class InjectContainer {
-		private PlayerInjector injector;
+		private SocketInjector injector;
 
-		public PlayerInjector getInjector() {
+		public SocketInjector getInjector() {
 			return injector;
 		}
 
-		public void setInjector(PlayerInjector injector) {
+		public void setInjector(SocketInjector injector) {
 			this.injector = injector;
 		}
 	}
@@ -80,7 +79,7 @@ class TemporaryPlayerFactory {
 	 *   <li>kickPlayer(String)</li>
 	 * </ul>
 	 * <p>
-	 * Note that the player a player has not been assigned a name yet, and thus cannot be
+	 * Note that a temporary player has not yet been assigned a name, and thus cannot be
 	 * uniquely identified. Use the address instead.
 	 * @param injector - the player injector used.
 	 * @param server - the current server.
@@ -94,7 +93,7 @@ class TemporaryPlayerFactory {
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 
 				String methodName = method.getName();
-				PlayerInjector injector = ((InjectContainer) obj).getInjector();
+				SocketInjector injector = ((InjectContainer) obj).getInjector();
 				
 				if (injector == null)
 					throw new IllegalStateException("Unable to find injector.");
@@ -173,7 +172,7 @@ class TemporaryPlayerFactory {
 	 * @throws InvocationTargetException If the message couldn't be sent.
 	 * @throws FieldAccessException If we were unable to construct the message packet.
 	 */
-	private Object sendMessage(PlayerInjector injector, String message) throws InvocationTargetException, FieldAccessException {
+	private Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
 		injector.sendServerPacket(chatPacket.createPacket(message).getHandle(), false);
 		return null;
 	}

@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -131,11 +130,6 @@ class ReadPacketModifier implements MethodInterceptor {
 						override.put(thisObj, CANCEL_MARKER);
 					} else if (!objectEquals(thisObj, result)) {
 						override.put(thisObj, result);
-					}
-					
-					// Update DataInputStream next time
-					if (!event.isCancelled() && packetID == Packets.Server.KEY_RESPONSE) {
-						packetInjector.scheduleDataInputRefresh(event.getPlayer());
 					}
 				}
 			} catch (Throwable e) {
