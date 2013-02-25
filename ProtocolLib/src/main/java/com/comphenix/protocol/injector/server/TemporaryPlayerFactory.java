@@ -60,6 +60,15 @@ public class TemporaryPlayerFactory {
 	}
 	
 	/**
+	 * Set the player injector, if possible.
+	 * @param player - the player to update.
+	 * @param injector - the injector to store.
+	 */
+	public static void setInjectorInPlayer(Player player, SocketInjector injector) {
+		((InjectContainer) player).setInjector(injector);
+	}
+	
+	/**
 	 * Construct a temporary player that supports a subset of every player command.
 	 * <p>
 	 * Supported methods include:

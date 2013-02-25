@@ -47,6 +47,8 @@ class ProtocolConfig {
 	private static final String UPDATER_DELAY = "delay";
 	private static final String UPDATER_LAST_TIME = "last";
 	
+	private static final String ALTERNATIVE_JVM = "alternate jvm";
+	
 	// Defaults
 	private static final long DEFAULT_UPDATER_DELAY = 43200;
 	
@@ -227,6 +229,22 @@ class ProtocolConfig {
 	 */
 	public void setBackgroundCompilerEnabled(boolean enabled) {
 		global.set(BACKGROUND_COMPILER_ENABLED, enabled);
+	}
+	
+	/**
+	 * Retrieve whether the current JVM is a non-standard implementation and require some workarounds.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public boolean isAlternateJVM() {
+		return global.getBoolean(ALTERNATIVE_JVM, false);
+	}
+	
+	/**
+	 * Set whether the current JVM is a non-standard implementation and require some workarounds.
+	 * @param value - TRUE if it is, FALSE otherwise.
+	 */
+	public void setAlternateJVM(boolean value) {
+		global.set(ALTERNATIVE_JVM, value);
 	}
 	
 	/**

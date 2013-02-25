@@ -136,7 +136,10 @@ public class ProtocolLibrary extends JavaPlugin {
 			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 			
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = new PacketFilterManager(getClassLoader(), getServer(), unhookTask, detailedReporter);
+			protocolManager = new PacketFilterManager(
+					getClassLoader(), getServer(), unhookTask, detailedReporter, config.isAlternateJVM());
+			
+			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);
 			
 			// Update injection hook

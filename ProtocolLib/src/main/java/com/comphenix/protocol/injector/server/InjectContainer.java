@@ -14,6 +14,8 @@ class InjectContainer {
 	}
 
 	public void setInjector(SocketInjector injector) {
+		if (injector == null)
+			throw new IllegalArgumentException("Injector cannot be NULL.");
 		this.injector = injector;
 	}
 }

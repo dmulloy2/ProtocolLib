@@ -17,6 +17,8 @@ global:
   # Disable version checking for the given Minecraft version. Backup your world first!
   ignore version check: 
   
+  # Set to TRUE if you're on a custom JVM implementation and you're having problems
+  alternate jvm: false
+  
   # Override the starting injecting method
   injection method: 
- 

@@ -36,7 +36,8 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
-import com.comphenix.protocol.injector.server.InputStreamPlayerLookup;
+import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
+import com.comphenix.protocol.injector.server.InputStreamLookupBuilder;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.google.common.base.Predicate;
@@ -52,7 +53,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private InjectedServerConnection serverInjection;
 	
 	// Server socket injection
-	private InputStreamPlayerLookup serverSocket;
+	private AbstractInputStreamLookup inputStreamLookup;
 	
 	// NetLogin injector
 	private NetLoginInjector netLoginInjector;
@@ -88,25 +89,33 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	// Used to filter injection attempts
 	private Predicate<GamePhase> injectionFilter;
 	
-	public ProxyPlayerInjectionHandler(ClassLoader classLoader, ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
-								  ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server) {
+	public ProxyPlayerInjectionHandler(
+			ClassLoader classLoader, ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
+			ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server, boolean alternateJVM) {
 		
 		this.classLoader = classLoader;
 		this.reporter = reporter;
 		this.invoker = invoker;
 		this.injectionFilter = injectionFilter;
 		this.packetListeners = packetListeners;
-		this.serverSocket = new InputStreamPlayerLookup(reporter, server);
-		this.netLoginInjector = new NetLoginInjector(reporter, this, serverSocket);
-		this.serverInjection = new InjectedServerConnection(reporter, serverSocket, server, netLoginInjector);
+	
+		this.inputStreamLookup = InputStreamLookupBuilder.newBuilder().
+							  server(server).
+							  reporter(reporter).
+							  alternativeJVM(alternateJVM).
+							  build();
+		
+		// Create net login injectors and the server connection injector
+		this.netLoginInjector = new NetLoginInjector(reporter, this, inputStreamLookup);
+		this.serverInjection = new InjectedServerConnection(reporter, inputStreamLookup, server, netLoginInjector);
 		serverInjection.injectList();
 	}
 	
 	@Override
 	public void postWorldLoaded() {
 		// This will actually create a socket and a seperate thread ...
-		if (serverSocket != null) {
-			serverSocket.postWorldLoaded();
+		if (inputStreamLookup != null) {
+			inputStreamLookup.postWorldLoaded();
 		}
 	}
 
@@ -208,7 +217,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	@Override
 	public Player getPlayerByConnection(DataInputStream inputStream) {
 		// Wait until the connection owner has been established
-		SocketInjector injector = serverSocket.getSocketInjector(inputStream);
+		SocketInjector injector = inputStreamLookup.getSocketInjector(inputStream);
 		
 		if (injector != null) {
 			return injector.getPlayer();
@@ -298,7 +307,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 						Socket socket = injector.getSocket();
 						
 						// Guard against NPE here too
-						SocketInjector previous = socket != null ? serverSocket.getSocketInjector(socket) : null;
+						SocketInjector previous = socket != null ? inputStreamLookup.getSocketInjector(socket) : null;
 						
 						// Close any previously associated hooks before we proceed
 						if (previous != null) {
@@ -308,7 +317,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 						injector.injectManager();
 						
 						// Save injector
-						serverSocket.setSocketInjector(inputStream, injector);
+						inputStreamLookup.setSocketInjector(inputStream, injector);
 						break;
 					}
 					
@@ -435,7 +444,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	@Override
 	public boolean uninjectPlayer(InetSocketAddress address) {
 		if (!hasClosed && address != null) {
-			SocketInjector injector = serverSocket.getSocketInjector(address);
+			SocketInjector injector = inputStreamLookup.getSocketInjector(address);
 			
 			// Clean up
 			if (injector != null)
@@ -504,7 +513,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			
 			// Only accept it if it's a player injector
 			if (!(socket instanceof PlayerInjector)) {
-				socket = serverSocket.getSocketInjector(player.getAddress());
+				socket = inputStreamLookup.getSocketInjector(player.getAddress());
 			}
 
 			// Ensure that it is a player injector
@@ -597,13 +606,13 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		}
 		
 		// Remove server handler
-		if (serverSocket != null)
-			serverSocket.cleanupAll();
+		if (inputStreamLookup != null)
+			inputStreamLookup.cleanupAll();
 		if (serverInjection != null)
 			serverInjection.cleanupAll();
 		if (netLoginInjector != null)
 			netLoginInjector.cleanupAll();
-		serverSocket = null;
+		inputStreamLookup = null;
 		serverInjection = null;
 		netLoginInjector = null;
 		hasClosed = true;

@@ -25,7 +25,7 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
-import com.comphenix.protocol.injector.server.InputStreamPlayerLookup;
+import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -45,15 +45,15 @@ class NetLoginInjector {
 	private ProxyPlayerInjectionHandler injectionHandler;
 	
 	// Associate input streams and injectors
-	private InputStreamPlayerLookup serverSocket;
+	private AbstractInputStreamLookup inputStreamLookup;
 	
 	// The current error rerporter
 	private ErrorReporter reporter;
 	
-	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, InputStreamPlayerLookup serverSocket) {
+	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, AbstractInputStreamLookup inputStreamLookup) {
 		this.reporter = reporter;
 		this.injectionHandler = injectionHandler;
-		this.serverSocket = serverSocket;
+		this.inputStreamLookup = inputStreamLookup;
 	}
 
 	/**
@@ -74,7 +74,7 @@ class NetLoginInjector {
 
 			// Get the underlying socket
 			Socket socket = (Socket) getSocketMethod.invoke(inserting);
-			SocketInjector socketInjector = serverSocket.getSocketInjector(socket);
+			SocketInjector socketInjector = inputStreamLookup.getSocketInjector(socket);
 			
 			// This is the case if we're dealing with a connection initiated by the injected server socket
 			if (socketInjector != null) {

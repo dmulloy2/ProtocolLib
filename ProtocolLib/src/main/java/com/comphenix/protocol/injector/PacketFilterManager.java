@@ -150,7 +150,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * Only create instances of this class if protocol lib is disabled.
 	 * @param unhookTask 
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, ErrorReporter reporter) {
+	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, ErrorReporter reporter, boolean alternateJVM) {
 		if (reporter == null)
 			throw new IllegalArgumentException("reporter cannot be NULL.");
 		if (classLoader == null)
@@ -200,6 +200,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 						classLoader(classLoader).
 						packetListeners(packetListeners).
 						injectionFilter(isInjectionNecessary).
+						alternativeJVM(alternateJVM).
 						buildHandler();
 			
 				this.packetInjector = PacketInjectorBuilder.newBuilder().

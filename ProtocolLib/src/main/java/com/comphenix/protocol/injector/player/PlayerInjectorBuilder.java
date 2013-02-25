@@ -37,6 +37,7 @@ public class PlayerInjectorBuilder {
 	protected ListenerInvoker invoker;
 	protected Set<PacketListener> packetListeners;
 	protected Server server;
+	protected boolean alternativeJVM;
 
 	/**
 	 * Set the class loader to use during class generation.
@@ -108,6 +109,16 @@ public class PlayerInjectorBuilder {
 	}
 	
 	/**
+	 * Set whether or not the current JVM implementation is alternative.
+	 * @param value - TRUE if it is, FALSE otherwise.
+	 * @return The current builder, for chaining.
+	 */
+	public PlayerInjectorBuilder alternativeJVM(boolean value) {
+		alternativeJVM = value;
+		return this;
+	}
+	
+	/**
 	 * Called before an object is created with this builder.
 	 */
 	private void initializeDefaults() {
@@ -140,6 +151,6 @@ public class PlayerInjectorBuilder {
 		
 		return new ProxyPlayerInjectionHandler(
 				classLoader, reporter, injectionFilter, 
-				invoker, packetListeners, server);
+				invoker, packetListeners, server, alternativeJVM);
 	}
 }

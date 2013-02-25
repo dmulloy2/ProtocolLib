@@ -27,7 +27,7 @@ import net.sf.cglib.proxy.Factory;
 import org.bukkit.Server;
 
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.injector.server.InputStreamPlayerLookup;
+import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;
@@ -55,7 +55,7 @@ class InjectedServerConnection {
 	private NetLoginInjector netLoginInjector;
 	
 	// Inject server connections
-	private InputStreamPlayerLookup socketInjector; 
+	private AbstractInputStreamLookup socketInjector; 
 	
 	private Server server;
 	private ErrorReporter reporter;
@@ -64,7 +64,7 @@ class InjectedServerConnection {
 	
 	private Object minecraftServer = null;
 	
-	public InjectedServerConnection(ErrorReporter reporter, InputStreamPlayerLookup socketInjector, Server server, NetLoginInjector netLoginInjector) {
+	public InjectedServerConnection(ErrorReporter reporter, AbstractInputStreamLookup socketInjector, Server server, NetLoginInjector netLoginInjector) {
 		this.listFields = new ArrayList<VolatileField>();
 		this.replacedLists = new ArrayList<ReplacedArrayList<Object>>();
 		this.reporter = reporter;
