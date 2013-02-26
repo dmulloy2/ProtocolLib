@@ -78,10 +78,13 @@ class NetLoginInjector {
 			// This is the case if we're dealing with a connection initiated by the injected server socket
 			if (socketInjector != null) {
 				PlayerInjector injector = injectionHandler.injectPlayer(socketInjector.getPlayer(), inserting, GamePhase.LOGIN);
-				injector.updateOnLogin = true;
-	
-				// Save the login
-				injectedLogins.putIfAbsent(inserting, injector);
+				
+				if (injector != null) {
+					injector.updateOnLogin = true;
+		
+					// Save the login
+					injectedLogins.putIfAbsent(inserting, injector);
+				}
 			}
 			
 			// NetServerInjector can never work (currently), so we don't need to replace the NetLoginHandler
@@ -90,7 +93,7 @@ class NetLoginInjector {
 		} catch (Throwable e) {
 			// Minecraft can't handle this, so we'll deal with it here
 			reporter.reportDetailed(this, "Unable to hook " + 
-						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting);
+						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting, injectionHandler);
 			return inserting;
 		}
 	}

@@ -269,6 +269,13 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 * @return The resulting player injector, or NULL if the injection failed.
 	 */
 	PlayerInjector injectPlayer(Player player, Object injectionPoint, GamePhase phase) {
+		if (player == null)
+			throw new IllegalArgumentException("Player cannot be NULL.");
+		if (injectionPoint == null)
+			throw new IllegalArgumentException("injectionPoint cannot be NULL.");
+		if (phase == null)
+			throw new IllegalArgumentException("phase cannot be NULL.");
+		
 		// Unfortunately, due to NetLoginHandler, multiple threads may potentially call this method.
 		synchronized (player) {
 			return injectPlayerInternal(player, injectionPoint, phase);
@@ -288,7 +295,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		boolean invalidInjector = injector != null ? !injector.canInject(phase) : true;
 
 		// Don't inject if the class has closed
-		if (!hasClosed && player != null && (tempHook != getInjectorType(injector) || invalidInjector)) {
+		if (!hasClosed && (tempHook != getInjectorType(injector) || invalidInjector)) {
 			while (tempHook != PlayerInjectHooks.NONE) {
 				// Whether or not the current hook method failed completely
 				boolean hookFailed = false;
