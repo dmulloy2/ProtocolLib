@@ -17,8 +17,8 @@
 
 package com.comphenix.protocol.injector.player;
 
-import java.lang.reflect.Method;
-import java.net.Socket;
+import java.lang.reflect.Field;
+import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentMap;
 
 import org.bukkit.entity.Player;
@@ -27,6 +27,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.injector.server.SocketInjector;
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
@@ -39,7 +40,8 @@ import com.google.common.collect.Maps;
 class NetLoginInjector {
 	private ConcurrentMap<Object, PlayerInjector> injectedLogins = Maps.newConcurrentMap();
 	
-	private static Method getSocketMethod;
+	private static Field networkManagerField;
+	private static Field socketAddressField;
 	
 	// Handles every hook
 	private ProxyPlayerInjectionHandler injectionHandler;
@@ -67,14 +69,11 @@ class NetLoginInjector {
 			if (!injectionHandler.isInjectionNecessary(GamePhase.LOGIN))
 				return inserting;
 			
-			if (getSocketMethod == null) {
-				getSocketMethod = FuzzyReflection.fromObject(inserting).
-					getMethodByParameters("getSocket", Socket.class, new Class<?>[0]);
-			}
-
+			Object networkManager = getNetworkManager(inserting);
+			SocketAddress address = getAddress(networkManager);
+			
 			// Get the underlying socket
-			Socket socket = (Socket) getSocketMethod.invoke(inserting);
-			SocketInjector socketInjector = inputStreamLookup.getSocketInjector(socket);
+			SocketInjector socketInjector = inputStreamLookup.getSocketInjector(address);
 			
 			// This is the case if we're dealing with a connection initiated by the injected server socket
 			if (socketInjector != null) {
@@ -94,6 +93,36 @@ class NetLoginInjector {
 						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting);
 			return inserting;
 		}
+	}
+	
+	/**
+	 * Retrieve the network manager from a given pending connection.
+	 * @param inserting - the pending connection.
+	 * @return The referenced network manager.
+	 * @throws IllegalAccessException If we are unable to read the network manager.
+	 */
+	private Object getNetworkManager(Object inserting) throws IllegalAccessException {
+		if (networkManagerField == null) {
+			networkManagerField = FuzzyReflection.fromObject(inserting, true).
+					getFieldByType("networkManager", MinecraftReflection.getNetworkManagerClass());
+		}
+		
+		return FieldUtils.readField(networkManagerField, inserting, true);
+	}
+	
+	/**
+	 * Retrieve the socket address stored in a network manager.
+	 * @param networkManager - the network manager.
+	 * @return The associated socket address.
+	 * @throws IllegalAccessException If we are unable to read the address.
+	 */
+	private SocketAddress getAddress(Object networkManager) throws IllegalAccessException {
+		if (socketAddressField == null) {
+			socketAddressField = FuzzyReflection.fromObject(networkManager, true).
+					getFieldByType("socketAddress", SocketAddress.class);
+		}
+		
+		return (SocketAddress) FieldUtils.readField(socketAddressField, networkManager, true);
 	}
 	
 	/**
