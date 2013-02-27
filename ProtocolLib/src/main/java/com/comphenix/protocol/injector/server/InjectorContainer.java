@@ -6,7 +6,7 @@ package com.comphenix.protocol.injector.server;
  * A necessary hack.
  * @author Kristian
  */
-class InjectContainer {
+class InjectorContainer {
 	private volatile SocketInjector injector;
 
 	public SocketInjector getInjector() {

@@ -53,8 +53,8 @@ public class TemporaryPlayerFactory {
 	 * @return The referenced player injector, or NULL if none can be found.
 	 */
 	public static SocketInjector getInjectorFromPlayer(Player player) {
-		if (player instanceof InjectContainer) {
-			return ((InjectContainer) player).getInjector();
+		if (player instanceof InjectorContainer) {
+			return ((InjectorContainer) player).getInjector();
 		} 
 		return null;
 	}
@@ -65,7 +65,7 @@ public class TemporaryPlayerFactory {
 	 * @param injector - the injector to store.
 	 */
 	public static void setInjectorInPlayer(Player player, SocketInjector injector) {
-		((InjectContainer) player).setInjector(injector);
+		((InjectorContainer) player).setInjector(injector);
 	}
 	
 	/**
@@ -96,7 +96,7 @@ public class TemporaryPlayerFactory {
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 
 				String methodName = method.getName();
-				SocketInjector injector = ((InjectContainer) obj).getInjector();
+				SocketInjector injector = ((InjectorContainer) obj).getInjector();
 				
 				if (injector == null)
 					throw new IllegalStateException("Unable to find injector.");
@@ -149,7 +149,7 @@ public class TemporaryPlayerFactory {
 				public int accept(Method method) {
 					// Do not override the object method or the superclass methods
 					if (method.getDeclaringClass().equals(Object.class) ||
-						method.getDeclaringClass().equals(InjectContainer.class))
+						method.getDeclaringClass().equals(InjectorContainer.class))
 						return 0;
 					else 
 						return 1;
@@ -159,7 +159,7 @@ public class TemporaryPlayerFactory {
     	
 		// CGLib is amazing
     	Enhancer ex = new Enhancer();
-    	ex.setSuperclass(InjectContainer.class);
+    	ex.setSuperclass(InjectorContainer.class);
     	ex.setInterfaces(new Class[] { Player.class });
 		ex.setCallbacks(new Callback[] { NoOp.INSTANCE, implementation });
 		ex.setCallbackFilter(callbackFilter);
@@ -176,7 +176,7 @@ public class TemporaryPlayerFactory {
 	public Player createTemporaryPlayer(Server server, SocketInjector injector) {
 		Player temporary = createTemporaryPlayer(server);
 		
-		((InjectContainer) temporary).setInjector(injector);
+		((InjectorContainer) temporary).setInjector(injector);
 		return temporary;
 	}
 	
