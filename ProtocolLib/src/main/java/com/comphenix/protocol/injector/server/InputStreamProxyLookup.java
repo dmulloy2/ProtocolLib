@@ -12,6 +12,7 @@ import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
@@ -34,6 +35,11 @@ class InputStreamProxyLookup extends AbstractInputStreamLookup {
 	private static final int READ_TIMEOUT = 5000;
 	private static final int CONNECT_TIMEOUT = 1000;
 		
+	// Using weak keys and values ensures that we will not hold up garbage collection
+	protected ConcurrentMap<InputStream, SocketInjector> ownerSocket = new MapMaker().weakKeys().makeMap();
+	protected ConcurrentMap<SocketAddress, InputStream> addressLookup = new MapMaker().weakValues().makeMap();
+	protected ConcurrentMap<Socket, InputStream> socketLookup = new MapMaker().weakKeys().makeMap();
+	
 	// Fake connections
 	private Set<SocketAddress> fakeConnections = Collections.newSetFromMap(
 			new MapMaker().weakKeys().<SocketAddress, Boolean>makeMap()
@@ -89,7 +95,7 @@ class InputStreamProxyLookup extends AbstractInputStreamLookup {
 							if (address != null) {
 								InputStream previousStream = addressLookup.
 									putIfAbsent(delegate.getRemoteSocketAddress(), input);
-								
+																
 								// Ensure that this is our first time
 								if (previousStream == null) {
 									// Create a new temporary player
@@ -99,6 +105,9 @@ class InputStreamProxyLookup extends AbstractInputStreamLookup {
 									
 									// Update it
 									TemporaryPlayerFactory.setInjectorInPlayer(temporaryPlayer, socketInjector);
+								
+									// Socket lookup
+									socketLookup.put(this, input);
 									
 									// Associate the socket with a given input stream
 									setSocketInjector(input, socketInjector);
@@ -113,6 +122,54 @@ class InputStreamProxyLookup extends AbstractInputStreamLookup {
 		} catch (IOException e) {
 			throw new IllegalStateException("Unbound socket threw an exception. Should never occur.", e);
 		}
+	}
+	
+	@Override
+	public SocketInjector getSocketInjector(Socket socket) {
+		InputStream stream = getStream(socket);
+		
+		if (stream != null)
+			return getSocketInjector(stream);
+		else
+			return null;
+	}
+
+	@Override
+	public void setSocketInjector(Socket socket, SocketInjector injector) {
+		InputStream stream = getStream(socket);
+		
+		if (stream != null) {
+			socketLookup.put(socket, stream);
+			setSocketInjector(stream, injector);
+		}
+	}
+	
+	/**
+	 * Set the referenced socket injector by input stream.
+	 * @param stream - the input stream.
+	 * @param injector - the injector to reference.
+	 */
+	public void setSocketInjector(InputStream stream, SocketInjector injector) {
+		SocketInjector previous = ownerSocket.put(stream, injector);
+		
+		// Handle overwrite
+		if (previous != null) {
+			onPreviousSocketOverwritten(previous, injector);
+		}
+	}
+
+	private InputStream getStream(Socket socket) {
+		InputStream result = socketLookup.get(socket);
+		
+		// Use the socket as well
+		if (result == null) {
+			try {
+				result = socket.getInputStream();
+			} catch (IOException e) {
+				throw new RuntimeException("Unable to retrieve input stream from socket " + socket, e);
+			}
+		}
+		return result;
 	}
 	
 	@Override
@@ -213,6 +270,9 @@ class InputStreamProxyLookup extends AbstractInputStreamLookup {
 	
 	@Override
 	protected void onPreviousSocketOverwritten(SocketInjector previous, SocketInjector current) {
+		// Don't forget this
+		super.onPreviousSocketOverwritten(previous, current);
+		
 		if (previous instanceof DelegatedSocketInjector) {
 			DelegatedSocketInjector delegated = (DelegatedSocketInjector) previous;
 			

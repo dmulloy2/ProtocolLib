@@ -7,7 +7,7 @@ package com.comphenix.protocol.injector.server;
  * @author Kristian
  */
 class InjectContainer {
-	private SocketInjector injector;
+	private volatile SocketInjector injector;
 
 	public SocketInjector getInjector() {
 		return injector;

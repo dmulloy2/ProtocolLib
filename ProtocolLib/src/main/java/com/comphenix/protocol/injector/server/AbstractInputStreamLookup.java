@@ -5,8 +5,6 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.concurrent.ConcurrentMap;
-
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -14,15 +12,10 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.google.common.collect.MapMaker;
 
 public abstract class AbstractInputStreamLookup {
 	// Used to access the inner input stream of a filtered input stream
 	private static Field filteredInputField;
-	
-	// Using weak keys and values ensures that we will not hold up garbage collection
-	protected ConcurrentMap<InputStream, SocketInjector> ownerSocket = new MapMaker().weakKeys().makeMap();
-	protected ConcurrentMap<SocketAddress, InputStream> addressLookup = new MapMaker().weakValues().makeMap();
 
 	// Error reporter
 	protected final ErrorReporter reporter;
@@ -82,63 +75,45 @@ public abstract class AbstractInputStreamLookup {
 
 	/**
 	 * Retrieve the associated socket injector for a player.
-	 * @param filtered - the indentifying filtered input stream.
+	 * @param input - the indentifying filtered input stream.
 	 * @return The socket injector we have associated with this player.
 	 */
 	public abstract SocketInjector getSocketInjector(InputStream input);
-
-	/**
-	 * Retrieve a injector by its address.
-	 * @param address - the address of the socket.
-	 * @return The socket injector.
-	 */
-	public abstract SocketInjector getSocketInjector(SocketAddress address);
 	
 	/**
 	 * Retrieve an injector by its socket.
 	 * @param socket - the socket.
 	 * @return The socket injector.
 	 */
-	public SocketInjector getSocketInjector(Socket socket) {
-		if (socket == null)
-			throw new IllegalArgumentException("The socket cannot be NULL.");
-		return getSocketInjector(socket.getRemoteSocketAddress());
-	}
+	public abstract SocketInjector getSocketInjector(Socket socket);
 	
 	/**
-	 * Associate a given input stream with the provided socket injector.
-	 * @param input - the filtered input stream to associate.
-	 * @param injector - the injector.
-	 * @throws FieldAccessException Unable to access input stream.
+	 * Retrieve a injector by its address.
+	 * @param address - the address of the socket.
+	 * @return The socket injector, or NULL if not found.
 	 */
-	public void setSocketInjector(FilterInputStream input, SocketInjector injector) {
-		setSocketInjector(getInputStream(input), injector);
-	}
+	public abstract SocketInjector getSocketInjector(SocketAddress address);
 
 	/**
-	 * Associate a given input stream with the provided socket injector.
-	 * @param input - the input stream to associate.
+	 * Associate a given socket the provided socket injector.
+	 * @param input - the socket to associate.
 	 * @param injector - the injector.
 	 */
-	public void setSocketInjector(InputStream input, SocketInjector injector) {
-		SocketInjector previous = ownerSocket.put(input, injector);
-		
-		// Any previous temporary players will also be associated
-		if (previous != null) {
-			Player player = previous.getPlayer();
-			
-			if (player instanceof InjectContainer) {
-				InjectContainer container = (InjectContainer) player;
-				container.setInjector(injector);
-			}
-			
-			// Update the reference to any previous injector
-			onPreviousSocketOverwritten(previous, injector);
-		}
-	}
-	
+	public abstract void setSocketInjector(Socket socket, SocketInjector injector);
+
+	/**
+	 * If a player can hold a reference to its parent injector, this method will update that reference.
+	 * @param previous - the previous injector.
+	 * @param current - the new injector.
+	 */
 	protected void onPreviousSocketOverwritten(SocketInjector previous, SocketInjector current) {
-		// Do nothing
+		Player player = previous.getPlayer();
+		
+		// Default implementation
+		if (player instanceof InjectContainer) {
+			InjectContainer container = (InjectContainer) player;
+			container.setInjector(current);
+		}
 	}
 	
 	/**

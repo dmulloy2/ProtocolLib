@@ -284,7 +284,6 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	
 	// Unsafe variant of the above
 	private PlayerInjector injectPlayerInternal(Player player, Object injectionPoint, GamePhase phase) {
-		
 		PlayerInjector injector = playerInjection.get(player);
 		PlayerInjectHooks tempHook = getPlayerHook(phase);
 		PlayerInjectHooks permanentHook = tempHook;
@@ -310,21 +309,24 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 					if (injector.canInject(phase)) {
 						injector.initialize(injectionPoint);
 						
-						DataInputStream inputStream = injector.getInputStream(false);
+						// Get socket and socket injector
 						Socket socket = injector.getSocket();
+						SocketInjector previous = null;
 						
-						// Guard against NPE here too
-						SocketInjector previous = socket != null ? inputStreamLookup.getSocketInjector(socket) : null;
+						// Due to a race condition, the main server "accept connections" thread may 
+						// get a closed network manager with a NULL input stream, 
+						if (socket == null) {
+							
+						}
 						
 						// Close any previously associated hooks before we proceed
-						if (previous != null) {
+						if (previous != null && previous instanceof PlayerInjector) {
 							uninjectPlayer(previous.getPlayer(), true);
 						}
-	
 						injector.injectManager();
 						
 						// Save injector
-						inputStreamLookup.setSocketInjector(inputStream, injector);
+						inputStreamLookup.setSocketInjector(socket, injector);
 						break;
 					}
 					
