@@ -20,8 +20,7 @@ public class InputStreamLookupBuilder {
 	
 	private Server server;
 	private ErrorReporter reporter;
-	private boolean alternativeJVM;
-	
+
 	/**
 	 * Set the server instance to use.
 	 * @param server - server instance.
@@ -42,20 +41,7 @@ public class InputStreamLookupBuilder {
 		return this;
 	}
 	
-	/**
-	 * Set whether or not the current JVM implementation is alternative.
-	 * @param value - TRUE if it is, FALSE otherwise.
-	 * @return The current builder, for chaining.
-	 */
-	public InputStreamLookupBuilder alternativeJVM(boolean value) {
-		alternativeJVM = value;
-		return this;
-	}
-	
 	public AbstractInputStreamLookup build() {
-		if (alternativeJVM)
-			return new InputStreamProxyLookup(reporter, server);
-		else
-			return new InputStreamReflectLookup(reporter, server);
+		return new InputStreamReflectLookup(reporter, server);
 	}
 }

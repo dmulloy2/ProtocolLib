@@ -137,7 +137,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(
-					getClassLoader(), getServer(), unhookTask, detailedReporter, config.isAlternateJVM());
+					getClassLoader(), getServer(), unhookTask, detailedReporter);
 			
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);

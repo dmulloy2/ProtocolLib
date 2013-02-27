@@ -91,7 +91,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	
 	public ProxyPlayerInjectionHandler(
 			ClassLoader classLoader, ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
-			ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server, boolean alternateJVM) {
+			ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server) {
 		
 		this.classLoader = classLoader;
 		this.reporter = reporter;
@@ -102,7 +102,6 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		this.inputStreamLookup = InputStreamLookupBuilder.newBuilder().
 							  server(server).
 							  reporter(reporter).
-							  alternativeJVM(alternateJVM).
 							  build();
 		
 		// Create net login injectors and the server connection injector
@@ -323,6 +322,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 						if (previous != null && previous instanceof PlayerInjector) {
 							uninjectPlayer(previous.getPlayer(), true);
 						}
+						
 						injector.injectManager();
 						
 						// Save injector
