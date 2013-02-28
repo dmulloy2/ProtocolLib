@@ -29,6 +29,7 @@ import org.bukkit.entity.Player;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -132,7 +133,7 @@ class ProxyPacketInjector implements PacketInjector {
 			throw new IllegalStateException("Packet ID " + packetID + " is not a valid packet ID in this version.");
 		}
 		// Check for previous injections
-		if (!MinecraftReflection.isMinecraftClass(old)) {
+		if (Factory.class.isAssignableFrom(old)) {
 			throw new IllegalStateException("Packet " + packetID + " has already been injected.");
 		}
 		
