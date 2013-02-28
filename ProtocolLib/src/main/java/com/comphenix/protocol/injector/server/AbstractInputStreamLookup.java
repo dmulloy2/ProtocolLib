@@ -65,41 +65,38 @@ public abstract class AbstractInputStreamLookup {
 	
 	/**
 	 * Retrieve the associated socket injector for a player.
-	 * @param filtered - the indentifying filtered input stream.
-	 * @return The socket injector we have associated with this player.
-	 * @throws FieldAccessException Unable to access input stream.
-	 */
-	public SocketInjector getSocketInjector(FilterInputStream filtered) {
-		return getSocketInjector(getInputStream(filtered));
-	}
-
-	/**
-	 * Retrieve the associated socket injector for a player.
 	 * @param input - the indentifying filtered input stream.
 	 * @return The socket injector we have associated with this player.
 	 */
-	public abstract SocketInjector getSocketInjector(InputStream input);
+	public abstract SocketInjector waitSocketInjector(InputStream input);
 	
 	/**
 	 * Retrieve an injector by its socket.
 	 * @param socket - the socket.
 	 * @return The socket injector.
 	 */
-	public abstract SocketInjector getSocketInjector(Socket socket);
+	public abstract SocketInjector waitSocketInjector(Socket socket);
 	
 	/**
 	 * Retrieve a injector by its address.
 	 * @param address - the address of the socket.
 	 * @return The socket injector, or NULL if not found.
 	 */
-	public abstract SocketInjector getSocketInjector(SocketAddress address);
+	public abstract SocketInjector waitSocketInjector(SocketAddress address);
 
 	/**
-	 * Associate a given socket the provided socket injector.
-	 * @param input - the socket to associate.
+	 * Attempt to get a socket injector without blocking the thread.
+	 * @param address - the address to lookup.
+	 * @return The socket injector, or NULL if not found.
+	 */
+	public abstract SocketInjector peekSocketInjector(SocketAddress address);
+	
+	/**
+	 * Associate a given socket address to the provided socket injector.
+	 * @param input - the socket address to associate.
 	 * @param injector - the injector.
 	 */
-	public abstract void setSocketInjector(Socket socket, SocketInjector injector);
+	public abstract void setSocketInjector(SocketAddress address, SocketInjector injector);
 
 	/**
 	 * If a player can hold a reference to its parent injector, this method will update that reference.
@@ -111,8 +108,7 @@ public abstract class AbstractInputStreamLookup {
 		
 		// Default implementation
 		if (player instanceof InjectorContainer) {
-			InjectorContainer container = (InjectorContainer) player;
-			container.setInjector(current);
+			TemporaryPlayerFactory.setInjectorInPlayer(player, current);
 		}
 	}
 	

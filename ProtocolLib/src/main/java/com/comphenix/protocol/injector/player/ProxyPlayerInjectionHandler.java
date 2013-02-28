@@ -20,9 +20,12 @@ package com.comphenix.protocol.injector.player;
 import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
+
+import net.sf.cglib.proxy.Factory;
+
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -39,7 +42,7 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.injector.server.InputStreamLookupBuilder;
 import com.comphenix.protocol.injector.server.SocketInjector;
-import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 
@@ -105,7 +108,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 							  build();
 		
 		// Create net login injectors and the server connection injector
-		this.netLoginInjector = new NetLoginInjector(reporter, this, inputStreamLookup);
+		this.netLoginInjector = new NetLoginInjector(reporter, server, this);
 		this.serverInjection = new InjectedServerConnection(reporter, inputStreamLookup, server, netLoginInjector);
 		serverInjection.injectList();
 	}
@@ -216,7 +219,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	@Override
 	public Player getPlayerByConnection(DataInputStream inputStream) {
 		// Wait until the connection owner has been established
-		SocketInjector injector = inputStreamLookup.getSocketInjector(inputStream);
+		SocketInjector injector = inputStreamLookup.waitSocketInjector(inputStream);
 		
 		if (injector != null) {
 			return injector.getPlayer();
@@ -309,24 +312,18 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 						injector.initialize(injectionPoint);
 						
 						// Get socket and socket injector
-						Socket socket = injector.getSocket();
-						SocketInjector previous = null;
-						
-						// Due to a race condition, the main server "accept connections" thread may 
-						// get a closed network manager with a NULL input stream, 
-						if (socket == null) {
-							
-						}
-						
+						SocketAddress address = injector.getAddress();
+						SocketInjector previous = inputStreamLookup.peekSocketInjector(address);
+
 						// Close any previously associated hooks before we proceed
-						if (previous != null && previous instanceof PlayerInjector) {
+						if (previous != null && !(player instanceof Factory)) {
 							uninjectPlayer(previous.getPlayer(), true);
 						}
 						
 						injector.injectManager();
 						
 						// Save injector
-						inputStreamLookup.setSocketInjector(socket, injector);
+						inputStreamLookup.setSocketInjector(address, injector);
 						break;
 					}
 					
@@ -453,7 +450,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	@Override
 	public boolean uninjectPlayer(InetSocketAddress address) {
 		if (!hasClosed && address != null) {
-			SocketInjector injector = inputStreamLookup.getSocketInjector(address);
+			SocketInjector injector = inputStreamLookup.peekSocketInjector(address);
 			
 			// Clean up
 			if (injector != null)
@@ -495,7 +492,6 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 */
 	@Override
 	public void processPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
-		
 		PlayerInjector injector = getInjector(player);
 		
 		// Process the given packet, or simply give up
@@ -518,16 +514,13 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		
 		if (injector == null) {
 			// Try getting it from the player itself
-			SocketInjector socket = TemporaryPlayerFactory.getInjectorFromPlayer(player);
-			
-			// Only accept it if it's a player injector
-			if (!(socket instanceof PlayerInjector)) {
-				socket = inputStreamLookup.getSocketInjector(player.getAddress());
-			}
+			SocketAddress address = player.getAddress();
+			// Look that up without blocking
+			SocketInjector result = inputStreamLookup.peekSocketInjector(address);
 
-			// Ensure that it is a player injector
-			if (socket instanceof PlayerInjector)
-				return (PlayerInjector) socket;
+			// Ensure that it is non-null and a player injector
+			if (result instanceof PlayerInjector)
+				return (PlayerInjector) result;
 			else
 				return null;
 		} else {

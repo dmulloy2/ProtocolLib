@@ -60,6 +60,7 @@ abstract class PlayerInjector implements SocketInjector {
 	protected static Field networkManagerField;
 	protected static Field netHandlerField;
 	protected static Field socketField;
+	protected static Field socketAddressField;
 	
 	private static Field inputField;
 	private static Field entityPlayerField;
@@ -87,8 +88,9 @@ abstract class PlayerInjector implements SocketInjector {
 	protected Object serverHandler;
 	protected Object netHandler;
 	
-	// Current socket
+	// Current socket and address
 	protected Socket socket;
+	protected SocketAddress socketAddress;
 	
 	// The packet manager and filters
 	protected ListenerInvoker invoker;
@@ -250,7 +252,8 @@ abstract class PlayerInjector implements SocketInjector {
 	public Socket getSocket() throws IllegalAccessException {
 		try {
 			if (socketField == null)
-				socketField = FuzzyReflection.fromObject(networkManager, true).getFieldListByType(Socket.class).get(0);
+				socketField = FuzzyReflection.fromObject(networkManager, true).
+								getFieldListByType(Socket.class).get(0);
 			if (socket == null)
 				socket = (Socket) FieldUtils.readField(socketField, networkManager, true);
 			return socket;
@@ -261,19 +264,23 @@ abstract class PlayerInjector implements SocketInjector {
 	}
 	
 	/**
-	 * Retrieve the associated address of this player.
-	 * @return The associated address.
-	 * @throws IllegalAccessException If we're unable to read the socket field.
+	 * Retrieve the associated remote address of a player.
+	 * @return The associated remote address..
+	 * @throws IllegalAccessException If we're unable to read the socket address field.
 	 */
 	@Override
 	public SocketAddress getAddress() throws IllegalAccessException {
-		Socket socket = getSocket();
-		
-		// Guard against NULL
-		if (socket != null)
-			return socket.getRemoteSocketAddress();
-		else
-			return null;
+		try {
+			if (socketAddressField == null)
+				socketAddressField = FuzzyReflection.fromObject(networkManager, true).
+										getFieldListByType(SocketAddress.class).get(0);
+			if (socketAddress == null)
+				socketAddress = (SocketAddress) FieldUtils.readField(socketAddressField, networkManager, true);
+			return socketAddress;
+			
+		} catch (IndexOutOfBoundsException e) {
+			throw new IllegalAccessException("Unable to read the socket address field.");
+		}
 	}
 	
 	/**

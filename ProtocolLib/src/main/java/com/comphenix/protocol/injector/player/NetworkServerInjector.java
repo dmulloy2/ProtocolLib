@@ -180,6 +180,7 @@ class NetworkServerInjector extends PlayerInjector {
 			return;
 		
 		if (!tryInjectManager()) {
+			Class<?> serverHandlerClass = MinecraftReflection.getNetServerHandlerClass();
 			
 			// Try to override the proxied object
 			if (proxyServerField != null) {
@@ -188,6 +189,8 @@ class NetworkServerInjector extends PlayerInjector {
 				
 				if (serverHandler == null)
 					throw new RuntimeException("Cannot hook player: Inner proxy object is NULL.");
+				else
+					serverHandlerClass = serverHandler.getClass();
 				
 				// Try again
 				if (tryInjectManager()) {
@@ -198,7 +201,7 @@ class NetworkServerInjector extends PlayerInjector {
 			
 			throw new RuntimeException(
 					"Cannot hook player: Unable to find a valid constructor for the " 
-						+ MinecraftReflection.getNetServerHandlerClass().getName() + " object.");
+						+ serverHandlerClass.getName() + " object.");
 		}
 	}
 	
