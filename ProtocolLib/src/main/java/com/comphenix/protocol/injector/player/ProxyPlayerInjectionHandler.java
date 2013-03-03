@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import net.sf.cglib.proxy.Factory;
 
@@ -30,6 +31,7 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.concurrency.BlockingHashMap;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketAdapter;
@@ -42,8 +44,11 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.injector.server.InputStreamLookupBuilder;
 import com.comphenix.protocol.injector.server.SocketInjector;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 import com.google.common.base.Predicate;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 
 /**
@@ -63,6 +68,12 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	
 	// The last successful player hook
 	private PlayerInjector lastSuccessfulHook;
+	
+	// Dummy injection
+	private Cache<Player, PlayerInjector> dummyInjectors = 
+			CacheBuilder.newBuilder().
+			expireAfterWrite(30, TimeUnit.SECONDS).
+			build(BlockingHashMap.<Player, PlayerInjector>newInvalidCacheLoader());
 	
 	// Player injection
 	private Map<Player, PlayerInjector> playerInjection = Maps.newConcurrentMap();
@@ -370,7 +381,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		
 		return injector;
 	}
-	
+
 	private void cleanupHook(PlayerInjector injector) {
 		// Clean up as much as possible
 		try {
@@ -522,9 +533,40 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			if (result instanceof PlayerInjector)
 				return (PlayerInjector) result;
 			else
-				return null;
+				// Make a dummy injector them
+				return createDummyInjector(player);
+			
 		} else {
 			return injector;
+		}
+	}
+	
+	/**
+	 * Construct a simple dummy injector incase none has been constructed.
+	 * @param player - the CraftPlayer to construct for.
+	 * @return A dummy injector, or NULL if the given player is not a CraftPlayer.
+	 */
+	private PlayerInjector createDummyInjector(Player player) {
+		if (!MinecraftReflection.getCraftPlayerClass().isAssignableFrom(player.getClass())) {
+			// No - this is not safe
+			return null;
+		}
+
+		try {
+			PlayerInjector dummyInjector = getHookInstance(player, PlayerInjectHooks.NETWORK_SERVER_OBJECT);
+			dummyInjector.initializePlayer(player);
+			
+			// This probably means the player has disconnected
+			if (dummyInjector.getSocket() == null) {
+				return null;
+			}
+			
+			inputStreamLookup.setSocketInjector(dummyInjector.getAddress(), dummyInjector);
+			dummyInjectors.asMap().put(player, dummyInjector);
+			return dummyInjector;
+			
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Cannot access fields.", e);
 		}
 	}
 	

@@ -48,6 +48,19 @@ public class BlockingHashMap<TKey, TValue> {
 	private final ConcurrentMap<TKey, Object> locks;
 	
 	/**
+	 * Retrieve a cache loader that will always throw an exception.
+	 * @return An invalid cache loader.
+	 */
+	public static <TKey, TValue> CacheLoader<TKey, TValue> newInvalidCacheLoader() {
+		return new CacheLoader<TKey, TValue>() {
+			@Override
+			public TValue load(TKey key) throws Exception {
+				throw new IllegalStateException("Illegal use. Access the map directly instead.");
+			}
+		};
+	}
+	
+	/**
 	 * Initialize a new map.
 	 */
 	public BlockingHashMap() {
@@ -59,12 +72,8 @@ public class BlockingHashMap<TKey, TValue> {
 				locks.remove(entry.getKey());
 			}
 		}).build(
-		  new CacheLoader<TKey, TValue>() {
-			@Override
-			public TValue load(TKey key) throws Exception {
-				throw new IllegalStateException("Illegal use. Access the map directly instead.");
-			}
-		});
+				BlockingHashMap.<TKey, TValue>newInvalidCacheLoader()
+		);
 		backingMap = backingCache.asMap();
 		
 		// Normal concurrent hash map

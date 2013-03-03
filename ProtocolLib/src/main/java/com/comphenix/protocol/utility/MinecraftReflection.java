@@ -85,7 +85,7 @@ public class MinecraftReflection {
 	private static Method craftNMSMethod;
 	private static Method craftBukkitMethod;
 	private static boolean craftItemStackFailed;
-	
+
 	// net.minecraft.server
 	private static Class<?> itemStackArrayClass;
 
@@ -924,7 +924,7 @@ public class MinecraftReflection {
 	public static Class<?> getCraftEntityClass() { 
 		return getCraftBukkitClass("entity.CraftEntity");
 	}
-		
+
 	/**
 	 * Retrieve a CraftItemStack from a given ItemStack.
 	 * @param bukkitItemStack - the Bukkit ItemStack to convert.
