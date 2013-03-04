@@ -56,6 +56,7 @@ import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
 import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -620,7 +621,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 */
 	public void initializePlayers(Player[] players) {
 		for (Player player : players)
-			playerInjection.injectPlayer(player);
+			playerInjection.injectPlayer(player, ConflictStrategy.OVERRIDE);
 	}
 	
 	/**
@@ -680,7 +681,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
     private void onPlayerJoin(PlayerJoinEvent event) {
 		try {
 			// This call will be ignored if no listeners are registered
-			playerInjection.injectPlayer(event.getPlayer());
+			playerInjection.injectPlayer(event.getPlayer(), ConflictStrategy.OVERRIDE);
 		} catch (Exception e) {
 			reporter.reportDetailed(PacketFilterManager.this, "Unable to inject player.", e, event);
 		}

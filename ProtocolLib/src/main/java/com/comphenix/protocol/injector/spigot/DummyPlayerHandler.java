@@ -79,7 +79,8 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	}
 	
 	@Override
-	public void injectPlayer(Player player) {
+	public void injectPlayer(Player player, ConflictStrategy strategy) {
+		// We don't care about strategy
 		injector.injectPlayer(player);
 	}
 	

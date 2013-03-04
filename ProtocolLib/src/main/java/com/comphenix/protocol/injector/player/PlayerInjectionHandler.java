@@ -13,6 +13,23 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 
 public interface PlayerInjectionHandler {
 	/**
+	 * How to handle a previously existing player injection.
+	 * 
+	 * @author Kristian
+	 */
+	public enum ConflictStrategy {
+		/**
+		 * Override it.
+		 */
+		OVERRIDE,
+		
+		/**
+		 * Immediately exit.
+		 */
+		BAIL_OUT;
+	}
+	
+	/**
 	 * Retrieves how the server packets are read.
 	 * @return Injection method for reading server packets.
 	 */
@@ -64,8 +81,9 @@ public interface PlayerInjectionHandler {
 	 * <p>
 	 * This call will  be ignored if there's no listener that can receive the given events.
 	 * @param player - player to hook.
+	 * @param strategy - how to handle injection conflicts.
 	 */
-	public abstract void injectPlayer(Player player);
+	public abstract void injectPlayer(Player player, ConflictStrategy strategy);
 
 	/**
 	 * Invoke special routines for handling disconnect before a player is uninjected.

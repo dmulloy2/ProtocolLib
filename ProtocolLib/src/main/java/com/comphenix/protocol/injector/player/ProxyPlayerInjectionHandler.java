@@ -253,12 +253,13 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 * <p>
 	 * This call will  be ignored if there's no listener that can receive the given events.
 	 * @param player - player to hook.
+	 * @param strategy - how to handle previous player injections.
 	 */
 	@Override
-	public void injectPlayer(Player player) {
+	public void injectPlayer(Player player, ConflictStrategy strategy) {
 		// Inject using the player instance itself
 		if (isInjectionNecessary(GamePhase.PLAYING)) {
-			injectPlayer(player, player, GamePhase.PLAYING);
+			injectPlayer(player, player, strategy, GamePhase.PLAYING);
 		}
 	}
 	
@@ -281,7 +282,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 * @param phase - the current game phase.
 	 * @return The resulting player injector, or NULL if the injection failed.
 	 */
-	PlayerInjector injectPlayer(Player player, Object injectionPoint, GamePhase phase) {
+	PlayerInjector injectPlayer(Player player, Object injectionPoint, ConflictStrategy stategy, GamePhase phase) {
 		if (player == null)
 			throw new IllegalArgumentException("Player cannot be NULL.");
 		if (injectionPoint == null)
@@ -291,12 +292,12 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		
 		// Unfortunately, due to NetLoginHandler, multiple threads may potentially call this method.
 		synchronized (player) {
-			return injectPlayerInternal(player, injectionPoint, phase);
+			return injectPlayerInternal(player, injectionPoint, stategy, phase);
 		}
 	}
 	
 	// Unsafe variant of the above
-	private PlayerInjector injectPlayerInternal(Player player, Object injectionPoint, GamePhase phase) {
+	private PlayerInjector injectPlayerInternal(Player player, Object injectionPoint, ConflictStrategy stategy, GamePhase phase) {
 		PlayerInjector injector = playerInjection.get(player);
 		PlayerInjectHooks tempHook = getPlayerHook(phase);
 		PlayerInjectHooks permanentHook = tempHook;
@@ -328,9 +329,14 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 
 						// Close any previously associated hooks before we proceed
 						if (previous != null && !(player instanceof Factory)) {
-							uninjectPlayer(previous.getPlayer(), true);
+							switch (stategy) {
+							case OVERRIDE:
+								uninjectPlayer(previous.getPlayer(), true);
+								break;
+							case BAIL_OUT:
+								return null;
+							}
 						}
-						
 						injector.injectManager();
 						
 						// Save injector

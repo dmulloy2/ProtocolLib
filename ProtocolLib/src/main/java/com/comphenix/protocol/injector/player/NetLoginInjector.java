@@ -24,6 +24,7 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
@@ -64,7 +65,9 @@ class NetLoginInjector {
 				return inserting;
 			
 			Player temporary = playerFactory.createTemporaryPlayer(server);
-			PlayerInjector injector = injectionHandler.injectPlayer(temporary, inserting, GamePhase.LOGIN);
+			// Note that we bail out if there's an existing player injector
+			PlayerInjector injector = injectionHandler.injectPlayer(
+					temporary, inserting, ConflictStrategy.BAIL_OUT, GamePhase.LOGIN);
 			
 			if (injector != null) {
 				// Update injector as well
