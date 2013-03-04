@@ -93,7 +93,7 @@ public abstract class AbstractInputStreamLookup {
 	
 	/**
 	 * Associate a given socket address to the provided socket injector.
-	 * @param input - the socket address to associate.
+	 * @param address - the socket address to associate.
 	 * @param injector - the injector.
 	 */
 	public abstract void setSocketInjector(SocketAddress address, SocketInjector injector);

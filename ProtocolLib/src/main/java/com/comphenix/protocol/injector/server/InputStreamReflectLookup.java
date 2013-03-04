@@ -88,7 +88,7 @@ class InputStreamReflectLookup extends AbstractInputStreamLookup {
 	@Override
 	public SocketInjector waitSocketInjector(InputStream input) {
 		try {
-			SocketAddress address = getSocketAddress(input);
+			SocketAddress address = waitSocketAddress(input);
 			
 			// Guard against NPE
 			if (address != null)
@@ -106,10 +106,10 @@ class InputStreamReflectLookup extends AbstractInputStreamLookup {
 	 * @return The underlying socket address, or NULL if not found.
 	 * @throws IllegalAccessException Unable to access socket field.
 	 */
-	private SocketAddress getSocketAddress(InputStream stream) throws IllegalAccessException {
+	private SocketAddress waitSocketAddress(InputStream stream) throws IllegalAccessException {
 		// Extra check, just in case
 		if (stream instanceof FilterInputStream)
-			return getSocketAddress(getInputStream((FilterInputStream) stream));
+			return waitSocketAddress(getInputStream((FilterInputStream) stream));
 		
 		SocketAddress result = inputLookup.get(stream);
 		

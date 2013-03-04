@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 
@@ -69,7 +70,9 @@ public class BlockingHashMap<TKey, TValue> {
 			@Override
 			public void onRemoval(RemovalNotification<TKey, TValue> entry) {
 				// Clean up locks too
-				locks.remove(entry.getKey());
+				if (entry.getCause() != RemovalCause.REPLACED) {
+					locks.remove(entry.getKey());
+				}
 			}
 		}).build(
 				BlockingHashMap.<TKey, TValue>newInvalidCacheLoader()
