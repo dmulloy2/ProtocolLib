@@ -204,6 +204,29 @@ public class BlockingHashMap<TKey, TValue> {
 		}
 	}
 	
+	/**
+	 * If and only if a key is not present in the map will it be associated with the given value.
+	 * @param key - the key to associate.
+	 * @param value - the value to associate.
+	 * @return The previous value this key has been associated with.
+	 */
+	public TValue putIfAbsent(TKey key, TValue value) {
+		if (value == null)
+			throw new IllegalArgumentException("This map doesn't support NULL values.");
+		
+		final TValue previous = backingMap.putIfAbsent(key, value);
+		
+		// No need to unlock readers if we haven't changed anything
+		if (previous == null) {
+			final Object lock = getLock(key);
+			
+			synchronized (lock) {
+				lock.notifyAll();
+			}
+		}
+		return previous;
+	}
+	
 	public int size() {
 		return backingMap.size();
 	}

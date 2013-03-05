@@ -64,7 +64,7 @@ class InputStreamReflectLookup extends AbstractInputStreamLookup {
 			return null;
 		}
 	}
-	
+
 	@Override
 	public SocketInjector waitSocketInjector(SocketAddress address) {
 		try {
