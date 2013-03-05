@@ -17,6 +17,10 @@
 
 package com.comphenix.protocol.reflect.compiler;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryUsage;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +33,9 @@ import javax.annotation.Nullable;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.compiler.StructureCompiler.StructureKey;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
@@ -48,8 +55,17 @@ public class BackgroundCompiler {
 	// How long to wait for a shutdown
 	public static final int SHUTDOWN_DELAY_MS = 2000;
 	
+	/**
+	 * The default fraction of perm gen space after which the background compiler will be disabled.
+	 */
+	public static final double DEFAULT_DISABLE_AT_PERM_GEN = 0.65;
+	
 	// The single background compiler we're using
 	private static BackgroundCompiler backgroundCompiler;
+	
+	// Classes we're currently compiling
+	private Map<StructureKey, List<CompileListener<?>>> listeners = Maps.newHashMap();
+	private Object listenerLock = new Object();
 	
 	private StructureCompiler compiler;
 	private boolean enabled;
@@ -57,6 +73,8 @@ public class BackgroundCompiler {
 	
 	private ExecutorService executor;
 	private ErrorReporter reporter;
+
+	private double disablePermGenFraction = DEFAULT_DISABLE_AT_PERM_GEN;
 	
 	/**
 	 * Retrieves the current background compiler.
@@ -139,26 +157,61 @@ public class BackgroundCompiler {
 	 * @param uncompiled - structure modifier to compile.
 	 * @param listener - listener responsible for responding to the compilation.
 	 */
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public <TKey> void scheduleCompilation(final StructureModifier<TKey> uncompiled, final CompileListener<TKey> listener) {
-
 		// Only schedule if we're enabled
 		if (enabled && !shuttingDown) {
+			// Check perm gen
+			if (getPermGenUsage() > disablePermGenFraction)
+				return;
 			
 			// Don't try to schedule anything
 			if (executor == null || executor.isShutdown())
 				return;
+
+			// Use to look up structure modifiers
+			final StructureKey key = new StructureKey(uncompiled);
+			
+			// Allow others to listen in too
+			synchronized (listenerLock) {
+				List list = listeners.get(key);
+				
+				if (!listeners.containsKey(key)) {
+					listeners.put(key, (List) Lists.newArrayList(listener)); 
+				} else {
+					// We're currently compiling
+					list.add(listener);
+					return;
+				}
+			}
 			
 			// Create the worker that will compile our modifier
 			Callable<?> worker = new Callable<Object>() {
 				@Override
 				public Object call() throws Exception {
 					StructureModifier<TKey> modifier = uncompiled;
+					List list = null;
 					
 					// Do our compilation
 					try {
 						modifier = compiler.compile(modifier);
-						listener.onCompiled(modifier);
-
+						
+						synchronized (listenerLock) {
+							list = listeners.get(key);
+						}
+						
+						// Only execute the listeners if there is a list
+						if (list != null) {
+							for (Object compileListener : list) {
+								((CompileListener<TKey>) compileListener).onCompiled(modifier);
+							}
+							
+							// Remove it when we're done
+							synchronized (listenerLock) {
+								list = listeners.remove(key);
+							}
+						}
+						
 					} catch (Throwable e) {
 						// Disable future compilations!
 						setEnabled(false);
@@ -206,6 +259,41 @@ public class BackgroundCompiler {
 	}
 	
 	/**
+	 * Add a compile listener if we are still waiting for the structure modifier to be compiled.
+	 * @param uncompiled - the structure modifier that may get compiled.
+	 * @param listener - the listener to invoke in that case.
+	 */
+	@SuppressWarnings("unchecked")
+	public <TKey> void addListener(final StructureModifier<TKey> uncompiled, final CompileListener<TKey> listener) {
+		synchronized (listenerLock) {
+			StructureKey key = new StructureKey(uncompiled);
+			
+			@SuppressWarnings("rawtypes")
+			List list = listeners.get(key); 
+			
+			if (list != null) {
+				list.add(listener);
+			}
+		}
+	}
+	
+	/**
+	 * Retrieve the current usage of the Perm Gen space in percentage.
+	 * @return Usage of the perm gen space.
+	 */
+	private double getPermGenUsage() {
+		for (MemoryPoolMXBean item : ManagementFactory.getMemoryPoolMXBeans()) {
+			if (item.getName().contains("Perm Gen")) {
+				MemoryUsage usage = item.getUsage();
+				return usage.getUsed() / (double) usage.getCommitted();
+			}
+		}
+		
+		// Unknown
+		return 0;
+	}
+	
+	/**
 	 * Clean up after ourselves using the default timeout.
 	 */
 	public void shutdownAll() {
@@ -246,6 +334,22 @@ public class BackgroundCompiler {
 		this.enabled = enabled;
 	}
 
+	/**
+	 * Retrieve the fraction of perm gen space used after which the background compiler will be disabled.
+	 * @return The fraction after which the background compiler is disabled.
+	 */
+	public double getDisablePermGenFraction() {
+		return disablePermGenFraction;
+	}
+	
+	/**
+	 * Set the fraction of perm gen space used after which the background compiler will be disabled.
+	 * @param fraction - the maximum use of perm gen space.
+	 */
+	public void setDisablePermGenFraction(double fraction) {
+		this.disablePermGenFraction = fraction;
+	}
+	
 	/**
 	 * Retrieve the current structure compiler.
 	 * @return Current structure compiler.

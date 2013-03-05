@@ -58,7 +58,7 @@ class CachedPackage {
 			if (result == null) {
 				// Look up the class dynamically
 				result = CachedPackage.class.getClassLoader().
-							loadClass(packageName + "." + className);
+							loadClass(combine(packageName, className));
 				cache.put(className, result);
 			}
 
@@ -67,5 +67,17 @@ class CachedPackage {
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException("Cannot find class " + className, e);
 		}
+	}
+	
+	/**
+	 * Correctly combine a package name and the child class we're looking for.
+	 * @param packageName - name of the package, or an empty string for the default package.
+	 * @param className - the class name.
+	 * @return We full class path.
+	 */
+	private String combine(String packageName, String className) {
+		if (packageName.length() == 0)
+			return className;
+		return packageName + "." + className;
 	}
 }

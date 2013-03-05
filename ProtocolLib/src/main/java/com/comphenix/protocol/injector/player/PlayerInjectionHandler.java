@@ -4,8 +4,6 @@ import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -14,6 +12,23 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 
 public interface PlayerInjectionHandler {
+	/**
+	 * How to handle a previously existing player injection.
+	 * 
+	 * @author Kristian
+	 */
+	public enum ConflictStrategy {
+		/**
+		 * Override it.
+		 */
+		OVERRIDE,
+		
+		/**
+		 * Immediately exit.
+		 */
+		BAIL_OUT;
+	}
+	
 	/**
 	 * Retrieves how the server packets are read.
 	 * @return Injection method for reading server packets.
@@ -62,22 +77,13 @@ public interface PlayerInjectionHandler {
 			throws InterruptedException;
 
 	/**
-	 * Retrieve a player by its DataInput connection.
-	 * @param inputStream - the associated DataInput connection.
-	 * @param playerTimeout - the amount of time to wait for a result.
-	 * @param unit - unit of playerTimeout.
-	 * @return The player. 
-	 * @throws InterruptedException If the thread was interrupted during the wait.
-	 */
-	public abstract Player getPlayerByConnection(DataInputStream inputStream, long playerTimeout, TimeUnit unit) throws InterruptedException;
-
-	/**
 	 * Initialize a player hook, allowing us to read server packets.
 	 * <p>
 	 * This call will  be ignored if there's no listener that can receive the given events.
 	 * @param player - player to hook.
+	 * @param strategy - how to handle injection conflicts.
 	 */
-	public abstract void injectPlayer(Player player);
+	public abstract void injectPlayer(Player player, ConflictStrategy strategy);
 
 	/**
 	 * Invoke special routines for handling disconnect before a player is uninjected.
@@ -149,8 +155,7 @@ public interface PlayerInjectionHandler {
 	public abstract void close();
 
 	/**
-	 * Inform the current PlayerInjector that it should update the DataInputStream next.
-	 * @param player - the player to update.
+	 * Perform any action that must be delayed until the world(s) has loaded.
 	 */
-	public abstract void scheduleDataInputRefresh(Player player);
+	public abstract void postWorldLoaded();
 }

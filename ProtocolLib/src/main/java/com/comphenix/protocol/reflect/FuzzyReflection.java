@@ -24,11 +24,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * Retrieves fields and methods by signature, not just name.
@@ -420,6 +422,22 @@ public class FuzzyReflection {
 			return result.get(0);
 		else
 			throw new IllegalArgumentException("Unable to find a method that matches " + matcher);
+	}
+	
+	/**
+	 * Retrieve every method as a map over names. 
+	 * <p>
+	 * Note that overloaded methods will only occur once in the resulting map.
+	 * @param methods - every method.
+	 * @return A map over every given method.
+	 */
+	public Map<String, Method> getMappedMethods(List<Method> methods) {
+		Map<String, Method> map = Maps.newHashMap();
+		
+		for (Method method : methods) {
+			map.put(method.getName(), method);
+		}
+		return map;
 	}
 	
 	/**

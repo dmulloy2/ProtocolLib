@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.injector.player;
+package com.comphenix.protocol.injector.server;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -36,26 +36,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 /**
  * Create fake player instances that represents pre-authenticated clients.
  */
-class TemporaryPlayerFactory {
-	
-	/**
-	 * Able to store a PlayerInjector.
-	 * <p>
-	 * A necessary hack.
-	 * @author Kristian
-	 */
-	public static class InjectContainer {
-		private PlayerInjector injector;
-
-		public PlayerInjector getInjector() {
-			return injector;
-		}
-
-		public void setInjector(PlayerInjector injector) {
-			this.injector = injector;
-		}
-	}
-	
+public class TemporaryPlayerFactory {
 	// Helpful constructors
 	private final PacketConstructor chatPacket;
 	
@@ -64,6 +45,27 @@ class TemporaryPlayerFactory {
 	
 	public TemporaryPlayerFactory() {
 		chatPacket =  PacketConstructor.DEFAULT.withPacket(3, new Object[] { "DEMO" });
+	}
+	
+	/**
+	 * Retrieve the injector from a given player if it contains one.
+	 * @param player - the player that may contain a reference to a player injector.
+	 * @return The referenced player injector, or NULL if none can be found.
+	 */
+	public static SocketInjector getInjectorFromPlayer(Player player) {
+		if (player instanceof InjectorContainer) {
+			return ((InjectorContainer) player).getInjector();
+		} 
+		return null;
+	}
+	
+	/**
+	 * Set the player injector, if possible.
+	 * @param player - the player to update.
+	 * @param injector - the injector to store.
+	 */
+	public static void setInjectorInPlayer(Player player, SocketInjector injector) {
+		((InjectorContainer) player).setInjector(injector);
 	}
 	
 	/**
@@ -80,7 +82,7 @@ class TemporaryPlayerFactory {
 	 *   <li>kickPlayer(String)</li>
 	 * </ul>
 	 * <p>
-	 * Note that the player a player has not been assigned a name yet, and thus cannot be
+	 * Note that a temporary player has not yet been assigned a name, and thus cannot be
 	 * uniquely identified. Use the address instead.
 	 * @param injector - the player injector used.
 	 * @param server - the current server.
@@ -94,7 +96,7 @@ class TemporaryPlayerFactory {
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 
 				String methodName = method.getName();
-				PlayerInjector injector = ((InjectContainer) obj).getInjector();
+				SocketInjector injector = ((InjectorContainer) obj).getInjector();
 				
 				if (injector == null)
 					throw new IllegalStateException("Unable to find injector.");
@@ -147,7 +149,7 @@ class TemporaryPlayerFactory {
 				public int accept(Method method) {
 					// Do not override the object method or the superclass methods
 					if (method.getDeclaringClass().equals(Object.class) ||
-						method.getDeclaringClass().equals(InjectContainer.class))
+						method.getDeclaringClass().equals(InjectorContainer.class))
 						return 0;
 					else 
 						return 1;
@@ -157,12 +159,25 @@ class TemporaryPlayerFactory {
     	
 		// CGLib is amazing
     	Enhancer ex = new Enhancer();
-    	ex.setSuperclass(InjectContainer.class);
+    	ex.setSuperclass(InjectorContainer.class);
     	ex.setInterfaces(new Class[] { Player.class });
 		ex.setCallbacks(new Callback[] { NoOp.INSTANCE, implementation });
 		ex.setCallbackFilter(callbackFilter);
     	
     	return (Player) ex.create();
+	}
+	
+	/**
+	 * Construct a temporary player with the given associated socket injector.
+	 * @param server - the parent server.
+	 * @param injector - the referenced socket injector.
+	 * @return The temporary player.
+	 */
+	public Player createTemporaryPlayer(Server server, SocketInjector injector) {
+		Player temporary = createTemporaryPlayer(server);
+		
+		((InjectorContainer) temporary).setInjector(injector);
+		return temporary;
 	}
 	
 	/**
@@ -173,7 +188,7 @@ class TemporaryPlayerFactory {
 	 * @throws InvocationTargetException If the message couldn't be sent.
 	 * @throws FieldAccessException If we were unable to construct the message packet.
 	 */
-	private Object sendMessage(PlayerInjector injector, String message) throws InvocationTargetException, FieldAccessException {
+	private Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
 		injector.sendServerPacket(chatPacket.createPacket(message).getHandle(), false);
 		return null;
 	}

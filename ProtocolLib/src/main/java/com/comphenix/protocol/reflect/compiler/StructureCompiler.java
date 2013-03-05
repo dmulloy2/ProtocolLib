@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.base.Objects;
 import com.google.common.primitives.Primitives;
@@ -94,7 +95,7 @@ public final class StructureCompiler {
 
 	// Used to store generated classes of different types
 	@SuppressWarnings("rawtypes")
-	private static class StructureKey {
+	static class StructureKey {
 		private Class targetType;
 		private Class fieldType;
 		
@@ -206,6 +207,11 @@ public final class StructureCompiler {
 			return (StructureModifier<TField>) compiledClass.getConstructor(
 					StructureModifier.class, StructureCompiler.class).
 					 newInstance(source, this);
+		} catch (OutOfMemoryError e) {
+			// Print the number of generated classes by the current instances
+			ProtocolLibrary.getErrorReporter().reportWarning(
+					this, "May have generated too many classes (count: " + compiledCache.size() + ")");
+			throw e;
 		} catch (IllegalArgumentException e) {
 			throw new IllegalStateException("Used invalid parameters in instance creation", e);
 		} catch (SecurityException e) {
@@ -218,7 +224,7 @@ public final class StructureCompiler {
 			throw new RuntimeException("Error occured while instancing generated class.", e);
 		} catch (NoSuchMethodException e) {
 			throw new IllegalStateException("Cannot happen.", e);
-		}
+		} 
 	}
 	
 	/**

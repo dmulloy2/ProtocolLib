@@ -9,6 +9,7 @@ package com.comphenix.protocol.metrics;
  * This class provides the means to safetly and easily update a plugin, or check to see if it is updated using dev.bukkit.org
  */
 import java.io.*;
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -259,10 +260,18 @@ public class Updater
             logger.warning("The project slug added ('" + slug + "') is invalid, and does not exist on dev.bukkit.org");
             result = Updater.UpdateResult.FAIL_BADSLUG; // Bad slug! Bad!
         }
+        
         if (url != null)
         {
             // Obtain the results of the project's file feed
-            readFeed();
+            try {
+				readFeed();
+			} catch (ConnectException ex) {
+				// Minimal warning - it's just a temporary problem
+				logger.warning("Update problem: " + ex.getMessage());
+				return UpdateResult.FAIL_DBO;
+			}
+            
             if(versionCheck(versionTitle))
             {            	
                 String fileLink = getFile(versionLink);
@@ -545,8 +554,9 @@ public class Updater
     
     /**
      * Part of RSS Reader by Vogella, modified by H31IX for use with Bukkit
+     * @throws ConnectException Cannot connect to the server.
      */ 
-    private void readFeed() 
+    private void readFeed() throws ConnectException 
     {
         try 
         {
@@ -598,15 +608,15 @@ public class Updater
 
     /**
      * Open the RSS feed
+     * @throws ConnectException If we are unable to connect to the server.
      */    
-    private InputStream read() 
+    private InputStream read() throws ConnectException 
     {
-        try 
-        {
+        try  {
             return url.openStream();
-        } 
-        catch (IOException e) 
-        {
+        } catch (ConnectException e) {
+        	throw e;
+        } catch (IOException e)  {
             throw new RuntimeException(e);
         }
     }

@@ -4,8 +4,6 @@ import java.io.DataInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.concurrency.IntegerSet;
@@ -49,12 +47,7 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	public void setPlayerHook(PlayerInjectHooks playerHook) {
 		throw new UnsupportedOperationException("This is not needed in Spigot.");
 	}
-	
-	@Override
-	public void scheduleDataInputRefresh(Player player) {
-		// Fine
-	}
-	
+
 	@Override
 	public void addPacketHandler(int packetID) {
 		sendingFilters.add(packetID);
@@ -86,7 +79,8 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	}
 	
 	@Override
-	public void injectPlayer(Player player) {
+	public void injectPlayer(Player player, ConflictStrategy strategy) {
+		// We don't care about strategy
 		injector.injectPlayer(player);
 	}
 	
@@ -107,11 +101,6 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	}
 	
 	@Override
-	public Player getPlayerByConnection(DataInputStream inputStream, long playerTimeout, TimeUnit unit) throws InterruptedException {
-		throw new UnsupportedOperationException("This is not needed in Spigot.");
-	}
-	
-	@Override
 	public Player getPlayerByConnection(DataInputStream inputStream) throws InterruptedException {
 		throw new UnsupportedOperationException("This is not needed in Spigot.");
 	}
@@ -124,5 +113,10 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	@Override
 	public void checkListener(Set<PacketListener> listeners) {
 		// Yes, really
+	}
+
+	@Override
+	public void postWorldLoaded() {
+		// Do nothing
 	}
 }

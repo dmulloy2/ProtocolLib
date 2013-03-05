@@ -152,7 +152,13 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	public void setValue(Map<String, NbtBase<?>> newValue) {
 		// Write all the entries
 		for (Map.Entry<String, NbtBase<?>> entry : newValue.entrySet()) {
-			put(entry.getValue());
+			Object value = entry.getValue();
+			
+			// We don't really know
+			if (value instanceof NbtBase)
+				put(entry.getValue());
+			else
+				putObject(entry.getKey(), entry.getValue());
 		}
 	}
 	
@@ -215,6 +221,9 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	 */
 	@Override
 	public <T> NbtCompound put(NbtBase<T> entry) {
+		if (entry == null)
+			throw new IllegalArgumentException("Entry cannot be NULL.");
+		
 		getValue().put(entry.getName(), entry);
 		return this;
 	}
@@ -250,6 +259,29 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	public NbtCompound put(String key, String value) {
 		getValue().put(key, NbtFactory.of(key, value));
 		return this;
+	}
+	
+	@Override
+	public NbtCompound putObject(String key, Object value) {
+		if (value == null) {
+			remove(key);
+		} else if (value instanceof NbtBase) {
+			put(key, (NbtBase<?>) value);
+		} else {
+			NbtBase<?> base = new MemoryElement<Object>(key, value);
+			put(base);
+		}
+		return this;
+	}
+	
+	@Override
+	public Object getObject(String key) {
+		NbtBase<?> base = getValue(key);
+		
+		if (base != null && base.getType() != NbtType.TAG_LIST && base.getType() != NbtType.TAG_COMPOUND)
+			return base.getValue();
+		else
+			return base;
 	}
 	
 	/**
@@ -565,6 +597,9 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	
 	@Override
 	public NbtCompound put(String key, NbtBase<?> entry) {
+		if (entry == null)
+			throw new IllegalArgumentException("Entry cannot be NULL.");
+		
 		// Don't modify the original NBT
 		NbtBase<?> clone = entry.deepClone();
 		
@@ -581,6 +616,11 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	@Override
 	public <T> NbtCompound put(String key, Collection<? extends NbtBase<T>> list) {
 		return put(WrappedList.fromList(key, list));
+	}
+	
+	@Override
+	public <T> NbtBase<?> remove(String key) {
+		return getValue().remove(key);
 	}
 	
 	@Override

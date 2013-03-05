@@ -27,6 +27,7 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.google.common.base.Strings;
 
 /**
  * Utility methods for sending chat messages.
@@ -97,5 +98,49 @@ public class ChatExtensions {
 				sendMessageSilently(player, message);
 			}
 		}
+	}
+	
+	/**
+	 * Print a flower box around a given message.
+	 * @param message - the message to print.
+	 * @param marginChar - the character to use as margin.
+	 * @param marginWidth - the width (in characters) of the left and right margin.
+	 * @param marginHeight - the height (in characters) of the top and buttom margin.
+	 */
+	public static String[] toFlowerBox(String[] message, String marginChar, int marginWidth, int marginHeight) {
+		String[] output = new String[message.length + marginHeight * 2];
+		int width = getMaximumLength(message);
+		
+		// Margins
+		String topButtomMargin = Strings.repeat(marginChar, width + marginWidth * 2);
+		String leftRightMargin = Strings.repeat(marginChar, marginWidth);
+		
+		// Add left and right margin
+		for (int i = 0; i < message.length; i++) {
+			output[i + marginHeight] = leftRightMargin + Strings.padEnd(message[i], width, ' ') + leftRightMargin;
+		}
+		
+		// Insert top and bottom margin
+		for (int i = 0; i < marginHeight; i++) {
+			output[i] = topButtomMargin;
+			output[output.length - i - 1] = topButtomMargin;
+		}
+		return output;
+	}
+	
+	/**
+	 * Retrieve the longest line lenght in a list of strings.
+	 * @param lines - the lines.
+	 * @return Longest line lenght.
+	 */
+	private static int getMaximumLength(String[] lines) {
+		int current = 0;
+		
+		// Find the longest line
+		for (int i = 0; i < lines.length; i++) {
+			if (current < lines[i].length())
+				current = lines[i].length();
+		}
+		return current;
 	}
 }

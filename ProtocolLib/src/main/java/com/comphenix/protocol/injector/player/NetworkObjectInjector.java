@@ -39,7 +39,7 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
-import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
+import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 
 /**
  * Injection method that overrides the NetworkHandler itself, and its queue-method.
@@ -54,7 +54,7 @@ public class NetworkObjectInjector extends PlayerInjector {
 	private ClassLoader classLoader;
 
 	// Shared callback filter - avoid creating a new class every time
-	private static CallbackFilter callbackFilter;
+	private volatile static CallbackFilter callbackFilter;
 	
 	// Temporary player factory
 	private static volatile TemporaryPlayerFactory tempPlayerFactory;
@@ -91,10 +91,8 @@ public class NetworkObjectInjector extends PlayerInjector {
 		if (tempPlayerFactory == null)
 			tempPlayerFactory = new TemporaryPlayerFactory();
 		
-		// Create and associate this fake player with this network injector
-		Player player = tempPlayerFactory.createTemporaryPlayer(server);
-		((InjectContainer) player).setInjector(this);
-		return player;
+		// Create and associate the fake player with this network injector
+		return tempPlayerFactory.createTemporaryPlayer(server, this);
 	}
 	
 	@Override

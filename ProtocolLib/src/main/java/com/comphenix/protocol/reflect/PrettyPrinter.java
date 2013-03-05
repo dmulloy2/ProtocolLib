@@ -21,6 +21,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.google.common.primitives.Primitives;
@@ -80,7 +82,7 @@ public class PrettyPrinter {
 		
 		// Start and stop
 		output.append("{ ");
-		printObject(output, object, start, stop, previous, hierachyDepth);
+		printObject(output, object, start, stop, previous, hierachyDepth, true);
 		output.append(" }");
 		
 		return output.toString();
@@ -99,14 +101,41 @@ public class PrettyPrinter {
 			else
 				output.append(", ");
 			
-			// Handle exceptions
-			if (value != null)
-				printValue(output, value, value.getClass(), stop, previous, hierachyIndex - 1);
-			else
-				output.append("NULL");
+			// Print value
+			printValue(output, value,  stop, previous, hierachyIndex - 1);
 		}
 		
 		output.append(")");
+	}
+
+	/**
+	 * Print the content of a maps entries.
+	 * @param output - the output string builder.
+	 * @param map - the map to print.
+	 * @param current - the type of this map.
+	 * @param stop - the class that indicates we should stop printing.
+	 * @param previous - previous objects printed.
+	 * @param hierachyIndex - hierachy index.
+	 * @throws IllegalAccessException If any reflection went wrong.
+	 */
+	private static void printMap(StringBuilder output, Map<Object, Object> map, Class<?> current, Class<?> stop, 
+			   Set<Object> previous, int hierachyIndex) throws IllegalAccessException {	
+
+		boolean first = true;
+		output.append("[");
+
+		for (Entry<Object, Object> entry : map.entrySet()) {
+			if (first)
+				first = false;
+			else
+				output.append(", ");
+
+			printValue(output, entry.getKey(), stop, previous, hierachyIndex - 1);
+			output.append(": ");
+			printValue(output, entry.getValue(),  stop, previous, hierachyIndex - 1);
+		}
+
+		output.append("]");
 	}
 	
 	private static void printArray(StringBuilder output, Object array, Class<?> current, Class<?> stop, 
@@ -142,10 +171,8 @@ public class PrettyPrinter {
 	
 	// Internal recursion method
 	private static void printObject(StringBuilder output, Object object, Class<?> current, Class<?> stop, 
-									Set<Object> previous, int hierachyIndex) throws IllegalAccessException {
-		// Trickery
-		boolean first = true;
-
+									Set<Object> previous, int hierachyIndex, boolean first) throws IllegalAccessException {
+		
 		// See if we're supposed to skip this class
 		if (current == Object.class || (stop != null && current.equals(stop))) {
 			return;
@@ -168,10 +195,11 @@ public class PrettyPrinter {
 				Class<?> type = field.getType();
 				Object value = FieldUtils.readField(field, object, true);
 				
-				if (first) 
+				if (first) {
 					first = false;
-				else
+				} else {
 					output.append(", ");
+				}
 				
 				output.append(field.getName());
 				output.append(" = ");
@@ -180,10 +208,16 @@ public class PrettyPrinter {
 		}
 		
 		// Recurse
-		printObject(output, object, current.getSuperclass(), stop, previous, hierachyIndex);
+		printObject(output, object, current.getSuperclass(), stop, previous, hierachyIndex, first);
 	}
 
-	@SuppressWarnings("rawtypes")
+	private static void printValue(StringBuilder output, Object value, Class<?> stop, 
+								   Set<Object> previous, int hierachyIndex) throws IllegalAccessException {
+		// Handle the NULL case
+		printValue(output, value, value != null ? value.getClass() : null, stop, previous, hierachyIndex);
+	}
+	
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static void printValue(StringBuilder output, Object value, Class<?> type, 
 								   Class<?> stop, Set<Object> previous, int hierachyIndex) throws IllegalAccessException {
 		// Just print primitive types
@@ -197,12 +231,14 @@ public class PrettyPrinter {
 			printArray(output, value, type, stop, previous, hierachyIndex);
 		} else if (Iterable.class.isAssignableFrom(type)) {
 			printIterables(output, (Iterable) value, type, stop, previous, hierachyIndex);
+		} else if (Map.class.isAssignableFrom(type)) {
+			printMap(output, (Map<Object, Object>) value, type, stop, previous, hierachyIndex);
 		} else if (ClassLoader.class.isAssignableFrom(type) || previous.contains(value)) {
 			// Don't print previous objects
 			output.append("\"" + value + "\"");
 		} else {
 			output.append("{ ");
-			printObject(output, value, value.getClass(), stop, previous, hierachyIndex);
+			printObject(output, value, value.getClass(), stop, previous, hierachyIndex, true);
 			output.append(" }");
 		}
 	}

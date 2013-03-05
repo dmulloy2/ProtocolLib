@@ -24,7 +24,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
-
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.entity.Player;
@@ -38,13 +37,14 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
-abstract class PlayerInjector {
+abstract class PlayerInjector implements SocketInjector {
 
 	// Net login handler stuff
 	private static Field netLoginNetworkField;
@@ -60,6 +60,7 @@ abstract class PlayerInjector {
 	protected static Field networkManagerField;
 	protected static Field netHandlerField;
 	protected static Field socketField;
+	protected static Field socketAddressField;
 	
 	private static Field inputField;
 	private static Field entityPlayerField;
@@ -87,8 +88,9 @@ abstract class PlayerInjector {
 	protected Object serverHandler;
 	protected Object netHandler;
 	
-	// Current socket
+	// Current socket and address
 	protected Socket socket;
+	protected SocketAddress socketAddress;
 	
 	// The packet manager and filters
 	protected ListenerInvoker invoker;
@@ -98,9 +100,6 @@ abstract class PlayerInjector {
 	
 	// Handle errors
 	protected ErrorReporter reporter;
-
-	// Scheduled action on the next packet event
-	protected Runnable scheduledAction;
 
 	// Whether or not the injector has been cleaned
 	private boolean clean;
@@ -249,10 +248,12 @@ abstract class PlayerInjector {
 	 * @return The associated socket.
 	 * @throws IllegalAccessException If we're unable to read the socket field.
 	 */
+	@Override
 	public Socket getSocket() throws IllegalAccessException {
 		try {
 			if (socketField == null)
-				socketField = FuzzyReflection.fromObject(networkManager, true).getFieldListByType(Socket.class).get(0);
+				socketField = FuzzyReflection.fromObject(networkManager, true).
+								getFieldListByType(Socket.class).get(0);
 			if (socket == null)
 				socket = (Socket) FieldUtils.readField(socketField, networkManager, true);
 			return socket;
@@ -263,18 +264,23 @@ abstract class PlayerInjector {
 	}
 	
 	/**
-	 * Retrieve the associated address of this player.
-	 * @return The associated address.
-	 * @throws IllegalAccessException If we're unable to read the socket field.
+	 * Retrieve the associated remote address of a player.
+	 * @return The associated remote address..
+	 * @throws IllegalAccessException If we're unable to read the socket address field.
 	 */
+	@Override
 	public SocketAddress getAddress() throws IllegalAccessException {
-		Socket socket = getSocket();
-		
-		// Guard against NULL
-		if (socket != null)
-			return socket.getRemoteSocketAddress();
-		else
-			return null;
+		try {
+			if (socketAddressField == null)
+				socketAddressField = FuzzyReflection.fromObject(networkManager, true).
+										getFieldListByType(SocketAddress.class).get(0);
+			if (socketAddress == null)
+				socketAddress = (SocketAddress) FieldUtils.readField(socketAddressField, networkManager, true);
+			return socketAddress;
+			
+		} catch (IndexOutOfBoundsException e) {
+			throw new IllegalAccessException("Unable to read the socket address field.");
+		}
 	}
 	
 	/**
@@ -282,6 +288,7 @@ abstract class PlayerInjector {
 	 * @param message - the message to display.
 	 * @throws InvocationTargetException If disconnection failed.
 	 */
+	@Override
 	public void disconnect(String message) throws InvocationTargetException {
 		// Get a non-null handler
 		boolean usingNetServer = serverHandler != null;
@@ -450,6 +457,7 @@ abstract class PlayerInjector {
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
+	@Override
 	public abstract void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException;
 	
 	/**
@@ -517,12 +525,7 @@ abstract class PlayerInjector {
 			Integer id = invoker.getPacketID(packet);
 			Player currentPlayer = player;
 			
-			// Hack #1: Handle a single scheduled action
-			if (scheduledAction != null) {
-				scheduledAction.run();
-				scheduledAction = null;
-			}
-			// Hack #2
+			// Hack #1
 			if (updateOnLogin) {
 				if (id == Packets.Server.LOGIN) {
 					try {
@@ -594,16 +597,9 @@ abstract class PlayerInjector {
 	}
 	
 	/**
-	 * Schedule an action to occur on the next sent packet.
-	 * @param action - action to execute.
-	 */
-	public void scheduleAction(Runnable action) {
-		scheduledAction = action;
-	}
-
-	/**
 	 * Retrieve the hooked player.
 	 */
+	@Override
 	public Player getPlayer() {
 		return player;
 	}
@@ -630,11 +626,17 @@ abstract class PlayerInjector {
 	 * Retrieve the hooked player object OR the more up-to-date player instance.
 	 * @return The hooked player, or a more up-to-date instance.
 	 */
+	@Override
 	public Player getUpdatedPlayer() {
 		if (updatedPlayer != null)
 			return updatedPlayer;
 		else
 			return player;
+	}
+	
+	@Override
+	public void transferState(SocketInjector delegate) {
+		// Do nothing
 	}
 	
 	/**

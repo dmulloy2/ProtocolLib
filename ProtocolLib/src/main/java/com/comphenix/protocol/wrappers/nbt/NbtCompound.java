@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 /**
  * Represents a mapping of arbitrary NBT elements and their unique names.
  * <p>
@@ -16,6 +18,10 @@ import java.util.Set;
  * @author Kristian
  */
 public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>> {
+	@Override
+	@Deprecated()
+	public Map<String, NbtBase<?>> getValue();
+	
 	/**
 	 * Determine if an entry with the given key exists or not.
 	 * @param key - the key to lookup. 
@@ -48,8 +54,9 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * Set a entry based on its name.
 	 * @param entry - entry with a name and value.
 	 * @return This compound, for chaining.
+	 * @throws IllegalArgumentException If entry is NULL.
 	 */
-	public abstract <T> NbtCompound put(NbtBase<T> entry);
+	public abstract <T> NbtCompound put(@Nonnull NbtBase<T> entry);
 
 	/**
 	 * Retrieve the string value of an entry identified by a given key.
@@ -251,7 +258,26 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * @return This current compound, for chaining.
 	 */
 	public abstract NbtCompound put(String key, int[] value);
-
+	
+	/**
+	 * Associates a given Java primitive value, list, map or NbtBase<?> with a certain key.
+	 * <p>
+	 * If the value is NULL, the corresponding key is removed. Any Map or List will be converted
+	 * to a corresponding NbtCompound or NbtList.
+	 * 
+	 * @param key - the name of the new entry,
+	 * @param value - the value of the new entry, or NULL to remove the current value.
+	 * @return This current compound, for chaining.
+	 */
+	public abstract NbtCompound putObject(String key, Object value);
+	
+	/**
+	 * Retrieve the primitive object, NbtList or NbtCompound associated with the given key.
+	 * @param key - the key of the object to find.
+	 * @return The object with this key, or NULL if we couldn't find anything.
+	 */
+	public abstract Object getObject(String key);
+	
 	/**
 	 * Retrieve the compound (map) value of an entry identified by a given key.
 	 * @param key - the key of the entry.
@@ -304,6 +330,13 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 */
 	public abstract <T> NbtCompound put(String key, Collection<? extends NbtBase<T>> list);
 
+	/**
+	 * Remove the NBT element that is associated with the given key.
+	 * @param key - the key of the element to remove.
+	 * @return The removed element, or NULL if no such element was found.
+	 */
+	public abstract <T> NbtBase<?> remove(String key);
+	
 	/**
 	 * Retrieve an iterator view of the NBT tags stored in this compound.
 	 * @return The tags stored in this compound.

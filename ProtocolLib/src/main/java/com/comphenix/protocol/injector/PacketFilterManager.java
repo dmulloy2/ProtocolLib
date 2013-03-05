@@ -56,6 +56,7 @@ import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
 import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -133,8 +134,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	private AsyncFilterManager asyncFilterManager;
 	
 	// Valid server and client packets
-	private Set<Integer> serverPackets;
-	private Set<Integer> clientPackets;
+	private boolean knowsServerPackets;
+	private boolean knowsClientPackets;
 	
 	// Ensure that we're not performing too may injections
 	private AtomicInteger phaseLoginCount = new AtomicInteger(0);
@@ -214,8 +215,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			
 			// Attempt to load the list of server and client packets
 			try {
-				this.serverPackets = PacketRegistry.getServerPackets();
-				this.clientPackets = PacketRegistry.getClientPackets();
+				knowsServerPackets = PacketRegistry.getServerPackets() != null;
+				knowsClientPackets = PacketRegistry.getClientPackets() != null;
 			} catch (FieldAccessException e) {
 				reporter.reportWarning(this, "Cannot load server and client packet list.", e);
 			}
@@ -223,6 +224,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		} catch (IllegalAccessException e) {
 			reporter.reportWarning(this, "Unable to initialize packet injector.", e);
 		}
+	}
+	
+	/**
+	 * Initiate logic that is performed after the world has loaded.
+	 */
+	public void postWorldLoaded() {
+		playerInjection.postWorldLoaded();
 	}
 	
 	@Override
@@ -275,15 +283,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				// Make sure this is possible
 				playerInjection.checkListener(listener);
 			}
+			if (hasSending)
+				incrementPhases(sending.getGamePhase());
+			
+			// Handle receivers after senders
 			if (hasReceiving) {
 				verifyWhitelist(listener, receiving);
 				recievedListeners.addListener(listener, receiving);
 				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
 			}
-			
-			// Increment phases too
-			if (hasSending)
-				incrementPhases(sending.getGamePhase());
 			if (hasReceiving)
 				incrementPhases(receiving.getGamePhase());
 			
@@ -466,7 +474,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		for (int packetID : packets) {
 			// Only register server packets that are actually supported by Minecraft
 			if (side.isForServer()) {
-				if (serverPackets != null && serverPackets.contains(packetID))
+				// Note that we may update the packet list here
+				if (!knowsServerPackets || PacketRegistry.getServerPackets().contains(packetID))
 					playerInjection.addPacketHandler(packetID);
 				else
 					reporter.reportWarning(this, String.format(
@@ -477,7 +486,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			
 			// As above, only for client packets
 			if (side.isForClient() && packetInjector != null) {
-				if (clientPackets != null && clientPackets.contains(packetID))
+				if (!knowsClientPackets || PacketRegistry.getClientPackets().contains(packetID))
 					packetInjector.addPacketHandler(packetID);
 				else
 					reporter.reportWarning(this, String.format(
@@ -612,7 +621,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 */
 	public void initializePlayers(Player[] players) {
 		for (Player player : players)
-			playerInjection.injectPlayer(player);
+			playerInjection.injectPlayer(player, ConflictStrategy.OVERRIDE);
 	}
 	
 	/**
@@ -672,7 +681,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
     private void onPlayerJoin(PlayerJoinEvent event) {
 		try {
 			// This call will be ignored if no listeners are registered
-			playerInjection.injectPlayer(event.getPlayer());
+			playerInjection.injectPlayer(event.getPlayer(), ConflictStrategy.OVERRIDE);
 		} catch (Exception e) {
 			reporter.reportDetailed(PacketFilterManager.this, "Unable to inject player.", e, event);
 		}

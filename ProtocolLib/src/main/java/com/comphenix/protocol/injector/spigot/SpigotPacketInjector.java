@@ -349,7 +349,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	public Object packetQueued(Object networkManager, Object connection, Object packet) {
 		Integer id = invoker.getPacketID(packet);
 		
-		if (id != null & queuedFilters.contains(id)) {
+		if (id != null && queuedFilters.contains(id)) {
 			// Check for ignored packets
 			if (ignoredPackets.remove(packet)) {
 				return packet;
@@ -427,7 +427,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	void uninjectPlayer(Player player) {
 		final NetworkObjectInjector injector = getInjector(player);
 		
-		if (player != null) {
+		if (player != null && injector != null) {
 			Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 				@Override
 				public void run() {

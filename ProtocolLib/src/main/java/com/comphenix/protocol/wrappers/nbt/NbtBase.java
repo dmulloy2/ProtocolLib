@@ -64,6 +64,9 @@ public interface NbtBase<TType> {
 	 * Is either a primitive {@link java.lang.Number wrapper}, {@link java.lang.String String}, 
 	 * {@link java.util.List List} or a {@link java.util.Map Map}. 
 	 * <p>
+	 * Users are encouraged to cast an NBT compound to {@link NbtCompound} and use its put and get-methods
+	 * instead of accessing its content from getValue().
+	 * <p>
 	 * All operations that modify collections directly, such as {@link java.util.List#add(Object) List.add(Object)} or 
 	 * {@link java.util.Map#clear() Map.clear()}, are considered optional. This also include members in {@link java.util.Iterator Iterator} and 
 	 * {@link java.util.ListIterator ListIterator}. Operations that are not implemented throw a 

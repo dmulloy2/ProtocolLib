@@ -24,7 +24,8 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.GamePhase;
-import com.comphenix.protocol.injector.player.TemporaryPlayerFactory.InjectContainer;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
+import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
@@ -34,23 +35,22 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class NetLoginInjector {
-
 	private ConcurrentMap<Object, PlayerInjector> injectedLogins = Maps.newConcurrentMap();
-	
+
 	// Handles every hook
 	private ProxyPlayerInjectionHandler injectionHandler;
+
+	// Create temporary players
+	private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
+	
+	// The current error reporter
+	private ErrorReporter reporter;
 	private Server server;
 	
-	// The current error rerporter
-	private ErrorReporter reporter;
-	
-	// Used to create fake players
-	private TemporaryPlayerFactory tempPlayerFactory = new TemporaryPlayerFactory();
-	
-	public NetLoginInjector(ErrorReporter reporter, ProxyPlayerInjectionHandler injectionHandler, Server server) {
+	public NetLoginInjector(ErrorReporter reporter, Server server, ProxyPlayerInjectionHandler injectionHandler) {
 		this.reporter = reporter;
-		this.injectionHandler = injectionHandler;
 		this.server = server;
+		this.injectionHandler = injectionHandler;
 	}
 
 	/**
@@ -64,16 +64,19 @@ class NetLoginInjector {
 			if (!injectionHandler.isInjectionNecessary(GamePhase.LOGIN))
 				return inserting;
 			
-			Player fakePlayer = tempPlayerFactory.createTemporaryPlayer(server);
-			PlayerInjector injector = injectionHandler.injectPlayer(fakePlayer, inserting, GamePhase.LOGIN);
-			injector.updateOnLogin = true;
+			Player temporary = playerFactory.createTemporaryPlayer(server);
+			// Note that we bail out if there's an existing player injector
+			PlayerInjector injector = injectionHandler.injectPlayer(
+					temporary, inserting, ConflictStrategy.BAIL_OUT, GamePhase.LOGIN);
 			
-			// Associate the injector too
-			InjectContainer container = (InjectContainer) fakePlayer;
-			container.setInjector(injector);
-			
-			// Save the login
-			injectedLogins.putIfAbsent(inserting, injector);
+			if (injector != null) {
+				// Update injector as well
+				TemporaryPlayerFactory.setInjectorInPlayer(temporary, injector);
+				injector.updateOnLogin = true;
+	
+				// Save the login
+				injectedLogins.putIfAbsent(inserting, injector);
+			}
 			
 			// NetServerInjector can never work (currently), so we don't need to replace the NetLoginHandler
 			return inserting;	
@@ -81,7 +84,7 @@ class NetLoginInjector {
 		} catch (Throwable e) {
 			// Minecraft can't handle this, so we'll deal with it here
 			reporter.reportDetailed(this, "Unable to hook " + 
-						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting);
+						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting, injectionHandler);
 			return inserting;
 		}
 	}
@@ -108,15 +111,13 @@ class NetLoginInjector {
 				
 				// Hack to clean up other references
 				newInjector = injectionHandler.getInjectorByNetworkHandler(injected.getNetworkManager());
+				injectionHandler.uninjectPlayer(player);
 				
 				// Update NetworkManager
-				if (newInjector == null) {
-					injectionHandler.uninjectPlayer(player);
-				} else {
-					injectionHandler.uninjectPlayer(player, false);
-					
-					if (injected instanceof NetworkObjectInjector)
+				if (newInjector != null) {
+					if (injected instanceof NetworkObjectInjector) {
 						newInjector.setNetworkManager(injected.getNetworkManager(), true);
+					}
 				}
 				
 			} catch (Throwable e) {

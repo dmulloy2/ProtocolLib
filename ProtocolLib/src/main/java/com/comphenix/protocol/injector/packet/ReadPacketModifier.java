@@ -19,24 +19,17 @@ package com.comphenix.protocol.injector.packet;
 
 import java.io.DataInputStream;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
-import java.util.WeakHashMap;
 
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.google.common.collect.MapMaker;
 
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 class ReadPacketModifier implements MethodInterceptor {
-
-	@SuppressWarnings("rawtypes")
-	private static Class[] parameters = { DataInputStream.class };
-
 	// A cancel marker
 	private static final Object CANCEL_MARKER = new Object();
 	
@@ -47,20 +40,24 @@ class ReadPacketModifier implements MethodInterceptor {
 	// Report errors
 	private ErrorReporter reporter;
 	
-	// Whether or not a packet has been cancelled
-	private static Map<Object, Object> override = Collections.synchronizedMap(new WeakHashMap<Object, Object>());
+	// If this is a read packet data method
+	private boolean isReadPacketDataMethod;
 	
-	public ReadPacketModifier(int packetID, ProxyPacketInjector packetInjector, ErrorReporter reporter) {
+	// Whether or not a packet has been cancelled
+	private static Map<Object, Object> override = new MapMaker().weakKeys().makeMap();
+	
+	public ReadPacketModifier(int packetID, ProxyPacketInjector packetInjector, ErrorReporter reporter, boolean isReadPacketDataMethod) {
 		this.packetID = packetID;
 		this.packetInjector = packetInjector;
 		this.reporter = reporter;
+		this.isReadPacketDataMethod = isReadPacketDataMethod;
 	}
 	
 	/**
 	 * Remove any packet overrides.
 	 * @param packet - the packet to rever
 	 */
-	public void removeOverride(Object packet) {
+	public static void removeOverride(Object packet) {
 		override.remove(packet);
 	}
 	
@@ -69,7 +66,7 @@ class ReadPacketModifier implements MethodInterceptor {
 	 * @param packet - the given packet.
 	 * @return Overriden object.
 	 */
-	public Object getOverride(Object packet) {
+	public static Object getOverride(Object packet) {
 		return override.get(packet);
 	}
 
@@ -78,23 +75,15 @@ class ReadPacketModifier implements MethodInterceptor {
 	 * @param packet - the packet to check.
 	 * @return TRUE if it has been cancelled, FALSE otherwise.
 	 */
-	public boolean hasCancelled(Object packet) {
+	public static boolean hasCancelled(Object packet) {
 		return getOverride(packet) == CANCEL_MARKER;
 	}
-	
+
 	@Override
 	public Object intercept(Object thisObj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-		
-		Object returnValue = null;
-		String methodName = method.getName();
-
-		// We always pass these down (otherwise, we'll end up with a infinite loop)
-		if (methodName.equals("hashCode") || methodName.equals("equals") || methodName.equals("toString")) {
-			return proxy.invokeSuper(thisObj, args);
-		}
-		
 		// Atomic retrieval
 		Object overridenObject = override.get(thisObj);
+		Object returnValue = null;
 		
 		if (overridenObject != null) {
 			// This packet has been cancelled
@@ -112,9 +101,7 @@ class ReadPacketModifier implements MethodInterceptor {
 		}
 		
 		// Is this a readPacketData method?
-		if (returnValue == null && 
-				Arrays.equals(method.getParameterTypes(), parameters)) {
-			
+		if (isReadPacketDataMethod) {
 			try {
 				// We need this in order to get the correct player
 				DataInputStream input = (DataInputStream) args[0];
@@ -132,18 +119,12 @@ class ReadPacketModifier implements MethodInterceptor {
 					} else if (!objectEquals(thisObj, result)) {
 						override.put(thisObj, result);
 					}
-					
-					// Update DataInputStream next time
-					if (!event.isCancelled() && packetID == Packets.Server.KEY_RESPONSE) {
-						packetInjector.scheduleDataInputRefresh(event.getPlayer());
-					}
 				}
 			} catch (Throwable e) {
 				// Minecraft cannot handle this error
-				reporter.reportDetailed(this, "Cannot handle clienet packet.", e, args[0]);
+				reporter.reportDetailed(this, "Cannot handle client packet.", e, args[0]);
 			}
 		}
-		
 		return returnValue;
 	}
 	

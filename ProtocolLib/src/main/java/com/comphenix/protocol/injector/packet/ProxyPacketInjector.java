@@ -23,13 +23,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.bukkit.entity.Player;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.CallbackFilter;
+import net.sf.cglib.proxy.NoOp;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -37,6 +39,8 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.MethodInfo;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
@@ -45,7 +49,15 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * @author Kristian
  */
 class ProxyPacketInjector implements PacketInjector {
-
+	/**
+	 * Matches the readPacketData(DataInputStream) method in Packet.
+	 */
+	private static FuzzyMethodContract readPacket = FuzzyMethodContract.newBuilder().
+			returnTypeVoid().
+			parameterExactType(DataInputStream.class).
+			parameterCount(1).
+			build();
+	
 	// The "put" method that associates a packet ID with a packet class
 	private static Method putMethod;
 	private static Object intHashMap;
@@ -59,11 +71,11 @@ class ProxyPacketInjector implements PacketInjector {
 	// Allows us to determine the sender
 	private PlayerInjectionHandler playerInjection;
 	
-	// Allows us to look up read packet injectors
-	private Map<Integer, ReadPacketModifier> readModifier;
-	
 	// Class loader
 	private ClassLoader classLoader;
+	
+	// Share callback filter
+	private CallbackFilter filter;
 			
 	public ProxyPacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
 						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws IllegalAccessException {
@@ -72,7 +84,6 @@ class ProxyPacketInjector implements PacketInjector {
 		this.manager = manager;
 		this.playerInjection = playerInjection;
 		this.reporter = reporter;
-		this.readModifier = new ConcurrentHashMap<Integer, ReadPacketModifier>();
 		initialize();
 	}
 	
@@ -83,11 +94,9 @@ class ProxyPacketInjector implements PacketInjector {
 	 */
 	@Override
 	public void undoCancel(Integer id, Object packet) {
-		ReadPacketModifier modifier = readModifier.get(id);
-		
 		// See if this packet has been cancelled before
-		if (modifier != null && modifier.hasCancelled(packet)) {
-			modifier.removeOverride(packet);
+		if (ReadPacketModifier.hasCancelled(packet)) {
+			ReadPacketModifier.removeOverride(packet);
 		}
 	}
 	
@@ -131,22 +140,38 @@ class ProxyPacketInjector implements PacketInjector {
 			throw new IllegalStateException("Packet ID " + packetID + " is not a valid packet ID in this version.");
 		}
 		// Check for previous injections
-		if (!MinecraftReflection.isMinecraftClass(old)) {
+		if (Factory.class.isAssignableFrom(old)) {
 			throw new IllegalStateException("Packet " + packetID + " has already been injected.");
+		}
+		
+		if (filter == null) {
+			filter = new CallbackFilter() {
+				@Override
+				public int accept(Method method) {
+					// Skip methods defined in Object
+					if (method.getDeclaringClass().equals(Object.class))
+						return 0;
+					else if (readPacket.isMatch(MethodInfo.fromMethod(method), null))
+						return 1;
+					else
+						return 2;
+				}
+			};
 		}
 		
 		// Subclass the specific packet class
 		ex.setSuperclass(old);
-		ex.setCallbackType(ReadPacketModifier.class);
+		ex.setCallbackFilter(filter);
+		ex.setCallbackTypes(new Class<?>[] { NoOp.class, ReadPacketModifier.class, ReadPacketModifier.class });
 		ex.setClassLoader(classLoader);
 		Class proxy = ex.createClass();
 		
-		// Create the proxy handler
-		ReadPacketModifier modifier = new ReadPacketModifier(packetID, this, reporter);
-		readModifier.put(packetID, modifier);
-		
+		// Create the proxy handlers
+		ReadPacketModifier modifierReadPacket = new ReadPacketModifier(packetID, this, reporter, true);
+		ReadPacketModifier modifierRest = new ReadPacketModifier(packetID, this, reporter, false);
+
 		// Add a static reference
-		Enhancer.registerStaticCallbacks(proxy, new Callback[] { modifier });
+		Enhancer.registerStaticCallbacks(proxy, new Callback[] { NoOp.INSTANCE, modifierReadPacket, modifierRest });
 		
 		try {
 			// Override values
@@ -182,7 +207,6 @@ class ProxyPacketInjector implements PacketInjector {
 			
 			putMethod.invoke(intHashMap, packetID, old);
 			previous.remove(packetID);
-			readModifier.remove(packetID);
 			registry.remove(proxy);
 			overwritten.remove(packetID);
 			return true;
@@ -211,18 +235,22 @@ class ProxyPacketInjector implements PacketInjector {
 	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
 		try {
 			Player client = playerInjection.getPlayerByConnection(input);
-			
+
 			// Never invoke a event if we don't know where it's from
-			if (client != null)
+			if (client != null) {
 				return packetRecieved(packet, client);
-			else
+			} else {
+				// Hack #2 - Caused by our server socket injector
+				if (packet.getID() != Packets.Client.GET_INFO)
+					System.out.println("[ProtocolLib] Unknown origin " + input + " for packet " + packet.getID());
 				return null;
+			}
 			
 		} catch (InterruptedException e) {
 			// We will ignore this - it occurs when a player disconnects
 			//reporter.reportDetailed(this, "Thread was interrupted.", e, packet, input);
 			return null;
-		}
+		} 
 	}
 	
 	/**
@@ -252,13 +280,5 @@ class ProxyPacketInjector implements PacketInjector {
 		
 		overwritten.clear();
 		previous.clear();
-	}
-
-	/**
-	 * Inform the current PlayerInjector that it should update the DataInputStream next.
-	 * @param player - the player to update.
-	 */
-	public void scheduleDataInputRefresh(Player player) {
-		playerInjection.scheduleDataInputRefresh(player);
 	}
 }

@@ -228,7 +228,7 @@ class ProtocolConfig {
 	public void setBackgroundCompilerEnabled(boolean enabled) {
 		global.set(BACKGROUND_COMPILER_ENABLED, enabled);
 	}
-	
+
 	/**
 	 * Set the last time we updated, in seconds since 1970.01.01 00:00.
 	 * @param lastTimeSeconds - new last update time.
