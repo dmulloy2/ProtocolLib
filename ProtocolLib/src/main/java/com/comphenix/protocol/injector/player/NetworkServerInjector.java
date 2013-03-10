@@ -20,6 +20,8 @@ package com.comphenix.protocol.injector.player;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+
 import net.sf.cglib.proxy.*;
 
 import org.bukkit.entity.Player;
@@ -45,8 +47,8 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * @author Kristian
  */
 class NetworkServerInjector extends PlayerInjector {
-
 	private volatile static CallbackFilter callbackFilter;
+	private volatile static boolean foundSendPacket;
 	
 	private volatile static Field disconnectField;
 	private InjectedServerConnection serverInjection;
@@ -168,10 +170,12 @@ class NetworkServerInjector extends PlayerInjector {
 			callbackFilter = new CallbackFilter() {
 				@Override
 				public int accept(Method method) {
-					if (method.equals(sendPacket))
+					if (isCallableEqual(sendPacket, method)) {
+						foundSendPacket = true;
 						return 0;
-					else
+					} else {
 						return 1;
+					}
 				}
 			};
 		}
@@ -204,15 +208,31 @@ class NetworkServerInjector extends PlayerInjector {
 		
 		// Inject it now
 		if (proxyObject != null) {
-			// This will be done by InjectedServerConnection instead
-			//copyTo(serverHandler, proxyObject);
-			
+			// Did we override a sendPacket method?
+			if (!foundSendPacket) {
+				throw new IllegalArgumentException("Unable to find a sendPacket method in " + serverClass);
+			}
+
 			serverInjection.replaceServerHandler(serverHandler, proxyObject);
 			serverHandlerRef.setValue(proxyObject);
 			return true;
 		} else {
 			return false;
 		}
+	}
+	
+	/**
+	 * Determine if the two methods are equal in terms of call semantics.
+	 * <p>
+	 * Two methods are equal if they have the same name, parameter types and return type.
+	 * @param first - first method.
+	 * @param second - second method.
+	 * @return TRUE if they are, FALSE otherwise.
+	 */
+	private boolean isCallableEqual(Method first, Method second) {
+		return first.getName().equals(second.getName()) &&
+			   first.getReturnType().equals(second.getReturnType()) &&
+			   Arrays.equals(first.getParameterTypes(), second.getParameterTypes());
 	}
 	
 	private Object getProxyServerHandler() {
