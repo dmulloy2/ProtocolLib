@@ -40,6 +40,7 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
  * Represents a player hook into the NetServerHandler class. 
@@ -326,7 +327,7 @@ class NetworkServerInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public UnsupportedListener checkListener(PacketListener listener) {
+	public UnsupportedListener checkListener(MinecraftVersion version, PacketListener listener) {
 		// We support everything
 		return null;
 	}

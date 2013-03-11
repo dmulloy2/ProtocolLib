@@ -14,6 +14,7 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 
@@ -37,6 +38,7 @@ public class PlayerInjectorBuilder {
 	protected ListenerInvoker invoker;
 	protected Set<PacketListener> packetListeners;
 	protected Server server;
+	protected MinecraftVersion version;
 
 	/**
 	 * Set the class loader to use during class generation.
@@ -108,6 +110,16 @@ public class PlayerInjectorBuilder {
 	}
 	
 	/**
+	 * Set the current Minecraft version.
+	 * @param server - the current Minecraft version, or NULL if unknown.
+	 * @return This builder, for chaining.
+	 */
+	public PlayerInjectorBuilder version(MinecraftVersion version) {
+		this.version = version;
+		return this;
+	}
+	
+	/**
 	 * Called before an object is created with this builder.
 	 */
 	private void initializeDefaults() {
@@ -140,6 +152,6 @@ public class PlayerInjectorBuilder {
 		
 		return new ProxyPlayerInjectionHandler(
 				classLoader, reporter, injectionFilter, 
-				invoker, packetListeners, server);
+				invoker, packetListeners, server, version);
 	}
 }

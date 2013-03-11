@@ -43,6 +43,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 abstract class PlayerInjector implements SocketInjector {
 
@@ -508,11 +509,13 @@ abstract class PlayerInjector implements SocketInjector {
 	 * Invoked before a new listener is registered.
 	 * <p>
 	 * The player injector should only return a non-null value if some or all of the packet IDs are unsupported.
+	 * @param version 
 	 * 
+	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @param listener - the listener that is about to be registered.
 	 * @return A error message with the unsupported packet IDs, or NULL if this listener is valid.
 	 */
-	public abstract UnsupportedListener checkListener(PacketListener listener);
+	public abstract UnsupportedListener checkListener(MinecraftVersion version, PacketListener listener);
 	
 	/**
 	 * Allows a packet to be sent by the listeners.

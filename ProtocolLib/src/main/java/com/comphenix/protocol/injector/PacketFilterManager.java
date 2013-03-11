@@ -61,6 +61,7 @@ import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
@@ -149,9 +150,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
-	 * @param unhookTask 
 	 */
 	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, ErrorReporter reporter) {
+		this(classLoader, server, new MinecraftVersion(server), unhookTask, reporter);
+	}
+	
+	/**
+	 * Only create instances of this class if protocol lib is disabled.
+	 */
+	public PacketFilterManager(ClassLoader classLoader, Server server, MinecraftVersion mcVersion, DelayedSingleTask unhookTask, ErrorReporter reporter) {
 		if (reporter == null)
 			throw new IllegalArgumentException("reporter cannot be NULL.");
 		if (classLoader == null)
@@ -201,6 +208,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 						classLoader(classLoader).
 						packetListeners(packetListeners).
 						injectionFilter(isInjectionNecessary).
+						version(mcVersion).
 						buildHandler();
 			
 				this.packetInjector = PacketInjectorBuilder.newBuilder().
@@ -561,7 +569,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				return;
 		}
 		
-		playerInjection.processPacket(sender, mcPacket);
+		playerInjection.recieveClientPacket(sender, mcPacket);
 	}
 	
 	@Override

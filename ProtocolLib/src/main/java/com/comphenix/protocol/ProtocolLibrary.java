@@ -43,6 +43,7 @@ import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
  * The main entry point for ProtocolLib.
@@ -132,12 +133,15 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Check for other versions
 			checkConflictingVersions();
 			
+			// Handle unexpected Minecraft versions
+			MinecraftVersion version = verifyMinecraftVersion();
+			
 			// Set updater
 			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 			
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(
-					getClassLoader(), getServer(), unhookTask, detailedReporter);
+					getClassLoader(), getServer(), version, unhookTask, detailedReporter);
 			
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -248,10 +252,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			} else {
 				logger.info("Structure compiler thread has been disabled.");
 			}
-			
-			// Handle unexpected Minecraft versions
-			verifyMinecraftVersion();
-			
+		
 			// Set up command handlers
 			registerCommand(CommandProtocol.NAME, commandProtocol);
 			registerCommand(CommandPacket.NAME, commandPacket);
@@ -282,7 +283,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	}
 	
 	// Used to check Minecraft version
-	private void verifyMinecraftVersion() {
+	private MinecraftVersion verifyMinecraftVersion() {
 		try {
 			MinecraftVersion minimum = new MinecraftVersion(MINIMUM_MINECRAFT_VERSION);
 			MinecraftVersion maximum = new MinecraftVersion(MAXIMUM_MINECRAFT_VERSION);
@@ -296,9 +297,14 @@ public class ProtocolLibrary extends JavaPlugin {
 				if (current.compareTo(maximum) > 0)
 					logger.warning("Version " + current + " has not yet been tested! Proceed with caution.");
 	 		}
+			return current;
+			
 		} catch (Exception e) {
 			reporter.reportWarning(this, "Unable to retrieve current Minecraft version.", e);
 		}
+		
+		// Unknown version
+		return null;
 	}
 	
 	private void checkConflictingVersions() {

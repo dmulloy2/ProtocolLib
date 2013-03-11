@@ -74,7 +74,7 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	}
 
 	@Override
-	public void processPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
+	public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
 		injector.processPacket(player, mcPacket);
 	}
 	

@@ -45,6 +45,7 @@ import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.injector.server.InputStreamLookupBuilder;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 import com.google.common.base.Predicate;
 import com.google.common.cache.Cache;
@@ -91,6 +92,9 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	// Used to invoke events
 	private ListenerInvoker invoker;
 	
+	// Current Minecraft version
+	private MinecraftVersion version;
+	
 	// Enabled packet filters
 	private IntegerSet sendingFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
 	
@@ -105,13 +109,14 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	
 	public ProxyPlayerInjectionHandler(
 			ClassLoader classLoader, ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
-			ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server) {
+			ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server, MinecraftVersion version) {
 		
 		this.classLoader = classLoader;
 		this.reporter = reporter;
 		this.invoker = invoker;
 		this.injectionFilter = injectionFilter;
 		this.packetListeners = packetListeners;
+		this.version = version;
 	
 		this.inputStreamLookup = InputStreamLookupBuilder.newBuilder().
 							  server(server).
@@ -501,14 +506,14 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	}
 	
 	/**
-	 * Process a packet as if it were sent by the given player.
+	 * Recieve a packet as if it were sent by the given player.
 	 * @param player - the sender.
 	 * @param mcPacket - the packet to process.
 	 * @throws IllegalAccessException If the reflection machinery failed.
 	 * @throws InvocationTargetException If the underlying method caused an error.
 	 */
 	@Override
-	public void processPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
+	public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
 		PlayerInjector injector = getInjector(player);
 		
 		// Process the given packet, or simply give up
@@ -619,7 +624,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	@Override
 	public void checkListener(PacketListener listener) {
 		if (lastSuccessfulHook != null) {
-			UnsupportedListener result = lastSuccessfulHook.checkListener(listener);
+			UnsupportedListener result = lastSuccessfulHook.checkListener(version, listener);
 
 			// We won't prevent the listener, as it may still have valid packets
 			if (result != null) {

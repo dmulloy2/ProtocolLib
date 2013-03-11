@@ -21,6 +21,8 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
+
 public class MinecraftVersionTest {
 
 	@Test
