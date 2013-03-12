@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
@@ -30,7 +31,6 @@ import com.comphenix.protocol.events.PacketListener;
  * @author Kristian
  */
 public final class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<PacketListener> {
-	
 	/**
 	 * Invokes the given packet event for every registered listener.
 	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
@@ -49,6 +49,33 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
 				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
+						event.getPacket().getHandle());
+			}
+		}
+	}
+	
+	/**
+	 * Invokes the given packet event for every registered listener of the given priority.
+	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
+	 * @param event - the packet event to invoke.
+	 * @param priorityFilter - the required priority for a listener to be invoked.
+	 */
+	public void invokePacketRecieving(ErrorReporter reporter, PacketEvent event, ListenerPriority priorityFilter) {
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
+		
+		if (list == null)
+			return;
+
+		for (PrioritizedListener<PacketListener> element : list) {
+			final PacketListener listener = element.getListener();
+			
+			try {
+				if (listener.getReceivingWhitelist().getPriority() == priorityFilter) {
+					listener.onPacketReceiving(event);
+				}
+			} catch (Throwable e) {
+				// Minecraft doesn't want your Exception.
+				reporter.reportMinimal(listener.getPlugin(), "onPacketReceiving(PacketEvent)", e, 
 						event.getPacket().getHandle());
 			}
 		}
@@ -76,4 +103,30 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 		}
 	}
 	
+	/**
+	 * Invokes the given packet event for every registered listener of the given priority.
+	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
+	 * @param event - the packet event to invoke.
+	 * @param priorityFilter - the required priority for a listener to be invoked.
+	 */
+	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, ListenerPriority priorityFilter) {
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
+		
+		if (list == null)
+			return;
+		
+		for (PrioritizedListener<PacketListener> element : list) {
+			final PacketListener listener = element.getListener();
+			
+			try {
+				if (listener.getSendingWhitelist().getPriority() == priorityFilter) {
+					listener.onPacketSending(event);
+				}
+			} catch (Throwable e) {
+				// Minecraft doesn't want your Exception.
+				reporter.reportMinimal(listener.getPlugin(), "onPacketSending(PacketEvent)", e, 
+						event.getPacket().getHandle());
+			}
+		}
+	}
 }

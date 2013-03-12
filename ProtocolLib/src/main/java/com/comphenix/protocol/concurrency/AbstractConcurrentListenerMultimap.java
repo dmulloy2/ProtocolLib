@@ -34,7 +34,6 @@ import com.google.common.collect.Iterables;
  * @author Kristian
  */
 public abstract class AbstractConcurrentListenerMultimap<TListener> {
-
 	// The core of our map
 	private ConcurrentMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>> listeners = 
 		new ConcurrentHashMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>>();
@@ -45,7 +44,6 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	 * @param whitelist - the packet whitelist to use.
 	 */
 	public void addListener(TListener listener, ListeningWhitelist whitelist) {
-		
 		PrioritizedListener<TListener> prioritized = new PrioritizedListener<TListener>(listener, whitelist.getPriority());
 		
 		for (Integer packetID : whitelist.getWhitelist()) {
@@ -55,7 +53,6 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	
 	// Add the listener to a specific packet notifcation list
 	private void addListener(Integer packetID, PrioritizedListener<TListener> listener) {
-		
 		SortedCopyOnWriteArray<PrioritizedListener<TListener>> list = listeners.get(packetID);
 		
 		// We don't want to create this for every lookup
@@ -84,7 +81,6 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	 * @return Every packet ID that was removed due to no listeners.
 	 */
 	public List<Integer> removeListener(TListener listener, ListeningWhitelist whitelist) {
-	
 		List<Integer> removedPackets = new ArrayList<Integer>();
 		
 		// Again, not terribly efficient. But adding or removing listeners should be a rare event.

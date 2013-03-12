@@ -27,6 +27,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.async.AsyncMarker;
+import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -47,7 +48,7 @@ public interface ProtocolManager extends PacketStream {
 	 * 
 	 * @param reciever - the reciever.
 	 * @param packet - packet to send.
-	 * @param filters - whether or not to invoke any packet filters.
+	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
 	 * @throws InvocationTargetException - if an error occured when sending the packet.
 	 */
 	@Override
@@ -62,7 +63,7 @@ public interface ProtocolManager extends PacketStream {
 	 * 
 	 * @param sender - the sender.
 	 * @param packet - the packet that was sent.
-	 * @param filters - whether or not to invoke any packet filters.
+	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
 	 * @throws InvocationTargetException If the reflection machinery failed.
 	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */

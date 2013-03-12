@@ -537,6 +537,14 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (packetCreation.compareAndSet(false, true)) 
 			incrementPhases(GamePhase.PLAYING);
 		
+		// Inform the MONITOR packets
+		if (!filters) {
+			sendingListeners.invokePacketSending(
+					reporter, 
+					PacketEvent.fromServer(this, packet, reciever), 
+					ListenerPriority.MONITOR);
+		}
+		
 		playerInjection.sendServerPacket(reciever, packet, filters);
 	}
 
@@ -567,6 +575,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				mcPacket = event.getPacket().getHandle();
 			else
 				return;
+			
+		} else {
+			// Let the monitors know though
+			recievedListeners.invokePacketSending(
+					reporter, 
+					PacketEvent.fromClient(this, packet, sender), 
+					ListenerPriority.MONITOR);
 		}
 		
 		playerInjection.recieveClientPacket(sender, mcPacket);
