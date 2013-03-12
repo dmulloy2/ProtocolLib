@@ -23,6 +23,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
@@ -66,7 +67,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 	}
 	
 	public PacketProcessingQueue(PlayerSendingHandler sendingHandler, int initialSize, int maximumSize, int maximumConcurrency) {
-		super();
+		super(Packets.MAXIMUM_PACKET_ID);
 
 		try {
 			this.processingQueue = Synchronization.queue(MinMaxPriorityQueue.

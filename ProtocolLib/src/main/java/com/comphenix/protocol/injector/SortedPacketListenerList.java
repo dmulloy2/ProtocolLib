@@ -19,6 +19,7 @@ package com.comphenix.protocol.injector;
 
 import java.util.Collection;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -31,6 +32,10 @@ import com.comphenix.protocol.events.PacketListener;
  * @author Kristian
  */
 public final class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<PacketListener> {
+	public SortedPacketListenerList() {
+		super(Packets.MAXIMUM_PACKET_ID);
+	}
+	
 	/**
 	 * Invokes the given packet event for every registered listener.
 	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
