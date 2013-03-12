@@ -45,6 +45,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 		// The returned list is thread-safe
 		for (PrioritizedListener<PacketListener> element : list) {
 			try {
+				event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 				element.getListener().onPacketReceiving(event);
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
@@ -67,15 +68,14 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			return;
 
 		for (PrioritizedListener<PacketListener> element : list) {
-			final PacketListener listener = element.getListener();
-			
 			try {
-				if (listener.getReceivingWhitelist().getPriority() == priorityFilter) {
-					listener.onPacketReceiving(event);
+				if (element.getPriority() == priorityFilter) {
+					event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
+					element.getListener().onPacketReceiving(event);
 				}
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(listener.getPlugin(), "onPacketReceiving(PacketEvent)", e, 
+				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
 						event.getPacket().getHandle());
 			}
 		}
@@ -94,6 +94,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 		
 		for (PrioritizedListener<PacketListener> element : list) {
 			try {
+				event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 				element.getListener().onPacketSending(event);
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
@@ -116,15 +117,14 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			return;
 		
 		for (PrioritizedListener<PacketListener> element : list) {
-			final PacketListener listener = element.getListener();
-			
 			try {
-				if (listener.getSendingWhitelist().getPriority() == priorityFilter) {
-					listener.onPacketSending(event);
+				if (element.getPriority() == priorityFilter) {
+					event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
+					element.getListener().onPacketSending(event);
 				}
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(listener.getPlugin(), "onPacketSending(PacketEvent)", e, 
+				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending(PacketEvent)", e, 
 						event.getPacket().getHandle());
 			}
 		}
