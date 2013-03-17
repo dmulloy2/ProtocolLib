@@ -537,6 +537,11 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		if (injector == null) {
 			// Try getting it from the player itself
 			SocketAddress address = player.getAddress();
+			
+			// Must have logged out - there's nothing we can do
+			if (address == null)
+				return null;
+			
 			// Look that up without blocking
 			SocketInjector result = inputStreamLookup.peekSocketInjector(address);
 
