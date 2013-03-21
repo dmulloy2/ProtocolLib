@@ -129,6 +129,9 @@ public class MinecraftReflection {
 				Class<?> craftClass = craftServer.getClass();
 				CRAFTBUKKIT_PACKAGE = getPackage(craftClass.getCanonicalName());
 				
+				// Libigot patch
+				handleLibigot();
+				
 				// Next, do the same for CraftEntity.getHandle() in order to get the correct Minecraft package
 				Class<?> craftEntity = getCraftEntityClass();
 				Method getHandle = craftEntity.getMethod("getHandle");
@@ -163,6 +166,20 @@ public class MinecraftReflection {
 			
 		} else {
 			throw new IllegalStateException("Could not find Bukkit. Is it running?");
+		}
+	}
+	
+	// Patch for Libigot
+	private static void handleLibigot() {
+		try {
+			getCraftEntityClass();
+		} catch (RuntimeException e) {
+			// Try reverting the package to the old format
+			craftbukkitPackage = null;
+			CRAFTBUKKIT_PACKAGE = "org.bukkit.craftbukkit";
+			
+			// This might fail too
+			getCraftEntityClass();
 		}
 	}
 
