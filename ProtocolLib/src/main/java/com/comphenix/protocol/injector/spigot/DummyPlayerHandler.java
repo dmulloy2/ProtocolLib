@@ -119,4 +119,9 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	public void postWorldLoaded() {
 		// Do nothing
 	}
+
+	@Override
+	public void updatePlayer(Player player) {
+		// Do nothing
+	}
 }

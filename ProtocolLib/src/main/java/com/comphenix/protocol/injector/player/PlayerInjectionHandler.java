@@ -130,6 +130,12 @@ public interface PlayerInjectionHandler {
 			throws IllegalAccessException, InvocationTargetException;
 
 	/**
+	 * Ensure that packet readers are informed of this player reference.
+	 * @param player - the player to update.
+	 */
+	public abstract void updatePlayer(Player player);
+	
+	/**
 	 * Determine if the given listeners are valid.
 	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @param listeners - listeners to check.
