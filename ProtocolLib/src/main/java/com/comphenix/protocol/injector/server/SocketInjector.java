@@ -58,4 +58,10 @@ public interface SocketInjector {
 	 * @param delegate - the new injector.
 	 */
 	public abstract void transferState(SocketInjector delegate);
+
+	/**
+	 * Set the real Bukkit player that we will use.
+	 * @param updatedPlayer - the real Bukkit player.
+	 */
+	public abstract void setUpdatedPlayer(Player updatedPlayer);
 }

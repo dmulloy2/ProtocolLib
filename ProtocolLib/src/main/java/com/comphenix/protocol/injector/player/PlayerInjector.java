@@ -642,10 +642,7 @@ abstract class PlayerInjector implements SocketInjector {
 		// Do nothing
 	}
 	
-	/**
-	 * Set the real Bukkit player that we will use.
-	 * @param updatedPlayer - the real Bukkit player.
-	 */
+	@Override
 	public void setUpdatedPlayer(Player updatedPlayer) {
 		this.updatedPlayer = updatedPlayer;
 	}

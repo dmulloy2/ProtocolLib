@@ -198,6 +198,11 @@ public class BackgroundCompiler {
 						
 						synchronized (listenerLock) {
 							list = listeners.get(key);
+							
+							// Prevent ConcurrentModificationExceptions
+							if (list != null) {
+								list = Lists.newArrayList(list);
+							}
 						}
 						
 						// Only execute the listeners if there is a list

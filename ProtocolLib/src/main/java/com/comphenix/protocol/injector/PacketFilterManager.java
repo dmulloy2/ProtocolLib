@@ -696,6 +696,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		try {
 			// Let's clean up the other injection first.
 			playerInjection.uninjectPlayer(event.getPlayer().getAddress());
+			playerInjection.updatePlayer(event.getPlayer());
 		} catch (Exception e) {
 			reporter.reportDetailed(PacketFilterManager.this, "Unable to uninject net handler for player.", e, event);
 		}

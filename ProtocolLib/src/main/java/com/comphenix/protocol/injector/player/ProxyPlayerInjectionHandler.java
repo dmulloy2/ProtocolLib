@@ -42,6 +42,7 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
+import com.comphenix.protocol.injector.server.BukkitSocketInjector;
 import com.comphenix.protocol.injector.server.InputStreamLookupBuilder;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -413,6 +414,18 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		
 		if (injector != null) {
 			injector.handleDisconnect();
+		}
+	}
+	
+	@Override
+	public void updatePlayer(Player player) {
+		SocketInjector injector = inputStreamLookup.peekSocketInjector(player.getAddress());
+		
+		if (injector != null) {
+			injector.setUpdatedPlayer(player);
+		} else {
+			inputStreamLookup.setSocketInjector(player.getAddress(), 
+					new BukkitSocketInjector(player));
 		}
 	}
 	
