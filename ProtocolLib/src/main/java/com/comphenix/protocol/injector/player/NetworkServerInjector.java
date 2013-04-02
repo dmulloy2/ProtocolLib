@@ -249,7 +249,7 @@ class NetworkServerInjector extends PlayerInjector {
 	}
 	
 	private Class<?> getFirstMinecraftSuperClass(Class<?> clazz) {
-		if (clazz.getName().startsWith(MinecraftReflection.getMinecraftPackage()))
+		if (MinecraftReflection.isMinecraftClass(clazz))
 			return clazz;
 		else if (clazz.equals(Object.class))
 			return clazz;
