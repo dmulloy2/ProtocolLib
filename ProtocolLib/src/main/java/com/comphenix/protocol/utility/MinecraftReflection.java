@@ -852,9 +852,15 @@ public class MinecraftReflection {
 								returnTypeMatches(tagCompoundContract).
 								build()					
 							 );
+			Class<?> nbtBase = selected.getReturnType().getSuperclass();
 			
+			// That can't be correct
+			if (nbtBase == null || nbtBase.equals(Object.class)) {
+				throw new IllegalStateException("Unable to find NBT base class: " + nbtBase);
+			}
+
 			// Use the return type here too
-			return setMinecraftClass("NBTBase", selected.getReturnType());
+			return setMinecraftClass("NBTBase", nbtBase);
 		}
  	}
 
