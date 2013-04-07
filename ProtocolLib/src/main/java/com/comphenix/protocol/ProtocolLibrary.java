@@ -130,6 +130,11 @@ public class ProtocolLibrary extends JavaPlugin {
 			}
 		}
 		
+		// Print the state of the debug mode
+		if (config.isDebug()) {
+			logger.warning("Debug mode is enabled!");
+		}
+		
 		try {
 			// Check for other versions
 			checkConflictingVersions();
@@ -162,7 +167,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			// Initialize command handlers
 			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
-			commandFilter = new CommandFilter(detailedReporter, this);
+			commandFilter = new CommandFilter(detailedReporter, this, config);
 			commandPacket = new CommandPacket(detailedReporter, this, logger, commandFilter, protocolManager);
 			
 			// Send logging information to player listeners too

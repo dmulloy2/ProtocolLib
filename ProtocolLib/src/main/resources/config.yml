@@ -19,3 +19,6 @@ global:
   
   # Override the starting injecting method
   injection method: 
+  
+  # Whether or not to enable the filter command
+  debug: false

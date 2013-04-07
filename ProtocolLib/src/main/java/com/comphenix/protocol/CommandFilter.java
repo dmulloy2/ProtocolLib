@@ -221,12 +221,16 @@ public class CommandFilter extends CommandBase {
 	// Owner plugin
 	private final Plugin plugin;
 	
+	// Whether or not the command is enabled
+	private ProtocolConfig config;
+	
 	// Script engine
 	private ScriptEngine engine;
 	
-	public CommandFilter(ErrorReporter reporter, Plugin plugin) {
+	public CommandFilter(ErrorReporter reporter, Plugin plugin, ProtocolConfig config) {
 		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 2);
 		this.plugin = plugin;
+		this.config = config;
 		
 		// Start the engine
 		initalizeScript();
@@ -264,13 +268,18 @@ public class CommandFilter extends CommandBase {
 		// Pass!
 		return true;
 	}
-	
+
 	/*
 	 * Description: Adds or removes a simple packet listener.
        Usage:       /<command> add|remove name [packet IDs]
 	 */
 	@Override
 	protected boolean handleCommand(CommandSender sender, String[] args) {
+		if (!config.isDebug()) {
+			sender.sendMessage(ChatColor.RED + "Debug mode must be enabled in the configuration first!");
+			return true;
+		}
+		
 		final SubCommand command = parseCommand(args, 0);
 		final String name = args[1];
 		

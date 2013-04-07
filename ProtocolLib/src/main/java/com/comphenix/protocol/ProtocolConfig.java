@@ -40,6 +40,8 @@ class ProtocolConfig {
 	private static final String IGNORE_VERSION_CHECK = "ignore version check";	
 	private static final String BACKGROUND_COMPILER_ENABLED = "background compiler";
 
+	private static final String DEBUG_MODE_ENABLED = "debug";
+	
 	private static final String INJECTION_METHOD = "injection method";
 	
 	private static final String UPDATER_NOTIFY = "notify";
@@ -139,6 +141,24 @@ class ProtocolConfig {
 	 */
 	public void setAutoDownload(boolean value) {
 		updater.set(UPDATER_DOWNLAD, value);
+	}
+	
+	/**
+	 * Determine whether or not debug mode is enabled.
+	 * <p>
+	 * This grants access to the filter command.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public boolean isDebug() {
+		return global.getBoolean(DEBUG_MODE_ENABLED, false);
+	}
+	
+	/**
+	 * Set whether or not debug mode is enabled.
+	 * @param value - TRUE if it is enabled, FALSE otherwise.
+	 */
+	public void setDebug(boolean value) {
+		global.set(DEBUG_MODE_ENABLED, value);
 	}
 
 	/**
