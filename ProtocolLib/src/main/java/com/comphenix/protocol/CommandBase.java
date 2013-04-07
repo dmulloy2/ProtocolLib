@@ -55,6 +55,7 @@ abstract class CommandBase implements CommandExecutor {
 		try {
 			// Make sure we're dealing with the correct command
 			if (!command.getName().equalsIgnoreCase(name)) {
+				reporter.reportWarning(this, "Incorrect command assigned to " + this);
 				return false;
 			}
 			if (permission != null && !sender.hasPermission(permission)) {
@@ -66,6 +67,7 @@ abstract class CommandBase implements CommandExecutor {
 			if (args != null && args.length >= minimumArgumentCount) {
 				return handleCommand(sender, args);
 			} else {
+				sender.sendMessage(ChatColor.RED + "Insufficient commands. You need at least " + minimumArgumentCount);
 				return false;
 			}
 			

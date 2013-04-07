@@ -103,6 +103,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Commands
 	private CommandProtocol commandProtocol;
 	private CommandPacket commandPacket;
+	private CommandFilter commandFilter;
 	
 	// Whether or not disable is not needed
 	private boolean skipDisable;
@@ -161,7 +162,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			// Initialize command handlers
 			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
-			commandPacket = new CommandPacket(detailedReporter, this, logger, protocolManager);
+			commandFilter = new CommandFilter(detailedReporter, this);
+			commandPacket = new CommandPacket(detailedReporter, this, logger, commandFilter, protocolManager);
 			
 			// Send logging information to player listeners too
 			setupBroadcastUsers(PERMISSION_INFO);
@@ -256,6 +258,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Set up command handlers
 			registerCommand(CommandProtocol.NAME, commandProtocol);
 			registerCommand(CommandPacket.NAME, commandPacket);
+			registerCommand(CommandFilter.NAME, commandFilter);
 	
 			// Player login and logout events
 			protocolManager.registerEvents(manager, this);

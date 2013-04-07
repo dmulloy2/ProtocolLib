@@ -17,6 +17,12 @@ commands:
     usage: /<command> add|remove|names client|server [ID start]-[ID stop] [detailed]
     permission: protocol.admin
     permission-message: You don't have <permission>
+  filter:
+    description: Add or remove programmable filters to the packet listeners.
+    usage: /<command> add|remove name [ID start]-[ID stop]
+    aliases: [packet_filter]
+    permission: protocol.admin
+    permission-message: You don't have <permission>
 
 permissions:
   protocol.*:

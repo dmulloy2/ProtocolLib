@@ -18,6 +18,7 @@
 package com.comphenix.protocol.concurrency;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -58,6 +59,16 @@ public class IntegerSet {
 	 */
 	public void add(int element) {
 		array[element] = true;
+	}
+	
+	/**
+	 * Add the given collection of elements to the set.
+	 * @param packets - elements to add.
+	 */
+	public void addAll(Collection<Integer> packets) {
+		for (Integer id : packets) {
+			add(id);
+		}
 	}
 	
 	/**

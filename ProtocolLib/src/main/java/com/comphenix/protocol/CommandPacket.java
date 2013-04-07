@@ -93,11 +93,15 @@ class CommandPacket extends CommandBase {
 	private AbstractIntervalTree<Integer, DetailedPacketListener> clientListeners = createTree(ConnectionSide.CLIENT_SIDE);
 	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
 	
-	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, ProtocolManager manager) {
+	// Filter packet events
+	private CommandFilter filter;
+	
+	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, CommandFilter filter, ProtocolManager manager) {
 		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
 		this.logger = logger;
 		this.manager = manager;
+		this.filter = filter;
 		this.chatter = new ChatExtensions(manager);
 	}
 	
@@ -362,7 +366,6 @@ class CommandPacket extends CommandBase {
 	}
 		
 	public DetailedPacketListener createPacketListener(final ConnectionSide side, int idStart, int idStop, final boolean detailed) {
-		
 		Set<Integer> range = Ranges.closed(idStart, idStop).asSet(DiscreteDomains.integers());
 		Set<Integer> packets;
 		
@@ -386,14 +389,14 @@ class CommandPacket extends CommandBase {
 		return new DetailedPacketListener() {
 			@Override
 			public void onPacketSending(PacketEvent event) {
-				if (side.isForServer()) {
+				if (side.isForServer() && filter.filterEvent(event)) {
 					printInformation(event);
 				}
 			}
 			
 			@Override
 			public void onPacketReceiving(PacketEvent event) {
-				if (side.isForClient()) {
+				if (side.isForClient() && filter.filterEvent(event)) {
 					printInformation(event);
 				}
 			}
