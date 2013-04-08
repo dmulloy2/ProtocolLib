@@ -62,6 +62,25 @@ public abstract class AbstractFuzzyMatcher<T> implements Comparable<AbstractFuzz
 		else
 			return Math.max(roundA, roundB);
 	}
+	
+	/**
+	 * Combine n round numbers by taking the highest non-zero number, or return zero.
+	 * @param rounds - the round numbers.
+	 * @return The combined round number.
+	 */
+	protected final int combineRounds(Integer... rounds) {
+		if (rounds.length < 2)
+			throw new IllegalArgumentException("Must supply at least two arguments.");
+		
+		// Get the seed
+		int reduced = combineRounds(rounds[0], rounds[1]);
+		
+		// Aggregate it all 
+		for (int i = 2; i < rounds.length; i++) {
+			reduced = combineRounds(reduced, rounds[i]);
+		}
+		return reduced;
+	}
 		
 	@Override
 	public int compareTo(AbstractFuzzyMatcher<T> obj) {
