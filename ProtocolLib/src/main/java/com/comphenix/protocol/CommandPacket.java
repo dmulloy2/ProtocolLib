@@ -340,6 +340,8 @@ class CommandPacket extends CommandBase {
 			supported.addAll(Packets.Client.getSupported());
 		else if (side.isForServer())
 			supported.addAll(Packets.Server.getSupported());
+		
+		System.out.println("Supported for " + side + ": " + supported);
 		return supported;
 	}
 	

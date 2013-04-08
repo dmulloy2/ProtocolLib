@@ -37,6 +37,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
@@ -50,6 +51,85 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  */
 class ProxyPacketInjector implements PacketInjector {
 	/**
+	 * Represents a way to update the packet ID to class lookup table.
+	 * @author Kristian
+	 */
+	private static interface PacketClassLookup {
+		public void setLookup(int packetID, Class<?> clazz);
+	}
+	
+	private static class IntHashMapLookup implements PacketClassLookup {
+		// The "put" method that associates a packet ID with a packet class
+		private Method putMethod;
+		private Object intHashMap;
+		
+		public IntHashMapLookup() throws IllegalAccessException {
+			initialize();
+		}
+		
+		@Override
+		public void setLookup(int packetID, Class<?> clazz) {
+			try {
+				putMethod.invoke(intHashMap, packetID, clazz);
+			} catch (IllegalArgumentException e) {
+				throw new RuntimeException("Illegal argument.", e);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException("Cannot access method.", e);
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException("Exception occured in IntHashMap.put.", e);
+			}
+		}
+
+		private void initialize() throws IllegalAccessException {
+			if (intHashMap == null) {
+				// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
+				Field intHashMapField = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).
+						getFieldByType(MinecraftReflection.getMinecraftObjectRegex());
+				
+				try {
+					intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);
+				} catch (IllegalArgumentException e) {
+					throw new RuntimeException("Minecraft is incompatible.", e);
+				}
+				
+				// Now, get the "put" method.
+				putMethod = FuzzyReflection.fromObject(intHashMap).
+						getMethodByParameters("put", int.class, Object.class);
+			}
+		}
+	}
+	
+	private static class ArrayLookup implements PacketClassLookup {
+		private Class<?>[] array;
+		
+		public ArrayLookup() throws IllegalAccessException {
+			initialize();
+		}
+		
+		@Override
+		public void setLookup(int packetID, Class<?> clazz) {
+			array[packetID] = clazz;
+		}
+
+		private void initialize() throws IllegalAccessException {
+			FuzzyReflection reflection = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass());
+			
+			// Is there a Class array with 256 elements instead?
+			for (Field field : reflection.getFieldListByType(Class[].class)) {
+				Class<?>[] test = (Class<?>[]) FieldUtils.readField(field, (Object)null);
+				
+				if (test.length == 256) {
+					array = test;
+					return;
+				}
+			}
+			throw new IllegalArgumentException(
+					"Unable to find an array with the type " + Class[].class + 
+					" in " + MinecraftReflection.getPacketClass());
+		}
+	}
+	
+	/**
 	 * Matches the readPacketData(DataInputStream) method in Packet.
 	 */
 	private static FuzzyMethodContract readPacket = FuzzyMethodContract.newBuilder().
@@ -58,9 +138,7 @@ class ProxyPacketInjector implements PacketInjector {
 			parameterCount(1).
 			build();
 	
-	// The "put" method that associates a packet ID with a packet class
-	private static Method putMethod;
-	private static Object intHashMap;
+	private static PacketClassLookup lookup;
 	
 	// The packet filter manager
 	private ListenerInvoker manager;
@@ -78,7 +156,7 @@ class ProxyPacketInjector implements PacketInjector {
 	private CallbackFilter filter;
 			
 	public ProxyPacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
-						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws IllegalAccessException {
+						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws FieldAccessException {
 		
 		this.classLoader = classLoader;
 		this.manager = manager;
@@ -100,20 +178,21 @@ class ProxyPacketInjector implements PacketInjector {
 		}
 	}
 	
-	private void initialize() throws IllegalAccessException {
-		if (intHashMap == null) {
-			// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
-			Field intHashMapField = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).
-					getFieldByType(MinecraftReflection.getMinecraftObjectRegex());
-			
+	private void initialize() throws FieldAccessException {
+		if (lookup == null) {
 			try {
-				intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);
-			} catch (IllegalArgumentException e) {
-				throw new RuntimeException("Minecraft is incompatible.", e);
+				lookup = new IntHashMapLookup();
+			} catch (Exception e1) {
+				
+				try { 
+					lookup = new ArrayLookup();
+				} catch (Exception e2) {
+					// Wow
+					throw new FieldAccessException(e1.getMessage() + ". Workaround failed too.", e2);
+				}
 			}
 			
-			// Now, get the "put" method.
-			putMethod = FuzzyReflection.fromObject(intHashMap).getMethodByParameters("put", int.class, Object.class);
+			// Should work fine now
 		}
 	}
 	
@@ -173,21 +252,12 @@ class ProxyPacketInjector implements PacketInjector {
 		// Add a static reference
 		Enhancer.registerStaticCallbacks(proxy, new Callback[] { NoOp.INSTANCE, modifierReadPacket, modifierRest });
 		
-		try {
-			// Override values
-			previous.put(packetID, old);
-			registry.put(proxy, packetID);
-			overwritten.put(packetID, proxy);
-			putMethod.invoke(intHashMap, packetID, proxy);
-			return true;
-			
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException("Illegal argument.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Cannot access method.", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Exception occured in IntHashMap.put.", e);
-		}
+		// Override values
+		previous.put(packetID, old);
+		registry.put(proxy, packetID);
+		overwritten.put(packetID, proxy);
+		lookup.setLookup(packetID, proxy);
+		return true;
 	}
 	
 	@Override
@@ -200,25 +270,14 @@ class ProxyPacketInjector implements PacketInjector {
 		Map<Integer, Class> previous = PacketRegistry.getPreviousPackets();
 		Map<Integer, Class> overwritten = PacketRegistry.getOverwrittenPackets();
 		
-		// Use the old class definition
-		try {
-			Class old = previous.get(packetID);
-			Class proxy = PacketRegistry.getPacketClassFromID(packetID);
-			
-			putMethod.invoke(intHashMap, packetID, old);
-			previous.remove(packetID);
-			registry.remove(proxy);
-			overwritten.remove(packetID);
-			return true;
-			
-			// Handle some problems
-		} catch (IllegalArgumentException e) {
-			return false;
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Cannot access method.", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Exception occured in IntHashMap.put.", e);
-		}
+		Class old = previous.get(packetID);
+		Class proxy = PacketRegistry.getPacketClassFromID(packetID);
+		
+		lookup.setLookup(packetID, old);
+		previous.remove(packetID);
+		registry.remove(proxy);
+		overwritten.remove(packetID);
+		return true;
 	}
 	
 	@Override

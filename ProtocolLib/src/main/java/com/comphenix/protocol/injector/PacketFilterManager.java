@@ -229,7 +229,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				reporter.reportWarning(this, "Cannot load server and client packet list.", e);
 			}
 
-		} catch (IllegalAccessException e) {
+		} catch (FieldAccessException e) {
 			reporter.reportWarning(this, "Unable to initialize packet injector.", e);
 		}
 	}
@@ -757,7 +757,14 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (!MinecraftReflection.isPacketClass(packet))
 			throw new IllegalArgumentException("The given object " + packet + " is not a packet.");
 		
-		return PacketRegistry.getPacketToID().get(packet.getClass());
+		Integer id = PacketRegistry.getPacketToID().get(packet.getClass());
+		
+		if (id != null) {
+			return id;
+		} else {
+			throw new IllegalArgumentException(
+					"Unable to find associated packet of " + packet + ": Lookup returned NULL.");
+		}
 	}
 	
 	@Override

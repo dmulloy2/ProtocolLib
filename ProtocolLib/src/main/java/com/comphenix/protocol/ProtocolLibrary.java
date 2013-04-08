@@ -259,7 +259,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			} else {
 				logger.info("Structure compiler thread has been disabled.");
 			}
-		
+			
 			// Set up command handlers
 			registerCommand(CommandProtocol.NAME, commandProtocol);
 			registerCommand(CommandPacket.NAME, commandPacket);

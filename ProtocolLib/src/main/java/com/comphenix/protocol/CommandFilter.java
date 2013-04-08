@@ -270,7 +270,7 @@ public class CommandFilter extends CommandBase {
 	}
 
 	/*
-	 * Description: Adds or removes a simple packet listener.
+	 * Description: Adds or removes a simple packet filter.
        Usage:       /<command> add|remove name [packet IDs]
 	 */
 	@Override
