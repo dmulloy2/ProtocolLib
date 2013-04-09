@@ -2,6 +2,7 @@ package com.comphenix.protocol;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -16,11 +17,11 @@ import org.bukkit.conversations.Conversable;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
 import org.bukkit.conversations.ConversationAbandonedListener;
-import org.bukkit.conversations.ConversationCanceller;
 import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.ConversationFactory;
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.MultipleLinesPrompt.MultipleConversationCanceller;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
@@ -34,23 +35,17 @@ import com.google.common.collect.Ranges;
  * @author Kristian
  */
 public class CommandFilter extends CommandBase {
-	@SuppressWarnings("serial")
-	public static class FilterFailedException extends RuntimeException {
-		private Filter filter;
-
-		public FilterFailedException() {
-			super();
-		}
-
-		public FilterFailedException(String message, Filter filter, Throwable cause) {
-			super(message, cause);
-			this.filter = filter;
-		}
-
-		public Filter getFilter() {
-			return filter;
-		}
+	public interface FilterFailedHandler{
+		/**
+		 * Invoked when a given filter has failed.
+		 * @param event - the packet event.
+		 * @param filter - the filter that failed.
+		 * @param ex - the failure.
+		 * @returns TRUE to keep processing this filter, FALSE to remove it.
+		 */
+		public boolean handle(PacketEvent event, Filter filter, Exception ex);
 	}
+	
 	/**
 	 * Possible sub commands.
 	 * 
@@ -123,7 +118,7 @@ public class CommandFilter extends CommandBase {
 		 * @param context - the current script context.
 		 * @param event - the packet event to evaluate.
 		 * @return TRUE to pass this packet event on to the debug listeners, FALSE otherwise.
-		 * @throws ScriptException If the compilation failed.
+		 * @throws ScriptException If the compilation failed or the filter is not valid.
 		 */
 		public boolean evaluate(ScriptEngine context, PacketEvent event) throws ScriptException {
 			if (!isApplicable(event))
@@ -132,7 +127,13 @@ public class CommandFilter extends CommandBase {
 			compile(context);
 			
 			try {
-				return (Boolean) ((Invocable) context).invokeFunction(name, event, event.getPacket().getHandle());
+				Object result = ((Invocable) context).invokeFunction(name, event, event.getPacket().getHandle());
+				
+				if (result instanceof Boolean)
+					return (Boolean) result;
+				else
+					throw new ScriptException("Filter result wasn't a boolean: " + result);
+				
 			} catch (NoSuchMethodException e) {
 				// Must be a fault with the script engine itself
 				throw new IllegalStateException("Unable to compile " + name + " into current script engine.", e);
@@ -159,54 +160,36 @@ public class CommandFilter extends CommandBase {
 		}
 	}
 	
-	private static class BracketBalance implements ConversationCanceller {
-		private String KEY_BRACKET_COUNT = "bracket_balance.count";
-		
-		// What to set the initial counter
-		private final int initialBalance;
-		
-		public BracketBalance(int initialBalance) {
-			this.initialBalance = initialBalance;
-		}
-		
+	private class CompilationSuccessCanceller implements MultipleConversationCanceller {
 		@Override
 		public boolean cancelBasedOnInput(ConversationContext context, String in) {
-			Object stored = context.getSessionData(KEY_BRACKET_COUNT);
-			int value = 0;
-			
-			// Get the stored value
-			if (stored instanceof Integer) {
-				value = (Integer)stored;
-			} else {
-				value = initialBalance;
-			}
-			
-			value += count(in, '{') - count(in, '}');
-			context.setSessionData(KEY_BRACKET_COUNT, value);
-			
-			// Cancel if the bracket balance is zero
-			return value <= 0;
-		}
-		
-		private int count(String text, char character) {
-			 int counter = 0;
-			 
-			 for (int i=0; i < text.length(); i++) {
-			     if (text.charAt(i) == character) {
-			         counter++;
-			     } 
-			 }
-			 return counter;
+			throw new UnsupportedOperationException("Cannot cancel on the last line alone.");
 		}
 
 		@Override
 		public void setConversation(Conversation conversation) {
-			// Whatever
+			// Ignore
+		}
+
+		@Override
+		public boolean cancelBasedOnInput(ConversationContext context, String currentLine, StringBuilder lines, int lineCount) {
+			try {
+				engine.eval("function(event, packet) {\n" + lines.toString());
+				
+				// It compiles - accept the filter!
+				return true;
+			} catch (ScriptException e) {
+				// We also have the function() line
+				int realLineCount = lineCount + 1;
+				
+				// Only possible to recover from an error on the last line.
+				return e.getLineNumber() < realLineCount;
+			}
 		}
 		
 		@Override
-		public ConversationCanceller clone() {
-			return new BracketBalance(initialBalance);
+		public CompilationSuccessCanceller clone() {
+			return new CompilationSuccessCanceller();
 		}
 	}
 	
@@ -251,18 +234,41 @@ public class CommandFilter extends CommandBase {
 
 	/**
 	 * Determine whether or not to pass the given packet event to the packet listeners.
+	 * <p>
+	 * Uses a default filter failure handler that simply prints the error message and removes the filter.
 	 * @param event - the event.
+	 * @return TRUE if we should, FALSE otherwise.
+	 */
+	public boolean filterEvent(PacketEvent event) {
+		return filterEvent(event, new FilterFailedHandler() {
+			@Override
+			public boolean handle(PacketEvent event, Filter filter, Exception ex) {
+				reporter.reportMinimal(plugin, "filterEvent(PacketEvent)", ex, event);
+				reporter.reportWarning(this, "Removing filter " + filter.getName() + " for causing an exception.");
+				return false;
+			}
+		});
+	}
+	
+	/**
+	 * Determine whether or not to pass the given packet event to the packet listeners.
+	 * @param event - the event.
+	 * @param handler - failure handler.
 	 * @return TRUE if we should, FALSE otherwise.
 	 * @throws FilterFailedException If one of the filters failed.
 	 */
-	public boolean filterEvent(PacketEvent event) throws FilterFailedException {
-		for (Filter filter : filters) {
+	public boolean filterEvent(PacketEvent event, FilterFailedHandler handler) {
+		for (Iterator<Filter> it = filters.iterator(); it.hasNext(); ) {
+			Filter filter = it.next();
+			
 			try {
 				if (!filter.evaluate(engine, event)) {
 					return false;
 				}
-			} catch (ScriptException e) {
-				throw new FilterFailedException("Filter failed.", filter, e);
+			} catch (Exception ex) {
+				if (!handler.handle(event, filter, ex)) {
+					it.remove();
+				}
 			}
 		}
 		// Pass!
@@ -297,7 +303,7 @@ public class CommandFilter extends CommandBase {
 				// Make sure we can use the conversable interface
 				if (sender instanceof Conversable) {
 					final MultipleLinesPrompt prompt = 
-							new MultipleLinesPrompt(new BracketBalance(1), "function(event, packet) {");
+							new MultipleLinesPrompt(new CompilationSuccessCanceller(), "function(event, packet) {");
 					
 					new ConversationFactory(plugin).
 						withFirstPrompt(prompt).
