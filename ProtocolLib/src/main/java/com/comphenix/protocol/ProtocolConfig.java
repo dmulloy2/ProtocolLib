@@ -41,8 +41,9 @@ class ProtocolConfig {
 	private static final String BACKGROUND_COMPILER_ENABLED = "background compiler";
 
 	private static final String DEBUG_MODE_ENABLED = "debug";
-	
 	private static final String INJECTION_METHOD = "injection method";
+	
+	private static final String SCRIPT_ENGINE_NAME = "script engine";
 	
 	private static final String UPDATER_NOTIFY = "notify";
 	private static final String UPDATER_DOWNLAD = "download";
@@ -255,6 +256,24 @@ class ProtocolConfig {
 	 */
 	public void setAutoLastTime(long lastTimeSeconds) { 
 		updater.set(UPDATER_LAST_TIME, lastTimeSeconds);
+	}
+	
+	/**
+	 * Retrieve the unique name of the script engine to use for filtering.
+	 * @return Script engine to use.
+	 */
+	public String getScriptEngineName() {
+		return global.getString(SCRIPT_ENGINE_NAME, "JavaScript");
+	}
+	
+	/**
+	 * Set the unique name of the script engine to use for filtering.
+	 * <p>
+	 * This setting will take effect next time ProtocolLib is started.
+	 * @param name - name of the script engine to use.
+	 */
+	public void setScriptEngineName(String name) {
+		global.set(SCRIPT_ENGINE_NAME, name);
 	}
 	
 	/**

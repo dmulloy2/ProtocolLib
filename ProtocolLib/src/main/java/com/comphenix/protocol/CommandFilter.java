@@ -220,16 +220,44 @@ public class CommandFilter extends CommandBase {
 	}
 	
 	private void initalizeScript() {
+		try {
+			// First attempt
+			initializeEngine();
+		} catch (ScriptException e1) {
+			// It's not a huge deal
+			printPackageWarning(e1);
+			
+			if (!config.getScriptEngineName().equals("rhino")) {
+				reporter.reportWarning(this, "Falling back to the Rhino engine.");
+				config.setScriptEngineName("rhino");
+				config.saveAll();
+				
+				try {
+					initializeEngine();
+				} catch (ScriptException e2) {
+					// And again ..
+					printPackageWarning(e2);
+				}
+			}
+		}
+	}
+	
+	private void printPackageWarning(ScriptException e) {
+		reporter.reportWarning(this, "Unable to initialize packages for JavaScript engine.", e);
+	}
+	
+	/**
+	 * Initialize the current configured engine.
+	 * @throws ScriptException If we are unable to import packages.
+	 */
+	private void initializeEngine() throws ScriptException {
 		ScriptEngineManager manager = new ScriptEngineManager();
-		engine = manager.getEngineByName("JavaScript");
+		engine = manager.getEngineByName(config.getScriptEngineName());
 		
 		// Import useful packages
-		try {
-			engine.eval("importPackage(org.bukkit);");
-			engine.eval("importPackage(com.comphenix.protocol.reflect);");
-		} catch (ScriptException e) {
-			throw new IllegalStateException("Unable to initialize packages for JavaScript engine.", e);
-		}
+		engine.eval("importPackage(org.bukkit);");
+		engine.eval("importPackage(com.comphenix.protocol.reflect);");
+			
 	}
 
 	/**

@@ -22,3 +22,6 @@ global:
   
   # Whether or not to enable the filter command
   debug: false
+  
+  # The engine used by the filter command
+  script engine: JavaScript
