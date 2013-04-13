@@ -198,6 +198,9 @@ public class CommandFilter extends CommandBase {
 	 */
 	public static final String NAME = "filter";
 	
+	// Default error handler
+	private FilterFailedHandler defaultFailedHandler;
+	
 	// Currently registered filters
 	private List<Filter> filters = new ArrayList<Filter>();
 	
@@ -223,6 +226,11 @@ public class CommandFilter extends CommandBase {
 		try {
 			// First attempt
 			initializeEngine();
+			
+			// Oh for ..
+			if (!isInitialized()) {
+				throw new ScriptException("A JavaScript engine could not be found.");
+			}
 		} catch (ScriptException e1) {
 			// It's not a huge deal
 			printPackageWarning(e1);
@@ -234,6 +242,10 @@ public class CommandFilter extends CommandBase {
 				
 				try {
 					initializeEngine();
+					
+					if (!isInitialized()) {
+						reporter.reportWarning(this, "Could not load Rhino either. Please upgrade your JVM or OS.");
+					}
 				} catch (ScriptException e2) {
 					// And again ..
 					printPackageWarning(e2);
@@ -255,11 +267,35 @@ public class CommandFilter extends CommandBase {
 		engine = manager.getEngineByName(config.getScriptEngineName());
 		
 		// Import useful packages
-		engine.eval("importPackage(org.bukkit);");
-		engine.eval("importPackage(com.comphenix.protocol.reflect);");
-			
+		if (engine != null) {
+			engine.eval("importPackage(org.bukkit);");
+			engine.eval("importPackage(com.comphenix.protocol.reflect);");
+		}
+	}
+	
+	/**
+	 * Determine if the filter engine has been successfully initialized.
+	 * @return TRUE if it has, FALSE otherwise.
+	 */
+	public boolean isInitialized() {
+		return engine != null;
 	}
 
+	private FilterFailedHandler getDefaultErrorHandler() {
+		// No need to create a new object every time
+		if (defaultFailedHandler == null) {
+			defaultFailedHandler = new FilterFailedHandler() {
+				@Override
+				public boolean handle(PacketEvent event, Filter filter, Exception ex) {
+					reporter.reportMinimal(plugin, "filterEvent(PacketEvent)", ex, event);
+					reporter.reportWarning(this, "Removing filter " + filter.getName() + " for causing an exception.");
+					return false;
+				}
+			};
+		}
+		return defaultFailedHandler;
+	}
+	
 	/**
 	 * Determine whether or not to pass the given packet event to the packet listeners.
 	 * <p>
@@ -268,14 +304,7 @@ public class CommandFilter extends CommandBase {
 	 * @return TRUE if we should, FALSE otherwise.
 	 */
 	public boolean filterEvent(PacketEvent event) {
-		return filterEvent(event, new FilterFailedHandler() {
-			@Override
-			public boolean handle(PacketEvent event, Filter filter, Exception ex) {
-				reporter.reportMinimal(plugin, "filterEvent(PacketEvent)", ex, event);
-				reporter.reportWarning(this, "Removing filter " + filter.getName() + " for causing an exception.");
-				return false;
-			}
-		});
+		return filterEvent(event, getDefaultErrorHandler());
 	}
 	
 	/**
@@ -311,6 +340,10 @@ public class CommandFilter extends CommandBase {
 	protected boolean handleCommand(CommandSender sender, String[] args) {
 		if (!config.isDebug()) {
 			sender.sendMessage(ChatColor.RED + "Debug mode must be enabled in the configuration first!");
+			return true;
+		}
+		if (!isInitialized()) {
+			sender.sendMessage(ChatColor.RED + "JavaScript engine was not present. Filter system is disabled.");
 			return true;
 		}
 		
