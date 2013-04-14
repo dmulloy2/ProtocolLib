@@ -52,6 +52,11 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			try {
 				event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 				element.getListener().onPacketReceiving(event);
+				
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
 				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
@@ -78,6 +83,11 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 					event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 					element.getListener().onPacketReceiving(event);
 				}
+				
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
 				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
@@ -101,6 +111,11 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			try {
 				event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 				element.getListener().onPacketSending(event);
+				
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
 				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending(PacketEvent)", e, 
@@ -127,6 +142,11 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 					event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 					element.getListener().onPacketSending(event);
 				}
+				
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				// Minecraft doesn't want your Exception.
 				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending(PacketEvent)", e, 
