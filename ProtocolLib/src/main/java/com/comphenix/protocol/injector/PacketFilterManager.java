@@ -148,17 +148,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Spigot listener, if in use
 	private SpigotPacketInjector spigotInjector;
 	
+	// Plugin verifier
+	private PluginVerifier pluginVerifier;
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, DelayedSingleTask unhookTask, ErrorReporter reporter) {
-		this(classLoader, server, new MinecraftVersion(server), unhookTask, reporter);
+	public PacketFilterManager(ClassLoader classLoader, Server server, Plugin library, DelayedSingleTask unhookTask, ErrorReporter reporter) {
+		this(classLoader, server, library, new MinecraftVersion(server), unhookTask, reporter);
 	}
 	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, MinecraftVersion mcVersion, DelayedSingleTask unhookTask, ErrorReporter reporter) {
+	public PacketFilterManager(ClassLoader classLoader, Server server, Plugin library, 
+							   MinecraftVersion mcVersion, DelayedSingleTask unhookTask, ErrorReporter reporter) {
+		
 		if (reporter == null)
 			throw new IllegalArgumentException("reporter cannot be NULL.");
 		if (classLoader == null)
@@ -176,6 +181,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		this.server = server;
 		this.classLoader = classLoader;
 		this.reporter = reporter;
+		
+		// The plugin verifier
+		this.pluginVerifier = new PluginVerifier(library);
 		
 		// Used to determine if injection is needed
 		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
@@ -267,6 +275,20 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		return ImmutableSet.copyOf(packetListeners);
 	}
 
+	/**
+	 * Warn of common programming mistakes.
+	 * @param plugin - plugin to check.
+	 */
+	private void printPluginWarnings(Plugin plugin) {
+		switch (pluginVerifier.verify(plugin)) {
+			case NO_DEPEND:
+				reporter.reportWarning(this, plugin + " doesn't depend on ProtocolLib. Check that its plugin.yml has a 'depend' directive.");
+			case VALID:
+				// Do nothing
+				break;
+		}
+	}
+	
 	@Override
 	public void addPacketListener(PacketListener listener) {
 		if (listener == null)
@@ -275,6 +297,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// A listener can only be added once
 		if (packetListeners.contains(listener))
 			return;
+		// Check plugin
+		printPluginWarnings(listener.getPlugin());
 		
 		ListeningWhitelist sending = listener.getSendingWhitelist();
 		ListeningWhitelist receiving = listener.getReceivingWhitelist();
