@@ -3,7 +3,9 @@ version: 2.4.2-SNAPSHOT
 description: Provides read/write access to the Minecraft protocol.
 author: Comphenix
 website: http://www.comphenix.net/ProtocolLib
+
 main: com.comphenix.protocol.ProtocolLibrary
+load: startup
 database: false
 
 commands:
