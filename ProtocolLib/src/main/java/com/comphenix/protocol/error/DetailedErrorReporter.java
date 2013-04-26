@@ -141,6 +141,13 @@ public class DetailedErrorReporter implements ErrorReporter {
 		reportMinimalNoSpam(sender, methodName, error);
 	}
 	
+	/**
+	 * Report a problem with a given method and plugin, ensuring that we don't exceed the maximum number of error reports.
+	 * @param sender - the component that observed this exception.
+	 * @param methodName - the method name.
+	 * @param error - the error itself.
+	 * @return TRUE if the error was printed, FALSE if it was suppressed.
+	 */
 	public boolean reportMinimalNoSpam(Plugin sender, String methodName, Throwable error) {
 		String pluginName = PacketAdapter.getPluginName(sender);
 		AtomicInteger counter = warningCount.get(pluginName);
@@ -368,63 +375,125 @@ public class DetailedErrorReporter implements ErrorReporter {
 		return test instanceof String || Primitives.isWrapperType(test.getClass());
 	}
 	
+	/**
+	 * Retrieve the current number of errors printed through {@link #reportDetailed(Object, Report)}.
+	 * @return Number of errors printed.
+	 */
 	public int getErrorCount() {
 		return internalErrorCount.get();
 	}
 
+	/**
+	 * Set the number of errors printed.
+	 * @param errorCount - new number of errors printed.
+	 */
 	public void setErrorCount(int errorCount) {
 		internalErrorCount.set(errorCount);
 	}
 
+	/**
+	 * Retrieve the maximum number of errors we can print before we begin suppressing errors.
+	 * @return Maximum number of errors.
+	 */
 	public int getMaxErrorCount() {
 		return maxErrorCount;
 	}
 
+	/**
+	 * Set the maximum number of errors we can print before we begin suppressing errors.
+	 * @param maxErrorCount - new max count.
+	 */
 	public void setMaxErrorCount(int maxErrorCount) {
 		this.maxErrorCount = maxErrorCount;
 	}
 	
 	/**
 	 * Adds the given global parameter. It will be included in every error report.
+	 * <p>
+	 * Both key and value must be non-null.
 	 * @param key - name of parameter.
 	 * @param value - the global parameter itself.
 	 */
 	public void addGlobalParameter(String key, Object value) {
+		if (key == null)
+			throw new IllegalArgumentException("key cannot be NULL.");
+		if (value == null)
+			throw new IllegalArgumentException("value cannot be NULL.");
+		
 		globalParameters.put(key, value);
 	}
 	
+	/**
+	 * Retrieve a global parameter by its key.
+	 * @param key - key of the parameter to retrieve.
+	 * @return The value of the global parameter, or NULL if not found.
+	 */
 	public Object getGlobalParameter(String key) {
+		if (key == null)
+			throw new IllegalArgumentException("key cannot be NULL.");
+		
 		return globalParameters.get(key);
 	}
 	
+	/**
+	 * Reset all global parameters.
+	 */
 	public void clearGlobalParameters() {
 		globalParameters.clear();
 	}
 	
+	/**
+	 * Retrieve a set of every registered global parameter.
+	 * @return Set of all registered global parameters.
+	 */
 	public Set<String> globalParameters() {
 		return globalParameters.keySet();
 	}
 	
+	/**
+	 * Retrieve the support URL that will be added to all detailed reports.
+	 * @return Support URL.
+	 */
 	public String getSupportURL() {
 		return supportURL;
 	}
 
+	/**
+	 * Set the support URL that will be added to all detailed reports.
+	 * @param supportURL - the new support URL.
+	 */
 	public void setSupportURL(String supportURL) {
 		this.supportURL = supportURL;
 	}
 	
+	/**
+	 * Retrieve the prefix to apply to every line in the error reports.
+	 * @return Error report prefix.
+	 */
 	public String getPrefix() {
 		return prefix;
 	}
 
+	/**
+	 * Set the prefix to apply to every line in the error reports.
+	 * @param prefix - new prefix.
+	 */
 	public void setPrefix(String prefix) {
 		this.prefix = prefix;
 	}
 	
+	/**
+	 * Retrieve the current logger that is used to print all reports.
+	 * @return The current logger.
+	 */
 	public Logger getLogger() {
 		return logger;
 	}
 
+	/**
+	 * Set the current logger that is used to print all reports.
+	 * @param logger - new logger.
+	 */
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}

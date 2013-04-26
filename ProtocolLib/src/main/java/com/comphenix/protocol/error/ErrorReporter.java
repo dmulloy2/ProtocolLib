@@ -21,9 +21,14 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.error.Report.ReportBuilder;
 
+/**
+ * Represents an object that can forward an error {@link Report} to the display and permanent storage.
+ * 
+ * @author Kristian
+ */
 public interface ErrorReporter {
 	/**
-	 * Prints a small minimal error report about an exception from another plugin.
+	 * Prints a small minimal error report regarding an exception from another plugin.
 	 * @param sender - the other plugin.
 	 * @param methodName - name of the caller method.
 	 * @param error - the exception itself.
@@ -31,7 +36,7 @@ public interface ErrorReporter {
 	public abstract void reportMinimal(Plugin sender, String methodName, Throwable error);
 
 	/**
-	 * Prints a small minimal error report about an exception from another plugin.
+	 * Prints a small minimal error report regarding an exception from another plugin.
 	 * @param sender - the other plugin.
 	 * @param methodName - name of the caller method.
 	 * @param error - the exception itself.
