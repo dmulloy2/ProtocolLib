@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.StructureCompiler.StructureKey;
 import com.google.common.collect.Lists;
@@ -46,7 +48,9 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * @author Kristian
  */
 public class BackgroundCompiler {
-
+	public static final ReportType REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER = new ReportType("Cannot compile structure. Disabing compiler.");
+	public static final ReportType REPORT_CANNOT_SCHEDULE_COMPILATION = new ReportType("Unable to schedule compilation task.");
+	
 	/**
 	 * The default format for the name of new worker threads.
 	 */
@@ -223,8 +227,9 @@ public class BackgroundCompiler {
 						
 						// Inform about this error as best as we can
 						if (reporter != null) {
-							reporter.reportDetailed(BackgroundCompiler.this, 
-									"Cannot compile structure. Disabing compiler.", e, uncompiled);
+							reporter.reportDetailed(BackgroundCompiler.this,
+									Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(e)
+							);
 						} else {
 							System.err.println("Exception occured in structure compiler: ");
 							e.printStackTrace();
@@ -258,7 +263,7 @@ public class BackgroundCompiler {
 				// Occures when the underlying queue is overflowing. Since the compilation  
 				// is only an optmization and not really essential we'll just log this failure 
 				// and move on.
-				reporter.reportWarning(this, "Unable to schedule compilation task.", e);
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SCHEDULE_COMPILATION).error(e));
 			}
 		}
 	}

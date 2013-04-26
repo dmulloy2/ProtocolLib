@@ -24,6 +24,8 @@ import java.util.Set;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 
@@ -38,7 +40,8 @@ import net.sf.cglib.proxy.MethodProxy;
  * @author Kristian
  */
 class InjectedArrayList extends ArrayList<Object> {
-
+	public static final ReportType REPORT_CANNOT_REVERT_CANCELLED_PACKET = new ReportType("Reverting cancelled packet failed.");
+	
 	/**
 	 * Silly Eclipse.
 	 */
@@ -89,7 +92,7 @@ class InjectedArrayList extends ArrayList<Object> {
 			
 			// Prefer to report this to the user, instead of risking sending it to Minecraft
 			if (reporter != null) {
-				reporter.reportDetailed(this, "Reverting cancelled packet failed.", e, packet);
+				reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_REVERT_CANCELLED_PACKET).error(e).callerParam(packet));
 			} else {
 				System.out.println("[ProtocolLib] Reverting cancelled packet failed.");
 				e.printStackTrace();

@@ -34,6 +34,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.error.Report.ReportBuilder;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.google.common.primitives.Primitives;
@@ -44,12 +45,15 @@ import com.google.common.primitives.Primitives;
  * @author Kristian
  */
 public class DetailedErrorReporter implements ErrorReporter {
+	/**
+	 * Report format for printing the current exception count. 
+	 */
+	public static final ReportType REPORT_EXCEPTION_COUNT = new ReportType("Internal exception count: %s!");
 	
 	public static final String SECOND_LEVEL_PREFIX = "  ";
 	public static final String DEFAULT_PREFIX = "  ";
 	public static final String DEFAULT_SUPPORT_URL = "http://dev.bukkit.org/server-mods/protocollib/";
-	public static final String PLUGIN_NAME = "ProtocolLib";
-	
+
 	// Users that are informed about errors in the chat
 	public static final String ERROR_PERMISSION = "protocol.info";
 	
@@ -68,13 +72,14 @@ public class DetailedErrorReporter implements ErrorReporter {
 	protected Logger logger;
 	
 	protected WeakReference<Plugin> pluginReference;
-
+	protected String pluginName;
+	
 	// Whether or not Apache Commons is not present
 	protected boolean apacheCommonsMissing;
 	
 	// Map of global objects
 	protected Map<String, Object> globalParameters = new HashMap<String, Object>();
-	
+
 	/**
 	 * Create a default error reporting system.
 	 */
@@ -91,15 +96,6 @@ public class DetailedErrorReporter implements ErrorReporter {
 	public DetailedErrorReporter(Plugin plugin, String prefix, String supportURL) {
 		this(plugin, prefix, supportURL, DEFAULT_MAX_ERROR_COUNT, getBukkitLogger());
 	}
-	
-	// Attempt to get the logger.
-	private static Logger getBukkitLogger() {
-		try {
-			return Bukkit.getLogger();
-		} catch (Throwable e) {
-			return Logger.getLogger("Minecraft");
-		}
-	}
 
 	/**
 	 * Create a central error reporting system.
@@ -114,10 +110,20 @@ public class DetailedErrorReporter implements ErrorReporter {
 			throw new IllegalArgumentException("Plugin cannot be NULL.");
 		
 		this.pluginReference = new WeakReference<Plugin>(plugin);
+		this.pluginName = plugin.getName();
 		this.prefix = prefix;
 		this.supportURL = supportURL;
 		this.maxErrorCount = maxErrorCount;
 		this.logger = logger;
+	}
+
+	// Attempt to get the logger.
+	private static Logger getBukkitLogger() {
+		try {
+			return Bukkit.getLogger();
+		} catch (Throwable e) {
+			return Logger.getLogger("Minecraft");
+		}
 	}
 
 	@Override
@@ -125,12 +131,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 		if (reportMinimalNoSpam(sender, methodName, error)) {
 			// Print parameters, if they are given
 			if (parameters != null && parameters.length > 0) {
-				logger.log(Level.SEVERE, "  Parameters:");
-				
-				// Print each parameter
-				for (Object parameter : parameters) {
-					logger.log(Level.SEVERE, "    " + getStringDescription(parameter));
-				}
+				logger.log(Level.SEVERE, printParameters(parameters));
 			}
 		}
 	}
@@ -158,14 +159,14 @@ public class DetailedErrorReporter implements ErrorReporter {
 		
 		// See if we should print the full error
 		if (errorCount < getMaxErrorCount()) {
-			logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception occured in " +
+			logger.log(Level.SEVERE, "[" + pluginName + "] Unhandled exception occured in " +
 					 methodName + " for " + pluginName, error);
 			return true;
 			
 		} else {
 			// Nope - only print the error count occationally
 			if (isPowerOfTwo(errorCount)) {
-				logger.log(Level.SEVERE, "[" + PLUGIN_NAME + "] Unhandled exception number " + errorCount + " occured in " +
+				logger.log(Level.SEVERE, "[" + pluginName + "] Unhandled exception number " + errorCount + " occured in " +
 						 methodName + " for " + pluginName, error);
 			}
 			return false;
@@ -184,15 +185,36 @@ public class DetailedErrorReporter implements ErrorReporter {
 	}
 	
 	@Override
-	public void reportWarning(Object sender, String message) {
-		logger.log(Level.WARNING, "[" + PLUGIN_NAME + "] [" + getSenderName(sender) + "] " + message);
+	public void reportWarning(Object sender, ReportBuilder reportBuilder) {
+		if (reportBuilder == null)
+			throw new IllegalArgumentException("reportBuilder cannot be NULL.");
+		
+		reportWarning(sender, reportBuilder.build());
 	}
 	
 	@Override
-	public void reportWarning(Object sender, String message, Throwable error) {
-		logger.log(Level.WARNING, "[" + PLUGIN_NAME + "] [" + getSenderName(sender) + "] " + message, error);
+	public void reportWarning(Object sender, Report report) {
+		String message = "[" + pluginName + "] [" + getSenderName(sender) + "] " + report.getReportMessage();
+		
+		// Print the main warning
+		if (report.getException() != null) {
+			logger.log(Level.WARNING, message, report.getException());
+		} else {
+			logger.log(Level.WARNING, message);
+		}
+		
+		// Parameters?
+		if (report.hasCallerParameters()) {
+			// Write it
+			logger.log(Level.WARNING, printParameters(report.getCallerParameters()));
+		}
 	}
 	
+	/**
+	 * Retrieve the name of a sender class.
+	 * @param sender - sender object.
+	 * @return The name of the sender's class.
+	 */
 	private String getSenderName(Object sender) {
 		if (sender != null)
 			return sender.getClass().getSimpleName();
@@ -201,8 +223,12 @@ public class DetailedErrorReporter implements ErrorReporter {
 	}
 	
 	@Override
-	public void reportDetailed(Object sender, String message, Throwable error, Object... parameters) {
-
+	public void reportDetailed(Object sender, ReportBuilder reportBuilder) {
+		reportDetailed(sender, reportBuilder.build());
+	}
+	
+	@Override
+	public void reportDetailed(Object sender, Report report) {
 		final Plugin plugin = pluginReference.get();
 		final int errorCount = internalErrorCount.incrementAndGet();
 		
@@ -211,7 +237,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 			// Only allow the error count at rare occations
 			if (isPowerOfTwo(errorCount)) {
 				// Permit it - but print the number of exceptions first
-				reportWarning(this, "Internal exception count: " + errorCount + "!");
+				reportWarning(this, Report.newBuilder(REPORT_EXCEPTION_COUNT).messageParam(errorCount).build());
 			} else {
 				// NEVER SPAM THE CONSOLE
 				return;
@@ -222,27 +248,23 @@ public class DetailedErrorReporter implements ErrorReporter {
 		PrintWriter writer = new PrintWriter(text);
 
 		// Helpful message
-		writer.println("[ProtocolLib] INTERNAL ERROR: " + message);
+		writer.println("[" + pluginName + "] INTERNAL ERROR: " + report.getReportMessage());
 	    writer.println("If this problem hasn't already been reported, please open a ticket");
 	    writer.println("at " + supportURL + " with the following data:");
 	    
 	    // Now, let us print important exception information
 		writer.println("          ===== STACK TRACE =====");
 
-		if (error != null) 
-			error.printStackTrace(writer);
+		if (report.getException() != null) {
+			report.getException().printStackTrace(writer);
+		}
 		
 		// Data dump!
 		writer.println("          ===== DUMP =====");
 		
 		// Relevant parameters
-		if (parameters != null && parameters.length > 0) {
-			writer.println("Parameters:");
-			
-			// We *really* want to get as much information as possible
-			for (Object param : parameters) {
-				writer.println(addPrefix(getStringDescription(param), SECOND_LEVEL_PREFIX));
-			}
+		if (report.hasCallerParameters()) {
+			printParameters(writer, report.getCallerParameters());
 		}
 		
 		// Global parameters
@@ -270,7 +292,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 			// Inform of this occurrence
 			if (ERROR_PERMISSION != null) {	
 				Bukkit.getServer().broadcast(
-						String.format("Error %s (%s) occured in %s.", message, error, sender),
+						String.format("Error %s (%s) occured in %s.", report.getReportMessage(), report.getException(), sender),
 						ERROR_PERMISSION
 				);
 			}
@@ -278,6 +300,23 @@ public class DetailedErrorReporter implements ErrorReporter {
 		
 		// Make sure it is reported
 		logger.severe(addPrefix(text.toString(), prefix));
+	}
+	
+	private String printParameters(Object... parameters) {
+		StringWriter writer = new StringWriter();
+		
+		// Print and retrieve the string buffer
+		printParameters(new PrintWriter(writer), parameters);
+		return writer.toString();
+	}
+
+	private void printParameters(PrintWriter writer, Object[] parameters) {
+		writer.println("Parameters: ");
+		
+		// We *really* want to get as much information as possible
+		for (Object param : parameters) {
+			writer.println(addPrefix(getStringDescription(param), SECOND_LEVEL_PREFIX));
+		}
 	}
 	
 	/**
@@ -290,6 +329,11 @@ public class DetailedErrorReporter implements ErrorReporter {
 		return text.replaceAll("(?m)^", prefix);
 	}
 	
+	/**
+	 * Retrieve a string representation of the given object.
+	 * @param value - object to convert.
+	 * @return String representation.
+	 */
 	protected String getStringDescription(Object value) {
 		
 		// We can't only rely on toString.

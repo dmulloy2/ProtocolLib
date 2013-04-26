@@ -26,6 +26,8 @@ import java.util.Set;
 import net.sf.cglib.proxy.Factory;
 
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -44,6 +46,11 @@ import com.google.common.collect.ImmutableSet;
  */
 @SuppressWarnings("rawtypes")
 public class PacketRegistry {
+	public static final ReportType REPORT_CANNOT_CORRECT_TROVE_MAP = new ReportType("Unable to correct no entry value.");
+	
+	public static final ReportType REPORT_INSUFFICIENT_SERVER_PACKETS = new ReportType("Too few server packets detected: %s");
+	public static final ReportType REPORT_INSUFFICIENT_CLIENT_PACKETS = new ReportType("Too few client packets detected: %s");
+	
 	private static final int MIN_SERVER_PACKETS = 5;
 	private static final int MIN_CLIENT_PACKETS = 5;
 
@@ -117,8 +124,9 @@ public class PacketRegistry {
 				FieldUtils.writeField(field, troveMap, -1);
 			}
 		} catch (IllegalArgumentException e) {
-			// Whatever
-			ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class, "Unable to correct no entry value.", e);
+			// Whatever			
+			ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class, 
+					Report.newBuilder(REPORT_CANNOT_CORRECT_TROVE_MAP).error(e));
 		}
 		
 		// We'll assume this a Trove map
@@ -200,10 +208,12 @@ public class PacketRegistry {
 					// Check sizes
 					if (serverPackets.size() < MIN_SERVER_PACKETS)
 						ProtocolLibrary.getErrorReporter().reportWarning(
-							PacketRegistry.class, "Too few server packets detected: " + serverPackets.size());
+							PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_SERVER_PACKETS).messageParam(serverPackets.size())
+						);
 					if (clientPackets.size() < MIN_CLIENT_PACKETS)
 						ProtocolLibrary.getErrorReporter().reportWarning(
-							PacketRegistry.class, "Too few client packets detected: " + clientPackets.size());
+								PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_CLIENT_PACKETS).messageParam(clientPackets.size())
+							);
 					
 				} else {
 					throw new FieldAccessException("Cannot retrieve packet client/server sets.");

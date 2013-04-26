@@ -24,6 +24,8 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.MultipleLinesPrompt.MultipleConversationCanceller;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.DiscreteDomains;
 import com.google.common.collect.Range;
@@ -35,6 +37,12 @@ import com.google.common.collect.Ranges;
  * @author Kristian
  */
 public class CommandFilter extends CommandBase {
+	public static final ReportType REPORT_FALLBACK_ENGINE = new ReportType("Falling back to the Rhino engine.");
+	public static final ReportType REPORT_CANNOT_LOAD_FALLBACK_ENGINE = new ReportType("Could not load Rhino either. Please upgrade your JVM or OS.");
+	public static final ReportType REPORT_PACKAGES_UNSUPPORTED_IN_ENGINE = new ReportType("Unable to initialize packages for JavaScript engine.");
+	public static final ReportType REPORT_FILTER_REMOVED_FOR_ERROR = new ReportType("Removing filter %s for causing %s.");
+	public static final ReportType REPORT_CANNOT_HANDLE_CONVERSATION = new ReportType("Cannot handle conversation.");
+	
 	public interface FilterFailedHandler{
 		/**
 		 * Invoked when a given filter has failed.
@@ -236,7 +244,7 @@ public class CommandFilter extends CommandBase {
 			printPackageWarning(e1);
 			
 			if (!config.getScriptEngineName().equals("rhino")) {
-				reporter.reportWarning(this, "Falling back to the Rhino engine.");
+				reporter.reportWarning(this, Report.newBuilder(REPORT_FALLBACK_ENGINE));
 				config.setScriptEngineName("rhino");
 				config.saveAll();
 				
@@ -244,7 +252,7 @@ public class CommandFilter extends CommandBase {
 					initializeEngine();
 					
 					if (!isInitialized()) {
-						reporter.reportWarning(this, "Could not load Rhino either. Please upgrade your JVM or OS.");
+						reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_FALLBACK_ENGINE));
 					}
 				} catch (ScriptException e2) {
 					// And again ..
@@ -255,7 +263,7 @@ public class CommandFilter extends CommandBase {
 	}
 	
 	private void printPackageWarning(ScriptException e) {
-		reporter.reportWarning(this, "Unable to initialize packages for JavaScript engine.", e);
+		reporter.reportWarning(this, Report.newBuilder(REPORT_PACKAGES_UNSUPPORTED_IN_ENGINE).error(e));
 	}
 	
 	/**
@@ -288,7 +296,9 @@ public class CommandFilter extends CommandBase {
 				@Override
 				public boolean handle(PacketEvent event, Filter filter, Exception ex) {
 					reporter.reportMinimal(plugin, "filterEvent(PacketEvent)", ex, event);
-					reporter.reportWarning(this, "Removing filter " + filter.getName() + " for causing an exception.");
+					reporter.reportWarning(this, 
+							Report.newBuilder(REPORT_FILTER_REMOVED_FOR_ERROR).messageParam(filter.getName(), ex.getClass().getSimpleName())
+					);
 					return false;
 				}
 			};
@@ -398,7 +408,9 @@ public class CommandFilter extends CommandBase {
 										whom.sendRawMessage(ChatColor.RED + "Cancelled filter.");
 									}
 								} catch (Exception e) {
-									reporter.reportDetailed(this, "Cannot handle conversation.", e, event);
+									reporter.reportDetailed(this, 
+											Report.newBuilder(REPORT_CANNOT_HANDLE_CONVERSATION).error(e).callerParam(event)
+									);
 								}
 							}
 						}).

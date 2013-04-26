@@ -34,6 +34,8 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.BlockingHashMap;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
@@ -59,6 +61,16 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
+	// Warnings and errors
+	public static final ReportType REPORT_UNSUPPPORTED_LISTENER = new ReportType("Cannot fully register listener for %s: %s");
+	
+	// Fallback to older player hook types
+	public static final ReportType REPORT_PLAYER_HOOK_FAILED = new ReportType("Player hook %s failed.");
+	public static final ReportType REPORT_SWITCHED_PLAYER_HOOK = new ReportType("Switching to %s instead.");
+	
+	public static final ReportType REPORT_HOOK_CLEANUP_FAILED = new ReportType("Cleaing up after player hook failed.");
+	public static final ReportType REPORT_CANNOT_REVERT_HOOK = new ReportType("Unable to fully revert old injector. May cause conflicts.");
+	
 	// Server connection injection
 	private InjectedServerConnection serverInjection;
 	
@@ -355,8 +367,9 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 					
 				} catch (Exception e) {
 					// Mark this injection attempt as a failure
-					reporter.reportDetailed(this, "Player hook " + tempHook.toString() + " failed.", 
-											 e, player, injectionPoint, phase);
+					reporter.reportDetailed(this, 
+							Report.newBuilder(REPORT_PLAYER_HOOK_FAILED).messageParam(tempHook).callerParam(player, injectionPoint, phase).error(e) 
+					);
 					hookFailed = true;
 				}
 				
@@ -364,7 +377,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 				tempHook = PlayerInjectHooks.values()[tempHook.ordinal() - 1];
 				
 				if (hookFailed)
-					reporter.reportWarning(this, "Switching to " + tempHook.toString() + " instead.");
+					reporter.reportWarning(this, Report.newBuilder(REPORT_SWITCHED_PLAYER_HOOK).messageParam(tempHook));
 				
 				// Check for UTTER FAILURE
 				if (tempHook == PlayerInjectHooks.NONE) {
@@ -400,7 +413,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			if (injector != null)
 				injector.cleanupAll();
 		} catch (Exception ex) {
-			reporter.reportDetailed(this, "Cleaing up after player hook failed.", ex, injector);
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_HOOK_CLEANUP_FAILED).callerParam(injector).error(ex));
 		}
 	}
 	
@@ -462,7 +475,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 
 					} catch (IllegalAccessException e) {
 						// Let the user know
-						reporter.reportWarning(this, "Unable to fully revert old injector. May cause conflicts.", e);
+						reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REVERT_HOOK).error(e));
 					}
 				}
 				
@@ -646,8 +659,9 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 
 			// We won't prevent the listener, as it may still have valid packets
 			if (result != null) {
-				reporter.reportWarning(this, "Cannot fully register listener for " + 
-						  PacketAdapter.getPluginName(listener) + ": " + result.toString());
+				reporter.reportWarning(this, 
+						Report.newBuilder(REPORT_UNSUPPPORTED_LISTENER).messageParam(PacketAdapter.getPluginName(listener), result) 
+				);
 				
 				// These are illegal
 				for (int packetID : result.getPackets())

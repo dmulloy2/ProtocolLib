@@ -22,6 +22,8 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.MapMaker;
@@ -30,6 +32,8 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 class ReadPacketModifier implements MethodInterceptor {
+	public static final ReportType REPORT_CANNOT_HANDLE_CLIENT_PACKET = new ReportType("Cannot handle client packet.");
+	
 	// A cancel marker
 	private static final Object CANCEL_MARKER = new Object();
 	
@@ -122,7 +126,9 @@ class ReadPacketModifier implements MethodInterceptor {
 				}
 			} catch (Throwable e) {
 				// Minecraft cannot handle this error
-				reporter.reportDetailed(this, "Cannot handle client packet.", e, args[0]);
+				reporter.reportDetailed(this, 
+						Report.newBuilder(REPORT_CANNOT_HANDLE_CLIENT_PACKET).callerParam(args[0]).error(e)
+				);
 			}
 		}
 		return returnValue;

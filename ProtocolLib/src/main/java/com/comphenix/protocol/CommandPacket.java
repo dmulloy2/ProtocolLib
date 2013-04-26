@@ -36,6 +36,8 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.concurrency.AbstractIntervalTree;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
@@ -57,6 +59,7 @@ import com.google.common.collect.Sets;
  * @author Kristian
  */
 class CommandPacket extends CommandBase {
+	public static final ReportType REPORT_CANNOT_SEND_MESSAGE = new ReportType("Cannot send chat message.");
 	
 	private interface DetailedPacketListener extends PacketListener {
 		/**
@@ -166,7 +169,9 @@ class CommandPacket extends CommandBase {
 		try {
 			chatter.sendMessageSilently(receiver, message);
 		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, "Cannot send chat message.", e, receiver, message);
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_SEND_MESSAGE).error(e).callerParam(receiver, message)
+			);
 		}
 	}
 	
@@ -179,7 +184,9 @@ class CommandPacket extends CommandBase {
 		try {
 			chatter.broadcastMessageSilently(message, permission);
 		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, "Cannot send chat message.", e, message, permission);
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_SEND_MESSAGE).error(e).callerParam(message, permission)
+			);
 		}
 	}
 	
