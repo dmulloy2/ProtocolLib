@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -88,15 +87,10 @@ class InjectedArrayList extends ArrayList<Object> {
 			return true;
 			
 		} catch (InvocationTargetException e) {
-			ErrorReporter reporter = ProtocolLibrary.getErrorReporter();
-			
 			// Prefer to report this to the user, instead of risking sending it to Minecraft
-			if (reporter != null) {
-				reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_REVERT_CANCELLED_PACKET).error(e).callerParam(packet));
-			} else {
-				System.out.println("[ProtocolLib] Reverting cancelled packet failed.");
-				e.printStackTrace();
-			}
+			ProtocolLibrary.getErrorReporter().reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_REVERT_CANCELLED_PACKET).error(e).callerParam(packet)
+			);
 			
 			// Failure
 			return false;

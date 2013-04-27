@@ -342,7 +342,6 @@ public class DetailedErrorReporter implements ErrorReporter {
 	 * @return String representation.
 	 */
 	protected String getStringDescription(Object value) {
-		
 		// We can't only rely on toString.
 		if (value == null) {
 			return "[NULL]";

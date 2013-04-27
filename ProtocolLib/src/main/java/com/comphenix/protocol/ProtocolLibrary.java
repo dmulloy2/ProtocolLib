@@ -33,6 +33,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -92,7 +93,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private static PacketFilterManager protocolManager;
 	
 	// Error reporter
-	private static ErrorReporter reporter;
+	private static ErrorReporter reporter = new BasicErrorReporter();
 	
 	// Metrics and statistisc
 	private Statistics statistisc;
@@ -490,7 +491,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			unhookTask.close();
 		protocolManager = null;
 		statistisc = null;
-		reporter = null;
+
+		// To clean up global parameters
+		reporter = new BasicErrorReporter();
 		
 		// Leaky ClassLoader begone!
 		if (updater == null || updater.getResult() != UpdateResult.SUCCESS) {
@@ -515,6 +518,8 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	/**
 	 * Retrieve the current error reporter.
+	 * <p>
+	 * This is guaranteed to not be NULL in 2.5.0 and later.
 	 * @return Current error reporter.
 	 */
 	public static ErrorReporter getErrorReporter() {

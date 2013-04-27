@@ -368,7 +368,7 @@ public abstract class PlayerInjector implements SocketInjector {
 					return null;
 				
 				hasProxyType = true;
-				reporter.reportWarning(this, Report.newBuilder(REPORT_DETECTED_CUSTOM_SERVER_HANDLER).callerParam(notchEntity, serverField));
+				reporter.reportWarning(this, Report.newBuilder(REPORT_DETECTED_CUSTOM_SERVER_HANDLER).callerParam(serverField));
 				
 				// No? Is it a Proxy type?
 				try {

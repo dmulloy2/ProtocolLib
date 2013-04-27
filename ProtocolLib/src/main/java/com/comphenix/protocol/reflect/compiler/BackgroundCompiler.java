@@ -29,8 +29,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nullable;
-
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -122,11 +120,13 @@ public class BackgroundCompiler {
 	}
 
 	// Avoid "Constructor call must be the first statement".
-	private void initializeCompiler(ClassLoader loader, @Nullable ErrorReporter reporter, ExecutorService executor) {
+	private void initializeCompiler(ClassLoader loader, ErrorReporter reporter, ExecutorService executor) {
 		if (loader == null)
 			throw new IllegalArgumentException("loader cannot be NULL");
 		if (executor == null)
 			throw new IllegalArgumentException("executor cannot be NULL");
+		if (reporter == null)
+			throw new IllegalArgumentException("reporter cannot be NULL.");
 		
 		this.compiler = new StructureCompiler(loader);
 		this.reporter = reporter;
@@ -226,14 +226,9 @@ public class BackgroundCompiler {
 						setEnabled(false);
 						
 						// Inform about this error as best as we can
-						if (reporter != null) {
-							reporter.reportDetailed(BackgroundCompiler.this,
-									Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(e)
-							);
-						} else {
-							System.err.println("Exception occured in structure compiler: ");
-							e.printStackTrace();
-						}
+						reporter.reportDetailed(BackgroundCompiler.this,
+								Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(e)
+						);
 					}
 					
 					// We'll also return the new structure modifier
