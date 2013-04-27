@@ -49,7 +49,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	private static volatile boolean classChecked;
 	
 	// Retrieve the entity player from a PlayerConnection
-	private static Field playerConnectionPlayer;
+	private static volatile Field playerConnectionPlayer;
 	
 	// Packets that are not to be processed by the filters
 	private Set<Object> ignoredPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
