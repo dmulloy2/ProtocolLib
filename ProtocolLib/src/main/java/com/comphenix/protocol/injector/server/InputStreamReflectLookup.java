@@ -18,6 +18,9 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.collect.MapMaker;
 
 class InputStreamReflectLookup extends AbstractInputStreamLookup {
+	// Used to access the inner input stream of a filtered input stream
+	private static Field filteredInputField;
+	
 	// The default lookup timeout
 	private static final long DEFAULT_TIMEOUT = 2000; // ms
 	
@@ -121,6 +124,30 @@ class InputStreamReflectLookup extends AbstractInputStreamLookup {
 			inputLookup.put(stream, result);
 		}
 		return result;
+	}
+	
+	/**
+	 * Retrieve the underlying input stream that is associated with a given filter input stream.
+	 * @param filtered - the filter input stream.
+	 * @return The underlying input stream that is being filtered.
+	 * @throws FieldAccessException Unable to access input stream.
+	 */
+	protected static InputStream getInputStream(FilterInputStream filtered) {
+		if (filteredInputField == null)
+			filteredInputField = FuzzyReflection.fromClass(FilterInputStream.class, true).
+								  getFieldByType("in", InputStream.class);
+		
+		InputStream current = filtered;
+		
+		try {
+			// Iterate until we find the real input stream
+			while (current instanceof FilterInputStream) {
+				current = (InputStream) FieldUtils.readField(filteredInputField, current, true);
+			}
+			return current;
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Cannot access filtered input field.", e);
+		}
 	}
 	
 	@Override

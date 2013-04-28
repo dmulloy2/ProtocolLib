@@ -1,22 +1,14 @@
 package com.comphenix.protocol.injector.server;
 
-import java.io.FilterInputStream;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketAddress;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FieldUtils;
-import com.comphenix.protocol.reflect.FuzzyReflection;
 
 public abstract class AbstractInputStreamLookup {
-	// Used to access the inner input stream of a filtered input stream
-	private static Field filteredInputField;
-
 	// Error reporter
 	protected final ErrorReporter reporter;
 	
@@ -26,30 +18,6 @@ public abstract class AbstractInputStreamLookup {
 	protected AbstractInputStreamLookup(ErrorReporter reporter, Server server) {
 		this.reporter = reporter;
 		this.server = server;
-	}
-
-	/**
-	 * Retrieve the underlying input stream that is associated with a given filter input stream.
-	 * @param filtered - the filter input stream.
-	 * @return The underlying input stream that is being filtered.
-	 * @throws FieldAccessException Unable to access input stream.
-	 */
-	protected static InputStream getInputStream(FilterInputStream filtered) {
-		if (filteredInputField == null)
-			filteredInputField = FuzzyReflection.fromClass(FilterInputStream.class, true).
-								  getFieldByType("in", InputStream.class);
-		
-		InputStream current = filtered;
-		
-		try {
-			// Iterate until we find the real input stream
-			while (current instanceof FilterInputStream) {
-				current = (InputStream) FieldUtils.readField(filteredInputField, current, true);
-			}
-			return current;
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Cannot access filtered input field.", e);
-		}
 	}
 
 	/**
