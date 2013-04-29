@@ -18,12 +18,15 @@
 package com.comphenix.protocol;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 /**
  * Represents the configuration of ProtocolLib.
@@ -31,6 +34,7 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
  * @author Kristian
  */
 class ProtocolConfig {
+	private static final String LAST_UPDATE_FILE = "lastupdate";
 	
 	private static final String SECTION_GLOBAL = "global";
 	private static final String SECTION_AUTOUPDATER = "auto updater";
@@ -48,7 +52,6 @@ class ProtocolConfig {
 	private static final String UPDATER_NOTIFY = "notify";
 	private static final String UPDATER_DOWNLAD = "download";
 	private static final String UPDATER_DELAY = "delay";
-	private static final String UPDATER_LAST_TIME = "last";
 	
 	// Defaults
 	private static final long DEFAULT_UPDATER_DELAY = 43200;
@@ -59,6 +62,11 @@ class ProtocolConfig {
 	
 	private ConfigurationSection global;
 	private ConfigurationSection updater;
+	
+	// Last update time
+	private long lastUpdateTime;
+	private boolean configChanged;
+	private boolean valuesChanged;
 	
 	public ProtocolConfig(Plugin plugin) {
 		this(plugin, plugin.getConfig());
@@ -73,8 +81,62 @@ class ProtocolConfig {
 	 * Reload configuration file.
 	 */
 	public void reloadConfig() {
+		// Reset
+		configChanged = false;
+		valuesChanged = false;
+		
 		this.config = plugin.getConfig();
+		this.lastUpdateTime = loadLastUpdate();
 		loadSections(!loadingSections);
+	}
+	
+	/**
+	 * Load the last update time stamp from the file system.
+	 * @return Last update time stamp.
+	 */
+	private long loadLastUpdate() {
+		File dataFile = getLastUpdateFile();
+		
+		if (dataFile.exists()) {
+			try {
+				return Long.parseLong(Files.toString(dataFile, Charsets.UTF_8));
+			} catch (NumberFormatException e) {
+				throw new RuntimeException("Cannot parse " + dataFile + " as a number.", e);
+			} catch (IOException e) {
+				throw new RuntimeException("Cannot read " + dataFile, e);
+			}
+		} else {
+			// Default last update
+			return 0;
+		}
+	}
+	
+	/**
+	 * Store the given time stamp.
+	 * @param value - time stamp to store.
+	 */
+	private void saveLastUpdate(long value) {
+		File dataFile = getLastUpdateFile();
+	
+		// The data folder must exist
+		dataFile.getParentFile().mkdirs();
+		
+		if (dataFile.exists())
+			dataFile.delete();
+		
+		try {
+			Files.write(Long.toString(value), dataFile, Charsets.UTF_8);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot write " + dataFile, e);
+		}
+	}
+	
+	/**
+	 * Retrieve the file that is used to store the update time stamp.
+	 * @return File storing the update time stamp.
+	 */
+	private File getLastUpdateFile() {
+		return new File(plugin.getDataFolder(), LAST_UPDATE_FILE);
 	}
 	
 	/**
@@ -103,6 +165,17 @@ class ProtocolConfig {
 			System.out.println("[ProtocolLib] Created default configuration.");
 		}
 	}
+	
+	/**
+	 * Set a particular configuration key value pair.
+	 * @param section - the configuration root.
+	 * @param path - the path to the key.
+	 * @param value - the value to set.
+	 */
+	private void setConfig(ConfigurationSection section, String path, Object value) {
+		configChanged = true;
+		section.set(path, value);
+	}
 
 	/**
 	 * Retrieve a reference to the configuration file.
@@ -125,7 +198,7 @@ class ProtocolConfig {
 	 * @param value - TRUE to do this automatically, FALSE otherwise.
 	 */
 	public void setAutoNotify(boolean value) {
-		updater.set(UPDATER_NOTIFY, value);
+		setConfig(updater, UPDATER_NOTIFY, value);
 	}
 	
 	/**
@@ -141,7 +214,7 @@ class ProtocolConfig {
 	 * @param value - TRUE if it should. FALSE otherwise.
 	 */
 	public void setAutoDownload(boolean value) {
-		updater.set(UPDATER_DOWNLAD, value);
+		setConfig(updater, UPDATER_DOWNLAD, value);
 	}
 	
 	/**
@@ -159,7 +232,7 @@ class ProtocolConfig {
 	 * @param value - TRUE if it is enabled, FALSE otherwise.
 	 */
 	public void setDebug(boolean value) {
-		global.set(DEBUG_MODE_ENABLED, value);
+		setConfig(global, DEBUG_MODE_ENABLED, value);
 	}
 
 	/**
@@ -181,17 +254,9 @@ class ProtocolConfig {
 		// Silently fix the delay
 		if (delaySeconds < DEFAULT_UPDATER_DELAY)
 			delaySeconds = DEFAULT_UPDATER_DELAY;
-		updater.set(UPDATER_DELAY, delaySeconds);
+		setConfig(updater, UPDATER_DELAY, delaySeconds);
 	}
 	
-	/**
-	 * Retrieve the last time we updated, in seconds since 1970.01.01 00:00.
-	 * @return Last update time.
-	 */
-	public long getAutoLastTime() {
-		return updater.getLong(UPDATER_LAST_TIME, 0);
-	}
-
 	/**
 	 * The version of Minecraft to ignore the built-in safety feature.
 	 * @return The version to ignore ProtocolLib's satefy.
@@ -209,7 +274,7 @@ class ProtocolConfig {
 	 * @param ignoreVersion - the version of Minecraft where the satefy will be disabled.
 	 */
 	public void setIgnoreVersionCheck(String ignoreVersion) {
-		global.set(IGNORE_VERSION_CHECK, ignoreVersion);
+		setConfig(global, IGNORE_VERSION_CHECK, ignoreVersion);
 	}
 	
 	/**
@@ -228,7 +293,7 @@ class ProtocolConfig {
 	 * @param enabled - whether or not metrics is enabled.
 	 */
 	public void setMetricsEnabled(boolean enabled) {
-		global.set(METRICS_ENABLED, enabled);
+		setConfig(global, METRICS_ENABLED, enabled);
 	}
 	
 	/**
@@ -247,7 +312,15 @@ class ProtocolConfig {
 	 * @param enabled - TRUE if is enabled/running, FALSE otherwise.
 	 */
 	public void setBackgroundCompilerEnabled(boolean enabled) {
-		global.set(BACKGROUND_COMPILER_ENABLED, enabled);
+		setConfig(global, BACKGROUND_COMPILER_ENABLED, enabled);
+	}
+	
+	/**
+	 * Retrieve the last time we updated, in seconds since 1970.01.01 00:00.
+	 * @return Last update time.
+	 */
+	public long getAutoLastTime() {
+		return lastUpdateTime;
 	}
 
 	/**
@@ -255,7 +328,8 @@ class ProtocolConfig {
 	 * @param lastTimeSeconds - new last update time.
 	 */
 	public void setAutoLastTime(long lastTimeSeconds) { 
-		updater.set(UPDATER_LAST_TIME, lastTimeSeconds);
+		this.valuesChanged = true;
+		this.lastUpdateTime = lastTimeSeconds;
 	}
 	
 	/**
@@ -273,7 +347,7 @@ class ProtocolConfig {
 	 * @param name - name of the script engine to use.
 	 */
 	public void setScriptEngineName(String name) {
-		global.set(SCRIPT_ENGINE_NAME, name);
+		setConfig(global, SCRIPT_ENGINE_NAME, name);
 	}
 	
 	/**
@@ -305,13 +379,20 @@ class ProtocolConfig {
 	 * @return Injection method.
 	 */
 	public void setInjectionMethod(PlayerInjectHooks hook) {
-		global.set(INJECTION_METHOD, hook.name());
+		setConfig(global, INJECTION_METHOD, hook.name());
 	}
 	
 	/**
 	 * Save the current configuration file.
 	 */
 	public void saveAll() {
-		plugin.saveConfig();
+		if (valuesChanged)
+			saveLastUpdate(lastUpdateTime);
+		if (configChanged)
+			plugin.saveConfig();
+		
+		// And we're done
+		valuesChanged = false;
+		configChanged = false;
 	}
 }
