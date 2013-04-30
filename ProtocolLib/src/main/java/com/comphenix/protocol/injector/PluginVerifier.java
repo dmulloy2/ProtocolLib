@@ -120,12 +120,15 @@ class PluginVerifier {
 		if (plugin == null)
 			throw new IllegalArgumentException("plugin cannot be NULL.");
 		
-		if (!loadedAfter.contains(plugin.getName())) {
-			if (verifyLoadOrder(dependency, plugin)) {
-				// Memorize
-				loadedAfter.add(plugin.getName());
-			} else {
-				return VerificationResult.NO_DEPEND;
+		// Skip the load order check for ProtocolLib itself
+		if (!dependency.equals(plugin)) {
+			if (!loadedAfter.contains(plugin.getName())) {
+				if (verifyLoadOrder(dependency, plugin)) {
+					// Memorize
+					loadedAfter.add(plugin.getName());
+				} else {
+					return VerificationResult.NO_DEPEND;
+				}
 			}
 		}
 		
