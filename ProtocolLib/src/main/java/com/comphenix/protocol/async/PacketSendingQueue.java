@@ -89,6 +89,7 @@ abstract class PacketSendingQueue {
 			PacketEvent copy = PacketEvent.fromSynchronous(packetUpdated, marker);
 			
 			// "Cancel" the original event
+			packetUpdated.setReadOnly(false);
 			packetUpdated.setCancelled(true);
 			
 			// Enqueue the copy with the new sending index

@@ -496,6 +496,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			asyncFilterManager.enqueueSyncPacket(event, event.getAsyncMarker());
 
 			// The above makes a copy of the event, so it's safe to cancel it
+			event.setReadOnly(false);
 			event.setCancelled(true);
 		}
 	}
