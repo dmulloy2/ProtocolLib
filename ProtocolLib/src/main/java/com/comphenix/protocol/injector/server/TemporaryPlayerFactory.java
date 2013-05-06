@@ -102,6 +102,8 @@ public class TemporaryPlayerFactory {
 					throw new IllegalStateException("Unable to find injector.");
 				
 				// Use the socket to get the address
+				if (methodName.equalsIgnoreCase("isOnline"))
+					return injector.getSocket() != null && injector.getSocket().isConnected();
 				if (methodName.equalsIgnoreCase("getName"))
 					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
 				if (methodName.equalsIgnoreCase("getPlayer"))
@@ -110,7 +112,7 @@ public class TemporaryPlayerFactory {
 					return injector.getAddress();
 				if (methodName.equalsIgnoreCase("getServer"))
 					return server;
-				
+
 				try {
 					// Handle send message methods
 					if (methodName.equalsIgnoreCase("chat") || methodName.equalsIgnoreCase("sendMessage")) {
