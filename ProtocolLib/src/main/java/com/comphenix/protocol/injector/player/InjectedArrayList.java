@@ -21,12 +21,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.collect.MapMaker;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
@@ -45,6 +49,9 @@ class InjectedArrayList extends ArrayList<Object> {
 	 * Silly Eclipse.
 	 */
 	private static final long serialVersionUID = -1173865905404280990L;
+	
+	// Fake inverted proxy objects
+	private static ConcurrentMap<Object, Object> delegateLookup = new MapMaker().weakKeys().makeMap();
 	
 	private transient PlayerInjector injector;
 	private transient Set<Object> ignoredPackets;
@@ -108,10 +115,7 @@ class InjectedArrayList extends ArrayList<Object> {
 		ListenerInvoker invoker = injector.getInvoker();
 		
 		int packetID = invoker.getPacketID(source);
-		Class<?> type = invoker.getPacketClassFromID(packetID, true);
 
-		System.out.println(type.getName());
-		
 		// We want to subtract the byte amount that were added to the running
 		// total of outstanding packets. Otherwise, cancelling too many packets
 		// might cause a "disconnect.overflow" error.
@@ -131,7 +135,7 @@ class InjectedArrayList extends ArrayList<Object> {
 		//   ect.
 		//   }
 		Enhancer ex = new Enhancer();
-		ex.setSuperclass(type);
+		ex.setSuperclass(MinecraftReflection.getPacketClass());
 		ex.setInterfaces(new Class[] { FakePacket.class } );
 		ex.setUseCache(true);
 		ex.setClassLoader(classLoader);
@@ -143,7 +147,10 @@ class InjectedArrayList extends ArrayList<Object> {
 		try {
 			// Temporarily associate the fake packet class
 			invoker.registerPacketClass(proxyClass, packetID);
-			return proxyClass.newInstance();
+			Object proxy = proxyClass.newInstance();
+			
+			InjectedArrayList.registerDelegate(proxy, source);
+			return proxy;
 			
 		} catch (Exception e) {
 			// Don't pollute the throws tree
@@ -155,17 +162,32 @@ class InjectedArrayList extends ArrayList<Object> {
 	}
 	
 	/**
+	 * Ensure that the inverted integer proxy uses the given object as source.
+	 * @param proxy - inverted integer proxy.
+	 * @param source - source object.
+	 */
+	private static void registerDelegate(Object proxy, Object source) {
+		delegateLookup.put(proxy, source);
+	}
+	
+	/**
 	 * Inverts the integer result of every integer method.
 	 * @author Kristian
 	 */
-	private class InvertedIntegerCallback implements MethodInterceptor {
+	private class InvertedIntegerCallback implements MethodInterceptor {		
 		@Override
 		public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+			final Object delegate = delegateLookup.get(obj);
+			
+			if (delegate == null) {
+				throw new IllegalStateException("Unable to find delegate source for " + obj);
+			}
+				
 			if (method.getReturnType().equals(int.class) && args.length == 0) {
-				Integer result = (Integer) proxy.invokeSuper(obj, args);
+				Integer result = (Integer) proxy.invoke(delegate, args);
 				return -result;
 			} else {
-				return proxy.invokeSuper(obj, args);
+				return proxy.invoke(delegate, args);
 			}
 		}
 	}
