@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;

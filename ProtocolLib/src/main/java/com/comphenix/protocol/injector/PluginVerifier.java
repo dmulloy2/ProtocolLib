@@ -83,13 +83,22 @@ class PluginVerifier {
 	 * @throws PluginNotFoundException If a plugin with the given name cannot be found.
 	 */
 	private Plugin getPlugin(String pluginName) {
-		Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
+		Plugin plugin = getPluginOrDefault(pluginName);
 		
 		// Ensure that the plugin exists
 		if (plugin != null)
 			return plugin;
 		else
 			throw new PluginNotFoundException("Cannot find plugin " + pluginName); 
+	}
+	
+	/**
+	 * Retrieve a plugin by name.
+	 * @param pluginName - the non-null name of the plugin to retrieve.
+	 * @return The retrieved plugin, or NULL if not found.
+	 */
+	private Plugin getPluginOrDefault(String pluginName) {
+		return Bukkit.getPluginManager().getPlugin(pluginName);
 	}
 	
 	/**
@@ -183,15 +192,15 @@ class PluginVerifier {
 			return Sets.newHashSet(list);
 	}
 	
-	// Avoid cycles
-	private boolean hasDependency(Plugin plugin, Plugin dependency, Set<String> checked) {
+	// Avoid cycles. DFS.
+	private boolean hasDependency(Plugin plugin, Plugin dependency, Set<String> checking) {
 		Set<String> childNames = Sets.union(
 				 safeConversion(plugin.getDescription().getDepend()),
 				 safeConversion(plugin.getDescription().getSoftDepend())
 		);
 		
 		// Ensure that the same plugin isn't processed twice
-		if (!checked.add(plugin.getName())) {
+		if (!checking.add(plugin.getName())) {
 			throw new IllegalStateException("Cycle detected in dependency graph: " + plugin);
 		}
 		// Look for the dependency in the immediate children
@@ -201,12 +210,15 @@ class PluginVerifier {
 		
 		// Recurse through their dependencies
 		for (String childName : childNames) {
-			Plugin childPlugin = getPlugin(childName);
+			Plugin childPlugin = getPluginOrDefault(childName);
 			
-			if (hasDependency(childPlugin, dependency, checked)) {
+			if (childPlugin != null && hasDependency(childPlugin, dependency, checking)) {
 				return true;
 			}
 		}
+		
+		// Cross edges are permitted
+		checking.remove(plugin.getName());
 		
 		// No dependency found!
 		return false;
