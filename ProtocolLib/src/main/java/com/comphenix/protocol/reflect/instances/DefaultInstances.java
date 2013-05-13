@@ -327,6 +327,7 @@ public class DefaultInstances implements InstanceProvider {
 		try {
 			return (T) constructor.newInstance(params);
 		} catch (Exception e) {
+			//e.printStackTrace();
 			// Cannot create it
 			return null;
 		}

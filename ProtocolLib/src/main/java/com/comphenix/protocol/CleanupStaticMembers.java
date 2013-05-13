@@ -24,6 +24,8 @@ import java.util.List;
 
 import com.comphenix.protocol.async.AsyncListenerHandler;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
@@ -51,7 +53,10 @@ import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
  * @author Kristian
  */
 class CleanupStaticMembers {
-
+	// Reports
+	public final static ReportType REPORT_CANNOT_RESET_FIELD = new ReportType("Unable to reset field %s: %s");
+	public final static ReportType REPORT_CANNOT_UNLOAD_CLASS = new ReportType("Unable to unload class %s.");
+	
 	private ClassLoader loader;
 	private ErrorReporter reporter;
 
@@ -116,7 +121,9 @@ class CleanupStaticMembers {
 					setFinalStatic(field, null);
 				} catch (IllegalAccessException e) {
 					// Just inform the player
-					reporter.reportWarning(this, "Unable to reset field " + field.getName() + ": " + e.getMessage(), e);
+					reporter.reportWarning(this, 
+							Report.newBuilder(REPORT_CANNOT_RESET_FIELD).error(e).messageParam(field.getName(), e.getMessage())
+					);
 				}
 			}
 		}
@@ -151,7 +158,7 @@ class CleanupStaticMembers {
 				output.add(loader.loadClass(name));
 			} catch (ClassNotFoundException e) {
 				// Warn the user
-				reporter.reportWarning(this, "Unable to unload class " + name, e);
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_UNLOAD_CLASS).error(e).messageParam(name));
 			}
 		}
 		

@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
@@ -42,7 +45,31 @@ import com.google.common.primitives.Primitives;
  * @author Kristian
  */
 public class BukkitUnwrapper implements Unwrapper {
+	public static final ReportType REPORT_ILLEGAL_ARGUMENT = new ReportType("Illegal argument.");
+	public static final ReportType REPORT_SECURITY_LIMITATION = new ReportType("Security limitation.");
+	public static final ReportType REPORT_CANNOT_FIND_UNWRAP_METHOD = new ReportType("Cannot find method.");
+	
+	public static final ReportType REPORT_CANNOT_READ_FIELD_HANDLE = new ReportType("Cannot read field 'handle'.");
+	
 	private static Map<Class<?>, Unwrapper> unwrapperCache = new ConcurrentHashMap<Class<?>, Unwrapper>();
+	
+	// The current error reporter
+	private final ErrorReporter reporter;
+	
+	/**
+	 * Construct a new Bukkit unwrapper with ProtocolLib's default error reporter.
+	 */
+	public BukkitUnwrapper() {
+		this(ProtocolLibrary.getErrorReporter());
+	}
+	
+	/**
+	 * Construct a new Bukkit unwrapper with the given error reporter.
+	 * @param reporter - the error reporter to use.
+	 */
+	public BukkitUnwrapper(ErrorReporter reporter) {
+		 this.reporter = reporter;
+	}
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -111,8 +138,9 @@ public class BukkitUnwrapper implements Unwrapper {
 						return find.invoke(wrappedObject);
 						
 					} catch (IllegalArgumentException e) {
-						ProtocolLibrary.getErrorReporter().reportDetailed(
-								this, "Illegal argument.", e, wrappedObject, find);
+						reporter.reportDetailed(this, 
+								Report.newBuilder(REPORT_ILLEGAL_ARGUMENT).error(e).callerParam(wrappedObject, find)
+						);
 					} catch (IllegalAccessException e) {
 						// Should not occur either
 						return null;
@@ -129,7 +157,9 @@ public class BukkitUnwrapper implements Unwrapper {
 			return methodUnwrapper;
 			
 		} catch (SecurityException e) {
-			ProtocolLibrary.getErrorReporter().reportDetailed(this, "Security limitation.", e, type.getName());
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_SECURITY_LIMITATION).error(e).callerParam(type)
+			);
 		} catch (NoSuchMethodException e) {
 			// Try getting the field unwrapper too
 			Unwrapper fieldUnwrapper = getFieldUnwrapper(type);
@@ -137,7 +167,8 @@ public class BukkitUnwrapper implements Unwrapper {
 			if (fieldUnwrapper != null)
 				return fieldUnwrapper;
 			else
-				ProtocolLibrary.getErrorReporter().reportDetailed(this, "Cannot find method.", e, type.getName());
+				reporter.reportDetailed(this, 
+						Report.newBuilder(REPORT_CANNOT_FIND_UNWRAP_METHOD).error(e).callerParam(type));
 		}
 		
 		// Default method
@@ -160,8 +191,9 @@ public class BukkitUnwrapper implements Unwrapper {
 					try {
 						return FieldUtils.readField(find, wrappedObject, true);
 					} catch (IllegalAccessException e) {
-						ProtocolLibrary.getErrorReporter().reportDetailed(
-								this, "Cannot read field 'handle'.", e, wrappedObject, find.getName());
+						reporter.reportDetailed(this, 
+								Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e).callerParam(wrappedObject, find)
+						);
 						return null;
 					}
 				}
@@ -172,9 +204,9 @@ public class BukkitUnwrapper implements Unwrapper {
 			
 		} else {
 			// Inform about this too
-			ProtocolLibrary.getErrorReporter().reportDetailed(
-					this, "Could not find field 'handle'.", 
-					new Exception("Unable to find 'handle'"), type.getName());
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(find)
+			);
 			return null;
 		}
 	}

@@ -27,6 +27,8 @@ import net.sf.cglib.proxy.Factory;
 import org.bukkit.Server;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -40,6 +42,19 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * @author Kristian
  */
 class InjectedServerConnection {
+	// A number of things can go wrong ...
+	public static final ReportType REPORT_CANNOT_FIND_MINECRAFT_SERVER = new ReportType("Cannot extract minecraft server from Bukkit.");
+	public static final ReportType REPORT_CANNOT_INJECT_SERVER_CONNECTION = new ReportType("Cannot inject into server connection. Bad things will happen.");
+	
+	public static final ReportType REPORT_CANNOT_FIND_LISTENER_THREAD = new ReportType("Cannot find listener thread in MinecraftServer.");
+	public static final ReportType REPORT_CANNOT_READ_LISTENER_THREAD = new ReportType("Unable to read the listener thread.");
+	
+	public static final ReportType REPORT_CANNOT_FIND_SERVER_CONNECTION = new ReportType("Unable to retrieve server connection");
+	public static final ReportType REPORT_UNEXPECTED_THREAD_COUNT = new ReportType("Unexpected number of threads in %s: %s");
+	public static final ReportType REPORT_CANNOT_FIND_NET_HANDLER_THREAD = new ReportType("Unable to retrieve net handler thread.");
+	public static final ReportType REPORT_INSUFFICENT_THREAD_COUNT = new ReportType("Unable to inject %s lists in %s.");
+	
+	public static final ReportType REPORT_CANNOT_COPY_OLD_TO_NEW = new ReportType("Cannot copy old %s to new.");
 	
 	private static Field listenerThreadField;
 	private static Field minecraftServerField;
@@ -74,7 +89,6 @@ class InjectedServerConnection {
 	}
 
 	public void injectList() {
-
 		// Only execute this method once
 		if (!hasAttempted)
 			hasAttempted = true;
@@ -88,7 +102,7 @@ class InjectedServerConnection {
 		try {
 			minecraftServer = FieldUtils.readField(minecraftServerField, server, true);
 		} catch (IllegalAccessException e1) {
-			reporter.reportWarning(this, "Cannot extract minecraft server from Bukkit.");
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_FIND_MINECRAFT_SERVER));
 			return;
 		}
 		
@@ -107,7 +121,7 @@ class InjectedServerConnection {
 			
 		} catch (Exception e) {
 			// Oh damn - inform the player
-			reporter.reportDetailed(this, "Cannot inject into server connection. Bad things will happen.", e);
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_INJECT_SERVER_CONNECTION).error(e));
 		}
 	}
 	
@@ -117,7 +131,9 @@ class InjectedServerConnection {
 				listenerThreadField = FuzzyReflection.fromObject(minecraftServer).
 										getFieldByType("networkListenThread", MinecraftReflection.getNetworkListenThreadClass());
 		} catch (RuntimeException e) {
-			reporter.reportDetailed(this, "Cannot find listener thread in MinecraftServer.", e, minecraftServer);
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_FIND_LISTENER_THREAD).callerParam(minecraftServer).error(e)
+			);
 			return;
 		}
 
@@ -127,7 +143,7 @@ class InjectedServerConnection {
 		try {
 			listenerThread = listenerThreadField.get(minecraftServer);
 		} catch (Exception e) {
-			reporter.reportWarning(this, "Unable to read the listener thread.", e);
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_READ_LISTENER_THREAD).error(e));
 			return;
 		}
 		
@@ -140,14 +156,15 @@ class InjectedServerConnection {
 	}
 	
 	private void injectServerConnection() {
-		
 		Object serverConnection = null;
 		
 		// Careful - we might fail
 		try {
 			serverConnection = serverConnectionMethod.invoke(minecraftServer);
-		} catch (Exception ex) {
-			reporter.reportDetailed(this, "Unable to retrieve server connection", ex, minecraftServer);
+		} catch (Exception e) {
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_FIND_SERVER_CONNECTION).callerParam(minecraftServer).error(e)
+			);
 			return;
 		}
 		
@@ -160,7 +177,9 @@ class InjectedServerConnection {
 		
 			// Verify the field count
 			if (matches.size() != 1) 
-				reporter.reportWarning(this, "Unexpected number of threads in " + serverConnection.getClass().getName());
+				reporter.reportWarning(this, 
+						Report.newBuilder(REPORT_UNEXPECTED_THREAD_COUNT).messageParam(serverConnection.getClass(), matches.size())
+				);
 			else
 				dedicatedThreadField = matches.get(0);
 		}
@@ -175,7 +194,7 @@ class InjectedServerConnection {
 				injectEveryListField(dedicatedThread, 1);
 			}
 		} catch (IllegalAccessException e) {
-			reporter.reportWarning(this, "Unable to retrieve net handler thread.", e);
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_FIND_NET_HANDLER_THREAD).error(e));
 		}
 		
 		injectIntoList(serverConnection, listField);
@@ -201,7 +220,7 @@ class InjectedServerConnection {
 		
 		// Warn about unexpected errors
 		if (lists.size() < minimum) {
-			reporter.reportWarning(this, "Unable to inject " + minimum + " lists in " + container.getClass().getName());
+			reporter.reportWarning(this, Report.newBuilder(REPORT_INSUFFICENT_THREAD_COUNT).messageParam(minimum, container.getClass()));
 		}
 	}
 	
@@ -241,8 +260,9 @@ class InjectedServerConnection {
 					try {
 						writer.copyTo(inserting, replacement, inserting.getClass());
 					} catch (Throwable e) {
-						reporter.reportDetailed(InjectedServerConnection.this, "Cannot copy old " + inserting + 
-								 				" to new.", e, inserting, replacement);
+						reporter.reportDetailed(InjectedServerConnection.this, 
+								Report.newBuilder(REPORT_CANNOT_COPY_OLD_TO_NEW).messageParam(inserting).callerParam(inserting, replacement).error(e)
+						);
 					}
 				}
 			}

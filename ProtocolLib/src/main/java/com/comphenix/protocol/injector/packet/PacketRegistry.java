@@ -25,10 +25,17 @@ import java.util.Set;
 
 import net.sf.cglib.proxy.Factory;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.TroveWrapper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 
@@ -39,6 +46,13 @@ import com.google.common.collect.ImmutableSet;
  */
 @SuppressWarnings("rawtypes")
 public class PacketRegistry {
+	public static final ReportType REPORT_CANNOT_CORRECT_TROVE_MAP = new ReportType("Unable to correct no entry value.");
+	
+	public static final ReportType REPORT_INSUFFICIENT_SERVER_PACKETS = new ReportType("Too few server packets detected: %s");
+	public static final ReportType REPORT_INSUFFICIENT_CLIENT_PACKETS = new ReportType("Too few client packets detected: %s");
+	
+	private static final int MIN_SERVER_PACKETS = 5;
+	private static final int MIN_CLIENT_PACKETS = 5;
 
 	// Fuzzy reflection
 	private static FuzzyReflection packetRegistry;
@@ -67,6 +81,14 @@ public class PacketRegistry {
 			try {
 				Field packetsField = getPacketRegistry().getFieldByType("packetsField", Map.class);
 				packetToID = (Map<Class, Integer>) FieldUtils.readStaticField(packetsField, true);
+			} catch (IllegalArgumentException e) {
+				// Spigot 1.2.5 MCPC workaround
+				try {
+					packetToID = getSpigotWrapper();
+				} catch (Exception e2) {
+					// Very bad indeed
+					throw new IllegalArgumentException(e.getMessage() + "; Spigot workaround failed.", e2);
+				}
 				
 			} catch (IllegalAccessException e) {
 				throw new RuntimeException("Unable to retrieve the packetClassToIdMap", e);
@@ -74,6 +96,41 @@ public class PacketRegistry {
 		}
 		
 		return packetToID;
+	}
+	
+	private static Map<Class, Integer> getSpigotWrapper() throws IllegalAccessException {
+		// If it talks like a duck, etc.
+		// Perhaps it would be nice to have a proper duck typing library as well
+		FuzzyClassContract mapLike = FuzzyClassContract.newBuilder().
+				method(FuzzyMethodContract.newBuilder().
+						nameExact("size").returnTypeExact(int.class)).
+				method(FuzzyMethodContract.newBuilder().
+						nameExact("put").parameterCount(2)).
+				method(FuzzyMethodContract.newBuilder().
+						nameExact("get").parameterCount(1)).
+				build();
+		
+		Field packetsField = getPacketRegistry().getField(
+				FuzzyFieldContract.newBuilder().typeMatches(mapLike).build());
+		Object troveMap = FieldUtils.readStaticField(packetsField, true);
+		
+		// Check for stupid no_entry_values
+		try {
+			Field field = FieldUtils.getField(troveMap.getClass(), "no_entry_value", true);
+			Integer value = (Integer) FieldUtils.readField(field, troveMap, true);
+			
+			if (value >= 0 && value < 256) {
+				// Someone forgot to set the no entry value. Let's help them.
+				FieldUtils.writeField(field, troveMap, -1);
+			}
+		} catch (IllegalArgumentException e) {
+			// Whatever			
+			ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class, 
+					Report.newBuilder(REPORT_CANNOT_CORRECT_TROVE_MAP).error(e));
+		}
+		
+		// We'll assume this a Trove map
+		return TroveWrapper.getDecoratedMap(troveMap);
 	}
 	
 	/**
@@ -109,6 +166,10 @@ public class PacketRegistry {
 	 */
 	public static Set<Integer> getServerPackets() throws FieldAccessException {
 		initializeSets();
+		
+		// Sanity check. This is impossible!
+		if (serverPackets != null && serverPackets.size() < MIN_SERVER_PACKETS) 
+			throw new FieldAccessException("Server packet list is empty. Seems to be unsupported");
 		return serverPackets;
 	}
 	
@@ -119,6 +180,10 @@ public class PacketRegistry {
 	 */
 	public static Set<Integer> getClientPackets() throws FieldAccessException {
 		initializeSets();
+		
+		// As above
+		if (clientPackets != null && clientPackets.size() < MIN_CLIENT_PACKETS) 
+			throw new FieldAccessException("Client packet list is empty. Seems to be unsupported");
 		return clientPackets;
 	}
 	
@@ -139,6 +204,16 @@ public class PacketRegistry {
 					// NEVER allow callers to modify the underlying sets
 					serverPackets = ImmutableSet.copyOf(serverPacketsRef);
 					clientPackets = ImmutableSet.copyOf(clientPacketsRef);
+					
+					// Check sizes
+					if (serverPackets.size() < MIN_SERVER_PACKETS)
+						ProtocolLibrary.getErrorReporter().reportWarning(
+							PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_SERVER_PACKETS).messageParam(serverPackets.size())
+						);
+					if (clientPackets.size() < MIN_CLIENT_PACKETS)
+						ProtocolLibrary.getErrorReporter().reportWarning(
+								PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_CLIENT_PACKETS).messageParam(clientPackets.size())
+							);
 					
 				} else {
 					throw new FieldAccessException("Cannot retrieve packet client/server sets.");

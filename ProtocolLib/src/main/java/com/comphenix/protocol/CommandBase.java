@@ -23,6 +23,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 
 /**
  * Base class for all our commands.
@@ -30,7 +32,9 @@ import com.comphenix.protocol.error.ErrorReporter;
  * @author Kristian
  */
 abstract class CommandBase implements CommandExecutor {
-
+	public static final ReportType REPORT_COMMAND_ERROR = new ReportType("Cannot execute command %s.");
+	public static final ReportType REPORT_UNEXPECTED_COMMAND = new ReportType("Incorrect command assigned to %s.");
+	
 	public static final String PERMISSION_ADMIN = "protocol.admin";
 	
 	private String permission;
@@ -55,6 +59,7 @@ abstract class CommandBase implements CommandExecutor {
 		try {
 			// Make sure we're dealing with the correct command
 			if (!command.getName().equalsIgnoreCase(name)) {
+				reporter.reportWarning(this, Report.newBuilder(REPORT_UNEXPECTED_COMMAND).messageParam(this));
 				return false;
 			}
 			if (permission != null && !sender.hasPermission(permission)) {
@@ -66,11 +71,14 @@ abstract class CommandBase implements CommandExecutor {
 			if (args != null && args.length >= minimumArgumentCount) {
 				return handleCommand(sender, args);
 			} else {
+				sender.sendMessage(ChatColor.RED + "Insufficient commands. You need at least " + minimumArgumentCount);
 				return false;
 			}
 			
 		} catch (Exception e) {
-			reporter.reportDetailed(this, "Cannot execute command " + name, e, sender, label, args);
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_COMMAND_ERROR).error(e).messageParam(name).callerParam(sender, label, args)
+			);
 			return true;
 		}
 	}

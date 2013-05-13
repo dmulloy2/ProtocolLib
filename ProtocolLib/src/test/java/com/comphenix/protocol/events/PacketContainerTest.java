@@ -22,7 +22,7 @@ import java.lang.reflect.Array;
 import java.util.List;
 
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_4_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_5_R2.inventory.CraftItemFactory;
 
 import org.bukkit.Material;
 import org.bukkit.WorldType;

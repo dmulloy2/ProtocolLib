@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.base.Objects;
 import com.google.common.primitives.Primitives;
@@ -92,7 +94,8 @@ import net.sf.cglib.asm.*;
  * @author Kristian
  */
 public final class StructureCompiler {
-
+	public static final ReportType REPORT_TOO_MANY_GENERATED_CLASSES = new ReportType("Generated too many classes (count: %s)");
+	
 	// Used to store generated classes of different types
 	@SuppressWarnings("rawtypes")
 	static class StructureKey {
@@ -210,7 +213,8 @@ public final class StructureCompiler {
 		} catch (OutOfMemoryError e) {
 			// Print the number of generated classes by the current instances
 			ProtocolLibrary.getErrorReporter().reportWarning(
-					this, "May have generated too many classes (count: " + compiledCache.size() + ")");
+				this, Report.newBuilder(REPORT_TOO_MANY_GENERATED_CLASSES).messageParam(compiledCache.size())
+			);
 			throw e;
 		} catch (IllegalArgumentException e) {
 			throw new IllegalStateException("Used invalid parameters in instance creation", e);

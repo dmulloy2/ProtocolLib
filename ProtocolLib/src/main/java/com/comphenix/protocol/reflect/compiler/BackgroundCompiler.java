@@ -29,9 +29,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nullable;
-
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.StructureCompiler.StructureKey;
 import com.google.common.collect.Lists;
@@ -46,7 +46,9 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * @author Kristian
  */
 public class BackgroundCompiler {
-
+	public static final ReportType REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER = new ReportType("Cannot compile structure. Disabing compiler.");
+	public static final ReportType REPORT_CANNOT_SCHEDULE_COMPILATION = new ReportType("Unable to schedule compilation task.");
+	
 	/**
 	 * The default format for the name of new worker threads.
 	 */
@@ -118,11 +120,13 @@ public class BackgroundCompiler {
 	}
 
 	// Avoid "Constructor call must be the first statement".
-	private void initializeCompiler(ClassLoader loader, @Nullable ErrorReporter reporter, ExecutorService executor) {
+	private void initializeCompiler(ClassLoader loader, ErrorReporter reporter, ExecutorService executor) {
 		if (loader == null)
 			throw new IllegalArgumentException("loader cannot be NULL");
 		if (executor == null)
 			throw new IllegalArgumentException("executor cannot be NULL");
+		if (reporter == null)
+			throw new IllegalArgumentException("reporter cannot be NULL.");
 		
 		this.compiler = new StructureCompiler(loader);
 		this.reporter = reporter;
@@ -198,6 +202,11 @@ public class BackgroundCompiler {
 						
 						synchronized (listenerLock) {
 							list = listeners.get(key);
+							
+							// Prevent ConcurrentModificationExceptions
+							if (list != null) {
+								list = Lists.newArrayList(list);
+							}
 						}
 						
 						// Only execute the listeners if there is a list
@@ -217,13 +226,9 @@ public class BackgroundCompiler {
 						setEnabled(false);
 						
 						// Inform about this error as best as we can
-						if (reporter != null) {
-							reporter.reportDetailed(BackgroundCompiler.this, 
-									"Cannot compile structure. Disabing compiler.", e, uncompiled);
-						} else {
-							System.err.println("Exception occured in structure compiler: ");
-							e.printStackTrace();
-						}
+						reporter.reportDetailed(BackgroundCompiler.this,
+								Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(e)
+						);
 					}
 					
 					// We'll also return the new structure modifier
@@ -253,7 +258,7 @@ public class BackgroundCompiler {
 				// Occures when the underlying queue is overflowing. Since the compilation  
 				// is only an optmization and not really essential we'll just log this failure 
 				// and move on.
-				reporter.reportWarning(this, "Unable to schedule compilation task.", e);
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SCHEDULE_COMPILATION).error(e));
 			}
 		}
 	}

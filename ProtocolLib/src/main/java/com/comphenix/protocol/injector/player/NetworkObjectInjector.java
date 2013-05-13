@@ -40,6 +40,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
  * Injection method that overrides the NetworkHandler itself, and its queue-method.
@@ -53,6 +54,12 @@ public class NetworkObjectInjector extends PlayerInjector {
 	// Used to construct proxy objects
 	private ClassLoader classLoader;
 
+	// After commit 336a4e00668fd2518c41242755ed6b3bdc3b0e6c (Update CraftBukkit to Minecraft 1.4.4.), 
+	// CraftBukkit stopped redirecting map chunk and map chunk bulk packets to a separate queue.
+	// Thus, NetworkFieldInjector can safely handle every packet (though not perfectly - some packets
+	// will be slightly processed).
+	private MinecraftVersion safeVersion = new MinecraftVersion("1.4.4");
+	
 	// Shared callback filter - avoid creating a new class every time
 	private volatile static CallbackFilter callbackFilter;
 	
@@ -117,14 +124,19 @@ public class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public UnsupportedListener checkListener(PacketListener listener) {
-		int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
-		
-		// Unfortunately, we don't support chunk packets
-		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), unsupported)) {
-			return new UnsupportedListener("The NETWORK_OBJECT_INJECTOR hook doesn't support map chunk listeners.", unsupported);
-		} else {
+	public UnsupportedListener checkListener(MinecraftVersion version, PacketListener listener) {
+		if (version != null && version.compareTo(safeVersion) > 0) {
 			return null;
+			
+		} else {
+			int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
+			
+			// Unfortunately, we don't support chunk packets
+			if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), unsupported)) {
+				return new UnsupportedListener("The NETWORK_OBJECT_INJECTOR hook doesn't support map chunk listeners.", unsupported);
+			} else {
+				return null;
+			}
 		}
 	}
 	

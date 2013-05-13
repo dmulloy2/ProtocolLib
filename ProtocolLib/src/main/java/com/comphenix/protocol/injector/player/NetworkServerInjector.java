@@ -20,12 +20,16 @@ package com.comphenix.protocol.injector.player;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+
 import net.sf.cglib.proxy.*;
 
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -38,6 +42,7 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
  * Represents a player hook into the NetServerHandler class. 
@@ -45,8 +50,13 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * @author Kristian
  */
 class NetworkServerInjector extends PlayerInjector {
-
+	// Disconnected field
+	public static final ReportType REPORT_ASSUMING_DISCONNECT_FIELD = new ReportType("Unable to find 'disconnected' field. Assuming %s.");
+	public static final ReportType REPORT_DISCONNECT_FIELD_MISSING = new ReportType("Cannot find disconnected field. Is ProtocolLib up to date?");
+	public static final ReportType REPORT_DISCONNECT_FIELD_FAILURE = new ReportType("Unable to update disconnected field. Player quit event may be sent twice.");
+	
 	private volatile static CallbackFilter callbackFilter;
+	private volatile static boolean foundSendPacket;
 	
 	private volatile static Field disconnectField;
 	private InjectedServerConnection serverInjection;
@@ -168,10 +178,12 @@ class NetworkServerInjector extends PlayerInjector {
 			callbackFilter = new CallbackFilter() {
 				@Override
 				public int accept(Method method) {
-					if (method.equals(sendPacket))
+					if (isCallableEqual(sendPacket, method)) {
+						foundSendPacket = true;
 						return 0;
-					else
+					} else {
 						return 1;
+					}
 				}
 			};
 		}
@@ -204,15 +216,31 @@ class NetworkServerInjector extends PlayerInjector {
 		
 		// Inject it now
 		if (proxyObject != null) {
-			// This will be done by InjectedServerConnection instead
-			//copyTo(serverHandler, proxyObject);
-			
+			// Did we override a sendPacket method?
+			if (!foundSendPacket) {
+				throw new IllegalArgumentException("Unable to find a sendPacket method in " + serverClass);
+			}
+
 			serverInjection.replaceServerHandler(serverHandler, proxyObject);
 			serverHandlerRef.setValue(proxyObject);
 			return true;
 		} else {
 			return false;
 		}
+	}
+	
+	/**
+	 * Determine if the two methods are equal in terms of call semantics.
+	 * <p>
+	 * Two methods are equal if they have the same name, parameter types and return type.
+	 * @param first - first method.
+	 * @param second - second method.
+	 * @return TRUE if they are, FALSE otherwise.
+	 */
+	private boolean isCallableEqual(Method first, Method second) {
+		return first.getName().equals(second.getName()) &&
+			   first.getReturnType().equals(second.getReturnType()) &&
+			   Arrays.equals(first.getParameterTypes(), second.getParameterTypes());
 	}
 	
 	private Object getProxyServerHandler() {
@@ -228,7 +256,7 @@ class NetworkServerInjector extends PlayerInjector {
 	}
 	
 	private Class<?> getFirstMinecraftSuperClass(Class<?> clazz) {
-		if (clazz.getName().startsWith(MinecraftReflection.getMinecraftPackage()))
+		if (MinecraftReflection.isMinecraftClass(clazz))
 			return clazz;
 		else if (clazz.equals(Object.class))
 			return clazz;
@@ -288,7 +316,7 @@ class NetworkServerInjector extends PlayerInjector {
 			// Assume it's the first ...
 			if (disconnectField == null) {
 				disconnectField = FuzzyReflection.fromObject(handler).getFieldByType("disconnected", boolean.class);
-				reporter.reportWarning(this, "Unable to find 'disconnected' field. Assuming " + disconnectField);
+				reporter.reportWarning(this, Report.newBuilder(REPORT_ASSUMING_DISCONNECT_FIELD).messageParam(disconnectField));
 				
 				// Try again
 				if (disconnectField != null) {
@@ -298,15 +326,15 @@ class NetworkServerInjector extends PlayerInjector {
 			}
 			
 			// This is really bad
-			reporter.reportDetailed(this, "Cannot find disconnected field. Is ProtocolLib up to date?", e);
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_DISCONNECT_FIELD_MISSING).error(e));
 				
 		} catch (IllegalAccessException e) {
-			reporter.reportWarning(this, "Unable to update disconnected field. Player quit event may be sent twice.");
+			reporter.reportWarning(this, Report.newBuilder(REPORT_DISCONNECT_FIELD_FAILURE).error(e));
 		}
 	}
 	
 	@Override
-	public UnsupportedListener checkListener(PacketListener listener) {
+	public UnsupportedListener checkListener(MinecraftVersion version, PacketListener listener) {
 		// We support everything
 		return null;
 	}

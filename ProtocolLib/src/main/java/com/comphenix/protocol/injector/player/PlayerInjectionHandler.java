@@ -126,11 +126,18 @@ public interface PlayerInjectionHandler {
 	 * @throws IllegalAccessException If the reflection machinery failed.
 	 * @throws InvocationTargetException If the underlying method caused an error.
 	 */
-	public abstract void processPacket(Player player, Object mcPacket)
+	public abstract void recieveClientPacket(Player player, Object mcPacket)
 			throws IllegalAccessException, InvocationTargetException;
 
 	/**
+	 * Ensure that packet readers are informed of this player reference.
+	 * @param player - the player to update.
+	 */
+	public abstract void updatePlayer(Player player);
+	
+	/**
 	 * Determine if the given listeners are valid.
+	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @param listeners - listeners to check.
 	 */
 	public abstract void checkListener(Set<PacketListener> listeners);
@@ -139,6 +146,7 @@ public interface PlayerInjectionHandler {
 	 * Determine if a listener is valid or not.
 	 * <p>
 	 * If not, a warning will be printed to the console. 
+	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @param listener - listener to check.
 	 */
 	public abstract void checkListener(PacketListener listener);

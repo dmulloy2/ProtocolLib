@@ -4,8 +4,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import net.minecraft.server.v1_5_R2.StatisticList;
+
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_4_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_5_R2.inventory.CraftItemFactory;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -34,6 +36,12 @@ public class BukkitInitialization {
 						
 			initializePackage();
 			
+			try {
+				StatisticList.b();
+			} catch (Exception e) {
+				// Swallow
+			}
+			
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
 			ItemFactory mockedFactory = mock(CraftItemFactory.class);
@@ -55,6 +63,6 @@ public class BukkitInitialization {
 	 */
 	public static void initializePackage() {
 		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_4_R1", "org.bukkit.craftbukkit.v1_4_R1");
+		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_5_R2", "org.bukkit.craftbukkit.v1_5_R2");
 	}
 }

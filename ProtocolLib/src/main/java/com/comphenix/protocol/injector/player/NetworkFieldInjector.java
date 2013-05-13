@@ -39,6 +39,7 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Sets;
 
 /**
@@ -55,6 +56,12 @@ class NetworkFieldInjector extends PlayerInjector {
 	public interface FakePacket {
 		// Nothing
 	}
+	
+	// After commit 336a4e00668fd2518c41242755ed6b3bdc3b0e6c (Update CraftBukkit to Minecraft 1.4.4.), 
+	// CraftBukkit stopped redirecting map chunk and map chunk bulk packets to a separate queue.
+	// Thus, NetworkFieldInjector can safely handle every packet (though not perfectly - some packets
+	// will be slightly processed).
+	private MinecraftVersion safeVersion = new MinecraftVersion("1.4.4");
 	
 	// Packets to ignore
 	private Set<Object> ignoredPackets = Sets.newSetFromMap(new ConcurrentHashMap<Object, Boolean>());
@@ -99,7 +106,6 @@ class NetworkFieldInjector extends PlayerInjector {
 
 	@Override
 	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
-		
 		if (networkManager != null) {
 			try {
 				if (!filtered) {
@@ -122,14 +128,19 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public UnsupportedListener checkListener(PacketListener listener) {
-		int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
-		
-		// Unfortunately, we don't support chunk packets
-		if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), unsupported)) {
-			return new UnsupportedListener("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.", unsupported);
-		} else {
+	public UnsupportedListener checkListener(MinecraftVersion version, PacketListener listener) {
+		if (version != null && version.compareTo(safeVersion) > 0) {
 			return null;
+			
+		} else {
+			int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
+			
+			// Unfortunately, we don't support chunk packets
+			if (ListeningWhitelist.containsAny(listener.getSendingWhitelist(), unsupported)) {
+				return new UnsupportedListener("The NETWORK_FIELD_INJECTOR hook doesn't support map chunk listeners.", unsupported);
+			} else {
+				return null;
+			}
 		}
 	}
 	

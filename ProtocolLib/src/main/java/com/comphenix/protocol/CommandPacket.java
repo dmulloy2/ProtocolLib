@@ -36,6 +36,8 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.concurrency.AbstractIntervalTree;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
@@ -57,6 +59,7 @@ import com.google.common.collect.Sets;
  * @author Kristian
  */
 class CommandPacket extends CommandBase {
+	public static final ReportType REPORT_CANNOT_SEND_MESSAGE = new ReportType("Cannot send chat message.");
 	
 	private interface DetailedPacketListener extends PacketListener {
 		/**
@@ -93,11 +96,15 @@ class CommandPacket extends CommandBase {
 	private AbstractIntervalTree<Integer, DetailedPacketListener> clientListeners = createTree(ConnectionSide.CLIENT_SIDE);
 	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
 	
-	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, ProtocolManager manager) {
+	// Filter packet events
+	private CommandFilter filter;
+	
+	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, CommandFilter filter, ProtocolManager manager) {
 		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
 		this.logger = logger;
 		this.manager = manager;
+		this.filter = filter;
 		this.chatter = new ChatExtensions(manager);
 	}
 	
@@ -162,7 +169,9 @@ class CommandPacket extends CommandBase {
 		try {
 			chatter.sendMessageSilently(receiver, message);
 		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, "Cannot send chat message.", e, receiver, message);
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_SEND_MESSAGE).error(e).callerParam(receiver, message)
+			);
 		}
 	}
 	
@@ -175,7 +184,9 @@ class CommandPacket extends CommandBase {
 		try {
 			chatter.broadcastMessageSilently(message, permission);
 		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, "Cannot send chat message.", e, message, permission);
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_SEND_MESSAGE).error(e).callerParam(message, permission)
+			);
 		}
 	}
 	
@@ -336,6 +347,7 @@ class CommandPacket extends CommandBase {
 			supported.addAll(Packets.Client.getSupported());
 		else if (side.isForServer())
 			supported.addAll(Packets.Server.getSupported());
+		
 		return supported;
 	}
 	
@@ -362,7 +374,6 @@ class CommandPacket extends CommandBase {
 	}
 		
 	public DetailedPacketListener createPacketListener(final ConnectionSide side, int idStart, int idStop, final boolean detailed) {
-		
 		Set<Integer> range = Ranges.closed(idStart, idStop).asSet(DiscreteDomains.integers());
 		Set<Integer> packets;
 		
@@ -386,14 +397,14 @@ class CommandPacket extends CommandBase {
 		return new DetailedPacketListener() {
 			@Override
 			public void onPacketSending(PacketEvent event) {
-				if (side.isForServer()) {
+				if (side.isForServer() && filter.filterEvent(event)) {
 					printInformation(event);
 				}
 			}
 			
 			@Override
 			public void onPacketReceiving(PacketEvent event) {
-				if (side.isForClient()) {
+				if (side.isForClient() && filter.filterEvent(event)) {
 					printInformation(event);
 				}
 			}

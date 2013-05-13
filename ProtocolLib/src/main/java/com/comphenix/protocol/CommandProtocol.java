@@ -24,6 +24,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.metrics.Updater.UpdateType;
@@ -39,6 +41,10 @@ class CommandProtocol extends CommandBase {
 	 * Name of this command.
 	 */
 	public static final String NAME = "protocol";
+	
+	public static final ReportType REPORT_HTTP_ERROR = new ReportType("Http error: %s");
+	public static final ReportType REPORT_CANNOT_CHECK_FOR_UPDATES = new ReportType("Cannot check updates for ProtocolLib.");
+	public static final ReportType REPORT_CANNOT_UPDATE_PLUGIN = new ReportType("Cannot update ProtocolLib.");
 	
 	private Plugin plugin;
 	private Updater updater;
@@ -77,9 +83,11 @@ class CommandProtocol extends CommandBase {
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
 					if (isHttpError(e)) {
-						getReporter().reportWarning(this, "Http error: " + e.getCause().getMessage());
+						getReporter().reportWarning(this, 
+								Report.newBuilder(REPORT_HTTP_ERROR).messageParam(e.getCause().getMessage())
+						);
 					} else {
-						getReporter().reportDetailed(this, "Cannot check updates for ProtocolLib.", e, sender);
+						getReporter().reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CHECK_FOR_UPDATES).error(e).callerParam(sender));
 					}
 				}
 			}
@@ -98,9 +106,11 @@ class CommandProtocol extends CommandBase {
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
 					if (isHttpError(e)) {
-						getReporter().reportWarning(this, "Http error: " + e.getCause().getMessage());
+						getReporter().reportWarning(this, 
+								Report.newBuilder(REPORT_HTTP_ERROR).messageParam(e.getCause().getMessage())
+						);
 					} else {
-						getReporter().reportDetailed(this, "Cannot update ProtocolLib.", e, sender);
+						getReporter().reportDetailed(this,Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e).callerParam(sender));
 					}
 				}
 			}

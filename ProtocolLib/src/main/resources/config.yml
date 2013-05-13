@@ -6,8 +6,6 @@ global:
     
     # Number of seconds to wait until a new update is downloaded
     delay: 43200 # 12 hours
-    # Last update time
-    last: 0
  
   metrics: true
   
@@ -19,3 +17,9 @@ global:
   
   # Override the starting injecting method
   injection method: 
+  
+  # Whether or not to enable the filter command
+  debug: false
+  
+  # The engine used by the filter command
+  script engine: JavaScript

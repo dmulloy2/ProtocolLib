@@ -44,6 +44,9 @@ public class PacketEvent extends EventObject implements Cancellable {
 	private AsyncMarker asyncMarker;
 	private boolean asynchronous;
 	
+	// Whether or not a packet event is read only
+	private boolean readOnly;
+	
 	/**
 	 * Use the static constructors to create instances of this event.
 	 * @param source - the event source.
@@ -114,6 +117,8 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @param packet - the packet that will be sent instead.
 	 */
 	public void setPacket(PacketContainer packet) {
+		if (readOnly)
+			throw new IllegalStateException("The packet event is read-only.");
 		this.packet = packet;
 	}
 
@@ -147,6 +152,8 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @param cancel - TRUE if it should be cancelled, FALSE otherwise.
 	 */
 	public void setCancelled(boolean cancel) {
+		if (readOnly)
+			throw new IllegalStateException("The packet event is read-only.");
 		this.cancel = cancel;
 	}
 
@@ -193,9 +200,34 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public void setAsyncMarker(AsyncMarker asyncMarker) {
 		if (isAsynchronous())
 			throw new IllegalStateException("The marker is immutable for asynchronous events");
+		if (readOnly)
+			throw new IllegalStateException("The packet event is read-only.");
 		this.asyncMarker = asyncMarker;
 	}
 
+	/**
+	 * Determine if the current packet event is read only.
+	 * <p>
+	 * This is used to ensure that a monitor listener doesn't accidentally alter the state of the event. However,
+	 * it is still possible to modify the packet itself, as it would require too many resources to verify its integrity.
+	 * <p>
+	 * Thus, the packet is considered immutable if the packet event is read only.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+	
+	/**
+	 * Set the read-only state of this packet event.
+	 * <p>
+	 * This will be reset for every packet listener.
+	 * @param readOnly - TRUE if it is read-only, FALSE otherwise.
+	 */
+	public void setReadOnly(boolean readOnly) {
+		this.readOnly = readOnly;
+	}
+	
 	/**
 	 * Determine if the packet event has been executed asynchronously or not.
 	 * @return TRUE if this packet event is asynchronous, FALSE otherwise.
@@ -203,7 +235,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public boolean isAsynchronous() {
 		return asynchronous;
 	}
-	
+
 	private void writeObject(ObjectOutputStream output) throws IOException {
 	    // Default serialization 
 		output.defaultWriteObject();

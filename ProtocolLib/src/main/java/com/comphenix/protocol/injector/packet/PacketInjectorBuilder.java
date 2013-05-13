@@ -8,6 +8,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.google.common.base.Preconditions;
 
 /**
@@ -100,9 +101,9 @@ public class PacketInjectorBuilder {
 	 * <p>
 	 * Note that any non-null builder parameters must be set.
 	 * @return The created injector.
-	 * @throws IllegalAccessException If anything goes wrong in terms of reflection.
+	 * @throws FieldAccessException If anything goes wrong in terms of reflection.
 	 */
-	public PacketInjector buildInjector() throws IllegalAccessException {
+	public PacketInjector buildInjector() throws FieldAccessException {
 		initializeDefaults();
 		return new ProxyPacketInjector(classLoader, invoker, playerInjection, reporter);
 	}

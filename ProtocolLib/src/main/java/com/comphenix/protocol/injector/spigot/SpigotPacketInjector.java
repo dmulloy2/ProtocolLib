@@ -22,7 +22,9 @@ import net.sf.cglib.proxy.NoOp;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -47,7 +49,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	private static volatile boolean classChecked;
 	
 	// Retrieve the entity player from a PlayerConnection
-	private static Field playerConnectionPlayer;
+	private static volatile Field playerConnectionPlayer;
 	
 	// Packets that are not to be processed by the filters
 	private Set<Object> ignoredPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
@@ -275,7 +277,8 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		if (dummyInjector == null) {
 			// Inject the network manager
 			try {
-				NetworkObjectInjector created = new NetworkObjectInjector(classLoader, reporter, null, invoker, null);
+				NetworkObjectInjector created = new NetworkObjectInjector(
+						classLoader, filterImpossibleWarnings(reporter), null, invoker, null);
 				
 				if (MinecraftReflection.isLoginHandler(connection)) {
 					created.initialize(connection);
@@ -303,6 +306,23 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		return dummyInjector;
 	}
 
+	/**
+	 * Return a delegated error reporter that ignores certain warnings that are irrelevant on Spigot.
+	 * @param reporter - error reporter to delegate.
+	 * @return The filtered error reporter.
+	 */
+	private ErrorReporter filterImpossibleWarnings(ErrorReporter reporter) {
+		return new DelegatedErrorReporter(reporter) {
+			@Override
+			protected Report filterReport(Object sender, Report report, boolean detailed) {
+				// This doesn't matter - ignore it
+				if (report.getType() == NetworkObjectInjector.REPORT_DETECTED_CUSTOM_SERVER_HANDLER)
+					return null;
+				return report;
+			}
+		};
+	}
+	
 	/**
 	 * Save a given player injector for later.
 	 * @param networkManager - the associated network manager.
@@ -400,7 +420,8 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 */
 	void injectPlayer(Player player) {
 		try {
-			NetworkObjectInjector dummy = new NetworkObjectInjector(classLoader, reporter, player, invoker, null);
+			NetworkObjectInjector dummy = new NetworkObjectInjector(
+					classLoader, filterImpossibleWarnings(reporter), player, invoker, null);
 			dummy.initializePlayer(player);
 			
 			// Save this player for the network manager

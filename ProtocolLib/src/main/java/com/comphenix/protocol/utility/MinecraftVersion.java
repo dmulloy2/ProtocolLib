@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol;
+package com.comphenix.protocol.utility;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,7 +31,7 @@ import com.google.common.collect.Ordering;
  * 
  * @author Kristian
  */
-class MinecraftVersion implements Comparable<MinecraftVersion> {
+public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	/**
 	 * Regular expression used to parse version strings.
 	 */

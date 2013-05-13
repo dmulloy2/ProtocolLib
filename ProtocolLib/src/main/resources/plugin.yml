@@ -1,9 +1,11 @@
 name: ProtocolLib
-version: 2.3.0
+version: 2.4.3
 description: Provides read/write access to the Minecraft protocol.
 author: Comphenix
 website: http://www.comphenix.net/ProtocolLib
+
 main: com.comphenix.protocol.ProtocolLibrary
+load: startup
 database: false
 
 commands:
@@ -15,6 +17,12 @@ commands:
   packet:
     description: Add or remove a simple packet listener.
     usage: /<command> add|remove|names client|server [ID start]-[ID stop] [detailed]
+    permission: protocol.admin
+    permission-message: You don't have <permission>
+  filter:
+    description: Add or remove programmable filters to the packet listeners.
+    usage: /<command> add|remove name [ID start]-[ID stop]
+    aliases: [packet_filter]
     permission: protocol.admin
     permission-message: You don't have <permission>
 

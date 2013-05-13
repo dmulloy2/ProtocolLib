@@ -23,6 +23,8 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
@@ -35,6 +37,9 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class NetLoginInjector {
+	public static final ReportType REPORT_CANNOT_HOOK_LOGIN_HANDLER = new ReportType("Unable to hook %s.");
+	public static final ReportType REPORT_CANNOT_CLEANUP_LOGIN_HANDLER = new ReportType("Cannot cleanup %s.");
+	
 	private ConcurrentMap<Object, PlayerInjector> injectedLogins = Maps.newConcurrentMap();
 
 	// Handles every hook
@@ -83,8 +88,12 @@ class NetLoginInjector {
 			
 		} catch (Throwable e) {
 			// Minecraft can't handle this, so we'll deal with it here
-			reporter.reportDetailed(this, "Unable to hook " + 
-						MinecraftReflection.getNetLoginHandlerName() + ".", e, inserting, injectionHandler);
+			reporter.reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_HOOK_LOGIN_HANDLER).
+						messageParam(MinecraftReflection.getNetLoginHandlerName()).
+						callerParam(inserting, injectionHandler).
+						error(e)
+			);
 			return inserting;
 		}
 	}
@@ -122,8 +131,12 @@ class NetLoginInjector {
 				
 			} catch (Throwable e) {
 				// Don't leak this to Minecraft
-				reporter.reportDetailed(this, "Cannot cleanup " + 
-						MinecraftReflection.getNetLoginHandlerName() + ".", e, removing);
+				reporter.reportDetailed(this, 
+						Report.newBuilder(REPORT_CANNOT_CLEANUP_LOGIN_HANDLER).
+							messageParam(MinecraftReflection.getNetLoginHandlerName()).
+							callerParam(removing).
+							error(e)
+				);
 			}
 		}
 	}

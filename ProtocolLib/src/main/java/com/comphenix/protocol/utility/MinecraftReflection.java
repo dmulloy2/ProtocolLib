@@ -81,6 +81,9 @@ public class MinecraftReflection {
 	private static Constructor<?> craftNMSConstructor;
 	private static Constructor<?> craftBukkitConstructor;
 	
+	// Matches classes
+	private static AbstractFuzzyMatcher<Class<?>> fuzzyMatcher;
+	
 	// New in 1.4.5
 	private static Method craftNMSMethod;
 	private static Method craftBukkitMethod;
@@ -88,7 +91,12 @@ public class MinecraftReflection {
 
 	// net.minecraft.server
 	private static Class<?> itemStackArrayClass;
-
+	
+	/**
+	 * Whether or not we're currently initializing the reflection handler.
+	 */
+	private static boolean initializing;
+	
 	private MinecraftReflection() {
 		// No need to make this constructable.
 	}
@@ -108,7 +116,9 @@ public class MinecraftReflection {
 	 * @return A matcher for Minecraft objects.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> getMinecraftObjectMatcher() {
-		return FuzzyMatchers.matchRegex(getMinecraftObjectRegex(), 50);
+		if (fuzzyMatcher == null)
+			fuzzyMatcher = FuzzyMatchers.matchRegex(getMinecraftObjectRegex(), 50);
+		return fuzzyMatcher;
 	}
 	
 	/**
@@ -119,6 +129,9 @@ public class MinecraftReflection {
 		// Speed things up
 		if (MINECRAFT_FULL_PACKAGE != null)
 			return MINECRAFT_FULL_PACKAGE;
+		if (initializing)
+			throw new IllegalStateException("Already initializing minecraft package!");
+		initializing = true;
 		
 		Server craftServer = Bukkit.getServer();
 		
@@ -128,6 +141,9 @@ public class MinecraftReflection {
 				// The return type will tell us the full package, regardless of formating
 				Class<?> craftClass = craftServer.getClass();
 				CRAFTBUKKIT_PACKAGE = getPackage(craftClass.getCanonicalName());
+				
+				// Libigot patch
+				handleLibigot();
 				
 				// Next, do the same for CraftEntity.getHandle() in order to get the correct Minecraft package
 				Class<?> craftEntity = getCraftEntityClass();
@@ -141,16 +157,16 @@ public class MinecraftReflection {
 					MINECRAFT_PREFIX_PACKAGE = MINECRAFT_FULL_PACKAGE;
 					
 					// The package is usualy flat, so go with that assumtion
-					DYNAMIC_PACKAGE_MATCHER = 
+					String matcher = 
 							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? 
 									Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + "\\w+";
 					
 					// We'll still accept the default location, however
-					DYNAMIC_PACKAGE_MATCHER = "(" + DYNAMIC_PACKAGE_MATCHER + ")|(" + MINECRAFT_OBJECT + ")";
+					setDynamicPackageMatcher("(" + matcher + ")|(" + MINECRAFT_OBJECT + ")");
 					
 				} else {
 					// Use the standard matcher
-					DYNAMIC_PACKAGE_MATCHER = MINECRAFT_OBJECT;
+					setDynamicPackageMatcher(MINECRAFT_OBJECT);
 				}
 				
 				return MINECRAFT_FULL_PACKAGE;
@@ -159,10 +175,38 @@ public class MinecraftReflection {
 				throw new RuntimeException("Security violation. Cannot get handle method.", e);
 			} catch (NoSuchMethodException e) {
 				throw new IllegalStateException("Cannot find getHandle() method on server. Is this a modified CraftBukkit version?", e);
+			} finally {
+				initializing = false;
 			}
 			
 		} else {
+			initializing = false;
 			throw new IllegalStateException("Could not find Bukkit. Is it running?");
+		}
+	}
+	
+	/**
+	 * Update the dynamic package matcher.
+	 * @param regex - the Minecraft package regex.
+	 */
+	private static void setDynamicPackageMatcher(String regex) {
+		DYNAMIC_PACKAGE_MATCHER = regex;
+		
+		// Ensure that the matcher is regenerated
+		fuzzyMatcher = null;
+	}
+	
+	// Patch for Libigot
+	private static void handleLibigot() {
+		try {
+			getCraftEntityClass();
+		} catch (RuntimeException e) {
+			// Try reverting the package to the old format
+			craftbukkitPackage = null;
+			CRAFTBUKKIT_PACKAGE = "org.bukkit.craftbukkit";
+			
+			// This might fail too
+			getCraftEntityClass();
 		}
 	}
 
@@ -176,7 +220,7 @@ public class MinecraftReflection {
 		CRAFTBUKKIT_PACKAGE = craftBukkitPackage;
 		
 		// Standard matcher
-		DYNAMIC_PACKAGE_MATCHER = MINECRAFT_OBJECT;
+		setDynamicPackageMatcher(MINECRAFT_OBJECT);
 	}
 	
 	/**
@@ -244,8 +288,7 @@ public class MinecraftReflection {
 		if (clazz == null)
 			throw new IllegalArgumentException("Class cannot be NULL.");
 		
-		// Doesn't matter if we don't check for the version here
-		return clazz.getName().startsWith(MINECRAFT_PREFIX_PACKAGE);
+		return getMinecraftObjectMatcher().isMatch(clazz, null);
 	}
 	
 	/**
@@ -809,9 +852,15 @@ public class MinecraftReflection {
 								returnTypeMatches(tagCompoundContract).
 								build()					
 							 );
+			Class<?> nbtBase = selected.getReturnType().getSuperclass();
 			
+			// That can't be correct
+			if (nbtBase == null || nbtBase.equals(Object.class)) {
+				throw new IllegalStateException("Unable to find NBT base class: " + nbtBase);
+			}
+
 			// Use the return type here too
-			return setMinecraftClass("NBTBase", selected.getReturnType());
+			return setMinecraftClass("NBTBase", nbtBase);
 		}
  	}
 

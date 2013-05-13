@@ -52,8 +52,9 @@ public interface ListenerInvoker {
 	public abstract void unregisterPacketClass(Class<?> clazz);
 
 	/**
-	 * Remove a given class from the packet registry. Internal method.
-	 * @param clazz - class to remove.
+	 * Register a given class in the packet registry. Internal method.
+	 * @param clazz - class to register.
+	 * @param packetID - the the new associated packet ID.
 	 */
 	public abstract void registerPacketClass(Class<?> clazz, int packetID);
 

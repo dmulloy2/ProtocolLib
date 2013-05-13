@@ -114,6 +114,10 @@ public final class Packets {
 		public static final int PLAYER_INFO = 201;
 		public static final int ABILITIES = 202;
 		public static final int TAB_COMPLETE = 203;
+		public static final int SCOREBOARD_OBJECTIVE = 206;
+		public static final int UPDATE_SCORE  = 207;
+		public static final int DISPLAY_SCOREBOARD = 208;
+		public static final int TEAMS = 209;
 		public static final int CUSTOM_PAYLOAD = 250;
 		public static final int KEY_RESPONSE = 252;
 		public static final int KEY_REQUEST = 253;

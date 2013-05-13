@@ -19,10 +19,16 @@ package com.comphenix.protocol.error;
 
 import org.bukkit.plugin.Plugin;
 
-public interface ErrorReporter {
+import com.comphenix.protocol.error.Report.ReportBuilder;
 
+/**
+ * Represents an object that can forward an error {@link Report} to the display and permanent storage.
+ * 
+ * @author Kristian
+ */
+public interface ErrorReporter {
 	/**
-	 * Prints a small minimal error report about an exception from another plugin.
+	 * Prints a small minimal error report regarding an exception from another plugin.
 	 * @param sender - the other plugin.
 	 * @param methodName - name of the caller method.
 	 * @param error - the exception itself.
@@ -30,7 +36,7 @@ public interface ErrorReporter {
 	public abstract void reportMinimal(Plugin sender, String methodName, Throwable error);
 
 	/**
-	 * Prints a small minimal error report about an exception from another plugin.
+	 * Prints a small minimal error report regarding an exception from another plugin.
 	 * @param sender - the other plugin.
 	 * @param methodName - name of the caller method.
 	 * @param error - the exception itself.
@@ -41,25 +47,28 @@ public interface ErrorReporter {
 	/**
 	 * Prints a warning message from the current plugin.
 	 * @param sender - the object containing the caller method. 
-	 * @param message - error message. 
+	 * @param report - an error report to include.
 	 */
-	public abstract void reportWarning(Object sender, String message);
-
+	public abstract void reportWarning(Object sender, Report report);
+	
 	/**
 	 * Prints a warning message from the current plugin.
 	 * @param sender - the object containing the caller method. 
-	 * @param message - error message. 
-	 * @param error - the exception that was thrown.
+	 * @param reportBuilder - an error report builder that will be used to get the report.
 	 */
-	public abstract void reportWarning(Object sender, String message, Throwable error);
+	public abstract void reportWarning(Object sender, ReportBuilder reportBuilder);
 
 	/**
 	 * Prints a detailed error report about an unhandled exception.
 	 * @param sender - the object containing the caller method.
-	 * @param message - an error message to include.
-	 * @param error - the exception that was thrown in the caller method.
-	 * @param parameters - parameters from the caller method.
+	 * @param report - an error report to include.
 	 */
-	public abstract void reportDetailed(Object sender, String message, Throwable error, Object... parameters);
-
+	public abstract void reportDetailed(Object sender, Report report);
+	
+	/**
+	 * Prints a detailed error report about an unhandled exception.
+	 * @param sender - the object containing the caller method.
+	 * @param reportBuilder - an error report builder that will be used to get the report.
+	 */
+	public abstract void reportDetailed(Object sender, ReportBuilder reportBuilder);
 }

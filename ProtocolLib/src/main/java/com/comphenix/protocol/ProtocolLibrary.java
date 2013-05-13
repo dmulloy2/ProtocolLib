@@ -33,8 +33,11 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.DelayedSingleTask;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
@@ -43,6 +46,7 @@ import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
  * The main entry point for ProtocolLib.
@@ -50,6 +54,24 @@ import com.comphenix.protocol.utility.ChatExtensions;
  * @author Kristian
  */
 public class ProtocolLibrary extends JavaPlugin {
+	// Every possible error or warning report type
+	public static final ReportType REPORT_CANNOT_LOAD_CONFIG = new ReportType("Cannot load configuration");
+	public static final ReportType REPORT_CANNOT_DELETE_CONFIG = new ReportType("Cannot delete old ProtocolLib configuration.");
+	public static final ReportType REPORT_CANNOT_PARSE_INJECTION_METHOD = new ReportType("Cannot parse injection method. Using default.");
+	
+	public static final ReportType REPORT_PLUGIN_LOAD_ERROR = new ReportType("Cannot load ProtocolLib.");
+	public static final ReportType REPORT_PLUGIN_ENABLE_ERROR = new ReportType("Cannot enable ProtocolLib.");
+	
+	public static final ReportType REPORT_METRICS_IO_ERROR = new ReportType("Unable to enable metrics due to network problems.");
+	public static final ReportType REPORT_METRICS_GENERIC_ERROR = new ReportType("Unable to enable metrics due to network problems.");
+	
+	public static final ReportType REPORT_CANNOT_PARSE_MINECRAFT_VERSION = new ReportType("Unable to retrieve current Minecraft version.");
+	public static final ReportType REPORT_CANNOT_DETECT_CONFLICTING_PLUGINS = new ReportType("Unable to detect conflicting plugin versions.");
+	public static final ReportType REPORT_CANNOT_REGISTER_COMMAND = new ReportType("Cannot register command %s: %s");
+	
+	public static final ReportType REPORT_CANNOT_CREATE_TIMEOUT_TASK = new ReportType("Unable to create packet timeout task.");
+	public static final ReportType REPORT_CANNOT_UPDATE_PLUGIN = new ReportType("Cannot perform automatic updates.");
+	
 	/**
 	 * The minimum version ProtocolLib has been tested with.
 	 */
@@ -58,7 +80,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The maximum version ProtocolLib has been tested with,
 	 */
-	private static final String MAXIMUM_MINECRAFT_VERSION = "1.4.7";
+	private static final String MAXIMUM_MINECRAFT_VERSION = "1.5.2";
 	
 	/**
 	 * The number of milliseconds per second.
@@ -71,7 +93,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private static PacketFilterManager protocolManager;
 	
 	// Error reporter
-	private static ErrorReporter reporter;
+	private static ErrorReporter reporter = new BasicErrorReporter();
 	
 	// Metrics and statistisc
 	private Statistics statistisc;
@@ -102,6 +124,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Commands
 	private CommandProtocol commandProtocol;
 	private CommandPacket commandPacket;
+	private CommandFilter commandFilter;
 	
 	// Whether or not disable is not needed
 	private boolean skipDisable;
@@ -118,26 +141,34 @@ public class ProtocolLibrary extends JavaPlugin {
 		try {
 			config = new ProtocolConfig(this);
 		} catch (Exception e) {
-			detailedReporter.reportWarning(this, "Cannot load configuration", e);
+			detailedReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_CONFIG).error(e));
 
 			// Load it again
 			if (deleteConfig()) {
 				config = new ProtocolConfig(this);
 			} else {
-				reporter.reportWarning(this, "Cannot delete old ProtocolLib configuration.");
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DELETE_CONFIG));
 			}
+		}
+		
+		// Print the state of the debug mode
+		if (config.isDebug()) {
+			logger.warning("Debug mode is enabled!");
 		}
 		
 		try {
 			// Check for other versions
 			checkConflictingVersions();
 			
+			// Handle unexpected Minecraft versions
+			MinecraftVersion version = verifyMinecraftVersion();
+			
 			// Set updater
 			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 			
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(
-					getClassLoader(), getServer(), unhookTask, detailedReporter);
+					getClassLoader(), getServer(), this, version, unhookTask, detailedReporter);			
 			
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -152,18 +183,19 @@ public class ProtocolLibrary extends JavaPlugin {
 					protocolManager.setPlayerHook(hook);
 				}
 			} catch (IllegalArgumentException e) {
-				detailedReporter.reportWarning(config, "Cannot parse injection method. Using default.", e);
+				detailedReporter.reportWarning(config, Report.newBuilder(REPORT_CANNOT_PARSE_INJECTION_METHOD).error(e));
 			}
 			
 			// Initialize command handlers
 			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
-			commandPacket = new CommandPacket(detailedReporter, this, logger, protocolManager);
+			commandFilter = new CommandFilter(detailedReporter, this, config);
+			commandPacket = new CommandPacket(detailedReporter, this, logger, commandFilter, protocolManager);
 			
 			// Send logging information to player listeners too
 			setupBroadcastUsers(PERMISSION_INFO);
 			
 		} catch (Throwable e) {
-			detailedReporter.reportDetailed(this, "Cannot load ProtocolLib.", e, protocolManager);
+			detailedReporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
 			disablePlugin();
 		}
 	}
@@ -249,12 +281,10 @@ public class ProtocolLibrary extends JavaPlugin {
 				logger.info("Structure compiler thread has been disabled.");
 			}
 			
-			// Handle unexpected Minecraft versions
-			verifyMinecraftVersion();
-			
 			// Set up command handlers
 			registerCommand(CommandProtocol.NAME, commandProtocol);
 			registerCommand(CommandPacket.NAME, commandPacket);
+			registerCommand(CommandFilter.NAME, commandFilter);
 	
 			// Player login and logout events
 			protocolManager.registerEvents(manager, this);
@@ -264,7 +294,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			createAsyncTask(server);
 		
 		} catch (Throwable e) {
-			reporter.reportDetailed(this, "Cannot enable ProtocolLib.", e);
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_ENABLE_ERROR).error(e));
 			disablePlugin();
 			return;
 		}
@@ -275,14 +305,14 @@ public class ProtocolLibrary extends JavaPlugin {
 				statistisc = new Statistics(this);
 			}
 		} catch (IOException e) {
-			reporter.reportDetailed(this, "Unable to enable metrics.", e, statistisc);
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_METRICS_IO_ERROR).error(e).callerParam(statistisc));
 		} catch (Throwable e) {
-			reporter.reportDetailed(this, "Metrics cannot be enabled. Incompatible Bukkit version.", e, statistisc);
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_METRICS_GENERIC_ERROR).error(e).callerParam(statistisc));
 		}
 	}
 	
 	// Used to check Minecraft version
-	private void verifyMinecraftVersion() {
+	private MinecraftVersion verifyMinecraftVersion() {
 		try {
 			MinecraftVersion minimum = new MinecraftVersion(MINIMUM_MINECRAFT_VERSION);
 			MinecraftVersion maximum = new MinecraftVersion(MAXIMUM_MINECRAFT_VERSION);
@@ -296,9 +326,14 @@ public class ProtocolLibrary extends JavaPlugin {
 				if (current.compareTo(maximum) > 0)
 					logger.warning("Version " + current + " has not yet been tested! Proceed with caution.");
 	 		}
+			return current;
+			
 		} catch (Exception e) {
-			reporter.reportWarning(this, "Unable to retrieve current Minecraft version.", e);
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_PARSE_MINECRAFT_VERSION).error(e));
 		}
+		
+		// Unknown version
+		return null;
 	}
 	
 	private void checkConflictingVersions() {
@@ -331,7 +366,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			}
 
 		} catch (Exception e) {
-			reporter.reportWarning(this, "Unable to detect conflicting plugin versions.", e);
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DETECT_CONFLICTING_PLUGINS).error(e));
 		}
 		
 		// See if the newest version is actually higher
@@ -360,7 +395,9 @@ public class ProtocolLibrary extends JavaPlugin {
 				throw new RuntimeException("plugin.yml might be corrupt.");
 		
 		} catch (RuntimeException e) {
-			reporter.reportWarning(this, "Cannot register command " + name + ": " + e.getMessage());
+			reporter.reportWarning(this, 
+					Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(name, e.getMessage()).error(e)
+			);
 		}
 	}
 	
@@ -394,7 +431,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		} catch (Throwable e) {
 			if (asyncPacketTask == -1) {
-				reporter.reportDetailed(this, "Unable to create packet timeout task.", e);
+				reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CREATE_TIMEOUT_TASK).error(e));
 			}
 		}
 	}
@@ -417,7 +454,7 @@ public class ProtocolLibrary extends JavaPlugin {
 					commandProtocol.updateFinished();
 			}
 		} catch (Exception e) {
-			reporter.reportDetailed(this, "Cannot perform automatic updates.", e);
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e));
 			updateDisabled = true;
 		}
 	}
@@ -454,7 +491,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			unhookTask.close();
 		protocolManager = null;
 		statistisc = null;
-		reporter = null;
+
+		// To clean up global parameters
+		reporter = new BasicErrorReporter();
 		
 		// Leaky ClassLoader begone!
 		if (updater == null || updater.getResult() != UpdateResult.SUCCESS) {
@@ -479,6 +518,8 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	/**
 	 * Retrieve the current error reporter.
+	 * <p>
+	 * This is guaranteed to not be NULL in 2.5.0 and later.
 	 * @return Current error reporter.
 	 */
 	public static ErrorReporter getErrorReporter() {
