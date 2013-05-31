@@ -63,6 +63,8 @@ public abstract class PlayerInjector implements SocketInjector {
 	public static final ReportType REPORT_CANNOT_UPDATE_PLAYER = new ReportType("Cannot update player in PlayerEvent.");
 	public static final ReportType REPORT_CANNOT_HANDLE_PACKET = new ReportType("Cannot handle server packet.");
 	
+	public static final ReportType REPORT_INVALID_NETWORK_MANAGER = new ReportType("NetworkManager doesn't appear to be valid.");
+	
 	// Net login handler stuff
 	private static Field netLoginNetworkField;
 	
@@ -296,6 +298,9 @@ public abstract class PlayerInjector implements SocketInjector {
 			return socketAddress;
 			
 		} catch (IndexOutOfBoundsException e) {
+			// Inform about the state of the network manager too
+			reporter.reportWarning(
+					this, Report.newBuilder(REPORT_INVALID_NETWORK_MANAGER).callerParam(networkManager).build());
 			throw new IllegalAccessException("Unable to read the socket address field.");
 		}
 	}
