@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 
 /**
  * Represents a strongly-typed report. Subclasses should be immutable.
@@ -15,7 +17,10 @@ import com.comphenix.protocol.reflect.FieldAccessException;
  */
 public class ReportType {
 	private final String errorFormat;
-
+	
+	// Used to store the report name
+	protected String reportName;
+	
 	/**
 	 * Construct a new report type.
 	 * @param errorFormat - string used to format the underlying report.
@@ -42,25 +47,69 @@ public class ReportType {
 	}
 	
 	/**
+	 * Retrieve the full canonical name of a given report type.
+	 * <p>
+	 * This is in the format <i>canonical_name_of_class#report_type</i>
+	 * @param clazz - the sender class.
+	 * @param type - the report instance.
+	 * @return The full canonical name.
+	 */
+	public static String getReportName(Class<?> sender, ReportType type) {
+		if (sender == null)
+			throw new IllegalArgumentException("sender cannot be NUll.");
+		
+		// Whether or not we need to retrieve the report name again
+		if (type.reportName == null) {
+			for (Field field : getReportFields(sender)) {
+				try {
+					field.setAccessible(true);
+					
+					if (field.get(null) == type) {
+						// We got the right field!
+						return type.reportName = field.getDeclaringClass().getCanonicalName() + "#" + field.getName();
+					}
+				} catch (IllegalAccessException e) {
+					throw new FieldAccessException("Unable to read field " + field, e);
+				}
+			}
+			throw new IllegalArgumentException("Cannot find report name for " + type);
+		}
+		return type.reportName;
+	}
+	
+	/**
 	 * Retrieve all publicly associated reports.
-	 * @param clazz - sender class.
+	 * @param sender - sender class.
 	 * @return All associated reports.
 	 */
-	public static ReportType[] getReports(Class<?> clazz) {
-		if (clazz == null)
-			throw new IllegalArgumentException("clazz cannot be NULL.");
+	public static ReportType[] getReports(Class<?> sender) {
+		if (sender == null)
+			throw new IllegalArgumentException("sender cannot be NULL.");
 		List<ReportType> result = new ArrayList<ReportType>();
 		
-		for (Field field : clazz.getFields()) {
-			if (Modifier.isStatic(field.getModifiers()) && 
-				ReportType.class.isAssignableFrom(field.getDeclaringClass())) {
-				try {
-					result.add((ReportType) field.get(null));
-				} catch (IllegalAccessException e) {
-					throw new FieldAccessException("Unable to access field.", e);
-				}
+		// Go through all the fields
+		for (Field field : getReportFields(sender)) {
+			try {
+				field.setAccessible(true);
+				result.add((ReportType) field.get(null));
+			} catch (IllegalAccessException e) {
+				throw new FieldAccessException("Unable to read field " + field, e);
 			}
 		}
 		return result.toArray(new ReportType[0]);
+	}
+	
+	/**
+	 * Retrieve all publicly associated report fields.
+	 * @param clazz - sender class.
+	 * @return All associated report fields.
+	 */
+	private static List<Field> getReportFields(Class<?> clazz) {
+		return FuzzyReflection.fromClass(clazz).getFieldList(
+				FuzzyFieldContract.newBuilder().
+					requireModifier(Modifier.STATIC).
+					typeDerivedOf(ReportType.class).
+					build()
+		);
 	}
 }

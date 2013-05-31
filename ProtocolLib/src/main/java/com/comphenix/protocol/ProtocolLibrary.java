@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -34,6 +35,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.BasicErrorReporter;
+import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -47,6 +49,9 @@ import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 /**
  * The main entry point for ProtocolLib.
@@ -136,12 +141,12 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 		// Add global parameters
 		DetailedErrorReporter detailedReporter = new DetailedErrorReporter(this);
-		reporter = detailedReporter;
+		reporter = getFilteredReporter(detailedReporter);
 		
 		try {
 			config = new ProtocolConfig(this);
 		} catch (Exception e) {
-			detailedReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_CONFIG).error(e));
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_CONFIG).error(e));
 
 			// Load it again
 			if (deleteConfig()) {
@@ -168,7 +173,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = new PacketFilterManager(
-					getClassLoader(), getServer(), this, version, unhookTask, detailedReporter);			
+					getClassLoader(), getServer(), this, version, unhookTask, reporter);			
 			
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -183,21 +188,50 @@ public class ProtocolLibrary extends JavaPlugin {
 					protocolManager.setPlayerHook(hook);
 				}
 			} catch (IllegalArgumentException e) {
-				detailedReporter.reportWarning(config, Report.newBuilder(REPORT_CANNOT_PARSE_INJECTION_METHOD).error(e));
+				reporter.reportWarning(config, Report.newBuilder(REPORT_CANNOT_PARSE_INJECTION_METHOD).error(e));
 			}
 			
 			// Initialize command handlers
-			commandProtocol = new CommandProtocol(detailedReporter, this, updater, config);
-			commandFilter = new CommandFilter(detailedReporter, this, config);
-			commandPacket = new CommandPacket(detailedReporter, this, logger, commandFilter, protocolManager);
+			commandProtocol = new CommandProtocol(reporter, this, updater, config);
+			commandFilter = new CommandFilter(reporter, this, config);
+			commandPacket = new CommandPacket(reporter, this, logger, commandFilter, protocolManager);
 			
 			// Send logging information to player listeners too
 			setupBroadcastUsers(PERMISSION_INFO);
 			
 		} catch (Throwable e) {
-			detailedReporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
 			disablePlugin();
 		}
+	}
+	
+	/**
+	 * Retrieve a error reporter that may be filtered by the configuration.
+	 * @return The new default error reporter.
+	 */
+	private ErrorReporter getFilteredReporter(ErrorReporter reporter) {
+		return new DelegatedErrorReporter(reporter) {			
+			private int lastModCount = -1;
+			private Set<String> reports = Sets.newHashSet();
+			
+			@Override
+			protected Report filterReport(Object sender, Report report, boolean detailed) {
+				String canonicalName = ReportType.getReportName(sender.getClass(), report.getType());
+				String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
+				
+				if (config != null && config.getModificationCount() != lastModCount) {
+					// Update our cached set again
+					reports = Sets.newHashSet(config.getSuppressedReports());
+					lastModCount = config.getModificationCount();
+				}
+
+				// Cancel reports either on the full canonical name, or just the report name
+				if (reports.contains(canonicalName) || reports.contains(reportName))
+					return null;
+				else
+					return report;
+			}
+		};
 	}
 	
 	private boolean deleteConfig() {
