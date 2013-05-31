@@ -358,13 +358,16 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	private Field getProxyField(Object notchEntity, Field serverField) {
 		try {
-			Object handler = FieldUtils.readField(serverHandlerField, notchEntity, true);
+			Object currentHandler = FieldUtils.readField(serverHandlerField, notchEntity, true);
+
+			// This is bad
+			if (currentHandler == null)
+				throw new IllegalAccessError("Unable to fetch server handler: was NUll.");
 			
-			// Is this a Minecraft hook?
-			if (handler != null && !MinecraftReflection.isMinecraftObject(handler)) {
-				
+			// See if this isn't a standard net handler class
+			if (!isStandardMinecraftNetHandler(currentHandler)) {
 				// This is our proxy object
-				if (handler instanceof Factory)
+				if (currentHandler instanceof Factory)
 					return null;
 				
 				hasProxyType = true;
@@ -372,7 +375,7 @@ public abstract class PlayerInjector implements SocketInjector {
 				
 				// No? Is it a Proxy type?
 				try {
-					FuzzyReflection reflection = FuzzyReflection.fromObject(handler, true);
+					FuzzyReflection reflection = FuzzyReflection.fromObject(currentHandler, true);
 					
 					// It might be
 					return reflection.getFieldByType("NetServerHandler", MinecraftReflection.getNetServerHandlerClass());
@@ -388,6 +391,20 @@ public abstract class PlayerInjector implements SocketInjector {
 
 		// Nope, just go with it
 		return null;
+	}
+	
+	/**
+	 * Determine if a given object is a standard Minecraft net handler.
+	 * @param obj the object to test.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	private boolean isStandardMinecraftNetHandler(Object obj) {
+		if (obj == null)
+			return false;
+		Class<?> clazz = obj.getClass();
+		
+		return MinecraftReflection.getNetLoginHandlerClass().equals(clazz) ||
+			   MinecraftReflection.getNetServerHandlerClass().equals(clazz);
 	}
 	
 	/**
