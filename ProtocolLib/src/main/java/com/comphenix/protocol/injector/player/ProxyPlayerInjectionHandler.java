@@ -343,6 +343,11 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 						
 						// Get socket and socket injector
 						SocketAddress address = injector.getAddress();
+						
+						// Ignore logged out players
+						if (address == null)
+							return null;
+						
 						SocketInjector previous = inputStreamLookup.peekSocketInjector(address);
 
 						// Close any previously associated hooks before we proceed
@@ -432,13 +437,18 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	
 	@Override
 	public void updatePlayer(Player player) {
-		SocketInjector injector = inputStreamLookup.peekSocketInjector(player.getAddress());
+		SocketAddress address = player.getAddress();
 		
-		if (injector != null) {
-			injector.setUpdatedPlayer(player);
-		} else {
-			inputStreamLookup.setSocketInjector(player.getAddress(), 
-					new BukkitSocketInjector(player));
+		// Ignore logged out players
+		if (address != null) {
+			SocketInjector injector = inputStreamLookup.peekSocketInjector(address);
+			
+			if (injector != null) {
+				injector.setUpdatedPlayer(player);
+			} else {
+				inputStreamLookup.setSocketInjector(player.getAddress(), 
+						new BukkitSocketInjector(player));
+			}
 		}
 	}
 	
