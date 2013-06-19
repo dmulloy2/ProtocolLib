@@ -5,7 +5,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.bukkit.Bukkit;
@@ -37,6 +36,7 @@ import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
 
 /**
  * Offload all the work to Spigot, if possible. 
@@ -58,6 +58,42 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 * The amount of ticks to wait before removing all traces of a player.
 	 */
 	private static final int CLEANUP_DELAY = 100;
+		
+	// The listener we will register on Spigot.
+	// Unfortunately, due to the use of PlayerConnection, INetworkManager and Packet, we're
+	// unable to reference it directly. But with CGLib, it shouldn't cost us much.
+	private Object dynamicListener;
+	
+	// Reference to ProtocolLib
+	private Plugin plugin;
+	
+	// Different sending filters
+	private IntegerSet queuedFilters;
+	private IntegerSet reveivedFilters;
+
+	// NetworkManager to injector and player
+	private ConcurrentMap<Object, NetworkObjectInjector> networkManagerInjector = Maps.newConcurrentMap();
+	
+	// Player to injector
+	private ConcurrentMap<Player, NetworkObjectInjector> playerInjector = Maps.newConcurrentMap();
+	
+	// Responsible for informing the PL packet listeners
+	private ListenerInvoker invoker;
+	private ErrorReporter reporter;
+	private Server server;
+	private ClassLoader classLoader;
+	
+	/**
+	 * Create a new spigot injector.
+	 */
+	public SpigotPacketInjector(ClassLoader classLoader, ErrorReporter reporter, ListenerInvoker invoker, Server server) {
+		this.classLoader = classLoader;
+		this.reporter = reporter;
+		this.invoker = invoker;
+		this.server = server;
+		this.queuedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+		this.reveivedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+	}
 	
 	/**
 	 * Retrieve the spigot packet listener class.
@@ -105,42 +141,6 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 */
 	public static boolean canUseSpigotListener() {
 		return getSpigotListenerClass() != null;
-	}
-	
-	// The listener we will register on Spigot.
-	// Unfortunately, due to the use of PlayerConnection, INetworkManager and Packet, we're
-	// unable to reference it directly. But with CGLib, it shouldn't cost us much.
-	private Object dynamicListener;
-	
-	// Reference to ProtocolLib
-	private Plugin plugin;
-	
-	// Different sending filters
-	private IntegerSet queuedFilters;
-	private IntegerSet reveivedFilters;
-
-	// NetworkManager to injector and player
-	private ConcurrentMap<Object, NetworkObjectInjector> networkManagerInjector = new ConcurrentHashMap<Object, NetworkObjectInjector>();
-	
-	// Player to injector
-	private ConcurrentMap<Player, NetworkObjectInjector> playerInjector = new ConcurrentHashMap<Player, NetworkObjectInjector>();
-	
-	// Responsible for informing the PL packet listeners
-	private ListenerInvoker invoker;
-	private ErrorReporter reporter;
-	private Server server;
-	private ClassLoader classLoader;
-	
-	/**
-	 * Create a new spigot injector.
-	 */
-	public SpigotPacketInjector(ClassLoader classLoader, ErrorReporter reporter, ListenerInvoker invoker, Server server) {
-		this.classLoader = classLoader;
-		this.reporter = reporter;
-		this.invoker = invoker;
-		this.server = server;
-		this.queuedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
-		this.reveivedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
 	}
 	
 	/**
@@ -455,7 +455,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 					// Clean up
 					playerInjector.remove(injector.getPlayer());
 					playerInjector.remove(injector.getUpdatedPlayer());
-					networkManagerInjector.remove(injector);
+					networkManagerInjector.remove(injector.getNetworkManager());
 				}
 			}, CLEANUP_DELAY);
 		}
