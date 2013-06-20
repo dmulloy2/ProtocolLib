@@ -144,7 +144,7 @@ class NetworkServerInjector extends PlayerInjector {
 						+ serverHandlerClass.getName() + " object.");
 		}
 	}
-	
+
 	private boolean tryInjectManager() {
 		Class<?> serverClass = serverHandler.getClass();
 		
@@ -173,19 +173,7 @@ class NetworkServerInjector extends PlayerInjector {
 		// Share callback filter - that way, we avoid generating a new class for 
 		// every logged in player.
 		if (callbackFilter == null) {
-			final Method sendPacket = MinecraftMethods.getSendPacketMethod();
-			
-			callbackFilter = new CallbackFilter() {
-				@Override
-				public int accept(Method method) {
-					if (isCallableEqual(sendPacket, method)) {
-						foundSendPacket = true;
-						return 0;
-					} else {
-						return 1;
-					}
-				}
-			};
+			callbackFilter = new SendMethodFilter();
 		}
 		
 		ex.setClassLoader(classLoader);
@@ -227,20 +215,6 @@ class NetworkServerInjector extends PlayerInjector {
 		} else {
 			return false;
 		}
-	}
-	
-	/**
-	 * Determine if the two methods are equal in terms of call semantics.
-	 * <p>
-	 * Two methods are equal if they have the same name, parameter types and return type.
-	 * @param first - first method.
-	 * @param second - second method.
-	 * @return TRUE if they are, FALSE otherwise.
-	 */
-	private boolean isCallableEqual(Method first, Method second) {
-		return first.getName().equals(second.getName()) &&
-			   first.getReturnType().equals(second.getReturnType()) &&
-			   Arrays.equals(first.getParameterTypes(), second.getParameterTypes());
 	}
 	
 	private Object getProxyServerHandler() {
@@ -348,5 +322,37 @@ class NetworkServerInjector extends PlayerInjector {
 	@Override
 	public PlayerInjectHooks getHookType() {
 		return PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	}
+	
+	/**
+	 * Represents a CallbackFilter that only matches the SendPacket method.
+	 * @author Kristian
+	 */
+	private static class SendMethodFilter implements CallbackFilter {
+		private Method sendPacket = MinecraftMethods.getSendPacketMethod();
+		
+		@Override
+		public int accept(Method method) {
+			if (isCallableEqual(sendPacket, method)) {
+				NetworkServerInjector.foundSendPacket = true;
+				return 0;
+			} else {
+				return 1;
+			}
+		}
+		
+		/**
+		 * Determine if the two methods are equal in terms of call semantics.
+		 * <p>
+		 * Two methods are equal if they have the same name, parameter types and return type.
+		 * @param first - first method.
+		 * @param second - second method.
+		 * @return TRUE if they are, FALSE otherwise.
+		 */
+		private boolean isCallableEqual(Method first, Method second) {
+			return first.getName().equals(second.getName()) &&
+				   first.getReturnType().equals(second.getReturnType()) &&
+				   Arrays.equals(first.getParameterTypes(), second.getParameterTypes());
+		}
 	}
 }

@@ -124,6 +124,7 @@ class CleanupStaticMembers {
 					reporter.reportWarning(this, 
 							Report.newBuilder(REPORT_CANNOT_RESET_FIELD).error(e).messageParam(field.getName(), e.getMessage())
 					);
+					e.printStackTrace();
 				}
 			}
 		}

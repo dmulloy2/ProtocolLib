@@ -23,3 +23,5 @@ global:
   
   # The engine used by the filter command
   script engine: JavaScript
+  
+  suppressed reports:

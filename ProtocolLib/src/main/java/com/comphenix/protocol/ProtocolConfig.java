@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,6 +27,8 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 /**
@@ -48,6 +51,7 @@ class ProtocolConfig {
 	private static final String INJECTION_METHOD = "injection method";
 	
 	private static final String SCRIPT_ENGINE_NAME = "script engine";
+	private static final String SUPPRESSED_REPORTS = "suppressed reports";
 	
 	private static final String UPDATER_NOTIFY = "notify";
 	private static final String UPDATER_DOWNLAD = "download";
@@ -68,6 +72,9 @@ class ProtocolConfig {
 	private boolean configChanged;
 	private boolean valuesChanged;
 	
+	// Modifications
+	private int modCount;
+	
 	public ProtocolConfig(Plugin plugin) {
 		this(plugin, plugin.getConfig());
 	}
@@ -84,6 +91,7 @@ class ProtocolConfig {
 		// Reset
 		configChanged = false;
 		valuesChanged = false;
+		modCount++;
 		
 		this.config = plugin.getConfig();
 		this.lastUpdateTime = loadLastUpdate();
@@ -199,6 +207,7 @@ class ProtocolConfig {
 	 */
 	public void setAutoNotify(boolean value) {
 		setConfig(updater, UPDATER_NOTIFY, value);
+		modCount++;
 	}
 	
 	/**
@@ -215,6 +224,7 @@ class ProtocolConfig {
 	 */
 	public void setAutoDownload(boolean value) {
 		setConfig(updater, UPDATER_DOWNLAD, value);
+		modCount++;
 	}
 	
 	/**
@@ -233,6 +243,24 @@ class ProtocolConfig {
 	 */
 	public void setDebug(boolean value) {
 		setConfig(global, DEBUG_MODE_ENABLED, value);
+		modCount++;
+	}
+	
+	/**
+	 * Retrieve an immutable list of every suppressed report type.
+	 * @return Every suppressed report type.
+	 */
+	public ImmutableList<String> getSuppressedReports() {
+		return ImmutableList.copyOf(global.getStringList(SUPPRESSED_REPORTS));
+	}
+	
+	/**
+	 * Set the list of suppressed report types,
+	 * @param reports - suppressed report types.
+	 */
+	public void setSuppressedReports(List<String> reports) {
+		global.set(SUPPRESSED_REPORTS, Lists.newArrayList(reports));
+		modCount++;
 	}
 
 	/**
@@ -255,6 +283,7 @@ class ProtocolConfig {
 		if (delaySeconds < DEFAULT_UPDATER_DELAY)
 			delaySeconds = DEFAULT_UPDATER_DELAY;
 		setConfig(updater, UPDATER_DELAY, delaySeconds);
+		modCount++;
 	}
 	
 	/**
@@ -275,6 +304,7 @@ class ProtocolConfig {
 	 */
 	public void setIgnoreVersionCheck(String ignoreVersion) {
 		setConfig(global, IGNORE_VERSION_CHECK, ignoreVersion);
+		modCount++;
 	}
 	
 	/**
@@ -294,6 +324,7 @@ class ProtocolConfig {
 	 */
 	public void setMetricsEnabled(boolean enabled) {
 		setConfig(global, METRICS_ENABLED, enabled);
+		modCount++;
 	}
 	
 	/**
@@ -313,6 +344,7 @@ class ProtocolConfig {
 	 */
 	public void setBackgroundCompilerEnabled(boolean enabled) {
 		setConfig(global, BACKGROUND_COMPILER_ENABLED, enabled);
+		modCount++;
 	}
 	
 	/**
@@ -325,6 +357,9 @@ class ProtocolConfig {
 
 	/**
 	 * Set the last time we updated, in seconds since 1970.01.01 00:00.
+	 * <p>
+	 * Note that this is not considered to modify the configuration, so the modification count 
+	 * will not be incremented.
 	 * @param lastTimeSeconds - new last update time.
 	 */
 	public void setAutoLastTime(long lastTimeSeconds) { 
@@ -348,6 +383,7 @@ class ProtocolConfig {
 	 */
 	public void setScriptEngineName(String name) {
 		setConfig(global, SCRIPT_ENGINE_NAME, name);
+		modCount++;
 	}
 	
 	/**
@@ -380,6 +416,15 @@ class ProtocolConfig {
 	 */
 	public void setInjectionMethod(PlayerInjectHooks hook) {
 		setConfig(global, INJECTION_METHOD, hook.name());
+		modCount++;
+	}
+	
+	/**
+	 * Retrieve the number of modifications made to this configuration.
+	 * @return The number of modifications.
+	 */
+	public int getModificationCount() {
+		return modCount;
 	}
 	
 	/**

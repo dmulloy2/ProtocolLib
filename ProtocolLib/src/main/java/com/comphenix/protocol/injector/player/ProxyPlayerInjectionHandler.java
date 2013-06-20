@@ -18,6 +18,7 @@
 package com.comphenix.protocol.injector.player;
 
 import java.io.DataInputStream;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -81,7 +82,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private NetLoginInjector netLoginInjector;
 	
 	// The last successful player hook
-	private PlayerInjector lastSuccessfulHook;
+	private WeakReference<PlayerInjector> lastSuccessfulHook;
 	
 	// Dummy injection
 	private Cache<Player, PlayerInjector> dummyInjectors = 
@@ -343,6 +344,11 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 						
 						// Get socket and socket injector
 						SocketAddress address = injector.getAddress();
+						
+						// Ignore logged out players
+						if (address == null)
+							return null;
+						
 						SocketInjector previous = inputStreamLookup.peekSocketInjector(address);
 
 						// Close any previously associated hooks before we proceed
@@ -394,7 +400,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			
 			// Update values
 			if (injector != null)
-				lastSuccessfulHook = injector;
+				lastSuccessfulHook = new WeakReference<PlayerInjector>(injector);
 			if (permanentHook != getPlayerHook(phase)) 
 				setPlayerHook(phase, tempHook);
 			
@@ -432,13 +438,18 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	
 	@Override
 	public void updatePlayer(Player player) {
-		SocketInjector injector = inputStreamLookup.peekSocketInjector(player.getAddress());
+		SocketAddress address = player.getAddress();
 		
-		if (injector != null) {
-			injector.setUpdatedPlayer(player);
-		} else {
-			inputStreamLookup.setSocketInjector(player.getAddress(), 
-					new BukkitSocketInjector(player));
+		// Ignore logged out players
+		if (address != null) {
+			SocketInjector injector = inputStreamLookup.peekSocketInjector(address);
+			
+			if (injector != null) {
+				injector.setUpdatedPlayer(player);
+			} else {
+				inputStreamLookup.setSocketInjector(player.getAddress(), 
+						new BukkitSocketInjector(player));
+			}
 		}
 	}
 	
@@ -639,11 +650,21 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	@Override
 	public void checkListener(Set<PacketListener> listeners) {
 		// Make sure the current listeners are compatible
-		if (lastSuccessfulHook != null) {
+		if (getLastSuccessfulHook() != null) {
 			for (PacketListener listener : listeners) {
 				checkListener(listener);
 			}
 		}
+	}
+	
+	/**
+	 * Retrieve the last successful hook.
+	 * <p>
+	 * May be NULL if the hook has been uninjected.
+	 * @return Last successful hook.
+	 */
+	private PlayerInjector getLastSuccessfulHook() {
+		return lastSuccessfulHook != null ? lastSuccessfulHook.get() : null;
 	}
 	
 	/**
@@ -654,8 +675,10 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 */
 	@Override
 	public void checkListener(PacketListener listener) {
-		if (lastSuccessfulHook != null) {
-			UnsupportedListener result = lastSuccessfulHook.checkListener(version, listener);
+		PlayerInjector last = getLastSuccessfulHook();
+		
+		if (last != null) {
+			UnsupportedListener result = last.checkListener(version, listener);
 
 			// We won't prevent the listener, as it may still have valid packets
 			if (result != null) {

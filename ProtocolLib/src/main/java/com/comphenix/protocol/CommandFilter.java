@@ -220,14 +220,15 @@ public class CommandFilter extends CommandBase {
 	
 	// Script engine
 	private ScriptEngine engine;
+	private boolean uninitialized;
 	
 	public CommandFilter(ErrorReporter reporter, Plugin plugin, ProtocolConfig config) {
 		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 2);
 		this.plugin = plugin;
 		this.config = config;
 		
-		// Start the engine
-		initalizeScript();
+		// Tell the filter system to initialize the script first chance it gets
+		this.uninitialized = true;
 	}
 	
 	private void initalizeScript() {
@@ -238,6 +239,8 @@ public class CommandFilter extends CommandBase {
 			// Oh for ..
 			if (!isInitialized()) {
 				throw new ScriptException("A JavaScript engine could not be found.");
+			} else {
+				plugin.getLogger().info("Loaded command filter engine.");
 			}
 		} catch (ScriptException e1) {
 			// It's not a huge deal
@@ -342,12 +345,25 @@ public class CommandFilter extends CommandBase {
 		return true;
 	}
 
+	/**
+	 * Initialize the script engine if necessary.
+	 */
+	private void checkScriptStatus() {
+		// Start the engine
+		if (uninitialized) {
+			uninitialized = false;
+			initalizeScript();
+		}
+	}
+	
 	/*
 	 * Description: Adds or removes a simple packet filter.
        Usage:       /<command> add|remove name [packet IDs]
 	 */
 	@Override
 	protected boolean handleCommand(CommandSender sender, String[] args) {
+		checkScriptStatus();
+		
 		if (!config.isDebug()) {
 			sender.sendMessage(ChatColor.RED + "Debug mode must be enabled in the configuration first!");
 			return true;

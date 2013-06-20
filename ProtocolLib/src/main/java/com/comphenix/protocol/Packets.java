@@ -85,6 +85,12 @@ public final class Packets {
 		public static final int ENTITY_HEAD_ROTATION = 35;
 		public static final int ENTITY_STATUS = 38;
 		public static final int ATTACH_ENTITY = 39;
+		
+		/**
+		 * Sent when an entities DataWatcher is updated.
+		 * <p>
+		 * Remember to clone the packet if you are modifying it.
+		 */
 		public static final int ENTITY_METADATA = 40;
 		public static final int MOB_EFFECT = 41;
 		public static final int REMOVE_MOB_EFFECT = 42;
@@ -109,6 +115,12 @@ public final class Packets {
 		public static final int SET_CREATIVE_SLOT = 107;
 		public static final int UPDATE_SIGN = 130;
 		public static final int ITEM_DATA = 131;
+		
+		/**
+		 * Sent the first time a tile entity (chest inventory, etc.) is withing range of the player, or has been updated.
+		 * <p>
+		 * Remember to clone the packet if you are modifying it.
+		 */
 		public static final int TILE_ENTITY_DATA = 132;
 		public static final int STATISTIC = 200;
 		public static final int PLAYER_INFO = 201;

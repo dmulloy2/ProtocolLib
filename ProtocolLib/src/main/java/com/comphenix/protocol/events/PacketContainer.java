@@ -285,43 +285,11 @@ public class PacketContainer implements Serializable {
 	 * internal Minecraft ItemStack.
 	 * @return A modifier for ItemStack array fields.
 	 */
-	public StructureModifier<ItemStack[]> getItemArrayModifier() {
-		
-		final EquivalentConverter<ItemStack> stackConverter = BukkitConverters.getItemStackConverter();
-		
+	public StructureModifier<ItemStack[]> getItemArrayModifier() {		
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack[]>withType(
 				MinecraftReflection.getItemStackArrayClass(), 
-				BukkitConverters.getIgnoreNull(new EquivalentConverter<ItemStack[]>() {
-					
-			public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
-				Class<?> nmsStack = MinecraftReflection.getItemStackClass();
-				Object[] result = (Object[]) Array.newInstance(nmsStack, specific.length);
-				
-				// Unwrap every item
-				for (int i = 0; i < result.length; i++) {
-					result[i] = stackConverter.getGeneric(nmsStack, specific[i]); 
-				}
-				return result;
-			}
-			
-			@Override
-			public ItemStack[] getSpecific(Object generic) {
-				Object[] input = (Object[]) generic;
-				ItemStack[] result = new ItemStack[input.length];
-				
-				// Add the wrapper
-				for (int i = 0; i < result.length; i++) {
-					result[i] = stackConverter.getSpecific(input[i]);
-				}
-				return result;
-			}
-			
-			@Override
-			public Class<ItemStack[]> getSpecificType() {
-				return ItemStack[].class;
-			}
-		}));
+				BukkitConverters.getIgnoreNull(new ItemStackArrayConverter()));
 	}
 	
 	/**
@@ -555,5 +523,41 @@ public class PacketContainer implements Serializable {
 		}
 		
 		return method;
+	}
+	
+	/**
+	 * Represents an equivalent converter for ItemStack arrays.
+	 * @author Kristian
+	 */
+	private static class ItemStackArrayConverter implements EquivalentConverter<ItemStack[]> {
+		final EquivalentConverter<ItemStack> stackConverter = BukkitConverters.getItemStackConverter();
+		
+		public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
+			Class<?> nmsStack = MinecraftReflection.getItemStackClass();
+			Object[] result = (Object[]) Array.newInstance(nmsStack, specific.length);
+			
+			// Unwrap every item
+			for (int i = 0; i < result.length; i++) {
+				result[i] = stackConverter.getGeneric(nmsStack, specific[i]); 
+			}
+			return result;
+		}
+		
+		@Override
+		public ItemStack[] getSpecific(Object generic) {
+			Object[] input = (Object[]) generic;
+			ItemStack[] result = new ItemStack[input.length];
+			
+			// Add the wrapper
+			for (int i = 0; i < result.length; i++) {
+				result[i] = stackConverter.getSpecific(input[i]);
+			}
+			return result;
+		}
+		
+		@Override
+		public Class<ItemStack[]> getSpecificType() {
+			return ItemStack[].class;
+		}
 	}
 }
