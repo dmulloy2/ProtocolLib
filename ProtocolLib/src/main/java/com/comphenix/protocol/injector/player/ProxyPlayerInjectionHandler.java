@@ -21,6 +21,7 @@ import java.io.DataInputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +52,7 @@ import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -350,6 +352,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 							return null;
 						
 						SocketInjector previous = inputStreamLookup.peekSocketInjector(address);
+						Socket socket = injector.getSocket();
 
 						// Close any previously associated hooks before we proceed
 						if (previous != null && !(player instanceof Factory)) {
@@ -363,8 +366,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 						}
 						injector.injectManager();
 						
-						// Save injector
-						inputStreamLookup.setSocketInjector(address, injector);
+						saveAddressLookup(address, socket, injector);
 						break;
 					}
 					
@@ -413,6 +415,17 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		return injector;
 	}
 
+	private void saveAddressLookup(SocketAddress address, Socket socket, SocketInjector injector) {
+		SocketAddress socketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+		
+		if (socketAddress != null && !Objects.equal(socketAddress, address)) {
+			// Save this version as well
+			inputStreamLookup.setSocketInjector(socketAddress, injector);
+		}
+		// Save injector
+		inputStreamLookup.setSocketInjector(address, injector);
+	}
+	
 	private void cleanupHook(PlayerInjector injector) {
 		// Clean up as much as possible
 		try {

@@ -284,7 +284,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	/**
 	 * Retrieve the associated remote address of a player.
-	 * @return The associated remote address..
+	 * @return The associated remote address.
 	 * @throws IllegalAccessException If we're unable to read the socket address field.
 	 */
 	@Override
