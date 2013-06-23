@@ -85,6 +85,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	public static final ReportType REPORT_CANNOT_INJECT_PLAYER = new ReportType("Unable to inject player.");
 
 	public static final ReportType REPORT_CANNOT_UNREGISTER_PLUGIN = new ReportType("Unable to handle disabled plugin.");
+	public static final ReportType REPORT_PLUGIN_VERIFIER_ERROR = new ReportType("Verifier error: %s");
 	
 	/**
 	 * Sets the inject hook type. Different types allow for maximum compatibility.
@@ -298,12 +299,16 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param plugin - plugin to check.
 	 */
 	private void printPluginWarnings(Plugin plugin) {
-		switch (pluginVerifier.verify(plugin)) {
-			case NO_DEPEND:
-				reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_DEPEND_MISSING).messageParam(plugin.getName()));
-			case VALID:
-				// Do nothing
-				break;
+		try {
+			switch (pluginVerifier.verify(plugin)) {
+				case NO_DEPEND:
+					reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_DEPEND_MISSING).messageParam(plugin.getName()));
+				case VALID:
+					// Do nothing
+					break;
+			}
+		} catch (IllegalStateException e) {
+			reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_VERIFIER_ERROR).messageParam(e.getMessage()));
 		}
 	}
 	
