@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoadOrder;
 
@@ -61,7 +60,7 @@ class PluginVerifier {
 	 * Reference to ProtocolLib.
 	 */
 	private final Plugin dependency;
-
+	
 	/**
 	 * Construct a new plugin verifier.
 	 * @param dependency - reference to ProtocolLib, a dependency we require of plugins.
@@ -98,7 +97,7 @@ class PluginVerifier {
 	 * @return The retrieved plugin, or NULL if not found.
 	 */
 	private Plugin getPluginOrDefault(String pluginName) {
-		return Bukkit.getPluginManager().getPlugin(pluginName);
+		return dependency.getServer().getPluginManager().getPlugin(pluginName);
 	}
 	
 	/**
