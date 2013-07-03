@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
+
+import javax.annotation.Nullable;
 
 import net.sf.cglib.proxy.Factory;
 
@@ -36,8 +39,10 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.TroveWrapper;
-import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 
 /**
  * Static packet registry in Minecraft.
@@ -59,6 +64,10 @@ public class PacketRegistry {
 	
 	// The packet class to packet ID translator
 	private static Map<Class, Integer> packetToID;
+	
+	// Packet IDs to classes, grouped by whether or not they're vanilla or custom defined
+	private static Multimap<Integer, Class> customIdToPacket;
+	private static Map<Integer, Class> vanillaIdToPacket;
 	
 	// Whether or not certain packets are sent by the client or the server
 	private static ImmutableSet<Integer> serverPackets;
@@ -93,8 +102,23 @@ public class PacketRegistry {
 			} catch (IllegalAccessException e) {
 				throw new RuntimeException("Unable to retrieve the packetClassToIdMap", e);
 			}
+			
+			// Create the inverse maps
+			customIdToPacket = InverseMaps.inverseMultimap(packetToID, new Predicate<Map.Entry<Class, Integer>>() {
+				@Override
+				public boolean apply(@Nullable Entry<Class, Integer> entry) {
+					return !MinecraftReflection.isMinecraftClass(entry.getKey());
+				}
+			});
+			
+			// And the vanilla pack - here we assume a unique ID to class mapping
+			vanillaIdToPacket = InverseMaps.inverseMap(packetToID, new Predicate<Map.Entry<Class, Integer>>() {
+				@Override
+				public boolean apply(@Nullable Entry<Class, Integer> entry) {
+					return MinecraftReflection.isMinecraftClass(entry.getKey());
+				}
+			});
 		}
-		
 		return packetToID;
 	}
 	
@@ -248,24 +272,30 @@ public class PacketRegistry {
 	 * @return The associated class.
 	 */
 	public static Class getPacketClassFromID(int packetID, boolean forceVanilla) {
-		
 		Map<Integer, Class> lookup = forceVanilla ? previousValues : overwrittenPackets;
+		Class<?> result = null;
 		
 		// Optimized lookup
 		if (lookup.containsKey(packetID)) {
 			return removeEnhancer(lookup.get(packetID), forceVanilla);
 		}
+		
+		// Refresh lookup tables
+		getPacketToID();
 
-		// Will most likely not be used
-		for (Map.Entry<Class, Integer> entry : getPacketToID().entrySet()) {
-			if (Objects.equal(entry.getValue(), packetID)) {
-				// Attempt to get the vanilla class here too
-				if (!forceVanilla || MinecraftReflection.isMinecraftClass(entry.getKey()))
-					return removeEnhancer(entry.getKey(), forceVanilla);
-			}
+		// See if we can look for non-vanilla classes
+		if (!forceVanilla) {
+			result = Iterables.getFirst(customIdToPacket.get(packetID), null);
+		}
+		if (result == null) {
+			result = vanillaIdToPacket.get(packetID);
 		}
 		
-		throw new IllegalArgumentException("The packet ID " + packetID + " is not registered.");
+		// See if we got it
+		if (result != null)
+			return result;
+		else
+			throw new IllegalArgumentException("The packet ID " + packetID + " is not registered.");
 	}
 	
 	/**

@@ -287,7 +287,7 @@ public class MinecraftReflection {
 	public static boolean isMinecraftClass(@Nonnull Class<?> clazz) {
 		if (clazz == null)
 			throw new IllegalArgumentException("Class cannot be NULL.");
-		
+
 		return getMinecraftObjectMatcher().isMatch(clazz, null);
 	}
 	
