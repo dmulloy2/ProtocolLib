@@ -29,6 +29,11 @@
       <id>bukkit-rep</id>
       <url>http://repo.bukkit.org/content/groups/public</url>
     </repository>
+    <repository>
+      <id>comphenix-releases</id>
+      <name>Comphenix Maven Releases</name>
+      <url>http://repo.comphenix.net/content/repositories/releases/</url>
+    </repository>
   </repositories>
  
   <build>
