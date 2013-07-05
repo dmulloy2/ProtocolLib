@@ -27,11 +27,6 @@ public abstract class AbstractInputStreamLookup {
 	public abstract void inject(Object container);
 	
 	/**
-	 * Invoked when the world has loaded.
-	 */
-	public abstract void postWorldLoaded();
-	
-	/**
 	 * Retrieve the associated socket injector for a player.
 	 * @param input - the indentifying filtered input stream.
 	 * @return The socket injector we have associated with this player.

@@ -10,36 +10,14 @@ import java.util.List;
 import org.bukkit.entity.Player;
 
 public class BukkitSocketInjector implements SocketInjector {
-	/**
-	 * Represents a single send packet command.
-	 * @author Kristian
-	 */
-	static class SendPacketCommand {
-		private final Object packet;
-		private final boolean filtered;
-		
-		public SendPacketCommand(Object packet, boolean filtered) {
-			this.packet = packet;
-			this.filtered = filtered;
-		}
-
-		public Object getPacket() {
-			return packet;
-		}
-
-		public boolean isFiltered() {
-			return filtered;
-		}
-	}
-	
 	private Player player;
 	
 	// Queue of server packets
-	private List<SendPacketCommand> syncronizedQueue = Collections.synchronizedList(new ArrayList<SendPacketCommand>());
+	private List<QueuedSendPacket> syncronizedQueue = Collections.synchronizedList(new ArrayList<QueuedSendPacket>());
 	
 	/**
 	 * Represents a temporary socket injector.
-	 * @param temporaryPlayer - 
+	 * @param temporaryPlayer - a temporary player.
 	 */
 	public BukkitSocketInjector(Player player) {
 		if (player == null)
@@ -65,7 +43,7 @@ public class BukkitSocketInjector implements SocketInjector {
 	@Override
 	public void sendServerPacket(Object packet, boolean filtered)
 			throws InvocationTargetException {
-		SendPacketCommand command = new SendPacketCommand(packet, filtered);
+		QueuedSendPacket command = new QueuedSendPacket(packet, filtered);
 		
 		// Queue until we can find something better
 		syncronizedQueue.add(command);
@@ -86,7 +64,7 @@ public class BukkitSocketInjector implements SocketInjector {
 		// Transmit all queued packets to a different injector.
 		try {
 			synchronized(syncronizedQueue) {
-			    for (SendPacketCommand command : syncronizedQueue) {
+			    for (QueuedSendPacket command : syncronizedQueue) {
 					delegate.sendServerPacket(command.getPacket(), command.isFiltered());
 			    }
 			    syncronizedQueue.clear();

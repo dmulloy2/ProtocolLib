@@ -144,14 +144,6 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		this.serverInjection = new InjectedServerConnection(reporter, inputStreamLookup, server, netLoginInjector);
 		serverInjection.injectList();
 	}
-	
-	@Override
-	public void postWorldLoaded() {
-		// This will actually create a socket and a seperate thread ...
-		if (inputStreamLookup != null) {
-			inputStreamLookup.postWorldLoaded();
-		}
-	}
 
 	/**
 	 * Retrieves how the server packets are read.

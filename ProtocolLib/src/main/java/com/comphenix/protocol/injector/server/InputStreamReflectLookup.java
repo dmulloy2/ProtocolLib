@@ -54,11 +54,6 @@ class InputStreamReflectLookup extends AbstractInputStreamLookup {
 	}
 
 	@Override
-	public void postWorldLoaded() {
-		// Nothing again
-	}
-	
-	@Override
 	public SocketInjector peekSocketInjector(SocketAddress address) {
 		try {
 			return addressLookup.get(address, 0, TimeUnit.MILLISECONDS);

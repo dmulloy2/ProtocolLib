@@ -42,9 +42,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
+import com.comphenix.executors.BukkitFutures;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
@@ -56,6 +58,7 @@ import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.injector.player.InjectedServerConnection;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
@@ -67,8 +70,11 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 
-public final class PacketFilterManager implements ProtocolManager, ListenerInvoker {
+public final class PacketFilterManager implements ProtocolManager, ListenerInvoker, InternalManager {
+	
 	public static final ReportType REPORT_CANNOT_LOAD_PACKET_LIST = new ReportType("Cannot load server and client packet list.");
 	public static final ReportType REPORT_CANNOT_INITIALIZE_PACKET_INJECTOR = new ReportType("Unable to initialize packet injector");
 	
@@ -86,6 +92,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 	public static final ReportType REPORT_CANNOT_UNREGISTER_PLUGIN = new ReportType("Unable to handle disabled plugin.");
 	public static final ReportType REPORT_PLUGIN_VERIFIER_ERROR = new ReportType("Verifier error: %s");
+	
+	public static final ReportType REPORT_TEMPORARY_EVENT_ERROR = new ReportType("Unable to register or handle temporary event.");
 	
 	/**
 	 * Sets the inject hook type. Different types allow for maximum compatibility.
@@ -173,23 +181,31 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, Plugin library, DelayedSingleTask unhookTask, ErrorReporter reporter) {
-		this(classLoader, server, library, new MinecraftVersion(server), unhookTask, reporter);
-	}
-	
-	/**
-	 * Only create instances of this class if protocol lib is disabled.
-	 */
-	public PacketFilterManager(ClassLoader classLoader, Server server, Plugin library, 
-							   MinecraftVersion mcVersion, DelayedSingleTask unhookTask, ErrorReporter reporter) {
+	public PacketFilterManager(
+		ClassLoader classLoader, Server server, Plugin library, 
+		AsyncFilterManager asyncManager, MinecraftVersion mcVersion, 
+		final DelayedSingleTask unhookTask, 
+		ErrorReporter reporter, boolean nettyEnabled) {
 		
 		if (reporter == null)
 			throw new IllegalArgumentException("reporter cannot be NULL.");
 		if (classLoader == null)
 			throw new IllegalArgumentException("classLoader cannot be NULL.");
 		
-		// Just boilerplate
-		final DelayedSingleTask finalUnhookTask = unhookTask;
+		// Used to determine if injection is needed
+		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
+			@Override
+			public boolean apply(@Nullable GamePhase phase) {
+				boolean result = true;
+				
+				if (phase.hasLogin())
+					result &= getPhaseLoginCount() > 0;
+				// Note that we will still hook players if the unhooking has been delayed
+				if (phase.hasPlaying())
+					result &= getPhasePlayingCount() > 0 || unhookTask.isRunning();
+				return result;
+			}
+		};
 		
 		// Listener containers
 		this.recievedListeners = new SortedPacketListenerList();
@@ -204,70 +220,99 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// The plugin verifier
 		this.pluginVerifier = new PluginVerifier(library);
 		
-		// Used to determine if injection is needed
-		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
-			@Override
-			public boolean apply(@Nullable GamePhase phase) {
-				boolean result = true;
-				
-				if (phase.hasLogin())
-					result &= getPhaseLoginCount() > 0;
-				// Note that we will still hook players if the unhooking has been delayed
-				if (phase.hasPlaying())
-					result &= getPhasePlayingCount() > 0 || finalUnhookTask.isRunning();
-				return result;
-			}
-		};
+		// Use the correct injection type
+		if (nettyEnabled) {
+			spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
+			this.playerInjection = spigotInjector.getPlayerHandler();
+			this.packetInjector = spigotInjector.getPacketInjector();
+			
+		} else {
+			// Initialize standard injection mangers
+			this.playerInjection = PlayerInjectorBuilder.newBuilder().
+					invoker(this).
+					server(server).
+					reporter(reporter).
+					classLoader(classLoader).
+					packetListeners(packetListeners).
+					injectionFilter(isInjectionNecessary).
+					version(mcVersion).
+					buildHandler();
 		
+			this.packetInjector = PacketInjectorBuilder.newBuilder().
+					invoker(this).
+					reporter(reporter).
+					classLoader(classLoader).
+					playerInjection(playerInjection).
+					buildInjector();
+		}
+		this.asyncFilterManager = asyncManager;
+		
+		// Attempt to load the list of server and client packets
 		try {
-			// Spigot
-			if (SpigotPacketInjector.canUseSpigotListener()) {
-				spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
-				this.playerInjection = spigotInjector.getPlayerHandler();
-				this.packetInjector = spigotInjector.getPacketInjector();
-				
-			} else {
-				// Initialize standard injection mangers
-				this.playerInjection = PlayerInjectorBuilder.newBuilder().
-						invoker(this).
-						server(server).
-						reporter(reporter).
-						classLoader(classLoader).
-						packetListeners(packetListeners).
-						injectionFilter(isInjectionNecessary).
-						version(mcVersion).
-						buildHandler();
-			
-				this.packetInjector = PacketInjectorBuilder.newBuilder().
-						invoker(this).
-						reporter(reporter).
-						classLoader(classLoader).
-						playerInjection(playerInjection).
-						buildInjector();
-			}
-
-			this.asyncFilterManager = new AsyncFilterManager(reporter, server.getScheduler(), this);
-			
-			// Attempt to load the list of server and client packets
-			try {
-				knowsServerPackets = PacketRegistry.getServerPackets() != null;
-				knowsClientPackets = PacketRegistry.getClientPackets() != null;
-			} catch (FieldAccessException e) {
-				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_PACKET_LIST).error(e));
-			}
-
+			knowsServerPackets = PacketRegistry.getServerPackets() != null;
+			knowsClientPackets = PacketRegistry.getClientPackets() != null;
 		} catch (FieldAccessException e) {
-			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_INITIALIZE_PACKET_INJECTOR).error(e));
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_PACKET_LIST).error(e));
 		}
 	}
 	
-	/**
-	 * Initiate logic that is performed after the world has loaded.
-	 */
-	public void postWorldLoaded() {
-		playerInjection.postWorldLoaded();
+	public static InternalManager createManager(
+		final ClassLoader classLoader, final Server server, final Plugin library, 
+		final MinecraftVersion mcVersion, final DelayedSingleTask unhookTask, 
+		final ErrorReporter reporter) {
+		
+		final AsyncFilterManager asyncManager = new AsyncFilterManager(reporter, server.getScheduler());
+		
+		// Spigot
+		if (SpigotPacketInjector.canUseSpigotListener()) {
+			// We need to delay this until we know if Netty is enabled
+			final DelayedPacketManager delayed = new DelayedPacketManager(reporter);
+			
+			Futures.addCallback(BukkitFutures.nextEvent(library, WorldInitEvent.class), new FutureCallback<WorldInitEvent>() {
+				@Override
+				public void onSuccess(WorldInitEvent event) {
+					// Nevermind
+					if (delayed.isClosed())
+						return;
+					
+					try {
+						// Now we are probably able to check for Netty
+						InjectedServerConnection inspector = new InjectedServerConnection(reporter, null, server, null);
+						Object connection = inspector.getServerConnection();
+
+						// Use netty if we have a non-standard ServerConnection class
+						boolean useNetty = !MinecraftReflection.isMinecraftObject(connection);
+						
+						// Switch to the standard manager
+						delayed.setDelegate(new PacketFilterManager(
+							classLoader, server, library, asyncManager, mcVersion, unhookTask, reporter, useNetty)
+						);
+						// Reference this manager directly
+						asyncManager.setManager(delayed.getDelegate());
+
+					} catch (Exception e) {
+						onFailure(e);
+					}
+				}
+				
+				@Override
+				public void onFailure(Throwable error) {
+					reporter.reportWarning(this, Report.newBuilder(REPORT_TEMPORARY_EVENT_ERROR).error(error));
+				}
+			});
+			
+			// Let plugins use this version instead
+			return delayed;
+		} else {
+			// The standard manager
+			PacketFilterManager manager = new PacketFilterManager(
+				classLoader, server, library, asyncManager, mcVersion, unhookTask, reporter, false);
+			
+			asyncManager.setManager(manager);
+			return manager;
+		}
 	}
-	
+
 	@Override
 	public AsynchronousManager getAsynchronousManager() {
 		return asyncFilterManager;
@@ -277,6 +322,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * Retrieves how the server packets are read.
 	 * @return Injection method for reading server packets.
 	 */
+	@Override
 	public PlayerInjectHooks getPlayerHook() {
 		return playerInjection.getPlayerHook();
 	}
@@ -285,6 +331,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * Sets how the server packets are read.
 	 * @param playerHook - the new injection method for reading server packets.
 	 */
+	@Override
 	public void setPlayerHook(PlayerInjectHooks playerHook) {
 		playerInjection.setPlayerHook(playerHook);
 	}
@@ -707,6 +754,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param manager - Bukkit plugin manager that provides player join/leave events.
 	 * @param plugin - the parent plugin.
 	 */
+	@Override
 	public void registerEvents(PluginManager manager, final Plugin plugin) {
 		if (spigotInjector != null && !spigotInjector.register(plugin))
 			throw new IllegalArgumentException("Spigot has already been registered.");
@@ -974,9 +1022,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		return hasClosed;
 	}
 	
-	/**
-	 * Called when ProtocolLib is closing.
-	 */
+	@Override
 	public void close() {
 		// Guard
 		if (hasClosed)

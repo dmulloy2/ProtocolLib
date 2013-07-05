@@ -114,12 +114,7 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	public void checkListener(Set<PacketListener> listeners) {
 		// Yes, really
 	}
-
-	@Override
-	public void postWorldLoaded() {
-		// Do nothing
-	}
-
+	
 	@Override
 	public void updatePlayer(Player player) {
 		// Do nothing

@@ -69,11 +69,11 @@ public class AsyncFilterManager implements AsynchronousManager {
 	// Default scheduler
 	private final BukkitScheduler scheduler;
 	
-	// Our protocol manager
-	private final ProtocolManager manager;
-	
 	// Current packet index
 	private final AtomicInteger currentSendingIndex = new AtomicInteger();
+	
+	// Our protocol manager
+	private ProtocolManager manager;
 	
 	/**
 	 * Initialize a asynchronous filter manager.
@@ -83,7 +83,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * @param scheduler - task scheduler.
 	 * @param manager - protocol manager.
 	 */
-	public AsyncFilterManager(ErrorReporter reporter, BukkitScheduler scheduler, ProtocolManager manager) {
+	public AsyncFilterManager(ErrorReporter reporter, BukkitScheduler scheduler) {
 		// Initialize timeout listeners
 		this.serverTimeoutListeners = new SortedPacketListenerList();
 		this.clientTimeoutListeners = new SortedPacketListenerList();
@@ -95,10 +95,24 @@ public class AsyncFilterManager implements AsynchronousManager {
 		this.playerSendingHandler.initializeScheduler();
 		
 		this.scheduler = scheduler;
-		this.manager = manager;
-		
 		this.reporter = reporter;
 		this.mainThread = Thread.currentThread();
+	}
+	
+	/**
+	 * Retrieve the protocol manager.
+	 * @return The protocol manager.
+	 */
+	public ProtocolManager getManager() {
+		return manager;
+	}
+	
+	/**
+	 * Set the associated protocol manager.
+	 * @param manager - the new manager.
+	 */
+	public void setManager(ProtocolManager manager) {
+		this.manager = manager;
 	}
 	
 	@Override

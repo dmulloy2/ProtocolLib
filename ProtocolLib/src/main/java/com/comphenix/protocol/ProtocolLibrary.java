@@ -41,6 +41,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.DelayedSingleTask;
+import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
@@ -95,7 +96,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private static final String PERMISSION_INFO = "protocol.info";
 	
 	// There should only be one protocol manager, so we'll make it static
-	private static PacketFilterManager protocolManager;
+	private static InternalManager protocolManager;
 	
 	// Error reporter
 	private static ErrorReporter reporter = new BasicErrorReporter();
@@ -172,7 +173,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 			
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = new PacketFilterManager(
+			protocolManager = PacketFilterManager.createManager(
 					getClassLoader(), getServer(), this, version, unhookTask, reporter);			
 			
 			// Setup error reporter
@@ -181,7 +182,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Update injection hook
 			try {
 				PlayerInjectHooks hook = config.getInjectionMethod();
-				
+
 				// Only update the hook if it's different
 				if (!protocolManager.getPlayerHook().equals(hook)) {
 					logger.info("Changing player hook from " + protocolManager.getPlayerHook() + " to " + hook);
@@ -301,9 +302,6 @@ public class ProtocolLibrary extends JavaPlugin {
 				disablePlugin();
 				return;
 			}
-			
-			// Perform logic when the world has loaded
-			protocolManager.postWorldLoaded();
 			
 			// Initialize background compiler
 			if (backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
