@@ -95,6 +95,7 @@ public final class Packets {
 		public static final int MOB_EFFECT = 41;
 		public static final int REMOVE_MOB_EFFECT = 42;
 		public static final int SET_EXPERIENCE = 43;
+		public static final int UDATE_ATTRIBUTES = 44;
 		public static final int MAP_CHUNK = 51;
 		public static final int MULTI_BLOCK_CHANGE = 52;
 		public static final int BLOCK_CHANGE = 53;
@@ -199,6 +200,7 @@ public final class Packets {
 		public static final int BLOCK_ITEM_SWITCH = 16;
 		public static final int ARM_ANIMATION = 18;
 		public static final int ENTITY_ACTION = 19;
+		public static final int PLAYER_INPUT = 27;
 		public static final int CLOSE_WINDOW = 101;
 		public static final int WINDOW_CLICK = 102;
 		public static final int TRANSACTION = 106;
