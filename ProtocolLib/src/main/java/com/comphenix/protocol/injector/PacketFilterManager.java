@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -271,39 +272,58 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			// They must reference each other
 			delayed.setAsynchronousManager(asyncManager);
 			asyncManager.setManager(delayed);
-			
-			Futures.addCallback(BukkitFutures.nextEvent(library, WorldInitEvent.class), new FutureCallback<WorldInitEvent>() {
+
+			final Callable<Object> registerSpigot = new Callable<Object>() {
 				@Override
-				public void onSuccess(WorldInitEvent event) {
-					// Nevermind
-					if (delayed.isClosed())
-						return;
+				public Object call() throws Exception {
+					// Now we are probably able to check for Netty
+					InjectedServerConnection inspector = new InjectedServerConnection(reporter, null, server, null);
+					Object connection = inspector.getServerConnection();
+
+					// Use netty if we have a non-standard ServerConnection class
+					boolean useNetty = !MinecraftReflection.isMinecraftObject(connection);
 					
-					try {
-						// Now we are probably able to check for Netty
-						InjectedServerConnection inspector = new InjectedServerConnection(reporter, null, server, null);
-						Object connection = inspector.getServerConnection();
+					// Switch to the standard manager
+					delayed.setDelegate(new PacketFilterManager(
+						classLoader, server, library, asyncManager, mcVersion, unhookTask, reporter, useNetty)
+					);
+					
+					// Reference this manager directly
+					asyncManager.setManager(delayed.getDelegate());
+					return null;
+				}
+			};
 
-						// Use netty if we have a non-standard ServerConnection class
-						boolean useNetty = !MinecraftReflection.isMinecraftObject(connection);
+			// If the server hasn't loaded yet - wait
+			if (server.getWorlds().size() == 0) {
+				Futures.addCallback(BukkitFutures.nextEvent(library, WorldInitEvent.class), new FutureCallback<WorldInitEvent>() {
+					@Override
+					public void onSuccess(WorldInitEvent event) {
+						// Nevermind
+						if (delayed.isClosed())
+							return;
 						
-						// Switch to the standard manager
-						delayed.setDelegate(new PacketFilterManager(
-							classLoader, server, library, asyncManager, mcVersion, unhookTask, reporter, useNetty)
-						);
-						// Reference this manager directly
-						asyncManager.setManager(delayed.getDelegate());
-
-					} catch (Exception e) {
-						onFailure(e);
+						try {
+							registerSpigot.call();
+						} catch (Exception e) {
+							onFailure(e);
+						}
 					}
-				}
+					
+					@Override
+					public void onFailure(Throwable error) {
+						reporter.reportWarning(PacketFilterManager.class, Report.newBuilder(REPORT_TEMPORARY_EVENT_ERROR).error(error));
+					}
+				});
 				
-				@Override
-				public void onFailure(Throwable error) {
-					reporter.reportWarning(PacketFilterManager.class, Report.newBuilder(REPORT_TEMPORARY_EVENT_ERROR).error(error));
+			} else {
+				// Do it now
+				try {
+					registerSpigot.call();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-			});
+			}
 			
 			// Let plugins use this version instead
 			return delayed;
