@@ -47,6 +47,39 @@ public class ReportType {
 	}
 	
 	/**
+	 * Retrieve the class of the given sender.
+	 * <p>
+	 * If the sender is already a Class, we return it.
+	 * @param sender - the sender to look up.
+	 * @return The class of the sender.
+	 */
+	public static Class<?> getSenderClass(Object sender) {
+		if (sender == null)
+			throw new IllegalArgumentException("sender cannot be NUll.");
+		else if (sender instanceof Class<?>)
+			return (Class<?>) sender;
+		else
+			return sender.getClass();
+	}
+	
+	/**
+	 * Retrieve the full canonical name of a given report type.
+	 * <p>
+	 * Note that the sender may be a class (for static callers), in which 
+	 * case it will be used directly instead of its getClass() method.
+	 * <p>
+	 * It is thus not advisable for class classes to report reports.
+	 * @param sender - the sender, or its class.
+	 * @param type - the report type.
+	 * @return The full canonical name.
+	 */
+	public static String getReportName(Object sender, ReportType type) {
+		if (sender == null)
+			throw new IllegalArgumentException("sender cannot be NUll.");
+		return getReportName(getSenderClass(sender), type);
+	}
+	
+	/**
 	 * Retrieve the full canonical name of a given report type.
 	 * <p>
 	 * This is in the format <i>canonical_name_of_class#report_type</i>
@@ -54,7 +87,7 @@ public class ReportType {
 	 * @param type - the report instance.
 	 * @return The full canonical name.
 	 */
-	public static String getReportName(Class<?> sender, ReportType type) {
+	private static String getReportName(Class<?> sender, ReportType type) {
 		if (sender == null)
 			throw new IllegalArgumentException("sender cannot be NUll.");
 		

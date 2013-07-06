@@ -362,6 +362,10 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 			return asyncManager;
 	}
 	
+	/**
+	 * Update the asynchronous manager. This must be set.
+	 * @param asyncManager - the asynchronous manager.
+	 */
 	public void setAsynchronousManager(AsynchronousManager asyncManager) {
 		this.asyncManager = asyncManager;
 	}

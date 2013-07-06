@@ -59,7 +59,7 @@ public class DelegatedErrorReporter implements ErrorReporter {
 	 * Invoked before an error report is passed on to the underlying error reporter.
 	 * <p>
 	 * To cancel a report, return NULL.
-	 * @param sender - the sender component.
+	 * @param sender - the sender instance or class.
 	 * @param report - the error report.
 	 * @param detailed - whether or not the report will be displayed in detail.
 	 * @return The report to pass on, or NULL to cancel it.

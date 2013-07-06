@@ -217,7 +217,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			@Override
 			protected Report filterReport(Object sender, Report report, boolean detailed) {
-				String canonicalName = ReportType.getReportName(sender.getClass(), report.getType());
+				String canonicalName = ReportType.getReportName(sender, report.getType());
 				String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
 				
 				if (config != null && config.getModificationCount() != lastModCount) {

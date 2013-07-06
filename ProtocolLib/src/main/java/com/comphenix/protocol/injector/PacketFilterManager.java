@@ -268,6 +268,10 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			// We need to delay this until we know if Netty is enabled
 			final DelayedPacketManager delayed = new DelayedPacketManager(reporter);
 			
+			// They must reference each other
+			delayed.setAsynchronousManager(asyncManager);
+			asyncManager.setManager(delayed);
+			
 			Futures.addCallback(BukkitFutures.nextEvent(library, WorldInitEvent.class), new FutureCallback<WorldInitEvent>() {
 				@Override
 				public void onSuccess(WorldInitEvent event) {
@@ -297,7 +301,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				
 				@Override
 				public void onFailure(Throwable error) {
-					reporter.reportWarning(this, Report.newBuilder(REPORT_TEMPORARY_EVENT_ERROR).error(error));
+					reporter.reportWarning(PacketFilterManager.class, Report.newBuilder(REPORT_TEMPORARY_EVENT_ERROR).error(error));
 				}
 			});
 			
