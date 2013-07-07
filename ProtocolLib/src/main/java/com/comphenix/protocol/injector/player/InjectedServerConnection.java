@@ -31,6 +31,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;
@@ -98,6 +99,27 @@ public class InjectedServerConnection {
 		this.netLoginInjector = netLoginInjector;
 	}
 
+	/**
+	 * Retrieve the current server connection.
+	 * @param reporter - error reproter.
+	 * @param server - the current server.
+	 * @return The current server connection, or NULL if it hasn't been initialized yet.
+	 * @throws FieldAccessException Reflection error.
+	 */
+	public static Object getServerConnection(ErrorReporter reporter, Server server) {
+		try {
+			// Now we are probably able to check for Netty
+			InjectedServerConnection inspector = new InjectedServerConnection(reporter, null, server, null);
+			return inspector.getServerConnection();
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Reflection error.", e);
+		} catch (IllegalArgumentException e) {
+			throw new FieldAccessException("Corrupt data.", e);
+		} catch (InvocationTargetException e) {
+			throw new FieldAccessException("Minecraft error.", e);
+		}
+	}
+	
 	/**
 	 * Initial reflective detective work. Will be automatically called by most methods in this class.
 	 */

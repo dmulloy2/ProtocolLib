@@ -173,8 +173,14 @@ public class ProtocolLibrary extends JavaPlugin {
 			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 			
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = PacketFilterManager.createManager(
-					getClassLoader(), getServer(), this, version, unhookTask, reporter);			
+			protocolManager = PacketFilterManager.newBuilder().
+					classLoader(getClassLoader()).
+					server(getServer()).
+					library(this).
+					minecraftVersion(version).
+					unhookTask(unhookTask).
+					reporter(reporter).
+					build();			
 			
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);

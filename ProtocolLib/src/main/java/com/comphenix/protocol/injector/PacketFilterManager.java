@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,11 +42,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
-import com.comphenix.executors.BukkitFutures;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
@@ -59,7 +56,6 @@ import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.injector.player.InjectedServerConnection;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
@@ -67,12 +63,9 @@ import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 
 public final class PacketFilterManager implements ProtocolManager, ListenerInvoker, InternalManager {
 	
@@ -93,8 +86,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 	public static final ReportType REPORT_CANNOT_UNREGISTER_PLUGIN = new ReportType("Unable to handle disabled plugin.");
 	public static final ReportType REPORT_PLUGIN_VERIFIER_ERROR = new ReportType("Verifier error: %s");
-	
-	public static final ReportType REPORT_TEMPORARY_EVENT_ERROR = new ReportType("Unable to register or handle temporary event.");
 	
 	/**
 	 * Sets the inject hook type. Different types allow for maximum compatibility.
@@ -182,17 +173,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
-	public PacketFilterManager(
-		ClassLoader classLoader, Server server, Plugin library, 
-		AsyncFilterManager asyncManager, MinecraftVersion mcVersion, 
-		final DelayedSingleTask unhookTask, 
-		ErrorReporter reporter, boolean nettyEnabled) {
-		
-		if (reporter == null)
-			throw new IllegalArgumentException("reporter cannot be NULL.");
-		if (classLoader == null)
-			throw new IllegalArgumentException("classLoader cannot be NULL.");
-		
+	public PacketFilterManager(PacketFilterBuilder builder) {		
 		// Used to determine if injection is needed
 		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
 			@Override
@@ -213,16 +194,16 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		this.sendingListeners = new SortedPacketListenerList();
 		
 		// References
-		this.unhookTask = unhookTask;
-		this.server = server;
-		this.classLoader = classLoader;
-		this.reporter = reporter;
+		this.unhookTask = builder.getUnhookTask();
+		this.server = builder.getServer();
+		this.classLoader = builder.getClassLoader();
+		this.reporter = builder.getReporter();
 		
 		// The plugin verifier
-		this.pluginVerifier = new PluginVerifier(library);
+		this.pluginVerifier = new PluginVerifier(builder.getLibrary());
 		
 		// Use the correct injection type
-		if (nettyEnabled) {
+		if (builder.isNettyEnabled()) {
 			spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
 			this.playerInjection = spigotInjector.getPlayerHandler();
 			this.packetInjector = spigotInjector.getPacketInjector();
@@ -236,7 +217,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 					classLoader(classLoader).
 					packetListeners(packetListeners).
 					injectionFilter(isInjectionNecessary).
-					version(mcVersion).
+					version(builder.getMinecraftVersion()).
 					buildHandler();
 		
 			this.packetInjector = PacketInjectorBuilder.newBuilder().
@@ -246,7 +227,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 					playerInjection(playerInjection).
 					buildInjector();
 		}
-		this.asyncFilterManager = asyncManager;
+		this.asyncFilterManager = builder.getAsyncManager();
 		
 		// Attempt to load the list of server and client packets
 		try {
@@ -256,87 +237,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_PACKET_LIST).error(e));
 		}
 	}
-	
-	public static InternalManager createManager(
-		final ClassLoader classLoader, final Server server, final Plugin library, 
-		final MinecraftVersion mcVersion, final DelayedSingleTask unhookTask, 
-		final ErrorReporter reporter) {
-		
-		final AsyncFilterManager asyncManager = new AsyncFilterManager(reporter, server.getScheduler());
-		
-		// Spigot
-		if (SpigotPacketInjector.canUseSpigotListener()) {
-			// We need to delay this until we know if Netty is enabled
-			final DelayedPacketManager delayed = new DelayedPacketManager(reporter);
-			
-			// They must reference each other
-			delayed.setAsynchronousManager(asyncManager);
-			asyncManager.setManager(delayed);
 
-			final Callable<Object> registerSpigot = new Callable<Object>() {
-				@Override
-				public Object call() throws Exception {
-					// Now we are probably able to check for Netty
-					InjectedServerConnection inspector = new InjectedServerConnection(reporter, null, server, null);
-					Object connection = inspector.getServerConnection();
-
-					// Use netty if we have a non-standard ServerConnection class
-					boolean useNetty = !MinecraftReflection.isMinecraftObject(connection);
-					
-					// Switch to the standard manager
-					delayed.setDelegate(new PacketFilterManager(
-						classLoader, server, library, asyncManager, mcVersion, unhookTask, reporter, useNetty)
-					);
-					
-					// Reference this manager directly
-					asyncManager.setManager(delayed.getDelegate());
-					return null;
-				}
-			};
-
-			// If the server hasn't loaded yet - wait
-			if (server.getWorlds().size() == 0) {
-				Futures.addCallback(BukkitFutures.nextEvent(library, WorldInitEvent.class), new FutureCallback<WorldInitEvent>() {
-					@Override
-					public void onSuccess(WorldInitEvent event) {
-						// Nevermind
-						if (delayed.isClosed())
-							return;
-						
-						try {
-							registerSpigot.call();
-						} catch (Exception e) {
-							onFailure(e);
-						}
-					}
-					
-					@Override
-					public void onFailure(Throwable error) {
-						reporter.reportWarning(PacketFilterManager.class, Report.newBuilder(REPORT_TEMPORARY_EVENT_ERROR).error(error));
-					}
-				});
-				
-			} else {
-				// Do it now
-				try {
-					registerSpigot.call();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			
-			// Let plugins use this version instead
-			return delayed;
-		} else {
-			// The standard manager
-			PacketFilterManager manager = new PacketFilterManager(
-				classLoader, server, library, asyncManager, mcVersion, unhookTask, reporter, false);
-			
-			asyncManager.setManager(manager);
-			return manager;
-		}
+	/**
+	 * Construct a new packet filter builder.
+	 * @return New builder.
+	 */
+	public static PacketFilterBuilder newBuilder() {
+		return new PacketFilterBuilder();
 	}
-
+	
 	@Override
 	public AsynchronousManager getAsynchronousManager() {
 		return asyncFilterManager;
