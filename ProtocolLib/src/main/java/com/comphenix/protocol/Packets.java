@@ -95,7 +95,7 @@ public final class Packets {
 		public static final int MOB_EFFECT = 41;
 		public static final int REMOVE_MOB_EFFECT = 42;
 		public static final int SET_EXPERIENCE = 43;
-		public static final int UDATE_ATTRIBUTES = 44;
+		public static final int UPDATE_ATTRIBUTES = 44;
 		public static final int MAP_CHUNK = 51;
 		public static final int MULTI_BLOCK_CHANGE = 52;
 		public static final int BLOCK_CHANGE = 53;
