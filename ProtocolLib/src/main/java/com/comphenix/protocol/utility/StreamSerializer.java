@@ -2,7 +2,9 @@ package com.comphenix.protocol.utility;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -13,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 
 /**
  * Utility methods for reading and writing Minecraft objects to streams.
@@ -37,11 +40,14 @@ public class StreamSerializer {
 	public ItemStack deserializeItemStack(@Nonnull DataInputStream input) throws IOException {
 		if (input == null)
 			throw new IllegalArgumentException("Input stream cannot be NULL.");
-		if (readItemMethod == null)
-			readItemMethod = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
-								getMethodByParameters("readPacket", 
-										MinecraftReflection.getItemStackClass(), 
-										new Class<?>[] {DataInputStream.class});
+		if (readItemMethod == null) {
+			readItemMethod = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(1).
+					parameterDerivedOf(DataInput.class).
+					returnDerivedOf(MinecraftReflection.getItemStackClass()).
+					build());
+		}
 		try {
 			Object nmsItem = readItemMethod.invoke(null, input);
 			
@@ -88,10 +94,12 @@ public class StreamSerializer {
 		Object nmsItem = MinecraftReflection.getMinecraftItemStack(stack);
 		
 		if (writeItemMethod == null)
-			writeItemMethod = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
-								getMethodByParameters("writePacket", new Class<?>[] { 
-										MinecraftReflection.getItemStackClass(), 
-										DataOutputStream.class });
+			writeItemMethod = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(2).
+					parameterDerivedOf(MinecraftReflection.getItemStackClass(), 0).
+					parameterDerivedOf(DataOutput.class, 1).
+					build());
 		try {
 			writeItemMethod.invoke(null, nmsItem, output);
 		} catch (Exception e) {
