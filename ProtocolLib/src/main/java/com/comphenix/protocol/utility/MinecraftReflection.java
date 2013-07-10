@@ -18,7 +18,7 @@
 package com.comphenix.protocol.utility;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -797,7 +797,7 @@ public class MinecraftReflection {
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
 							 requireModifier(Modifier.STATIC).
-							 parameterSuperOf(DataOutputStream.class, 0).
+							 parameterDerivedOf(DataOutput.class, 0).
 							 parameterMatches(getMinecraftObjectMatcher(), 1).
 						    build());
 		
