@@ -21,6 +21,7 @@ import static org.junit.Assert.*;
 import java.lang.reflect.Array;
 import java.util.List;
 
+import org.apache.commons.lang.SerializationUtils;
 // Will have to be updated for every version though
 import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
 
@@ -304,6 +305,17 @@ public class PacketContainerTest {
 		// Insert and read back
 		watchableAccessor.write(0, list);
 		assertEquals(list, watchableAccessor.read(0));
+	}
+	
+	@Test
+	public void testSerialization() {
+		PacketContainer chat = new PacketContainer(3);
+		chat.getStrings().write(0, "Test");
+		
+		PacketContainer copy = (PacketContainer) SerializationUtils.clone(chat);
+		
+		assertEquals(3, copy.getID());
+		assertEquals("Test", copy.getStrings().read(0));
 	}
 
 	@Test

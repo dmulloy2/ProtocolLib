@@ -17,7 +17,9 @@
 
 package com.comphenix.protocol.events;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -49,6 +51,7 @@ import com.comphenix.protocol.reflect.cloning.CollectionCloner;
 import com.comphenix.protocol.reflect.cloning.FieldCloner;
 import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
@@ -456,7 +459,7 @@ public class PacketContainer implements Serializable {
 
 		try {
 			// Call the write-method
-			getMethodLazily(writeMethods, handle.getClass(), "write", DataOutputStream.class).
+			getMethodLazily(writeMethods, handle.getClass(), "write", DataOutput.class).
 				invoke(handle, new DataOutputStream(output));
 			
 		} catch (IllegalArgumentException e) {
@@ -483,7 +486,7 @@ public class PacketContainer implements Serializable {
 	    	
 			// Call the read method
 			try {
-				getMethodLazily(readMethods, handle.getClass(), "read", DataInputStream.class).
+				getMethodLazily(readMethods, handle.getClass(), "read", DataInput.class).
 					invoke(handle, new DataInputStream(input));
 				
 			} catch (IllegalArgumentException e) {
@@ -513,7 +516,12 @@ public class PacketContainer implements Serializable {
 		
 		// Atomic operation
 		if (method == null) {
-			Method initialized = FuzzyReflection.fromClass(handleClass).getMethodByParameters(methodName, parameterClass);
+			Method initialized = FuzzyReflection.fromClass(handleClass).getMethod(
+							FuzzyMethodContract.newBuilder().
+							parameterCount(1).
+							parameterDerivedOf(parameterClass).
+							returnTypeVoid().
+							build());
 			method = lookup.putIfAbsent(handleClass, initialized);
 			
 			// Use our version if we succeeded
