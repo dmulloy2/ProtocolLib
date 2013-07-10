@@ -4,10 +4,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import net.minecraft.server.v1_5_R2.StatisticList;
+import net.minecraft.server.v1_6_R2.StatisticList;
 
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_5_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -63,6 +63,6 @@ public class BukkitInitialization {
 	 */
 	public static void initializePackage() {
 		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_5_R2", "org.bukkit.craftbukkit.v1_5_R2");
+		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_6_R2", "org.bukkit.craftbukkit.v1_6_R2");
 	}
 }

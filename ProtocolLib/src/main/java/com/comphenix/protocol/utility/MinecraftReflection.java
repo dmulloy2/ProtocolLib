@@ -219,6 +219,11 @@ public class MinecraftReflection {
 		MINECRAFT_FULL_PACKAGE = minecraftPackage;
 		CRAFTBUKKIT_PACKAGE = craftBukkitPackage;
 		
+		// Make sure it exists
+		if (getMinecraftServerClass() == null) {
+			throw new IllegalArgumentException("Cannot find MinecraftServer for package " + minecraftPackage);
+		}
+			
 		// Standard matcher
 		setDynamicPackageMatcher(MINECRAFT_OBJECT);
 	}

@@ -214,7 +214,7 @@
   	<dependency>
   		<groupId>org.bukkit</groupId>
   		<artifactId>craftbukkit</artifactId>
-  		<version>1.5.1-R0.2-SNAPSHOT</version>
+  		<version>1.6.2-R0.1-SNAPSHOT</version>
   		<scope>provided</scope>
   	</dependency>
   	<dependency>
