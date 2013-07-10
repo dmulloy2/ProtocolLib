@@ -18,6 +18,7 @@
 package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;
@@ -41,7 +43,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * 
  * @author Kristian
  */
-class InjectedServerConnection {
+public class InjectedServerConnection {
 	// A number of things can go wrong ...
 	public static final ReportType REPORT_CANNOT_FIND_MINECRAFT_SERVER = new ReportType("Cannot extract minecraft server from Bukkit.");
 	public static final ReportType REPORT_CANNOT_INJECT_SERVER_CONNECTION = new ReportType("Cannot inject into server connection. Bad things will happen.");
@@ -66,11 +68,20 @@ class InjectedServerConnection {
 	private List<VolatileField> listFields;
 	private List<ReplacedArrayList<Object>> replacedLists;
 
+	// The current detected server socket
+	public enum ServerSocketType {
+		SERVER_CONNECTION,
+		LISTENER_THREAD,
+	}
+	
 	// Used to inject net handlers
 	private NetLoginInjector netLoginInjector;
 	
 	// Inject server connections
 	private AbstractInputStreamLookup socketInjector; 
+	
+	// Detected by the initializer
+	private ServerSocketType socketType;
 	
 	private Server server;
 	private ErrorReporter reporter;
@@ -88,7 +99,31 @@ class InjectedServerConnection {
 		this.netLoginInjector = netLoginInjector;
 	}
 
-	public void injectList() {
+	/**
+	 * Retrieve the current server connection.
+	 * @param reporter - error reproter.
+	 * @param server - the current server.
+	 * @return The current server connection, or NULL if it hasn't been initialized yet.
+	 * @throws FieldAccessException Reflection error.
+	 */
+	public static Object getServerConnection(ErrorReporter reporter, Server server) {
+		try {
+			// Now we are probably able to check for Netty
+			InjectedServerConnection inspector = new InjectedServerConnection(reporter, null, server, null);
+			return inspector.getServerConnection();
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Reflection error.", e);
+		} catch (IllegalArgumentException e) {
+			throw new FieldAccessException("Corrupt data.", e);
+		} catch (InvocationTargetException e) {
+			throw new FieldAccessException("Minecraft error.", e);
+		}
+	}
+	
+	/**
+	 * Initial reflective detective work. Will be automatically called by most methods in this class.
+	 */
+	public void initialize() {
 		// Only execute this method once
 		if (!hasAttempted)
 			hasAttempted = true;
@@ -112,12 +147,11 @@ class InjectedServerConnection {
 											getMethodByParameters("getServerConnection", 
 													MinecraftReflection.getServerConnectionClass(), new Class[] {});
 			// We're using Minecraft 1.3.1
-			injectServerConnection();
-		
+			socketType = ServerSocketType.SERVER_CONNECTION;
+			
 		} catch (IllegalArgumentException e) {
-
 			// Minecraft 1.2.5 or lower
-			injectListenerThread();
+			socketType = ServerSocketType.LISTENER_THREAD;
 			
 		} catch (Exception e) {
 			// Oh damn - inform the player
@@ -125,23 +159,89 @@ class InjectedServerConnection {
 		}
 	}
 	
+	/**
+	 * Retrieve the known server socket type.
+	 * <p>
+	 * This depends on the version of CraftBukkit we are using.
+	 * @return The server socket type.
+	 */
+	public ServerSocketType getServerSocketType() {
+		return socketType;
+	}
+	
+	/**
+	 * Inject the connection interceptor into the correct server socket implementation.
+	 */
+	public void injectList() {
+		initialize();
+		
+		if (socketType == ServerSocketType.SERVER_CONNECTION) {
+			injectServerConnection();
+		} else if (socketType == ServerSocketType.LISTENER_THREAD) {
+			injectListenerThread();
+		} else {
+			// Damn it
+			throw new IllegalStateException("Unable to detected server connection.");
+		}
+	}
+	
+	/**
+	 * Retrieve the listener thread field.
+	 */
+	private void initializeListenerField() {
+		if (listenerThreadField == null)
+			listenerThreadField = FuzzyReflection.fromObject(minecraftServer).
+									getFieldByType("networkListenThread", MinecraftReflection.getNetworkListenThreadClass());
+	}
+	
+	/**
+	 * Retrieve the listener thread object, or NULL the server isn't using this socket implementation.
+	 * @return The listener thread, or NULL.
+	 * @throws IllegalAccessException Cannot access field.
+	 * @hrows RuntimeException Unexpected class structure - the field doesn't exist.
+	 */
+	public Object getListenerThread() throws RuntimeException, IllegalAccessException {
+		initialize();
+		
+		if (socketType == ServerSocketType.LISTENER_THREAD) {
+			initializeListenerField();
+			return listenerThreadField.get(minecraftServer);
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Retrieve the server connection object, or NULL if the server isn't using it as the socket implementation.
+	 * @return The socket connection, or NULL.
+	 * @throws IllegalAccessException If the reflective operation failed.
+	 * @throws IllegalArgumentException If the reflective operation failed.
+	 * @throws InvocationTargetException If the reflective operation failed.
+	 */
+	public Object getServerConnection() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		initialize();
+		
+		if (socketType == ServerSocketType.SERVER_CONNECTION)
+			return serverConnectionMethod.invoke(minecraftServer);
+		else
+			return null;
+	}
+	
 	private void injectListenerThread() {
 		try {
-			if (listenerThreadField == null)
-				listenerThreadField = FuzzyReflection.fromObject(minecraftServer).
-										getFieldByType("networkListenThread", MinecraftReflection.getNetworkListenThreadClass());
+			initializeListenerField();
 		} catch (RuntimeException e) {
 			reporter.reportDetailed(this, 
 					Report.newBuilder(REPORT_CANNOT_FIND_LISTENER_THREAD).callerParam(minecraftServer).error(e)
 			);
 			return;
 		}
-
+		
 		Object listenerThread = null;
 		
 		// Attempt to get the thread
 		try {
-			listenerThread = listenerThreadField.get(minecraftServer);
+			listenerThread = getListenerThread();
 		} catch (Exception e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_READ_LISTENER_THREAD).error(e));
 			return;
@@ -160,7 +260,7 @@ class InjectedServerConnection {
 		
 		// Careful - we might fail
 		try {
-			serverConnection = serverConnectionMethod.invoke(minecraftServer);
+			serverConnection = getServerConnection();
 		} catch (Exception e) {
 			reporter.reportDetailed(this, 
 					Report.newBuilder(REPORT_CANNOT_FIND_SERVER_CONNECTION).callerParam(minecraftServer).error(e)

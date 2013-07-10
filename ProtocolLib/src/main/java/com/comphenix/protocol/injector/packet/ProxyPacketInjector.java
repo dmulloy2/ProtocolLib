@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.injector.packet;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -33,6 +34,8 @@ import net.sf.cglib.proxy.NoOp;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -50,6 +53,8 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * @author Kristian
  */
 class ProxyPacketInjector implements PacketInjector {
+	public static final ReportType REPORT_CANNOT_FIND_READ_PACKET_METHOD = new ReportType("Cannot find read packet method for ID %s.");
+	
 	/**
 	 * Represents a way to update the packet ID to class lookup table.
 	 * @author Kristian
@@ -134,7 +139,7 @@ class ProxyPacketInjector implements PacketInjector {
 	 */
 	private static FuzzyMethodContract readPacket = FuzzyMethodContract.newBuilder().
 			returnTypeVoid().
-			parameterExactType(DataInputStream.class).
+			parameterDerivedOf(DataInput.class).
 			parameterCount(1).
 			build();
 	
@@ -154,6 +159,9 @@ class ProxyPacketInjector implements PacketInjector {
 	
 	// Share callback filter
 	private CallbackFilter filter;
+	
+	// Determine if the read packet method was found
+	private boolean readPacketIntercepted = false;
 			
 	public ProxyPacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
 						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws FieldAccessException {
@@ -224,16 +232,20 @@ class ProxyPacketInjector implements PacketInjector {
 		}
 		
 		if (filter == null) {
+			readPacketIntercepted = false;
+			
 			filter = new CallbackFilter() {
 				@Override
 				public int accept(Method method) {
 					// Skip methods defined in Object
-					if (method.getDeclaringClass().equals(Object.class))
+					if (method.getDeclaringClass().equals(Object.class)) {
 						return 0;
-					else if (readPacket.isMatch(MethodInfo.fromMethod(method), null))
+					} else if (readPacket.isMatch(MethodInfo.fromMethod(method), null)) {
+						readPacketIntercepted = true;
 						return 1;
-					else
+					} else {
 						return 2;
+					}
 				}
 			};
 		}
@@ -251,6 +263,12 @@ class ProxyPacketInjector implements PacketInjector {
 
 		// Add a static reference
 		Enhancer.registerStaticCallbacks(proxy, new Callback[] { NoOp.INSTANCE, modifierReadPacket, modifierRest });
+		
+		// Check that we found the read method
+		if (!readPacketIntercepted) {
+			reporter.reportWarning(this, 
+				Report.newBuilder(REPORT_CANNOT_FIND_READ_PACKET_METHOD).messageParam(packetID));
+		}
 		
 		// Override values
 		previous.put(packetID, old);

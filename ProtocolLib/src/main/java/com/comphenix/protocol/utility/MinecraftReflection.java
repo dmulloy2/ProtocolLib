@@ -18,7 +18,7 @@
 package com.comphenix.protocol.utility;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -219,6 +219,11 @@ public class MinecraftReflection {
 		MINECRAFT_FULL_PACKAGE = minecraftPackage;
 		CRAFTBUKKIT_PACKAGE = craftBukkitPackage;
 		
+		// Make sure it exists
+		if (getMinecraftServerClass() == null) {
+			throw new IllegalArgumentException("Cannot find MinecraftServer for package " + minecraftPackage);
+		}
+			
 		// Standard matcher
 		setDynamicPackageMatcher(MINECRAFT_OBJECT);
 	}
@@ -287,7 +292,7 @@ public class MinecraftReflection {
 	public static boolean isMinecraftClass(@Nonnull Class<?> clazz) {
 		if (clazz == null)
 			throw new IllegalArgumentException("Class cannot be NULL.");
-		
+
 		return getMinecraftObjectMatcher().isMatch(clazz, null);
 	}
 	
@@ -792,7 +797,7 @@ public class MinecraftReflection {
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
 							 requireModifier(Modifier.STATIC).
-							 parameterSuperOf(DataOutputStream.class, 0).
+							 parameterDerivedOf(DataOutput.class, 0).
 							 parameterMatches(getMinecraftObjectMatcher(), 1).
 						    build());
 		

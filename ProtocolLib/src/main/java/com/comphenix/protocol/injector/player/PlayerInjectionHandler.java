@@ -161,9 +161,4 @@ public interface PlayerInjectionHandler {
 	 * Close any lingering proxy injections.
 	 */
 	public abstract void close();
-
-	/**
-	 * Perform any action that must be delayed until the world(s) has loaded.
-	 */
-	public abstract void postWorldLoaded();
 }

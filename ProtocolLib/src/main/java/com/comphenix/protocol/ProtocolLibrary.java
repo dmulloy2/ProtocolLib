@@ -41,6 +41,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.DelayedSingleTask;
+import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
@@ -85,7 +86,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The maximum version ProtocolLib has been tested with,
 	 */
-	private static final String MAXIMUM_MINECRAFT_VERSION = "1.5.2";
+	private static final String MAXIMUM_MINECRAFT_VERSION = "1.6.1";
 	
 	/**
 	 * The number of milliseconds per second.
@@ -95,7 +96,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private static final String PERMISSION_INFO = "protocol.info";
 	
 	// There should only be one protocol manager, so we'll make it static
-	private static PacketFilterManager protocolManager;
+	private static InternalManager protocolManager;
 	
 	// Error reporter
 	private static ErrorReporter reporter = new BasicErrorReporter();
@@ -172,8 +173,14 @@ public class ProtocolLibrary extends JavaPlugin {
 			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
 			
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = new PacketFilterManager(
-					getClassLoader(), getServer(), this, version, unhookTask, reporter);			
+			protocolManager = PacketFilterManager.newBuilder().
+					classLoader(getClassLoader()).
+					server(getServer()).
+					library(this).
+					minecraftVersion(version).
+					unhookTask(unhookTask).
+					reporter(reporter).
+					build();			
 			
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -181,7 +188,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Update injection hook
 			try {
 				PlayerInjectHooks hook = config.getInjectionMethod();
-				
+
 				// Only update the hook if it's different
 				if (!protocolManager.getPlayerHook().equals(hook)) {
 					logger.info("Changing player hook from " + protocolManager.getPlayerHook() + " to " + hook);
@@ -216,7 +223,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			@Override
 			protected Report filterReport(Object sender, Report report, boolean detailed) {
-				String canonicalName = ReportType.getReportName(sender.getClass(), report.getType());
+				String canonicalName = ReportType.getReportName(sender, report.getType());
 				String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
 				
 				if (config != null && config.getModificationCount() != lastModCount) {
@@ -301,9 +308,6 @@ public class ProtocolLibrary extends JavaPlugin {
 				disablePlugin();
 				return;
 			}
-			
-			// Perform logic when the world has loaded
-			protocolManager.postWorldLoaded();
 			
 			// Initialize background compiler
 			if (backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {

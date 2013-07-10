@@ -224,7 +224,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	 */
 	private String getSenderName(Object sender) {
 		if (sender != null)
-			return sender.getClass().getSimpleName();
+			return ReportType.getSenderClass(sender).getSimpleName();
 		else
 			return "NULL";
 	}
@@ -345,7 +345,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 		// We can't only rely on toString.
 		if (value == null) {
 			return "[NULL]";
-		} if (isSimpleType(value)) {
+		} if (isSimpleType(value) || value instanceof Class<?>) {
 			return value.toString();
 		} else {
 			try {
