@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -39,6 +40,8 @@ import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
+import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -50,6 +53,7 @@ import com.comphenix.protocol.reflect.cloning.Cloner;
 import com.comphenix.protocol.reflect.cloning.CollectionCloner;
 import com.comphenix.protocol.reflect.cloning.FieldCloner;
 import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
+import com.comphenix.protocol.reflect.cloning.ReflectionCloner;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
@@ -109,6 +113,10 @@ public class PacketContainer implements Serializable {
 						}
 					}).
 			build();
+	
+	// Packets that cannot be cloned by our default deep cloner
+	private static final IntegerSet CLONING_UNSUPPORTED = new IntegerSet(Packets.PACKET_COUNT, 
+			Arrays.asList(Packets.Server.UPDATE_ATTRIBUTES));
 	
 	/**
 	 * Creates a packet container for a new packet.
@@ -424,10 +432,17 @@ public class PacketContainer implements Serializable {
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
-		Object clonedPacket = DEEP_CLONER.clone(getHandle());
+		Object clonedPacket = null; 
+		
+		// Fall back on the alternative (but slower) method of reading and writing back the packet
+		if (CLONING_UNSUPPORTED.contains(id)) {
+			clonedPacket = ReflectionCloner.clone(this).getHandle();
+		} else {
+			clonedPacket = DEEP_CLONER.clone(getHandle());
+		}
 		return new PacketContainer(getID(), clonedPacket);
 	}
-	
+		
 	// To save space, we'll skip copying the inflated buffers in packet 51 and 56
 	private static Function<BuilderParameters, Cloner> getSpecializedDeepClonerFactory() {
 		// Look at what you've made me do Java, look at it!! 

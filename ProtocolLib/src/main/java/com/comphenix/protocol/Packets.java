@@ -36,6 +36,11 @@ public final class Packets {
 	public static final int MAXIMUM_PACKET_ID = 255;
 	
 	/**
+	 * The maximum number of unique packet IDs. It's unlikely this will ever change.
+	 */
+	public static final int PACKET_COUNT = 256;
+	
+	/**
 	 * List of packets sent only by the server.
 	 * @author Kristian
 	 */
