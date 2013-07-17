@@ -191,7 +191,7 @@ public class TemporaryPlayerFactory {
 	 * @throws FieldAccessException If we were unable to construct the message packet.
 	 */
 	private Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
-		injector.sendServerPacket(chatPacket.createPacket(message).getHandle(), false);
+		injector.sendServerPacket(chatPacket.createPacket(message).getHandle(), null, false);
 		return null;
 	}
 }

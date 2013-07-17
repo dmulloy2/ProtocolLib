@@ -9,6 +9,8 @@ import java.util.List;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.events.NetworkMarker;
+
 public class BukkitSocketInjector implements SocketInjector {
 	private Player player;
 	
@@ -41,9 +43,9 @@ public class BukkitSocketInjector implements SocketInjector {
 	}
 
 	@Override
-	public void sendServerPacket(Object packet, boolean filtered)
+	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered)
 			throws InvocationTargetException {
-		QueuedSendPacket command = new QueuedSendPacket(packet, filtered);
+		QueuedSendPacket command = new QueuedSendPacket(packet, marker, filtered);
 		
 		// Queue until we can find something better
 		syncronizedQueue.add(command);
@@ -65,7 +67,7 @@ public class BukkitSocketInjector implements SocketInjector {
 		try {
 			synchronized(syncronizedQueue) {
 			    for (QueuedSendPacket command : syncronizedQueue) {
-					delegate.sendServerPacket(command.getPacket(), command.isFiltered());
+					delegate.sendServerPacket(command.getPacket(), command.getMarker(), command.isFiltered());
 			    }
 			    syncronizedQueue.clear();
 			}

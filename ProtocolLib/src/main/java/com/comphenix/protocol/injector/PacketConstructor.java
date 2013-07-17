@@ -142,7 +142,6 @@ public class PacketConstructor {
 	 * @throws RuntimeException Minecraft threw an exception.
 	 */
 	public PacketContainer createPacket(Object... values) throws FieldAccessException {
-		
 		try {
 			// Convert types
 			for (int i = 0; i < values.length; i++) {

@@ -31,6 +31,7 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -76,14 +77,10 @@ class NetworkFieldInjector extends PlayerInjector {
 	// Determine if we're listening
 	private IntegerSet sendingFilters;
 
-	// Used to construct proxy objects
-	private ClassLoader classLoader;
-	
 	public NetworkFieldInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								ListenerInvoker manager, IntegerSet sendingFilters) throws IllegalAccessException {
 		
-		super(reporter, player, manager);
-		this.classLoader = classLoader;
+		super(classLoader, reporter, player, manager);
 		this.sendingFilters = sendingFilters;
 	}
 	
@@ -105,11 +102,14 @@ class NetworkFieldInjector extends PlayerInjector {
 	}
 
 	@Override
-	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
+	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) throws InvocationTargetException {
 		if (networkManager != null) {
 			try {
 				if (!filtered) {
 					ignoredPackets.add(packet);
+				}
+				if (marker != null) {
+					queuedMarkers.put(packet, marker);
 				}
 				
 				// Note that invocation target exception is a wrapper for a checked exception
@@ -146,7 +146,6 @@ class NetworkFieldInjector extends PlayerInjector {
 	
 	@Override
 	public void injectManager() {
-		
 		if (networkManager != null) {
 
 			@SuppressWarnings("rawtypes")

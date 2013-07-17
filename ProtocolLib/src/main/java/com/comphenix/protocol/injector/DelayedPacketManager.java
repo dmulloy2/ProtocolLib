@@ -19,6 +19,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
@@ -49,16 +50,19 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	private static class QueuedPacket {
 		private final Player player;
 		private final PacketContainer packet;
+		private final NetworkMarker marker;
+		
 		private final boolean filtered;
 		private final ConnectionSide side;
 		
-		public QueuedPacket(Player player, PacketContainer packet, boolean filtered, ConnectionSide side) {
+		public QueuedPacket(Player player, PacketContainer packet, NetworkMarker marker, boolean filtered, ConnectionSide side) {
 			this.player = player;
 			this.packet = packet;
+			this.marker = marker;
 			this.filtered = filtered;
 			this.side = side;
 		}
-		
+
 		/**
 		 * Retrieve the packet that will be transmitted or receieved.
 		 * @return The packet.
@@ -81,6 +85,14 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 		 */
 		public ConnectionSide getSide() {
 			return side;
+		}
+		
+		/**
+		 * Retrieve the associated network marker used to serialize packets on the network stream.
+		 * @return The associated marker.
+		 */
+		public NetworkMarker getMarker() {
+			return marker;
 		}
 		
 		/**
@@ -162,10 +174,10 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 						// Attempt to send it now
 						switch (packet.getSide()) {
 							case CLIENT_SIDE:
-								delegate.recieveClientPacket(packet.getPlayer(), packet.getPacket(), packet.isFiltered());
+								delegate.recieveClientPacket(packet.getPlayer(), packet.getPacket(), packet.getMarker(), packet.isFiltered());
 								break;
 							case SERVER_SIDE:
-								delegate.sendServerPacket(packet.getPlayer(), packet.getPacket(), packet.isFiltered());
+								delegate.sendServerPacket(packet.getPlayer(), packet.getPacket(), packet.getMarker(), packet.isFiltered());
 								break;
 							default:
 								
@@ -197,29 +209,39 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	
 	@Override
 	public void sendServerPacket(Player reciever, PacketContainer packet) throws InvocationTargetException {
-		sendServerPacket(reciever, packet, true);
+		sendServerPacket(reciever, packet, null, true);
 	}
-
+	
 	@Override
 	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
+		sendServerPacket(reciever, packet, null, filters);
+	}
+	
+	@Override
+	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
 		if (delegate != null) {
-			delegate.sendServerPacket(reciever, packet, filters);
+			delegate.sendServerPacket(reciever, packet, marker, filters);
 		} else {
-			queuedPackets.add(new QueuedPacket(reciever, packet, filters, ConnectionSide.SERVER_SIDE));
+			queuedPackets.add(new QueuedPacket(reciever, packet, marker, filters, ConnectionSide.SERVER_SIDE));
 		}
 	}
 
 	@Override
 	public void recieveClientPacket(Player sender, PacketContainer packet) throws IllegalAccessException, InvocationTargetException {
-		recieveClientPacket(sender, packet, true);
+		recieveClientPacket(sender, packet, null, true);
 	}
 
 	@Override
 	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters) throws IllegalAccessException, InvocationTargetException {
+		recieveClientPacket(sender, packet, null, filters);
+	}
+	
+	@Override
+	public void recieveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters) throws IllegalAccessException, InvocationTargetException {
 		if (delegate != null) {
-			delegate.recieveClientPacket(sender, packet, filters);
+			delegate.recieveClientPacket(sender, packet, marker, filters);
 		} else {
-			queuedPackets.add(new QueuedPacket(sender, packet, filters, ConnectionSide.CLIENT_SIDE));
+			queuedPackets.add(new QueuedPacket(sender, packet, marker, filters, ConnectionSide.CLIENT_SIDE));
 		}
 	}
 

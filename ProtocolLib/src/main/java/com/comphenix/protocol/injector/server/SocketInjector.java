@@ -6,6 +6,8 @@ import java.net.SocketAddress;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.events.NetworkMarker;
+
 /**
  * Represents an injector that only gives access to a player's socket.
  * 
@@ -36,10 +38,11 @@ public interface SocketInjector {
 	/**
 	 * Send a packet to the client.
 	 * @param packet - server packet to send.
+	 * @param marker - the network marker.
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
-	public abstract void sendServerPacket(Object packet, boolean filtered)
+	public abstract void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) 
 			throws InvocationTargetException;
 
 	/**

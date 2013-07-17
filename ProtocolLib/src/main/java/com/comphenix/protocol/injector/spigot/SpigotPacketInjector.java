@@ -24,6 +24,7 @@ import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -460,15 +461,15 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			}, CLEANUP_DELAY);
 		}
 	}
-
 	/**
 	 * Invoked when a plugin wants to sent a packet.
 	 * @param reciever - the packet receiver.
 	 * @param packet - the packet to transmit.
+	 * @param marker - the network marker object.
 	 * @param filters - whether or not to invoke the packet listeners.
 	 * @throws InvocationTargetException If anything went wrong.
 	 */
-	void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
+	void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
 		NetworkObjectInjector networkObject = getInjector(reciever);
 		
 		// If TRUE, process this packet like any other
@@ -478,7 +479,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			ignoredPackets.add(packet.getHandle());
 			
 		if (networkObject != null)
-			networkObject.sendServerPacket(packet.getHandle(), filters);
+			networkObject.sendServerPacket(packet.getHandle(), marker, filters);
 		else
 			throw new PlayerLoggedOutException("Player " + reciever + " has logged out");
 	}

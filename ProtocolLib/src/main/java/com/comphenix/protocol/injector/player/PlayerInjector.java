@@ -24,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.Map;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.entity.Player;
@@ -32,6 +33,7 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
@@ -39,6 +41,7 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -46,6 +49,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.google.common.collect.MapMaker;
 
 public abstract class PlayerInjector implements SocketInjector {
 	// Disconnect method related reports
@@ -120,6 +124,13 @@ public abstract class PlayerInjector implements SocketInjector {
 	// Handle errors
 	protected ErrorReporter reporter;
 
+	// Used to construct proxy objects
+	protected ClassLoader classLoader;
+	
+	// Previous markers
+	protected Map<Object, NetworkMarker> queuedMarkers = new MapMaker().weakKeys().makeMap();
+	protected InterceptWritePacket writePacketInterceptor; 
+	
 	// Whether or not the injector has been cleaned
 	private boolean clean;
 	
@@ -127,10 +138,14 @@ public abstract class PlayerInjector implements SocketInjector {
 	boolean updateOnLogin;
 	Player updatedPlayer;
 	
-	public PlayerInjector(ErrorReporter reporter, Player player, ListenerInvoker invoker) throws IllegalAccessException {
+	public PlayerInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, ListenerInvoker invoker) throws IllegalAccessException {
+		this.classLoader = classLoader;
 		this.reporter = reporter;
 		this.player = player;
 		this.invoker = invoker;
+	
+		// Intercept the write method
+		writePacketInterceptor = new InterceptWritePacket(classLoader, reporter);
 	}
 
 	/**
@@ -492,11 +507,12 @@ public abstract class PlayerInjector implements SocketInjector {
 	/**
 	 * Send a packet to the client.
 	 * @param packet - server packet to send.
+	 * @param marker - the network marker.
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
 	 * @param InvocationTargetException If an error occured when sending the packet.
 	 */
 	@Override
-	public abstract void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException;
+	public abstract void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) throws InvocationTargetException;
 	
 	/**
 	 * Inject a hook to catch packets sent to the current player.
@@ -582,9 +598,11 @@ public abstract class PlayerInjector implements SocketInjector {
 			
 			// Make sure we're listening
 			if (id != null && hasListener(id)) {
+				NetworkMarker marker = queuedMarkers.remove(packet);
+				
 				// A packet has been sent guys!
 				PacketContainer container = new PacketContainer(id, packet);
-				PacketEvent event = PacketEvent.fromServer(invoker, container, currentPlayer);
+				PacketEvent event = PacketEvent.fromServer(invoker, container, marker, currentPlayer);
 				invoker.invokePacketSending(event);
 				
 				// Cancelling is pretty simple. Just ignore the packet.
@@ -592,7 +610,14 @@ public abstract class PlayerInjector implements SocketInjector {
 					return null;
 				
 				// Right, remember to replace the packet again
-				return event.getPacket().getHandle();
+				Object result = event.getPacket().getHandle();
+				marker = event.getNetworkMarker();
+				
+				// See if we need to proxy the write method
+				if (result != null && NetworkMarker.hasOutputHandlers(marker)) {
+					result = writePacketInterceptor.constructProxy(result, event, marker);
+				}
+				return result;
 			}
 			
 		} catch (Throwable e) {

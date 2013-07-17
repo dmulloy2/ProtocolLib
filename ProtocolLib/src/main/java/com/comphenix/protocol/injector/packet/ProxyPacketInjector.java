@@ -137,7 +137,7 @@ class ProxyPacketInjector implements PacketInjector {
 	/**
 	 * Matches the readPacketData(DataInputStream) method in Packet.
 	 */
-	private static FuzzyMethodContract readPacket = FuzzyMethodContract.newBuilder().
+	private static FuzzyMethodContract READ_PACKET = FuzzyMethodContract.newBuilder().
 			returnTypeVoid().
 			parameterDerivedOf(DataInput.class).
 			parameterCount(1).
@@ -240,7 +240,7 @@ class ProxyPacketInjector implements PacketInjector {
 					// Skip methods defined in Object
 					if (method.getDeclaringClass().equals(Object.class)) {
 						return 0;
-					} else if (readPacket.isMatch(MethodInfo.fromMethod(method), null)) {
+					} else if (READ_PACKET.isMatch(MethodInfo.fromMethod(method), null)) {
 						readPacketIntercepted = true;
 						return 1;
 					} else {

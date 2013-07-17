@@ -35,6 +35,7 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -51,9 +52,6 @@ public class NetworkObjectInjector extends PlayerInjector {
 	// Determine if we're listening
 	private IntegerSet sendingFilters;
 	
-	// Used to construct proxy objects
-	private ClassLoader classLoader;
-
 	// After commit 336a4e00668fd2518c41242755ed6b3bdc3b0e6c (Update CraftBukkit to Minecraft 1.4.4.), 
 	// CraftBukkit stopped redirecting map chunk and map chunk bulk packets to a separate queue.
 	// Thus, NetworkFieldInjector can safely handle every packet (though not perfectly - some packets
@@ -79,9 +77,8 @@ public class NetworkObjectInjector extends PlayerInjector {
 	 */
 	public NetworkObjectInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
 								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
-		super(reporter, player, invoker);
+		super(classLoader, reporter, player, invoker);
 		this.sendingFilters = sendingFilters;
-		this.classLoader = classLoader;
 	}
 
 	@Override
@@ -103,11 +100,15 @@ public class NetworkObjectInjector extends PlayerInjector {
 	}
 	
 	@Override
-	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
+	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) throws InvocationTargetException {
 		Object networkDelegate = filtered ? networkManagerRef.getValue() : networkManagerRef.getOldValue();
 		
 		if (networkDelegate != null) {
 			try {
+				if (marker != null) {
+					queuedMarkers.put(packet, marker);
+				}
+				
 				// Note that invocation target exception is a wrapper for a checked exception
 				queueMethod.invoke(networkDelegate, packet);
 				

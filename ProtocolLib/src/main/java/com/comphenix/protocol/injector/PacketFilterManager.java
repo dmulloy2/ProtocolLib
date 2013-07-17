@@ -550,11 +550,16 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	@Override
 	public void sendServerPacket(Player reciever, PacketContainer packet) throws InvocationTargetException {
-		sendServerPacket(reciever, packet, true);
+		sendServerPacket(reciever, packet, null, true);
 	}
 	
 	@Override
 	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
+		sendServerPacket(reciever, packet, null, true);
+	}
+	
+	@Override
+	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
 		if (reciever == null)
 			throw new IllegalArgumentException("reciever cannot be NULL.");
 		if (packet == null)
@@ -562,25 +567,30 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// We may have to enable player injection indefinitely after this
 		if (packetCreation.compareAndSet(false, true)) 
 			incrementPhases(GamePhase.PLAYING);
-		
+	
 		// Inform the MONITOR packets
 		if (!filters) {
+			PacketEvent event = PacketEvent.fromServer(this, packet, marker, reciever);
+			
 			sendingListeners.invokePacketSending(
-					reporter, 
-					PacketEvent.fromServer(this, packet, reciever), 
-					ListenerPriority.MONITOR);
+					reporter, event, ListenerPriority.MONITOR);
+			marker = event.getNetworkMarker();
 		}
-		
-		playerInjection.sendServerPacket(reciever, packet, filters);
+		playerInjection.sendServerPacket(reciever, packet, marker, filters);
 	}
 
 	@Override
 	public void recieveClientPacket(Player sender, PacketContainer packet) throws IllegalAccessException, InvocationTargetException {
-		recieveClientPacket(sender, packet, true);
+		recieveClientPacket(sender, packet, null, true);
 	}
 	
 	@Override
 	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters) throws IllegalAccessException, InvocationTargetException {
+		recieveClientPacket(sender, packet, null, true);
+	}
+	
+	@Override
+	public void recieveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters) throws IllegalAccessException, InvocationTargetException {
 		if (sender == null)
 			throw new IllegalArgumentException("sender cannot be NULL.");
 		if (packet == null)
@@ -606,7 +616,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			// Let the monitors know though
 			recievedListeners.invokePacketSending(
 					reporter, 
-					PacketEvent.fromClient(this, packet, sender), 
+					PacketEvent.fromClient(this, packet, marker, sender), 
 					ListenerPriority.MONITOR);
 		}
 		

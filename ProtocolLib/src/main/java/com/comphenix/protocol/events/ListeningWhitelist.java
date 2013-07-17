@@ -17,6 +17,9 @@
 
 package com.comphenix.protocol.events;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 import com.comphenix.protocol.injector.GamePhase;
@@ -29,7 +32,7 @@ import com.google.common.collect.Sets;
  * @author Kristian 
  */
 public class ListeningWhitelist {
-
+	
 	/**
 	 * A whitelist with no packets - indicates that the listener shouldn't observe any packets.
 	 */
@@ -38,6 +41,7 @@ public class ListeningWhitelist {
 	private ListenerPriority priority;
 	private Set<Integer> whitelist;
 	private GamePhase gamePhase;
+	private Set<ListenerOptions> options = EnumSet.noneOf(ListenerOptions.class);
 
 	/**
 	 * Creates a packet whitelist for a given priority with a set of packet IDs.
@@ -84,6 +88,19 @@ public class ListeningWhitelist {
 	}
 	
 	/**
+	 * Creates a packet whitelist for a given priority with a set of packet IDs and options.
+	 * @param priority - the listener priority.
+	 * @param whitelist - list of packet IDs to observe/enable.
+	 * @param gamePhase - which game phase to receieve notifications on.
+	 */
+	public ListeningWhitelist(ListenerPriority priority, Integer[] whitelist, GamePhase gamePhase, ListenerOptions... options) {
+		this.priority = priority;
+		this.whitelist = Sets.newHashSet(whitelist);
+		this.gamePhase = gamePhase;
+		this.options.addAll(Arrays.asList(options));
+	}
+	
+	/**
 	 * Whether or not this whitelist has any enabled packets.
 	 * @return TRUE if there are any packets, FALSE otherwise.
 	 */
@@ -115,9 +132,17 @@ public class ListeningWhitelist {
 		return gamePhase;
 	}
 	
+	/**
+	 * Retrieve every special option associated with this whitelist.
+	 * @return Every special option.
+	 */
+	public Set<ListenerOptions> getOptions() {
+		return Collections.unmodifiableSet(options);
+	}
+	
 	@Override
 	public int hashCode(){
-	    return Objects.hashCode(priority, whitelist, gamePhase);
+	    return Objects.hashCode(priority, whitelist, gamePhase, options);
 	}
 
 	/**
@@ -156,7 +181,9 @@ public class ListeningWhitelist {
 	    if(obj instanceof ListeningWhitelist){
 	        final ListeningWhitelist other = (ListeningWhitelist) obj;
 	        return Objects.equal(priority, other.priority)
-	            && Objects.equal(whitelist, other.whitelist);
+	            && Objects.equal(whitelist, other.whitelist)
+		        && Objects.equal(gamePhase, other.gamePhase)
+		        && Objects.equal(options, other.options);
 	    } else{
 	        return false;
 	    }
@@ -169,6 +196,9 @@ public class ListeningWhitelist {
 		else
 			return Objects.toStringHelper(this)
 				.add("priority", priority)
-				.add("packets", whitelist).toString();
+				.add("packets", whitelist)
+				.add("gamephase", gamePhase)
+				.add("options", options).
+				toString();
 	}
 }

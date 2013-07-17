@@ -38,6 +38,7 @@ import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
@@ -533,12 +534,12 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 * @throws InvocationTargetException If an error occured during sending.
 	 */
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
+	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
 		SocketInjector injector = getInjector(reciever);
 		
 		// Send the packet, or drop it completely
 		if (injector != null) {
-			injector.sendServerPacket(packet.getHandle(), filters);
+			injector.sendServerPacket(packet.getHandle(), marker, filters);
 		} else {
 			throw new PlayerLoggedOutException(String.format(
 					"Unable to send packet %s (%s): Player %s has logged out.", 

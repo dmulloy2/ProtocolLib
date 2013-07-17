@@ -30,6 +30,7 @@ import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -64,9 +65,6 @@ class NetworkServerInjector extends PlayerInjector {
 	// Determine if we're listening
 	private IntegerSet sendingFilters;
 	
-	// Used to create proxy objects
-	private ClassLoader classLoader;
-	
 	// Whether or not the player has disconnected
 	private boolean hasDisconnected;
 	
@@ -78,8 +76,7 @@ class NetworkServerInjector extends PlayerInjector {
 			ListenerInvoker invoker, IntegerSet sendingFilters, 
 			InjectedServerConnection serverInjection) throws IllegalAccessException {
 		
-		super(reporter, player, invoker);
-		this.classLoader = classLoader;
+		super(classLoader, reporter, player, invoker);
 		this.sendingFilters = sendingFilters;
 		this.serverInjection = serverInjection;
 	}
@@ -90,11 +87,15 @@ class NetworkServerInjector extends PlayerInjector {
 	}
 
 	@Override
-	public void sendServerPacket(Object packet, boolean filtered) throws InvocationTargetException {
+	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) throws InvocationTargetException {
 		Object serverDelegate = filtered ? serverHandlerRef.getValue() : serverHandlerRef.getOldValue();
 		
 		if (serverDelegate != null) {
 			try {
+				if (marker != null) {
+					queuedMarkers.put(packet, marker);
+				}
+				
 				// Note that invocation target exception is a wrapper for a checked exception
 				MinecraftMethods.getSendPacketMethod().invoke(serverDelegate, packet);
 				
@@ -112,7 +113,6 @@ class NetworkServerInjector extends PlayerInjector {
 
 	@Override
 	public void injectManager() {
-		
 		if (serverHandlerRef == null)
 			throw new IllegalStateException("Cannot find server handler.");
 		// Don't inject twice

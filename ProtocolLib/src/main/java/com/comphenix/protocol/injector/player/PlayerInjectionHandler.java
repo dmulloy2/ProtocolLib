@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
@@ -113,10 +114,11 @@ public interface PlayerInjectionHandler {
 	 * Send the given packet to the given reciever.
 	 * @param reciever - the player receiver.
 	 * @param packet - the packet to send.
+	 * @param marker 
 	 * @param filters - whether or not to invoke the packet filters.
 	 * @throws InvocationTargetException If an error occured during sending.
 	 */
-	public abstract void sendServerPacket(Player reciever, PacketContainer packet, boolean filters)
+	public abstract void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters)
 			throws InvocationTargetException;
 
 	/**

@@ -86,7 +86,7 @@ class InjectedArrayList extends ArrayList<Object> {
 				super.add(result);
 			} else {
 				// We'll use the FakePacket marker instead of preventing the filters
-				injector.sendServerPacket(createNegativePacket(packet), true);
+				injector.sendServerPacket(createNegativePacket(packet), null, true);
 			}
 
 			// Collection.add contract

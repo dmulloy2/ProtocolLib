@@ -22,11 +22,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.ref.WeakReference;
 import java.util.EventObject;
-
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
 import com.comphenix.protocol.async.AsyncMarker;
+import com.google.common.base.Preconditions;
 
 public class PacketEvent extends EventObject implements Cancellable {
 	/**
@@ -43,6 +43,9 @@ public class PacketEvent extends EventObject implements Cancellable {
 	
 	private AsyncMarker asyncMarker;
 	private boolean asynchronous;
+
+	// Network input and output handlers
+	private NetworkMarker networkMarker;
 	
 	// Whether or not a packet event is read only
 	private boolean readOnly;
@@ -56,9 +59,14 @@ public class PacketEvent extends EventObject implements Cancellable {
 	}
 
 	private PacketEvent(Object source, PacketContainer packet, Player player, boolean serverPacket) {
+		this(source, packet, null, player, serverPacket);
+	}
+	
+	private PacketEvent(Object source, PacketContainer packet, NetworkMarker marker, Player player, boolean serverPacket) {
 		super(source);
 		this.packet = packet;
 		this.playerReference = new WeakReference<Player>(player);
+		this.networkMarker = marker;
 		this.serverPacket = serverPacket;
 	}
 	
@@ -84,6 +92,18 @@ public class PacketEvent extends EventObject implements Cancellable {
 	}
 	
 	/**
+	 * Creates an event representing a client packet transmission.
+	 * @param source - the event source.
+	 * @param packet - the packet.
+	 * @param marker - the network marker.
+	 * @param client - the client that sent the packet.
+	 * @return The event.
+	 */
+	public static PacketEvent fromClient(Object source, PacketContainer packet, NetworkMarker marker, Player client) {
+		return new PacketEvent(source, packet, marker, client, false);
+	}
+	
+	/**
 	 * Creates an event representing a server packet transmission.
 	 * @param source - the event source.
 	 * @param packet - the packet.
@@ -92,6 +112,18 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public static PacketEvent fromServer(Object source,  PacketContainer packet, Player recipient) {
 		return new PacketEvent(source, packet, recipient, true);
+	}
+	
+	/**
+	 * Creates an event representing a server packet transmission.
+	 * @param source - the event source.
+	 * @param packet - the packet.
+	 * @param marker - the network marker.
+	 * @param recipient - the client that will receieve the packet.
+	 * @return The event.
+	 */
+	public static PacketEvent fromServer(Object source, PacketContainer packet, NetworkMarker marker, Player recipient) {
+		return new PacketEvent(source, packet, marker, recipient, true);
 	}
 	
 	/**
@@ -121,7 +153,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 			throw new IllegalStateException("The packet event is read-only.");
 		this.packet = packet;
 	}
-
+	
 	/**
 	 * Retrieves the packet ID.
 	 * @return The current packet ID.
@@ -137,7 +169,36 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public boolean isCancelled() {
 		return cancel;
 	}
+	
+	/**
+	 * Retrieve the object responsible for managing the serialized input and output of a packet.
+	 * <p>
+	 * Note that the serialized input data is only available for client-side packets, and the output handlers
+	 * can only be applied to server-side packets.
+	 * @return The network manager.
+	 */
+	public NetworkMarker getNetworkMarker() {
+		if (networkMarker == null) {
+			if (isServerPacket()) {
+				networkMarker = new NetworkMarker(
+					serverPacket ? ConnectionSide.SERVER_SIDE : ConnectionSide.CLIENT_SIDE, null);
+			} else {
+				throw new IllegalStateException("Add the option ListenerOptions.INTERCEPT_INPUT_BUFFER to your listener.");
+			}
+		}
+		return networkMarker;
+	}
 
+	/**
+	 * Update the network manager.
+	 * <p>
+	 * This method is internal - do not call.
+	 * @param networkMarker - the new network manager.
+	 */
+	public void setNetworkMarker(NetworkMarker networkMarker) {
+		this.networkMarker = Preconditions.checkNotNull(networkMarker, "marker cannot be NULL");
+	}
+	
 	/**
 	 * Sets whether or not the packet should be cancelled. Uncancelling is possible.
 	 * <p>

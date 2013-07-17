@@ -381,9 +381,9 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	void sendPacket(PacketEvent event) throws IOException {
 		try {
 			if (event.isServerPacket()) {
-				packetStream.sendServerPacket(event.getPlayer(), event.getPacket(), false);
+				packetStream.sendServerPacket(event.getPlayer(), event.getPacket(), event.getNetworkMarker(), false);
 			} else {
-				packetStream.recieveClientPacket(event.getPlayer(), event.getPacket(), false);
+				packetStream.recieveClientPacket(event.getPlayer(), event.getPacket(), event.getNetworkMarker(), false);
 			}
 			transmitted = true;
 			
