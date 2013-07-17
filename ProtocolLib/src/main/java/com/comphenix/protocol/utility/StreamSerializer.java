@@ -8,7 +8,6 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-
 import javax.annotation.Nonnull;
 
 import org.bukkit.inventory.ItemStack;
@@ -16,6 +15,8 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
 /**
  * Utility methods for reading and writing Minecraft objects to streams.
@@ -27,6 +28,9 @@ public class StreamSerializer {
 	private static Method READ_ITEM_METHOD;
 	private static Method WRITE_ITEM_METHOD;
 
+	private static Method READ_NBT_METHOD;
+	private static Method WRITE_NBT_METHOD;
+	
 	private static Method READ_STRING_METHOD;
 	private static Method WRITE_STRING_METHOD;
 	
@@ -61,6 +65,31 @@ public class StreamSerializer {
 			throw new IOException("Cannot read item stack.", e);
 		}
 	}
+
+	/**
+	 * Read or deserialize an NBT compound from a input stream.	
+	 * @param input - the target input stream.
+	 * @return The resulting compound, or NULL.
+	 * @throws IOException If the operation failed due to reflection or corrupt data.
+	 */
+	public NbtCompound deserializeCompound(@Nonnull DataInputStream input) throws IOException {
+		if (input == null)
+			throw new IllegalArgumentException("Input stream cannot be NULL.");
+		if (READ_NBT_METHOD == null) {
+			READ_NBT_METHOD = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(1).
+					parameterDerivedOf(DataInput.class).
+					returnDerivedOf(MinecraftReflection.getNBTBaseClass()).
+					build());
+		}
+		try {
+			// Convert back to an NBT Compound
+			return NbtFactory.fromNMSCompound(READ_NBT_METHOD.invoke(null, input));
+		} catch (Exception e) {
+			throw new IOException("Cannot read item stack.", e);
+		}
+	}
 	
 	/**
 	 * Deserialize a string using the standard Minecraft UTF-16 encoding.
@@ -68,7 +97,7 @@ public class StreamSerializer {
 	 * Note that strings cannot exceed 32767 characters, regardless if maximum lenght.
 	 * @param input - the input stream.
 	 * @param maximumLength - the maximum lenght of the string.
-	 * @return
+	 * @return The deserialized string.
 	 * @throws IOException
 	 */
 	public String deserializeString(@Nonnull DataInputStream input, int maximumLength) throws IOException {
@@ -141,6 +170,40 @@ public class StreamSerializer {
 			WRITE_ITEM_METHOD.invoke(null, nmsItem, output);
 		} catch (Exception e) {
 			throw new IOException("Cannot write item stack " + stack, e);
+		}
+	}
+	
+	/**
+	 * Write or serialize a NBT compound to the given output stream.
+	 * <p>
+	 * Note: An NBT compound can be written to a stream even if it's NULL.
+	 * 
+	 * @param output - the target output stream.
+	 * @param stack - the NBT compound to be serialized, or NULL to represent nothing.
+	 * @throws IOException If the operation fails due to reflection problems.
+	 */
+	public void serializeCompound(@Nonnull DataOutputStream output, NbtCompound compound) throws IOException {
+		if (output == null)
+			throw new IllegalArgumentException("Output stream cannot be NULL.");
+		
+		// Get the NMS version of the compound
+		Object handle = compound != null ? NbtFactory.fromBase(compound).getHandle() : null;
+		
+		if (WRITE_NBT_METHOD == null) {
+			WRITE_NBT_METHOD = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(2).
+					parameterDerivedOf(MinecraftReflection.getNBTBaseClass(), 0).
+					parameterDerivedOf(DataOutput.class, 1).
+					returnTypeVoid().
+					build());
+			WRITE_NBT_METHOD.setAccessible(true);
+		}
+		
+		try {
+			WRITE_NBT_METHOD.invoke(null, handle, output);
+		} catch (Exception e) {
+			throw new IOException("Cannot write compound " + compound, e);
 		}
 	}
 	

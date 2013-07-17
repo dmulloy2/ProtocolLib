@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -163,6 +165,17 @@ public class NbtFactory {
 			return partial;
 	}
 		
+	/**
+	 * Retrieve the NBT compound from a given NMS handle.
+	 * @param handle - the underlying net.minecraft.server object to wrap.
+	 * @return A NBT compound wrapper
+	 */
+	public static NbtCompound fromNMSCompound(@Nonnull Object handle) {
+		if (handle == null)
+			throw new IllegalArgumentException("handle cannot be NULL.");
+		return (NbtCompound) NbtFactory.<Map<String, NbtBase<?>>>fromNMS(handle);
+	}
+	
 	/**
 	 * Constructs a NBT tag of type string.
 	 * @param name - name of the tag.

@@ -17,6 +17,8 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PrepareForTest(CraftItemFactory.class)
@@ -50,6 +52,24 @@ public class StreamSerializerTest {
 		DataInputStream input = new DataInputStream(
 				new ByteArrayInputStream(buffer.toByteArray()));
 		String deserialized = serializer.deserializeString(input, 50);
+		
+		assertEquals(initial, deserialized);
+	}
+	
+	@Test
+	public void testCompound() throws IOException {
+		StreamSerializer serializer = new StreamSerializer();
+		NbtCompound initial = NbtFactory.ofCompound("tag");
+		initial.put("name", "Ole");
+		initial.put("age", 20);
+		
+		// Buffer
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+		serializer.serializeCompound(new DataOutputStream(buffer), initial);
+		
+		DataInputStream input = new DataInputStream(
+				new ByteArrayInputStream(buffer.toByteArray()));
+		NbtCompound deserialized = serializer.deserializeCompound(input);
 		
 		assertEquals(initial, deserialized);
 	}
