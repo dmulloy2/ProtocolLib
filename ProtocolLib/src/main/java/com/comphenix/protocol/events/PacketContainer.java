@@ -53,7 +53,7 @@ import com.comphenix.protocol.reflect.cloning.Cloner;
 import com.comphenix.protocol.reflect.cloning.CollectionCloner;
 import com.comphenix.protocol.reflect.cloning.FieldCloner;
 import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
-import com.comphenix.protocol.reflect.cloning.ReflectionCloner;
+import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
@@ -436,7 +436,7 @@ public class PacketContainer implements Serializable {
 		
 		// Fall back on the alternative (but slower) method of reading and writing back the packet
 		if (CLONING_UNSUPPORTED.contains(id)) {
-			clonedPacket = ReflectionCloner.clone(this).getHandle();
+			clonedPacket = SerializableCloner.clone(this).getHandle();
 		} else {
 			clonedPacket = DEEP_CLONER.clone(getHandle());
 		}

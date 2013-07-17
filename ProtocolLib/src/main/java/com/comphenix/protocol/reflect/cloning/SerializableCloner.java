@@ -10,7 +10,7 @@ import java.io.Serializable;
  * Represents a cloner that can clone any class that implements Serializable.
  * @author Kristian Stangeland
  */
-public class ReflectionCloner implements Cloner {
+public class SerializableCloner implements Cloner {
 
 	@Override
 	public boolean canClone(Object source) {
