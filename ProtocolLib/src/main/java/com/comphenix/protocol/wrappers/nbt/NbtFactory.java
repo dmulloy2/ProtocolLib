@@ -114,6 +114,22 @@ public class NbtFactory {
 	}
 	
 	/**
+	 * Set the NBT compound tag of a given item stack.
+	 * <p>
+	 * The item stack must be a wrapper for a CraftItemStack. Use 
+	 * {@link MinecraftReflection#getBukkitItemStack(ItemStack)} if not.
+	 * @param stack - the item stack.
+	 * @param compound - the new NBT compound.
+	 */
+	public static void setItemTag(ItemStack stack, NbtCompound compound) {
+		if (!MinecraftReflection.isCraftItemStack(stack))
+			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
+		
+		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
+		modifier.write(0, compound);
+	}
+	
+	/**
 	 * Construct a wrapper for an NBT tag stored (in memory) in an item stack. This is where
 	 * auxillary data such as enchanting, name and lore is stored. It doesn't include the items
 	 * material, damage value or count.
@@ -127,16 +143,7 @@ public class NbtFactory {
 		if (!MinecraftReflection.isCraftItemStack(stack))
 			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
 		
-		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
-		
-		if (itemStackModifier == null) {
-			itemStackModifier = new StructureModifier<Object>(nmsStack.getClass(), Object.class, false);
-		}
-		
-		// Use the first and best NBT tag
-		StructureModifier<NbtBase<?>> modifier = itemStackModifier.
-				withTarget(nmsStack).
-				withType(MinecraftReflection.getNBTBaseClass(), BukkitConverters.getNbtConverter());
+		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
 		NbtBase<?> result = modifier.read(0);
 		
 		// Create the tag if it doesn't exist
@@ -145,6 +152,25 @@ public class NbtFactory {
 			modifier.write(0, result);
 		}
 		return fromBase(result);
+	}
+	
+	/**
+	 * Retrieve a structure modifier that automatically marshalls between NBT wrappers and their NMS counterpart.
+	 * @param stack - the stack that will store the NBT compound.
+	 * @return The structure modifier.
+	 */
+	private static StructureModifier<NbtBase<?>> getStackModifier(ItemStack stack) {
+		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
+		
+		if (itemStackModifier == null) {
+			itemStackModifier = new StructureModifier<Object>(nmsStack.getClass(), Object.class, false);
+		}
+		
+		// Use the first and best NBT tag
+		return itemStackModifier.
+				withTarget(nmsStack).
+				withType(MinecraftReflection.getNBTBaseClass(), 
+						 BukkitConverters.getNbtConverter());
 	}
 	
 	/**

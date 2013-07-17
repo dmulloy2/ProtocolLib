@@ -26,21 +26,29 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 
+import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
+import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
+@RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
+@PrepareForTest(CraftItemFactory.class)
 public class NbtFactoryTest {
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeItemMeta();
 	}
 	
 	@Test
 	public void testFromStream() {
 		WrappedCompound compound = WrappedCompound.fromName("tag");
-		
 		compound.put("name", "Test Testerson");
 		compound.put("age", 42);
 		
@@ -58,5 +66,19 @@ public class NbtFactoryTest {
 		assertEquals(compound.getString("name"), cloned.getString("name"));
 		assertEquals(compound.getInteger("age"), cloned.getInteger("age"));
 		assertEquals(compound.getList("nicknames"), cloned.getList("nicknames"));
+	}
+	
+	@Test
+	public void testItemTag() {
+		ItemStack test = new ItemStack(Material.GOLD_AXE);
+		ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
+		
+		NbtCompound compound = NbtFactory.ofCompound("tag");
+		compound.put("name", "Test Testerson");
+		compound.put("age", 42);
+		
+		NbtFactory.setItemTag(craftTest, compound);
+		
+		assertEquals(compound, NbtFactory.fromItemTag(craftTest));
 	}
 }
