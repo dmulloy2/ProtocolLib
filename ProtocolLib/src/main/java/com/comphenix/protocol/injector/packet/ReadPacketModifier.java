@@ -17,7 +17,9 @@
 
 package com.comphenix.protocol.injector.packet;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -89,6 +91,18 @@ class ReadPacketModifier implements MethodInterceptor {
 		Object overridenObject = override.get(thisObj);
 		Object returnValue = null;
 		
+		ByteArrayOutputStream bufferStream = null;
+		
+		// See if we need to buffer the read data
+		if (isReadPacketDataMethod && packetInjector.requireInputBuffers(packetID)) {
+			CaptureInputStream captured = new CaptureInputStream(
+				(InputStream) args[0], 
+				bufferStream = new ByteArrayOutputStream()); 
+			
+			// Stash it back
+			args[0] = new DataInputStream(captured);
+		}
+		
 		if (overridenObject != null) {
 			// This packet has been cancelled
 			if (overridenObject == CANCEL_MARKER) {
@@ -109,10 +123,11 @@ class ReadPacketModifier implements MethodInterceptor {
 			try {
 				// We need this in order to get the correct player
 				DataInputStream input = (DataInputStream) args[0];
-	
+				byte[] buffer = bufferStream != null ? bufferStream.toByteArray() : null;
+				
 				// Let the people know
 				PacketContainer container = new PacketContainer(packetID, thisObj);
-				PacketEvent event = packetInjector.packetRecieved(container, input);
+				PacketEvent event = packetInjector.packetRecieved(container, input, buffer);
 				
 				// Handle override
 				if (event != null) {

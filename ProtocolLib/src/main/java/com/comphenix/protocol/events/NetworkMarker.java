@@ -130,4 +130,23 @@ public class NetworkMarker {
 	public static boolean hasOutputHandlers(NetworkMarker marker) {
 		return marker != null && !marker.getOutputHandlers().isEmpty();
 	}
+	
+	/**
+	 * Retrieve the byte buffer stored in the given marker.
+	 * @param marker - the marker.
+	 * @return The byte buffer, or NULL if not found.
+	 */
+	public static byte[] getByteBuffer(NetworkMarker marker) {
+		if (marker != null) {
+			ByteBuffer buffer = marker.getInputBuffer();
+			
+			if (buffer != null) {
+				byte[] data = new byte[buffer.remaining()];
+				
+				buffer.get(data, 0, data.length);
+				return data;
+			}
+		}
+		return null;
+	}
 }

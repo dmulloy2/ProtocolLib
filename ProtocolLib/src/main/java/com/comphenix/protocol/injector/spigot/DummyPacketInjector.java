@@ -51,7 +51,7 @@ class DummyPacketInjector implements PacketInjector {
 	}
 
 	@Override
-	public PacketEvent packetRecieved(PacketContainer packet, Player client) {
+	public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
 		return injector.packetReceived(packet, client);
 	}
 

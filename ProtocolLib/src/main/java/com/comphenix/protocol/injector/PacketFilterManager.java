@@ -46,9 +46,11 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.AsynchronousManager;
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
+import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -137,6 +139,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 	// Intercepting write packet methods
 	private InterceptWritePacket interceptWritePacket;
+	
+	// Whether or not a packet must be input buffered
+	private volatile IntegerSet inputBufferedPackets = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
 	
 	// The two listener containers
 	private SortedPacketListenerList recievedListeners;
@@ -323,6 +328,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (hasSending || hasReceiving) {
 			// Add listeners and hooks
 			if (hasSending) {
+				// This doesn't make any sense
+				if (sending.getOptions().contains(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
+					throw new IllegalArgumentException("Sending whitelist cannot require input bufferes to be intercepted.");
+				}
+				
 				verifyWhitelist(listener, sending);
 				sendingListeners.addListener(listener, sending);
 				enablePacketFilters(listener, ConnectionSide.SERVER_SIDE, sending.getWhitelist());
@@ -344,9 +354,30 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			
 			// Inform our injected hooks
 			packetListeners.add(listener);
+			updateRequireInputBuffers();
 		}
 	}
 	
+	/**
+	 * Invoked when we need to update the input buffer set.
+	 */
+	private void updateRequireInputBuffers() {
+		IntegerSet updated = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+		
+		for (PacketListener listener : packetListeners) {
+			ListeningWhitelist whitelist = listener.getReceivingWhitelist();
+			
+			// We only check the recieving whitelist
+			if (whitelist.getOptions().contains(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
+				for (int id : whitelist.getWhitelist()) {
+					updated.add(id);
+				}
+			}
+		}
+		// Update it
+		this.inputBufferedPackets = updated;
+	}
+
 	/**
 	 * Invoked to handle the different game phases of a added listener.
 	 * @param phase - listener's game game phase.
@@ -437,6 +468,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			disablePacketFilters(ConnectionSide.SERVER_SIDE, sendingRemoved);
 		if (receivingRemoved != null && receivingRemoved.size() > 0)
 			disablePacketFilters(ConnectionSide.CLIENT_SIDE, receivingRemoved);
+		updateRequireInputBuffers();
 	}
 	
 	@Override
@@ -466,6 +498,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (!hasClosed) {
 			handlePacket(sendingListeners, event, true);
 		}
+	}
+
+	@Override
+	public boolean requireInputBuffer(int packetId) {
+		return inputBufferedPackets.contains(packetId);
 	}
 	
 	/**
@@ -617,7 +654,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		packetInjector.undoCancel(packet.getID(), mcPacket);
 		
 		if (filters) {
-			PacketEvent event  = packetInjector.packetRecieved(packet, sender);
+			byte[] data = NetworkMarker.getByteBuffer(marker);
+			PacketEvent event  = packetInjector.packetRecieved(packet, sender, data);
 			
 			if (!event.isCancelled())
 				mcPacket = event.getPacket().getHandle();

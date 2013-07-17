@@ -36,6 +36,8 @@ import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -298,6 +300,15 @@ class ProxyPacketInjector implements PacketInjector {
 		return true;
 	}
 	
+	/**
+	 * Determine if the data a packet read must be buffered.
+	 * @param packetId - the packet to check.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public boolean requireInputBuffers(int packetId) {
+		return manager.requireInputBuffer(packetId);
+	}
+	
 	@Override
 	public boolean hasPacketHandler(int packetID) {
 		return PacketRegistry.getPreviousPackets().containsKey(packetID);
@@ -309,13 +320,13 @@ class ProxyPacketInjector implements PacketInjector {
 	}
 	
 	// Called from the ReadPacketModified monitor
-	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input) {
+	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input, byte[] buffered) {
 		try {
 			Player client = playerInjection.getPlayerByConnection(input);
 
 			// Never invoke a event if we don't know where it's from
 			if (client != null) {
-				return packetRecieved(packet, client);
+				return packetRecieved(packet, client, buffered);
 			} else {
 				// Hack #2 - Caused by our server socket injector
 				if (packet.getID() != Packets.Client.GET_INFO)
@@ -330,15 +341,10 @@ class ProxyPacketInjector implements PacketInjector {
 		} 
 	}
 	
-	/**
-	 * Let the packet listeners process the given packet.
-	 * @param packet - a packet to process.
-	 * @param client - the client that sent the packet.
-	 * @return The resulting packet event.
-	 */
 	@Override
-	public PacketEvent packetRecieved(PacketContainer packet, Player client) {
-		PacketEvent event = PacketEvent.fromClient((Object) manager, packet, client);
+	public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
+		NetworkMarker marker = buffered != null ? new NetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
+		PacketEvent event = PacketEvent.fromClient((Object) manager, packet, marker, client);
 		
 		manager.invokePacketRecieving(event);
 		return event;

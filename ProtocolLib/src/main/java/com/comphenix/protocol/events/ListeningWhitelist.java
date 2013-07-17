@@ -97,7 +97,10 @@ public class ListeningWhitelist {
 		this.priority = priority;
 		this.whitelist = Sets.newHashSet(whitelist);
 		this.gamePhase = gamePhase;
-		this.options.addAll(Arrays.asList(options));
+		
+		if (options != null) {
+			this.options.addAll(Arrays.asList(options));
+		}
 	}
 	
 	/**

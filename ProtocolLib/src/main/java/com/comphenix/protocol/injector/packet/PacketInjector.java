@@ -51,9 +51,10 @@ public interface PacketInjector {
 	 * Let the packet listeners process the given packet.
 	 * @param packet - a packet to process.
 	 * @param client - the client that sent the packet.
+	 * @param buffered - a buffer containing the data that had to be read in order to construct the packet.
 	 * @return The resulting packet event.
 	 */
-	public abstract PacketEvent packetRecieved(PacketContainer packet, Player client);
+	public abstract PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered);
 
 	/**
 	 * Perform any necessary cleanup before unloading ProtocolLib.

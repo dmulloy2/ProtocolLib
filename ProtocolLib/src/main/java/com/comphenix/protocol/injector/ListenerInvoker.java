@@ -53,6 +53,13 @@ public interface ListenerInvoker {
 	public InterceptWritePacket getInterceptWritePacket();
 	
 	/**
+	 * Determine if a given packet requires input buffering.
+	 * @param packetId - the packet to check.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public boolean requireInputBuffer(int packetId);
+	
+	/**
 	 * Associate a given class with the given packet ID. Internal method.
 	 * @param clazz - class to associate.
 	 */
