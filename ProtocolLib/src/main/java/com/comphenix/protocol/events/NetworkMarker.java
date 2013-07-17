@@ -1,5 +1,7 @@
 package com.comphenix.protocol.events;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,13 +13,19 @@ import javax.annotation.Nonnull;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
 
+/**
+ * Marker containing the serialized packet data seen from the network, 
+ * or output handlers that will serialize the current packet.
+ * 
+ * @author Kristian
+ */
 public class NetworkMarker {
 	// Custom network handler
 	private PriorityQueue<PacketOutputHandler> outputHandlers;
 	// The input buffer
 	private ByteBuffer inputBuffer;
 	
-	private ConnectionSide side;
+	private final ConnectionSide side;
 	
 	/**
 	 * Construct a new network marker.
@@ -55,6 +63,24 @@ public class NetworkMarker {
 		if (side.isForServer())
 			throw new IllegalStateException("Server-side packets have no input buffer.");
 		return inputBuffer != null ? inputBuffer.asReadOnlyBuffer() : null;
+	}
+	
+	/**
+	 * Retrieve the serialized packet data as an input stream.
+	 * <p>
+	 * The data is exactly the same as in {@link #getInputBuffer()}. 
+	 * @see {@link #getInputBuffer()}
+	 * @return The incoming serialized packet data as a stream, or NULL if the packet was transmitted locally.
+	 */
+	public DataInputStream getInputStream() {
+		if (side.isForServer())
+			throw new IllegalStateException("Server-side packets have no input buffer.");
+		if (inputBuffer == null)
+			return null;
+		
+		return new DataInputStream(
+				new ByteArrayInputStream(inputBuffer.array())
+		);
 	}
 	
 	/**
