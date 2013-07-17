@@ -20,9 +20,17 @@ package com.comphenix.protocol.events;
 import static org.junit.Assert.*;
 import java.lang.reflect.Array;
 import java.util.List;
+import java.util.UUID;
 
+import net.minecraft.server.v1_6_R2.AttributeModifier;
+import net.minecraft.server.v1_6_R2.AttributeSnapshot;
+import net.minecraft.server.v1_6_R2.Packet44UpdateAttributes;
+
+import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_5_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
 
 import org.bukkit.Material;
 import org.bukkit.WorldType;
@@ -305,7 +313,40 @@ public class PacketContainerTest {
 		watchableAccessor.write(0, list);
 		assertEquals(list, watchableAccessor.read(0));
 	}
+	
+	@Test
+	public void testSerialization() {
+		PacketContainer chat = new PacketContainer(3);
+		chat.getStrings().write(0, "Test");
+		
+		PacketContainer copy = (PacketContainer) SerializationUtils.clone(chat);
+		
+		assertEquals(3, copy.getID());
+		assertEquals("Test", copy.getStrings().read(0));
+	}
+	
+	@Test
+	public void testAttributeList() {
+		PacketContainer attribute = new PacketContainer(Packets.Server.UPDATE_ATTRIBUTES);
+		attribute.getIntegers().write(0, 123); // Entity ID
+		
+		// Initialize some test data
+		List<AttributeModifier> modifiers = Lists.newArrayList(
+			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, 0));
+		AttributeSnapshot snapshot = new AttributeSnapshot(
+				(Packet44UpdateAttributes) attribute.getHandle(), "generic.Maxhealth", 20.0, modifiers);
+		
+		attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
+		PacketContainer cloned = attribute.deepClone();
+		AttributeSnapshot clonedSnapshot = (AttributeSnapshot) cloned.getSpecificModifier(List.class).read(0).get(0);
+		
+		assertEquals(
+				ToStringBuilder.reflectionToString(snapshot, ToStringStyle.SHORT_PREFIX_STYLE),
+				ToStringBuilder.reflectionToString(clonedSnapshot, ToStringStyle.SHORT_PREFIX_STYLE));
+	}
 
+	
+	
 	@Test
 	public void testDeepClone() {
 		// Try constructing all the packets

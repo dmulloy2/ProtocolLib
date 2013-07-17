@@ -9,8 +9,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import com.google.common.collect.Lists;
 
 /**
@@ -186,7 +184,7 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	 */
 	@Override
 	public String toString() {
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 
 	/**

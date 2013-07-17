@@ -17,7 +17,9 @@
 
 package com.comphenix.protocol.events;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -26,6 +28,7 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -37,6 +40,8 @@ import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
+import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -48,7 +53,9 @@ import com.comphenix.protocol.reflect.cloning.Cloner;
 import com.comphenix.protocol.reflect.cloning.CollectionCloner;
 import com.comphenix.protocol.reflect.cloning.FieldCloner;
 import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
+import com.comphenix.protocol.reflect.cloning.ReflectionCloner;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
@@ -106,6 +113,10 @@ public class PacketContainer implements Serializable {
 						}
 					}).
 			build();
+	
+	// Packets that cannot be cloned by our default deep cloner
+	private static final IntegerSet CLONING_UNSUPPORTED = new IntegerSet(Packets.PACKET_COUNT, 
+			Arrays.asList(Packets.Server.UPDATE_ATTRIBUTES));
 	
 	/**
 	 * Creates a packet container for a new packet.
@@ -421,10 +432,17 @@ public class PacketContainer implements Serializable {
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
-		Object clonedPacket = DEEP_CLONER.clone(getHandle());
+		Object clonedPacket = null; 
+		
+		// Fall back on the alternative (but slower) method of reading and writing back the packet
+		if (CLONING_UNSUPPORTED.contains(id)) {
+			clonedPacket = ReflectionCloner.clone(this).getHandle();
+		} else {
+			clonedPacket = DEEP_CLONER.clone(getHandle());
+		}
 		return new PacketContainer(getID(), clonedPacket);
 	}
-	
+		
 	// To save space, we'll skip copying the inflated buffers in packet 51 and 56
 	private static Function<BuilderParameters, Cloner> getSpecializedDeepClonerFactory() {
 		// Look at what you've made me do Java, look at it!! 
@@ -456,7 +474,7 @@ public class PacketContainer implements Serializable {
 
 		try {
 			// Call the write-method
-			getMethodLazily(writeMethods, handle.getClass(), "write", DataOutputStream.class).
+			getMethodLazily(writeMethods, handle.getClass(), "write", DataOutput.class).
 				invoke(handle, new DataOutputStream(output));
 			
 		} catch (IllegalArgumentException e) {
@@ -483,7 +501,7 @@ public class PacketContainer implements Serializable {
 	    	
 			// Call the read method
 			try {
-				getMethodLazily(readMethods, handle.getClass(), "read", DataInputStream.class).
+				getMethodLazily(readMethods, handle.getClass(), "read", DataInput.class).
 					invoke(handle, new DataInputStream(input));
 				
 			} catch (IllegalArgumentException e) {
@@ -513,7 +531,12 @@ public class PacketContainer implements Serializable {
 		
 		// Atomic operation
 		if (method == null) {
-			Method initialized = FuzzyReflection.fromClass(handleClass).getMethodByParameters(methodName, parameterClass);
+			Method initialized = FuzzyReflection.fromClass(handleClass).getMethod(
+							FuzzyMethodContract.newBuilder().
+							parameterCount(1).
+							parameterDerivedOf(parameterClass).
+							returnTypeVoid().
+							build());
 			method = lookup.putIfAbsent(handleClass, initialized);
 			
 			// Use our version if we succeeded

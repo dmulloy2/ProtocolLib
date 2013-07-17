@@ -44,6 +44,18 @@ public class IntegerSet {
 	}
 	
 	/**
+	 * Initialize a lookup table with a given maximum and value list.
+	 * <p>
+	 * The provided elements must be in the range [0, count).
+	 * @param maximumCount - the maximum element value and count.
+	 * @param values - the elements to add to the set.
+	 */
+	public IntegerSet(int maximumCount, Collection<Integer> values) {
+		this.array = new boolean[maximumCount];
+		addAll(values);
+	}
+	
+	/**
 	 * Determine whether or not the given element exists in the set.
 	 * @param element - the element to check. Must be in the range [0, count).
 	 * @return TRUE if the given element exists, FALSE otherwise.

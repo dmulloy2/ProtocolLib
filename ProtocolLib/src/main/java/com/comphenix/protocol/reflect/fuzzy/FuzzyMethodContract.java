@@ -7,8 +7,6 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -65,7 +63,7 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 
 		@Override
 		public boolean isMatch(Class<?>[] value, Object parent) {
-			throw new NotImplementedException("Use the parameter match instead.");
+			throw new UnsupportedOperationException("Use the parameter match instead.");
 		}
 
 		@Override
