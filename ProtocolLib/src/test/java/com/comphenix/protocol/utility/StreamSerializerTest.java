@@ -2,6 +2,10 @@ package com.comphenix.protocol.utility;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.bukkit.Material;
@@ -32,5 +36,21 @@ public class StreamSerializerTest {
 	
 		assertEquals(before.getType(), after.getType());
 		assertEquals(before.getAmount(), after.getAmount());
+	}
+	
+	@Test
+	public void testStrings() throws IOException {
+		StreamSerializer serializer = new StreamSerializer();
+		String initial = "Hello - this is a ∆ÿ≈ test.";
+		
+		// Buffer
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+		serializer.serializeString(new DataOutputStream(buffer), initial);
+		
+		DataInputStream input = new DataInputStream(
+				new ByteArrayInputStream(buffer.toByteArray()));
+		String deserialized = serializer.deserializeString(input, 50);
+		
+		assertEquals(initial, deserialized);
 	}
 }

@@ -24,9 +24,12 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
  */
 public class StreamSerializer {
 	// Cached methods
-	private static Method readItemMethod;
-	private static Method writeItemMethod;
+	private static Method READ_ITEM_METHOD;
+	private static Method WRITE_ITEM_METHOD;
 
+	private static Method READ_STRING_METHOD;
+	private static Method WRITE_STRING_METHOD;
+	
 	/**
 	 * Read or deserialize an item stack from an underlying input stream.
 	 * <p>
@@ -40,8 +43,8 @@ public class StreamSerializer {
 	public ItemStack deserializeItemStack(@Nonnull DataInputStream input) throws IOException {
 		if (input == null)
 			throw new IllegalArgumentException("Input stream cannot be NULL.");
-		if (readItemMethod == null) {
-			readItemMethod = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
+		if (READ_ITEM_METHOD == null) {
+			READ_ITEM_METHOD = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
 					FuzzyMethodContract.newBuilder().
 					parameterCount(1).
 					parameterDerivedOf(DataInput.class).
@@ -49,13 +52,48 @@ public class StreamSerializer {
 					build());
 		}
 		try {
-			Object nmsItem = readItemMethod.invoke(null, input);
+			Object nmsItem = READ_ITEM_METHOD.invoke(null, input);
 			
 			// Convert back to a Bukkit item stack
 			return MinecraftReflection.getBukkitItemStack(nmsItem);
 			
 		} catch (Exception e) {
 			throw new IOException("Cannot read item stack.", e);
+		}
+	}
+	
+	/**
+	 * Deserialize a string using the standard Minecraft UTF-16 encoding.
+	 * <p>
+	 * Note that strings cannot exceed 32767 characters, regardless if maximum lenght.
+	 * @param input - the input stream.
+	 * @param maximumLength - the maximum lenght of the string.
+	 * @return
+	 * @throws IOException
+	 */
+	public String deserializeString(@Nonnull DataInputStream input, int maximumLength) throws IOException {
+		if (input == null)
+			throw new IllegalArgumentException("Input stream cannot be NULL.");
+		if (maximumLength > 32767)
+			throw new IllegalArgumentException("Maximum lenght cannot exceed 32767 characters.");
+		if (maximumLength < 0)
+			throw new IllegalArgumentException("Maximum lenght cannot be negative.");
+		
+		if (READ_STRING_METHOD == null) {
+			READ_STRING_METHOD = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(2).
+					parameterDerivedOf(DataInput.class, 0).
+					parameterExactType(int.class, 1).
+					returnTypeExact(String.class).
+					build());
+		}
+		
+		try {
+			// Convert back to a Bukkit item stack
+			return (String) READ_STRING_METHOD.invoke(null, input, maximumLength);
+		} catch (Exception e) {
+			throw new IOException("Cannot read Minecraft string.", e);
 		}
 	}
 	
@@ -68,7 +106,6 @@ public class StreamSerializer {
 	public ItemStack deserializeItemStack(@Nonnull String input) throws IOException {
 		if (input == null)
 			throw new IllegalArgumentException("Input text cannot be NULL.");
-		
 		ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(input));
 		
 		return deserializeItemStack(new DataInputStream(inputStream));
@@ -93,17 +130,50 @@ public class StreamSerializer {
 		// Get the NMS version of the ItemStack
 		Object nmsItem = MinecraftReflection.getMinecraftItemStack(stack);
 		
-		if (writeItemMethod == null)
-			writeItemMethod = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
+		if (WRITE_ITEM_METHOD == null)
+			WRITE_ITEM_METHOD = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
 					FuzzyMethodContract.newBuilder().
 					parameterCount(2).
 					parameterDerivedOf(MinecraftReflection.getItemStackClass(), 0).
 					parameterDerivedOf(DataOutput.class, 1).
 					build());
 		try {
-			writeItemMethod.invoke(null, nmsItem, output);
+			WRITE_ITEM_METHOD.invoke(null, nmsItem, output);
 		} catch (Exception e) {
 			throw new IOException("Cannot write item stack " + stack, e);
+		}
+	}
+	
+	/**
+	 * Deserialize a string using the standard Minecraft UTF-16 encoding.
+	 * <p>
+	 * Note that strings cannot exceed 32767 characters, regardless if maximum lenght.
+	 * @param input - the input stream.
+	 * @param maximumLength - the maximum lenght of the string.
+	 * @return
+	 * @throws IOException
+	 */
+	public void serializeString(@Nonnull DataOutputStream output, String text) throws IOException {
+		if (output == null)
+			throw new IllegalArgumentException("output stream cannot be NULL.");
+		if (text == null)
+			throw new IllegalArgumentException("text cannot be NULL.");
+		
+		if (WRITE_STRING_METHOD == null) {
+			WRITE_STRING_METHOD = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(2).
+					parameterExactType(String.class, 0).
+					parameterDerivedOf(DataOutput.class, 1).
+					returnTypeVoid().
+					build());
+		}
+		
+		try {
+			// Convert back to a Bukkit item stack
+			WRITE_STRING_METHOD.invoke(null, text, output);
+		} catch (Exception e) {
+			throw new IOException("Cannot read Minecraft string.", e);
 		}
 	}
 	

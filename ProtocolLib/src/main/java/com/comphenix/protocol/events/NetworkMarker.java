@@ -10,6 +10,7 @@ import java.util.PriorityQueue;
 
 import javax.annotation.Nonnull;
 
+import com.comphenix.protocol.utility.StreamSerializer;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
 
@@ -26,6 +27,9 @@ public class NetworkMarker {
 	private ByteBuffer inputBuffer;
 	
 	private final ConnectionSide side;
+	
+	// Cache serializer too
+	private StreamSerializer serializer;
 	
 	/**
 	 * Construct a new network marker.
@@ -50,6 +54,16 @@ public class NetworkMarker {
 		return side;
 	}
 
+	/**
+	 * Retrieve a utility class for serializing and deserializing Minecraft objects.
+	 * @return Serialization utility class.
+	 */
+	public StreamSerializer getSerializer() {
+		if (serializer == null)
+			serializer = new StreamSerializer();
+		return serializer;
+	}
+	
 	/**
 	 * Retrieve the serialized packet data (excluding the header) from the network input stream.
 	 * <p>
