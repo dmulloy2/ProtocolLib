@@ -59,7 +59,10 @@ public class StreamSerializer {
 			Object nmsItem = READ_ITEM_METHOD.invoke(null, input);
 			
 			// Convert back to a Bukkit item stack
-			return MinecraftReflection.getBukkitItemStack(nmsItem);
+			if (nmsItem != null)
+				return MinecraftReflection.getBukkitItemStack(nmsItem);
+			else
+				return null;
 			
 		} catch (Exception e) {
 			throw new IOException("Cannot read item stack.", e);
@@ -84,8 +87,14 @@ public class StreamSerializer {
 					build());
 		}
 		try {
+			Object nmsCompound = READ_NBT_METHOD.invoke(null, input);
+			
 			// Convert back to an NBT Compound
-			return NbtFactory.fromNMSCompound(READ_NBT_METHOD.invoke(null, input));
+			if (nmsCompound != null)
+				return NbtFactory.fromNMSCompound(nmsCompound);
+			else
+				return null;
+			
 		} catch (Exception e) {
 			throw new IOException("Cannot read item stack.", e);
 		}
