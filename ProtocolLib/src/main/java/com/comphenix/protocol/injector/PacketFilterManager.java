@@ -53,6 +53,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
@@ -134,6 +135,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Different injection types per game phase
 	private PlayerInjectionHandler playerInjection;
 
+	// Intercepting write packet methods
+	private InterceptWritePacket interceptWritePacket;
+	
 	// The two listener containers
 	private SortedPacketListenerList recievedListeners;
 	private SortedPacketListenerList sendingListeners;
@@ -201,6 +205,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// The plugin verifier
 		this.pluginVerifier = new PluginVerifier(builder.getLibrary());
+		
+		// The write packet interceptor
+		interceptWritePacket = new InterceptWritePacket(classLoader, reporter);
 		
 		// Use the correct injection type
 		if (builder.isNettyEnabled()) {
@@ -274,6 +281,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		return ImmutableSet.copyOf(packetListeners);
 	}
 
+	@Override
+	public InterceptWritePacket getInterceptWritePacket() {
+		return interceptWritePacket;
+	}
+	
 	/**
 	 * Warn of common programming mistakes.
 	 * @param plugin - plugin to check.

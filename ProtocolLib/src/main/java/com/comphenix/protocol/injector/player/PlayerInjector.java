@@ -143,9 +143,7 @@ public abstract class PlayerInjector implements SocketInjector {
 		this.reporter = reporter;
 		this.player = player;
 		this.invoker = invoker;
-	
-		// Intercept the write method
-		writePacketInterceptor = new InterceptWritePacket(classLoader, reporter);
+		this.writePacketInterceptor = invoker.getInterceptWritePacket();
 	}
 
 	/**
@@ -523,8 +521,10 @@ public abstract class PlayerInjector implements SocketInjector {
 	 * Remove all hooks and modifications.
 	 */
 	public final void cleanupAll() {
-		if (!clean)
+		if (!clean) {
 			cleanHook();
+			writePacketInterceptor.cleanup();
+		}
 		clean = true;
 	}
 

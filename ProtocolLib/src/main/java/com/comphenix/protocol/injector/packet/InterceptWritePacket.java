@@ -2,11 +2,11 @@ package com.comphenix.protocol.injector.packet;
 
 import java.io.DataOutput;
 import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentMap;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.NoOp;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -16,6 +16,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.collect.Maps;
 
 /**
  * Retrieve a packet instance that has its write method intercepted.
@@ -34,35 +35,41 @@ public class InterceptWritePacket {
 			parameterCount(1).
 			build();
 	
-	private ClassLoader classLoader;
-	private ErrorReporter reporter;
-
 	private CallbackFilter filter;
 	private boolean writePacketIntercepted;
 	
+	private ConcurrentMap<Integer, Class<?>> proxyClasses = Maps.newConcurrentMap();
+	
+	private ClassLoader classLoader;
+	private ErrorReporter reporter;
+	
+	private WritePacketModifier modifierWrite;
+	private WritePacketModifier modifierRest;
+
 	public InterceptWritePacket(ClassLoader classLoader, ErrorReporter reporter) {
 		this.classLoader = classLoader;
-		this.reporter = reporter;	
+		this.reporter = reporter;
+		
+		// Initialize modifiers
+		this.modifierWrite = new WritePacketModifier(reporter, true);
+		this.modifierRest = new WritePacketModifier(reporter, false);
 	}
 	
-	/**
-	 * Construct a new instance of the proxy object.
-	 * @return New instance of proxy.
-	 */
-	public Object constructProxy(Object proxyObject, PacketEvent event, NetworkMarker marker) {
+	private Class<?> createProxyClass(int packetId) {
 		// Construct the proxy object
 		Enhancer ex = new Enhancer();
 		
-		// Initialize the shared filter
+		// Attempt to share callback filter 
 		if (filter == null) {
 			filter = new CallbackFilter() {
 				@Override
 				public int accept(Method method) {
 					// Skip methods defined in Object
 					if (WRITE_PACKET.isMatch(MethodInfo.fromMethod(method), null)) {
-						return 1;
-					} else {
+						writePacketIntercepted = true;
 						return 0;
+					} else {
+						return 1;
 					}
 				}
 			};
@@ -71,15 +78,16 @@ public class InterceptWritePacket {
 		// Subclass the generic packet class
 		ex.setSuperclass(MinecraftReflection.getPacketClass());
 		ex.setCallbackFilter(filter);
+		ex.setUseCache(false);
+		
 		ex.setClassLoader(classLoader);
-		ex.setCallbacks(new Callback[] { 
-				NoOp.INSTANCE, 
-				new WritePacketModifier(reporter, proxyObject, event, marker) 
-		});
+		ex.setCallbackTypes( new Class[] { WritePacketModifier.class, WritePacketModifier.class });
+		Class<?> proxyClass = ex.createClass();
 		
-		Object proxy = ex.create();
-		
-		if (proxy != null) {
+		// Register write modifiers too
+		Enhancer.registerStaticCallbacks(proxyClass, new Callback[] { modifierWrite, modifierRest });
+
+		if (proxyClass != null) {
 			// Check that we found the read method
 			if (!writePacketIntercepted) {
 				reporter.reportWarning(this, 
@@ -87,6 +95,56 @@ public class InterceptWritePacket {
 						messageParam(MinecraftReflection.getPacketClass()));
 			}
 		}
-		return proxy;
+		return proxyClass;
+	}
+
+	private Class<?> getProxyClass(int packetId) {
+		Class<?> stored = proxyClasses.get(packetId);
+		
+		// Concurrent pattern
+		if (stored == null) {
+			final Class<?> created = createProxyClass(packetId);
+			stored = proxyClasses.putIfAbsent(packetId, created);
+			
+			// We won!
+			if (stored == null) {
+				stored = created;
+				PacketRegistry.getPacketToID().put(stored, packetId);
+			}
+		}
+		return stored;
+	}
+	
+	/**
+	 * Construct a new instance of the proxy object.
+	 * @return New instance of proxy, or NULL if we failed.
+	 */
+	public Object constructProxy(Object proxyObject, PacketEvent event, NetworkMarker marker) {
+		Class<?> proxyClass = null;
+		
+		try {
+			proxyClass = getProxyClass(event.getPacketID());
+			Object generated = proxyClass.newInstance();
+			
+			modifierWrite.register(generated, proxyObject, event, marker);
+			modifierRest.register(generated, proxyObject, event, marker);
+			return generated;
+			
+		} catch (Exception e) {
+			reporter.reportWarning(this, 
+					Report.newBuilder(REPORT_CANNOT_CONSTRUCT_WRITE_PROXY).
+						messageParam(proxyClass));
+			return null;
+		}
+	}
+	
+	/**
+	 * Invoked when the write packet proxy class should be removed.
+	 */
+	public void cleanup() {
+		// Remove all proxy classes from the registry
+		for (Class<?> stored : proxyClasses.values()) {
+			PacketRegistry.getPacketToID().remove(stored);
+		}
 	}
 }
