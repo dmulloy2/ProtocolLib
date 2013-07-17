@@ -1044,6 +1044,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		recievedListeners = null;
 		sendingListeners = null;
 		
+		// Also cleanup the interceptor for the write packet method
+		interceptWritePacket.cleanup();
+		
 		// Clean up async handlers. We have to do this last.
 		asyncFilterManager.cleanupAll();
 	}
