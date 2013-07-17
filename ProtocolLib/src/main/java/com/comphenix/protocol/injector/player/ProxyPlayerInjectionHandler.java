@@ -41,6 +41,7 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
@@ -647,6 +648,16 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		
 		// None found
 		return null;
+	}
+	
+	@Override
+	public boolean canRecievePackets() {
+		return false;
+	}
+	
+	@Override
+	public PacketEvent handlePacketRecieved(PacketContainer packet, DataInputStream input, byte[] buffered) {
+		throw new UnsupportedOperationException("Proxy injection cannot handle recieved packets.");
 	}
 	
 	/**

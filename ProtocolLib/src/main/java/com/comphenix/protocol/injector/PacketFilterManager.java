@@ -216,9 +216,18 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// Use the correct injection type
 		if (builder.isNettyEnabled()) {
-			spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
+			this.spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
 			this.playerInjection = spigotInjector.getPlayerHandler();
 			this.packetInjector = spigotInjector.getPacketInjector();
+			
+			// Set real injector, in case we need it
+			spigotInjector.setProxyPacketInjector(PacketInjectorBuilder.newBuilder().
+					invoker(this).
+					reporter(reporter).
+					classLoader(classLoader).
+					playerInjection(playerInjection).
+					buildInjector()
+			);
 			
 		} else {
 			// Initialize standard injection mangers
@@ -231,7 +240,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 					injectionFilter(isInjectionNecessary).
 					version(builder.getMinecraftVersion()).
 					buildHandler();
-		
+			
 			this.packetInjector = PacketInjectorBuilder.newBuilder().
 					invoker(this).
 					reporter(reporter).
@@ -376,6 +385,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		}
 		// Update it
 		this.inputBufferedPackets = updated;
+		this.packetInjector.inputBuffersChanged(updated.toSet());
 	}
 
 	/**

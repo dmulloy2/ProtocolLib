@@ -164,7 +164,7 @@ class ProxyPacketInjector implements PacketInjector {
 	
 	// Determine if the read packet method was found
 	private boolean readPacketIntercepted = false;
-			
+	
 	public ProxyPacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
 						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws FieldAccessException {
 		
@@ -204,6 +204,11 @@ class ProxyPacketInjector implements PacketInjector {
 			
 			// Should work fine now
 		}
+	}
+	
+	@Override
+	public void inputBuffersChanged(Set<Integer> set) {
+		// No need to do anything
 	}
 	
 	@Override
@@ -321,6 +326,10 @@ class ProxyPacketInjector implements PacketInjector {
 	
 	// Called from the ReadPacketModified monitor
 	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input, byte[] buffered) {
+		if (playerInjection.canRecievePackets()) {
+			return playerInjection.handlePacketRecieved(packet, input, buffered);
+		}
+		
 		try {
 			Player client = playerInjection.getPlayerByConnection(input);
 

@@ -42,6 +42,12 @@ public interface PacketInjector {
 	public abstract boolean hasPacketHandler(int packetID);
 
 	/**
+	 * Invoked when input buffers have changed.
+	 * @param set - the new set of packets that require the read buffer.
+	 */
+	public abstract void inputBuffersChanged(Set<Integer> set);
+	
+	/**
 	 * Retrieve every intercepted packet ID.
 	 * @return Every intercepted packet ID.
 	 */

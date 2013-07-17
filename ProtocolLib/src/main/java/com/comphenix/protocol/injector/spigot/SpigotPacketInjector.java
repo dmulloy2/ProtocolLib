@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
@@ -24,6 +25,7 @@ import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -78,11 +80,17 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	// Player to injector
 	private ConcurrentMap<Player, NetworkObjectInjector> playerInjector = Maps.newConcurrentMap();
 	
+	// For handling read buffered packet data
+	private Map<Object, byte[]> readBufferedPackets = new MapMaker().weakKeys().makeMap();
+	
 	// Responsible for informing the PL packet listeners
 	private ListenerInvoker invoker;
 	private ErrorReporter reporter;
 	private Server server;
 	private ClassLoader classLoader;
+	
+	// The proxy packet injector
+	private PacketInjector proxyPacketInjector;
 	
 	/**
 	 * Create a new spigot injector.
@@ -94,6 +102,30 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		this.server = server;
 		this.queuedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
 		this.reveivedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+	}
+	
+	/**
+	 * Retrieve the underlying listener invoker.
+	 * @return The invoker.
+	 */
+	public ListenerInvoker getInvoker() {
+		return invoker;
+	}
+	
+	/**
+	 * Set the real proxy packet injector.
+	 * @param proxyPacketInjector - the real injector.
+	 */
+	public void setProxyPacketInjector(PacketInjector proxyPacketInjector) {
+		this.proxyPacketInjector = proxyPacketInjector;
+	}
+	
+	/**
+	 * Retrieve the real proxy packet injector.
+	 * @return The real injector.
+	 */
+	public PacketInjector getProxyPacketInjector() {
+		return proxyPacketInjector;
 	}
 	
 	/**
@@ -343,6 +375,15 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		return result;
 	}
 	
+	/**
+	 * Save the buffered serialized input packet.
+	 * @param handle - the associated packet.
+	 * @param buffered - the buffere data to save.
+	 */
+	public void saveBuffered(Object handle, byte[] buffered) {
+		readBufferedPackets.put(handle, buffered);
+	}
+	
 	@Override
 	public Object packetReceived(Object networkManager, Object connection, Object packet) {
 		Integer id = invoker.getPacketID(packet);
@@ -355,7 +396,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			
 			Player sender = getInjector(networkManager, connection).getUpdatedPlayer();
 			PacketContainer container = new PacketContainer(id, packet);
-			PacketEvent event = packetReceived(container, sender);
+			PacketEvent event = packetReceived(container, sender, readBufferedPackets.get(packet));
 			
 			if (!event.isCancelled())
 				return event.getPacket().getHandle();
@@ -408,8 +449,9 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 * @param sender - the client packet.
 	 * @return The packet event that was used.
 	 */
-	PacketEvent packetReceived(PacketContainer packet, Player sender) {
-		PacketEvent event = PacketEvent.fromClient(this, packet, sender);
+	PacketEvent packetReceived(PacketContainer packet, Player sender, byte[] buffered) {
+		NetworkMarker marker = buffered != null ? new NetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
+		PacketEvent event = PacketEvent.fromClient(this, packet, marker, sender);
 		
 		invoker.invokePacketRecieving(event);
 		return event;

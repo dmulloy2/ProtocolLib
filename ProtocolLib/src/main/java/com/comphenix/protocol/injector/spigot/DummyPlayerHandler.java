@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
@@ -93,6 +94,20 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	@Override
 	public PlayerInjectHooks getPlayerHook(GamePhase phase) {
 		return PlayerInjectHooks.NETWORK_SERVER_OBJECT;
+	}
+	
+	@Override
+	public boolean canRecievePackets() {
+		return true;
+	}
+
+	@Override
+	public PacketEvent handlePacketRecieved(PacketContainer packet, DataInputStream input, byte[] buffered) {
+		// Associate this buffered data
+		if (buffered != null) {
+			injector.saveBuffered(packet.getHandle(), buffered);
+		}
+		return null;
 	}
 	
 	@Override

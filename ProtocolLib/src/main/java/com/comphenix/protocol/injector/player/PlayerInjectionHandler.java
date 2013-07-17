@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
@@ -159,6 +160,21 @@ public interface PlayerInjectionHandler {
 	 */
 	public abstract Set<Integer> getSendingFilters();
 
+	/**
+	 * Whether or not this player injection handler can also recieve packets.
+	 * @return TRUE if it can, FALSE otherwise.
+	 */
+	public abstract boolean canRecievePackets();
+	
+	/**
+	 * Invoked if this player injection handler can process recieved packets.
+	 * @param packet - the recieved packet.
+	 * @param input - the input stream.
+	 * @param buffered - the buffered packet.
+	 * @return The packet event.
+	 */
+	public abstract PacketEvent handlePacketRecieved(PacketContainer packet, DataInputStream input, byte[] buffered);
+	
 	/**
 	 * Close any lingering proxy injections.
 	 */
