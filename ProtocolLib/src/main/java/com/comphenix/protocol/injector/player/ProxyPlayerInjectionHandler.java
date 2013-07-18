@@ -25,6 +25,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import net.sf.cglib.proxy.Factory;
@@ -53,11 +54,10 @@ import com.comphenix.protocol.injector.server.InputStreamLookupBuilder;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.SafeCacheBuilder;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 
 /**
@@ -89,8 +89,8 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private WeakReference<PlayerInjector> lastSuccessfulHook;
 	
 	// Dummy injection
-	private Cache<Player, PlayerInjector> dummyInjectors = 
-			CacheBuilder.newBuilder().
+	private ConcurrentMap<Player, PlayerInjector> dummyInjectors = 
+			SafeCacheBuilder.newBuilder().
 			expireAfterWrite(30, TimeUnit.SECONDS).
 			build(BlockingHashMap.<Player, PlayerInjector>newInvalidCacheLoader());
 	
@@ -622,7 +622,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			}
 			
 			inputStreamLookup.setSocketInjector(dummyInjector.getAddress(), dummyInjector);
-			dummyInjectors.asMap().put(player, dummyInjector);
+			dummyInjectors.put(player, dummyInjector);
 			return dummyInjector;
 			
 		} catch (IllegalAccessException e) {

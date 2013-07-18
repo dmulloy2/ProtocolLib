@@ -23,8 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.comphenix.protocol.utility.SafeCacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
@@ -42,7 +41,6 @@ import com.google.common.cache.RemovalNotification;
  */
 public class BlockingHashMap<TKey, TValue> {
 	// Map of values
-	private final Cache<TKey, TValue> backingCache;
 	private final ConcurrentMap<TKey, TValue> backingMap;
 	
 	// Map of locked objects
@@ -65,19 +63,19 @@ public class BlockingHashMap<TKey, TValue> {
 	 * Initialize a new map.
 	 */
 	public BlockingHashMap() {
-		backingCache = CacheBuilder.newBuilder().weakValues().removalListener(
-		  new RemovalListener<TKey, TValue>() {
-			@Override
-			public void onRemoval(RemovalNotification<TKey, TValue> entry) {
-				// Clean up locks too
-				if (entry.getCause() != RemovalCause.REPLACED) {
-					locks.remove(entry.getKey());
-				}
-			}
-		}).build(
-				BlockingHashMap.<TKey, TValue>newInvalidCacheLoader()
-		);
-		backingMap = backingCache.asMap();
+		backingMap = SafeCacheBuilder.<TKey, TValue>newBuilder().
+			weakValues().
+			removalListener(
+				new RemovalListener<TKey, TValue>() {
+					@Override
+					public void onRemoval(RemovalNotification<TKey, TValue> entry) {
+						// Clean up locks too
+						if (entry.getCause() != RemovalCause.REPLACED) {
+							locks.remove(entry.getKey());
+						}
+					}
+				}).
+			build(BlockingHashMap.<TKey, TValue> newInvalidCacheLoader());
 		
 		// Normal concurrent hash map
 		locks = new ConcurrentHashMap<TKey, Object>();
