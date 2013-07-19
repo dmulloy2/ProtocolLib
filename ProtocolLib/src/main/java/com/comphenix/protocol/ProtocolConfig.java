@@ -48,6 +48,7 @@ class ProtocolConfig {
 	private static final String BACKGROUND_COMPILER_ENABLED = "background compiler";
 
 	private static final String DEBUG_MODE_ENABLED = "debug";
+	private static final String DETAILED_ERROR = "detailed error";
 	private static final String INJECTION_METHOD = "injection method";
 	
 	private static final String SCRIPT_ENGINE_NAME = "script engine";
@@ -191,6 +192,22 @@ class ProtocolConfig {
 	 */
 	public File getFile() {
 		return new File(plugin.getDataFolder(), "config.yml");
+	}
+	
+	/**
+	 * Determine if detailed error reporting is enabled. Default FALSE.
+	 * @return TRUE if it is enabled, FALSE otherwise.
+	 */
+	public boolean isDetailedErrorReporting() {
+		return global.getBoolean(DETAILED_ERROR, false);
+	}
+	
+	/**
+	 * Set whether or not detailed error reporting is enabled.
+	 * @param value - TRUE if it is enabled, FALSE otherwise.
+	 */
+	public void setDetailedErrorReporting(boolean value) {
+		global.set(DETAILED_ERROR, value);
 	}
 	
 	/**

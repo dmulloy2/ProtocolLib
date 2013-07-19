@@ -21,6 +21,9 @@ global:
   # Whether or not to enable the filter command
   debug: false
   
+  # Whether or not to print a stack trace for every warning
+  detailed error: false
+  
   # The engine used by the filter command
   script engine: JavaScript
   

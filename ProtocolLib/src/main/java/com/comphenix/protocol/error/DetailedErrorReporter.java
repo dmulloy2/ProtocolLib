@@ -77,6 +77,9 @@ public class DetailedErrorReporter implements ErrorReporter {
 	// Whether or not Apache Commons is not present
 	protected boolean apacheCommonsMissing;
 	
+	// Whether or not detailed errror reporting is enabled
+	protected boolean detailedReporting;
+	
 	// Map of global objects
 	protected Map<String, Object> globalParameters = new HashMap<String, Object>();
 
@@ -124,6 +127,22 @@ public class DetailedErrorReporter implements ErrorReporter {
 		} catch (Throwable e) {
 			return Logger.getLogger("Minecraft");
 		}
+	}
+	
+	/**
+	 * Determine if we're using detailed error reporting.
+	 * @return TRUE if we are, FALSE otherwise.
+	 */
+	public boolean isDetailedReporting() {
+		return detailedReporting;
+	}
+	
+	/**
+	 * Set whether or not to use detailed error reporting.
+	 * @param detailedReporting - TRUE to enable it, FALSE otherwise.
+	 */
+	public void setDetailedReporting(boolean detailedReporting) {
+		this.detailedReporting = detailedReporting;
 	}
 
 	@Override
@@ -206,8 +225,13 @@ public class DetailedErrorReporter implements ErrorReporter {
 		// Print the main warning
 		if (report.getException() != null) {
 			logger.log(Level.WARNING, message, report.getException());
-		} else {
+		} else {			
 			logger.log(Level.WARNING, message);
+			
+			// Remember the call stack
+			if (detailedReporting) {
+				printCallStack(Level.WARNING, logger);
+			}
 		}
 		
 		// Parameters?
@@ -264,6 +288,9 @@ public class DetailedErrorReporter implements ErrorReporter {
 
 		if (report.getException() != null) {
 			report.getException().printStackTrace(writer);
+			
+		} else if (detailedReporting) {
+			printCallStack(writer);
 		}
 		
 		// Data dump!
@@ -307,6 +334,27 @@ public class DetailedErrorReporter implements ErrorReporter {
 		
 		// Make sure it is reported
 		logger.severe(addPrefix(text.toString(), prefix));
+	}
+	
+	/**
+	 * Print the call stack to the given logger.
+	 * @param logger - the logger.
+	 */
+	private void printCallStack(Level level, Logger logger) {
+		StringWriter text = new StringWriter();
+		printCallStack(new PrintWriter(text));
+		
+		// Print the exception
+		logger.log(level, text.toString());
+	}
+	
+	/**
+	 * Print the current call stack.
+	 * @param writer - the writer.
+	 */
+	private void printCallStack(PrintWriter writer) {
+		Exception current = new Exception("Not an error! This is the call stack.");
+		current.printStackTrace(writer);
 	}
 	
 	private String printParameters(Object... parameters) {

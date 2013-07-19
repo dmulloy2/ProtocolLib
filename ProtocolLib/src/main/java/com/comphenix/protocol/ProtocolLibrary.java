@@ -161,6 +161,11 @@ public class ProtocolLibrary extends JavaPlugin {
 		if (config.isDebug()) {
 			logger.warning("Debug mode is enabled!");
 		}
+		// And the state of the error reporter
+		if (config.isDetailedErrorReporting()) {
+			detailedReporter.setDetailedReporting(true);
+			logger.warning("Detailed error reporting enabled!");
+		}
 		
 		try {
 			// Check for other versions
