@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.events;
 
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
@@ -25,6 +26,7 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.injector.GamePhase;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 /**
  * Represents a packet listener with useful constructors.
@@ -171,14 +173,31 @@ public abstract class PacketAdapter implements PacketListener {
 		if (options == null)
 			throw new IllegalArgumentException("options cannot be null");
 		
+		ListenerOptions[] serverOptions = options;
+		ListenerOptions[] clientOptions = options;
+		
+		// Special case that allows us to specify optionIntercept().
+		if (connectionSide == ConnectionSide.BOTH) {
+			serverOptions = except(serverOptions, new ListenerOptions[0], 
+					ListenerOptions.INTERCEPT_INPUT_BUFFER);
+		}
+		
 		// Add whitelists
 		if (connectionSide.isForServer())
-			sendingWhitelist = new ListeningWhitelist(listenerPriority, packets, gamePhase, options);
+			sendingWhitelist = new ListeningWhitelist(listenerPriority, packets, gamePhase, serverOptions);
 		if (connectionSide.isForClient())
-			receivingWhitelist = new ListeningWhitelist(listenerPriority, packets, gamePhase, options);
+			receivingWhitelist = new ListeningWhitelist(listenerPriority, packets, gamePhase, clientOptions);
 		
 		this.plugin = plugin;
 		this.connectionSide = connectionSide;
+	}
+	
+	// Remove a given element from an array
+	private static <T> T[] except(T[] values, T[] buffer, T except) {
+		List<T> result = Lists.newArrayList(values);
+		
+		result.remove(except);
+		return result.toArray(buffer);
 	}
 	
 	@Override
