@@ -19,9 +19,12 @@ package com.comphenix.protocol.events;
 
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.injector.GamePhase;
+import com.google.common.base.Preconditions;
 
 /**
  * Represents a packet listener with useful constructors.
@@ -35,6 +38,17 @@ public abstract class PacketAdapter implements PacketListener {
 	protected ListeningWhitelist receivingWhitelist = ListeningWhitelist.EMPTY_WHITELIST;
 	protected ListeningWhitelist sendingWhitelist = ListeningWhitelist.EMPTY_WHITELIST;
 
+	/**
+	 * Initialize a packet adapter using a collection of parameters. Use {@link #params()} to get an instance to this builder.
+	 * @param params - the parameters.
+	 */
+	public PacketAdapter(@Nonnull AdapterParameteters params) {
+		this(
+			checkValidity(params).plugin, params.connectionSide, params.listenerPriority, 
+			params.gamePhase, params.options, params.packets
+		);
+	}
+	
 	/**
 	 * Initialize a packet listener with default priority.
 	 * @param plugin - the plugin that spawned this listener.
@@ -59,7 +73,7 @@ public abstract class PacketAdapter implements PacketListener {
 	/**
 	 * Initialize a packet listener for a single connection side.
 	 * <p>
-	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * The game phase is used to optimize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param connectionSide - the packet type the listener is looking for.
 	 * @param gamePhase - which game phase this listener is active under.
@@ -72,7 +86,7 @@ public abstract class PacketAdapter implements PacketListener {
 	/**
 	 * Initialize a packet listener for a single connection side.
 	 * <p>
-	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * The game phase is used to optimize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param connectionSide - the packet type the listener is looking for.
 	 * @param listenerPriority - the event priority.
@@ -119,7 +133,7 @@ public abstract class PacketAdapter implements PacketListener {
 	/**
 	 * Initialize a packet listener for a single connection side.
 	 * <p>
-	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * The game phase is used to optimize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param connectionSide - the packet type the listener is looking for.
 	 * @param listenerPriority - the event priority.
@@ -133,7 +147,7 @@ public abstract class PacketAdapter implements PacketListener {
 	/**
 	 * Initialize a packet listener for a single connection side.
 	 * <p>
-	 * The game phase is used to optmize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
+	 * The game phase is used to optimize performance. A listener should only choose BOTH or LOGIN if it's absolutely necessary.
 	 * <p>
 	 * Listener options must be specified in order for {@link NetworkMarker#getInputBuffer()} to function correctly.
 	 * @param plugin - the plugin that spawned this listener.
@@ -228,5 +242,168 @@ public abstract class PacketAdapter implements PacketListener {
 				getPluginName(this), 
 				sendingWhitelist,
 				receivingWhitelist);
+	}
+	
+	/**
+	 * Construct a helper object for passing parameters to the packet adapter.
+	 * <p>
+	 * This is often simpler and better than passing them directly to each constructor.
+	 * @return Helper object.
+	 */
+	public static AdapterParameteters params() {
+		return new AdapterParameteters();
+	}
+	
+	/**
+	 * Construct a helper object for passing parameters to the packet adapter.
+	 * <p>
+	 * This is often simpler and better than passing them directly to each constructor.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param packets - the packet IDs the listener is looking for.
+	 * @return Helper object.
+	 */
+	public static AdapterParameteters params(Plugin plugin, Integer... packets) {
+		return new AdapterParameteters().plugin(plugin).packets(packets);
+	}
+	
+	/**
+	 * Represents a builder for passing parameters to the packet adapter constructor.
+	 * @author Kristian
+	 */
+	public static class AdapterParameteters {
+		private Plugin plugin;
+		private ConnectionSide connectionSide;
+		private Integer[] packets;
+	
+		// Parameters with default values
+		private GamePhase gamePhase = GamePhase.PLAYING;
+		private ListenerOptions[] options = new ListenerOptions[0];
+		private ListenerPriority listenerPriority = ListenerPriority.NORMAL;
+		
+		/**
+		 * Set the plugin that spawned this listener. This parameter is required.
+		 * @param plugin - the plugin.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters plugin(@Nonnull Plugin plugin) {
+			this.plugin = Preconditions.checkNotNull(plugin, "plugin cannot be NULL.");
+			return this;
+		}
+		
+		/**
+		 * Set the packet types this listener is looking for. This parameter is required.
+		 * @param connectionSide - the new packet type.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters connectionSide(@Nonnull ConnectionSide connectionSide) {
+			this.connectionSide = Preconditions.checkNotNull(connectionSide, "connectionside cannot be NULL.");
+			return this;
+		}
+		
+		/**
+		 * Set this adapter to look for client-side packets only. 
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters clientSide() {
+			return connectionSide(ConnectionSide.CLIENT_SIDE);
+		}
+		
+		/**
+		 * Set this adapter to look for client-side packets only. 
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters serverSide() {
+			return connectionSide(ConnectionSide.SERVER_SIDE);
+		}
+		
+		/**
+		 * Set the the event priority, where the execution is in ascending order from lowest to highest. 
+		 * <p>
+		 * Default is {@link ListenerPriority#NORMAL}.
+		 * @param listenerPriority - the new event priority.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters listenerPriority(@Nonnull ListenerPriority listenerPriority) {
+			this.listenerPriority = Preconditions.checkNotNull(listenerPriority, "listener priority cannot be NULL.");
+			return this;
+		}
+		
+		/**
+		 * Set which game phase this listener is active under. This is a hint for ProtocolLib to start intercepting login packets.
+		 * <p>
+		 * Default is {@link GamePhase#PLAYING}, which will not intercept login packets.
+		 * @param gamePhase - the new game phase.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters gamePhase(@Nonnull GamePhase gamePhase) {
+			this.gamePhase = Preconditions.checkNotNull(gamePhase, "gamePhase cannot be NULL.");
+			return this;
+		}
+		
+		/**
+		 * Set the game phase to {@link GamePhase#LOGIN}, allowing ProtocolLib to intercept login packets.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters loginPhase() {
+			return gamePhase(GamePhase.LOGIN);
+		}
+		
+		/**
+		 * Set listener options that decide whether or not to intercept the raw packet data as read from the network stream.
+		 * <p>
+		 * The default is to disable this raw packet interception.
+		 * @param options - every option to use.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters options(@Nonnull ListenerOptions... options) {
+			this.options = Preconditions.checkNotNull(options, "options cannot be NULL.");
+			return this;
+		}
+		
+		/**
+		 * Set the listener option to {@link ListenerOptions#INTERCEPT_INPUT_BUFFER}, causing ProtocolLib to read the raw packet data from the network stream.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters optionIntercept() {
+			return options(ListenerOptions.INTERCEPT_INPUT_BUFFER);
+		}
+		
+		/**
+		 * Set the packet IDs of the packets the listener is looking for.
+		 * <p>
+		 * This parameter is required.
+		 * @param packets - the packet IDs to look for.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters packets(@Nonnull Integer... packets) {
+			this.packets = Preconditions.checkNotNull(packets, "packets cannot be NULL");
+			return this;
+		}
+		
+		/**
+		 * Set the packet IDs of the packets the listener is looking for.
+		 * <p>
+		 * This parameter is required.
+		 * @param packets - a set of the packet IDs to look for.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters packets(@Nonnull Set<Integer> packets) {
+			return packets(packets.toArray(new Integer[0]));
+		}
+	}
+	
+	/**
+	 * Determine if the required parameters are set.
+	 */
+	private static AdapterParameteters checkValidity(AdapterParameteters params) {
+		if (params == null)
+			throw new IllegalArgumentException("params cannot be NULL.");
+		if (params.plugin == null)
+			throw new IllegalStateException("Plugin was never set in the parameters.");
+		if (params.connectionSide == null)
+			throw new IllegalStateException("Connection side was never set in the parameters.");
+		if (params.packets == null)
+			throw new IllegalStateException("Packet IDs was never set in the parameters.");
+		return params;
 	}
 }
