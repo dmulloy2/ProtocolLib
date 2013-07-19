@@ -301,19 +301,19 @@ public abstract class PacketAdapter implements PacketListener {
 		}
 		
 		/**
-		 * Set this adapter to look for client-side packets only. 
+		 * Set this adapter to also look for client-side packets. 
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters clientSide() {
-			return connectionSide(ConnectionSide.CLIENT_SIDE);
+			return connectionSide(ConnectionSide.add(connectionSide, ConnectionSide.CLIENT_SIDE));
 		}
 		
 		/**
-		 * Set this adapter to look for client-side packets only. 
+		 * Set this adapter to also look for client-side packets. 
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters serverSide() {
-			return connectionSide(ConnectionSide.SERVER_SIDE);
+			return connectionSide(ConnectionSide.add(connectionSide, ConnectionSide.SERVER_SIDE));
 		}
 		
 		/**
