@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import com.comphenix.protocol.error.RethrowErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -51,15 +52,19 @@ public class PacketConstructor {
 	// Used to unwrap Bukkit objects
 	private List<Unwrapper> unwrappers;
 	
+	// Parameters that need to be unwrapped
+	private boolean[] unwrappable;
+	
 	private PacketConstructor(Constructor<?> constructorMethod) {
 		this.constructorMethod = constructorMethod;
-		this.unwrappers = Lists.newArrayList((Unwrapper) new BukkitUnwrapper());
+		this.unwrappers = Lists.newArrayList((Unwrapper) new BukkitUnwrapper(new RethrowErrorReporter() ));
 	}
 	
-	private PacketConstructor(int packetID, Constructor<?> constructorMethod, List<Unwrapper> unwrappers) {
+	private PacketConstructor(int packetID, Constructor<?> constructorMethod, List<Unwrapper> unwrappers, boolean[] unwrappable) {
 		this.packetID = packetID;
 		this.constructorMethod = constructorMethod;
 		this.unwrappers = unwrappers;
+		this.unwrappable = unwrappable;
 	}
 	
 	public ImmutableList<Unwrapper> getUnwrappers() {
@@ -80,31 +85,41 @@ public class PacketConstructor {
 	 * @return A constructor with a different set of unwrappers.
 	 */
 	public PacketConstructor withUnwrappers(List<Unwrapper> unwrappers) {
-		return new PacketConstructor(packetID, constructorMethod, unwrappers);
+		return new PacketConstructor(packetID, constructorMethod, unwrappers, unwrappable);
 	}
 
 	/**
 	 * Create a packet constructor that creates packets using the given types.
+	 * <p>
+	 * Note that if you pass a Class<?> as a value, it will use its type directly.
 	 * @param id - packet ID.
-	 * @param values - types to create.
+	 * @param values - the values that will match each parameter in the desired constructor.
 	 * @return A packet constructor with these types.
 	 * @throws IllegalArgumentException If no packet constructor could be created with these types.
 	 */
 	public PacketConstructor withPacket(int id, Object[] values) {
-		
 		Class<?>[] types = new Class<?>[values.length];
+		Throwable lastException = null;
+		boolean[] unwrappable = new boolean[values.length];		
 		
 		for (int i = 0; i < types.length; i++) {
 			// Default type
 			if (values[i] != null) {
-				types[i] = values[i].getClass();
+				types[i] = (values[i] instanceof Class) ? (Class<?>)values[i] : values[i].getClass();
 				
 				for (Unwrapper unwrapper : unwrappers) {
-					Object result = unwrapper.unwrapItem(values[i]);
+					Object result = null;
+					
+					try {
+						result = unwrapper.unwrapItem(values[i]);
+					} catch (Throwable e) {
+						lastException = e;
+					}
 					
 					// Update type we're searching for
 					if (result != null) {
 						types[i] = result.getClass();
+						unwrappable[i] = true;
 						break;
 					}
 				}
@@ -126,11 +141,11 @@ public class PacketConstructor {
 
 			if (isCompatible(types, params)) {
 				// Right, we've found our type
-				return new PacketConstructor(id, constructor, unwrappers);
+				return new PacketConstructor(id, constructor, unwrappers, unwrappable);
 			}
 		}
 		
-		throw new IllegalArgumentException("No suitable constructor could be found.");
+		throw new IllegalArgumentException("No suitable constructor could be found.", lastException);
 	}
 	
 	/**
@@ -143,14 +158,16 @@ public class PacketConstructor {
 	 */
 	public PacketContainer createPacket(Object... values) throws FieldAccessException {
 		try {
-			// Convert types
+			// Convert types that needs to be converted
 			for (int i = 0; i < values.length; i++) {
-				for (Unwrapper unwrapper : unwrappers) {
-					Object converted = unwrapper.unwrapItem(values[i]);
-					
-					if (converted != null) {
-						values[i] = converted;
-						break;
+				if (unwrappable[i]) {
+					for (Unwrapper unwrapper : unwrappers) {
+						Object converted = unwrapper.unwrapItem(values[i]);
+						
+						if (converted != null) {
+							values[i] = converted;
+							break;
+						}
 					}
 				}
 			}
