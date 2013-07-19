@@ -128,6 +128,7 @@ public final class Packets {
 		 * Remember to clone the packet if you are modifying it.
 		 */
 		public static final int TILE_ENTITY_DATA = 132;
+		public static final int OPEN_TILE_ENTITY = 133;
 		public static final int STATISTIC = 200;
 		public static final int PLAYER_INFO = 201;
 		public static final int ABILITIES = 202;
