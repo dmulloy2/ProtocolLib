@@ -40,7 +40,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	private final int major;
 	private final int minor;
 	private final int build;
-	
+
 	// The development stage
 	private final String development;
 
@@ -141,10 +141,10 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	 * @return A normal version string.
 	 */
 	public String getVersion() {
-		if (development == null)
-			return String.format("%s.%s.%s", major, minor, build);
+		if (getDevelopmentStage() == null)
+			return String.format("%s.%s.%s", getMajor(), getMinor(), getBuild());
 		else
-			return String.format("%s.%s.%s-%s", major, minor, build, development);
+			return String.format("%s.%s.%s-%s", getMajor(), getMinor(), getBuild(), getDevelopmentStage());
 	}
 	
 	@Override
@@ -153,11 +153,11 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 			return 1;
 	
 		return ComparisonChain.start().
-					compare(major, o.major).
-					compare(minor, o.minor).
-					compare(build, o.build).
+					compare(getMajor(), o.getMajor()).
+					compare(getMinor(), o.getMinor()).
+					compare(getBuild(), o.getBuild()).
 					// No development String means it's a release
-					compare(development, o.development, Ordering.natural().nullsLast()).
+					compare(getDevelopmentStage(), o.getDevelopmentStage(), Ordering.natural().nullsLast()).
 					result();
 	}
 	
@@ -171,10 +171,10 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 		if (obj instanceof MinecraftVersion) {
 			MinecraftVersion other = (MinecraftVersion) obj;
 			
-			return major == other.major && 
-				   minor == other.minor && 
-				   build == other.build &&
-				   Objects.equal(development, other.development);
+			return getMajor() == other.getMajor() && 
+				   getMinor() == other.getMinor() && 
+				   getBuild() == other.getBuild() &&
+				   Objects.equal(getDevelopmentStage(), other.getDevelopmentStage());
 		}
 		
 		return false;
@@ -182,7 +182,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(major, minor, build);
+		return Objects.hashCode(getMajor(), getMinor(), getBuild());
 	}
 
 	@Override

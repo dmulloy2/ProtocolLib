@@ -24,6 +24,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -123,10 +124,14 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	private PluginManager queuedManager;
 	private Plugin queuedPlugin;
 	
-	public DelayedPacketManager(@Nonnull ErrorReporter reporter) {
+	private MinecraftVersion version;
+	
+	public DelayedPacketManager(@Nonnull ErrorReporter reporter, @Nonnull MinecraftVersion version) {
 		Preconditions.checkNotNull(reporter, "reporter cannot be NULL.");
+		Preconditions.checkNotNull(version, "version cannot be NULL.");
 		
 		this.reporter = reporter;
+		this.version = version;
 	}
 	
 	/**
@@ -135,6 +140,14 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	 */
 	public InternalManager getDelegate() {
 		return delegate;
+	}
+
+	@Override
+	public MinecraftVersion getMinecraftVersion() {
+		if (delegate != null)
+			return delegate.getMinecraftVersion();
+		else
+			return version;
 	}
 	
 	/**

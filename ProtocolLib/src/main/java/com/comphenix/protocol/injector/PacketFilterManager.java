@@ -66,6 +66,7 @@ import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
@@ -179,6 +180,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Plugin verifier
 	private PluginVerifier pluginVerifier;
 	
+	// The current Minecraft version
+	private MinecraftVersion minecraftVersion;
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
@@ -210,9 +214,10 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// The plugin verifier
 		this.pluginVerifier = new PluginVerifier(builder.getLibrary());
+		this.minecraftVersion = builder.getMinecraftVersion();
 		
 		// The write packet interceptor
-		interceptWritePacket = new InterceptWritePacket(classLoader, reporter);
+		this.interceptWritePacket = new InterceptWritePacket(classLoader, reporter);
 		
 		// Use the correct injection type
 		if (builder.isNettyEnabled()) {
@@ -265,6 +270,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 */
 	public static PacketFilterBuilder newBuilder() {
 		return new PacketFilterBuilder();
+	}
+	
+	@Override
+	public MinecraftVersion getMinecraftVersion() {
+		return minecraftVersion;
 	}
 	
 	@Override

@@ -190,7 +190,7 @@ public class PacketFilterBuilder {
 			// If the server hasn't loaded yet - wait
 			if (InjectedServerConnection.getServerConnection(reporter, server) == null) {
 				// We need to delay this until we know if Netty is enabled
-				final DelayedPacketManager delayed = new DelayedPacketManager(reporter);
+				final DelayedPacketManager delayed = new DelayedPacketManager(reporter, mcVersion);
 
 				// They must reference each other
 				delayed.setAsynchronousManager(asyncManager);

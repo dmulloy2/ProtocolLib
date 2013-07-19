@@ -32,6 +32,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -168,6 +169,12 @@ public interface ProtocolManager extends PacketStream {
 	 * @return Every filtered client packet.
 	 */
 	public Set<Integer> getReceivingFilters();
+	
+	/**
+	 * Retrieve the current Minecraft version.
+	 * @return The current version.
+	 */
+	public MinecraftVersion getMinecraftVersion();
 	
 	/**
 	 * Determines whether or not this protocol mananger has been disabled. 
