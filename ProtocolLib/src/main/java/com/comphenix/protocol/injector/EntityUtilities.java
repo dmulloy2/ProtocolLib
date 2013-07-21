@@ -21,8 +21,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +35,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
@@ -211,18 +212,14 @@ class EntityUtilities {
 			try {
 				hashGetMethod = type.getMethod("get", int.class);
 			} catch (NoSuchMethodException e) {
-			
-				Class<?>[] params = { int.class };
-				
-				// Then it's probably the lowest named method that takes an int-parameter
-				for (Method method : type.getMethods()) {
-					if (Arrays.equals(params, method.getParameterTypes())) {
-						if (hashGetMethod == null ||
-							method.getName().compareTo(hashGetMethod.getName()) < 0) {
-							hashGetMethod = method;
-						}
-					}
-				}
+				// Then it's probably the lowest named method that takes an int-parameter and returns a object
+				hashGetMethod = FuzzyReflection.fromClass(type).getMethod(
+					FuzzyMethodContract.newBuilder().banModifier(Modifier.STATIC).
+					parameterCount(1).
+					parameterExactType(int.class).
+					returnTypeExact(Object.class).
+					build()
+				);
 			}
 		}
 		
