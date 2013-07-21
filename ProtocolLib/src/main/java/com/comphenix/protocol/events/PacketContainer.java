@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.bukkit.World;
@@ -65,6 +66,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 /**
@@ -336,12 +338,30 @@ public class PacketContainer implements Serializable {
 	 * MAY return null or invalid entities for certain fields. Using the correct index 
 	 * is essential.
 	 * 
+	 * @param world - the world each entity is currently occupying.
 	 * @return A modifier entity types.
 	 */
-	public StructureModifier<Entity> getEntityModifier(World world) {
+	public StructureModifier<Entity> getEntityModifier(@Nonnull World world) {
+		Preconditions.checkNotNull(world, "world cannot be NULL.");
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<Entity>withType(
 				int.class, BukkitConverters.getEntityConverter(world));
+	}
+	
+	/**
+	 * Retrieves a read/write structure for entity objects.
+	 * <p>
+	 * Note that entities are transmitted by integer ID, and the type may not be enough
+	 * to distinguish between entities and other values. Thus, this structure modifier
+	 * MAY return null or invalid entities for certain fields. Using the correct index 
+	 * is essential.
+	 * 
+	 * @param event - the original packet event.
+	 * @return A modifier entity types.
+	 */
+	public StructureModifier<Entity> getEntityModifier(@Nonnull PacketEvent event) {
+		Preconditions.checkNotNull(event, "event cannot be NULL.");
+		return getEntityModifier(event.getPlayer().getWorld());
 	}
 	
 	/**
