@@ -52,6 +52,11 @@ class PluginVerifier {
 	}
 	
 	/**
+	 * Contains a list of plugins that will detect and use ProtocolLib dynamically, instead of relying on the dependency system.
+	 */
+	private static final Set<String> DYNAMIC_DEPENDENCY = Sets.newHashSet("mcore");
+	
+	/**
 	 * Set of plugins that have been loaded after ProtocolLib.
 	 */
 	private final Set<String> loadedAfter = new HashSet<String>();
@@ -127,10 +132,11 @@ class PluginVerifier {
 	public VerificationResult verify(Plugin plugin) {
 		if (plugin == null)
 			throw new IllegalArgumentException("plugin cannot be NULL.");
+		String name = plugin.getName();
 		
 		// Skip the load order check for ProtocolLib itself
 		if (!dependency.equals(plugin)) {
-			if (!loadedAfter.contains(plugin.getName())) {
+			if (!loadedAfter.contains(name) && !DYNAMIC_DEPENDENCY.contains(name)) {
 				if (verifyLoadOrder(dependency, plugin)) {
 					// Memorize
 					loadedAfter.add(plugin.getName());
