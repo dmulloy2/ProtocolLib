@@ -624,7 +624,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	@Override
 	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
-		sendServerPacket(reciever, packet, null, true);
+		sendServerPacket(reciever, packet, null, filters);
 	}
 	
 	@Override
@@ -655,7 +655,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	@Override
 	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters) throws IllegalAccessException, InvocationTargetException {
-		recieveClientPacket(sender, packet, null, true);
+		recieveClientPacket(sender, packet, null, filters);
 	}
 	
 	@Override

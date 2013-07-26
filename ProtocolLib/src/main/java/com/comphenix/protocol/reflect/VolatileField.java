@@ -184,4 +184,9 @@ public class VolatileField {
 	protected void finalize() throws Throwable {
 		revertValue();
 	}
+
+	@Override
+	public String toString() {
+		return "VolatileField [field=" + field + ", container=" + container + ", previous=" + previous + ", current=" + current + "]";
+	}
 }
