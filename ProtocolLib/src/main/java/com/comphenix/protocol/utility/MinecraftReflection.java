@@ -45,6 +45,8 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
 
 /**
@@ -868,6 +870,21 @@ public class MinecraftReflection {
 			return setMinecraftClass("NBTBase", nbtBase);
 		}
  	}
+	
+	/**
+	 * Retrieve the NBT Compound class.
+	 * @return The NBT Compond class.
+	 */
+	public static Class<?> getNBTCompoundClass() {
+		try {
+			return getMinecraftClass("NBTTagCompound");
+		} catch (RuntimeException e) {
+			return setMinecraftClass(
+				"NBTTagCompound", 
+				NbtFactory.ofWrapper(NbtType.TAG_COMPOUND, "Test").getHandle().getClass()
+			);
+		}
+	}
 
 	/**
 	 * Retrieve the EntityTracker (NMS) class.
