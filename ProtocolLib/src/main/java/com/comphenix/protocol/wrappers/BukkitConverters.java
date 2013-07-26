@@ -432,14 +432,18 @@ public class BukkitConverters {
 	public static Map<Class<?>, EquivalentConverter<Object>> getSpecificConverters() {
 		if (specificConverters == null) {
 			// Generics doesn't work, as usual
-			specificConverters = ImmutableMap.<Class<?>, EquivalentConverter<Object>>builder().
+			ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder = 
+				   ImmutableMap.<Class<?>, EquivalentConverter<Object>>builder().
 				put(WrappedDataWatcher.class, (EquivalentConverter) getDataWatcherConverter()).
 				put(ItemStack.class, (EquivalentConverter) getItemStackConverter()).
 				put(NbtBase.class, (EquivalentConverter) getNbtConverter()).
 				put(NbtCompound.class, (EquivalentConverter) getNbtConverter()).
-				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter()).
-				put(WorldType.class, (EquivalentConverter) getWorldTypeConverter()).
-				build();
+				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter());
+			
+			if (hasWorldType) {
+				builder.put(WorldType.class, (EquivalentConverter) getWorldTypeConverter());
+			}
+			specificConverters = builder.build();
 		}
 		return specificConverters;
 	}
@@ -452,14 +456,18 @@ public class BukkitConverters {
 	public static Map<Class<?>, EquivalentConverter<Object>> getGenericConverters() {
 		if (genericConverters == null) {
 			// Generics doesn't work, as usual
-			genericConverters = ImmutableMap.<Class<?>, EquivalentConverter<Object>>builder().
+			ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder =
+				   ImmutableMap.<Class<?>, EquivalentConverter<Object>>builder().
 				put(MinecraftReflection.getDataWatcherClass(), (EquivalentConverter) getDataWatcherConverter()).
 				put(MinecraftReflection.getItemStackClass(), (EquivalentConverter) getItemStackConverter()).
 				put(MinecraftReflection.getNBTBaseClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getNBTCompoundClass(), (EquivalentConverter) getNbtConverter()).
-				put(MinecraftReflection.getWatchableObjectClass(), (EquivalentConverter) getWatchableObjectConverter()).
-				put(MinecraftReflection.getWorldTypeClass(), (EquivalentConverter) getWorldTypeConverter()).
-				build();
+				put(MinecraftReflection.getWatchableObjectClass(), (EquivalentConverter) getWatchableObjectConverter());
+			
+			if (hasWorldType) {
+				builder.put(MinecraftReflection.getWorldTypeClass(), (EquivalentConverter) getWorldTypeConverter());
+			}
+			genericConverters = builder.build();
 		}
 		return genericConverters;
 	}
