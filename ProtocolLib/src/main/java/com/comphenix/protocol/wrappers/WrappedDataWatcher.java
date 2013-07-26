@@ -41,6 +41,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.Iterators;
@@ -82,6 +83,9 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 	
 	// Map of watchable objects
 	private Map<Integer, Object> watchableObjects;
+	
+	// A map view of all the watchable objects
+	private Map<Integer, WrappedWatchableObject> mapView;
 	
 	/**
 	 * Initialize a new data watcher.
@@ -610,5 +614,38 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 					return null;
 			}
 		});
+	}
+	
+	/**
+	 * Retrieve a view of this DataWatcher as a map.
+	 * <p>
+	 * Any changes to the map will be reflected in this DataWatcher, and vice versa.
+	 * @return A view of the data watcher as a map.
+	 */
+	public Map<Integer, WrappedWatchableObject> asMap() {
+		// Construct corresponding map
+		if (mapView == null) {
+			mapView = new ConvertedMap<Integer, Object, WrappedWatchableObject>(getWatchableObjectMap()) {
+				@Override
+				protected Object toInner(WrappedWatchableObject outer) {
+					if (outer == null)
+						return null;
+					return outer.getHandle();
+				}
+				
+				@Override
+				protected WrappedWatchableObject toOuter(Object inner) {
+					if (inner == null)
+						return null;
+					return new WrappedWatchableObject(inner);
+				}
+			};
+		}
+		return mapView;
+	}
+	
+	@Override
+	public String toString() {
+		return asMap().toString();
 	}
 }

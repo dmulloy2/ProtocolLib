@@ -221,4 +221,9 @@ public class ChunkPosition {
 	public int hashCode() {
 		return Objects.hashCode(x, y, z);
 	}
+
+	@Override
+	public String toString() {
+		return "ChunkPosition [x=" + x + ", y=" + y + ", z=" + z + "]";
+	}
 }

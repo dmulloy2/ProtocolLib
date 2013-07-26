@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.wrappers.nbt;
+package com.comphenix.protocol.wrappers.collection;
 
 import java.util.Collection;
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.ListIterator;
  * @param <VInner> - type of the items in the inner invisible list.
  * @param <VOuter> - type of the items publically accessible in the outer list.
  */
-abstract class ConvertedList<VInner, VOuter> extends ConvertedCollection<VInner, VOuter> implements List<VOuter> {
+public abstract class ConvertedList<VInner, VOuter> extends ConvertedCollection<VInner, VOuter> implements List<VOuter> {
 	private List<VInner> inner;
 	
 	public ConvertedList(List<VInner> inner) {

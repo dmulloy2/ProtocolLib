@@ -15,11 +15,13 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.wrappers.nbt;
+package com.comphenix.protocol.wrappers.collection;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
 
 /**
  * Represents a map that wraps another map by transforming the entries going in and out.
@@ -29,7 +31,7 @@ import java.util.Set;
  * @param <VInner> - type of the value in the entries in the inner invisible map.
  * @param <VOuter> - type of the value in the entries publically accessible in the outer map.
  */
-abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Map<Key, VOuter> {
+public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Map<Key, VOuter> {
 	// Inner map
 	private Map<Key, VInner> inner;
 
@@ -161,4 +163,36 @@ abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverted<VInne
 			}
 		};
 	}
+
+    /**
+     * Returns a string representation of this map.  The string representation
+     * consists of a list of key-value mappings in the order returned by the
+     * map's <tt>entrySet</tt> view's iterator, enclosed in braces
+     * (<tt>"{}"</tt>).  Adjacent mappings are separated by the characters
+     * <tt>", "</tt> (comma and space).  Each key-value mapping is rendered as
+     * the key followed by an equals sign (<tt>"="</tt>) followed by the
+     * associated value.  Keys and values are converted to strings as by
+     * {@link String#valueOf(Object)}.
+     *
+     * @return a string representation of this map
+     */
+    public String toString() {
+        Iterator<Entry<Key, VOuter>> i = entrySet().iterator();
+        if (!i.hasNext())
+            return "{}";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        for (;;) {
+            Entry<Key, VOuter> e = i.next();
+            Key key = e.getKey();
+            VOuter value = e.getValue();
+            sb.append(key   == this ? "(this Map)" : key);
+            sb.append('=');
+            sb.append(value == this ? "(this Map)" : value);
+            if (! i.hasNext())
+                return sb.append('}').toString();
+            sb.append(", ");
+        }
+    }
 }

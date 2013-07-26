@@ -179,4 +179,9 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	public int hashCode() {
 		return handle.hashCode();
 	}
+
+	@Override
+	public String toString() {
+		return String.format("ChunkCoordinate [x: %s, y: %s, z: %s]", getX(), getY(), getZ());
+	}
 }

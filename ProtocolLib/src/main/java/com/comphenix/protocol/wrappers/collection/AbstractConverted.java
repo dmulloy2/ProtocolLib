@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.wrappers.nbt;
+package com.comphenix.protocol.wrappers.collection;
 
 import javax.annotation.Nullable;
 
@@ -29,7 +29,7 @@ import com.google.common.base.Function;
  * @param <VInner> - the first type.
  * @param <VOuter> - the second type.
  */
-abstract class AbstractConverted<VInner, VOuter> {
+public abstract class AbstractConverted<VInner, VOuter> {
 	/**
 	 * Convert a value from the inner map to the outer visible map.
 	 * @param inner - the inner value.

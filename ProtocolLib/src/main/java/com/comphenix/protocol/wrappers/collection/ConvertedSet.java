@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.wrappers.nbt;
+package com.comphenix.protocol.wrappers.collection;
 
 import java.util.Collection;
 import java.util.Set;
@@ -28,7 +28,7 @@ import java.util.Set;
  * @param <VInner> - type of the element in the inner invisible set.
  * @param <VOuter> - type of the elements publically accessible in the outer set.
  */
-abstract class ConvertedSet<VInner, VOuter> extends ConvertedCollection<VInner, VOuter> implements Set<VOuter> {
+public abstract class ConvertedSet<VInner, VOuter> extends ConvertedCollection<VInner, VOuter> implements Set<VOuter> {
 	public ConvertedSet(Collection<VInner> inner) {
 		super(inner);
 	}

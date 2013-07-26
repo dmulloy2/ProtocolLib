@@ -15,7 +15,7 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol.wrappers.nbt;
+package com.comphenix.protocol.wrappers.collection;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -33,7 +33,7 @@ import com.google.common.collect.Lists;
  * @param <VInner> - type of the element in the inner invisible collection.
  * @param <VOuter> - type of the elements publically accessible in the outer collection.
  */
-abstract class ConvertedCollection<VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Collection<VOuter> {
+public abstract class ConvertedCollection<VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Collection<VOuter> {
 	// Inner collection
 	private Collection<VInner> inner;
 

@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
 /**
