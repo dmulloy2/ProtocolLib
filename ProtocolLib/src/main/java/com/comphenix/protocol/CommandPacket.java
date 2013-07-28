@@ -439,7 +439,7 @@ class CommandPacket extends CommandBase {
 								@Override
 								public boolean print(StringBuilder output, Object value) {
 									if (value != null) {
-										EquivalentConverter<Object> converter = BukkitConverters.getGenericConverters().get(value.getClass());
+										EquivalentConverter<Object> converter = BukkitConverters.getConvertersForGeneric().get(value.getClass());
 										
 										if (converter != null) {
 											output.append(converter.getSpecific(value));

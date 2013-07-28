@@ -19,6 +19,7 @@ package com.comphenix.protocol.utility;
 
 import java.io.DataInputStream;
 import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -33,12 +34,19 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
+import net.sf.cglib.asm.ClassReader;
+import net.sf.cglib.asm.MethodVisitor;
+import net.sf.cglib.asm.Opcodes;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
+import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
@@ -953,6 +961,79 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the attribute snapshot class.
+	 * <p>
+	 * This stores the final value of an attribute, along with all the associated computational steps.
+	 * @return The attribute snapshot class.
+	 */
+	public static Class<?> getAttributeSnapshotClass() {
+		try {
+			return getMinecraftClass("AttributeSnapshot");
+		} catch (RuntimeException e) {
+			final Class<?> packetUpdateAttributes = PacketRegistry.getPacketClassFromID(44, true);
+			final String packetSignature = packetUpdateAttributes.getCanonicalName().replace('.', '/');
+			
+			// HACK - class is found by inspecting code
+			try {
+				ClassReader reader = new ClassReader(packetUpdateAttributes.getCanonicalName());
+				
+				reader.accept(new EmptyClassVisitor() {
+					@Override
+					public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+						// The read method
+						if (desc.startsWith("(Ljava/io/DataInput")) {
+							return new EmptyMethodVisitor() {
+								public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+									if (opcode == Opcodes.INVOKESPECIAL && isConstructor(name)) {
+										String className = owner.replace('/', '.');
+										
+										// Use signature to distinguish between constructors
+										if (desc.startsWith("(L" + packetSignature)) {
+											setMinecraftClass("AttributeSnapshot", MinecraftReflection.getClass(className));
+										} else if (desc.startsWith("(Ljava/util/UUID;Ljava/lang/String")) {
+											setMinecraftClass("AttributeModifier", MinecraftReflection.getClass(className));
+										}
+									} 							
+								};
+							};
+						}
+						return null;
+					}
+				}, 0);
+				
+			} catch (IOException e1) {
+				throw new RuntimeException("Unable to read the content of Packet44UpdateAttributes.", e1);
+			}
+		
+			// If our dirty ASM trick failed, this will throw an exception
+			return getMinecraftClass("AttributeSnapshot");
+		}
+	}
+	
+	/**
+	 * Retrieve the attribute modifier class.
+	 * @return Attribute modifier class.
+	 */
+	public static Class<?> getAttributeModifierClass() {
+		try {
+			return getMinecraftClass("AttributeModifier");
+		} catch (RuntimeException e) {
+			// Initialize first
+			getAttributeSnapshotClass();
+			return getMinecraftClass("AttributeModifier"); 
+		}
+	}
+	
+	/**
+	 * Determine if a given method retrieved by ASM is a constructor.
+	 * @param name - the name of the method.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	private static boolean isConstructor(String name) {
+		return "<init>".equals(name);
+	}
+	
+	/**
 	 * Retrieve the ItemStack[] class.
 	 * @return The ItemStack[] class.
 	 */
@@ -1104,6 +1185,20 @@ public class MinecraftReflection {
 		
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		return unwrapper.unwrapItem(stack);
+	}
+	
+	/**
+	 * Retrieve the given class by name.
+	 * @param className - name of the class.
+	 * @return The class.
+	 */
+	@SuppressWarnings("rawtypes")
+	private static Class getClass(String className) {
+		try {
+			return MinecraftReflection.class.getClassLoader().loadClass(className);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException("Cannot find class " + className, e);
+		}
 	}
 	
 	/**

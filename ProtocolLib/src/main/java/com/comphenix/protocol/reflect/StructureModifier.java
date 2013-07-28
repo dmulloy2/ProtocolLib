@@ -92,6 +92,15 @@ public class StructureModifier<TField> {
 	/**
 	 * Creates a structure modifier.
 	 * @param targetType - the structure to modify.
+	 * @param useStructureCompiler - whether or not to use a structure compiler.
+	 */
+	public StructureModifier(Class targetType, boolean useStructureCompiler) {
+		this(targetType, null, true, useStructureCompiler);
+	}
+	
+	/**
+	 * Creates a structure modifier.
+	 * @param targetType - the structure to modify.
 	 * @param superclassExclude - a superclass to exclude.
 	 * @param requireDefault - whether or not we will be using writeDefaults().
 	 */

@@ -62,6 +62,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
+import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
@@ -384,6 +385,23 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 				MinecraftReflection.getNBTBaseClass(),
 				BukkitConverters.getNbtConverter());
+	}
+	
+	/**
+	 * Retrieves a read/write structure for collections of attribute snapshots.
+	 * <p>
+	 * This modifier will automatically marshall between the visible ProtocolLib WrappedAttribute and the
+	 * internal Minecraft AttributeSnapshot.
+	 * @return A modifier for AttributeSnapshot collection fields.
+	 */
+	public StructureModifier<List<WrappedAttribute>> getAttributeCollectionModifier() {
+		// Convert to and from the ProtocolLib wrapper
+		return structureModifier.withType(
+			Collection.class,
+			BukkitConverters.getListConverter(
+					MinecraftReflection.getAttributeSnapshotClass(), 
+					BukkitConverters.getWrappedAttributeConverter())
+		);
 	}
 	
 	/**
