@@ -115,7 +115,8 @@ class CleanupStaticMembers {
 			
 			// Only check static non-primitive fields. We also skip strings.
 			if (Modifier.isStatic(field.getModifiers()) && 
-					!type.isPrimitive() && !type.equals(String.class)) {
+					!type.isPrimitive() && !type.equals(String.class) && 
+					!type.equals(ReportType.class)) {
 				
 				try {
 					setFinalStatic(field, null);
