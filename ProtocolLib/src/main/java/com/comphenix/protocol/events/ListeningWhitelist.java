@@ -237,7 +237,7 @@ public class ListeningWhitelist {
 	 * @return A copy of the enum set.
 	 */
 	private static <T extends Enum<T>> EnumSet<T> safeEnumSet(Collection<T> options, Class<T> enumClass) {
-		if (options != null) {
+		if (options != null && !options.isEmpty()) {
 			return EnumSet.copyOf(options);
 		} else {
 			return EnumSet.noneOf(enumClass);
