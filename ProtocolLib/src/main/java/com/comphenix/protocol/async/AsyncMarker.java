@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.comphenix.protocol.PacketStream;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -381,9 +382,9 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	void sendPacket(PacketEvent event) throws IOException {
 		try {
 			if (event.isServerPacket()) {
-				packetStream.sendServerPacket(event.getPlayer(), event.getPacket(), event.getNetworkMarker(), false);
+				packetStream.sendServerPacket(event.getPlayer(), event.getPacket(), NetworkMarker.getNetworkMarker(event), false);
 			} else {
-				packetStream.recieveClientPacket(event.getPlayer(), event.getPacket(), event.getNetworkMarker(), false);
+				packetStream.recieveClientPacket(event.getPlayer(), event.getPacket(), NetworkMarker.getNetworkMarker(event), false);
 			}
 			transmitted = true;
 			

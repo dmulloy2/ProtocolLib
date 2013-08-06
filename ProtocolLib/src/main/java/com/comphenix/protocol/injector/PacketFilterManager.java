@@ -643,7 +643,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			
 			sendingListeners.invokePacketSending(
 					reporter, event, ListenerPriority.MONITOR);
-			marker = event.getNetworkMarker();
+			marker = NetworkMarker.getNetworkMarker(event);
 		}
 		playerInjection.sendServerPacket(reciever, packet, marker, filters);
 	}

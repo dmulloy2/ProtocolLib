@@ -189,4 +189,15 @@ public class NetworkMarker {
 		}
 		return null;
 	}
+	
+	/**
+	 * Retrieve the network marker of a particular event without creating it.
+	 * <p>
+	 * This is an internal method that should not be used by API users.
+	 * @param event - the event.
+	 * @return The network marker.
+	 */
+	public static NetworkMarker getNetworkMarker(PacketEvent event) {
+		return event.networkMarker;
+	}
 }

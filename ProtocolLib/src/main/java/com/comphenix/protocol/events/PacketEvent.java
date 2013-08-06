@@ -45,7 +45,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	private boolean asynchronous;
 
 	// Network input and output handlers
-	private NetworkMarker networkMarker;
+	NetworkMarker networkMarker;
 	
 	// Whether or not a packet event is read only
 	private boolean readOnly;
