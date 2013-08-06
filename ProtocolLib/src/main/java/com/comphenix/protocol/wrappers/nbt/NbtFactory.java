@@ -118,12 +118,12 @@ public class NbtFactory {
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use 
 	 * {@link MinecraftReflection#getBukkitItemStack(ItemStack)} if not.
-	 * @param stack - the item stack.
-	 * @param compound - the new NBT compound.
+	 * @param stack - the item stack, cannot be air.
+	 * @param compound - the new NBT compound, or NULL to remove it.
+	 * @throws IllegalArgumentException If the stack is not a CraftItemStack, or it represents air.
 	 */
 	public static void setItemTag(ItemStack stack, NbtCompound compound) {
-		if (!MinecraftReflection.isCraftItemStack(stack))
-			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
+		checkItemStack(stack);
 		
 		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
 		modifier.write(0, compound);
@@ -140,8 +140,7 @@ public class NbtFactory {
 	 * @return A wrapper for its NBT tag.
 	 */
 	public static NbtWrapper<?> fromItemTag(ItemStack stack) {
-		if (!MinecraftReflection.isCraftItemStack(stack))
-			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
+		checkItemStack(stack);
 		
 		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
 		NbtBase<?> result = modifier.read(0);
@@ -152,6 +151,19 @@ public class NbtFactory {
 			modifier.write(0, result);
 		}
 		return fromBase(result);
+	}
+	
+	/**
+	 * Ensure that the given stack can store arbitrary NBT information.
+	 * @param stack - the stack to check.
+	 */
+	private static void checkItemStack(ItemStack stack) {
+		if (stack == null)
+			throw new IllegalArgumentException("Stack cannot be NULL.");
+		if (!MinecraftReflection.isCraftItemStack(stack))
+			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
+		if (stack.getTypeId() == 0)
+			throw new IllegalArgumentException("ItemStacks representing air cannot store NMS information.");
 	}
 	
 	/**

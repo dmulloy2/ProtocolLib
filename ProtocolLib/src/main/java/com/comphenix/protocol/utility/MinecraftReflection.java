@@ -1175,8 +1175,10 @@ public class MinecraftReflection {
 	
 	/**
 	 * Retrieve the net.minecraft.server ItemStack from a Bukkit ItemStack.
+	 * <p>
+	 * By convention, item stacks that contain air are usually represented as NULL.
 	 * @param stack - the Bukkit ItemStack to convert.
-	 * @return The NMS ItemStack.
+	 * @return The NMS ItemStack, or NULL if the stack represents air.
 	 */
 	public static Object getMinecraftItemStack(ItemStack stack) {
 		// Make sure this is a CraftItemStack
