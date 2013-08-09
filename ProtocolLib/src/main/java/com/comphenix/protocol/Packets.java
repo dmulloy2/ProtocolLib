@@ -110,6 +110,7 @@ public final class Packets {
 		public static final int EXPLOSION = 60;
 		public static final int WORLD_EVENT = 61;
 		public static final int NAMED_SOUND_EFFECT = 62;
+		public static final int WORLD_PARTICLES = 63;
 		public static final int BED = 70;
 		public static final int WEATHER = 71;
 		public static final int OPEN_WINDOW = 100;
