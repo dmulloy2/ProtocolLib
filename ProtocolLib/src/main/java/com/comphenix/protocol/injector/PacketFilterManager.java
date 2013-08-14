@@ -669,9 +669,12 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			incrementPhases(GamePhase.PLAYING);
 		
 		Object mcPacket = packet.getHandle();
+		boolean cancelled = packetInjector.isCancelled(mcPacket);
 		
 		// Make sure the packet isn't cancelled
-		packetInjector.undoCancel(packet.getID(), mcPacket);
+		if (cancelled) {
+			packetInjector.setCancelled(mcPacket, false);
+		}
 		
 		if (filters) {
 			byte[] data = NetworkMarker.getByteBuffer(marker);
@@ -691,6 +694,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		}
 		
 		playerInjection.recieveClientPacket(sender, mcPacket);
+		
+		// Let it stay cancelled
+		if (cancelled) {
+			packetInjector.setCancelled(mcPacket, true);
+		}
 	}
 	
 	@Override

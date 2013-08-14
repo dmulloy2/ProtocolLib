@@ -14,12 +14,19 @@ import com.comphenix.protocol.events.PacketEvent;
  */
 public interface PacketInjector {
 	/**
-	 * Undo a packet cancel.
-	 * @param id - the id of the packet.
-	 * @param packet - packet to uncancel.
+	 * Determine if a packet is cancelled or not.
+	 * @param packet - the packet to check.
+	 * @return TRUE if it is, FALSE otherwise.
 	 */
-	public abstract void undoCancel(Integer id, Object packet);
-
+	public abstract boolean isCancelled(Object packet);
+	
+	/**
+	 * Set whether or not a packet is cancelled.
+	 * @param packet - the packet to set.
+	 * @param cancelled - TRUE to cancel the packet, FALSE otherwise.
+	 */
+	public abstract void setCancelled(Object packet, boolean cancelled);
+	
 	/**
 	 * Start intercepting packets with the given packet ID.
 	 * @param packetID - the ID of the packets to start intercepting.

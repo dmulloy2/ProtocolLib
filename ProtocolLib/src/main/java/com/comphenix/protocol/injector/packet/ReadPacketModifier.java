@@ -74,16 +74,27 @@ class ReadPacketModifier implements MethodInterceptor {
 	public static Object getOverride(Object packet) {
 		return override.get(packet);
 	}
+	
+	/**
+	 * Set the packet instance to delegate to instead, or mark the packet as cancelled.
+	 * <p>
+	 * To undo a override, use {@link #removeOverride(Object)}.
+	 * @param packet - the packet.
+	 * @param override - the override method. NULL to cancel this packet.
+	 */
+	public static void setOverride(Object packet, Object overridePacket) {
+		override.put(packet, overridePacket != null ? overridePacket : CANCEL_MARKER);
+	}
 
 	/**
 	 * Determine if the given packet has been cancelled before.
 	 * @param packet - the packet to check.
 	 * @return TRUE if it has been cancelled, FALSE otherwise.
 	 */
-	public static boolean hasCancelled(Object packet) {
+	public static boolean isCancelled(Object packet) {
 		return getOverride(packet) == CANCEL_MARKER;
 	}
-
+	
 	@Override
 	public Object intercept(Object thisObj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 		// Atomic retrieval
@@ -105,7 +116,7 @@ class ReadPacketModifier implements MethodInterceptor {
 		
 		if (overridenObject != null) {
 			// This packet has been cancelled
-			if (overridenObject == CANCEL_MARKER) {
+			if (overridenObject == CANCEL_MARKER) {				
 				// So, cancel all void methods
 				if (method.getReturnType().equals(Void.TYPE))
 					return null;

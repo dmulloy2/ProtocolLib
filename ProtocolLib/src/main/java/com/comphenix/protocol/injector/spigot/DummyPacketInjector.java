@@ -28,8 +28,14 @@ class DummyPacketInjector implements PacketInjector {
 	}
 
 	@Override
-	public void undoCancel(Integer id, Object packet) {
-		// Do nothing yet
+	public boolean isCancelled(Object packet) {
+		// No, it's never cancelled
+		return false;
+	}
+	
+	@Override
+	public void setCancelled(Object packet, boolean cancelled) {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override

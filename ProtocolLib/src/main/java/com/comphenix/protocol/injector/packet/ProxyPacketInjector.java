@@ -176,15 +176,16 @@ class ProxyPacketInjector implements PacketInjector {
 		initialize();
 	}
 	
-	/**
-	 * Undo a packet cancel.
-	 * @param id - the id of the packet.
-	 * @param packet - packet to uncancel.
-	 */
 	@Override
-	public void undoCancel(Integer id, Object packet) {
-		// See if this packet has been cancelled before
-		if (ReadPacketModifier.hasCancelled(packet)) {
+	public boolean isCancelled(Object packet) {
+		return ReadPacketModifier.isCancelled(packet);
+	}
+	
+	@Override
+	public void setCancelled(Object packet, boolean cancelled) {
+		if (cancelled) {
+			ReadPacketModifier.setOverride(packet, null);
+		} else {
 			ReadPacketModifier.removeOverride(packet);
 		}
 	}
