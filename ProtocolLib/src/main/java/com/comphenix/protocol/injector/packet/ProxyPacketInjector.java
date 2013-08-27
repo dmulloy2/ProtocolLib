@@ -19,6 +19,7 @@ package com.comphenix.protocol.injector.packet;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -314,13 +315,13 @@ class ProxyPacketInjector implements PacketInjector {
 	}
 	
 	// Called from the ReadPacketModified monitor
-	public PacketEvent packetRecieved(PacketContainer packet, DataInputStream input, byte[] buffered) {
+	public PacketEvent packetRecieved(PacketContainer packet, InputStream input, byte[] buffered) {
 		if (playerInjection.canRecievePackets()) {
 			return playerInjection.handlePacketRecieved(packet, input, buffered);
 		}
 		
 		try {
-			Player client = playerInjection.getPlayerByConnection(input);
+			Player client = playerInjection.getPlayerByConnection((DataInputStream) input);
 
 			// Never invoke a event if we don't know where it's from
 			if (client != null) {

@@ -19,6 +19,7 @@ package com.comphenix.protocol.injector.packet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -102,7 +103,7 @@ class ReadPacketModifier implements MethodInterceptor {
 		Object returnValue = null;
 		
 		// We need this in order to get the correct player
-		DataInputStream input = isReadPacketDataMethod ? (DataInputStream) args[0] : null;
+		InputStream input = isReadPacketDataMethod ? (InputStream) args[0] : null;
 		ByteArrayOutputStream bufferStream = null;
 		
 		// See if we need to buffer the read data

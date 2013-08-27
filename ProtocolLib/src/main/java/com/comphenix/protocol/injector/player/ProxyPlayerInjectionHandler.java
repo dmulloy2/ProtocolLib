@@ -18,6 +18,7 @@
 package com.comphenix.protocol.injector.player;
 
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
@@ -656,7 +657,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	}
 	
 	@Override
-	public PacketEvent handlePacketRecieved(PacketContainer packet, DataInputStream input, byte[] buffered) {
+	public PacketEvent handlePacketRecieved(PacketContainer packet, InputStream input, byte[] buffered) {
 		throw new UnsupportedOperationException("Proxy injection cannot handle recieved packets.");
 	}
 	

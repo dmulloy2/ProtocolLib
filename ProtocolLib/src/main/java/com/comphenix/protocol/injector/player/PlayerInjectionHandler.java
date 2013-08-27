@@ -1,6 +1,7 @@
 package com.comphenix.protocol.injector.player;
 
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.Set;
@@ -173,7 +174,7 @@ public interface PlayerInjectionHandler {
 	 * @param buffered - the buffered packet.
 	 * @return The packet event.
 	 */
-	public abstract PacketEvent handlePacketRecieved(PacketContainer packet, DataInputStream input, byte[] buffered);
+	public abstract PacketEvent handlePacketRecieved(PacketContainer packet, InputStream input, byte[] buffered);
 	
 	/**
 	 * Close any lingering proxy injections.

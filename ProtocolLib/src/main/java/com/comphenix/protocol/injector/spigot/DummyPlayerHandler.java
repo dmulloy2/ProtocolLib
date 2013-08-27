@@ -1,6 +1,7 @@
 package com.comphenix.protocol.injector.spigot;
 
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.Set;
@@ -102,7 +103,7 @@ class DummyPlayerHandler implements PlayerInjectionHandler {
 	}
 
 	@Override
-	public PacketEvent handlePacketRecieved(PacketContainer packet, DataInputStream input, byte[] buffered) {
+	public PacketEvent handlePacketRecieved(PacketContainer packet, InputStream input, byte[] buffered) {
 		// Associate this buffered data
 		if (buffered != null) {
 			injector.saveBuffered(packet.getHandle(), buffered);
