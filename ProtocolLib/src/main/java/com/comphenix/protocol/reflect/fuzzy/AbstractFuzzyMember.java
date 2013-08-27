@@ -1,6 +1,7 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
 import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -44,6 +45,14 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		public Builder<T> requireModifier(int modifier) {
 			member.modifiersRequired |= modifier;
 			return this;
+		}
+		
+		/**
+		 * Require that every matching member is public.
+		 * @return This builder, for chaining.
+		 */
+		public Builder<T> requirePublic() {
+			return requireModifier(Modifier.PUBLIC);
 		}
 		
 		/**

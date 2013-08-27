@@ -8,6 +8,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import net.minecraft.server.v1_6_R2.IntHashMap;
+
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
 import org.bukkit.inventory.ItemStack;
@@ -26,6 +28,11 @@ public class StreamSerializerTest {
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {
 		BukkitInitialization.initializeItemMeta();
+	}
+	
+	@Test
+	public void testMinecraftReflection() {
+		assertEquals(IntHashMap.class, MinecraftReflection.getIntHashMapClass());
 	}
 	
 	@Test

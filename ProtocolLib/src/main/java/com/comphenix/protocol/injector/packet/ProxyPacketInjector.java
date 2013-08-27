@@ -20,7 +20,6 @@ package com.comphenix.protocol.injector.packet;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +47,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.WrappedIntHashMap;
 
 /**
  * This class is responsible for adding or removing proxy objects that intercepts recieved packets.
@@ -67,9 +67,7 @@ class ProxyPacketInjector implements PacketInjector {
 	}
 	
 	private static class IntHashMapLookup implements PacketClassLookup {
-		// The "put" method that associates a packet ID with a packet class
-		private Method putMethod;
-		private Object intHashMap;
+		private WrappedIntHashMap intHashMap;
 		
 		public IntHashMapLookup() throws IllegalAccessException {
 			initialize();
@@ -77,32 +75,21 @@ class ProxyPacketInjector implements PacketInjector {
 		
 		@Override
 		public void setLookup(int packetID, Class<?> clazz) {
-			try {
-				putMethod.invoke(intHashMap, packetID, clazz);
-			} catch (IllegalArgumentException e) {
-				throw new RuntimeException("Illegal argument.", e);
-			} catch (IllegalAccessException e) {
-				throw new RuntimeException("Cannot access method.", e);
-			} catch (InvocationTargetException e) {
-				throw new RuntimeException("Exception occured in IntHashMap.put.", e);
-			}
+			intHashMap.put(packetID, clazz);
 		}
 
 		private void initialize() throws IllegalAccessException {
 			if (intHashMap == null) {
 				// We're looking for the first static field with a Minecraft-object. This should be a IntHashMap.
 				Field intHashMapField = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).
-						getFieldByType(MinecraftReflection.getMinecraftObjectRegex());
+						getFieldByType("packetIdMap", MinecraftReflection.getIntHashMapClass());
 				
 				try {
-					intHashMap = FieldUtils.readField(intHashMapField, (Object) null, true);
+					intHashMap = WrappedIntHashMap.fromHandle(
+						FieldUtils.readField(intHashMapField, (Object) null, true));
 				} catch (IllegalArgumentException e) {
 					throw new RuntimeException("Minecraft is incompatible.", e);
 				}
-				
-				// Now, get the "put" method.
-				putMethod = FuzzyReflection.fromObject(intHashMap).
-						getMethodByParameters("put", int.class, Object.class);
 			}
 		}
 	}

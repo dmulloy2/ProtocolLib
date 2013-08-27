@@ -99,6 +99,12 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 		}
 		
 		@Override
+		public Builder requirePublic() {
+			super.requirePublic();
+			return this;
+		}
+		
+		@Override
 		public Builder banModifier(int modifier) {
 			super.banModifier(modifier); 
 			return this;

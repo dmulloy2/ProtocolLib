@@ -35,6 +35,12 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 		}
 		
 		@Override
+		public Builder requirePublic() {
+			super.requirePublic();
+			return this;
+		}
+		
+		@Override
 		public Builder nameRegex(String regex) {
 			super.nameRegex(regex); 
 			return this;

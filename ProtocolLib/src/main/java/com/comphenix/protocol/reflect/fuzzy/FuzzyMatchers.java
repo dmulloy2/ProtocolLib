@@ -4,6 +4,9 @@ import java.lang.reflect.Member;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nonnull;
+
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
 /**
@@ -12,14 +15,56 @@ import com.google.common.collect.Sets;
  * @author Kristian
  */
 public class FuzzyMatchers {
+	// Constant matchers
+	private static AbstractFuzzyMatcher<Class<?>> MATCH_ALL = new AbstractFuzzyMatcher<Class<?>>() {
+		@Override
+		public boolean isMatch(Class<?> value, Object parent) {
+			return true;
+		}
+		
+		@Override
+		protected int calculateRoundNumber() {
+			return 0;
+		}
+	};
+	
 	private FuzzyMatchers() {
 		// Don't make this constructable
 	}
 
 	/**
+	 * Construct a class matcher that matches an array with a given component matcher.
+	 * @param componentMatcher - the component matcher.
+	 * @return A new array matcher.
+	 */
+	public static AbstractFuzzyMatcher<Class<?>> matchArray(@Nonnull final AbstractFuzzyMatcher<Class<?>> componentMatcher) {
+		Preconditions.checkNotNull(componentMatcher, "componentMatcher cannot be NULL.");
+		return new AbstractFuzzyMatcher<Class<?>>() {
+			@Override
+			public boolean isMatch(Class<?> value, Object parent) {
+				return value.isArray() && componentMatcher.isMatch(value.getComponentType(), parent);
+			}
+			
+			@Override
+			protected int calculateRoundNumber() {
+				// We're just above object
+				return -1;
+			}
+		};
+	}
+	
+	/**
+	 * Retrieve a fuzzy matcher that will match any class.
+	 * @return A class matcher.
+	 */
+	public static AbstractFuzzyMatcher<Class<?>> matchAll() {
+		return MATCH_ALL;
+	}
+	
+	/**
 	 * Construct a class matcher that matches types exactly.
 	 * @param matcher - the matching class.
-	 * @return A new class mathcher.
+	 * @return A new class matcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchExact(Class<?> matcher) {
 		return new ClassExactMatcher(matcher, ClassExactMatcher.Options.MATCH_EXACT);
@@ -28,7 +73,7 @@ public class FuzzyMatchers {
 	/**
 	 * Construct a class matcher that matches any of the given classes exactly.
 	 * @param classes - list of classes to match.
-	 * @return A new class mathcher.
+	 * @return A new class matcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchAnyOf(Class<?>... classes) {
 		return matchAnyOf(Sets.newHashSet(classes));
@@ -37,7 +82,7 @@ public class FuzzyMatchers {
 	/**
 	 * Construct a class matcher that matches any of the given classes exactly.
 	 * @param classes - set of classes to match.
-	 * @return A new class mathcher.
+	 * @return A new class matcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchAnyOf(Set<Class<?>> classes) {
 		return new ClassSetMatcher(classes);
@@ -46,7 +91,7 @@ public class FuzzyMatchers {
 	/**
 	 * Construct a class matcher that matches super types of the given class.
 	 * @param matcher - the matching type must be a super class of this type.
-	 * @return A new class mathcher.
+	 * @return A new class matcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchSuper(Class<?> matcher) {
 		return new ClassExactMatcher(matcher, ClassExactMatcher.Options.MATCH_SUPER);
@@ -55,7 +100,7 @@ public class FuzzyMatchers {
 	/**
 	 * Construct a class matcher that matches derived types of the given class.
 	 * @param matcher - the matching type must be a derived class of this type.
-	 * @return A new class mathcher.
+	 * @return A new class matcher.
 	 */
 	public static AbstractFuzzyMatcher<Class<?>> matchDerived(Class<?> matcher) {
 		return new ClassExactMatcher(matcher, ClassExactMatcher.Options.MATCH_DERIVED);

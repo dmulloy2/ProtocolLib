@@ -21,7 +21,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,8 +34,8 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.WrappedIntHashMap;
 import com.google.common.collect.Lists;
 
 /**
@@ -51,7 +50,6 @@ class EntityUtilities {
 	private static Field trackedPlayersField;
 	private static Field trackerField;
 	
-	private static Method hashGetMethod;
 	private static Method scanPlayersMethod;
 
 	/*
@@ -180,7 +178,7 @@ class EntityUtilities {
 		
 		if (trackedEntitiesField == null) {
 			@SuppressWarnings("rawtypes")
-			Set<Class> ignoredTypes = new HashSet<Class>();
+			Set<Class> ignoredTypes = new HashSet<Class>(); 
 			
 			// Well, this is more difficult. But we're looking for a Minecraft object that is not 
 			// created by the constructor(s).
@@ -197,42 +195,14 @@ class EntityUtilities {
 		
 		// Read the entity hashmap
 		Object trackedEntities = null;
-
+		
 		try {
 			trackedEntities = FieldUtils.readField(trackedEntitiesField, tracker, true);
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Cannot access 'trackedEntities' field due to security limitations.", e);
 		}
 		
-		// Getting the "get" method is pretty hard, but first - try to just get it by name
-		if (hashGetMethod == null) {
-			
-			Class<?> type = trackedEntities.getClass();
-			
-			try {
-				hashGetMethod = type.getMethod("get", int.class);
-			} catch (NoSuchMethodException e) {
-				// Then it's probably the lowest named method that takes an int-parameter and returns a object
-				hashGetMethod = FuzzyReflection.fromClass(type).getMethod(
-					FuzzyMethodContract.newBuilder().banModifier(Modifier.STATIC).
-					parameterCount(1).
-					parameterExactType(int.class).
-					returnTypeExact(Object.class).
-					build()
-				);
-			}
-		}
-		
-		// Wrap exceptions
-		try {
-			return hashGetMethod.invoke(trackedEntities, entityID);
-		} catch (IllegalArgumentException e) {
-			throw e;
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Security limitation prevents access to 'get' method in IntHashMap", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Exception occurred in Minecraft.", e);
-		}
+		return WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
 	}
 	
 	/**
