@@ -20,6 +20,7 @@ public class WrappedIntHashMap {
 	
 	private static Method PUT_METHOD;
 	private static Method GET_METHOD;
+	private static Method REMOVE_METHOD;
 	
 	private Object handle;
 	
@@ -78,15 +79,7 @@ public class WrappedIntHashMap {
 	 * @param value - the value to insert.
 	 */
 	private void putInternal(int key, Object value) {
-		try {
-			PUT_METHOD.invoke(handle, key, value);
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException("Illegal argument.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Cannot access method.", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Exception occured in " + PUT_METHOD + " for" + handle, e);
-		}
+		invokeMethod(PUT_METHOD, key, value);
 	}
 	
 	/**
@@ -96,31 +89,34 @@ public class WrappedIntHashMap {
 	 */
 	public Object get(int key) {
 		initializeGetMethod();
+		return invokeMethod(GET_METHOD, key);
+	}
 		
+	/**
+	 * Remove a mapping of a key to a value if it is present.
+	 * @param key - the key of the mapping to remove.
+	 * @return The object that was removed, or NULL if the key is not present.
+	 */
+	public Object remove(int key) {
+		return invokeMethod(REMOVE_METHOD, key);
+	}
+	
+	/**
+	 * Invoke a particular method on the current handle
+	 * @param method - the current method.
+	 * @param params - parameters.
+	 * @return The return value, if any.
+	 */
+	private Object invokeMethod(Method method, Object... params) {
 		try {
-			return GET_METHOD.invoke(handle, key);
+			return method.invoke(handle, params);
 		} catch (IllegalArgumentException e) {
 			throw new RuntimeException("Illegal argument.", e);
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException("Cannot access method.", e);
 		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Unable to invoke " + GET_METHOD + " on " + handle, e);
+			throw new RuntimeException("Unable to invoke " + method + " on " + handle, e);
 		}
-	}
-	
-	/**
-	 * Remove a mapping of a key to a value if it is present.
-	 * @param key - the key of the mapping to remove.
-	 * @return TRUE if a key-value pair was removed, FALSE otherwise.
-	 */
-	public boolean remove(int key) {
-		Object prev = get(key);
-		
-		if (prev != null) {
-			putInternal(key, null);
-			return true;
-		}
-		return false;
 	}
 	
 	private void initializePutMethod() {
@@ -140,23 +136,27 @@ public class WrappedIntHashMap {
 		if (GET_METHOD == null) {
 			WrappedIntHashMap temp = WrappedIntHashMap.newMap();
 			String expected = "hello";
-		
-			// Initialize a value
-			temp.put(1, expected);
-			
+					
 			// Determine which method to trust
 			for (Method method : FuzzyReflection.fromClass(INT_HASH_MAP).
 					getMethodListByParameters(Object.class, new Class<?>[] { int.class })) {
+				
+				// Initialize a value
+				temp.put(1, expected);
 				
 				// Skip static methods
 				if (Modifier.isStatic(method.getModifiers()))
 					continue;
 				
 				try {
+					boolean first = expected.equals(method.invoke(temp.getHandle(), 1));
+					boolean second = expected.equals(method.invoke(temp.getHandle(), 1));
+					
 					// See if we found the method we are looking for
-					if (expected.equals(method.invoke(temp.getHandle(), 1))) {
+					if (first && !second) {
+						REMOVE_METHOD = method;
+					} else if (first && second) {
 						GET_METHOD = method;
-						return;
 					}
 				} catch (Exception e) {
 					// Suppress
@@ -165,7 +165,7 @@ public class WrappedIntHashMap {
 			throw new IllegalStateException("Unable to find appropriate GET_METHOD for IntHashMap.");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the underlying IntHashMap object.
 	 * @return The underlying object.
