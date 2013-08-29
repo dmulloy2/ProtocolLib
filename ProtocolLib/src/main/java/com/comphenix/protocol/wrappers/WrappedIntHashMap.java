@@ -98,7 +98,23 @@ public class WrappedIntHashMap {
 	 * @return The object that was removed, or NULL if the key is not present.
 	 */
 	public Object remove(int key) {
+		initializeGetMethod();
+		
+		if (REMOVE_METHOD == null)
+			return removeFallback(key);
 		return invokeMethod(REMOVE_METHOD, key);
+	}
+	
+	/**
+	 * Remove a entry in the IntHashMap using a fallback method.
+	 * @param key - the key of the mapping to remove.
+	 * @return The removed element.
+	 */
+	private Object removeFallback(int key) {
+		Object old = get(key);
+		
+		invokeMethod(PUT_METHOD, key, null);
+		return old;
 	}
 	
 	/**
@@ -162,7 +178,9 @@ public class WrappedIntHashMap {
 					// Suppress
 				}
 			}
-			throw new IllegalStateException("Unable to find appropriate GET_METHOD for IntHashMap.");
+			
+			if (GET_METHOD == null)
+				throw new IllegalStateException("Unable to find appropriate GET_METHOD for IntHashMap.");
 		}
 	}
 
