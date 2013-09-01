@@ -73,6 +73,24 @@ public interface ProtocolManager extends PacketStream {
 			throws IllegalAccessException, InvocationTargetException;
 	
 	/**
+	 * Broadcast a given packet to every connected player on the server.
+	 * @param packet - the packet to broadcast.
+	 * @throws FieldAccessException If we were unable to send the packet due to reflection problems.
+	 */
+	public void broadcastServerPacket(PacketContainer packet);
+	
+	/**
+	 * Broadcast a packet to every player that is recieving information about a given entity. 
+	 * <p>
+	 * This is usually every player in the same world within an observable distance. If the entity is a 
+	 * player, its naturally excluded.
+	 * @param packet - the packet to broadcast.
+	 * @param tracker - the entity tracker.
+	 * @throws FieldAccessException If we were unable to send the packet due to reflection problems.
+	 */
+	public void broadcastServerPacket(PacketContainer packet, Entity tracker);
+	
+	/**
 	 * Retrieves a list of every registered packet listener.
 	 * @return Every registered packet listener.
 	 */

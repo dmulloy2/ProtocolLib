@@ -19,6 +19,7 @@ package com.comphenix.protocol.injector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -68,6 +69,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 
@@ -614,6 +616,34 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				playerInjection.removePacketHandler(packetID);
 			if (side.isForClient() && packetInjector != null) 
 				packetInjector.removePacketHandler(packetID);
+		}
+	}
+	
+	@Override
+	public void broadcastServerPacket(PacketContainer packet) {
+		Preconditions.checkNotNull(packet, "packet cannot be NULL.");
+		broadcastServerPacket(packet, Arrays.asList(server.getOnlinePlayers()));
+	}
+
+	@Override
+	public void broadcastServerPacket(PacketContainer packet, Entity tracker) {
+		Preconditions.checkNotNull(packet, "packet cannot be NULL.");
+		Preconditions.checkNotNull(tracker, "tracker cannot be NULL.");
+		broadcastServerPacket(packet, getEntityTrackers(tracker));
+	}
+	
+	/**
+	 * Broadcast a packet to a given iterable of players.
+	 * @param packet - the packet to broadcast.
+	 * @param players - the iterable of players.
+	 */
+	private void broadcastServerPacket(PacketContainer packet, Iterable<Player> players) {
+		try {
+			for (Player player : players) {
+				sendServerPacket(player, packet);
+			}
+		} catch (InvocationTargetException e) {
+			throw new FieldAccessException("Unable to send server packet.", e);
 		}
 	}
 	

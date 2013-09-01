@@ -29,7 +29,6 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 /**
@@ -42,74 +41,12 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	// Registering packet IDs that are not supported
 	public static final ReportType REPORT_CANNOT_SEND_QUEUED_PACKET = new ReportType("Cannot send queued packet %s.");
 	public static final ReportType REPORT_CANNOT_REGISTER_QUEUED_LISTENER = new ReportType("Cannot register queued listener %s.");
-
-	/**
-	 * Represents a packet that will be transmitted later.
-	 * @author Kristian
-	 *
-	 */
-	private static class QueuedPacket {
-		private final Player player;
-		private final PacketContainer packet;
-		private final NetworkMarker marker;
-		
-		private final boolean filtered;
-		private final ConnectionSide side;
-		
-		public QueuedPacket(Player player, PacketContainer packet, NetworkMarker marker, boolean filtered, ConnectionSide side) {
-			this.player = player;
-			this.packet = packet;
-			this.marker = marker;
-			this.filtered = filtered;
-			this.side = side;
-		}
-
-		/**
-		 * Retrieve the packet that will be transmitted or receieved.
-		 * @return The packet.
-		 */
-		public PacketContainer getPacket() {
-			return packet;
-		}
-		
-		/**
-		 * Retrieve the player that will send or recieve the packet.
-		 * @return The source.
-		 */
-		public Player getPlayer() {
-			return player;
-		}
-		
-		/**
-		 * Retrieve whether or not the packet will the sent or received.
-		 * @return The connection side.
-		 */
-		public ConnectionSide getSide() {
-			return side;
-		}
-		
-		/**
-		 * Retrieve the associated network marker used to serialize packets on the network stream.
-		 * @return The associated marker.
-		 */
-		public NetworkMarker getMarker() {
-			return marker;
-		}
-		
-		/**
-		 * Determine if the packet should be intercepted by packet listeners.
-		 * @return TRUE if it should, FALSE otherwise.
-		 */
-		public boolean isFiltered() {
-			return filtered;
-		}
-	}
 	
 	private volatile InternalManager delegate;
 
-	// Packet listeners that will be registered
-	private final Set<PacketListener> queuedListeners = Sets.newSetFromMap(Maps.<PacketListener, Boolean>newConcurrentMap());
-	private final List<QueuedPacket> queuedPackets = Collections.synchronizedList(Lists.<QueuedPacket>newArrayList());
+	// Queued actions
+	private final List<Runnable> queuedActions = Collections.synchronizedList(Lists.<Runnable>newArrayList());
+	private final List<PacketListener> queuedListeners = Collections.synchronizedList(Lists.<PacketListener>newArrayList());
 	
 	private AsynchronousManager asyncManager;
 	private ErrorReporter reporter;
@@ -170,46 +107,75 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 				delegate.registerEvents(queuedManager, queuedPlugin);
 			}
 			
-			for (PacketListener listener : queuedListeners) {
-				try {
-					delegate.addPacketListener(listener);
-				} catch (IllegalArgumentException e) {
-					// Inform about this plugin error
-					reporter.reportWarning(this, 
-						Report.newBuilder(REPORT_CANNOT_REGISTER_QUEUED_LISTENER).
-							callerParam(delegate).messageParam(listener).error(e));
+			// Add any pending listeners
+			synchronized (queuedListeners) {
+				for (PacketListener listener : queuedListeners) {
+					try {
+						delegate.addPacketListener(listener);
+					} catch (IllegalArgumentException e) {
+						// Inform about this plugin error
+						reporter.reportWarning(this, 
+							Report.newBuilder(REPORT_CANNOT_REGISTER_QUEUED_LISTENER).
+								callerParam(delegate).messageParam(listener).error(e));
+					}
 				}
 			}
 			
-			synchronized (queuedPackets) {
-				for (QueuedPacket packet : queuedPackets) {
-					try {
-						// Attempt to send it now
-						switch (packet.getSide()) {
-							case CLIENT_SIDE:
-								delegate.recieveClientPacket(packet.getPlayer(), packet.getPacket(), packet.getMarker(), packet.isFiltered());
-								break;
-							case SERVER_SIDE:
-								delegate.sendServerPacket(packet.getPlayer(), packet.getPacket(), packet.getMarker(), packet.isFiltered());
-								break;
-							default:
-								
-						}
-					} catch (Exception e) {
-						// Inform about this plugin error
-						reporter.reportWarning(this, 
-							Report.newBuilder(REPORT_CANNOT_SEND_QUEUED_PACKET).
-								callerParam(delegate).messageParam(packet).error(e));
-					} 
+			// Execute any delayed actions
+			synchronized (queuedActions) {
+				for (Runnable action : queuedActions) {
+					action.run();
 				}
 			}
 			
 			// Don't keep this around anymore
 			queuedListeners.clear();
-			queuedPackets.clear();
+			queuedActions.clear();
 		}
 	}
 
+	private Runnable queuedAddPacket(final ConnectionSide side, final Player player, final PacketContainer packet, 
+									 final NetworkMarker marker, final boolean filtered) {
+		
+		return new Runnable() {
+			@Override
+			public void run() {
+				try {
+					// Attempt to send it now
+					switch (side) {
+						case CLIENT_SIDE:
+							delegate.recieveClientPacket(player, packet, marker, filtered);
+							break;
+						case SERVER_SIDE:
+							delegate.sendServerPacket(player, packet, marker, filtered);
+							break;
+						default:
+							throw new IllegalArgumentException("side cannot be " + side);
+					}
+				} catch (Exception e) {
+					// Inform about this plugin error
+					reporter.reportWarning(this, 
+						Report.newBuilder(REPORT_CANNOT_SEND_QUEUED_PACKET).
+							callerParam(delegate).messageParam(packet).error(e));
+				} 
+			}
+		};
+	}
+	
+	private Runnable queuedBroadcastServerPacket(final PacketContainer packet, final Entity tracker) {
+		return new Runnable() {
+			@Override
+			public void run() {
+				// Invoke the correct version
+				if (tracker != null) {
+					delegate.broadcastServerPacket(packet, tracker);
+				} else {
+					delegate.broadcastServerPacket(packet);
+				}
+			}
+		};
+	}
+	
 	@Override
 	public void setPlayerHook(PlayerInjectHooks playerHook) {
 		this.hook = playerHook;
@@ -235,7 +201,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 		if (delegate != null) {
 			delegate.sendServerPacket(reciever, packet, marker, filters);
 		} else {
-			queuedPackets.add(new QueuedPacket(reciever, packet, marker, filters, ConnectionSide.SERVER_SIDE));
+			queuedActions.add(queuedAddPacket(ConnectionSide.SERVER_SIDE, reciever, packet, marker, filters));
 		}
 	}
 
@@ -254,8 +220,24 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 		if (delegate != null) {
 			delegate.recieveClientPacket(sender, packet, marker, filters);
 		} else {
-			queuedPackets.add(new QueuedPacket(sender, packet, marker, filters, ConnectionSide.CLIENT_SIDE));
+			queuedActions.add(queuedAddPacket(ConnectionSide.CLIENT_SIDE, sender, packet, marker, filters));
 		}
+	}
+	
+	@Override
+	public void broadcastServerPacket(PacketContainer packet, Entity tracker) {
+		if (delegate != null)
+			delegate.broadcastServerPacket(packet, tracker);
+		else
+			queuedActions.add(queuedBroadcastServerPacket(packet, tracker));
+	}
+
+	@Override
+	public void broadcastServerPacket(PacketContainer packet) {
+		if (delegate != null)
+			delegate.broadcastServerPacket(packet);
+		else
+			queuedActions.add(queuedBroadcastServerPacket(packet, null));
 	}
 
 	@Override
