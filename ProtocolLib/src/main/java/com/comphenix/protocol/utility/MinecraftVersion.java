@@ -35,7 +35,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	/**
 	 * Regular expression used to parse version strings.
 	 */
-	private static final String VERSION_PATTERN = ".*\\(MC:\\s*((?:\\d+\\.)*\\d)\\s*\\)";
+	private static final String VERSION_PATTERN = ".*\\(.*MC.\\s*((?:\\d+\\.)*\\d)\\s*\\)";
 	
 	private final int major;
 	private final int minor;
