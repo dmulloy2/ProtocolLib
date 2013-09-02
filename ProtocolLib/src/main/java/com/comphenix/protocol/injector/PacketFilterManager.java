@@ -33,6 +33,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -181,6 +182,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	// Plugin verifier
 	private PluginVerifier pluginVerifier;
+	
+	// Whether or not Location.distance(Location) exists - we assume this is the case
+	private boolean hasRecycleDistance = true;
 	
 	// The current Minecraft version
 	private MinecraftVersion minecraftVersion;
@@ -626,10 +630,60 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 
 	@Override
-	public void broadcastServerPacket(PacketContainer packet, Entity tracker) {
+	public void broadcastServerPacket(PacketContainer packet, Entity entity, boolean includeTracker) {
 		Preconditions.checkNotNull(packet, "packet cannot be NULL.");
-		Preconditions.checkNotNull(tracker, "tracker cannot be NULL.");
-		broadcastServerPacket(packet, getEntityTrackers(tracker));
+ 		Preconditions.checkNotNull(entity, "entity cannot be NULL.");
+ 		List<Player> trackers = getEntityTrackers(entity);
+ 		
+ 		// Only add it if it's a player
+ 		if (includeTracker && entity instanceof Player) {
+ 			trackers.add((Player) entity);
+ 		}
+		broadcastServerPacket(packet, trackers);
+	}
+	
+	@Override
+	public void broadcastServerPacket(PacketContainer packet, Location origin, int maxObserverDistance) {
+		try {
+			// Square the maximum too
+			int maxDistance = maxObserverDistance * maxObserverDistance;
+			
+			World world = origin.getWorld();
+			Location recycle = origin.clone();
+			
+			// Only broadcast the packet to nearby players
+			for (Player player : server.getOnlinePlayers()) {
+				if (world.equals(player.getWorld()) && 
+				    getDistanceSquared(origin, recycle, player) <= maxDistance) {
+					
+					sendServerPacket(player, packet);
+				}
+			}
+			
+		} catch (InvocationTargetException e) {
+			throw new FieldAccessException("Unable to send server packet.", e);
+		}
+	}
+	
+	/**
+	 * Retrieve the squared distance between a location and a player.
+	 * @param origin - the origin location. 
+	 * @param recycle - a location object to be recycled, if supported.
+	 * @param player - the player.
+	 * @return The squared distance between the player and the origin,
+	 */
+	private double getDistanceSquared(Location origin, Location recycle, Player player) {
+		if (hasRecycleDistance) {
+			try {
+				return player.getLocation(recycle).distanceSquared(origin);
+			} catch (Error e) {
+				// Damn it
+				hasRecycleDistance = false;
+			}
+		}
+		
+		// The fallback method
+		return player.getLocation().distanceSquared(origin);
 	}
 	
 	/**

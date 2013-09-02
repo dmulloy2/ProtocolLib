@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Set;
 
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -83,12 +84,21 @@ public interface ProtocolManager extends PacketStream {
 	 * Broadcast a packet to every player that is recieving information about a given entity. 
 	 * <p>
 	 * This is usually every player in the same world within an observable distance. If the entity is a 
-	 * player, its naturally excluded.
+	 * player, it will only be included if <i>includeTracker</i> is TRUE.
 	 * @param packet - the packet to broadcast.
-	 * @param tracker - the entity tracker.
+	 * @param entity - the entity whose trackers we will inform.
+	 * @param includeTracker - whether or not to also transmit the packet to the entity, if it is a tracker.
 	 * @throws FieldAccessException If we were unable to send the packet due to reflection problems.
 	 */
-	public void broadcastServerPacket(PacketContainer packet, Entity tracker);
+	public void broadcastServerPacket(PacketContainer packet, Entity entity, boolean includeTracker);
+	
+	/**
+	 * Broadcast a packet to every player within the given maximum observer distance.
+	 * @param packet - the packet to broadcast.
+	 * @param origin - the origin to consider when calculating the distance to each observer.
+	 * @param maxObserverDistance - the maximum distance to the origin.
+	 */
+	public void broadcastServerPacket(PacketContainer packet, Location origin, int maxObserverDistance);
 	
 	/**
 	 * Retrieves a list of every registered packet listener.

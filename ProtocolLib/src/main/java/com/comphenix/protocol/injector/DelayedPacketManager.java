@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -162,20 +163,6 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 		};
 	}
 	
-	private Runnable queuedBroadcastServerPacket(final PacketContainer packet, final Entity tracker) {
-		return new Runnable() {
-			@Override
-			public void run() {
-				// Invoke the correct version
-				if (tracker != null) {
-					delegate.broadcastServerPacket(packet, tracker);
-				} else {
-					delegate.broadcastServerPacket(packet);
-				}
-			}
-		};
-	}
-	
 	@Override
 	public void setPlayerHook(PlayerInjectHooks playerHook) {
 		this.hook = playerHook;
@@ -225,19 +212,45 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	}
 	
 	@Override
-	public void broadcastServerPacket(PacketContainer packet, Entity tracker) {
-		if (delegate != null)
-			delegate.broadcastServerPacket(packet, tracker);
-		else
-			queuedActions.add(queuedBroadcastServerPacket(packet, tracker));
+	public void broadcastServerPacket(final PacketContainer packet, final Entity entity, final boolean includeTracker) {
+		if (delegate != null) {
+			delegate.broadcastServerPacket(packet, entity, includeTracker);
+		} else {
+			queuedActions.add(new Runnable() {
+				@Override
+				public void run() {
+					delegate.broadcastServerPacket(packet, entity, includeTracker);
+				}
+			});
+		}
 	}
 
 	@Override
-	public void broadcastServerPacket(PacketContainer packet) {
-		if (delegate != null)
+	public void broadcastServerPacket(final PacketContainer packet, final Location origin, final int maxObserverDistance) {
+		if (delegate != null) {
+			delegate.broadcastServerPacket(packet, origin, maxObserverDistance);
+		} else {
+			queuedActions.add(new Runnable() {
+				@Override
+				public void run() {
+					delegate.broadcastServerPacket(packet, origin, maxObserverDistance);
+				}
+			});
+		}
+	}
+	
+	@Override
+	public void broadcastServerPacket(final PacketContainer packet) {
+		if (delegate != null) {
 			delegate.broadcastServerPacket(packet);
-		else
-			queuedActions.add(queuedBroadcastServerPacket(packet, null));
+		} else {
+			queuedActions.add(new Runnable() {
+				@Override
+				public void run() {
+					delegate.broadcastServerPacket(packet);
+				}
+			});
+		}
 	}
 
 	@Override
