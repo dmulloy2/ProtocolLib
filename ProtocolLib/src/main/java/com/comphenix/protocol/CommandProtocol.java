@@ -83,11 +83,11 @@ class CommandProtocol extends CommandBase {
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
 					if (isHttpError(e)) {
-						getReporter().reportWarning(this, 
+						getReporter().reportWarning(CommandProtocol.this, 
 								Report.newBuilder(REPORT_HTTP_ERROR).messageParam(e.getCause().getMessage())
 						);
 					} else {
-						getReporter().reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CHECK_FOR_UPDATES).error(e).callerParam(sender));
+						getReporter().reportDetailed(CommandProtocol.this, Report.newBuilder(REPORT_CANNOT_CHECK_FOR_UPDATES).error(e).callerParam(sender));
 					}
 				}
 			}
@@ -106,11 +106,11 @@ class CommandProtocol extends CommandBase {
 					sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + result.toString());
 				} catch (Exception e) {
 					if (isHttpError(e)) {
-						getReporter().reportWarning(this, 
+						getReporter().reportWarning(CommandProtocol.this, 
 								Report.newBuilder(REPORT_HTTP_ERROR).messageParam(e.getCause().getMessage())
 						);
 					} else {
-						getReporter().reportDetailed(this,Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e).callerParam(sender));
+						getReporter().reportDetailed(CommandProtocol.this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e).callerParam(sender));
 					}
 				}
 			}
