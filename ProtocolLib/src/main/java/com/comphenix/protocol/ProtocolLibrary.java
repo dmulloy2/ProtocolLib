@@ -228,20 +228,26 @@ public class ProtocolLibrary extends JavaPlugin {
 			
 			@Override
 			protected Report filterReport(Object sender, Report report, boolean detailed) {
-				String canonicalName = ReportType.getReportName(sender, report.getType());
-				String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
-				
-				if (config != null && config.getModificationCount() != lastModCount) {
-					// Update our cached set again
-					reports = Sets.newHashSet(config.getSuppressedReports());
-					lastModCount = config.getModificationCount();
+				try {
+					String canonicalName = ReportType.getReportName(sender, report.getType());
+					String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
+					
+					if (config != null && config.getModificationCount() != lastModCount) {
+						// Update our cached set again
+						reports = Sets.newHashSet(config.getSuppressedReports());
+						lastModCount = config.getModificationCount();
+					}
+	
+					// Cancel reports either on the full canonical name, or just the report name
+					if (reports.contains(canonicalName) || reports.contains(reportName))
+						return null;
+					
+				} catch (Exception e) {
+					// Only report this with a minor message
+					logger.warning("Error filtering reports: " + e.toString());
 				}
-
-				// Cancel reports either on the full canonical name, or just the report name
-				if (reports.contains(canonicalName) || reports.contains(reportName))
-					return null;
-				else
-					return report;
+				// Don't filter anything
+				return report;
 			}
 		};
 	}
