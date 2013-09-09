@@ -869,9 +869,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				@EventHandler(priority = EventPriority.LOWEST)
 			    public void onPrePlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPrePlayerJoin(event);
-			    }
-				@EventHandler(priority = EventPriority.MONITOR)
-			    public void onPlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPlayerJoin(event);
 			    }
 				@EventHandler(priority = EventPriority.MONITOR)
@@ -1001,7 +998,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Class eventPriority = loader.loadClass("org.bukkit.event.Event$Priority");
 			
 			// Get the priority
-			Object priorityLowest = Enum.valueOf(eventPriority, "Lowest");
 			Object priorityMonitor = Enum.valueOf(eventPriority, "Monitor");
 			
 			// Get event types
@@ -1016,27 +1012,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			// Find the register event method
 			Method registerEvent = FuzzyReflection.fromObject(manager).getMethodByParameters("registerEvent", 
 					eventTypes, Listener.class, eventPriority, Plugin.class);
-
-			Enhancer playerLow = new Enhancer();
+			
 			Enhancer playerEx = new Enhancer();
 			Enhancer serverEx = new Enhancer();
-			
-			playerLow.setSuperclass(playerListener);
-			playerLow.setClassLoader(classLoader);
-			playerLow.setCallback(new MethodInterceptor() {
-				@Override
-				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-					// Must have a parameter
-					if (args.length == 1) {
-						Object event = args[0];
-						
-						if (event instanceof PlayerJoinEvent) {
-							onPrePlayerJoin((PlayerJoinEvent) event);
-						}
-					}
-					return null;
-				}
-			});
 			
 			playerEx.setSuperclass(playerListener);
 			playerEx.setClassLoader(classLoader);
@@ -1048,6 +1026,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 						
 						// Check for the correct event
 						if (event instanceof PlayerJoinEvent) {
+							onPrePlayerJoin((PlayerJoinEvent) event);
 							onPlayerJoin((PlayerJoinEvent) event);
 						} else if (event instanceof PlayerQuitEvent) {
 							onPlayerQuit((PlayerQuitEvent) event);
@@ -1075,11 +1054,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			});
 			
 			// Create our listener
-			Object playerProxyLow = playerLow.create();
 			Object playerProxy = playerEx.create();
 			Object serverProxy = serverEx.create();
 			
-			registerEvent.invoke(manager, playerJoinType, playerProxyLow, priorityLowest, plugin);
 			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityMonitor, plugin);
