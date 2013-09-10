@@ -866,7 +866,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			manager.registerEvents(new Listener() {
-				@EventHandler(priority = EventPriority.LOWEST)
+				@EventHandler(priority = EventPriority.MONITOR)
 			    public void onPrePlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPrePlayerJoin(event);
 					PacketFilterManager.this.onPlayerJoin(event);
