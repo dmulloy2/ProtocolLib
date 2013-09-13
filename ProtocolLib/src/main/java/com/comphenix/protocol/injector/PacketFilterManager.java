@@ -1113,6 +1113,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// Remove packet handlers
 		if (packetInjector != null)
 			packetInjector.cleanupAll();
+		if (spigotInjector != null)
+			spigotInjector.cleanupAll();
 		
 		// Remove server handler
 		playerInjection.close();

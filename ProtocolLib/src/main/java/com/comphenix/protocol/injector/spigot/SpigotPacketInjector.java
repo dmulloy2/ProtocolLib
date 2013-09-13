@@ -545,4 +545,13 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		else
 			throw new PlayerLoggedOutException("Player " + player + " has logged out");
 	}
+
+	/**
+	 * Invoked when the server is cleaning up.
+	 */
+	public void cleanupAll() {
+		if (proxyPacketInjector != null) {
+			proxyPacketInjector.cleanupAll();
+		}
+	}
 }
