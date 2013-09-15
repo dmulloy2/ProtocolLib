@@ -132,9 +132,14 @@ class EntityUtilities {
 			List<Player> result = new ArrayList<Player>();
 			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 
-			if (trackedPlayersField == null) 
+			if (trackerEntry == null) {
+				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + 
+						(entity.isDead() ? " - entity is dead." : "."));
+			}
+			if (trackedPlayersField == null) {
 				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
-			
+			}
+				
 			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
 			
 			// Wrap every player - we also ensure that the underlying tracker list is immutable
