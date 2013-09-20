@@ -106,7 +106,6 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	/**
 	 * Determine if an entry with the given key exists or not.
 	 * @param key - the key to lookup. 
-	 * @return TRUE if an entry with the given key exists, FALSE otherwise.
 	 */
 	@Override
 	public boolean containsKey(String key) {

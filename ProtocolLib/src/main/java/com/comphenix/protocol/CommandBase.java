@@ -82,6 +82,30 @@ abstract class CommandBase implements CommandExecutor {
 			return true;
 		}
 	}
+
+	/**
+	 * Parse a boolean value at a specific location.
+	 * @param args - the argument array.
+	 * @param parameterName - the parameter name.
+	 * @param index - the argument index.
+	 * @return The parsed boolean, or NULL if not valid.
+	 */
+	protected Boolean parseBoolean(String[] args, String parameterName, int index) {
+		if (index < args.length) {
+			String arg = args[index];
+			
+			if (arg.equalsIgnoreCase("true") || arg.equalsIgnoreCase("on"))
+				return true;
+			else if (arg.equalsIgnoreCase(parameterName))
+				return true;
+			else if (arg.equalsIgnoreCase("false") || arg.equalsIgnoreCase("off"))
+				return false;
+			else
+				return null;
+		} else {
+			return null;
+		}
+	}
 	
 	/**
 	 * Retrieve the permission necessary to execute this command.

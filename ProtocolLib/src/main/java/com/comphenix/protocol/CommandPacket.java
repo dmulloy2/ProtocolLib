@@ -543,20 +543,4 @@ class CommandPacket extends CommandBase {
 			return defaultValue;
 		}
 	}
-		
-	// Parse a boolean
-	private Boolean parseBoolean(String[] args, String parameterName, int index) {
-		if (index < args.length) {
-			if (args[index].equalsIgnoreCase("true"))
-				return true;
-			else if (args[index].equalsIgnoreCase(parameterName))
-				return true;
-			else if (args[index].equalsIgnoreCase("false"))
-				return false;
-			else
-				return null;
-		} else {
-			return null;
-		}
-	}
 }

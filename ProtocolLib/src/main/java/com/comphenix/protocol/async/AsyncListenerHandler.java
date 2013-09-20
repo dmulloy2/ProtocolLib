@@ -30,6 +30,9 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.timing.TimedListenerManager;
+import com.comphenix.protocol.timing.TimedTracker;
+import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.utility.WrappedScheduler;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -83,6 +86,9 @@ public class AsyncListenerHandler {
 	
 	// Minecraft main thread
 	private Thread mainThread;
+	
+	// Timing manager
+	private TimedListenerManager timedManager = TimedListenerManager.getInstance();
 	
 	/**
 	 * Construct a manager for an asynchronous packet handler.
@@ -575,10 +581,27 @@ public class AsyncListenerHandler {
 				marker.setListenerHandler(this);
 				marker.setWorkerID(workerID);
 				
-				if (packet.isServerPacket())
-					listener.onPacketSending(packet);
-				else
-					listener.onPacketReceiving(packet);
+				// We're not THAT worried about performance here
+				if (timedManager.isTiming()) {
+					// Retrieve the tracker to use
+					TimedTracker tracker = timedManager.getTracker(listener, 
+						packet.isServerPacket() ? ListenerType.ASYNC_SERVER_SIDE : ListenerType.ASYNC_CLIENT_SIDE);
+					long token = tracker.beginTracking();
+					
+					if (packet.isServerPacket())
+						listener.onPacketSending(packet);
+					else
+						listener.onPacketReceiving(packet);
+					
+					// And we're done
+					tracker.endTracking(token, packet.getPacketID());
+					
+				} else {
+					if (packet.isServerPacket())
+						listener.onPacketSending(packet);
+					else
+						listener.onPacketReceiving(packet);
+				}
 			}
 			
 		} catch (Throwable e) {

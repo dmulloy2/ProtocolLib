@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.bukkit.ChatColor;
@@ -29,6 +30,8 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.metrics.Updater.UpdateType;
+import com.comphenix.protocol.timing.TimedListenerManager;
+import com.comphenix.protocol.timing.TimingReportGenerator;
 import com.comphenix.protocol.utility.WrappedScheduler;
 
 /**
@@ -68,6 +71,8 @@ class CommandProtocol extends CommandBase {
 			checkVersion(sender);
 		else if (subCommand.equalsIgnoreCase("update"))
 			updateVersion(sender);
+		else if (subCommand.equalsIgnoreCase("timings"))
+			toggleTimings(sender, args);
 		else
 			return false;
 		return true;
@@ -117,6 +122,55 @@ class CommandProtocol extends CommandBase {
 		}, 0L);
 		
 		updateFinished();
+	}
+	
+	private void toggleTimings(CommandSender sender, String[] args) {
+		TimedListenerManager manager = TimedListenerManager.getInstance();
+		boolean state = !manager.isTiming(); // toggle
+		
+		// Parse the boolean parameter
+		if (args.length == 2) {
+			Boolean parsed = parseBoolean(args, "start", 2);
+			
+			if (parsed != null) {
+				state = parsed;
+			} else {
+				sender.sendMessage(ChatColor.RED + "Specify a state: ON or OFF.");
+				return;
+			}
+		} else if (args.length > 2) {
+			sender.sendMessage(ChatColor.RED + "Too many parameters.");
+			return;
+		}
+		
+		// Now change the state
+		if (state) {
+			if (manager.startTiming())
+				sender.sendMessage(ChatColor.GOLD + "Started timing packet listeners.");
+			else
+				sender.sendMessage(ChatColor.RED + "Packet timing already started.");
+		} else {
+			if (manager.stopTiming()) {
+				saveTimings(manager);
+				sender.sendMessage(ChatColor.GOLD + "Stopped and saved result in plugin folder.");
+			} else {
+				sender.sendMessage(ChatColor.RED + "Packet timing already stopped.");
+			}
+ 		}
+	}
+	
+	private void saveTimings(TimedListenerManager manager) {
+		try {
+			File destination = new File(plugin.getDataFolder(), "Timings - " + System.currentTimeMillis() + ".txt");
+			TimingReportGenerator generator = new TimingReportGenerator();
+			
+			// Print to a text file
+			generator.saveTo(destination, manager);
+			manager.clear();
+			
+		} catch (IOException e) {
+			reporter.reportMinimal(plugin, "saveTimings()", e);
+		}
 	}
 	
 	private boolean isHttpError(Exception e) { 

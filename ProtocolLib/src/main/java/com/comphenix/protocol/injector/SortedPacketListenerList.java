@@ -25,6 +25,9 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.timing.TimedListenerManager;
+import com.comphenix.protocol.timing.TimedTracker;
+import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 
 /**
  * Registry of synchronous packet listeners.
@@ -32,10 +35,13 @@ import com.comphenix.protocol.events.PacketListener;
  * @author Kristian
  */
 public final class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<PacketListener> {
+	// The current listener manager
+	private TimedListenerManager timedManager = TimedListenerManager.getInstance();
+	
 	public SortedPacketListenerList() {
 		super(Packets.MAXIMUM_PACKET_ID);
 	}
-	
+
 	/**
 	 * Invokes the given packet event for every registered listener.
 	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
@@ -48,19 +54,18 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			return;
 
 		// The returned list is thread-safe
-		for (PrioritizedListener<PacketListener> element : list) {
-			try {
-				event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
-				element.getListener().onPacketReceiving(event);
+		if (timedManager.isTiming()) {
+			for (PrioritizedListener<PacketListener> element : list) {
+				TimedTracker tracker = timedManager.getTracker(element.getListener(), ListenerType.SYNC_CLIENT_SIDE);
+				long token = tracker.beginTracking();
 				
-			} catch (OutOfMemoryError e) {
-				throw e;
-			} catch (ThreadDeath e) {
-				throw e;
-			} catch (Throwable e) {
-				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
-						event.getPacket().getHandle());
+				// Measure and record the execution time
+				invokeReceivingListener(reporter, event, element);
+				tracker.endTracking(token, event.getPacketID());
+			}
+		} else {
+			for (PrioritizedListener<PacketListener> element : list) {
+				invokeReceivingListener(reporter, event, element);
 			}
 		}
 	}
@@ -77,22 +82,46 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 		if (list == null)
 			return;
 
-		for (PrioritizedListener<PacketListener> element : list) {
-			try {
+		// The returned list is thread-safe
+		if (timedManager.isTiming()) {
+			for (PrioritizedListener<PacketListener> element : list) {
 				if (element.getPriority() == priorityFilter) {
-					event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
-					element.getListener().onPacketReceiving(event);
+					TimedTracker tracker = timedManager.getTracker(element.getListener(), ListenerType.SYNC_CLIENT_SIDE);
+					long token = tracker.beginTracking();
+					
+					// Measure and record the execution time
+					invokeReceivingListener(reporter, event, element);
+					tracker.endTracking(token, event.getPacketID());
 				}
-				
-			} catch (OutOfMemoryError e) {
-				throw e;
-			} catch (ThreadDeath e) {
-				throw e;
-			} catch (Throwable e) {
-				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
-						event.getPacket().getHandle());
 			}
+		} else {
+			for (PrioritizedListener<PacketListener> element : list) {
+				if (element.getPriority() == priorityFilter) {
+					invokeReceivingListener(reporter, event, element);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Invoke a particular receiving listener.
+	 * @param reporter - the error reporter.
+	 * @param event - the related packet event.
+	 * @param element - the listener to invoke.
+	 */
+	private final void invokeReceivingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
+		try {
+			event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
+			element.getListener().onPacketReceiving(event);
+			
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
+		} catch (Throwable e) {
+			// Minecraft doesn't want your Exception.
+			reporter.reportMinimal(element.getListener().getPlugin(), "onPacketReceiving(PacketEvent)", e, 
+					event.getPacket().getHandle());
 		}
 	}
 	
@@ -107,19 +136,18 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 		if (list == null)
 			return;
 		
-		for (PrioritizedListener<PacketListener> element : list) {
-			try {
-				event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
-				element.getListener().onPacketSending(event);
+		if (timedManager.isTiming()) {
+			for (PrioritizedListener<PacketListener> element : list) {
+				TimedTracker tracker = timedManager.getTracker(element.getListener(), ListenerType.SYNC_SERVER_SIDE);
+				long token = tracker.beginTracking();
 				
-			} catch (OutOfMemoryError e) {
-				throw e;
-			} catch (ThreadDeath e) {
-				throw e;
-			} catch (Throwable e) {
-				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending(PacketEvent)", e, 
-						event.getPacket().getHandle());
+				// Measure and record the execution time
+				invokeSendingListener(reporter, event, element);
+				tracker.endTracking(token, event.getPacketID());
+			}
+		} else {
+			for (PrioritizedListener<PacketListener> element : list) {
+				invokeSendingListener(reporter, event, element);
 			}
 		}
 	}
@@ -136,22 +164,45 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 		if (list == null)
 			return;
 		
-		for (PrioritizedListener<PacketListener> element : list) {
-			try {
+		if (timedManager.isTiming()) {
+			for (PrioritizedListener<PacketListener> element : list) {
 				if (element.getPriority() == priorityFilter) {
-					event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
-					element.getListener().onPacketSending(event);
-				}
+				TimedTracker tracker = timedManager.getTracker(element.getListener(), ListenerType.SYNC_SERVER_SIDE);
+				long token = tracker.beginTracking();
 				
-			} catch (OutOfMemoryError e) {
-				throw e;
-			} catch (ThreadDeath e) {
-				throw e;
-			} catch (Throwable e) {
-				// Minecraft doesn't want your Exception.
-				reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending(PacketEvent)", e, 
-						event.getPacket().getHandle());
+				// Measure and record the execution time
+				invokeSendingListener(reporter, event, element);
+				tracker.endTracking(token, event.getPacketID());
+				}
 			}
+		} else {
+			for (PrioritizedListener<PacketListener> element : list) {
+				if (element.getPriority() == priorityFilter) {
+					invokeSendingListener(reporter, event, element);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Invoke a particular sending listener.
+	 * @param reporter - the error reporter.
+	 * @param event - the related packet event.
+	 * @param element - the listener to invoke.
+	 */
+	private final void invokeSendingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
+		try {
+			event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
+			element.getListener().onPacketSending(event);
+			
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
+		} catch (Throwable e) {
+			// Minecraft doesn't want your Exception.
+			reporter.reportMinimal(element.getListener().getPlugin(), "onPacketSending(PacketEvent)", e, 
+					event.getPacket().getHandle());
 		}
 	}
 }
