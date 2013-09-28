@@ -22,9 +22,9 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.SnapshotVersion;
 
 public class MinecraftVersionTest {
-
 	@Test
 	public void testComparision() {
 		MinecraftVersion within = new MinecraftVersion(1, 2, 5);
@@ -36,6 +36,12 @@ public class MinecraftVersionTest {
 		// Make sure this is valid
 		assertTrue(lower.compareTo(within) < 0 && within.compareTo(highest) < 0);
 		assertFalse(outside.compareTo(within) < 0 && outside.compareTo(highest) < 0);
+	}
+	
+	@Test
+	public void testSnapshotVersion() {
+		MinecraftVersion version = MinecraftVersion.fromServerVersion("git-Spigot-1119 (MC: 13w39b)");
+		assertEquals(version.getSnapshot(), new SnapshotVersion("13w39b"));
 	}
 	
 	public void testParsing() {

@@ -17,10 +17,13 @@
 
 package com.comphenix.protocol.utility;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bukkit.Server;
+import com.comphenix.protocol.ProtocolLibrary;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
@@ -35,15 +38,18 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	/**
 	 * Regular expression used to parse version strings.
 	 */
-	private static final String VERSION_PATTERN = ".*\\(.*MC.\\s*((?:\\d+\\.)*\\d)\\s*\\)";
+	private static final String VERSION_PATTERN = ".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)";
 	
 	private final int major;
 	private final int minor;
 	private final int build;
 
 	// The development stage
-	private final String development;
-
+	private final String development; 
+	
+	// Snapshot?
+	private final SnapshotVersion snapshot;
+	
 	/**
 	 * Determine the current Minecraft version.
 	 * @param server - the Bukkit server that will be used to examine the MC version.
@@ -53,17 +59,53 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	}
 
 	/**
-	 * Construct a version object from the format major.minor.build.
+	 * Construct a version object from the format major.minor.build, or the snapshot format.
 	 * @param versionOnly - the version in text form.
 	 */
 	public MinecraftVersion(String versionOnly) {
+		this(versionOnly, true);
+	}
+	
+	/**
+	 * Construct a version format from the standard release version or the snapshot verison.
+	 * @param versionOnly - the version.
+	 * @param parseSnapshot - TRUE to parse the snapshot, FALSE otherwise.
+	 */
+	private MinecraftVersion(String versionOnly, boolean parseSnapshot) {
 		String[] section = versionOnly.split("-");
-		int[] numbers = parseVersion(section[0]);
+		SnapshotVersion snapshot = null;
+		int[] numbers = new int[3];
+		
+		try {
+			numbers = parseVersion(section[0]);
+						
+		} catch (NumberFormatException cause) {
+			// Skip snapshot parsing
+			if (!parseSnapshot)
+				throw cause;
+			
+			try {
+				// Determine if the snapshot is newer than the current release version
+				snapshot = new SnapshotVersion(section[0]);
+				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+
+				MinecraftVersion latest = new MinecraftVersion(ProtocolLibrary.MAXIMUM_MINECRAFT_VERSION, false);
+				boolean newer = snapshot.getSnapshotDate().compareTo(
+						        format.parse(ProtocolLibrary.MINECRAFT_LAST_RELEASE_DATE)) > 0;
+						        
+		        numbers[0] = latest.getMajor();
+		        numbers[1] = latest.getMinor() + (newer ? 1 : -1);
+		        numbers[2] = 0;
+			} catch (Exception e) {
+				throw new IllegalStateException("Cannot parse " + section[0], e);
+			}
+		}
 		
 		this.major = numbers[0];
 		this.minor = numbers[1];
 		this.build = numbers[2];
-		this.development = section.length > 1 ? section[1] : null;
+		this.development = section.length > 1 ? section[1] : (snapshot != null ? "snapshot" : null);
+		this.snapshot = snapshot;
 	}
 	
 	/**
@@ -88,6 +130,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 		this.minor = minor;
 		this.build = build;
 		this.development = development;
+		this.snapshot = null;
 	}
 
 	private int[] parseVersion(String version) {
@@ -137,6 +180,22 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	}
 	
 	/**
+	 * Retrieve the snapshot version, or NULL if this is a release.
+	 * @return The snapshot version.
+	 */
+	public SnapshotVersion getSnapshot() {
+		return snapshot;
+	}
+	
+	/**
+	 * Determine if this version is a snapshot.
+	 * @return The snapshot version.
+	 */
+	public boolean isSnapshot() {
+		return snapshot != null;
+	}
+	
+	/**
 	 * Retrieve the version String (major.minor.build) only.
 	 * @return A normal version string.
 	 */
@@ -144,7 +203,8 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 		if (getDevelopmentStage() == null)
 			return String.format("%s.%s.%s", getMajor(), getMinor(), getBuild());
 		else
-			return String.format("%s.%s.%s-%s", getMajor(), getMinor(), getBuild(), getDevelopmentStage());
+			return String.format("%s.%s.%s-%s%s", getMajor(), getMinor(), getBuild(), 
+					getDevelopmentStage(), isSnapshot() ? snapshot : "");
 	}
 	
 	@Override
@@ -158,6 +218,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 					compare(getBuild(), o.getBuild()).
 					// No development String means it's a release
 					compare(getDevelopmentStage(), o.getDevelopmentStage(), Ordering.natural().nullsLast()).
+					compare(getSnapshot(), o.getSnapshot()).
 					result();
 	}
 	
@@ -206,5 +267,14 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 		} else {
 			throw new IllegalStateException("Cannot parse version String '" + text + "'");
 		}
+	}
+	
+	/**
+	 * Parse the given server version into a Minecraft version.
+	 * @param serverVersion - the server version.
+	 * @return The resulting Minecraft version.
+	 */
+	public static MinecraftVersion fromServerVersion(String serverVersion) {
+		return new MinecraftVersion(extractVersion(serverVersion));
 	}
 }

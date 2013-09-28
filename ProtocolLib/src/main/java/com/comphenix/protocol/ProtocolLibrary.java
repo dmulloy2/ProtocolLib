@@ -81,12 +81,17 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The minimum version ProtocolLib has been tested with.
 	 */
-	private static final String MINIMUM_MINECRAFT_VERSION = "1.0.0";
+	public static final String MINIMUM_MINECRAFT_VERSION = "1.0.0";
 	
 	/**
 	 * The maximum version ProtocolLib has been tested with,
 	 */
-	private static final String MAXIMUM_MINECRAFT_VERSION = "1.6.2";
+	public static final String MAXIMUM_MINECRAFT_VERSION = "1.6.2";
+	
+	/**
+	 * The date (with ISO 8601) when the most recent version was released.
+	 */
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2013-07-08";
 	
 	/**
 	 * The number of milliseconds per second.
@@ -376,7 +381,7 @@ public class ProtocolLibrary extends JavaPlugin {
 					logger.warning("Version " + current + " has not yet been tested! Proceed with caution.");
 	 		}
 			return current;
-			
+
 		} catch (Exception e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_PARSE_MINECRAFT_VERSION).error(e));
 		}
@@ -384,7 +389,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		// Unknown version
 		return null;
 	}
-	
+
 	private void checkConflictingVersions() {
 		Pattern ourPlugin = Pattern.compile("ProtocolLib-(.*)\\.jar");
 		MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
