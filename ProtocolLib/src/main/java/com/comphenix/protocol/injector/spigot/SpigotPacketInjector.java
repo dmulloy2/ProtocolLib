@@ -16,6 +16,7 @@ import org.bukkit.plugin.Plugin;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.cglib.proxy.NoOp;
@@ -293,10 +294,32 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	/**
 	 * Retrieve the currently registered injector for the given player.
 	 * @param player - injected player.
+	 * @param createNew - whether or not to create a new injector if the current is missing.
 	 * @return The injector.
 	 */
-	NetworkObjectInjector getInjector(Player player) {
-		return playerInjector.get(player);
+	NetworkObjectInjector getInjector(Player player, boolean createNew) {
+		NetworkObjectInjector injector = playerInjector.get(player);
+		
+		if (injector == null && createNew) {
+			// Check for temporary players ..
+			if ((player instanceof Factory))
+				throw new IllegalArgumentException("Cannot inject tempoary player " + player);
+			
+			try {
+				NetworkObjectInjector created = new NetworkObjectInjector(
+					classLoader, filterImpossibleWarnings(reporter), null, invoker, null);
+			
+				created.initializePlayer(player);
+				
+				if (created.getNetworkManager() == null)
+					throw new PlayerLoggedOutException("Player " + player + " has logged out.");
+				injector = saveInjector(created.getNetworkManager(), created);
+				
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException("Cannot create dummy injector.", e);
+			}
+		}
+		return injector;
 	}
 	
 	/**
@@ -490,7 +513,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 * @param player - the player to uninject.
 	 */
 	void uninjectPlayer(Player player) {
-		final NetworkObjectInjector injector = getInjector(player);
+		final NetworkObjectInjector injector = getInjector(player, false);
 		
 		if (player != null && injector != null) {
 			Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
@@ -513,7 +536,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 * @throws InvocationTargetException If anything went wrong.
 	 */
 	void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-		NetworkObjectInjector networkObject = getInjector(reciever);
+		NetworkObjectInjector networkObject = getInjector(reciever, true);
 		
 		// If TRUE, process this packet like any other
 		if (filters)
@@ -521,10 +544,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		else
 			ignoredPackets.add(packet.getHandle());
 			
-		if (networkObject != null)
-			networkObject.sendServerPacket(packet.getHandle(), marker, filters);
-		else
-			throw new PlayerLoggedOutException("Player " + reciever + " has logged out");
+		networkObject.sendServerPacket(packet.getHandle(), marker, filters);
 	}
 
 	/**
@@ -535,15 +555,11 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 * @throws InvocationTargetException Minecraft threw an exception.
 	 */
 	void processPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
-		NetworkObjectInjector networkObject = getInjector(player);
+		NetworkObjectInjector networkObject = getInjector(player, true);
 		
 		// We will always ignore this packet
 		ignoredPackets.add(mcPacket);
-		
-		if (networkObject != null)
-			networkObject.processPacket(mcPacket);
-		else
-			throw new PlayerLoggedOutException("Player " + player + " has logged out");
+		networkObject.processPacket(mcPacket);
 	}
 
 	/**

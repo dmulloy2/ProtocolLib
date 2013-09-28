@@ -263,6 +263,14 @@ public abstract class PlayerInjector implements SocketInjector {
 	}
 	
 	/**
+	 * Retrieve the current server handler (PlayerConnection).
+	 * @return Current server handler.
+	 */
+	public Object getServerHandler() {
+		return serverHandlerRef.getValue();
+	}
+	
+	/**
 	 * Set the current network manager.
 	 * @param value - new network manager.
 	 * @param force - whether or not to save this value.
