@@ -98,7 +98,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	protected static Method queueMethod;
 	protected static Method processMethod;
 		
-	protected Player player;
+	protected volatile Player player;
 	protected boolean hasInitialized;
 	
 	// Reference to the player's network manager
@@ -136,7 +136,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	// Whether or not to update the current player on the first Packet1Login
 	boolean updateOnLogin;
-	Player updatedPlayer;
+	volatile Player updatedPlayer;
 	
 	public PlayerInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, ListenerInvoker invoker) throws IllegalAccessException {
 		this.classLoader = classLoader;
