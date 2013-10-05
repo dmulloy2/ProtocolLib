@@ -19,7 +19,7 @@ public class BukkitSocketInjector implements SocketInjector {
 	
 	/**
 	 * Represents a temporary socket injector.
-	 * @param temporaryPlayer - a temporary player.
+	 * @param player - a temporary player.
 	 */
 	public BukkitSocketInjector(Player player) {
 		if (player == null)

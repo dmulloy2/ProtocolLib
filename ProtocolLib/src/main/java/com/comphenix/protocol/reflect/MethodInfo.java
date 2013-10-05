@@ -180,7 +180,8 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	/**
 	 * Returns a string describing this method or constructor
 	 * @return A string representation of the object.
-	 * @see {@link Method#toString()} or {@link Constructor#toString()}
+	 * @see Method#toString()
+	 * @see Constructor#toString()
 	 */
 	@Override
 	public String toString() {
@@ -190,7 +191,8 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	/**
 	 * Returns a string describing this method or constructor, including type parameters.
 	 * @return A string describing this Method, include type parameters
-	 * @see {@link Method#toGenericString()} or {@link Constructor#toGenericString()}
+	 * @see Method#toGenericString()
+	 * @see Constructor#toGenericString()
 	 */
 	public abstract String toGenericString();
 	
@@ -198,7 +200,8 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	 * Returns an array of Class objects that represent the types of the exceptions declared to be thrown by the 
 	 * underlying method or constructor represented by this MethodInfo object.
 	 * @return The exception types declared as being thrown by the method or constructor this object represents.
-	 * @see {@link Method#getExceptionTypes()} or {@link Constructor#getExceptionTypes()}
+	 * @see Method#getExceptionTypes()
+	 * @see Constructor#getExceptionTypes()
 	 */
 	public abstract Class<?>[] getExceptionTypes();
 
@@ -208,7 +211,7 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	 * <p>
 	 * This is always {@link Void} for constructors.
 	 * @return The return value, or Void if a constructor.
-	 * @see {@link Method#getReturnType()}
+	 * @see Method#getReturnType()
 	 */
 	public abstract Class<?> getReturnType();
 
@@ -216,7 +219,8 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	 * Returns an array of Class objects that represent the formal parameter types, in declaration order, 
 	 * of the method or constructor represented by this MethodInfo object.
 	 * @return The parameter types for the method or constructor this object represents.
-	 * @see {@link Method#getParameterTypes()} or {@link Constructor#getParameterTypes()}
+	 * @see Method#getParameterTypes() 
+	 * @see Constructor#getParameterTypes()
 	 */
 	public abstract Class<?>[] getParameterTypes();
 	

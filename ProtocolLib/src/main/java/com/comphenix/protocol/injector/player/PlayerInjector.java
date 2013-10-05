@@ -515,7 +515,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	 * @param packet - server packet to send.
 	 * @param marker - the network marker.
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
-	 * @param InvocationTargetException If an error occured when sending the packet.
+	 * @throws InvocationTargetException If an error occured when sending the packet.
 	 */
 	@Override
 	public abstract void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) throws InvocationTargetException;
@@ -570,8 +570,6 @@ public abstract class PlayerInjector implements SocketInjector {
 	 * Invoked before a new listener is registered.
 	 * <p>
 	 * The player injector should only return a non-null value if some or all of the packet IDs are unsupported.
-	 * @param version 
-	 * 
 	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @param listener - the listener that is about to be registered.
 	 * @return A error message with the unsupported packet IDs, or NULL if this listener is valid.

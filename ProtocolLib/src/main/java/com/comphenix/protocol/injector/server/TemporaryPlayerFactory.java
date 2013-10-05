@@ -84,7 +84,6 @@ public class TemporaryPlayerFactory {
 	 * <p>
 	 * Note that a temporary player has not yet been assigned a name, and thus cannot be
 	 * uniquely identified. Use the address instead.
-	 * @param injector - the player injector used.
 	 * @param server - the current server.
 	 * @return A temporary player instance.
 	 */

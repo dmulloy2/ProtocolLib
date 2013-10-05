@@ -104,7 +104,7 @@ public class PrettyPrinter {
 	 * @param object - the object to serialize.
 	 * @param stop - superclass that will stop the process.
 	 * @param hierachyDepth - maximum recursion level.
-	 * @param transformer - a generic object printer.
+	 * @param printer - a generic object printer.
 	 * @return String representation of the class.
 	 * @throws IllegalAccessException 
 	 */

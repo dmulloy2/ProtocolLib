@@ -315,7 +315,7 @@ public class WrappedAttribute {
 		 * Change the base value of the attribute.
 		 * <p>
 		 * The modifiers will automatically supply a value if this is unset.
-		 * @param value - the final value.
+		 * @param baseValue - the base value value.
 		 * @return This builder, for chaining.
 		 */
 		public Builder baseValue(double baseValue) {
@@ -337,8 +337,6 @@ public class WrappedAttribute {
 		
 		/**
 		 * Set the modifers that will be supplied to the client, and used to compute the final value.
-		 * <p>
-		 * Call {@link #recomputeValue()} to force the builder to recompute the final value.
 		 * @param modifiers - the attribute modifiers.
 		 * @return This builder, for chaining.
 		 */

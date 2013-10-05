@@ -109,7 +109,7 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 		
 		/**
 		 * Add a new base class contract.
-		 * @param matcher - builder for the new base class contract.
+		 * @param builder - builder for the new base class contract.
 		 * @return This builder, for chaining.
 		 */
 		public Builder baseclass(FuzzyClassContract.Builder builder) {
@@ -128,7 +128,7 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 		
 		/**
 		 * Add a new interface contract.
-		 * @param matcher - builder for the new interface contract.
+		 * @param builder - builder for the new interface contract.
 		 * @return This builder, for chaining.
 		 */
 		public Builder interfaces(FuzzyClassContract.Builder builder) {

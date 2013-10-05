@@ -49,7 +49,7 @@ public class CommandFilter extends CommandBase {
 		 * @param event - the packet event.
 		 * @param filter - the filter that failed.
 		 * @param ex - the failure.
-		 * @returns TRUE to keep processing this filter, FALSE to remove it.
+		 * @return TRUE to keep processing this filter, FALSE to remove it.
 		 */
 		public boolean handle(PacketEvent event, Filter filter, Exception ex);
 	}
@@ -77,7 +77,7 @@ public class CommandFilter extends CommandBase {
 		 * Construct a new immutable filter.
 		 * @param name - the unique name of the filter.
  		 * @param predicate - the JavaScript predicate that will be used to filter packet events.
-		 * @param ranges - a list of valid packet ID ranges that this filter applies to.
+		 * @param packets - a list of valid packet ID that this filter applies to.
 		 */
 		public Filter(String name, String predicate, Set<Integer> packets) {
 			this.name = name;

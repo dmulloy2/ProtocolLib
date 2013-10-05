@@ -83,7 +83,7 @@ public class NetworkMarker {
 	 * Retrieve the serialized packet data as an input stream.
 	 * <p>
 	 * The data is exactly the same as in {@link #getInputBuffer()}. 
-	 * @see {@link #getInputBuffer()}
+	 * @see #getInputBuffer()
 	 * @return The incoming serialized packet data as a stream, or NULL if the packet was transmitted locally.
 	 */
 	public DataInputStream getInputStream() {

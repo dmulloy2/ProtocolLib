@@ -141,7 +141,6 @@ public interface PlayerInjectionHandler {
 	
 	/**
 	 * Determine if the given listeners are valid.
-	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @param listeners - listeners to check.
 	 */
 	public abstract void checkListener(Set<PacketListener> listeners);
@@ -150,7 +149,6 @@ public interface PlayerInjectionHandler {
 	 * Determine if a listener is valid or not.
 	 * <p>
 	 * If not, a warning will be printed to the console. 
-	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @param listener - listener to check.
 	 */
 	public abstract void checkListener(PacketListener listener);

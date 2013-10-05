@@ -68,8 +68,8 @@ public class PacketInjectorBuilder {
 	}
 
 	/**
-	 * The packet stream invoker.
-	 * @param invoker - the invoker.
+	 * Set the player injection.
+	 * @param playerInjection - the injection.
 	 * @return This builder, for chaining.
 	 */
 	@Nonnull

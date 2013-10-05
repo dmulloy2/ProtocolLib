@@ -188,7 +188,7 @@ public class StreamSerializer {
 	 * Note: An NBT compound can be written to a stream even if it's NULL.
 	 * 
 	 * @param output - the target output stream.
-	 * @param stack - the NBT compound to be serialized, or NULL to represent nothing.
+	 * @param compound - the NBT compound to be serialized, or NULL to represent nothing.
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public void serializeCompound(@Nonnull DataOutputStream output, NbtCompound compound) throws IOException {
@@ -217,13 +217,12 @@ public class StreamSerializer {
 	}
 	
 	/**
-	 * Deserialize a string using the standard Minecraft UTF-16 encoding.
+	 * Serialize a string using the standard Minecraft UTF-16 encoding.
 	 * <p>
 	 * Note that strings cannot exceed 32767 characters, regardless if maximum lenght.
-	 * @param input - the input stream.
-	 * @param maximumLength - the maximum lenght of the string.
-	 * @return
-	 * @throws IOException
+	 * @param output - the output stream.
+	 * @param text - the string to serialize.
+	 * @throws IOException If the data in the string cannot be written.
 	 */
 	public void serializeString(@Nonnull DataOutputStream output, String text) throws IOException {
 		if (output == null)

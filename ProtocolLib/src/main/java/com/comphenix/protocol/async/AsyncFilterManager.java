@@ -81,7 +81,6 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * <b>Internal method</b>. Retrieve the global asynchronous manager from the protocol manager instead. 
 	 * @param reporter - desired error reporter.
 	 * @param scheduler - task scheduler.
-	 * @param manager - protocol manager.
 	 */
 	public AsyncFilterManager(ErrorReporter reporter, BukkitScheduler scheduler) {
 		// Initialize timeout listeners

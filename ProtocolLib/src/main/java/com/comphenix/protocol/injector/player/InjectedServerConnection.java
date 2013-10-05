@@ -198,7 +198,7 @@ public class InjectedServerConnection {
 	 * Retrieve the listener thread object, or NULL the server isn't using this socket implementation.
 	 * @return The listener thread, or NULL.
 	 * @throws IllegalAccessException Cannot access field.
-	 * @hrows RuntimeException Unexpected class structure - the field doesn't exist.
+	 * @throws RuntimeException Unexpected class structure - the field doesn't exist.
 	 */
 	public Object getListenerThread() throws RuntimeException, IllegalAccessException {
 		initialize();

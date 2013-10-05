@@ -40,7 +40,7 @@ public interface SocketInjector {
 	 * @param packet - server packet to send.
 	 * @param marker - the network marker.
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
-	 * @param InvocationTargetException If an error occured when sending the packet.
+	 * @throws InvocationTargetException If an error occured when sending the packet.
 	 */
 	public abstract void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) 
 			throws InvocationTargetException;

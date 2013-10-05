@@ -83,7 +83,7 @@ public class DefaultInstances implements InstanceProvider {
 	
 	/**
 	 * Construct a default instance generator using the given instance providers.
-	 * @param instaceProviders - array of instance providers.
+	 * @param instanceProviders - array of instance providers.
 	 * @return An default instance generator.
 	 */
 	public static DefaultInstances fromArray(InstanceProvider... instanceProviders) {
@@ -92,7 +92,7 @@ public class DefaultInstances implements InstanceProvider {
 	
 	/**
 	 * Construct a default instance generator using the given instance providers.
-	 * @param instaceProviders - collection of instance providers.
+	 * @param instanceProviders - collection of instance providers.
 	 * @return An default instance generator.
 	 */
 	public static DefaultInstances fromCollection(Collection<InstanceProvider> instanceProviders) {

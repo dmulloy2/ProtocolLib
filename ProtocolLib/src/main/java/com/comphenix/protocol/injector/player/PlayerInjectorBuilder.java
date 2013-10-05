@@ -111,7 +111,7 @@ public class PlayerInjectorBuilder {
 	
 	/**
 	 * Set the current Minecraft version.
-	 * @param server - the current Minecraft version, or NULL if unknown.
+	 * @param version - the current Minecraft version, or NULL if unknown.
 	 * @return This builder, for chaining.
 	 */
 	public PlayerInjectorBuilder version(MinecraftVersion version) {

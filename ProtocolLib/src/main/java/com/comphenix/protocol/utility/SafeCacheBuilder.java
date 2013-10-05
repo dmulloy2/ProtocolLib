@@ -66,9 +66,10 @@ public class SafeCacheBuilder<K, V> {
 	/**
 	 * Specifies that each entry should be automatically removed from the cache
 	 * once a fixed duration has elapsed after the entry's creation, or last
-	 * access. Access time is reset by {@link Cache#get} and
-	 * {@link Cache#getUnchecked}, but not by operations on the view returned by
-	 * {@link Cache#asMap}.
+	 * access. Access time is reset by {@link com.google.common.cache.Cache#get Cache.get()} and
+	 * {@link com.google.common.cache.Cache#getUnchecked Cache.getUnchecked()}, 
+	 * but not by operations on the view returned by
+	 * {@link com.google.common.cache.Cache#asMap() Cache.asMap()}.
 	 * 
 	 * <p>
 	 * When {@code duration} is zero, elements will be evicted immediately after
@@ -77,7 +78,7 @@ public class SafeCacheBuilder<K, V> {
 	 * or to disable caching temporarily without a code change.
 	 * 
 	 * <p>
-	 * Expired entries may be counted by {@link Cache#size}, but will never be
+	 * Expired entries may be counted by {@link com.google.common.cache.Cache#size Cache.size()}, but will never be
 	 * visible to read or write operations. Expired entries are currently
 	 * cleaned up during write operations, or during occasional read operations
 	 * in the absense of writes; though this behavior may change in the future.
@@ -89,7 +90,6 @@ public class SafeCacheBuilder<K, V> {
 	 * @throws IllegalStateException if the time to idle or time to live was
 	 *             already set
 	 */
-
 	public SafeCacheBuilder<K, V> expireAfterAccess(long duration, TimeUnit unit) {
 		builder.expireAfterAccess(duration, unit);
 		return this;
@@ -107,7 +107,7 @@ public class SafeCacheBuilder<K, V> {
 	 * or to disable caching temporarily without a code change.
 	 * 
 	 * <p>
-	 * Expired entries may be counted by {@link Cache#size}, but will never be
+	 * Expired entries may be counted by {@link com.google.common.cache.Cache#size Cache.size()}, but will never be
 	 * visible to read or write operations. Expired entries are currently
 	 * cleaned up during write operations, or during occasional read operations
 	 * in the absense of writes; though this behavior may change in the future.
@@ -173,7 +173,7 @@ public class SafeCacheBuilder<K, V> {
 	 * <p>
 	 * Each cache built by this {@code CacheBuilder} after this method is called
 	 * invokes the supplied listener after removing an element for any reason
-	 * (see removal causes in {@link RemovalCause}). It will invoke the listener
+	 * (see removal causes in {@link com.google.common.cache.RemovalCause RemovalCause}). It will invoke the listener
 	 * during invocations of any of that cache's public methods (even read-only
 	 * methods).
 	 * 
@@ -188,7 +188,7 @@ public class SafeCacheBuilder<K, V> {
 	 * provided; the {@code CacheBuilder} type cannot do this. For best results,
 	 * simply use the standard method-chaining idiom, as illustrated in the
 	 * documentation at top, configuring a {@code CacheBuilder} and building
-	 * your {@link Cache} all in a single statement.
+	 * your {@link com.google.common.cache.Cache Cache} all in a single statement.
 	 * 
 	 * <p>
 	 * <b>Warning:</b> if you ignore the above advice, and use this
@@ -222,7 +222,7 @@ public class SafeCacheBuilder<K, V> {
 
 	/**
 	 * Specifies that each value (not key) stored in the cache should be wrapped
-	 * in a {@link SoftReference} (by default, strong references are used).
+	 * in a {@link java.lang.ref.SoftReference SoftReference} (by default, strong references are used).
 	 * Softly-referenced objects will be garbage-collected in a <i>globally</i>
 	 * least-recently-used manner, in response to memory demand.
 	 * 
@@ -238,7 +238,6 @@ public class SafeCacheBuilder<K, V> {
 	 * 
 	 * @throws IllegalStateException if the value strength was already set
 	 */
-
 	public SafeCacheBuilder<K, V> softValues() {
 		builder.softValues();
 		return this;
@@ -246,7 +245,7 @@ public class SafeCacheBuilder<K, V> {
 
 	/**
 	 * Specifies that each key (not value) stored in the cache should be wrapped
-	 * in a {@link WeakReference} (by default, strong references are used).
+	 * in a {@link java.lang.ref.WeakReference WeakReference} (by default, strong references are used).
 	 * 
 	 * <p>
 	 * <b>Warning:</b> when this method is used, the resulting cache will use
@@ -261,7 +260,7 @@ public class SafeCacheBuilder<K, V> {
 
 	/**
 	 * Specifies that each value (not key) stored in the cache should be wrapped
-	 * in a {@link WeakReference} (by default, strong references are used).
+	 * in a {@link java.lang.ref.WeakReference WeakReference} (by default, strong references are used).
 	 * 
 	 * <p>
 	 * Weak values will be garbage collected once they are weakly reachable.

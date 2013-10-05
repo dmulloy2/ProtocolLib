@@ -134,8 +134,8 @@ abstract class CommandBase implements CommandExecutor {
 	/**
 	 * Main implementation of this command.
 	 * @param sender - command sender.
-	 * @param args
-	 * @return
+	 * @param args - input arguments.
+	 * @return TRUE if the command was successfully handled, FALSE otherwise.
 	 */
 	protected abstract boolean handleCommand(CommandSender sender, String[] args);
 }

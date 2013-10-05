@@ -138,8 +138,8 @@ public class TimedListenerManager {
 	}
 	
 	/**
-	 * Retrieve the timed tracker associated with the given listener and listener type.
-	 * @param listener - the listener.
+	 * Retrieve the timed tracker associated with the given plugin and listener type.
+	 * @param pluginName - the plugin name.
 	 * @param type - the listener type.
 	 * @return The timed tracker.
 	 */
@@ -170,7 +170,7 @@ public class TimedListenerManager {
 	
 	/**
 	 * Retrieve a new map of trackers for an unspecified plugin.
-	 * @return 
+	 * @return A map of listeners and timed trackers.
 	 */
 	private ImmutableMap<ListenerType, TimedTracker> newTrackerMap() {
 		ImmutableMap.Builder<ListenerType, TimedTracker> builder = ImmutableMap.builder();

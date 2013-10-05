@@ -354,7 +354,7 @@ public class WrappedAttributeModifier {
 
 		/**
 		 * Set a human readable name of this modifier.
-		 * @param attributeKey - the attribute key to supply to the new object.
+		 * @param name - the name of the modifier.
 		 * @return This builder, for chaining.
 		 */
 		public Builder name(@Nonnull String name) {

@@ -38,7 +38,7 @@ public abstract class AbstractFuzzyMatcher<T> implements Comparable<AbstractFuzz
 	 * <p>
 	 * Matchers with a lower round number are applied before matchers with a higher round number.
 	 * @return The round number.
-	 * @see {@link #calculateRoundNumber()}
+	 * @see #calculateRoundNumber()
 	 */
 	public final int getRoundNumber() {
 		if (roundNumber == null) {

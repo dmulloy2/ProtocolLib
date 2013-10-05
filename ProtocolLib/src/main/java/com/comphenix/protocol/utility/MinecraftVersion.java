@@ -254,7 +254,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	
 	/**
 	 * Extract the Minecraft version from CraftBukkit itself.
-	 * @param server - the server object representing CraftBukkit.
+	 * @param text - the server version in text form.
 	 * @return The underlying MC version.
 	 * @throws IllegalStateException If we could not parse the version string.
 	 */
