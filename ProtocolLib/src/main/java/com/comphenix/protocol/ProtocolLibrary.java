@@ -71,7 +71,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	public static final ReportType REPORT_METRICS_IO_ERROR = new ReportType("Unable to enable metrics due to network problems.");
 	public static final ReportType REPORT_METRICS_GENERIC_ERROR = new ReportType("Unable to enable metrics due to network problems.");
 	
-	public static final ReportType REPORT_CANNOT_PARSE_MINECRAFT_VERSION = new ReportType("Unable to retrieve current Minecraft version.");
+	public static final ReportType REPORT_CANNOT_PARSE_MINECRAFT_VERSION = new ReportType("Unable to retrieve current Minecraft version. Assuming %s");
 	public static final ReportType REPORT_CANNOT_DETECT_CONFLICTING_PLUGINS = new ReportType("Unable to detect conflicting plugin versions.");
 	public static final ReportType REPORT_CANNOT_REGISTER_COMMAND = new ReportType("Cannot register command %s: %s");
 	
@@ -367,9 +367,10 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Used to check Minecraft version
 	private MinecraftVersion verifyMinecraftVersion() {
+		MinecraftVersion minimum = new MinecraftVersion(MINIMUM_MINECRAFT_VERSION);
+		MinecraftVersion maximum = new MinecraftVersion(MAXIMUM_MINECRAFT_VERSION);
+		
 		try {
-			MinecraftVersion minimum = new MinecraftVersion(MINIMUM_MINECRAFT_VERSION);
-			MinecraftVersion maximum = new MinecraftVersion(MAXIMUM_MINECRAFT_VERSION);
 			MinecraftVersion current = new MinecraftVersion(getServer());
 
 			// Skip certain versions
@@ -383,11 +384,12 @@ public class ProtocolLibrary extends JavaPlugin {
 			return current;
 
 		} catch (Exception e) {
-			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_PARSE_MINECRAFT_VERSION).error(e));
+			reporter.reportWarning(this, 
+				Report.newBuilder(REPORT_CANNOT_PARSE_MINECRAFT_VERSION).error(e).messageParam(maximum));
+			
+			// Unknown version - just assume it is the latest
+			return maximum;
 		}
-		
-		// Unknown version
-		return null;
 	}
 
 	private void checkConflictingVersions() {

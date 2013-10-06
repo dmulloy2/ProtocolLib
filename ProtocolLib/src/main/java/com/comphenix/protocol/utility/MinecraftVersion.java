@@ -218,7 +218,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 					compare(getBuild(), o.getBuild()).
 					// No development String means it's a release
 					compare(getDevelopmentStage(), o.getDevelopmentStage(), Ordering.natural().nullsLast()).
-					compare(getSnapshot(), o.getSnapshot()).
+					compare(getSnapshot(), o.getSnapshot(), Ordering.natural().nullsFirst()).
 					result();
 	}
 	
