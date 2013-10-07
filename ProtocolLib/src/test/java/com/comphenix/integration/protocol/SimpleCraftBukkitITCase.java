@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +16,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoadOrder;
+import org.bukkit.plugin.PluginManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -63,6 +66,7 @@ public class SimpleCraftBukkitITCase {
 		Bukkit.getScheduler().callSyncMethod(FAKE_PLUGIN, new Callable<Object>() {
 			@Override
 			public Object call() throws Exception {
+				initializePlugin(FAKE_PLUGIN);
 				return null;
 			}
 		}).get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
@@ -104,6 +108,27 @@ public class SimpleCraftBukkitITCase {
 			}
 		}
 		FileUtils.copyFile(bestFile, new File(pluginDirectory, bestFile.getName()));
+	}
+	
+	/**
+	 * Load a specific fake plugin.
+	 * @param plugin - the plugin to load.
+	 */
+	@SuppressWarnings("unchecked")
+	private static void initializePlugin(Plugin plugin) {
+		PluginManager manager = Bukkit.getPluginManager();
+		
+		try {
+			List<Plugin> plugins = (List<Plugin>) FieldUtils.readField(manager, "plugins", true);
+	    	Map<String, Plugin> lookupNames = (Map<String, Plugin>) FieldUtils.readField(manager, "lookupNames", true);
+	    
+	    	/// Associate this plugin
+	    	plugins.add(plugin);
+	    	lookupNames.put(plugin.getName(), plugin);
+	    
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to access the fields of " + manager, e);
+		}
 	}
 	
 	/**
