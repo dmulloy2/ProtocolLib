@@ -126,7 +126,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Updater
 	private Updater updater;
-	private boolean updateDisabled;
+	private static boolean UPDATES_DISABLED;
 	
 	// Logger
 	private Logger logger;
@@ -479,7 +479,7 @@ public class ProtocolLibrary extends JavaPlugin {
 					manager.sendProcessedPackets(tickCounter++, true);
 					
 					// Check for updates too
-					if (!updateDisabled) {
+					if (!UPDATES_DISABLED) {
 						checkUpdates();
 					}
 				}
@@ -511,7 +511,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			}
 		} catch (Exception e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e));
-			updateDisabled = true;
+			UPDATES_DISABLED = true;
 		}
 	}
 	
