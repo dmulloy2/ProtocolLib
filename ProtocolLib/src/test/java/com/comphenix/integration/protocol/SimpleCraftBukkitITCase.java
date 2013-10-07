@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
@@ -28,6 +30,14 @@ import com.google.common.collect.Lists;
 public class SimpleCraftBukkitITCase {	
 	// The fake plugin
 	private static volatile Plugin FAKE_PLUGIN = null;
+	
+	/**
+	 * The maximum amount of time to wait before a server has started.
+	 * <p>
+	 * We have to give it the ample time of 60 seconds, as a server may have to 
+	 * generate the spawn area in three worlds.
+	 */
+	private static final int TIMEOUT_MS = 60000;
 	
 	/**
 	 * Setup the CraftBukkit server for all the tests.
@@ -55,7 +65,7 @@ public class SimpleCraftBukkitITCase {
 			public Object call() throws Exception {
 				return null;
 			}
-		}).get();
+		}).get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
 	
 		// Plugins are now ready
 	}

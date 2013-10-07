@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.plugin.Plugin;
 
@@ -21,6 +22,9 @@ public class TestPingPacket {
 	// Current versions
 	private static final String CRAFTBUKKIT_VERSION = "1.6.2";
 	private static final int PROTOCOL_VERSION = 74;
+	
+	// Timeout
+	private static final int TIMEOUT_PING_MS = 10000;
 	
 	private volatile String source;
 	
@@ -43,7 +47,8 @@ public class TestPingPacket {
 	 */
 	public void startTest(Plugin plugin) throws Throwable {
 		try {
-			String transmitted = testInterception(plugin).get();
+			String transmitted = testInterception(plugin).
+				get(TIMEOUT_PING_MS, TimeUnit.MILLISECONDS);
 	
 			// Make sure it's the same
 			System.out.println("Server string: " + transmitted);
@@ -66,7 +71,8 @@ public class TestPingPacket {
 		return Executors.newSingleThreadExecutor().submit(new Callable<String>() {
 			@Override
 			public String call() throws Exception {
-				SimpleMinecraftClient client = new SimpleMinecraftClient(new MinecraftVersion(CRAFTBUKKIT_VERSION), PROTOCOL_VERSION);
+				SimpleMinecraftClient client = new SimpleMinecraftClient(
+					new MinecraftVersion(CRAFTBUKKIT_VERSION), PROTOCOL_VERSION);
 				String information = client.queryLocalPing();
 
 				// Wait for the listener to catch up
