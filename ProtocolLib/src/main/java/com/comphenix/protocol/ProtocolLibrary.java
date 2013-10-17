@@ -47,6 +47,7 @@ import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateResult;
+import com.comphenix.protocol.metrics.Updater.UpdateType;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -92,6 +93,10 @@ public class ProtocolLibrary extends JavaPlugin {
 	 * The date (with ISO 8601) when the most recent version was released.
 	 */
 	public static final String MINECRAFT_LAST_RELEASE_DATE = "2013-07-08";
+	
+	// Update information
+	static final String BUKKIT_DEV_SLUG = "protocollib";
+	static final int BUKKIT_DEV_ID = 45564;
 	
 	/**
 	 * The number of milliseconds per second.
@@ -179,8 +184,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Handle unexpected Minecraft versions
 			MinecraftVersion version = verifyMinecraftVersion();
 			
-			// Set updater
-			updater = new Updater(this, logger, "protocollib", getFile(), "protocol.info");
+			// Set updater - this will not perform any update automatically
+			updater = new Updater(this, BUKKIT_DEV_ID, getFile(), UpdateType.NO_DOWNLOAD, true);
 			
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = PacketFilterManager.newBuilder().
