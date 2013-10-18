@@ -505,7 +505,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			long updateTime = config.getAutoLastTime() + config.getAutoDelay();
 
 			// Should we update?
-			if (currentTime > updateTime) {		
+			if (currentTime > updateTime && !updater.isChecking()) {		
 				// Initiate the update as if it came from the console
 				if (config.isAutoDownload())
 					commandProtocol.updateVersion(getServer().getConsoleSender());

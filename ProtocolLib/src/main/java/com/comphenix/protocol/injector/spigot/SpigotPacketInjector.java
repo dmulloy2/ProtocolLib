@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -26,6 +27,7 @@ import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
@@ -35,11 +37,14 @@ import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.player.NetworkObjectInjector;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 
@@ -49,6 +54,8 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public class SpigotPacketInjector implements SpigotPacketListener {
+	public static final ReportType REPORT_CANNOT_CLEANUP_SPIGOT = new ReportType("Cannot cleanup Spigot listener.");
+	
 	// Lazily retrieve the spigot listener class
 	private static volatile Class<?> spigotListenerClass;
 	private static volatile boolean classChecked;
@@ -562,10 +569,44 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		networkObject.processPacket(mcPacket);
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private void cleanupListener() {
+		Class<?> listenerClass = getSpigotListenerClass();
+				
+		// Yeah ... there's no easy way to remove the listener
+		synchronized (listenerClass) {
+			try {
+				Field listenersField = FieldUtils.getField(listenerClass, "listeners", true);
+				Field bakedField = FieldUtils.getField(listenerClass, "baked", true);
+
+				Map<Object, Plugin> listenerMap = (Map<Object, Plugin>) listenersField.get(null);
+				List<Object> listenerArray = Lists.newArrayList((Object[]) bakedField.get(null));
+
+				listenerMap.remove(dynamicListener);
+				listenerArray.remove(dynamicListener);
+				
+				// Save the array back
+				bakedField.set(null, Iterables.toArray(listenerArray, (Class)listenerClass));
+				
+				// Success
+				dynamicListener = null;
+			} catch (Exception e) {
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_CLEANUP_SPIGOT).
+					callerParam(dynamicListener).error(e));
+			}
+		}
+	}
+	
 	/**
 	 * Invoked when the server is cleaning up.
 	 */
 	public void cleanupAll() {
+		// Cleanup the Spigot listener
+		if (dynamicListener != null) {
+			cleanupListener();
+		}
+		
+		// Cleanup network marker
 		if (proxyPacketInjector != null) {
 			proxyPacketInjector.cleanupAll();
 		}
