@@ -62,6 +62,7 @@ import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.injector.player.PlayerInjector.ServerHandlerNull;
 import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
 import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
@@ -904,6 +905,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		try {
 			// This call will be ignored if no listeners are registered
 			playerInjection.injectPlayer(event.getPlayer(), ConflictStrategy.OVERRIDE);
+		} catch (ServerHandlerNull e) {
+			// Caused by logged out players, or fake login events in MCPC++. Ignore it.
 		} catch (Exception e) {
 			reporter.reportDetailed(PacketFilterManager.this, 
 					Report.newBuilder(REPORT_CANNOT_INJECT_PLAYER).callerParam(event).error(e)

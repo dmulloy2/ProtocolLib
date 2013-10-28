@@ -388,7 +388,7 @@ public abstract class PlayerInjector implements SocketInjector {
 
 			// This is bad
 			if (currentHandler == null)
-				throw new IllegalAccessError("Unable to fetch server handler: was NUll.");
+				throw new ServerHandlerNull();
 			
 			// See if this isn't a standard net handler class
 			if (!isStandardMinecraftNetHandler(currentHandler)) {
@@ -713,5 +713,23 @@ public abstract class PlayerInjector implements SocketInjector {
 	@Override
 	public void setUpdatedPlayer(Player updatedPlayer) {
 		this.updatedPlayer = updatedPlayer;
+	}
+	
+	/**
+	 * Indicates that a player's NetServerHandler or PlayerConnection was NULL.
+	 * <p>
+	 * This is usually because the player has just logged out, or due to it being a "fake" player in MCPC++.
+	 * @author Kristian
+	 */
+	public static class ServerHandlerNull extends IllegalAccessError {
+		private static final long serialVersionUID = 1L;
+
+		public ServerHandlerNull() {
+			super("Unable to fetch server handler: was NUll.");
+		}
+
+		public ServerHandlerNull(String s) {
+			super(s);
+		}
 	}
 }
