@@ -143,7 +143,7 @@ public class ListeningWhitelist {
 	public GamePhase getGamePhase() {
 		return gamePhase;
 	}
-
+	
 	/**
 	 * Retrieve every special option associated with this whitelist.
 	 * @return Every special option.

@@ -190,6 +190,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// The current Minecraft version
 	private MinecraftVersion minecraftVersion;
 	
+	// Login packets
+	private LoginPackets loginPackets;
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
@@ -222,6 +225,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// The plugin verifier
 		this.pluginVerifier = new PluginVerifier(builder.getLibrary());
 		this.minecraftVersion = builder.getMinecraftVersion();
+		this.loginPackets = new LoginPackets(minecraftVersion);
 		
 		// The write packet interceptor
 		this.interceptWritePacket = new InterceptWritePacket(classLoader, reporter);
@@ -367,7 +371,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				playerInjection.checkListener(listener);
 			}
 			if (hasSending)
-				incrementPhases(sending.getGamePhase());
+				incrementPhases(processPhase(sending, ConnectionSide.SERVER_SIDE));
 			
 			// Handle receivers after senders
 			if (hasReceiving) {
@@ -376,12 +380,26 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
 			}
 			if (hasReceiving)
-				incrementPhases(receiving.getGamePhase());
+				incrementPhases(processPhase(receiving, ConnectionSide.CLIENT_SIDE));
 			
 			// Inform our injected hooks
 			packetListeners.add(listener);
 			updateRequireInputBuffers();
 		}
+	}
+	
+	private GamePhase processPhase(ListeningWhitelist whitelist, ConnectionSide side) {
+		// Determine if this is a login packet, ensuring that gamephase detection is enabled
+		if (!whitelist.getGamePhase().hasLogin() && 
+			!whitelist.getOptions().contains(ListenerOptions.DISABLE_GAMEPHASE_DETECTION)) {
+			
+			for (int id : whitelist.getWhitelist()) {
+				if (loginPackets.isLoginPacket(id, side)) {
+					return GamePhase.BOTH;
+				}
+			}
+		}
+		return whitelist.getGamePhase();
 	}
 	
 	/**
@@ -483,11 +501,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// Remove listeners and phases
 		if (sending != null && sending.isEnabled()) {
 			sendingRemoved = sendingListeners.removeListener(listener, sending);
-			decrementPhases(sending.getGamePhase());
+			decrementPhases(processPhase(sending, ConnectionSide.SERVER_SIDE));
 		}
 		if (receiving != null && receiving.isEnabled()) {
 			receivingRemoved = recievedListeners.removeListener(listener, receiving);
-			decrementPhases(receiving.getGamePhase());
+			decrementPhases(processPhase(receiving, ConnectionSide.CLIENT_SIDE));
 		}
 		
 		// Remove hooks, if needed
@@ -500,7 +518,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 	@Override
 	public void removePacketListeners(Plugin plugin) {
-		
 		// Iterate through every packet listener
 		for (PacketListener listener : packetListeners) {			
 			// Remove the listener

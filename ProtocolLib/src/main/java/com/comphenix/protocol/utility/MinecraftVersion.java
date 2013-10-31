@@ -40,6 +40,26 @@ public class MinecraftVersion implements Comparable<MinecraftVersion> {
 	 */
 	private static final String VERSION_PATTERN = ".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)";
 	
+	/**
+	 * Version 1.7.2 - the update that changed the world.
+	 */
+	public static final MinecraftVersion WORLD_UPDATE = new MinecraftVersion("1.7.2");
+	
+	/**
+	 * Version 1.6.1 - the horse update.
+	 */
+	public static final MinecraftVersion HORSE_UPDATE = new MinecraftVersion("1.6.1");
+	
+	/**
+	 * Version 1.5.0 - the redstone update.
+	 */
+	public static final MinecraftVersion REDSTONE_UPDATE = new MinecraftVersion("1.5.0");
+	
+	/**
+	 * Version 1.4.2 - the scary update (Wither Boss).
+	 */
+	public static final MinecraftVersion SCARY_UPDATE = new MinecraftVersion("1.4.2");
+	
 	private final int major;
 	private final int minor;
 	private final int build;

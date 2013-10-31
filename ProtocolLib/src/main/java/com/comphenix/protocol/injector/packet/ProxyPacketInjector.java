@@ -32,7 +32,6 @@ import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.NoOp;
 
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -57,7 +56,7 @@ import com.comphenix.protocol.wrappers.WrappedIntHashMap;
  */
 class ProxyPacketInjector implements PacketInjector {
 	public static final ReportType REPORT_CANNOT_FIND_READ_PACKET_METHOD = new ReportType("Cannot find read packet method for ID %s.");
-	public static final ReportType REPORT_UNKNOWN_ORIGIN_FOR_PACKET = new ReportType("Unknown origin %s for packet %s. Are you using GamePhase.LOGIN?");
+	public static final ReportType REPORT_UNKNOWN_ORIGIN_FOR_PACKET = new ReportType("Timeout: Unknown origin %s for packet %s. Are you using GamePhase.LOGIN?");
 	
 	/**
 	 * Represents a way to update the packet ID to class lookup table.
@@ -327,9 +326,8 @@ class ProxyPacketInjector implements PacketInjector {
 			if (client != null) {
 				return packetRecieved(packet, client, buffered);
 			} else {
-				// Hack #2 - Caused by our server socket injector
-				if (packet.getID() != Packets.Client.GET_INFO)
-					reporter.reportWarning(this, Report.newBuilder(REPORT_UNKNOWN_ORIGIN_FOR_PACKET).messageParam(input, packet.getID()));
+				// The timeout elapsed!
+				reporter.reportWarning(this, Report.newBuilder(REPORT_UNKNOWN_ORIGIN_FOR_PACKET).messageParam(input, packet.getID()));
 				return null;
 			}
 			
