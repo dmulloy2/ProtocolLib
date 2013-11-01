@@ -72,6 +72,11 @@ public class SortedCopyOnWriteArrayTest {
 		// Make sure the normal's are in the right order
 		assertEquals(2, test.get(0).id);
 		assertEquals(3, test.get(1).id);
+		
+		// Test remove
+		test.remove(b);
+		assertEquals(2, test.size());
+		assertFalse(test.contains(b));
 	}
 	
 	private static class PriorityStuff implements Comparable<PriorityStuff> {

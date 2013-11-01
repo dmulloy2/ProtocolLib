@@ -68,7 +68,6 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Iterable
 	 */
 	@Override
 	public synchronized boolean add(T value) {
-    	
     	// We use NULL as a special marker, so we don't allow it
     	if (value == null)
     		throw new IllegalArgumentException("value cannot be NULL");
@@ -94,7 +93,6 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Iterable
     
 	@Override
     public synchronized boolean addAll(Collection<? extends T> values) {
-		
 		if (values == null)
 			throw new IllegalArgumentException("values cannot be NULL");
 		if (values.size() == 0)
@@ -120,20 +118,22 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Iterable
 	@Override
     public synchronized boolean remove(Object value) {
     	List<T> copy = new ArrayList<T>();
+    	boolean result = false;
     	
     	// Note that there's not much to be gained from using BinarySearch, as we
     	// have to copy (and thus read) the entire list regardless.
     	
     	// Copy every element except the one given to us. 
     	for (T element : list) {
-    		if (value != null && !Objects.equal(value, element)) {
-    			copy.add(element);
-    			value = null;
+    		if (!Objects.equal(value, element)) {
+    			copy.add(element);    			
+    		} else {
+    			result = true;
     		}
     	}
 
     	list = copy;
-    	return value == null;
+    	return result;
     }
     
 	@Override
@@ -175,7 +175,6 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Iterable
      * @param index - index of the element to remove.
      */
     public synchronized void remove(int index) {
-    	
     	List<T> copy = new ArrayList<T>(list);
     	
     	copy.remove(index);
@@ -236,5 +235,10 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Iterable
 	@Override
 	public <T> T[] toArray(T[] a) {
 		return list.toArray(a);
+	}
+	
+	@Override
+	public String toString() {
+		return list.toString();
 	}
 }
