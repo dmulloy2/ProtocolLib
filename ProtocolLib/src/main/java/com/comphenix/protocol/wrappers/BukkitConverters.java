@@ -33,6 +33,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
@@ -308,12 +309,17 @@ public class BukkitConverters {
 		if (!hasWorldType)
 			return null;
 		
+		final Class<?> worldType = MinecraftReflection.getWorldTypeClass();
+		
 		return new IgnoreNullConverter<WorldType>() {
 			@Override
 			protected Object getGenericValue(Class<?> genericType, WorldType specific) {
 				try {
-					if (worldTypeGetType == null)
-						worldTypeGetType = MinecraftReflection.getWorldTypeClass().getMethod("getType", String.class);
+					// Deduce getType method by parameters alone
+					if (worldTypeGetType == null) {
+						worldTypeGetType = FuzzyReflection.fromClass(worldType).
+								getMethodByParameters("getType", worldType, new Class<?>[] { String.class });
+					}
 					
 					// Convert to the Bukkit world type
 					return worldTypeGetType.invoke(this, specific.getName());
@@ -326,8 +332,15 @@ public class BukkitConverters {
 			@Override
 			protected WorldType getSpecificValue(Object generic) {
 				try {
-					if (worldTypeName == null)
-						worldTypeName = MinecraftReflection.getWorldTypeClass().getMethod("name");
+					if (worldTypeName == null) {
+						try {
+							worldTypeName = worldType.getMethod("name");
+						} catch (Exception e) {
+							// Assume the first method is the one
+							worldTypeName = FuzzyReflection.fromClass(worldType).
+								getMethodByParameters("name", String.class, new Class<?>[] {});
+						}
+					}
 					
 					// Dynamically call the namne method
 					String name = (String) worldTypeName.invoke(generic);
