@@ -280,6 +280,8 @@ public class WrappedWatchableObject {
 			return ChunkPosition.class;
 		else if (unwrapped.equals(MinecraftReflection.getChunkCoordinatesClass()))
 			return WrappedChunkCoordinate.class;
+		else if (unwrapped.equals(MinecraftReflection.getItemStackClass())) 
+			return ItemStack.class;
 		else
 			return unwrapped;
 	}
@@ -291,7 +293,10 @@ public class WrappedWatchableObject {
 	 */
 	static Object getUnwrapped(Object wrapped) {
     	// Convert special cases
-    	if (wrapped instanceof WrappedChunkCoordinate)
+		if (wrapped instanceof ChunkPosition)
+			return ChunkPosition.getConverter().getGeneric(
+				MinecraftReflection.getChunkPositionClass(), (ChunkPosition) wrapped);
+		else if (wrapped instanceof WrappedChunkCoordinate)
     		return ((WrappedChunkCoordinate) wrapped).getHandle();
     	else if (wrapped instanceof ItemStack)
     		return BukkitConverters.getItemStackConverter().getGeneric(
