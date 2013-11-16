@@ -19,6 +19,7 @@ package com.comphenix.protocol.utility;
 
 import java.util.Map;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
 /**
@@ -27,12 +28,19 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class CachedPackage {
-	private Map<String, Class<?>> cache;
-	private String packageName;
+	private final Map<String, Class<?>> cache;
+	private final String packageName;
+	private final ClassSource source;
 	
-	public CachedPackage(String packageName) {
+	/**
+	 * Construct a new cached package.
+	 * @param packageName - the name of the current package.
+	 * @param source - the class source.
+	 */
+	public CachedPackage(String packageName, ClassSource source) {
 		this.packageName = packageName;
 		this.cache = Maps.newConcurrentMap();
+		this.source = source;
 	}
 	
 	/**
@@ -57,13 +65,11 @@ class CachedPackage {
 			// Concurrency is not a problem - we don't care if we look up a class twice
 			if (result == null) {
 				// Look up the class dynamically
-				result = CachedPackage.class.getClassLoader().
-							loadClass(combine(packageName, className));
+				result = source.loadClass(combine(packageName, className));
 				cache.put(className, result);
-			}
-
+			}	
 			return result;
-			
+		
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException("Cannot find class " + className, e);
 		}
@@ -75,9 +81,11 @@ class CachedPackage {
 	 * @param className - the class name.
 	 * @return We full class path.
 	 */
-	private String combine(String packageName, String className) {
-		if (packageName.length() == 0)
+	public static String combine(String packageName, String className) {
+		if (Strings.isNullOrEmpty(packageName))
 			return className;
+		if (Strings.isNullOrEmpty(className))
+			return packageName;
 		return packageName + "." + className;
 	}
 }
