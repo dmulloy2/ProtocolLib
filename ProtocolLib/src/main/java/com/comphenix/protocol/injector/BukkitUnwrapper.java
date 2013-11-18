@@ -77,7 +77,11 @@ public class BukkitUnwrapper implements Unwrapper {
 		// Special case
 		if (wrappedObject == null) 
 			return null;
-		Class<?> currentClass = wrappedObject.getClass();
+		Class<?> currentClass = PacketConstructor.getClass(wrappedObject);
+		
+		// No need to unwrap primitives
+		if (currentClass.isPrimitive() || currentClass.equals(String.class))
+			return null;
 		
 		// Next, check for types that doesn't have a getHandle()
 		if (wrappedObject instanceof Collection) {
@@ -119,7 +123,7 @@ public class BukkitUnwrapper implements Unwrapper {
 	 * @param type - the type of the class.
 	 * @return An unwrapper for the given class.
 	 */
-	private Unwrapper getSpecificUnwrapper(Class<?> type) {
+	private Unwrapper getSpecificUnwrapper(final Class<?> type) {
 		// See if we're already determined this
 		if (unwrapperCache.containsKey(type)) {
 			// We will never remove from the cache, so this ought to be thread safe
@@ -133,8 +137,9 @@ public class BukkitUnwrapper implements Unwrapper {
 			Unwrapper methodUnwrapper = new Unwrapper() {
 				@Override
 				public Object unwrapItem(Object wrappedObject) {
-					
 					try {
+						if (wrappedObject instanceof Class)
+							return checkClass((Class<?>) wrappedObject, type, find.getReturnType());
 						return find.invoke(wrappedObject);
 						
 					} catch (IllegalArgumentException e) {
@@ -180,7 +185,7 @@ public class BukkitUnwrapper implements Unwrapper {
 	 * @param type - a cached field unwrapper.
 	 * @return The cached field unwrapper.
 	 */
-	private Unwrapper getFieldUnwrapper(Class<?> type) {
+	private Unwrapper getFieldUnwrapper(final Class<?> type) {
 		final Field find = FieldUtils.getField(type, "handle", true);
 		
 		// See if we succeeded
@@ -189,6 +194,8 @@ public class BukkitUnwrapper implements Unwrapper {
 				@Override
 				public Object unwrapItem(Object wrappedObject) {
 					try {
+						if (wrappedObject instanceof Class)
+							return checkClass((Class<?>) wrappedObject, type, find.getType());
 						return FieldUtils.readField(find, wrappedObject, true);
 					} catch (IllegalAccessException e) {
 						reporter.reportDetailed(this, 
@@ -209,5 +216,12 @@ public class BukkitUnwrapper implements Unwrapper {
 			);
 			return null;
 		}
+	}
+
+	private static Class<?> checkClass(Class<?> input, Class<?> expected, Class<?> result) {
+		if (expected.isAssignableFrom(input)) {
+			return result;
+		}
+		return null;
 	}
 }

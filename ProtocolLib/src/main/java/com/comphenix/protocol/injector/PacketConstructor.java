@@ -25,6 +25,7 @@ import com.comphenix.protocol.error.RethrowErrorReporter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
@@ -53,18 +54,19 @@ public class PacketConstructor {
 	private List<Unwrapper> unwrappers;
 	
 	// Parameters that need to be unwrapped
-	private boolean[] unwrappable;
+	private Unwrapper[] paramUnwrapper;
 	
 	private PacketConstructor(Constructor<?> constructorMethod) {
 		this.constructorMethod = constructorMethod;
 		this.unwrappers = Lists.newArrayList((Unwrapper) new BukkitUnwrapper(new RethrowErrorReporter() ));
+		this.unwrappers.addAll(BukkitConverters.getUnwrappers()); 
 	}
 	
-	private PacketConstructor(int packetID, Constructor<?> constructorMethod, List<Unwrapper> unwrappers, boolean[] unwrappable) {
+	private PacketConstructor(int packetID, Constructor<?> constructorMethod, List<Unwrapper> unwrappers, Unwrapper[] paramUnwrapper) {
 		this.packetID = packetID;
 		this.constructorMethod = constructorMethod;
 		this.unwrappers = unwrappers;
-		this.unwrappable = unwrappable;
+		this.paramUnwrapper = paramUnwrapper;
 	}
 	
 	public ImmutableList<Unwrapper> getUnwrappers() {
@@ -85,7 +87,7 @@ public class PacketConstructor {
 	 * @return A constructor with a different set of unwrappers.
 	 */
 	public PacketConstructor withUnwrappers(List<Unwrapper> unwrappers) {
-		return new PacketConstructor(packetID, constructorMethod, unwrappers, unwrappable);
+		return new PacketConstructor(packetID, constructorMethod, unwrappers, paramUnwrapper);
 	}
 
 	/**
@@ -100,12 +102,12 @@ public class PacketConstructor {
 	public PacketConstructor withPacket(int id, Object[] values) {
 		Class<?>[] types = new Class<?>[values.length];
 		Throwable lastException = null;
-		boolean[] unwrappable = new boolean[values.length];		
+		Unwrapper[] paramUnwrapper = new Unwrapper[values.length];		
 		
 		for (int i = 0; i < types.length; i++) {
 			// Default type
 			if (values[i] != null) {
-				types[i] = (values[i] instanceof Class) ? (Class<?>)values[i] : values[i].getClass();
+				types[i] = PacketConstructor.getClass(values[i]);
 				
 				for (Unwrapper unwrapper : unwrappers) {
 					Object result = null;
@@ -118,8 +120,8 @@ public class PacketConstructor {
 					
 					// Update type we're searching for
 					if (result != null) {
-						types[i] = result.getClass();
-						unwrappable[i] = true;
+						types[i] = PacketConstructor.getClass(result);
+						paramUnwrapper[i] = unwrapper;
 						break;
 					}
 				}
@@ -141,7 +143,7 @@ public class PacketConstructor {
 
 			if (isCompatible(types, params)) {
 				// Right, we've found our type
-				return new PacketConstructor(id, constructor, unwrappers, unwrappable);
+				return new PacketConstructor(id, constructor, unwrappers, paramUnwrapper);
 			}
 		}
 		
@@ -160,15 +162,8 @@ public class PacketConstructor {
 		try {
 			// Convert types that needs to be converted
 			for (int i = 0; i < values.length; i++) {
-				if (unwrappable[i]) {
-					for (Unwrapper unwrapper : unwrappers) {
-						Object converted = unwrapper.unwrapItem(values[i]);
-						
-						if (converted != null) {
-							values[i] = converted;
-							break;
-						}
-					}
+				if (paramUnwrapper[i] != null) {
+					values[i] = paramUnwrapper[i].unwrapItem(values[i]);
 				}
 			}
 			
@@ -196,7 +191,7 @@ public class PacketConstructor {
 				Class<?> paramType = params[i];
 				
 				// The input type is always wrapped
-				if (paramType.isPrimitive()) {
+				if (!inputType.isPrimitive() && paramType.isPrimitive()) {
 					// Wrap it
 					paramType = Primitives.wrap(paramType);
 				}
@@ -213,6 +208,17 @@ public class PacketConstructor {
 		// Parameter count must match
 		return false;
 	}
+	
+	/**
+	 * Retrieve the class of an object, or just the class if it already is a class object.
+	 * @param obj - the object.
+	 * @return The class of an object.
+	 */
+	public static Class<?> getClass(Object obj) {
+		if (obj instanceof Class)
+			return (Class<?>) obj;
+		return obj.getClass();
+	}
 
 	/**
 	 * Represents a unwrapper for a constructor parameter.
@@ -222,8 +228,11 @@ public class PacketConstructor {
 	public static interface Unwrapper {
 		/**
 		 * Convert the given wrapped object to the equivalent net.minecraft.server object.
-		 * @param wrappedObject - wrapped object.
-		 * @return The net.minecraft.server object.
+		 * <p>
+		 * Note that we may pass in a class instead of object - in that case, the unwrapper should 
+		 * return the equivalent NMS class.
+		 * @param wrappedObject - wrapped object or class.
+		 * @return The equivalent net.minecraft.server object or class.
 		 */
 		public Object unwrapItem(Object wrappedObject);
 	}

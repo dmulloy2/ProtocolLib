@@ -43,6 +43,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.inventory.ItemStack;
 
+import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -1117,6 +1118,27 @@ public class MinecraftReflection {
 			// Initialize first
 			getAttributeSnapshotClass();
 			return getMinecraftClass("AttributeModifier"); 
+		}
+	}
+	
+	/**
+	 * Retrieve the net.minecraft.server.MobEffect class.
+	 * @return The mob effect class.
+	 */
+	public static Class<?> getMobEffectClass() {
+		try {
+			return getMinecraftClass("MobEffect");
+		} catch (RuntimeException e) {
+			// It is the second parameter in Packet41MobEffect
+			Class<?> packet = PacketRegistry.getPacketClassFromID(Packets.Server.MOB_EFFECT);
+			Constructor<?> constructor = FuzzyReflection.fromClass(packet).getConstructor(
+				FuzzyMethodContract.newBuilder().
+				parameterCount(2).
+				parameterExactType(int.class, 0).
+				parameterMatches(getMinecraftObjectMatcher(), 1).
+				build()
+			);
+			return setMinecraftClass("MobEffect", constructor.getParameterTypes()[1]);
 		}
 	}
 	

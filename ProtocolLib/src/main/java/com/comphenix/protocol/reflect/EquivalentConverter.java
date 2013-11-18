@@ -26,6 +26,8 @@ package com.comphenix.protocol.reflect;
 public interface EquivalentConverter<TType> {
 	/**
 	 * Retrieve a copy of the specific type using an instance of the generic type.
+	 * <p>
+	 * This is usually a wrapper type in the Bukkit API.
 	 * @param generic - the generic type.
 	 * @return The new specific type.
 	 */
@@ -33,6 +35,8 @@ public interface EquivalentConverter<TType> {
 	
 	/**
 	 * Retrieve a copy of the generic type from a specific type.
+	 * <p>
+	 * This is usually a native net.minecraft.server type in Minecraft.
 	 * @param genericType - class or super class of the generic type.
 	 * @param specific - the specific type we need to copy.
 	 * @return A copy of the specific type.

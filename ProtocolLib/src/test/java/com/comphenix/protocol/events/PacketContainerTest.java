@@ -35,6 +35,8 @@ import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
 import org.bukkit.Material;
 import org.bukkit.WorldType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +44,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -345,7 +348,20 @@ public class PacketContainerTest {
 				ToStringBuilder.reflectionToString(clonedSnapshot, ToStringStyle.SHORT_PREFIX_STYLE));
 	}
 
-	
+	@Test
+	public void testPotionEffect() {
+		PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
+		
+		// The constructor we want to call
+		PacketConstructor creator = PacketConstructor.DEFAULT.withPacket(
+			Packets.Server.MOB_EFFECT, new Class<?>[] { int.class, PotionEffect.class }); 
+		PacketContainer packet = creator.createPacket(1, effect);
+		
+		assertEquals(1, (int) packet.getIntegers().read(0));
+		assertEquals(effect.getType().getId(), (byte) packet.getBytes().read(0));
+		assertEquals(effect.getAmplifier(), (byte) packet.getBytes().read(1));
+		assertEquals(effect.getDuration(), (short) packet.getShorts().read(0));
+	}
 	
 	@Test
 	public void testDeepClone() {
