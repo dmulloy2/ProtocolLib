@@ -336,7 +336,7 @@ public class MinecraftReflection {
 	 */
 	public static boolean isMinecraftObject(@Nonnull Object obj) {
 		if (obj == null)
-			throw new IllegalArgumentException("Cannot determine the type of a null object.");
+			return false;
 		
 		// Doesn't matter if we don't check for the version here
 		return obj.getClass().getName().startsWith(MINECRAFT_PREFIX_PACKAGE);
@@ -349,7 +349,7 @@ public class MinecraftReflection {
 	 */
 	public static boolean isMinecraftClass(@Nonnull Class<?> clazz) {
 		if (clazz == null)
-			throw new IllegalArgumentException("Class cannot be NULL.");
+			throw new IllegalArgumentException("clazz cannot be NULL.");
 
 		return getMinecraftObjectMatcher().isMatch(clazz, null);
 	}
@@ -362,7 +362,7 @@ public class MinecraftReflection {
 	 */
 	public static boolean isMinecraftObject(@Nonnull Object obj, String className) {
 		if (obj == null)
-			throw new IllegalArgumentException("Cannot determine the type of a null object.");
+			return false;
 		
 		String javaName = obj.getClass().getName();
 		return javaName.startsWith(MINECRAFT_PREFIX_PACKAGE) && javaName.endsWith(className);
@@ -374,7 +374,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
 	public static boolean isChunkPosition(Object obj) {
-		return getChunkPositionClass().isAssignableFrom(obj.getClass());
+		return obj != null && getChunkPositionClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -383,7 +383,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
 	public static boolean isChunkCoordinates(Object obj) {
-		return getChunkCoordinatesClass().isAssignableFrom(obj.getClass());
+		return obj != null && getChunkCoordinatesClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -392,7 +392,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isPacketClass(Object obj) {
-		return getPacketClass().isAssignableFrom(obj.getClass());
+		return obj != null && getPacketClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -401,7 +401,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isLoginHandler(Object obj) {
-		return getNetLoginHandlerClass().isAssignableFrom(obj.getClass());
+		return obj != null && getNetLoginHandlerClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -410,7 +410,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isServerHandler(Object obj) {
-		return getNetServerHandlerClass().isAssignableFrom(obj.getClass());
+		return obj != null && getNetServerHandlerClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -419,7 +419,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isMinecraftEntity(Object obj) {
-		return getEntityClass().isAssignableFrom(obj.getClass());
+		return obj != null && getEntityClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -428,7 +428,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isItemStack(Object value) {
-		return getItemStackClass().isAssignableFrom(value.getClass());
+		return value != null && getItemStackClass().isAssignableFrom(value.getClass());
 	}
 	
 	/**
@@ -437,7 +437,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isCraftPlayer(Object value) {
-		return getCraftPlayerClass().isAssignableFrom(value.getClass());
+		return value != null && getCraftPlayerClass().isAssignableFrom(value.getClass());
 	}
 	
 	/**
@@ -446,7 +446,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isMinecraftPlayer(Object obj) {
-		return getEntityPlayerClass().isAssignableFrom(obj.getClass());
+		return obj != null && getEntityPlayerClass().isAssignableFrom(obj.getClass());
 	}
 
 	/**
@@ -455,7 +455,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isWatchableObject(Object obj) {
-		return getWatchableObjectClass().isAssignableFrom(obj.getClass());
+		return obj != null && getWatchableObjectClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -464,7 +464,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isDataWatcher(Object obj) {
-		return getDataWatcherClass().isAssignableFrom(obj.getClass());
+		return obj != null && getDataWatcherClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -473,7 +473,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isIntHashMap(Object obj) {
-		return getIntHashMapClass().isAssignableFrom(obj.getClass());
+		return obj != null && getIntHashMapClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
@@ -482,7 +482,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isCraftItemStack(Object obj) {
-		return getCraftItemStackClass().isAssignableFrom(obj.getClass());
+		return obj != null && getCraftItemStackClass().isAssignableFrom(obj.getClass());
 	}
 	
 	/**
