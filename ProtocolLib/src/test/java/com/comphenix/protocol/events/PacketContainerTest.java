@@ -22,15 +22,15 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.server.v1_6_R2.AttributeModifier;
-import net.minecraft.server.v1_6_R2.AttributeSnapshot;
-import net.minecraft.server.v1_6_R2.Packet44UpdateAttributes;
+import net.minecraft.server.v1_6_R3.AttributeModifier;
+import net.minecraft.server.v1_6_R3.AttributeSnapshot;
+import net.minecraft.server.v1_6_R3.Packet44UpdateAttributes;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_6_R3.inventory.CraftItemFactory;
 
 import org.bukkit.Material;
 import org.bukkit.WorldType;
@@ -348,6 +348,7 @@ public class PacketContainerTest {
 				ToStringBuilder.reflectionToString(clonedSnapshot, ToStringStyle.SHORT_PREFIX_STYLE));
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testPotionEffect() {
 		PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);

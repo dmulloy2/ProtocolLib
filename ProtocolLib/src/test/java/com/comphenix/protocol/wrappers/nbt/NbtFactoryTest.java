@@ -27,7 +27,7 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_6_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_6_R3.inventory.CraftItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;

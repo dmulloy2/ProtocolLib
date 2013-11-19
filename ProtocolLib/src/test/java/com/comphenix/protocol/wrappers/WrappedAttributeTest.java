@@ -4,9 +4,9 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
-import net.minecraft.server.v1_6_R2.AttributeModifier;
-import net.minecraft.server.v1_6_R2.AttributeSnapshot;
-import net.minecraft.server.v1_6_R2.Packet44UpdateAttributes;
+import net.minecraft.server.v1_6_R3.AttributeModifier;
+import net.minecraft.server.v1_6_R3.AttributeSnapshot;
+import net.minecraft.server.v1_6_R3.Packet44UpdateAttributes;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
