@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -162,7 +163,7 @@ public class NbtFactory {
 			throw new IllegalArgumentException("Stack cannot be NULL.");
 		if (!MinecraftReflection.isCraftItemStack(stack))
 			throw new IllegalArgumentException("Stack must be a CraftItemStack.");
-		if (stack.getTypeId() == 0)
+		if (stack.getType() == Material.AIR)
 			throw new IllegalArgumentException("ItemStacks representing air cannot store NMS information.");
 	}
 	
