@@ -545,7 +545,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		} else {
 			throw new PlayerLoggedOutException(String.format(
 					"Unable to send packet %s (%s): Player %s has logged out.", 
-					packet.getID(), packet, reciever.getName()
+					packet.getID(), packet, reciever
 			));
 		}
 	}
@@ -567,7 +567,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		else
 			throw new PlayerLoggedOutException(String.format(
 					"Unable to receieve packet %s. Player %s has logged out.", 
-					mcPacket, player.getName()
+					mcPacket, player
 			));
 	}
 	
