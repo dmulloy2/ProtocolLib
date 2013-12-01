@@ -42,8 +42,11 @@ public final class Packets {
 	
 	/**
 	 * List of packets sent only by the server.
+	 * <p>
+	 * This has been superceded by PacketType. 
 	 * @author Kristian
 	 */
+	@Deprecated
 	public static final class Server extends IntEnum {
 		/**
 		 * The singleton instance. Can also be retrieved from the parent class.
@@ -144,6 +147,16 @@ public final class Packets {
 		public static final int KICK_DISCONNECT = 255;
 		
 		/**
+		 * This packet was introduced in 1.7.2.
+		 */
+		public static final int PING_TIME = 230;
+		
+		/**
+		 * This packet was introduced in 1.7.2.
+		 */
+		public static final int LOGIN_SUCCESS = 232;
+		
+		/**
 		 * A registry that parses between names and packet IDs.
 		 * @return The current server registry.
 		 */
@@ -178,8 +191,11 @@ public final class Packets {
 	
 	/**
 	 * List of packets sent by the client.
+	 * <p>
+	 * This has been superceded by PacketType. 
 	 * @author Kristian
 	 */
+	@Deprecated
 	public static class Client extends IntEnum {
 		/**
 		 * The singleton instance. Can also be retrieved from the parent class.
@@ -224,6 +240,16 @@ public final class Packets {
 		public static final int KICK_DISCONNECT = 255;
 		
 		/**
+		 * This packet was introduced in 1.7.2.
+		 */
+		public static final int PING_TIME = 230;
+		
+		/**
+		 * This packet was introduced in 1.7.2.
+		 */
+		public static final int LOGIN_START = 231;
+		
+		/**
 		 * A registry that parses between names and packet IDs.
 		 * @return The current client registry.
 		 */
@@ -260,6 +286,7 @@ public final class Packets {
 	 * A registry that parses between names and packet IDs.
 	 * @return The current client registry.
 	 */
+	@Deprecated
 	public static Server getServerRegistry() {
 		return Server.getRegistry();
 	}
@@ -268,6 +295,7 @@ public final class Packets {
 	 * A registry that parses between names and packet IDs.
 	 * @return The current server registry.
 	 */
+	@Deprecated
 	public static Client getClientRegistry() {
 		return Client.INSTANCE;
 	}
@@ -277,6 +305,7 @@ public final class Packets {
 	 * @param name - name of packet to find.
 	 * @return The packet ID found.
 	 */
+	@Deprecated
 	public static int valueOf(String name) {
 		Integer serverAttempt = Server.INSTANCE.valueOf(name);
 		
@@ -291,6 +320,7 @@ public final class Packets {
 	 * @param packetID - packet to retrieve name.
 	 * @return The name, or NULL if unable to find such a packet.
 	 */
+	@Deprecated
 	public static String getDeclaredName(int packetID) {
 		String serverAttempt = Server.INSTANCE.getDeclaredName(packetID);
 		

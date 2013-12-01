@@ -585,6 +585,24 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the EnumProtocol class in 1.7.2.
+	 * @return The Enum protocol class.
+	 */
+	public static Class<?> getEnumProtocolClass() {
+		try {
+			return getMinecraftClass("EnumProtocol");
+		} catch (RuntimeException e) {
+			Method protocolMethod = FuzzyReflection.fromClass(getNetworkManagerClass()).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(1).
+					parameterDerivedOf(Enum.class, 0).
+					build()
+			);
+			return setMinecraftClass("EnumProtocol", protocolMethod.getParameterTypes()[0]);
+		}
+	}
+	
+	/**
 	 * Retrieve the least derived class, except Object.
 	 * @return Least derived super class.
 	 */
@@ -598,7 +616,6 @@ public class MinecraftReflection {
 				clazz = superClass;
 		}
 	}
-	
 	
 	/**
 	 * Retrieve the MinecraftServer class.
