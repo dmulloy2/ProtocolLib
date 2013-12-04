@@ -53,6 +53,13 @@ public class FuzzyReflection {
 		 * @throws IllegalStateException If the current security context prohibits reflection.
 		 */
 		public Object get(Object instance);
+		
+		/**
+		 * Set the value of a field for a particular instance.
+		 * @param instance - the instance, or NULL for a static field.
+		 * @param value - the new value of the field.
+		 */
+		public void set(Object instance, Object value);
 	}
 	
 	/**
@@ -129,7 +136,6 @@ public class FuzzyReflection {
 	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
 		// Get a field accessor
 		Field field = FuzzyReflection.fromObject(instanceClass, forceAccess).getFieldByType(null, fieldClass);
-		field.setAccessible(true);
 		return getFieldAccessor(field);
 	}
 	
@@ -139,11 +145,32 @@ public class FuzzyReflection {
 	 * @return The field accessor.
 	 */
 	public static FieldAccessor getFieldAccessor(final Field field) {
+		return getFieldAccessor(field, true);
+	}
+	
+	/**
+	 * Retrieve a field accessor from a given field that uses unchecked exceptions.
+	 * @param field - the field.
+	 * @param forceAccess - whether or not to skip Java access checking.
+	 * @return The field accessor.
+	 */
+	public static FieldAccessor getFieldAccessor(final Field field, boolean forceAccess) {
+		field.setAccessible(true);
+		
 		return new FieldAccessor() {
 			@Override
 			public Object get(Object instance) {
 				try {
 					return field.get(instance);
+				} catch (IllegalAccessException e) {
+					throw new IllegalStateException("Cannot use reflection.", e);
+				}
+			}
+			
+			@Override
+			public void set(Object instance, Object value) {
+				try {
+					field.set(instance, value);
 				} catch (IllegalAccessException e) {
 					throw new IllegalStateException("Cannot use reflection.", e);
 				}
