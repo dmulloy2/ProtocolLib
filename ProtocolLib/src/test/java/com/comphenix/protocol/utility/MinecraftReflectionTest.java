@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import net.minecraft.server.v1_7_R1.NBTCompressedStreamTools;
 import net.minecraft.util.com.google.common.collect.Maps;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -20,6 +21,11 @@ public class MinecraftReflectionTest {
 			MinecraftReflection.getMinecraftPackage(), 
 			ClassSource.fromMap(Maps.<String, Class<?>>newHashMap())
 		);
+	}
+	
+	@AfterClass
+	public static void undoMocking() {
+		MinecraftReflection.minecraftPackage = null;
 	}
 	
 	@Test

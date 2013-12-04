@@ -33,8 +33,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javassist.bytecode.CodeAttribute.RuntimeCopyException;
-
 import javax.annotation.Nonnull;
 
 import net.minecraft.util.io.netty.buffer.ByteBuf;
