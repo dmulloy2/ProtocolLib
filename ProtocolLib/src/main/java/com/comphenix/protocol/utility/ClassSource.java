@@ -1,5 +1,7 @@
 package com.comphenix.protocol.utility;
 
+import java.util.Map;
+
 /**
  * Represents an abstract class loader that can only retrieve classes by their canonical name.
  * @author Kristian
@@ -23,6 +25,20 @@ abstract class ClassSource {
 			@Override
 			public Class<?> loadClass(String canonicalName) throws ClassNotFoundException {
 				return loader.loadClass(canonicalName);
+			}
+		};
+	}
+
+	/**
+	 * Construct a class source from a mapping of canonical names and the corresponding classes.
+	 * @param map - map of class names and classes.
+	 * @return The class source.
+	 */
+	public static ClassSource fromMap(final Map<String, Class<?>> map) {
+		return new ClassSource() {
+			@Override
+			public Class<?> loadClass(String canonicalName) throws ClassNotFoundException {
+				return map.get(canonicalName);
 			}
 		};
 	}

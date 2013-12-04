@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javassist.bytecode.CodeAttribute.RuntimeCopyException;
+
 import javax.annotation.Nonnull;
 
 import net.minecraft.util.io.netty.buffer.ByteBuf;
@@ -51,7 +53,9 @@ import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.reflect.ClassAnalyser;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
 import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
 import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
@@ -107,8 +111,9 @@ public class MinecraftReflection {
 	private static String MINECRAFT_FULL_PACKAGE = null;
 	private static String CRAFTBUKKIT_PACKAGE = null;
 
-	private static CachedPackage minecraftPackage;
-	private static CachedPackage craftbukkitPackage;
+	// Package private for the purpose of unit testing
+	static CachedPackage minecraftPackage;
+	static CachedPackage craftbukkitPackage;
 	
 	// org.bukkit.craftbukkit
 	private static Constructor<?> craftNMSConstructor;
@@ -561,22 +566,35 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("Packet");
 		} catch (RuntimeException e) {
+			FuzzyClassContract paketContract = null;
+			
 			// What kind of class we're looking for (sanity check)
-			FuzzyClassContract paketContract = 
-					FuzzyClassContract.newBuilder().
-						field(FuzzyFieldContract.newBuilder().
-								typeDerivedOf(Map.class).
-								requireModifier(Modifier.STATIC)).
-						field(FuzzyFieldContract.newBuilder().
-								typeDerivedOf(Set.class).
-								requireModifier(Modifier.STATIC)).
+			if (isUsingNetty()) {
+				paketContract = FuzzyClassContract.newBuilder().
 						method(FuzzyMethodContract.newBuilder().
-							    parameterSuperOf(DataInputStream.class).
+							    parameterDerivedOf(ByteBuf.class).
 							    returnTypeVoid()).
-					build();
-																	
+						method(FuzzyMethodContract.newBuilder().
+							    parameterDerivedOf(ByteBuf.class, 0).
+							    parameterExactType(byte[].class, 1).
+							    returnTypeVoid()).
+						build();	
+			} else {
+				paketContract = FuzzyClassContract.newBuilder().
+					field(FuzzyFieldContract.newBuilder().
+							typeDerivedOf(Map.class).
+							requireModifier(Modifier.STATIC)).
+					field(FuzzyFieldContract.newBuilder().
+							typeDerivedOf(Set.class).
+							requireModifier(Modifier.STATIC)).
+					method(FuzzyMethodContract.newBuilder().
+						    parameterSuperOf(DataInputStream.class).
+						    returnTypeVoid()).
+					build();		
+			}
+						
 			// Select a method with one Minecraft object parameter
-			Method selected = FuzzyReflection.fromClass(getNetHandlerClass()).
+			Method selected = FuzzyReflection.fromClass(getNetServerHandlerClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
 							parameterMatches(paketContract, 0).
 							parameterCount(1).
@@ -715,11 +733,39 @@ public class MinecraftReflection {
 		try  {
 			return getMinecraftClass("NetServerHandler", "PlayerConnection");
 		} catch (RuntimeException e) {
-			// Use the player connection field
-			return setMinecraftClass("NetServerHandler", 
-						FuzzyReflection.fromClass(getEntityPlayerClass()).
-						getFieldByType("playerConnection", getNetHandlerClass()).getType()
-				   );
+			try {
+				// Use the player connection field
+				return setMinecraftClass("NetServerHandler", 
+					FuzzyReflection.fromClass(getEntityPlayerClass()).
+					getFieldByType("playerConnection", getNetHandlerClass()).getType()
+				);
+				
+			} catch (RuntimeException e1) {
+				// Okay, this must be on 1.7.2
+				Class<?> playerClass = getEntityPlayerClass();
+				
+				FuzzyClassContract playerConnection = FuzzyClassContract.newBuilder().
+					field(FuzzyFieldContract.newBuilder().typeExact(playerClass).build()).
+					constructor(FuzzyMethodContract.newBuilder().
+							parameterCount(3).
+							parameterSuperOf(getMinecraftServerClass(), 0).
+							parameterSuperOf(getEntityPlayerClass(), 2).
+							build()
+					).
+					method(FuzzyMethodContract.newBuilder().
+							parameterCount(1).
+							parameterExactType(String.class).
+							build()
+					).
+					build();
+				
+				// If not, use duck typing
+				Class<?> fieldType = FuzzyReflection.fromClass(getEntityPlayerClass(), true).getField(
+					FuzzyFieldContract.newBuilder().typeMatches(playerConnection).build()
+				).getType();
+				
+				return setMinecraftClass("NetServerHandler", fieldType);
+			}
 		}
 	}
 	
@@ -751,6 +797,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("NetHandler", "Connection");
 		} catch (RuntimeException e) {
+			// Try getting the net login handler
 			return setMinecraftClass("NetHandler", getNetLoginHandlerClass().getSuperclass());
 		}
 	}
@@ -948,23 +995,46 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("NBTBase");
 		} catch (RuntimeException e) {
-			FuzzyClassContract tagCompoundContract = FuzzyClassContract.newBuilder().
-					constructor(FuzzyMethodContract.newBuilder().
-								  parameterExactType(String.class).
-								  parameterCount(1)).
-					field(FuzzyFieldContract.newBuilder().
-							typeDerivedOf(Map.class)).
-			build();
+			Class<?> nbtBase = null;
 			
-			Method selected = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
+			if (isUsingNetty()) {
+				FuzzyClassContract tagCompoundContract = FuzzyClassContract.newBuilder().
+						field(FuzzyFieldContract.newBuilder().
+							typeDerivedOf(Map.class)).
+						method(FuzzyMethodContract.newBuilder().
+							parameterDerivedOf(DataOutput.class).
+							parameterCount(1)).
+						build();
+				
+				Method selected = FuzzyReflection.fromClass(getPacketDataSerializerClass()).
+						getMethod(FuzzyMethodContract.newBuilder().
+							banModifier(Modifier.STATIC).
+							parameterCount(1).
+							parameterMatches(tagCompoundContract).
+							returnTypeVoid().
+							build()					
+						 );
+				nbtBase = selected.getParameterTypes()[0].getSuperclass();
+				
+			} else {
+				FuzzyClassContract tagCompoundContract = FuzzyClassContract.newBuilder().
+					constructor(FuzzyMethodContract.newBuilder().
+						parameterExactType(String.class).
+						parameterCount(1)).
+					field(FuzzyFieldContract.newBuilder().
+						typeDerivedOf(Map.class)).
+					build();
+				
+				Method selected = FuzzyReflection.fromClass(getPacketClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
-								requireModifier(Modifier.STATIC).
-								parameterSuperOf(DataInputStream.class).
-								parameterCount(1).
-								returnTypeMatches(tagCompoundContract).
-								build()					
-							 );
-			Class<?> nbtBase = selected.getReturnType().getSuperclass();
+						requireModifier(Modifier.STATIC).
+						parameterSuperOf(DataInputStream.class).
+						parameterCount(1).
+						returnTypeMatches(tagCompoundContract).
+						build()					
+					 );
+				nbtBase = selected.getReturnType().getSuperclass();
+			}
 			
 			// That can't be correct
 			if (nbtBase == null || nbtBase.equals(Object.class)) {
@@ -1198,6 +1268,36 @@ public class MinecraftReflection {
 					build()
 				);
 			return setMinecraftClass("PacketDataSerializer", method.getParameterTypes()[0]);
+		}
+	}
+	
+	/**
+	 * Retrieve the NBTCompressedStreamTools class.
+	 * @return The NBTCompressedStreamTools class.
+	 */
+	public static Class<?> getNbtCompressedStreamToolsClass() {
+		try {
+			return getMinecraftClass("NBTCompressedStreamTools");
+		} catch (RuntimeException e) {
+			Class<?> packetSerializer = getPacketDataSerializerClass();
+			
+			// Get the write NBT compound method
+			Method writeNbt = FuzzyReflection.fromClass(packetSerializer).
+					getMethodByParameters("writeNbt", getNBTCompoundClass());
+		
+			try {
+				// Now -- we inspect all the method calls within that method, and use the first foreign Minecraft class
+				for (AsmMethod method : ClassAnalyser.getDefault().getMethodCalls(writeNbt)) {
+					Class<?> owner = MinecraftReflection.class.getClassLoader().loadClass(method.getOwnerClass().replace('/', '.'));
+					
+					if (!packetSerializer.equals(owner) && isMinecraftClass(owner)) {
+						return setMinecraftClass("NBTCompressedStreamTools", owner);
+					}
+				}
+			} catch (Exception e1) {
+				throw new RuntimeException("Unable to analyse class.", e1);
+			}
+			throw new IllegalArgumentException("Unable to find NBTCompressedStreamTools.");
 		}
 	}
 	

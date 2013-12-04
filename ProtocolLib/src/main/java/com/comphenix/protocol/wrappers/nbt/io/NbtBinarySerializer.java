@@ -33,8 +33,9 @@ public class NbtBinarySerializer {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
 			
 			// Use the base class
-			methodWrite = FuzzyReflection.fromClass(base).
+			methodWrite = getUtilityClass().
 					getMethodByParameters("writeNBT", base, DataOutput.class);
+			methodWrite.setAccessible(true);
 		}
 		
 		try {
@@ -52,16 +53,34 @@ public class NbtBinarySerializer {
 	public <TType> NbtWrapper<TType> deserialize(DataInput source) {
 		if (methodLoad == null) {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
+			Class<?>[] params = MinecraftReflection.isUsingNetty() ? 
+					new Class<?>[] { DataInput.class, int.class } : 
+					new Class<?>[] { DataInput.class };
 			
 			// Use the base class
-			methodLoad = FuzzyReflection.fromClass(base).
-					getMethodByParameters("load", base, new Class<?>[] { DataInput.class });
+			methodLoad = getUtilityClass().getMethodByParameters("load", base, params);
+			methodLoad.setAccessible(true);
 		}
 		
 		try {
-			return NbtFactory.fromNMS(methodLoad.invoke(null, source), null);
+			Object result = null;
+			
+			// Invoke the correct utility method
+			if (MinecraftReflection.isUsingNetty())
+				result = methodLoad.invoke(null, source, 0);
+			else
+				result = methodLoad.invoke(null, source);
+			return NbtFactory.fromNMS(result, null);
 		} catch (Exception e) {
 			throw new FieldAccessException("Unable to read NBT from " + source, e);
+		}
+	}
+	
+	private FuzzyReflection getUtilityClass() {
+		if (MinecraftReflection.isUsingNetty()) {
+			return FuzzyReflection.fromClass(MinecraftReflection.getNbtCompressedStreamToolsClass(), true);
+		} else {
+			return FuzzyReflection.fromClass(MinecraftReflection.getNBTBaseClass(), true);
 		}
 	}
 	

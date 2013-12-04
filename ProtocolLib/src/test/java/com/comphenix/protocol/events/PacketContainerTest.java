@@ -56,7 +56,6 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 // Ensure that the CraftItemFactory is mockable
