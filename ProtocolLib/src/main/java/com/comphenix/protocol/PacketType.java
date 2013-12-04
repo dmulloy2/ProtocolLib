@@ -141,7 +141,7 @@ public class PacketType implements Serializable {
 			public static final PacketType SET_SLOT = 				  new PacketType(PROTOCOL, SENDER, 0x2F, 103);
 			public static final PacketType WINDOW_ITEMS = 			  new PacketType(PROTOCOL, SENDER, 0x30, 104);
 			public static final PacketType CRAFT_PROGRESS_BAR = 	  new PacketType(PROTOCOL, SENDER, 0x31, 105);
-			public static final PacketType TRANSACTION = 			  new PacketType(PROTOCOL, SENDER, 0x32, 106); 	
+			public static final PacketType TRANSACTION = 			  new PacketType(PROTOCOL, SENDER, 0x32, 106);
 			public static final PacketType UPDATE_SIGN = 			  new PacketType(PROTOCOL, SENDER, 0x33, 130);
 			public static final PacketType ITEM_DATA = 				  new PacketType(PROTOCOL, SENDER, 0x34, 131);
 			public static final PacketType TILE_ENTITY_DATA = 		  new PacketType(PROTOCOL, SENDER, 0x35, 132);

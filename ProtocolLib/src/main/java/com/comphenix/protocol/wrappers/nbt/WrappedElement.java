@@ -227,8 +227,7 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 			
 			// Make sure we're dealing with the same type
 			if (other.getType().equals(getType())) {
-				return Objects.equal(getName(), other.getName()) &&
-					   Objects.equal(getValue(), other.getValue());
+				return Objects.equal(getValue(), other.getValue());
 			}
 		}
 		return false;
