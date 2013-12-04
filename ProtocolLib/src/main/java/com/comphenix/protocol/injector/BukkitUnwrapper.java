@@ -45,6 +45,8 @@ import com.google.common.primitives.Primitives;
  * @author Kristian
  */
 public class BukkitUnwrapper implements Unwrapper {
+	private static BukkitUnwrapper DEFAULT;
+
 	public static final ReportType REPORT_ILLEGAL_ARGUMENT = new ReportType("Illegal argument.");
 	public static final ReportType REPORT_SECURITY_LIMITATION = new ReportType("Security limitation.");
 	public static final ReportType REPORT_CANNOT_FIND_UNWRAP_METHOD = new ReportType("Cannot find method.");
@@ -55,6 +57,20 @@ public class BukkitUnwrapper implements Unwrapper {
 	
 	// The current error reporter
 	private final ErrorReporter reporter;
+	
+	/**
+	 * Retrieve the default instance of the Bukkit unwrapper.
+	 * @return The default instance.
+	 */
+	public static BukkitUnwrapper getInstance() {
+		ErrorReporter currentReporter = ProtocolLibrary.getErrorReporter();
+		
+		// Also recreate the unwrapper if the error reporter has changed
+		if (DEFAULT == null || DEFAULT.reporter != currentReporter) {
+			DEFAULT = new BukkitUnwrapper(currentReporter);
+		}
+		return DEFAULT;
+	}
 	
 	/**
 	 * Construct a new Bukkit unwrapper with ProtocolLib's default error reporter.

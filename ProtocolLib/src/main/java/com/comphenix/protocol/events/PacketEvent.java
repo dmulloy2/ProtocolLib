@@ -25,6 +25,7 @@ import java.util.EventObject;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.google.common.base.Preconditions;
 
@@ -156,10 +157,21 @@ public class PacketEvent extends EventObject implements Cancellable {
 	
 	/**
 	 * Retrieves the packet ID.
+	 * <p>
+	 * Deprecated: Use {@link #getPacketType()} instead.
 	 * @return The current packet ID.
 	 */
+	@Deprecated
 	public int getPacketID() {
 		return packet.getID();
+	}
+	
+	/**
+	 * Retrieve the packet type.
+	 * @return The type.
+	 */
+	public PacketType getPacketType() {
+		return packet.getType();
 	}
 	
 	/**
@@ -181,7 +193,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 		if (networkMarker == null) {
 			if (isServerPacket()) {
 				networkMarker = new NetworkMarker(
-					serverPacket ? ConnectionSide.SERVER_SIDE : ConnectionSide.CLIENT_SIDE, null);
+					serverPacket ? ConnectionSide.SERVER_SIDE : ConnectionSide.CLIENT_SIDE, (byte[]) null);
 			} else {
 				throw new IllegalStateException("Add the option ListenerOptions.INTERCEPT_INPUT_BUFFER to your listener.");
 			}

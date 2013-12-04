@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -26,6 +25,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 // Damn final classes ...
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -91,13 +91,14 @@ public class SimpleCraftBukkitITCase {
 	 * Copy ProtocolLib into the plugins folder.
 	 * @throws IOException If anything went wrong.
 	 */
+	@SuppressWarnings("deprecation")
 	private static void setupPlugins() throws IOException {
 		File pluginDirectory = new File("plugins/");
 		File bestFile = null;
 		int bestLength = Integer.MAX_VALUE;
 		
 		// Copy the ProtocolLib plugin to the server
-		FileUtils.cleanDirectory(pluginDirectory);
+		Files.deleteDirectoryContents(pluginDirectory);
 		
 		for (File file : new File("../").listFiles()) {
 			String name = file.getName();
@@ -107,7 +108,7 @@ public class SimpleCraftBukkitITCase {
 				bestFile = file;
 			}
 		}
-		FileUtils.copyFile(bestFile, new File(pluginDirectory, bestFile.getName()));
+		Files.copy(bestFile, new File(pluginDirectory, bestFile.getName()));
 	}
 	
 	/**

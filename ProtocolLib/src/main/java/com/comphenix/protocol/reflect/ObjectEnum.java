@@ -18,7 +18,9 @@
 package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import com.google.common.collect.BiMap;
@@ -31,27 +33,32 @@ import com.google.common.collect.HashBiMap;
  * want to prevent the creation of additional members dynamically.
  * @author Kristian
  */
-public class ObjectEnum<T> {
+public class ObjectEnum<T> implements Iterable<T> {
 	// Used to convert between IDs and names
 	protected BiMap<T, String> members = HashBiMap.create();
 	
 	/**
 	 * Registers every declared integer field.
 	 */
-	public ObjectEnum() {
-		registerAll();
+	public ObjectEnum(Class<T> fieldType) {
+		registerAll(fieldType);
 	}
 	
 	/**
-	 * Registers every public int field as a member.
+	 * Registers every public assignable static field as a member.
 	 */
 	@SuppressWarnings("unchecked")
-	protected void registerAll() {
+	protected void registerAll(Class<T> fieldType) {
 		try {
 			// Register every int field
 			for (Field entry : this.getClass().getFields()) {
-				if (entry.getType().equals(int.class)) {
-					registerMember((T) entry.get(this), entry.getName());
+				if (Modifier.isStatic(entry.getModifiers()) && fieldType.isAssignableFrom(entry.getType())) {
+					T value = (T) entry.get(null);
+					
+					if (value == null)
+						throw new IllegalArgumentException("Field " + entry + " was NULL. Remember to " + 
+								"construct the object after the field has been declared.");
+					registerMember(value, entry.getName());
 				}
 			}
 		
@@ -63,13 +70,17 @@ public class ObjectEnum<T> {
 	}
 	
 	/**
-	 * Registers a member.
+	 * Registers a member if its not present.
 	 * @param instance - member instance.
 	 * @param name - name of member.
+	 * @return TRUE if the member was registered, FALSE otherwise.
 	 */
-	protected void registerMember(T instance, String name) {
-		members.put(instance, name);
-		
+	public boolean registerMember(T instance, String name) {
+		if (!members.containsKey(instance)) {
+			members.put(instance, name);	
+			return true;
+		}
+		return false;
 	}
 	
 	/**
@@ -105,5 +116,10 @@ public class ObjectEnum<T> {
 	 */
 	public Set<T> values() {
 		return new HashSet<T>(members.keySet());
+	}
+
+	@Override
+	public Iterator<T> iterator() {
+		return members.keySet().iterator();
 	}
 }

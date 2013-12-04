@@ -33,6 +33,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.comphenix.executors.BukkitExecutors;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
@@ -54,6 +55,7 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 
 /**
  * The main entry point for ProtocolLib.
@@ -113,12 +115,16 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Metrics and statistisc
 	private Statistics statistisc;
+
+	// Executors
+	private static ListeningScheduledExecutorService executorAsync;
+	private static ListeningScheduledExecutorService executorSync;
 	
 	// Structure compiler
 	private BackgroundCompiler backgroundCompiler;
 	
-	// Used to clean up server packets that have expired. 
-	// But mostly required to simulate recieving client packets.
+	// Used to clean up server packets that have expired. But mostly required to simulate 
+	// recieving client packets.
 	private int asyncPacketTask = -1;
 	private int tickCounter = 0;
 	private static final int ASYNC_PACKET_DELAY = 1;
@@ -141,7 +147,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private CommandProtocol commandProtocol;
 	private CommandPacket commandPacket;
 	private CommandFilter commandFilter;
-	
+		
 	// Whether or not disable is not needed
 	private boolean skipDisable;
 	
@@ -149,6 +155,10 @@ public class ProtocolLibrary extends JavaPlugin {
 	public void onLoad() {
 		// Load configuration
 		logger = getLoggerSafely();
+		
+		// Initialize executors
+		executorAsync = BukkitExecutors.newAsynchronous(this);
+		executorSync = BukkitExecutors.newSynchronous(this);
 		
 		// Add global parameters
 		DetailedErrorReporter detailedReporter = new DetailedErrorReporter(this);
@@ -526,6 +536,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			return;
 		}
 		
+		// Bukkit will shut down tasks on our executors
+		// ...
+		
 		// Disable compiler
 		if (backgroundCompiler != null) {
 			backgroundCompiler.shutdownAll();
@@ -604,5 +617,25 @@ public class ProtocolLibrary extends JavaPlugin {
 	 */
 	public Statistics getStatistics() {
 		return statistisc;
+	}
+	
+	/**
+	 * Retrieve an executor service for performing asynchronous tasks on the behalf of ProtocolLib.
+	 * <p>
+	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
+	 * @return The executor service, or NULL.
+	 */
+	public static ListeningScheduledExecutorService getExecutorAsync() {
+		return executorAsync;
+	}
+	
+	/**
+	 * Retrieve an executor service for performing synchronous tasks (main thread) on the behalf of ProtocolLib.
+	 * <p>
+	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
+	 * @return The executor service, or NULL.
+	 */
+	public static ListeningScheduledExecutorService getExecutorSync() {
+		return executorSync;
 	}
 }

@@ -2,6 +2,7 @@ package com.comphenix.protocol.injector;
 
 import org.bukkit.Bukkit;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.events.ConnectionSide;
@@ -17,6 +18,7 @@ class LoginPackets {
 	private IntegerSet clientSide = new IntegerSet(Packets.PACKET_COUNT);
 	private IntegerSet serverSide = new IntegerSet(Packets.PACKET_COUNT);
 	
+	@SuppressWarnings("deprecation")
 	public LoginPackets(MinecraftVersion version) {
 		// Ordinary login
 		clientSide.add(Packets.Client.HANDSHAKE);
@@ -55,6 +57,7 @@ class LoginPackets {
 	 * @param side - the direction.
 	 * @return TRUE if it may, FALSE otherwise.
 	 */
+	@Deprecated
 	public boolean isLoginPacket(int packetId, ConnectionSide side) {
 		switch (side) {
 			case CLIENT_SIDE:
@@ -68,4 +71,16 @@ class LoginPackets {
 				throw new IllegalArgumentException("Unknown connection side: " + side);
 		}
 	}	
+	
+	/**
+	 * Determine if a given packet may be sent during login.
+	 * @param type - the packet type.
+	 * @return TRUE if it may, FALSE otherwise.
+	 */
+	public boolean isLoginPacket(PacketType type) {
+		return PacketType.Login.Client.getInstance().hasMember(type) || 
+			   PacketType.Login.Server.getInstance().hasMember(type) ||
+			   PacketType.Status.Client.getInstance().hasMember(type) || 
+			   PacketType.Status.Server.getInstance().hasMember(type);
+	}
 }

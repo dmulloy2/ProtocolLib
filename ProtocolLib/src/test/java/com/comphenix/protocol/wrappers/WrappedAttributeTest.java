@@ -4,9 +4,9 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
-import net.minecraft.server.v1_6_R3.AttributeModifier;
-import net.minecraft.server.v1_6_R3.AttributeSnapshot;
-import net.minecraft.server.v1_6_R3.Packet44UpdateAttributes;
+import net.minecraft.server.v1_7_R1.AttributeModifier;
+import net.minecraft.server.v1_7_R1.AttributeSnapshot;
+import net.minecraft.server.v1_7_R1.PacketPlayOutUpdateAttributes;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -83,7 +83,7 @@ public class WrappedAttributeTest {
 			modifiers.add((AttributeModifier) wrapper.getHandle());
 		}
 		return new AttributeSnapshot(
-			(Packet44UpdateAttributes) attribute.getParentPacket().getHandle(), 
+			(PacketPlayOutUpdateAttributes) attribute.getParentPacket().getHandle(), 
 			attribute.getAttributeKey(), attribute.getBaseValue(), modifiers);
 	}
 	

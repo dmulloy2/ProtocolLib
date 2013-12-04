@@ -17,36 +17,26 @@
 
 package com.comphenix.protocol.injector.packet;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
-import javax.annotation.Nullable;
-
-import net.sf.cglib.proxy.Factory;
-
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
+import com.comphenix.protocol.injector.packet.LegacyPacketRegistry.CannotCorrectTroveMapException;
+import com.comphenix.protocol.injector.packet.LegacyPacketRegistry.InsufficientPacketsException;
 import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FieldUtils;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.TroveWrapper;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * Static packet registry in Minecraft.
- * 
  * @author Kristian
  */
 @SuppressWarnings("rawtypes")
@@ -55,279 +45,351 @@ public class PacketRegistry {
 	
 	public static final ReportType REPORT_INSUFFICIENT_SERVER_PACKETS = new ReportType("Too few server packets detected: %s");
 	public static final ReportType REPORT_INSUFFICIENT_CLIENT_PACKETS = new ReportType("Too few client packets detected: %s");
-	
-	private static final int MIN_SERVER_PACKETS = 5;
-	private static final int MIN_CLIENT_PACKETS = 5;
 
-	// Fuzzy reflection
-	private static FuzzyReflection packetRegistry;
+	// Two different packet registry
+	private static volatile LegacyPacketRegistry LEGACY;
+	private static volatile NettyProtocolRegistry NETTY;
 	
-	// The packet class to packet ID translator
-	private static Map<Class, Integer> packetToID;
+	// Cached for legacy
+	private static volatile Set<PacketType> NETTY_SERVER_PACKETS;
+	private static volatile Set<PacketType> NETTY_CLIENT_PACKETS;
 	
-	// Packet IDs to classes, grouped by whether or not they're vanilla or custom defined
-	private static Multimap<Integer, Class> customIdToPacket;
-	private static Map<Integer, Class> vanillaIdToPacket;
+	// Cached for Netty
+	private static volatile Set<Integer> LEGACY_SERVER_PACKETS;
+	private static volatile Set<Integer> LEGACY_CLIENT_PACKETS;
+	private static volatile Map<Integer, Class> LEGACY_PREVIOUS_PACKETS;
 	
-	// Whether or not certain packets are sent by the client or the server
-	private static ImmutableSet<Integer> serverPackets;
-	private static ImmutableSet<Integer> clientPackets;
+	// Whether or not the registry has
+	private static boolean INITIALIZED;
 	
-	// The underlying sets
-	private static Set<Integer> serverPacketsRef;
-	private static Set<Integer> clientPacketsRef;
-	
-	// New proxy values
-	private static Map<Integer, Class> overwrittenPackets = new HashMap<Integer, Class>();
-	
-	// Vanilla packets
-	private static Map<Integer, Class> previousValues = new HashMap<Integer, Class>();
-	
-	@SuppressWarnings({ "unchecked" })
-	public static Map<Class, Integer> getPacketToID() {
-		// Initialize it, if we haven't already
-		if (packetToID == null) {
-			try {
-				Field packetsField = getPacketRegistry().getFieldByType("packetsField", Map.class);
-				packetToID = (Map<Class, Integer>) FieldUtils.readStaticField(packetsField, true);
-			} catch (IllegalArgumentException e) {
-				// Spigot 1.2.5 MCPC workaround
-				try {
-					packetToID = getSpigotWrapper();
-				} catch (Exception e2) {
-					// Very bad indeed
-					throw new IllegalArgumentException(e.getMessage() + "; Spigot workaround failed.", e2);
-				}
-				
-			} catch (IllegalAccessException e) {
-				throw new RuntimeException("Unable to retrieve the packetClassToIdMap", e);
-			}
-			
-			// Create the inverse maps
-			customIdToPacket = InverseMaps.inverseMultimap(packetToID, new Predicate<Map.Entry<Class, Integer>>() {
-				@Override
-				public boolean apply(@Nullable Entry<Class, Integer> entry) {
-					return !MinecraftReflection.isMinecraftClass(entry.getKey());
-				}
-			});
-			
-			// And the vanilla pack - here we assume a unique ID to class mapping
-			vanillaIdToPacket = InverseMaps.inverseMap(packetToID, new Predicate<Map.Entry<Class, Integer>>() {
-				@Override
-				public boolean apply(@Nullable Entry<Class, Integer> entry) {
-					return MinecraftReflection.isMinecraftClass(entry.getKey());
-				}
-			});
+	/**
+	 * Initialize the packet registry.
+	 */
+	private static void initialize() {
+		if (INITIALIZED) {
+			// Make sure they were initialized
+			if (NETTY == null && LEGACY == null)
+				throw new IllegalStateException("No initialized registry.");
+			return;
 		}
-		return packetToID;
-	}
 	
-	private static Map<Class, Integer> getSpigotWrapper() throws IllegalAccessException {
-		// If it talks like a duck, etc.
-		// Perhaps it would be nice to have a proper duck typing library as well
-		FuzzyClassContract mapLike = FuzzyClassContract.newBuilder().
-				method(FuzzyMethodContract.newBuilder().
-						nameExact("size").returnTypeExact(int.class)).
-				method(FuzzyMethodContract.newBuilder().
-						nameExact("put").parameterCount(2)).
-				method(FuzzyMethodContract.newBuilder().
-						nameExact("get").parameterCount(1)).
-				build();
-		
-		Field packetsField = getPacketRegistry().getField(
-				FuzzyFieldContract.newBuilder().typeMatches(mapLike).build());
-		Object troveMap = FieldUtils.readStaticField(packetsField, true);
-		
-		// Check for stupid no_entry_values
-		try {
-			Field field = FieldUtils.getField(troveMap.getClass(), "no_entry_value", true);
-			Integer value = (Integer) FieldUtils.readField(field, troveMap, true);
-			
-			if (value >= 0 && value < 256) {
-				// Someone forgot to set the no entry value. Let's help them.
-				FieldUtils.writeField(field, troveMap, -1);
+		// Check for netty
+		if (MinecraftReflection.isUsingNetty()) {
+			if (NETTY == null) {
+				NETTY = new NettyProtocolRegistry();
 			}
-		} catch (IllegalArgumentException e) {
-			// Whatever			
-			ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class, 
-					Report.newBuilder(REPORT_CANNOT_CORRECT_TROVE_MAP).error(e));
+		} else {
+			initializeLegacy();
 		}
-		
-		// We'll assume this a Trove map
-		return TroveWrapper.getDecoratedMap(troveMap);
 	}
 	
 	/**
-	 * Retrieve the cached fuzzy reflection instance allowing access to the packet registry.
-	 * @return Reflected packet registry.
-	 */ 
-	private static FuzzyReflection getPacketRegistry() {
-		if (packetRegistry == null)
-			packetRegistry = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true);
-		return packetRegistry;
+	 * Determine if the given packet type is supported on the current server.
+	 * @param type - the type to check.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public static boolean isSupported(PacketType type) {
+		initialize();
+		
+		if (NETTY != null)
+			return NETTY.getPacketTypeLookup().containsKey(type);
+		
+		// Look up the correct type
+		return type.isClient() ? 
+			LEGACY.getClientPackets().contains(type.getLegacyId()) :
+			LEGACY.getServerPackets().contains(type.getLegacyId());
+	}
+	
+	/**
+	 * Initialize the legacy packet registry.
+	 */
+	private static void initializeLegacy() {
+		if (LEGACY == null) {
+			try {
+				LEGACY = new LegacyPacketRegistry();
+				LEGACY.initialize();
+			} catch (InsufficientPacketsException e) {
+				if (e.isClient()) {
+					ProtocolLibrary.getErrorReporter().reportWarning(
+						PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_CLIENT_PACKETS).messageParam(e.getPacketCount())
+					);
+				} else {
+					ProtocolLibrary.getErrorReporter().reportWarning(
+						PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_SERVER_PACKETS).messageParam(e.getPacketCount())
+					);
+				}
+			} catch (CannotCorrectTroveMapException e) {
+				ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class, 
+					Report.newBuilder(REPORT_CANNOT_CORRECT_TROVE_MAP).error(e.getCause()));
+			}
+		}
+	}
+	
+	/**
+	 * Retrieve a map of every packet class to every ID.
+	 * <p>
+	 * Deprecated: Use {@link #getPacketToType()} instead.
+	 * @return A map of packet classes and their corresponding ID.
+	 */
+	@Deprecated
+	public static Map<Class, Integer> getPacketToID() {
+		initialize();
+		
+		if (NETTY != null) {
+			@SuppressWarnings("unchecked")
+			Map<Class, Integer> result = (Map)Maps.transformValues(NETTY.getPacketClassLookup(), new Function<PacketType, Integer>() {
+				public Integer apply(PacketType type) {
+					return type.getLegacyId();
+				};
+			});
+			return result;
+		}
+		return LEGACY.getPacketToID();
+	}
+	
+	/**
+	 * Retrieve a map of every packet class to the respective packet type.
+	 * @return A map of packet classes and their corresponding packet type.
+	 */
+	public static Map<Class, PacketType> getPacketToType() {
+		initialize();
+	
+		if (NETTY != null) {
+			@SuppressWarnings("unchecked")
+			Map<Class, PacketType> result = (Map)NETTY.getPacketClassLookup();
+			return result;
+		}
+		return Maps.transformValues(LEGACY.getPacketToID(), new Function<Integer, PacketType>() {
+			public PacketType apply(Integer packetId) {
+				return PacketType.findLegacy(packetId);
+			};
+		});
 	}
 	
 	/**
 	 * Retrieve the injected proxy classes handlig each packet ID.
+	 * <p>
+	 * This is not supported in 1.7.2 and later.
 	 * @return Injected classes.
 	 */
+	@Deprecated
 	public static Map<Integer, Class> getOverwrittenPackets() {
-		return overwrittenPackets;
+		initialize();
+		
+		if (LEGACY != null)
+			return LEGACY.getOverwrittenPackets();
+		throw new IllegalStateException("Not supported on Netty.");
 	}
 	
 	/**
 	 * Retrieve the vanilla classes handling each packet ID.
 	 * @return Vanilla classes.
 	 */
+	@Deprecated
 	public static Map<Integer, Class> getPreviousPackets() {
-		return previousValues;
+		initialize();
+		
+		if (NETTY != null) {
+			// Construct it first
+			if (LEGACY_PREVIOUS_PACKETS == null) {
+				Map<Integer, Class> map = Maps.newHashMap();
+				
+				for (Entry<PacketType, Class<?>> entry : NETTY.getPacketTypeLookup().entrySet()) {
+					map.put(entry.getKey().getLegacyId(), entry.getValue());
+				}
+				LEGACY_PREVIOUS_PACKETS = Collections.unmodifiableMap(map);
+			}
+			return LEGACY_PREVIOUS_PACKETS;
+		}
+		return LEGACY.getPreviousPackets();
 	}
 	
 	/**
 	 * Retrieve every known and supported server packet.
+	 * <p>
+	 * Deprecated: Use {@link #getServerPacketTypes()} instead.
 	 * @return An immutable set of every known server packet.
 	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
 	 */
+	@Deprecated
 	public static Set<Integer> getServerPackets() throws FieldAccessException {
-		initializeSets();
+		initialize();
 		
-		// Sanity check. This is impossible!
-		if (serverPackets != null && serverPackets.size() < MIN_SERVER_PACKETS) 
-			throw new FieldAccessException("Server packet list is empty. Seems to be unsupported");
-		return serverPackets;
+		if (NETTY != null) {
+			if (LEGACY_SERVER_PACKETS == null) {
+				LEGACY_SERVER_PACKETS = toLegacy(NETTY.getServerPackets());
+			}
+			return LEGACY_SERVER_PACKETS;
+		}
+		return LEGACY.getServerPackets();
+	}
+	
+	/**
+	 * Retrieve every known and supported server packet type.
+	 * @return Every server packet type.
+	 */
+	public static Set<PacketType> getServerPacketTypes() {
+		initialize();
+		
+		if (NETTY != null)
+			return NETTY.getServerPackets();
+		
+		// Handle legacy
+		if (NETTY_SERVER_PACKETS == null) {
+			NETTY_SERVER_PACKETS = toPacketTypes(LEGACY.getServerPackets());
+		}
+		return NETTY_SERVER_PACKETS;
 	}
 	
 	/**
 	 * Retrieve every known and supported client packet.
+	 * <p>
+	 * Deprecated: Use {@link #getClientPacketTypes()} instead.
 	 * @return An immutable set of every known client packet.
 	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
 	 */
+	@Deprecated
 	public static Set<Integer> getClientPackets() throws FieldAccessException {
-		initializeSets();
+		initialize();
 		
-		// As above
-		if (clientPackets != null && clientPackets.size() < MIN_CLIENT_PACKETS) 
-			throw new FieldAccessException("Client packet list is empty. Seems to be unsupported");
-		return clientPackets;
+		if (NETTY != null) {
+			if (LEGACY_CLIENT_PACKETS == null) {
+				LEGACY_CLIENT_PACKETS = toLegacy(NETTY.getClientPackets());
+			}
+			return LEGACY_CLIENT_PACKETS;
+		}
+		return LEGACY.getClientPackets();
 	}
 	
-	@SuppressWarnings("unchecked")
-	private static void initializeSets() throws FieldAccessException {
-		if (serverPacketsRef == null || clientPacketsRef == null) {
-			List<Field> sets = getPacketRegistry().getFieldListByType(Set.class);
-			
-			try {
-				if (sets.size() > 1) {
-					serverPacketsRef = (Set<Integer>) FieldUtils.readStaticField(sets.get(0), true);
-					clientPacketsRef = (Set<Integer>) FieldUtils.readStaticField(sets.get(1), true);
-					
-					// Impossible
-					if (serverPacketsRef == null || clientPacketsRef == null)
-						throw new FieldAccessException("Packet sets are in an illegal state.");
-					
-					// NEVER allow callers to modify the underlying sets
-					serverPackets = ImmutableSet.copyOf(serverPacketsRef);
-					clientPackets = ImmutableSet.copyOf(clientPacketsRef);
-					
-					// Check sizes
-					if (serverPackets.size() < MIN_SERVER_PACKETS)
-						ProtocolLibrary.getErrorReporter().reportWarning(
-							PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_SERVER_PACKETS).messageParam(serverPackets.size())
-						);
-					if (clientPackets.size() < MIN_CLIENT_PACKETS)
-						ProtocolLibrary.getErrorReporter().reportWarning(
-								PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_CLIENT_PACKETS).messageParam(clientPackets.size())
-							);
-					
-				} else {
-					throw new FieldAccessException("Cannot retrieve packet client/server sets.");
-				}
-				
-			} catch (IllegalAccessException e) {
-				throw new FieldAccessException("Cannot access field.", e);
-			}
-			
-		} else {
-			// Copy over again if it has changed
-			if (serverPacketsRef != null && serverPacketsRef.size() != serverPackets.size())
-				serverPackets = ImmutableSet.copyOf(serverPacketsRef);
-			if (clientPacketsRef != null && clientPacketsRef.size() != clientPackets.size())
-				clientPackets = ImmutableSet.copyOf(clientPacketsRef);
+	/**
+	 * Retrieve every known and supported server packet type.
+	 * @return Every server packet type.
+	 */
+	public static Set<PacketType> getClientPacketTypes() {
+		initialize();
+		
+		if (NETTY != null)
+			return NETTY.getClientPackets();
+		
+		// Handle legacy
+		if (NETTY_CLIENT_PACKETS == null) {
+			NETTY_CLIENT_PACKETS = toPacketTypes(LEGACY.getClientPackets());
 		}
+		return NETTY_CLIENT_PACKETS;
+	}
+	
+	/**
+	 * Convert a set of packet types to a set of integers based on the legacy packet ID.
+	 * @param types - packet type.
+	 * @return Set of integers.
+	 */
+	private static Set<Integer> toLegacy(Set<PacketType> types) { 
+		Set<Integer> result = Sets.newHashSet();
+		
+		for (PacketType type : types)
+			result.add(type.getLegacyId());
+		return Collections.unmodifiableSet(result);
+	}
+	
+	/**
+	 * Convert a set of legacy packet IDs to packet types.
+	 * @param types - legacy packet IDs.
+	 * @return Set of packet types.
+	 */
+	private static Set<PacketType> toPacketTypes(Set<Integer> ids) { 
+		Set<PacketType> result = Sets.newHashSet();
+		
+		for (int id : ids)
+			result.add(PacketType.findLegacy(id));
+		return Collections.unmodifiableSet(result);
 	}
 	
 	/**
 	 * Retrieves the correct packet class from a given packet ID.
+	 * <p>
+	 * Deprecated: Use {@link #getPacketClassFromType(PacketType)} instead.
 	 * @param packetID - the packet ID.
 	 * @return The associated class.
 	 */
+	@Deprecated
 	public static Class getPacketClassFromID(int packetID) {
-		return getPacketClassFromID(packetID, false);
+		initialize();
+		
+		if (NETTY != null)
+			return NETTY.getPacketTypeLookup().get(PacketType.findLegacy(packetID));
+		return LEGACY.getPacketClassFromID(packetID);
+	}
+	
+	/**
+	 * Retrieves the correct packet class from a given type.
+	 * @param type - the packet type.
+	 * @return The associated class.
+	 */
+	public static Class getPacketClassFromType(PacketType type) {
+		return getPacketClassFromType(type, false);
+	}
+	
+	/**
+	 * Retrieves the correct packet class from a given type.
+	 * <p>
+	 * Note that forceVanillla will be ignored on MC 1.7.2 and later.
+	 * @param type - the packet type.
+	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
+	 * @return The associated class.
+	 */
+	public static Class getPacketClassFromType(PacketType type, boolean forceVanilla) {
+		initialize();
+		
+		if (NETTY != null)
+			return NETTY.getPacketTypeLookup().get(type);
+		return LEGACY.getPacketClassFromID(type.getLegacyId(), forceVanilla);
 	}
 	
 	/**
 	 * Retrieves the correct packet class from a given packet ID.
+	 * <p>
+	 * This method has been deprecated.
 	 * @param packetID - the packet ID.
  	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
 	 * @return The associated class.
 	 */
+	@Deprecated
 	public static Class getPacketClassFromID(int packetID, boolean forceVanilla) {
-		Map<Integer, Class> lookup = forceVanilla ? previousValues : overwrittenPackets;
-		Class<?> result = null;
+		initialize();
 		
-		// Optimized lookup
-		if (lookup.containsKey(packetID)) {
-			return removeEnhancer(lookup.get(packetID), forceVanilla);
-		}
-		
-		// Refresh lookup tables
-		getPacketToID();
-
-		// See if we can look for non-vanilla classes
-		if (!forceVanilla) {
-			result = Iterables.getFirst(customIdToPacket.get(packetID), null);
-		}
-		if (result == null) {
-			result = vanillaIdToPacket.get(packetID);
-		}
-		
-		// See if we got it
-		if (result != null)
-			return result;
-		else
-			throw new IllegalArgumentException("The packet ID " + packetID + " is not registered.");
+		if (LEGACY != null)
+			return LEGACY.getPacketClassFromID(packetID, forceVanilla);
+		return getPacketClassFromID(packetID);
 	}
 	
 	/**
 	 * Retrieve the packet ID of a given packet.
+	 * <p>
+	 * Deprecated: Use {@link #getPacketType(Class)}.
 	 * @param packet - the type of packet to check.
-	 * @return The ID of the given packet.
+	 * @return The legacy ID of the given packet.
 	 * @throws IllegalArgumentException If this is not a valid packet.
 	 */
+	@Deprecated
 	public static int getPacketID(Class<?> packet) {
-		if (packet == null)
-			throw new IllegalArgumentException("Packet type class cannot be NULL.");
-		if (!MinecraftReflection.getPacketClass().isAssignableFrom(packet))
-			throw new IllegalArgumentException("Type must be a packet.");
+		initialize();
 		
-		// The registry contains both the overridden and original packets
-		return getPacketToID().get(packet);
+		if (NETTY != null)
+			return NETTY.getPacketClassLookup().get(packet).getLegacyId();
+		return LEGACY.getPacketID(packet);
 	}
 	
 	/**
-	 * Find the first superclass that is not a CBLib proxy object.
-	 * @param clazz - the class whose hierachy we're going to search through.
-	 * @param remove - whether or not to skip enhanced (proxy) classes.
-	 * @return If remove is TRUE, the first superclass that is not a proxy.
+	 * Retrieve the packet type of a given packet.
+	 * @param packet - the class of the packet.
+	 * @return The packet type.
+	 * @throws IllegalArgumentException If this is not a valid packet.
 	 */
-	private static Class removeEnhancer(Class clazz, boolean remove) {
-		if (remove) {
-			// Get the underlying vanilla class
-			while (Factory.class.isAssignableFrom(clazz) && !clazz.equals(Object.class)) {
-				clazz = clazz.getSuperclass();
-			}
-		}
+	public static PacketType getPacketType(Class<?> packet) {
+		initialize();
 		
-		return clazz;
+		if (NETTY != null)
+			return NETTY.getPacketClassLookup().get(packet);
+		return PacketType.findLegacy(LEGACY.getPacketID(packet));
 	}
 }

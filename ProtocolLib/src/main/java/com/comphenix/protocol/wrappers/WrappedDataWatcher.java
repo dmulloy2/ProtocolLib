@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -52,7 +53,6 @@ import com.google.common.collect.Iterators;
  * @author Kristian
  */
 public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
-
 	/**
 	 * Used to assign integer IDs to given types.
 	 */
@@ -61,11 +61,15 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 	// Fields
 	private static Field valueMapField;
 	private static Field readWriteLockField;
+	private static Field entityField;
 	
 	// Methods
 	private static Method createKeyValueMethod;
 	private static Method updateKeyValueMethod;
 	private static Method getKeyValueMethod;
+	
+	// Constructors
+	private static Constructor<?> createDataWatcherConstructor;
 	
 	// Entity methods
 	private volatile static Field entityDataField;
@@ -94,7 +98,11 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 	public WrappedDataWatcher() {
 		// Just create a new watcher
 		try {
-			this.handle = MinecraftReflection.getDataWatcherClass().newInstance();
+			if (MinecraftReflection.isUsingNetty()) {
+				this.handle = newEntityHandle(null);
+			} else {
+				this.handle = MinecraftReflection.getDataWatcherClass().newInstance();
+			}
 			initialize();
 			
 		} catch (Exception e) {
@@ -115,6 +123,42 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 		
 		this.handle = handle;
 		initialize();
+	}
+	
+	/**
+	 * Construct a new data watcher with the given entity.
+	 * <p>
+	 * In 1.6.4 and ealier, this will fall back to using {@link #WrappedDataWatcher()}.
+	 * @param entity - the entity.
+	 * @return The wrapped data watcher.
+	 */
+	public static WrappedDataWatcher newWithEntity(Entity entity) {
+		// Use the old constructor
+		if (!MinecraftReflection.isUsingNetty())
+			return new WrappedDataWatcher();
+		return new WrappedDataWatcher(newEntityHandle(entity));
+	}
+	
+	/**
+	 * Construct a new native DataWatcher with the given entity.
+	 * <p>
+	 * Warning: This is only supported in 1.7.2 and above.
+	 * @param entity - the entity, or NULL.
+	 * @return The data watcher.
+	 */
+	private static Object newEntityHandle(Entity entity) {
+		Class<?> dataWatcher = MinecraftReflection.getDataWatcherClass();
+		
+		try {
+			if (createDataWatcherConstructor == null)
+				createDataWatcherConstructor = dataWatcher.getConstructor(MinecraftReflection.getEntityClass());
+			
+			return createDataWatcherConstructor.newInstance(
+					BukkitUnwrapper.getInstance().unwrapItem(entity)
+			);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot construct data watcher.", e);
+		}
 	}
 	
 	/**
@@ -548,6 +592,11 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 			// It's not a big deal
 		}
 		
+		// Check for the entity field as well
+		if (MinecraftReflection.isUsingNetty()) {
+			entityField = fuzzy.getFieldByType("entity", MinecraftReflection.getEntityClass());
+			entityField.setAccessible(true);
+		}
 		initializeMethods(fuzzy);
 	}
 	
@@ -647,5 +696,39 @@ public class WrappedDataWatcher implements Iterable<WrappedWatchableObject> {
 	@Override
 	public String toString() {
 		return asMap().toString();
+	}
+	
+	/**
+	 * Retrieve the entity associated with this data watcher.
+	 * <p>
+	 * <b>Warning:</b> This is only supported on 1.7.2 and above.
+	 * @return The entity, or NULL.
+	 */
+	public Entity getEntity() {
+		if (!MinecraftReflection.isUsingNetty())
+			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
+		
+		try {
+			return (Entity) MinecraftReflection.getBukkitEntity(entityField.get(handle));
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to retrieve entity.", e);
+		}
+	}
+	
+	/**
+	 * Set the entity associated with this data watcher.
+	 * <p>
+	 * <b>Warning:</b> This is only supported on 1.7.2 and above.
+	 * @param entity - the new entity.
+	 */
+	public void setEntity(Entity entity) {
+		if (!MinecraftReflection.isUsingNetty())
+			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
+		
+		try {
+			entityField.set(handle, BukkitUnwrapper.getInstance().unwrapItem(entity));
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to set entity.", e);
+		}
 	}
 }

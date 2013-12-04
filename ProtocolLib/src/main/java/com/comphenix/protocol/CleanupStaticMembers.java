@@ -70,6 +70,7 @@ class CleanupStaticMembers {
 	 */
 	public void resetAll() {
 		// This list must always be updated
+		@SuppressWarnings("deprecation")
 		Class<?>[] publicClasses = { 
 				AsyncListenerHandler.class, ListeningWhitelist.class, PacketContainer.class, 
 				BukkitUnwrapper.class, DefaultInstances.class, CollectionGenerator.class,

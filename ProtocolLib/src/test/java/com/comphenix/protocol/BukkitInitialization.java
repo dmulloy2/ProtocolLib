@@ -4,10 +4,13 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import net.minecraft.server.v1_6_R3.StatisticList;
+import net.minecraft.server.v1_7_R1.Block;
+import net.minecraft.server.v1_7_R1.Item;
+import net.minecraft.server.v1_7_R1.RegistryMaterials;
+import net.minecraft.server.v1_7_R1.StatisticList;
 
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_6_R3.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_7_R1.inventory.CraftItemFactory;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -37,9 +40,12 @@ public class BukkitInitialization {
 			initializePackage();
 			
 			try {
-				StatisticList.b();
+				Block.p();
+				Item.l();
+				StatisticList.a();
 			} catch (Exception e) {
 				// Swallow
+				e.printStackTrace();
 			}
 			
 			// Mock the server object
@@ -48,6 +54,7 @@ public class BukkitInitialization {
 			ItemMeta mockedMeta = mock(ItemMeta.class);
 	
 			when(mockedServer.getItemFactory()).thenReturn(mockedFactory);
+			when(mockedServer.isPrimaryThread()).thenReturn(true);
 			when(mockedFactory.getItemMeta(any(Material.class))).thenReturn(mockedMeta);
 	
 			// Inject this fake server
@@ -63,6 +70,6 @@ public class BukkitInitialization {
 	 */
 	public static void initializePackage() {
 		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_6_R3", "org.bukkit.craftbukkit.v1_6_R3");
+		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_7_R1", "org.bukkit.craftbukkit.v1_7_R1");
 	}
 }

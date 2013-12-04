@@ -33,6 +33,16 @@ public class NetworkMarker {
 	
 	/**
 	 * Construct a new network marker.
+	 * @param side - whether or not this marker belongs to a client or server packet. 
+	 * @param inputBuffer - the read serialized packet data.
+	 */
+	public NetworkMarker(@Nonnull ConnectionSide side, ByteBuffer inputBuffer) {
+		this.side = Preconditions.checkNotNull(side, "side cannot be NULL.");
+		this.inputBuffer = Preconditions.checkNotNull(inputBuffer, "inputBuffer cannot be NULL.");
+	}
+	
+	/**
+	 * Construct a new network marker.
 	 * <p>
 	 * The input buffer is only non-null for client-side packets.
 	 * @param side - whether or not this marker belongs to a client or server packet. 

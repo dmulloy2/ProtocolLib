@@ -581,7 +581,7 @@ public class StructureModifier<TField> {
 		List<Field> result = new ArrayList<Field>();
 		
 		// Retrieve every private and public field
-		for (Field field : FuzzyReflection.fromClass(type, true).getFields()) {
+		for (Field field : FuzzyReflection.fromClass(type, true).getDeclaredFields(superclassExclude)) {
 			int mod = field.getModifiers();
 			
 			// Ignore static and "abstract packet" fields
@@ -595,6 +595,4 @@ public class StructureModifier<TField> {
 		
 		return result;
 	}
-
-
 }

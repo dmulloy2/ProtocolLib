@@ -19,6 +19,7 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import net.minecraft.util.com.google.common.collect.Sets;
 
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.google.common.collect.Lists;
@@ -38,6 +41,33 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public class FuzzyReflection {
+	/**
+	 * Represents an interface for accessing a field.
+	 * @author Kristian
+	 */
+	public interface FieldAccessor {
+		/**
+		 * Retrieve the value of a field for a particular instance.
+		 * @param instance - the instance, or NULL for a static field.
+		 * @return The value of the field.
+		 * @throws IllegalStateException If the current security context prohibits reflection.
+		 */
+		public Object get(Object instance);
+	}
+	
+	/**
+	 * Represents an interface for invoking a method.
+	 * @author Kristian 
+	 */
+	public interface MethodAccessor {
+		/**
+		 * Invoke the underlying method.
+		 * @param target - the target instance, or NULL for a static method.
+		 * @param args - the arguments to pass to the method.
+		 * @return The return value, or NULL for void methods.
+		 */
+		public Object invoke(Object target, Object... args);
+	}
 	
 	// The class we're actually representing
 	private Class<?> source;
@@ -89,10 +119,130 @@ public class FuzzyReflection {
 	}
 	
 	/**
+	 * Retrieve an accessor for the first field of the given type.
+	 * @param instanceClass - the type of the instance to retrieve.
+	 * @param fieldClass - type of the field to retrieve.
+	 * @param forceAccess - whether or not to look for private and protected fields.
+	 * @return The value of that field.
+	 * @throws IllegalArgumentException If the field cannot be found.
+	 */
+	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
+		// Get a field accessor
+		Field field = FuzzyReflection.fromObject(instanceClass, forceAccess).getFieldByType(null, fieldClass);
+		field.setAccessible(true);
+		return getFieldAccessor(field);
+	}
+	
+	/**
+	 * Retrieve a field accessor from a given field that uses unchecked exceptions.
+	 * @param field - the field.
+	 * @return The field accessor.
+	 */
+	public static FieldAccessor getFieldAccessor(final Field field) {
+		return new FieldAccessor() {
+			@Override
+			public Object get(Object instance) {
+				try {
+					return field.get(instance);
+				} catch (IllegalAccessException e) {
+					throw new IllegalStateException("Cannot use reflection.", e);
+				}
+			}
+		};
+	}
+	
+	/**
+	 * Retrieve a method accessor for a method with the given name and signature.
+	 * @param instanceClass - the parent class.
+	 * @param name - the method name.
+	 * @param parameters - the parameters.
+	 * @return The method accessor.
+	 */
+	public static MethodAccessor getMethodAccessor(Class<?> instanceClass, String name, Class<?>... parameters) {
+		Method method = MethodUtils.getAccessibleMethod(instanceClass, name, parameters);	
+		method.setAccessible(true);
+		return getMethodAccessor(method);
+	}
+	
+	/**
+	 * Retrieve a method accessor for a particular method, avoding checked exceptions.
+	 * @param method - the method to access.
+	 * @return The method accessor.
+	 */
+	public static MethodAccessor getMethodAccessor(final Method method) {
+		return new MethodAccessor() {
+			@Override
+			public Object invoke(Object target, Object... args) {
+				try {
+					return method.invoke(target, args);
+				} catch (IllegalAccessException e) {
+					throw new IllegalStateException("Cannot use reflection.", e);
+				} catch (InvocationTargetException e) {
+					throw new RuntimeException("An internal error occured.", e.getCause());
+				} catch (IllegalArgumentException e) {
+					throw e;
+				}
+			}
+		};
+	}
+	
+	/**
+	 * Retrieve the value of the first field of the given type.
+	 * @param instance - the instance to retrieve from.
+	 * @param fieldClass - type of the field to retrieve.
+	 * @param forceAccess - whether or not to look for private and protected fields.
+	 * @return The value of that field.
+	 * @throws IllegalArgumentException If the field cannot be found.
+	 */
+	public static <T> T getFieldValue(Object instance, Class<T> fieldClass, boolean forceAccess) {
+		@SuppressWarnings("unchecked")
+		T result = (T) getFieldAccessor(instance.getClass(), fieldClass, forceAccess).get(instance);
+		return result;
+	}
+	
+	/**
 	 * Retrieves the underlying class.
 	 */
 	public Class<?> getSource() {
 		return source;
+	}
+		
+	/**
+	 * Retrieve the singleton instance of a class, from a method or field.
+	 * @return The singleton instance.
+	 * @throws IllegalStateException If the class has no singleton.
+	 */
+	public Object getSingleton() {	
+		Method method = null;
+		Field field = null;
+		
+		try {
+			method = getMethodByParameters("getInstance", source.getClass(), new Class<?>[0]);
+		} catch (IllegalArgumentException e) {
+			// Try getting the field instead
+			// Note that this will throw an exception if not found
+			field = getFieldByType("instance", source.getClass());
+		}
+
+		// Convert into unchecked exceptions
+		if (method != null) {
+			try {
+				method.setAccessible(true);
+				return method.invoke(null);
+			} catch (Exception e) {
+				throw new RuntimeException("Cannot invoke singleton method " + method, e);
+			}
+		}
+		if (field != null) {
+			try {
+				field.setAccessible(true);
+				return field.get(null);
+			} catch (Exception e) {
+				throw new IllegalArgumentException("Cannot get content of singleton field " + field, e);
+			}
+		}
+		// We should never get to this point
+		throw new IllegalStateException("Impossible.");
 	}
 	
 	/**
@@ -246,7 +396,6 @@ public class FuzzyReflection {
 				methods.add(method);
 			}
 		}
-		
 		return methods;
 	}
 	
@@ -474,6 +623,25 @@ public class FuzzyReflection {
 	}
 	
 	/**
+	 * Retrieves all private and public fields, up until a certain superclass.
+	 * @param excludeClass - the class (and its superclasses) to exclude from the search.
+	 * @return Every such declared field.
+	 */
+	public Set<Field> getDeclaredFields(Class<?> excludeClass) {
+		if (forceAccess) {
+			Class<?> current = source;
+			Set<Field> fields = Sets.newLinkedHashSet();
+			
+			while (current != null && current != excludeClass) {
+				fields.addAll(Arrays.asList(current.getDeclaredFields()));
+				current = current.getSuperclass();
+			}
+			return fields;
+		}
+		return getFields();
+	}
+	
+	/**
 	 * Retrieves all private and public methods in declared order (after JDK 1.5).
 	 * <p>
 	 * Private, protected and package methods are ignored if forceAccess is FALSE.
@@ -509,7 +677,6 @@ public class FuzzyReflection {
 				result.add(element);
 			}
 		}
-		
 		return result;
 	}
 	

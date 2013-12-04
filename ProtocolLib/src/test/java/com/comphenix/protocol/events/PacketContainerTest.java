@@ -22,15 +22,15 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.server.v1_6_R3.AttributeModifier;
-import net.minecraft.server.v1_6_R3.AttributeSnapshot;
-import net.minecraft.server.v1_6_R3.Packet44UpdateAttributes;
+import net.minecraft.server.v1_7_R1.AttributeModifier;
+import net.minecraft.server.v1_7_R1.AttributeSnapshot;
+import net.minecraft.server.v1_7_R1.PacketPlayOutUpdateAttributes;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_6_R3.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_7_R1.inventory.CraftItemFactory;
 
 import org.bukkit.Material;
 import org.bukkit.WorldType;
@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -120,7 +121,7 @@ public class PacketContainerTest {
 	
 	@Test
 	public void testGetShorts() {
-		PacketContainer itemData = new PacketContainer(Packets.Server.ITEM_DATA);
+		PacketContainer itemData = new PacketContainer(Packets.Server.TRANSACTION);
 		testPrimitive(itemData.getShorts(), 0, (short)0, (short)1);
 	}
 
@@ -150,7 +151,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetStrings() {
-		PacketContainer explosion = new PacketContainer(Packets.Server.CHAT);
+		PacketContainer explosion = new PacketContainer(PacketType.Play.Client.CHAT);
 		testPrimitive(explosion.getStrings(), 0, null, "hello");
 	}
 
@@ -183,11 +184,12 @@ public class PacketContainerTest {
 		StructureModifier<ItemStack> items = windowClick.getItemModifier();
 		ItemStack goldAxe = new ItemStack(Material.GOLD_AXE);
 		
+		assertNotNull(goldAxe.getType());
 		assertNull(items.read(0));
 		
 		// Insert the goldaxe and check if it's there
 		items.write(0, goldAxe);
-		assertTrue(equivalentItem(goldAxe, items.read(0)));
+		assertTrue("Item " + goldAxe + " != " + items.read(0), equivalentItem(goldAxe, items.read(0)));
 	}
  
 	@Test
@@ -292,10 +294,12 @@ public class PacketContainerTest {
 		List<ChunkPosition> positions = Lists.newArrayList();
 		positions.add(new ChunkPosition(1, 2, 3));
 		positions.add(new ChunkPosition(3, 4, 5));
-		
+	
 		// Insert and read back
 		positionAccessor.write(0, positions);
-		assertEquals(positions, positionAccessor.read(0));
+		List<ChunkPosition> cloned = positionAccessor.read(0);
+		
+		assertEquals(positions, cloned);
 	}
 
 	@Test
@@ -319,7 +323,7 @@ public class PacketContainerTest {
 	
 	@Test
 	public void testSerialization() {
-		PacketContainer chat = new PacketContainer(3);
+		PacketContainer chat = new PacketContainer(PacketType.Play.Client.CHAT);
 		chat.getStrings().write(0, "Test");
 		
 		PacketContainer copy = (PacketContainer) SerializationUtils.clone(chat);
@@ -337,7 +341,7 @@ public class PacketContainerTest {
 		List<AttributeModifier> modifiers = Lists.newArrayList(
 			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, 0));
 		AttributeSnapshot snapshot = new AttributeSnapshot(
-				(Packet44UpdateAttributes) attribute.getHandle(), "generic.Maxhealth", 20.0, modifiers);
+				(PacketPlayOutUpdateAttributes) attribute.getHandle(), "generic.Maxhealth", 20.0, modifiers);
 		
 		attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 		PacketContainer cloned = attribute.deepClone();
@@ -367,25 +371,17 @@ public class PacketContainerTest {
 	@Test
 	public void testDeepClone() {
 		// Try constructing all the packets
-		for (Integer id : Iterables.concat(
-				Packets.getClientRegistry().values(), 
-				Packets.getServerRegistry().values() )) {
-
+		for (PacketType type : PacketType.values()) {
 			// Whether or not this packet has been registered
-			boolean registered = Packets.Server.isSupported(id) || 
-								 Packets.Client.isSupported(id);
+			boolean registered = type.isSupported();
 			
 			try {
-				PacketContainer constructed = new PacketContainer(id);
+				PacketContainer constructed = new PacketContainer(type);
 			
 				if (!registered) {
-					fail("Expected IllegalArgumentException(Packet " + id + " not registered");
+					fail("Expected IllegalArgumentException(Packet " + type + " not registered");
 				}
 					
-				// Make sure these packets contains fields as well
-				assertTrue("Constructed packet with no known fields (" + id + ")", 
-						constructed.getModifier().size() > 0);
-				
 				// Initialize default values
 				constructed.getModifier().writeDefaults();
 				
@@ -396,18 +392,23 @@ public class PacketContainerTest {
 				StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
 				assertEquals(firstMod.size(), secondMod.size());
 
-				// Make sure all the fields are equivalent
-				for (int i = 0; i < firstMod.size(); i++) {
-					if (firstMod.getField(i).getType().isArray())
-						assertArrayEquals(getArray(firstMod.read(i)), getArray(secondMod.read(i)));
-					else
-						testEquality(firstMod.read(i), secondMod.read(i));
+				if (PacketType.Status.Server.KICK_DISCONNECT.equals(type)) {
+					assertArrayEquals(SerializationUtils.serialize(constructed), SerializationUtils.serialize(cloned));
+
+				} else {
+					// Make sure all the fields are equivalent
+					for (int i = 0; i < firstMod.size(); i++) {
+						if (firstMod.getField(i).getType().isArray())
+							assertArrayEquals(getArray(firstMod.read(i)), getArray(secondMod.read(i)));
+						else
+							testEquality(firstMod.read(i), secondMod.read(i));
+					}
 				}
 				
 			} catch (IllegalArgumentException e) {
 				if (!registered) {
 					// Check the same
-					assertEquals(e.getMessage(), "The packet ID " + id + " is not registered.");
+					assertEquals(e.getMessage(), "The packet ID " + type + " is not registered.");
 				} else {
 					// Something is very wrong
 					throw e;

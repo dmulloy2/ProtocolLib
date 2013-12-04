@@ -163,7 +163,8 @@ public class ChunkPosition {
 				
 				// Construct the underlying ChunkPosition
 				try {
-					return chunkPositionConstructor.newInstance(specific.x, specific.y, specific.z);
+					Object result = chunkPositionConstructor.newInstance(specific.x, specific.y, specific.z);
+					return result;
 				} catch (Exception e) {
 					throw new RuntimeException("Cannot construct ChunkPosition.", e);
 				}
@@ -183,7 +184,8 @@ public class ChunkPosition {
 					if (intModifier.size() >= 3) {
 						try {
 							StructureModifier<Integer> instance = intModifier.withTarget(generic);
-							return new ChunkPosition(instance.read(0), instance.read(1), instance.read(2));
+							ChunkPosition result = new ChunkPosition(instance.read(0), instance.read(1), instance.read(2));
+							return result;
 						} catch (FieldAccessException e) {
 							// This is an exeptional work-around, so we don't want to burden the caller with the messy details
 							throw new RuntimeException("Field access error.", e);
@@ -224,6 +226,6 @@ public class ChunkPosition {
 
 	@Override
 	public String toString() {
-		return "ChunkPosition [x=" + x + ", y=" + y + ", z=" + z + "]";
+		return "WrappedChunkPosition [x=" + x + ", y=" + y + ", z=" + z + "]";
 	}
 }

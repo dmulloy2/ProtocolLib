@@ -1,8 +1,23 @@
 package com.comphenix.protocol;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+
+import org.bukkit.Bukkit;
+
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ObjectEnum;
+import com.comphenix.protocol.utility.MinecraftVersion;
+
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
 
 /**
  * Represents the type of a packet in a specific protocol.
@@ -15,23 +30,66 @@ public class PacketType implements Serializable {
 	// Increment whenever the type changes
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Represents an unknown legacy packet ID.
+	 */
+	public static final int UNKNOWN_PACKET = -1;
+	
+	/**
+	 * Packets sent during handshake.
+	 * @author Kristian
+	 */
 	public static class Handshake {
-		public static final Protocol PROTOCOL = Protocol.HANDSHAKE;
+		private static final Protocol PROTOCOL = Protocol.HANDSHAKING;
 		
 		public static class Client extends ObjectEnum<PacketType> {
-			public final static Sender SENDER = Sender.CLIENT;
-			public final static Client INSTANCE = new Client();
-			
+			private final static Sender SENDER = Sender.CLIENT;
 			public static final PacketType HANDSHAKE = new PacketType(PROTOCOL, SENDER, 0x00, 2);
+			
+			private final static Client INSTANCE = new Client();
+			
+			// Prevent accidental construction
+			private Client() { super(PacketType.class); }
+			
+			public static Client getInstance() {
+				return INSTANCE;
+			}
+			public static Sender getSender() {
+				return SENDER;
+			}
+		}
+		
+		/**
+		 * An empty enum, as the server will not send any packets in this protocol.
+		 * @author Kristian
+		 */
+		public static class Server extends ObjectEnum<PacketType> {
+			private final static Sender SENDER = Sender.CLIENT;
+			private final static Server INSTANCE = new Server();
+			private Server() { super(PacketType.class); }
+
+			public static Server getInstance() {
+				return INSTANCE;
+			}
+			public static Sender getSender() {
+				return SENDER;
+			}
+		}
+		
+		public static Protocol getProtocol() {
+			return PROTOCOL;
 		}
 	}
 	
-	public static class Game {
-		public static final Protocol PROTOCOL = Protocol.GAME;
+	/**
+	 * Packets sent and recieved when logged into the game.
+	 * @author Kristian
+	 */
+	public static class Play {
+		private static final Protocol PROTOCOL = Protocol.GAME;
 		
-		public static class Server extends ObjectEnum<PacketType> {
-			public final static Sender SENDER = Sender.SERVER;
-			public final static Server INSTANCE = new Server();
+		public static class Server extends ObjectEnum<PacketType> {		
+			private final static Sender SENDER = Sender.SERVER;
 			
 			public static final PacketType KEEP_ALIVE = 		 	  new PacketType(PROTOCOL, SENDER, 0x00, 0);
 			public static final PacketType LOGIN = 					  new PacketType(PROTOCOL, SENDER, 0x01, 1);
@@ -83,7 +141,7 @@ public class PacketType implements Serializable {
 			public static final PacketType SET_SLOT = 				  new PacketType(PROTOCOL, SENDER, 0x2F, 103);
 			public static final PacketType WINDOW_ITEMS = 			  new PacketType(PROTOCOL, SENDER, 0x30, 104);
 			public static final PacketType CRAFT_PROGRESS_BAR = 	  new PacketType(PROTOCOL, SENDER, 0x31, 105);
-			public static final PacketType TRANSACTION = 			  new PacketType(PROTOCOL, SENDER, 0x32, 106);
+			public static final PacketType TRANSACTION = 			  new PacketType(PROTOCOL, SENDER, 0x32, 106); 	
 			public static final PacketType UPDATE_SIGN = 			  new PacketType(PROTOCOL, SENDER, 0x33, 130);
 			public static final PacketType ITEM_DATA = 				  new PacketType(PROTOCOL, SENDER, 0x34, 131);
 			public static final PacketType TILE_ENTITY_DATA = 		  new PacketType(PROTOCOL, SENDER, 0x35, 132);
@@ -99,11 +157,23 @@ public class PacketType implements Serializable {
 			public static final PacketType SET_SCOREOARD_TEAM =       new PacketType(PROTOCOL, SENDER, 0x3E, 209);
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x3F, 250);
 			public static final PacketType KICK_DISCONNECT =          new PacketType(PROTOCOL, SENDER, 0x40, 255);
+			
+			// The instance must 
+			private final static Server INSTANCE = new Server();
+			
+			// Prevent accidental construction
+			private Server() { super(PacketType.class); }
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Server getInstance() {
+				return INSTANCE;
+			}
 		}
 		
 		public static class Client extends ObjectEnum<PacketType> {
-			public final static Sender SENDER = Sender.CLIENT;
-			public final static Client INSTANCE = new Client();
+			private final static Sender SENDER = Sender.CLIENT;
 			
 			public static final PacketType KEEP_ALIVE =          	  new PacketType(PROTOCOL, SENDER, 0x00, 0);
 			public static final PacketType CHAT =          			  new PacketType(PROTOCOL, SENDER, 0x01, 3);
@@ -129,51 +199,127 @@ public class PacketType implements Serializable {
 			public static final PacketType LOCALE_AND_VIEW_DISTANCE = new PacketType(PROTOCOL, SENDER, 0x15, 204);
 			public static final PacketType CLIENT_COMMAND =           new PacketType(PROTOCOL, SENDER, 0x16, 205);
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x17, 250);
+			
+			private final static Client INSTANCE = new Client();
+			
+			// Prevent accidental construction
+			private Client() { super(PacketType.class); }
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Client getInstance() {
+				return INSTANCE;
+			}
+		}
+		
+		public static Protocol getProtocol() {
+			return PROTOCOL;
 		}
 	}
 	
+	/**
+	 * Packets sent and recieved when querying the server in the multiplayer menu.
+	 * @author Kristian
+	 */
 	public static class Status {
-		public static final Protocol PROTOCOL = Protocol.STATUS;
+		private static final Protocol PROTOCOL = Protocol.STATUS;
 		
 		public static class Server extends ObjectEnum<PacketType> {
-			public final static Sender SENDER = Sender.SERVER;
-			public final static Server INSTANCE = new Server();
+			private final static Sender SENDER = Sender.SERVER;
 			
 			public static final PacketType KICK_DISCONNECT =   new PacketType(PROTOCOL, SENDER, 0x00, 255);
 			@SuppressWarnings("deprecation")
-			public static final PacketType PING_TIME =         new PacketType(PROTOCOL, SENDER, 0x00, Packets.Server.PING_TIME);
+			public static final PacketType PING_TIME =         new PacketType(PROTOCOL, SENDER, 0x01, Packets.Server.PING_TIME);
+			
+			private final static Server INSTANCE = new Server();
+			
+			// Prevent accidental construction
+			private Server() { super(PacketType.class); }
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Server getInstance() {
+				return INSTANCE;
+			}
 		}
 		
 		public static class Client extends ObjectEnum<PacketType> {
-			public final static Sender SENDER = Sender.CLIENT;
-			public final static Client INSTANCE = new Client();
+			private final static Sender SENDER = Sender.CLIENT;		
 			
 			public static final PacketType STATUS_REQUEST =    new PacketType(PROTOCOL, SENDER, 0x00, 254);
 			@SuppressWarnings("deprecation")
-			public static final PacketType PING_TIME =         new PacketType(PROTOCOL, SENDER, 0x00, Packets.Client.PING_TIME);
+			public static final PacketType PING_TIME =         new PacketType(PROTOCOL, SENDER, 0x01, Packets.Client.PING_TIME);
+			
+			private final static Client INSTANCE = new Client();
+			
+			// Prevent accidental construction
+			private Client() { super(PacketType.class); }
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Client getInstance() {
+				return INSTANCE;
+			}
+		}
+		
+		public static Protocol getProtocol() {
+			return PROTOCOL;
 		}
 	}
 	
+	/**
+	 * Packets sent and recieved when logging in to the server.
+	 * @author Kristian
+	 */
 	public static class Login {
-		public static final Protocol PROTOCOL = Protocol.LOGIN;
+		private static final Protocol PROTOCOL = Protocol.LOGIN;
 		
 		public static class Server extends ObjectEnum<PacketType> {
-			public final static Sender SENDER = Sender.SERVER;
-			public final static Server INSTANCE = new Server();
+			private final static Sender SENDER = Sender.SERVER;
 			
 			public static final PacketType KICK_DISCONNECT =   new PacketType(PROTOCOL, SENDER, 0x00, 255);
 			public static final PacketType KEY_REQUEST =       new PacketType(PROTOCOL, SENDER, 0x01, 253);
 			@SuppressWarnings("deprecation")
 			public static final PacketType LOGIN_SUCCESS =     new PacketType(PROTOCOL, SENDER, 0x02, Packets.Server.LOGIN_SUCCESS);
+
+			private final static Server INSTANCE = new Server();
+			
+			// Prevent accidental construction
+			private Server() { super(PacketType.class); }
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Server getInstance() {
+				return INSTANCE;
+			}
 		}
 		
 		public static class Client extends ObjectEnum<PacketType> {
-			public final static Sender SENDER = Sender.CLIENT;
-			public final static Client INSTANCE = new Client();
+			private final static Sender SENDER = Sender.CLIENT;
 			
 			@SuppressWarnings("deprecation")
-			public static final PacketType LOGIN_START =     new PacketType(PROTOCOL, SENDER, 0x00, Packets.Client.LOGIN_START);
+			public static final PacketType LOGIN_START =       new PacketType(PROTOCOL, SENDER, 0x00, Packets.Client.LOGIN_START);
 			public static final PacketType KEY_RESPONSE =      new PacketType(PROTOCOL, SENDER, 0x01, 252);
+
+			private final static Client INSTANCE = new Client();
+			
+			// Prevent accidental construction
+			private Client() { super(PacketType.class); }
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Client getInstance() {
+				return INSTANCE;
+			}
+		}
+		
+		public static Protocol getProtocol() {
+			return PROTOCOL;
 		}
 	}
 	
@@ -182,10 +328,29 @@ public class PacketType implements Serializable {
 	 * @author Kristian
 	 */
 	public enum Protocol {
-		HANDSHAKE,
+		HANDSHAKING,
 		GAME,
 		STATUS,
-		LOGIN
+		LOGIN;
+		
+		/**
+		 * Retrieve the correct protocol enum from a given vanilla enum instance.
+		 * @param vanilla - the vanilla protocol enum instance.
+		 * @return The corresponding protocol.
+		 */
+		public static Protocol fromVanilla(Enum<?> vanilla) {
+			String name = vanilla.name();
+			
+			if ("HANDSHAKING".equals(name))
+					return HANDSHAKING;
+			if ("PLAY".equals(name))
+				return GAME;
+			if ("STATUS".equals(name))
+				return STATUS;
+			if ("LOGIN".equals(name))
+				return LOGIN;
+			throw new IllegalArgumentException("Unrecognized vanilla enum " + vanilla);
+		}
 	}
 	
 	/**
@@ -205,23 +370,189 @@ public class PacketType implements Serializable {
 		SERVER
 	}
 	
+	// Lookup of packet types
+	private static PacketTypeLookup LOOKUP;
+	
+	/**
+	 * Protocol version of all the current IDs.
+	 */
+	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.WORLD_UPDATE;
+	
 	private final Protocol protocol;
 	private final Sender sender;
 	private final int currentId;
 	private final int legacyId;
+	private final MinecraftVersion version;
 	
+	/**
+	 * Retrieve the current packet/legacy lookup.
+	 * @return The packet type lookup.
+	 */
+	private static PacketTypeLookup getLookup() {
+		if (LOOKUP == null) {
+			LOOKUP = new PacketTypeLookup().
+				addPacketTypes(Handshake.Client.getInstance()).
+				addPacketTypes(Handshake.Server.getInstance()).
+				addPacketTypes(Play.Client.getInstance()).
+				addPacketTypes(Play.Server.getInstance()).
+				addPacketTypes(Status.Client.getInstance()).
+				addPacketTypes(Status.Server.getInstance()).
+				addPacketTypes(Login.Client.getInstance()).
+				addPacketTypes(Login.Server.getInstance());
+		}
+		return LOOKUP;
+	}
+	
+	/**
+	 * Find every packet type known to the current version of ProtocolLib.
+	 * @return Every packet type.
+	 */
+	public static Iterable<PacketType> values() {
+		List<Iterable<? extends PacketType>> sources = Lists.newArrayList();
+		sources.add(Handshake.Client.getInstance());
+		sources.add(Handshake.Server.getInstance());
+		sources.add(Play.Client.getInstance());
+		sources.add(Play.Server.getInstance());
+		sources.add(Status.Client.getInstance());
+		sources.add(Status.Server.getInstance());
+		sources.add(Login.Client.getInstance());
+		sources.add(Login.Server.getInstance());
+		return Iterables.concat(sources);
+	}
+	
+	/**
+	 * Retrieve a packet type from a legacy (1.6.4 and below) packet ID.
+	 * @param packetId - the legacy packet ID.
+	 * @return The corresponding packet type.
+	 * @throws IllegalArgumentException If the legacy packet could not be found.
+	 */
+	public static PacketType findLegacy(int packetId) {
+		PacketType type = getLookup().getFromLegacy(packetId);
+		
+		if (type != null)
+			return type;
+		throw new IllegalArgumentException("Cannot find legacy packet " + packetId);
+	}
+	
+	/**
+	 * Retrieve a packet type from a protocol, sender and packet ID.
+	 * @param protocol - the current protocol.
+	 * @param sender - the sender.
+	 * @param packetId - the packet ID.
+	 * @return The corresponding packet type.
+	 * @throws IllegalArgumentException If the current packet could not be found.
+	 */
+	public static PacketType findCurrent(Protocol protocol, Sender sender, int packetId) {
+		PacketType type = getLookup().getFromCurrent(protocol, sender, packetId);
+		
+		if (type != null)
+			return type;
+		throw new IllegalArgumentException("Cannot find packet " + packetId + 
+				"(Protocol: " + protocol + ", Sender: " + sender + ")");
+	}
+	
+	/**
+	 * Retrieve a packet type from a protocol, sender and packet ID.
+	 * <p>
+	 * The packet will automatically be registered if its missing.
+	 * @param protocol - the current protocol.
+	 * @param sender - the sender.
+	 * @param packetId - the packet ID.
+	 * @param legacyId - the legacy packet ID. Can be UNKNOWN_PACKET.
+	 * @return The corresponding packet type.
+	 */
+	public static PacketType fromCurrent(Protocol protocol, Sender sender, int packetId, int legacyId) {
+		PacketType type = getLookup().getFromCurrent(protocol, sender, packetId);
+		
+		if (type == null) {
+			type = new PacketType(protocol, sender, packetId, legacyId);
+			
+			// Many may be scheduled, but only the first will be executed
+			scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
+		}
+		return type;
+	}
+	
+	/**
+	 * Register a particular packet type.
+	 * <p>
+	 * Note that the registration will be performed on the main thread. 
+	 * @param type - the type to register.
+	 * @param name - the name of the packet.
+	 * @return A future telling us if our instance was registrered.
+	 */
+	public static Future<Boolean> scheduleRegister(final PacketType type, final String name) {
+		Callable<Boolean> callable = new Callable<Boolean>() {
+			@Override
+			public Boolean call() throws Exception {
+				ObjectEnum<PacketType> objEnum;
+				
+				// A bit ugly, but performance is critical
+				switch (type.getProtocol()) {
+					case HANDSHAKING:
+						objEnum = type.isClient() ? Handshake.Client.getInstance() : Handshake.Server.getInstance(); break;
+					case GAME:
+						objEnum = type.isClient() ? Play.Client.getInstance() : Play.Server.getInstance(); break;
+					case STATUS:
+						objEnum = type.isClient() ? Status.Client.getInstance() : Status.Server.getInstance(); break;
+					case LOGIN:
+						objEnum = type.isClient() ? Login.Client.getInstance() : Login.Server.getInstance(); break;
+					default:
+						throw new IllegalStateException("Unexpected protocol: " + type.getProtocol());
+				}
+				
+				if (objEnum.registerMember(type, name)) {
+					getLookup().addPacketTypes(Arrays.asList(type));
+					return true;
+				}
+				return false;
+			}
+		};
+
+		// Execute in the main thread if possible
+		if (Bukkit.getServer() == null || Bukkit.isPrimaryThread()) {
+			try {
+				return Futures.immediateFuture(callable.call());
+			} catch (Exception e) {
+				return Futures.immediateFailedFuture(e);
+			}
+		}
+		return ProtocolLibrary.getExecutorSync().submit(callable);
+	}
+	
+	/**
+	 * Construct a new packet type.
+	 * @param protocol - the current protocol.
+	 * @param target - the target - client or server.
+	 * @param currentId - the current packet ID, or 
+	 * @param legacyId - the legacy packet ID.
+	 */
+	public PacketType(Protocol protocol, Sender sender, int currentId, int legacyId) {
+		this(protocol, sender, currentId, legacyId, PROTOCOL_VERSION);
+	}
+
 	/**
 	 * Construct a new packet type.
 	 * @param protocol - the current protocol.
 	 * @param target - the target - client or server.
 	 * @param currentId - the current packet ID.
 	 * @param legacyId - the legacy packet ID.
+	 * @param version - the version of the current ID.
 	 */
-	public PacketType(Protocol protocol, Sender sender, int currentId, int legacyId) {
-		this.protocol = protocol;
-		this.sender = sender;
+	public PacketType(Protocol protocol, Sender sender, int currentId, int legacyId, MinecraftVersion version) {
+		this.protocol = Preconditions.checkNotNull(protocol, "protocol cannot be NULL");
+		this.sender = Preconditions.checkNotNull(sender, "sender cannot be NULL");
 		this.currentId = currentId;
 		this.legacyId = legacyId;
+		this.version = version;
+	}
+	
+	/**
+	 * Determine if this packet is supported on the current server.
+	 * @return Whether or not the packet is supported.
+	 */
+	public boolean isSupported() {
+		return PacketRegistry.isSupported(this);
 	}
 
 	/**
@@ -241,6 +572,22 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
+	 * Determine if this packet was sent by the client.
+	 * @return TRUE if it was, FALSE otherwise.
+	 */
+	public boolean isClient() {
+		return sender == Sender.CLIENT;
+	}
+	
+	/**
+	 * Determine if this packet was sent by the server.
+	 * @return TRUE if it was, FALSE otherwise.
+	 */
+	public boolean isServer() {
+		return sender == Sender.SERVER;
+	}
+	
+	/**
 	 * Retrieve the current protocol ID for this packet type.
 	 * <p>
 	 * This is only unique within a specific protocol and target.
@@ -251,10 +598,26 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
-	 * Retrieve the legacy (pre 1.7.2) protocol ID of the packet type.
+	 * Retrieve the equivalent packet class.
+	 * @return The packet class.
+	 */
+	public Class<?> getPacketClass() {
+		return PacketRegistry.getPacketClassFromType(this);
+	}
+	
+	/**
+	 * Retrieve the Minecraft version for the current ID.
+	 * @return The Minecraft version.
+	 */
+	public MinecraftVersion getCurrentVersion() {
+		return version;
+	}
+	
+	/**
+	 * Retrieve the legacy (1.6.4 or below) protocol ID of the packet type.
 	 * <p>
 	 * This ID is globally unique.
-	 * @return The legacy ID.
+	 * @return The legacy ID, or {@link #UNKNOWN_PACKET} if unknown.
 	 */
 	public int getLegacyId() {
 		return legacyId;
@@ -262,7 +625,7 @@ public class PacketType implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(protocol, sender, legacyId, currentId);
+		return Objects.hashCode(protocol, sender, currentId);
 	}
 	
 	@Override
@@ -281,6 +644,8 @@ public class PacketType implements Serializable {
 	
 	@Override
 	public String toString() {
-		return "Packet [protocol=" + protocol + ", sender=" + sender + ", legacyId=" + legacyId + ", currentId=" + currentId + "]";
+		Class<?> clazz = getPacketClass();
+		return (clazz != null ? clazz.getSimpleName() : "UNREGISTERED") + 
+			" [" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + "]";
 	}
 }

@@ -44,6 +44,7 @@ public interface ListenerInvoker {
 	 * @param packet - the packet.
 	 * @return The packet ID.
 	 */
+	@Deprecated
 	public abstract int getPacketID(Object packet);
 
 	/**

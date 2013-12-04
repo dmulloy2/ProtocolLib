@@ -1,7 +1,9 @@
 package com.comphenix.protocol.utility;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -14,12 +16,16 @@ import com.google.common.collect.ComparisonChain;
  * Used to parse a snapshot version.
  * @author Kristian
  */
-public class SnapshotVersion implements Comparable<SnapshotVersion> {
+public class SnapshotVersion implements Comparable<SnapshotVersion>, Serializable {
+	// Increment when the class changes
+	private static final long serialVersionUID = 1L;
+
 	private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("(\\d{2}w\\d{2})([a-z])");
 
-	private final String rawString;
 	private final Date snapshotDate;
 	private final int snapshotWeekVersion;
+
+	private transient String rawString;
 	
 	public SnapshotVersion(String version) {
 		Matcher matcher = SNAPSHOT_PATTERN.matcher(version.trim());
@@ -70,6 +76,15 @@ public class SnapshotVersion implements Comparable<SnapshotVersion> {
 	 * @return The snapshot string.
 	 */
 	public String getSnapshotString() {
+		if (rawString == null) {
+			// It's essential that we use the same locale
+			Calendar current = Calendar.getInstance(Locale.US);
+			current.setTime(snapshotDate);
+			rawString = String.format("%02dw%02d%s",
+				current.get(Calendar.YEAR) % 100, 
+				current.get(Calendar.WEEK_OF_YEAR),
+				(char) ((int)'a' + snapshotWeekVersion));
+		}
 		return rawString;
 	}
 
@@ -103,6 +118,6 @@ public class SnapshotVersion implements Comparable<SnapshotVersion> {
 	
 	@Override
 	public String toString() {
-		return rawString;
+		return getSnapshotString();
 	}
 }

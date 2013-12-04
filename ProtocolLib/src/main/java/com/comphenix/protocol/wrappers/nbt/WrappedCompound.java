@@ -69,6 +69,15 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	public WrappedCompound(Object handle) {
 		this.container = new WrappedElement<Map<String,Object>>(handle);
 	}
+
+	/**
+	 * Construct a wrapped compound from a given NMS handle.
+	 * @param handle - the NMS handle.
+	 * @param name - the name of the current compound.
+	 */
+	public WrappedCompound(Object handle, String name) {
+		this.container = new WrappedElement<Map<String,Object>>(handle, name);
+	}
 	
 	@Override
 	public boolean accept(NbtVisitor visitor) {
@@ -128,16 +137,24 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 			savedMap = new ConvertedMap<String, Object, NbtBase<?>>(container.getValue()) {
 				@Override
 				protected Object toInner(NbtBase<?> outer) {
-					if (outer == null)
+					if (outer == null) 
 						return null;
 					return NbtFactory.fromBase(outer).getHandle();
 				}
 				
+				@SuppressWarnings("deprecation")
 				protected NbtBase<?> toOuter(Object inner) {
 					if (inner == null)
 						return null;
 					return NbtFactory.fromNMS(inner);
 				};
+				
+				@Override
+				protected NbtBase<?> toOuter(String key, Object inner) {
+					if (inner == null)
+						return null;
+					return NbtFactory.fromNMS(inner, key);
+				}
 				
 				@Override
 				public String toString() {

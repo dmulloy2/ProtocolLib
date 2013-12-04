@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.utility;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -34,7 +35,9 @@ import com.google.common.collect.Ordering;
  * 
  * @author Kristian
  */
-public class MinecraftVersion implements Comparable<MinecraftVersion> {
+public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * Regular expression used to parse version strings.
 	 */

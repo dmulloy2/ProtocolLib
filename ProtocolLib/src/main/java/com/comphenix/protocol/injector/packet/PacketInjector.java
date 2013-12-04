@@ -8,7 +8,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 
 /**
- * Represents a incoming packet injector.
+ * Represents an incoming packet injector.
  * 
  * @author Kristian
  */

@@ -22,6 +22,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 
 /**
  * Represents a map that wraps another map by transforming the entries going in and out.
@@ -95,12 +99,13 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 
 					@Override
 					public VOuter getValue() {
-						return ConvertedMap.this.toOuter(inner.getValue());
+						return ConvertedMap.this.toOuter(inner.getKey(), inner.getValue());
 					}
 
 					@Override
 					public VOuter setValue(VOuter value) {
-						return ConvertedMap.this.toOuter(inner.setValue(ConvertedMap.this.toInner(value))); 
+						final VInner converted = ConvertedMap.this.toInner(getKey(), value);
+						return ConvertedMap.this.toOuter(getKey(), inner.setValue(converted)); 
 					}
 					
 					@Override
@@ -112,9 +117,28 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 		};
 	}
 
+	/**
+	 * Convert a value from the inner map to the outer visible map.
+	 * @param inner - the inner value.
+	 * @return The outer value.
+	 */
+	protected VOuter toOuter(Key key, VInner inner) {
+		return toOuter(inner);
+	}
+	
+	/**
+	 * Convert a value from the outer map to the internal inner map.
+	 * @param outer - the outer value.
+	 * @return The inner value.
+	 */
+	protected VInner toInner(Key key, VOuter outer) {
+		return toInner(outer);
+	}
+	
+	@SuppressWarnings("unchecked")
 	@Override
 	public VOuter get(Object key) {
-		return toOuter(inner.get(key));
+		return toOuter((Key) key, inner.get(key));
 	}
 
 	@Override
@@ -129,7 +153,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 
 	@Override
 	public VOuter put(Key key, VOuter value) {
-		return toOuter(inner.put(key, toInner(value)));
+		return toOuter(key, inner.put(key, toInner(key, value)));
 	}
 
 	@Override
@@ -139,9 +163,10 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public VOuter remove(Object key) {
-		return toOuter(inner.remove(key));
+		return toOuter((Key) key, inner.remove(key));
 	}
 
 	@Override
@@ -151,17 +176,12 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 
 	@Override
 	public Collection<VOuter> values() {
-		return new ConvertedCollection<VInner, VOuter>(inner.values()) {
+		return Collections2.transform(entrySet(), new Function<Entry<Key, VOuter>, VOuter>() {
 			@Override
-			protected VOuter toOuter(VInner inner) {
-				return ConvertedMap.this.toOuter(inner);
+			public VOuter apply(@Nullable java.util.Map.Entry<Key, VOuter> entry) {
+				return entry.getValue();
 			}
-
-			@Override
-			protected VInner toInner(VOuter outer) {
-				return ConvertedMap.this.toInner(outer);
-			}
-		};
+		});
 	}
 
     /**

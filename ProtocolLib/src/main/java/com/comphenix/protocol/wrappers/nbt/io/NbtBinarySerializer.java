@@ -59,7 +59,7 @@ public class NbtBinarySerializer {
 		}
 		
 		try {
-			return NbtFactory.fromNMS(methodLoad.invoke(null, source));
+			return NbtFactory.fromNMS(methodLoad.invoke(null, source), null);
 		} catch (Exception e) {
 			throw new FieldAccessException("Unable to read NBT from " + source, e);
 		}

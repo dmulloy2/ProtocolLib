@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.sf.cglib.asm.ClassReader;
 import net.sf.cglib.asm.MethodVisitor;
 import net.sf.cglib.asm.Opcodes;
@@ -43,7 +44,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.inventory.ItemStack;
 
-import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -118,7 +119,8 @@ public class MinecraftReflection {
 	
 	// New in 1.4.5
 	private static Method craftNMSMethod;
-	private static Method craftBukkitMethod;
+	private static Method craftBukkitNMS;
+	private static Method craftBukkitOBC;
 	private static boolean craftItemStackFailed;
 
 	// The NMS version
@@ -134,6 +136,9 @@ public class MinecraftReflection {
 	 * Whether or not we're currently initializing the reflection handler.
 	 */
 	private static boolean initializing;
+	
+	// Whether or not we are using netty
+	private static Boolean cachedNetty;
 	
 	private MinecraftReflection() {
 		// No need to make this constructable.
@@ -603,6 +608,23 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Determine if this Minecraft version is using Netty.
+	 * <p>
+	 * Spigot is ignored in this consideration.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public static boolean isUsingNetty() {
+		if (cachedNetty == null) {
+			try {	
+				cachedNetty = getEnumProtocolClass() != null;
+			} catch (RuntimeException e) {
+				cachedNetty = false;
+			}
+		}
+		return cachedNetty;
+	}
+	
+	/**
 	 * Retrieve the least derived class, except Object.
 	 * @return Least derived super class.
 	 */
@@ -1045,7 +1067,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("AttributeSnapshot");
 		} catch (RuntimeException e) {
-			final Class<?> packetUpdateAttributes = PacketRegistry.getPacketClassFromID(44, true);
+			final Class<?> packetUpdateAttributes = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.UPDATE_ATTRIBUTES, true);
 			final String packetSignature = packetUpdateAttributes.getCanonicalName().replace('.', '/');
 			
 			// HACK - class is found by inspecting code
@@ -1147,7 +1169,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("MobEffect");
 		} catch (RuntimeException e) {
 			// It is the second parameter in Packet41MobEffect
-			Class<?> packet = PacketRegistry.getPacketClassFromID(Packets.Server.MOB_EFFECT);
+			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.MOB_EFFECT);
 			Constructor<?> constructor = FuzzyReflection.fromClass(packet).getConstructor(
 				FuzzyMethodContract.newBuilder().
 				parameterCount(2).
@@ -1156,6 +1178,41 @@ public class MinecraftReflection {
 				build()
 			);
 			return setMinecraftClass("MobEffect", constructor.getParameterTypes()[1]);
+		}
+	}
+	
+	/**
+	 * Retrieve the packet data serializer class that overrides ByteBuf.
+	 * @return The data serializer class.
+	 */
+	public static Class<?> getPacketDataSerializerClass() {
+		try {
+			return getMinecraftClass("PacketDataSerializer");
+		} catch (RuntimeException e) {
+			Class<?> packet = getPacketClass();
+			Method method = FuzzyReflection.fromClass(packet).getMethod(
+					FuzzyMethodContract.newBuilder().
+					parameterCount(1).
+					parameterDerivedOf(ByteBuf.class).
+					returnTypeVoid().
+					build()
+				);
+			return setMinecraftClass("PacketDataSerializer", method.getParameterTypes()[0]);
+		}
+	}
+	
+	/**
+	 * Retrieve an instance of the packet data serializer wrapper.
+	 * @param buffer - the buffer.
+	 * @return The instance.
+	 */
+	public static ByteBuf getPacketDataSerializer(ByteBuf buffer) {
+		Class<?> packetSerializer = getPacketDataSerializerClass();
+		
+		try {
+			return (ByteBuf) packetSerializer.getConstructor(ByteBuf.class).newInstance(buffer);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
 	}
 	
@@ -1219,7 +1276,7 @@ public class MinecraftReflection {
 	 */
 	public static ItemStack getBukkitItemStack(ItemStack bukkitItemStack) {
 		// Delegate this task to the method that can execute it
-		if (craftBukkitMethod != null)
+		if (craftBukkitNMS != null)
 			return getBukkitItemByMethod(bukkitItemStack);
 		
 		if (craftBukkitConstructor == null) {
@@ -1243,9 +1300,10 @@ public class MinecraftReflection {
 	}
 
 	private static ItemStack getBukkitItemByMethod(ItemStack bukkitItemStack) {
-		if (craftBukkitMethod == null) {
+		if (craftBukkitNMS == null) {
 			try {
-				craftBukkitMethod = getCraftItemStackClass().getMethod("asCraftCopy", ItemStack.class);
+				craftBukkitNMS = getCraftItemStackClass().getMethod("asNMSCopy", ItemStack.class);
+				craftBukkitOBC = getCraftItemStackClass().getMethod("asCraftMirror", MinecraftReflection.getItemStackClass());
 			} catch (Exception e) {
 				craftItemStackFailed = true;
 				throw new RuntimeException("Cannot find CraftItemStack.asCraftCopy(org.bukkit.inventory.ItemStack).", e);
@@ -1254,7 +1312,8 @@ public class MinecraftReflection {
 		
 		// Next, construct it
 		try {
-			return (ItemStack) craftBukkitMethod.invoke(null, bukkitItemStack);
+			Object nmsItemStack = craftBukkitNMS.invoke(null, bukkitItemStack);
+			return (ItemStack) craftBukkitOBC.invoke(null, nmsItemStack);
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct CraftItemStack.", e);
 		}

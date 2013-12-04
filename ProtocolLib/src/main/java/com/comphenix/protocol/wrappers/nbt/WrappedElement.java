@@ -34,14 +34,13 @@ import com.google.common.base.Objects;
  * @param <TType> - type of the value field.
  */
 class WrappedElement<TType> implements NbtWrapper<TType> {	
-	// Structure modifier for the base class 
-	private static volatile StructureModifier<Object> baseModifier;
-	
 	// For retrieving the current type ID
 	private static volatile Method methodGetTypeID;
-	
 	// For handling cloning
 	private static volatile Method methodClone;
+	
+	// Which name property to use
+	private static volatile Boolean hasNbtName;
 	
 	// Structure modifiers for the different NBT elements
 	private static StructureModifier<?>[] modifiers = new StructureModifier<?>[NbtType.values().length];
@@ -52,27 +51,43 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 	// Saved type
 	private NbtType type;
 	
+	// Saved name
+	private NameProperty nameProperty;
+	
 	/**
 	 * Initialize a NBT wrapper for a generic element.
 	 * @param handle - the NBT element to wrap.
 	 */
 	public WrappedElement(Object handle) {
 		this.handle = handle;
+		initializeProperty();
 	}
 		
 	/**
-	 * Retrieve the modifier (with no target) that is used to read and write the NBT name.
-	 * @return A modifier for accessing the NBT name.
+	 * Initialize a NBT wrapper for a generic element.
+	 * @param handle - the NBT element to wrap.
 	 */
-	protected static StructureModifier<String> getBaseModifier() {
-		if (baseModifier == null) {
+	public WrappedElement(Object handle, String name) {
+		this.handle = handle;
+		initializeProperty();
+		setName(name);
+	}
+	
+	private void initializeProperty() {
+		if (nameProperty == null) {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
-
-			// This will be the same for all classes, so we'll share modifier
-			baseModifier = new StructureModifier<Object>(base, Object.class, false).withType(String.class);
+			
+			// Determine if we have a NBT string field
+			if (hasNbtName == null) {
+				hasNbtName = NameProperty.hasStringIndex(base, 0);
+			}
+			
+			// Now initialize the name property
+			if (hasNbtName)
+				this.nameProperty = NameProperty.fromStringIndex(base, handle, 0);
+			else
+				this.nameProperty = NameProperty.fromBean();
 		}
-		
-		return baseModifier.withType(String.class);
 	}
 	
 	/**
@@ -159,12 +174,12 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 	
 	@Override
 	public String getName() {
-		return getBaseModifier().withTarget(handle).read(0);
+		return nameProperty.getName();
 	}
 	
 	@Override
 	public void setName(String name) {
-		getBaseModifier().withTarget(handle).write(0, name);
+		nameProperty.setName(name);
 	}
 	
 	@Override
@@ -194,7 +209,7 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 		}
 		
 		try {
-			return NbtFactory.fromNMS(methodClone.invoke(handle));
+			return NbtFactory.fromNMS(methodClone.invoke(handle), getName());
 		} catch (Exception e) {
 			throw new FieldAccessException("Unable to clone " + handle, e);
 		}

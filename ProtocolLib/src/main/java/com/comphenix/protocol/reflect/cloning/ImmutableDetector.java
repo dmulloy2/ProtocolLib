@@ -72,7 +72,7 @@ public class ImmutableDetector implements Cloner {
 		if (Primitives.isWrapperType(type) || String.class.equals(type))
 			return true;
 		// May not be true, but if so, that kind of code is broken anyways
-		if (type.isEnum())
+		if (isEnumWorkaround(type))
 			return true;
 			
 		for (Class<?> clazz : immutableClasses)
@@ -80,6 +80,16 @@ public class ImmutableDetector implements Cloner {
 				return true;
 		
 		// Probably not
+		return false;
+	}
+	
+	// This is just great. Just great.
+	private static boolean isEnumWorkaround(Class<?> enumClass) {
+		while (enumClass != null) {
+			if (enumClass.isEnum())
+				return true;
+			enumClass = enumClass.getSuperclass();
+		}
 		return false;
 	}
 	

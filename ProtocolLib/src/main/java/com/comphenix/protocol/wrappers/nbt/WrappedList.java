@@ -108,6 +108,16 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 		this.container = new WrappedElement<List<Object>>(handle);
 		this.elementType = container.getSubType();
 	}
+	
+	/**
+	 * Construct a list from an NMS instance.
+	 * @param handle - NMS instance.
+	 * @param name - name of the current list.
+	 */
+	public WrappedList(Object handle, String name) {
+		this.container = new WrappedElement<List<Object>>(handle, name);
+		this.elementType = container.getSubType();
+	}
 
 	@Override
 	public boolean accept(NbtVisitor visitor) {
@@ -209,7 +219,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<T
 				protected NbtBase<TType> toOuter(Object inner) {
 					if (inner == null)
 						return null;
-					return NbtFactory.fromNMS(inner);
+					return NbtFactory.fromNMS(inner, null);
 				}
 				
 				@Override

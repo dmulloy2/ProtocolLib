@@ -256,7 +256,7 @@ public class AggregateCloner implements Cloner {
 		if (index < cloners.size()) {
 			return cloners.get(index).clone(source);
 		}
-		
+
 		// Damn - failure
 		throw new IllegalArgumentException("Cannot clone " + source + ": No cloner is sutable.");
 	}

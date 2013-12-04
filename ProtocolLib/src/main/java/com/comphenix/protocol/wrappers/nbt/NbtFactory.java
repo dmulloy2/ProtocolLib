@@ -41,6 +41,7 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 public class NbtFactory {
 	// Used to create the underlying tag
 	private static Method methodCreateTag;
+	private static boolean methodCreateWithName;
 		
 	// Item stack trickery
 	private static StructureModifier<Object> itemStackModifier;
@@ -188,10 +189,13 @@ public class NbtFactory {
 	
 	/**
 	 * Initialize a NBT wrapper.
+	 * <p>
+	 * Use {@link #fromNMS(Object, String)} instead.
 	 * @param handle - the underlying net.minecraft.server object to wrap.
 	 * @return A NBT wrapper.
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
+	@Deprecated
 	public static <T> NbtWrapper<T> fromNMS(Object handle) {
 		WrappedElement<T> partial = new WrappedElement<T>(handle);
 		
@@ -200,6 +204,25 @@ public class NbtFactory {
 			return (NbtWrapper<T>) new WrappedCompound(handle);
 		else if (partial.getType() == NbtType.TAG_LIST)
 			return new WrappedList(handle);
+		else
+			return partial;
+	}
+	
+	/**
+	 * Initialize a NBT wrapper with a name.
+	 * @param name - the name of the tag, or NULL if not valid.
+	 * @param handle - the underlying net.minecraft.server object to wrap.
+	 * @return A NBT wrapper.
+	 */
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static <T> NbtWrapper<T> fromNMS(Object handle, String name) {
+		WrappedElement<T> partial = new WrappedElement<T>(handle, name);
+		
+		// See if this is actually a compound tag
+		if (partial.getType() == NbtType.TAG_COMPOUND)
+			return (NbtWrapper<T>) new WrappedCompound(handle, name);
+		else if (partial.getType() == NbtType.TAG_LIST)
+			return new WrappedList(handle, name);
 		else
 			return partial;
 	}
@@ -351,7 +374,6 @@ public class NbtFactory {
 	 * @return The new wrapped NBT tag.
 	 * @throws FieldAccessException If we're unable to create the underlying tag.
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <T> NbtWrapper<T> ofWrapper(NbtType type, String name) {
 		if (type == null)
 			throw new IllegalArgumentException("type cannot be NULL.");
@@ -362,19 +384,22 @@ public class NbtFactory {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
 			
 			// Use the base class
-			methodCreateTag = FuzzyReflection.fromClass(base).
-				getMethodByParameters("createTag", base, new Class<?>[] { byte.class, String.class });
+			try {
+				methodCreateTag = findCreateMethod(base, byte.class, String.class);
+				methodCreateWithName = true;
+				
+			} catch (Exception e) {
+				methodCreateTag = findCreateMethod(base, byte.class);
+				methodCreateWithName = false;
+			}
 		}
 		
 		try {
-			Object handle = methodCreateTag.invoke(null, (byte) type.getRawID(), name);
-			
-			if (type == NbtType.TAG_COMPOUND)
-				return (NbtWrapper<T>) new WrappedCompound(handle);
-			else if (type == NbtType.TAG_LIST)
-				return (NbtWrapper<T>) new WrappedList(handle);
+			// Delegate to the correct version
+			if (methodCreateWithName)
+				return createTagWithName(type, name);
 			else
-				return new WrappedElement<T>(handle);
+				return createTagSetName(type, name);
 			
 		} catch (Exception e) {
 			// Inform the caller
@@ -382,6 +407,43 @@ public class NbtFactory {
 					String.format("Cannot create NBT element %s (type: %s)", name, type),
 					e);
 		}
+	}
+
+	/**
+	 * Find the create method of NBTBase.
+	 * @param base - the base NBT.
+	 * @param params - the parameters.
+	 */
+	private static Method findCreateMethod(Class<?> base, Class<?>... params) {
+		Method method = FuzzyReflection.fromClass(base, true).getMethodByParameters("createTag", base, params);
+		method.setAccessible(true);
+		return method;
+	}
+
+	// For Minecraft 1.6.4 and below
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static <T> NbtWrapper<T> createTagWithName(NbtType type, String name) throws Exception {
+		Object handle = methodCreateTag.invoke(null, (byte) type.getRawID(), name);
+		
+		if (type == NbtType.TAG_COMPOUND)
+			return (NbtWrapper<T>) new WrappedCompound(handle);
+		else if (type == NbtType.TAG_LIST)
+			return (NbtWrapper<T>) new WrappedList(handle);
+		else
+			return new WrappedElement<T>(handle);
+	}
+	
+	// For Minecraft 1.7.2 and above
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static <T> NbtWrapper<T> createTagSetName(NbtType type, String name) throws Exception {
+		Object handle = methodCreateTag.invoke(null, (byte) type.getRawID());
+		
+		if (type == NbtType.TAG_COMPOUND)
+			return (NbtWrapper<T>) new WrappedCompound(handle, name);
+		else if (type == NbtType.TAG_LIST)
+			return (NbtWrapper<T>) new WrappedList(handle, name);
+		else
+			return new WrappedElement<T>(handle, name);
 	}
 	
 	/**

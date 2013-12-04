@@ -57,6 +57,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.injector.netty.NettyProtocolInjector;
 import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
@@ -181,6 +182,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Spigot listener, if in use
 	private SpigotPacketInjector spigotInjector;
 	
+	// Netty injector (for 1.7.2)
+	private NettyProtocolInjector nettyInjector;
+	
 	// Plugin verifier
 	private PluginVerifier pluginVerifier;
 	
@@ -231,7 +235,12 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		this.interceptWritePacket = new InterceptWritePacket(classLoader, reporter);
 		
 		// Use the correct injection type
-		if (builder.isNettyEnabled()) {
+		if (MinecraftReflection.isUsingNetty()) {
+			this.nettyInjector = new NettyProtocolInjector(this);
+			this.playerInjection = nettyInjector.getPlayerInjector();
+			this.packetInjector = nettyInjector.getPacketInjector();
+			
+		} else if (builder.isNettyEnabled()) {
 			this.spigotInjector = new SpigotPacketInjector(classLoader, reporter, this, server);
 			this.playerInjection = spigotInjector.getPlayerHandler();
 			this.packetInjector = spigotInjector.getPacketInjector();
@@ -780,7 +789,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		if (filters) {
 			byte[] data = NetworkMarker.getByteBuffer(marker);
-			PacketEvent event  = packetInjector.packetRecieved(packet, sender, data);
+			PacketEvent event = packetInjector.packetRecieved(packet, sender, data);
 			
 			if (!event.isCancelled())
 				mcPacket = event.getPacket().getHandle();
@@ -881,6 +890,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	public void registerEvents(PluginManager manager, final Plugin plugin) {
 		if (spigotInjector != null && !spigotInjector.register(plugin))
 			throw new IllegalArgumentException("Spigot has already been registered.");
+		if (nettyInjector != null)
+			nettyInjector.inject();
 		
 		try {
 			manager.registerEvents(new Listener() {
@@ -1009,7 +1020,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Yes, this is crazy.
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void registerOld(PluginManager manager, final Plugin plugin) {
-		
 		try {
 			ClassLoader loader = manager.getClass().getClassLoader();
 			
