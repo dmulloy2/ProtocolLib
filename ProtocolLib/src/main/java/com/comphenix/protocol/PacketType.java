@@ -196,7 +196,7 @@ public class PacketType implements Serializable {
 			public static final PacketType HELD_ITEM_SLOT =        	  new PacketType(PROTOCOL, SENDER, 0x09, 16);
 			public static final PacketType ARM_ANIMATION =            new PacketType(PROTOCOL, SENDER, 0x0A, 18);
 			public static final PacketType ENTITY_ACTION =            new PacketType(PROTOCOL, SENDER, 0x0B, 19);
-			public static final PacketType STEER_VECHICLE =           new PacketType(PROTOCOL, SENDER, 0x0C, 27);
+			public static final PacketType STEER_VEHICLE =           new PacketType(PROTOCOL, SENDER, 0x0C, 27);
 			public static final PacketType CLOSE_WINDOW =          	  new PacketType(PROTOCOL, SENDER, 0x0D, 101);
 			public static final PacketType WINDOW_CLICK =          	  new PacketType(PROTOCOL, SENDER, 0x0E, 102);
 			public static final PacketType TRANSACTION =          	  new PacketType(PROTOCOL, SENDER, 0x0F, 106);
