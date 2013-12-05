@@ -5,16 +5,17 @@ import java.util.Set;
 
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 
 public abstract class AbstractPlayerHandler implements PlayerInjectionHandler {
-	protected IntegerSet sendingFilters;
+	protected PacketTypeSet sendingFilters;
 
-	public AbstractPlayerHandler(IntegerSet sendingFilters) {
+	public AbstractPlayerHandler(PacketTypeSet sendingFilters) {
 		this.sendingFilters = sendingFilters;
 	}
 
@@ -29,18 +30,18 @@ public abstract class AbstractPlayerHandler implements PlayerInjectionHandler {
 	}
 
 	@Override
-	public void addPacketHandler(int packetID) {
-		sendingFilters.add(packetID);
+	public void addPacketHandler(PacketType type) {
+		sendingFilters.addType(type);
 	}
 
 	@Override
-	public void removePacketHandler(int packetID) {
-		sendingFilters.remove(packetID);
+	public void removePacketHandler(PacketType type) {
+		sendingFilters.removeType(type);
 	}
 
 	@Override
-	public Set<Integer> getSendingFilters() {
-		return sendingFilters.toSet();
+	public Set<PacketType> getSendingFilters() {
+		return sendingFilters.values();
 	}
 
 	@Override

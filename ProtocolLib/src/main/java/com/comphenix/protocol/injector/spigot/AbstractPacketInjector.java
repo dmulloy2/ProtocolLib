@@ -2,13 +2,14 @@ package com.comphenix.protocol.injector.spigot;
 
 import java.util.Set;
 
-import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 
 public abstract class AbstractPacketInjector implements PacketInjector {
-	private IntegerSet reveivedFilters;
+	private PacketTypeSet reveivedFilters;
 	
-	public AbstractPacketInjector(IntegerSet reveivedFilters) {
+	public AbstractPacketInjector(PacketTypeSet reveivedFilters) {
 		this.reveivedFilters = reveivedFilters;
 	}
 
@@ -24,25 +25,25 @@ public abstract class AbstractPacketInjector implements PacketInjector {
 	}
 
 	@Override
-	public boolean addPacketHandler(int packetID) {
-		reveivedFilters.add(packetID);
+	public boolean addPacketHandler(PacketType type) {
+		reveivedFilters.addType(type);
 		return true;
 	}
 
 	@Override
-	public boolean removePacketHandler(int packetID) {
-		reveivedFilters.remove(packetID);
+	public boolean removePacketHandler(PacketType type) {
+		reveivedFilters.removeType(type);
 		return true;
 	}
 
 	@Override
-	public boolean hasPacketHandler(int packetID) {
-		return reveivedFilters.contains(packetID);
+	public boolean hasPacketHandler(PacketType type) {
+		return reveivedFilters.contains(type);
 	}
 
 	@Override
-	public Set<Integer> getPacketHandlers() {
-		return reveivedFilters.toSet();
+	public Set<PacketType> getPacketHandlers() {
+		return reveivedFilters.values();
 	}
 
 	@Override

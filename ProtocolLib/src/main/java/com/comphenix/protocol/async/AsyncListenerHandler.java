@@ -336,7 +336,7 @@ public class AsyncListenerHandler {
 		if (whitelist == null)
 			return "";
 		else
-			return Joiner.on(", ").join(whitelist.getWhitelist());
+			return Joiner.on(", ").join(whitelist.getTypes());
 	}
 	
 	/**

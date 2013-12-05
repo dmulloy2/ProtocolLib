@@ -4,8 +4,8 @@ import java.util.Set;
 
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.Packets;
-import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.PacketInjector;
@@ -18,23 +18,23 @@ import com.google.common.collect.Sets;
  */
 class DummyPacketInjector extends AbstractPacketInjector implements PacketInjector {
 	private SpigotPacketInjector injector;	
-	private IntegerSet lastBufferedPackets = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+	private PacketTypeSet lastBufferedPackets = new PacketTypeSet();
 
-	public DummyPacketInjector(SpigotPacketInjector injector, IntegerSet reveivedFilters) {
+	public DummyPacketInjector(SpigotPacketInjector injector, PacketTypeSet reveivedFilters) {
 		super(reveivedFilters);
 		this.injector = injector;
 	}
 
 	@Override
-	public void inputBuffersChanged(Set<Integer> set) {
-		Set<Integer> removed = Sets.difference(lastBufferedPackets.toSet(), set);
-		Set<Integer> added = Sets.difference(set, lastBufferedPackets.toSet());
+	public void inputBuffersChanged(Set<PacketType> set) {
+		Set<PacketType> removed = Sets.difference(lastBufferedPackets.values(), set);
+		Set<PacketType> added = Sets.difference(set, lastBufferedPackets.values());
 		
 		// Update the proxy packet injector
-		for (int packet : removed) {
+		for (PacketType packet : removed) {
 			injector.getProxyPacketInjector().removePacketHandler(packet);
 		}
-		for (int packet : added) {
+		for (PacketType packet : added) {
 			injector.getProxyPacketInjector().addPacketHandler(packet);
 		}
 	}

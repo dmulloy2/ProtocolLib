@@ -32,6 +32,7 @@ import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.NoOp;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -196,14 +197,16 @@ class ProxyPacketInjector implements PacketInjector {
 	}
 	
 	@Override
-	public void inputBuffersChanged(Set<Integer> set) {
+	public void inputBuffersChanged(Set<PacketType> set) {
 		// No need to do anything
 	}
 	
 	@Override
-	@SuppressWarnings("rawtypes")
-	public boolean addPacketHandler(int packetID) {
-		if (hasPacketHandler(packetID))
+	@SuppressWarnings({"rawtypes", "deprecation"})
+	public boolean addPacketHandler(PacketType type) {
+		final int packetID = type.getLegacyId();
+		
+		if (hasPacketHandler(type))
 			return false;
 		
 		Enhancer ex = new Enhancer();
@@ -216,15 +219,15 @@ class ProxyPacketInjector implements PacketInjector {
 		Map<Integer, Class> overwritten = PacketRegistry.getOverwrittenPackets();
 		Map<Integer, Class> previous = PacketRegistry.getPreviousPackets();
 		Map<Class, Integer> registry = PacketRegistry.getPacketToID();
-		Class old = PacketRegistry.getPacketClassFromID(packetID);
+		Class old = PacketRegistry.getPacketClassFromType(type);
 		
 		// If this packet is not known
 		if (old == null) {
-			throw new IllegalStateException("Packet ID " + packetID + " is not a valid packet ID in this version.");
+			throw new IllegalStateException("Packet ID " + type + " is not a valid packet type in this version.");
 		}
 		// Check for previous injections
 		if (Factory.class.isAssignableFrom(old)) {
-			throw new IllegalStateException("Packet " + packetID + " has already been injected.");
+			throw new IllegalStateException("Packet " + type + " has already been injected.");
 		}
 		
 		if (filter == null) {
@@ -275,9 +278,11 @@ class ProxyPacketInjector implements PacketInjector {
 	}
 	
 	@Override
-	@SuppressWarnings("rawtypes")
-	public boolean removePacketHandler(int packetID) {
-		if (!hasPacketHandler(packetID))
+	@SuppressWarnings({"rawtypes", "deprecation"})
+	public boolean removePacketHandler(PacketType type) {
+		final int packetID = type.getLegacyId();
+		
+		if (!hasPacketHandler(type))
 			return false;
 		
 		Map<Class, Integer> registry = PacketRegistry.getPacketToID();
@@ -285,7 +290,7 @@ class ProxyPacketInjector implements PacketInjector {
 		Map<Integer, Class> overwritten = PacketRegistry.getOverwrittenPackets();
 		
 		Class old = previous.get(packetID);
-		Class proxy = PacketRegistry.getPacketClassFromID(packetID);
+		Class proxy = PacketRegistry.getPacketClassFromType(type);
 		
 		lookup.setLookup(packetID, old);
 		previous.remove(packetID);
@@ -299,18 +304,21 @@ class ProxyPacketInjector implements PacketInjector {
 	 * @param packetId - the packet to check.
 	 * @return TRUE if it does, FALSE otherwise.
 	 */
+	@Deprecated
 	public boolean requireInputBuffers(int packetId) {
 		return manager.requireInputBuffer(packetId);
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
-	public boolean hasPacketHandler(int packetID) {
-		return PacketRegistry.getPreviousPackets().containsKey(packetID);
+	public boolean hasPacketHandler(PacketType type) {
+		return PacketRegistry.getPreviousPackets().containsKey(type.getLegacyId());
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
-	public Set<Integer> getPacketHandlers() {
-		return PacketRegistry.getPreviousPackets().keySet();
+	public Set<PacketType> getPacketHandlers() {
+		return PacketRegistry.toPacketTypes(PacketRegistry.getPreviousPackets().keySet());
 	}
 	
 	// Called from the ReadPacketModified monitor
@@ -327,7 +335,7 @@ class ProxyPacketInjector implements PacketInjector {
 				return packetRecieved(packet, client, buffered);
 			} else {
 				// The timeout elapsed!
-				reporter.reportWarning(this, Report.newBuilder(REPORT_UNKNOWN_ORIGIN_FOR_PACKET).messageParam(input, packet.getID()));
+				reporter.reportWarning(this, Report.newBuilder(REPORT_UNKNOWN_ORIGIN_FOR_PACKET).messageParam(input, packet.getType()));
 				return null;
 			}
 			
@@ -348,14 +356,14 @@ class ProxyPacketInjector implements PacketInjector {
 	}
 	
 	@Override
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "deprecation"})
 	public synchronized void cleanupAll() {
 		Map<Integer, Class> overwritten = PacketRegistry.getOverwrittenPackets();
 		Map<Integer, Class> previous = PacketRegistry.getPreviousPackets();
 		
 		// Remove every packet handler
 		for (Integer id : previous.keySet().toArray(new Integer[0])) {
-			removePacketHandler(id);
+			removePacketHandler(PacketType.findLegacy(id));
 		}
 		
 		overwritten.clear();

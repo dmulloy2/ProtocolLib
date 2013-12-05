@@ -25,6 +25,7 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
@@ -293,6 +294,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	}
 
 	@Override
+	@Deprecated
 	public PacketContainer createPacket(int id) {
 		if (delegate != null)
 			return delegate.createPacket(id);
@@ -300,6 +302,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	}
 	
 	@Override
+	@Deprecated
 	public PacketContainer createPacket(int id, boolean forceDefaults) {
 		if (delegate != null) {
 			return delegate.createPacket(id);
@@ -337,6 +340,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	}
 
 	@Override
+	@Deprecated
 	public Set<Integer> getSendingFilters() {
 		if (delegate != null) {
 			return delegate.getSendingFilters();
@@ -352,6 +356,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	}
 	
 	@Override
+	@Deprecated
 	public Set<Integer> getReceivingFilters() {
 		if (delegate != null) {
 			return delegate.getReceivingFilters();
@@ -363,6 +368,26 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 			}
 			return recieving;
 		}
+	}
+	
+	@Override
+	public PacketContainer createPacket(PacketType type) {
+		return createPacket(type.getLegacyId());
+	}
+
+	@Override
+	public PacketContainer createPacket(PacketType type, boolean forceDefaults) {
+		return createPacket(type.getLegacyId(), forceDefaults);
+	}
+
+	@Override
+	public Set<PacketType> getSendingFilterTypes() {
+		return PacketRegistry.toPacketTypes(getSendingFilters());
+	}
+
+	@Override
+	public Set<PacketType> getReceivingFilterTypes() {
+		return PacketRegistry.toPacketTypes(getReceivingFilters());
 	}
 	
 	@Override
@@ -426,6 +451,4 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 			delegate.close();
 		closed = true;
 	}
-
-
 }

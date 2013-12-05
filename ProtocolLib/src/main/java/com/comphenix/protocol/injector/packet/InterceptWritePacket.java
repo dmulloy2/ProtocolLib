@@ -98,6 +98,7 @@ public class InterceptWritePacket {
 		return proxyClass;
 	}
 
+	@SuppressWarnings("deprecation")
 	private Class<?> getProxyClass(int packetId) {
 		Class<?> stored = proxyClasses.get(packetId);
 		
@@ -119,6 +120,7 @@ public class InterceptWritePacket {
 	 * Construct a new instance of the proxy object.
 	 * @return New instance of proxy, or NULL if we failed.
 	 */
+	@SuppressWarnings("deprecation")
 	public Object constructProxy(Object proxyObject, PacketEvent event, NetworkMarker marker) {
 		Class<?> proxyClass = null;
 		
@@ -141,6 +143,7 @@ public class InterceptWritePacket {
 	/**
 	 * Invoked when the write packet proxy class should be removed.
 	 */
+	@SuppressWarnings("deprecation")
 	public void cleanup() {
 		// Remove all proxy classes from the registry
 		for (Class<?> stored : proxyClasses.values()) {

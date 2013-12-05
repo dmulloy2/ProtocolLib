@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import javax.annotation.Nonnull;
 
-import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -132,7 +132,7 @@ public class WrappedAttribute {
 	 */
 	public PacketContainer getParentPacket() {
 		return new PacketContainer(
-			Packets.Server.UPDATE_ATTRIBUTES, 
+			PacketType.Play.Server.UPDATE_ATTRIBUTES, 
 			modifier.withType(MinecraftReflection.getPacketClass()).read(0)
 		);
 	}
@@ -351,7 +351,7 @@ public class WrappedAttribute {
 		 * @return This builder, for chaining.
 		 */
 		public Builder packet(PacketContainer packet) {
-			if (Preconditions.checkNotNull(packet, "packet cannot be NULL").getID() != Packets.Server.UPDATE_ATTRIBUTES) {
+			if (Preconditions.checkNotNull(packet, "packet cannot be NULL").getType() != PacketType.Play.Server.UPDATE_ATTRIBUTES) {
 				throw new IllegalArgumentException("Packet must be UPDATE_ATTRIBUTES (44)");
 			}
 			this.packet = packet;

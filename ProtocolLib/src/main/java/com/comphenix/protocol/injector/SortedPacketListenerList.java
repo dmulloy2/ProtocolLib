@@ -19,7 +19,6 @@ package com.comphenix.protocol.injector;
 
 import java.util.Collection;
 
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -39,7 +38,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	private TimedListenerManager timedManager = TimedListenerManager.getInstance();
 	
 	public SortedPacketListenerList() {
-		super(Packets.MAXIMUM_PACKET_ID);
+		super();
 	}
 
 	/**
@@ -48,7 +47,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketRecieving(ErrorReporter reporter, PacketEvent event) {
-		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketType());
 		
 		if (list == null)
 			return;
@@ -77,7 +76,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param priorityFilter - the required priority for a listener to be invoked.
 	 */
 	public void invokePacketRecieving(ErrorReporter reporter, PacketEvent event, ListenerPriority priorityFilter) {
-		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketType());
 		
 		if (list == null)
 			return;
@@ -131,7 +130,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketSending(ErrorReporter reporter, PacketEvent event) {
-		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketType());
 		
 		if (list == null)
 			return;
@@ -159,7 +158,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param priorityFilter - the required priority for a listener to be invoked.
 	 */
 	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, ListenerPriority priorityFilter) {
-		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketID());
+		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketType());
 		
 		if (list == null)
 			return;

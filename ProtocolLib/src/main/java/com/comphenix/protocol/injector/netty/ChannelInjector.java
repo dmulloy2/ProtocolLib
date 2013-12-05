@@ -10,7 +10,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import net.minecraft.util.com.google.common.base.Joiner;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelHandler;
@@ -33,7 +32,6 @@ import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketOutputHandler;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -83,10 +81,10 @@ class ChannelInjector extends ByteToMessageDecoder {
 		
 		/**
 		 * Determine if we need the buffer data of a given client side packet.
-		 * @param packetId - the packet Id.
+		 * @param packetClass - the packet class.
 		 * @return TRUE if we do, FALSE otherwise.
 		 */
-		public boolean includeBuffer(int packetId);
+		public boolean includeBuffer(Class<?> packetClass);
 		
 		/**
 		 * Retrieve the current error reporter.
@@ -326,10 +324,10 @@ class ChannelInjector extends ByteToMessageDecoder {
 			
 			if (packets.size() > 0) {
 				Object input = packets.get(0);
-				int id = PacketRegistry.getPacketID(input.getClass());
+				Class<?> packetClass = input.getClass();
 				NetworkMarker marker = null;
 				
-				if (channelListener.includeBuffer(id)) {
+				if (channelListener.includeBuffer(packetClass)) {
 					byteBuffer.resetReaderIndex();
 					marker = new NetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
 				}

@@ -59,16 +59,36 @@ public interface AsynchronousManager {
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be 
 	 * observed by the asynchronous listeners.
+	 * <p>
+	 * Deprecated: Use {@link #getSendingTypes()} instead.
 	 * @return Every filtered server packet.
 	 */
+	@Deprecated
 	public abstract Set<Integer> getSendingFilters();
 
 	/**
+	 * Retrieves a immutable set containing the types of the sent server packets that will be 
+	 * observed by the asynchronous listeners.
+	 * @return Every filtered server packet.
+	 */
+	public abstract Set<PacketType> getSendingTypes();
+	
+	/**
 	 * Retrieves a immutable set containing the ID of the recieved client packets that will be
+	 * <p>
+	 * Deprecated: Use {@link #getReceivingTypes()} instead.
 	 * observed by the asynchronous listeners.
 	 * @return Every filtered client packet.
 	 */
+	@Deprecated
 	public abstract Set<Integer> getReceivingFilters();
+	
+	/**
+	 * Retrieves a immutable set containing the types of the recieved client packets that will be
+	 * observed by the asynchronous listeners.
+	 * @return Every filtered client packet.
+	 */
+	public abstract Set<PacketType> getReceivingTypes();
 
 	/**
 	 * Determine if a given synchronous packet has asynchronous listeners.

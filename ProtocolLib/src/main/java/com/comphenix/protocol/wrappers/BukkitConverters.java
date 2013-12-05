@@ -383,7 +383,7 @@ public class BukkitConverters {
 			
 			@Override
 			protected NbtBase<?> getSpecificValue(Object generic) {
-				return NbtFactory.fromNMS(generic);
+				return NbtFactory.fromNMS(generic, null);
 			}
 			
 			@Override

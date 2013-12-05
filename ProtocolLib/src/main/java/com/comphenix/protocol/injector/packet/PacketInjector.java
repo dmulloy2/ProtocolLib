@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 
@@ -28,37 +29,37 @@ public interface PacketInjector {
 	public abstract void setCancelled(Object packet, boolean cancelled);
 	
 	/**
-	 * Start intercepting packets with the given packet ID.
-	 * @param packetID - the ID of the packets to start intercepting.
+	 * Start intercepting packets with the given packet type.
+	 * @param type - the type of the packets to start intercepting.
 	 * @return TRUE if we didn't already intercept these packets, FALSE otherwise.
 	 */
-	public abstract boolean addPacketHandler(int packetID);
+	public abstract boolean addPacketHandler(PacketType type);
 
 	/**
-	 * Stop intercepting packets with the given packet ID.
-	 * @param packetID - the ID of the packets to stop intercepting.
+	 * Stop intercepting packets with the given packet type.
+	 * @param type - the type of the packets to stop intercepting.
 	 * @return TRUE if we successfuly stopped intercepting a given packet ID, FALSE otherwise.
 	 */
-	public abstract boolean removePacketHandler(int packetID);
+	public abstract boolean removePacketHandler(PacketType type);
 
 	/**
-	 * Determine if packets with the given packet ID is being intercepted.
-	 * @param packetID - the packet ID to lookup.
+	 * Determine if packets with the given packet type is being intercepted.
+	 * @param type - the packet type to lookup.
 	 * @return TRUE if we do, FALSE otherwise.
 	 */
-	public abstract boolean hasPacketHandler(int packetID);
+	public abstract boolean hasPacketHandler(PacketType type);
 
 	/**
 	 * Invoked when input buffers have changed.
 	 * @param set - the new set of packets that require the read buffer.
 	 */
-	public abstract void inputBuffersChanged(Set<Integer> set);
+	public abstract void inputBuffersChanged(Set<PacketType> set);
 	
 	/**
-	 * Retrieve every intercepted packet ID.
-	 * @return Every intercepted packet ID.
+	 * Retrieve every intercepted packet type.
+	 * @return Every intercepted packet type.
 	 */
-	public abstract Set<Integer> getPacketHandlers();
+	public abstract Set<PacketType> getPacketHandlers();
 
 	/**
 	 * Let the packet listeners process the given packet.

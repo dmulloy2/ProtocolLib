@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadFactory;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.ConcurrentPlayerMap;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
@@ -172,13 +173,13 @@ class PlayerSendingHandler {
 	
 	/**
 	 * Immediately send every server packet with the given list of IDs.
-	 * @param ids - ID of every packet to send immediately.
+	 * @param types - types of every packet to send immediately.
 	 * @param synchronusOK - whether or not we're running on the main thread. 
 	 */
-	public void sendServerPackets(List<Integer> ids, boolean synchronusOK) {
+	public void sendServerPackets(List<PacketType> types, boolean synchronusOK) {
 		if (!cleaningUp) {
 			for (QueueContainer queue : playerSendingQueues.values()) {
-				queue.getServerQueue().signalPacketUpdate(ids, synchronusOK);
+				queue.getServerQueue().signalPacketUpdate(types, synchronusOK);
 			}
 		}
 	}
@@ -188,10 +189,10 @@ class PlayerSendingHandler {
 	 * @param ids - ID of every packet to send immediately.
 	 * @param synchronusOK - whether or not we're running on the main thread. 
 	 */
-	public void sendClientPackets(List<Integer> ids, boolean synchronusOK) {
+	public void sendClientPackets(List<PacketType> types, boolean synchronusOK) {
 		if (!cleaningUp) {
 			for (QueueContainer queue : playerSendingQueues.values()) {
-				queue.getClientQueue().signalPacketUpdate(ids, synchronusOK);
+				queue.getClientQueue().signalPacketUpdate(types, synchronusOK);
 			}
 		}
 	}

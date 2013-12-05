@@ -132,10 +132,37 @@ public interface ProtocolManager extends PacketStream {
 
 	/**
 	 * Constructs a new encapsulated Minecraft packet with the given ID.
+	 * <p>
+	 * Deprecated: Use {@link #createPacket(PacketType)} instead.
 	 * @param id - packet ID.
 	 * @return New encapsulated Minecraft packet.
 	 */
+	@Deprecated
 	public PacketContainer createPacket(int id);
+	
+	/**
+	 * Constructs a new encapsulated Minecraft packet with the given ID.
+	 * @param  type - packet  type.
+	 * @return New encapsulated Minecraft packet.
+	 */
+	public PacketContainer createPacket(PacketType type);
+	
+	/**
+	 * Constructs a new encapsulated Minecraft packet with the given ID.
+	 * <p>
+	 * If set to true, the <i>forceDefaults</i> option will force the system to automatically 
+	 * give non-primitive fields in the packet sensible default values. For instance, certain
+	 * packets - like Packet60Explosion - require a List or Set to be non-null. If the
+	 * forceDefaults option is true, the List or Set will be automatically created.
+	 * <p>
+	 * Deprecated: Use {@link #createPacket(PacketType, boolean)} instead.
+	 * 
+	 * @param id - packet ID.
+	 * @param forceDefaults - TRUE to use sensible defaults in most fields, FALSE otherwise.
+	 * @return New encapsulated Minecraft packet.
+	 */
+	@Deprecated
+	public PacketContainer createPacket(int id, boolean forceDefaults);
 	
 	/**
 	 * Constructs a new encapsulated Minecraft packet with the given ID.
@@ -145,11 +172,11 @@ public interface ProtocolManager extends PacketStream {
 	 * packets - like Packet60Explosion - require a List or Set to be non-null. If the
 	 * forceDefaults option is true, the List or Set will be automatically created.
 	 * 
-	 * @param id - packet ID.
+	 * @param type - packet type.
 	 * @param forceDefaults - TRUE to use sensible defaults in most fields, FALSE otherwise.
 	 * @return New encapsulated Minecraft packet.
 	 */
-	public PacketContainer createPacket(int id, boolean forceDefaults);
+	public PacketContainer createPacket(PacketType type, boolean forceDefaults);
 
 	/**
 	 * Construct a packet using the special builtin Minecraft constructors.
@@ -199,15 +226,33 @@ public interface ProtocolManager extends PacketStream {
 	
 	/**
 	 * Retrieves a immutable set containing the ID of the sent server packets that will be observed by listeners.
+	 * <p>
+	 * Deprecated: Use {@link #getSendingFilterTypes()} instead.
 	 * @return Every filtered server packet.
 	 */
+	@Deprecated
 	public Set<Integer> getSendingFilters();
 	
 	/**
+	 * Retrieves a immutable set containing the type of the sent server packets that will be observed by listeners.
+	 * @return Every filtered server packet.
+	 */
+	public Set<PacketType> getSendingFilterTypes();
+	
+	/**
 	 * Retrieves a immutable set containing the ID of the recieved client packets that will be observed by listeners.
+	 * <p>
+	 * Deprecated: Use {@link #getReceivingFilterTypes()} instead.
 	 * @return Every filtered client packet.
 	 */
+	@Deprecated
 	public Set<Integer> getReceivingFilters();
+	
+	/**
+	 * Retrieves a immutable set containing the type of the recieved client packets that will be observed by listeners.
+	 * @return Every filtered client packet.
+	 */
+	public Set<PacketType> getReceivingFilterTypes();
 	
 	/**
 	 * Retrieve the current Minecraft version.

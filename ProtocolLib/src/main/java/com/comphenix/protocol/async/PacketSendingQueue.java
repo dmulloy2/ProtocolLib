@@ -26,6 +26,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -106,15 +107,14 @@ abstract class PacketSendingQueue {
 	 * @param packetsRemoved - packets that no longer have any listeners.
 	 * @param onMainThread - whether or not this is occuring on the main thread.
 	 */
-	public synchronized void signalPacketUpdate(List<Integer> packetsRemoved, boolean onMainThread) {
-		
-		Set<Integer> lookup = new HashSet<Integer>(packetsRemoved);
+	public synchronized void signalPacketUpdate(List<PacketType> packetsRemoved, boolean onMainThread) {
+		Set<PacketType> lookup = new HashSet<PacketType>(packetsRemoved);
 		
 		// Note that this is O(n), so it might be expensive
 		for (PacketEventHolder holder : sendingQueue) {
 			PacketEvent event = holder.getEvent();
 			
-			if (lookup.contains(event.getPacketID())) {
+			if (lookup.contains(event.getPacketType())) {
 				event.getAsyncMarker().setProcessed(true);
 			}
 		}
@@ -280,8 +280,8 @@ abstract class PacketSendingQueue {
 		
 		} catch (PlayerLoggedOutException e) {
 			System.out.println(String.format(
-					"[ProtocolLib] Warning: Dropped packet index %s of ID %s",
-					marker.getOriginalSendingIndex(), event.getPacketID()
+					"[ProtocolLib] Warning: Dropped packet index %s of type %s",
+					marker.getOriginalSendingIndex(), event.getPacketType()
 			));
 			
 		} catch (IOException e) {

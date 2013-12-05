@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.injector;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 
@@ -48,6 +49,13 @@ public interface ListenerInvoker {
 	public abstract int getPacketID(Object packet);
 
 	/**
+	 * Retrieve the associated type of a packet.
+	 * @param packet - the packet.
+	 * @return The packet type.
+	 */
+	public abstract PacketType getPacketType(Object packet);
+	
+	/**
 	 * Retrieve the object responsible for intercepting write packets.
 	 * @return Object that intercepts write packets.
 	 */
@@ -58,6 +66,7 @@ public interface ListenerInvoker {
 	 * @param packetId - the packet to check.
 	 * @return TRUE if it does, FALSE otherwise.
 	 */
+	@Deprecated
 	public boolean requireInputBuffer(int packetId);
 	
 	/**
@@ -71,6 +80,7 @@ public interface ListenerInvoker {
 	 * @param clazz - class to register.
 	 * @param packetID - the the new associated packet ID.
 	 */
+	@Deprecated
 	public abstract void registerPacketClass(Class<?> clazz, int packetID);
 
 	/**
@@ -79,5 +89,6 @@ public interface ListenerInvoker {
  	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
 	 * @return The associated class.
 	 */
+	@Deprecated
 	public abstract Class<?> getPacketClassFromID(int packetID, boolean forceVanilla);
 }

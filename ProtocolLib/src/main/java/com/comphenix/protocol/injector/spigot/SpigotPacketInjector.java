@@ -22,8 +22,7 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.cglib.proxy.NoOp;
 
-import com.comphenix.protocol.Packets;
-import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -80,8 +79,8 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	private Plugin plugin;
 	
 	// Different sending filters
-	private IntegerSet queuedFilters;
-	private IntegerSet reveivedFilters;
+	private PacketTypeSet queuedFilters;
+	private PacketTypeSet reveivedFilters;
 
 	// NetworkManager to injector and player
 	private ConcurrentMap<Object, NetworkObjectInjector> networkManagerInjector = Maps.newConcurrentMap();
@@ -109,8 +108,8 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		this.reporter = reporter;
 		this.invoker = invoker;
 		this.server = server;
-		this.queuedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
-		this.reveivedFilters = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+		this.queuedFilters = new PacketTypeSet();
+		this.reveivedFilters = new PacketTypeSet();
 	}
 	
 	/**
@@ -417,9 +416,10 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	
 	@Override
 	public Object packetReceived(Object networkManager, Object connection, Object packet) {
-		Integer id = invoker.getPacketID(packet);
-		
-		if (id != null && reveivedFilters.contains(id)) {
+		if (reveivedFilters.contains(packet.getClass())) {
+			@SuppressWarnings("deprecation")
+			Integer id = invoker.getPacketID(packet);
+			
 			// Check for ignored packets
 			if (ignoredPackets.remove(packet)) {
 				return packet;
@@ -440,9 +440,10 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 
 	@Override
 	public Object packetQueued(Object networkManager, Object connection, Object packet) {
-		Integer id = invoker.getPacketID(packet);
-		
-		if (id != null && queuedFilters.contains(id)) {
+		if (queuedFilters.contains(packet.getClass())) {
+			@SuppressWarnings("deprecation")
+			Integer id = invoker.getPacketID(packet);
+			
 			// Check for ignored packets
 			if (ignoredPackets.remove(packet)) {
 				return packet;

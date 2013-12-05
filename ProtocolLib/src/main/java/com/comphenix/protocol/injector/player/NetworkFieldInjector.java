@@ -133,6 +133,7 @@ class NetworkFieldInjector extends PlayerInjector {
 			return null;
 			
 		} else {
+			@SuppressWarnings("deprecation")
 			int[] unsupported = { Packets.Server.MAP_CHUNK, Packets.Server.MAP_CHUNK_BULK };
 			
 			// Unfortunately, we don't support chunk packets

@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -17,7 +17,8 @@ import com.comphenix.protocol.events.PacketEvent;
  */
 class DummyPlayerHandler extends AbstractPlayerHandler {
 	private SpigotPacketInjector injector;
-	public DummyPlayerHandler(SpigotPacketInjector injector, IntegerSet sendingFilters) {
+	
+	public DummyPlayerHandler(SpigotPacketInjector injector, PacketTypeSet sendingFilters) {
 		super(sendingFilters);
 		this.injector = injector;
 	}

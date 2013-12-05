@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -110,10 +111,11 @@ class InjectedArrayList extends ArrayList<Object> {
 	 * @param source - packet to invert.
 	 * @return The inverted packet.
 	 */
+	@SuppressWarnings("deprecation")
 	Object createNegativePacket(Object source) {
 		ListenerInvoker invoker = injector.getInvoker();
 		
-		int packetID = invoker.getPacketID(source);
+		PacketType type = invoker.getPacketType(source);
 
 		// We want to subtract the byte amount that were added to the running
 		// total of outstanding packets. Otherwise, cancelling too many packets
@@ -145,7 +147,7 @@ class InjectedArrayList extends ArrayList<Object> {
 		
 		try {
 			// Temporarily associate the fake packet class
-			invoker.registerPacketClass(proxyClass, packetID);
+			invoker.registerPacketClass(proxyClass, type.getLegacyId());
 			Object proxy = proxyClass.newInstance();
 			
 			InjectedArrayList.registerDelegate(proxy, source);

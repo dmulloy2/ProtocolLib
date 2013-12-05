@@ -18,8 +18,8 @@ import net.minecraft.util.io.netty.channel.ChannelInboundHandler;
 import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
 import net.minecraft.util.io.netty.channel.ChannelInitializer;
 
-import com.comphenix.protocol.Packets;
-import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
@@ -28,6 +28,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.netty.ChannelInjector.ChannelListener;
 import com.comphenix.protocol.injector.packet.PacketInjector;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.comphenix.protocol.injector.spigot.AbstractPacketInjector;
@@ -46,11 +47,11 @@ public class NettyProtocolInjector implements ChannelListener {
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
     
 	// Different sending filters
-	private IntegerSet queuedFilters = new IntegerSet(Packets.PACKET_COUNT);
-	private IntegerSet reveivedFilters = new IntegerSet(Packets.PACKET_COUNT);
+	private PacketTypeSet queuedFilters = new PacketTypeSet();
+	private PacketTypeSet reveivedFilters = new PacketTypeSet();
 	
 	// Which packets are buffered
-    private Set<Integer> bufferedPackets;
+    private PacketTypeSet bufferedPackets;
     private ListenerInvoker invoker;
     
     // Handle errors
@@ -172,14 +173,14 @@ public class NettyProtocolInjector implements ChannelListener {
     
 	@Override
 	public Object onPacketSending(ChannelInjector injector, Object packet, NetworkMarker marker) {
-		Integer id = invoker.getPacketID(packet);
+		Class<?> clazz = packet.getClass();
 		
-		if (id != null && queuedFilters.contains(id)) {
+		if (queuedFilters.contains(clazz)) {
 			// Check for ignored packets
 			if (injector.unignorePacket(packet)) {
 				return packet;
 			}
-			PacketContainer container = new PacketContainer(id, packet);
+			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
 			PacketEvent event = packetQueued(container, injector.getPlayer());
 			
 			if (!event.isCancelled()) {
@@ -195,14 +196,14 @@ public class NettyProtocolInjector implements ChannelListener {
 
 	@Override
 	public Object onPacketReceiving(ChannelInjector injector, Object packet, NetworkMarker marker) {
-		Integer id = invoker.getPacketID(packet);
+		Class<?> clazz = packet.getClass();
 		
-		if (id != null && reveivedFilters.contains(id)) {
+		if (reveivedFilters.contains(clazz)) {
 			// Check for ignored packets
 			if (injector.unignorePacket(packet)) {
 				return packet;
 			}
-			PacketContainer container = new PacketContainer(id, packet);
+			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
 			PacketEvent event = packetReceived(container, injector.getPlayer(), marker);
 			
 			if (!event.isCancelled()) {
@@ -216,8 +217,8 @@ public class NettyProtocolInjector implements ChannelListener {
 	}
 
 	@Override
-	public boolean includeBuffer(int packetId) {
-		return bufferedPackets.contains(packetId);
+	public boolean includeBuffer(Class<?> packetClass) {
+		return bufferedPackets.contains(packetClass);
 	}
  
 	/**
@@ -313,8 +314,8 @@ public class NettyProtocolInjector implements ChannelListener {
 			}
 			
 			@Override
-			public void inputBuffersChanged(Set<Integer> set) {
-				bufferedPackets = set;
+			public void inputBuffersChanged(Set<PacketType> set) {
+				bufferedPackets = new PacketTypeSet(set);
 			}
 		};
 	}

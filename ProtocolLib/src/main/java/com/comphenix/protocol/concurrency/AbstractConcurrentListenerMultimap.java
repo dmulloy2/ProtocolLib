@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.google.common.collect.Iterables;
@@ -36,12 +36,10 @@ import com.google.common.collect.Iterables;
  */
 public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	// The core of our map
-	private AtomicReferenceArray<SortedCopyOnWriteArray<PrioritizedListener<TListener>>> arrayListeners;
-	private ConcurrentMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>> mapListeners;
+	private ConcurrentMap<PacketType, SortedCopyOnWriteArray<PrioritizedListener<TListener>>> mapListeners;
 	
-	public AbstractConcurrentListenerMultimap(int maximumPacketID) {
-		arrayListeners = new AtomicReferenceArray<SortedCopyOnWriteArray<PrioritizedListener<TListener>>>(maximumPacketID + 1);
-		mapListeners =   new ConcurrentHashMap<Integer, SortedCopyOnWriteArray<PrioritizedListener<TListener>>>();
+	public AbstractConcurrentListenerMultimap() {
+		mapListeners =   new ConcurrentHashMap<PacketType, SortedCopyOnWriteArray<PrioritizedListener<TListener>>>();
 	}
 	
 	/**
@@ -52,14 +50,14 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	public void addListener(TListener listener, ListeningWhitelist whitelist) {
 		PrioritizedListener<TListener> prioritized = new PrioritizedListener<TListener>(listener, whitelist.getPriority());
 		
-		for (Integer packetID : whitelist.getWhitelist()) {
-			addListener(packetID, prioritized);
+		for (PacketType type : whitelist.getTypes()) {
+			addListener(type, prioritized);
 		}
 	}
 	
 	// Add the listener to a specific packet notifcation list
-	private void addListener(Integer packetID, PrioritizedListener<TListener> listener) {
-		SortedCopyOnWriteArray<PrioritizedListener<TListener>> list = arrayListeners.get(packetID);
+	private void addListener(PacketType type, PrioritizedListener<TListener> listener) {
+		SortedCopyOnWriteArray<PrioritizedListener<TListener>> list = mapListeners.get(type);
 		
 		// We don't want to create this for every lookup
 		if (list == null) {
@@ -68,11 +66,10 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 			final SortedCopyOnWriteArray<PrioritizedListener<TListener>> value = new SortedCopyOnWriteArray<PrioritizedListener<TListener>>();
 
 			// We may end up creating multiple multisets, but we'll agree on which to use
-			if (arrayListeners.compareAndSet(packetID, null, value)) {
-				mapListeners.put(packetID, value);
+			list = mapListeners.putIfAbsent(type, value);
+		
+			if (list == null) {
 				list = value;
-			} else {
-				list = arrayListeners.get(packetID);
 			}
 		}
 		
@@ -86,12 +83,12 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	 * @param whitelist - the packet whitelist that was used.
 	 * @return Every packet ID that was removed due to no listeners.
 	 */
-	public List<Integer> removeListener(TListener listener, ListeningWhitelist whitelist) {
-		List<Integer> removedPackets = new ArrayList<Integer>();
+	public List<PacketType> removeListener(TListener listener, ListeningWhitelist whitelist) {
+		List<PacketType> removedPackets = new ArrayList<PacketType>();
 		
 		// Again, not terribly efficient. But adding or removing listeners should be a rare event.
-		for (Integer packetID : whitelist.getWhitelist()) {
-			SortedCopyOnWriteArray<PrioritizedListener<TListener>> list = arrayListeners.get(packetID);
+		for (PacketType type : whitelist.getTypes()) {
+			SortedCopyOnWriteArray<PrioritizedListener<TListener>> list = mapListeners.get(type);
 			
 			// Remove any listeners
 			if (list != null) {
@@ -101,16 +98,13 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 					list.remove(new PrioritizedListener<TListener>(listener, whitelist.getPriority()));
 					
 					if (list.size() == 0) {
-						arrayListeners.set(packetID, null);
-						mapListeners.remove(packetID);
-						removedPackets.add(packetID);
+						mapListeners.remove(type);
+						removedPackets.add(type);
 					}
 				}
 			}
-			
 			// Move on to the next
 		}
-		
 		return removedPackets;
 	}
 	
@@ -118,11 +112,11 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	 * Retrieve the registered listeners, in order from the lowest to the highest priority.
 	 * <p>
 	 * The returned list is thread-safe and doesn't require synchronization.
-	 * @param packetID - packet ID.
+	 * @param type - packet type.
 	 * @return Registered listeners.
 	 */
-	public Collection<PrioritizedListener<TListener>> getListener(int packetID) {
-		return arrayListeners.get(packetID);
+	public Collection<PrioritizedListener<TListener>> getListener(PacketType type) {
+		return mapListeners.get(type);
 	}
 	
 	/**
@@ -134,10 +128,10 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	}
 	
 	/**
-	 * Retrieve every registered packet ID:
-	 * @return Registered packet ID.
+	 * Retrieve every registered packet type:
+	 * @return Registered packet type.
 	 */
-	public Set<Integer> keySet() {
+	public Set<PacketType> keySet() {
 		return mapListeners.keySet();
 	}
 	
@@ -145,8 +139,6 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	 * Remove all packet listeners.
 	 */
 	protected void clearListeners() {
-		arrayListeners = new AtomicReferenceArray<
-				SortedCopyOnWriteArray<PrioritizedListener<TListener>>>(arrayListeners.length());
 		mapListeners.clear();
 	}
 }

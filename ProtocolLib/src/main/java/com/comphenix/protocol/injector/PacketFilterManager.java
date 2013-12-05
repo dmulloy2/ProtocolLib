@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.util.com.google.common.collect.Sets;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -49,11 +50,9 @@ import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
-import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -148,7 +147,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	private InterceptWritePacket interceptWritePacket;
 	
 	// Whether or not a packet must be input buffered
-	private volatile IntegerSet inputBufferedPackets = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+	private volatile Set<PacketType> inputBufferedPackets = Sets.newHashSet();
 	
 	// The two listener containers
 	private SortedPacketListenerList recievedListeners;
@@ -278,8 +277,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// Attempt to load the list of server and client packets
 		try {
-			knowsServerPackets = PacketRegistry.getServerPackets() != null;
-			knowsClientPackets = PacketRegistry.getClientPackets() != null;
+			knowsServerPackets = PacketRegistry.getClientPacketTypes() != null;
+			knowsClientPackets = PacketRegistry.getServerPacketTypes() != null;
 		} catch (FieldAccessException e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_PACKET_LIST).error(e));
 		}
@@ -375,7 +374,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				
 				verifyWhitelist(listener, sending);
 				sendingListeners.addListener(listener, sending);
-				enablePacketFilters(listener, ConnectionSide.SERVER_SIDE, sending.getWhitelist());
+				enablePacketFilters(listener, ConnectionSide.SERVER_SIDE, sending.getTypes());
 				
 				// Make sure this is possible
 				playerInjection.checkListener(listener);
@@ -387,7 +386,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			if (hasReceiving) {
 				verifyWhitelist(listener, receiving);
 				recievedListeners.addListener(listener, receiving);
-				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getWhitelist());
+				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getTypes());
 			}
 			if (hasReceiving)
 				incrementPhases(processPhase(receiving, ConnectionSide.CLIENT_SIDE));
@@ -403,8 +402,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (!whitelist.getGamePhase().hasLogin() && 
 			!whitelist.getOptions().contains(ListenerOptions.DISABLE_GAMEPHASE_DETECTION)) {
 			
-			for (int id : whitelist.getWhitelist()) {
-				if (loginPackets.isLoginPacket(id, side)) {
+			for (PacketType type : whitelist.getTypes()) {
+				if (loginPackets.isLoginPacket(type)) {
 					return GamePhase.BOTH;
 				}
 			}
@@ -416,21 +415,21 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * Invoked when we need to update the input buffer set.
 	 */
 	private void updateRequireInputBuffers() {
-		IntegerSet updated = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
+		Set<PacketType> updated = Sets.newHashSet();
 		
 		for (PacketListener listener : packetListeners) {
 			ListeningWhitelist whitelist = listener.getReceivingWhitelist();
 			
 			// We only check the recieving whitelist
 			if (whitelist.getOptions().contains(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
-				for (int id : whitelist.getWhitelist()) {
-					updated.add(id);
+				for (PacketType type : whitelist.getTypes()) {
+					updated.add(type);
 				}
 			}
 		}
 		// Update it
 		this.inputBufferedPackets = updated;
-		this.packetInjector.inputBuffersChanged(updated.toSet());
+		this.packetInjector.inputBuffersChanged(updated);
 	}
 
 	/**
@@ -484,10 +483,10 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @throws IllegalArgumentException If the whitelist is illegal.
 	 */
 	public static void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist) {
-		for (Integer id : whitelist.getWhitelist()) {
-			if (id >= 256 || id < 0) {
-				throw new IllegalArgumentException(String.format("Invalid packet id %s in listener %s.", 
-							id, PacketAdapter.getPluginName(listener))
+		for (PacketType type : whitelist.getTypes()) {
+			if (type == null) {
+				throw new IllegalArgumentException(String.format("Packet type in in listener %s was NULL.", 
+						PacketAdapter.getPluginName(listener))
 				);
 			}
 		}
@@ -498,8 +497,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		if (listener == null)
 			throw new IllegalArgumentException("listener cannot be NULL");
 
-		List<Integer> sendingRemoved = null;
-		List<Integer> receivingRemoved = null;
+		List<PacketType> sendingRemoved = null;
+		List<PacketType> receivingRemoved = null;
 		
 		ListeningWhitelist sending = listener.getSendingWhitelist();
 		ListeningWhitelist receiving = listener.getReceivingWhitelist();
@@ -556,7 +555,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 	@Override
 	public boolean requireInputBuffer(int packetId) {
-		return inputBufferedPackets.contains(packetId);
+		return inputBufferedPackets.contains(PacketType.findLegacy(packetId));
 	}
 	
 	/**
@@ -567,7 +566,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param event - the evnet to broadcast.
 	 */
 	private void handlePacket(SortedPacketListenerList packetListeners, PacketEvent event, boolean sending) {
-		
 		// By default, asynchronous packets are queued for processing
 		if (asyncFilterManager.hasAsynchronousListeners(event)) {
 			event.setAsyncMarker(asyncFilterManager.createAsyncMarker());
@@ -603,32 +601,32 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param side - which side the event will arrive from.
 	 * @param packets - the packet id(s).
 	 */
-	private void enablePacketFilters(PacketListener listener, ConnectionSide side, Iterable<Integer> packets) {
+	private void enablePacketFilters(PacketListener listener, ConnectionSide side, Iterable<PacketType> packets) {
 		if (side == null)
 			throw new IllegalArgumentException("side cannot be NULL.");
 
 		// Note the difference between unsupported and valid.
 		// Every packet ID between and including 0 - 255 is valid, but only a subset is supported.
 		
-		for (int packetID : packets) {
+		for (PacketType type : packets) {
 			// Only register server packets that are actually supported by Minecraft
 			if (side.isForServer()) {
 				// Note that we may update the packet list here
-				if (!knowsServerPackets || PacketRegistry.getServerPackets().contains(packetID))
-					playerInjection.addPacketHandler(packetID);
+				if (!knowsServerPackets || PacketRegistry.getServerPacketTypes().contains(type))
+					playerInjection.addPacketHandler(type);
 				else
 					reporter.reportWarning(this, 
-							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), packetID)
+							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)
 					);
 			}
 			
 			// As above, only for client packets
 			if (side.isForClient() && packetInjector != null) {
-				if (!knowsClientPackets || PacketRegistry.getClientPackets().contains(packetID))
-					packetInjector.addPacketHandler(packetID);
+				if (!knowsClientPackets || PacketRegistry.getClientPacketTypes().contains(type))
+					packetInjector.addPacketHandler(type);
 				else
 					reporter.reportWarning(this, 
-							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), packetID)
+							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)
 					);
 			}
 		}
@@ -639,15 +637,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param packets - the packet id(s).
 	 * @param side - which side the event no longer should arrive from.
 	 */
-	private void disablePacketFilters(ConnectionSide side, Iterable<Integer> packets) {
+	private void disablePacketFilters(ConnectionSide side, Iterable<PacketType> packets) {
 		if (side == null)
 			throw new IllegalArgumentException("side cannot be NULL.");
 		
-		for (int packetID : packets) {
+		for (PacketType type : packets) {
 			if (side.isForServer())
-				playerInjection.removePacketHandler(packetID);
+				playerInjection.removePacketHandler(type);
 			if (side.isForClient() && packetInjector != null) 
-				packetInjector.removePacketHandler(packetID);
+				packetInjector.removePacketHandler(type);
 		}
 	}
 	
@@ -812,15 +810,27 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			packetInjector.setCancelled(mcPacket, true);
 		}
 	}
-	
+		
 	@Override
+	@Deprecated
 	public PacketContainer createPacket(int id) {
-		return createPacket(id, true);
+		return createPacket(PacketType.findLegacy(id), true);
 	}
 	
 	@Override
+	public PacketContainer createPacket(PacketType type) {
+		return createPacket(type, true);
+	}
+	
+	@Override
+	@Deprecated
 	public PacketContainer createPacket(int id, boolean forceDefaults) {
-		PacketContainer packet = new PacketContainer(id);
+		return createPacket(PacketType.findLegacy(id), forceDefaults);
+	}
+
+	@Override
+	public PacketContainer createPacket(PacketType type, boolean forceDefaults) {
+		PacketContainer packet = new PacketContainer(type);
 		
 		// Use any default values if possible
 		if (forceDefaults) {
@@ -846,13 +856,23 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
+	@Deprecated
 	public Set<Integer> getSendingFilters() {
-		return playerInjection.getSendingFilters();
+		return PacketRegistry.toLegacy(playerInjection.getSendingFilters());
 	}
 	
 	@Override
 	public Set<Integer> getReceivingFilters() {
-		return ImmutableSet.copyOf(packetInjector.getPacketHandlers());
+		return PacketRegistry.toLegacy(packetInjector.getPacketHandlers());
+	}
+	@Override
+	public Set<PacketType> getSendingFilterTypes() {
+		return Collections.unmodifiableSet(playerInjection.getSendingFilters());
+	}
+
+	@Override
+	public Set<PacketType> getReceivingFilterTypes() {
+		return Collections.unmodifiableSet(packetInjector.getPacketHandlers());
 	}
 	
 	@Override
@@ -993,16 +1013,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
+	@Deprecated
 	public int getPacketID(Object packet) {
+		return getPacketType(packet).getLegacyId();
+	}
+
+	@Override
+	public PacketType getPacketType(Object packet) {
 		if (packet == null)
 			throw new IllegalArgumentException("Packet cannot be NULL.");
 		if (!MinecraftReflection.isPacketClass(packet))
 			throw new IllegalArgumentException("The given object " + packet + " is not a packet.");
 		
-		Integer id = PacketRegistry.getPacketToID().get(packet.getClass());
+		PacketType type = PacketRegistry.getPacketType(packet.getClass());
 		
-		if (id != null) {
-			return id;
+		if (type != null) {
+			return type;
 		} else {
 			throw new IllegalArgumentException(
 					"Unable to find associated packet of " + packet + ": Lookup returned NULL.");
@@ -1010,16 +1036,19 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
+	@Deprecated
 	public void registerPacketClass(Class<?> clazz, int packetID) {
 		PacketRegistry.getPacketToID().put(clazz, packetID);
 	}
 	
 	@Override
+	@Deprecated
 	public void unregisterPacketClass(Class<?> clazz) {
 		PacketRegistry.getPacketToID().remove(clazz);
 	}
 
 	@Override
+	@Deprecated
 	public Class<?> getPacketClassFromID(int packetID, boolean forceVanilla) {
 		return PacketRegistry.getPacketClassFromID(packetID, forceVanilla);
 	}
@@ -1115,6 +1144,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @return An immutable set of every known server packet.
 	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
 	 */
+	@Deprecated
 	public static Set<Integer> getServerPackets() throws FieldAccessException {
 		return PacketRegistry.getServerPackets();
 	}
@@ -1124,6 +1154,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @return An immutable set of every known client packet.
 	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
 	 */
+	@Deprecated
 	public static Set<Integer> getClientPackets() throws FieldAccessException {
 		return PacketRegistry.getClientPackets();
 	}

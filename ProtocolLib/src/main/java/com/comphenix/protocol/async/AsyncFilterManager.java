@@ -29,6 +29,7 @@ import org.bukkit.scheduler.BukkitScheduler;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
@@ -37,6 +38,7 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.comphenix.protocol.injector.SortedPacketListenerList;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -181,7 +183,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	}
 	
 	private boolean hasValidWhitelist(ListeningWhitelist whitelist) {
-		return whitelist != null && whitelist.getWhitelist().size() > 0;
+		return whitelist != null && whitelist.getTypes().size() > 0;
 	}
 	
 	@Override
@@ -220,14 +222,14 @@ public class AsyncFilterManager implements AsynchronousManager {
 		
 		// Just remove it from the queue(s)
 		if (hasValidWhitelist(listener.getSendingWhitelist())) {
-			List<Integer> removed = serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
+			List<PacketType> removed = serverProcessingQueue.removeListener(handler, listener.getSendingWhitelist());
 			
 			// We're already taking care of this, so don't do anything
 			playerSendingHandler.sendServerPackets(removed, synchronusOK);
 		}
 		
 		if (hasValidWhitelist(listener.getReceivingWhitelist())) {
-			List<Integer> removed = clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
+			List<PacketType> removed = clientProcessingQueue.removeListener(handler, listener.getReceivingWhitelist());
 			playerSendingHandler.sendClientPackets(removed, synchronusOK);
 		}
 	}
@@ -279,11 +281,21 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	@Override
 	public Set<Integer> getSendingFilters() {
+		return PacketRegistry.toLegacy(serverProcessingQueue.keySet());
+	}
+	
+	@Override
+	public Set<PacketType> getReceivingTypes() {
 		return serverProcessingQueue.keySet();
 	}
 	
 	@Override
 	public Set<Integer> getReceivingFilters() {
+		return PacketRegistry.toLegacy(clientProcessingQueue.keySet());
+	}
+	
+	@Override
+	public Set<PacketType> getSendingTypes() {
 		return clientProcessingQueue.keySet();
 	}
 	
@@ -297,7 +309,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	@Override
 	public boolean hasAsynchronousListeners(PacketEvent packet) {
-		 Collection<?> list = getProcessingQueue(packet).getListener(packet.getPacketID());
+		 Collection<?> list = getProcessingQueue(packet).getListener(packet.getPacketType());
 		 return list != null && list.size() > 0;
 	}
 	

@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -59,16 +60,16 @@ public interface PlayerInjectionHandler {
 	public abstract void setPlayerHook(GamePhase phase, PlayerInjectHooks playerHook);
 
 	/**
-	 * Add an underlying packet handler of the given ID.
-	 * @param packetID - packet ID to register.
+	 * Add an underlying packet handler of the given type.
+	 * @param type - packet type to register.
 	 */
-	public abstract void addPacketHandler(int packetID);
+	public abstract void addPacketHandler(PacketType type);
 
 	/**
-	 * Remove an underlying packet handler of ths ID.  
-	 * @param packetID - packet ID to unregister.
+	 * Remove an underlying packet handler of this type.  
+	 * @param type - packet type to unregister.
 	 */
-	public abstract void removePacketHandler(int packetID);
+	public abstract void removePacketHandler(PacketType type);
 
 	/**
 	 * Retrieve a player by its DataInput connection.
@@ -157,7 +158,7 @@ public interface PlayerInjectionHandler {
 	 * Retrieve the current list of registered sending listeners.
 	 * @return List of the sending listeners's packet IDs.
 	 */
-	public abstract Set<Integer> getSendingFilters();
+	public abstract Set<PacketType> getSendingFilters();
 
 	/**
 	 * Whether or not this player injection handler can also recieve packets.

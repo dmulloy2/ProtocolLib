@@ -96,6 +96,7 @@ class ReadPacketModifier implements MethodInterceptor {
 		return getOverride(packet) == CANCEL_MARKER;
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public Object intercept(Object thisObj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 		// Atomic retrieval

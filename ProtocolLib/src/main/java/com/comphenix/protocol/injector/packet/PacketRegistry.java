@@ -283,7 +283,7 @@ public class PacketRegistry {
 	 * @param types - packet type.
 	 * @return Set of integers.
 	 */
-	private static Set<Integer> toLegacy(Set<PacketType> types) { 
+	public static Set<Integer> toLegacy(Set<PacketType> types) { 
 		Set<Integer> result = Sets.newHashSet();
 		
 		for (PacketType type : types)
@@ -296,7 +296,7 @@ public class PacketRegistry {
 	 * @param types - legacy packet IDs.
 	 * @return Set of packet types.
 	 */
-	private static Set<PacketType> toPacketTypes(Set<Integer> ids) { 
+	public static Set<PacketType> toPacketTypes(Set<Integer> ids) { 
 		Set<PacketType> result = Sets.newHashSet();
 		
 		for (int id : ids)
