@@ -1237,7 +1237,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("MobEffect");
 		} catch (RuntimeException e) {
 			// It is the second parameter in Packet41MobEffect
-			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.MOB_EFFECT);
+			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.ENTITY_EFFECT);
 			Constructor<?> constructor = FuzzyReflection.fromClass(packet).getConstructor(
 				FuzzyMethodContract.newBuilder().
 				parameterCount(2).

@@ -181,7 +181,7 @@ public class MinecraftMethods {
 				new Object[]   { UnpooledByteBufAllocator.DEFAULT.buffer() }
 			);
 			
-			Object lookPacket = new PacketContainer(PacketType.Play.Client.PLACE).getHandle();
+			Object lookPacket = new PacketContainer(PacketType.Play.Client.BLOCK_PLACE).getHandle();
 			List<Method> candidates = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
 				getMethodListByParameters(Void.TYPE, new Class<?>[] { MinecraftReflection.getPacketDataSerializerClass() });
 			
