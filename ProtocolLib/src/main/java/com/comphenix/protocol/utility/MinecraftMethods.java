@@ -41,10 +41,17 @@ public class MinecraftMethods {
 	public static Method getSendPacketMethod() {
 		if (sendPacketMethod == null) {
 			Class<?> serverHandlerClass = MinecraftReflection.getNetServerHandlerClass();
-			
+
 			try {
-				sendPacketMethod = FuzzyReflection.fromObject(serverHandlerClass).getMethodByName("sendPacket.*");
+				sendPacketMethod = FuzzyReflection.fromClass(serverHandlerClass).getMethodByName("sendPacket.*");
 			} catch (IllegalArgumentException e) {
+				// We can't use the method below on Netty
+				if (MinecraftReflection.isUsingNetty()) {
+					sendPacketMethod = FuzzyReflection.fromClass(serverHandlerClass).
+						getMethodByParameters("sendPacket", MinecraftReflection.getPacketClass());
+					return sendPacketMethod;
+				}
+				
 				Map<String, Method> netServer = getMethodList(
 						serverHandlerClass, MinecraftReflection.getPacketClass());
 				Map<String, Method> netHandler = getMethodList(
