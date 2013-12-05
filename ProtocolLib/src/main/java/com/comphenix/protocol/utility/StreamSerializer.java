@@ -7,7 +7,6 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import javax.annotation.Nonnull;
 
 import org.bukkit.inventory.ItemStack;

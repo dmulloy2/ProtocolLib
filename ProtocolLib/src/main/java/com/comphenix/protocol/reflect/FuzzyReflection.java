@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -29,9 +30,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import net.minecraft.util.com.google.common.base.Joiner;
 import net.minecraft.util.com.google.common.collect.Sets;
 
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -135,8 +138,20 @@ public class FuzzyReflection {
 	 */
 	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
 		// Get a field accessor
-		Field field = FuzzyReflection.fromObject(instanceClass, forceAccess).getFieldByType(null, fieldClass);
+		Field field = FuzzyReflection.fromClass(instanceClass, forceAccess).getFieldByType(null, fieldClass);
 		return getFieldAccessor(field);
+	}
+	
+	/**
+	 * Retrieve an accessor for the first field of the given type.
+	 * @param instanceClass - the type of the instance to retrieve.
+	 * @param fieldClass - type of the field to retrieve.
+	 * @param forceAccess - whether or not to look for private and protected fields.
+	 * @return The value of that field.
+	 * @throws IllegalArgumentException If the field cannot be found.
+	 */
+	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, String fieldName, boolean forceAccess) {	
+		return getFieldAccessor(FieldUtils.getField(instanceClass, fieldName, forceAccess));
 	}
 	
 	/**
@@ -186,9 +201,30 @@ public class FuzzyReflection {
 	 * @return The method accessor.
 	 */
 	public static MethodAccessor getMethodAccessor(Class<?> instanceClass, String name, Class<?>... parameters) {
-		Method method = MethodUtils.getAccessibleMethod(instanceClass, name, parameters);	
-		method.setAccessible(true);
-		return getMethodAccessor(method);
+		return getMethodAccessor(instanceClass, instanceClass, name, parameters);
+	}
+	
+	// Helper method
+	private static MethodAccessor getMethodAccessor(
+		Class<?> initialClass, Class<?> instanceClass, String name, Class<?>... parameters) {
+		
+		try {
+			Method method = instanceClass.getDeclaredMethod(name, parameters);
+			method.setAccessible(true);
+			return getMethodAccessor(method);
+			
+		} catch (NoSuchMethodException e) {
+			// Search for a private method in the superclass
+			if (initialClass.getSuperclass() != null)
+				return getMethodAccessor(initialClass, instanceClass.getSuperclass(), name, parameters);
+			
+			// Unable to find it
+			throw new IllegalArgumentException("Unable to find method " + name +
+					"(" + Joiner.on(", ").join(parameters) +") in " + initialClass);
+			
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to retrieve methods.", e);
+		}
 	}
 	
 	/**
@@ -244,7 +280,13 @@ public class FuzzyReflection {
 		Field field = null;
 		
 		try {
-			method = getMethodByParameters("getInstance", source.getClass(), new Class<?>[0]);
+			method = getMethod(
+				FuzzyMethodContract.newBuilder().
+					parameterCount(0).
+					returnDerivedOf(source).
+					requireModifier(Modifier.STATIC).
+					build()
+			);
 		} catch (IllegalArgumentException e) {
 			// Try getting the field instead
 			// Note that this will throw an exception if not found

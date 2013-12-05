@@ -1,13 +1,9 @@
 package com.comphenix.protocol.utility;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
-
-import org.bukkit.command.defaults.EnchantCommand;
 
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.UnpooledByteBufAllocator;

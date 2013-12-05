@@ -30,22 +30,16 @@ import net.sf.cglib.proxy.NoOp;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.utility.ChatExtensions;
 
 /**
  * Create fake player instances that represents pre-authenticated clients.
  */
 public class TemporaryPlayerFactory {
-	// Helpful constructors
-	private final PacketConstructor chatPacket;
-	
 	// Prevent too many class creations
 	private static CallbackFilter callbackFilter;
-	
-	public TemporaryPlayerFactory() {
-		chatPacket =  PacketConstructor.DEFAULT.withPacket(3, new Object[] { "DEMO" });
-	}
 	
 	/**
 	 * Retrieve the injector from a given player if it contains one.
@@ -190,7 +184,9 @@ public class TemporaryPlayerFactory {
 	 * @throws FieldAccessException If we were unable to construct the message packet.
 	 */
 	private Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
-		injector.sendServerPacket(chatPacket.createPacket(message).getHandle(), null, false);
+		for (PacketContainer packet : ChatExtensions.createChatPackets(message)) {
+			injector.sendServerPacket(packet.getHandle(), null, false);
+		}
 		return null;
 	}
 }

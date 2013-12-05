@@ -153,11 +153,22 @@ public interface ProtocolManager extends PacketStream {
 
 	/**
 	 * Construct a packet using the special builtin Minecraft constructors.
+	 * <p>
+	 * Deprecated: Use {@link #createPacketConstructor(PacketType, Object...)} instead.
 	 * @param id - the packet ID.
 	 * @param arguments - arguments that will be passed to the constructor.
 	 * @return The packet constructor.
 	 */
+	@Deprecated
 	public PacketConstructor createPacketConstructor(int id, Object... arguments);
+	
+	/**
+	 * Construct a packet using the special builtin Minecraft constructors.
+	 * @param id - the packet type.
+	 * @param arguments - arguments that will be passed to the constructor.
+	 * @return The packet constructor.
+	 */
+	public PacketConstructor createPacketConstructor(PacketType type, Object... arguments);
 	
 	/**
 	 * Completely resend an entity to a list of clients.

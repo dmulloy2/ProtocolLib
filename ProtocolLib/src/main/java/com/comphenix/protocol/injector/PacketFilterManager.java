@@ -48,6 +48,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.AsynchronousManager;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
@@ -236,7 +237,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// Use the correct injection type
 		if (MinecraftReflection.isUsingNetty()) {
-			this.nettyInjector = new NettyProtocolInjector(this);
+			this.nettyInjector = new NettyProtocolInjector(this, reporter);
 			this.playerInjection = nettyInjector.getPlayerInjector();
 			this.packetInjector = nettyInjector.getPacketInjector();
 			
@@ -834,10 +835,16 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
+	@Deprecated
 	public PacketConstructor createPacketConstructor(int id, Object... arguments) {
 		return PacketConstructor.DEFAULT.withPacket(id, arguments);
 	}
 
+	@Override
+	public PacketConstructor createPacketConstructor(PacketType type, Object... arguments) {
+		return PacketConstructor.DEFAULT.withPacket(type, arguments);
+	}
+	
 	@Override
 	public Set<Integer> getSendingFilters() {
 		return playerInjection.getSendingFilters();
@@ -1145,6 +1152,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			packetInjector.cleanupAll();
 		if (spigotInjector != null)
 			spigotInjector.cleanupAll();
+		if (nettyInjector != null)
+			nettyInjector.close();
 		
 		// Remove server handler
 		playerInjection.close();

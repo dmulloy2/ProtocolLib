@@ -20,6 +20,7 @@ import net.minecraft.util.io.netty.channel.ChannelInitializer;
 
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.IntegerSet;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
@@ -34,6 +35,7 @@ import com.comphenix.protocol.injector.spigot.AbstractPlayerHandler;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.collect.Lists;
 
 public class NettyProtocolInjector implements ChannelListener {   
     private volatile boolean injected;
@@ -41,7 +43,7 @@ public class NettyProtocolInjector implements ChannelListener {
     
     // The temporary player factory
     private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
-    private VolatileField bootstrapField;
+    private List<VolatileField> bootstrapFields = Lists.newArrayList();
     
 	// Different sending filters
 	private IntegerSet queuedFilters = new IntegerSet(Packets.PACKET_COUNT);
@@ -49,11 +51,14 @@ public class NettyProtocolInjector implements ChannelListener {
 	
 	// Which packets are buffered
     private Set<Integer> bufferedPackets;
-	
     private ListenerInvoker invoker;
     
-    public NettyProtocolInjector(ListenerInvoker invoker) {
+    // Handle errors
+    private ErrorReporter reporter;
+    
+    public NettyProtocolInjector(ListenerInvoker invoker, ErrorReporter reporter) {
 		this.invoker = invoker;
+		this.reporter = reporter;
 	}
 
 	/**
@@ -89,7 +94,7 @@ public class NettyProtocolInjector implements ChannelListener {
             	@Override
             	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                     Channel channel = (Channel) msg;
-                    
+
                     // Execute the other handlers before adding our own
                     ctx.fireChannelRead(msg);
                     channel.pipeline().addLast(initProtocol);
@@ -97,17 +102,25 @@ public class NettyProtocolInjector implements ChannelListener {
             };
             
             // Insert ProtocolLib's connection interceptor
-            bootstrapField = getBootstrapField(serverConnection);
-            bootstrapField.setValue(new BootstrapList(
-            	(List<ChannelFuture>) bootstrapField.getValue(), connectionHandler
-            ));
+            bootstrapFields = getBootstrapFields(serverConnection);
             
+            for (VolatileField field : bootstrapFields) {
+            	field.setValue(new BootstrapList(
+            		(List<Object>) field.getValue(), connectionHandler
+                ));
+            }
+
             injected = true;
             
         } catch (Exception e) {
             throw new RuntimeException("Unable to inject channel futures.", e);
         }
     }
+    
+	@Override
+	public ErrorReporter getReporter() {
+		return reporter;
+	}
     
     /**
      * Inject our packet handling into a specific player.
@@ -117,23 +130,20 @@ public class NettyProtocolInjector implements ChannelListener {
     	ChannelInjector.fromPlayer(player, this).inject();
     }
     
-    private VolatileField getBootstrapField(Object serverConnection) {
-    	VolatileField firstVolatile = null;
+    private List<VolatileField> getBootstrapFields(Object serverConnection) {
+    	List<VolatileField> result = Lists.newArrayList();
     	
+    	// Find and (possibly) proxy every list
     	for (Field field : FuzzyReflection.fromObject(serverConnection, true).getFieldListByType(List.class)) {
-    		VolatileField currentVolatile = new VolatileField(field, serverConnection, true);
+    		VolatileField volatileField = new VolatileField(field, serverConnection, true);
     		@SuppressWarnings("unchecked")
-			List<Object> list = (List<Object>) currentVolatile.getValue();
+			List<Object> list = (List<Object>) volatileField.getValue();
     		
-    		// Also save the first list
-    		if (firstVolatile == null) {
-    			firstVolatile = currentVolatile;
-    		}
-    		if (list.size() > 0 && list.get(0) instanceof ChannelFuture) {
-    			return currentVolatile;
+    		if (list.size() == 0 || list.get(0) instanceof ChannelFuture) {
+    			result.add(volatileField);
     		}
     	}
-    	return firstVolatile;
+    	return result;
     }
     
     /**
@@ -142,22 +152,21 @@ public class NettyProtocolInjector implements ChannelListener {
     public synchronized void close() {
         if (!closed) {
             closed = true;
-            
-            @SuppressWarnings("unchecked")
-			List<Object> bootstraps = (List<Object>) bootstrapField.getValue();
-            
-            // Remember to close all the bootstraps
-            for (Object value : bootstraps) {
+
+            for (VolatileField field : bootstrapFields) {
+            	Object value = field.getValue();
+            	
+            	// Undo the processed channels, if any 
             	if (value instanceof BootstrapList) {
             		((BootstrapList) value).close();
             	}
+            	field.revertValue();
             }
             
             // Uninject all the players
             for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             	ChannelInjector.fromPlayer(player, this).close();
             }
-            bootstrapField.revertValue();
         }
     }
     
@@ -261,12 +270,14 @@ public class NettyProtocolInjector implements ChannelListener {
 			
 			@Override
 			public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-				ChannelInjector.fromPlayer(reciever, listener).sendServerPacket(packet.getHandle(), marker, filters);
+				ChannelInjector.fromPlayer(reciever, listener).
+					sendServerPacket(packet.getHandle(), marker, filters);
 			}
 			
 			@Override
 			public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
-				ChannelInjector.fromPlayer(player, listener).recieveClientPacket(mcPacket, null, true);
+				ChannelInjector.fromPlayer(player, listener).
+					recieveClientPacket(mcPacket, null, true);
 			}
 			
 			@Override
@@ -296,7 +307,8 @@ public class NettyProtocolInjector implements ChannelListener {
 			@Override
 			public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
 				NetworkMarker marker = buffered != null ? new NetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
-				ChannelInjector.fromPlayer(client, NettyProtocolInjector.this).saveMarker(packet.getHandle(), marker);
+				ChannelInjector.fromPlayer(client, NettyProtocolInjector.this).
+					saveMarker(packet.getHandle(), marker);
 				return packetReceived(packet, client, marker);
 			}
 			

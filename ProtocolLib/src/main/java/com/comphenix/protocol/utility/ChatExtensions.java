@@ -19,7 +19,6 @@ package com.comphenix.protocol.utility;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
@@ -27,12 +26,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.FuzzyReflection.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.google.common.base.Strings;
@@ -45,12 +46,14 @@ import com.google.common.collect.Iterables;
  */
 public class ChatExtensions {
 	// Used to sent chat messages
-	private PacketConstructor chatConstructor;
 	private ProtocolManager manager;
 	
+	// The chat packet constructor
+	private static volatile PacketConstructor chatConstructor;
+	
 	// Whether or not we have to use the post-1.6.1 chat format
-	private static Constructor<?> jsonConstructor = getJsonFormatConstructor();
-	private static Method messageFactory;
+	private static volatile Constructor<?> jsonConstructor = getJsonFormatConstructor();
+	private static volatile MethodAccessor messageFactory;
 	
 	public ChatExtensions(ProtocolManager manager) {
 		this.manager = manager;
@@ -83,63 +86,64 @@ public class ChatExtensions {
 	 * @throws InvocationTargetException If we were unable to send the message.
 	 */
 	private void sendMessageSilently(Player player, String message) throws InvocationTargetException {
-		if (jsonConstructor != null) {
-			sendMessageAsJson(player, message);
-		} else {
-			sendMessageAsString(player, message);
+		try {
+			for (PacketContainer packet : createChatPackets(message)) {
+				manager.sendServerPacket(player, packet, false);
+			}
+		} catch (FieldAccessException e) {
+			throw new InvocationTargetException(e);
 		}
 	}
 
 	/**
-	 * Send a message using the new JSON format in 1.6.1.
-	 * @param player - the player to send it to.
+	 * Construct chat packet to send in order to display a given message.
 	 * @param message - the message to send.
-	 * @throws InvocationTargetException InvocationTargetException If we were unable to send the message.
+	 * @return The packets.
 	 */
-	private void sendMessageAsJson(Player player, String message) throws InvocationTargetException {
-		Object messageObject = null;
+	public static PacketContainer[] createChatPackets(String message) {
+		if (jsonConstructor != null) {
+			if (chatConstructor == null) {
+				Class<?> messageClass = jsonConstructor.getParameterTypes()[0];
+				chatConstructor = PacketConstructor.DEFAULT.withPacket(PacketType.Play.Server.CHAT, new Object[] { messageClass });
+				
+				// Try one of the string constructors
+				if (MinecraftReflection.isUsingNetty()) {
+					messageFactory = FuzzyReflection.getMethodAccessor(
+						MinecraftReflection.getCraftMessageClass(), "fromString", String.class);
+				} else {
+					messageFactory = FuzzyReflection.getMethodAccessor(
+					  FuzzyReflection.fromClass(messageClass).getMethod(
+						FuzzyMethodContract.newBuilder().
+						requireModifier(Modifier.STATIC).
+						parameterCount(1).
+						parameterExactType(String.class).
+						returnTypeMatches(FuzzyMatchers.matchParent()).
+						build())
+					);
+				}
+			}
+		 
+			// Minecraft 1.7.2 and later
+			if (MinecraftReflection.isUsingNetty()) {
+				Object[] components = (Object[]) messageFactory.invoke(null, message);
+				PacketContainer[] packets = new PacketContainer[components.length];
+				
+				for (int i = 0; i < components.length; i++) {
+					packets[i] = chatConstructor.createPacket(components[i]);
+				}
+				return packets;
+				
+			// Minecraft 1.6.1 - 1.6.4
+			} else {
+				return  new PacketContainer[] { chatConstructor.createPacket(messageFactory.invoke(null, message)) };
+			}
 		
-		if (chatConstructor == null) {
-			Class<?> messageClass = jsonConstructor.getParameterTypes()[0];
-			chatConstructor = manager.createPacketConstructor(Packets.Server.CHAT, messageClass);
-			
-			// Try one of the string constructors
-			messageFactory = FuzzyReflection.fromClass(messageClass).getMethod(
-					FuzzyMethodContract.newBuilder().
-					requireModifier(Modifier.STATIC).
-					parameterCount(1).
-					parameterExactType(String.class).
-					returnTypeMatches(FuzzyMatchers.matchParent()).
-					build());
-		}
-		
-		try {
-			 messageObject = messageFactory.invoke(null, message);
-		} catch (Exception e) {
-			throw new InvocationTargetException(e);
-		}
-		
-		try {
-			manager.sendServerPacket(player, chatConstructor.createPacket(messageObject), false);
-		} catch (FieldAccessException e) {
-			throw new InvocationTargetException(e);
-		}
-	}
-	
-	/**
-	 * Send a message as a pure string.
-	 * @param player - the player.
-	 * @param message - the message to send.
-	 * @throws InvocationTargetException If anything went wrong.
-	 */
-	private void sendMessageAsString(Player player, String message) throws InvocationTargetException {
-		if (chatConstructor == null)
-			chatConstructor = manager.createPacketConstructor(Packets.Server.CHAT, message);
-		
-		try {
-			manager.sendServerPacket(player, chatConstructor.createPacket(message), false);
-		} catch (FieldAccessException e) {
-			throw new InvocationTargetException(e);
+		} else {
+			if (chatConstructor == null) {
+				chatConstructor = PacketConstructor.DEFAULT.withPacket(PacketType.Play.Server.CHAT, new Object[] { message });
+			}
+			// Minecraft 1.6.0 and earlier
+			return new PacketContainer[] { chatConstructor.createPacket(message) };
 		}
 	}
 	
@@ -210,7 +214,7 @@ public class ChatExtensions {
 	 * @return A constructor for JSON-based packets.
 	 */
 	static Constructor<?> getJsonFormatConstructor() {
-		Class<?> chatPacket = PacketRegistry.getPacketClassFromID(3, true);
+		Class<?> chatPacket = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.CHAT, true);
 		List<Constructor<?>> list = FuzzyReflection.fromClass(chatPacket).getConstructorList(
 			FuzzyMethodContract.newBuilder().
 				parameterCount(1).

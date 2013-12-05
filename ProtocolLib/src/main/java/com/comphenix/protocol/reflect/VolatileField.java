@@ -122,7 +122,6 @@ public class VolatileField {
 	 * @param newValue - new field value.
 	 */
 	public void setValue(Object newValue) {
-		
 		// Remember to safe the previous value
 		ensureLoaded();
 		
@@ -132,7 +131,20 @@ public class VolatileField {
 			currentSet = true;
 			
 		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Unable to read field " + field.getName(), e);
+			throw new RuntimeException("Unable to write field " + field.getName(), e);
+		}
+	}
+	
+	/**
+	 * Ensure the previously set value is set.
+	 */
+	public void refreshValue() {
+		if (currentSet) {
+			try {
+				FieldUtils.writeField(field, container, current, forceAccess);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException("Unable to read field " + field.getName(), e);
+			}
 		}
 	}
 	

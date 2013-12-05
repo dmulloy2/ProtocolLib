@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import net.minecraft.server.v1_7_R1.Block;
 import net.minecraft.server.v1_7_R1.Item;
-import net.minecraft.server.v1_7_R1.RegistryMaterials;
 import net.minecraft.server.v1_7_R1.StatisticList;
 
 // Will have to be updated for every version though

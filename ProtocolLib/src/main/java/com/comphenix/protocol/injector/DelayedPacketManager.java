@@ -15,6 +15,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.AsynchronousManager;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -318,12 +319,21 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public PacketConstructor createPacketConstructor(int id, Object... arguments) {
 		if (delegate != null)
 			return delegate.createPacketConstructor(id, arguments);
 		else
 			return PacketConstructor.DEFAULT.withPacket(id, arguments);
+	}
+	
+	@Override
+	public PacketConstructor createPacketConstructor(PacketType type, Object... arguments) {
+		if (delegate != null)
+			return delegate.createPacketConstructor(type, arguments);
+		else
+			return PacketConstructor.DEFAULT.withPacket(type, arguments);
 	}
 
 	@Override
@@ -416,4 +426,6 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 			delegate.close();
 		closed = true;
 	}
+
+
 }

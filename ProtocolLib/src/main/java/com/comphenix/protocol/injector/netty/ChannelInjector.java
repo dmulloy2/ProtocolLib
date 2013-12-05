@@ -6,9 +6,11 @@ import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import net.minecraft.util.com.google.common.base.Joiner;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelHandler;
@@ -17,12 +19,16 @@ import net.minecraft.util.io.netty.channel.socket.SocketChannel;
 import net.minecraft.util.io.netty.handler.codec.ByteToMessageDecoder;
 import net.minecraft.util.io.netty.handler.codec.MessageToByteEncoder;
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
+import net.minecraft.util.io.netty.util.internal.TypeParameterMatcher;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
@@ -45,6 +51,9 @@ import com.google.common.collect.MapMaker;
  * @author Kristian
  */
 class ChannelInjector extends ByteToMessageDecoder {
+	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
+	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
+	
 	/**
 	 * Represents a listener for received or sent packets.
 	 * @author Kristian
@@ -78,18 +87,29 @@ class ChannelInjector extends ByteToMessageDecoder {
 		 * @return TRUE if we do, FALSE otherwise.
 		 */
 		public boolean includeBuffer(int packetId);
+		
+		/**
+		 * Retrieve the current error reporter.
+		 * @return The error reporter.
+		 */
+		public ErrorReporter getReporter();
 	}
 	
 	private static final ConcurrentMap<Player, ChannelInjector> cachedInjector = new MapMaker().weakKeys().makeMap();
+	
+	// Saved accessors
+	private static MethodAccessor DECODE_BUFFER;
+	private static MethodAccessor ENCODE_BUFFER;
+	private static FieldAccessor ENCODER_TYPE_MATCHER;
+
+	// For retrieving the protocol
+	private static FieldAccessor PROTOCOL_ACCESSOR;
 	
 	// The player, or temporary player
 	private Player player;
 	
 	// The player connection
 	private Object playerConnection;
-
-	// For retrieving the protocol
-	private FieldAccessor protocolAccessor;
 	
 	// The current network manager and channel
 	private final Object networkManager;
@@ -106,8 +126,6 @@ class ChannelInjector extends ByteToMessageDecoder {
 	// Other handlers
 	private ByteToMessageDecoder vanillaDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
-	private MethodAccessor decodeBuffer;
-	private MethodAccessor encodeBuffer;
 	
 	// Our extra handler
 	private MessageToByteEncoder<Object> protocolEncoder;
@@ -130,16 +148,18 @@ class ChannelInjector extends ByteToMessageDecoder {
 		this.networkManager =  Preconditions.checkNotNull(networkManager, "networkMananger cannot be NULL");
 		this.originalChannel = Preconditions.checkNotNull(channel, "channel cannot be NULL");
 		this.channelListener = Preconditions.checkNotNull(channelListener, "channelListener cannot be NULL");
-		
+	
 		// Get the channel field
 		this.channelField = new VolatileField(
 			FuzzyReflection.fromObject(networkManager, true).
-			getFieldByType("channel", Channel.class), networkManager);
+				getFieldByType("channel", Channel.class), 
+			networkManager, true);
 	}
 	
 	/**
 	 * Construct or retrieve a channel injector from an existing Bukkit player.
 	 * @param player - the existing Bukkit player.
+	 * @param channelListener - the listener.
 	 * @return A new injector, or an existing injector associated with this player.
 	 */
 	public static ChannelInjector fromPlayer(Player player, ChannelListener listener) {
@@ -169,6 +189,8 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 * Construct a new channel injector for the given channel.
 	 * @param channel - the channel.
 	 * @param playerFactory - a temporary player creator.
+	 * @param channelListener - the listener.
+	 * @param loader - the current (plugin) class loader.
 	 * @return The channel injector.
 	 */
 	public static ChannelInjector fromChannel(Channel channel, ChannelListener listener, TemporaryPlayerFactory playerFactory) {
@@ -201,46 +223,79 @@ class ChannelInjector extends ByteToMessageDecoder {
 			// Get the vanilla decoder, so we don't have to replicate the work
 			vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
-			decodeBuffer = FuzzyReflection.getMethodAccessor(vanillaDecoder.getClass(), 
+			patchEncoder(vanillaEncoder);
+			
+			if (vanillaDecoder == null)
+				throw new IllegalArgumentException("Unable to find vanilla decoder.in " + originalChannel.pipeline());
+			if (vanillaEncoder == null)
+				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
+			
+			if (DECODE_BUFFER == null)
+				DECODE_BUFFER = FuzzyReflection.getMethodAccessor(vanillaDecoder.getClass(), 
 					"decode", ChannelHandlerContext.class, ByteBuf.class, List.class);
-			encodeBuffer = FuzzyReflection.getMethodAccessor(vanillaEncoder.getClass(),
+			if (ENCODE_BUFFER == null)
+				ENCODE_BUFFER = FuzzyReflection.getMethodAccessor(vanillaEncoder.getClass(),
 					"encode", ChannelHandlerContext.class, Object.class, ByteBuf.class);
 			
 			protocolEncoder = new MessageToByteEncoder<Object>() {
 				@Override
 				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
-					NetworkMarker marker = getMarker(output);
-					PacketEvent event = markerEvent.remove(marker);
-					
-					if (event != null && NetworkMarker.hasOutputHandlers(marker)) {
-						ByteBuf packetBuffer = ctx.alloc().buffer();
-						encodeBuffer.invoke(vanillaEncoder, ctx, packet, packetBuffer);
-						byte[] data = getBytes(packetBuffer);
+					try {
+						NetworkMarker marker = getMarker(output);
+						PacketEvent event = markerEvent.remove(marker);
 						
-						for (PacketOutputHandler handler : marker.getOutputHandlers()) {
-							handler.handle(event, data);
+						if (event != null && NetworkMarker.hasOutputHandlers(marker)) {
+							ByteBuf packetBuffer = ctx.alloc().buffer();
+							ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, packetBuffer);
+							byte[] data = getBytes(packetBuffer);
+							
+							for (PacketOutputHandler handler : marker.getOutputHandlers()) {
+								handler.handle(event, data);
+							}
+							// Write the result
+							output.writeBytes(data);
+							return;
 						}
-						// Write the result
-						output.writeBytes(data);
+					} catch (Exception e) {
+						channelListener.getReporter().reportDetailed(this, 
+							Report.newBuilder(REPORT_CANNOT_INTERCEPT_SERVER_PACKET).callerParam(packet).error(e).build());
+					} finally {
+						// Attempt to handle the packet nevertheless
+						ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
 					}
+				}
+				
+				public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
+					throwable.printStackTrace();
 				}
 			};
 			
-			// Insert our handler - note that we replace the decoder with our own
+			// Insert our handlers - note that we effectively replace the vanilla encoder/decoder 
 			originalChannel.pipeline().addBefore("decoder", "protocol_lib_decoder", this);
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
 			
 			// Intercept all write methods
-			channelField.setValue(new ChannelProxy() {
+			channelField.setValue(new ChannelProxy(originalChannel) {
 				@Override
 				protected Object onMessageWritten(Object message) {
 					return channelListener.onPacketSending(ChannelInjector.this, message, packetMarker.get(message));
 				}
-			}.asChannel(originalChannel));
+			});
 			
 			injected = true;
 			return true;
 		}
+	}
+	
+	/**
+	 * This method patches the encoder so that it skips already created packets.
+	 * @param encoder - the encoder to patch.
+	 */
+	private void patchEncoder(MessageToByteEncoder<Object> encoder) {
+		if (ENCODER_TYPE_MATCHER == null) {
+			ENCODER_TYPE_MATCHER = FuzzyReflection.getFieldAccessor(encoder.getClass(), "matcher", true);
+		}
+		ENCODER_TYPE_MATCHER.set(encoder, TypeParameterMatcher.get(MinecraftReflection.getPacketClass()));
 	}
 	
 	/**
@@ -251,34 +306,54 @@ class ChannelInjector extends ByteToMessageDecoder {
 			closed = true;
 			
 			if (injected) {
-				originalChannel.pipeline().remove(this);
-				originalChannel.pipeline().remove(protocolEncoder);
 				channelField.revertValue();
+				
+				try {
+					originalChannel.pipeline().remove(this);
+					originalChannel.pipeline().remove(protocolEncoder);
+				} catch (NoSuchElementException e) {
+					// Ignore it - the player has logged out
+				}
 			}
 		}
 	}
 	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
-		byteBuffer.markReaderIndex();
-		decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
-		
-		if (packets.size() > 0) {
-			Object input = packets.get(0);
-			int id = PacketRegistry.getPacketID(input.getClass());
-			NetworkMarker marker = null;
+		try {
+			byteBuffer.markReaderIndex();
+			DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
 			
-			if (channelListener.includeBuffer(id)) {
-				byteBuffer.resetReaderIndex();
-				marker = new NetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
+			if (packets.size() > 0) {
+				Object input = packets.get(0);
+				int id = PacketRegistry.getPacketID(input.getClass());
+				NetworkMarker marker = null;
+				
+				if (channelListener.includeBuffer(id)) {
+					byteBuffer.resetReaderIndex();
+					marker = new NetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
+				}
+				Object output = channelListener.onPacketReceiving(this, input, marker);
+				
+				// Handle packet changes
+				if (output == null)
+					packets.clear();
+				else if (output != input)
+					packets.set(0, output);
 			}
-			Object output = channelListener.onPacketReceiving(this, input, marker);
-			
-			// Handle packet changes
-			if (output == null)
-				packets.clear();
-			else if (output != input)
-				packets.set(0, output);
+		} catch (Exception e) {
+			channelListener.getReporter().reportDetailed(this, 
+					Report.newBuilder(REPORT_CANNOT_INTERCEPT_CLIENT_PACKET).callerParam(byteBuffer).error(e).build());
+		}
+	}
+	
+	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		super.channelActive(ctx);
+		
+		// See NetworkManager.channelActive(ChannelHandlerContext) for why
+		if (channelField != null) {
+			channelField.refreshValue();
 		}
 	}
 	
@@ -364,11 +439,11 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 * @return The current protocol.
 	 */
 	public Protocol getCurrentProtocol() {
-		if (protocolAccessor == null) {
-			protocolAccessor = FuzzyReflection.getFieldAccessor(
+		if (PROTOCOL_ACCESSOR == null) {
+			PROTOCOL_ACCESSOR = FuzzyReflection.getFieldAccessor(
 					networkManager.getClass(), MinecraftReflection.getEnumProtocolClass(), true);
 		}
-		return Protocol.fromVanilla((Enum<?>) protocolAccessor.get(networkManager));
+		return Protocol.fromVanilla((Enum<?>) PROTOCOL_ACCESSOR.get(networkManager));
 	}
 	
 	/**

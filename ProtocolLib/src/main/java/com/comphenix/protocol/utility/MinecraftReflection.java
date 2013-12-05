@@ -1366,6 +1366,14 @@ public class MinecraftReflection {
 	public static Class<?> getCraftEntityClass() { 
 		return getCraftBukkitClass("entity.CraftEntity");
 	}
+	
+	/**
+	 * Retrieve the CraftChatMessage introduced in 1.7.2
+	 * @return The CraftChatMessage class.
+	 */
+	public static Class<?> getCraftMessageClass() {
+		return getCraftBukkitClass("util.CraftChatMessage");
+	}
 
 	/**
 	 * Retrieve a CraftItemStack from a given ItemStack.
