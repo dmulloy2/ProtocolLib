@@ -72,7 +72,7 @@ public class TestPingPacket {
 			@Override
 			public String call() throws Exception {
 				SimpleMinecraftClient client = new SimpleMinecraftClient(
-					new MinecraftVersion(CRAFTBUKKIT_VERSION), PROTOCOL_VERSION);
+						new MinecraftVersion(CRAFTBUKKIT_VERSION), PROTOCOL_VERSION);
 				String information = client.queryLocalPing();
 
 				// Wait for the listener to catch up

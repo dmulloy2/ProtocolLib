@@ -51,7 +51,7 @@ public class NettyProtocolInjector implements ChannelListener {
 	private PacketTypeSet reveivedFilters = new PacketTypeSet();
 	
 	// Which packets are buffered
-    private PacketTypeSet bufferedPackets;
+    private PacketTypeSet bufferedPackets = new PacketTypeSet();
     private ListenerInvoker invoker;
     
     // Handle errors

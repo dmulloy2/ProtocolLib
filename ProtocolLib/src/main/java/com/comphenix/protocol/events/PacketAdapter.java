@@ -332,16 +332,33 @@ public abstract class PacketAdapter implements PacketListener {
 	 * Construct a helper object for passing parameters to the packet adapter.
 	 * <p>
 	 * This is often simpler and better than passing them directly to each constructor.
+	 * <p>
+	 * Deprecated: Use {@link #params(Plugin, PacketType...)} instead.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param packets - the packet IDs the listener is looking for.
 	 * @return Helper object.
 	 */
+	@Deprecated
 	public static AdapterParameteters params(Plugin plugin, Integer... packets) {
 		return new AdapterParameteters().plugin(plugin).packets(packets);
 	}
 	
 	/**
+	 * Construct a helper object for passing parameters to the packet adapter.
+	 * <p>
+	 * This is often simpler and better than passing them directly to each constructor.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param packets - the packet types the listener is looking for.
+	 * @return Helper object.
+	 */
+	public static AdapterParameteters params(Plugin plugin, PacketType... packets) {
+		return new AdapterParameteters().plugin(plugin).types(packets);
+	}
+	
+	/**
 	 * Represents a builder for passing parameters to the packet adapter constructor.
+	 * <p>
+	 * Note: Never make spelling mistakes in a public API!
 	 * @author Kristian
 	 */
 	public static class AdapterParameteters {
