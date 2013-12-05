@@ -176,21 +176,21 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	}
 	
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet) throws InvocationTargetException {
-		sendServerPacket(reciever, packet, null, true);
+	public void sendServerPacket(Player receiver, PacketContainer packet) throws InvocationTargetException {
+		sendServerPacket(receiver, packet, null, true);
 	}
 	
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
-		sendServerPacket(reciever, packet, null, filters);
+	public void sendServerPacket(Player receiver, PacketContainer packet, boolean filters) throws InvocationTargetException {
+		sendServerPacket(receiver, packet, null, filters);
 	}
 	
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
+	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
 		if (delegate != null) {
-			delegate.sendServerPacket(reciever, packet, marker, filters);
+			delegate.sendServerPacket(receiver, packet, marker, filters);
 		} else {
-			queuedActions.add(queuedAddPacket(ConnectionSide.SERVER_SIDE, reciever, packet, marker, filters));
+			queuedActions.add(queuedAddPacket(ConnectionSide.SERVER_SIDE, receiver, packet, marker, filters));
 		}
 	}
 

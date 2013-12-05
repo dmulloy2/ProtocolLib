@@ -152,9 +152,9 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * Asynchronous events will only be executed if a synchronous listener with the same packets is registered.
 	 * If you already have a synchronous event, call this method with autoInject set to FALSE.
 	 * 
-	 * @param listener - the packet listener that will recieve these asynchronous events.
+	 * @param listener - the packet listener that will receive these asynchronous events.
 	 * @param autoInject - whether or not to automatically create the corresponding synchronous listener,
-	 * @return An asynchrouns handler.
+	 * @return An asynchronous handler.
 	 */
 	public AsyncListenerHandler registerAsyncHandler(PacketListener listener, boolean autoInject) {
 		AsyncListenerHandler handler = new AsyncListenerHandler(mainThread, this, listener);

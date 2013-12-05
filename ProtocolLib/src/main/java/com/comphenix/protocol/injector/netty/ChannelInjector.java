@@ -428,7 +428,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 		try {
 			MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(networkManager, null, packet);
 		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to recieve client packet " + packet, e);
+			throw new IllegalArgumentException("Unable to receive client packet " + packet, e);
 		}
 	}
 	

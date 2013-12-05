@@ -51,7 +51,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
 
 /**
- * This class is responsible for adding or removing proxy objects that intercepts recieved packets.
+ * This class is responsible for adding or removing proxy objects that intercepts received packets.
  * 
  * @author Kristian
  */

@@ -449,9 +449,9 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 				return packet;
 			}
 			
-			Player reciever = getInjector(networkManager, connection).getUpdatedPlayer();
+			Player receiver = getInjector(networkManager, connection).getUpdatedPlayer();
 			PacketContainer container = new PacketContainer(id, packet);
-			PacketEvent event = packetQueued(container, reciever);
+			PacketEvent event = packetQueued(container, receiver);
 
 			if (!event.isCancelled())
 				return event.getPacket().getHandle();
@@ -465,11 +465,11 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	/**
 	 * Called to inform the event listeners of a queued packet.
 	 * @param packet - the packet that is to be sent.
-	 * @param reciever - the reciever of this packet.
+	 * @param receiver - the receiver of this packet.
 	 * @return The packet event that was used.
 	 */
-	PacketEvent packetQueued(PacketContainer packet, Player reciever) {
-		PacketEvent event = PacketEvent.fromServer(this, packet, reciever);
+	PacketEvent packetQueued(PacketContainer packet, Player receiver) {
+		PacketEvent event = PacketEvent.fromServer(this, packet, receiver);
 		
 		invoker.invokePacketSending(event);
 		return event;
@@ -537,14 +537,14 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	}
 	/**
 	 * Invoked when a plugin wants to sent a packet.
-	 * @param reciever - the packet receiver.
+	 * @param receiver - the packet receiver.
 	 * @param packet - the packet to transmit.
 	 * @param marker - the network marker object.
 	 * @param filters - whether or not to invoke the packet listeners.
 	 * @throws InvocationTargetException If anything went wrong.
 	 */
-	void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-		NetworkObjectInjector networkObject = getInjector(reciever, true);
+	void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
+		NetworkObjectInjector networkObject = getInjector(receiver, true);
 		
 		// If TRUE, process this packet like any other
 		if (filters)

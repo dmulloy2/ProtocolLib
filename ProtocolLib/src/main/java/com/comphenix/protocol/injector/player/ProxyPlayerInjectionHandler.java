@@ -523,15 +523,15 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	}
 	
 	/**
-	 * Send the given packet to the given reciever.
-	 * @param reciever - the player receiver.
+	 * Send the given packet to the given receiver.
+	 * @param receiver - the player receiver.
 	 * @param packet - the packet to send.
 	 * @param filters - whether or not to invoke the packet filters.
 	 * @throws InvocationTargetException If an error occured during sending.
 	 */
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-		SocketInjector injector = getInjector(reciever);
+	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
+		SocketInjector injector = getInjector(receiver);
 		
 		// Send the packet, or drop it completely
 		if (injector != null) {
@@ -539,7 +539,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		} else {
 			throw new PlayerLoggedOutException(String.format(
 					"Unable to send packet %s (%s): Player %s has logged out.", 
-					packet.getType(), packet, reciever
+					packet.getType(), packet, receiver
 			));
 		}
 	}
@@ -652,7 +652,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	
 	@Override
 	public PacketEvent handlePacketRecieved(PacketContainer packet, InputStream input, byte[] buffered) {
-		throw new UnsupportedOperationException("Proxy injection cannot handle recieved packets.");
+		throw new UnsupportedOperationException("Proxy injection cannot handle received packets.");
 	}
 	
 	/**

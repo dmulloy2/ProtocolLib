@@ -45,22 +45,22 @@ public interface ProtocolManager extends PacketStream {
 	/**
 	 * Send a packet to the given player.
 	 * <p>
-	 * Re-sending a previously cancelled packet is discuraged. Use {@link AsyncMarker#incrementProcessingDelay()} 
+	 * Re-sending a previously cancelled packet is discouraged. Use {@link AsyncMarker#incrementProcessingDelay()} 
 	 * to delay a packet until a certain condition has been met.
 	 * 
-	 * @param reciever - the reciever.
+	 * @param receiver - the receiver.
 	 * @param packet - packet to send.
 	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 * @throws InvocationTargetException - if an error occured when sending the packet.
+	 * @throws InvocationTargetException - if an error occurred when sending the packet.
 	 */
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) 
+	public void sendServerPacket(Player receiver, PacketContainer packet, boolean filters) 
 			throws InvocationTargetException;
 	
 	/**
-	 * Simulate recieving a certain packet from a given player.
+	 * Simulate receiving a certain packet from a given player.
 	 * <p>
-	 * Receiving a previously cancelled packet is discuraged. Use {@link AsyncMarker#incrementProcessingDelay()} 
+	 * Receiving a previously cancelled packet is discouraged. Use {@link AsyncMarker#incrementProcessingDelay()} 
 	 * to delay a packet until a certain condition has been met.
 	 * 
 	 * @param sender - the sender.
@@ -81,7 +81,7 @@ public interface ProtocolManager extends PacketStream {
 	public void broadcastServerPacket(PacketContainer packet);
 	
 	/**
-	 * Broadcast a packet to every player that is recieving information about a given entity. 
+	 * Broadcast a packet to every player that is receiving information about a given entity. 
 	 * <p>
 	 * This is usually every player in the same world within an observable distance. If the entity is a 
 	 * player, it will only be included if <i>includeTracker</i> is TRUE.
@@ -240,7 +240,7 @@ public interface ProtocolManager extends PacketStream {
 	public Set<PacketType> getSendingFilterTypes();
 	
 	/**
-	 * Retrieves a immutable set containing the ID of the recieved client packets that will be observed by listeners.
+	 * Retrieves a immutable set containing the ID of the received client packets that will be observed by listeners.
 	 * <p>
 	 * Deprecated: Use {@link #getReceivingFilterTypes()} instead.
 	 * @return Every filtered client packet.
@@ -249,7 +249,7 @@ public interface ProtocolManager extends PacketStream {
 	public Set<Integer> getReceivingFilters();
 	
 	/**
-	 * Retrieves a immutable set containing the type of the recieved client packets that will be observed by listeners.
+	 * Retrieves a immutable set containing the type of the received client packets that will be observed by listeners.
 	 * @return Every filtered client packet.
 	 */
 	public Set<PacketType> getReceivingFilterTypes();
@@ -261,14 +261,14 @@ public interface ProtocolManager extends PacketStream {
 	public MinecraftVersion getMinecraftVersion();
 	
 	/**
-	 * Determines whether or not this protocol mananger has been disabled. 
+	 * Determines whether or not this protocol manager has been disabled. 
 	 * @return TRUE if it has, FALSE otherwise.
 	 */
 	public boolean isClosed();
 
 	/**
-	 * Retrieve the current asyncronous packet manager.
-	 * @return Asyncronous packet manager.
+	 * Retrieve the current asynchronous packet manager.
+	 * @return Asynchronous packet manager.
 	 */
 	public AsynchronousManager getAsynchronousManager();
 }

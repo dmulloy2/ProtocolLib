@@ -738,9 +738,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-		if (reciever == null)
-			throw new IllegalArgumentException("reciever cannot be NULL.");
+	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
+		if (receiver == null)
+			throw new IllegalArgumentException("receiver cannot be NULL.");
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
 		// We may have to enable player injection indefinitely after this
@@ -749,13 +749,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 		// Inform the MONITOR packets
 		if (!filters) {
-			PacketEvent event = PacketEvent.fromServer(this, packet, marker, reciever);
+			PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver);
 			
 			sendingListeners.invokePacketSending(
 					reporter, event, ListenerPriority.MONITOR);
 			marker = NetworkMarker.getNetworkMarker(event);
 		}
-		playerInjection.sendServerPacket(reciever, packet, marker, filters);
+		playerInjection.sendServerPacket(receiver, packet, marker, filters);
 	}
 
 	@Override

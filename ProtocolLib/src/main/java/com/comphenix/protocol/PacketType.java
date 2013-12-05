@@ -85,7 +85,7 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
-	 * Packets sent and recieved when logged into the game.
+	 * Packets sent and received when logged into the game.
 	 * @author Kristian
 	 */
 	public static class Play {
@@ -228,7 +228,7 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
-	 * Packets sent and recieved when querying the server in the multiplayer menu.
+	 * Packets sent and received when querying the server in the multiplayer menu.
 	 * @author Kristian
 	 */
 	public static class Status {
@@ -280,7 +280,7 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
-	 * Packets sent and recieved when logging in to the server.
+	 * Packets sent and received when logging in to the server.
 	 * @author Kristian
 	 */
 	public static class Login {
@@ -363,7 +363,7 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
-	 * Represens the sender of this packet type.
+	 * Represents the sender of this packet type.
 	 * @author Kristian
 	 *
 	 */
@@ -488,7 +488,7 @@ public class PacketType implements Serializable {
 	 * Note that the registration will be performed on the main thread. 
 	 * @param type - the type to register.
 	 * @param name - the name of the packet.
-	 * @return A future telling us if our instance was registrered.
+	 * @return A future telling us if our instance was registered.
 	 */
 	public static Future<Boolean> scheduleRegister(final PacketType type, final String name) {
 		Callable<Boolean> callable = new Callable<Boolean>() {

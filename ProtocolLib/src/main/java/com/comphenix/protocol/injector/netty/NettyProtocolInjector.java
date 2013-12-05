@@ -224,11 +224,11 @@ public class NettyProtocolInjector implements ChannelListener {
 	/**
 	 * Called to inform the event listeners of a queued packet.
 	 * @param packet - the packet that is to be sent.
-	 * @param reciever - the reciever of this packet.
+	 * @param receiver - the receiver of this packet.
 	 * @return The packet event that was used.
 	 */
-	private PacketEvent packetQueued(PacketContainer packet, Player reciever) {
-		PacketEvent event = PacketEvent.fromServer(this, packet, reciever);
+	private PacketEvent packetQueued(PacketContainer packet, Player receiver) {
+		PacketEvent event = PacketEvent.fromServer(this, packet, receiver);
 		
 		invoker.invokePacketSending(event);
 		return event;
@@ -270,8 +270,8 @@ public class NettyProtocolInjector implements ChannelListener {
 			}
 			
 			@Override
-			public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-				ChannelInjector.fromPlayer(reciever, listener).
+			public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
+				ChannelInjector.fromPlayer(receiver, listener).
 					sendServerPacket(packet.getHandle(), marker, filters);
 			}
 			
