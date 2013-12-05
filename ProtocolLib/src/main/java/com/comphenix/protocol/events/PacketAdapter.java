@@ -332,10 +332,12 @@ public abstract class PacketAdapter implements PacketListener {
 	 * Construct a helper object for passing parameters to the packet adapter.
 	 * <p>
 	 * This is often simpler and better than passing them directly to each constructor.
+	 * Deprecated: Use {@link #types(PacketType...)} instead.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param packets - the packet IDs the listener is looking for.
 	 * @return Helper object.
 	 */
+	@Deprecated
 	public static AdapterParameteters params(Plugin plugin, Integer... packets) {
 		return new AdapterParameteters().plugin(plugin).packets(packets);
 	}
@@ -383,7 +385,7 @@ public abstract class PacketAdapter implements PacketListener {
 		}
 		
 		/**
-		 * Set this adapter to also look for client-side packets. 
+		 * Set this adapter to also look for server-side packets. 
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters serverSide() {
