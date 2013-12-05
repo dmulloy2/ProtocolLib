@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 
 import org.bukkit.Bukkit;
 
+import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ObjectEnum;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -376,7 +377,15 @@ public class PacketType implements Serializable {
 		/**
 		 * Indicate that packets of this type will be sent by the current server.
 		 */
-		SERVER
+		SERVER;
+		
+		/**
+		 * Retrieve the equivialent connection side.
+		 * @return The connection side.
+		 */
+		public ConnectionSide toSide() {
+			return this == CLIENT ? ConnectionSide.CLIENT_SIDE : ConnectionSide.SERVER_SIDE;
+		}
 	}
 	
 	// Lookup of packet types

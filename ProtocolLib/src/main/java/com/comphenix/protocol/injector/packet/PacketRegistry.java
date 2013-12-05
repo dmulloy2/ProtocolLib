@@ -298,7 +298,7 @@ public class PacketRegistry {
 	 * @return Set of packet types.
 	 */
 	public static Set<PacketType> toPacketTypes(Set<Integer> ids) { 
-		return toPacketTypes(ids);
+		return toPacketTypes(ids, null);
 	}
 	
 	/**

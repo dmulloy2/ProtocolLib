@@ -56,6 +56,26 @@ public abstract class PacketAdapter implements PacketListener {
 	}
 	
 	/**
+	 * Initialize a packet listener with the given parameters.
+	 * @param plugin - the plugin.
+	 * @param listenerPriority - the priority.
+	 * @param types - the packet types.
+	 */
+	public PacketAdapter(Plugin plugin, PacketType... types) {
+		this(plugin, ListenerPriority.NORMAL, types);
+	}
+	
+	/**
+	 * Initialize a packet listener with the given parameters.
+	 * @param plugin - the plugin.
+	 * @param listenerPriority - the priority.
+	 * @param types - the packet types.
+	 */
+	public PacketAdapter(Plugin plugin, ListenerPriority listenerPriority, PacketType... types) {
+		this(params(plugin, types).listenerPriority(listenerPriority));
+	}
+	
+	/**
 	 * Initialize a packet listener with default priority.
 	 * <p>
 	 * Deprecated: Use {@link #params()} instead.
@@ -500,6 +520,12 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters types(@Nonnull PacketType... packets) {
+			// Set the connection side as well
+			if (connectionSide == null) {
+				for (PacketType type : packets) {
+					this.connectionSide = ConnectionSide.add(this.connectionSide, type.getSender().toSide());
+				}
+			}
 			this.packets = Preconditions.checkNotNull(packets, "packets cannot be NULL");
 			return this;
 		}

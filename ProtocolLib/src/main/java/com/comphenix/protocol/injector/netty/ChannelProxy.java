@@ -45,14 +45,15 @@ abstract class ChannelProxy implements Channel {
 				(Class<? extends ChannelFuture>) ChannelProxy.class.getClassLoader().
 					loadClass("net.minecraft.util.io.netty.channel.SucceededChannelFuture");
 				
-				FUTURE_CONSTRUCTOR = succededFuture.getConstructor(Channel.class, EventExecutor.class);
+				FUTURE_CONSTRUCTOR = succededFuture.getDeclaredConstructor(Channel.class, EventExecutor.class);
+				FUTURE_CONSTRUCTOR.setAccessible(true);
 			}		
 			return FUTURE_CONSTRUCTOR.newInstance(this, null);
 			
 		} catch (ClassNotFoundException e) {
-			throw new RuntimeException("Cannot get succeeded future.");
+			throw new RuntimeException("Cannot get succeeded future.", e);
 		} catch (Exception e) {
-			throw new RuntimeException("Cannot construct completed future.");
+			throw new RuntimeException("Cannot construct completed future.", e);
 		}
 	}
 	
