@@ -48,7 +48,7 @@ public abstract class PacketAdapter implements PacketListener {
 	 * Initialize a packet adapter using a collection of parameters. Use {@link #params()} to get an instance to this builder.
 	 * @param params - the parameters.
 	 */
-	public PacketAdapter(@Nonnull AdapterParameteters params) {
+	public PacketAdapter(@Nonnull AdapterParameters params) {
 		this(
 			checkValidity(params).plugin, params.connectionSide, params.listenerPriority, 
 			params.gamePhase, params.options, params.packets
@@ -324,29 +324,41 @@ public abstract class PacketAdapter implements PacketListener {
 	 * This is often simpler and better than passing them directly to each constructor.
 	 * @return Helper object.
 	 */
-	public static AdapterParameteters params() {
-		return new AdapterParameteters();
+	public static AdapterParameters params() {
+		return new AdapterParameters();
 	}
 	
 	/**
 	 * Construct a helper object for passing parameters to the packet adapter.
 	 * <p>
 	 * This is often simpler and better than passing them directly to each constructor.
-	 * Deprecated: Use {@link #types(PacketType...)} instead.
+	 * Deprecated: Use {@link #params(Plugin, PacketType...)} instead.
 	 * @param plugin - the plugin that spawned this listener.
 	 * @param packets - the packet IDs the listener is looking for.
 	 * @return Helper object.
 	 */
 	@Deprecated
-	public static AdapterParameteters params(Plugin plugin, Integer... packets) {
-		return new AdapterParameteters().plugin(plugin).packets(packets);
+	public static AdapterParameters params(Plugin plugin, Integer... packets) {
+		return new AdapterParameters().plugin(plugin).packets(packets);
+	}
+	
+	/**
+	 * Construct a helper object for passing parameters to the packet adapter.
+	 * <p>
+	 * This is often simpler and better than passing them directly to each constructor.
+	 * @param plugin - the plugin that spawned this listener.
+	 * @param packets - the packet types the listener is looking for.
+	 * @return Helper object.
+	 */
+	public static AdapterParameters params(Plugin plugin, PacketType... packets) {
+		return new AdapterParameters().plugin(plugin).types(packets);
 	}
 	
 	/**
 	 * Represents a builder for passing parameters to the packet adapter constructor.
 	 * @author Kristian
 	 */
-	public static class AdapterParameteters {
+	public static class AdapterParameters {
 		private Plugin plugin;
 		private ConnectionSide connectionSide;
 		private PacketType[] packets;
@@ -361,7 +373,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @param plugin - the plugin.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters plugin(@Nonnull Plugin plugin) {
+		public AdapterParameters plugin(@Nonnull Plugin plugin) {
 			this.plugin = Preconditions.checkNotNull(plugin, "plugin cannot be NULL.");
 			return this;
 		}
@@ -371,7 +383,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @param connectionSide - the new packet type.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters connectionSide(@Nonnull ConnectionSide connectionSide) {
+		public AdapterParameters connectionSide(@Nonnull ConnectionSide connectionSide) {
 			this.connectionSide = Preconditions.checkNotNull(connectionSide, "connectionside cannot be NULL.");
 			return this;
 		}
@@ -380,7 +392,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * Set this adapter to also look for client-side packets. 
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters clientSide() {
+		public AdapterParameters clientSide() {
 			return connectionSide(ConnectionSide.add(connectionSide, ConnectionSide.CLIENT_SIDE));
 		}
 		
@@ -388,7 +400,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * Set this adapter to also look for server-side packets. 
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters serverSide() {
+		public AdapterParameters serverSide() {
 			return connectionSide(ConnectionSide.add(connectionSide, ConnectionSide.SERVER_SIDE));
 		}
 		
@@ -399,7 +411,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @param listenerPriority - the new event priority.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters listenerPriority(@Nonnull ListenerPriority listenerPriority) {
+		public AdapterParameters listenerPriority(@Nonnull ListenerPriority listenerPriority) {
 			this.listenerPriority = Preconditions.checkNotNull(listenerPriority, "listener priority cannot be NULL.");
 			return this;
 		}
@@ -411,7 +423,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @param gamePhase - the new game phase.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters gamePhase(@Nonnull GamePhase gamePhase) {
+		public AdapterParameters gamePhase(@Nonnull GamePhase gamePhase) {
 			this.gamePhase = Preconditions.checkNotNull(gamePhase, "gamePhase cannot be NULL.");
 			return this;
 		}
@@ -420,7 +432,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * Set the game phase to {@link GamePhase#LOGIN}, allowing ProtocolLib to intercept login packets.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters loginPhase() {
+		public AdapterParameters loginPhase() {
 			return gamePhase(GamePhase.LOGIN);
 		}
 		
@@ -431,7 +443,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @param options - every option to use.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters options(@Nonnull ListenerOptions... options) {
+		public AdapterParameters options(@Nonnull ListenerOptions... options) {
 			this.options = Preconditions.checkNotNull(options, "options cannot be NULL.");
 			return this;
 		}
@@ -440,7 +452,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * Set the listener option to {@link ListenerOptions#INTERCEPT_INPUT_BUFFER}, causing ProtocolLib to read the raw packet data from the network stream.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters optionIntercept() {
+		public AdapterParameters optionIntercept() {
 			return options(ListenerOptions.INTERCEPT_INPUT_BUFFER);
 		}
 		
@@ -454,7 +466,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @return This builder, for chaining.
 		 */
 		@Deprecated
-		public AdapterParameteters packets(@Nonnull Integer... packets) {
+		public AdapterParameters packets(@Nonnull Integer... packets) {
 			Preconditions.checkNotNull(packets, "packets cannot be NULL");
 			PacketType[] types = new PacketType[packets.length];
 			
@@ -473,7 +485,7 @@ public abstract class PacketAdapter implements PacketListener {
 		 * @return This builder, for chaining.
 		 */
 		@Deprecated
-		public AdapterParameteters packets(@Nonnull Set<Integer> packets) {
+		public AdapterParameters packets(@Nonnull Set<Integer> packets) {
 			return packets(packets.toArray(new Integer[0]));
 		}
 		
@@ -481,10 +493,10 @@ public abstract class PacketAdapter implements PacketListener {
 		 * Set the packet types the listener is looking for.
 		 * <p>
 		 * This parameter is required.
-		 * @param packets
+		 * @param packets - the packet types to look for.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters types(@Nonnull PacketType... packets) {
+		public AdapterParameters types(@Nonnull PacketType... packets) {
 			this.packets = Preconditions.checkNotNull(packets, "packets cannot be NULL");
 			return this;
 		}
@@ -493,10 +505,10 @@ public abstract class PacketAdapter implements PacketListener {
 		 * Set the packet types the listener is looking for.
 		 * <p>
 		 * This parameter is required.
-		 * @param packets
+		 * @param packets - a set of packet types to look for.
 		 * @return This builder, for chaining.
 		 */
-		public AdapterParameteters types(@Nonnull Set<PacketType> packets) {
+		public AdapterParameters types(@Nonnull Set<PacketType> packets) {
 			return types(packets.toArray(new PacketType[0]));
 		}
 	}
@@ -504,7 +516,7 @@ public abstract class PacketAdapter implements PacketListener {
 	/**
 	 * Determine if the required parameters are set.
 	 */
-	private static AdapterParameteters checkValidity(AdapterParameteters params) {
+	private static AdapterParameters checkValidity(AdapterParameters params) {
 		if (params == null)
 			throw new IllegalArgumentException("params cannot be NULL.");
 		if (params.plugin == null)
