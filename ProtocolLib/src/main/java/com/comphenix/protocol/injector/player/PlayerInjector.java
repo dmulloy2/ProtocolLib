@@ -29,7 +29,9 @@ import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -608,7 +610,8 @@ public abstract class PlayerInjector implements SocketInjector {
 				NetworkMarker marker = queuedMarkers.remove(packet);
 				
 				// A packet has been sent guys!
-				PacketContainer container = new PacketContainer(id, packet);
+				PacketType type = PacketType.findLegacy(id, Sender.SERVER);
+				PacketContainer container = new PacketContainer(type, packet);
 				PacketEvent event = PacketEvent.fromServer(invoker, container, marker, currentPlayer);
 				invoker.invokePacketSending(event);
 				

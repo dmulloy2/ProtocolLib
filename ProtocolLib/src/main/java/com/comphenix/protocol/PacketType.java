@@ -444,6 +444,23 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
+	 * Retrieve a packet type from a legacy (1.6.4 and below) packet ID.
+	 * @param packetId - the legacy packet ID.
+	 * @param preference - the preferred sender, or NULL for any arbitrary sender.
+	 * @return The corresponding packet type.
+	 * @throws IllegalArgumentException If the legacy packet could not be found.
+	 */
+	public static PacketType findLegacy(int packetId, Sender preference) {
+		if (preference == null)
+			return findLegacy(packetId);
+		PacketType type = getLookup().getFromLegacy(packetId, preference);
+		
+		if (type != null)
+			return type;
+		throw new IllegalArgumentException("Cannot find legacy packet " + packetId);
+	}
+	
+	/**
 	 * Retrieve a packet type from a protocol, sender and packet ID.
 	 * @param protocol - the current protocol.
 	 * @param sender - the sender.

@@ -195,7 +195,7 @@ public abstract class PacketAdapter implements PacketListener {
 			GamePhase gamePhase, ListenerOptions[] options, Integer... packets) {
 		
 		this(plugin, connectionSide, listenerPriority, gamePhase, options,
-			PacketRegistry.toPacketTypes(Sets.newHashSet(packets)).toArray(new PacketType[0])
+			PacketRegistry.toPacketTypes(Sets.newHashSet(packets), connectionSide.getSender()).toArray(new PacketType[0])
 		);
 	}
 	

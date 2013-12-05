@@ -33,6 +33,7 @@ import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.NoOp;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -318,7 +319,7 @@ class ProxyPacketInjector implements PacketInjector {
 	@SuppressWarnings("deprecation")
 	@Override
 	public Set<PacketType> getPacketHandlers() {
-		return PacketRegistry.toPacketTypes(PacketRegistry.getPreviousPackets().keySet());
+		return PacketRegistry.toPacketTypes(PacketRegistry.getPreviousPackets().keySet(), Sender.CLIENT);
 	}
 	
 	// Called from the ReadPacketModified monitor

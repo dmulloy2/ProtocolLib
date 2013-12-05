@@ -17,6 +17,7 @@ import org.bukkit.plugin.PluginManager;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -382,12 +383,12 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 
 	@Override
 	public Set<PacketType> getSendingFilterTypes() {
-		return PacketRegistry.toPacketTypes(getSendingFilters());
+		return PacketRegistry.toPacketTypes(getSendingFilters(), Sender.SERVER);
 	}
 
 	@Override
 	public Set<PacketType> getReceivingFilterTypes() {
-		return PacketRegistry.toPacketTypes(getReceivingFilters());
+		return PacketRegistry.toPacketTypes(getReceivingFilters(), Sender.CLIENT);
 	}
 	
 	@Override

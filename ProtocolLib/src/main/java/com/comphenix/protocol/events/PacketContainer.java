@@ -122,27 +122,36 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Creates a packet container for a new packet.
+	 * <p>
+	 * Deprecated: Use {@link #PacketContainer(PacketType)} instead.
 	 * @param id - ID of the packet to create.
 	 */
+	@Deprecated
 	public PacketContainer(int id) {
 		this(PacketType.findLegacy(id), StructureCache.newPacket(PacketType.findLegacy(id)));
 	}
 	
 	/**
 	 * Creates a packet container for an existing packet.
+	 * <p>
+	 * Deprecated: Use {@link #PacketContainer(PacketType, Object))} instead.
 	 * @param id - ID of the given packet.
 	 * @param handle - contained packet.
 	 */
+	@Deprecated
 	public PacketContainer(int id, Object handle) {
 		this(PacketType.findLegacy(id), handle);
 	}
 	
 	/**
 	 * Creates a packet container for an existing packet.
+	 * <p>
+	 * Deprecated: Use {@link #PacketContainer(PacketType, Object, StructureModifier))} instead.
 	 * @param id - ID of the given packet.
 	 * @param handle - contained packet.
 	 * @param structure - structure modifier.
 	 */
+	@Deprecated
 	public PacketContainer(int id, Object handle, StructureModifier<Object> structure) {
 		this(PacketType.findLegacy(id), handle, structure);
 	}
@@ -495,7 +504,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public PacketContainer shallowClone() {
 		Object clonedPacket = SHALLOW_CLONER.clone(getHandle());
-		return new PacketContainer(getID(), clonedPacket);
+		return new PacketContainer(getType(), clonedPacket);
 	}
 	
 	/**

@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol.events;
 
+import com.comphenix.protocol.PacketType.Sender;
+
 /**
  * Used to set a packet filter.
  * 
@@ -44,6 +46,20 @@ public enum ConnectionSide {
 	
 	public boolean isForServer() {
 		return this == SERVER_SIDE || this == BOTH;
+	}
+	
+	/**
+	 * Retrieve the sender of this connection side.
+	 * <p>
+	 * This is NULL for {@link #BOTH}.
+	 * @return The sender.
+	 */
+	public Sender getSender() {
+		if (this == SERVER_SIDE)
+			return Sender.SERVER;
+		else if (this == CLIENT_SIDE)
+			return Sender.CLIENT;
+		return null;
 	}
 	
 	/**

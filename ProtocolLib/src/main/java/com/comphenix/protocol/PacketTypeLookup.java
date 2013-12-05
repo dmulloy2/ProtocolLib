@@ -45,6 +45,8 @@ class PacketTypeLookup {
 	
 	// Packet IDs from 1.6.4 and below
 	private final IntegerMap<PacketType> legacyLookup = new IntegerMap<PacketType>();
+	private final IntegerMap<PacketType> serverLookup = new IntegerMap<PacketType>();
+	private final IntegerMap<PacketType> clientLookup = new IntegerMap<PacketType>();
 	
 	// Packets for 1.7.2
 	private final ProtocolSenderLookup currentLookup = new ProtocolSenderLookup();
@@ -61,6 +63,10 @@ class PacketTypeLookup {
 			
 			// Skip unknown legacy packets
 			if (legacy != PacketType.UNKNOWN_PACKET) {
+				if (type.isServer())
+					serverLookup.put(type.getLegacyId(), type);
+				if (type.isClient())
+					clientLookup.put(type.getLegacyId(), type);
 				legacyLookup.put(type.getLegacyId(), type);
 			}
 			currentLookup.getMap(type.getProtocol(), type.getSender()).put(type.getCurrentId(), type);
@@ -75,6 +81,27 @@ class PacketTypeLookup {
 	 */
 	public PacketType getFromLegacy(int packetId) {
 		return legacyLookup.get(packetId);
+	}
+	
+	/**
+	 * Retrieve a packet type from a legacy (1.6.4 and below) packet ID.
+	 * @param packetId - the legacy packet ID.
+	 * @param preference - which packet type to look for first.
+	 * @return The corresponding packet type, or NULL if not found.
+	 */
+	public PacketType getFromLegacy(int packetId, Sender preference) {	
+		if (preference == Sender.CLIENT)
+			return getFirst(packetId, clientLookup, serverLookup);
+		else
+			return getFirst(packetId, serverLookup, clientLookup);
+	}
+	
+	// Helper method for looking up in two sets
+	private <T> T getFirst(int packetId, IntegerMap<T> first, IntegerMap<T> second) {
+		if (first.containsKey(packetId))
+			return first.get(packetId);
+		else
+			return second.get(packetId);
 	}
 	
 	/**

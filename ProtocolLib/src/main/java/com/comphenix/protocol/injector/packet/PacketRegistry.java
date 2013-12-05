@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -236,7 +237,7 @@ public class PacketRegistry {
 		
 		// Handle legacy
 		if (NETTY_SERVER_PACKETS == null) {
-			NETTY_SERVER_PACKETS = toPacketTypes(LEGACY.getServerPackets());
+			NETTY_SERVER_PACKETS = toPacketTypes(LEGACY.getServerPackets(), Sender.SERVER);
 		}
 		return NETTY_SERVER_PACKETS;
 	}
@@ -273,7 +274,7 @@ public class PacketRegistry {
 		
 		// Handle legacy
 		if (NETTY_CLIENT_PACKETS == null) {
-			NETTY_CLIENT_PACKETS = toPacketTypes(LEGACY.getClientPackets());
+			NETTY_CLIENT_PACKETS = toPacketTypes(LEGACY.getClientPackets(), Sender.CLIENT);
 		}
 		return NETTY_CLIENT_PACKETS;
 	}
@@ -297,10 +298,20 @@ public class PacketRegistry {
 	 * @return Set of packet types.
 	 */
 	public static Set<PacketType> toPacketTypes(Set<Integer> ids) { 
+		return toPacketTypes(ids);
+	}
+	
+	/**
+	 * Convert a set of legacy packet IDs to packet types.
+	 * @param types - legacy packet IDs.
+	 * @param preference - the sender preference, if any.
+	 * @return Set of packet types.
+	 */
+	public static Set<PacketType> toPacketTypes(Set<Integer> ids, Sender preference) { 
 		Set<PacketType> result = Sets.newHashSet();
 		
 		for (int id : ids)
-			result.add(PacketType.findLegacy(id));
+			result.add(PacketType.findLegacy(id, preference));
 		return Collections.unmodifiableSet(result);
 	}
 	

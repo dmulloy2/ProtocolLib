@@ -35,6 +35,7 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.BlockingHashMap;
 import com.comphenix.protocol.concurrency.IntegerSet;
@@ -711,7 +712,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	 */
 	@Override
 	public Set<PacketType> getSendingFilters() {
-		return PacketRegistry.toPacketTypes(sendingFilters.toSet());
+		return PacketRegistry.toPacketTypes(sendingFilters.toSet(), Sender.SERVER);
 	}
 	
 	@Override

@@ -22,6 +22,8 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.cglib.proxy.NoOp;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -426,7 +428,8 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			}
 			
 			Player sender = getInjector(networkManager, connection).getUpdatedPlayer();
-			PacketContainer container = new PacketContainer(id, packet);
+			PacketType type = PacketType.findLegacy(id, Sender.CLIENT);
+			PacketContainer container = new PacketContainer(type, packet);
 			PacketEvent event = packetReceived(container, sender, readBufferedPackets.get(packet));
 			
 			if (!event.isCancelled())
@@ -450,7 +453,8 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			}
 			
 			Player reciever = getInjector(networkManager, connection).getUpdatedPlayer();
-			PacketContainer container = new PacketContainer(id, packet);
+			PacketType type = PacketType.findLegacy(id, Sender.SERVER);
+			PacketContainer container = new PacketContainer(type, packet);
 			PacketEvent event = packetQueued(container, reciever);
 
 			if (!event.isCancelled())
