@@ -175,10 +175,6 @@ public class NettyProtocolInjector implements ChannelListener {
 	public Object onPacketSending(ChannelInjector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
 		
-		if (!Bukkit.isPrimaryThread()) {
-			System.out.println("FUCK ME: " + packet);
-		}
-		
 		if (queuedFilters.contains(clazz)) {
 			// Check for ignored packets
 			if (injector.unignorePacket(packet)) {
