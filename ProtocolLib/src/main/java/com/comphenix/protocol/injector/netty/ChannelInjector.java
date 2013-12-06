@@ -434,10 +434,13 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 */
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
 		saveMarker(packet, marker);
+		processedPackets.remove(packet);
 		
 		// Record if this packet should be ignored by most listeners
 		if (!filtered) {
 			ignoredPackets.add(packet);
+		} else {
+			ignoredPackets.remove(packet);
 		}
 		
 		// Attempt to send the packet with NetworkMarker.handle(), or the PlayerConnection if its active
@@ -460,9 +463,12 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 */
 	public void recieveClientPacket(Object packet, NetworkMarker marker, boolean filtered) {
 		saveMarker(packet, marker);
+		processedPackets.remove(packet);
 	
 		if (!filtered) {
 			ignoredPackets.add(packet);
+		} else {
+			ignoredPackets.remove(packet);
 		}
 		
 		try {
