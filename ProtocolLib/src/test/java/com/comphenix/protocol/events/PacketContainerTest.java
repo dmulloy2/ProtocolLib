@@ -45,6 +45,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -424,6 +425,11 @@ public class PacketContainerTest {
 				}
 			}
 		}
+	}
+	
+	@Test
+	public void testPacketType() {
+		assertEquals(PacketType.Legacy.Server.SET_CREATIVE_SLOT, PacketType.findLegacy(107, Sender.SERVER));
 	}
 	
 	// Convert to objects that support equals()

@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ObjectEnum;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
 import com.google.common.base.Objects;
@@ -334,6 +335,75 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
+	 * Contains every packet Minecraft 1.6.4 packet removed in Minecraft 1.7.2.
+	 * @author Kristian
+	 */
+	public static class Legacy {
+		private static final Protocol PROTOCOL = Protocol.LEGACY;
+		
+		// Missing server packets: [10, 11, 12, 21, 107, 252]
+		public static class Server extends ObjectEnum<PacketType> {
+			private final static Sender SENDER = Sender.SERVER;
+			
+			public static final PacketType PLAYER_FLYING =   	  	  PacketType.newLegacy(SENDER, 10);
+			public static final PacketType PLAYER_POSITION =   	  	  PacketType.newLegacy(SENDER, 11);
+			public static final PacketType PLAYER_POSITON_LOOK =   	  PacketType.newLegacy(SENDER, 12);
+			/**
+			 * Removed in Minecraft 1.4.6.
+			 */
+			public static final PacketType PICKUP_SPAWN =   	  	  PacketType.newLegacy(SENDER, 21);
+			/**
+			 * Removed in Minecraft 1.7.2
+			 */
+			public static final PacketType SET_CREATIVE_SLOT = 	  	  PacketType.newLegacy(SENDER, 107);
+			
+			/**
+			 * Removed in Minecraft 1.7.2
+			 */
+			public static final PacketType KEY_RESPONSE = 	  	  	  PacketType.newLegacy(SENDER, 252);
+			
+			private final static Server INSTANCE = new Server();
+			
+			// Prevent accidental construction
+			private Server() { 
+				super(PacketType.class); 
+			}
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Server getInstance() {
+				return INSTANCE;
+			}
+		}
+		
+		// Missing client packets: [1, 9, 255]
+		public static class Client extends ObjectEnum<PacketType> {
+			private final static Sender SENDER = Sender.CLIENT;
+			
+			public static final PacketType LOGIN = 	  	  	  		  PacketType.newLegacy(SENDER, 1);
+			public static final PacketType RESPAWN = 	  	  	  	  PacketType.newLegacy(SENDER, 9);
+			public static final PacketType DISCONNECT = 	  	  	  PacketType.newLegacy(SENDER, 255);
+				
+			private final static Client INSTANCE = new Client();
+			
+			// Prevent accidental construction
+			private Client() { super(PacketType.class); }
+			
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Client getInstance() {
+				return INSTANCE;
+			}
+		}
+		
+		public static Protocol getProtocol() {
+			return PROTOCOL;
+		}
+	}
+	
+	/**
 	 * Represents the different protocol or connection states.
 	 * @author Kristian
 	 */
@@ -341,7 +411,12 @@ public class PacketType implements Serializable {
 		HANDSHAKING,
 		GAME,
 		STATUS,
-		LOGIN;
+		LOGIN,
+		
+		/**
+		 * Only for packets removed in Minecraft 1.7.2
+		 */
+		LEGACY;
 		
 		/**
 		 * Retrieve the correct protocol enum from a given vanilla enum instance.
@@ -416,7 +491,9 @@ public class PacketType implements Serializable {
 				addPacketTypes(Status.Client.getInstance()).
 				addPacketTypes(Status.Server.getInstance()).
 				addPacketTypes(Login.Client.getInstance()).
-				addPacketTypes(Login.Server.getInstance());
+				addPacketTypes(Login.Server.getInstance()).
+				addPacketTypes(Legacy.Client.getInstance()).
+				addPacketTypes(Legacy.Server.getInstance());
 		}
 		return LOOKUP;
 	}
@@ -435,6 +512,12 @@ public class PacketType implements Serializable {
 		sources.add(Status.Server.getInstance());
 		sources.add(Login.Client.getInstance());
 		sources.add(Login.Server.getInstance());
+		
+		// Add the missing types in earlier versions
+		if (!MinecraftReflection.isUsingNetty()) {
+			sources.add(Legacy.Client.getInstance());
+			sources.add(Legacy.Server.getInstance());
+		}
 		return Iterables.concat(sources);
 	}
 	
@@ -492,7 +575,7 @@ public class PacketType implements Serializable {
 	 * The packet will automatically be registered if its missing.
 	 * @param protocol - the current protocol.
 	 * @param sender - the sender.
-	 * @param packetId - the packet ID.
+	 * @param packetId - the packet ID. Can be UNKNOWN_PACKET.
 	 * @param legacyId - the legacy packet ID. Can be UNKNOWN_PACKET.
 	 * @return The corresponding packet type.
 	 */
@@ -532,6 +615,8 @@ public class PacketType implements Serializable {
 						objEnum = type.isClient() ? Status.Client.getInstance() : Status.Server.getInstance(); break;
 					case LOGIN:
 						objEnum = type.isClient() ? Login.Client.getInstance() : Login.Server.getInstance(); break;
+					case LEGACY:
+						objEnum = type.isClient() ? Legacy.Client.getInstance() : Legacy.Server.getInstance(); break;
 					default:
 						throw new IllegalStateException("Unexpected protocol: " + type.getProtocol());
 				}
@@ -558,7 +643,7 @@ public class PacketType implements Serializable {
 	/**
 	 * Construct a new packet type.
 	 * @param protocol - the current protocol.
-	 * @param target - the target - client or server.
+	 * @param sender - client or server.
 	 * @param currentId - the current packet ID, or 
 	 * @param legacyId - the legacy packet ID.
 	 */
@@ -569,7 +654,7 @@ public class PacketType implements Serializable {
 	/**
 	 * Construct a new packet type.
 	 * @param protocol - the current protocol.
-	 * @param target - the target - client or server.
+	 * @param sender - client or server.
 	 * @param currentId - the current packet ID.
 	 * @param legacyId - the legacy packet ID.
 	 * @param version - the version of the current ID.
@@ -580,6 +665,15 @@ public class PacketType implements Serializable {
 		this.currentId = currentId;
 		this.legacyId = legacyId;
 		this.version = version;
+	}
+	
+	/**
+	 * Construct a legacy packet type.
+	 * @param sender - client or server.
+	 * @param legacyId - the legacy packet ID.
+	 */
+	public static PacketType newLegacy(Sender sender, int legacyId) {
+		return new PacketType(Protocol.LEGACY, sender, PacketType.UNKNOWN_PACKET, legacyId, MinecraftVersion.WORLD_UPDATE);
 	}
 	
 	/**
@@ -626,7 +720,9 @@ public class PacketType implements Serializable {
 	 * Retrieve the current protocol ID for this packet type.
 	 * <p>
 	 * This is only unique within a specific protocol and target.
-	 * @return The current ID.
+	 * <p>
+	 * It is only unknown if the packet was removed in Minecraft 1.7.2.
+	 * @return The current ID, or {@link #UNKNOWN_PACKET} if unknown.
 	 */
 	public int getCurrentId() {
 		return currentId;
@@ -637,7 +733,12 @@ public class PacketType implements Serializable {
 	 * @return The packet class.
 	 */
 	public Class<?> getPacketClass() {
-		return PacketRegistry.getPacketClassFromType(this);
+		try {
+			return PacketRegistry.getPacketClassFromType(this);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	/**
@@ -660,7 +761,7 @@ public class PacketType implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(protocol, sender, currentId);
+		return Objects.hashCode(protocol, sender, currentId, legacyId);
 	}
 	
 	@Override
@@ -672,7 +773,8 @@ public class PacketType implements Serializable {
 			PacketType other = (PacketType) obj;
 			return protocol == other.protocol && 
 				   sender == other.sender && 
-				   currentId == other.currentId;
+				   currentId == other.currentId && 
+				   legacyId == other.legacyId;
 		}
 		return false;
 	}

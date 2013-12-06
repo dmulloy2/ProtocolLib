@@ -69,7 +69,10 @@ class PacketTypeLookup {
 					clientLookup.put(type.getLegacyId(), type);
 				legacyLookup.put(type.getLegacyId(), type);
 			}
-			currentLookup.getMap(type.getProtocol(), type.getSender()).put(type.getCurrentId(), type);
+			// Skip unknown current packets
+			if (type.getCurrentId() != PacketType.UNKNOWN_PACKET) {
+				currentLookup.getMap(type.getProtocol(), type.getSender()).put(type.getCurrentId(), type);
+			}
 		}
 		return this;
 	}
