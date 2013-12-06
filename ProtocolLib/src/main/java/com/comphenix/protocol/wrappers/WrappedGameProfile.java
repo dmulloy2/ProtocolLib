@@ -60,7 +60,7 @@ public class WrappedGameProfile {
 	}
 
 	/**
-	 * Construct a new game profile with the same ID, but different id.
+	 * Construct a new game profile with the same ID, but different name.
 	 * @param name - the new name of the profile to create.
 	 * @return The new game profile.
 	 */
