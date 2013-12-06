@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.google.common.base.Preconditions;
 
 import net.minecraft.util.com.google.common.collect.Maps;
 
@@ -32,8 +33,12 @@ public class PacketTypeSet {
 	 * @param type - the type to add.
 	 */
 	public synchronized void addType(PacketType type) {
-		types.add(type);
-		classes.add(getPacketClass(type));
+		Class<?> packetClass = getPacketClass(type);
+		types.add(Preconditions.checkNotNull(type, "type cannot be NULL."));
+		
+		if (packetClass != null) {
+			classes.add(getPacketClass(type));
+		}
 	}
 	
 	/**
@@ -41,8 +46,12 @@ public class PacketTypeSet {
 	 * @param type - the type to remove.
 	 */
 	public synchronized void removeType(PacketType type) {
-		types.remove(type);
-		classes.remove(getPacketClass(type));
+		Class<?> packetClass = getPacketClass(type);
+		types.remove(Preconditions.checkNotNull(type, "type cannot be NULL."));
+		
+		if (packetClass != null) {
+			classes.remove(getPacketClass(type));
+		}
 	}
 	
 	/**
