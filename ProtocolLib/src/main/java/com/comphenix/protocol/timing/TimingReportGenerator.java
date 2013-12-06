@@ -13,7 +13,7 @@ import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 public class TimingReportGenerator {
-	private static final String NEWLINE = System.lineSeparator();
+	private static final String NEWLINE = System.getProperty("line.separator");
 	private static final String META_STARTED = "Started: %s" + NEWLINE;
 	private static final String META_STOPPED = "Stopped: %s (after %s seconds)" + NEWLINE;
 	private static final String PLUGIN_HEADER = "=== PLUGIN %s ===" + NEWLINE;
