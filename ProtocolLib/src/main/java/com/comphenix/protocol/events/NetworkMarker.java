@@ -27,7 +27,7 @@ import com.google.common.primitives.Ints;
 public abstract class NetworkMarker {	
 	public static class EmptyBufferMarker extends NetworkMarker {
 		public EmptyBufferMarker(@Nonnull ConnectionSide side) {
-			super(side, (ByteBuffer)null, null);
+			super(side, (byte[]) null, null);
 		}
 
 		@Override
@@ -64,8 +64,8 @@ public abstract class NetworkMarker {
 	 */
 	public NetworkMarker(@Nonnull ConnectionSide side, ByteBuffer inputBuffer, PacketType type) {
 		this.side = Preconditions.checkNotNull(side, "side cannot be NULL.");
-		this.inputBuffer = Preconditions.checkNotNull(inputBuffer, "inputBuffer cannot be NULL.");
-		this.type = Preconditions.checkNotNull(type, "type cannot be NULL.");
+		this.inputBuffer = inputBuffer;
+		this.type = type;
 	}
 	
 	/**
@@ -78,7 +78,7 @@ public abstract class NetworkMarker {
 	 */
 	public NetworkMarker(@Nonnull ConnectionSide side, byte[] inputBuffer, PacketType type) {
 		this.side = Preconditions.checkNotNull(side, "side cannot be NULL.");
-		this.type = Preconditions.checkNotNull(type, "type cannot be NULL.");
+		this.type = type;
 			
 		if (inputBuffer != null) {
 			this.inputBuffer = ByteBuffer.wrap(inputBuffer);
