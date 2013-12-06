@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.sf.cglib.asm.ClassReader;
 import net.sf.cglib.asm.MethodVisitor;
@@ -515,6 +516,19 @@ public class MinecraftReflection {
 				return fallbackMethodReturn("EntityPlayer", "entity.CraftPlayer", "getHandle");
 			}
 		}
+	}
+	
+	/**
+	 * Retrieve the GameProfile class in 1.7.2 and later.
+	 * @return The game profile class.
+	 * @throws IllegalStateException If we are running 1.6.4 or earlier.
+	 */
+	public static Class<?> getGameProfileClass() {
+		if (!isUsingNetty())
+			throw new IllegalStateException("GameProfile does not exist in version 1.6.4 and earlier.");
+		
+		// Yay, we can actually refer to it directly
+		return GameProfile.class;
 	}
 	
 	/**

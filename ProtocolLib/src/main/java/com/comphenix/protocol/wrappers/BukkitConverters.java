@@ -238,6 +238,29 @@ public class BukkitConverters {
 	 * Retrieve a converter for wrapped attribute snapshots.
 	 * @return Wrapped attribute snapshot converter.
 	 */
+	public static EquivalentConverter<WrappedGameProfile> getWrappedGameProfileConverter() {
+		return new IgnoreNullConverter<WrappedGameProfile>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, WrappedGameProfile specific) {
+				return specific.getHandle();
+			}
+			
+			@Override
+			protected WrappedGameProfile getSpecificValue(Object generic) {
+				return WrappedGameProfile.fromHandle(generic);
+			}
+			
+			@Override
+			public Class<WrappedGameProfile> getSpecificType() {
+				return WrappedGameProfile.class;
+			}
+		};
+	}
+	
+	/**
+	 * Retrieve a converter for wrapped attribute snapshots.
+	 * @return Wrapped attribute snapshot converter.
+	 */
 	public static EquivalentConverter<WrappedAttribute> getWrappedAttributeConverter() {
 		return new IgnoreNullConverter<WrappedAttribute>() {
 			@Override

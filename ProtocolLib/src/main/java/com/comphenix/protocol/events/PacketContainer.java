@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.UnpooledByteBufAllocator;
 import org.bukkit.World;
@@ -66,6 +67,7 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.google.common.base.Function;
@@ -473,6 +475,19 @@ public class PacketContainer implements Serializable {
 					MinecraftReflection.getWatchableObjectClass(), 
 					BukkitConverters.getWatchableObjectConverter())
 		);
+	}
+	
+	/**
+	 * Retrieves a read/write structure for game profiles.
+	 * <p>
+	 * This modifier will automatically marshall between WrappedGameProfile and the
+	 * internal Minecraft GameProfile.
+	 * @return A modifier for GameProfile fields.
+	 */
+	public StructureModifier<WrappedGameProfile> getGameProfiles() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.<WrappedGameProfile>withType(
+				GameProfile.class, BukkitConverters.getWrappedGameProfileConverter());
 	}
 	
 	/**

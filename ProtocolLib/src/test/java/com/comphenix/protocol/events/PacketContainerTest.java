@@ -52,6 +52,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -318,6 +319,15 @@ public class PacketContainerTest {
 		// Insert and read back
 		watchableAccessor.write(0, list);
 		assertEquals(list, watchableAccessor.read(0));
+	}
+	
+	@Test
+	public void testGameProfiles() {
+		PacketContainer spawnEntity = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
+		WrappedGameProfile profile = new WrappedGameProfile("id", "name");
+		spawnEntity.getGameProfiles().write(0, profile);
+		
+		assertEquals(profile, spawnEntity.getGameProfiles().read(0));
 	}
 	
 	@Test

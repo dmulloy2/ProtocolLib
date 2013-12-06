@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import net.minecraft.server.v1_7_R1.NBTCompressedStreamTools;
 import net.minecraft.util.com.google.common.collect.Maps;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -27,7 +28,7 @@ public class MinecraftReflectionTest {
 	public static void undoMocking() {
 		MinecraftReflection.minecraftPackage = null;
 	}
-	
+
 	@Test
 	public void testNbtStreamTools() {
 		assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
