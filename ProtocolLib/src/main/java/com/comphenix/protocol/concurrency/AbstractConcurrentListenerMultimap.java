@@ -43,8 +43,8 @@ public abstract class AbstractConcurrentListenerMultimap<TListener> {
 	}
 	
 	/**
-	 * Adds a listener to its requested list of packet recievers.
-	 * @param listener - listener with a list of packets to recieve notifcations for.
+	 * Adds a listener to its requested list of packet receivers.
+	 * @param listener - listener with a list of packets to receive notifications for.
 	 * @param whitelist - the packet whitelist to use.
 	 */
 	public void addListener(TListener listener, ListeningWhitelist whitelist) {

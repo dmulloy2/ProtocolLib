@@ -32,7 +32,7 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
 
 /**
- * Represents a listener that is notified of every sent and recieved packet.
+ * Represents a listener that is notified of every sent and received packet.
  * 
  * @author Kristian
  */

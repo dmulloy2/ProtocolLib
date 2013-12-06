@@ -114,14 +114,14 @@ public interface PlayerInjectionHandler {
 	public abstract boolean uninjectPlayer(InetSocketAddress address);
 
 	/**
-	 * Send the given packet to the given reciever.
-	 * @param reciever - the player receiver.
+	 * Send the given packet to the given receiver.
+	 * @param receiver - the player receiver.
 	 * @param packet - the packet to send.
 	 * @param marker 
 	 * @param filters - whether or not to invoke the packet filters.
-	 * @throws InvocationTargetException If an error occured during sending.
+	 * @throws InvocationTargetException If an error occurred during sending.
 	 */
-	public abstract void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters)
+	public abstract void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters)
 			throws InvocationTargetException;
 
 	/**
@@ -161,14 +161,14 @@ public interface PlayerInjectionHandler {
 	public abstract Set<PacketType> getSendingFilters();
 
 	/**
-	 * Whether or not this player injection handler can also recieve packets.
+	 * Whether or not this player injection handler can also receive packets.
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
 	public abstract boolean canRecievePackets();
 	
 	/**
-	 * Invoked if this player injection handler can process recieved packets.
-	 * @param packet - the recieved packet.
+	 * Invoked if this player injection handler can process received packets.
+	 * @param packet - the received packet.
 	 * @param input - the input stream.
 	 * @param buffered - the buffered packet.
 	 * @return The packet event.

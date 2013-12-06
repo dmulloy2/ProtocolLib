@@ -55,7 +55,7 @@ class CaptureInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Retrieve the output stream that recieves all the read information.
+	 * Retrieve the output stream that receives all the read information.
 	 * @return The output stream everything is copied to.
 	 */
 	public OutputStream getOutputStream() {

@@ -39,8 +39,8 @@ public interface AsynchronousManager {
 	 * Use {@link AsyncMarker#incrementProcessingDelay()} to delay a packet until its ready to be transmitted.
 	 * <p>
 	 * To start listening asynchronously, pass the getListenerLoop() runnable to a different thread.
-	 * @param listener - the packet listener that will recieve these asynchronous events.
-	 * @return An asynchrouns handler.
+	 * @param listener - the packet listener that will receive these asynchronous events.
+	 * @return An asynchronous handler.
 	 */
 	public abstract AsyncListenerHandler registerAsyncHandler(PacketListener listener);
 
@@ -84,7 +84,7 @@ public interface AsynchronousManager {
 	public abstract Set<Integer> getReceivingFilters();
 	
 	/**
-	 * Retrieves a immutable set containing the types of the recieved client packets that will be
+	 * Retrieves a immutable set containing the types of the received client packets that will be
 	 * observed by the asynchronous listeners.
 	 * @return Every filtered client packet.
 	 */

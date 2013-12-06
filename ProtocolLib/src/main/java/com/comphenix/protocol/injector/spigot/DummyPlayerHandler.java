@@ -35,8 +35,8 @@ class DummyPlayerHandler extends AbstractPlayerHandler {
 	}
 	
 	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-		injector.sendServerPacket(reciever, packet, marker, filters);
+	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
+		injector.sendServerPacket(receiver, packet, marker, filters);
 	}
 
 	@Override

@@ -33,32 +33,32 @@ import com.comphenix.protocol.events.PacketContainer;
 public interface PacketStream {
 	/**
 	 * Send a packet to the given player.
-	 * @param reciever - the reciever.
+	 * @param receiver - the reciever.
 	 * @param packet - packet to send.
 	 * @throws InvocationTargetException - if an error occured when sending the packet.
 	 */
-	public void sendServerPacket(Player reciever, PacketContainer packet) 
+	public void sendServerPacket(Player receiver, PacketContainer packet) 
 			throws InvocationTargetException;
 
 	/**
 	 * Send a packet to the given player.
-	 * @param reciever - the reciever.
+	 * @param receiver - the reciever.
 	 * @param packet - packet to send.
 	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
 	 * @throws InvocationTargetException - if an error occured when sending the packet.
 	 */
-	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters)
+	public void sendServerPacket(Player receiver, PacketContainer packet, boolean filters)
 			throws InvocationTargetException;
 	
 	/**
 	 * Send a packet to the given player.
-	 * @param reciever - the reciever.
+	 * @param receiver - the receiver.
 	 * @param packet - packet to send.
 	 * @param marker - the network marker to use.
 	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
 	 * @throws InvocationTargetException - if an error occured when sending the packet.
 	 */
-	public void sendServerPacket(Player reciever, PacketContainer packet, NetworkMarker marker, boolean filters)
+	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters)
 			throws InvocationTargetException;
 
 

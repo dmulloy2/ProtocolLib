@@ -20,7 +20,7 @@ package com.comphenix.protocol.events;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Represents a listener that recieves notifications when packets are sent or recieved.
+ * Represents a listener that receives notifications when packets are sent or received.
  * <p>
  * Use {@link PacketAdapter} for a simple wrapper around this interface.
  * @author Kristian
@@ -39,13 +39,13 @@ public interface PacketListener {
 	public void onPacketSending(PacketEvent event);
 
 	/**
-	 * Invoked right before a recieved packet from a client is being processed.
+	 * Invoked right before a received packet from a client is being processed.
 	 * <p>
 	 * <b>WARNING</b>: </br> 
 	 * This method will be called <i>asynchronously</i>! You should synchronize with the main 
 	 * thread using {@link org.bukkit.scheduler.BukkitScheduler#scheduleSyncDelayedTask(Plugin, Runnable, long) scheduleSyncDelayedTask} 
 	 * if you need to call the Bukkit API.
-	 * @param event - the packet that has been recieved.
+	 * @param event - the packet that has been received.
 	 */
 	public void onPacketReceiving(PacketEvent event);
 	
