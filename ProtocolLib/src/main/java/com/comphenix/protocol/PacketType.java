@@ -114,7 +114,7 @@ public class PacketType implements Serializable {
 			public static final PacketType COLLECT = 				  new PacketType(PROTOCOL, SENDER, 0x0D, 22);
 			public static final PacketType SPAWN_ENTITY = 			  new PacketType(PROTOCOL, SENDER, 0x0E, 23);
 			public static final PacketType SPAWN_ENTITY_LIVING = 	  new PacketType(PROTOCOL, SENDER, 0x0F, 24);
-			public static final PacketType SPAWN_ENTITY_PAITING =	  new PacketType(PROTOCOL, SENDER, 0x10, 25);
+			public static final PacketType SPAWN_ENTITY_PAINTING =	  new PacketType(PROTOCOL, SENDER, 0x10, 25);
 			public static final PacketType SPAWN_ENTITY_EXPERIENCE_ORB = new PacketType(PROTOCOL, SENDER, 0x11, 26);
 			public static final PacketType ENTITY_VELOCITY = 		  new PacketType(PROTOCOL, SENDER, 0x12, 28);
 			public static final PacketType ENTITY_DESTROY = 		  new PacketType(PROTOCOL, SENDER, 0x13, 29);
@@ -164,7 +164,7 @@ public class PacketType implements Serializable {
 			public static final PacketType SCOREBOARD_SCORE =     	  new PacketType(PROTOCOL, SENDER, 0x3C, 207);
 			public static final PacketType SCOREBOARD_DISPLAY_OBJECTIVE = 
 																	  new PacketType(PROTOCOL, SENDER, 0x3D, 208);
-			public static final PacketType SCOREOARD_TEAM =           new PacketType(PROTOCOL, SENDER, 0x3E, 209);
+			public static final PacketType SCOREBOARD_TEAM =           new PacketType(PROTOCOL, SENDER, 0x3E, 209);
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x3F, 250);
 			public static final PacketType KICK_DISCONNECT =          new PacketType(PROTOCOL, SENDER, 0x40, 255);
 			
