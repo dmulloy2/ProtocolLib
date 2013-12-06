@@ -25,9 +25,11 @@ import com.comphenix.protocol.reflect.IntEnum;
 
 /**
  * List of known packet IDs since 1.3.2.
- * 
+ * <p>
+ * Deprecated: Use {@link PacketType} instead.
  * @author Kristian
  */
+@Deprecated
 public final class Packets {
 	
 	/**
@@ -43,7 +45,7 @@ public final class Packets {
 	/**
 	 * List of packets sent only by the server.
 	 * <p>
-	 * This has been superceded by PacketType. 
+	 * Deprecated: Use {@link PacketType} instead.
 	 * @author Kristian
 	 */
 	@Deprecated
@@ -196,7 +198,7 @@ public final class Packets {
 	/**
 	 * List of packets sent by the client.
 	 * <p>
-	 * This has been superceded by PacketType. 
+	 * Deprecated: Use {@link PacketType} instead.
 	 * @author Kristian
 	 */
 	@Deprecated
@@ -288,6 +290,8 @@ public final class Packets {
 	
 	/**
 	 * A registry that parses between names and packet IDs.
+	 * <p>
+	 * Deprecated: Use {@link PacketType} instead.
 	 * @return The current client registry.
 	 */
 	@Deprecated
@@ -297,6 +301,8 @@ public final class Packets {
 
 	/**
 	 * A registry that parses between names and packet IDs.
+	 * <p>
+	 * Deprecated: Use {@link PacketType} instead.
 	 * @return The current server registry.
 	 */
 	@Deprecated
@@ -306,6 +312,8 @@ public final class Packets {
 	
 	/**
 	 * Find a packet by name. Must be capitalized and use underscores.
+	 * <p>
+	 * Deprecated: Use {@link PacketType} instead.
 	 * @param name - name of packet to find.
 	 * @return The packet ID found.
 	 */
@@ -321,6 +329,8 @@ public final class Packets {
 	
 	/**
 	 * Retrieves the name of a packet.
+	 * <p>
+	 * Deprecated: Use {@link PacketType} instead.
 	 * @param packetID - packet to retrieve name.
 	 * @return The name, or NULL if unable to find such a packet.
 	 */

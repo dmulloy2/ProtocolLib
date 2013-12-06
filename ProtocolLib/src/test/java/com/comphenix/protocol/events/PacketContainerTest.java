@@ -49,6 +49,7 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
@@ -231,6 +232,10 @@ public class PacketContainerTest {
 	
 	@Test
 	public void testGetWorldTypeModifier() {
+		// Not used in Netty
+		if (MinecraftReflection.isUsingNetty())
+			return;
+		
 		PacketContainer loginPacket = new PacketContainer(Packets.Server.LOGIN);
 		StructureModifier<WorldType> worldAccess = loginPacket.getWorldTypeModifier();
 		
