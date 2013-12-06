@@ -349,7 +349,7 @@ class ProxyPacketInjector implements PacketInjector {
 	
 	@Override
 	public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
-		NetworkMarker marker = buffered != null ? new NetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
+		NetworkMarker marker = buffered != null ? new LegacyNetworkMarker(ConnectionSide.CLIENT_SIDE, buffered, packet.getType()) : null;
 		PacketEvent event = PacketEvent.fromClient((Object) manager, packet, marker, client);
 		
 		manager.invokePacketRecieving(event);

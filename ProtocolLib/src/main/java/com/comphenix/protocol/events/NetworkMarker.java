@@ -2,6 +2,7 @@ package com.comphenix.protocol.events;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +11,9 @@ import java.util.PriorityQueue;
 
 import javax.annotation.Nonnull;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.utility.ByteBufferInputStream;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
@@ -20,13 +24,35 @@ import com.google.common.primitives.Ints;
  * 
  * @author Kristian
  */
-public class NetworkMarker {
+public abstract class NetworkMarker {	
+	public static class EmptyBufferMarker extends NetworkMarker {
+		public EmptyBufferMarker(@Nonnull ConnectionSide side) {
+			super(side, (ByteBuffer)null, null);
+		}
+
+		@Override
+		protected DataInputStream skipHeader(DataInputStream input) throws IOException {
+			throw new IllegalStateException("Buffer is empty.");
+		}
+
+		@Override
+		protected ByteBuffer addHeader(ByteBuffer buffer, PacketType type) {
+			throw new IllegalStateException("Buffer is empty.");
+		}
+
+		@Override
+		protected DataInputStream addHeader(DataInputStream input, PacketType type) {
+			throw new IllegalStateException("Buffer is empty.");
+		}		
+	}
+	
 	// Custom network handler
 	private PriorityQueue<PacketOutputHandler> outputHandlers;
+	
 	// The input buffer
 	private ByteBuffer inputBuffer;
-	
 	private final ConnectionSide side;
+	private final PacketType type;
 	
 	// Cache serializer too
 	private StreamSerializer serializer;
@@ -36,9 +62,10 @@ public class NetworkMarker {
 	 * @param side - whether or not this marker belongs to a client or server packet. 
 	 * @param inputBuffer - the read serialized packet data.
 	 */
-	public NetworkMarker(@Nonnull ConnectionSide side, ByteBuffer inputBuffer) {
+	public NetworkMarker(@Nonnull ConnectionSide side, ByteBuffer inputBuffer, PacketType type) {
 		this.side = Preconditions.checkNotNull(side, "side cannot be NULL.");
 		this.inputBuffer = Preconditions.checkNotNull(inputBuffer, "inputBuffer cannot be NULL.");
+		this.type = Preconditions.checkNotNull(type, "type cannot be NULL.");
 	}
 	
 	/**
@@ -47,10 +74,12 @@ public class NetworkMarker {
 	 * The input buffer is only non-null for client-side packets.
 	 * @param side - whether or not this marker belongs to a client or server packet. 
 	 * @param inputBuffer - the read serialized packet data.
+	 * @param handler - handle skipping headers.
 	 */
-	public NetworkMarker(@Nonnull ConnectionSide side, byte[] inputBuffer) {
+	public NetworkMarker(@Nonnull ConnectionSide side, byte[] inputBuffer, PacketType type) {
 		this.side = Preconditions.checkNotNull(side, "side cannot be NULL.");
-		
+		this.type = Preconditions.checkNotNull(type, "type cannot be NULL.");
+			
 		if (inputBuffer != null) {
 			this.inputBuffer = ByteBuffer.wrap(inputBuffer);
 		}
@@ -75,7 +104,7 @@ public class NetworkMarker {
 	}
 	
 	/**
-	 * Retrieve the serialized packet data (excluding the header) from the network input stream.
+	 * Retrieve the serialized packet data (excluding the header by default) from the network input stream.
 	 * <p>
 	 * The returned buffer is read-only. If the parent event is a server side packet this 
 	 * method throws {@link IllegalStateException}.
@@ -84,9 +113,49 @@ public class NetworkMarker {
 	 * @return A byte buffer containing the raw packet data read from the network.
 	 */
 	public ByteBuffer getInputBuffer() {
+		return getInputBuffer(true);
+	}
+		
+	/**
+	 * Retrieve the serialized packet data from the network input stream.
+	 * <p>
+	 * The returned buffer is read-only. If the parent event is a server side packet this 
+	 * method throws {@link IllegalStateException}.
+	 * <p>
+	 * It returns NULL if the packet was transmitted by a plugin locally.
+	 * @param excludeHeader - whether or not to exclude the packet ID header.
+	 * @return A byte buffer containing the raw packet data read from the network.
+	 */
+	public ByteBuffer getInputBuffer(boolean excludeHeader) {
 		if (side.isForServer())
 			throw new IllegalStateException("Server-side packets have no input buffer.");
-		return inputBuffer != null ? inputBuffer.asReadOnlyBuffer() : null;
+		
+		if (inputBuffer != null) {
+			ByteBuffer result = inputBuffer.asReadOnlyBuffer();
+			
+			try {
+				if (excludeHeader) 
+					result = skipHeader(result);
+				else
+					result = addHeader(result, type);
+			} catch (IOException e) {
+				throw new RuntimeException("Cannot skip packet header.", e);
+			}
+			return result;
+		}
+		return null;
+	}
+	
+	/**
+	 * Retrieve the serialized packet data (excluding the header by default) as an input stream.
+	 * <p>
+	 * The data is exactly the same as in {@link #getInputBuffer()}. 
+	 * @see #getInputBuffer()
+	 * @param excludeHeader - whether or not to exclude the packet ID header.
+	 * @return The incoming serialized packet data as a stream, or NULL if the packet was transmitted locally.
+	 */
+	public DataInputStream getInputStream() {
+		return getInputStream(true);
 	}
 	
 	/**
@@ -94,17 +163,37 @@ public class NetworkMarker {
 	 * <p>
 	 * The data is exactly the same as in {@link #getInputBuffer()}. 
 	 * @see #getInputBuffer()
+	 * @param excludeHeader - whether or not to exclude the packet ID header.
 	 * @return The incoming serialized packet data as a stream, or NULL if the packet was transmitted locally.
 	 */
-	public DataInputStream getInputStream() {
+	@SuppressWarnings("resource")
+	public DataInputStream getInputStream(boolean excludeHeader) {
 		if (side.isForServer())
 			throw new IllegalStateException("Server-side packets have no input buffer.");
 		if (inputBuffer == null)
 			return null;
 		
-		return new DataInputStream(
+		DataInputStream input = new DataInputStream(
 				new ByteArrayInputStream(inputBuffer.array())
 		);
+		
+		try {
+			if (excludeHeader) 
+				input = skipHeader(input);
+			else
+				input = addHeader(input, type);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot skip packet header.", e);
+		}
+		return input;
+	}
+	
+	/**
+	 * Whether or not the output handlers have to write a packet header.
+	 * @return TRUE if they do, FALSE otherwise.
+	 */
+	public boolean requireOutputHeader() {
+		return MinecraftReflection.isUsingNetty();
 	}
 	
 	/**
@@ -171,6 +260,40 @@ public class NetworkMarker {
 			throw new IllegalStateException("Must be a server side packet.");
 		}
 	}
+	
+	/**
+	 * Return a byte buffer without the header in the current packet.
+	 * <p>
+	 * It's safe to modify the position of the buffer.
+	 * @param buffer - a read-only byte source. 
+	 */
+	protected ByteBuffer skipHeader(ByteBuffer buffer) throws IOException {
+		skipHeader(new DataInputStream(new ByteBufferInputStream(buffer)));
+		return buffer;
+	}
+	
+	/**
+	 * Return an input stream without the header in the current packet.
+	 * <p>
+	 * It's safe to modify the input stream.
+	 */
+	protected abstract DataInputStream skipHeader(DataInputStream input) throws IOException;
+	
+	/**
+	 * Return the byte buffer prepended with the packet header.
+	 * @param buffer - the read-only byte buffer. 
+	 * @param type - the current packet. 
+	 * @return The byte buffer.
+	 */
+	protected abstract ByteBuffer addHeader(ByteBuffer buffer, PacketType type);
+	
+	/**
+	 * Return the input stream prepended with the packet header.
+	 * @param input - the input stream.
+	 * @param type - the current packet. 
+	 * @return The byte buffer.
+	 */
+	protected abstract DataInputStream addHeader(DataInputStream input, PacketType type);
 	
 	/**
 	 * Determine if the given marker has any output handlers.

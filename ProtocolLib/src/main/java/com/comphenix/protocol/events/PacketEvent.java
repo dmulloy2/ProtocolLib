@@ -207,8 +207,8 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public NetworkMarker getNetworkMarker() {
 		if (networkMarker == null) {
 			if (isServerPacket()) {
-				networkMarker = new NetworkMarker(
-					serverPacket ? ConnectionSide.SERVER_SIDE : ConnectionSide.CLIENT_SIDE, (byte[]) null);
+				networkMarker = new NetworkMarker.EmptyBufferMarker(
+					serverPacket ? ConnectionSide.SERVER_SIDE : ConnectionSide.CLIENT_SIDE);
 			} else {
 				throw new IllegalStateException("Add the option ListenerOptions.INTERCEPT_INPUT_BUFFER to your listener.");
 			}

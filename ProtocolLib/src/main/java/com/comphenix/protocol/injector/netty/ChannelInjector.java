@@ -244,10 +244,6 @@ class ChannelInjector extends ByteToMessageDecoder {
 				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 					ChannelInjector.this.encode(ctx, packet, output);
 				}
-				
-				public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
-					throwable.printStackTrace();
-				}
 			};
 			
 			// Insert our handlers - note that we effectively replace the vanilla encoder/decoder 
@@ -369,7 +365,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 				
 				if (channelListener.includeBuffer(packetClass)) {
 					byteBuffer.resetReaderIndex();
-					marker = new NetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
+					marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
 				}
 				Object output = channelListener.onPacketReceiving(this, input, marker);
 				

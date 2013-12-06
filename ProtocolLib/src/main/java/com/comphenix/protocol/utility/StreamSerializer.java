@@ -17,6 +17,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.google.common.base.Preconditions;
 
 /**
  * Utility methods for reading and writing Minecraft objects to streams.
@@ -24,6 +25,8 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
  * @author Kristian
  */
 public class StreamSerializer {
+	private static final StreamSerializer DEFAULT = new StreamSerializer();
+	
 	// Cached methods
 	private static MethodAccessor READ_ITEM_METHOD;
 	private static MethodAccessor WRITE_ITEM_METHOD;
@@ -33,6 +36,52 @@ public class StreamSerializer {
 	
 	private static MethodAccessor READ_STRING_METHOD;
 	private static MethodAccessor WRITE_STRING_METHOD;
+	
+	/**
+	 * Retrieve a default stream serializer.
+	 * @return A serializer.
+	 */
+	public static StreamSerializer getDefault() {
+		return DEFAULT;
+	}
+	
+	/**
+	 * Read a variable integer from an input stream.
+	 * @param source - the source.
+	 * @return The integer.
+	 * @throws IOException The source stream threw an exception.
+	 */
+	public int deserializeVarInt(@Nonnull DataInputStream source) throws IOException {
+		Preconditions.checkNotNull(source, "source cannot be NULL");
+		
+		int result = 0;
+		int length = 0;
+		byte currentByte;
+		do {
+			currentByte = source.readByte();
+			result |= (currentByte & 0x7F) << length++ * 7;
+			if (length > 5)
+				throw new RuntimeException("VarInt too big");
+		} while ((currentByte & 0x80) == 0x80);
+
+		return result;
+	}
+
+	/**
+	 * Write a variable integer to an output stream.
+	 * @param destination - the destination.
+	 * @param value - the value to write.
+	 * @throws IOException The destination stream threw an exception.
+	 */
+	public void serializeVarInt(@Nonnull DataOutputStream destination, int value) throws IOException {
+		Preconditions.checkNotNull(destination, "source cannot be NULL");
+		
+		while ((value & 0xFFFFFF80) != 0) {
+			destination.writeByte(value & 0x7F | 0x80);
+			value >>>= 7;
+		}
+		destination.writeByte(value);
+	}
 	
 	/**
 	 * Read or deserialize an item stack from an underlying input stream.

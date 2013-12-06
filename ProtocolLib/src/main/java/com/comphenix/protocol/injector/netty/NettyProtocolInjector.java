@@ -307,7 +307,7 @@ public class NettyProtocolInjector implements ChannelListener {
 		return new AbstractPacketInjector(reveivedFilters) {
 			@Override
 			public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
-				NetworkMarker marker = buffered != null ? new NetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
+				NetworkMarker marker = buffered != null ? new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
 				ChannelInjector.fromPlayer(client, NettyProtocolInjector.this).
 					saveMarker(packet.getHandle(), marker);
 				return packetReceived(packet, client, marker);

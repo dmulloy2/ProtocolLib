@@ -35,6 +35,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
+import com.comphenix.protocol.injector.packet.LegacyNetworkMarker;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.player.NetworkObjectInjector;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
@@ -486,7 +487,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	 * @return The packet event that was used.
 	 */
 	PacketEvent packetReceived(PacketContainer packet, Player sender, byte[] buffered) {
-		NetworkMarker marker = buffered != null ? new NetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
+		NetworkMarker marker = buffered != null ? new LegacyNetworkMarker(ConnectionSide.CLIENT_SIDE, buffered, packet.getType()) : null;
 		PacketEvent event = PacketEvent.fromClient(this, packet, marker, sender);
 		
 		invoker.invokePacketRecieving(event);
