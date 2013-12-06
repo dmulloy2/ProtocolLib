@@ -24,6 +24,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.metrics.Updater;
 import com.comphenix.protocol.metrics.Updater.UpdateType;
 import com.comphenix.protocol.timing.TimedListenerManager;
@@ -64,6 +65,8 @@ class CommandProtocol extends CommandBase {
 			updateVersion(sender);
 		else if (subCommand.equalsIgnoreCase("timings"))
 			toggleTimings(sender, args);
+		else if (subCommand.equalsIgnoreCase("listeners"))
+			printListeners(sender, args);
 		else
 			return false;
 		return true;
@@ -75,6 +78,14 @@ class CommandProtocol extends CommandBase {
 	
 	public void updateVersion(final CommandSender sender) {
 		performUpdate(sender, UpdateType.DEFAULT);
+	}
+	
+	// Display every listener on the server
+	private void printListeners(final CommandSender sender, String[] args) {
+		for (PacketListener listener : ProtocolLibrary.getProtocolManager().getPacketListeners()) {
+			sender.sendMessage(ChatColor.GOLD + "Packet listeners:");
+			sender.sendMessage(ChatColor.GOLD + " " + listener);
+		}
 	}
 	
 	private void performUpdate(final CommandSender sender, UpdateType type) {
