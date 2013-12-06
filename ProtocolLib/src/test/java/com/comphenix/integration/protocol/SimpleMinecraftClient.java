@@ -70,7 +70,7 @@ public class SimpleMinecraftClient {
             // For 1.6
             if (version.compareTo(new MinecraftVersion(PLUGIN_MESSAGE_VERSION)) >= 0) {
                 DataOutputStream data = new DataOutputStream(output);
-            	String host = address.getHostString();
+            	String host = address.getHostName();
 
             	data.writeByte(0xFA);
             	writeString(data, "MC|PingHost");
