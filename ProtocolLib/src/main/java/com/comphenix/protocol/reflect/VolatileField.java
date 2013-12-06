@@ -19,6 +19,8 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 
+import net.minecraft.util.com.google.common.base.Objects;
+
 /**
  * Represents a field that will revert to its original state when this class is garbaged collected.
  * 
@@ -136,15 +138,23 @@ public class VolatileField {
 	}
 	
 	/**
-	 * Ensure the previously set value is set.
+	 * Reapply the current changed value.
+	 * <p>
+	 * Also refresh the previously set value.
 	 */
 	public void refreshValue() {
+		Object fieldValue = readFieldValue();
+		
 		if (currentSet) {
-			try {
-				FieldUtils.writeField(field, container, current, forceAccess);
-			} catch (IllegalAccessException e) {
-				throw new RuntimeException("Unable to read field " + field.getName(), e);
+			// If they differ, we need to set them again
+			if (!Objects.equal(current, fieldValue)) {
+				previous = readFieldValue();
+				previousLoaded = true;
+				writeFieldValue(current);
 			}
+		} else if (previousLoaded) {
+			// Update that too
+			previous = fieldValue;
 		}
 	}
 	
@@ -183,12 +193,32 @@ public class VolatileField {
 	private void ensureLoaded() {
 		// Load the value if we haven't already
 		if (!previousLoaded) {
-			try {
-				previous = FieldUtils.readField(field, container, forceAccess);
-				previousLoaded = true;
-			} catch (IllegalAccessException e) {
-				throw new RuntimeException("Unable to read field " + field.getName(), e);
-			}
+			previous = readFieldValue();
+			previousLoaded = true;
+		}
+	}
+	
+	/**
+	 * Read the content of the underlying field.
+	 * @return The field value.
+	 */
+	private Object readFieldValue() {
+		try {
+			return FieldUtils.readField(field, container, forceAccess);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to read field " + field.getName(), e);
+		}
+	}
+	
+	/**
+	 * Write the given value to the underlying field.
+	 * @param newValue - the new value.
+	 */
+	private void writeFieldValue(Object newValue) {
+		try {
+			FieldUtils.writeField(field, container, newValue, forceAccess);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to write field " + field.getName(), e);
 		}
 	}
 		
