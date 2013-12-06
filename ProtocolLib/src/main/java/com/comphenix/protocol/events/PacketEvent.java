@@ -22,6 +22,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.ref.WeakReference;
 import java.util.EventObject;
+
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
@@ -135,6 +137,19 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public static PacketEvent fromSynchronous(PacketEvent event, AsyncMarker marker) {
 		return new PacketEvent(event, marker);
+	}
+	
+	/**
+	 * Determine if we are executing the packet event in an asynchronous thread.
+	 * <p>
+	 * If so, you must synchronize all calls to the Bukkit API.
+	 * <p>
+	 * Generally, most server packets are executed on the main thread, whereas client packets
+	 * are all executed asynchronously.
+	 * @return TRUE if we are, FALSE otherwise.
+	 */
+	public boolean isAsync() {
+		return !Bukkit.isPrimaryThread();
 	}
 	
 	/**

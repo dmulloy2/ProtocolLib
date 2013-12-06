@@ -1,8 +1,13 @@
 package com.comphenix.protocol.injector.netty;
 
-import java.lang.reflect.Constructor;
 import java.net.SocketAddress;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
+
+import net.minecraft.util.com.google.common.collect.Maps;
 import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelConfig;
@@ -14,48 +19,35 @@ import net.minecraft.util.io.netty.channel.ChannelPromise;
 import net.minecraft.util.io.netty.channel.EventLoop;
 import net.minecraft.util.io.netty.util.Attribute;
 import net.minecraft.util.io.netty.util.AttributeKey;
-import net.minecraft.util.io.netty.util.concurrent.EventExecutor;
 
 abstract class ChannelProxy implements Channel {
-	private static Constructor<? extends ChannelFuture> FUTURE_CONSTRUCTOR;
+	// Mark that a certain object does not contain a message field
+	private static final FieldAccessor MARK_NO_MESSAGE = new FieldAccessor() {
+		public void set(Object instance, Object value) { }
+		public Object get(Object instance) { return null; }
+	};
+	
+	// Looking up packets in inner classes
+	private static Map<Class<?>, FieldAccessor> MESSAGE_LOOKUP = Maps.newConcurrentMap();
 	
 	// The underlying channel
 	private Channel delegate;
-
-	public ChannelProxy(Channel delegate) {
-		this.delegate = delegate;
-	}
-
-	/**
-	 * Invoked when a packet is being transmitted.
-	 * @param message - the packet to transmit.
-	 * @return The object to transmit.
-	 */
-	protected abstract Object onMessageWritten(Object message);
+	private Class<?> messageClass;
 	
-	/**
-	 * The future we return when packets are being cancelled.
-	 * @return A succeeded future.
-	 */
-	protected ChannelFuture getSucceededFuture() {
-		try {
-			if (FUTURE_CONSTRUCTOR == null) {
-				@SuppressWarnings("unchecked")
-				Class<? extends ChannelFuture> succededFuture = 
-				(Class<? extends ChannelFuture>) ChannelProxy.class.getClassLoader().
-					loadClass("net.minecraft.util.io.netty.channel.SucceededChannelFuture");
-				
-				FUTURE_CONSTRUCTOR = succededFuture.getDeclaredConstructor(Channel.class, EventExecutor.class);
-				FUTURE_CONSTRUCTOR.setAccessible(true);
-			}		
-			return FUTURE_CONSTRUCTOR.newInstance(this, null);
-			
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException("Cannot get succeeded future.", e);
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot construct completed future.", e);
-		}
+	// Event loop proxy
+	private transient EventLoopProxy loopProxy;
+	
+	public ChannelProxy(Channel delegate, Class<?> messageClass) {
+		this.delegate = delegate;
+		this.messageClass = messageClass;
 	}
+
+	/**
+	 * Invoked when a packet is scheduled for transmission in the event loop.
+	 * @param message - the packet to schedule.
+	 * @return The object to transmit, or NULL to cancel.
+	 */
+	protected abstract Object onMessageScheduled(Object message);
 	
 	public <T> Attribute<T> attr(AttributeKey<T> paramAttributeKey) {
 		return delegate.attr(paramAttributeKey);
@@ -82,7 +74,66 @@ abstract class ChannelProxy implements Channel {
 	}
 
 	public EventLoop eventLoop() {
-		return delegate.eventLoop();
+		if (loopProxy == null) {
+			loopProxy = new EventLoopProxy() {
+				@Override
+				protected EventLoop getDelegate() {
+					return delegate.eventLoop();
+				}
+				
+				@Override
+				protected Runnable schedulingRunnable(Runnable runnable) {
+					FieldAccessor accessor = getMessageAccessor(runnable);
+					
+					if (accessor != null) {
+						Object packet = onMessageScheduled(accessor.get(runnable));
+						
+						if (packet != null)
+							accessor.set(runnable, packet);
+						else
+							getEmptyRunnable();
+					}
+					return runnable;
+				}
+				
+				@Override
+				protected <T> Callable<T> schedulingCallable(Callable<T> callable) {
+					FieldAccessor accessor = getMessageAccessor(callable);
+					
+					if (accessor != null) {
+						Object packet = onMessageScheduled(accessor.get(callable));
+						
+						if (packet != null)
+							accessor.set(callable, packet);
+						else
+							getEmptyCallable();
+					}
+					return callable;
+				}
+			};
+		}
+		return loopProxy;
+	}
+	
+	/**
+	 * Retrieve a way to access the packet field of an object.
+	 * @param value - the object.
+	 * @return The packet field accessor, or NULL if not found.
+	 */
+	private FieldAccessor getMessageAccessor(Object value) {	
+		Class<?> clazz = value.getClass();
+		FieldAccessor accessor = MESSAGE_LOOKUP.get(clazz);
+		
+		if (accessor == null) {
+			try {
+				accessor = FuzzyReflection.getFieldAccessor(clazz, messageClass, true);
+			} catch (IllegalArgumentException e) {
+				accessor = MARK_NO_MESSAGE;
+			}
+			// Save the result
+			MESSAGE_LOOKUP.put(clazz, accessor);
+		}
+		return accessor != MARK_NO_MESSAGE ? accessor : null;
 	}
 
 	public ChannelFuture connect(SocketAddress paramSocketAddress1,
@@ -198,37 +249,21 @@ abstract class ChannelProxy implements Channel {
 	public ChannelFuture deregister(ChannelPromise paramChannelPromise) {
 		return delegate.deregister(paramChannelPromise);
 	}
-
-	public ChannelFuture write(Object message) {
-		Object result = onMessageWritten(message);
-		
-		if (result != null)
-			return delegate.write(result);
-		return getSucceededFuture();
+	
+	public ChannelFuture write(Object paramObject) {
+		return delegate.write(paramObject);
 	}
 
-	public ChannelFuture write(Object message, ChannelPromise paramChannelPromise) {
-		Object result = onMessageWritten(message);
-		
-		if (result != null)
-			return delegate.write(message, paramChannelPromise);
-		return getSucceededFuture();
+	public ChannelFuture write(Object paramObject, ChannelPromise paramChannelPromise) {
+		return delegate.write(paramObject, paramChannelPromise);
 	}
 
-	public ChannelFuture writeAndFlush(Object message, ChannelPromise paramChannelPromise) {
-		Object result = onMessageWritten(message);
-		
-		if (result != null)
-			return delegate.writeAndFlush(message, paramChannelPromise);
-		return getSucceededFuture();
+	public ChannelFuture writeAndFlush(Object paramObject, ChannelPromise paramChannelPromise) {
+		return delegate.writeAndFlush(paramObject, paramChannelPromise);
 	}
 
-	public ChannelFuture writeAndFlush(Object message) {
-		Object result = onMessageWritten(message);
-		
-		if (result != null)
-			return delegate.writeAndFlush(message);
-		return getSucceededFuture();
+	public ChannelFuture writeAndFlush(Object paramObject) {
+		return delegate.writeAndFlush(paramObject);
 	}
 
 	public int compareTo(Channel o) {

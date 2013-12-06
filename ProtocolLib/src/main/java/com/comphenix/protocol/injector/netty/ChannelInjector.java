@@ -118,6 +118,9 @@ class ChannelInjector extends ByteToMessageDecoder {
 	private ConcurrentMap<Object, NetworkMarker> packetMarker = new MapMaker().weakKeys().makeMap();
 	private ConcurrentMap<NetworkMarker, PacketEvent> markerEvent = new MapMaker().weakKeys().makeMap();
 	
+	// Packets we have processed before
+	private Set<Object> processedPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
+	
 	// Packets to ignore
 	private Set<Object> ignoredPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
 	
@@ -235,32 +238,11 @@ class ChannelInjector extends ByteToMessageDecoder {
 				ENCODE_BUFFER = FuzzyReflection.getMethodAccessor(vanillaEncoder.getClass(),
 					"encode", ChannelHandlerContext.class, Object.class, ByteBuf.class);
 			
+			// Intercept sent packets
 			protocolEncoder = new MessageToByteEncoder<Object>() {
 				@Override
 				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
-					try {
-						NetworkMarker marker = getMarker(output);
-						PacketEvent event = markerEvent.remove(marker);
-						
-						if (event != null && NetworkMarker.hasOutputHandlers(marker)) {
-							ByteBuf packetBuffer = ctx.alloc().buffer();
-							ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, packetBuffer);
-							byte[] data = getBytes(packetBuffer);
-							
-							for (PacketOutputHandler handler : marker.getOutputHandlers()) {
-								handler.handle(event, data);
-							}
-							// Write the result
-							output.writeBytes(data);
-							return;
-						}
-					} catch (Exception e) {
-						channelListener.getReporter().reportDetailed(this, 
-							Report.newBuilder(REPORT_CANNOT_INTERCEPT_SERVER_PACKET).callerParam(packet).error(e).build());
-					} finally {
-						// Attempt to handle the packet nevertheless
-						ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
-					}
+					ChannelInjector.this.encode(ctx, packet, output);
 				}
 				
 				public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
@@ -273,16 +255,31 @@ class ChannelInjector extends ByteToMessageDecoder {
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
 			
 			// Intercept all write methods
-			channelField.setValue(new ChannelProxy(originalChannel) {
+			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
 				@Override
-				protected Object onMessageWritten(Object message) {
-					return channelListener.onPacketSending(ChannelInjector.this, message, packetMarker.get(message));
+				protected Object onMessageScheduled(Object message) {
+					Object result = processSending(message);
+					
+					// We have now processed this packet once already
+					if (result != null) {
+						processedPackets.add(result);
+					}
+					return result;
 				}
 			});
 			
 			injected = true;
 			return true;
 		}
+	}
+	
+	/**
+	 * Process a given message on the packet listeners.
+	 * @param message - the message/packet.
+	 * @return The resulting message/packet.
+	 */
+	private Object processSending(Object message) {
+		return channelListener.onPacketSending(ChannelInjector.this, message, packetMarker.get(message));
 	}
 	
 	/**
@@ -312,6 +309,49 @@ class ChannelInjector extends ByteToMessageDecoder {
 				} catch (NoSuchElementException e) {
 					// Ignore it - the player has logged out
 				}
+			}
+		}
+	}
+	
+	/**
+	 * Encode a packet to a byte buffer, taking over for the standard Minecraft encoder.
+	 * @param ctx - the current context. 
+	 * @param packet - the packet to encode to a byte array.
+	 * @param output - the output byte array.
+	 * @throws Exception If anything went wrong.
+	 */
+	protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
+		try {
+			NetworkMarker marker = getMarker(packet);
+			PacketEvent event = markerEvent.remove(marker);
+			
+			// Try again, in case this packet was sent directly in the event loop
+			if (event == null && !processedPackets.remove(packet)) {
+				packet = processSending(packet);
+				marker = getMarker(packet);
+				event = markerEvent.remove(marker);
+			}
+			
+			// Process output handler
+			if (packet != null && event != null && NetworkMarker.hasOutputHandlers(marker)) {
+				ByteBuf packetBuffer = ctx.alloc().buffer();
+				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, packetBuffer);
+				byte[] data = getBytes(packetBuffer);
+				
+				for (PacketOutputHandler handler : marker.getOutputHandlers()) {
+					handler.handle(event, data);
+				}
+				// Write the result
+				output.writeBytes(data);
+				return;
+			}
+		} catch (Exception e) {
+			channelListener.getReporter().reportDetailed(this, 
+				Report.newBuilder(REPORT_CANNOT_INTERCEPT_SERVER_PACKET).callerParam(packet).error(e).build());
+		} finally {
+			// Attempt to handle the packet nevertheless
+			if (packet != null) {
+				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
 			}
 		}
 	}
