@@ -391,6 +391,7 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @return Helper object.
 	 */
 	public static AdapterParameteters params(Plugin plugin, PacketType... packets) {
+		
 		return new AdapterParameteters().plugin(plugin).types(packets);
 	}
 	
@@ -545,8 +546,10 @@ public abstract class PacketAdapter implements PacketListener {
 					this.connectionSide = ConnectionSide.add(this.connectionSide, type.getSender().toSide());
 				}
 			}
-
 			this.packets = Preconditions.checkNotNull(packets, "packets cannot be NULL");
+			
+			if (packets.length == 0)
+				throw new IllegalArgumentException("Passed an empty packet type array.");
 			return this;
 		}
 		
