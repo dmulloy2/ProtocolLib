@@ -613,7 +613,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			if (side.isForServer()) {
 				// Note that we may update the packet list here
 				if (!knowsServerPackets || PacketRegistry.getServerPacketTypes().contains(type))
-					playerInjection.addPacketHandler(type);
+					playerInjection.addPacketHandler(type, listener.getSendingWhitelist().getOptions());
 				else
 					reporter.reportWarning(this, 
 							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)
@@ -623,7 +623,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			// As above, only for client packets
 			if (side.isForClient() && packetInjector != null) {
 				if (!knowsClientPackets || PacketRegistry.getClientPacketTypes().contains(type))
-					packetInjector.addPacketHandler(type);
+					packetInjector.addPacketHandler(type, listener.getReceivingWhitelist().getOptions());
 				else
 					reporter.reportWarning(this, 
 							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)

@@ -17,5 +17,10 @@ public enum ListenerOptions {
 	 * Disable the automatic game phase detection that will normally force {@link GamePhase#LOGIN} when
 	 * a packet ID is known to be transmitted during login.
 	 */
-	DISABLE_GAMEPHASE_DETECTION;
+	DISABLE_GAMEPHASE_DETECTION,
+	
+	/**
+	 * Notify ProtocolLib that {@link PacketListener#onPacketSending(PacketEvent)} is thread safe.
+	 */
+	ASYNC;
 }

@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
@@ -30,7 +31,7 @@ public abstract class AbstractPlayerHandler implements PlayerInjectionHandler {
 	}
 
 	@Override
-	public void addPacketHandler(PacketType type) {
+	public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
 		sendingFilters.addType(type);
 	}
 

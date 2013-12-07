@@ -8,6 +8,7 @@ import java.util.Set;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -62,8 +63,9 @@ public interface PlayerInjectionHandler {
 	/**
 	 * Add an underlying packet handler of the given type.
 	 * @param type - packet type to register.
+	 * @param options - any specified listener options.
 	 */
-	public abstract void addPacketHandler(PacketType type);
+	public abstract void addPacketHandler(PacketType type, Set<ListenerOptions> options);
 
 	/**
 	 * Remove an underlying packet handler of this type.  

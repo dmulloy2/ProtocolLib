@@ -90,6 +90,17 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @param plugin - the plugin.
 	 * @param listenerPriority - the priority.
 	 * @param types - the packet types.
+	 * @param options - the options.
+	 */
+	public PacketAdapter(Plugin plugin, ListenerPriority listenerPriority, Iterable<? extends PacketType> types, ListenerOptions... options) {
+		this(params(plugin, Iterables.toArray(types, PacketType.class)).listenerPriority(listenerPriority).options(options));
+	}
+	
+	/**
+	 * Initialize a packet listener with the given parameters.
+	 * @param plugin - the plugin.
+	 * @param listenerPriority - the priority.
+	 * @param types - the packet types.
 	 */
 	public PacketAdapter(Plugin plugin, ListenerPriority listenerPriority, PacketType... types) {
 		this(params(plugin, types).listenerPriority(listenerPriority));
@@ -391,7 +402,6 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @return Helper object.
 	 */
 	public static AdapterParameteters params(Plugin plugin, PacketType... packets) {
-		
 		return new AdapterParameteters().plugin(plugin).types(packets);
 	}
 	
@@ -490,13 +500,59 @@ public abstract class PacketAdapter implements PacketListener {
 			this.options = Preconditions.checkNotNull(options, "options cannot be NULL.");
 			return this;
 		}
+
+		/**
+		 * Set listener options that decide whether or not to intercept the raw packet data as read from the network stream.
+		 * <p>
+		 * The default is to disable this raw packet interception.
+		 * @param options - every option to use.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters options(@Nonnull Set<? extends ListenerOptions> options) {
+			Preconditions.checkNotNull(options, "options cannot be NULL.");
+			this.options = options.toArray(new ListenerOptions[0]);
+			return this;
+		}
+		
+		/**
+		 * Add a given option to the current builder.
+		 * @param option - the option to add.
+		 * @return This builder, for chaining.
+		 */
+		private AdapterParameteters addOption(ListenerOptions option) {
+			if (options == null) {
+				return options(option);
+			} else {
+				Set<ListenerOptions> current = Sets.newHashSet(options);
+				current.add(option);
+				return options(current);
+			}
+		}
 		
 		/**
 		 * Set the listener option to {@link ListenerOptions#INTERCEPT_INPUT_BUFFER}, causing ProtocolLib to read the raw packet data from the network stream.
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters optionIntercept() {
-			return options(ListenerOptions.INTERCEPT_INPUT_BUFFER);
+			return addOption(ListenerOptions.INTERCEPT_INPUT_BUFFER);
+		}
+		
+		/**
+		 * Set the listener option to {@link ListenerOptions#DISABLE_GAMEPHASE_DETECTION}, causing ProtocolLib to ignore automatic game phase detection.
+		 * <p>
+		 * This is no longer relevant in 1.7.2.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters optionManualGamePhase() {
+			return addOption(ListenerOptions.DISABLE_GAMEPHASE_DETECTION);
+		}
+		
+		/**
+		 * Set the listener option to {@link ListenerOptions#ASYNC}, causing ProtocolLib to ignore automatic game phase detection.
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters optionAsync() {
+			return addOption(ListenerOptions.DISABLE_GAMEPHASE_DETECTION);
 		}
 		
 		/**

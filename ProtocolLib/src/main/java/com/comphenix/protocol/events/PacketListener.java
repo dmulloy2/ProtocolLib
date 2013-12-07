@@ -34,8 +34,8 @@ public interface PacketListener {
 	 * <p>
 	 * This method is executed on the main thread in 1.6.4 and earlier, and thus the Bukkit API is safe to use.
 	 * <p>
-	 * <b>Warning:</b> In 1.7.2 and later, login and status packets are executed on a worker thread. 
-	 * Call {@link PacketEvent#isAsync()} to detect this in your listener.
+	 * In Minecraft 1.7.2 and later, this method MAY be executed asynchronously, but only if {@link ListenerOptions#ASYNC} 
+	 * have been specified in the listener. This is off by default.
 	 * @param event - the packet that should be sent.
 	 */
 	public void onPacketSending(PacketEvent event);

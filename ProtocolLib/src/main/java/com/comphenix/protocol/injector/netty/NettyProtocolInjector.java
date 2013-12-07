@@ -22,11 +22,11 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
-import com.comphenix.protocol.injector.netty.ChannelInjector.ChannelListener;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
@@ -47,8 +47,10 @@ public class NettyProtocolInjector implements ChannelListener {
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
     
 	// Different sending filters
-	private PacketTypeSet queuedFilters = new PacketTypeSet();
+	private PacketTypeSet sendingFilters = new PacketTypeSet();
 	private PacketTypeSet reveivedFilters = new PacketTypeSet();
+	// Packets that must be executed on the main thread
+	private PacketTypeSet mainThreadFilters = new PacketTypeSet();
 	
 	// Which packets are buffered
     private PacketTypeSet bufferedPackets = new PacketTypeSet();
@@ -119,6 +121,16 @@ public class NettyProtocolInjector implements ChannelListener {
     }
     
 	@Override
+	public boolean hasListener(Class<?> packetClass) {
+		return reveivedFilters.contains(packetClass) || sendingFilters.contains(packetClass);
+	}
+    
+	@Override
+	public boolean hasMainThreadListener(Class<?> packetClass) {
+		return mainThreadFilters.contains(packetClass);
+	}
+	
+	@Override
 	public ErrorReporter getReporter() {
 		return reporter;
 	}
@@ -175,7 +187,7 @@ public class NettyProtocolInjector implements ChannelListener {
 	public Object onPacketSending(ChannelInjector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
 		
-		if (queuedFilters.contains(clazz)) {
+		if (sendingFilters.contains(clazz)) {
 			// Check for ignored packets
 			if (injector.unignorePacket(packet)) {
 				return packet;
@@ -248,8 +260,9 @@ public class NettyProtocolInjector implements ChannelListener {
 		return event;
 	}
     
+	// Server side
 	public PlayerInjectionHandler getPlayerInjector() {
-		return new AbstractPlayerHandler(queuedFilters) {
+		return new AbstractPlayerHandler(sendingFilters) {
 			private ChannelListener listener = NettyProtocolInjector.this;
 			
 			@Override
@@ -261,6 +274,19 @@ public class NettyProtocolInjector implements ChannelListener {
 			public boolean uninjectPlayer(InetSocketAddress address) {
 				// Ignore this too
 				return true;
+			}
+			
+			@Override
+			public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
+				if (options != null && !options.contains(ListenerOptions.ASYNC))
+					mainThreadFilters.addType(type);
+				super.addPacketHandler(type, options);
+			}
+			
+			@Override
+			public void removePacketHandler(PacketType type) {
+				mainThreadFilters.removeType(type);
+				super.removePacketHandler(type);
 			}
 			
 			@Override
@@ -303,6 +329,7 @@ public class NettyProtocolInjector implements ChannelListener {
 	 * Retrieve a view of this protocol injector as a packet injector.
 	 * @return The packet injector.
 	 */
+	// Client side
 	public PacketInjector getPacketInjector() {
 		return new AbstractPacketInjector(reveivedFilters) {
 			@Override

@@ -5,6 +5,7 @@ import java.util.Set;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 
@@ -31,9 +32,10 @@ public interface PacketInjector {
 	/**
 	 * Start intercepting packets with the given packet type.
 	 * @param type - the type of the packets to start intercepting.
+	 * @param options - any listener options.
 	 * @return TRUE if we didn't already intercept these packets, FALSE otherwise.
 	 */
-	public abstract boolean addPacketHandler(PacketType type);
+	public abstract boolean addPacketHandler(PacketType type, Set<ListenerOptions> options);
 
 	/**
 	 * Stop intercepting packets with the given packet type.

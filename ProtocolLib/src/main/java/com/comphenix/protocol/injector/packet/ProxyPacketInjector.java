@@ -38,6 +38,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
@@ -204,7 +205,7 @@ class ProxyPacketInjector implements PacketInjector {
 	
 	@Override
 	@SuppressWarnings({"rawtypes", "deprecation"})
-	public boolean addPacketHandler(PacketType type) {
+	public boolean addPacketHandler(PacketType type, Set<ListenerOptions> options) {
 		final int packetID = type.getLegacyId();
 		
 		if (hasPacketHandler(type))

@@ -4,6 +4,7 @@ import java.util.Set;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 
 public abstract class AbstractPacketInjector implements PacketInjector {
@@ -25,7 +26,7 @@ public abstract class AbstractPacketInjector implements PacketInjector {
 	}
 
 	@Override
-	public boolean addPacketHandler(PacketType type) {
+	public boolean addPacketHandler(PacketType type, Set<ListenerOptions> options) {
 		reveivedFilters.addType(type);
 		return true;
 	}

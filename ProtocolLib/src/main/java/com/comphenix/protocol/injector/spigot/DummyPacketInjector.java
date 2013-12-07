@@ -35,7 +35,7 @@ class DummyPacketInjector extends AbstractPacketInjector implements PacketInject
 			injector.getProxyPacketInjector().removePacketHandler(packet);
 		}
 		for (PacketType packet : added) {
-			injector.getProxyPacketInjector().addPacketHandler(packet);
+			injector.getProxyPacketInjector().addPacketHandler(packet, null);
 		}
 	}
 

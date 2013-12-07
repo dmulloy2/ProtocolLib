@@ -42,6 +42,7 @@ import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
@@ -203,7 +204,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	}
 	
 	@Override
-	public void addPacketHandler(PacketType type) {
+	public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
 		sendingFilters.add(type.getLegacyId());
 	}
 	

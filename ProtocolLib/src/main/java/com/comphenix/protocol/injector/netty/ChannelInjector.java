@@ -25,7 +25,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType.Protocol;
-import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
@@ -51,47 +51,6 @@ import com.google.common.collect.MapMaker;
 class ChannelInjector extends ByteToMessageDecoder {
 	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
 	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
-	
-	/**
-	 * Represents a listener for received or sent packets.
-	 * @author Kristian
-	 */
-	interface ChannelListener {
-		/**
-		 * Invoked when a packet is being sent to the client.
-		 * <p>
-		 * This is invoked on the main thread.
-		 * @param injector - the channel injector.
-		 * @param packet - the packet.
-		 * @param marker - the associated network marker, if any.
-		 * @return The new packet, if it should be changed, or NULL to cancel.
-		 */
-		public Object onPacketSending(ChannelInjector injector, Object packet, NetworkMarker marker);
-		
-		/**
-		 * Invoked when a packet is being received from a client.
-		 * <p>
-		 * This is invoked on an asynchronous worker thread.
-		 * @param injector - the channel injector.
-		 * @param packet - the packet.
-		 * @param marker - the associated network marker, if any.
-		 * @return The new packet, if it should be changed, or NULL to cancel.
-		 */
-		public Object onPacketReceiving(ChannelInjector injector, Object packet, NetworkMarker marker);
-		
-		/**
-		 * Determine if we need the buffer data of a given client side packet.
-		 * @param packetClass - the packet class.
-		 * @return TRUE if we do, FALSE otherwise.
-		 */
-		public boolean includeBuffer(Class<?> packetClass);
-		
-		/**
-		 * Retrieve the current error reporter.
-		 * @return The error reporter.
-		 */
-		public ErrorReporter getReporter();
-	}
 	
 	private static final ConcurrentMap<Player, ChannelInjector> cachedInjector = new MapMaker().weakKeys().makeMap();
 	
@@ -340,9 +299,19 @@ class ChannelInjector extends ByteToMessageDecoder {
 			
 			// Try again, in case this packet was sent directly in the event loop
 			if (event == null && !processedPackets.remove(packet)) {
-				packet = processSending(packet);
-				marker = getMarker(packet);
-				event = markerEvent.remove(marker);
+				Class<?> clazz = packet.getClass();
+				
+				// Schedule the transmission on the main thread instead
+				if (channelListener.hasMainThreadListener(clazz)) {
+					// Delay the packet
+					scheduleMainThread(marker, packet);
+					packet = null;
+					
+				} else {
+					packet = processSending(packet);
+					marker = getMarker(packet);
+					event = markerEvent.remove(marker);
+				}
 			}
 			
 			// Process output handler
@@ -367,6 +336,15 @@ class ChannelInjector extends ByteToMessageDecoder {
 				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
 			}
 		}
+	}
+
+	private void scheduleMainThread(final NetworkMarker marker, final Object packetCopy) {
+		ProtocolLibrary.getExecutorSync().execute(new Runnable() {
+			@Override
+			public void run() {
+				sendServerPacket(packetCopy, marker, true);
+			}
+		});
 	}
 	
 	@Override
@@ -620,7 +598,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 * Represents a socket injector that foreards to the current channel injector.
 	 * @author Kristian
 	 */
-	private static class ChannelSocketInjector implements SocketInjector {
+	static class ChannelSocketInjector implements SocketInjector {
 		private final ChannelInjector injector;
 		
 		public ChannelSocketInjector(ChannelInjector injector) {
