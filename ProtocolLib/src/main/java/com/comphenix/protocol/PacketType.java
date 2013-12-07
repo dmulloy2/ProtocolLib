@@ -8,7 +8,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import org.bukkit.Bukkit;
-
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ObjectEnum;
@@ -731,17 +730,16 @@ public class PacketType implements Serializable {
 	
 	/**
 	 * Retrieve the equivalent packet class.
-	 * @return The packet class.
+	 * @return The packet class, or NULL if not found.
 	 */
 	public Class<?> getPacketClass() {
 		try {
 			return PacketRegistry.getPacketClassFromType(this);
 		} catch (Exception e) {
-			e.printStackTrace();
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Retrieve the Minecraft version for the current ID.
 	 * @return The Minecraft version.
@@ -782,7 +780,7 @@ public class PacketType implements Serializable {
 	
 	@Override
 	public String toString() {
-		Class<?> clazz = getPacketClass();
+		Class<?> clazz = getPacketClass();;
 		return (clazz != null ? clazz.getSimpleName() : "UNREGISTERED") + 
 			" [" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + "]";
 	}

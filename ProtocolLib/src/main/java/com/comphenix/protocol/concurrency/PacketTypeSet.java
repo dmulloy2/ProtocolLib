@@ -7,8 +7,7 @@ import java.util.Set;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.google.common.base.Preconditions;
-
-import net.minecraft.util.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 
 /**
  * Represents a concurrent set of packet types.

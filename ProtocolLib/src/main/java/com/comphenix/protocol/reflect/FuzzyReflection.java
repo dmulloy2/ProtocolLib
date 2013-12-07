@@ -30,13 +30,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import net.minecraft.util.com.google.common.base.Joiner;
-import net.minecraft.util.com.google.common.collect.Sets;
-
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * Retrieves fields and methods by signature, not just name.

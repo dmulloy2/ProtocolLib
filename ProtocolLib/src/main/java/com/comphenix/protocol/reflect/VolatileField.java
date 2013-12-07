@@ -19,7 +19,7 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 
-import net.minecraft.util.com.google.common.base.Objects;
+import com.google.common.base.Objects;
 
 /**
  * Represents a field that will revert to its original state when this class is garbaged collected.

@@ -6,8 +6,8 @@ import java.util.concurrent.Callable;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
+import com.google.common.collect.Maps;
 
-import net.minecraft.util.com.google.common.collect.Maps;
 import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelConfig;

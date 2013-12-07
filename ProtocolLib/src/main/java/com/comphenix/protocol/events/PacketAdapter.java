@@ -22,8 +22,6 @@ import java.util.Set;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.util.com.google.common.collect.Sets;
-
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketType;
@@ -32,6 +30,7 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 /**
  * Represents a packet listener with useful constructors.
