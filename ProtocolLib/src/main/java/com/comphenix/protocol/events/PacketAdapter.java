@@ -30,6 +30,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 /**
@@ -63,6 +64,25 @@ public abstract class PacketAdapter implements PacketListener {
 	 */
 	public PacketAdapter(Plugin plugin, PacketType... types) {
 		this(plugin, ListenerPriority.NORMAL, types);
+	}
+	
+	/**
+	 * Initialize a packet listener with the given parameters.
+	 * @param plugin - the plugin.
+	 * @param types - the packet types.
+	 */
+	public PacketAdapter(Plugin plugin, Iterable<? extends PacketType> types) {
+		this(params(plugin, Iterables.toArray(types, PacketType.class)));
+	}
+	
+	/**
+	 * Initialize a packet listener with the given parameters.
+	 * @param plugin - the plugin.
+	 * @param listenerPriority - the priority.
+	 * @param types - the packet types.
+	 */
+	public PacketAdapter(Plugin plugin, ListenerPriority listenerPriority, Iterable<? extends PacketType> types) {
+		this(params(plugin, Iterables.toArray(types, PacketType.class)).listenerPriority(listenerPriority));
 	}
 	
 	/**
