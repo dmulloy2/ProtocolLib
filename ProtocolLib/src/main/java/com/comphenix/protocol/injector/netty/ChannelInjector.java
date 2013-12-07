@@ -304,7 +304,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 				// Schedule the transmission on the main thread instead
 				if (channelListener.hasMainThreadListener(clazz)) {
 					// Delay the packet
-					scheduleMainThread(marker, packet);
+					scheduleMainThread(packet);
 					packet = null;
 					
 				} else {
@@ -338,11 +338,14 @@ class ChannelInjector extends ByteToMessageDecoder {
 		}
 	}
 
-	private void scheduleMainThread(final NetworkMarker marker, final Object packetCopy) {
+	private void scheduleMainThread(final Object packetCopy) {
+		// Do not process this packet agai
+		processedPackets.add(packetCopy);
+		
 		ProtocolLibrary.getExecutorSync().execute(new Runnable() {
 			@Override
 			public void run() {
-				sendServerPacket(packetCopy, marker, true);
+				invokeSendPacket(packetCopy);
 			}
 		});
 	}
@@ -433,7 +436,14 @@ class ChannelInjector extends ByteToMessageDecoder {
 		} else {
 			ignoredPackets.remove(packet);
 		}
-		
+		invokeSendPacket(packet);
+	}
+	
+	/**
+	 * Invoke the sendPacket method in Minecraft.
+	 * @param packet - the packet to send.
+ 	 */
+	private void invokeSendPacket(Object packet) {
 		// Attempt to send the packet with NetworkMarker.handle(), or the PlayerConnection if its active
 		try {
 			if (player instanceof Factory) {

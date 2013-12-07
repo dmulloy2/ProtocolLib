@@ -91,7 +91,7 @@ abstract class ChannelProxy implements Channel {
 						if (packet != null)
 							accessor.set(runnable, packet);
 						else
-							getEmptyRunnable();
+							return getEmptyRunnable();
 					}
 					return runnable;
 				}
@@ -106,7 +106,7 @@ abstract class ChannelProxy implements Channel {
 						if (packet != null)
 							accessor.set(callable, packet);
 						else
-							getEmptyCallable();
+							return getEmptyCallable();
 					}
 					return callable;
 				}
