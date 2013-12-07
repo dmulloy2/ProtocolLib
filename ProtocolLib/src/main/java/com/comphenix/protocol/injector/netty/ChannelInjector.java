@@ -166,6 +166,9 @@ class ChannelInjector extends ByteToMessageDecoder {
 	public static ChannelInjector fromPlayer(Player player, ChannelListener listener) {
 		ChannelInjector injector = cachedInjector.get(player);
 		
+		// Find a temporary injector as well
+		if (injector == null)
+			injector = getTemporaryInjector(player);
 		if (injector != null)
 			return injector;
 		
@@ -184,6 +187,20 @@ class ChannelInjector extends ByteToMessageDecoder {
 		// Cache injector and return
 		cachedInjector.put(player, injector);
 		return injector;
+	}
+	
+	/**
+	 * Retrieve the associated channel injector.
+	 * @param player - the temporary player, or normal Bukkit player.
+	 * @return The associated injector, or NULL if this is a Bukkit player.
+	 */
+	private static ChannelInjector getTemporaryInjector(Player player) {
+		SocketInjector injector = TemporaryPlayerFactory.getInjectorFromPlayer(player);
+		
+		if (injector != null) {
+			return ((ChannelSocketInjector) injector).getChannelInjector();
+		}
+		return null;
 	}
 	
 	/**
@@ -607,7 +624,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 		private final ChannelInjector injector;
 		
 		public ChannelSocketInjector(ChannelInjector injector) {
-			this.injector = injector;
+			this.injector = Preconditions.checkNotNull(injector, "injector cannot be NULL");
 		}
 
 		@Override
@@ -648,6 +665,10 @@ class ChannelInjector extends ByteToMessageDecoder {
 		@Override
 		public void setUpdatedPlayer(Player updatedPlayer) {
 			injector.player = updatedPlayer;
-		}	
+		}
+		
+		public ChannelInjector getChannelInjector() {
+			return injector;
+		}
 	}
 }
