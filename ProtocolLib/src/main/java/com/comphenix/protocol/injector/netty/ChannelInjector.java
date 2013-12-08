@@ -200,12 +200,12 @@ class ChannelInjector extends ByteToMessageDecoder {
 			// Get the vanilla decoder, so we don't have to replicate the work
 			vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
-			patchEncoder(vanillaEncoder);
 			
 			if (vanillaDecoder == null)
 				throw new IllegalArgumentException("Unable to find vanilla decoder.in " + originalChannel.pipeline());
 			if (vanillaEncoder == null)
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
+			patchEncoder(vanillaEncoder);
 			
 			if (DECODE_BUFFER == null)
 				DECODE_BUFFER = FuzzyReflection.getMethodAccessor(vanillaDecoder.getClass(), 
