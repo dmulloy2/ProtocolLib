@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.netty;
 
+import java.lang.reflect.Field;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -25,6 +26,7 @@ abstract class ChannelProxy implements Channel {
 	private static final FieldAccessor MARK_NO_MESSAGE = new FieldAccessor() {
 		public void set(Object instance, Object value) { }
 		public Object get(Object instance) { return null; }
+		public Field getField() { return null; };
 	};
 	
 	// Looking up packets in inner classes

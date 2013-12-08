@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.bukkit.Bukkit;
@@ -108,9 +109,13 @@ public class NettyProtocolInjector implements ChannelListener {
             bootstrapFields = getBootstrapFields(serverConnection);
             
             for (VolatileField field : bootstrapFields) {
-            	field.setValue(new BootstrapList(
-            		(List<Object>) field.getValue(), connectionHandler
-                ));
+            	final List<Object> list = (List<Object>) field.getValue();
+
+            	// Synchronize with each list before we attempt to replace them.
+            	// We also reapply the synchronized list wrapper.
+				field.setValue(Collections.synchronizedList(new BootstrapList(
+	            	list, connectionHandler
+	            )));
             }
 
             injected = true;
@@ -148,7 +153,8 @@ public class NettyProtocolInjector implements ChannelListener {
     	
     	// Find and (possibly) proxy every list
     	for (Field field : FuzzyReflection.fromObject(serverConnection, true).getFieldListByType(List.class)) {
-    		VolatileField volatileField = new VolatileField(field, serverConnection, true);
+    		VolatileField volatileField = new VolatileField(field, serverConnection, true).toSynchronized();
+    		
     		@SuppressWarnings("unchecked")
 			List<Object> list = (List<Object>) volatileField.getValue();
     		

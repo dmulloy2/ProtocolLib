@@ -19,6 +19,7 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 
+import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
 import com.google.common.base.Objects;
 
 /**
@@ -27,8 +28,7 @@ import com.google.common.base.Objects;
  * @author Kristian
  */
 public class VolatileField {
-
-	private Field field;
+	private FieldAccessor accessor;
 	private Object container;
 	
 	// The current and previous values
@@ -48,7 +48,7 @@ public class VolatileField {
 	 * @param container - the object this field belongs to.
 	 */
 	public VolatileField(Field field, Object container) {
-		this.field = field;
+		this.accessor = FuzzyReflection.getFieldAccessor(field);
 		this.container = container;
 	}
 	
@@ -59,9 +59,19 @@ public class VolatileField {
 	 * @param forceAccess - whether or not to override any scope restrictions.
 	 */
 	public VolatileField(Field field, Object container, boolean forceAccess) {
-		this.field = field;
+		this.accessor = FuzzyReflection.getFieldAccessor(field, true);
 		this.container = container;
 		this.forceAccess = forceAccess;
+	}
+	
+	/**
+	 * Initializes a volatile field with the given accessor and associated object.
+	 * @param accessor - the field accessor.
+	 * @param container - the object this field belongs to.
+	 */
+	public VolatileField(FieldAccessor accessor, Object container) {
+		this.accessor = accessor;
+		this.container = container;
 	}
 	
 	/**
@@ -69,7 +79,7 @@ public class VolatileField {
 	 * @return The stored field.
 	 */
 	public Field getField() {
-		return field;
+		return accessor.getField();
 	}
 	
 	/**
@@ -127,14 +137,9 @@ public class VolatileField {
 		// Remember to safe the previous value
 		ensureLoaded();
 		
-		try {
-			FieldUtils.writeField(field, container, newValue, forceAccess);
-			current = newValue;
-			currentSet = true;
-			
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Unable to write field " + field.getName(), e);
-		}
+		writeFieldValue(newValue);
+		current = newValue;
+		currentSet = true;
 	}
 	
 	/**
@@ -178,9 +183,17 @@ public class VolatileField {
 			} else {
 				// This can be a bad sign
 				System.out.println(String.format("[ProtocolLib] Unable to switch %s to %s. Expected %s but got %s.",
-						field.toGenericString(), previous, current, getValue()));
+						getField().toGenericString(), previous, current, getValue()));
 			}
 		}
+	}
+	
+	/**
+	 * Retrieve a synchronized version of the current field.
+	 * @return A synchronized volatile field.
+	 */
+	public VolatileField toSynchronized() {
+		return new VolatileField(FuzzyReflection.getSynchronized(accessor), container);
 	}
 	
 	/**
@@ -203,11 +216,7 @@ public class VolatileField {
 	 * @return The field value.
 	 */
 	private Object readFieldValue() {
-		try {
-			return FieldUtils.readField(field, container, forceAccess);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Unable to read field " + field.getName(), e);
-		}
+		return accessor.get(container);
 	}
 	
 	/**
@@ -215,11 +224,7 @@ public class VolatileField {
 	 * @param newValue - the new value.
 	 */
 	private void writeFieldValue(Object newValue) {
-		try {
-			FieldUtils.writeField(field, container, newValue, forceAccess);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Unable to write field " + field.getName(), e);
-		}
+		accessor.set(container, newValue);
 	}
 		
 	@Override
@@ -229,6 +234,8 @@ public class VolatileField {
 
 	@Override
 	public String toString() {
-		return "VolatileField [field=" + field + ", container=" + container + ", previous=" + previous + ", current=" + current + "]";
+		return "VolatileField [accessor=" + accessor + ", container=" + container + ", previous="
+				+ previous + ", current=" + current + ", previousLoaded=" + previousLoaded
+				+ ", currentSet=" + currentSet + ", forceAccess=" + forceAccess + "]";
 	}
 }

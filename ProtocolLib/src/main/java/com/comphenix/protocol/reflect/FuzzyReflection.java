@@ -19,7 +19,6 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -62,6 +61,12 @@ public class FuzzyReflection {
 		 * @param value - the new value of the field.
 		 */
 		public void set(Object instance, Object value);
+		
+		/**
+		 * Retrieve the underlying field.
+		 * @return The field.
+		 */
+		public Field getField();
 	}
 	
 	/**
@@ -76,6 +81,44 @@ public class FuzzyReflection {
 		 * @return The return value, or NULL for void methods.
 		 */
 		public Object invoke(Object target, Object... args);
+		
+		/**
+		 * Retrieve the underlying method.
+		 * @return The method.
+		 */
+		public Method getMethod();
+	}
+	
+	/**
+	 * Represents a field accessor that synchronizes access to the underlying field.
+	 * @author Kristian
+	 */
+	private static final class SynchronizedFieldAccessor implements FieldAccessor {
+		private final FieldAccessor accessor;
+		private SynchronizedFieldAccessor(FieldAccessor accessor) {
+			this.accessor = accessor;
+		}
+		
+		@Override
+		public void set(Object instance, Object value) {
+			Object lock = accessor.get(instance);
+			
+			if (lock != null) {
+				synchronized (lock) {
+					accessor.set(instance, value);
+				}
+			} else {
+				accessor.set(instance, value);
+			}
+		}
+		@Override
+		public Object get(Object instance) {
+			return accessor.get(instance);
+		}
+		@Override
+		public Field getField() {
+			return accessor.getField();
+		}
 	}
 	
 	// The class we're actually representing
@@ -170,26 +213,19 @@ public class FuzzyReflection {
 	 */
 	public static FieldAccessor getFieldAccessor(final Field field, boolean forceAccess) {
 		field.setAccessible(true);
-		
-		return new FieldAccessor() {
-			@Override
-			public Object get(Object instance) {
-				try {
-					return field.get(instance);
-				} catch (IllegalAccessException e) {
-					throw new IllegalStateException("Cannot use reflection.", e);
-				}
-			}
-			
-			@Override
-			public void set(Object instance, Object value) {
-				try {
-					field.set(instance, value);
-				} catch (IllegalAccessException e) {
-					throw new IllegalStateException("Cannot use reflection.", e);
-				}
-			}
-		};
+		return new DefaultFieldAccessor(field);
+	}
+	
+	/**
+	 * Retrieve a field accessor where the write operation is synchronized on the current field value.
+	 * @param accessor - the accessor.
+	 * @return The field accessor.
+	 */
+	public static FieldAccessor getSynchronized(final FieldAccessor accessor) {
+		// Only wrap once
+		if (accessor instanceof SynchronizedFieldAccessor)
+			return accessor;
+		return new SynchronizedFieldAccessor(accessor);
 	}
 	
 	/**
@@ -232,20 +268,7 @@ public class FuzzyReflection {
 	 * @return The method accessor.
 	 */
 	public static MethodAccessor getMethodAccessor(final Method method) {
-		return new MethodAccessor() {
-			@Override
-			public Object invoke(Object target, Object... args) {
-				try {
-					return method.invoke(target, args);
-				} catch (IllegalAccessException e) {
-					throw new IllegalStateException("Cannot use reflection.", e);
-				} catch (InvocationTargetException e) {
-					throw new RuntimeException("An internal error occured.", e.getCause());
-				} catch (IllegalArgumentException e) {
-					throw e;
-				}
-			}
-		};
+		return new DefaultMethodAccessor(method);
 	}
 	
 	/**
