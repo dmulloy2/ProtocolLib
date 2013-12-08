@@ -544,6 +544,14 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the CraftChatMessage in Minecraft 1.7.2.
+	 * @return The CraftChatMessage class.
+	 */
+	public static Class<?> getCraftChatMessage() {
+		return getCraftBukkitClass("util.CraftChatMessage");
+	}
+	
+	/**
 	 * Retrieve the WorldServer (NMS) class.
 	 * @return The WorldServer class.
 	 */
@@ -635,6 +643,52 @@ public class MinecraftReflection {
 			);
 			return setMinecraftClass("EnumProtocol", protocolMethod.getParameterTypes()[0]);
 		}
+	}
+	
+	/**
+	 * Retrieve the IChatBaseComponent class.
+	 * @return The IChatBaseComponent.
+	 */
+	public static Class<?> getIChatBaseComponent() {
+		try {
+			return getMinecraftClass("IChatBaseComponent");
+		} catch (RuntimeException e) {
+			return setMinecraftClass("IChatBaseComponent", 
+				FuzzyReflection.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
+					getMethod().getReturnType().getComponentType()
+			);
+		}
+	}
+
+	/**
+	 * Attempt to find the ChatSerializer class.
+	 * @return The serializer class.
+	 * @throws IllegalStateException If the class could not be found or deduced.
+	 */
+	public static Class<?> getChatSerializer() {
+		try {
+			return getMinecraftClass("ChatSerializer");
+		} catch (RuntimeException e) {
+			// Analyse the ASM
+			try {
+				List<AsmMethod> methodCalls = ClassAnalyser.getDefault().getMethodCalls(
+					PacketType.Play.Server.CHAT.getPacketClass(), 
+					MinecraftMethods.getPacketReadByteBufMethod()
+				);
+				Class<?> packetSerializer = getPacketDataSerializerClass();
+				
+				for (AsmMethod method : methodCalls) {
+					Class<?> owner = method.getOwnerClass();
+					
+					if (isMinecraftClass(owner) && !owner.equals(packetSerializer)) {
+						return setMinecraftClass("ChatSerializer", owner);
+					}
+				}
+			} catch (Exception e1) {
+				throw new IllegalStateException("Cannot find ChatSerializer class.", e);
+			}
+		}
+		throw new IllegalStateException("Cannot find ChatSerializer class.");
 	}
 	
 	/**
@@ -1300,7 +1354,7 @@ public class MinecraftReflection {
 			try {
 				// Now -- we inspect all the method calls within that method, and use the first foreign Minecraft class
 				for (AsmMethod method : ClassAnalyser.getDefault().getMethodCalls(writeNbt)) {
-					Class<?> owner = MinecraftReflection.class.getClassLoader().loadClass(method.getOwnerClass().replace('/', '.'));
+					Class<?> owner = method.getOwnerClass();
 					
 					if (!packetSerializer.equals(owner) && isMinecraftClass(owner)) {
 						return setMinecraftClass("NBTCompressedStreamTools", owner);

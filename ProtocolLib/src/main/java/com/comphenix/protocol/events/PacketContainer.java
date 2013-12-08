@@ -66,6 +66,7 @@ import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
@@ -478,7 +479,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Retrieves a read/write structure for game profiles.
+	 * Retrieves a read/write structure for game profiles in Minecraft 1.7.2.
 	 * <p>
 	 * This modifier will automatically marshall between WrappedGameProfile and the
 	 * internal Minecraft GameProfile.
@@ -488,6 +489,19 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedGameProfile>withType(
 				GameProfile.class, BukkitConverters.getWrappedGameProfileConverter());
+	}
+	
+	/**
+	 * Retrieves a read/write structure for chat components in Minecraft 1.7.2.
+	 * <p>
+	 * This modifier will automatically marshall between WrappedChatComponent and the
+	 * internal Minecraft GameProfile.
+	 * @return A modifier for GameProfile fields.
+	 */
+	public StructureModifier<WrappedChatComponent> getChatComponents() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.<WrappedChatComponent>withType(
+				MinecraftReflection.getIChatBaseComponent(), BukkitConverters.getWrappedChatComponentConverter());
 	}
 	
 	/**

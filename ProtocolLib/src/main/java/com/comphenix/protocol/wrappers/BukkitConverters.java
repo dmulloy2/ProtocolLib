@@ -258,6 +258,29 @@ public class BukkitConverters {
 	}
 	
 	/**
+	 * Retrieve a converter for wrapped chat components.
+	 * @return Wrapped chat componetns.
+	 */
+	public static EquivalentConverter<WrappedChatComponent> getWrappedChatComponentConverter() {
+		return new IgnoreNullConverter<WrappedChatComponent>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, WrappedChatComponent specific) {
+				return specific.getHandle();
+			}
+			
+			@Override
+			protected WrappedChatComponent getSpecificValue(Object generic) {
+				return WrappedChatComponent.fromHandle(generic);
+			}
+			
+			@Override
+			public Class<WrappedChatComponent> getSpecificType() {
+				return WrappedChatComponent.class;
+			}
+		};
+	}
+	
+	/**
 	 * Retrieve a converter for wrapped attribute snapshots.
 	 * @return Wrapped attribute snapshot converter.
 	 */
@@ -601,6 +624,12 @@ public class BukkitConverters {
 				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter()).
 				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter());
 			
+			// Types added in 1.7.2
+			if (MinecraftReflection.isUsingNetty()) {
+				builder.put(WrappedGameProfile.class, (EquivalentConverter) getWrappedGameProfileConverter());
+				builder.put(WrappedChatComponent.class, (EquivalentConverter) getWrappedChatComponentConverter());	
+			}
+			
 			if (hasWorldType) 
 				builder.put(WorldType.class, (EquivalentConverter) getWorldTypeConverter());
 			if (hasAttributeSnapshot)
@@ -626,11 +655,17 @@ public class BukkitConverters {
 				put(MinecraftReflection.getNBTCompoundClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getWatchableObjectClass(), (EquivalentConverter) getWatchableObjectConverter()).
 				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter());
-			
+				
 			if (hasWorldType)
 				builder.put(MinecraftReflection.getWorldTypeClass(), (EquivalentConverter) getWorldTypeConverter());
 			if (hasAttributeSnapshot)
 				builder.put(MinecraftReflection.getAttributeSnapshotClass(), (EquivalentConverter) getWrappedAttributeConverter());
+			
+			// Types added in 1.7.2
+			if (MinecraftReflection.isUsingNetty()) {
+				builder.put(MinecraftReflection.getGameProfileClass(), (EquivalentConverter) getWrappedGameProfileConverter());
+				builder.put(MinecraftReflection.getIChatBaseComponent(), (EquivalentConverter) getWrappedChatComponentConverter());
+			}
 			genericConverters = builder.build();
 		}
 		return genericConverters;

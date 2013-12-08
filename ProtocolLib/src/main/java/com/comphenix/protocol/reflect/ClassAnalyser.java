@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
 import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
 import net.sf.cglib.asm.ClassReader;
@@ -28,8 +29,17 @@ public class ClassAnalyser {
 			this.signature = signature;
 		}
 
-		public String getOwnerClass() {
+		public String getOwnerName() {
 			return ownerClass;
+		}
+		
+		/**
+		 * Retrieve the associated owner class.
+		 * @return The owner class.
+		 * @throws ClassNotFoundException
+		 */
+		public Class<?> getOwnerClass() throws ClassNotFoundException {
+			return AsmMethod.class.getClassLoader().loadClass(getOwnerName().replace('/', '.'));
 		}
 		
 		public String getMethodName() {
@@ -57,7 +67,18 @@ public class ClassAnalyser {
 	 * @throws IOException Cannot access the parent class.
 	 */
 	public List<AsmMethod> getMethodCalls(Method method) throws IOException {
-		final ClassReader reader = new ClassReader(method.getDeclaringClass().getCanonicalName());
+		return getMethodCalls(method.getDeclaringClass(), method);
+	}
+	
+	/**
+	 * Retrieve every method calls in the given method.
+	 * @param clazz - the parent class.
+	 * @param method - the method to analyse.
+	 * @return The method calls.
+	 * @throws IOException Cannot access the parent class.
+	 */
+	public List<AsmMethod> getMethodCalls(Class<?> clazz, Method method) throws IOException {
+		final ClassReader reader = new ClassReader(clazz.getCanonicalName());
 		final List<AsmMethod> output = Lists.newArrayList();
 		
 		// The method we are looking for

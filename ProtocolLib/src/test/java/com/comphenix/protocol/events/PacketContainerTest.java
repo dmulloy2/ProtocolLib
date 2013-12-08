@@ -32,6 +32,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 // Will have to be updated for every version though
 import org.bukkit.craftbukkit.v1_7_R1.inventory.CraftItemFactory;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.WorldType;
 import org.bukkit.inventory.ItemStack;
@@ -53,6 +54,7 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
@@ -334,6 +336,16 @@ public class PacketContainerTest {
 		spawnEntity.getGameProfiles().write(0, profile);
 		
 		assertEquals(profile, spawnEntity.getGameProfiles().read(0));
+	}
+	
+	@Test
+	public void testChatComponents() {
+		PacketContainer chatPacket = new PacketContainer(PacketType.Play.Server.CHAT);
+		chatPacket.getChatComponents().write(0, 
+				WrappedChatComponent.fromChatMessage("You shall not " + ChatColor.ITALIC + "pass!")[0]);
+		
+		assertEquals("{\"extra\":[\"You shall not \",{\"italic\":true,\"text\":\"pass!\"}],\"text\":\"\"}", 
+				     chatPacket.getChatComponents().read(0).getJson());
 	}
 	
 	@Test
