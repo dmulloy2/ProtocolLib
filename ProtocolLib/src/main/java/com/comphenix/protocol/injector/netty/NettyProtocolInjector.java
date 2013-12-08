@@ -273,7 +273,12 @@ public class NettyProtocolInjector implements ChannelListener {
 			
 			@Override
 			public void updatePlayer(Player player) {
-				// Ignore it
+				ChannelInjector.fromPlayer(player, listener).inject();
+			
+			}
+			@Override
+			public void injectPlayer(Player player, ConflictStrategy strategy) {
+				ChannelInjector.fromPlayer(player, listener).inject();
 			}
 			
 			@Override
@@ -311,11 +316,6 @@ public class NettyProtocolInjector implements ChannelListener {
 			public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
 				ChannelInjector.fromPlayer(player, listener).
 					recieveClientPacket(mcPacket, null, true);
-			}
-			
-			@Override
-			public void injectPlayer(Player player, ConflictStrategy strategy) {
-				ChannelInjector.fromPlayer(player, listener).inject();
 			}
 			
 			@Override

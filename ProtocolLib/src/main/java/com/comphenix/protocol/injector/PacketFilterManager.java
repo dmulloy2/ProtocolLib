@@ -922,9 +922,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		try {
 			manager.registerEvents(new Listener() {
-				@EventHandler(priority = EventPriority.MONITOR)
+				@EventHandler(priority = EventPriority.LOWEST)
 			    public void onPrePlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPrePlayerJoin(event);
+				}
+				
+				@EventHandler(priority = EventPriority.MONITOR)
+			    public void onPlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPlayerJoin(event);
 			    }
 				@EventHandler(priority = EventPriority.MONITOR)
@@ -945,20 +949,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
     private void onPrePlayerJoin(PlayerJoinEvent event) {
-		try {
-			// Let's clean up the other injection first.
-			playerInjection.uninjectPlayer(event.getPlayer().getAddress());
-			playerInjection.updatePlayer(event.getPlayer());
-		} catch (Exception e) {
-			reporter.reportDetailed(PacketFilterManager.this, 
-					Report.newBuilder(REPORT_CANNOT_UNINJECT_PLAYER).callerParam(event).error(e)
-			);
-		}
+		playerInjection.updatePlayer(event.getPlayer());
     }
 	
     private void onPlayerJoin(PlayerJoinEvent event) {
 		try {
-			// This call will be ignored if no listeners are registered
+			// Let's clean up the other injection first.
+			playerInjection.uninjectPlayer(event.getPlayer().getAddress());
 			playerInjection.injectPlayer(event.getPlayer(), ConflictStrategy.OVERRIDE);
 		} catch (ServerHandlerNull e) {
 			// Caused by logged out players, or fake login events in MCPC++. Ignore it.
@@ -1064,6 +1061,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Class eventPriority = loader.loadClass("org.bukkit.event.Event$Priority");
 			
 			// Get the priority
+			Object priorityLowest  = Enum.valueOf(eventPriority, "Lowest");
 			Object priorityMonitor = Enum.valueOf(eventPriority, "Monitor");
 			
 			// Get event types
@@ -1079,8 +1077,27 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Method registerEvent = FuzzyReflection.fromObject(manager).getMethodByParameters("registerEvent", 
 					eventTypes, Listener.class, eventPriority, Plugin.class);
 			
+			Enhancer playerLow = new Enhancer();
 			Enhancer playerEx = new Enhancer();
 			Enhancer serverEx = new Enhancer();
+			
+			playerLow.setSuperclass(playerListener);
+			playerLow.setClassLoader(classLoader);
+			playerLow.setCallback(new MethodInterceptor() {
+				@Override
+				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy)
+						throws Throwable {
+					// Must have a parameter
+					if (args.length == 1) {
+						Object event = args[0];
+
+						if (event instanceof PlayerJoinEvent) {
+							onPrePlayerJoin((PlayerJoinEvent) event);
+						}
+					}
+					return null;
+				}
+			});
 			
 			playerEx.setSuperclass(playerListener);
 			playerEx.setClassLoader(classLoader);
@@ -1092,7 +1109,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 						
 						// Check for the correct event
 						if (event instanceof PlayerJoinEvent) {
-							onPrePlayerJoin((PlayerJoinEvent) event);
 							onPlayerJoin((PlayerJoinEvent) event);
 						} else if (event instanceof PlayerQuitEvent) {
 							onPlayerQuit((PlayerQuitEvent) event);
@@ -1120,9 +1136,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			});
 			
 			// Create our listener
+			Object playerProxyLow = playerLow.create();
 			Object playerProxy = playerEx.create();
 			Object serverProxy = serverEx.create();
 			
+			registerEvent.invoke(manager, playerJoinType, playerProxyLow, priorityLowest, plugin);
 			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityMonitor, plugin);
 			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityMonitor, plugin);
