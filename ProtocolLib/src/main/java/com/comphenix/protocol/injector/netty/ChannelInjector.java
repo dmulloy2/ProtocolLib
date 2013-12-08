@@ -356,10 +356,10 @@ class ChannelInjector extends ByteToMessageDecoder {
 	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
-		try {
-			byteBuffer.markReaderIndex();
-			DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
-			
+		byteBuffer.markReaderIndex();
+		DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+		
+		try {			
 			if (packets.size() > 0) {
 				Object input = packets.get(0);
 				Class<?> packetClass = input.getClass();
