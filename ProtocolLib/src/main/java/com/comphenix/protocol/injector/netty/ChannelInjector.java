@@ -182,13 +182,18 @@ class ChannelInjector extends ByteToMessageDecoder {
 	
 	/**
 	 * Inject the current channel.
+	 * <p>
+	 * Note that only active channels can be injected.
+	 * @return TRUE if we injected the channel, false if we could not inject or it was already injected.
 	 */
 	@SuppressWarnings("unchecked")
 	public boolean inject() {
 		synchronized (networkManager) {
 			if (originalChannel instanceof Factory)
 				return false;
-
+			if (!originalChannel.isActive())
+				return false;
+			
 			// Don't inject the same channel twice
 			if (findChannelHandler(originalChannel, ChannelInjector.class) != null) {
 				// Invalidate cache
@@ -202,9 +207,9 @@ class ChannelInjector extends ByteToMessageDecoder {
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 			
 			if (vanillaDecoder == null)
-				throw new IllegalArgumentException("Unable to find vanilla decoder.in " + originalChannel.pipeline() + ". " + getChannelState());
+				throw new IllegalArgumentException("Unable to find vanilla decoder.in " + originalChannel.pipeline() );
 			if (vanillaEncoder == null)
-				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline() + ". " + getChannelState());
+				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline() );
 			patchEncoder(vanillaEncoder);
 			
 			if (DECODE_BUFFER == null)
@@ -243,10 +248,6 @@ class ChannelInjector extends ByteToMessageDecoder {
 			injected = true;
 			return true;
 		}
-	}
-	
-	private String getChannelState() {
-		return "Registered channel: " + originalChannel.isRegistered() + ", Active channel: " + originalChannel.isActive() + ", Open channel: " + originalChannel.isOpen();
 	}
 	
 	/**
