@@ -43,6 +43,10 @@ public class PacketType implements Serializable {
 	public static class Handshake {
 		private static final Protocol PROTOCOL = Protocol.HANDSHAKING;
 		
+		/**
+		 * Incoming packets.
+		 * @author Kristian
+		 */
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
 			/**
@@ -92,6 +96,10 @@ public class PacketType implements Serializable {
 	public static class Play {
 		private static final Protocol PROTOCOL = Protocol.GAME;
 		
+		/**
+		 * Outgoing packets.
+		 * @author Kristian
+		 */
 		public static class Server extends ObjectEnum<PacketType> {		
 			private final static Sender SENDER = Sender.SERVER;
 			
@@ -183,6 +191,10 @@ public class PacketType implements Serializable {
 			}
 		}
 		
+		/**
+		 * Incoming packets.
+		 * @author Kristian
+		 */
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
 			
@@ -236,6 +248,10 @@ public class PacketType implements Serializable {
 	public static class Status {
 		private static final Protocol PROTOCOL = Protocol.STATUS;
 		
+		/**
+		 * Outgoing packets.
+		 * @author Kristian
+		 */
 		public static class Server extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
 			
@@ -256,6 +272,10 @@ public class PacketType implements Serializable {
 			}
 		}
 		
+		/**
+		 * Incoming packets.
+		 * @author Kristian
+		 */
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;		
 			
@@ -288,6 +308,10 @@ public class PacketType implements Serializable {
 	public static class Login {
 		private static final Protocol PROTOCOL = Protocol.LOGIN;
 		
+		/**
+		 * Outgoing packets.
+		 * @author Kristian
+		 */
 		public static class Server extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
 			
@@ -309,6 +333,10 @@ public class PacketType implements Serializable {
 			}
 		}
 		
+		/**
+		 * Incoming packets.
+		 * @author Kristian
+		 */
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
 			
@@ -341,6 +369,10 @@ public class PacketType implements Serializable {
 	public static class Legacy {
 		private static final Protocol PROTOCOL = Protocol.LEGACY;
 		
+		/**
+		 * Outgoing packets.
+		 * @author Kristian
+		 */
 		// Missing server packets: [10, 11, 12, 21, 107, 252]
 		public static class Server extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
@@ -377,6 +409,10 @@ public class PacketType implements Serializable {
 			}
 		}
 		
+		/**
+		 * Incoming packets.
+		 * @author Kristian
+		 */
 		// Missing client packets: [1, 9, 255]
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;

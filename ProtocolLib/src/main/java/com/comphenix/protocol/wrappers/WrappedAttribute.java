@@ -24,7 +24,7 @@ import com.google.common.collect.Sets;
  * Represents a single attribute sent in packet 44.
  * @author Kristian
  */
-public class WrappedAttribute {
+public class WrappedAttribute extends AbstractWrapper {
 	// Shared structure modifier
 	private static StructureModifier<Object> ATTRIBUTE_MODIFIER;
 	
@@ -42,6 +42,22 @@ public class WrappedAttribute {
 	
 	// Cached modifiers list
 	private Set<WrappedAttributeModifier> attributeModifiers;
+	
+	/**
+	 * Construct a wrapper around a specific NMS instance.
+	 * @param handle - the NMS instance.
+	 */
+	private WrappedAttribute(@Nonnull Object handle) {
+		super(MinecraftReflection.getAttributeSnapshotClass());
+		setHandle(handle);
+		
+		// Initialize modifier
+		if (ATTRIBUTE_MODIFIER == null) {
+			ATTRIBUTE_MODIFIER = new StructureModifier<Object>(MinecraftReflection.getAttributeSnapshotClass());
+		}
+		this.modifier = ATTRIBUTE_MODIFIER.withTarget(handle);
+	}
+	
 	
 	/**
 	 * Construct a new wrapped attribute around a specific NMS instance.
@@ -68,33 +84,6 @@ public class WrappedAttribute {
 	 */
 	public static Builder newBuilder(@Nonnull WrappedAttribute template) {
 		return new Builder(Preconditions.checkNotNull(template, "template cannot be NULL."));
-	}
-	
-	/**
-	 * Construct a wrapper around a specific NMS instance.
-	 * @param handle - the NMS instance.
-	 */
-	private WrappedAttribute(@Nonnull Object handle) {
-		this.handle = Preconditions.checkNotNull(handle, "handle cannot be NULL.");
-		
-		// Check handle type
-		if (!MinecraftReflection.getAttributeSnapshotClass().isAssignableFrom(handle.getClass())) {
-			throw new IllegalArgumentException("handle (" + handle + ") must be a AttributeSnapshot.");
-		}
-		
-		// Initialize modifier
-		if (ATTRIBUTE_MODIFIER == null) {
-			ATTRIBUTE_MODIFIER = new StructureModifier<Object>(MinecraftReflection.getAttributeSnapshotClass());
-		}
-		this.modifier = ATTRIBUTE_MODIFIER.withTarget(handle);
-	}
-	
-	/**
-	 * Retrieve the underlying NMS attribute snapshot.
-	 * @return The underlying attribute snapshot.
-	 */
-	public Object getHandle() {
-		return handle;
 	}
 	
 	/**

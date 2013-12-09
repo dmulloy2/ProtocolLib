@@ -11,7 +11,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * Represents a chat component added in Minecraft 1.7.2
  * @author Kristian
  */
-public class WrappedChatComponent {
+public class WrappedChatComponent extends AbstractWrapper {
 	private static final Class<?> SERIALIZER = MinecraftReflection.getChatSerializer();
 	private static final Class<?> COMPONENT = MinecraftReflection.getIChatBaseComponent();
 	private static MethodAccessor SERIALIZE_COMPONENT = null;
@@ -32,11 +32,11 @@ public class WrappedChatComponent {
 			MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
 	}
 	
-	private Object handle;
 	private transient String cache;
 	
 	private WrappedChatComponent(Object handle, String cache) {
-		this.handle = handle;
+		super(MinecraftReflection.getIChatBaseComponent());
+		setHandle(handle);
 		this.cache = cache;
 	}
 	
@@ -46,10 +46,6 @@ public class WrappedChatComponent {
 	 * @return The wrapper.
 	 */
 	public static WrappedChatComponent fromHandle(Object handle) {
-		if (handle == null)
-			throw new IllegalArgumentException("handle cannot be NULL.");
-		if (!COMPONENT.isAssignableFrom(handle.getClass()))
-			throw new IllegalArgumentException("handle (" + handle + ") is not a " + COMPONENT);
 		return new WrappedChatComponent(handle, null);
 	}
 	
@@ -99,14 +95,6 @@ public class WrappedChatComponent {
 	public void setJson(String obj) {
 		this.handle = DESERIALIZE_COMPONENT.invoke(null, obj);
 		this.cache = obj;
-	}
-	
-	/**
-	 * Retrieve the underlying IChatBaseComponent instance.
-	 * @return The underlying instance.
-	 */
-	public Object getHandle() {
-		return handle;
 	}
 
 	@Override

@@ -6,16 +6,11 @@ import net.minecraft.util.com.mojang.authlib.GameProfile;
  * Represents a wrapper for a game profile.
  * @author Kristian
  */
-public class WrappedGameProfile {
-	private GameProfile profile;
-	
+public class WrappedGameProfile extends AbstractWrapper {
 	// Profile from a handle
 	private WrappedGameProfile(Object profile) {
-		if (profile == null)
-			throw new IllegalArgumentException("Profile cannot be NULL.");
-		if (!(profile instanceof GameProfile)) 
-			throw new IllegalArgumentException(profile + " is not a GameProfile");
-		this.profile = (GameProfile) profile;
+		super(GameProfile.class);
+		setHandle(profile);
 	}
 	
 	/**
@@ -34,21 +29,13 @@ public class WrappedGameProfile {
 	public static WrappedGameProfile fromHandle(Object handle) {
 		return new WrappedGameProfile(handle);
 	}
-	
-	/**
-	 * Retrieve the underlying game profile.
-	 * @return The profile.
-	 */
-	public Object getHandle() {
-		return profile;
-	}
 
 	/**
 	 * Retrieve the UUID of the player.
 	 * @return The UUID of the player, or NULL if not computed.
 	 */
 	public String getId() {
-		return profile.getId();
+		return getProfile().getId();
 	}
 
 	/**
@@ -56,7 +43,11 @@ public class WrappedGameProfile {
 	 * @return The player name.
 	 */
 	public String getName() {
-		return profile.getName();
+		return getProfile().getName();
+	}
+	
+	private GameProfile getProfile() {
+		return (GameProfile) handle;
 	}
 
 	/**
@@ -82,12 +73,12 @@ public class WrappedGameProfile {
 	 * @return TRUE if it does, FALSE otherwise.
 	 */
 	public boolean isComplete() {
-		return profile.isComplete();
+		return getProfile().isComplete();
 	}
 	
 	@Override
 	public int hashCode() {
-		return profile.hashCode();
+		return getProfile().hashCode();
 	}
 	
 	@Override
@@ -97,7 +88,7 @@ public class WrappedGameProfile {
 		
 		if (obj instanceof WrappedGameProfile) {
 			WrappedGameProfile other = (WrappedGameProfile) obj;
-			return profile.equals(other.profile);
+			return getProfile().equals(other.getProfile());
 		}
 		return false;
 	}

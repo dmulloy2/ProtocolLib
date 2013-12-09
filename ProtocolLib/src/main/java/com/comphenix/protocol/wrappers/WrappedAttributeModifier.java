@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
  * 
  * @author Kristian
  */
-public class WrappedAttributeModifier {
+public class WrappedAttributeModifier extends AbstractWrapper {
 	 /**
 	  * Represents the different modifier operations.
 	  * <p>
@@ -86,10 +86,7 @@ public class WrappedAttributeModifier {
 	// The constructor we are interested in
 	private static Constructor<?> ATTRIBUTE_MODIFIER_CONSTRUCTOR;
 	
-	/**
-	 * Handle to the underlying AttributeModifier.
-	 */
-	protected Object handle;
+	// A modifier for the wrapped handler
 	protected StructureModifier<Object> modifier;
 	
 	// Cached values
@@ -97,6 +94,58 @@ public class WrappedAttributeModifier {
 	private final String name;
 	private final Operation operation;
 	private final double amount;
+	
+	/**
+	 * Construct a new wrapped attribute modifier with no associated handle.
+	 * <p>
+	 * Note that the handle object is not initialized after this constructor.
+	 * @param uuid - the UUID.
+	 * @param name - the human readable name.
+	 * @param amount - the amount.
+	 * @param operation - the operation.
+	 */
+	protected WrappedAttributeModifier(UUID uuid, String name, double amount, Operation operation) {
+		super(MinecraftReflection.getAttributeModifierClass());
+		
+		// Use the supplied values instead of reading from the NMS instance
+		this.uuid = uuid;
+		this.name = name;
+		this.amount = amount;
+		this.operation = operation;
+	}
+	
+	/**
+	 * Construct an attribute modifier wrapper around a given NMS instance.
+	 * @param handle - the NMS instance.
+	 */
+	protected WrappedAttributeModifier(@Nonnull Object handle) {
+		// Update handle and modifier
+		super(MinecraftReflection.getAttributeModifierClass());
+		setHandle(handle);
+		initializeModifier(handle);
+		
+		// Load final values, caching them
+		this.uuid = (UUID) modifier.withType(UUID.class).read(0);
+	    this.name = (String) modifier.withType(String.class).read(0);
+	    this.amount = (Double) modifier.withType(double.class).read(0);
+	    this.operation = Operation.fromId((Integer) modifier.withType(int.class).read(0));
+	}
+	
+	/**
+	 * Construct an attribute modifier wrapper around a NMS instance.
+	 * @param handle - the NMS instance.
+	 * @param uuid - the UUID.
+	 * @param name - the human readable name.
+	 * @param amount - the amount.
+	 * @param operation - the operation.
+	 */
+	protected WrappedAttributeModifier(@Nonnull Object handle, UUID uuid, String name, double amount, Operation operation) {
+		this(uuid, name, amount, operation);
+		
+		// Initialize handle and modifier
+		setHandle(handle);
+		initializeModifier(handle);
+	}
 	
 	/**
 	 * Construct a new attribute modifier builder.
@@ -135,54 +184,7 @@ public class WrappedAttributeModifier {
 	public static WrappedAttributeModifier fromHandle(@Nonnull Object handle) {
 		return new WrappedAttributeModifier(handle);
 	}
-	
-	/**
-	 * Construct a new wrapped attribute modifier with no associated handle.
-	 * @param uuid - the UUID.
-	 * @param name - the human readable name.
-	 * @param amount - the amount.
-	 * @param operation - the operation.
-	 */
-	protected WrappedAttributeModifier(UUID uuid, String name, double amount, Operation operation) {
-		// Use the supplied values instead of reading from the NMS instance
-		this.uuid = uuid;
-		this.name = name;
-		this.amount = amount;
-		this.operation = operation;
-	}
-	
-	/**
-	 * Construct an attribute modifier wrapper around a given NMS instance.
-	 * @param handle - the NMS instance.
-	 */
-	protected WrappedAttributeModifier(@Nonnull Object handle) {
-		// Update handle and modifier
-		setHandle(handle);
-		initializeModifier(handle);
 		
-		// Load final values, caching them
-		this.uuid = (UUID) modifier.withType(UUID.class).read(0);
-	    this.name = (String) modifier.withType(String.class).read(0);
-	    this.amount = (Double) modifier.withType(double.class).read(0);
-	    this.operation = Operation.fromId((Integer) modifier.withType(int.class).read(0));
-	}
-	
-	/**
-	 * Construct an attribute modifier wrapper around a NMS instance.
-	 * @param handle - the NMS instance.
-	 * @param uuid - the UUID.
-	 * @param name - the human readable name.
-	 * @param amount - the amount.
-	 * @param operation - the operation.
-	 */
-	protected WrappedAttributeModifier(@Nonnull Object handle, UUID uuid, String name, double amount, Operation operation) {
-		this(uuid, name, amount, operation);
-		
-		// Initialize handle and modifier
-		setHandle(handle);
-		initializeModifier(handle);
-	}
-	
 	/**
 	 * Initialize modifier from a given handle.
 	 * @param handle - the handle.
@@ -194,17 +196,6 @@ public class WrappedAttributeModifier {
 			BASE_MODIFIER = new StructureModifier<Object>(MinecraftReflection.getAttributeModifierClass());
 		}
 		this.modifier = BASE_MODIFIER.withTarget(handle);
-	}
-	
-	/**
-	 * Set the handle of a modifier.
-	 * @param handle - the underlying handle.
-	 */
-	private void setHandle(Object handle) {
-		// Check handle type
-		if (!MinecraftReflection.getAttributeModifierClass().isAssignableFrom(handle.getClass())) 
-			throw new IllegalArgumentException("handle (" + handle + ") must be a AttributeModifier.");
-		this.handle = handle;
 	}
 	
 	/**
@@ -239,16 +230,6 @@ public class WrappedAttributeModifier {
 	 */
 	public double getAmount() {
 		return amount;
-	}
-	
-	/**
-	 * Invoked when we need to construct a handle object.
-	 */
-	protected void checkHandle() {
-		if (handle == null) {
-			handle = newBuilder(this).build().getHandle();
-			initializeModifier(handle);
-		}
 	}
 	
 	/**

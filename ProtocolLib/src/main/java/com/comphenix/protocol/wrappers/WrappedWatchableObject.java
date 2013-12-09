@@ -33,8 +33,7 @@ import com.google.common.base.Objects;
  * 
  * @author Kristian
  */
-public class WrappedWatchableObject {
-
+public class WrappedWatchableObject extends AbstractWrapper {
 	// Whether or not the reflection machinery has been initialized
 	private static boolean hasInitialized;
 	
@@ -47,7 +46,6 @@ public class WrappedWatchableObject {
 	// The watchable object class type
 	private static Class<?> watchableObjectClass;
 	
-	protected Object handle;
 	protected StructureModifier<Object> modifier;
 	
 	// Type of the stored value
@@ -58,6 +56,7 @@ public class WrappedWatchableObject {
 	 * @param handle - the raw watchable object to wrap.
 	 */
 	public WrappedWatchableObject(Object handle) {
+		super(MinecraftReflection.getWatchableObjectClass());
 		load(handle);
 	}
 	
@@ -67,6 +66,8 @@ public class WrappedWatchableObject {
 	 * @param value - non-null value of specific types.
 	 */
 	public WrappedWatchableObject(int index, Object value) {
+		super(MinecraftReflection.getWatchableObjectClass());
+		
 		if (value == null)
 			throw new IllegalArgumentException("Value cannot be NULL.");
 		
@@ -105,14 +106,6 @@ public class WrappedWatchableObject {
 			throw new ClassCastException("Cannot cast the class " + handle.getClass().getName() +
 										 " to " + watchableObjectClass.getName());
 		}
-	}
-	
-	/**
-	 * Retrieves the underlying watchable object.
-	 * @return The underlying watchable object.
-	 */
-	public Object getHandle() {
-		return handle;
 	}
 	
 	/**

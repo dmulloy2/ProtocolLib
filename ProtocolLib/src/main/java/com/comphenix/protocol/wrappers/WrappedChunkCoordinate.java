@@ -26,27 +26,26 @@ import com.google.common.base.Objects;
  * 
  * @author Kristian
  */
-public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate> {
-
+public class WrappedChunkCoordinate extends AbstractWrapper implements Comparable<WrappedChunkCoordinate> {
 	/**
 	 * If TRUE, NULLs should be put before non-null instances of this class.
 	 */
 	private static final boolean LARGER_THAN_NULL = true;
-	
-	@SuppressWarnings("rawtypes")
-	protected Comparable handle;
 
 	// Used to access a ChunkCoordinate
-	private static StructureModifier<Integer> intModifier;
+	private static StructureModifier<Integer> SHARED_MODIFIER;
+	
+	// The current modifier
+	private StructureModifier<Integer> handleModifier;
 	
 	/**
 	 * Create a new empty wrapper.
 	 */
-	@SuppressWarnings("rawtypes")
 	public WrappedChunkCoordinate() {
-		try {
-			this.handle = (Comparable) MinecraftReflection.getChunkCoordinatesClass().newInstance();
-			initializeModifier();
+		super(MinecraftReflection.getChunkCoordinatesClass());
+		
+		try {	
+			setHandle(getHandleType().newInstance());
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct chunk coordinate.");
 		}
@@ -58,17 +57,17 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 */
 	@SuppressWarnings("rawtypes")
 	public WrappedChunkCoordinate(Comparable handle) {
-		if (handle == null)
-			throw new IllegalArgumentException("handle cannot be NULL");
-		this.handle = handle;
-		initializeModifier();
+		super(MinecraftReflection.getChunkCoordinatesClass());
+		setHandle(handle);
 	}
 
 	// Ensure that the structure modifier is initialized
-	private void initializeModifier() {
-		if (intModifier == null) {
-			intModifier = new StructureModifier<Object>(handle.getClass(), null, false).withType(int.class);
-		}
+	private StructureModifier<Integer> getModifier() {
+		if (SHARED_MODIFIER == null)
+			SHARED_MODIFIER = new StructureModifier<Object>(handle.getClass(), null, false).withType(int.class);
+		if (handleModifier == null)
+			handleModifier = SHARED_MODIFIER.withTarget(handle);
+		return handleModifier;
 	}
 	
 	/**
@@ -101,7 +100,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @return The x coordinate.
 	 */
 	public int getX() {
-		return intModifier.read(0);
+		return getModifier().read(0);
 	}
 	
 	/**
@@ -109,7 +108,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @param newX - the new x coordinate.
 	 */
 	public void setX(int newX) {
-		intModifier.write(0, newX);
+		getModifier().write(0, newX);
 	}
 	
 	/**
@@ -117,7 +116,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @return The y coordinate.
 	 */
 	public int getY() {
-		return intModifier.read(1);
+		return getModifier().read(1);
 	}
 	
 	/**
@@ -125,7 +124,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @param newY - the new y coordinate.
 	 */
 	public void setY(int newY) {
-		intModifier.write(1, newY);
+		getModifier().write(1, newY);
 	}
 	
 	/**
@@ -133,7 +132,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @return The z coordinate.
 	 */
 	public int getZ() {
-		return intModifier.read(2);
+		return getModifier().read(2);
 	}
 	
 	/**
@@ -141,7 +140,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 	 * @param newZ - the new z coordinate.
 	 */
 	public void setZ(int newZ) {
-		intModifier.write(2, newZ);
+		getModifier().write(2, newZ);
 	}
 	
 	/**
@@ -159,7 +158,7 @@ public class WrappedChunkCoordinate implements Comparable<WrappedChunkCoordinate
 		if (other.handle == null)
 			return LARGER_THAN_NULL ? -1 : 1;
 		else
-			return handle.compareTo(other.handle);
+			return ((Comparable<Object>) handle).compareTo(other.handle);
 	}
 
 	@Override

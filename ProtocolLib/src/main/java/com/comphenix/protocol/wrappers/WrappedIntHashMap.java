@@ -15,21 +15,18 @@ import com.google.common.base.Preconditions;
  * Represents a wrapper for the internal IntHashMap in Minecraft.
  * @author Kristian
  */
-public class WrappedIntHashMap {
-	private static final Class<?> INT_HASH_MAP = MinecraftReflection.getIntHashMapClass();
-	
+public class WrappedIntHashMap extends AbstractWrapper {
 	private static Method PUT_METHOD;
 	private static Method GET_METHOD;
 	private static Method REMOVE_METHOD;
-	
-	private Object handle;
 	
 	/**
 	 * Construct an IntHashMap wrapper around an instance.
 	 * @param handle - the NMS instance.
 	 */
 	private WrappedIntHashMap(Object handle) {		
-		this.handle = handle;
+		super(MinecraftReflection.getIntHashMapClass());
+		setHandle(handle);
 	}
 	
 	/**
@@ -38,7 +35,7 @@ public class WrappedIntHashMap {
 	 */
 	public static WrappedIntHashMap newMap() {
 		try {
-			return new WrappedIntHashMap(INT_HASH_MAP.newInstance());
+			return new WrappedIntHashMap(MinecraftReflection.getIntHashMapClass().newInstance());
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to construct IntHashMap.", e);
 		}
@@ -51,10 +48,6 @@ public class WrappedIntHashMap {
 	 * @throws IllegalArgumentException If the handle is not an IntHasMap.
 	 */
 	public static WrappedIntHashMap fromHandle(@Nonnull Object handle) {
-		Preconditions.checkNotNull(handle, "handle cannot be NULL");
-		Preconditions.checkState(MinecraftReflection.isIntHashMap(handle), 
-				"handle is a " + handle.getClass() + ", not an IntHashMap.");
-
 		return new WrappedIntHashMap(handle);
 	}
 	
@@ -138,7 +131,7 @@ public class WrappedIntHashMap {
 	private void initializePutMethod() {
 		if (PUT_METHOD == null) {
 			// Fairly straight forward
-			PUT_METHOD = FuzzyReflection.fromClass(INT_HASH_MAP).getMethod(
+			PUT_METHOD = FuzzyReflection.fromClass(MinecraftReflection.getIntHashMapClass()).getMethod(
 				FuzzyMethodContract.newBuilder().
 					banModifier(Modifier.STATIC).
 					parameterCount(2).
@@ -154,7 +147,7 @@ public class WrappedIntHashMap {
 			String expected = "hello";
 					
 			// Determine which method to trust
-			for (Method method : FuzzyReflection.fromClass(INT_HASH_MAP).
+			for (Method method : FuzzyReflection.fromClass(MinecraftReflection.getIntHashMapClass()).
 					getMethodListByParameters(Object.class, new Class<?>[] { int.class })) {
 				
 				// Initialize a value
@@ -182,13 +175,5 @@ public class WrappedIntHashMap {
 			if (GET_METHOD == null)
 				throw new IllegalStateException("Unable to find appropriate GET_METHOD for IntHashMap.");
 		}
-	}
-
-	/**
-	 * Retrieve the underlying IntHashMap object.
-	 * @return The underlying object.
-	 */
-	public Object getHandle() {
-		return handle;
 	}
 }
