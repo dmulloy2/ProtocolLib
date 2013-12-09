@@ -650,7 +650,7 @@ public class MinecraftReflection {
 	 * Retrieve the IChatBaseComponent class.
 	 * @return The IChatBaseComponent.
 	 */
-	public static Class<?> getIChatBaseComponent() {
+	public static Class<?> getIChatBaseComponentClass() {
 		try {
 			return getMinecraftClass("IChatBaseComponent");
 		} catch (RuntimeException e) {
@@ -666,7 +666,7 @@ public class MinecraftReflection {
 	 * @return The serializer class.
 	 * @throws IllegalStateException If the class could not be found or deduced.
 	 */
-	public static Class<?> getChatSerializer() {
+	public static Class<?> getChatSerializerClass() {
 		try {
 			return getMinecraftClass("ChatSerializer");
 		} catch (RuntimeException e) {
@@ -692,6 +692,92 @@ public class MinecraftReflection {
 		throw new IllegalStateException("Cannot find ChatSerializer class.");
 	}
 	
+	/**
+	 * Retrieve the ServerPing class in Minecraft 1.7.2.
+	 * @return The ServerPing class.
+	 */
+	public static Class<?> getServerPingClass() {
+		if (!isUsingNetty())
+			throw new IllegalStateException("ServerPing is only supported in 1.7.2.");
+		
+		try {
+			return getMinecraftClass("ServerPing");
+		} catch (RuntimeException e) {
+			Class<?> statusServerInfo = PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass();
+			
+			// Find a server ping object
+			AbstractFuzzyMatcher<Class<?>> serverPingContract = FuzzyClassContract.newBuilder().
+				field(FuzzyFieldContract.newBuilder().typeExact(String.class).build()).
+				field(FuzzyFieldContract.newBuilder().typeDerivedOf(getIChatBaseComponentClass()).build()).
+				build().
+			and(getMinecraftObjectMatcher());
+			
+			return setMinecraftClass("ServerPing", 
+				FuzzyReflection.fromClass(statusServerInfo, true).
+					getField(FuzzyFieldContract.matchType(serverPingContract)).getType());
+		}
+	}
+	
+	/**
+	 * Retrieve the ServerPingServerData class in Minecraft 1.7.2.
+	 * @return The ServerPingServerData class.
+	 */
+	public static Class<?> getServerPingServerDataClass() {
+		if (!isUsingNetty())
+			throw new IllegalStateException("ServerPingServerData is only supported in 1.7.2.");
+		
+		try {
+			return getMinecraftClass("ServerPingServerData");
+		} catch (RuntimeException e) {
+			Class<?> serverPing = getServerPingClass();
+			
+			// Find a server ping object
+			AbstractFuzzyMatcher<Class<?>> serverDataContract = FuzzyClassContract.newBuilder().
+				constructor(FuzzyMethodContract.newBuilder().parameterExactArray(String.class, int.class)).
+				build().
+			and(getMinecraftObjectMatcher());
+			
+			return setMinecraftClass("ServerPingServerData", getTypeFromField(serverPing, serverDataContract));
+		}
+	}
+	
+	/**
+	 * Retrieve the ServerPingPlayerSample class in Minecraft 1.7.2.
+	 * @return The ServerPingPlayerSample class.
+	 */
+	public static Class<?> getServerPingPlayerSampleClass() {
+		if (!isUsingNetty())
+			throw new IllegalStateException("ServerPingPlayerSample is only supported in 1.7.2.");
+		
+		try {
+			return getMinecraftClass("ServerPingPlayerSample");
+		} catch (RuntimeException e) {
+			Class<?> serverPing = getServerPingClass();
+			
+			// Find a server ping object
+			AbstractFuzzyMatcher<Class<?>> serverPlayerContract = FuzzyClassContract.newBuilder().
+				constructor(FuzzyMethodContract.newBuilder().parameterExactArray(int.class, int.class)).
+				field(FuzzyFieldContract.newBuilder().typeExact(GameProfile[].class)).
+				build().
+			and(getMinecraftObjectMatcher());
+
+			return setMinecraftClass("ServerPingPlayerSample", getTypeFromField(serverPing, serverPlayerContract));
+		}
+	}
+	
+	/**
+	 * Retrieve the type of the field whose type matches.
+	 * @param clazz - the declaring type.
+	 * @param fieldTypeMatcher - the field type matcher.
+	 * @return The type of the field.
+	 */
+	private static Class<?> getTypeFromField(Class<?> clazz, AbstractFuzzyMatcher<Class<?>> fieldTypeMatcher) {
+		final FuzzyFieldContract fieldMatcher = FuzzyFieldContract.matchType(fieldTypeMatcher);
+		
+		return FuzzyReflection.fromClass(clazz, true).
+			getField(fieldMatcher).getType();
+	}
+
 	/**
 	 * Determine if this Minecraft version is using Netty.
 	 * <p>

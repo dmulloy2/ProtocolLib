@@ -115,6 +115,15 @@ public class FuzzyFieldContract extends AbstractFuzzyMember<Field> {
 	}
 
 	/**
+	 * Match a field by its type.
+	 * @param matcher - the type to match.
+	 * @return The field contract.
+	 */
+	public static FuzzyFieldContract matchType(AbstractFuzzyMatcher<Class<?>> matcher) {
+		return newBuilder().typeMatches(matcher).build();
+	}
+	
+	/**
 	 * Return a new fuzzy field contract builder.
 	 * @return New fuzzy field contract builder.
 	 */

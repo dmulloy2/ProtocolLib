@@ -12,8 +12,8 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * @author Kristian
  */
 public class WrappedChatComponent extends AbstractWrapper {
-	private static final Class<?> SERIALIZER = MinecraftReflection.getChatSerializer();
-	private static final Class<?> COMPONENT = MinecraftReflection.getIChatBaseComponent();
+	private static final Class<?> SERIALIZER = MinecraftReflection.getChatSerializerClass();
+	private static final Class<?> COMPONENT = MinecraftReflection.getIChatBaseComponentClass();
 	private static MethodAccessor SERIALIZE_COMPONENT = null;
 	private static MethodAccessor DESERIALIZE_COMPONENT = null;
 	private static MethodAccessor CONSTRUCT_COMPONENT = null;
@@ -35,7 +35,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 	private transient String cache;
 	
 	private WrappedChatComponent(Object handle, String cache) {
-		super(MinecraftReflection.getIChatBaseComponent());
+		super(MinecraftReflection.getIChatBaseComponentClass());
 		setHandle(handle);
 		this.cache = cache;
 	}

@@ -208,6 +208,20 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 		}
 		
 		/**
+		 * Add a new required parameters by type and order for any matching method.
+		 * @param type - the types of every parameters in order.
+		 * @return This builder, for chaining.
+		 */
+		public Builder parameterExactArray(Class<?>... types) {
+			parameterCount(types.length);
+			
+			for (int i = 0; i < types.length; i++) {
+				parameterExactType(types[i], i);
+			}
+			return this;
+		}
+		
+		/**
 		 * Add a new required parameter whose type must be a superclass of the given type.
 		 * <p>
 		 * If a parameter is of type Number, any derived class (Integer, Long, etc.) will match it.

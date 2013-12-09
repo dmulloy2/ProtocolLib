@@ -69,6 +69,7 @@ import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.google.common.base.Function;
@@ -496,12 +497,25 @@ public class PacketContainer implements Serializable {
 	 * <p>
 	 * This modifier will automatically marshall between WrappedChatComponent and the
 	 * internal Minecraft GameProfile.
-	 * @return A modifier for GameProfile fields.
+	 * @return A modifier for ChatComponent fields.
 	 */
 	public StructureModifier<WrappedChatComponent> getChatComponents() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedChatComponent>withType(
-				MinecraftReflection.getIChatBaseComponent(), BukkitConverters.getWrappedChatComponentConverter());
+				MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
+	}
+	
+	/**
+	 * Retrieve a read/write structure for the ServerPing fields in the following packet: <br>
+	 * <ul>
+	 *   <li>{@link PacketType.Status.Server#OUT_SERVER_INFO}
+	 * </ul>
+	 * @return A modifier for ServerPing fields.
+	 */
+	public StructureModifier<WrappedServerPing> getServerPings() {
+		// Convert to and from the wrapper
+		return structureModifier.<WrappedServerPing>withType(
+				MinecraftReflection.getServerPingClass(), BukkitConverters.getWrappedServerPingConverter());
 	}
 	
 	/**

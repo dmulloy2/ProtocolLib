@@ -18,6 +18,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -48,6 +50,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
@@ -230,6 +233,58 @@ public class BukkitConverters {
 					// Damn you Java
 					Class<?> dummy = List.class;
 					return (Class<List<T>>) dummy;
+				}
+			};
+	}
+	
+	/**
+	 * Retrieve an equivalent converter for an array of generic items.
+	 * <p>
+	 * The array is wrapped in a list.
+	 * @param genericItemType - the generic item type.
+	 * @param itemConverter - an equivalent converter for the generic type.
+	 * @return An equivalent converter.
+	 */
+	public static <T> EquivalentConverter<Iterable<? extends T>> getArrayConverter(
+			final Class<?> genericItemType, final EquivalentConverter<T> itemConverter) {
+		// Convert to and from the wrapper
+		return new IgnoreNullConverter<Iterable<? extends T>>() {
+				@Override
+				protected List<T> getSpecificValue(Object generic) {
+					if (generic instanceof Object[]) {
+						ImmutableList.Builder<T> builder = ImmutableList.builder();
+
+						// Copy everything to a new list
+						for (Object item : (Object[]) generic) {
+							T result = itemConverter.getSpecific(item);
+							builder.add(result);
+						}
+						return builder.build();
+					}
+					
+					// Not valid
+					return null;
+				}
+
+				@Override
+				protected Object getGenericValue(Class<?> genericType, Iterable<? extends T> specific) {
+					List<T> list = Lists.newArrayList(specific);
+					Object[] output = (Object[]) Array.newInstance(genericType, list.size());
+					
+					// Convert each object
+					for (int i = 0; i < output.length; i++) {
+						Object converted = itemConverter.getGeneric(genericItemType, list.get(i));
+						output[i] = converted;
+					}
+					return output;
+				}
+
+				@SuppressWarnings("unchecked")
+				@Override
+				public Class<Iterable<? extends T>> getSpecificType() {
+					// Damn you Java
+					Class<?> dummy = Iterable.class;
+					return (Class<Iterable<? extends T>>) dummy;
 				}
 			};
 	}
@@ -507,6 +562,29 @@ public class BukkitConverters {
 	}
 	
 	/**
+	 * Retrieve the converter for the ServerPing packet in {@link PacketType.Status.Server#OUT_SERVER_INFO}.
+	 * @return Server ping converter.
+	 */
+	public static EquivalentConverter<WrappedServerPing> getWrappedServerPingConverter() {
+		return new IgnoreNullConverter<WrappedServerPing>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, WrappedServerPing specific) {
+				return specific.getHandle();
+			}
+			
+			@Override
+			protected WrappedServerPing getSpecificValue(Object generic) {
+				return WrappedServerPing.fromHandle(generic);
+			}
+			
+			@Override
+			public Class<WrappedServerPing> getSpecificType() {
+				return WrappedServerPing.class;
+			}
+		};
+	}
+	
+	/**
 	 * Retrieve the converter used to convert between a PotionEffect and the equivalent NMS Mobeffect.
 	 * @return The potion effect converter.
 	 */
@@ -664,7 +742,7 @@ public class BukkitConverters {
 			// Types added in 1.7.2
 			if (MinecraftReflection.isUsingNetty()) {
 				builder.put(MinecraftReflection.getGameProfileClass(), (EquivalentConverter) getWrappedGameProfileConverter());
-				builder.put(MinecraftReflection.getIChatBaseComponent(), (EquivalentConverter) getWrappedChatComponentConverter());
+				builder.put(MinecraftReflection.getIChatBaseComponentClass(), (EquivalentConverter) getWrappedChatComponentConverter());
 			}
 			genericConverters = builder.build();
 		}

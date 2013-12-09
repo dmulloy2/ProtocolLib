@@ -1,10 +1,13 @@
 package com.comphenix.protocol.reflect.accessors;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.google.common.base.Joiner;
 
 public final class Accessors {
 	/**
@@ -46,7 +49,7 @@ public final class Accessors {
 	 * @param instanceClass - the type of the instance to retrieve.
 	 * @param fieldClass - type of the field to retrieve.
 	 * @param forceAccess - whether or not to look for private and protected fields.
-	 * @return The value of that field.
+	 * @return The field accessor.
 	 * @throws IllegalArgumentException If the field cannot be found.
 	 */
 	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
@@ -55,6 +58,23 @@ public final class Accessors {
 		return Accessors.getFieldAccessor(field);
 	}
 
+	/**
+	 * Retrieve an accessor (in declared order) for every field of the givne type.
+	 * @param instanceClass - the type of the instance to retrieve.
+	 * @param fieldClass - type of the field(s) to retrieve.
+	 * @param forceAccess - whether or not to look for private and protected fields.
+	 * @return The accessors.
+	 */
+	public static FieldAccessor[] getFieldAccessorArray(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
+		List<Field> fields = FuzzyReflection.fromClass(instanceClass, forceAccess).getFieldListByType(fieldClass);
+		FieldAccessor[] accessors = new FieldAccessor[fields.size()];
+		
+		for (int i = 0; i < accessors.length; i++) {
+			accessors[i] = getFieldAccessor(fields.get(i));
+		}
+		return accessors;
+	}
+	
 	/**
 	 * Retrieve an accessor for the first field of the given type.
 	 * @param instanceClass - the type of the instance to retrieve.
@@ -98,7 +118,7 @@ public final class Accessors {
 			return accessor;
 		return new SynchronizedFieldAccessor(accessor);
 	}
-
+	
 	/**
 	 * Retrieve a method accessor for a method with the given name and signature.
 	 * @param instanceClass - the parent class.
@@ -119,6 +139,33 @@ public final class Accessors {
 		return new DefaultMethodAccessor(method);
 	}
 
+	/**
+	 * Retrieve a constructor accessor for a constructor with the given signature.
+	 * @param instanceClass - the parent class.
+	 * @param parameters - the parameters.
+	 * @return The constructor accessor.
+	 */
+	public static ConstructorAccessor getConstructorAccessor(Class<?> instanceClass, Class<?>... parameters) {
+		try {
+			return getConstructorAccessor(instanceClass.getDeclaredConstructor(parameters));
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(String.format(
+				"Unable to find constructor %s(%s).", instanceClass, Joiner.on(",").join(parameters))
+			);
+		} catch (SecurityException e) {
+			throw new IllegalStateException("Cannot access constructors.", e);
+		}
+	}
+
+	/**
+	 * Retrieve a constructor accessor for a particular constructor, avoding checked exceptions.
+	 * @param constructor - the constructor to access.
+	 * @return The method accessor.
+	 */
+	public static ConstructorAccessor getConstructorAccessor(final Constructor<?> constructor) {
+		return new DefaultConstrutorAccessor(constructor);
+	}
+	
 	// Seal this class
 	private Accessors() {
 	}
