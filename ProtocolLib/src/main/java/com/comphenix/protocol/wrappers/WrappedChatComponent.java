@@ -3,7 +3,8 @@ package com.comphenix.protocol.wrappers;
 import org.bukkit.ChatColor;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.FuzzyReflection.MethodAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
@@ -21,13 +22,13 @@ public class WrappedChatComponent {
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER);
 		
 		// Retrieve the correct methods
-		SERIALIZE_COMPONENT = FuzzyReflection.getMethodAccessor(
+		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(
 			fuzzy.getMethodByParameters("serialize", String.class, new Class<?>[] { COMPONENT }));
-		DESERIALIZE_COMPONENT = FuzzyReflection.getMethodAccessor(
+		DESERIALIZE_COMPONENT = Accessors.getMethodAccessor(
 				fuzzy.getMethodByParameters("serialize", COMPONENT, new Class<?>[] { String.class }));
 	
 		// Get a component from a standard Minecraft message
-		CONSTRUCT_COMPONENT = FuzzyReflection.getMethodAccessor(
+		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(
 			MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
 	}
 	

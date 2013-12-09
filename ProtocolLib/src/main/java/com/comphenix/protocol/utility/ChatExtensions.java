@@ -33,7 +33,8 @@ import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.FuzzyReflection.MethodAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.google.common.base.Strings;
@@ -108,10 +109,10 @@ public class ChatExtensions {
 				
 				// Try one of the string constructors
 				if (MinecraftReflection.isUsingNetty()) {
-					messageFactory = FuzzyReflection.getMethodAccessor(
+					messageFactory = Accessors.getMethodAccessor(
 						MinecraftReflection.getCraftMessageClass(), "fromString", String.class);
 				} else {
-					messageFactory = FuzzyReflection.getMethodAccessor(
+					messageFactory = Accessors.getMethodAccessor(
 					  FuzzyReflection.fromClass(messageClass).getMethod(
 						FuzzyMethodContract.newBuilder().
 						requireModifier(Modifier.STATIC).

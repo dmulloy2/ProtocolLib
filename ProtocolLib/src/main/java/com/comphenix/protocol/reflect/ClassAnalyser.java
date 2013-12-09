@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
 import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
-import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
 import net.sf.cglib.asm.ClassReader;

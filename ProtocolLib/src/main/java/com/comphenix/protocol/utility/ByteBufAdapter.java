@@ -12,8 +12,8 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.LimitInputStream;
 
@@ -47,10 +47,10 @@ class ByteBufAdapter extends AbstractByteBuf {
 		// Prepare accessors
 		try {
 			if (READER_INDEX == null) {
-				READER_INDEX = FuzzyReflection.getFieldAccessor(AbstractByteBuf.class.getDeclaredField("readerIndex"));
+				READER_INDEX = Accessors.getFieldAccessor(AbstractByteBuf.class.getDeclaredField("readerIndex"));
 			}
 			if (WRITER_INDEX == null) {
-				WRITER_INDEX = FuzzyReflection.getFieldAccessor(AbstractByteBuf.class.getDeclaredField("writerIndex"));
+				WRITER_INDEX = Accessors.getFieldAccessor(AbstractByteBuf.class.getDeclaredField("writerIndex"));
 			}
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot initialize ByteBufAdapter.", e);

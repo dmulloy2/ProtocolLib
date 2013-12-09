@@ -3,8 +3,8 @@ package com.comphenix.protocol.utility;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 
 /**
  * Retrieve the content of well-known fields in Minecraft.
@@ -30,7 +30,7 @@ public class MinecraftFields {
 		if (NETWORK_ACCESSOR == null) {
 			Class<?> networkClass = MinecraftReflection.getNetworkManagerClass();
 			Class<?> connectionClass = MinecraftReflection.getNetServerHandlerClass();
-			NETWORK_ACCESSOR = FuzzyReflection.getFieldAccessor(connectionClass, networkClass, true);
+			NETWORK_ACCESSOR = Accessors.getFieldAccessor(connectionClass, networkClass, true);
 		}
 		// Retrieve the network manager
 		return NETWORK_ACCESSOR.get(getPlayerConnection(nmsPlayer));
@@ -49,7 +49,7 @@ public class MinecraftFields {
 	private static Object getPlayerConnection(Object nmsPlayer) {
 		if (CONNECTION_ACCESSOR == null) {
 			Class<?> connectionClass = MinecraftReflection.getNetServerHandlerClass();
-			CONNECTION_ACCESSOR = FuzzyReflection.getFieldAccessor(nmsPlayer.getClass(), connectionClass, true);
+			CONNECTION_ACCESSOR = Accessors.getFieldAccessor(nmsPlayer.getClass(), connectionClass, true);
 		}
 		return CONNECTION_ACCESSOR.get(nmsPlayer);
 	}

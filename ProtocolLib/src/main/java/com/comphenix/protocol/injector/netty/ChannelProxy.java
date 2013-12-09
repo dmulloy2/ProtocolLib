@@ -5,8 +5,8 @@ import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.collect.Maps;
 
 import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
@@ -128,7 +128,7 @@ abstract class ChannelProxy implements Channel {
 		
 		if (accessor == null) {
 			try {
-				accessor = FuzzyReflection.getFieldAccessor(clazz, messageClass, true);
+				accessor = Accessors.getFieldAccessor(clazz, messageClass, true);
 			} catch (IllegalArgumentException e) {
 				accessor = MARK_NO_MESSAGE;
 			}

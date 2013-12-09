@@ -1,9 +1,7 @@
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.accessors;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
-import com.comphenix.protocol.reflect.FuzzyReflection.MethodAccessor;
 
 final class DefaultMethodAccessor implements MethodAccessor {
 	private final Method method;

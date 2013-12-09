@@ -29,9 +29,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -42,85 +42,6 @@ import com.google.common.collect.Sets;
  * @author Kristian
  */
 public class FuzzyReflection {
-	/**
-	 * Represents an interface for accessing a field.
-	 * @author Kristian
-	 */
-	public interface FieldAccessor {
-		/**
-		 * Retrieve the value of a field for a particular instance.
-		 * @param instance - the instance, or NULL for a static field.
-		 * @return The value of the field.
-		 * @throws IllegalStateException If the current security context prohibits reflection.
-		 */
-		public Object get(Object instance);
-		
-		/**
-		 * Set the value of a field for a particular instance.
-		 * @param instance - the instance, or NULL for a static field.
-		 * @param value - the new value of the field.
-		 */
-		public void set(Object instance, Object value);
-		
-		/**
-		 * Retrieve the underlying field.
-		 * @return The field.
-		 */
-		public Field getField();
-	}
-	
-	/**
-	 * Represents an interface for invoking a method.
-	 * @author Kristian 
-	 */
-	public interface MethodAccessor {
-		/**
-		 * Invoke the underlying method.
-		 * @param target - the target instance, or NULL for a static method.
-		 * @param args - the arguments to pass to the method.
-		 * @return The return value, or NULL for void methods.
-		 */
-		public Object invoke(Object target, Object... args);
-		
-		/**
-		 * Retrieve the underlying method.
-		 * @return The method.
-		 */
-		public Method getMethod();
-	}
-	
-	/**
-	 * Represents a field accessor that synchronizes access to the underlying field.
-	 * @author Kristian
-	 */
-	private static final class SynchronizedFieldAccessor implements FieldAccessor {
-		private final FieldAccessor accessor;
-		private SynchronizedFieldAccessor(FieldAccessor accessor) {
-			this.accessor = accessor;
-		}
-		
-		@Override
-		public void set(Object instance, Object value) {
-			Object lock = accessor.get(instance);
-			
-			if (lock != null) {
-				synchronized (lock) {
-					accessor.set(instance, value);
-				}
-			} else {
-				accessor.set(instance, value);
-			}
-		}
-		@Override
-		public Object get(Object instance) {
-			return accessor.get(instance);
-		}
-		@Override
-		public Field getField() {
-			return accessor.getField();
-		}
-	}
-	
 	// The class we're actually representing
 	private Class<?> source;
 
@@ -171,107 +92,6 @@ public class FuzzyReflection {
 	}
 	
 	/**
-	 * Retrieve an accessor for the first field of the given type.
-	 * @param instanceClass - the type of the instance to retrieve.
-	 * @param fieldClass - type of the field to retrieve.
-	 * @param forceAccess - whether or not to look for private and protected fields.
-	 * @return The value of that field.
-	 * @throws IllegalArgumentException If the field cannot be found.
-	 */
-	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
-		// Get a field accessor
-		Field field = FuzzyReflection.fromClass(instanceClass, forceAccess).getFieldByType(null, fieldClass);
-		return getFieldAccessor(field);
-	}
-	
-	/**
-	 * Retrieve an accessor for the first field of the given type.
-	 * @param instanceClass - the type of the instance to retrieve.
-	 * @param fieldClass - type of the field to retrieve.
-	 * @param forceAccess - whether or not to look for private and protected fields.
-	 * @return The value of that field.
-	 * @throws IllegalArgumentException If the field cannot be found.
-	 */
-	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, String fieldName, boolean forceAccess) {	
-		return getFieldAccessor(FieldUtils.getField(instanceClass, fieldName, forceAccess));
-	}
-	
-	/**
-	 * Retrieve a field accessor from a given field that uses unchecked exceptions.
-	 * @param field - the field.
-	 * @return The field accessor.
-	 */
-	public static FieldAccessor getFieldAccessor(final Field field) {
-		return getFieldAccessor(field, true);
-	}
-	
-	/**
-	 * Retrieve a field accessor from a given field that uses unchecked exceptions.
-	 * @param field - the field.
-	 * @param forceAccess - whether or not to skip Java access checking.
-	 * @return The field accessor.
-	 */
-	public static FieldAccessor getFieldAccessor(final Field field, boolean forceAccess) {
-		field.setAccessible(true);
-		return new DefaultFieldAccessor(field);
-	}
-	
-	/**
-	 * Retrieve a field accessor where the write operation is synchronized on the current field value.
-	 * @param accessor - the accessor.
-	 * @return The field accessor.
-	 */
-	public static FieldAccessor getSynchronized(final FieldAccessor accessor) {
-		// Only wrap once
-		if (accessor instanceof SynchronizedFieldAccessor)
-			return accessor;
-		return new SynchronizedFieldAccessor(accessor);
-	}
-	
-	/**
-	 * Retrieve a method accessor for a method with the given name and signature.
-	 * @param instanceClass - the parent class.
-	 * @param name - the method name.
-	 * @param parameters - the parameters.
-	 * @return The method accessor.
-	 */
-	public static MethodAccessor getMethodAccessor(Class<?> instanceClass, String name, Class<?>... parameters) {
-		return getMethodAccessor(instanceClass, instanceClass, name, parameters);
-	}
-	
-	// Helper method
-	private static MethodAccessor getMethodAccessor(
-		Class<?> initialClass, Class<?> instanceClass, String name, Class<?>... parameters) {
-		
-		try {
-			Method method = instanceClass.getDeclaredMethod(name, parameters);
-			method.setAccessible(true);
-			return getMethodAccessor(method);
-			
-		} catch (NoSuchMethodException e) {
-			// Search for a private method in the superclass
-			if (initialClass.getSuperclass() != null)
-				return getMethodAccessor(initialClass, instanceClass.getSuperclass(), name, parameters);
-			
-			// Unable to find it
-			throw new IllegalArgumentException("Unable to find method " + name +
-					"(" + Joiner.on(", ").join(parameters) +") in " + initialClass);
-			
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to retrieve methods.", e);
-		}
-	}
-	
-	/**
-	 * Retrieve a method accessor for a particular method, avoding checked exceptions.
-	 * @param method - the method to access.
-	 * @return The method accessor.
-	 */
-	public static MethodAccessor getMethodAccessor(final Method method) {
-		return new DefaultMethodAccessor(method);
-	}
-	
-	/**
 	 * Retrieve the value of the first field of the given type.
 	 * @param instance - the instance to retrieve from.
 	 * @param fieldClass - type of the field to retrieve.
@@ -281,7 +101,7 @@ public class FuzzyReflection {
 	 */
 	public static <T> T getFieldValue(Object instance, Class<T> fieldClass, boolean forceAccess) {
 		@SuppressWarnings("unchecked")
-		T result = (T) getFieldAccessor(instance.getClass(), fieldClass, forceAccess).get(instance);
+		T result = (T) Accessors.getFieldAccessor(instance.getClass(), fieldClass, forceAccess).get(instance);
 		return result;
 	}
 	

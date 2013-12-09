@@ -55,6 +55,7 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ClassAnalyser;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
 import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
@@ -654,7 +655,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("IChatBaseComponent");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("IChatBaseComponent", 
-				FuzzyReflection.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
+				Accessors.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
 					getMethod().getReturnType().getComponentType()
 			);
 		}

@@ -19,7 +19,8 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 
-import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.base.Objects;
 
 /**
@@ -48,7 +49,7 @@ public class VolatileField {
 	 * @param container - the object this field belongs to.
 	 */
 	public VolatileField(Field field, Object container) {
-		this.accessor = FuzzyReflection.getFieldAccessor(field);
+		this.accessor = Accessors.getFieldAccessor(field);
 		this.container = container;
 	}
 	
@@ -59,7 +60,7 @@ public class VolatileField {
 	 * @param forceAccess - whether or not to override any scope restrictions.
 	 */
 	public VolatileField(Field field, Object container, boolean forceAccess) {
-		this.accessor = FuzzyReflection.getFieldAccessor(field, true);
+		this.accessor = Accessors.getFieldAccessor(field, true);
 		this.container = container;
 		this.forceAccess = forceAccess;
 	}
@@ -193,7 +194,7 @@ public class VolatileField {
 	 * @return A synchronized volatile field.
 	 */
 	public VolatileField toSynchronized() {
-		return new VolatileField(FuzzyReflection.getSynchronized(accessor), container);
+		return new VolatileField(Accessors.getSynchronized(accessor), container);
 	}
 	
 	/**

@@ -13,7 +13,8 @@ import org.bukkit.inventory.ItemStack;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.FuzzyReflection.MethodAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -100,7 +101,7 @@ public class StreamSerializer {
 		
 		if (MinecraftReflection.isUsingNetty()) {
 			if (READ_ITEM_METHOD == null) {
-				READ_ITEM_METHOD = FuzzyReflection.getMethodAccessor(
+				READ_ITEM_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
 						getMethodByParameters("readItemStack", 
 								MinecraftReflection.getItemStackClass(), new Class<?>[0])
@@ -110,7 +111,7 @@ public class StreamSerializer {
 			
 		} else {
 			if (READ_ITEM_METHOD == null) {
-				READ_ITEM_METHOD = FuzzyReflection.getMethodAccessor(
+				READ_ITEM_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
 						FuzzyMethodContract.newBuilder().
 						parameterCount(1).
@@ -143,7 +144,7 @@ public class StreamSerializer {
 		// Invoke the correct method
 		if (MinecraftReflection.isUsingNetty()) {
 			if (READ_NBT_METHOD == null) {
-				READ_NBT_METHOD = FuzzyReflection.getMethodAccessor(
+				READ_NBT_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
 						getMethodByParameters("readNbtCompound", 
 								MinecraftReflection.getNBTCompoundClass(), new Class<?>[0])
@@ -153,7 +154,7 @@ public class StreamSerializer {
 			
 		} else {
 			if (READ_NBT_METHOD == null) {
-				READ_NBT_METHOD = FuzzyReflection.getMethodAccessor(
+				READ_NBT_METHOD = Accessors.getMethodAccessor(
 				  FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
 					FuzzyMethodContract.newBuilder().
 					parameterCount(1).
@@ -196,7 +197,7 @@ public class StreamSerializer {
 		
 		if (MinecraftReflection.isUsingNetty()) {
 			if (READ_STRING_METHOD == null) {
-				READ_STRING_METHOD = FuzzyReflection.getMethodAccessor(
+				READ_STRING_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
 						getMethodByParameters("readString", String.class, new Class<?>[] { int.class })
 				);
@@ -205,7 +206,7 @@ public class StreamSerializer {
 			
 		} else {
 			if (READ_STRING_METHOD == null) {
-				READ_STRING_METHOD = FuzzyReflection.getMethodAccessor(
+				READ_STRING_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
 						FuzzyMethodContract.newBuilder().
 						parameterCount(2).
@@ -254,7 +255,7 @@ public class StreamSerializer {
 		
 		if (MinecraftReflection.isUsingNetty()) {
 			if (WRITE_ITEM_METHOD == null) {
-				WRITE_ITEM_METHOD = FuzzyReflection.getMethodAccessor(
+				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
 						getMethodByParameters("writeStack", MinecraftReflection.getItemStackClass())
 				);
@@ -263,7 +264,7 @@ public class StreamSerializer {
 			
 		} else {
 			if (WRITE_ITEM_METHOD == null)
-				WRITE_ITEM_METHOD = FuzzyReflection.getMethodAccessor(
+				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
 						FuzzyMethodContract.newBuilder().
 						parameterCount(2).
@@ -293,7 +294,7 @@ public class StreamSerializer {
 		
 		if (MinecraftReflection.isUsingNetty()) {
 			if (WRITE_NBT_METHOD == null) {
-				WRITE_NBT_METHOD = FuzzyReflection.getMethodAccessor(
+				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
 						getMethodByParameters("writeNbtCompound", MinecraftReflection.getNBTCompoundClass())
 				);
@@ -302,7 +303,7 @@ public class StreamSerializer {
 			
 		} else {
 			if (WRITE_NBT_METHOD == null) {
-				WRITE_NBT_METHOD = FuzzyReflection.getMethodAccessor(
+				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).getMethod(
 						FuzzyMethodContract.newBuilder().
 						parameterCount(2).
@@ -332,7 +333,7 @@ public class StreamSerializer {
 		
 		if (MinecraftReflection.isUsingNetty()) {
 			if (WRITE_STRING_METHOD == null) {
-				WRITE_STRING_METHOD = FuzzyReflection.getMethodAccessor(
+				WRITE_STRING_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
 						getMethodByParameters("writeString", String.class)
 				);
@@ -341,7 +342,7 @@ public class StreamSerializer {
 			
 		} else {
 			if (WRITE_STRING_METHOD == null) {
-				WRITE_STRING_METHOD = FuzzyReflection.getMethodAccessor(
+				WRITE_STRING_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
 						FuzzyMethodContract.newBuilder().
 						parameterCount(2).

@@ -36,8 +36,9 @@ import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
-import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
-import com.comphenix.protocol.reflect.FuzzyReflection.MethodAccessor;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -213,10 +214,10 @@ class ChannelInjector extends ByteToMessageDecoder {
 			patchEncoder(vanillaEncoder);
 			
 			if (DECODE_BUFFER == null)
-				DECODE_BUFFER = FuzzyReflection.getMethodAccessor(vanillaDecoder.getClass(), 
+				DECODE_BUFFER = Accessors.getMethodAccessor(vanillaDecoder.getClass(), 
 					"decode", ChannelHandlerContext.class, ByteBuf.class, List.class);
 			if (ENCODE_BUFFER == null)
-				ENCODE_BUFFER = FuzzyReflection.getMethodAccessor(vanillaEncoder.getClass(),
+				ENCODE_BUFFER = Accessors.getMethodAccessor(vanillaEncoder.getClass(),
 					"encode", ChannelHandlerContext.class, Object.class, ByteBuf.class);
 			
 			// Intercept sent packets
@@ -265,7 +266,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 */
 	private void patchEncoder(MessageToByteEncoder<Object> encoder) {
 		if (ENCODER_TYPE_MATCHER == null) {
-			ENCODER_TYPE_MATCHER = FuzzyReflection.getFieldAccessor(encoder.getClass(), "matcher", true);
+			ENCODER_TYPE_MATCHER = Accessors.getFieldAccessor(encoder.getClass(), "matcher", true);
 		}
 		ENCODER_TYPE_MATCHER.set(encoder, TypeParameterMatcher.get(MinecraftReflection.getPacketClass()));
 	}
@@ -490,7 +491,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 */
 	public Protocol getCurrentProtocol() {
 		if (PROTOCOL_ACCESSOR == null) {
-			PROTOCOL_ACCESSOR = FuzzyReflection.getFieldAccessor(
+			PROTOCOL_ACCESSOR = Accessors.getFieldAccessor(
 					networkManager.getClass(), MinecraftReflection.getEnumProtocolClass(), true);
 		}
 		return Protocol.fromVanilla((Enum<?>) PROTOCOL_ACCESSOR.get(networkManager));

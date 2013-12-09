@@ -1,8 +1,6 @@
-package com.comphenix.protocol.reflect;
+package com.comphenix.protocol.reflect.accessors;
 
 import java.lang.reflect.Field;
-
-import com.comphenix.protocol.reflect.FuzzyReflection.FieldAccessor;
 
 final class DefaultFieldAccessor implements FieldAccessor {
 	private final Field field;
