@@ -94,7 +94,7 @@ public class PacketType implements Serializable {
 	 * @author Kristian
 	 */
 	public static class Play {
-		private static final Protocol PROTOCOL = Protocol.GAME;
+		private static final Protocol PROTOCOL = Protocol.PLAY;
 		
 		/**
 		 * Outgoing packets.
@@ -445,7 +445,7 @@ public class PacketType implements Serializable {
 	 */
 	public enum Protocol {
 		HANDSHAKING,
-		GAME,
+		PLAY,
 		STATUS,
 		LOGIN,
 		
@@ -465,7 +465,7 @@ public class PacketType implements Serializable {
 			if ("HANDSHAKING".equals(name))
 					return HANDSHAKING;
 			if ("PLAY".equals(name))
-				return GAME;
+				return PLAY;
 			if ("STATUS".equals(name))
 				return STATUS;
 			if ("LOGIN".equals(name))
@@ -590,6 +590,11 @@ public class PacketType implements Serializable {
 	
 	/**
 	 * Retrieve a packet type from a protocol, sender and packet ID.
+	 * <p>
+	 * It is usually better to access the packet types statically, like so:
+	 * <ul>
+	 *   <li>{@link PacketType.Play.Server#SPAWN_ENTITY}
+	 * </ul>
 	 * @param protocol - the current protocol.
 	 * @param sender - the sender.
 	 * @param packetId - the packet ID.
@@ -645,7 +650,7 @@ public class PacketType implements Serializable {
 				switch (type.getProtocol()) {
 					case HANDSHAKING:
 						objEnum = type.isClient() ? Handshake.Client.getInstance() : Handshake.Server.getInstance(); break;
-					case GAME:
+					case PLAY:
 						objEnum = type.isClient() ? Play.Client.getInstance() : Play.Server.getInstance(); break;
 					case STATUS:
 						objEnum = type.isClient() ? Status.Client.getInstance() : Status.Server.getInstance(); break;

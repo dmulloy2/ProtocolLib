@@ -31,7 +31,7 @@ class PacketTypeLookup {
 			switch (protocol) {
 				case HANDSHAKING: 
 					return sender == Sender.CLIENT ? HANDSHAKE_CLIENT : HANDSHAKE_SERVER;
-				case GAME:
+				case PLAY:
 					return sender == Sender.CLIENT ? GAME_CLIENT : GAME_SERVER;
 				case STATUS:
 					return sender == Sender.CLIENT ? STATUS_CLIENT : STATUS_SERVER;

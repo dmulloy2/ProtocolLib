@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bukkit.World;
 import org.bukkit.WorldType;
@@ -34,6 +35,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -584,6 +586,8 @@ public class BukkitConverters {
 		};
 	}
 	
+
+	
 	/**
 	 * Retrieve the converter used to convert between a PotionEffect and the equivalent NMS Mobeffect.
 	 * @return The potion effect converter.
@@ -706,6 +710,11 @@ public class BukkitConverters {
 			if (MinecraftReflection.isUsingNetty()) {
 				builder.put(WrappedGameProfile.class, (EquivalentConverter) getWrappedGameProfileConverter());
 				builder.put(WrappedChatComponent.class, (EquivalentConverter) getWrappedChatComponentConverter());	
+				builder.put(WrappedServerPing.class, (EquivalentConverter) getWrappedServerPingConverter());
+				
+				for (Entry<Class<?>, EquivalentConverter<?>> entry : EnumWrappers.getFromWrapperMap().entrySet()) {
+					builder.put((Class) entry.getKey(), (EquivalentConverter) entry.getValue());
+				}
 			}
 			
 			if (hasWorldType) 
@@ -743,6 +752,11 @@ public class BukkitConverters {
 			if (MinecraftReflection.isUsingNetty()) {
 				builder.put(MinecraftReflection.getGameProfileClass(), (EquivalentConverter) getWrappedGameProfileConverter());
 				builder.put(MinecraftReflection.getIChatBaseComponentClass(), (EquivalentConverter) getWrappedChatComponentConverter());
+				builder.put(MinecraftReflection.getServerPingClass(), (EquivalentConverter) getWrappedServerPingConverter());
+				
+				for (Entry<Class<?>, EquivalentConverter<?>> entry : EnumWrappers.getFromNativeMap().entrySet()) {
+					builder.put((Class) entry.getKey(), (EquivalentConverter) entry.getValue());
+				}
 			}
 			genericConverters = builder.build();
 		}

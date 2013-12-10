@@ -45,6 +45,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -65,12 +66,18 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
+import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
+import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -516,6 +523,66 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the wrapper
 		return structureModifier.<WrappedServerPing>withType(
 				MinecraftReflection.getServerPingClass(), BukkitConverters.getWrappedServerPingConverter());
+	}
+	
+	/**
+	 * Retrieve a read/write structure for the Protocol enum.
+	 * @return A modifier for Protocol enum fields.
+	 */
+	public StructureModifier<Protocol> getProtocols() {
+		// Convert to and from the wrapper
+		return structureModifier.<Protocol>withType(
+				EnumWrappers.getProtocolClass(), EnumWrappers.getProtocolConverter());
+	}
+	
+	/**
+	 * Retrieve a read/write structure for the ClientCommand enum.
+	 * @return A modifier for ClientCommand enum fields.
+	 */
+	public StructureModifier<ClientCommand> getClientCommands() {
+		// Convert to and from the wrapper
+		return structureModifier.<ClientCommand>withType(
+				EnumWrappers.getClientCommandClass(), EnumWrappers.getClientCommandConverter());
+	}
+
+	/**
+	 * Retrieve a read/write structure for the ChatVisibility enum.
+	 * @return A modifier for ChatVisibility enum fields.
+	 */
+	public StructureModifier<ChatVisibility> getChatVisibilities() {
+		// Convert to and from the wrapper
+		return structureModifier.<ChatVisibility>withType(
+				EnumWrappers.getChatVisibilityClass(), EnumWrappers.getChatVisibilityConverter());
+	}
+	
+	/**
+	 * Retrieve a read/write structure for the Difficulty enum.
+	 * @return A modifier for Difficulty enum fields.
+	 */
+	public StructureModifier<Difficulty> getDifficulties() {
+		// Convert to and from the wrapper
+		return structureModifier.<Difficulty>withType(
+				EnumWrappers.getDifficultyClass(), EnumWrappers.getDifficultyConverter());
+	}
+	
+	/**
+	 * Retrieve a read/write structure for the EntityUse enum.
+	 * @return A modifier for EntityUse enum fields.
+	 */
+	public StructureModifier<EntityUseAction> getEntityUseActions() {
+		// Convert to and from the wrapper
+		return structureModifier.<EntityUseAction>withType(
+				EnumWrappers.getEntityUseActionClass(), EnumWrappers.getEntityUseActionConverter());
+	}
+	
+	/**
+	 * Retrieve a read/write structure for the NativeGameMode enum.
+	 * @return A modifier for NativeGameMode enum fields.
+	 */
+	public StructureModifier<NativeGameMode> getGamemodes() {
+		// Convert to and from the wrapper
+		return structureModifier.<NativeGameMode>withType(
+				EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
 	}
 	
 	/**
