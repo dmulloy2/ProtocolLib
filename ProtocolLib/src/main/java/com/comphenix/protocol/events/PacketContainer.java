@@ -39,6 +39,8 @@ import javax.annotation.Nullable;
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.UnpooledByteBufAllocator;
+
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
@@ -486,6 +488,20 @@ public class PacketContainer implements Serializable {
 		);
 	}
 	
+	
+	/**
+	 * Retrieves a read/write structure for block fields.
+	 * <p>
+	 * This modifier will automatically marshall between Material and the
+	 * internal Minecraft Block.
+	 * @return A modifier for GameProfile fields.
+	 */
+	public StructureModifier<Material> getBlocks() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.<Material>withType(
+				MinecraftReflection.getBlockClass(), BukkitConverters.getBlockConverter());
+	}
+	
 	/**
 	 * Retrieves a read/write structure for game profiles in Minecraft 1.7.2.
 	 * <p>
@@ -526,7 +542,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Retrieve a read/write structure for the Protocol enum.
+	 * Retrieve a read/write structure for the Protocol enum in 1.7.2.
 	 * @return A modifier for Protocol enum fields.
 	 */
 	public StructureModifier<Protocol> getProtocols() {
@@ -536,7 +552,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Retrieve a read/write structure for the ClientCommand enum.
+	 * Retrieve a read/write structure for the ClientCommand enum in 1.7.2.
 	 * @return A modifier for ClientCommand enum fields.
 	 */
 	public StructureModifier<ClientCommand> getClientCommands() {
@@ -546,7 +562,7 @@ public class PacketContainer implements Serializable {
 	}
 
 	/**
-	 * Retrieve a read/write structure for the ChatVisibility enum.
+	 * Retrieve a read/write structure for the ChatVisibility enum in 1.7.2.
 	 * @return A modifier for ChatVisibility enum fields.
 	 */
 	public StructureModifier<ChatVisibility> getChatVisibilities() {
@@ -556,7 +572,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Retrieve a read/write structure for the Difficulty enum.
+	 * Retrieve a read/write structure for the Difficulty enum in 1.7.2.
 	 * @return A modifier for Difficulty enum fields.
 	 */
 	public StructureModifier<Difficulty> getDifficulties() {
@@ -566,7 +582,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Retrieve a read/write structure for the EntityUse enum.
+	 * Retrieve a read/write structure for the EntityUse enum in 1.7.2.
 	 * @return A modifier for EntityUse enum fields.
 	 */
 	public StructureModifier<EntityUseAction> getEntityUseActions() {
@@ -576,7 +592,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Retrieve a read/write structure for the NativeGameMode enum.
+	 * Retrieve a read/write structure for the NativeGameMode enum in 1.7.2.
 	 * @return A modifier for NativeGameMode enum fields.
 	 */
 	public StructureModifier<NativeGameMode> getGamemodes() {

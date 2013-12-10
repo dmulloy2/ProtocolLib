@@ -378,6 +378,14 @@ public class PacketContainerTest {
 				ToStringBuilder.reflectionToString(snapshot, ToStringStyle.SHORT_PREFIX_STYLE),
 				ToStringBuilder.reflectionToString(clonedSnapshot, ToStringStyle.SHORT_PREFIX_STYLE));
 	}
+	
+	@Test
+	public void testBlocks() {
+		PacketContainer blockAction = new PacketContainer(PacketType.Play.Server.BLOCK_ACTION);
+		blockAction.getBlocks().write(0, Material.STONE);
+		
+		assertEquals(Material.STONE, blockAction.getBlocks().read(0));
+	}
 
 	@SuppressWarnings("deprecation")
 	@Test

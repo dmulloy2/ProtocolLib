@@ -21,12 +21,14 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
@@ -35,7 +37,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -44,6 +45,9 @@ import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
@@ -72,6 +76,10 @@ public class BukkitConverters {
 	// Used to access the world type
 	private static Method worldTypeName;
 	private static Method worldTypeGetType;
+	
+	// Used to get block instances
+	private static MethodAccessor GET_BLOCK;
+	private static MethodAccessor GET_BLOCK_ID;
 	
 	// Used for potion effect conversion
 	private static volatile Constructor<?> mobEffectConstructor;
@@ -586,7 +594,44 @@ public class BukkitConverters {
 		};
 	}
 	
-
+	/**
+	 * Retrieve a converter for block instances.
+	 * @return A converter for block instances.
+	 */
+	public static EquivalentConverter<Material> getBlockConverter() {
+		// Initialize if we have't already
+		if (GET_BLOCK == null || GET_BLOCK_ID == null) {
+			Class<?> block = MinecraftReflection.getBlockClass();
+			
+			FuzzyMethodContract getIdContract = FuzzyMethodContract.newBuilder().
+					parameterExactArray(block).
+					requireModifier(Modifier.STATIC).
+					build();
+			FuzzyMethodContract getBlockContract = FuzzyMethodContract.newBuilder().
+					parameterExactArray(int.class).
+					requireModifier(Modifier.STATIC).
+					build();
+			GET_BLOCK = Accessors.getMethodAccessor(FuzzyReflection.fromClass(block).getMethod(getBlockContract));
+			GET_BLOCK_ID = Accessors.getMethodAccessor(FuzzyReflection.fromClass(block).getMethod(getIdContract));
+		}
+		
+		return new IgnoreNullConverter<Material>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, Material specific) {
+				return GET_BLOCK.invoke(null, specific.getId());
+			}
+			
+			@Override
+			protected Material getSpecificValue(Object generic) {
+				return Material.getMaterial((Integer) GET_BLOCK_ID.invoke(null, generic));
+			}
+			
+			@Override
+			public Class<Material> getSpecificType() {
+				return Material.class;
+			}
+		};
+	}
 	
 	/**
 	 * Retrieve the converter used to convert between a PotionEffect and the equivalent NMS Mobeffect.
