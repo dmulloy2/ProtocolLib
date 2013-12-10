@@ -6,6 +6,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.events.ConnectionSide;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
@@ -78,6 +79,9 @@ class LoginPackets {
 	 * @return TRUE if it may, FALSE otherwise.
 	 */
 	public boolean isLoginPacket(PacketType type) {
+		if (!MinecraftReflection.isUsingNetty())
+			return isLoginPacket(type.getLegacyId(), type.getSender().toSide());
+		
 		return PacketType.Login.Client.getInstance().hasMember(type) || 
 			   PacketType.Login.Server.getInstance().hasMember(type) ||
 			   PacketType.Status.Client.getInstance().hasMember(type) || 
