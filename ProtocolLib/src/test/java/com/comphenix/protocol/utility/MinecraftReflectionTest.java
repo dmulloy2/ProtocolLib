@@ -3,6 +3,7 @@ package com.comphenix.protocol.utility;
 import static org.junit.Assert.*;
 
 import net.minecraft.server.v1_7_R1.ChatSerializer;
+import net.minecraft.server.v1_7_R1.ChunkCoordIntPair;
 import net.minecraft.server.v1_7_R1.IChatBaseComponent;
 import net.minecraft.server.v1_7_R1.NBTCompressedStreamTools;
 import net.minecraft.server.v1_7_R1.ServerPing;
@@ -61,5 +62,10 @@ public class MinecraftReflectionTest {
 	@Test
 	public void testServerPingServerData() {
 		assertEquals(ServerPingServerData.class, MinecraftReflection.getServerPingServerDataClass());
+	}
+	
+	@Test
+	public void testChunkCoordIntPair() {
+		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
 	}
 }

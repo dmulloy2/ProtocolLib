@@ -389,6 +389,15 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Determine if the given object is an NMS ChunkCoordIntPar.
+	 * @param obj - the object.
+	 * @return TRUE if it can, FALSE otherwise.
+	 */
+	public static boolean isChunkCoordIntPair(Object obj) {
+		return obj != null && getChunkCoordIntPair().isAssignableFrom(obj.getClass());
+	}
+	
+	/**
 	 * Determine if a given object is a ChunkCoordinate.
 	 * @param obj - the object to test.
 	 * @return TRUE if it can, FALSE otherwise.
@@ -1090,6 +1099,35 @@ public class MinecraftReflection {
 			return getMinecraftClass("ChunkCoordinates");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("ChunkCoordinates", WrappedDataWatcher.getTypeClass(6));
+		}
+	}
+	
+	/**
+	 * Retrieve the ChunkCoordIntPair class.
+	 * @return The ChunkCoordIntPair class.
+	 */
+	public static Class<?> getChunkCoordIntPair() {
+		if (!isUsingNetty())
+			throw new IllegalArgumentException("Not supported on 1.6.4 and older.");
+			
+		try {
+			return getMinecraftClass("ChunkCoordIntPair");
+		} catch (RuntimeException e) {
+			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
+			
+			AbstractFuzzyMatcher<Class<?>> chunkCoordIntContract = FuzzyClassContract.newBuilder().
+					   field(FuzzyFieldContract.newBuilder().
+							 typeDerivedOf(int.class)).
+					   field(FuzzyFieldContract.newBuilder().
+							 typeDerivedOf(int.class)).
+					   method(FuzzyMethodContract.newBuilder().
+							 parameterExactArray(int.class).
+							 returnDerivedOf( getChunkPositionClass() )).
+					  build().and(getMinecraftObjectMatcher());
+			
+			Field field = FuzzyReflection.fromClass(packet, true).getField(
+				FuzzyFieldContract.matchType(chunkCoordIntContract));
+			return setMinecraftClass("ChunkCoordIntPair", field.getType());
 		}
 	}
 	

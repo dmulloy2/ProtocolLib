@@ -67,6 +67,7 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
@@ -424,6 +425,17 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 				MinecraftReflection.getChunkPositionClass(),
 				ChunkPosition.getConverter());
+	}
+	
+	/**
+	 * Retrieves a read/write structure for wrapped ChunkCoordIntPairs.
+	 * @return A modifier for ChunkCoordIntPair.
+	 */
+	public StructureModifier<ChunkCoordIntPair> getChunkCoordIntPairs() {
+		// Allow access to the NBT class in packet 130
+		return structureModifier.withType(
+				MinecraftReflection.getChunkCoordIntPair(),
+				ChunkCoordIntPair.getConverter());
 	}
 	
 	/**
