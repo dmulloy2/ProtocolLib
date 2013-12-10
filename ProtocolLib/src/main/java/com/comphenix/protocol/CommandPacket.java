@@ -260,7 +260,7 @@ class CommandPacket extends CommandBase {
 			if (subCommand == SubCommand.ADD) {
 				// The add command is dangerous - don't default on the connection side
 				if (args.length == 1) {
-					sender.sendMessage(ChatColor.RED + "Please specify a connectionn side.");
+					sender.sendMessage(ChatColor.RED + "Please specify a connection side.");
 					return false;
 				}
 				

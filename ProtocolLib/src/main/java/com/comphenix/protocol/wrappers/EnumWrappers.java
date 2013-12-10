@@ -66,9 +66,9 @@ public abstract class EnumWrappers {
 	/**
 	 * Initialize the wrappers, if we haven't already.
 	 */
-	private static boolean initialize() {
-		if (MinecraftReflection.isUsingNetty())
-			return false;
+	private static void initialize() {
+		if (!MinecraftReflection.isUsingNetty())
+			throw new IllegalArgumentException("Not supported on 1.6.4 and earlier.");
 		
 		PROTOCOL_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
 		CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
@@ -83,7 +83,6 @@ public abstract class EnumWrappers {
 		associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());
 		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
 		associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
-		return true;
 	}
 	
 	private static void associate(Class<?> nativeClass, Class<?> wrapperClass, EquivalentConverter<?> converter) {

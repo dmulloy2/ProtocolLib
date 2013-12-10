@@ -595,7 +595,7 @@ public class PacketContainer implements Serializable {
 	 * Retrieve a read/write structure for the NativeGameMode enum in 1.7.2.
 	 * @return A modifier for NativeGameMode enum fields.
 	 */
-	public StructureModifier<NativeGameMode> getGamemodes() {
+	public StructureModifier<NativeGameMode> getGameModes() {
 		// Convert to and from the wrapper
 		return structureModifier.<NativeGameMode>withType(
 				EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
