@@ -1082,7 +1082,7 @@ public class MinecraftReflection {
 	}
 	
 	/**
-	 * Retrieve the ChunkPosition class.
+	 * Retrieve the ChunkCoordinates class.
 	 * @return The ChunkPosition class.
 	 */
 	public static Class<?> getChunkCoordinatesClass() {
