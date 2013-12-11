@@ -235,6 +235,24 @@ public class WrappedServerPing extends AbstractWrapper {
 	}
 	
 	/**
+	 * Retrieve a deep copy of the current wrapper object.
+	 * @return The current object.
+	 */
+	public WrappedServerPing deepClone() {
+		WrappedServerPing copy = new WrappedServerPing();
+		WrappedChatComponent motd = getMotD();
+		
+		copy.setPlayers(getPlayers());
+		copy.setFavicon(getFavicon());
+		copy.setMotD(motd != null ? motd.deepClone() : null);
+		copy.setPlayersMaximum(getPlayersMaximum());
+		copy.setPlayersOnline(getPlayersOnline());
+		copy.setVersionName(getVersionName());
+		copy.setVersionProtocol(getVersionProtocol());
+		return copy;
+	}
+	
+	/**
 	 * Represents a compressed favicon.
 	 * @author Kristian
 	 */

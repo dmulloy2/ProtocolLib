@@ -28,22 +28,10 @@ public class PacketInjectorBuilder {
 	public static PacketInjectorBuilder newBuilder() {
 		return new PacketInjectorBuilder();
 	}
-	
-	protected ClassLoader classLoader;
+
 	protected ListenerInvoker invoker;
 	protected ErrorReporter reporter;
 	protected PlayerInjectionHandler playerInjection;
-	
-	/**
-	 * Set the class loader to use during class generation.
-	 * @param classLoader - new class loader.
-	 * @return This builder, for chaining.
-	 */
-	public PacketInjectorBuilder classLoader(@Nonnull ClassLoader classLoader) {
-		Preconditions.checkNotNull(classLoader, "classLoader cannot be NULL");
-		this.classLoader = classLoader;
-		return this;
-	}
 	
 	/**
 	 * The error reporter used by the created injector.
@@ -86,8 +74,6 @@ public class PacketInjectorBuilder {
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager(); 
 		
 		// Initialize with default values if we can
-		if (classLoader == null)
-			classLoader = this.getClass().getClassLoader();
 		if (reporter == null)
 			reporter = ProtocolLibrary.getErrorReporter();
 		if (invoker == null)
@@ -105,6 +91,6 @@ public class PacketInjectorBuilder {
 	 */
 	public PacketInjector buildInjector() throws FieldAccessException {
 		initializeDefaults();
-		return new ProxyPacketInjector(classLoader, invoker, playerInjection, reporter);
+		return new ProxyPacketInjector(invoker, playerInjection, reporter);
 	}
 }

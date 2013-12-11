@@ -35,6 +35,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.utility.EnhancerFactory;
+
 /**
  * Represents a player object that can be serialized by Java.
  * 
@@ -208,7 +210,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 		}
 		
     	// MORE CGLIB magic!
-    	Enhancer ex = new Enhancer();
+    	Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
     	ex.setSuperclass(Player.class);
     	ex.setCallback(new MethodInterceptor() {
 			@Override

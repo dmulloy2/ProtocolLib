@@ -29,6 +29,7 @@ import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.MapMaker;
 
@@ -55,12 +56,10 @@ class InjectedArrayList extends ArrayList<Object> {
 	
 	private transient PlayerInjector injector;
 	private transient Set<Object> ignoredPackets;
-	private transient ClassLoader classLoader;
 	
 	private transient InvertedIntegerCallback callback;
 	
-	public InjectedArrayList(ClassLoader classLoader, PlayerInjector injector, Set<Object> ignoredPackets) {
-		this.classLoader = classLoader;
+	public InjectedArrayList(PlayerInjector injector, Set<Object> ignoredPackets) {
 		this.injector = injector;
 		this.ignoredPackets = ignoredPackets;
 		this.callback = new InvertedIntegerCallback();
@@ -135,11 +134,10 @@ class InjectedArrayList extends ArrayList<Object> {
 		//      }
 		//   ect.
 		//   }
-		Enhancer ex = new Enhancer();
+		Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
 		ex.setSuperclass(MinecraftReflection.getPacketClass());
 		ex.setInterfaces(new Class[] { FakePacket.class } );
 		ex.setUseCache(true);
-		ex.setClassLoader(classLoader);
 		ex.setCallbackType(InvertedIntegerCallback.class);
 
 		Class<?> proxyClass = ex.createClass();

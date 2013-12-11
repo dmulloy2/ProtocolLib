@@ -77,10 +77,10 @@ class NetworkFieldInjector extends PlayerInjector {
 	// Determine if we're listening
 	private IntegerSet sendingFilters;
 
-	public NetworkFieldInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
+	public NetworkFieldInjector(ErrorReporter reporter, Player player, 
 								ListenerInvoker manager, IntegerSet sendingFilters) throws IllegalAccessException {
 		
-		super(classLoader, reporter, player, manager);
+		super(reporter, player, manager);
 		this.sendingFilters = sendingFilters;
 	}
 	
@@ -161,7 +161,7 @@ class NetworkFieldInjector extends PlayerInjector {
 				
 				synchronized(syncObject) {
 					// The list we'll be inserting
-					List<Object> hackedList = new InjectedArrayList(classLoader, this, ignoredPackets);
+					List<Object> hackedList = new InjectedArrayList(this, ignoredPackets);
 					
 					// Add every previously stored packet
 					for (Object packet : minecraftList) {

@@ -5,6 +5,8 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.plugin.Plugin;
+
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.UnpooledByteBufAllocator;
 import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
@@ -161,7 +163,7 @@ public class MinecraftMethods {
 		// Initialize the methods
 		if (packetReadByteBuf == null || packetWriteByteBuf == null) {
 			// This object will allow us to detect which methods were called
-			Enhancer enhancer = new Enhancer();
+			Enhancer enhancer = EnhancerFactory.getInstance().createEnhancer();
 			enhancer.setSuperclass(MinecraftReflection.getPacketDataSerializerClass());
 			enhancer.setCallback(new MethodInterceptor() {
 				@Override

@@ -49,6 +49,7 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
 
@@ -147,19 +148,15 @@ class ProxyPacketInjector implements PacketInjector {
 	// Allows us to determine the sender
 	private PlayerInjectionHandler playerInjection;
 	
-	// Class loader
-	private ClassLoader classLoader;
-	
 	// Share callback filter
 	private CallbackFilter filter;
 	
 	// Determine if the read packet method was found
 	private boolean readPacketIntercepted = false;
 	
-	public ProxyPacketInjector(ClassLoader classLoader, ListenerInvoker manager, 
-						  PlayerInjectionHandler playerInjection, ErrorReporter reporter) throws FieldAccessException {
+	public ProxyPacketInjector(ListenerInvoker manager, PlayerInjectionHandler playerInjection, 
+							   ErrorReporter reporter) throws FieldAccessException {
 		
-		this.classLoader = classLoader;
 		this.manager = manager;
 		this.playerInjection = playerInjection;
 		this.reporter = reporter;
@@ -211,7 +208,7 @@ class ProxyPacketInjector implements PacketInjector {
 		if (hasPacketHandler(type))
 			return false;
 		
-		Enhancer ex = new Enhancer();
+		Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
 		
 		// Unfortunately, we can't easily distinguish between these two functions:
 		//   * Object lookup(int par1)
@@ -255,7 +252,6 @@ class ProxyPacketInjector implements PacketInjector {
 		ex.setSuperclass(old);
 		ex.setCallbackFilter(filter);
 		ex.setCallbackTypes(new Class<?>[] { NoOp.class, ReadPacketModifier.class, ReadPacketModifier.class });
-		ex.setClassLoader(classLoader);
 		Class proxy = ex.createClass();
 		
 		// Create the proxy handlers

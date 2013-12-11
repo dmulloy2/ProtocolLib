@@ -140,8 +140,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	boolean updateOnLogin;
 	volatile Player updatedPlayer;
 	
-	public PlayerInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, ListenerInvoker invoker) throws IllegalAccessException {
-		this.classLoader = classLoader;
+	public PlayerInjector(ErrorReporter reporter, Player player, ListenerInvoker invoker) throws IllegalAccessException {
 		this.reporter = reporter;
 		this.player = player;
 		this.invoker = invoker;

@@ -51,6 +51,7 @@ import com.comphenix.protocol.metrics.Updater.UpdateResult;
 import com.comphenix.protocol.metrics.Updater.UpdateType;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -119,7 +120,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Executors
 	private static ListeningScheduledExecutorService executorAsync;
 	private static ListeningScheduledExecutorService executorSync;
-	
+		
 	// Structure compiler
 	private BackgroundCompiler backgroundCompiler;
 	
@@ -155,6 +156,9 @@ public class ProtocolLibrary extends JavaPlugin {
 	public void onLoad() {
 		// Load configuration
 		logger = getLoggerSafely();
+		
+		// Initialize enhancer factory
+		EnhancerFactory.getInstance().setClassLoader(getClassLoader());
 		
 		// Initialize executors
 		executorAsync = BukkitExecutors.newAsynchronous(this);

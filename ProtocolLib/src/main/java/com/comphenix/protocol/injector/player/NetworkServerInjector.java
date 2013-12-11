@@ -41,6 +41,7 @@ import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -72,11 +73,11 @@ class NetworkServerInjector extends PlayerInjector {
 	private final ObjectWriter writer = new ObjectWriter();
 	
 	public NetworkServerInjector(
-			ClassLoader classLoader, ErrorReporter reporter, Player player, 
+			ErrorReporter reporter, Player player, 
 			ListenerInvoker invoker, IntegerSet sendingFilters, 
 			InjectedServerConnection serverInjection) throws IllegalAccessException {
 		
-		super(classLoader, reporter, player, invoker);
+		super(reporter, player, invoker);
 		this.sendingFilters = sendingFilters;
 		this.serverInjection = serverInjection;
 	}
@@ -148,7 +149,7 @@ class NetworkServerInjector extends PlayerInjector {
 	private boolean tryInjectManager() {
 		Class<?> serverClass = serverHandler.getClass();
 		
-		Enhancer ex = new Enhancer();
+		Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
 		Callback sendPacketCallback = new MethodInterceptor() {
 			@Override
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {

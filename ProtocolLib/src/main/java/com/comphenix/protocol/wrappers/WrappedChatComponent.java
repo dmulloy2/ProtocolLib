@@ -97,6 +97,14 @@ public class WrappedChatComponent extends AbstractWrapper {
 		this.cache = obj;
 	}
 
+	/**
+	 * Retrieve a deep copy of the current chat component.
+	 * @return A copy of the current component.
+	 */
+	public WrappedChatComponent deepClone() {
+		return fromJson(getJson());
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this)

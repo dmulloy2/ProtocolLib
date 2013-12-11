@@ -124,17 +124,13 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	// List of packet listeners
 	private Set<PacketListener> packetListeners;
 	
-	// The class loader we're using
-	private ClassLoader classLoader;
-	
 	// Used to filter injection attempts
 	private Predicate<GamePhase> injectionFilter;
 	
 	public ProxyPlayerInjectionHandler(
-			ClassLoader classLoader, ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
+			ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
 			ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server, MinecraftVersion version) {
 		
-		this.classLoader = classLoader;
 		this.reporter = reporter;
 		this.invoker = invoker;
 		this.injectionFilter = injectionFilter;
@@ -224,11 +220,11 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		// Construct the correct player hook
 		switch (hook) {
 		case NETWORK_HANDLER_FIELDS: 
-			return new NetworkFieldInjector(classLoader, reporter, player, invoker, sendingFilters);
+			return new NetworkFieldInjector(reporter, player, invoker, sendingFilters);
 		case NETWORK_MANAGER_OBJECT: 
-			return new NetworkObjectInjector(classLoader, reporter, player, invoker, sendingFilters);
+			return new NetworkObjectInjector(reporter, player, invoker, sendingFilters);
 		case NETWORK_SERVER_OBJECT:
-			return new NetworkServerInjector(classLoader, reporter, player, invoker, sendingFilters, serverInjection);
+			return new NetworkServerInjector(reporter, player, invoker, sendingFilters, serverInjection);
 		default:
 			throw new IllegalArgumentException("Cannot construct a player injector.");
 		}

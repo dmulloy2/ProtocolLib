@@ -15,6 +15,7 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
@@ -39,15 +40,12 @@ public class InterceptWritePacket {
 	private boolean writePacketIntercepted;
 	
 	private ConcurrentMap<Integer, Class<?>> proxyClasses = Maps.newConcurrentMap();
-	
-	private ClassLoader classLoader;
 	private ErrorReporter reporter;
 	
 	private WritePacketModifier modifierWrite;
 	private WritePacketModifier modifierRest;
 
-	public InterceptWritePacket(ClassLoader classLoader, ErrorReporter reporter) {
-		this.classLoader = classLoader;
+	public InterceptWritePacket(ErrorReporter reporter) {
 		this.reporter = reporter;
 		
 		// Initialize modifiers
@@ -57,7 +55,7 @@ public class InterceptWritePacket {
 	
 	private Class<?> createProxyClass(int packetId) {
 		// Construct the proxy object
-		Enhancer ex = new Enhancer();
+		Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
 		
 		// Attempt to share callback filter 
 		if (filter == null) {
@@ -80,7 +78,6 @@ public class InterceptWritePacket {
 		ex.setCallbackFilter(filter);
 		ex.setUseCache(false);
 		
-		ex.setClassLoader(classLoader);
 		ex.setCallbackTypes( new Class[] { WritePacketModifier.class, WritePacketModifier.class });
 		Class<?> proxyClass = ex.createClass();
 		

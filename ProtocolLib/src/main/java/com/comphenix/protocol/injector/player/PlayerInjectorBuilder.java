@@ -32,7 +32,6 @@ public class PlayerInjectorBuilder {
 		// Use the static method.
 	}
 
-	protected ClassLoader classLoader;
 	protected ErrorReporter reporter;
 	protected Predicate<GamePhase> injectionFilter;
 	protected ListenerInvoker invoker;
@@ -40,17 +39,6 @@ public class PlayerInjectorBuilder {
 	protected Server server;
 	protected MinecraftVersion version;
 
-	/**
-	 * Set the class loader to use during class generation.
-	 * @param classLoader - new class loader.
-	 * @return This builder, for chaining.
-	 */
-	public PlayerInjectorBuilder classLoader(@Nonnull ClassLoader classLoader) {
-		Preconditions.checkNotNull(classLoader, "classLoader cannot be NULL");
-		this.classLoader = classLoader;
-		return this;
-	}
-	
 	/**
 	 * The error reporter used by the created injector.
 	 * @param reporter - new error reporter.
@@ -126,8 +114,6 @@ public class PlayerInjectorBuilder {
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager(); 
 		
 		// Initialize with default values if we can
-		if (classLoader == null)
-			classLoader = this.getClass().getClassLoader();
 		if (reporter == null)
 			reporter = ProtocolLibrary.getErrorReporter();
 		if (invoker == null)
@@ -151,7 +137,7 @@ public class PlayerInjectorBuilder {
 		initializeDefaults();
 		
 		return new ProxyPlayerInjectionHandler(
-				classLoader, reporter, injectionFilter, 
+				reporter, injectionFilter, 
 				invoker, packetListeners, server, version);
 	}
 }

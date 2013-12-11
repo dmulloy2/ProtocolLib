@@ -41,6 +41,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
@@ -68,16 +69,16 @@ public class NetworkObjectInjector extends PlayerInjector {
 	 * Create a new network object injector.
 	 * <p>
 	 * Note: This class is intended to be internal. Do not use.
-	 * @param classLoader - the class loader.
 	 * @param reporter - the error reporter.
 	 * @param player - the player Bukkit entity.
 	 * @param invoker - the packet invoker.
 	 * @param sendingFilters - list of permitted packet IDs.
 	 * @throws IllegalAccessException If reflection failed.
 	 */
-	public NetworkObjectInjector(ClassLoader classLoader, ErrorReporter reporter, Player player, 
+	public NetworkObjectInjector(ErrorReporter reporter, Player player, 
 								 ListenerInvoker invoker, IntegerSet sendingFilters) throws IllegalAccessException {
-		super(classLoader, reporter, player, invoker);
+		
+		super(reporter, player, invoker);
 		this.sendingFilters = sendingFilters;
 	}
 
@@ -194,8 +195,7 @@ public class NetworkObjectInjector extends PlayerInjector {
 			}
 			
 			// Create our proxy object
-			Enhancer ex = new Enhancer();
-			ex.setClassLoader(classLoader);
+			Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
 			ex.setSuperclass(networkInterface);
 			ex.setCallbacks(new Callback[] { queueFilter, dispatch });
 			ex.setCallbackFilter(callbackFilter);

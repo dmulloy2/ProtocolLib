@@ -43,6 +43,7 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 import com.google.common.collect.Iterables;
@@ -98,7 +99,6 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	private ListenerInvoker invoker;
 	private ErrorReporter reporter;
 	private Server server;
-	private ClassLoader classLoader;
 	
 	// The proxy packet injector
 	private PacketInjector proxyPacketInjector;
@@ -106,8 +106,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	/**
 	 * Create a new spigot injector.
 	 */
-	public SpigotPacketInjector(ClassLoader classLoader, ErrorReporter reporter, ListenerInvoker invoker, Server server) {
-		this.classLoader = classLoader;
+	public SpigotPacketInjector(ErrorReporter reporter, ListenerInvoker invoker, Server server) {
 		this.reporter = reporter;
 		this.invoker = invoker;
 		this.server = server;
@@ -220,8 +219,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		// Don't care for everything else
 		callbacks[2] = NoOp.INSTANCE;
 		
-		Enhancer enhancer = new Enhancer();
-		enhancer.setClassLoader(classLoader);
+		Enhancer enhancer = EnhancerFactory.getInstance().createEnhancer();
 		enhancer.setSuperclass(getSpigotListenerClass());
 		enhancer.setCallbacks(callbacks);
 		enhancer.setCallbackFilter(new CallbackFilter() {
@@ -316,7 +314,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			
 			try {
 				NetworkObjectInjector created = new NetworkObjectInjector(
-					classLoader, filterImpossibleWarnings(reporter), null, invoker, null);
+					filterImpossibleWarnings(reporter), null, invoker, null);
 			
 				created.initializePlayer(player);
 				
@@ -344,7 +342,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			// Inject the network manager
 			try {
 				NetworkObjectInjector created = new NetworkObjectInjector(
-						classLoader, filterImpossibleWarnings(reporter), null, invoker, null);
+						filterImpossibleWarnings(reporter), null, invoker, null);
 				
 				if (MinecraftReflection.isLoginHandler(connection)) {
 					created.initialize(connection);
@@ -501,7 +499,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	void injectPlayer(Player player) {
 		try {
 			NetworkObjectInjector dummy = new NetworkObjectInjector(
-					classLoader, filterImpossibleWarnings(reporter), player, invoker, null);
+					filterImpossibleWarnings(reporter), player, invoker, null);
 			dummy.initializePlayer(player);
 			
 			// Save this player for the network manager
