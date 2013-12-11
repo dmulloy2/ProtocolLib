@@ -199,7 +199,7 @@ public class SafeCacheBuilder<K, V> {
 	 * @throws IllegalStateException if a removal listener was already set
 	 */
 	@SuppressWarnings("unchecked")
-	public <K1 extends K, V1 extends V> SafeCacheBuilder<K1, V1> removalListener(RemovalListener<? super K, ? super V> listener) {
+	public <K1 extends K, V1 extends V> SafeCacheBuilder<K1, V1> removalListener(RemovalListener<? super K1, ? super V1> listener) {
 		builder.removalListener(listener);
 		return (SafeCacheBuilder<K1, V1>) this;
 	}
