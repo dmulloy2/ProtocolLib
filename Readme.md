@@ -36,90 +36,99 @@ You no longer have to reference CraftBukkit!
 To use the library, first add ProtocolLib.jar to your Java build path. Then, add ProtocolLib
 as a dependency (or soft-dependency, if you can live without it) to your plugin.yml file:
 
-    depends: [ProtocolLib]
+````yml
+depends: [ProtocolLib]
+````
 
 Future versions will be available in a public Maven repository, possibly on Maven central. But it
 will always be possible to reference ProtocolLib manually.
 
 Then get a reference to ProtocolManager in onLoad() and you're good to go.
 
-    private ProtocolManager protocolManager;
-    
-    public void onLoad() {
-        protocolManager = ProtocolLibrary.getProtocolManager();
-    }
+````java
+private ProtocolManager protocolManager;
+
+public void onLoad() {
+    protocolManager = ProtocolLibrary.getProtocolManager();
+}
+````
 
 To listen for packets sent by the server to a client, add a server-side listener:
 
-    // Disable all sound effects
-    protocolManager.addPacketListener(
-      new PacketAdapter(this, ConnectionSide.SERVER_SIDE, ListenerPriority.NORMAL, 0x3E) {
-        @Override
-        public void onPacketSending(PacketEvent event) {
-            // Item packets
-            switch (event.getPacketID()) {
-            case 0x3E: // Sound effect
-                event.setCancelled(true);
-                break;
-            }
+````java
+// Disable all sound effects
+protocolManager.addPacketListener(
+  new PacketAdapter(this, ConnectionSide.SERVER_SIDE, ListenerPriority.NORMAL, 0x3E) {
+    @Override
+    public void onPacketSending(PacketEvent event) {
+        // Item packets
+        switch (event.getPacketID()) {
+        case 0x3E: // Sound effect
+            event.setCancelled(true);
+            break;
         }
-    });
-
+    }
+});
+````
 
 It's also possible to read and modify the content of these packets. For instance, you can create a global
 censor by listening for Packet3Chat events:
 
-    // Censor
-    protocolManager.addPacketListener(
-      new PacketAdapter(this, ConnectionSide.CLIENT_SIDE, ListenerPriority.NORMAL, 0x03) {
-        @Override
-        public void onPacketReceiving(PacketEvent event) {
-            if (event.getPacketID() == 0x03) {
-                try {
-                    PacketContainer packet = event.getPacket();
-                    String message = packet.getSpecificModifier(String.class).read(0);
-                    
-                    if (message.contains("shit") || message.contains("damn")) {
-                        event.setCancelled(true);
-                        event.getPlayer().sendMessage("Bad manners!");
-                    }
-                    		
-                } catch (FieldAccessException e) {
-                    getLogger().log(Level.SEVERE, "Couldn't access field.", e);
+````java
+// Censor
+protocolManager.addPacketListener(
+  new PacketAdapter(this, ConnectionSide.CLIENT_SIDE, ListenerPriority.NORMAL, 0x03) {
+    @Override
+    public void onPacketReceiving(PacketEvent event) {
+        if (event.getPacketID() == 0x03) {
+            try {
+                PacketContainer packet = event.getPacket();
+                String message = packet.getSpecificModifier(String.class).read(0);
+                
+                if (message.contains("shit") || message.contains("damn")) {
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage("Bad manners!");
                 }
+                		
+            } catch (FieldAccessException e) {
+                getLogger().log(Level.SEVERE, "Couldn't access field.", e);
             }
         }
-    });
-
+    }
+});
+````
 
 ### Sending packets
 
 Normally, you might have to do something ugly like the following:
 
-    Packet60Explosion fakeExplosion = new Packet60Explosion();
-    	
-    fakeExplosion.a = player.getLocation().getX();
-    fakeExplosion.b = player.getLocation().getY();
-    fakeExplosion.c = player.getLocation().getZ();
-    fakeExplosion.d = 3.0F;
-    fakeExplosion.e = new ArrayList<Object>();
+````java
+Packet60Explosion fakeExplosion = new Packet60Explosion();
+	
+fakeExplosion.a = player.getLocation().getX();
+fakeExplosion.b = player.getLocation().getY();
+fakeExplosion.c = player.getLocation().getZ();
+fakeExplosion.d = 3.0F;
+fakeExplosion.e = new ArrayList<Object>();
 
-    ((CraftPlayer) player).getHandle().netServerHandler.sendPacket(fakeExplosion);
+((CraftPlayer) player).getHandle().netServerHandler.sendPacket(fakeExplosion);
+````
 
 But with ProtocolLib, you can turn that into something more manageable. Notice that 
 you don't have to create an ArrayList this version:
 
-    PacketContainer fakeExplosion = protocolManager.createPacket(60);
-    
-    fakeExplosion.getSpecificModifier(double.class).
-        write(0, player.getLocation().getX()).
-        write(1, player.getLocation().getY()).
-        write(2, player.getLocation().getZ());
-    fakeExplosion.getSpecificModifier(float.class).
-        write(0, 3.0F);
-    
-    protocolManager.sendServerPacket(player, fakeExplosion);
+````java
+PacketContainer fakeExplosion = protocolManager.createPacket(60);
 
+fakeExplosion.getSpecificModifier(double.class).
+    write(0, player.getLocation().getX()).
+    write(1, player.getLocation().getY()).
+    write(2, player.getLocation().getZ());
+fakeExplosion.getSpecificModifier(float.class).
+    write(0, 3.0F);
+
+protocolManager.sendServerPacket(player, fakeExplosion);
+````
 
 Compatiblity
 ------------
