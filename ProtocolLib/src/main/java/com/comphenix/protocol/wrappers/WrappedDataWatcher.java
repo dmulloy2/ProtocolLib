@@ -41,6 +41,9 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.ReadOnlyFieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.google.common.base.Function;
@@ -58,8 +61,11 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 */
 	private static Map<Class<?>, Integer> TYPE_MAP;
 
+	// Accessors
+	private static FieldAccessor TYPE_MAP_ACCESSOR;
+	private static FieldAccessor VALUE_MAP_ACCESSOR;
+	
 	// Fields
-	private static Field VALUE_MAP_FIELD;
 	private static Field READ_WRITE_LOCK_FIELD;
 	private static Field ENTITY_FIELD;
 	
@@ -509,13 +515,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 */
 	@SuppressWarnings("unchecked")
 	protected Map<Integer, Object> getWatchableObjectMap() throws FieldAccessException {
-		if (watchableObjects == null) {
-			try {
-				watchableObjects = (Map<Integer, Object>) FieldUtils.readField(VALUE_MAP_FIELD, handle, true);
-			} catch (IllegalAccessException e) {
-				throw new FieldAccessException("Cannot read watchable object field.", e);
-			}
-		}
+		if (watchableObjects == null) 
+			watchableObjects = (Map<Integer, Object>) VALUE_MAP_ACCESSOR.get(handle);
 		return watchableObjects;
 	}
 	
@@ -561,17 +562,17 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		for (Field lookup : fuzzy.getFieldListByType(Map.class)) {
 			if (Modifier.isStatic(lookup.getModifiers())) {
 				// This must be the type map
-				try {
-					TYPE_MAP = (Map<Class<?>, Integer>) FieldUtils.readStaticField(lookup, true);
-				} catch (IllegalAccessException e) {
-					throw new FieldAccessException("Cannot access type map field.", e);
-				}
-				
+				TYPE_MAP_ACCESSOR = Accessors.getFieldAccessor(lookup, true);
 			} else {
 				// If not, then we're probably dealing with the value map
-				VALUE_MAP_FIELD = lookup;
+				VALUE_MAP_ACCESSOR = Accessors.getFieldAccessor(lookup, true);
 			}
 		}
+		// Spigot workaround
+		initializeSpigot(fuzzy);
+		
+		// Initialize static type type
+		TYPE_MAP = (Map<Class<?>, Integer>) TYPE_MAP_ACCESSOR.get(null);
 		
 		try {
 			READ_WRITE_LOCK_FIELD = fuzzy.getFieldByType("readWriteLock", ReadWriteLock.class);
@@ -585,6 +586,32 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			ENTITY_FIELD.setAccessible(true);
 		}
 		initializeMethods(fuzzy);
+	}
+	
+	private static void initializeSpigot(FuzzyReflection fuzzy) {
+		// See if the workaround is needed
+		if (TYPE_MAP_ACCESSOR != null && VALUE_MAP_ACCESSOR != null)
+			return;
+		
+		for (Field lookup : fuzzy.getFields()) {
+			final Class<?> type = lookup.getType();
+			
+			if (TroveWrapper.isTroveClass(type)) {
+				// Create a wrapper accessor
+				final ReadOnlyFieldAccessor accessor = TroveWrapper.wrapMapField(Accessors.getFieldAccessor(lookup, true));
+				
+				if (Modifier.isStatic(lookup.getModifiers())) {
+					TYPE_MAP_ACCESSOR = accessor;
+				} else {
+					VALUE_MAP_ACCESSOR = accessor;
+				}
+			}
+		}
+		
+		if (TYPE_MAP_ACCESSOR == null)
+			throw new IllegalArgumentException("Unable to find static type map.");
+		if (VALUE_MAP_ACCESSOR == null)
+			throw new IllegalArgumentException("Unable to find static value map.");
 	}
 	
 	private static void initializeMethods(FuzzyReflection fuzzy) {

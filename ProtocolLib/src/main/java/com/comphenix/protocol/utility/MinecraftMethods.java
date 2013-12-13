@@ -5,8 +5,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-import org.bukkit.plugin.Plugin;
-
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.UnpooledByteBufAllocator;
 import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
