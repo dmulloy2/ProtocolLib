@@ -5,7 +5,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.bukkit.Bukkit;
@@ -112,10 +111,9 @@ public class NettyProtocolInjector implements ChannelListener {
             	final List<Object> list = (List<Object>) field.getValue();
 
             	// Synchronize with each list before we attempt to replace them.
-            	// We also reapply the synchronized list wrapper.
-				field.setValue(Collections.synchronizedList(new BootstrapList(
+				field.setValue(new BootstrapList(
 	            	list, connectionHandler
-	            )));
+	            ));
             }
 
             injected = true;
@@ -174,7 +172,7 @@ public class NettyProtocolInjector implements ChannelListener {
 
             for (VolatileField field : bootstrapFields) {
             	Object value = field.getValue();
-            	
+
             	// Undo the processed channels, if any 
             	if (value instanceof BootstrapList) {
             		((BootstrapList) value).close();
