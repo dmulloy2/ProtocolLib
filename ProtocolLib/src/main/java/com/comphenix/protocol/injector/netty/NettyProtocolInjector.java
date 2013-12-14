@@ -21,6 +21,8 @@ import net.minecraft.util.io.netty.channel.ChannelInitializer;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
@@ -39,13 +41,17 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
 public class NettyProtocolInjector implements ChannelListener {   
+	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to to inject incoming channel %s.");
+	
     private volatile boolean injected;
     private volatile boolean closed;
     
     // The temporary player factory
     private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
-    private List<Object> networkManagers;
+    
+    // List of network managers
+    private volatile List<Object> networkManagers;
     
 	// Different sending filters
 	private PacketTypeSet sendingFilters = new PacketTypeSet();
@@ -85,16 +91,21 @@ public class NettyProtocolInjector implements ChannelListener {
             final ChannelInboundHandler initProtocol = new ChannelInitializer<Channel>() {
                 @Override
                 protected void initChannel(Channel channel) throws Exception {
-                    // Check and see if the injector has closed
-                    synchronized (this) {
-                        if (closed)
-                            return;
-                    }
-                    
-                    // This can take a while, so we need to stop the main thread from interfering
-                    synchronized (networkManagers) {
-                    	ChannelInjector.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
-					}
+                	try {
+	                    // Check and see if the injector has closed
+	                    synchronized (this) {
+	                        if (closed)
+	                            return;
+	                    }
+	                    
+	                    // This can take a while, so we need to stop the main thread from interfering
+	                    synchronized (networkManagers) {
+	                    	ChannelInjector.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
+						}
+                	} catch (Exception e) {
+                		reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).
+                				messageParam(channel).error(e));
+                	}
                 }
             };
             
@@ -111,7 +122,7 @@ public class NettyProtocolInjector implements ChannelListener {
             };
             
             // Get the current NetworkMananger list
-            Object networkManagerList = FuzzyReflection.fromObject(serverConnection, true).
+            networkManagers = (List<Object>) FuzzyReflection.fromObject(serverConnection, true).
             	invokeMethod(null, "getNetworkManagers", List.class, serverConnection);
             
             // Insert ProtocolLib's connection interceptor
@@ -121,9 +132,7 @@ public class NettyProtocolInjector implements ChannelListener {
             	final List<Object> list = (List<Object>) field.getValue();
      
             	// We don't have to override this list
-            	if (list == networkManagerList) {
-            		// Save it for later
-            		networkManagers = list;
+            	if (list == networkManagers) {
             		continue;
             	}
             	
