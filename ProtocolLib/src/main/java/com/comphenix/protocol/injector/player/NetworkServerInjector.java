@@ -177,7 +177,6 @@ class NetworkServerInjector extends PlayerInjector {
 			callbackFilter = new SendMethodFilter();
 		}
 		
-		ex.setClassLoader(classLoader);
 		ex.setSuperclass(serverClass);
 		ex.setCallbacks(new Callback[] { sendPacketCallback, noOpCallback });
 		ex.setCallbackFilter(callbackFilter);

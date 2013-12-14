@@ -125,9 +125,6 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	// Handle errors
 	protected ErrorReporter reporter;
-
-	// Used to construct proxy objects
-	protected ClassLoader classLoader;
 	
 	// Previous markers
 	protected Map<Object, NetworkMarker> queuedMarkers = new MapMaker().weakKeys().makeMap();
