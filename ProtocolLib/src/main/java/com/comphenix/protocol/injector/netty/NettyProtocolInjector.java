@@ -45,7 +45,7 @@ public class NettyProtocolInjector implements ChannelListener {
     // The temporary player factory
     private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
-    private BootstrapList networkManagers;
+    private List<Object> networkManagers;
     
 	// Different sending filters
 	private PacketTypeSet sendingFilters = new PacketTypeSet();
@@ -119,16 +119,16 @@ public class NettyProtocolInjector implements ChannelListener {
             
             for (VolatileField field : bootstrapFields) {
             	final List<Object> list = (List<Object>) field.getValue();
-            	final BootstrapList bootstrap = new BootstrapList(list, connectionHandler);
-            	
-            	// Synchronize with each list before we attempt to replace them.
-				field.setValue(bootstrap);
-				
+     
+            	// We don't have to override this list
             	if (list == networkManagerList) {
             		// Save it for later
-            		networkManagers = bootstrap;
+            		networkManagers = list;
             		continue;
             	}
+            	
+            	// Synchronize with each list before we attempt to replace them.
+				field.setValue(new BootstrapList(list, connectionHandler));
             }
 
             injected = true;
