@@ -279,6 +279,26 @@ public class FuzzyReflection {
 		throw new IllegalArgumentException("Unable to find " + name + " in " + source.getName());
 	}
 	
+	/**
+	 * Invoke a method by return type and parameters alone.
+	 * <p>
+	 * The parameters must be non-null for this to work.
+	 * @param target - the instance.
+	 * @param name - the name of the method - for debugging.
+	 * @param returnType - the expected return type.
+	 * @param parameters - the parameters.
+	 * @return The return value, or NULL.
+	 */
+	public Object invokeMethod(Object target, String name, Class<?> returnType, Object... parameters) {
+		Class<?>[] types = new Class<?>[parameters.length];
+		
+		for (int i = 0; i < types.length; i++) {
+			types[i] = parameters[i].getClass();
+		}
+		return Accessors.getMethodAccessor(getMethodByParameters(name, returnType, types)).
+			invoke(target, parameters);
+	}
+	
 	private boolean matchParameters(Pattern[] parameterMatchers, Class<?>[] argTypes) {
 		if (parameterMatchers.length != argTypes.length)
 			throw new IllegalArgumentException("Arrays must have the same cardinality.");

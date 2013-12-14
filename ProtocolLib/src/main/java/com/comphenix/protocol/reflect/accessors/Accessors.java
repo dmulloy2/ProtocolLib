@@ -136,6 +136,17 @@ public final class Accessors {
 	 * @return The method accessor.
 	 */
 	public static MethodAccessor getMethodAccessor(final Method method) {
+		return getMethodAccessor(method, true);
+	}
+	
+	/**
+	 * Retrieve a method accessor for a particular method, avoding checked exceptions.
+	 * @param method - the method to access.
+	 * @param forceAccess - whether or not to skip Java access checking.
+	 * @return The method accessor.
+	 */
+	public static MethodAccessor getMethodAccessor(final Method method, boolean forceAccess) {
+		method.setAccessible(forceAccess);
 		return new DefaultMethodAccessor(method);
 	}
 

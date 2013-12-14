@@ -27,9 +27,7 @@ class BootstrapList implements List<Object> {
 		
 		// Process all existing bootstraps
 		for (Object item : this) {
-			if (item instanceof ChannelFuture) {
-				processBootstrap((ChannelFuture) item);
-			}
+			processElement(item);
 		}
 	}
 

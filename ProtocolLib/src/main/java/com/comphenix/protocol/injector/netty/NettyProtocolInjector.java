@@ -35,6 +35,7 @@ import com.comphenix.protocol.injector.spigot.AbstractPacketInjector;
 import com.comphenix.protocol.injector.spigot.AbstractPlayerHandler;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
@@ -45,10 +46,12 @@ public class NettyProtocolInjector implements ChannelListener {
     // The temporary player factory
     private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
+    private BootstrapList networkManagers;
     
 	// Different sending filters
 	private PacketTypeSet sendingFilters = new PacketTypeSet();
 	private PacketTypeSet reveivedFilters = new PacketTypeSet();
+	
 	// Packets that must be executed on the main thread
 	private PacketTypeSet mainThreadFilters = new PacketTypeSet();
 	
@@ -88,7 +91,11 @@ public class NettyProtocolInjector implements ChannelListener {
                         if (closed)
                             return;
                     }
-                    ChannelInjector.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
+                    
+                    // This can take a while, so we need to stop the main thread from interfering
+                    synchronized (networkManagers) {
+                    	ChannelInjector.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
+					}
                 }
             };
             
@@ -104,16 +111,25 @@ public class NettyProtocolInjector implements ChannelListener {
             	}
             };
             
+            // Get the current NetworkMananger list
+            Object networkManagerList = FuzzyReflection.fromObject(serverConnection, true).
+            	invokeMethod(null, "getNetworkManagers", List.class, serverConnection);
+            
             // Insert ProtocolLib's connection interceptor
             bootstrapFields = getBootstrapFields(serverConnection);
             
             for (VolatileField field : bootstrapFields) {
             	final List<Object> list = (List<Object>) field.getValue();
-
+            	final BootstrapList bootstrap = new BootstrapList(list, connectionHandler);
+            	
             	// Synchronize with each list before we attempt to replace them.
-				field.setValue(new BootstrapList(
-	            	list, connectionHandler
-	            ));
+				field.setValue(bootstrap);
+				
+            	if (list == networkManagerList) {
+            		// Save it for later
+            		networkManagers = bootstrap;
+            		continue;
+            	}
             }
 
             injected = true;
