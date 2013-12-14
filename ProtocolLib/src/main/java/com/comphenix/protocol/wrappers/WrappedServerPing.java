@@ -46,7 +46,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT = 
-		BukkitConverters.getArrayConverter(GameProfile[].class, BukkitConverters.getWrappedGameProfileConverter());
+		BukkitConverters.getArrayConverter(GameProfile.class, BukkitConverters.getWrappedGameProfileConverter());
 	
 	// Server ping player sample fields
 	private static Class<?> PLAYERS_CLASS = MinecraftReflection.getServerPingPlayerSampleClass();

@@ -568,7 +568,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 				VALUE_MAP_ACCESSOR = Accessors.getFieldAccessor(lookup, true);
 			}
 		}
-		// Spigot workaround
+		// Spigot workaround (not necessary
 		initializeSpigot(fuzzy);
 		
 		// Initialize static type type
@@ -588,6 +588,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		initializeMethods(fuzzy);
 	}
 	
+	// TODO: Remove, as this was fixed in build #1189 of Spigot
 	private static void initializeSpigot(FuzzyReflection fuzzy) {
 		// See if the workaround is needed
 		if (TYPE_MAP_ACCESSOR != null && VALUE_MAP_ACCESSOR != null)

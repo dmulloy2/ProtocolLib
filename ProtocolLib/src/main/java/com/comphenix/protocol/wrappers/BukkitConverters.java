@@ -256,7 +256,7 @@ public class BukkitConverters {
 	 * @return An equivalent converter.
 	 */
 	public static <T> EquivalentConverter<Iterable<? extends T>> getArrayConverter(
-			final Class<?> genericItemType, final EquivalentConverter<T> itemConverter) {
+	  final Class<?> genericItemType, final EquivalentConverter<T> itemConverter) {
 		// Convert to and from the wrapper
 		return new IgnoreNullConverter<Iterable<? extends T>>() {
 				@Override
@@ -279,7 +279,7 @@ public class BukkitConverters {
 				@Override
 				protected Object getGenericValue(Class<?> genericType, Iterable<? extends T> specific) {
 					List<T> list = Lists.newArrayList(specific);
-					Object[] output = (Object[]) Array.newInstance(genericType, list.size());
+					Object[] output = (Object[]) Array.newInstance(genericItemType, list.size());
 					
 					// Convert each object
 					for (int i = 0; i < output.length; i++) {
