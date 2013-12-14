@@ -10,11 +10,13 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.ReadOnlyFieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.utility.ClassSource;
+import com.google.common.base.Function;
 
 /**
  * Wrap a GNU Trove Collection class with an equivalent Java Collection class.
@@ -38,9 +40,24 @@ public class TroveWrapper {
 	 * @return The read only accessor.
 	 */
 	public static ReadOnlyFieldAccessor wrapMapField(final FieldAccessor accessor) {
+		return wrapMapField(accessor, null);
+	}
+	
+	/**
+	 * Retrieve a read-only field accessor that automatically wraps the underlying Trove instance.
+	 * @param accessor - the accessor.
+	 * @param noEntryTransform - transform the no entry value, or NULL to ignore.
+	 * @return The read only accessor.
+	 */
+	public static ReadOnlyFieldAccessor wrapMapField(final FieldAccessor accessor, final Function<Integer, Integer> noEntryTransform) {
 		return new ReadOnlyFieldAccessor() {
 			public Object get(Object instance) {
-				return getDecoratedMap(accessor.get(instance));
+				Object troveMap = accessor.get(instance);
+				
+				// Apply transform as well
+				if (noEntryTransform != null)
+					TroveWrapper.transformNoEntryValue(troveMap, noEntryTransform);
+				return getDecoratedMap(troveMap);
 			}
 			public Field getField() {
 				return accessor.getField();
@@ -132,6 +149,28 @@ public class TroveWrapper {
 	}
 	
 	/**
+	 * Transform the no entry value in the given map.
+	 * @param troveMap - the trove map.
+	 * @param transform - the transform.
+	 */
+	public static void transformNoEntryValue(Object troveMap, Function<Integer, Integer> transform) {
+		// Check for stupid no_entry_values
+		try {
+			Field field = FieldUtils.getField(troveMap.getClass(), "no_entry_value", true);
+			int current = (Integer) FieldUtils.readField(field, troveMap, true);
+			int transformed = transform.apply(current);
+			
+			if (current != transformed) {
+				FieldUtils.writeField(field, troveMap, transformed);
+			}
+		} catch (IllegalArgumentException e) {
+			throw new CannotFindTroveNoEntryValue(e);
+		} catch (IllegalAccessException e) {
+			throw new IllegalStateException("Cannot access reflection.", e);
+		}
+	}
+	
+	/**
 	 * Retrieve the correct class source from the given class.
 	 * @param clazz - the class source.
 	 * @return The class source, or NULL if not found.
@@ -188,5 +227,13 @@ public class TroveWrapper {
 		}
 		
 		throw new IllegalArgumentException("Cannot find decorator for " + trove + " (" + trove.getClass() + ")");
+	}
+	
+	public static class CannotFindTroveNoEntryValue extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		private CannotFindTroveNoEntryValue(Throwable inner) {
+			super("Cannot correct trove map.", inner);
+		}
 	}
 }

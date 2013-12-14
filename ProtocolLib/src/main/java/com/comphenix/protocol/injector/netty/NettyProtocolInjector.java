@@ -35,7 +35,6 @@ import com.comphenix.protocol.injector.spigot.AbstractPacketInjector;
 import com.comphenix.protocol.injector.spigot.AbstractPlayerHandler;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 

@@ -28,10 +28,10 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
-import com.comphenix.protocol.injector.packet.LegacyPacketRegistry.CannotCorrectTroveMapException;
 import com.comphenix.protocol.injector.packet.LegacyPacketRegistry.InsufficientPacketsException;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.TroveWrapper.CannotFindTroveNoEntryValue;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -119,7 +119,7 @@ public class PacketRegistry {
 						PacketRegistry.class, Report.newBuilder(REPORT_INSUFFICIENT_SERVER_PACKETS).messageParam(e.getPacketCount())
 					);
 				}
-			} catch (CannotCorrectTroveMapException e) {
+			} catch (CannotFindTroveNoEntryValue e) {
 				ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class, 
 					Report.newBuilder(REPORT_CANNOT_CORRECT_TROVE_MAP).error(e.getCause()));
 			}

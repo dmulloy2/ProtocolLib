@@ -598,7 +598,16 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			
 			if (TroveWrapper.isTroveClass(type)) {
 				// Create a wrapper accessor
-				final ReadOnlyFieldAccessor accessor = TroveWrapper.wrapMapField(Accessors.getFieldAccessor(lookup, true));
+				final ReadOnlyFieldAccessor accessor = TroveWrapper.wrapMapField(
+				  Accessors.getFieldAccessor(lookup, true), new Function<Integer, Integer>() {
+					@Override
+					public Integer apply(@Nullable Integer value) {
+						// Do not use zero for no entry value
+						if (value == 0)
+							return -1;
+						return value;
+					}
+				});
 				
 				if (Modifier.isStatic(lookup.getModifiers())) {
 					TYPE_MAP_ACCESSOR = accessor;

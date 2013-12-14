@@ -20,6 +20,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.TroveWrapper;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -164,18 +165,16 @@ class LegacyPacketRegistry {
 				FuzzyFieldContract.newBuilder().typeMatches(mapLike).build());
 		Object troveMap = FieldUtils.readStaticField(packetsField, true);
 		
-		// Check for stupid no_entry_values
-		try {
-			Field field = FieldUtils.getField(troveMap.getClass(), "no_entry_value", true);
-			Integer value = (Integer) FieldUtils.readField(field, troveMap, true);
-			
-			if (value >= 0 && value < 256) {
-				// Someone forgot to set the no entry value. Let's help them.
-				FieldUtils.writeField(field, troveMap, -1);
+		// Fix incorrect no entry values
+		TroveWrapper.transformNoEntryValue(troveMap, new Function<Integer, Integer>() {
+			public Integer apply(Integer value) {
+				if (value >= 0 && value < 256) {
+					// Someone forgot to set the no entry value. Let's help them.
+					return -1;
+				}
+				return value;
 			}
-		} catch (IllegalArgumentException e) {
-			throw new CannotCorrectTroveMapException(e);
-		}
+		});
 		
 		// We'll assume this a Trove map
 		return TroveWrapper.getDecoratedMap(troveMap);
@@ -331,14 +330,6 @@ class LegacyPacketRegistry {
 		
 		public int getPacketCount() {
 			return packetCount;
-		}
-	}
-	
-	public static class CannotCorrectTroveMapException extends RuntimeException {
-		private static final long serialVersionUID = 1L;
-
-		private CannotCorrectTroveMapException(Throwable inner) {
-			super("Cannot correct trove map.", inner);
 		}
 	}
 }
