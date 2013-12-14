@@ -547,11 +547,13 @@ public abstract class PacketAdapter implements PacketListener {
 		}
 		
 		/**
-		 * Set the listener option to {@link ListenerOptions#ASYNC}, causing ProtocolLib to ignore automatic game phase detection.
+		 * Set the listener option to {@link ListenerOptions#ASYNC}, indicating that our listener is thread safe.
+		 * <p>
+		 * This allows ProtocolLib to perform certain optimizations.
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters optionAsync() {
-			return addOption(ListenerOptions.DISABLE_GAMEPHASE_DETECTION);
+			return addOption(ListenerOptions.ASYNC);
 		}
 		
 		/**
