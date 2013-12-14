@@ -420,7 +420,6 @@ public class ListeningWhitelist {
 		public Builder gamePhaseBoth() {
 			return gamePhase(GamePhase.BOTH);
 		}
-		
 		/**
 		 * Set the options to copy when constructing new whitelists.
 		 * @param options - the options.
@@ -433,11 +432,44 @@ public class ListeningWhitelist {
 		
 		/**
 		 * Set the options to copy when constructing new whitelists.
+		 * @param options - the options.
+		 * @return This builder, for chaining.
+		 */
+		public Builder options(Collection<ListenerOptions> options) {
+			this.options = safeSet(options);
+			return this;
+		}
+		
+		/**
+		 * Set the options to copy when constructing new whitelists.
 		 * @param options - the options array.
 		 * @return This builder, for chaining.
 		 */
 		public Builder options(ListenerOptions[] serverOptions) {
 			this.options = safeSet(Sets.newHashSet(serverOptions));
+			return this;
+		}
+		
+		/**
+		 * Options to merge into the current set of options.
+		 * @param options - the options array.
+		 * @return This builder, for chaining.
+		 */
+		public Builder mergeOptions(ListenerOptions... serverOptions) {
+			return mergeOptions(Arrays.asList(serverOptions));
+		}
+		
+		/**
+		 * Options to merge into the current set of options.
+		 * @param options - the options array.
+		 * @return This builder, for chaining.
+		 */
+		public Builder mergeOptions(Collection<ListenerOptions> serverOptions) {
+			if (options == null)
+				return options(serverOptions);
+			
+			// Merge the options
+			this.options.addAll(serverOptions);
 			return this;
 		}
 		

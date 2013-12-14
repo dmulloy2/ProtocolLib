@@ -19,6 +19,7 @@ package com.comphenix.protocol.async;
 
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
@@ -67,7 +68,8 @@ class NullPacketListener implements PacketListener {
 	
 	private ListeningWhitelist cloneWhitelist(ListenerPriority priority, ListeningWhitelist whitelist) {
 		if (whitelist != null) 
-			return ListeningWhitelist.newBuilder(whitelist).priority(priority).build();
+			// We don't use the Bukkit API, so don't engage the ProtocolLib synchronization code
+			return ListeningWhitelist.newBuilder(whitelist).priority(priority).mergeOptions(ListenerOptions.ASYNC).build();
 		else 
 			return null;
 	}
