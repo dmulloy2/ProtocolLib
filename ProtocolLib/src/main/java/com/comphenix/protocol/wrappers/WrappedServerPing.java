@@ -185,7 +185,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	 * @param profile - every logged in player.
 	 */
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
-		PLAYERS_PROFILES.set(handle, PROFILE_CONVERT.getGeneric(GameProfile[].class, profile));
+		PLAYERS_PROFILES.set(players, PROFILE_CONVERT.getGeneric(GameProfile[].class, profile));
 	}
 	
 	/**
