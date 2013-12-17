@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import net.minecraft.util.io.netty.channel.Channel;
@@ -23,11 +22,7 @@ import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.ListenerOptions;
-import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
@@ -40,6 +35,7 @@ import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
+
 public class NettyProtocolInjector implements ChannelListener {   
 	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to to inject incoming channel %s.");
 	
@@ -49,6 +45,9 @@ public class NettyProtocolInjector implements ChannelListener {
     // The temporary player factory
     private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
+    
+    // The channel injector factory
+    private InjectionFactory injectionFactory = new InjectionFactory();
     
     // List of network managers
     private volatile List<Object> networkManagers;
@@ -92,15 +91,9 @@ public class NettyProtocolInjector implements ChannelListener {
                 @Override
                 protected void initChannel(Channel channel) throws Exception {
                 	try {
-	                    // Check and see if the injector has closed
-	                    synchronized (this) {
-	                        if (closed)
-	                            return;
-	                    }
-	                    
 	                    // This can take a while, so we need to stop the main thread from interfering
 	                    synchronized (networkManagers) {
-	                    	ChannelInjector.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
+	                    	injectionFactory.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
 						}
                 	} catch (Exception e) {
                 		reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).
@@ -167,7 +160,7 @@ public class NettyProtocolInjector implements ChannelListener {
      * @param player
      */
     public void injectPlayer(Player player) {
-    	ChannelInjector.fromPlayer(player, this).inject();
+    	injectionFactory.fromPlayer(player, this).inject();
     }
     
     private List<VolatileField> getBootstrapFields(Object serverConnection) {
@@ -203,16 +196,13 @@ public class NettyProtocolInjector implements ChannelListener {
             	}
             	field.revertValue();
             }
-            
             // Uninject all the players
-            for (Player player : Bukkit.getServer().getOnlinePlayers()) {
-            	ChannelInjector.fromPlayer(player, this).close();
-            }
+            injectionFactory.close();
         }
     }
     
 	@Override
-	public Object onPacketSending(ChannelInjector injector, Object packet, NetworkMarker marker) {
+	public Object onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
 		
 		if (sendingFilters.contains(clazz)) {
@@ -235,7 +225,7 @@ public class NettyProtocolInjector implements ChannelListener {
 	}
 
 	@Override
-	public Object onPacketReceiving(ChannelInjector injector, Object packet, NetworkMarker marker) {
+	public Object onPacketReceiving(Injector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
 		
 		if (reveivedFilters.contains(clazz)) {
@@ -295,12 +285,12 @@ public class NettyProtocolInjector implements ChannelListener {
 			
 			@Override
 			public void updatePlayer(Player player) {
-				ChannelInjector.fromPlayer(player, listener).inject();
+				injectionFactory.fromPlayer(player, listener).inject();
 			
 			}
 			@Override
 			public void injectPlayer(Player player, ConflictStrategy strategy) {
-				ChannelInjector.fromPlayer(player, listener).inject();
+				injectionFactory.fromPlayer(player, listener).inject();
 			}
 			
 			@Override
@@ -324,19 +314,19 @@ public class NettyProtocolInjector implements ChannelListener {
 			
 			@Override
 			public boolean uninjectPlayer(Player player) {
-				ChannelInjector.fromPlayer(player, listener).close();
+				injectionFactory.fromPlayer(player, listener).close();
 				return true;
 			}
 			
 			@Override
 			public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-				ChannelInjector.fromPlayer(receiver, listener).
+				injectionFactory.fromPlayer(receiver, listener).
 					sendServerPacket(packet.getHandle(), marker, filters);
 			}
 			
 			@Override
 			public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
-				ChannelInjector.fromPlayer(player, listener).
+				injectionFactory.fromPlayer(player, listener).
 					recieveClientPacket(mcPacket, null, true);
 			}
 			
@@ -348,7 +338,7 @@ public class NettyProtocolInjector implements ChannelListener {
 			
 			@Override
 			public void handleDisconnect(Player player) {
-				ChannelInjector.fromPlayer(player, listener).close();
+				injectionFactory.fromPlayer(player, listener).close();
 			}
 		};
 	}
@@ -363,7 +353,7 @@ public class NettyProtocolInjector implements ChannelListener {
 			@Override
 			public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
 				NetworkMarker marker = buffered != null ? new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
-				ChannelInjector.fromPlayer(client, NettyProtocolInjector.this).
+				injectionFactory.fromPlayer(client, NettyProtocolInjector.this).
 					saveMarker(packet.getHandle(), marker);
 				return packetReceived(packet, client, marker);
 			}

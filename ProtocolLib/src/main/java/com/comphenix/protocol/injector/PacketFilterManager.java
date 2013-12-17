@@ -951,7 +951,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
     private void onPlayerLogin(PlayerLoginEvent event) {
-    	System.out.println("Address: " + event.getAddress());
 		playerInjection.updatePlayer(event.getPlayer());
     }
 	

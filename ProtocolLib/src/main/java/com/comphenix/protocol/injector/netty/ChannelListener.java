@@ -3,6 +3,7 @@ package com.comphenix.protocol.injector.netty;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.NetworkMarker;
 
+
 /**
  * Represents a listener for received or sent packets.
  * @author Kristian
@@ -17,7 +18,7 @@ interface ChannelListener {
 	 * @param marker - the associated network marker, if any.
 	 * @return The new packet, if it should be changed, or NULL to cancel.
 	 */
-	public Object onPacketSending(ChannelInjector injector, Object packet, NetworkMarker marker);
+	public Object onPacketSending(Injector injector, Object packet, NetworkMarker marker);
 	
 	/**
 	 * Invoked when a packet is being received from a client.
@@ -28,7 +29,7 @@ interface ChannelListener {
 	 * @param marker - the associated network marker, if any.
 	 * @return The new packet, if it should be changed, or NULL to cancel.
 	 */
-	public Object onPacketReceiving(ChannelInjector injector, Object packet, NetworkMarker marker);
+	public Object onPacketReceiving(Injector injector, Object packet, NetworkMarker marker);
 	
 	/**
 	 * Determine if there is a packet listener for the given packet.
