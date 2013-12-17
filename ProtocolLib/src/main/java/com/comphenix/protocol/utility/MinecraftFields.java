@@ -22,7 +22,7 @@ public class MinecraftFields {
 	/**
 	 * Retrieve the network mananger associated with a particular player.
 	 * @param player - the player.
-	 * @return The network manager.
+	 * @return The network manager, or NULL if no network manager has been asssociated yet.
 	 */
 	public static Object getNetworkManager(Player player) {
 		Object nmsPlayer = BukkitUnwrapper.getInstance().unwrapItem(player);
@@ -33,7 +33,11 @@ public class MinecraftFields {
 			NETWORK_ACCESSOR = Accessors.getFieldAccessor(connectionClass, networkClass, true);
 		}
 		// Retrieve the network manager
-		return NETWORK_ACCESSOR.get(getPlayerConnection(nmsPlayer));
+		final Object playerConnection = getPlayerConnection(nmsPlayer);
+		
+		if (playerConnection != null)
+			return NETWORK_ACCESSOR.get(playerConnection);
+		return null;
 	}
 	
 	/**

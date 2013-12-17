@@ -10,6 +10,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelHandler;
@@ -24,6 +25,7 @@ import net.sf.cglib.proxy.Factory;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
@@ -44,6 +46,7 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
 
 /**
  * Represents a channel injector.
@@ -53,7 +56,12 @@ class ChannelInjector extends ByteToMessageDecoder {
 	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
 	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
 	
-	private static final ConcurrentMap<Player, ChannelInjector> cachedInjector = new MapMaker().weakKeys().makeMap();
+	private static final ConcurrentMap<Player, ChannelInjector> PLAYER_LOOKUP = Maps.newConcurrentMap();
+	private static final ConcurrentMap<String, ChannelInjector> NAME_LOOKUP = new MapMaker().weakValues().makeMap();
+	
+	// The login packet
+	private static Class<?> PACKET_LOGIN_CLIENT = null;
+	private static FieldAccessor LOGIN_GAME_PROFILE = null;
 	
 	// Saved accessors
 	private static MethodAccessor DECODE_BUFFER;
@@ -124,7 +132,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 	 * @return A new injector, or an existing injector associated with this player.
 	 */
 	public static ChannelInjector fromPlayer(Player player, ChannelListener listener) {
-		ChannelInjector injector = cachedInjector.get(player);
+		ChannelInjector injector = PLAYER_LOOKUP.get(player);
 		
 		// Find a temporary injector as well
 		if (injector == null)
@@ -133,6 +141,11 @@ class ChannelInjector extends ByteToMessageDecoder {
 			return injector;
 		
 		Object networkManager = MinecraftFields.getNetworkManager(player);
+		
+		// Must be a temporary Bukkit player
+		if (networkManager == null)
+			return fromName(player.getName(), player);
+		
 		Channel channel = FuzzyReflection.getFieldValue(networkManager, Channel.class, true);
 		
 		// See if a channel has already been created
@@ -145,7 +158,8 @@ class ChannelInjector extends ByteToMessageDecoder {
 			injector = new ChannelInjector(player, networkManager, channel, listener);
 		}
 		// Cache injector and return
-		cachedInjector.put(player, injector);
+		NAME_LOOKUP.put(player.getName(), injector);
+		PLAYER_LOOKUP.put(player, injector);
 		return injector;
 	}
 	
@@ -161,6 +175,24 @@ class ChannelInjector extends ByteToMessageDecoder {
 			return ((ChannelSocketInjector) injector).getChannelInjector();
 		}
 		return null;
+	}
+	
+	/**
+	 * Retrieve a cached injector from a name.
+	 * @param address - the name.
+	 * @return The cached injector.
+	 * @throws IllegalArgumentException If we cannot find the corresponding injector.
+	 */
+	private static ChannelInjector fromName(String name, Player player) {
+		ChannelInjector injector = NAME_LOOKUP.get(name);
+		
+		// We can only retrieve cached injectors
+		if (injector != null) {
+			// Update instance
+			injector.player = player;
+			return injector;
+		}
+		throw new IllegalArgumentException("Cannot inject temporary Bukkit player.");
 	}
 	
 	/**
@@ -199,7 +231,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 			if (findChannelHandler(originalChannel, ChannelInjector.class) != null) {
 				// Invalidate cache
 				if (player != null)
-					cachedInjector.remove(player);
+					PLAYER_LOOKUP.remove(player);
 				return false;
 			}
 			
@@ -287,6 +319,9 @@ class ChannelInjector extends ByteToMessageDecoder {
 				} catch (NoSuchElementException e) {
 					// Ignore it - the player has logged out
 				}
+				// Clear cache
+				NAME_LOOKUP.remove(player.getName());
+				PLAYER_LOOKUP.remove(player);
 			}
 		}
 	}
@@ -367,6 +402,9 @@ class ChannelInjector extends ByteToMessageDecoder {
 				Class<?> packetClass = input.getClass();
 				NetworkMarker marker = null;
 				
+				// Special case!
+				handleLogin(packetClass, input);
+				
 				if (channelListener.includeBuffer(packetClass)) {
 					byteBuffer.resetReaderIndex();
 					marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
@@ -382,6 +420,27 @@ class ChannelInjector extends ByteToMessageDecoder {
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this, 
 					Report.newBuilder(REPORT_CANNOT_INTERCEPT_CLIENT_PACKET).callerParam(byteBuffer).error(e).build());
+		}
+	}
+	
+	/**
+	 * Invoked when we may need to handle the login packet.
+	 * @param packetClass - the packet class.
+	 * @param packet - the packet.
+	 */
+	protected void handleLogin(Class<?> packetClass, Object packet) {
+		// Initialize packet class
+		if (PACKET_LOGIN_CLIENT == null) {
+			PACKET_LOGIN_CLIENT = PacketType.Login.Client.START.getPacketClass();
+			LOGIN_GAME_PROFILE = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, GameProfile.class, true);
+		}
+			
+		// See if we are dealing with the login packet
+		if (PACKET_LOGIN_CLIENT.equals(packetClass)) {
+			GameProfile profile = (GameProfile) LOGIN_GAME_PROFILE.get(packet);
+			
+			// Save the channel injector
+			NAME_LOOKUP.put(profile.getName(), this);
 		}
 	}
 	

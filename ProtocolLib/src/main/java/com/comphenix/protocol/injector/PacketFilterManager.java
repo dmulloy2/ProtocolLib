@@ -42,6 +42,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
@@ -921,10 +922,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		try {
 			manager.registerEvents(new Listener() {
 				@EventHandler(priority = EventPriority.LOWEST)
+			    public void onPlayerLogin(PlayerLoginEvent event) {
+					PacketFilterManager.this.onPlayerLogin(event);
+				}
+				@EventHandler(priority = EventPriority.LOWEST)
 			    public void onPrePlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPrePlayerJoin(event);
 				}
-				
 				@EventHandler(priority = EventPriority.MONITOR)
 			    public void onPlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPlayerJoin(event);
@@ -945,6 +949,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			registerOld(manager, plugin);
 		}
 	}
+	
+    private void onPlayerLogin(PlayerLoginEvent event) {
+    	System.out.println("Address: " + event.getAddress());
+		playerInjection.updatePlayer(event.getPlayer());
+    }
 	
     private void onPrePlayerJoin(PlayerJoinEvent event) {
 		playerInjection.updatePlayer(event.getPlayer());
