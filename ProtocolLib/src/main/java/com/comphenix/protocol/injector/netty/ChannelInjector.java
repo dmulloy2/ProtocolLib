@@ -73,6 +73,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 	
 	// The player, or temporary player
 	private Player player;
+	private Player updated;
 	
 	// The player connection
 	private Object playerConnection;
@@ -189,7 +190,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 		// We can only retrieve cached injectors
 		if (injector != null) {
 			// Update instance
-			injector.player = player;
+			injector.updated = player;
 			return injector;
 		}
 		throw new IllegalArgumentException("Cannot inject temporary Bukkit player.");
@@ -707,7 +708,7 @@ class ChannelInjector extends ByteToMessageDecoder {
 
 		@Override
 		public Player getUpdatedPlayer() {
-			return injector.player;
+			return injector.updated;
 		}
 
 		@Override

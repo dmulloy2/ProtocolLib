@@ -87,50 +87,58 @@ public class TemporaryPlayerFactory {
 		Callback implementation = new MethodInterceptor() {
 			@Override
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-
 				String methodName = method.getName();
 				SocketInjector injector = ((InjectorContainer) obj).getInjector();
 				
 				if (injector == null)
 					throw new IllegalStateException("Unable to find injector.");
-				
+
 				// Use the socket to get the address
-				if (methodName.equalsIgnoreCase("isOnline"))
-					return injector.getSocket() != null && injector.getSocket().isConnected();
-				if (methodName.equalsIgnoreCase("getName"))
-					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
-				if (methodName.equalsIgnoreCase("getPlayer"))
+				else if (methodName.equals("getPlayer"))
 					return injector.getUpdatedPlayer();
-				if (methodName.equalsIgnoreCase("getAddress")) 
+				else if (methodName.equals("getAddress")) 
 					return injector.getAddress();
-				if (methodName.equalsIgnoreCase("getServer"))
+				else if (methodName.equals("getServer"))
 					return server;
 
-				try {
-					// Handle send message methods
-					if (methodName.equalsIgnoreCase("chat") || methodName.equalsIgnoreCase("sendMessage")) {
-						Object argument = args[0];
-						
-						// Dynamic overloading
-						if (argument instanceof String) {
-							return sendMessage(injector, (String) argument);
-						} else if (argument instanceof String[]) {
-							for (String message : (String[]) argument) {
-								sendMessage(injector, message);
-							}
-							return null;
+				// Handle send message methods
+				if (methodName.equals("chat") || methodName.equals("sendMessage")) {
+					try {
+					Object argument = args[0];
+					
+					// Dynamic overloading
+					if (argument instanceof String) {
+						return sendMessage(injector, (String) argument);
+					} else if (argument instanceof String[]) {
+						for (String message : (String[]) argument) {
+							sendMessage(injector, message);
 						}
+						return null;
 					}
-				} catch (InvocationTargetException e) {
-					throw e.getCause();
+					} catch (InvocationTargetException e) {
+						throw e.getCause();
+					}
 				}
 				
 				// Also, handle kicking
-				if (methodName.equalsIgnoreCase("kickPlayer")) {
+				if (methodName.equals("kickPlayer")) {
 					injector.disconnect((String) args[0]);
 					return null;
 				}
-					
+				
+				// The fallback instance
+				Player updated = injector.getUpdatedPlayer();
+				
+				if (updated != obj && updated != null) {
+					return proxy.invoke(updated, args);
+				}
+				
+				// Methods that are supported in the fallback instance
+				if (methodName.equals("isOnline"))
+					return injector.getSocket() != null && injector.getSocket().isConnected();
+				else if (methodName.equals("getName"))
+					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
+				
 				// Ignore all other methods
 				throw new UnsupportedOperationException(
 						"The method " + method.getName() + " is not supported for temporary players.");
