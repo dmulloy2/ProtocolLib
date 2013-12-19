@@ -41,6 +41,16 @@ public class PacketTypeSet {
 	}
 	
 	/**
+	 * Add the given types to the set of packet types.
+	 * @param types - the types to add.
+	 */
+	public synchronized void addAll(Iterable<? extends PacketType> types) {
+		for (PacketType type : types) {
+			addType(type);
+		}
+	}
+	
+	/**
 	 * Remove a particular type to the set.
 	 * @param type - the type to remove.
 	 */
@@ -50,6 +60,16 @@ public class PacketTypeSet {
 		
 		if (packetClass != null) {
 			classes.remove(getPacketClass(type));
+		}
+	}
+	
+	/**
+	 * Remove the given types from the set.
+	 * @param type - the types to remove.
+	 */
+	public synchronized void removeAll(Iterable<? extends PacketType> types) {
+		for (PacketType type : types) {
+			removeType(type);
 		}
 	}
 	

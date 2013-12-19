@@ -17,6 +17,10 @@
 
 package com.comphenix.protocol;
 
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -84,27 +88,38 @@ abstract class CommandBase implements CommandExecutor {
 	}
 
 	/**
-	 * Parse a boolean value at a specific location.
-	 * @param args - the argument array.
-	 * @param parameterName - the parameter name.
-	 * @param index - the argument index.
+	 * Parse a boolean value at the head of the queue.
+	 * @param arguments - the queue of arguments.
+	 * @param parameterName - the parameter name we will match.
 	 * @return The parsed boolean, or NULL if not valid.
 	 */
-	protected Boolean parseBoolean(String[] args, String parameterName, int index) {
-		if (index < args.length) {
-			String arg = args[index];
+	protected Boolean parseBoolean(Deque<String> arguments, String parameterName) {
+		Boolean result = null;
+		
+		if (!arguments.isEmpty()) {
+			String arg = arguments.peek();
 			
 			if (arg.equalsIgnoreCase("true") || arg.equalsIgnoreCase("on"))
-				return true;
+				result = true;
 			else if (arg.equalsIgnoreCase(parameterName))
-				return true;
+				result = true;
 			else if (arg.equalsIgnoreCase("false") || arg.equalsIgnoreCase("off"))
-				return false;
-			else
-				return null;
-		} else {
-			return null;
+				result = false;
 		}
+		
+		if (result != null)
+			arguments.poll();
+		return result;
+	}
+		
+	/**
+	 * Create a queue from a sublist of a given array.
+	 * @param args - the source array.
+	 * @param start - the starting index.
+	 * @return A queue that contains every element in the array, starting at the given index.
+	 */
+	protected Deque<String> toQueue(String[] args, int start) {
+		return new ArrayDeque<String>(Arrays.asList(args).subList(start, args.length));
 	}
 	
 	/**

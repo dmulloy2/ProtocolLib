@@ -1,7 +1,7 @@
 package com.comphenix.protocol;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -22,14 +22,11 @@ import org.bukkit.conversations.ConversationFactory;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.MultipleLinesPrompt.MultipleConversationCanceller;
-import com.comphenix.protocol.concurrency.IntegerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketEvent;
-import com.google.common.collect.DiscreteDomains;
-import com.google.common.collect.Range;
-import com.google.common.collect.Ranges;
+import com.google.common.collect.Sets;
 
 /**
  * A command to apply JavaScript filtering to the packet command.
@@ -71,19 +68,18 @@ public class CommandFilter extends CommandBase {
 		private final String name;
 		private final String predicate;
 		
-		private final IntegerSet ranges;
+		private final Set<PacketType> packets;
 		
 		/**
 		 * Construct a new immutable filter.
 		 * @param name - the unique name of the filter.
  		 * @param predicate - the JavaScript predicate that will be used to filter packet events.
-		 * @param packets - a list of valid packet ID that this filter applies to.
+		 * @param packets - a list of packet types this filter applies to.
 		 */
-		public Filter(String name, String predicate, Set<Integer> packets) {
+		public Filter(String name, String predicate, Set<PacketType> packets) {
 			this.name = name;
 			this.predicate = predicate;
-			this.ranges = new IntegerSet(Packets.MAXIMUM_PACKET_ID + 1);
-			this.ranges.addAll(packets);
+			this.packets = Sets.newHashSet(packets);
 		}
 		
 		/**
@@ -106,8 +102,8 @@ public class CommandFilter extends CommandBase {
 		 * Retrieve a copy of the set of packets this filter applies to.
 		 * @return Set of packets this filter applies to.
 		 */
-		public Set<Integer> getRanges() {
-			return ranges.toSet();
+		public Set<PacketType> getRanges() {
+			return Sets.newHashSet(packets);
 		}
 		
 		/**
@@ -116,7 +112,7 @@ public class CommandFilter extends CommandBase {
 		 * @return TRUE if it does, FALSE otherwise.
 		 */
 		private boolean isApplicable(PacketEvent event) {
-			return ranges.contains(event.getPacketID());
+			return packets.contains(event.getPacketType());
 		}
 		
 		/**
@@ -384,7 +380,11 @@ public class CommandFilter extends CommandBase {
 					return true;
 				}
 				
-				final Set<Integer> packets = parseRanges(args, 2);
+				// Prepare the input to the packet type parser
+				Deque<String> rangeArguments = toQueue(args, 2);
+				
+				final PacketTypeParser parser = new PacketTypeParser();
+				final Set<PacketType> packets = parser.parseTypes(rangeArguments, PacketTypeParser.DEFAULT_MAX_RANGE);
 				sender.sendMessage("Enter filter program ('}' to complete or CANCEL):");
 				
 				// Make sure we can use the conversable interface
@@ -453,22 +453,6 @@ public class CommandFilter extends CommandBase {
 		}
 		
 		return true;
-	}
-	
-	private Set<Integer> parseRanges(String[] args, int start) {
-		List<Range<Integer>> ranges = RangeParser.getRanges(args, 2, args.length - 1, Ranges.closed(0, 255));
-		Set<Integer> flatten = new HashSet<Integer>();
-		
-		if (ranges.isEmpty()) {
-			// Use every packet ID
-			ranges.add(Ranges.closed(0, 255));
-		}
-		
-		// Finally, flatten it all
-		for (Range<Integer> range : ranges) {
-			flatten.addAll(range.asSet(DiscreteDomains.integers()));
-		}
-		return flatten;
 	}
 	
 	/**

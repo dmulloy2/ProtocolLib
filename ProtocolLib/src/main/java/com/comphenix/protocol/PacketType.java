@@ -589,6 +589,16 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
+	 * Determine if the given legacy packet exists.
+	 * @param packetId - the legacy packet ID.
+	 * @param preference - the sender preference.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public static boolean hasLegacy(int packetId) {
+		return getLookup().getFromLegacy(packetId) != null;
+	}
+	
+	/**
 	 * Retrieve a packet type from a protocol, sender and packet ID.
 	 * <p>
 	 * It is usually better to access the packet types statically, like so:
@@ -608,6 +618,17 @@ public class PacketType implements Serializable {
 			return type;
 		throw new IllegalArgumentException("Cannot find packet " + packetId + 
 				"(Protocol: " + protocol + ", Sender: " + sender + ")");
+	}
+	
+	/**
+	 * Determine if the given packet exists.
+	 * @param protocol - the protocol.
+	 * @param sender - the sender.
+	 * @param packetId - the packet ID.
+	 * @return TRUE if it exists, FALSE otherwise.
+	 */
+	public static boolean hasCurrent(Protocol protocol, Sender sender, int packetId) {
+		return getLookup().getFromCurrent(protocol, sender, packetId) != null;
 	}
 	
 	/**
@@ -822,7 +843,10 @@ public class PacketType implements Serializable {
 	@Override
 	public String toString() {
 		Class<?> clazz = getPacketClass();;
-		return (clazz != null ? clazz.getSimpleName() : "UNREGISTERED") + 
-			" [" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + "]";
+	
+		if (clazz == null)
+			return "UNREGISTERED [" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + "]";
+		else
+			return clazz.getSimpleName() + "[" + currentId + ", legacy: " + legacyId + "]";
 	}
 }

@@ -18,8 +18,10 @@
 package com.comphenix.protocol;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,26 +36,20 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.concurrency.AbstractIntervalTree;
+import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.comphenix.protocol.reflect.PrettyPrinter.ObjectPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.google.common.collect.DiscreteDomains;
-import com.google.common.collect.Range;
-import com.google.common.collect.Ranges;
 import com.google.common.collect.Sets;
 
 /**
@@ -63,15 +59,7 @@ import com.google.common.collect.Sets;
  */
 class CommandPacket extends CommandBase {
 	public static final ReportType REPORT_CANNOT_SEND_MESSAGE = new ReportType("Cannot send chat message.");
-	
-	private interface DetailedPacketListener extends PacketListener {
-		/**
-		 * Determine whether or not the given packet listener is detailed or not.
-		 * @return TRUE if it is detailed, FALSE otherwise.
-		 */
-		public boolean isDetailed();
-	}
-	
+
 	private enum SubCommand {
 		ADD, REMOVE, NAMES, PAGE;
 	}
@@ -92,12 +80,18 @@ class CommandPacket extends CommandBase {
 		
 	private ChatExtensions chatter;
 	
+	// The main parser
+	private PacketTypeParser typeParser = new PacketTypeParser();
+	
 	// Paged message
 	private Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<CommandSender, List<String>>();
 	
-	// Registered packet listeners
-	private AbstractIntervalTree<Integer, DetailedPacketListener> clientListeners = createTree(ConnectionSide.CLIENT_SIDE);
-	private AbstractIntervalTree<Integer, DetailedPacketListener> serverListeners = createTree(ConnectionSide.SERVER_SIDE);
+	// Current registered packet types
+	private PacketTypeSet packetTypes = new PacketTypeSet();
+	private PacketTypeSet extendedTypes = new PacketTypeSet();
+	
+	// The packet listener
+	private PacketListener listener;
 	
 	// Filter packet events
 	private CommandFilter filter;
@@ -110,58 +104,7 @@ class CommandPacket extends CommandBase {
 		this.filter = filter;
 		this.chatter = new ChatExtensions(manager);
 	}
-	
-	/**
-	 * Construct a packet listener interval tree.
-	 * @return Construct the tree.
-	 */
-	private AbstractIntervalTree<Integer, DetailedPacketListener> createTree(final ConnectionSide side) {
-		return new AbstractIntervalTree<Integer, DetailedPacketListener>() {
-			@Override
-			protected Integer decrementKey(Integer key) {
-				return key != null ? key - 1 : null;
-			}
-			
-			@Override
-			protected Integer incrementKey(Integer key) {
-				return key != null ? key + 1 : null;
-			}
-			
-			@Override
-			protected void onEntryAdded(Entry added) {
-				// Ensure that the starting ID and the ending ID is correct
-				// This is necessary because the interval tree may change the range.
-				if (added != null) {
-					Range<Integer> key = added.getKey();
-					DetailedPacketListener listener = added.getValue();
-					DetailedPacketListener corrected = createPacketListener(
-							side, key.lowerEndpoint(), key.upperEndpoint(), listener.isDetailed());
-					
-					added.setValue(corrected);
-					
-					if (corrected != null) {
-						manager.addPacketListener(corrected);
-					} else {
-						// Never mind
-						remove(key.lowerEndpoint(), key.upperEndpoint());
-					}
-				}
-			}
-			
-			@Override
-			protected void onEntryRemoved(Entry removed) {
-				// Remove the listener
-				if (removed != null) {
-					DetailedPacketListener listener = removed.getValue();
-					
-					if (listener != null) {
-						manager.removePacketListener(listener);
-					}
-				}
-			}
-		};
-	}
-	
+
 	/**
 	 * Send a message without invoking the packet listeners.
 	 * @param receiver - the player to send it to.
@@ -223,8 +166,9 @@ class CommandPacket extends CommandBase {
 	@Override
 	protected boolean handleCommand(CommandSender sender, String[] args) {
 		try {
-			SubCommand subCommand = parseCommand(args, 0);
-			
+			Deque<String> arguments = new ArrayDeque<String>(Arrays.asList(args));
+			SubCommand subCommand = parseCommand(arguments);
+
 			// Commands with different parameters
 			if (subCommand == SubCommand.PAGE) {
 				int page = Integer.parseInt(args[1]);
@@ -236,26 +180,18 @@ class CommandPacket extends CommandBase {
 				return true;
 			}
 			
-			ConnectionSide side = parseSide(args, 1, ConnectionSide.BOTH);
+			Set<PacketType> types = typeParser.parseTypes(arguments, PacketTypeParser.DEFAULT_MAX_RANGE);
+			Boolean detailed = parseBoolean(arguments, "detailed");
 			
-			Integer lastIndex = args.length - 1;
-			Boolean detailed = parseBoolean(args, "detailed", lastIndex);
-
-			// See if the last element is a boolean
+			if (arguments.size() > 0) {
+				throw new IllegalArgumentException("Insufficient arguments.");
+			}
+		
+			// The last element is optional
 			if (detailed == null) {
 				detailed = false;
-			} else {
-				lastIndex--;
 			}
-			
-			// Make sure the packet IDs are valid
-			List<Range<Integer>> ranges = RangeParser.getRanges(args, 2, lastIndex, Ranges.closed(0, 255));
 
-			if (ranges.isEmpty()) {
-				// Use every packet ID
-				ranges.add(Ranges.closed(0, 255));
-			}
-			
 			// Perform commands
 			if (subCommand == SubCommand.ADD) {
 				// The add command is dangerous - don't default on the connection side
@@ -264,11 +200,11 @@ class CommandPacket extends CommandBase {
 					return false;
 				}
 				
-				executeAddCommand(sender, side, detailed, ranges);
+				executeAddCommand(sender, types, detailed);
 			} else if (subCommand == SubCommand.REMOVE) {
-				executeRemoveCommand(sender, side, detailed, ranges);
+				executeRemoveCommand(sender, types);
 			} else if (subCommand == SubCommand.NAMES) {
-				executeNamesCommand(sender, side, ranges);
+				executeNamesCommand(sender, types);
 			}
 			
 		} catch (NumberFormatException e) {
@@ -279,36 +215,31 @@ class CommandPacket extends CommandBase {
 		
 		return true;
 	}
-
-	private void executeAddCommand(CommandSender sender, ConnectionSide side, Boolean detailed, List<Range<Integer>> ranges) {
-		for (Range<Integer> range : ranges) {
-			DetailedPacketListener listener = addPacketListeners(side, range.lowerEndpoint(), range.upperEndpoint(), detailed);
-			sendMessageSilently(sender, ChatColor.BLUE + "Added listener " + getWhitelistInfo(listener));
+	
+	private void executeAddCommand(CommandSender sender, Set<PacketType> addition, boolean detailed) {
+		packetTypes.addAll(addition);
+		
+		// Also mark these types as "detailed"
+		if (detailed) {
+			extendedTypes.addAll(addition);
 		}
+		updatePacketListener();
+		sendMessageSilently(sender, ChatColor.BLUE + "Added listener " + getWhitelistInfo(listener));
 	}
 	
-	private void executeRemoveCommand(CommandSender sender, ConnectionSide side, Boolean detailed, List<Range<Integer>> ranges) {
-		int count = 0; 
-		
-		// Remove each packet listener
-		for (Range<Integer> range : ranges) {
-			count += removePacketListeners(side, range.lowerEndpoint(), range.upperEndpoint(), detailed).size();
-		}
-		
-		sendMessageSilently(sender, ChatColor.BLUE + "Fully removed " + count + " listeners.");
+	private void executeRemoveCommand(CommandSender sender, Set<PacketType> removal) {
+		packetTypes.removeAll(removal);
+		extendedTypes.removeAll(removal);
+		updatePacketListener();
+		sendMessageSilently(sender, ChatColor.BLUE + "Removing packet types.");
 	}
 	
-	private void executeNamesCommand(CommandSender sender, ConnectionSide side, List<Range<Integer>> ranges) {
-		Set<Integer> named = getNamedPackets(side);
+	private void executeNamesCommand(CommandSender sender, Set<PacketType> types) {
 		List<String> messages = new ArrayList<String>();
 		
 		// Print the equivalent name of every given ID
-		for (Range<Integer> range : ranges) {
-			for (int id : range.asSet(DiscreteDomains.integers())) {
-				if (named.contains(id)) {
-					messages.add(ChatColor.WHITE + "" + id + ": " + ChatColor.BLUE + Packets.getDeclaredName(id));
-				}
-			}
+		for (PacketType type : types) {
+			messages.add(ChatColor.BLUE + type.toString());
 		}
 		
 		if (sender instanceof Player && messages.size() > 0 && messages.size() > PAGE_LINE_COUNT) {
@@ -342,90 +273,58 @@ class CommandPacket extends CommandBase {
 		else
 			return "[None]";
 	}
-	
-	private Set<Integer> getValidPackets(ConnectionSide side) throws FieldAccessException {
-		HashSet<Integer> supported = Sets.newHashSet();
 		
-		if (side.isForClient())
-			supported.addAll(Packets.Client.getSupported());
-		else if (side.isForServer())
-			supported.addAll(Packets.Server.getSupported());
+	private Set<PacketType> filterTypes(Set<PacketType> types, Sender sender) {
+		Set<PacketType> result = Sets.newHashSet();
 		
-		return supported;
-	}
-	
-	private Set<Integer> getNamedPackets(ConnectionSide side) {
-		
-		Set<Integer> valids = null;
-		Set<Integer> result = Sets.newHashSet();
-		
-		try {
-			valids = getValidPackets(side);
-		} catch (FieldAccessException e) {
-			valids = Ranges.closed(0, 255).asSet(DiscreteDomains.integers());
+		for (PacketType type : types) {
+			if (type.getSender() == sender) {
+				result.add(type);
+			}
 		}
-		
-		// Check connection side
-		if (side.isForClient())
-			result.addAll(Packets.Client.getRegistry().values());
-		if (side.isForServer())
-			result.addAll(Packets.Server.getRegistry().values());
-		
-		// Remove invalid packets
-		result.retainAll(valids);
 		return result;
 	}
+	
+	public PacketListener createPacketListener(Set<PacketType> type) {
+		final ListeningWhitelist serverList = ListeningWhitelist.newBuilder().
+				types(filterTypes(type, Sender.SERVER)).
+				gamePhaseBoth().
+				monitor().
+				build();
 		
-	public DetailedPacketListener createPacketListener(final ConnectionSide side, int idStart, int idStop, final boolean detailed) {
-		Set<Integer> range = Ranges.closed(idStart, idStop).asSet(DiscreteDomains.integers());
-		Set<Integer> packets;
+		final ListeningWhitelist clientList = ListeningWhitelist.newBuilder(serverList).
+				types(filterTypes(type, Sender.CLIENT)).
+				build();
 		
-		try {
-			// Only use supported packet IDs
-			packets = new HashSet<Integer>(getValidPackets(side));
-			packets.retainAll(range);
-			
-		} catch (FieldAccessException e) {
-			// Don't filter anything then
-			packets = range;
-		}
-
-		// Ignore empty sets
-		if (packets.isEmpty())
-			return null;
-		
-		// Create the listener we will be using
-		final ListeningWhitelist whitelist = new ListeningWhitelist(ListenerPriority.MONITOR, packets, GamePhase.BOTH);
-		
-		return new DetailedPacketListener() {
+		return new PacketListener() {
 			@Override
 			public void onPacketSending(PacketEvent event) {
-				if (side.isForServer() && filter.filterEvent(event)) {
+				if (filter.filterEvent(event)) {
 					printInformation(event);
 				}
 			}
 			
 			@Override
 			public void onPacketReceiving(PacketEvent event) {
-				if (side.isForClient() && filter.filterEvent(event)) {
+				if (filter.filterEvent(event)) {
 					printInformation(event);
 				}
 			}
 			
 			private void printInformation(PacketEvent event) {
-				String verb = side.isForClient() ? "Received" : "Sent";
-				String format = side.isForClient() ? 
-						"%s %s (%s) from %s" : 
-						"%s %s (%s) to %s";
+				String verb = event.isServerPacket() ? "Sent" : "Received";
+				String format = event.isServerPacket() ? 
+						"%s %s to %s" : 
+						"%s %s from %s";
+				
 				String shortDescription = String.format(format,
 						event.isCancelled() ? "Cancelled" : verb,
-						Packets.getDeclaredName(event.getPacketID()),
-						event.getPacketID(),
+						event.getPacketType(),
 						event.getPlayer().getName()
 				);
 				
 				// Detailed will print the packet's content too
-				if (detailed) {
+				if (extendedTypes.contains(event.getPacketType())) {
 					try {
 						Object packet = event.getPacket().getHandle();
 						Class<?> clazz = packet.getClass();
@@ -463,56 +362,34 @@ class CommandPacket extends CommandBase {
 			
 			@Override
 			public ListeningWhitelist getSendingWhitelist() {
-				return side.isForServer() ? whitelist : ListeningWhitelist.EMPTY_WHITELIST;
+				return serverList;
 			}
 			
 			@Override
 			public ListeningWhitelist getReceivingWhitelist() {
-				return side.isForClient() ? whitelist : ListeningWhitelist.EMPTY_WHITELIST;
+				return clientList;
 			}
 			
 			@Override
 			public Plugin getPlugin() {
 				return plugin;
 			}
-
-			@Override
-			public boolean isDetailed() {
-				return detailed;
-			}
 		};
 	}
 		
-	public DetailedPacketListener addPacketListeners(ConnectionSide side, int idStart, int idStop, boolean detailed) {
-		DetailedPacketListener listener = createPacketListener(side, idStart, idStop, detailed);
-		
-		// The trees will manage the listeners for us
+	public PacketListener updatePacketListener() {
 		if (listener != null) {
-			if (side.isForClient())
-				clientListeners.put(idStart, idStop, listener);
-			if (side.isForServer())
-				serverListeners.put(idStart, idStop, listener);
-			return listener;
-		} else {
-			throw new IllegalArgumentException("No packets found in the range " + idStart + " - " + idStop + ".");
+			manager.removePacketListener(listener);
 		}
+		
+		// Register a new listener instead
+		listener = createPacketListener(packetTypes.values());
+		manager.addPacketListener(listener);
+		return listener;
 	}
 	
-	public Set<AbstractIntervalTree<Integer, DetailedPacketListener>.Entry> removePacketListeners(
-			ConnectionSide side, int idStart, int idStop, boolean detailed) {
-		
-		HashSet<AbstractIntervalTree<Integer, DetailedPacketListener>.Entry> result = Sets.newHashSet();
-		
-		// The interval tree will automatically remove the listeners for us
-		if (side.isForClient())
-			result.addAll(clientListeners.remove(idStart, idStop, true));
-		if (side.isForServer())
-			result.addAll(serverListeners.remove(idStart, idStop, true));
-		return result;
-	}
-
-	private SubCommand parseCommand(String[] args, int index) {
-		String text = args[index].toLowerCase();
+	private SubCommand parseCommand(Deque<String> arguments) {
+		String text = arguments.poll().toLowerCase();
 		
 		// Parse this too
 		if ("add".startsWith(text))
@@ -525,22 +402,5 @@ class CommandPacket extends CommandBase {
 			return SubCommand.PAGE;
 		else
 			throw new IllegalArgumentException(text + " is not a valid sub command. Must be add or remove.");
-	}
-	
-	private ConnectionSide parseSide(String[] args, int index, ConnectionSide defaultValue) {
-		if (index < args.length) {
-			String text = args[index].toLowerCase();
-			
-			// Parse the side gracefully
-			if ("client".startsWith(text))
-				return ConnectionSide.CLIENT_SIDE;
-			else if ("server".startsWith(text))
-				return ConnectionSide.SERVER_SIDE;
-			else
-				throw new IllegalArgumentException(text + " is not a connection side.");
-			
-		} else {
-			return defaultValue;
-		}
 	}
 }

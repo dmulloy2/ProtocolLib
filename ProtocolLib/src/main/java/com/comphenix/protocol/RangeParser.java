@@ -17,7 +17,10 @@
 
 package com.comphenix.protocol;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 
 import com.google.common.collect.DiscreteDomains;
@@ -37,7 +40,7 @@ class RangeParser {
 	 * @return The parsed ranges.
 	 */
 	public static List<Range<Integer>> getRanges(String text, Range<Integer> legalRange) {
-		return getRanges(new String[] { text }, 0, 0, legalRange);
+		return getRanges(new ArrayDeque<String>(Arrays.asList(text)), legalRange);
 	}
 	
 	/**
@@ -48,8 +51,8 @@ class RangeParser {
 	 * @param legalRange - range of legal values.
 	 * @return The parsed ranges.
 	 */
-	public static List<Range<Integer>> getRanges(String[] args, int offset, int lastIndex, Range<Integer> legalRange) {
-		List<String> tokens = tokenizeInput(args, offset, lastIndex);
+	public static List<Range<Integer>> getRanges(Deque<String> input, Range<Integer> legalRange) {
+		List<String> tokens = tokenizeInput(input);
 		List<Range<Integer>> ranges = new ArrayList<Range<Integer>>();
 		
 		for (int i = 0; i < tokens.size(); i++) {
@@ -121,13 +124,13 @@ class RangeParser {
 		return result;
 	}
 	
-	private static List<String> tokenizeInput(String[] args, int offset, int lastIndex) {
+	private static List<String> tokenizeInput(Deque<String> input) {
 		List<String> tokens = new ArrayList<String>();
 		
 		// Tokenize the input
-		for (int i = offset; i <= lastIndex; i++) {
-			String text = args[i];
+		while (!input.isEmpty()) {
 			StringBuilder number = new StringBuilder();
+			String text = input.peek();
 			
 			for (int j = 0; j < text.length(); j++) {
 				char current = text.charAt(j);
@@ -145,13 +148,15 @@ class RangeParser {
 					
 					tokens.add(Character.toString(current));
 				} else {
-					throw new IllegalArgumentException("Illegal character '" + current + "' found.");
+					// We're no longer dealing with integers - quit
+					return tokens;
 				}
 			}
 			
 			// Add the number token, if it hasn't already
 			if (number.length() > 0)
 				tokens.add(number.toString());
+			input.poll();
 		}
 		
 		return tokens;

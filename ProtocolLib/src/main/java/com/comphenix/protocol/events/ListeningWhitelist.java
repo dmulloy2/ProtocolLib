@@ -295,9 +295,9 @@ public class ListeningWhitelist {
 	 */
 	public static class Builder {
 		private ListenerPriority priority;
-		private Set<PacketType> types;
+		private Set<PacketType> types = Sets.newHashSet();
 		private GamePhase gamePhase;
-		private Set<ListenerOptions> options;
+		private Set<ListenerOptions> options = Sets.newHashSet();
 		
 		/**
 		 * Construct a new listening whitelist template.

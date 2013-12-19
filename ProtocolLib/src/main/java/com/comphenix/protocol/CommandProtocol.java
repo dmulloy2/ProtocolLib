@@ -114,7 +114,7 @@ class CommandProtocol extends CommandBase {
 		
 		// Parse the boolean parameter
 		if (args.length == 2) {
-			Boolean parsed = parseBoolean(args, "start", 2);
+			Boolean parsed = parseBoolean(toQueue(args, 2), "start");
 			
 			if (parsed != null) {
 				state = parsed;
