@@ -43,7 +43,7 @@ public class NettyProtocolRegistry {
 	}
 	
 	/**
-	 * Retrieve an immutable view of the class to packet tyåe lookup.
+	 * Retrieve an immutable view of the class to packet type lookup.
 	 * @return The packet type lookup.
 	 */
 	public Map<Class<?>, PacketType> getPacketClassLookup() {

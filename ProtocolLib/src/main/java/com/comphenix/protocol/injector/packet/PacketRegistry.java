@@ -393,14 +393,14 @@ public class PacketRegistry {
 	/**
 	 * Retrieve the packet type of a given packet.
 	 * @param packet - the class of the packet.
-	 * @return The packet type.
-	 * @throws IllegalArgumentException If this is not a valid packet.
+	 * @return The packet type, or NULL if not found.
 	 */
 	public static PacketType getPacketType(Class<?> packet) {
 		initialize();
 		
 		if (NETTY != null)
 			return NETTY.getPacketClassLookup().get(packet);
-		return PacketType.findLegacy(LEGACY.getPacketID(packet));
+		final int id = LEGACY.getPacketID(packet);
+		return PacketType.hasLegacy(id) ? PacketType.findLegacy(id) : null;
 	}
 }

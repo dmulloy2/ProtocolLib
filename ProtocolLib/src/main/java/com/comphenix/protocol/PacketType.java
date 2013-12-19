@@ -654,6 +654,28 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
+	 * Lookup a packet type from a packet class.
+	 * @param packetClass - the packet class.
+	 * @return The corresponding packet type, or NULL if not found.
+	 */
+	public static PacketType fromClass(Class<?> packetClass) {
+		PacketType type = PacketRegistry.getPacketType(packetClass);
+		
+		if (type != null)
+			return type;
+		throw new IllegalArgumentException("Class " + packetClass + " is not a registered packet.");
+	}
+	
+	/**
+	 * Determine if a given class represents a packet class.
+	 * @param packetClass - the class to lookup.
+	 * @return TRUE if this is a packet class, FALSE otherwise.
+	 */
+	public static boolean hasClass(Class<?> packetClass) {
+		return PacketRegistry.getPacketType(packetClass) != null;
+	}
+	
+	/**
 	 * Register a particular packet type.
 	 * <p>
 	 * Note that the registration will be performed on the main thread. 

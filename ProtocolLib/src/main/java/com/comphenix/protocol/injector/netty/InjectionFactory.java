@@ -79,15 +79,15 @@ class InjectionFactory {
 	 * @return The cached injector, or a closed injector if it could not be found.
 	 */
 	public Injector fromName(String name, Player player) {
-		if (closed)
-			return new ClosedInjector(player);
-		Injector injector = nameLookup.get(name);
-		
-		// We can only retrieve cached injectors
-		if (injector != null) {
-			// Update instance
-			injector.setUpdatedPlayer(player);
-			return injector;
+		if (!closed) {
+			Injector injector = nameLookup.get(name);
+			
+			// We can only retrieve cached injectors
+			if (injector != null) {
+				// Update instance
+				injector.setUpdatedPlayer(player);
+				return injector;
+			}
 		}
 		return new ClosedInjector(player);
 	}
