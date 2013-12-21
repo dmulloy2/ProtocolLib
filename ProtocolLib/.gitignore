@@ -1,2 +1,4 @@
 target/
-/logs
+bin/
+crash-reports/
+logs/
