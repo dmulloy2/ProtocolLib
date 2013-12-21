@@ -1,0 +1,9 @@
+name: TinyProtocol
+version: 0.0.1-SNAPSHOT
+description: Intercept packets without ProtocolLib
+author: Comphenix
+
+load: startup
+
+main: com.comphenix.tinyprotocol.ExamplePlugin
+database: false
