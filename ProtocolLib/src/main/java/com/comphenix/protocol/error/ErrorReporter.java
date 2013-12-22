@@ -45,6 +45,22 @@ public interface ErrorReporter {
 	public abstract void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters);
 	
 	/**
+	 * Prints a debug message from the current sender.
+	 * <p>
+	 * Most users will not see this message.
+	 * @param sender - the sender.
+	 * @param report - the report.
+	 */
+	public abstract void reportDebug(Object sender, Report report);
+	
+	/**
+	 * Prints a debug message from the current sender.
+	 * @param sender - the sender.
+	 * @param report - the report builder.
+	 */
+	public abstract void reportDebug(Object sender, ReportBuilder builder);
+	
+	/**
 	 * Prints a warning message from the current plugin.
 	 * @param sender - the object containing the caller method. 
 	 * @param report - an error report to include.

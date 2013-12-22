@@ -23,7 +23,10 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.google.common.collect.MinMaxPriorityQueue;
@@ -35,6 +38,8 @@ import com.google.common.collect.MinMaxPriorityQueue;
  * @author Kristian
  */
 class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncListenerHandler> {
+	public static final ReportType REPORT_GUAVA_CORRUPT_MISSING = 
+			new ReportType("Guava is either missing or corrupt. Reverting to PriorityQueue.");
 
 	// Initial number of elements
 	public static final int INITIAL_CAPACITY = 64;
@@ -74,8 +79,9 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 					maximumSize(maximumSize).
 					<PacketEventHolder>create(), null);
 		} catch (IncompatibleClassChangeError e) {
-			System.out.println("[ProtocolLib] Guava is either missing or corrupt. Reverting to PriorityQueue.");
-			e.printStackTrace();
+			// Print in the console
+			ProtocolLibrary.getErrorReporter().reportWarning(
+				this, Report.newBuilder(REPORT_GUAVA_CORRUPT_MISSING).error(e));
 			
 			// It's a Beta class after all
 			this.processingQueue = Synchronization.queue(

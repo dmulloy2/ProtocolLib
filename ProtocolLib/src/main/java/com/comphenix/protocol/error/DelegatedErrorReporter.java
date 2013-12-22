@@ -38,6 +38,15 @@ public class DelegatedErrorReporter implements ErrorReporter {
 	}
 
 	@Override
+	public void reportDebug(Object sender, Report report) {
+		Report transformed = filterReport(sender, report, false);
+		
+		if (transformed != null) {
+			delegated.reportDebug(sender, transformed);
+		}
+	}
+	
+	@Override
 	public void reportWarning(Object sender, Report report) {
 		Report transformed = filterReport(sender, report, false);
 		
@@ -76,5 +85,10 @@ public class DelegatedErrorReporter implements ErrorReporter {
 	@Override
 	public void reportDetailed(Object sender, ReportBuilder reportBuilder) {
 		reportDetailed(sender, reportBuilder.build());
+	}
+	
+	@Override
+	public void reportDebug(Object sender, ReportBuilder builder) {
+		reportDebug(sender, builder.build());
 	}
 }

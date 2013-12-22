@@ -22,6 +22,16 @@ public class RethrowErrorReporter implements ErrorReporter {
 	}
 
 	@Override
+	public void reportDebug(Object sender, Report report) {
+		// Do nothing - this is just a debug
+	}
+
+	@Override
+	public void reportDebug(Object sender, ReportBuilder builder) {
+		// As above
+	}
+	
+	@Override
 	public void reportWarning(Object sender, ReportBuilder reportBuilder) {
 		reportWarning(sender, reportBuilder.build());
 	}

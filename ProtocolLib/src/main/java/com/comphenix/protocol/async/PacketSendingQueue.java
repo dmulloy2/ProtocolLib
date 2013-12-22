@@ -27,6 +27,10 @@ import java.util.concurrent.PriorityBlockingQueue;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -36,17 +40,16 @@ import com.comphenix.protocol.reflect.FieldAccessException;
  * @author Kristian
  */
 abstract class PacketSendingQueue {
-
+	public static final ReportType REPORT_DROPPED_PACKET = new ReportType("Warning: Dropped packet index %s of type %s.");
+	
 	public static final int INITIAL_CAPACITY = 10;
 	
 	private PriorityBlockingQueue<PacketEventHolder> sendingQueue;
 	
 	// Asynchronous packet sending
 	private Executor asynchronousSender;
-	
 	// Whether or not packet transmission must occur on a specific thread
 	private final boolean notThreadSafe;
-
 	// Whether or not we've run the cleanup procedure
 	private boolean cleanedUp = false;
 	
@@ -279,10 +282,10 @@ abstract class PacketSendingQueue {
 			}
 		
 		} catch (PlayerLoggedOutException e) {
-			System.out.println(String.format(
-					"[ProtocolLib] Warning: Dropped packet index %s of type %s",
-					marker.getOriginalSendingIndex(), event.getPacketType()
-			));
+			ProtocolLibrary.getErrorReporter().reportDebug(this, Report.newBuilder(REPORT_DROPPED_PACKET).
+				messageParam(marker.getOriginalSendingIndex(), event.getPacketType()).
+				callerParam(event)
+			);
 			
 		} catch (IOException e) {
 			// Just print the error

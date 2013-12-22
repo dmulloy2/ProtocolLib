@@ -37,6 +37,7 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.error.Report.ReportBuilder;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.reflect.PrettyPrinter;
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
 
 /**
@@ -144,7 +145,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	public void setDetailedReporting(boolean detailedReporting) {
 		this.detailedReporting = detailedReporting;
 	}
-
+	
 	@Override
 	public void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters) {
 		if (reportMinimalNoSpam(sender, methodName, error)) {
@@ -211,6 +212,18 @@ public class DetailedErrorReporter implements ErrorReporter {
 	}
 	
 	@Override
+	public void reportDebug(Object sender, ReportBuilder builder) {
+		reportDebug(sender, Preconditions.checkNotNull(builder, "builder cannot be NULL").build());
+	}
+	
+	@Override
+	public void reportDebug(Object sender, Report report) {
+		if (logger.isLoggable(Level.FINE)) {
+			reportLevel(Level.FINE, sender, report);
+		}
+	}
+	
+	@Override
 	public void reportWarning(Object sender, ReportBuilder reportBuilder) {
 		if (reportBuilder == null)
 			throw new IllegalArgumentException("reportBuilder cannot be NULL.");
@@ -220,24 +233,30 @@ public class DetailedErrorReporter implements ErrorReporter {
 	
 	@Override
 	public void reportWarning(Object sender, Report report) {
+		if (logger.isLoggable(Level.WARNING)) {
+			reportLevel(Level.WARNING, sender, report);
+		}
+	}
+	
+	private void reportLevel(Level level, Object sender, Report report) {
 		String message = "[" + pluginName + "] [" + getSenderName(sender) + "] " + report.getReportMessage();
 		
 		// Print the main warning
 		if (report.getException() != null) {
-			logger.log(Level.WARNING, message, report.getException());
+			logger.log(level, message, report.getException());
 		} else {			
-			logger.log(Level.WARNING, message);
+			logger.log(level, message);
 			
 			// Remember the call stack
 			if (detailedReporting) {
-				printCallStack(Level.WARNING, logger);
+				printCallStack(level, logger);
 			}
 		}
 		
 		// Parameters?
 		if (report.hasCallerParameters()) {
 			// Write it
-			logger.log(Level.WARNING, printParameters(report.getCallerParameters()));
+			logger.log(level, printParameters(report.getCallerParameters()));
 		}
 	}
 	

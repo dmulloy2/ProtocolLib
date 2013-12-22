@@ -46,6 +46,16 @@ public class BasicErrorReporter implements ErrorReporter {
 	}
 
 	@Override
+	public void reportDebug(Object sender, Report report) {
+		// We just have to swallow it
+	}
+
+	@Override
+	public void reportDebug(Object sender, ReportBuilder builder) {
+		// As above
+	}
+	
+	@Override
 	public void reportWarning(Object sender, Report report) {
 		// Basic warning
 		output.println("[" + sender.getClass().getSimpleName() + "] " + report.getReportMessage());

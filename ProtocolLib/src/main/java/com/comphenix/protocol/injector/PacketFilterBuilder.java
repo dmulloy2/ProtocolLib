@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.Futures;
 
 public class PacketFilterBuilder {
 	public static final ReportType REPORT_TEMPORARY_EVENT_ERROR = new ReportType("Unable to register or handle temporary event.");
+	public static final ReportType REPORT_SPIGOT_IS_DELAYING_INJECTOR = new ReportType("Delaying due to Spigot.");
 	
 	private ClassLoader classLoader;
 	private Server server;
@@ -218,8 +219,8 @@ public class PacketFilterBuilder {
 							}
 						});
 				
-				System.out.println("Delaying due to Spigot");
-				
+				reporter.reportWarning(this, Report.newBuilder(REPORT_SPIGOT_IS_DELAYING_INJECTOR));
+
 				// Let plugins use this version instead
 				return delayed;
 			} else {
