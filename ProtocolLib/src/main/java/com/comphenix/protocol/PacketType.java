@@ -632,6 +632,29 @@ public class PacketType implements Serializable {
 	}
 	
 	/**
+	 * Retrieve a packet type from a legacy ID.
+	 * <p>
+	 * If no associated packet type could be found, a new will be registered under LEGACY.
+	 * @param id - the legacy ID.
+	 * @param sender - the sender of the packet, or NULL if unknown.
+	 * @return The packet type.
+	 * @throws IllegalArgumentException If the sender is NULL and the packet doesn't exist.
+	 */
+	public static PacketType fromLegacy(int id, Sender sender) {
+		PacketType type = getLookup().getFromLegacy(id);
+		
+		if (type == null) {
+			if (sender == null)
+				throw new IllegalArgumentException("Cannot find legacy packet " + id);
+			type = newLegacy(sender, id);
+			
+			// As below
+			scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
+		}
+		return type;
+	}
+	
+	/**
 	 * Retrieve a packet type from a protocol, sender and packet ID.
 	 * <p>
 	 * The packet will automatically be registered if its missing.

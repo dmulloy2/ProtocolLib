@@ -396,11 +396,25 @@ public class PacketRegistry {
 	 * @return The packet type, or NULL if not found.
 	 */
 	public static PacketType getPacketType(Class<?> packet) {
+		return getPacketType(packet, null);
+	}
+	
+	/**
+	 * Retrieve the packet type of a given packet.
+	 * @param packet - the class of the packet.
+	 * @param sender - the sender of the packet, or NULL.
+	 * @return The packet type, or NULL if not found.
+	 */
+	public static PacketType getPacketType(Class<?> packet, Sender sender) {
 		initialize();
 		
-		if (NETTY != null)
+		if (NETTY != null) {
 			return NETTY.getPacketClassLookup().get(packet);
-		final int id = LEGACY.getPacketID(packet);
-		return PacketType.hasLegacy(id) ? PacketType.findLegacy(id) : null;
+		} else {
+			final int id = LEGACY.getPacketID(packet);
+			
+			return PacketType.hasLegacy(id) ? 
+					PacketType.fromLegacy(id, sender) : null;
+		}
 	}
 }

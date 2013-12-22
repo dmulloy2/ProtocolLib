@@ -1018,7 +1018,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	@Override
 	@Deprecated
 	public int getPacketID(Object packet) {
-		return getPacketType(packet).getLegacyId();
+		return PacketRegistry.getPacketID(packet.getClass());
 	}
 
 	@Override
