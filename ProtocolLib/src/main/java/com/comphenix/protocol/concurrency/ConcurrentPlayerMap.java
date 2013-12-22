@@ -223,10 +223,13 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	public TValue remove(Object key) {
 		if (key instanceof Player) {
 			Object playerKey = keyMethod.apply((Player) key);
-			TValue value = valueLookup.remove(playerKey);
 			
-			keyLookup.remove(playerKey);
-			return value;
+			if (playerKey != null) {
+				TValue value = valueLookup.remove(playerKey);
+			
+				keyLookup.remove(playerKey);
+				return value;
+			}
 		}
 		return null;
 	}
@@ -236,7 +239,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 		if (key instanceof Player) {
 			Object playerKey = keyMethod.apply((Player) key);
 			
-			if (valueLookup.remove(playerKey, value)) {
+			if (playerKey != null && valueLookup.remove(playerKey, value)) {
 				keyLookup.remove(playerKey);
 				return true;
 			}
@@ -246,15 +249,19 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	
 	@Override
 	public TValue get(Object key) {
-		if (key instanceof Player) 
-			return valueLookup.get(keyMethod.apply((Player) key));
+		if (key instanceof Player) {
+			Object playerKey = keyMethod.apply((Player) key);
+			return playerKey != null ? valueLookup.get(playerKey) : null;
+		}
 		return null;
 	}
 	
 	@Override
 	public boolean containsKey(Object key) {
-		if (key instanceof Player) 
-			return valueLookup.containsKey(keyMethod.apply((Player) key));
+		if (key instanceof Player) {
+			Object playerKey = keyMethod.apply((Player) key);
+			return playerKey != null && valueLookup.containsKey(playerKey);
+		}
 		return false;
 	}
 		
