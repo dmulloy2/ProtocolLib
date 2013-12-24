@@ -6,8 +6,8 @@ import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
@@ -510,12 +510,31 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			if (injected) {
 				channelField.revertValue();
 				
-				try {
-					originalChannel.pipeline().remove(this);
-					originalChannel.pipeline().remove(protocolEncoder);
-				} catch (NoSuchElementException e) {
-					// Ignore it - the player has logged out
-				}
+				// Calling remove() in the main thread will block the main thread, which may lead 
+				// to a deadlock:
+				//    http://pastebin.com/L3SBVKzp
+				// 
+				// ProtocolLib executes this close() method through a PlayerQuitEvent in the main thread,
+				// which has implicitly aquired a lock on SimplePluginManager (see SimplePluginManager.callEvent(Event)). 
+				// Unfortunately, the remove() method will schedule the removal on one of the Netty worker threads if 
+				// it's called from a different thread, blocking until the removal has been confirmed.
+				// 
+				// This is bad enough (Rule #1: Don't block the main thread), but the real trouble starts if the same 
+				// worker thread happens to be handling a server ping connection when this removal task is scheduled. 
+				// In that case, it may attempt to invoke an asynchronous ServerPingEvent (see PacketStatusListener) 
+				// using SimplePluginManager.callEvent(). But, since this has already been locked by the main thread, 
+				// we end up with a deadlock. The main thread is waiting for the worker thread to process the task, and 
+			    // the worker thread is waiting for the main thread to finish executing PlayerQuitEvent.
+				//
+				// TLDR: Concurrenty is hard.
+				originalChannel.eventLoop().submit(new Callable<Object>() {
+					@Override
+					public Object call() throws Exception {
+						originalChannel.pipeline().remove(ChannelInjector.this);
+						originalChannel.pipeline().remove(protocolEncoder);
+						return null;
+					}
+				});
 				// Clear cache
 				factory.invalidate(player);
 			}

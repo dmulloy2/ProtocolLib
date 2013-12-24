@@ -4,9 +4,11 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
 
 import com.google.common.collect.Lists;
+
+import net.minecraft.util.io.netty.channel.Channel;
 
 // Hopefully, CB won't version these as well
 import net.minecraft.util.io.netty.channel.ChannelFuture;
@@ -94,11 +96,16 @@ class BootstrapList implements List<Object> {
 	 * @param future - the future.
 	 */
 	protected void unprocessBootstrap(ChannelFuture future) {
-		try {
-			future.channel().pipeline().remove(handler);
-		} catch (NoSuchElementException e) {
-			// Whatever
-		}
+		final Channel channel = future.channel();
+		
+		// For thread safety - see ChannelInjector.close()
+		channel.eventLoop().submit(new Callable<Object>() {
+			@Override
+			public Object call() throws Exception {
+				channel.pipeline().remove(handler);
+				return null;
+			}
+		});
 	}
 	
 	/**
