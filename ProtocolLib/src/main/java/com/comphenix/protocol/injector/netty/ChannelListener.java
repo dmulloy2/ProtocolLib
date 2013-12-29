@@ -57,4 +57,10 @@ interface ChannelListener {
 	 * @return The error reporter.
 	 */
 	public ErrorReporter getReporter();
+	
+    /**
+     * Determine if debug mode is enabled.
+     * @return TRUE if it is, FALSE otherwise.
+     */
+	boolean isDebug();
 }

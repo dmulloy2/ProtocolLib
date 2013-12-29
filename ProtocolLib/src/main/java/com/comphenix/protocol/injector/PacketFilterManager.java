@@ -199,6 +199,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// Login packets
 	private LoginPackets loginPackets;
 	
+	// Debug mode
+	private boolean debug;
+	
 	/**
 	 * Only create instances of this class if protocol lib is disabled.
 	 */
@@ -299,6 +302,21 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	@Override
 	public AsynchronousManager getAsynchronousManager() {
 		return asyncFilterManager;
+	}
+	
+	@Override
+	public boolean isDebug() {
+		return debug;
+	}
+
+	@Override
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+		
+		// Inform components that can handle debug mode
+		if (nettyInjector != null) {
+			nettyInjector.setDebug(debug);
+		}
 	}
 	
 	/**

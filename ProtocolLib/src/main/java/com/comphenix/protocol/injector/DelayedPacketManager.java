@@ -60,6 +60,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	
 	// If we have been closed
 	private boolean closed;
+	private boolean debug;
 	
 	// Queued registration
 	private PluginManager queuedManager;
@@ -110,6 +111,8 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 			if (queuedManager != null && queuedPlugin != null) {
 				delegate.registerEvents(queuedManager, queuedPlugin);
 			}
+			// And update the debug mode
+			delegate.setDebug(debug);
 			
 			// Add any pending listeners
 			synchronized (queuedListeners) {
@@ -426,6 +429,20 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 			return delegate.getAsynchronousManager();
 		else
 			return asyncManager;
+	}
+	
+	@Override
+	public boolean isDebug() {
+		return debug;
+	}
+
+	@Override
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+		
+		if (delegate != null) {
+			delegate.setDebug(debug);
+		}
 	}
 	
 	/**

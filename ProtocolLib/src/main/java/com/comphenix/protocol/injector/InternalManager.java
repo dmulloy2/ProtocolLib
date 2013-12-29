@@ -35,4 +35,16 @@ public interface InternalManager extends ProtocolManager {
 	 * Called when ProtocolLib is closing.
 	 */
 	public void close();
+
+	/**
+	 * Determine if debug mode is enabled.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public boolean isDebug();
+	
+	/**
+	 * Set whether or not debug mode is enabled.
+	 * @param debug - TRUE if it is, FALSE otherwise.
+	 */
+	public void setDebug(boolean debug);
 }

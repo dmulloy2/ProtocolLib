@@ -65,12 +65,26 @@ public class NettyProtocolInjector implements ChannelListener {
     
     // Handle errors
     private ErrorReporter reporter;
+    private boolean debug;
     
     public NettyProtocolInjector(ListenerInvoker invoker, ErrorReporter reporter) {
 		this.invoker = invoker;
 		this.reporter = reporter;
 	}
 
+    @Override
+    public boolean isDebug() {
+		return debug;
+	}
+    
+    /**
+     * Set whether or not the debug mode is enabled.
+     * @param debug - TRUE if it is, FALSE otherwise.
+     */
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+    
 	/**
      * Inject into the spigot connection class.
      */

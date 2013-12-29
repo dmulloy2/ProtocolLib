@@ -210,6 +210,13 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		ENCODER_TYPE_MATCHER.set(encoder, TypeParameterMatcher.get(MinecraftReflection.getPacketClass()));
 	}
 		
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		if (channelListener.isDebug())
+			cause.printStackTrace();
+		super.exceptionCaught(ctx, cause);
+	}
+	
 	/**
 	 * Encode a packet to a byte buffer, taking over for the standard Minecraft encoder.
 	 * @param ctx - the current context. 

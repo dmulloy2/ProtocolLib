@@ -356,7 +356,6 @@ class ProtocolConfig {
 	 * Set whether or not the background compiler for structure modifiers is enabled or not.
 	 * <p>
 	 * This setting will take effect next time ProtocolLib is started.
-	 * 
 	 * @param enabled - TRUE if is enabled/running, FALSE otherwise.
 	 */
 	public void setBackgroundCompilerEnabled(boolean enabled) {

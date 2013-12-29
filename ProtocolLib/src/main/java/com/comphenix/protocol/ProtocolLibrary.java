@@ -126,14 +126,15 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Used to clean up server packets that have expired. But mostly required to simulate 
 	// recieving client packets.
-	private int asyncPacketTask = -1;
+	private int packetTask = -1;
 	private int tickCounter = 0;
-	private static final int ASYNC_PACKET_DELAY = 1;
+	private static final int ASYNC_MANAGER_DELAY = 1;
 	
 	// Used to unhook players after a delay
 	private DelayedSingleTask unhookTask;
 	
 	// Settings/options
+	private int configExpectedMod = -1;
 	private ProtocolConfig config;
 	
 	// Updater
@@ -364,7 +365,7 @@ public class ProtocolLibrary extends JavaPlugin {
 				
 			// Worker that ensures that async packets are eventually sent
 			// It also performs the update check.
-			createAsyncTask(server);
+			createPacketTask(server);
 		
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_ENABLE_ERROR).error(e));
@@ -483,31 +484,43 @@ public class ProtocolLibrary extends JavaPlugin {
 		getServer().getPluginManager().disablePlugin(this);
 	}
 	
-	private void createAsyncTask(Server server) {
+	private void createPacketTask(Server server) {
 		try {
-			if (asyncPacketTask >= 0)
-				throw new IllegalStateException("Async task has already been created");
+			if (packetTask >= 0)
+				throw new IllegalStateException("Packet task has already been created");
 			
 			// Attempt to create task
-			asyncPacketTask = server.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+			packetTask = server.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
 				@Override
 				public void run() {
 					AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
 					
 					// We KNOW we're on the main thread at the moment
 					manager.sendProcessedPackets(tickCounter++, true);
+				
+					// House keeping
+					updateConfiguration();
 					
 					// Check for updates too
 					if (!UPDATES_DISABLED) {
 						checkUpdates();
 					}
 				}
-			}, ASYNC_PACKET_DELAY, ASYNC_PACKET_DELAY);
+			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
 		
 		} catch (Throwable e) {
-			if (asyncPacketTask == -1) {
+			if (packetTask == -1) {
 				reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CREATE_TIMEOUT_TASK).error(e));
 			}
+		}
+	}
+	
+	private void updateConfiguration() {
+		if (config != null && config.getModificationCount() != configExpectedMod) {
+			configExpectedMod = config.getModificationCount();
+			
+			// Update the debug flag
+			protocolManager.setDebug(config.isDebug());
 		}
 	}
 	
@@ -551,9 +564,9 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 		
 		// Clean up
-		if (asyncPacketTask >= 0) {
-			getServer().getScheduler().cancelTask(asyncPacketTask);
-			asyncPacketTask = -1;
+		if (packetTask >= 0) {
+			getServer().getScheduler().cancelTask(packetTask);
+			packetTask = -1;
 		}
 		
 		// And redirect handler too
