@@ -713,20 +713,7 @@ public class PacketType implements Serializable {
 				ObjectEnum<PacketType> objEnum;
 				
 				// A bit ugly, but performance is critical
-				switch (type.getProtocol()) {
-					case HANDSHAKING:
-						objEnum = type.isClient() ? Handshake.Client.getInstance() : Handshake.Server.getInstance(); break;
-					case PLAY:
-						objEnum = type.isClient() ? Play.Client.getInstance() : Play.Server.getInstance(); break;
-					case STATUS:
-						objEnum = type.isClient() ? Status.Client.getInstance() : Status.Server.getInstance(); break;
-					case LOGIN:
-						objEnum = type.isClient() ? Login.Client.getInstance() : Login.Server.getInstance(); break;
-					case LEGACY:
-						objEnum = type.isClient() ? Legacy.Client.getInstance() : Legacy.Server.getInstance(); break;
-					default:
-						throw new IllegalStateException("Unexpected protocol: " + type.getProtocol());
-				}
+				objEnum = getObjectEnum(type);
 				
 				if (objEnum.registerMember(type, name)) {
 					getLookup().addPacketTypes(Arrays.asList(type));
@@ -745,6 +732,28 @@ public class PacketType implements Serializable {
 			}
 		}
 		return ProtocolLibrary.getExecutorSync().submit(callable);
+	}
+	
+	/**
+	 * Retrieve the correct object enum from a specific packet type.
+	 * @param type - the packet type.
+	 * @return The corresponding object enum.
+	 */
+	public static ObjectEnum<PacketType> getObjectEnum(final PacketType type) {
+		switch (type.getProtocol()) {
+			case HANDSHAKING:
+				return type.isClient() ? Handshake.Client.getInstance() : Handshake.Server.getInstance(); 
+			case PLAY:
+				return type.isClient() ? Play.Client.getInstance() : Play.Server.getInstance(); 
+			case STATUS:
+				return type.isClient() ? Status.Client.getInstance() : Status.Server.getInstance(); 
+			case LOGIN:
+				return type.isClient() ? Login.Client.getInstance() : Login.Server.getInstance(); 
+			case LEGACY:
+				return type.isClient() ? Legacy.Client.getInstance() : Legacy.Server.getInstance(); 
+			default:
+				throw new IllegalStateException("Unexpected protocol: " + type.getProtocol());
+		}
 	}
 	
 	/**
@@ -845,6 +854,14 @@ public class PacketType implements Serializable {
 		} catch (Exception e) {
 			return null;
 		}
+	}
+	
+	/**
+	 * Retrieve the declared enum name of this packet type.
+	 * @return The enum name.
+	 */
+	public String name() {
+		return getObjectEnum(this).getDeclaredName(this);
 	}
 
 	/**
