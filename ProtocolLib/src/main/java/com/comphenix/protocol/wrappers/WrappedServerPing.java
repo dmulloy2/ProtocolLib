@@ -16,6 +16,7 @@ import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.Unpooled;
 import net.minecraft.util.io.netty.handler.codec.base64.Base64;
+import net.minecraft.util.io.netty.util.IllegalReferenceCountException;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -256,9 +257,18 @@ public class WrappedServerPing extends AbstractWrapper {
 	 * Represents a compressed favicon.
 	 * @author Kristian
 	 */
+	// Should not have been an inner class ... oh well.
 	public static class CompressedImage {
-		private final String mime;
-		private final byte[] data;
+		protected volatile String mime;
+		protected volatile byte[] data;
+		protected volatile String encoded;
+		
+		/**
+		 * Represents a compressed image with no content.
+		 */
+		protected CompressedImage() {
+			// Derived class should initialize some of the fields
+		}
 		
 		/**
 		 * Construct a new compressed image.
@@ -290,6 +300,20 @@ public class WrappedServerPing extends AbstractWrapper {
 		}
 		
 		/**
+		 * Retrieve a compressed image from a base-64 encoded PNG file.
+		 * @param base64 - the base 64-encoded PNG.
+		 * @return The compressed image.
+		 */
+		public static CompressedImage fromBase64Png(String base64) {
+			try {
+				return new EncodedCompressedImage("data:image/png;base64," + base64);
+			} catch (IllegalArgumentException e) {
+				// Remind the caller
+				throw new IllegalReferenceCountException("Must be a pure base64 encoded string. Cannot be an encoded text.", e);
+			}
+		}
+		
+		/**
 		 * Retrieve a compressed image from an image.
 		 * @param image - the image.
 		 * @throws IOException If we were unable to compress the image.
@@ -306,24 +330,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		 * @return The corresponding compressed image.
 		 */
 		public static CompressedImage fromEncodedText(String text) {
-			String mime = null;
-			byte[] data = null;
-			
-			for (String segment : Splitter.on(";").split(text)) {
-				if (segment.startsWith("data:")) {
-					mime = segment.substring(5);
-				} else if (segment.startsWith("base64,")) {
-					byte[] encoded = segment.substring(7).getBytes(Charsets.UTF_8);
-					ByteBuf decoded = Base64.decode(Unpooled.wrappedBuffer(encoded));
-					
-					// Read into a byte array
-					data = new byte[decoded.readableBytes()];
-					decoded.readBytes(data);
-				} else {
-					// We will ignore these segments
-				}
-			}
-			return new CompressedImage(mime, data);
+			return new EncodedCompressedImage(text);
 		}
 		
 		/**
@@ -341,7 +348,15 @@ public class WrappedServerPing extends AbstractWrapper {
 		 * @return The underlying compressed image.
 		 */
 		public byte[] getDataCopy() {
-			return data.clone();
+			return getData().clone();
+		}
+		
+		/**
+		 * Retrieve the underlying data, with no copying.
+		 * @return The underlying data.
+		 */
+		protected byte[] getData() {
+			return data;
 		}
 		
 		/**
@@ -350,15 +365,79 @@ public class WrappedServerPing extends AbstractWrapper {
 		 * @throws IOException If the image data could not be decoded.
 		 */
 		public BufferedImage getImage() throws IOException {
-			return ImageIO.read(new ByteArrayInputStream(data));
+			return ImageIO.read(new ByteArrayInputStream(getData()));
 		}
-
+		
 		/**
 		 * Convert the compressed image to encoded text.
 		 * @return The encoded text.
 		 */
 		public String toEncodedText() {
-			return "data:" + mime + ";base64," + Base64.encode(Unpooled.wrappedBuffer(data)).toString(Charsets.UTF_8);
+			if (encoded == null) {
+				final ByteBuf buffer = Unpooled.wrappedBuffer(getData());
+				String computed = "data:" + mime + ";base64," + 
+					Base64.encode(buffer).toString(Charsets.UTF_8);
+				
+				encoded = computed;
+			}
+			return encoded;
+		}
+	}
+	
+	/**
+	 * Represents a compressed image that starts out as an encoded base 64 string.
+	 * @author Kristian
+	 */
+	private static class EncodedCompressedImage extends CompressedImage {
+		public EncodedCompressedImage(String encoded) {
+			this.encoded =  encoded;
+		}
+		
+		/**
+		 * Ensure that we have decoded the content of the encoded text.
+		 */
+		protected void initialize() {
+			if (mime == null || data == null) {
+				decode();
+			}
+		}
+		
+		/**
+		 * Decode the encoded text.
+		 */
+		protected void decode() {
+			for (String segment : Splitter.on(";").split(encoded)) {
+				if (segment.startsWith("data:")) {
+					this.mime = segment.substring(5);
+				} else if (segment.startsWith("base64,")) {
+					byte[] encoded = segment.substring(7).getBytes(Charsets.UTF_8);
+					ByteBuf decoded = Base64.decode(Unpooled.wrappedBuffer(encoded));
+					
+					// Read into a byte array
+					byte[] data = new byte[decoded.readableBytes()];
+					decoded.readBytes(data);
+					this.data = data;
+				} else {
+					// We will ignore these segments
+				}
+			}
+		}
+		
+		@Override
+		protected byte[] getData() {
+			initialize();
+			return super.getData();
+		}
+		
+		@Override
+		public String getMime() {
+			initialize();
+			return super.getMime();
+		}
+		
+		@Override
+		public String toEncodedText() {
+			return encoded;
 		}
 	}
 }

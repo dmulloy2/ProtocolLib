@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
@@ -35,7 +36,10 @@ public class WrappedServerPingTest {
 		assertEquals("Minecraft 123", serverPing.getVersionName());
 		assertEquals(4, serverPing.getVersionProtocol());
 		
-		assertArrayEquals(original, serverPing.getFavicon().getDataCopy());
+		assertArrayEquals(original, serverPing.getFavicon().getData());
+		
+		CompressedImage copy = CompressedImage.fromBase64Png(Base64Coder.encodeLines(tux.getData()));
+		assertArrayEquals(copy.getData(), serverPing.getFavicon().getData());
 	}
 
 }
