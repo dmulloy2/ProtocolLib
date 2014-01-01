@@ -312,10 +312,15 @@ public class WrappedServerPing extends AbstractWrapper {
 		copy.setPlayers(getPlayers());
 		copy.setFavicon(getFavicon());
 		copy.setMotD(motd != null ? motd.deepClone() : null);
-		copy.setPlayersMaximum(getPlayersMaximum());
-		copy.setPlayersOnline(getPlayersOnline());
 		copy.setVersionName(getVersionName());
 		copy.setVersionProtocol(getVersionProtocol());
+		
+		if (isPlayersVisible()) {
+			copy.setPlayersMaximum(getPlayersMaximum());
+			copy.setPlayersOnline(getPlayersOnline());
+		} else {
+			copy.setPlayersVisible(false);
+		}
 		return copy;
 	}
 	
