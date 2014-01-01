@@ -145,18 +145,19 @@ public class WrappedServerPing extends AbstractWrapper {
 	
 	/**
 	 * Retrieve the compressed PNG file that is being displayed as a favicon.
-	 * @return The favicon.
+	 * @return The favicon, or NULL if no favicon will be displayed.
 	 */
 	public CompressedImage getFavicon() {
-		return CompressedImage.fromEncodedText((String) FAVICON.get(handle));
+		String favicon = (String) FAVICON.get(handle);
+		return (favicon != null) ? CompressedImage.fromEncodedText(favicon) : null;
 	}
 	
 	/**
 	 * Set the compressed PNG file that is being displayed.
-	 * @param image - the new compressed image.
+	 * @param image - the new compressed image or NULL if no favicon should be displayed.
 	 */
 	public void setFavicon(CompressedImage image) {
-		FAVICON.set(handle, image.toEncodedText());
+		FAVICON.set(handle, (image != null) ? image.toEncodedText() : null);
 	}
 	
 	/**
@@ -455,7 +456,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	 */
 	private static class EncodedCompressedImage extends CompressedImage {
 		public EncodedCompressedImage(String encoded) {
-			this.encoded =  encoded;
+			this.encoded =  Preconditions.checkNotNull(encoded, "encoded favicon cannot be NULL");
 		}
 		
 		/**
