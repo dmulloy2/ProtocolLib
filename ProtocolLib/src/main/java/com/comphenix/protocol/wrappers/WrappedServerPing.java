@@ -10,6 +10,8 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
@@ -68,19 +70,19 @@ public class WrappedServerPing extends AbstractWrapper {
 			MinecraftReflection.getEntityPlayerClass().getSuperclass(), GameProfile.class, true);
 	
 	// Inner class
-	private Object players;
+	private Object players; // may be NULL
 	private Object version;
 	
 	/**
-	 * Construct a new server ping initialized with empty values.
+	 * Construct a new server ping initialized with a zero player count, and zero maximum. 
+	 * <p>
+	 * Note that the version string is set to 1.7.2.
 	 */
 	public WrappedServerPing() {
 		super(MinecraftReflection.getServerPingClass());
 		setHandle(SERVER_PING_CONSTRUCTOR.invoke());
-		this.players = PLAYERS_CONSTRUCTOR.invoke(0, 0);
-		this.version = VERSION_CONSTRUCTOR.invoke(MinecraftVersion.WORLD_UPDATE.toString(), 4);
-		PLAYERS.set(handle, players);
-		VERSION.set(handle, version);
+		resetPlayers();
+		resetVersion();
 	}
 	
 	private WrappedServerPing(Object handle) {
@@ -88,6 +90,22 @@ public class WrappedServerPing extends AbstractWrapper {
 		setHandle(handle);
 		this.players = PLAYERS.get(handle);
 		this.version = VERSION.get(handle);
+	}
+	
+	/**
+	 * Set the player count and player maximum to the default values.
+	 */
+	protected void resetPlayers() {
+		players = PLAYERS_CONSTRUCTOR.invoke(0, 0);
+		PLAYERS.set(handle, players);
+	}
+	
+	/**
+	 * Reset the version string to the default state.
+	 */
+	protected void resetVersion() {
+		version = VERSION_CONSTRUCTOR.invoke(MinecraftVersion.WORLD_UPDATE.toString(), 4);
+		VERSION.set(handle, version);
 	}
 	
 	/**
@@ -143,34 +161,81 @@ public class WrappedServerPing extends AbstractWrapper {
 	
 	/**
 	 * Retrieve the displayed number of online players.
+	 * @see {@link #setPlayersOnline(int)} for more information.
 	 * @return The displayed number.
+	 * @throws IllegalStateException If the player count has been hidden via {@link #setPlayersVisible(boolean)}.
 	 */
 	public int getPlayersOnline() {
+		if (players == null)
+			throw new IllegalStateException("The player count has been hidden.");
 		return (Integer) PLAYERS_ONLINE.get(players);
 	}
 	
 	/**
 	 * Set the displayed number of online players.
+	 * <p>
+	 * As of 1.7.2, this is completely unrestricted, and can be both positive and 
+	 * negative, as well as higher than the player maximum.
 	 * @param online - online players.
 	 */
 	public void setPlayersOnline(int online) {
+		if (players == null)
+			resetPlayers();
 		PLAYERS_ONLINE.set(players, online);
 	}
 	
 	/**
 	 * Retrieve the displayed maximum number of players.
+	 * @see {@link #setPlayersMaximum(int)} for more information.
 	 * @return The maximum number.
+	 * @throws IllegalStateException If the player maximum has been hidden via {@link #setPlayersVisible(boolean)}.
 	 */
 	public int getPlayersMaximum() {
+		if (players == null)
+			throw new IllegalStateException("The player maximum has been hidden.");
 		return (Integer) PLAYERS_MAXIMUM.get(players);
 	}
 	
 	/**
 	 * Set the displayed maximum number of players.
+	 * <p>
+	 * The 1.7.2 accepts any value as a player maximum, positive or negative. It even permits a player maximum that
+	 * is less than the player count.
 	 * @param maximum - maximum player count.
 	 */
 	public void setPlayersMaximum(int maximum) {
+		if (players == null)
+			resetPlayers();
 		PLAYERS_MAXIMUM.set(players, maximum);
+	}
+	
+	/**
+	 * Set whether or not the player count and player maximum is visible.
+	 * <p>
+	 * Note that this may set the current player count and maximum to their respective real values.
+	 * @param visible - TRUE if it should be visible, FALSE otherwise.
+	 */
+	public void setPlayersVisible(boolean visible) {
+		if (isPlayersVisible() != visible) {
+			if (visible) {
+				// Recreate the count and maximum
+				Server server = Bukkit.getServer();
+				setPlayersMaximum(server.getMaxPlayers());
+				setPlayersOnline(server.getOnlinePlayers().length);
+			} else {
+				PLAYERS.set(handle, players = null);
+			}
+		}
+	}
+	
+	/**
+	 * Determine if the player count and maximum is visible.
+	 * <p>
+	 * If not, the client will display ??? in the same location.
+	 * @return TRUE if the player statistics is visible, FALSE otherwise.
+	 */
+	public boolean isPlayersVisible() {
+		return players != null;
 	}
 	
 	/**
