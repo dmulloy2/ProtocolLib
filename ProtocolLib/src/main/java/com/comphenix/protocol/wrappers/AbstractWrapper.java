@@ -28,7 +28,7 @@ public abstract class AbstractWrapper {
 		if (handle == null)
 			throw new IllegalArgumentException("handle cannot be NULL.");
 		if (!handleType.isAssignableFrom(handle.getClass()))
-			throw new IllegalArgumentException("handle (" + handle + ") is not a " + handleType);
+			throw new IllegalArgumentException("handle (" + handle + ") is not a " + handleType + ", but " + handle.getClass());
 		this.handle = handle;
 	}
 	

@@ -57,6 +57,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
@@ -189,6 +190,60 @@ public class BukkitConverters {
 			}
 			return false;
 		}
+	}
+	
+	/**
+	 * Retrieve an equivalent converter for a map of generic keys and primitive values.
+	 * @param genericItemType - the generic item type.
+	 * @param itemConverter - an equivalent converter for the generic type.
+	 * @return An equivalent converter.
+	 */
+	public static <T, U> EquivalentConverter<Map<T, U>> getMapConverter(
+	  final Class<?> genericKeyType, final EquivalentConverter<T> keyConverter) {
+		// Convert to and from the wrapper
+		return new IgnoreNullConverter<Map<T, U>>() {
+				@SuppressWarnings("unchecked")
+				@Override
+				protected Map<T, U> getSpecificValue(Object generic) {
+					if (generic instanceof Map) {
+						Map<T, U> result = Maps.newHashMap();
+					
+						// Copy everything to a new list
+						for (Entry<Object, Object> entry : ((Map<Object, Object>) generic).entrySet()) {
+							result.put(
+								keyConverter.getSpecific(entry.getKey()),
+								(U) entry.getValue()
+							);
+						}
+						return result;
+					}
+					
+					// Not valid
+					return null;
+				}
+
+				@SuppressWarnings("unchecked")
+				@Override
+				protected Object getGenericValue(Class<?> genericType, Map<T, U> specific) {
+					Map<Object, Object> newContainer = (Map<Object, Object>) DefaultInstances.DEFAULT.getDefault(genericType);
+					
+					// Convert each object
+					for (Entry<T, U> entry : specific.entrySet()) {
+						newContainer.put(
+							keyConverter.getGeneric(genericKeyType, entry.getKey()),
+							entry.getValue()
+						);
+					}
+					return newContainer;
+				}
+
+				@SuppressWarnings("unchecked")
+				@Override
+				public Class<Map<T, U>> getSpecificType() {
+					Class<?> dummy = Map.class;
+					return (Class<Map<T, U>>) dummy;
+				}
+			};
 	}
 	
 	/**
@@ -595,6 +650,29 @@ public class BukkitConverters {
 	}
 	
 	/**
+	 * Retrieve the converter for a statistic.
+	 * @return Statistic converter.
+	 */
+	public static EquivalentConverter<WrappedStatistic> getWrappedStatisticConverter() {
+		return new IgnoreNullConverter<WrappedStatistic>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, WrappedStatistic specific) {
+				return specific.getHandle();
+			}
+			
+			@Override
+			protected WrappedStatistic getSpecificValue(Object generic) {
+				return WrappedStatistic.fromHandle(generic);
+			}
+			
+			@Override
+			public Class<WrappedStatistic> getSpecificType() {
+				return WrappedStatistic.class;
+			}
+		};
+	}
+	
+	/**
 	 * Retrieve a converter for block instances.
 	 * @return A converter for block instances.
 	 */
@@ -756,6 +834,7 @@ public class BukkitConverters {
 				builder.put(WrappedGameProfile.class, (EquivalentConverter) getWrappedGameProfileConverter());
 				builder.put(WrappedChatComponent.class, (EquivalentConverter) getWrappedChatComponentConverter());	
 				builder.put(WrappedServerPing.class, (EquivalentConverter) getWrappedServerPingConverter());
+				builder.put(WrappedStatistic.class, (EquivalentConverter) getWrappedStatisticConverter());
 				
 				for (Entry<Class<?>, EquivalentConverter<?>> entry : EnumWrappers.getFromWrapperMap().entrySet()) {
 					builder.put((Class) entry.getKey(), (EquivalentConverter) entry.getValue());
@@ -798,6 +877,7 @@ public class BukkitConverters {
 				builder.put(MinecraftReflection.getGameProfileClass(), (EquivalentConverter) getWrappedGameProfileConverter());
 				builder.put(MinecraftReflection.getIChatBaseComponentClass(), (EquivalentConverter) getWrappedChatComponentConverter());
 				builder.put(MinecraftReflection.getServerPingClass(), (EquivalentConverter) getWrappedServerPingConverter());
+				builder.put(MinecraftReflection.getStatisticClass(), (EquivalentConverter) getWrappedStatisticConverter());
 				
 				for (Entry<Class<?>, EquivalentConverter<?>> entry : EnumWrappers.getFromNativeMap().entrySet()) {
 					builder.put((Class) entry.getKey(), (EquivalentConverter) entry.getValue());

@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
@@ -76,6 +77,7 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
+import com.comphenix.protocol.wrappers.WrappedStatistic;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
 import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
@@ -355,6 +357,21 @@ public class PacketContainer implements Serializable {
 		return structureModifier.<ItemStack[]>withType(
 				MinecraftReflection.getItemStackArrayClass(), 
 				BukkitConverters.getIgnoreNull(new ItemStackArrayConverter()));
+	}
+	
+	/**
+	 * Retrieve a read/write structure for maps of statistics.
+	 * <p>
+	 * Note that you must write back the changed map to persist it.
+	 * @return A modifier for maps of statistics.
+	 */
+	public StructureModifier<Map<WrappedStatistic, Integer>> getStatisticMaps() {
+		return structureModifier.withType(Map.class, 
+			BukkitConverters.<WrappedStatistic, Integer>getMapConverter(
+				MinecraftReflection.getStatisticClass(), 
+				BukkitConverters.getWrappedStatisticConverter()
+			)
+		);
 	}
 	
 	/**

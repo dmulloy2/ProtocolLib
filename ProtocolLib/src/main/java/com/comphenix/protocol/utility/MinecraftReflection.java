@@ -833,6 +833,24 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the NMS statistics class.
+	 * @return The statistics class.
+	 */
+	public static Class<?> getStatisticClass() {
+		// TODO: Implement fallback
+		return getMinecraftClass("Statistic");
+	}
+	
+	/**
+	 * Retrieve the NMS statistic list class.
+	 * @return The statistic list class.
+	 */
+	public static Class<?> getStatisticListClass() {
+		// TODO: Implement fallback
+		return getMinecraftClass("StatisticList");
+	}
+	
+	/**
 	 * Fallback method that can determine the MinecraftServer and the ServerConfigurationManager.
 	 */
 	private static void useFallbackServer() {
