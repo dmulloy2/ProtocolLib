@@ -360,7 +360,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 					// Do nothing
 					break;
 			}
-		} catch (IllegalStateException e) {
+		} catch (Exception e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_VERIFIER_ERROR).messageParam(e.getMessage()));
 		}
 	}
