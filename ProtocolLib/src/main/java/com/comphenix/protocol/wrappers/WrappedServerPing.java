@@ -241,11 +241,11 @@ public class WrappedServerPing extends AbstractWrapper {
 	
 	/**
 	 * Retrieve a copy of all the logged in players.
-	 * @return Logged in players or NULL if the player count has been hidden via {@link #setPlayersVisible(boolean)}.
+	 * @return Logged in players or an empty list if no player names will be displayed.
 	 */
 	public ImmutableList<WrappedGameProfile> getPlayers() {
 		if (players == null)
-			return null;
+			return ImmutableList.of();
 		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(PLAYERS_PROFILES.get(players)));
 	}
 	
