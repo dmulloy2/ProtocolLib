@@ -2,6 +2,7 @@ package com.comphenix.protocol.utility;
 
 import static org.junit.Assert.*;
 
+import net.minecraft.server.v1_7_R1.ChatComponentText;
 import net.minecraft.server.v1_7_R1.ChatSerializer;
 import net.minecraft.server.v1_7_R1.ChunkCoordIntPair;
 import net.minecraft.server.v1_7_R1.IChatBaseComponent;
@@ -42,6 +43,11 @@ public class MinecraftReflectionTest {
 	@Test
 	public void testChatComponent() {
 		assertEquals(IChatBaseComponent.class, MinecraftReflection.getIChatBaseComponentClass());
+	}
+	
+	@Test
+	public void testChatComponentText() {
+		assertEquals(ChatComponentText.class, MinecraftReflection.getChatComponentTextClass());
 	}
 	
 	@Test

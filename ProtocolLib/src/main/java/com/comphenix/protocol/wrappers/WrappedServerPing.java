@@ -134,13 +134,11 @@ public class WrappedServerPing extends AbstractWrapper {
 	}
 
 	/**
-	 * Set the message of the day. 
-	 * <p>
-	 * <b>Warning:</b> Only the first line will be transmitted.
+	 * Set the message of the day.
 	 * @param description - the message.
 	 */
 	public void setMotD(String message) {
-		setMotD(WrappedChatComponent.fromChatMessage(message)[0]);
+		setMotD(WrappedChatComponent.fromText(message));
 	}
 	
 	/**

@@ -4,8 +4,10 @@ import org.bukkit.ChatColor;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.base.Preconditions;
 
 /**
  * Represents a chat component added in Minecraft 1.7.2
@@ -17,6 +19,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 	private static MethodAccessor SERIALIZE_COMPONENT = null;
 	private static MethodAccessor DESERIALIZE_COMPONENT = null;
 	private static MethodAccessor CONSTRUCT_COMPONENT = null;
+	private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
 	
 	static {
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER);
@@ -30,6 +33,10 @@ public class WrappedChatComponent extends AbstractWrapper {
 		// Get a component from a standard Minecraft message
 		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(
 			MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
+		
+		// And the component text constructor
+		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(
+				MinecraftReflection.getChatComponentTextClass(), String.class);
 	}
 	
 	private transient String cache;
@@ -56,6 +63,16 @@ public class WrappedChatComponent extends AbstractWrapper {
 	 */
 	public static WrappedChatComponent fromJson(String json) {
 		return new WrappedChatComponent(DESERIALIZE_COMPONENT.invoke(null, json), json);
+	}
+	
+	/**
+	 * Construct a wrapper around a new text chat component with the given text.
+	 * @param text - the text of the text chat component.
+	 * @return The wrapper around the new chat component.
+	 */
+	public static WrappedChatComponent fromText(String text) {
+		Preconditions.checkNotNull(text, "text cannot be NULL.");
+		return fromHandle(CONSTRUCT_TEXT_COMPONENT.invoke(text));
 	}
 	
 	/**

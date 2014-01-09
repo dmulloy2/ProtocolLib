@@ -671,6 +671,33 @@ public class MinecraftReflection {
 	}
 
 	/**
+	 * Retrieve the NMS chat component text class.
+	 * @return The chat component class.
+	 */
+	public static Class<?> getChatComponentTextClass() {
+		try {
+			return getMinecraftClass("ChatComponentText");
+		} catch (RuntimeException e) {
+			try {
+				Method getScoreboardDisplayName = FuzzyReflection.fromClass(getEntityClass()).
+					getMethodByParameters("getScoreboardDisplayName", getIChatBaseComponentClass(), new Class<?>[0]);
+				Class<?> baseClass = getIChatBaseComponentClass();
+				
+				for (AsmMethod method : ClassAnalyser.getDefault().getMethodCalls(getScoreboardDisplayName)) {
+					Class<?> owner = method.getOwnerClass();
+					
+					if (isMinecraftClass(owner) && baseClass.isAssignableFrom(owner)) {
+						return setMinecraftClass("ChatComponentText", owner);
+					}
+				}
+			} catch (Exception e1) {
+				throw new IllegalStateException("Cannot find ChatComponentText class.", e);
+			}
+		}
+		throw new IllegalStateException("Cannot find ChatComponentText class.");
+	}
+	
+	/**
 	 * Attempt to find the ChatSerializer class.
 	 * @return The serializer class.
 	 * @throws IllegalStateException If the class could not be found or deduced.
