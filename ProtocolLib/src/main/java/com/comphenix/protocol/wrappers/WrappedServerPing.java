@@ -241,10 +241,15 @@ public class WrappedServerPing extends AbstractWrapper {
 	
 	/**
 	 * Retrieve a copy of all the logged in players.
-	 * @return Logged in players.
+	 * @return Logged in players or an empty list if no player names will be displayed.
 	 */
 	public ImmutableList<WrappedGameProfile> getPlayers() {
-		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(PLAYERS_PROFILES.get(players)));
+		if (players == null)
+			return ImmutableList.of();
+		Object playerProfiles = PLAYERS_PROFILES.get(players);
+		if (playerProfiles == null)
+			return ImmutableList.of();
+		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(playerProfiles));
 	}
 	
 	/**
@@ -252,7 +257,9 @@ public class WrappedServerPing extends AbstractWrapper {
 	 * @param profile - every logged in player.
 	 */
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
-		PLAYERS_PROFILES.set(players, PROFILE_CONVERT.getGeneric(GameProfile[].class, profile));
+		if (players == null)
+			resetPlayers();
+		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(GameProfile[].class, profile) : null);
 	}
 	
 	/**
