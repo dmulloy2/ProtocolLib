@@ -246,7 +246,10 @@ public class WrappedServerPing extends AbstractWrapper {
 	public ImmutableList<WrappedGameProfile> getPlayers() {
 		if (players == null)
 			return ImmutableList.of();
-		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(PLAYERS_PROFILES.get(players)));
+		Object playerProfiles = PLAYERS_PROFILES.get(players);
+		if (playerProfiles == null)
+			return ImmutableList.of();
+		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(playerProfiles));
 	}
 	
 	/**
@@ -256,7 +259,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
 		if (players == null)
 			resetPlayers();
-		PLAYERS_PROFILES.set(players, PROFILE_CONVERT.getGeneric(GameProfile[].class, profile));
+		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(GameProfile[].class, profile) : null);
 	}
 	
 	/**
