@@ -1,5 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
+import com.google.common.base.Objects;
+
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 /**
@@ -24,9 +26,11 @@ public class WrappedGameProfile extends AbstractWrapper {
 	
 	/**
 	 * Construct a wrapper around an existing game profile.
-	 * @param profile - the underlying profile.
+	 * @param profile - the underlying profile, or NULL.
 	 */
 	public static WrappedGameProfile fromHandle(Object handle) {
+		if (handle == null) 
+			return null;
 		return new WrappedGameProfile(handle);
 	}
 
@@ -46,6 +50,10 @@ public class WrappedGameProfile extends AbstractWrapper {
 		return getProfile().getName();
 	}
 	
+	/**
+	 * Retrieve the underlying GameProfile.
+	 * @return The GameProfile.
+	 */
 	private GameProfile getProfile() {
 		return (GameProfile) handle;
 	}
@@ -77,8 +85,14 @@ public class WrappedGameProfile extends AbstractWrapper {
 	}
 	
 	@Override
+	public String toString() {
+		return String.valueOf(getProfile());
+	}
+	
+	@Override
 	public int hashCode() {
-		return getProfile().hashCode();
+		// Mojang's hashCode() is broken, it doesn't handle NULL id or name. So we implement our own
+		return Objects.hashCode(getId(), getName());
 	}
 	
 	@Override
@@ -88,7 +102,7 @@ public class WrappedGameProfile extends AbstractWrapper {
 		
 		if (obj instanceof WrappedGameProfile) {
 			WrappedGameProfile other = (WrappedGameProfile) obj;
-			return getProfile().equals(other.getProfile());
+			return Objects.equal(getProfile(), other.getProfile());
 		}
 		return false;
 	}
