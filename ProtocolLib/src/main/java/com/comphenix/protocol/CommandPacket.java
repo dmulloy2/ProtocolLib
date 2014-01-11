@@ -171,6 +171,11 @@ class CommandPacket extends CommandBase {
 
 			// Commands with different parameters
 			if (subCommand == SubCommand.PAGE) {
+				if (args.length <= 1) {
+					sendMessageSilently(sender, ChatColor.RED + "Must specify a page index.");
+					return true;
+				}
+				
 				int page = Integer.parseInt(args[1]);
 				
 				if (page > 0)
