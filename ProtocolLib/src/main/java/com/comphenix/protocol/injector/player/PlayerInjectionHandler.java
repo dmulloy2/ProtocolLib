@@ -98,12 +98,12 @@ public interface PlayerInjectionHandler {
 	public abstract void handleDisconnect(Player player);
 
 	/**
-	 * Unregisters the given player.
-	 * @param player - player to unregister.
+	 * Uninject the given player.
+	 * @param player - player to uninject.
 	 * @return TRUE if a player has been uninjected, FALSE otherwise.
 	 */
 	public abstract boolean uninjectPlayer(Player player);
-
+	
 	/**
 	 * Unregisters a player by the given address.
 	 * <p>

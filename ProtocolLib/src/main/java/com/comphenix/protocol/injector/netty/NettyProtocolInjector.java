@@ -328,10 +328,10 @@ public class NettyProtocolInjector implements ChannelListener {
 			
 			@Override
 			public boolean uninjectPlayer(Player player) {
-				injectionFactory.fromPlayer(player, listener).close();
+				// Just let Netty clean this up
 				return true;
 			}
-			
+
 			@Override
 			public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
 				injectionFactory.fromPlayer(receiver, listener).

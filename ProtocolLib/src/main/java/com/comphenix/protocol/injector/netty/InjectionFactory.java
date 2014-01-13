@@ -14,7 +14,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.MapMaker;
-import com.google.common.collect.Maps;
 
 /**
  * Represents an injector factory.
@@ -23,11 +22,12 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class InjectionFactory {
-	private final ConcurrentMap<Player, Injector> playerLookup = Maps.newConcurrentMap();
+	// This should work as long as the injectors are, uh, injected
+	private final ConcurrentMap<Player, Injector> playerLookup = new MapMaker().weakKeys().weakValues().makeMap();
 	private final ConcurrentMap<String, Injector> nameLookup = new MapMaker().weakValues().makeMap();
 	
 	// Whether or not the factory is closed
-	private boolean closed;
+	private volatile boolean closed;
 	
 	/**
 	 * Construct or retrieve a channel injector from an existing Bukkit player.
@@ -44,7 +44,7 @@ class InjectionFactory {
 		// Find a temporary injector as well
 		if (injector == null)
 			injector = getTemporaryInjector(player);
-		if (injector != null)
+		if (injector != null && !injector.isClosed())
 			return injector;
 		
 		Object networkManager = MinecraftFields.getNetworkManager(player);

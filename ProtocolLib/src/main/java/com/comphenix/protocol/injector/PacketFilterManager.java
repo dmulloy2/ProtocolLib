@@ -921,8 +921,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param players - list of players to uninject. 
 	 */
 	public void uninitializePlayers(Player[] players) {
-		for (Player player : players)
+		for (Player player : players) {
 			playerInjection.uninjectPlayer(player);
+		}
 	}
 	
 	/**
