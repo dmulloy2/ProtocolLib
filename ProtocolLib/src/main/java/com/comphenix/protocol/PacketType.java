@@ -16,6 +16,7 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
@@ -27,7 +28,7 @@ import com.google.common.util.concurrent.Futures;
  * rely on IDs alone.
  * @author Kristian
  */
-public class PacketType implements Serializable {
+public class PacketType implements Serializable, Comparable<PacketType> {
 	// Increment whenever the type changes
 	private static final long serialVersionUID = 1L;
 
@@ -900,6 +901,16 @@ public class PacketType implements Serializable {
 				   legacyId == other.legacyId;
 		}
 		return false;
+	}
+	
+	@Override
+	public int compareTo(PacketType other) {
+		return ComparisonChain.start().
+				compare(protocol, other.getProtocol()).
+				compare(sender, other.getSender()).
+				compare(currentId, other.getCurrentId()).
+				compare(legacyId, other.getLegacyId()).
+				result();
 	}
 	
 	@Override

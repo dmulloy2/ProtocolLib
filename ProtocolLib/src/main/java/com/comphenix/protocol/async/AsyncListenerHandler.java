@@ -594,7 +594,7 @@ public class AsyncListenerHandler {
 						listener.onPacketReceiving(packet);
 					
 					// And we're done
-					tracker.endTracking(token, packet.getPacketID());
+					tracker.endTracking(token, packet.getPacketType());
 					
 				} else {
 					if (packet.isServerPacket())

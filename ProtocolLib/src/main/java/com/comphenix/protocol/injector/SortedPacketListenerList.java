@@ -60,7 +60,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 				
 				// Measure and record the execution time
 				invokeReceivingListener(reporter, event, element);
-				tracker.endTracking(token, event.getPacketID());
+				tracker.endTracking(token, event.getPacketType());
 			}
 		} else {
 			for (PrioritizedListener<PacketListener> element : list) {
@@ -90,7 +90,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 					
 					// Measure and record the execution time
 					invokeReceivingListener(reporter, event, element);
-					tracker.endTracking(token, event.getPacketID());
+					tracker.endTracking(token, event.getPacketType());
 				}
 			}
 		} else {
@@ -142,7 +142,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 				
 				// Measure and record the execution time
 				invokeSendingListener(reporter, event, element);
-				tracker.endTracking(token, event.getPacketID());
+				tracker.endTracking(token, event.getPacketType());
 			}
 		} else {
 			for (PrioritizedListener<PacketListener> element : list) {
@@ -171,7 +171,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 				
 				// Measure and record the execution time
 				invokeSendingListener(reporter, event, element);
-				tracker.endTracking(token, event.getPacketID());
+				tracker.endTracking(token, event.getPacketType());
 				}
 			}
 		} else {
