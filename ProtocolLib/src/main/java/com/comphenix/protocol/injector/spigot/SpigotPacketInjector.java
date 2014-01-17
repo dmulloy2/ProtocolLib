@@ -24,6 +24,7 @@ import net.sf.cglib.proxy.NoOp;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -34,6 +35,8 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.PacketFilterBuilder;
+import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.packet.LegacyNetworkMarker;
 import com.comphenix.protocol.injector.packet.PacketInjector;
@@ -103,6 +106,10 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	// The proxy packet injector
 	private PacketInjector proxyPacketInjector;
 	
+	// Background task
+	private static final int BACKGROUND_DELAY = 30 * PacketFilterManager.TICKS_PER_SECOND; 
+	private int backgroundId;
+	
 	/**
 	 * Create a new spigot injector.
 	 */
@@ -113,7 +120,7 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		this.queuedFilters = new PacketTypeSet();
 		this.reveivedFilters = new PacketTypeSet();
 	}
-	
+		
 	/**
 	 * Retrieve the underlying listener invoker.
 	 * @return The invoker.
@@ -253,8 +260,53 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			throw new RuntimeException("Cannot register Spigot packet listener.", e);
 		}
 		
+		// Remember to register background task
+		backgroundId = createBackgroundTask();
+		
 		// If we succeed
 		return true;
+	}
+	
+	/**
+	 * Create and register a background task.
+	 * @return The background task ID.
+	 */
+	private int createBackgroundTask() {
+		return Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+			@Override
+			public void run() {
+				cleanupInjectors();
+			}
+		}, BACKGROUND_DELAY, BACKGROUND_DELAY);
+	}
+	
+	/**
+	 * Ensure that all disconnected injectors are removed from memory.
+	 */
+	private void cleanupInjectors() {
+		for (NetworkObjectInjector injector : networkManagerInjector.values()) {
+			try {
+				if (injector.getSocket() != null && injector.getSocket().isClosed()) {
+					cleanupInjector(injector);
+				}
+			} catch (Exception e) {
+				reporter.reportMinimal(plugin, "cleanupInjectors", e);
+				
+				// What?
+				cleanupInjector(injector);
+			}
+		}
+	}
+	
+	/**
+	 * Remove a given network object injector.
+	 * @param injector - the injector.
+	 */
+	private void cleanupInjector(final NetworkObjectInjector injector) {
+		// Clean up
+		playerInjector.remove(injector.getPlayer());
+		playerInjector.remove(injector.getUpdatedPlayer());
+		networkManagerInjector.remove(injector.getNetworkManager());
 	}
 	
 	/**
@@ -530,14 +582,12 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 			Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 				@Override
 				public void run() {
-					// Clean up
-					playerInjector.remove(injector.getPlayer());
-					playerInjector.remove(injector.getUpdatedPlayer());
-					networkManagerInjector.remove(injector.getNetworkManager());
+					cleanupInjector(injector);
 				}
 			}, CLEANUP_DELAY);
 		}
 	}
+		
 	/**
 	 * Invoked when a plugin wants to sent a packet.
 	 * @param receiver - the packet receiver.
@@ -608,6 +658,10 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 		// Cleanup the Spigot listener
 		if (dynamicListener != null) {
 			cleanupListener();
+		}
+		if (backgroundId >= 0) {
+			Bukkit.getScheduler().cancelTask(backgroundId);
+			backgroundId = -1;
 		}
 		
 		// Cleanup network marker

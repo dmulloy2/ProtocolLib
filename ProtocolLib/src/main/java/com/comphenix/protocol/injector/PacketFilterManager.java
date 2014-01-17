@@ -99,6 +99,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	public static final ReportType REPORT_PLUGIN_VERIFIER_ERROR = new ReportType("Verifier error: %s");
 	
 	/**
+	 * The number of ticks in a second.
+	 */
+	public static final int TICKS_PER_SECOND = 20;
+	
+	/**
 	 * Sets the inject hook type. Different types allow for maximum compatibility.
 	 * @author Kristian
 	 */
@@ -129,7 +134,6 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	// The amount of time to wait until we actually unhook every player
-	private static final int TICKS_PER_SECOND = 20;
 	private static final int UNHOOK_DELAY = 5 * TICKS_PER_SECOND; 
 	
 	// Delayed unhook
