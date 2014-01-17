@@ -258,6 +258,6 @@ public class AggregateCloner implements Cloner {
 		}
 
 		// Damn - failure
-		throw new IllegalArgumentException("Cannot clone " + source + ": No cloner is sutable.");
+		throw new IllegalArgumentException("Cannot clone " + source + ": No cloner is suitable.");
 	}
 }

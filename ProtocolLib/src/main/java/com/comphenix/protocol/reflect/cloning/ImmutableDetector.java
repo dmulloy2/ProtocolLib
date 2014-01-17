@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.primitives.Primitives;
 
 /**
@@ -79,6 +80,12 @@ public class ImmutableDetector implements Cloner {
 			if (clazz.equals(type))
 				return true;
 		
+		// Check for known immutable classes in 1.7.2
+		if (MinecraftReflection.isUsingNetty()) {
+			if (type.equals(MinecraftReflection.getGameProfileClass())) {
+				return true;
+			}
+		}
 		// Probably not
 		return false;
 	}
