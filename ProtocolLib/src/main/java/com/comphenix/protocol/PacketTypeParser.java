@@ -16,13 +16,14 @@ import com.google.common.collect.Sets;
 class PacketTypeParser {
 	public final static Range<Integer> DEFAULT_MAX_RANGE = Ranges.closed(0, 255);
 	
+	private Sender side = null;
+	private Protocol protocol = null;
+	
 	public Set<PacketType> parseTypes(Deque<String> arguments, Range<Integer> defaultRange) {
-		Sender side = null;
-		Protocol protocol = null;
 		Set<PacketType> result = Sets.newHashSet();
 
 		// Find these first
-		while (protocol == null || side == null) {
+		while (side == null) {
 			String arg = arguments.poll();
 			
 			// Attempt to parse a side or protocol first
@@ -39,7 +40,7 @@ class PacketTypeParser {
 					continue;
 				}
 			}
-			throw new IllegalArgumentException("No side and protocol specified.");
+			throw new IllegalArgumentException("Specify connection side (CLIENT or SERVER).");
 		}
 		
 		// Then we move on to parsing IDs (named packet types soon to come)
@@ -66,6 +67,22 @@ class PacketTypeParser {
 			}
 		}
 		return result;
+	}
+	
+	/**
+	 * Retrieve the last parsed protocol.
+	 * @return Last protocol.
+	 */
+	public Protocol getLastProtocol() {
+		return protocol;
+	}
+	
+	/**
+	 * Retrieve the last sender.
+	 * @return Last sender.
+	 */
+	public Sender getLastSide() {
+		return side;
 	}
 	
 	/**

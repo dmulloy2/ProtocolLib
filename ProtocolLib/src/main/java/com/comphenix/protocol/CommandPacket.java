@@ -188,6 +188,10 @@ class CommandPacket extends CommandBase {
 			Set<PacketType> types = typeParser.parseTypes(arguments, PacketTypeParser.DEFAULT_MAX_RANGE);
 			Boolean detailed = parseBoolean(arguments, "detailed");
 			
+			// Notify user
+			if (typeParser.getLastProtocol() == null) {
+				sender.sendMessage(ChatColor.YELLOW + "Warning: Missing protocol (PLAY, etc) - assuming legacy IDs.");
+			}
 			if (arguments.size() > 0) {
 				throw new IllegalArgumentException("Insufficient arguments.");
 			}
