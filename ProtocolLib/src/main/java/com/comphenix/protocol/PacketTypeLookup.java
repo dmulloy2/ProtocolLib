@@ -1,9 +1,16 @@
 package com.comphenix.protocol;
 
+import java.util.Collection;
+import java.util.Collections;
+
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.collections.IntegerMap;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Retrieve a packet type based on its version and ID, optionally with protocol and sender too.
@@ -51,6 +58,9 @@ class PacketTypeLookup {
 	// Packets for 1.7.2
 	private final ProtocolSenderLookup currentLookup = new ProtocolSenderLookup();
 
+	// Packets based on name
+	private final Multimap<String, PacketType> nameLookup = HashMultimap.create();
+	
 	/**
 	 * Add a collection of packet types to the lookup.
 	 * @param types - the types to add.
@@ -73,6 +83,8 @@ class PacketTypeLookup {
 			if (type.getCurrentId() != PacketType.UNKNOWN_PACKET) {
 				currentLookup.getMap(type.getProtocol(), type.getSender()).put(type.getCurrentId(), type);
 			}
+			// Save name
+			nameLookup.put(type.name(), type);
 		}
 		return this;
 	}
@@ -84,6 +96,15 @@ class PacketTypeLookup {
 	 */
 	public PacketType getFromLegacy(int packetId) {
 		return legacyLookup.get(packetId);
+	}
+	
+	/**
+	 * Retrieve an unmodifiable view of all the packet types with this name.
+	 * @param name - the name.
+	 * @return The packet types, usually one.
+	 */
+	public Collection<PacketType> getFromName(String name) {
+		return Collections.unmodifiableCollection(nameLookup.get(name));
 	}
 	
 	/**

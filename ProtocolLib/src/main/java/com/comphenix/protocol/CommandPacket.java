@@ -193,7 +193,7 @@ class CommandPacket extends CommandBase {
 				sender.sendMessage(ChatColor.YELLOW + "Warning: Missing protocol (PLAY, etc) - assuming legacy IDs.");
 			}
 			if (arguments.size() > 0) {
-				throw new IllegalArgumentException("Insufficient arguments.");
+				throw new IllegalArgumentException("Cannot parse " + arguments);
 			}
 		
 			// The last element is optional

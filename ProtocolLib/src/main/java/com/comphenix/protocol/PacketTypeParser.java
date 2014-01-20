@@ -1,6 +1,8 @@
 package com.comphenix.protocol;
 
+import java.util.Collection;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -21,7 +23,9 @@ class PacketTypeParser {
 	
 	public Set<PacketType> parseTypes(Deque<String> arguments, Range<Integer> defaultRange) {
 		Set<PacketType> result = Sets.newHashSet();
-
+		side = null;
+		protocol = null;
+		
 		// Find these first
 		while (side == null) {
 			String arg = arguments.poll();
@@ -45,9 +49,24 @@ class PacketTypeParser {
 		
 		// Then we move on to parsing IDs (named packet types soon to come)
 		List<Range<Integer>> ranges = RangeParser.getRanges(arguments, DEFAULT_MAX_RANGE);
+
+		// And finally, parse packet names if we have a protocol
+		if (protocol != null) {
+			for (Iterator<String> it = arguments.iterator(); it.hasNext(); ) {
+				String name = it.next().toUpperCase();
+				Collection<PacketType> names = PacketType.fromName(name);
+				
+				for (PacketType type : names) {
+					if (type.getProtocol() == protocol && type.getSender() == side) {
+						result.add(type);
+						it.remove();
+					}
+				}
+			}
+		}
 		
 		// Supply a default integer range
-		if (ranges.size() == 0) {
+		if (ranges.isEmpty() && result.isEmpty()) {
 			ranges = Lists.newArrayList();
 			ranges.add(defaultRange);
 		}

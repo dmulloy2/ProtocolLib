@@ -2,6 +2,7 @@ package com.comphenix.protocol;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -688,6 +689,17 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		if (type != null)
 			return type;
 		throw new IllegalArgumentException("Class " + packetClass + " is not a registered packet.");
+	}
+	
+	/**
+	 * Retrieve every packet type with the given UPPER_CAMEL_CASE name.
+	 * <p>
+	 * Note that the collection is unmodiable.
+	 * @param name - the name.
+	 * @return Every packet type, or an empty collection.
+	 */
+	public static Collection<PacketType> fromName(String name) {
+		return getLookup().getFromName(name);
 	}
 	
 	/**
