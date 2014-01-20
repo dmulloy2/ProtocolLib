@@ -1,5 +1,5 @@
 name: ProtocolLib
-version: 3.1.2
+version: 3.1.3-SNAPSHOT
 description: Provides read/write access to the Minecraft protocol.
 author: Comphenix
 website: http://www.comphenix.net/ProtocolLib
