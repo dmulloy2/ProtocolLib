@@ -346,6 +346,8 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return MinecraftReflection.getChunkPositionClass(); 
 		else if (wrapped.equals(WrappedChunkCoordinate.class))
 			return MinecraftReflection.getChunkCoordinatesClass();
+		else if (ItemStack.class.isAssignableFrom(wrapped))
+			return MinecraftReflection.getItemStackClass();
 		else
 			return wrapped;
 	}
