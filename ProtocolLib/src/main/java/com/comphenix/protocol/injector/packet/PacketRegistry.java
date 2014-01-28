@@ -311,7 +311,7 @@ public class PacketRegistry {
 		Set<PacketType> result = Sets.newHashSet();
 		
 		for (int id : ids)
-			result.add(PacketType.findLegacy(id, preference));
+			result.add(PacketType.fromLegacy(id, preference));
 		return Collections.unmodifiableSet(result);
 	}
 	
