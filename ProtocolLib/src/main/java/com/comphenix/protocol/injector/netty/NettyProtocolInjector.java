@@ -101,7 +101,7 @@ public class NettyProtocolInjector implements ChannelListener {
             Object serverConnection = serverConnectionMethod.invoke(server);
             
             // Handle connected channels
-            final ChannelInboundHandler initProtocol = new ChannelInitializer<Channel>() {
+            final ChannelInboundHandler endInitProtocol = new ChannelInitializer<Channel>() {
                 @Override
                 protected void initChannel(Channel channel) throws Exception {
                 	try {
@@ -116,15 +116,24 @@ public class NettyProtocolInjector implements ChannelListener {
                 }
             };
             
+            // This is executed before Minecraft's channel handler
+            final ChannelInboundHandler beginInitProtocol = new ChannelInitializer<Channel>() {
+            	@Override
+            	protected void initChannel(Channel channel) throws Exception {
+            		// Our only job is to add init protocol
+            		channel.pipeline().addLast(endInitProtocol);
+            	}
+            };
+            
             // Add our handler to newly created channels
             final ChannelHandler connectionHandler = new ChannelInboundHandlerAdapter() {
             	@Override
             	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                     Channel channel = (Channel) msg;
 
-                    // Execute the other handlers before adding our own
+                    // Prepare to initialize ths channel
+                    channel.pipeline().addFirst(beginInitProtocol);
                     ctx.fireChannelRead(msg);
-                    channel.pipeline().addLast(initProtocol);
             	}
             };
             
