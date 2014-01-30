@@ -60,7 +60,12 @@ public class StructureCache {
 	 */
 	public static Object newPacket(PacketType type) {
 		try {
-			return PacketRegistry.getPacketClassFromType(type, true).newInstance();
+			Class<?> clazz = PacketRegistry.getPacketClassFromType(type, true);
+			
+			// Check the return value
+			if (clazz != null)
+				return clazz.newInstance();
+			throw new IllegalArgumentException("Cannot find associated packet class: " + type);
 		} catch (InstantiationException e) {
 			return null;
 		} catch (IllegalAccessException e) {
