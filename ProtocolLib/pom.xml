@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
-  <version>3.2.0</version>
+  <version>3.2.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Provides read/write access to the Minecraft protocol.</description>
   
@@ -43,6 +43,7 @@
     <resources>
       <resource>
         <directory>src/main/resources</directory>
+        <filtering>true</filtering>
         <excludes>
           <exclude>**/*.java</exclude>
         </excludes>
