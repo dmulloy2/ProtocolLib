@@ -4,20 +4,20 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.comphenix.tinyprotocol.TinyProtocol.FieldAccessor;
+import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
 
 public class ExamplePlugin extends JavaPlugin {
 	// Chat packets
-	private FieldAccessor<String> CHAT_MESSAGE = TinyProtocol.getField(
-			"PacketPlayInChat", String.class, 0);
+	private FieldAccessor<String> CHAT_MESSAGE = Reflection.getField(
+			"{nms}.PacketPlayInChat", String.class, 0);
 	
 	// Explosion packet
-	private Class<?> particleClass = TinyProtocol.getMinecraftClass("PacketPlayOutWorldParticles");
-	private FieldAccessor<String> particleName = TinyProtocol.getField(particleClass, String.class, 0);
-	private FieldAccessor<Float> particleX = TinyProtocol.getField(particleClass, float.class, 0);
-	private FieldAccessor<Float> particleY = TinyProtocol.getField(particleClass, float.class, 1);
-	private FieldAccessor<Float> particleZ = TinyProtocol.getField(particleClass, float.class, 2);
-	private FieldAccessor<Integer> particleCount = TinyProtocol.getField(particleClass, int.class, 0);
+	private Class<?> particleClass = Reflection.getClass("{nms}.PacketPlayOutWorldParticles");
+	private FieldAccessor<String> particleName = Reflection.getField(particleClass, String.class, 0);
+	private FieldAccessor<Float> particleX = Reflection.getField(particleClass, float.class, 0);
+	private FieldAccessor<Float> particleY = Reflection.getField(particleClass, float.class, 1);
+	private FieldAccessor<Float> particleZ = Reflection.getField(particleClass, float.class, 2);
+	private FieldAccessor<Integer> particleCount = Reflection.getField(particleClass, int.class, 0);
 	
 	private TinyProtocol protocol;
 	
