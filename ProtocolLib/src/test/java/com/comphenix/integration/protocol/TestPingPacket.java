@@ -10,18 +10,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.GamePhase;
-import com.comphenix.protocol.utility.MinecraftVersion;
 
 public class TestPingPacket {
 	// Current versions
-	private static final String CRAFTBUKKIT_VERSION = "1.6.2";
-	private static final int PROTOCOL_VERSION = 74;
+	private static final int PROTOCOL_VERSION = 4;
 	
 	// Timeout
 	private static final int TIMEOUT_PING_MS = 10000;
@@ -52,7 +48,7 @@ public class TestPingPacket {
 	
 			// Make sure it's the same
 			System.out.println("Server string: " + transmitted);
-			assertEquals(transmitted, source);
+			assertEquals(source, transmitted);
 		} catch (ExecutionException e) {
 			throw e.getCause();
 		}
@@ -60,10 +56,10 @@ public class TestPingPacket {
 	
 	private Future<String> testInterception(Plugin test) {
 		ProtocolLibrary.getProtocolManager().addPacketListener(
-		  new PacketAdapter(test, ConnectionSide.SERVER_SIDE, GamePhase.LOGIN, Packets.Server.KICK_DISCONNECT) {
+		  new PacketAdapter(test, PacketType.Status.Server.OUT_SERVER_INFO) {
 			@Override
 			public void onPacketSending(PacketEvent event) {
-				source = event.getPacket().getStrings().read(0);
+				source = event.getPacket().getServerPings().read(0).toJson();
 			}
 		});
 		
@@ -71,8 +67,7 @@ public class TestPingPacket {
 		return Executors.newSingleThreadExecutor().submit(new Callable<String>() {
 			@Override
 			public String call() throws Exception {
-				SimpleMinecraftClient client = new SimpleMinecraftClient(
-						new MinecraftVersion(CRAFTBUKKIT_VERSION), PROTOCOL_VERSION);
+				SimpleMinecraftClient client = new SimpleMinecraftClient(PROTOCOL_VERSION);
 				String information = client.queryLocalPing();
 
 				// Wait for the listener to catch up

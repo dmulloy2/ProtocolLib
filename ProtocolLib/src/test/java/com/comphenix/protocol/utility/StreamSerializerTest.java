@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.BukkitInitialization;
@@ -23,6 +24,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
+@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
 @PrepareForTest(CraftItemFactory.class)
 public class StreamSerializerTest {
 	@BeforeClass

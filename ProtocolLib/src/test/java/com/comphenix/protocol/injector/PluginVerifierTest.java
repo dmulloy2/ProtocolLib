@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
 import com.google.common.base.Objects;
@@ -25,6 +26,7 @@ import com.google.common.collect.Lists;
 
 // Damn final classes
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
+@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
 @PrepareForTest(PluginDescriptionFile.class)
 public class PluginVerifierTest {
 	@Test

@@ -1,5 +1,8 @@
 package com.comphenix.integration.protocol;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,24 +10,24 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.Charset;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.google.common.base.Charsets;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.utility.StreamSerializer;
+import com.google.common.io.ByteStreams;
 
 public class SimpleMinecraftClient {
     private static final int CONNECT_TIMEOUT = 2500;
     private static final int READ_TIMEOUT = 15000;
-    
-    // The version after which we must send a plugin message with the host name
-    private static final String PLUGIN_MESSAGE_VERSION = "1.6.0";
-    
+
     // Current Minecraft version
-    private final MinecraftVersion version;
     private final int protocolVersion;
+
+    // Typical Minecraft serializer
+    private static StreamSerializer serializer = StreamSerializer.getDefault();
     
-    public SimpleMinecraftClient(MinecraftVersion version, int protocolVersion) {
-		this.version = version;
+    public SimpleMinecraftClient(int protocolVersion) {
 		this.protocolVersion = protocolVersion;
 	}
     
@@ -49,9 +52,6 @@ public class SimpleMinecraftClient {
         InputStream input = null;
         InputStreamReader reader = null;
         
-        // UTF-16!
-        Charset charset = Charsets.UTF_16BE;
-        
         try {
             socket = new Socket();
             socket.connect(address, CONNECT_TIMEOUT);
@@ -62,42 +62,20 @@ public class SimpleMinecraftClient {
             // Retrieve sockets
             output = socket.getOutputStream();
             input = socket.getInputStream();
-            reader = new InputStreamReader(input, charset);
+
+            // The output writer
+            DataOutputStream data = new DataOutputStream(output);
+
+            // Request a server information packet
+            writePacket(data, new HandshakePacket(protocolVersion, address.getHostName(), address.getPort(), 1));
+            writePacket(data, new RequestPacket());
+            data.flush();
             
-            // Get the server to send a MOTD
-            output.write(new byte[] { (byte) 0xFE, (byte) 0x01 });
-
-            // For 1.6
-            if (version.compareTo(new MinecraftVersion(PLUGIN_MESSAGE_VERSION)) >= 0) {
-                DataOutputStream data = new DataOutputStream(output);
-            	String host = address.getHostName();
-
-            	data.writeByte(0xFA);
-            	writeString(data, "MC|PingHost");
-            	data.writeShort(3 + 2 * host.length() + 4);
-
-            	data.writeByte(protocolVersion);
-            	writeString(data, host);
-                data.writeInt(address.getPort());
-            	data.flush();
-            }
-            
-            int packetId = input.read();
-            int length = reader.read();
-            
-            if (packetId != 255) 
-                throw new IOException("Invalid packet ID: " + packetId);
-            if (length <= 0)
-                throw new IOException("Invalid string length.");
-                
-            char[] chars = new char[length];
-             
-            // Read all the characters
-            if (reader.read(chars, 0, length) != length) {
-                throw new IOException("Premature end of stream.");
-            }
-
-            return new String(chars);
+            // Read a single packet, and close the connection
+            SimplePacket packet = readPacket(new DataInputStream(input), Protocol.STATUS);
+          
+            socket.close();
+            return ((ResponsePacket) packet).getPingJson();
             
         } finally {
             if (reader != null)
@@ -111,10 +89,136 @@ public class SimpleMinecraftClient {
         }
 	}
 	
-	private void writeString(DataOutputStream output, String text) throws IOException {
-	    if (text.length() > 32767)
-	        throw new IOException("String too big: " + text.length());
-		output.writeShort(text.length());
-		output.writeChars(text);
+	private void writePacket(DataOutputStream output, SimplePacket packet) throws IOException {
+		ByteArrayOutputStream packetBuffer = new ByteArrayOutputStream();
+		DataOutputStream packetOutput = new DataOutputStream(packetBuffer);
+		
+		// Prefix the packet with a length field
+		packet.write(packetOutput);
+		writeByteArray(output, packetBuffer.toByteArray());
+	}
+
+	private SimplePacket readPacket(DataInputStream input, Protocol protocol) throws IOException {
+		while (true) {
+			byte[] buffer = readByteArray(input);
+			
+			// Skip empty packets
+			if (buffer.length == 0)
+				continue;
+			
+			DataInputStream data = getDataInput(buffer);
+			PacketType type = PacketType.findCurrent(protocol, Sender.SERVER, serializer.deserializeVarInt(data));
+			
+			if (type == PacketType.Status.Server.OUT_SERVER_INFO) {
+				ResponsePacket response = new ResponsePacket();
+				response.read(type, data);
+				return response;
+			} else {
+				throw new IllegalArgumentException("Unsuppported and unexpected type: " + type);
+			}
+		}
+	}
+
+	/**
+	 * Wrap an input stream around a byte array.
+	 * @param bytes - the array.
+	 * @return The wrapped input stream.
+	 */
+	private DataInputStream getDataInput(byte[] bytes) {
+		return new DataInputStream(new ByteArrayInputStream(bytes));
+	}
+	
+	/**
+	 * Write a byte array to the output stream, prefixed by a length.
+	 * @param output - the stream.
+	 * @param data - the data to write.
+	 */
+	private static void writeByteArray(DataOutputStream output, byte[] data) throws IOException {
+		StreamSerializer.getDefault().serializeVarInt(output, data.length);
+		
+		if (data.length > 0) {
+			output.write(data);
+		}
+	}
+
+	/**
+	 * Read a byte array from an input stream, prefixed by length.
+	 * @param input - the input stream.
+	 * @return The read byte array.
+	 */
+	private static byte[] readByteArray(DataInputStream input) throws IOException {
+		int length = serializer.deserializeVarInt(input);
+		byte[] data = new byte[length];
+
+		ByteStreams.readFully(input, data);
+		return data;
+	}
+
+	private static class RequestPacket extends SimplePacket {
+		public RequestPacket() {
+			super(PacketType.Status.Client.IN_START);
+		}
+	}
+	
+	private static class ResponsePacket extends SimplePacket {
+		private String ping;
+		
+		public ResponsePacket() {
+			super(PacketType.Status.Server.OUT_SERVER_INFO);
+		}
+		
+		@Override
+		public void read(PacketType type, DataInputStream input) throws IOException {
+			super.read(type, input);
+			ping = serializer.deserializeString(input, 32000);
+		}
+		
+		public String getPingJson() {
+			return ping;
+		}
+	}
+	
+	private static class HandshakePacket extends SimplePacket {	
+		private int protocol;
+		private String host;
+		private int port;
+		private int nextState;
+		
+		public HandshakePacket(int protocol, String host, int port, int nextState) {
+			super(PacketType.Handshake.Client.SET_PROTOCOL);
+			this.protocol = protocol;
+			this.host = host;
+			this.port = port;
+			this.nextState = nextState;
+		}
+
+		@Override
+		public void write(DataOutputStream output) throws IOException {
+			super.write(output);
+			serializer.serializeVarInt(output, protocol);
+			serializer.serializeString(output, host);
+			output.writeShort(port);
+			serializer.serializeVarInt(output, nextState);
+		}
+	}
+	
+	private static class SimplePacket {
+		protected final PacketType type;
+		protected final StreamSerializer serializer = StreamSerializer.getDefault();
+		
+		public SimplePacket(PacketType type) {
+			this.type = type;
+		}
+		
+		public void write(DataOutputStream output) throws IOException {
+			serializer.serializeVarInt(output, type.getCurrentId());
+		}
+		
+		public void read(PacketType type, DataInputStream input) throws IOException {
+			// Note - we don't read the packet id
+			if (this.type != type) {
+				throw new IllegalArgumentException("Unexpected type: " + type);
+			}
+		}
 	}
 }
