@@ -78,12 +78,12 @@ public class SimpleCraftBukkitITCase {
 			@Override
 			public Object call() throws Exception {
 				initializePlugin(FAKE_PLUGIN);
-				ProtocolLibrary.getConfiguration().setDebug(true);
 				return null;
 			}
 		}).get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
 	
 		// Plugins are now ready
+		ProtocolLibrary.getConfiguration().setDebug(true);
 	}
 	
 	/**

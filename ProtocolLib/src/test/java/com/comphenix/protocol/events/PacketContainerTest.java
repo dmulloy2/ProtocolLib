@@ -46,7 +46,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -102,7 +101,7 @@ public class PacketContainerTest {
 	@Test
 	public void testGetByteArrays() {
 		// Contains a byte array we will test
-		PacketContainer customPayload = new PacketContainer(Packets.Server.CUSTOM_PAYLOAD);
+		PacketContainer customPayload = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
 		StructureModifier<byte[]> bytes = customPayload.getByteArrays();
 		byte[] testArray = new byte[] { 1, 2, 3 };
 		
@@ -120,37 +119,37 @@ public class PacketContainerTest {
 	
 	@Test
 	public void testGetBytes() {
-		PacketContainer spawnMob = new PacketContainer(Packets.Server.MOB_SPAWN);
+		PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
 		testPrimitive(spawnMob.getBytes(), 0, (byte)0, (byte)1);
 	}
 	
 	@Test
 	public void testGetShorts() {
-		PacketContainer itemData = new PacketContainer(Packets.Server.TRANSACTION);
+		PacketContainer itemData = new PacketContainer(PacketType.Play.Server.TRANSACTION);
 		testPrimitive(itemData.getShorts(), 0, (short)0, (short)1);
 	}
 
 	@Test
 	public void testGetIntegers() {
-		PacketContainer updateSign = new PacketContainer(Packets.Server.UPDATE_SIGN);
+		PacketContainer updateSign = new PacketContainer(PacketType.Play.Server.UPDATE_SIGN);
 		testPrimitive(updateSign.getIntegers(), 0, (int)0, (int)1);
 	}
 
 	@Test
 	public void testGetLongs() {
-		PacketContainer updateTime = new PacketContainer(Packets.Server.UPDATE_TIME);
+		PacketContainer updateTime = new PacketContainer(PacketType.Play.Server.UPDATE_TIME);
 		testPrimitive(updateTime.getLongs(), 0, (long)0, (long)1);
 	}
 
 	@Test
 	public void testGetFloat() {
-		PacketContainer explosion = new PacketContainer(Packets.Server.EXPLOSION);
+		PacketContainer explosion = new PacketContainer(PacketType.Play.Server.EXPLOSION);
 		testPrimitive(explosion.getFloat(), 0, (float)0, (float)0.8);
 	}
 
 	@Test
 	public void testGetDoubles() {
-		PacketContainer explosion = new PacketContainer(Packets.Server.EXPLOSION);
+		PacketContainer explosion = new PacketContainer(PacketType.Play.Server.EXPLOSION);
 		testPrimitive(explosion.getDoubles(), 0, (double)0, (double)0.8);
 	}
 
@@ -162,14 +161,14 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetStringArrays() {
-		PacketContainer explosion = new PacketContainer(Packets.Server.UPDATE_SIGN);
+		PacketContainer explosion = new PacketContainer(PacketType.Play.Server.UPDATE_SIGN);
 		testObjectArray(explosion.getStringArrays(), 0, new String[0], new String[] { "hello", "world" });
 	}
 
 	@Test
 	public void testGetIntegerArrays() {
 		// Contains a byte array we will test
-		PacketContainer mapChunkBulk = new PacketContainer(Packets.Server.MAP_CHUNK_BULK);
+		PacketContainer mapChunkBulk = new PacketContainer(PacketType.Play.Server.MAP_CHUNK_BULK);
 		StructureModifier<int[]> integers = mapChunkBulk.getIntegerArrays();
 		int[] testArray = new int[] { 1, 2, 3 };
 		
@@ -184,7 +183,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetItemModifier() {
-		PacketContainer windowClick = new PacketContainer(Packets.Client.WINDOW_CLICK);
+		PacketContainer windowClick = new PacketContainer(PacketType.Play.Client.WINDOW_CLICK);
 		
 		StructureModifier<ItemStack> items = windowClick.getItemModifier();
 		ItemStack goldAxe = new ItemStack(Material.GOLD_AXE);
@@ -199,7 +198,7 @@ public class PacketContainerTest {
  
 	@Test
 	public void testGetItemArrayModifier() {
-		PacketContainer windowItems = new PacketContainer(Packets.Server.WINDOW_ITEMS);
+		PacketContainer windowItems = new PacketContainer(PacketType.Play.Server.WINDOW_ITEMS);
 		StructureModifier<ItemStack[]> itemAccess = windowItems.getItemArrayModifier();
 		
 		ItemStack[] itemArray = new ItemStack[] { 
@@ -239,7 +238,7 @@ public class PacketContainerTest {
 		if (MinecraftReflection.isUsingNetty())
 			return;
 		
-		PacketContainer loginPacket = new PacketContainer(Packets.Server.LOGIN);
+		PacketContainer loginPacket = new PacketContainer(PacketType.Play.Server.LOGIN);
 		StructureModifier<WorldType> worldAccess = loginPacket.getWorldTypeModifier();
 		
 		WorldType testValue = WorldType.LARGE_BIOMES;
@@ -253,7 +252,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetNbtModifier() {
-		PacketContainer updateTileEntity = new PacketContainer(132);
+		PacketContainer updateTileEntity = new PacketContainer(PacketType.Play.Server.TILE_ENTITY_DATA);
 		
 		NbtCompound compound = NbtFactory.ofCompound("test");
 		compound.put("test", "name");
@@ -269,7 +268,7 @@ public class PacketContainerTest {
 	
 	@Test
 	public void testGetDataWatcherModifier() {
-		PacketContainer mobSpawnPacket = new PacketContainer(Packets.Server.MOB_SPAWN);
+		PacketContainer mobSpawnPacket = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
 		StructureModifier<WrappedDataWatcher> watcherAccessor = mobSpawnPacket.getDataWatcherModifier();
 				
 		WrappedDataWatcher dataWatcher = new WrappedDataWatcher();
@@ -295,7 +294,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetPositionCollectionModifier() {
-		PacketContainer explosionPacket = new PacketContainer(Packets.Server.EXPLOSION);
+		PacketContainer explosionPacket = new PacketContainer(PacketType.Play.Server.EXPLOSION);
 		StructureModifier<List<ChunkPosition>> positionAccessor = explosionPacket.getPositionCollectionModifier();
 		
 		assertNull(positionAccessor.read(0));
@@ -313,7 +312,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetWatchableCollectionModifier() {
-		PacketContainer entityMetadata = new PacketContainer(Packets.Server.ENTITY_METADATA);
+		PacketContainer entityMetadata = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
 		StructureModifier<List<WrappedWatchableObject>> watchableAccessor = 
 				entityMetadata.getWatchableCollectionModifier();
 		
@@ -356,13 +355,13 @@ public class PacketContainerTest {
 		
 		PacketContainer copy = (PacketContainer) SerializationUtils.clone(chat);
 		
-		assertEquals(3, copy.getID());
+		assertEquals(PacketType.Play.Client.CHAT, copy.getType());
 		assertEquals("Test", copy.getStrings().read(0));
 	}
 	
 	@Test
 	public void testAttributeList() {
-		PacketContainer attribute = new PacketContainer(Packets.Server.UPDATE_ATTRIBUTES);
+		PacketContainer attribute = new PacketContainer(PacketType.Play.Server.UPDATE_ATTRIBUTES);
 		attribute.getIntegers().write(0, 123); // Entity ID
 		
 		// Initialize some test data
@@ -395,7 +394,7 @@ public class PacketContainerTest {
 		
 		// The constructor we want to call
 		PacketConstructor creator = PacketConstructor.DEFAULT.withPacket(
-			Packets.Server.MOB_EFFECT, new Class<?>[] { int.class, PotionEffect.class }); 
+				PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[] { int.class, PotionEffect.class }); 
 		PacketContainer packet = creator.createPacket(1, effect);
 		
 		assertEquals(1, (int) packet.getIntegers().read(0));
