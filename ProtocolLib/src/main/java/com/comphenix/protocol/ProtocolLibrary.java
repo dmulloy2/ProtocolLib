@@ -114,6 +114,9 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Error reporter
 	private static ErrorReporter reporter = new BasicErrorReporter();
 	
+	// Strongly typed configuration
+	private static ProtocolConfig config;
+	
 	// Metrics and statistisc
 	private Statistics statistisc;
 
@@ -135,7 +138,6 @@ public class ProtocolLibrary extends JavaPlugin {
 	
 	// Settings/options
 	private int configExpectedMod = -1;
-	private ProtocolConfig config;
 	
 	// Updater
 	private Updater updater;
@@ -615,6 +617,14 @@ public class ProtocolLibrary extends JavaPlugin {
 	 */
 	public static ErrorReporter getErrorReporter() {
 		return reporter;
+	}
+	
+	/**
+	 * Retrieve the current strongly typed configuration.
+	 * @return The configuration, or NULL if ProtocolLib hasn't loaded yet.
+	 */
+	public static ProtocolConfig getConfiguration() {
+		return config;
 	}
 	
 	/**

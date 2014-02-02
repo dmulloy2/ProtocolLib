@@ -36,7 +36,7 @@ import com.google.common.io.Files;
  * 
  * @author Kristian
  */
-class ProtocolConfig {
+public class ProtocolConfig {
 	private static final String LAST_UPDATE_FILE = "lastupdate";
 	
 	private static final String SECTION_GLOBAL = "global";
