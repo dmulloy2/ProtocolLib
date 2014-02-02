@@ -20,11 +20,13 @@ import net.minecraft.util.io.netty.buffer.Unpooled;
 import net.minecraft.util.io.netty.handler.codec.base64.Base64;
 import net.minecraft.util.io.netty.util.IllegalReferenceCountException;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Charsets;
@@ -58,6 +60,14 @@ public class WrappedServerPing extends AbstractWrapper {
 	private static FieldAccessor PLAYERS_PROFILES = Accessors.getFieldAccessor(PLAYERS_CLASS, GameProfile[].class, true);
 	private static FieldAccessor PLAYERS_MAXIMUM = PLAYERS_INTS[0];
 	private static FieldAccessor PLAYERS_ONLINE = PLAYERS_INTS[1];
+	
+	// Server ping serialization
+	private static Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
+	private static MethodAccessor GSON_TO_JSON = Accessors.getMethodAccessor(GSON_CLASS, "toJson", Object.class);
+	private static MethodAccessor GSON_FROM_JSON = Accessors.getMethodAccessor(GSON_CLASS, "fromJson", String.class, Class.class);
+	private static FieldAccessor PING_GSON = Accessors.getCached(Accessors.getFieldAccessor(
+		PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass(), GSON_CLASS, true
+	));
 	
 	// Server data fields
 	private static Class<?> VERSION_CLASS = MinecraftReflection.getServerPingServerDataClass();
@@ -115,6 +125,15 @@ public class WrappedServerPing extends AbstractWrapper {
 	 */
 	public static WrappedServerPing fromHandle(Object handle) {
 		return new WrappedServerPing(handle);
+	}
+	
+	/**
+	 * Construct a wrapper server ping from an encoded JSON string.
+	 * @param json - the JSON string.
+	 * @return The wrapped server ping.
+	 */
+	public static WrappedServerPing fromJson(String json) {
+		return fromHandle(GSON_FROM_JSON.invoke(PING_GSON.get(null), json, SERVER_PING));
 	}
 	
 	/**
@@ -327,6 +346,14 @@ public class WrappedServerPing extends AbstractWrapper {
 			copy.setPlayersVisible(false);
 		}
 		return copy;
+	}
+	
+	/**
+	 * Retrieve the underlying JSON representation of this server ping.
+	 * @return The JSON representation.
+	 */
+	public String toJson() {
+		return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), handle);
 	}
 	
 	/**

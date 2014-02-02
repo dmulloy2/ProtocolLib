@@ -4,7 +4,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
-
 import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Joiner;
@@ -105,6 +104,50 @@ public final class Accessors {
 	public static FieldAccessor getFieldAccessor(final Field field, boolean forceAccess) {
 		field.setAccessible(true);
 		return new DefaultFieldAccessor(field);
+	}
+	
+	/**
+	 * Retrieve a field accessor that will cache the content of the field.
+	 * <p>
+	 * Note that we don't check if the underlying field has changed after the value has been cached, 
+	 * so it's best to use this on final fields.
+	 * @param inner - the accessor.
+	 * @return A cached field accessor.
+	 */
+	public static FieldAccessor getCached(final FieldAccessor inner) {
+		return new FieldAccessor() {
+			private final Object EMPTY = new Object();
+			private volatile Object value = EMPTY;
+			
+			@Override
+			public void set(Object instance, Object value) {
+				inner.set(instance, value);
+				update(value);
+			}
+						
+			@Override
+			public Object get(Object instance) {
+				Object cache = value;
+				
+				if (cache != EMPTY)
+					return cache;
+				return update(inner.get(instance));
+			}
+			
+			/**
+			 * Update the cached value.
+			 * @param value - the value to cache.
+			 * @return The cached value.
+			 */
+			private Object update(Object value) {
+				return this.value = value;
+			}
+			
+			@Override
+			public Field getField() {
+				return inner.getField();
+			}
+		};
 	}
 
 	/**
