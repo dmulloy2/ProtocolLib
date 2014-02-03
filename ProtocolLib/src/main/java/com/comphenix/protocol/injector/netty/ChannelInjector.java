@@ -320,15 +320,22 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param packet - the packet.
 	 */
 	protected void handleLogin(Class<?> packetClass, Object packet) {
-		// Initialize packet class
-		if (PACKET_LOGIN_CLIENT == null) {
-			PACKET_LOGIN_CLIENT = PacketType.Login.Client.START.getPacketClass();
-			LOGIN_GAME_PROFILE = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, GameProfile.class, true);
+		Class<?> loginClass = PACKET_LOGIN_CLIENT;
+		FieldAccessor loginClient = LOGIN_GAME_PROFILE;
+		
+		// Initialize packet class and login
+		if (loginClass == null) {
+			loginClass = PacketType.Login.Client.START.getPacketClass();
+			PACKET_LOGIN_CLIENT = loginClass;
+		}
+		if (loginClient == null) {
+			loginClient = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, GameProfile.class, true);
+			LOGIN_GAME_PROFILE = loginClient;
 		}
 			
 		// See if we are dealing with the login packet
-		if (PACKET_LOGIN_CLIENT.equals(packetClass)) {
-			GameProfile profile = (GameProfile) LOGIN_GAME_PROFILE.get(packet);
+		if (loginClass.equals(packetClass)) {
+			GameProfile profile = (GameProfile) loginClient.get(packet);
 			
 			// Save the channel injector
 			factory.cacheInjector(profile.getName(), this);
