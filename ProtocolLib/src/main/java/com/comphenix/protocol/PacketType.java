@@ -643,7 +643,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 * @throws IllegalArgumentException If the sender is NULL and the packet doesn't exist.
 	 */
 	public static PacketType fromLegacy(int id, Sender sender) {
-		PacketType type = getLookup().getFromLegacy(id);
+		PacketType type = getLookup().getFromLegacy(id, sender);
 		
 		if (type == null) {
 			if (sender == null)
