@@ -8,9 +8,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
@@ -55,6 +58,8 @@ public class TestPingPacket {
 	}
 	
 	private Future<String> testInterception(Plugin test) {
+		PacketType customPacket = PacketType.fromCurrent(Protocol.STATUS, Sender.CLIENT, 3, -1);
+		
 		ProtocolLibrary.getProtocolManager().addPacketListener(
 		  new PacketAdapter(test, PacketType.Status.Server.OUT_SERVER_INFO) {
 			@Override

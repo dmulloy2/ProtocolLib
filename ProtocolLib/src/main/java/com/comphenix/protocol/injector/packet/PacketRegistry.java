@@ -232,8 +232,10 @@ public class PacketRegistry {
 	public static Set<PacketType> getServerPacketTypes() {
 		initialize();
 		
-		if (NETTY != null)
+		if (NETTY != null) {
+			NETTY.synchronize();
 			return NETTY.getServerPackets();
+		}
 		
 		// Handle legacy
 		if (NETTY_SERVER_PACKETS == null) {
@@ -269,8 +271,10 @@ public class PacketRegistry {
 	public static Set<PacketType> getClientPacketTypes() {
 		initialize();
 		
-		if (NETTY != null)
+		if (NETTY != null) {
+			NETTY.synchronize();
 			return NETTY.getClientPackets();
+		}
 		
 		// Handle legacy
 		if (NETTY_CLIENT_PACKETS == null) {
