@@ -235,8 +235,15 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		this.classLoader = builder.getClassLoader();
 		this.reporter = builder.getReporter();
 		
-		// The plugin verifier
-		this.pluginVerifier = new PluginVerifier(builder.getLibrary());
+		// The plugin verifier - we don't want to stop ProtocolLib just because its failing
+		try {
+			this.pluginVerifier = new PluginVerifier(builder.getLibrary());
+		} catch (Throwable e) {
+			reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_VERIFIER_ERROR).
+					messageParam(e.getMessage()).error(e));
+		}
+		
+		// Prepare version
 		this.minecraftVersion = builder.getMinecraftVersion();
 		this.loginPackets = new LoginPackets(minecraftVersion);
 		
@@ -356,6 +363,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param plugin - plugin to check.
 	 */
 	private void printPluginWarnings(Plugin plugin) {
+		if (pluginVerifier == null)
+			return;
+		
 		try {
 			switch (pluginVerifier.verify(plugin)) {
 				case NO_DEPEND:

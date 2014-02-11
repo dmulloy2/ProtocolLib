@@ -101,6 +101,13 @@ public class ProtocolLibrary extends JavaPlugin {
 	static final String BUKKIT_DEV_SLUG = "protocollib";
 	static final int BUKKIT_DEV_ID = 45564;
 	
+	// Different commands
+	private enum ProtocolCommand {
+		FILTER,
+		PACKET,
+		PROTOCOL
+	}
+	
 	/**
 	 * The number of milliseconds per second.
 	 */
@@ -159,6 +166,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	public void onLoad() {
 		// Load configuration
 		logger = getLoggerSafely();
+		Application.registerPrimaryThread();
 		
 		// Initialize enhancer factory
 		EnhancerFactory.getInstance().setClassLoader(getClassLoader());
@@ -229,18 +237,36 @@ public class ProtocolLibrary extends JavaPlugin {
 			} catch (IllegalArgumentException e) {
 				reporter.reportWarning(config, Report.newBuilder(REPORT_CANNOT_PARSE_INJECTION_METHOD).error(e));
 			}
-			
-			// Initialize command handlers
-			commandProtocol = new CommandProtocol(reporter, this, updater, config);
-			commandFilter = new CommandFilter(reporter, this, config);
-			commandPacket = new CommandPacket(reporter, this, logger, commandFilter, protocolManager);
-			
+						
 			// Send logging information to player listeners too
+			initializeCommands();
 			setupBroadcastUsers(PERMISSION_INFO);
 			
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
 			disablePlugin();
+		}
+	}
+
+	/**
+	 * Initialize all command handlers.
+	 */
+	private void initializeCommands() {
+		// Initialize command handlers
+		for (ProtocolCommand command : ProtocolCommand.values()) {
+			try {
+				switch (command) {
+					case PROTOCOL: 
+						commandProtocol = new CommandProtocol(reporter, this, updater, config); break;
+					case FILTER: 
+						commandFilter = new CommandFilter(reporter, this, config); break;
+					case PACKET:
+						commandPacket = new CommandPacket(reporter, this, logger, commandFilter, protocolManager); break;
+				}
+			} catch (Throwable e) {
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).
+					messageParam(command.name(), e.getMessage()).error(e));
+			}
 		}
 	}
 	
@@ -461,8 +487,9 @@ public class ProtocolLibrary extends JavaPlugin {
 		
 	private void registerCommand(String name, CommandExecutor executor) {
 		try {
+			// Ignore these - they must have printed an error already
 			if (executor == null) 
-				throw new RuntimeException("Executor was NULL.");
+				return;
 			
 			PluginCommand command = getCommand(name);
 			

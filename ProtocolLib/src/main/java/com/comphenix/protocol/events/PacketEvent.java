@@ -27,6 +27,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
+import com.comphenix.protocol.Application;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.google.common.base.Preconditions;
@@ -149,7 +150,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @return TRUE if we are, FALSE otherwise.
 	 */
 	public boolean isAsync() {
-		return !Bukkit.isPrimaryThread();
+		return !Application.isPrimaryThread();
 	}
 	
 	/**

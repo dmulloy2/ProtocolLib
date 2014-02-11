@@ -17,14 +17,42 @@
 
 package com.comphenix.protocol;
 
+import org.bukkit.Bukkit;
+
 /**
  * Ignore this class.
  * 
  * @author Kristian
  */
 public class Application {
+	private static Thread mainThread;
+	private static boolean primaryMethod = true;
+	
 	public static void main(String[] args) {
 		// For now, though we might consider making a proper application
 		System.out.println("This is a Bukkit library. Place it in the plugin-folder and restart the server!");
+	}
+
+	/**
+	 * Determine if we are running on the main thread.
+	 * @return TRUE if we are, FALSE otherwise.
+	 */
+	public static boolean isPrimaryThread() {
+		if (primaryMethod) {
+			try {
+				return Bukkit.isPrimaryThread();
+			} catch (Throwable e) {
+				primaryMethod = false;
+			}
+		}
+		// Fallback method
+		return Thread.currentThread().equals(mainThread);
+	}
+	
+	/**
+	 * Register the calling thread as the primary thread.
+	 */
+	static void registerPrimaryThread() {
+		mainThread = Thread.currentThread();
 	}
 }

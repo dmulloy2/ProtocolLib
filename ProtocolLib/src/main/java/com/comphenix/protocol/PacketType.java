@@ -737,7 +737,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		};
 
 		// Execute in the main thread if possible
-		if (Bukkit.getServer() == null || Bukkit.isPrimaryThread()) {
+		if (Bukkit.getServer() == null || Application.isPrimaryThread()) {
 			try {
 				return Futures.immediateFuture(callable.call());
 			} catch (Exception e) {
