@@ -286,7 +286,7 @@ public final class Reflection {
 	    	// Assume the expanded variables are all packages, and append a dot
 	    	if (replacement.length() > 0 && matcher.end() < name.length() && name.charAt(matcher.end()) != '.')
 	    		replacement += ".";
-	        matcher.appendReplacement(output, replacement);
+	        matcher.appendReplacement(output, Matcher.quoteReplacement(replacement));
 	    }
 	    matcher.appendTail(output);
 	    return output.toString();
