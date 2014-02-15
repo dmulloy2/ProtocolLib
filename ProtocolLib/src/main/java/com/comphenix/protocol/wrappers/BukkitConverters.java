@@ -827,7 +827,8 @@ public class BukkitConverters {
 				put(NbtBase.class, (EquivalentConverter) getNbtConverter()).
 				put(NbtCompound.class, (EquivalentConverter) getNbtConverter()).
 				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter()).
-				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter());
+				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter()).
+				put(Material.class, (EquivalentConverter) getBlockConverter());
 			
 			// Types added in 1.7.2
 			if (MinecraftReflection.isUsingNetty()) {
@@ -865,7 +866,8 @@ public class BukkitConverters {
 				put(MinecraftReflection.getNBTBaseClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getNBTCompoundClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getWatchableObjectClass(), (EquivalentConverter) getWatchableObjectConverter()).
-				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter());
+				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter()).
+				put(MinecraftReflection.getBlockClass(), (EquivalentConverter) getBlockConverter());
 				
 			if (hasWorldType)
 				builder.put(MinecraftReflection.getWorldTypeClass(), (EquivalentConverter) getWorldTypeConverter());

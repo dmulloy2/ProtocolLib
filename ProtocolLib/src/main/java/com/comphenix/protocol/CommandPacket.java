@@ -349,7 +349,7 @@ class CommandPacket extends CommandBase {
 								@Override
 								public boolean print(StringBuilder output, Object value) {
 									if (value != null) {
-										EquivalentConverter<Object> converter = BukkitConverters.getConvertersForGeneric().get(value.getClass());
+										EquivalentConverter<Object> converter = findConverter(value.getClass());
 										
 										if (converter != null) {
 											output.append(converter.getSpecific(value));
@@ -367,6 +367,20 @@ class CommandPacket extends CommandBase {
 				} else {
 					logger.info(shortDescription + ".");
 				}
+			}
+			
+			private EquivalentConverter<Object> findConverter(Class<?> clazz) {
+				Map<Class<?>, EquivalentConverter<Object>> converters = BukkitConverters.getConvertersForGeneric();
+				
+				while (clazz != null) {
+					EquivalentConverter<Object> result = converters.get(clazz);
+					
+					if (result != null)
+						return result;
+					else
+						clazz = clazz.getSuperclass();
+				}
+				return null;
 			}
 			
 			@Override
