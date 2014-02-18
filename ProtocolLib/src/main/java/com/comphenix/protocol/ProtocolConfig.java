@@ -110,14 +110,13 @@ public class ProtocolConfig {
 			try {
 				return Long.parseLong(Files.toString(dataFile, Charsets.UTF_8));
 			} catch (NumberFormatException e) {
-				throw new RuntimeException("Cannot parse " + dataFile + " as a number.", e);
+				plugin.getLogger().warning("Cannot parse " + dataFile + " as a number.");
 			} catch (IOException e) {
-				throw new RuntimeException("Cannot read " + dataFile, e);
+				plugin.getLogger().warning("Cannot read " + dataFile);
 			}
-		} else {
-			// Default last update
-			return 0;
 		}
+		// Default last update
+		return 0;
 	}
 	
 	/**
