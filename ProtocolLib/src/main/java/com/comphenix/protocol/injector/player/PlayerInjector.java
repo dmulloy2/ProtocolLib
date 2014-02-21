@@ -30,7 +30,6 @@ import net.sf.cglib.proxy.Factory;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -437,7 +436,15 @@ public abstract class PlayerInjector implements SocketInjector {
 	 * @throws IllegalAccessException Unable to find or retrieve net handler.
 	 */
 	protected Object getNetHandler() throws IllegalAccessException {
-		
+		return getNetHandler(false);
+	}
+	
+	/**
+	 * Retrieves the current net handler for this player.
+	 * @return Current net handler.
+	 * @throws IllegalAccessException Unable to find or retrieve net handler.
+	 */
+	protected Object getNetHandler(boolean refresh) throws IllegalAccessException {
 		// What a mess
 		try {
 			if (netHandlerField == null)
@@ -460,7 +467,7 @@ public abstract class PlayerInjector implements SocketInjector {
 		}
 		
 		// Get the handler
-		if (netHandler == null)
+		if (netHandler == null || refresh)
 			netHandler = FieldUtils.readField(netHandlerField, networkManager, true);
 		return netHandler;
 	}
@@ -590,11 +597,13 @@ public abstract class PlayerInjector implements SocketInjector {
 			if (updateOnLogin) {
 				if (updatedPlayer == null) {
 					try {
-						final Object handler = getNetHandler();
+						final Object handler = getNetHandler(true);
 						
 						// Is this a net server class?
 						if (MinecraftReflection.getNetServerHandlerClass().isAssignableFrom(handler.getClass())) {
-							updatedPlayer = (Player) MinecraftReflection.getBukkitEntity(getEntityPlayer(handler));
+							setUpdatedPlayer(
+								(Player) MinecraftReflection.getBukkitEntity(getEntityPlayer(handler))
+							);
 						}
 					} catch (IllegalAccessException e) {
 						reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLAYER).error(e).callerParam(packet));
@@ -602,8 +611,10 @@ public abstract class PlayerInjector implements SocketInjector {
 				}
 				
 				// This will only occur in the NetLoginHandler injection
-				if (updatedPlayer != null)
+				if (updatedPlayer != null) {
 					currentPlayer = updatedPlayer;
+					updateOnLogin = false;
+				}
 			}
 			
 			// Make sure we're listening
