@@ -827,11 +827,11 @@ public class BukkitConverters {
 				put(NbtBase.class, (EquivalentConverter) getNbtConverter()).
 				put(NbtCompound.class, (EquivalentConverter) getNbtConverter()).
 				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter()).
-				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter()).
-				put(Material.class, (EquivalentConverter) getBlockConverter());
-			
+				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter());
+				
 			// Types added in 1.7.2
 			if (MinecraftReflection.isUsingNetty()) {
+				builder.put(Material.class, (EquivalentConverter) getBlockConverter());
 				builder.put(WrappedGameProfile.class, (EquivalentConverter) getWrappedGameProfileConverter());
 				builder.put(WrappedChatComponent.class, (EquivalentConverter) getWrappedChatComponentConverter());	
 				builder.put(WrappedServerPing.class, (EquivalentConverter) getWrappedServerPingConverter());
@@ -866,8 +866,7 @@ public class BukkitConverters {
 				put(MinecraftReflection.getNBTBaseClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getNBTCompoundClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getWatchableObjectClass(), (EquivalentConverter) getWatchableObjectConverter()).
-				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter()).
-				put(MinecraftReflection.getBlockClass(), (EquivalentConverter) getBlockConverter());
+				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter());
 				
 			if (hasWorldType)
 				builder.put(MinecraftReflection.getWorldTypeClass(), (EquivalentConverter) getWorldTypeConverter());
@@ -876,6 +875,7 @@ public class BukkitConverters {
 			
 			// Types added in 1.7.2
 			if (MinecraftReflection.isUsingNetty()) {
+				builder.put(MinecraftReflection.getBlockClass(), (EquivalentConverter) getBlockConverter());
 				builder.put(MinecraftReflection.getGameProfileClass(), (EquivalentConverter) getWrappedGameProfileConverter());
 				builder.put(MinecraftReflection.getIChatBaseComponentClass(), (EquivalentConverter) getWrappedChatComponentConverter());
 				builder.put(MinecraftReflection.getServerPingClass(), (EquivalentConverter) getWrappedServerPingConverter());
