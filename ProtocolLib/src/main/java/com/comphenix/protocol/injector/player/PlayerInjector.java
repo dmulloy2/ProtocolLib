@@ -588,9 +588,14 @@ public abstract class PlayerInjector implements SocketInjector {
 			
 			// Hack #1
 			if (updateOnLogin) {
-				if (id == Packets.Server.LOGIN) {
+				if (updatedPlayer == null) {
 					try {
-						updatedPlayer = (Player) MinecraftReflection.getBukkitEntity(getEntityPlayer(getNetHandler()));
+						final Object handler = getNetHandler();
+						
+						// Is this a net server class?
+						if (MinecraftReflection.getNetServerHandlerClass().isAssignableFrom(handler.getClass())) {
+							updatedPlayer = (Player) MinecraftReflection.getBukkitEntity(getEntityPlayer(handler));
+						}
 					} catch (IllegalAccessException e) {
 						reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLAYER).error(e).callerParam(packet));
 					}
