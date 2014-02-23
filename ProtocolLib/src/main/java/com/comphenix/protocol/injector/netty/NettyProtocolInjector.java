@@ -227,48 +227,27 @@ public class NettyProtocolInjector implements ChannelListener {
     }
     
 	@Override
-	public Object onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
+	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
 		
 		if (sendingFilters.contains(clazz)) {
-			// Check for ignored packets
-			if (injector.unignorePacket(packet)) {
-				return packet;
-			}
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
-			PacketEvent event = packetQueued(container, injector.getPlayer());
-			
-			if (!event.isCancelled()) {
-				injector.saveEvent(marker, event);
-				return event.getPacket().getHandle();
-			} else {
-				return null; // Cancel
-			}
+			return packetQueued(container, injector.getPlayer());
 		}
 		// Don't change anything
-		return packet;
+		return null;
 	}
 
 	@Override
-	public Object onPacketReceiving(Injector injector, Object packet, NetworkMarker marker) {
+	public PacketEvent onPacketReceiving(Injector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
 		
 		if (reveivedFilters.contains(clazz)) {
-			// Check for ignored packets
-			if (injector.unignorePacket(packet)) {
-				return packet;
-			}
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
-			PacketEvent event = packetReceived(container, injector.getPlayer(), marker);
-			
-			if (!event.isCancelled()) {
-				return event.getPacket().getHandle();
-			} else {
-				return null; // Cancel
-			}
+			return packetReceived(container, injector.getPlayer(), marker);
 		}
 		// Don't change anything
-		return packet;
+		return null;
 	}
 
 	@Override

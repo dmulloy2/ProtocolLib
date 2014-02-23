@@ -4,7 +4,6 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketEvent;
 
 /**
  * Represents an injected client connection.
@@ -47,20 +46,6 @@ interface Injector {
 	public abstract Protocol getCurrentProtocol();
 
 	/**
-	 * Undo the ignore status of a packet.
-	 * @param packet - the packet.
-	 * @return TRUE if the ignore status was undone, FALSE otherwise.
-	 */
-	public abstract boolean unignorePacket(Object packet);
-
-	/**
-	 * Ignore the given packet.
-	 * @param packet - the packet to ignore.
-	 * @return TRUE if it was ignored, FALSE if it already is ignored.
-	 */
-	public abstract boolean ignorePacket(Object packet);
-
-	/**
 	 * Retrieve the network marker associated with a given packet.
 	 * @param packet - the packet.
 	 * @return The network marker.
@@ -73,13 +58,6 @@ interface Injector {
 	 * @param marker - the associated marker.
 	 */
 	public abstract void saveMarker(Object packet, NetworkMarker marker);
-
-	/**
-	 * Associate a given network marker with a packet event.
-	 * @param marker - the marker.
-	 * @param event - the packet event
-	 */
-	public abstract void saveEvent(NetworkMarker marker, PacketEvent event);
 
 	/**
 	 * Retrieve the current player or temporary player associated with the injector.

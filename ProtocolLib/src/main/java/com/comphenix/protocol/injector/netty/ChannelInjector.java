@@ -52,6 +52,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
 	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
 	
+	/**
+	 * Indicates that a packet has bypassed packet listeners.
+	 */
+	private static final PacketEvent BYPASSED_PACKET = new PacketEvent(ChannelInjector.class);
+	
 	// The login packet
 	private static Class<?> PACKET_LOGIN_CLIENT = null;
 	private static FieldAccessor LOGIN_GAME_PROFILE = null;
@@ -81,25 +86,22 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	// Known network markers
 	private ConcurrentMap<Object, NetworkMarker> packetMarker = new MapMaker().weakKeys().makeMap();
-	private ConcurrentMap<NetworkMarker, PacketEvent> markerEvent = new MapMaker().weakKeys().makeMap();
-	
-	// Packets we have processed before
-	//private Set<Object> processedPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
-	
-	// Packets to ignore
-	//private Set<Object> ignoredPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
 	
 	/**
-	 * Indicate that this packet will be ignored.
+	 * Indicate that this packet has been processed by event listeners.
 	 * <p>
 	 * This must never be set outside the channel pipeline's thread.
 	 */
-	private boolean processPackets = true;
+	private PacketEvent currentEvent;
 	
 	/**
 	 * A flag set by the main thread to indiciate that a packet should not be processed.
 	 */
-	private boolean scheduleProcessPackets = true;
+	private final ThreadLocal<Boolean> scheduleProcessPackets = new ThreadLocal<Boolean>() {
+		protected Boolean initialValue() {
+			return true;
+		};
+	};
 	
 	// Other handlers
 	private ByteToMessageDecoder vanillaDecoder;
@@ -158,7 +160,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 			
 			if (vanillaDecoder == null)
-				throw new IllegalArgumentException("Unable to find vanilla decoder.in " + originalChannel.pipeline() );
+				throw new IllegalArgumentException("Unable to find vanilla decoder in " + originalChannel.pipeline() );
 			if (vanillaEncoder == null)
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline() );
 			patchEncoder(vanillaEncoder);
@@ -186,49 +188,61 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
 				@Override
 				protected <T> Callable<T> onMessageScheduled(final Callable<T> callable, FieldAccessor packetAccessor) {
-					if (handleScheduled(callable, packetAccessor)) {
-						return new Callable<T>() {
-							@Override
-							public T call() throws Exception {
-								T result = null;
-								
-								// This field must only be updated in the pipeline thread
-								processPackets = false;
-								result = callable.call();
-								processPackets = true;
-								return result;
-							}
-						};
-					}
-					return null;
+					final PacketEvent event = handleScheduled(callable, packetAccessor);
+					
+					// Handle cancelled events
+					if (event != null && event.isCancelled())
+						return null;
+					
+					return new Callable<T>() {
+						@Override
+						public T call() throws Exception {
+							T result = null;
+							
+							// This field must only be updated in the pipeline thread
+							currentEvent = event;
+							result = callable.call();
+							currentEvent = null;
+							return result;
+						}
+					};
 				}
 				
 				@Override
 				protected Runnable onMessageScheduled(final Runnable runnable, FieldAccessor packetAccessor) {
-					if (handleScheduled(runnable, packetAccessor)) {
-						return new Runnable() {
-							@Override
-							public void run() {
-								processPackets = false;
-								runnable.run();
-								processPackets = true;
-							}
-						};
-					}
-					return null;
+					final PacketEvent event = handleScheduled(runnable, packetAccessor);
+					
+					// Handle cancelled events
+					if (event != null && event.isCancelled())
+						return null;
+
+					return new Runnable() {
+						@Override
+						public void run() {
+							currentEvent = event;
+							runnable.run();
+							currentEvent = null;
+						}
+					};
 				}
 				
-				protected boolean handleScheduled(Object instance, FieldAccessor accessor) {
+				protected PacketEvent handleScheduled(Object instance, FieldAccessor accessor) {
+					// See if we've been instructed not to process packets
+					if (!scheduleProcessPackets.get())
+						return BYPASSED_PACKET;
+					
+					// Let the filters handle this packet
 					Object original = accessor.get(instance);
-					Object result = scheduleProcessPackets ? processSending(original) : original;
-				
-					if (result != null) {
+					PacketEvent event = processSending(original);
+
+					if (event != null && !event.isCancelled()) {
+						Object changed = event.getPacket().getHandle();
+						
 						// Change packet to be scheduled
-						if (original != result)
-							accessor.set(instance, result);
-						return true;
-					}
-					return false;
+						if (original != changed)
+							accessor.set(instance, changed);
+					};
+					return event != null ? event : BYPASSED_PACKET;
 				}
 			});
 			
@@ -242,7 +256,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param message - the message/packet.
 	 * @return The resulting message/packet.
 	 */
-	private Object processSending(Object message) {
+	private PacketEvent processSending(Object message) {
 		return processSending(message, packetMarker.get(message));
 	}
 	
@@ -251,7 +265,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param message - the message/packet.
 	 * @return The resulting message/packet.
 	 */
-	private Object processSending(Object message, NetworkMarker marker) {
+	private PacketEvent processSending(Object message, NetworkMarker marker) {
 		return channelListener.onPacketSending(ChannelInjector.this, message, marker);
 	}
 	
@@ -282,11 +296,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 		try {
-			NetworkMarker marker = getMarker(packet);;
-			PacketEvent event = markerEvent.remove(marker);
+			PacketEvent event = currentEvent;
+			NetworkMarker marker = null;
 			
 			// This packet has not been seen by the main thread
-			if (processPackets) {
+			if (event == null) {
 				Class<?> clazz = packet.getClass();
 				
 				// Schedule the transmission on the main thread instead
@@ -296,10 +310,12 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					packet = null;
 					
 				} else {
-					packet = processSending(packet, marker);
-					marker = getMarker(packet);
-					event = markerEvent.remove(marker);
+					event = processSending(packet, marker);
 				}
+			}
+			if (event != null) {
+				// Retrieve marker without accidentally constructing it
+				marker = NetworkMarker.getNetworkMarker(event); 
 			}
 			
 			// Process output handler
@@ -354,13 +370,15 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					byteBuffer.resetReaderIndex();
 					marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
 				}
-				Object output = channelListener.onPacketReceiving(this, input, marker);
+				PacketEvent output = channelListener.onPacketReceiving(this, input, marker);
 				
 				// Handle packet changes
-				if (output == null)
-					packets.clear();
-				else if (output != input)
-					packets.set(0, output);
+				if (output != null) {
+					if (output.isCancelled())
+						packets.clear();
+					else if (output.getPacket().getHandle() != input)
+						packets.set(0, output.getPacket().getHandle());
+				}
 			}
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this, 
@@ -441,9 +459,9 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
 		saveMarker(packet, marker);
 		
-		scheduleProcessPackets = filtered;
+		scheduleProcessPackets.set(filtered);
 		invokeSendPacket(packet);
-		scheduleProcessPackets = true;
+		scheduleProcessPackets.set(true);
 	}
 	
 	/**
@@ -469,10 +487,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		Runnable action = new Runnable() {
 			@Override
 			public void run() {
-				Object result = filtered ? channelListener.onPacketReceiving(ChannelInjector.this, packet, marker) : packet;
+				PacketEvent event = filtered ? channelListener.onPacketReceiving(ChannelInjector.this, packet, marker) : null;
+				Object result = event != null ? event.getPacket().getHandle() : packet;
 				
 				// See if the packet has been cancelled
-				if (result == null)
+				if (event != null && event.isCancelled())
 					return;
 				
 				try {
@@ -513,18 +532,6 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 	
 	@Override
-	public boolean unignorePacket(Object packet) {
-		// NOP
-		return false;
-	}
-	
-	@Override
-	public boolean ignorePacket(Object packet) {
-		// NOP
-		return false;
-	}
-	
-	@Override
 	public NetworkMarker getMarker(Object packet) {
 		return packetMarker.get(packet);
 	}
@@ -533,13 +540,6 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public void saveMarker(Object packet, NetworkMarker marker) {
 		if (marker != null) {
 			packetMarker.put(packet, marker);
-		}
-	}
-	
-	@Override
-	public void saveEvent(NetworkMarker marker, PacketEvent event) {
-		if (marker != null) {
-			markerEvent.put(marker, event);
 		}
 	}
 			

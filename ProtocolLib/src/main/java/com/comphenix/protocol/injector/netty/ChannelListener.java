@@ -2,6 +2,7 @@ package com.comphenix.protocol.injector.netty;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.NetworkMarker;
+import com.comphenix.protocol.events.PacketEvent;
 
 
 /**
@@ -16,9 +17,9 @@ interface ChannelListener {
 	 * @param injector - the channel injector.
 	 * @param packet - the packet.
 	 * @param marker - the associated network marker, if any.
-	 * @return The new packet, if it should be changed, or NULL to cancel.
+	 * @return The packet even that was passed to the listeners, with a possible packet change, or NULL.
 	 */
-	public Object onPacketSending(Injector injector, Object packet, NetworkMarker marker);
+	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker);
 	
 	/**
 	 * Invoked when a packet is being received from a client.
@@ -27,9 +28,9 @@ interface ChannelListener {
 	 * @param injector - the channel injector.
 	 * @param packet - the packet.
 	 * @param marker - the associated network marker, if any.
-	 * @return The new packet, if it should be changed, or NULL to cancel.
+	 * @return The packet even that was passed to the listeners, with a possible packet change, or NULL.
 	 */
-	public Object onPacketReceiving(Injector injector, Object packet, NetworkMarker marker);
+	public PacketEvent onPacketReceiving(Injector injector, Object packet, NetworkMarker marker);
 	
 	/**
 	 * Determine if there is a packet listener for the given packet.

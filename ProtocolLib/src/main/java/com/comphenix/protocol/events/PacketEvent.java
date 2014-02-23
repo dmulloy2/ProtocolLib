@@ -23,7 +23,6 @@ import java.io.ObjectOutputStream;
 import java.lang.ref.WeakReference;
 import java.util.EventObject;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 

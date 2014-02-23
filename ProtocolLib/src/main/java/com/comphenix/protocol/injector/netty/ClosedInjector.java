@@ -48,27 +48,12 @@ class ClosedInjector implements Injector {
 	}
 
 	@Override
-	public boolean unignorePacket(Object packet) {
-		return false;
-	}
-
-	@Override
-	public boolean ignorePacket(Object packet) {
-		return false;
-	}
-
-	@Override
 	public NetworkMarker getMarker(Object packet) {
 		return null;
 	}
 
 	@Override
 	public void saveMarker(Object packet, NetworkMarker marker) {
-		// Do nothing
-	}
-
-	@Override
-	public void saveEvent(NetworkMarker marker, PacketEvent event) {
 		// Do nothing
 	}
 
