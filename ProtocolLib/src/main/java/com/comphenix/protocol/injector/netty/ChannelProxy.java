@@ -28,7 +28,7 @@ abstract class ChannelProxy implements Channel {
 		public Object get(Object instance) { return null; }
 		public Field getField() { return null; };
 	};
-	
+
 	// Looking up packets in inner classes
 	private static Map<Class<?>, FieldAccessor> MESSAGE_LOOKUP = Maps.newConcurrentMap();
 	
@@ -46,10 +46,19 @@ abstract class ChannelProxy implements Channel {
 
 	/**
 	 * Invoked when a packet is scheduled for transmission in the event loop.
-	 * @param message - the packet to schedule.
-	 * @return The object to transmit, or NULL to cancel.
+	 * @param callable - callable to schedule for execution.
+	 * @param packetAccessor - accessor for modifying the packet in the callable.
+	 * @return The callable that will be scheduled, or NULL to cancel.
 	 */
-	protected abstract Object onMessageScheduled(Object message);
+	protected abstract <T> Callable<T> onMessageScheduled(Callable<T> callable, FieldAccessor packetAccessor);
+	
+	/**
+	 * Invoked when a packet is scheduled for transmission in the event loop.
+	 * @param runnable - the runnable that contains a packet to be scheduled.
+	 * @param packetAccessor - accessor for modifying the packet in the runnable.
+	 * @return The runnable that will be scheduled, or NULL to cancel.
+	 */
+	protected abstract Runnable onMessageScheduled(Runnable runnable, FieldAccessor packetAccessor);
 	
 	public <T> Attribute<T> attr(AttributeKey<T> paramAttributeKey) {
 		return delegate.attr(paramAttributeKey);
@@ -84,16 +93,12 @@ abstract class ChannelProxy implements Channel {
 				}
 				
 				@Override
-				protected Runnable schedulingRunnable(Runnable runnable) {
-					FieldAccessor accessor = getMessageAccessor(runnable);
+				protected Runnable schedulingRunnable(final Runnable runnable) {
+					final FieldAccessor accessor = getMessageAccessor(runnable);
 					
 					if (accessor != null) {
-						Object packet = onMessageScheduled(accessor.get(runnable));
-						
-						if (packet != null)
-							accessor.set(runnable, packet);
-						else
-							return getEmptyRunnable();
+						Runnable result = onMessageScheduled(runnable, accessor);;
+						return result != null ? result : getEmptyRunnable();
 					}
 					return runnable;
 				}
@@ -103,12 +108,8 @@ abstract class ChannelProxy implements Channel {
 					FieldAccessor accessor = getMessageAccessor(callable);
 					
 					if (accessor != null) {
-						Object packet = onMessageScheduled(accessor.get(callable));
-						
-						if (packet != null)
-							accessor.set(callable, packet);
-						else
-							return getEmptyCallable();
+						Callable<T> result = onMessageScheduled(callable, accessor);;
+						return result != null ? result : EventLoopProxy.<T>getEmptyCallable();
 					}
 					return callable;
 				}

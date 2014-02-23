@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelFuture;
@@ -47,7 +48,7 @@ public class NettyProtocolInjector implements ChannelListener {
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
     
     // The channel injector factory
-    private InjectionFactory injectionFactory = new InjectionFactory();
+    private InjectionFactory injectionFactory;
     
     // List of network managers
     private volatile List<Object> networkManagers;
@@ -67,7 +68,8 @@ public class NettyProtocolInjector implements ChannelListener {
     private ErrorReporter reporter;
     private boolean debug;
     
-    public NettyProtocolInjector(ListenerInvoker invoker, ErrorReporter reporter) {
+    public NettyProtocolInjector(Plugin plugin, ListenerInvoker invoker, ErrorReporter reporter) {
+    	this.injectionFactory = new InjectionFactory(plugin);
 		this.invoker = invoker;
 		this.reporter = reporter;
 	}

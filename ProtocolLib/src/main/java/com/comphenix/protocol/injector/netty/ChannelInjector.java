@@ -3,10 +3,8 @@ package com.comphenix.protocol.injector.netty;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
@@ -22,6 +20,7 @@ import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.util.io.netty.util.internal.TypeParameterMatcher;
 import net.sf.cglib.proxy.Factory;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
@@ -85,10 +84,22 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private ConcurrentMap<NetworkMarker, PacketEvent> markerEvent = new MapMaker().weakKeys().makeMap();
 	
 	// Packets we have processed before
-	private Set<Object> processedPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
+	//private Set<Object> processedPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
 	
 	// Packets to ignore
-	private Set<Object> ignoredPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
+	//private Set<Object> ignoredPackets = Collections.newSetFromMap(new MapMaker().weakKeys().<Object, Boolean>makeMap());
+	
+	/**
+	 * Indicate that this packet will be ignored.
+	 * <p>
+	 * This must never be set outside the channel pipeline's thread.
+	 */
+	private boolean processPackets = true;
+	
+	/**
+	 * A flag set by the main thread to indiciate that a packet should not be processed.
+	 */
+	private boolean scheduleProcessPackets = true;
 	
 	// Other handlers
 	private ByteToMessageDecoder vanillaDecoder;
@@ -174,14 +185,50 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Intercept all write methods
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
 				@Override
-				protected Object onMessageScheduled(Object message) {
-					Object result = processSending(message);
-					
-					// We have now processed this packet once already
-					if (result != null) {
-						processedPackets.add(result);
+				protected <T> Callable<T> onMessageScheduled(final Callable<T> callable, FieldAccessor packetAccessor) {
+					if (handleScheduled(callable, packetAccessor)) {
+						return new Callable<T>() {
+							@Override
+							public T call() throws Exception {
+								T result = null;
+								
+								// This field must only be updated in the pipeline thread
+								processPackets = false;
+								result = callable.call();
+								processPackets = true;
+								return result;
+							}
+						};
 					}
-					return result;
+					return null;
+				}
+				
+				@Override
+				protected Runnable onMessageScheduled(final Runnable runnable, FieldAccessor packetAccessor) {
+					if (handleScheduled(runnable, packetAccessor)) {
+						return new Runnable() {
+							@Override
+							public void run() {
+								processPackets = false;
+								runnable.run();
+								processPackets = true;
+							}
+						};
+					}
+					return null;
+				}
+				
+				protected boolean handleScheduled(Object instance, FieldAccessor accessor) {
+					Object original = accessor.get(instance);
+					Object result = scheduleProcessPackets ? processSending(original) : original;
+				
+					if (result != null) {
+						// Change packet to be scheduled
+						if (original != result)
+							accessor.set(instance, result);
+						return true;
+					}
+					return false;
 				}
 			});
 			
@@ -196,7 +243,16 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @return The resulting message/packet.
 	 */
 	private Object processSending(Object message) {
-		return channelListener.onPacketSending(ChannelInjector.this, message, packetMarker.get(message));
+		return processSending(message, packetMarker.get(message));
+	}
+	
+	/**
+	 * Process a given message on the packet listeners.
+	 * @param message - the message/packet.
+	 * @return The resulting message/packet.
+	 */
+	private Object processSending(Object message, NetworkMarker marker) {
+		return channelListener.onPacketSending(ChannelInjector.this, message, marker);
 	}
 	
 	/**
@@ -226,11 +282,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 		try {
-			NetworkMarker marker = getMarker(packet);
+			NetworkMarker marker = getMarker(packet);;
 			PacketEvent event = markerEvent.remove(marker);
 			
-			// Try again, in case this packet was sent directly in the event loop
-			if (event == null && !processedPackets.remove(packet)) {
+			// This packet has not been seen by the main thread
+			if (processPackets) {
 				Class<?> clazz = packet.getClass();
 				
 				// Schedule the transmission on the main thread instead
@@ -240,7 +296,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					packet = null;
 					
 				} else {
-					packet = processSending(packet);
+					packet = processSending(packet, marker);
 					marker = getMarker(packet);
 					event = markerEvent.remove(marker);
 				}
@@ -271,10 +327,8 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 
 	private void scheduleMainThread(final Object packetCopy) {
-		// Do not process this packet agai
-		processedPackets.add(packetCopy);
-		
-		ProtocolLibrary.getExecutorSync().execute(new Runnable() {
+		// Don't use BukkitExecutors for this - it has a bit of overhead
+		Bukkit.getScheduler().scheduleSyncDelayedTask(factory.getPlugin(), new Runnable() {
 			@Override
 			public void run() {
 				invokeSendPacket(packetCopy);
@@ -386,15 +440,10 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	@Override
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
 		saveMarker(packet, marker);
-		processedPackets.remove(packet);
 		
-		// Record if this packet should be ignored by most listeners
-		if (!filtered) {
-			ignoredPackets.add(packet);
-		} else {
-			ignoredPackets.remove(packet);
-		}
+		scheduleProcessPackets = filtered;
 		invokeSendPacket(packet);
+		scheduleProcessPackets = true;
 	}
 	
 	/**
@@ -415,20 +464,31 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 	
 	@Override
-	public void recieveClientPacket(Object packet, NetworkMarker marker, boolean filtered) {
-		saveMarker(packet, marker);
-		processedPackets.remove(packet);
-	
-		if (!filtered) {
-			ignoredPackets.add(packet);
-		} else {
-			ignoredPackets.remove(packet);
-		}
+	public void recieveClientPacket(final Object packet, final NetworkMarker marker, final boolean filtered) {
+		// Execute this in the channel thread
+		Runnable action = new Runnable() {
+			@Override
+			public void run() {
+				Object result = filtered ? channelListener.onPacketReceiving(ChannelInjector.this, packet, marker) : packet;
+				
+				// See if the packet has been cancelled
+				if (result == null)
+					return;
+				
+				try {
+					MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(networkManager, null, result);
+				} catch (Exception e) {
+					// Inform the user
+					ProtocolLibrary.getErrorReporter().reportMinimal(factory.getPlugin(), "recieveClientPacket", e);
+				}
+			}
+		};
 		
-		try {
-			MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(networkManager, null, packet);
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Unable to receive client packet " + packet, e);
+		// Execute in the worker thread
+		if (originalChannel.eventLoop().inEventLoop()) {
+			action.run();
+		} else {
+			originalChannel.eventLoop().execute(action);
 		}
 	}
 	
@@ -454,12 +514,14 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	
 	@Override
 	public boolean unignorePacket(Object packet) {
-		return ignoredPackets.remove(packet);
+		// NOP
+		return false;
 	}
 	
 	@Override
 	public boolean ignorePacket(Object packet) {
-		return ignoredPackets.add(packet);
+		// NOP
+		return false;
 	}
 	
 	@Override

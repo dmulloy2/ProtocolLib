@@ -6,6 +6,7 @@ import javax.annotation.Nonnull;
 import net.minecraft.util.io.netty.channel.Channel;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.injector.netty.ChannelInjector.ChannelSocketInjector;
 import com.comphenix.protocol.injector.server.SocketInjector;
@@ -28,6 +29,21 @@ class InjectionFactory {
 	
 	// Whether or not the factory is closed
 	private volatile boolean closed;
+	
+	// The current plugin
+	private final Plugin plugin;
+	
+	public InjectionFactory(Plugin plugin) {
+		this.plugin = plugin;
+	}
+	
+	/**
+	 * Retrieve the main plugin associated with this injection factory.
+	 * @return The main plugin.
+	 */
+	public Plugin getPlugin() {
+		return plugin;
+	}
 	
 	/**
 	 * Construct or retrieve a channel injector from an existing Bukkit player.

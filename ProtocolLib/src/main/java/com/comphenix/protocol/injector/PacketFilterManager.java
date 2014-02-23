@@ -252,7 +252,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// Use the correct injection type
 		if (MinecraftReflection.isUsingNetty()) {
-			this.nettyInjector = new NettyProtocolInjector(this, reporter);
+			this.nettyInjector = new NettyProtocolInjector(builder.getLibrary(), this, reporter);
 			this.playerInjection = nettyInjector.getPlayerInjector();
 			this.packetInjector = nettyInjector.getPacketInjector();
 			
