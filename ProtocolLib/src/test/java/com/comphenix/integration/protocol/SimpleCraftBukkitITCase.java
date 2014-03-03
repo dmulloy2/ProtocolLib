@@ -106,24 +106,32 @@ public class SimpleCraftBukkitITCase {
 	@SuppressWarnings("deprecation")
 	private static void setupPlugins() throws IOException {
 		File pluginDirectory = new File("plugins/");
+		File srcDirectory = new File("../");
 		File bestFile = null;
 		int bestLength = Integer.MAX_VALUE;
+				
+		for (File file : srcDirectory.listFiles()) {
+			String name = file.getName();
+		
+			if (file.isFile() && name.startsWith("ProtocolLib") && name.length() < bestLength) {
+				bestLength = name.length();
+				bestFile = file;
+			}
+		}
+		
+		if (bestFile == null) {
+			throw new IllegalStateException("Cannot find ProtocolLib in " + srcDirectory);
+		}
 		
 		// Copy the ProtocolLib plugin to the server
 		if (pluginDirectory.exists()) {
 			Files.deleteDirectoryContents(pluginDirectory);
 		}
-		
-		for (File file : new File("../").listFiles()) {
-			String name = file.getName();
 			
-			if (name.startsWith("ProtocolLib") && name.length() < bestLength) {
-				bestLength = name.length();
-				bestFile = file;
-			}
-		}
 		pluginDirectory.mkdirs();
-		Files.copy(bestFile, new File(pluginDirectory, bestFile.getName()));
+		
+		File destination = new File(pluginDirectory, bestFile.getName()).getAbsoluteFile();
+		Files.copy(bestFile, destination);
 	}
 	
 	/**

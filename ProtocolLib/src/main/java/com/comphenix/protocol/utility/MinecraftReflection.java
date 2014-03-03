@@ -56,6 +56,7 @@ import com.comphenix.protocol.reflect.ClassAnalyser;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
 import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
@@ -69,6 +70,9 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -140,6 +144,14 @@ public class MinecraftReflection {
 	
 	// net.minecraft.server
 	private static Class<?> itemStackArrayClass;
+	
+	// Cache of getBukkitEntity
+	private static Cache<Class<?>, MethodAccessor> getBukkitEntityCache = CacheBuilder.newBuilder().build(
+	  new CacheLoader<Class<?>, MethodAccessor>() {
+		public MethodAccessor load(java.lang.Class<?> paramK) throws Exception {
+			return Accessors.getMethodAccessor(paramK, "getBukkitEntity");
+		};
+	});
 	
 	// The current class source
 	private static ClassSource classSource;
@@ -367,9 +379,9 @@ public class MinecraftReflection {
 		
 		// We will have to do this dynamically, unfortunately
 		try {
-			return nmsObject.getClass().getMethod("getBukkitEntity").invoke(nmsObject);
+			return getBukkitEntityCache.apply(nmsObject.getClass()).invoke(nmsObject);
 		} catch (Exception e) {
-			throw new RuntimeException("Cannot get Bukkit entity from " + nmsObject, e);
+			throw new IllegalArgumentException("Cannot get Bukkit entity from " + nmsObject, e);
 		}
 	}
 	

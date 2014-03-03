@@ -1,6 +1,7 @@
 package com.comphenix.protocol.utility;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import net.minecraft.server.v1_7_R1.ChatComponentText;
 import net.minecraft.server.v1_7_R1.ChatSerializer;
@@ -11,6 +12,8 @@ import net.minecraft.server.v1_7_R1.ServerPing;
 import net.minecraft.server.v1_7_R1.ServerPingPlayerSample;
 import net.minecraft.server.v1_7_R1.ServerPingServerData;
 
+import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -19,6 +22,15 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.google.common.collect.Maps;
 
 public class MinecraftReflectionTest {
+	// Mocking objects
+	private interface FakeEntity {
+		public Entity getBukkitEntity();
+	}
+	
+	private interface FakeBlock {
+		public Block getBukkitEntity();
+	}
+	
 	@BeforeClass
 	public static void initializeReflection() throws IllegalAccessException {
 		BukkitInitialization.initializePackage();
@@ -32,7 +44,24 @@ public class MinecraftReflectionTest {
 	
 	@AfterClass
 	public static void undoMocking() {
-		MinecraftReflection.minecraftPackage = null;
+		// NOP
+	}
+	
+	@Test
+	public void testBukkitMethod() {
+		FakeEntity entity = mock(FakeEntity.class);
+		FakeBlock block = mock(FakeBlock.class);
+		
+		MinecraftReflection.getBukkitEntity(entity);
+		MinecraftReflection.getBukkitEntity(block);
+		
+		verify(entity, times(1)).getBukkitEntity();
+		verify(block, times(1)).getBukkitEntity();
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testIllegalClass() {
+		MinecraftReflection.getBukkitEntity("Hello");
 	}
 
 	@Test
