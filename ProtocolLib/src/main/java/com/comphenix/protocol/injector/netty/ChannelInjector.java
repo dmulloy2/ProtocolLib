@@ -300,7 +300,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			NetworkMarker marker = null;
 			
 			// This packet has not been seen by the main thread
-			if (event == null) {
+			if (event == null && scheduleProcessPackets.get()) {
 				Class<?> clazz = packet.getClass();
 				
 				// Schedule the transmission on the main thread instead
@@ -459,9 +459,12 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
 		saveMarker(packet, marker);
 		
-		scheduleProcessPackets.set(filtered);
-		invokeSendPacket(packet);
-		scheduleProcessPackets.set(true);
+		try {
+			scheduleProcessPackets.set(filtered);
+			invokeSendPacket(packet);
+		} finally {
+			scheduleProcessPackets.set(true);
+		}
 	}
 	
 	/**

@@ -4,8 +4,6 @@ import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketEvent;
-
 
 /**
  * Represents a closed injector.
