@@ -41,6 +41,7 @@ import com.comphenix.protocol.injector.SortedPacketListenerList;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 /**
@@ -140,6 +141,18 @@ public class AsyncFilterManager implements AsynchronousManager {
 	@Override
 	public Set<PacketListener> getTimeoutHandlers() {
 		return ImmutableSet.copyOf(timeoutListeners);
+	}
+	
+	@Override
+	public Set<PacketListener> getAsyncHandlers() {
+		ImmutableSet.Builder<PacketListener> builder = ImmutableSet.builder();
+		
+		// Add every asynchronous packet listener
+		for (PrioritizedListener<AsyncListenerHandler> handler : 
+				Iterables.concat(serverProcessingQueue.values(), clientProcessingQueue.values())) {
+			builder.add(handler.getListener().getAsyncListener());
+		}
+		return builder.build();
 	}
 	
 	/**

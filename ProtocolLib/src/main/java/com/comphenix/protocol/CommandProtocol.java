@@ -82,8 +82,15 @@ class CommandProtocol extends CommandBase {
 	
 	// Display every listener on the server
 	private void printListeners(final CommandSender sender, String[] args) {
-		for (PacketListener listener : ProtocolLibrary.getProtocolManager().getPacketListeners()) {
+		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+		
+		for (PacketListener listener : manager.getPacketListeners()) {
 			sender.sendMessage(ChatColor.GOLD + "Packet listeners:");
+			sender.sendMessage(ChatColor.GOLD + " " + listener);
+		}
+		// Along with every asynchronous listener
+		for (PacketListener listener : manager.getAsynchronousManager().getAsyncHandlers()) {
+			sender.sendMessage(ChatColor.GOLD + "Asynchronous listeners:");
 			sender.sendMessage(ChatColor.GOLD + " " + listener);
 		}
 	}

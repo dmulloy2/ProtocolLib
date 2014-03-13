@@ -136,8 +136,14 @@ public interface AsynchronousManager {
 	public abstract void unregisterTimeoutHandler(PacketListener listener);
 
 	/**
-	 * Get a immutable list of every registered timeout handler.
-	 * @return List of every registered timeout handler.
+	 * Get a immutable set of every registered timeout handler.
+	 * @return Set of every registered timeout handler.
 	 */
 	public abstract Set<PacketListener> getTimeoutHandlers();
+
+	/**
+	 * Get an immutable set of every registered asynchronous packet listener.
+	 * @return Set of every asynchronous packet listener.
+	 */
+	public abstract Set<PacketListener> getAsyncHandlers();
 }
