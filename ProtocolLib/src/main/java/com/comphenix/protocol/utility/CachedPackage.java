@@ -19,6 +19,7 @@ package com.comphenix.protocol.utility;
 
 import java.util.Map;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
@@ -60,12 +61,15 @@ class CachedPackage {
 	 */
 	public Class<?> getPackageClass(String className) {
 		try {
-			Class<?> result = cache.get(className);
+			Class<?> result = cache.get(Preconditions.checkNotNull(className, "className cannot be NULL"));
 			
 			// Concurrency is not a problem - we don't care if we look up a class twice
 			if (result == null) {
 				// Look up the class dynamically
 				result = source.loadClass(combine(packageName, className));
+				
+				if (result == null)
+					throw new IllegalArgumentException("Source " + source + " returned NULL for " + className);
 				cache.put(className, result);
 			}	
 			return result;

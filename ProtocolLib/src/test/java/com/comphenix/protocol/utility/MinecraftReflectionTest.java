@@ -45,6 +45,7 @@ public class MinecraftReflectionTest {
 	@AfterClass
 	public static void undoMocking() {
 		// NOP
+		MinecraftReflection.minecraftPackage = null;
 	}
 	
 	@Test
