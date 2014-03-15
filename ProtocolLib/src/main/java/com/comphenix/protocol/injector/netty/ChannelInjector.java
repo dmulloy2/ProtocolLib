@@ -43,6 +43,7 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapMaker;
+import com.google.common.primitives.Bytes;
 
 /**
  * Represents a channel injector.
@@ -311,6 +312,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					
 				} else {
 					event = processSending(packet, marker);
+					
+					// Handle the output
+					if (event != null) {
+						packet = !event.isCancelled() ? event.getPacket().getHandle() : null;
+					}
 				}
 			}
 			if (event != null) {
@@ -327,6 +333,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				for (PacketOutputHandler handler : marker.getOutputHandlers()) {
 					handler.handle(event, data);
 				}
+				
 				// Write the result
 				output.writeBytes(data);
 				return;
