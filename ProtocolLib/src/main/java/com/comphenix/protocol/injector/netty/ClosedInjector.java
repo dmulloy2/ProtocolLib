@@ -36,7 +36,7 @@ class ClosedInjector implements Injector {
 	}
 
 	@Override
-	public void recieveClientPacket(Object packet, NetworkMarker marker, boolean filtered) {
+	public void recieveClientPacket(Object packet) {
 		// Do nothing
 	}
 

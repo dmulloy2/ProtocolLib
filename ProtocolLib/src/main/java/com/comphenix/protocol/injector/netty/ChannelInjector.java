@@ -485,20 +485,15 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 	
 	@Override
-	public void recieveClientPacket(final Object packet, final NetworkMarker marker, final boolean filtered) {
+	public void recieveClientPacket(final Object packet) {
+		// TODO: Ensure the packet listeners are executed in the channel thread.
+		
 		// Execute this in the channel thread
 		Runnable action = new Runnable() {
 			@Override
 			public void run() {
-				PacketEvent event = filtered ? channelListener.onPacketReceiving(ChannelInjector.this, packet, marker) : null;
-				Object result = event != null ? event.getPacket().getHandle() : packet;
-				
-				// See if the packet has been cancelled
-				if (event != null && event.isCancelled())
-					return;
-				
 				try {
-					MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(networkManager, null, result);
+					MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(networkManager, null, packet);
 				} catch (Exception e) {
 					// Inform the user
 					ProtocolLibrary.getErrorReporter().reportMinimal(factory.getPlugin(), "recieveClientPacket", e);

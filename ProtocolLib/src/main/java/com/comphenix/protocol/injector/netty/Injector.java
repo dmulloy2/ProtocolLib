@@ -34,10 +34,8 @@ interface Injector {
 	/**
 	 * Recieve a packet on the server.
 	 * @param packet - the (NMS) packet to send.
-	 * @param marker - the network marker.
-	 * @param filtered - whether or not the packet is filtered.
 	 */
-	public abstract void recieveClientPacket(Object packet, NetworkMarker marker, boolean filtered);
+	public abstract void recieveClientPacket(Object packet);
 
 	/**
 	 * Retrieve the current protocol state.

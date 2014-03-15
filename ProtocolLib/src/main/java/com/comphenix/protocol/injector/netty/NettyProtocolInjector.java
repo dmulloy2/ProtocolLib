@@ -331,7 +331,7 @@ public class NettyProtocolInjector implements ChannelListener {
 			@Override
 			public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
 				injectionFactory.fromPlayer(player, listener).
-					recieveClientPacket(mcPacket, null, true);
+					recieveClientPacket(mcPacket);
 			}
 			
 			@Override
