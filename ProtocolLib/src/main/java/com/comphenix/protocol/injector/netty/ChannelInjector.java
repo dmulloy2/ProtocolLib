@@ -655,7 +655,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		@Override
 		public SocketAddress getAddress() throws IllegalAccessException {
-			return injector.originalChannel.localAddress();
+			return injector.originalChannel.remoteAddress();
 		}
 
 		@Override
