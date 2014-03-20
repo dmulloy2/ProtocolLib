@@ -125,7 +125,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	private static Logger getBukkitLogger() {
 		try {
 			return Bukkit.getLogger();
-		} catch (Throwable e) {
+		} catch (LinkageError e) {
 			return Logger.getLogger("Minecraft");
 		}
 	}
@@ -418,7 +418,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 			try {
 				if (!apacheCommonsMissing)
 					return (ToStringBuilder.reflectionToString(value, ToStringStyle.MULTI_LINE_STYLE, false, null));
-			} catch (Throwable ex) {
+			} catch (LinkageError ex) {
 				// Apache is probably missing
 				apacheCommonsMissing = true;
 			}

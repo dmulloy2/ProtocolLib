@@ -86,6 +86,10 @@ class NetLoginInjector {
 			// NetServerInjector can never work (currently), so we don't need to replace the NetLoginHandler
 			return inserting;	
 			
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
 		} catch (Throwable e) {
 			// Minecraft can't handle this, so we'll deal with it here
 			reporter.reportDetailed(this, 
@@ -129,6 +133,10 @@ class NetLoginInjector {
 					}
 				}
 				
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				// Don't leak this to Minecraft
 				reporter.reportDetailed(this, 

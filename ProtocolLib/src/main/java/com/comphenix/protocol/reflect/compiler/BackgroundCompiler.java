@@ -221,6 +221,12 @@ public class BackgroundCompiler {
 							}
 						}
 						
+					} catch (OutOfMemoryError e) {
+						setEnabled(false);
+						throw e;
+					} catch (ThreadDeath e) {
+						setEnabled(false);
+						throw e;
 					} catch (Throwable e) {
 						// Disable future compilations!
 						setEnabled(false);

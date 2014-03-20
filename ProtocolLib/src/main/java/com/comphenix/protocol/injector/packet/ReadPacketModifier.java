@@ -156,6 +156,11 @@ class ReadPacketModifier implements MethodInterceptor {
 						override.put(thisObj, result);
 					}
 				}
+				
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				// Minecraft cannot handle this error
 				reporter.reportDetailed(this, 

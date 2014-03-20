@@ -221,6 +221,10 @@ class NetworkServerInjector extends PlayerInjector {
 		if (proxyServerField != null && !proxyServerField.equals(serverHandlerRef.getField())) {
 			try {
 				return FieldUtils.readField(proxyServerField, serverHandler, true);
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				// Oh well
 			}

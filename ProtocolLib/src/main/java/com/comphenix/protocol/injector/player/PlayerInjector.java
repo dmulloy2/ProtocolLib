@@ -642,6 +642,10 @@ public abstract class PlayerInjector implements SocketInjector {
 				return result;
 			}
 			
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_HANDLE_PACKET).error(e).callerParam(packet));
 		}

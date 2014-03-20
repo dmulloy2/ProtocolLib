@@ -120,6 +120,10 @@ public class WritePacketModifier implements MethodInterceptor {
 					output.write(outputBuffer);
 					return null;
 					
+				} catch (OutOfMemoryError e) {
+					throw e;
+				} catch (ThreadDeath e) {
+					throw e;
 				} catch (Throwable e) {
 					// Minecraft cannot handle this error
 					reporter.reportDetailed(this, 

@@ -141,6 +141,10 @@ public class PacketConstructor {
 					
 					try {
 						result = unwrapper.unwrapItem(values[i]);
+					} catch (OutOfMemoryError e) {
+						throw e;
+					} catch (ThreadDeath e) {
+						throw e;
 					} catch (Throwable e) {
 						lastException = e;
 					}

@@ -238,6 +238,10 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// The plugin verifier - we don't want to stop ProtocolLib just because its failing
 		try {
 			this.pluginVerifier = new PluginVerifier(builder.getLibrary());
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
 		} catch (Throwable e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_VERIFIER_ERROR).
 					messageParam(e.getMessage()).error(e));

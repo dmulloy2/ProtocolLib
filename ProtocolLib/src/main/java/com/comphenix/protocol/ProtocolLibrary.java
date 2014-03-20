@@ -242,6 +242,10 @@ public class ProtocolLibrary extends JavaPlugin {
 			initializeCommands();
 			setupBroadcastUsers(PERMISSION_INFO);
 			
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
 			disablePlugin();
@@ -263,6 +267,10 @@ public class ProtocolLibrary extends JavaPlugin {
 					case PACKET:
 						commandPacket = new CommandPacket(reporter, this, logger, commandFilter, protocolManager); break;
 				}
+			} catch (OutOfMemoryError e) {
+				throw e;
+			} catch (ThreadDeath e) {
+				throw e;
 			} catch (Throwable e) {
 				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).
 					messageParam(command.name(), e.getMessage()).error(e));
@@ -395,6 +403,10 @@ public class ProtocolLibrary extends JavaPlugin {
 			// It also performs the update check.
 			createPacketTask(server);
 		
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_ENABLE_ERROR).error(e));
 			disablePlugin();
@@ -406,6 +418,10 @@ public class ProtocolLibrary extends JavaPlugin {
 			if (config.isMetricsEnabled()) {
 				statistisc = new Statistics(this);
 			}
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
 		} catch (IOException e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_METRICS_IO_ERROR).error(e).callerParam(statistisc));
 		} catch (Throwable e) {
@@ -537,6 +553,10 @@ public class ProtocolLibrary extends JavaPlugin {
 				}
 			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
 		
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
 		} catch (Throwable e) {
 			if (packetTask == -1) {
 				reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CREATE_TIMEOUT_TASK).error(e));
@@ -625,10 +645,16 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Get the Bukkit logger first, before we try to create our own
 	private Logger getLoggerSafely() {
 		Logger log = null;
-
+		
 		try {
 			log = getLogger();
-		} catch (Throwable e) { }
+		} catch (OutOfMemoryError e) {
+			throw e;
+		} catch (ThreadDeath e) {
+			throw e;
+		} catch (Throwable e) {
+			// Ignore
+		}
 
 		// Use the default logger instead
 		if (log == null)

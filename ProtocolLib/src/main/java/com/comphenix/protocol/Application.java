@@ -41,7 +41,7 @@ public class Application {
 		if (primaryMethod) {
 			try {
 				return Bukkit.isPrimaryThread();
-			} catch (Throwable e) {
+			} catch (LinkageError e) {
 				primaryMethod = false;
 			}
 		}

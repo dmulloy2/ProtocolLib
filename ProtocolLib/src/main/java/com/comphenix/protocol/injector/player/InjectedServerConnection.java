@@ -359,6 +359,10 @@ public class InjectedServerConnection {
 					// If so, copy the content of the old element to the new
 					try {
 						writer.copyTo(inserting, replacement, inserting.getClass());
+					} catch (OutOfMemoryError e) {
+						throw e;
+					} catch (ThreadDeath e) {
+						throw e;
 					} catch (Throwable e) {
 						reporter.reportDetailed(InjectedServerConnection.this, 
 								Report.newBuilder(REPORT_CANNOT_COPY_OLD_TO_NEW).messageParam(inserting).callerParam(inserting, replacement).error(e)
