@@ -43,7 +43,6 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapMaker;
-import com.google.common.primitives.Bytes;
 
 /**
  * Represents a channel injector.
@@ -300,8 +299,13 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			PacketEvent event = currentEvent;
 			NetworkMarker marker = null;
 			
+			// Skip every kind of non-filtered packet
+			if (!scheduleProcessPackets.get()) {
+				return;
+			}
+			
 			// This packet has not been seen by the main thread
-			if (event == null && scheduleProcessPackets.get()) {
+			if (event == null) {
 				Class<?> clazz = packet.getClass();
 				
 				// Schedule the transmission on the main thread instead
@@ -331,11 +335,12 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				byte[] data = getBytes(packetBuffer);
 				
 				for (PacketOutputHandler handler : marker.getOutputHandlers()) {
-					handler.handle(event, data);
+					data = handler.handle(event, data);
 				}
 				
 				// Write the result
 				output.writeBytes(data);
+				packet = null;
 				return;
 			}
 		} catch (Exception e) {
