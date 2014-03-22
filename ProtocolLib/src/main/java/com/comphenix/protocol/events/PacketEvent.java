@@ -167,6 +167,10 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public void setPacket(PacketContainer packet) {
 		if (readOnly)
 			throw new IllegalStateException("The packet event is read-only.");
+		if (packet == null)
+			throw new IllegalArgumentException("Cannot set packet to NULL. Use setCancelled() instead.");
+		if (this.packet != null && this.packet.getType() != packet.getType())
+			throw new IllegalArgumentException("Cannot change packet type from " + this.packet.getType() + " to " + packet.getType());
 		this.packet = packet;
 	}
 	
