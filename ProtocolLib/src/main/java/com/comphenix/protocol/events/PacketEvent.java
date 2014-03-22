@@ -29,6 +29,7 @@ import org.bukkit.event.Cancellable;
 import com.comphenix.protocol.Application;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.async.AsyncMarker;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 public class PacketEvent extends EventObject implements Cancellable {
@@ -169,7 +170,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 			throw new IllegalStateException("The packet event is read-only.");
 		if (packet == null)
 			throw new IllegalArgumentException("Cannot set packet to NULL. Use setCancelled() instead.");
-		if (this.packet != null && this.packet.getType() != packet.getType())
+		if (this.packet != null && !Objects.equal(this.packet.getType(), packet.getType()))
 			throw new IllegalArgumentException("Cannot change packet type from " + this.packet.getType() + " to " + packet.getType());
 		this.packet = packet;
 	}
