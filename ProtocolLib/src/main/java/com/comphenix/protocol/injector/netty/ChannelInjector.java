@@ -257,16 +257,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @return The resulting message/packet.
 	 */
 	private PacketEvent processSending(Object message) {
-		return processSending(message, packetMarker.get(message));
-	}
-	
-	/**
-	 * Process a given message on the packet listeners.
-	 * @param message - the message/packet.
-	 * @return The resulting message/packet.
-	 */
-	private PacketEvent processSending(Object message, NetworkMarker marker) {
-		return channelListener.onPacketSending(ChannelInjector.this, message, marker);
+		return channelListener.onPacketSending(ChannelInjector.this, message);
 	}
 	
 	/**
@@ -315,7 +306,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					packet = null;
 					
 				} else {
-					event = processSending(packet, marker);
+					event = processSending(packet);
 					
 					// Handle the output
 					if (event != null) {

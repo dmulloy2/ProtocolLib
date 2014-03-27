@@ -227,7 +227,7 @@ public class NettyProtocolInjector implements ChannelListener {
     }
     
 	@Override
-	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
+	public PacketEvent onPacketSending(Injector injector, Object packet) {
 		Class<?> clazz = packet.getClass();
 		
 		if (sendingFilters.contains(clazz)) {
