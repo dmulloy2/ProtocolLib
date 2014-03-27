@@ -547,7 +547,7 @@ public class ProtocolLibrary extends JavaPlugin {
 					updateConfiguration();
 					
 					// Check for updates too
-					if (!UPDATES_DISABLED) {
+					if (!UPDATES_DISABLED && (tickCounter % 20) == 0) {
 						checkUpdates();
 					}
 				}
