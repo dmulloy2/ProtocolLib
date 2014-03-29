@@ -4,7 +4,7 @@ package com.comphenix.protocol.timing;
  * Represents an online algortihm for computing the mean and standard deviation without storing every value.
  * @author Kristian
  */
-public class StatisticsStream {
+public class StatisticsStream extends OnlineComputation {
 	// This algorithm is due to Donald Knuth, as described in:
 	//     Donald E. Knuth (1998). The Art of Computer Programming, volume 2: 
 	//	   Seminumerical Algorithms, 3rd edn., p. 232. Boston: Addison-Wesley.
@@ -35,11 +35,17 @@ public class StatisticsStream {
 		this.maximum = other.maximum;
 	}
 
+	@Override
+	public StatisticsStream copy() {
+		return new StatisticsStream(this);
+	}
+    
 	/**
      * Observe a value.
      * @param value - the observed value.
      */
-    public void observe(double value) {
+    @Override
+	public void observe(double value) {
     	double delta = value - mean;
     	
     	// As per Knuth
@@ -125,7 +131,8 @@ public class StatisticsStream {
      * Retrieve the number of observations.
      * @return Number of observations.
      */
-    public int getCount() {
+    @Override
+	public int getCount() {
 		return count;
 	}
     
@@ -133,5 +140,15 @@ public class StatisticsStream {
     	if (count == 0) {
     		throw new IllegalStateException("No observations in stream.");
     	}
+    }
+    
+    @Override
+    public String toString() {
+    	if (count == 0)
+    		return "StatisticsStream [Nothing recorded]";
+    	
+		return String.format("StatisticsStream [Average: %.3f, SD: %.3f, Min: %.3f, Max: %.3f, Count: %s]", 
+			getMean(), getStandardDeviation(), 
+			getMinimum(), getMaximum(), getCount());
     }
 }
