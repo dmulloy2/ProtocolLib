@@ -17,10 +17,17 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import javax.annotation.Nonnull;
 
@@ -32,6 +39,9 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+import com.google.common.base.Preconditions;
+import com.google.common.io.Closeables;
 
 /**
  * Factory methods for creating NBT elements, lists and compounds.
@@ -153,6 +163,56 @@ public class NbtFactory {
 			modifier.write(0, result);
 		}
 		return fromBase(result);
+	}
+	
+	/**
+	 * Load a NBT compound from a GZIP compressed file.
+	 * @param file - the source file.
+	 * @return The compound.
+	 * @throws IOException Unable to load file.
+	 */
+	public static NbtCompound fromFile(String file) throws IOException {
+		Preconditions.checkNotNull(file, "file cannot be NULL");
+	    FileInputStream stream = null;
+	    DataInputStream input = null;
+	    boolean swallow = true;
+	    
+	    try {
+	        stream = new FileInputStream(file);
+	        NbtCompound result = NbtBinarySerializer.DEFAULT.
+	            deserializeCompound(input = new DataInputStream(new GZIPInputStream(stream)));
+	        swallow = false;
+	        return result;
+	    } finally {
+	        // Would be nice to avoid this, but alas - we have to use Java 6
+	        if      (input != null) Closeables.close(input, swallow);
+	        else if (stream != null) Closeables.close(stream, swallow);
+	    }       
+	}
+	
+	/**
+	 * Save a NBT compound to a new compressed file, overwriting any existing files in the process.
+	 * @param compound - the compound to save.
+	 * @param file - the destination file.
+	 * @throws IOException Unable to save compound.
+	 */
+	public static void toFile(NbtCompound compound, String file) throws IOException {
+		Preconditions.checkNotNull(compound, "compound cannot be NULL");
+		Preconditions.checkNotNull(file, "file cannot be NULL");
+	    FileOutputStream stream = null;
+	    DataOutputStream output = null;
+	    boolean swallow = true;
+	    
+	    try {
+	        stream = new FileOutputStream(file);
+	        NbtBinarySerializer.DEFAULT.
+	            serialize(compound, output = new DataOutputStream(new GZIPOutputStream(stream)));
+	        swallow = false;
+	    } finally {
+	        // Note the order
+	        if      (output != null) Closeables.close(output, swallow);
+	        else if (stream != null) Closeables.close(stream, swallow);
+	    }       
 	}
 	
 	/**
