@@ -50,6 +50,7 @@ import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
@@ -409,7 +410,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				
 				verifyWhitelist(listener, sending);
 				sendingListeners.addListener(listener, sending);
-				enablePacketFilters(listener, ConnectionSide.SERVER_SIDE, sending.getTypes());
+				enablePacketFilters(listener, sending.getTypes());
 				
 				// Make sure this is possible
 				playerInjection.checkListener(listener);
@@ -421,7 +422,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			if (hasReceiving) {
 				verifyWhitelist(listener, receiving);
 				recievedListeners.addListener(listener, receiving);
-				enablePacketFilters(listener, ConnectionSide.CLIENT_SIDE, receiving.getTypes());
+				enablePacketFilters(listener, receiving.getTypes());
 			}
 			if (hasReceiving)
 				incrementPhases(processPhase(receiving, ConnectionSide.CLIENT_SIDE));
@@ -636,16 +637,13 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	 * @param side - which side the event will arrive from.
 	 * @param packets - the packet id(s).
 	 */
-	private void enablePacketFilters(PacketListener listener, ConnectionSide side, Iterable<PacketType> packets) {
-		if (side == null)
-			throw new IllegalArgumentException("side cannot be NULL.");
-
+	private void enablePacketFilters(PacketListener listener, Iterable<PacketType> packets) {
 		// Note the difference between unsupported and valid.
 		// Every packet ID between and including 0 - 255 is valid, but only a subset is supported.
 		
 		for (PacketType type : packets) {
 			// Only register server packets that are actually supported by Minecraft
-			if (side.isForServer()) {
+			if (type.getSender() == Sender.SERVER) {
 				// Note that we may update the packet list here
 				if (!knowsServerPackets || PacketRegistry.getServerPacketTypes().contains(type))
 					playerInjection.addPacketHandler(type, listener.getSendingWhitelist().getOptions());
@@ -656,7 +654,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			}
 			
 			// As above, only for client packets
-			if (side.isForClient() && packetInjector != null) {
+			if (type.getSender() == Sender.CLIENT && packetInjector != null) {
 				if (!knowsClientPackets || PacketRegistry.getClientPacketTypes().contains(type))
 					packetInjector.addPacketHandler(type, listener.getReceivingWhitelist().getOptions());
 				else
