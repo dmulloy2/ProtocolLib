@@ -187,10 +187,20 @@ public abstract class TinyProtocol {
 	public final void close() {
 		if (!closed) {
 			closed = true;
-	
+			// Compute this once
+			final String handlerName = getHandlerName();
+			
 			// Remove our handlers
 			for (Player player : plugin.getServer().getOnlinePlayers()) {
-				getChannel(player).pipeline().remove(getHandlerName());
+				final Channel channel = getChannel(player);
+				
+				// See ChannelInjector in ProtocolLib, line 590
+				channel.eventLoop().execute(new Runnable() {
+					@Override
+					public void run() {
+						channel.pipeline().remove(handlerName);
+					}
+				});
 			}
 			
 			// Clean up Bukkit
