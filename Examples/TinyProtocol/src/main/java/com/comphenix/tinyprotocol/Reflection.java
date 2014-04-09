@@ -1,5 +1,6 @@
 package com.comphenix.tinyprotocol;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -8,11 +9,25 @@ import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 
+import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
+
 /**
  * An utility class that simplifies reflection in Bukkit plugins.
  * @author Kristian
  */
 public final class Reflection {
+	/**
+	 * An interface for invoking a specific constructor. 
+	 */
+	public interface ConstructorInvoker {
+		/**
+		 * Invoke a constructor for a specific class.
+		 * @param arguments - the arguments to pass to the constructor.
+		 * @return The constructed object.
+		 */
+		public Object invoke(Object... arguments); 
+	}
+	
 	/**
 	 * An interface for invoking a specific method. 
 	 */
@@ -161,7 +176,7 @@ public final class Reflection {
      * @throws IllegalStateException If we cannot find this method.
      */
 	public static MethodInvoker getMethod(String className, String methodName, Class<?>... params) {
-		return getMethod(getClass(className), methodName, params);
+		return getTypedMethod(getClass(className), methodName, null, params);
 	}
 	
     /**
@@ -173,10 +188,24 @@ public final class Reflection {
      * @throws IllegalStateException If we cannot find this method.
      */
     public static MethodInvoker getMethod(Class<?> clazz, String methodName, Class<?>... params) {
+    	return getTypedMethod(clazz, methodName, null, params);
+    }
+	
+    /**
+     * Search for the first publically and privately defined method of the given name and parameter count.
+     * @param clazz - a class to start with.
+     * @param methodName - the method name, or NULL to skip.
+     * @param returnType - the expected return type, or NULL to ignore.
+     * @param params - the expected parameters.
+     * @return An object that invokes this specific method.
+     * @throws IllegalStateException If we cannot find this method.
+     */
+    public static MethodInvoker getTypedMethod(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) {
         for (final Method method : clazz.getDeclaredMethods()) {
             if ((methodName == null || method.getName().equals(methodName)) &&
+            	(returnType == null) || method.getReturnType().equals(returnType) &&
                  Arrays.equals(method.getParameterTypes(), params)) {
-                
+
                 method.setAccessible(true);
                 return new MethodInvoker() {
                 	@Override
@@ -196,7 +225,61 @@ public final class Reflection {
         throw new IllegalStateException(String.format(
             "Unable to find method %s (%s).", methodName, Arrays.asList(params)));
     }
-	 
+    
+    /**
+     * Search for the first publically and privately defined constructor of the given name and parameter count.
+     * @param className - lookup name of the class, see {@link #getClass(String)}.
+     * @param params - the expected parameters.
+     * @return An object that invokes this constructor.
+     * @throws IllegalStateException If we cannot find this method.
+     */
+    public static ConstructorInvoker getConstructor(String className, Class<?>... params) {
+    	return getConstructor(getClass(className), params);
+    }
+    
+    /**
+     * Search for the first publically and privately defined constructor of the given name and parameter count.
+     * @param clazz - a class to start with.
+     * @param params - the expected parameters.
+     * @return An object that invokes this constructor.
+     * @throws IllegalStateException If we cannot find this method.
+     */
+    public static ConstructorInvoker getConstructor(Class<?> clazz, Class<?>... params) {
+        for (final Constructor<?> constructor : clazz.getDeclaredConstructors()) {
+            if (Arrays.equals(constructor.getParameterTypes(), params)) {
+
+            	constructor.setAccessible(true);
+                return new ConstructorInvoker() {
+                	@Override
+                	public Object invoke(Object... arguments) {
+                		try {
+							return constructor.newInstance(arguments);
+						} catch (Exception e) {
+							throw new RuntimeException("Cannot invoke constructor " + constructor, e);
+						}
+                	}
+                };
+            }
+        }
+        throw new IllegalStateException(String.format(
+            "Unable to find constructor for %s (%s).", clazz, Arrays.asList(params)));
+    }
+     
+    /**
+     * Retrieve a class from its full name, without knowing its type on compile time.
+     * <p>
+     * This is useful when looking up fields by a NMS or OBC type.
+     * <p>
+     * @see {@link #getClass()} for more information.
+     * @param lookupName - the class name with variables.
+     * @return The class.
+     */
+    public static Class<Object> getUntypedClass(String lookupName) {
+    	@SuppressWarnings({"rawtypes", "unchecked"})
+		Class<Object> clazz = (Class<Object>)(Class)getClass(lookupName);
+    	return clazz;
+    }
+    
     /**
      * Retrieve a class from its full name.
      * <p>
