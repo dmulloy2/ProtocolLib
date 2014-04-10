@@ -119,7 +119,7 @@ public class ObjectWriter {
 			// Copy private fields underneath
 			Class<?> superclass = commonType.getSuperclass();
 			
-			if (!superclass.equals(Object.class)) {
+			if (superclass != null && !superclass.equals(Object.class)) {
 				copyToInternal(source, destination, superclass, false);
 			}
 			

@@ -210,7 +210,7 @@ public class PrettyPrinter {
 									ObjectPrinter printer) throws IllegalAccessException {
 		
 		// See if we're supposed to skip this class
-		if (current == Object.class || (stop != null && current.equals(stop))) {
+		if (current == null || current == Object.class || (stop != null && current.equals(stop))) {
 			return;
 		}
 

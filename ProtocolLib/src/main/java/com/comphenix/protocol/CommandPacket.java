@@ -339,8 +339,9 @@ class CommandPacket extends CommandBase {
 						Class<?> clazz = packet.getClass();
 						
 						// Get the first Minecraft super class
-						while ((!MinecraftReflection.isMinecraftClass(clazz) || 
-								 Factory.class.isAssignableFrom(clazz)) && clazz != Object.class) {
+						while (clazz != null && clazz != Object.class &&
+								(!MinecraftReflection.isMinecraftClass(clazz) || 
+								 Factory.class.isAssignableFrom(clazz))) {
 							clazz = clazz.getSuperclass();
 						}
 						
