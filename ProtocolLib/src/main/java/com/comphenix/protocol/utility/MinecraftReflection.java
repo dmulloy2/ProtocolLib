@@ -1328,6 +1328,16 @@ public class MinecraftReflection {
  	}
 	
 	/**
+	 * Retrieve the NBT read limiter class.
+	 * <p>
+	 * This is only supported in 1.7.8 (released 2014) and higher.
+	 * @return The NBT read limiter.
+	 */
+	public static Class<?> getNBTReadLimiterClass() {
+		return getMinecraftClass("NBTReadLimiter");
+	}
+	
+	/**
 	 * Retrieve the NBT Compound class.
 	 * @return The NBT Compond class.
 	 */

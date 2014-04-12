@@ -22,15 +22,15 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.server.v1_7_R1.AttributeModifier;
-import net.minecraft.server.v1_7_R1.AttributeSnapshot;
-import net.minecraft.server.v1_7_R1.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_7_R3.AttributeModifier;
+import net.minecraft.server.v1_7_R3.AttributeSnapshot;
+import net.minecraft.server.v1_7_R3.PacketPlayOutUpdateAttributes;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 // Will have to be updated for every version though
-import org.bukkit.craftbukkit.v1_7_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_7_R3.inventory.CraftItemFactory;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -332,7 +332,7 @@ public class PacketContainerTest {
 	@Test
 	public void testGameProfiles() {
 		PacketContainer spawnEntity = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
-		WrappedGameProfile profile = new WrappedGameProfile("id", "name");
+		WrappedGameProfile profile = new WrappedGameProfile("d7047a08-3150-4aa8-a2f2-7c1e2b17e298", "name");
 		spawnEntity.getGameProfiles().write(0, profile);
 		
 		assertEquals(profile, spawnEntity.getGameProfiles().read(0));

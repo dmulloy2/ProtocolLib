@@ -3,14 +3,14 @@ package com.comphenix.protocol.utility;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import net.minecraft.server.v1_7_R1.ChatComponentText;
-import net.minecraft.server.v1_7_R1.ChatSerializer;
-import net.minecraft.server.v1_7_R1.ChunkCoordIntPair;
-import net.minecraft.server.v1_7_R1.IChatBaseComponent;
-import net.minecraft.server.v1_7_R1.NBTCompressedStreamTools;
-import net.minecraft.server.v1_7_R1.ServerPing;
-import net.minecraft.server.v1_7_R1.ServerPingPlayerSample;
-import net.minecraft.server.v1_7_R1.ServerPingServerData;
+import net.minecraft.server.v1_7_R3.ChatComponentText;
+import net.minecraft.server.v1_7_R3.ChatSerializer;
+import net.minecraft.server.v1_7_R3.ChunkCoordIntPair;
+import net.minecraft.server.v1_7_R3.IChatBaseComponent;
+import net.minecraft.server.v1_7_R3.NBTCompressedStreamTools;
+import net.minecraft.server.v1_7_R3.ServerPing;
+import net.minecraft.server.v1_7_R3.ServerPingPlayerSample;
+import net.minecraft.server.v1_7_R3.ServerPingServerData;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;

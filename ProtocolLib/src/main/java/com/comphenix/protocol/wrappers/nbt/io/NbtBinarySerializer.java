@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -14,9 +16,62 @@ import com.comphenix.protocol.wrappers.nbt.NbtList;
 import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
 
 public class NbtBinarySerializer {
+	private static final Class<?> NBT_BASE_CLASS = MinecraftReflection.getNBTBaseClass();
+	
+	private interface LoadMethod {
+		/**
+		 * Load an NBT compound from a given stream.
+		 * @param input - the input stream.
+		 * @return The loaded NBT compound.
+		 */
+		public abstract Object loadNbt(DataInput input);
+	}
+	
+	/**
+	 * Load an NBT compound from the NBTBase static method pre-1.7.2.
+	 */
+	private static class LoadMethodNbtClass implements LoadMethod {
+		private MethodAccessor accessor = getNbtLoadMethod(DataInput.class);
+		
+		@Override
+		public Object loadNbt(DataInput input) {
+			return accessor.invoke(null, input);
+		}
+	}
+	
+	/**
+	 * Load an NBT compound from the NBTCompressedStreamTools static method in 1.7.2 - 1.7.5
+	 */
+	private static class LoadMethodWorldUpdate implements LoadMethod {
+		private MethodAccessor accessor = getNbtLoadMethod(DataInput.class, int.class);
+		
+		@Override
+		public Object loadNbt(DataInput input) {
+			return accessor.invoke(null, input, 0);
+		}
+	}
+
+	/**
+	 * Load an NBT compound from the NBTCompressedStreamTools static method in 1.7.8
+	 */
+	private static class LoadMethodSkinUpdate implements LoadMethod {
+		private Class<?> readLimitClass = MinecraftReflection.getNBTReadLimiterClass();
+		private Object readLimiter = FuzzyReflection.fromClass(readLimitClass).getSingleton();
+		private MethodAccessor accessor = getNbtLoadMethod(DataInput.class, int.class, readLimitClass);
+		
+		@Override
+		public Object loadNbt(DataInput input) {
+			return accessor.invoke(null, input, 0, readLimiter);
+		}
+	}
+	
 	// Used to read and write NBT
 	private static Method methodWrite;
-	private static Method methodLoad;
+	
+	/**
+	 * Method selected for loading NBT compounds.
+	 */
+	private static LoadMethod loadMethod;
 	
 	/**
 	 * Retrieve a default instance of the NBT binary serializer.
@@ -51,32 +106,36 @@ public class NbtBinarySerializer {
 	 * @return An NBT tag.
 	 */
 	public <TType> NbtWrapper<TType> deserialize(DataInput source) {
-		if (methodLoad == null) {
-			Class<?> base = MinecraftReflection.getNBTBaseClass();
-			Class<?>[] params = MinecraftReflection.isUsingNetty() ? 
-					new Class<?>[] { DataInput.class, int.class } : 
-					new Class<?>[] { DataInput.class };
+		LoadMethod method = loadMethod;
+		
+		if (loadMethod == null) {
+			if (MinecraftReflection.isUsingNetty()) {
+				try {
+					method = new LoadMethodWorldUpdate();
+				} catch (IllegalArgumentException e) {
+					// Cannot find that method - must be in 1.7.8
+					method = new LoadMethodSkinUpdate();
+				}
+			} else {
+				method = new LoadMethodNbtClass();
+			}
 			
-			// Use the base class
-			methodLoad = getUtilityClass().getMethodByParameters("load", base, params);
-			methodLoad.setAccessible(true);
+			// Save the selected method
+			loadMethod = method;
 		}
 		
 		try {
-			Object result = null;
-			
-			// Invoke the correct utility method
-			if (MinecraftReflection.isUsingNetty())
-				result = methodLoad.invoke(null, source, 0);
-			else
-				result = methodLoad.invoke(null, source);
-			return NbtFactory.fromNMS(result, null);
+			return NbtFactory.fromNMS(method.loadNbt(source), null);
 		} catch (Exception e) {
 			throw new FieldAccessException("Unable to read NBT from " + source, e);
 		}
 	}
 	
-	private FuzzyReflection getUtilityClass() {
+	private static MethodAccessor getNbtLoadMethod(Class<?>... parameters) {
+		return Accessors.getMethodAccessor(getUtilityClass().getMethodByParameters("load", NBT_BASE_CLASS, parameters), true);
+	}
+	
+	private static FuzzyReflection getUtilityClass() {
 		if (MinecraftReflection.isUsingNetty()) {
 			return FuzzyReflection.fromClass(MinecraftReflection.getNbtCompressedStreamToolsClass(), true);
 		} else {

@@ -107,6 +107,41 @@ public final class Accessors {
 	}
 	
 	/**
+	 * Retrieve a field accessor for a field with the given name and equivalent type, or NULL.
+	 * @param clazz - the declaration class.
+	 * @param fieldName - the field name.
+	 * @param fieldType - assignable field type.
+	 * @return The field accessor, or NULL if not found.
+	 */
+	public static FieldAccessor getFieldAcccessorOrNull(Class<?> clazz, String fieldName, Class<?> fieldType) {
+		 try {
+			 FieldAccessor accessor = Accessors.getFieldAccessor(clazz, fieldName, true);
+			 
+			 // Verify the type
+			 if (fieldType.isAssignableFrom(accessor.getField().getType())) {
+				 return accessor; 
+			 }
+			 return null;
+		 } catch (IllegalArgumentException e) {
+			 return null;
+		 }
+	}
+	
+	/**
+	 * Find a specific constructor in a class.
+	 * @param clazz - the class.
+	 * @param parameters - the signature of the constructor to find.
+	 * @return The constructor, or NULL if not found.
+	 */
+	public static ConstructorAccessor getConstructorAccessorOrNull(Class<?> clazz, Class<?>... parameters) {
+		try {
+			return Accessors.getConstructorAccessor(clazz, parameters);
+		} catch (IllegalArgumentException e) {
+			return null; // Not found
+		}
+	}
+	
+	/**
 	 * Retrieve a field accessor that will cache the content of the field.
 	 * <p>
 	 * Note that we don't check if the underlying field has changed after the value has been cached, 
@@ -198,6 +233,8 @@ public final class Accessors {
 	 * @param instanceClass - the parent class.
 	 * @param parameters - the parameters.
 	 * @return The constructor accessor.
+	 * @throws IllegalArgumentException If we cannot find this constructor.
+	 * @throws IllegalStateException If we cannot access reflection.
 	 */
 	public static ConstructorAccessor getConstructorAccessor(Class<?> instanceClass, Class<?>... parameters) {
 		try {

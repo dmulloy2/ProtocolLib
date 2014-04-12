@@ -288,7 +288,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		
 		for (Player player : players) {
 			GameProfile profile = (GameProfile) ENTITY_HUMAN_PROFILE.get(BukkitUnwrapper.getInstance().unwrapItem(player));
-			profiles.add(new WrappedGameProfile(profile.getId(), profile.getName()));
+			profiles.add(WrappedGameProfile.fromHandle(profile));
 		}
 		setPlayers(profiles);
 	}

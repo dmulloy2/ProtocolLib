@@ -44,6 +44,11 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	private static final String VERSION_PATTERN = ".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)";
 	
 	/**
+	 * Version 1.7.8 - the update that changed the skin format (and distribution - R.I.P. player disguise)
+	 */
+	public static final MinecraftVersion SKIN_UPDATE = new MinecraftVersion("1.7.8");
+	
+	/**
 	 * Version 1.7.2 - the update that changed the world.
 	 */
 	public static final MinecraftVersion WORLD_UPDATE = new MinecraftVersion("1.7.2");

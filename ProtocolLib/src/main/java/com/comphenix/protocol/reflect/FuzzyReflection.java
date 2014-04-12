@@ -132,7 +132,7 @@ public class FuzzyReflection {
 		} catch (IllegalArgumentException e) {
 			// Try getting the field instead
 			// Note that this will throw an exception if not found
-			field = getFieldByType("instance", source.getClass());
+			field = getFieldByType("instance", source);
 		}
 
 		// Convert into unchecked exceptions

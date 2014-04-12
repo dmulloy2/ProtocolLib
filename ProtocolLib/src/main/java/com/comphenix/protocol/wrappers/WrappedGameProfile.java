@@ -1,6 +1,14 @@
 package com.comphenix.protocol.wrappers;
 
+import java.util.UUID;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 
@@ -9,6 +17,10 @@ import net.minecraft.util.com.mojang.authlib.GameProfile;
  * @author Kristian
  */
 public class WrappedGameProfile extends AbstractWrapper {
+	// Version 1.7.2 and 1.7.8 respectively
+	private static final ConstructorAccessor CREATE_STRING_STRING = Accessors.getConstructorAccessorOrNull(GameProfile.class, String.class, String.class);
+	private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAcccessorOrNull(GameProfile.class, "id", String.class);
+	
 	// Profile from a handle
 	private WrappedGameProfile(Object profile) {
 		super(GameProfile.class);
@@ -21,7 +33,43 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * @param name - the name of the player.
 	 */
 	public WrappedGameProfile(String id, String name) {
-		this(new GameProfile(id, name));
+		super(GameProfile.class);
+		
+		if (CREATE_STRING_STRING != null) {
+			setHandle(CREATE_STRING_STRING.invoke(id, name));
+		} else {
+			parseUUID(id, name);
+			setHandle(new GameProfile(parseUUID(id, name), name));
+		}
+	}
+
+	private UUID parseUUID(String id, String name) {
+		try {
+			int missing = 4 - StringUtils.countMatches(id, "-");
+			
+			// Lenient - add missing data
+			if (missing > 0) {
+				id += StringUtils.repeat("-0", missing);
+			}
+			return UUID.fromString(id);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Cannot construct profile [" + id + ", " + name + "]", e);
+		}
+	}
+	
+	/**
+	 * Construct a new game profile with the given properties.
+	 * @param uuid - the UUID of the player.
+	 * @param name - the name of the player.
+	 */
+	public WrappedGameProfile(UUID uuid, String name) {
+		super(GameProfile.class);
+		
+		if (CREATE_STRING_STRING != null) {
+			setHandle(CREATE_STRING_STRING.invoke(uuid.toString(), name));
+		} else {
+			setHandle(new GameProfile(uuid, name));
+		}
 	}
 	
 	/**
@@ -39,7 +87,9 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * @return The UUID of the player, or NULL if not computed.
 	 */
 	public String getId() {
-		return getProfile().getId();
+		if (GET_UUID_STRING == null)
+			return (String) GET_UUID_STRING.get(handle);
+		return getProfile().getId() != null ? getProfile().getId().toString() : null;
 	}
 
 	/**

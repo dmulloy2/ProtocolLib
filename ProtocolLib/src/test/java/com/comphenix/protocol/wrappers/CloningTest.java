@@ -16,7 +16,7 @@ public class CloningTest {
 	
 	@Test
 	public void cloneGameProfile() {
-		WrappedGameProfile profile = new WrappedGameProfile("id", "name");
+		WrappedGameProfile profile = new WrappedGameProfile("8817d9ec-72e6-4abe-a496-cda667c3efe1", "name");
 		WrappedGameProfile copy = WrappedGameProfile.fromHandle(
 			AggregateCloner.DEFAULT.clone(profile.getHandle())
 		);

@@ -23,6 +23,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -53,6 +54,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	
 	// Relevant data about an offline player
 	private String name;
+	private UUID uuid;
 	private long firstPlayed;
 	private long lastPlayed;
 	private boolean operator;
@@ -77,6 +79,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	 */
 	public SerializedOfflinePlayer(OfflinePlayer offline) {
 		this.name = offline.getName();
+		this.uuid = offline.getUniqueId();
 		this.firstPlayed = offline.getFirstPlayed();
 		this.lastPlayed = offline.getLastPlayed();
 		this.operator = offline.isOp();
@@ -116,6 +119,11 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 		return lastPlayed;
 	}
 
+	@Override
+	public UUID getUniqueId() {
+		return uuid;
+	}
+	
 	@Override
 	public String getName() {
 		return name;
