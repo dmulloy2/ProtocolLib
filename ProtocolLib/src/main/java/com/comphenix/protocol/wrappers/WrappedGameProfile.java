@@ -8,7 +8,6 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.base.Objects;
-import com.google.common.base.Strings;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 
@@ -29,6 +28,9 @@ public class WrappedGameProfile extends AbstractWrapper {
 	
 	/**
 	 * Construct a new game profile with the given properties.
+	 * <p>
+	 * Note that this constructor is very lenient when parsing UUIDs for backwards compatibility reasons. 
+	 * Thus - "", " ", "0" and "0-0-0-0" are all equivalent to the the UUID "00000000-0000-0000-0000-000000000000".
 	 * @param id - the UUID of the player.
 	 * @param name - the name of the player.
 	 */
@@ -43,8 +45,14 @@ public class WrappedGameProfile extends AbstractWrapper {
 		}
 	}
 
-	private UUID parseUUID(String id, String name) {
+	private static UUID parseUUID(String id, String name) {
+		if (id == null)
+			return null;
+		
 		try {
+			// Interpret as zero
+			if (StringUtils.isBlank(id))
+				id = "0";
 			int missing = 4 - StringUtils.countMatches(id, "-");
 			
 			// Lenient - add missing data
@@ -59,14 +67,16 @@ public class WrappedGameProfile extends AbstractWrapper {
 	
 	/**
 	 * Construct a new game profile with the given properties.
-	 * @param uuid - the UUID of the player.
-	 * @param name - the name of the player.
+	 * <p>
+	 * Note that at least one of the parameters must be non-null.
+	 * @param uuid - the UUID of the player, or NULL.
+	 * @param name - the name of the player, or NULL.
 	 */
 	public WrappedGameProfile(UUID uuid, String name) {
 		super(GameProfile.class);
 		
 		if (CREATE_STRING_STRING != null) {
-			setHandle(CREATE_STRING_STRING.invoke(uuid.toString(), name));
+			setHandle(CREATE_STRING_STRING.invoke(uuid != null ? uuid.toString() : null, name));
 		} else {
 			setHandle(new GameProfile(uuid, name));
 		}
