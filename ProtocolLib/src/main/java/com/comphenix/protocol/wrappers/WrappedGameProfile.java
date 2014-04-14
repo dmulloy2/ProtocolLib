@@ -87,7 +87,7 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * @return The UUID of the player, or NULL if not computed.
 	 */
 	public String getId() {
-		if (GET_UUID_STRING == null)
+		if (GET_UUID_STRING != null)
 			return (String) GET_UUID_STRING.get(handle);
 		return getProfile().getId() != null ? getProfile().getId().toString() : null;
 	}
