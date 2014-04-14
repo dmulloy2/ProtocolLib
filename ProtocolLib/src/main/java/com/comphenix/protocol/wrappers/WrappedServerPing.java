@@ -7,7 +7,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
 import javax.imageio.ImageIO;
 
 import org.bukkit.Bukkit;
@@ -21,6 +20,8 @@ import net.minecraft.util.io.netty.handler.codec.base64.Base64;
 import net.minecraft.util.io.netty.util.IllegalReferenceCountException;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -33,6 +34,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
@@ -41,6 +43,16 @@ import com.google.common.io.ByteStreams;
  * @author Kristian
  */
 public class WrappedServerPing extends AbstractWrapper {
+	/**
+	 * Lookup of Minecraft versions and ping version numbers.
+	 */
+	private static ImmutableMap<MinecraftVersion, Integer> VERSION_NUMBERS = 
+	  ImmutableMap.<MinecraftVersion, Integer>builder().
+		put(MinecraftVersion.WORLD_UPDATE, 4).
+		put(MinecraftVersion.SKIN_UPDATE, 5).
+		build();
+	private static MinecraftVersion LAST_VERSION = MinecraftVersion.SKIN_UPDATE;
+	
 	// Server ping fields
 	private static Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
 	private static ConstructorAccessor SERVER_PING_CONSTRUCTOR = Accessors.getConstructorAccessor(SERVER_PING);
@@ -114,7 +126,14 @@ public class WrappedServerPing extends AbstractWrapper {
 	 * Reset the version string to the default state.
 	 */
 	protected void resetVersion() {
-		version = VERSION_CONSTRUCTOR.invoke(MinecraftVersion.WORLD_UPDATE.toString(), 4);
+		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+		MinecraftVersion minecraftVersion = LAST_VERSION;
+		
+		// Fetch the latest known version
+		if (manager != null) {
+			minecraftVersion = manager.getMinecraftVersion();
+		}
+		version = VERSION_CONSTRUCTOR.invoke(minecraftVersion.toString(), VERSION_NUMBERS.get(minecraftVersion));
 		VERSION.set(handle, version);
 	}
 	
@@ -354,6 +373,11 @@ public class WrappedServerPing extends AbstractWrapper {
 	 */
 	public String toJson() {
 		return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), handle);
+	}
+	
+	@Override
+	public String toString() {
+		return "WrappedServerPing< " + toJson() + ">";
 	}
 	
 	/**
