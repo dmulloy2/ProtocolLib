@@ -40,7 +40,6 @@ public class WrappedGameProfile extends AbstractWrapper {
 		if (CREATE_STRING_STRING != null) {
 			setHandle(CREATE_STRING_STRING.invoke(id, name));
 		} else {
-			parseUUID(id, name);
 			setHandle(new GameProfile(parseUUID(id, name), name));
 		}
 	}
@@ -99,7 +98,8 @@ public class WrappedGameProfile extends AbstractWrapper {
 	public String getId() {
 		if (GET_UUID_STRING != null)
 			return (String) GET_UUID_STRING.get(handle);
-		return getProfile().getId() != null ? getProfile().getId().toString() : null;
+		final GameProfile profile = getProfile();
+		return profile.getId() != null ? profile.getId().toString() : null;
 	}
 
 	/**
