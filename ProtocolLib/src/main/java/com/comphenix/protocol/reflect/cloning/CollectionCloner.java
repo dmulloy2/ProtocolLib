@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.reflect.cloning;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -55,32 +56,37 @@ public class CollectionCloner implements Cloner {
 			throw new IllegalArgumentException("source cannot be NULL.");
 		
 		Class<?> clazz = source.getClass();
-		
+
 		if (source instanceof Collection) {
 			Collection<Object> copy = cloneConstructor(Collection.class, clazz, source);
-			
+
 			// Next, clone each element in the collection
-			copy.clear();
-			
-			for (Object element : (Collection<Object>) source) {
-				copy.add(getClone(element, source));
+			try {
+				copy.clear();
+				
+				for (Object element : (Collection<Object>) source) {
+					copy.add(getClone(element, source));
+				}
+			} catch (UnsupportedOperationException e) {
+				// Immutable - we can't do much about that
 			}
-			
 			return copy;
 			
 		} else if (source instanceof Map) {
-			
 			Map<Object, Object> copy = cloneConstructor(Map.class, clazz, source);
 			
 			// Next, clone each element in the collection
-			copy.clear();
-			
-			for (Entry<Object, Object> element : ((Map<Object, Object>) source).entrySet()) {
-				Object key = getClone(element.getKey(), source);
-				Object value = getClone(element.getValue(), source);
-				copy.put(key, value);
+			try {
+				copy.clear();
+				
+				for (Entry<Object, Object> element : ((Map<Object, Object>) source).entrySet()) {
+					Object key = getClone(element.getKey(), source);
+					Object value = getClone(element.getValue(), source);
+					copy.put(key, value);
+				}
+			} catch (UnsupportedOperationException e) {
+				// Immutable - we can't do much about that
 			}
-			
 			return copy;
 			
 		} else if (clazz.isArray()) {
@@ -163,12 +169,14 @@ public class CollectionCloner implements Cloner {
 	 */
 	@SuppressWarnings("unchecked")
 	private <T> T cloneConstructor(Class<?> superclass, Class<?> clazz, Object source) {
-		
 		// Not all collections or maps implement "clone", but most *do* implement the "copy constructor" pattern
 		try {
 			Constructor<?> constructCopy = clazz.getConstructor(Collection.class);
 			return (T) constructCopy.newInstance(source);
 		} catch (NoSuchMethodException e) {
+			if (source instanceof Serializable)
+				return (T) new SerializableCloner().clone(source);
+			// Delegate to serializable if possible
 			return (T) cloneObject(clazz, source);
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct collection.", e);

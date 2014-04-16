@@ -21,7 +21,7 @@ public class SerializableCloner implements Cloner {
 
 	@Override
 	public Object clone(Object source) {
-		return clone(source);
+		return SerializableCloner.clone((Serializable)source);
 	}
 
 	/**
