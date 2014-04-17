@@ -26,7 +26,9 @@ import org.json.simple.JSONValue;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Preconditions;
+import com.google.common.io.Files;
 
 /**
  * Check dev.bukkit.org to find updates for a given plugin, and download the updates if needed.
@@ -54,7 +56,8 @@ public class Updater {
     private String versionLink;
     private String versionType;
     private String versionGameVersion;
-
+	private String versionFileName;
+    
     private boolean announce; // Whether to announce file downloads
 
     private URL url; // Connecting to RSS
@@ -63,15 +66,17 @@ public class Updater {
 
     private int id = -1; // Project's Curse ID
     private String apiKey = null; // BukkitDev ServerMods API key
-    private static final String TITLE_VALUE = "name"; // Gets remote file's title
-    private static final String LINK_VALUE = "downloadUrl"; // Gets remote file's download link
-    private static final String TYPE_VALUE = "releaseType"; // Gets remote file's release type
-    private static final String VERSION_VALUE = "gameVersion"; // Gets remote file's build version
+    private static final String TITLE_VALUE = "name"; 			// Gets remote file's title
+    private static final String LINK_VALUE = "downloadUrl"; 	// Gets remote file's download link
+    private static final String TYPE_VALUE = "releaseType"; 	// Gets remote file's release type
+    private static final String VERSION_VALUE = "gameVersion";  // Gets remote file's build version
+	private static final Object FILE_NAME = "fileName";			// Gets remote file's name
     private static final String QUERY = "/servermods/files?projectIds="; // Path to GET
     private static final String HOST = "https://api.curseforge.com"; // Slugs will be appended to this to get to the project's RSS feed
 
     private static final String[] NO_UPDATE_TAG = { "-DEV", "-PRE", "-SNAPSHOT" }; // If the version number contains one of these, don't update.
     private static final int BYTE_SIZE = 1024; // Used for downloading files
+
     private YamlConfiguration config; // Config file
     private String updateFolder;// The folder that downloads will be placed in
     private Updater.UpdateResult result = Updater.UpdateResult.SUCCESS; // Used for determining the outcome of the update process
@@ -485,8 +490,13 @@ public class Updater {
 			if (splitTitle.length == 2) {
 				// Get the newest file's version number
                 final String remoteVersion = splitTitle[1].split("-")[0]; 
+                
+                // Parse the version
+                MinecraftVersion parsedRemote = new MinecraftVersion(remoteVersion);
+                MinecraftVersion parsedCurrent = new MinecraftVersion(plugin.getDescription().getVersion());
 
-                if (this.hasTag(version) || version.equalsIgnoreCase(remoteVersion)) {
+                // The remote version has to be greater
+                if (this.hasTag(version) || parsedRemote.compareTo(parsedCurrent) <= 0) {
                     // We already have the latest version, or this build is tagged for no-update
                     this.result = Updater.UpdateResult.NO_UPDATE;
                     return false;
@@ -525,7 +535,6 @@ public class Updater {
                 conn.addRequestProperty("X-API-Key", this.apiKey);
             }
             conn.addRequestProperty("User-Agent", "Updater (by Gravity)");
-
             conn.setDoOutput(true);
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -539,10 +548,12 @@ public class Updater {
                 return false;
             }
 
-            this.versionName = (String) ((JSONObject) array.get(array.size() - 1)).get(Updater.TITLE_VALUE);
-            this.versionLink = (String) ((JSONObject) array.get(array.size() - 1)).get(Updater.LINK_VALUE);
-            this.versionType = (String) ((JSONObject) array.get(array.size() - 1)).get(Updater.TYPE_VALUE);
-            this.versionGameVersion = (String) ((JSONObject) array.get(array.size() - 1)).get(Updater.VERSION_VALUE);
+            final JSONObject jsonObject = (JSONObject) array.get(array.size() - 1);
+            this.versionFileName = (String) jsonObject.get(Updater.FILE_NAME);
+			this.versionName = (String) jsonObject.get(Updater.TITLE_VALUE);
+            this.versionLink = (String) jsonObject.get(Updater.LINK_VALUE);
+            this.versionType = (String) jsonObject.get(Updater.TYPE_VALUE);
+            this.versionGameVersion = (String) jsonObject.get(Updater.VERSION_VALUE);
 
             return true;
         } catch (final IOException e) {
@@ -588,20 +599,34 @@ public class Updater {
 
 		private void performUpdate() {
 			if ((Updater.this.versionLink != null) && (Updater.this.type != UpdateType.NO_DOWNLOAD)) {
-			    String name = Updater.this.file.getName();
+			    final String oldFileName = Updater.this.file.getName();
+			    final File pluginFolder = plugin.getDataFolder().getParentFile();
+				File destinationFolder = new File(pluginFolder, updateFolder);
+			    String name = versionFileName; 
 			    
-			    // If it's a zip file, it shouldn't be downloaded as the plugin's name
-			    if (Updater.this.versionLink.endsWith(".zip")) {
-			        final String[] split = Updater.this.versionLink.split("/");
-			        name = split[split.length - 1];
+			    // Oh - this is a problem - we'll have to create an empty plugin to remove the old version (after two reloads)
+			    if (!versionFileName.equals(oldFileName)) {
+					createEmptyFile(new File(destinationFolder, oldFileName));
+					destinationFolder = pluginFolder;
+					plugin.getLogger().info("Creating empty plugin file. Note that the server may need to be reloaded twice.");
 			    }
-			    Updater.this.saveFile(
-			    	new File(Updater.this.plugin.getDataFolder().getParent(), Updater.this.updateFolder), 
+			      
+				Updater.this.saveFile(
+			    	destinationFolder, 
 			    	name, 
 			    	Updater.this.versionLink
 			    );
 			} else {
 			    Updater.this.result = UpdateResult.UPDATE_AVAILABLE;
+			}
+		}
+		
+		private void createEmptyFile(File emptyFile) {
+			try {
+				emptyFile.delete();
+				Files.touch(emptyFile);
+			} catch (IOException e) {
+				throw new RuntimeException("Cannot create empty JAR-file.", e);
 			}
 		}
     }
