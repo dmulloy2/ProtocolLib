@@ -599,18 +599,14 @@ public class Updater {
 
 		private void performUpdate() {
 			if ((Updater.this.versionLink != null) && (Updater.this.type != UpdateType.NO_DOWNLOAD)) {
-			    final String oldFileName = Updater.this.file.getName();
 			    final File pluginFolder = plugin.getDataFolder().getParentFile();
 				File destinationFolder = new File(pluginFolder, updateFolder);
-			    String name = versionFileName; 
+			    String name = Updater.this.file.getName(); 
 			    
-			    // Oh - this is a problem - we'll have to create an empty plugin to remove the old version (after two reloads)
-			    if (!versionFileName.equals(oldFileName)) {
-					createEmptyFile(new File(destinationFolder, oldFileName));
-					destinationFolder = pluginFolder;
-					plugin.getLogger().info("Creating empty plugin file. Note that the server may need to be reloaded twice.");
-			    }
-			      
+			    // If it's a zip file, it shouldn't be downloaded as the plugin's name
+			    if (Updater.this.versionLink.endsWith(".zip")) {
+			        name = versionFileName;
+			    }	    
 				Updater.this.saveFile(
 			    	destinationFolder, 
 			    	name, 
@@ -618,15 +614,6 @@ public class Updater {
 			    );
 			} else {
 			    Updater.this.result = UpdateResult.UPDATE_AVAILABLE;
-			}
-		}
-		
-		private void createEmptyFile(File emptyFile) {
-			try {
-				emptyFile.delete();
-				Files.touch(emptyFile);
-			} catch (IOException e) {
-				throw new RuntimeException("Cannot create empty JAR-file.", e);
 			}
 		}
     }
