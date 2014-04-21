@@ -30,6 +30,22 @@ import com.google.common.base.Function;
  * @param <VOuter> - the second type.
  */
 public abstract class AbstractConverted<VInner, VOuter> {
+	// Inner conversion
+	private Function<VOuter, VInner> innerConverter = new Function<VOuter, VInner>() {
+		@Override
+		public VInner apply(@Nullable VOuter param) {
+			return toInner(param);
+		}
+	};
+	
+	// Outer conversion
+	private Function<VInner, VOuter> outerConverter = new Function<VInner, VOuter>() {
+		@Override
+		public VOuter apply(@Nullable VInner param) {
+			return toOuter(param);
+		}
+	};
+	
 	/**
 	 * Convert a value from the inner map to the outer visible map.
 	 * @param inner - the inner value.
@@ -45,15 +61,18 @@ public abstract class AbstractConverted<VInner, VOuter> {
 	protected abstract VInner toInner(VOuter outer);
 	
 	/**
+	 * Retrieve a function delegate that converts outer objects to inner objects.
+	 * @return A function delegate.
+	 */
+	protected Function<VOuter, VInner> getInnerConverter() {
+		return innerConverter;
+	}
+	
+	/**
 	 * Retrieve a function delegate that converts inner objects to outer objects.
 	 * @return A function delegate.
 	 */
 	protected Function<VInner, VOuter> getOuterConverter() {
-		return new Function<VInner, VOuter>() {
-			@Override
-			public VOuter apply(@Nullable VInner param) {
-				return toOuter(param);
-			}
-		};
+		return outerConverter;
 	}
 }

@@ -3,13 +3,19 @@ package com.comphenix.protocol.wrappers;
 import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
+import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.collection.ConvertedMultimap;
 import com.google.common.base.Objects;
+import com.google.common.collect.Multimap;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
+import net.minecraft.util.com.mojang.authlib.properties.Property;
 
 /**
  * Represents a wrapper for a game profile.
@@ -20,10 +26,32 @@ public class WrappedGameProfile extends AbstractWrapper {
 	private static final ConstructorAccessor CREATE_STRING_STRING = Accessors.getConstructorAccessorOrNull(GameProfile.class, String.class, String.class);
 	private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAcccessorOrNull(GameProfile.class, "id", String.class);
 	
+	// Fetching game profile
+	private static FieldAccessor GET_PROFILE;
+	
+	// Property map
+	private Multimap<String, WrappedSignedProperty> propertyMap;
+	
 	// Profile from a handle
 	private WrappedGameProfile(Object profile) {
 		super(GameProfile.class);
 		setHandle(profile);
+	}
+	
+	/**
+	 * Retrieve the associated game profile of a player.
+	 * @param player - the player.
+	 * @return The game profile.
+	 */
+	public static WrappedGameProfile fromPlayer(Player player) {
+		FieldAccessor accessor = GET_PROFILE;
+		Object nmsPlayer = BukkitUnwrapper.getInstance().unwrapItem(player);
+		
+		if (accessor == null) {
+			accessor = Accessors.getFieldAccessor(MinecraftReflection.getEntityHumanClass(), GameProfile.class, true);
+			GET_PROFILE = accessor;
+		}
+		return WrappedGameProfile.fromHandle(GET_PROFILE.get(nmsPlayer));
 	}
 	
 	/**
@@ -108,6 +136,39 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 */
 	public String getName() {
 		return getProfile().getName();
+	}
+	
+	/**
+	 * Retrieve the property map of signed values.
+	 * @return Property map.
+	 */
+	public Multimap<String, WrappedSignedProperty> getProperties() {
+		Multimap<String, WrappedSignedProperty> result = propertyMap;
+
+		if (result == null) {
+			result = new ConvertedMultimap<String, Property, WrappedSignedProperty>(
+					GuavaWrappers.getBukkitMultimap(getProfile().getProperties())) {
+				@Override
+				protected Property toInner(WrappedSignedProperty outer) {
+					return (Property) outer.handle;
+				}
+				
+				@Override
+				protected Object toInnerObject(Object outer) {
+					if (outer instanceof WrappedSignedProperty) {
+						return toInner((WrappedSignedProperty) outer);
+					}
+					return outer;
+				}
+				
+				@Override
+				protected WrappedSignedProperty toOuter(Property inner) {
+					return WrappedSignedProperty.fromHandle(inner);
+				}
+			};
+			propertyMap = result;
+		}
+		return result;
 	}
 	
 	/**

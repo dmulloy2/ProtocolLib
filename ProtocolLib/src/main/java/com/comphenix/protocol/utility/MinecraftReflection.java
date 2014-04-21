@@ -574,6 +574,15 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the EntityHuman class.
+	 * @return The entity human class.
+	 */
+	public static Class<?> getEntityHumanClass() {
+		// Assume its the direct superclass
+		return getEntityPlayerClass().getSuperclass();
+	}
+	
+	/**
 	 * Retrieve the GameProfile class in 1.7.2 and later.
 	 * @return The game profile class.
 	 * @throws IllegalStateException If we are running 1.6.4 or earlier.
