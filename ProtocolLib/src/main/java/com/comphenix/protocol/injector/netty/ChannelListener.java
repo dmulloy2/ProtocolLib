@@ -16,9 +16,10 @@ interface ChannelListener {
 	 * This is invoked on the main thread.
 	 * @param injector - the channel injector.
 	 * @param packet - the packet.
+	 * @param marker - the network marker.
 	 * @return The packet even that was passed to the listeners, with a possible packet change, or NULL.
 	 */
-	public PacketEvent onPacketSending(Injector injector, Object packet);
+	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker);
 	
 	/**
 	 * Invoked when a packet is being received from a client.

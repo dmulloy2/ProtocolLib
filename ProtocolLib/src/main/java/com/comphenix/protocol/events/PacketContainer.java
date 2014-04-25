@@ -49,6 +49,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -204,6 +205,16 @@ public class PacketContainer implements Serializable {
 		this.type = type;
 		this.handle = handle;
 		this.structureModifier = structure;
+	}
+	
+	/**
+	 * Construct a new packet container from a given handle.
+	 * @param packet - the NMS packet.
+	 * @return The packet container.
+	 */
+	public static PacketContainer fromPacket(Object packet) {
+		PacketType type = PacketType.fromClass(packet.getClass());
+		return new PacketContainer(type, packet);
 	}
 	
 	/**

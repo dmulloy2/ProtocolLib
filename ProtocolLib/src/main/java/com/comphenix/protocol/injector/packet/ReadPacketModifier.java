@@ -163,7 +163,7 @@ class ReadPacketModifier implements MethodInterceptor {
 					
 					// This is fine - received packets are enqueued in any case
 					NetworkMarker marker = NetworkMarker.getNetworkMarker(event);
-					processor.invokePostListeners(event, marker);
+					processor.invokePostEvent(event, marker);
 				}
 				
 			} catch (OutOfMemoryError e) {

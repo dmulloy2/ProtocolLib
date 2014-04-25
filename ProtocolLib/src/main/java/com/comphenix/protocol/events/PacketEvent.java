@@ -101,6 +101,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 		this.cancel = origial.cancel;
 		this.serverPacket = origial.serverPacket;
 		this.filtered = origial.filtered;
+		this.networkMarker = origial.networkMarker;
 		this.asyncMarker = asyncMarker;
 		this.asynchronous = true;
 	}
@@ -401,6 +402,28 @@ public class PacketEvent extends EventObject implements Cancellable {
 		return asynchronous;
 	}
 
+	/**
+	 * Schedule a packet for sending or receiving after the current packet event is successful.
+	 * <p>
+	 * The packet will be added to {@link NetworkMarker#getScheduledPackets()}.
+	 * @param scheduled - the packet to transmit or receive.
+	 */
+	public void schedule(ScheduledPacket scheduled) {
+		getNetworkMarker().getScheduledPackets().add(scheduled);
+	}
+	
+	/**
+	 * Unschedule a specific packet.
+	 * @param scheduled - the scheduled packet.
+	 * @return TRUE if it was unscheduled, FALSE otherwise.
+	 */
+	public boolean unschedule(ScheduledPacket scheduled) {
+		if (networkMarker != null) {
+			return networkMarker.getScheduledPackets().remove(scheduled);
+		}
+		return false;
+	}
+	
 	private void writeObject(ObjectOutputStream output) throws IOException {
 	    // Default serialization 
 		output.defaultWriteObject();

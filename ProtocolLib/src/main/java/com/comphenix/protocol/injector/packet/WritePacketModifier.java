@@ -105,7 +105,7 @@ public class WritePacketModifier implements MethodInterceptor {
 					output.write(outputBuffer);
 
 					// We're done
-					processor.invokePostListeners(information.event, information.marker);
+					processor.invokePostEvent(information.event, information.marker);
 					return null;
 					
 				} catch (OutOfMemoryError e) {
@@ -122,7 +122,7 @@ public class WritePacketModifier implements MethodInterceptor {
 			
 			// Invoke this write method first
 			proxy.invoke(information.proxyObject, args);
-			processor.invokePostListeners(information.event, information.marker);
+			processor.invokePostEvent(information.event, information.marker);
 			return null;
 		}
 		

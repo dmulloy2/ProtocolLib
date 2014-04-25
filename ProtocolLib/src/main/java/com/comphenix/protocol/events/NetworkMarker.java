@@ -51,8 +51,10 @@ public abstract class NetworkMarker {
 	
 	// Custom network handler
 	private PriorityQueue<PacketOutputHandler> outputHandlers;
-	// Sent listeners
+	// Post listeners
 	private List<PacketPostListener> postListeners;
+	// Post packets
+	private List<ScheduledPacket> scheduledPackets;
 	
 	// The input buffer
 	private ByteBuffer inputBuffer;
@@ -296,6 +298,18 @@ public abstract class NetworkMarker {
 	}
 	
 	/**
+	 * Retrieve a list of packets that will be schedule (in-order) when the current packet has been successfully transmitted.
+	 * <p>
+	 * This list is modifiable.
+	 * @return List of packets that will be scheduled.
+	 */
+	public List<ScheduledPacket> getScheduledPackets() {
+		if (scheduledPackets == null)
+			scheduledPackets = Lists.newArrayList();
+		return scheduledPackets;
+	}
+	
+	/**
 	 * Ensure that the packet event is server side.
 	 */
 	private void checkServerSide() {
@@ -384,5 +398,16 @@ public abstract class NetworkMarker {
 	 */
 	public static NetworkMarker getNetworkMarker(PacketEvent event) {
 		return event.networkMarker;
+	}
+	
+	/**
+	 * Retrieve the scheduled packets of a particular network marker without constructing the list.
+	 * <p>
+	 * This is an internal method that should not be used by API users.
+	 * @param marker - the marker.
+	 * @return The list, or NULL if not found or initialized.
+	 */
+	public static List<ScheduledPacket> readScheduledPackets(NetworkMarker marker) {
+		return marker.scheduledPackets;
 	}
 }

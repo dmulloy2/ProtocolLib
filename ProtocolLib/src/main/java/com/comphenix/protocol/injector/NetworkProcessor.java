@@ -1,12 +1,16 @@
 package com.comphenix.protocol.injector;
 
+import java.util.List;
 import java.util.PriorityQueue;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketOutputHandler;
 import com.comphenix.protocol.events.PacketPostListener;
+import com.comphenix.protocol.events.ScheduledPacket;
 
 /**
  * Represents a processor for network markers.
@@ -61,10 +65,13 @@ public class NetworkProcessor {
 	}
 
 	/**
-	 * Invoke the post listeners, if any.
+	 * Invoke the post listeners and packet transmission, if any.
 	 * @param marker - the network marker, or NULL.
 	 */
-	public void invokePostListeners(PacketEvent event, NetworkMarker marker) {
+	public void invokePostEvent(PacketEvent event, NetworkMarker marker) {
+		if (marker == null)
+			return;
+		
 		if (NetworkMarker.hasPostListeners(marker)) {
 			// Invoke every sent listener
 			for (PacketPostListener listener : marker.getPostListeners()) {
@@ -79,5 +86,22 @@ public class NetworkProcessor {
 				}
 			}
 		}
+		sendScheduledPackets(marker);
 	}
-}
+	
+	/**
+	 * Send any scheduled packets.
+	 * @param marker - the network marker.
+	 */
+	private void sendScheduledPackets(NetworkMarker marker) {
+		// Next, invoke post packet transmission
+		List<ScheduledPacket> scheduled = NetworkMarker.readScheduledPackets(marker);
+		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+		
+		if (scheduled != null) {
+			for (ScheduledPacket packet : scheduled) {
+				packet.schedule(manager);
+			}
+		}
+	}
+ }

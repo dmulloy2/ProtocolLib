@@ -36,6 +36,7 @@ import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.NetworkProcessor;
 import com.comphenix.protocol.injector.server.SocketInjector;
@@ -261,12 +262,21 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				}
 				
 				protected PacketEvent handleScheduled(Object instance, FieldAccessor accessor) {
-					// See if we've been instructed not to process packets
-					if (!scheduleProcessPackets.get())
-						return BYPASSED_PACKET;
-					
 					// Let the filters handle this packet
 					Object original = accessor.get(instance);
+					
+					// See if we've been instructed not to process packets
+					if (!scheduleProcessPackets.get()) {
+						NetworkMarker marker = getMarker(original);
+						
+						if (marker != null)	{
+							PacketEvent result = new PacketEvent(ChannelInjector.class);
+							result.setNetworkMarker(marker);
+							return result;
+						} else {
+							return BYPASSED_PACKET;
+						}
+					}
 					PacketEvent event = processSending(original);
 
 					if (event != null && !event.isCancelled()) {
@@ -291,7 +301,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @return The resulting message/packet.
 	 */
 	private PacketEvent processSending(Object message) {
-		return channelListener.onPacketSending(ChannelInjector.this, message);
+		return channelListener.onPacketSending(ChannelInjector.this, message, getMarker(message));
 	}
 	
 	/**
@@ -395,7 +405,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			finalEvent = null;
 			currentEvent = null;
 			
-			processor.invokePostListeners(event, NetworkMarker.getNetworkMarker(event));
+			processor.invokePostEvent(event, NetworkMarker.getNetworkMarker(event));
 		}
 	}
 
@@ -463,7 +473,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			NetworkMarker marker = NetworkMarker.getNetworkMarker(event);
 			
 			if (marker != null) {
-				processor.invokePostListeners(event, marker);
+				processor.invokePostEvent(event, marker);
 			}
 		}
 	}
