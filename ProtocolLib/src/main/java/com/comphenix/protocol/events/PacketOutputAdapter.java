@@ -4,7 +4,6 @@ import org.bukkit.plugin.Plugin;
 
 /**
  * Represents an adapter version of the output handler interface.
- * 
  * @author Kristian
  */
 public abstract class PacketOutputAdapter implements PacketOutputHandler {

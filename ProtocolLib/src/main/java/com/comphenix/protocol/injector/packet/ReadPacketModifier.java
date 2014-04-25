@@ -28,8 +28,10 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.NetworkProcessor;
 import com.google.common.collect.MapMaker;
 
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -47,6 +49,7 @@ class ReadPacketModifier implements MethodInterceptor {
 	
 	// Report errors
 	private ErrorReporter reporter;
+	private NetworkProcessor processor;
 	
 	// If this is a read packet data method
 	private boolean isReadPacketDataMethod;
@@ -58,6 +61,7 @@ class ReadPacketModifier implements MethodInterceptor {
 		this.packetID = packetID;
 		this.packetInjector = packetInjector;
 		this.reporter = reporter;
+		this.processor = new NetworkProcessor(reporter);
 		this.isReadPacketDataMethod = isReadPacketDataMethod;
 	}
 	
@@ -152,9 +156,14 @@ class ReadPacketModifier implements MethodInterceptor {
 					
 					if (event.isCancelled()) {
 						override.put(thisObj, CANCEL_MARKER);
+						return returnValue;
 					} else if (!objectEquals(thisObj, result)) {
 						override.put(thisObj, result);
 					}
+					
+					// This is fine - received packets are enqueued in any case
+					NetworkMarker marker = NetworkMarker.getNetworkMarker(event);
+					processor.invokePostListeners(event, marker);
 				}
 				
 			} catch (OutOfMemoryError e) {

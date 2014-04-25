@@ -20,7 +20,7 @@ package com.comphenix.protocol.events;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Represents a listener that receives notifications when packets are sent or received.
+ * Represents a listener that receives notifications when packets are sending or being received.
  * <p>
  * Use {@link PacketAdapter} for a simple wrapper around this interface.
  * @author Kristian

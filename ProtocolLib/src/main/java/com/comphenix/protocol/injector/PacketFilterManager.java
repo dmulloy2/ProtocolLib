@@ -782,7 +782,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	
 		// Inform the MONITOR packets
 		if (!filters) {
-			PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver);
+			PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
 			
 			sendingListeners.invokePacketSending(
 					reporter, event, ListenerPriority.MONITOR);
@@ -832,7 +832,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			// Let the monitors know though
 			recievedListeners.invokePacketSending(
 					reporter, 
-					PacketEvent.fromClient(this, packet, marker, sender), 
+					PacketEvent.fromClient(this, packet, marker, sender, false), 
 					ListenerPriority.MONITOR);
 		}
 		

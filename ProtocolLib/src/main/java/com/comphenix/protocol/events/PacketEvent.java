@@ -70,6 +70,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	
 	// Whether or not a packet event is read only
 	private boolean readOnly;
+	private boolean filtered;
 	
 	/**
 	 * Use the static constructors to create instances of this event.
@@ -77,18 +78,20 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public PacketEvent(Object source) {
 		super(source);
+		this.filtered = true;
 	}
 
 	private PacketEvent(Object source, PacketContainer packet, Player player, boolean serverPacket) {
-		this(source, packet, null, player, serverPacket);
+		this(source, packet, null, player, serverPacket, true);
 	}
 	
-	private PacketEvent(Object source, PacketContainer packet, NetworkMarker marker, Player player, boolean serverPacket) {
+	private PacketEvent(Object source, PacketContainer packet, NetworkMarker marker, Player player, boolean serverPacket, boolean filtered) {
 		super(source);
 		this.packet = packet;
 		this.playerReference = new WeakReference<Player>(player);
 		this.networkMarker = marker;
 		this.serverPacket = serverPacket;
+		this.filtered = filtered;
 	}
 	
 	private PacketEvent(PacketEvent origial, AsyncMarker asyncMarker) {
@@ -97,6 +100,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 		this.playerReference = origial.playerReference;
 		this.cancel = origial.cancel;
 		this.serverPacket = origial.serverPacket;
+		this.filtered = origial.filtered;
 		this.asyncMarker = asyncMarker;
 		this.asynchronous = true;
 	}
@@ -121,7 +125,22 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @return The event.
 	 */
 	public static PacketEvent fromClient(Object source, PacketContainer packet, NetworkMarker marker, Player client) {
-		return new PacketEvent(source, packet, marker, client, false);
+		return new PacketEvent(source, packet, marker, client, false, true);
+	}
+	
+	/**
+	 * Creates an event representing a client packet transmission.
+	 * <p>
+	 * If <i>filtered</i> is FALSE, then this event is only processed by packet monitors.
+	 * @param source - the event source.
+	 * @param packet - the packet.
+	 * @param marker - the network marker.
+	 * @param client - the client that sent the packet.
+	 * @param filtered - whether or not this packet event is processed by every packet listener.
+	 * @return The event.
+	 */
+	public static PacketEvent fromClient(Object source, PacketContainer packet, NetworkMarker marker, Player client, boolean filtered) {
+		return new PacketEvent(source, packet, marker, client, false, filtered);
 	}
 	
 	/**
@@ -144,7 +163,22 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @return The event.
 	 */
 	public static PacketEvent fromServer(Object source, PacketContainer packet, NetworkMarker marker, Player recipient) {
-		return new PacketEvent(source, packet, marker, recipient, true);
+		return new PacketEvent(source, packet, marker, recipient, true, true);
+	}
+	
+	/**
+	 * Creates an event representing a server packet transmission.
+	 * <p>
+	 * If <i>filtered</i> is FALSE, then this event is only processed by packet monitors.
+	 * @param source - the event source.
+	 * @param packet - the packet.
+	 * @param marker - the network marker.
+	 * @param recipient - the client that will receieve the packet.
+	 * @param filtered - whether or not this packet event is processed by every packet listener.
+	 * @return The event.
+	 */
+	public static PacketEvent fromServer(Object source, PacketContainer packet, NetworkMarker marker, Player recipient, boolean filtered) {
+		return new PacketEvent(source, packet, marker, recipient, true, filtered);
 	}
 	
 	/**
@@ -284,6 +318,16 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public Player getPlayer() {
 		return playerReference.get();
+	}
+	
+	/**
+	 * Determine if this packet is filtered by every packet listener.
+	 * <p>
+	 * If not, it will only be intercepted by monitor packets.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public boolean isFiltered() {
+		return filtered;
 	}
 	
 	/**

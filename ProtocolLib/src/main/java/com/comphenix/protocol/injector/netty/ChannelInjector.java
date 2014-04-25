@@ -3,7 +3,10 @@ package com.comphenix.protocol.injector.netty;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
@@ -13,6 +16,9 @@ import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelHandler;
 import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
+import net.minecraft.util.io.netty.channel.ChannelInboundHandler;
+import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
+import net.minecraft.util.io.netty.channel.ChannelPromise;
 import net.minecraft.util.io.netty.channel.socket.SocketChannel;
 import net.minecraft.util.io.netty.handler.codec.ByteToMessageDecoder;
 import net.minecraft.util.io.netty.handler.codec.MessageToByteEncoder;
@@ -31,7 +37,7 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketOutputHandler;
+import com.comphenix.protocol.injector.NetworkProcessor;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
@@ -95,6 +101,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private PacketEvent currentEvent;
 	
 	/**
+	 * A packet event that should be processed by the write method.
+	 */
+	private PacketEvent finalEvent;
+	
+	/**
 	 * A flag set by the main thread to indiciate that a packet should not be processed.
 	 */
 	private final ThreadLocal<Boolean> scheduleProcessPackets = new ThreadLocal<Boolean>() {
@@ -107,11 +118,16 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private ByteToMessageDecoder vanillaDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
 	
-	// Our extra handler
+	// Our extra handlers
 	private MessageToByteEncoder<Object> protocolEncoder;
-	
+	private ChannelInboundHandler finishHandler;
+	private Deque<PacketEvent> finishQueue = new ArrayDeque<PacketEvent>();
+
 	// The channel listener
 	private ChannelListener channelListener;
+	
+	// Processing network markers
+	private NetworkProcessor processor;
 	
 	// Closed
 	private boolean injected;
@@ -131,6 +147,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		this.originalChannel = Preconditions.checkNotNull(channel, "channel cannot be NULL");
 		this.channelListener = Preconditions.checkNotNull(channelListener, "channelListener cannot be NULL");
 		this.factory = Preconditions.checkNotNull(factory, "factory cannot be NULL");
+		this.processor = new NetworkProcessor(ProtocolLibrary.getErrorReporter());
 		
 		// Get the channel field
 		this.channelField = new VolatileField(
@@ -178,10 +195,27 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 					ChannelInjector.this.encode(ctx, packet, output);
 				}
+				
+				@Override
+				public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
+					super.write(ctx, packet, promise);
+					ChannelInjector.this.finalWrite(ctx, packet, promise);
+				}
+			};
+			
+			// Intercept recieved packets
+			finishHandler = new ChannelInboundHandlerAdapter() {
+				@Override
+				public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+					// Execute context first
+					ctx.fireChannelRead(msg);
+					ChannelInjector.this.finishRead(ctx, msg);
+				}
 			};
 			
 			// Insert our handlers - note that we effectively replace the vanilla encoder/decoder 
 			originalChannel.pipeline().addBefore("decoder", "protocol_lib_decoder", this);
+			originalChannel.pipeline().addBefore("protocol_lib_decoder", "protocol_lib_finish", finishHandler);
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
 			
 			// Intercept all write methods
@@ -250,7 +284,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			return true;
 		}
 	}
-	
+
 	/**
 	 * Process a given message on the packet listeners.
 	 * @param message - the message/packet.
@@ -286,10 +320,10 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @throws Exception If anything went wrong.
 	 */
 	protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
+		NetworkMarker marker = null;
+		PacketEvent event = currentEvent;
+		
 		try {
-			PacketEvent event = currentEvent;
-			NetworkMarker marker = null;
-			
 			// Skip every kind of non-filtered packet
 			if (!scheduleProcessPackets.get()) {
 				return;
@@ -323,15 +357,16 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			if (packet != null && event != null && NetworkMarker.hasOutputHandlers(marker)) {
 				ByteBuf packetBuffer = ctx.alloc().buffer();
 				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, packetBuffer);
-				byte[] data = getBytes(packetBuffer);
-				
-				for (PacketOutputHandler handler : marker.getOutputHandlers()) {
-					data = handler.handle(event, data);
-				}
+
+				// Let each handler prepare the actual output
+				byte[] data = processor.processOutput(event, marker, getBytes(packetBuffer));
 				
 				// Write the result
 				output.writeBytes(data);
 				packet = null;
+				
+				// Sent listeners?
+				finalEvent = event;
 				return;
 			}
 		} catch (Exception e) {
@@ -341,7 +376,26 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Attempt to handle the packet nevertheless
 			if (packet != null) {
 				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
+				finalEvent = event;
 			}
+		}
+	}
+
+	/**
+	 * Invoked when a packet has been written to the channel.
+	 * @param ctx - current context.
+	 * @param packet - the packet that has been written.
+	 * @param promise - a promise.
+	 */
+	protected void finalWrite(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) {
+		PacketEvent event = finalEvent;
+		
+		if (event != null) {
+			// Necessary to prevent infinite loops
+			finalEvent = null;
+			currentEvent = null;
+			
+			processor.invokePostListeners(event, NetworkMarker.getNetworkMarker(event));
 		}
 	}
 
@@ -360,9 +414,12 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		byteBuffer.markReaderIndex();
 		DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
 		
-		try {			
-			if (packets.size() > 0) {
-				Object input = packets.get(0);
+		try {		
+			// Reset queue
+			finishQueue.clear();
+			
+			for (ListIterator<Object> it = packets.listIterator(); it.hasNext(); ) {
+				Object input = it.next();
 				Class<?> packetClass = input.getClass();
 				NetworkMarker marker = null;
 				
@@ -377,15 +434,37 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				
 				// Handle packet changes
 				if (output != null) {
-					if (output.isCancelled())
-						packets.clear();
-					else if (output.getPacket().getHandle() != input)
-						packets.set(0, output.getPacket().getHandle());
+					if (output.isCancelled()) {
+						it.remove();
+						continue;
+					} else if (output.getPacket().getHandle() != input) {
+						it.set(output.getPacket().getHandle());
+					}
+					
+					finishQueue.addLast(output);
 				}
 			}
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this, 
 					Report.newBuilder(REPORT_CANNOT_INTERCEPT_CLIENT_PACKET).callerParam(byteBuffer).error(e).build());
+		}
+	}
+	
+	/**
+	 * Invoked after our decoder.
+	 * @param ctx - current context.
+	 * @param msg - the current packet.
+	 */
+	protected void finishRead(ChannelHandlerContext ctx, Object msg) {
+		// Assume same order
+		PacketEvent event = finishQueue.pollFirst();
+		
+		if (event != null) {
+			NetworkMarker marker = NetworkMarker.getNetworkMarker(event);
+			
+			if (marker != null) {
+				processor.invokePostListeners(event, marker);
+			}
 		}
 	}
 	
@@ -608,6 +687,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					@Override
 					public Object call() throws Exception {
 						originalChannel.pipeline().remove(ChannelInjector.this);
+						originalChannel.pipeline().remove(finishHandler);
 						originalChannel.pipeline().remove(protocolEncoder);
 						return null;
 					}

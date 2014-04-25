@@ -636,7 +636,7 @@ public abstract class PlayerInjector implements SocketInjector {
 				marker = NetworkMarker.getNetworkMarker(event);
 
 				// See if we need to proxy the write method
-				if (result != null && NetworkMarker.hasOutputHandlers(marker)) {
+				if (result != null && (NetworkMarker.hasOutputHandlers(marker) || NetworkMarker.hasPostListeners(marker))) {
 					result = writePacketInterceptor.constructProxy(result, event, marker);
 				}
 				return result;

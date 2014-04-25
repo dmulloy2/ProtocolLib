@@ -30,6 +30,7 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketOutputHandler;
+import com.comphenix.protocol.injector.NetworkProcessor;
 import com.google.common.collect.MapMaker;
 
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -55,12 +56,14 @@ public class WritePacketModifier implements MethodInterceptor {
 
 	// Report errors
 	private final ErrorReporter reporter;
+	private final NetworkProcessor processor;
 	
 	// Whether or not this represents the write method
 	private boolean isWriteMethod;
 	
 	public WritePacketModifier(ErrorReporter reporter,  boolean isWriteMethod) {
 		this.reporter = reporter;
+		this.processor = new NetworkProcessor(reporter);
 		this.isWriteMethod = isWriteMethod;
 	}
 
@@ -85,39 +88,24 @@ public class WritePacketModifier implements MethodInterceptor {
 		}
 		
 		if (isWriteMethod) {
-			PriorityQueue<PacketOutputHandler> handlers = (PriorityQueue<PacketOutputHandler>) 
-					information.marker.getOutputHandlers();
-			
 			// If every output handler has been removed - ignore everything
-			if (!handlers.isEmpty()) {
+			if (!information.marker.getOutputHandlers().isEmpty()) {
 				try {
 					DataOutput output = (DataOutput) args[0];
 
 					// First - we need the initial buffer
 					ByteArrayOutputStream outputBufferStream = new ByteArrayOutputStream();
 					proxy.invoke(information.proxyObject, new Object[] { new DataOutputStream(outputBufferStream) });
-					byte[] outputBuffer = outputBufferStream.toByteArray();
 					
 					// Let each handler prepare the actual output
-					while (!handlers.isEmpty()) {
-						PacketOutputHandler handler = handlers.poll();
-						
-						try {
-							byte[] changed = handler.handle(information.event, outputBuffer);
-							
-							// Don't break just because a plugin returned NULL
-							if (changed != null) {
-								outputBuffer = changed;
-							} else {
-								throw new IllegalStateException("Handler cannot return a NULL array.");
-							}
-						} catch (Exception e) {
-							reporter.reportMinimal(handler.getPlugin(), "PacketOutputHandler.handle()", e);
-						}
-					}
-
+					byte[] outputBuffer = processor.processOutput(information.event, information.marker, 
+							outputBufferStream.toByteArray());
+					
 					// Write that output to the network stream
 					output.write(outputBuffer);
+
+					// We're done
+					processor.invokePostListeners(information.event, information.marker);
 					return null;
 					
 				} catch (OutOfMemoryError e) {
@@ -131,6 +119,11 @@ public class WritePacketModifier implements MethodInterceptor {
 					);
 				}
 			}
+			
+			// Invoke this write method first
+			proxy.invoke(information.proxyObject, args);
+			processor.invokePostListeners(information.event, information.marker);
+			return null;
 		}
 		
 		// Default to the super method

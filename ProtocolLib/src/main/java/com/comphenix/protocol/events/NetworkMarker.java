@@ -7,15 +7,18 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.PriorityQueue;
 
 import javax.annotation.Nonnull;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.utility.ByteBufferInputStream;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 
 /**
@@ -48,6 +51,8 @@ public abstract class NetworkMarker {
 	
 	// Custom network handler
 	private PriorityQueue<PacketOutputHandler> outputHandlers;
+	// Sent listeners
+	private List<PacketPostListener> postListeners;
 	
 	// The input buffer
 	private ByteBuffer inputBuffer;
@@ -151,7 +156,6 @@ public abstract class NetworkMarker {
 	 * <p>
 	 * The data is exactly the same as in {@link #getInputBuffer()}. 
 	 * @see #getInputBuffer()
-	 * @param excludeHeader - whether or not to exclude the packet ID header.
 	 * @return The incoming serialized packet data as a stream, or NULL if the packet was transmitted locally.
 	 */
 	public DataInputStream getInputStream() {
@@ -253,6 +257,45 @@ public abstract class NetworkMarker {
 	}
 	
 	/**
+	 * Add a listener that is invoked after a packet has been successfully sent to the client, or received 
+	 * by the server. 
+	 * <p>
+	 * Received packets are not guarenteed to have been fully processed, but packets passed 
+	 * to {@link ProtocolManager#recieveClientPacket(Player, PacketContainer)} will be processed after the
+	 * current packet event.
+	 * <p>
+	 * Note that post listeners will be executed asynchronously off the main thread. They are not executed
+	 * in any defined order.
+	 * @param listener - the listener that will be invoked.
+	 * @return TRUE if it was added.
+	 */
+	public boolean addPostListener(PacketPostListener listener) {
+		if (postListeners == null)
+			postListeners = Lists.newArrayList();
+		return postListeners.add(listener);
+	}
+	
+	/**
+	 * Remove the first instance of the given listener.
+	 * @param listener - listener to remove.
+	 * @return TRUE if it was removed, FALSE otherwise.
+	 */
+	public boolean removePostListener(PacketPostListener listener) {
+		if (postListeners != null) {
+			return postListeners.remove(listener);
+		}
+		return false;
+	}
+	
+	/**
+	 * Retrieve an immutable view of all the listeners that will be invoked once the packet has been sent or received.
+	 * @return Every post packet listener. Never NULL.
+	 */
+	public List<PacketPostListener> getPostListeners() {
+		return postListeners != null ? Collections.unmodifiableList(postListeners) : Collections.<PacketPostListener>emptyList();
+	}
+	
+	/**
 	 * Ensure that the packet event is server side.
 	 */
 	private void checkServerSide() {
@@ -302,6 +345,15 @@ public abstract class NetworkMarker {
 	 */
 	public static boolean hasOutputHandlers(NetworkMarker marker) {
 		return marker != null && !marker.getOutputHandlers().isEmpty();
+	}
+	
+	/**
+	 * Determine if the given marker has any post listeners.
+	 * @param marker - the marker to check.
+	 * @return TRUE if it does, FALSE otherwise.
+	 */
+	public static boolean hasPostListeners(NetworkMarker marker) {
+		return marker != null && !marker.getPostListeners().isEmpty();
 	}
 	
 	/**
