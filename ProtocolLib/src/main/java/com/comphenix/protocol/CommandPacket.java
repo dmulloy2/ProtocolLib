@@ -42,6 +42,7 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -50,6 +51,7 @@ import com.comphenix.protocol.reflect.PrettyPrinter.ObjectPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 
 /**
@@ -90,8 +92,15 @@ class CommandPacket extends CommandBase {
 	private PacketTypeSet packetTypes = new PacketTypeSet();
 	private PacketTypeSet extendedTypes = new PacketTypeSet();
 	
+	// Compare listeners
+	private PacketTypeSet compareTypes = new PacketTypeSet();
+	private Map<PacketEvent, String> originalPackets = new MapMaker().weakKeys().makeMap();
+	
 	// The packet listener
 	private PacketListener listener;
+	
+	// Compare listener
+	private PacketListener compareListener;
 	
 	// Filter packet events
 	private CommandFilter filter;
@@ -187,6 +196,7 @@ class CommandPacket extends CommandBase {
 			
 			Set<PacketType> types = typeParser.parseTypes(arguments, PacketTypeParser.DEFAULT_MAX_RANGE);
 			Boolean detailed = parseBoolean(arguments, "detailed");
+			Boolean compare = parseBoolean(arguments, "compare");
 			
 			// Notify user
 			if (typeParser.getLastProtocol() == null) {
@@ -196,9 +206,15 @@ class CommandPacket extends CommandBase {
 				throw new IllegalArgumentException("Cannot parse " + arguments);
 			}
 		
-			// The last element is optional
+			// The last elements are optional
 			if (detailed == null) {
 				detailed = false;
+			}
+			if (compare == null) {
+				compare = false;
+			} else {
+				// This is implied - we cannot compare content without going detailed
+				detailed = true;
 			}
 
 			// Perform commands
@@ -209,7 +225,7 @@ class CommandPacket extends CommandBase {
 					return false;
 				}
 				
-				executeAddCommand(sender, types, detailed);
+				executeAddCommand(sender, types, detailed, compare);
 			} else if (subCommand == SubCommand.REMOVE) {
 				executeRemoveCommand(sender, types);
 			} else if (subCommand == SubCommand.NAMES) {
@@ -225,13 +241,18 @@ class CommandPacket extends CommandBase {
 		return true;
 	}
 	
-	private void executeAddCommand(CommandSender sender, Set<PacketType> addition, boolean detailed) {
+	private void executeAddCommand(CommandSender sender, Set<PacketType> addition, boolean detailed, boolean compare) {
 		packetTypes.addAll(addition);
 		
 		// Also mark these types as "detailed"
 		if (detailed) {
 			extendedTypes.addAll(addition);
 		}
+		// Whether or not to compare the packet with the initial state
+		if (compare) {
+			compareTypes.addAll(addition);
+		}
+		
 		updatePacketListener();
 		sendMessageSilently(sender, ChatColor.BLUE + "Added listener " + getWhitelistInfo(listener));
 	}
@@ -239,6 +260,7 @@ class CommandPacket extends CommandBase {
 	private void executeRemoveCommand(CommandSender sender, Set<PacketType> removal) {
 		packetTypes.removeAll(removal);
 		extendedTypes.removeAll(removal);
+		compareTypes.removeAll(removal);
 		updatePacketListener();
 		sendMessageSilently(sender, ChatColor.BLUE + "Removing packet types.");
 	}
@@ -303,6 +325,7 @@ class CommandPacket extends CommandBase {
 		
 		final ListeningWhitelist clientList = ListeningWhitelist.newBuilder(serverList).
 				types(filterTypes(type, Sender.CLIENT)).
+				monitor().
 				build();
 		
 		return new PacketListener() {
@@ -335,53 +358,22 @@ class CommandPacket extends CommandBase {
 				// Detailed will print the packet's content too
 				if (extendedTypes.contains(event.getPacketType())) {
 					try {
-						Object packet = event.getPacket().getHandle();
-						Class<?> clazz = packet.getClass();
+						String original = originalPackets.remove(event);
 						
-						// Get the first Minecraft super class
-						while (clazz != null && clazz != Object.class &&
-								(!MinecraftReflection.isMinecraftClass(clazz) || 
-								 Factory.class.isAssignableFrom(clazz))) {
-							clazz = clazz.getSuperclass();
+						// Also print original
+						if (original != null) {
+							logger.info("Initial packet:\n" + original + " -> ");
 						}
 						
-						logger.info(shortDescription + ":\n" +
-							PrettyPrinter.printObject(packet, clazz, MinecraftReflection.getPacketClass(), PrettyPrinter.RECURSE_DEPTH, new ObjectPrinter() {
-								@Override
-								public boolean print(StringBuilder output, Object value) {
-									if (value != null) {
-										EquivalentConverter<Object> converter = findConverter(value.getClass());
-										
-										if (converter != null) {
-											output.append(converter.getSpecific(value));
-											return true;
-										}
-									}
-									return false;
-								}
-							})
+						logger.info(shortDescription + ":\n" + getPacketDescription(
+							event.getPacket())
 						);
-						
 					} catch (IllegalAccessException e) {
 						logger.log(Level.WARNING, "Unable to use reflection.", e);
 					}
 				} else {
 					logger.info(shortDescription + ".");
 				}
-			}
-			
-			private EquivalentConverter<Object> findConverter(Class<?> clazz) {
-				Map<Class<?>, EquivalentConverter<Object>> converters = BukkitConverters.getConvertersForGeneric();
-				
-				while (clazz != null) {
-					EquivalentConverter<Object> result = converters.get(clazz);
-					
-					if (result != null)
-						return result;
-					else
-						clazz = clazz.getSuperclass();
-				}
-				return null;
 			}
 			
 			@Override
@@ -400,15 +392,124 @@ class CommandPacket extends CommandBase {
 			}
 		};
 	}
+	
+	public PacketListener createCompareListener(Set<PacketType> type) {
+		final ListeningWhitelist serverList = ListeningWhitelist.newBuilder().
+				types(filterTypes(type, Sender.SERVER)).
+				gamePhaseBoth().
+				lowest().
+				build();
+		
+		final ListeningWhitelist clientList = ListeningWhitelist.newBuilder(serverList).
+				types(filterTypes(type, Sender.CLIENT)).
+				lowest().
+				build();
+		
+		return new PacketListener() {
+			@Override
+			public void onPacketSending(PacketEvent event) {
+				savePacketState(event);
+			}
+			
+			@Override
+			public void onPacketReceiving(PacketEvent event) {
+				savePacketState(event);
+			}
+			
+			/**
+			 * Save the original value.
+			 * @param event - the event with the packet to save.
+			 */
+			private void savePacketState(PacketEvent event) {
+				try {
+					originalPackets.put(event, getPacketDescription(event.getPacket()));
+				} catch (IllegalAccessException e) {
+					throw new RuntimeException("Cannot read packet.", e);
+				}
+			}
+			
+			@Override
+			public ListeningWhitelist getSendingWhitelist() {
+				return serverList;
+			}
+			
+			@Override
+			public ListeningWhitelist getReceivingWhitelist() {
+				return clientList;
+			}
+			
+			@Override
+			public Plugin getPlugin() {
+				return plugin;
+			}
+		};
+	}
+	
+	/**
+	 * Retrieve a detailed string representation of the given packet.
+	 * @param packetContainer - the packet to describe. 
+	 * @return The detailed description.
+	 * @throws IllegalAccessException An error occured.
+	 */
+	public String getPacketDescription(PacketContainer packetContainer) throws IllegalAccessException {
+		Object packet = packetContainer.getHandle();
+		Class<?> clazz = packet.getClass();
+		
+		// Get the first Minecraft super class
+		while (clazz != null && clazz != Object.class &&
+				(!MinecraftReflection.isMinecraftClass(clazz) || 
+				 Factory.class.isAssignableFrom(clazz))) {
+			clazz = clazz.getSuperclass();
+		}
+		
+		return PrettyPrinter.printObject(packet, clazz, MinecraftReflection.getPacketClass(), PrettyPrinter.RECURSE_DEPTH, new ObjectPrinter() {
+			@Override
+			public boolean print(StringBuilder output, Object value) {
+				if (value != null) {
+					EquivalentConverter<Object> converter = findConverter(value.getClass());
+					
+					if (converter != null) {
+						output.append(converter.getSpecific(value));
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+	}
+	
+	/**
+	 * Retrieve the closest equivalent converter to a specific class.
+	 * @param clazz - the class.
+	 * @return The closest converter, or NULL if not found,
+	 */
+	private EquivalentConverter<Object> findConverter(Class<?> clazz) {
+		Map<Class<?>, EquivalentConverter<Object>> converters = BukkitConverters.getConvertersForGeneric();
+		
+		while (clazz != null) {
+			EquivalentConverter<Object> result = converters.get(clazz);
+			
+			if (result != null)
+				return result;
+			else
+				clazz = clazz.getSuperclass();
+		}
+		return null;
+	}
 		
 	public PacketListener updatePacketListener() {
 		if (listener != null) {
 			manager.removePacketListener(listener);
 		}
+		if (compareListener != null) {
+			manager.removePacketListener(compareListener);
+		}
 		
-		// Register a new listener instead
+		// Register the new listeners 
 		listener = createPacketListener(packetTypes.values());
+		compareListener = createCompareListener(compareTypes.values());
 		manager.addPacketListener(listener);
+		manager.addPacketListener(compareListener);
 		return listener;
 	}
 	
