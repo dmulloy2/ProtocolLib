@@ -728,7 +728,7 @@ public class BukkitConverters {
 	
 	/**
 	 * Retrieve the converter used to convert between a NMS World and a Bukkit world.
-	 * @return The potion effect converter.
+	 * @return The world converter.
 	 */
 	public static EquivalentConverter<World> getWorldConverter() {		
 		return new IgnoreNullConverter<World>() {
