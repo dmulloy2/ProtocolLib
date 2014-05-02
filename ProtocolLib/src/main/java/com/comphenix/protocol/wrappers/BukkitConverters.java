@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldType;
@@ -39,6 +40,7 @@ import org.bukkit.potion.PotionEffectType;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -46,6 +48,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
@@ -86,6 +89,9 @@ public class BukkitConverters {
 	private static volatile Constructor<?> mobEffectConstructor;
 	private static volatile StructureModifier<Object> mobEffectModifier;
 	
+	// Used for fetching the CraftWorld associated with a WorldServer
+	private static FieldAccessor craftWorldField;
+	
 	static {
 		try {
 			MinecraftReflection.getWorldTypeClass();
@@ -97,6 +103,15 @@ public class BukkitConverters {
 			MinecraftReflection.getAttributeSnapshotClass();
 			hasAttributeSnapshot = true;
 		} catch (Exception e) {
+		}
+		
+		// Fetch CraftWorld field
+		try {
+			craftWorldField = Accessors.getFieldAccessor(
+				MinecraftReflection.getNmsWorldClass(), 
+				MinecraftReflection.getCraftWorldClass(), true);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -712,6 +727,29 @@ public class BukkitConverters {
 	}
 	
 	/**
+	 * Retrieve the converter used to convert between a NMS World and a Bukkit world.
+	 * @return The potion effect converter.
+	 */
+	public static EquivalentConverter<World> getWorldConverter() {		
+		return new IgnoreNullConverter<World>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, World specific) {
+				return BukkitUnwrapper.getInstance().unwrapItem(specific);
+			}
+			
+			@Override
+			protected World getSpecificValue(Object generic) {
+				return (World) craftWorldField.get(generic);
+			}
+			
+			@Override
+			public Class<World> getSpecificType() {
+				return World.class;
+			}
+		};
+	}
+	
+	/**
 	 * Retrieve the converter used to convert between a PotionEffect and the equivalent NMS Mobeffect.
 	 * @return The potion effect converter.
 	 */
@@ -827,8 +865,9 @@ public class BukkitConverters {
 				put(NbtBase.class, (EquivalentConverter) getNbtConverter()).
 				put(NbtCompound.class, (EquivalentConverter) getNbtConverter()).
 				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter()).
-				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter());
-				
+				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter()).
+				put(World.class, (EquivalentConverter) getWorldConverter());	
+			
 			// Types added in 1.7.2
 			if (MinecraftReflection.isUsingNetty()) {
 				builder.put(Material.class, (EquivalentConverter) getBlockConverter());
@@ -866,7 +905,8 @@ public class BukkitConverters {
 				put(MinecraftReflection.getNBTBaseClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getNBTCompoundClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getWatchableObjectClass(), (EquivalentConverter) getWatchableObjectConverter()).
-				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter());
+				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter()).
+				put(MinecraftReflection.getNmsWorldClass(), (EquivalentConverter) getWorldConverter());
 				
 			if (hasWorldType)
 				builder.put(MinecraftReflection.getWorldTypeClass(), (EquivalentConverter) getWorldTypeConverter());

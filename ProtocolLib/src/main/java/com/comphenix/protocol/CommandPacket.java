@@ -49,6 +49,7 @@ import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.comphenix.protocol.reflect.PrettyPrinter.ObjectPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.HexDumper;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.collect.MapMaker;
@@ -75,6 +76,11 @@ class CommandPacket extends CommandBase {
 	 * Number of lines per page.
 	 */
 	public static final int PAGE_LINE_COUNT = 9;
+	
+	/**
+	 * Number of bytes before we do a hex dump.
+	 */
+	private static final int HEX_DUMP_THRESHOLD = 256;
 	
 	private Plugin plugin;
 	private Logger logger;
@@ -465,9 +471,19 @@ class CommandPacket extends CommandBase {
 		return PrettyPrinter.printObject(packet, clazz, MinecraftReflection.getPacketClass(), PrettyPrinter.RECURSE_DEPTH, new ObjectPrinter() {
 			@Override
 			public boolean print(StringBuilder output, Object value) {
-				if (value != null) {
-					EquivalentConverter<Object> converter = findConverter(value.getClass());
+				// Special case
+				if (value instanceof byte[]) {
+					byte[] data = (byte[]) value;
 					
+					if (data.length > HEX_DUMP_THRESHOLD) {
+						output.append("[");
+						HexDumper.defaultDumper().appendTo(output, data);
+						output.append("]");
+						return true;
+					}
+				} else if (value != null) {
+					EquivalentConverter<Object> converter = findConverter(value.getClass());
+
 					if (converter != null) {
 						output.append(converter.getSpecific(value));
 						return true;

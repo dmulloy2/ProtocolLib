@@ -628,6 +628,18 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the World (NMS) class.
+	 * @return The world class.
+	 */
+	public static Class<?> getNmsWorldClass() {
+		try {
+			return getMinecraftClass("World");
+		} catch (RuntimeException e) {
+			return setMinecraftClass("World", getWorldServerClass().getSuperclass());
+		}
+	}
+	
+	/**
 	 * Fallback on the return value of a named method in order to get a NMS class.
 	 * @param nmsClass - the expected name of the Minecraft class.
 	 * @param craftClass - a CraftBukkit class to look at.
@@ -1673,6 +1685,14 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getCraftPlayerClass() { 
 		return getCraftBukkitClass("entity.CraftPlayer");
+	}
+	
+	/**
+	 * Retrieve the CraftWorld class.
+	 * @return The CraftWorld class.
+	 */
+	public static Class<?> getCraftWorldClass() {
+		return getCraftBukkitClass("CraftWorld");
 	}
 	
 	/**
