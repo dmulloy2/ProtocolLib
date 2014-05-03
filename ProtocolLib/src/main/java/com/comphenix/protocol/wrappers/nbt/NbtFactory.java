@@ -32,6 +32,8 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -213,6 +215,35 @@ public class NbtFactory {
 	        if      (output != null) Closeables.close(output, swallow);
 	        else if (stream != null) Closeables.close(stream, swallow);
 	    }       
+	}
+	
+	/**
+	 * Retrieve the NBT tile entity that represents the given block.
+	 * @param state - the block state.
+	 * @return The NBT compound, or NULL if the state doesn't have a tile entity.
+	 */
+	public static NbtCompound readBlockState(Block block) {
+		 BlockState state = block.getState();
+		 TileEntityAccessor<BlockState> accessor = TileEntityAccessor.getAccessor(state);
+		 
+		 return accessor != null ? accessor.readBlockState(state) : null;
+	}
+	
+	/**
+	 * Write to the NBT tile entity in the given block.
+	 * @param target - the target block.
+	 * @param blockState - the new tile entity.
+	 * @throws IllegalArgumentException If the block doesn't contain a tile entity.
+	 */
+	public static void writeBlockState(Block target, NbtCompound blockState) {
+		 BlockState state = target.getState();
+		 TileEntityAccessor<BlockState> accessor = TileEntityAccessor.getAccessor(state);
+		 
+		 if (accessor != null) {
+			 accessor.writeBlockState(state, blockState);
+		 } else {
+			 throw new IllegalArgumentException("Unable to find tile entity in " + target);
+		 }
 	}
 	
 	/**

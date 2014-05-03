@@ -1629,6 +1629,14 @@ public class MinecraftReflection {
 	}
 	
 	/**
+	 * Retrieve the NMS tile entity class.
+	 * @return The tile entity class.
+	 */
+	public static Class<?> getTileEntityClass() {
+		return getMinecraftClass("TileEntity");
+	}
+	
+	/**
 	 * Retrieve the google.gson.Gson class used by Minecraft.
 	 * @return The GSON class.
 	 */
