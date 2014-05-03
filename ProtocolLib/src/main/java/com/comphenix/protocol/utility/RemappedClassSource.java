@@ -98,7 +98,7 @@ class RemappedClassSource extends ClassSource {
 	 * @param path - the canonical class name.
 	 * @return The obfuscated class name.
 	 */
-	private String getClassName(String path) {
+	public String getClassName(String path) {
 		try {
 			String remapped = (String) mapType.invoke(classRemapper, path.replace('.', '/'));
 			return remapped.replace('/', '.');

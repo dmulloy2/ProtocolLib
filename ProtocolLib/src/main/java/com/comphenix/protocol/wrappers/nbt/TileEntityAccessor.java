@@ -1,20 +1,27 @@
 package com.comphenix.protocol.wrappers.nbt;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentMap;
 
 import net.minecraft.server.v1_7_R3.NBTTagCompound;
+import net.minecraft.server.v1_7_R3.TileEntityChest;
 import net.sf.cglib.asm.ClassReader;
 import net.sf.cglib.asm.MethodVisitor;
 import net.sf.cglib.asm.Opcodes;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.block.BlockState;
 
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
 import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
+import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
@@ -37,6 +44,10 @@ class TileEntityAccessor<T extends BlockState> {
 	private MethodAccessor readCompound;
 	private MethodAccessor writeCompound;
 	
+	// For CGLib detection
+	private boolean writeDetected;
+	private boolean readDetected;
+	
 	private TileEntityAccessor() {
 		// Do nothing
 	}
@@ -45,18 +56,31 @@ class TileEntityAccessor<T extends BlockState> {
 	 * Construct a new tile entity accessor.
 	 * @param tileEntityField - the tile entity field.
 	 * @param tileEntity - the tile entity.
+	 * @param tile - the block state.
 	 * @throws IOException Cannot read tile entity.
 	 */
-	private TileEntityAccessor(FieldAccessor tileEntityField) {
+	private TileEntityAccessor(FieldAccessor tileEntityField, T state) {
 		if (tileEntityField != null) {
 			this.tileEntityField = tileEntityField;
+			Class<?> type = tileEntityField.getField().getType();
 			
 			// Possible read/write methods
 			try {
-				findSerializationMethods(tileEntityField.getField().getType());
-			} catch (IOException e) {
-				throw new RuntimeException("Cannot find read/write methods.", e);
+				findMethodsUsingASM(type);
+			} catch (IOException ex1) {
+				try {
+					// Much slower though
+					findMethodUsingCGLib(state);
+				} catch (Exception ex2) {
+					throw new RuntimeException("Cannot find read/write methods in " + type, ex2);
+				}
 			}
+			
+			// Ensure we found them
+			if (readCompound == null)
+				throw new RuntimeException("Unable to find read method in " + type);
+			if (writeCompound == null)
+				throw new RuntimeException("Unable to find write method in " + type);
 		}
 	}
 
@@ -66,11 +90,11 @@ class TileEntityAccessor<T extends BlockState> {
 	 * @param nbtCompoundClass - the compound clas.
 	 * @throws IOException If we cannot find these methods.
 	 */
-	private void findSerializationMethods(final Class<?> tileEntityClass) throws IOException {
+	private void findMethodsUsingASM(final Class<?> tileEntityClass) throws IOException {
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
-		
 		final ClassReader reader = new ClassReader(tileEntityClass.getCanonicalName());
-		final String tagCompoundName = getJarName(NBTTagCompound.class);
+		
+		final String tagCompoundName = getJarName(MinecraftReflection.getNBTCompoundClass());
 		final String expectedDesc = "(L" + tagCompoundName + ";)V";
 		
 		reader.accept(new EmptyClassVisitor() {
@@ -113,12 +137,51 @@ class TileEntityAccessor<T extends BlockState> {
 				return null;
 			}
 		}, 0);
+	}
+	
+	/**
+	 * Find the read/write methods in TileEntity.
+	 * @param blockState - the block state.
+	 * @throws IOException If we cannot find these methods.
+	 */
+	private void findMethodUsingCGLib(T blockState) throws IOException {
+		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 		
-		// Ensure we found them
-		if (readCompound == null)
-			throw new RuntimeException("Unable to find read method in " + tileEntityClass);
-		if (writeCompound == null)
-			throw new RuntimeException("Unable to find write method in " + tileEntityClass);
+		// This is a much slower method, but it is necessary in MCPC
+		Enhancer enhancer = EnhancerFactory.getInstance().createEnhancer();
+		enhancer.setSuperclass(nbtCompoundClass);
+		enhancer.setCallback(new MethodInterceptor() {
+			@Override
+			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+				if (method.getReturnType().equals(Void.TYPE)) {
+					// Write method
+					writeDetected = true;
+				} else {
+					// Read method
+					readDetected = true;
+				}
+				throw new RuntimeException("Stop execution.");
+			}
+		});
+		Object compound = enhancer.create();
+		Object tileEntity = tileEntityField.get(blockState);
+		
+		// Look in every read/write like method
+		for (Method method : FuzzyReflection.fromObject(tileEntity, true).
+				getMethodListByParameters(Void.TYPE, new Class<?>[] { nbtCompoundClass })) {
+			
+			try {
+				readDetected = false;
+				writeDetected = false;
+				method.invoke(tileEntity, compound);
+			} catch (Exception e) {
+				// Okay - see if we detected a write or read
+				if (readDetected)
+					readCompound = Accessors.getMethodAccessor(method, true);
+				if (writeDetected)
+					writeCompound = Accessors.getMethodAccessor(method, true);
+			}
+		}
 	}
 	
 	/**
@@ -177,7 +240,7 @@ class TileEntityAccessor<T extends BlockState> {
 				created = EMPTY_ACCESSOR;
 			} 
 			if (field != null) {
-				created = new TileEntityAccessor<T>(field);
+				created = new TileEntityAccessor<T>(field, state);
 			}
 			accessor = cachedAccessors.putIfAbsent(craftBlockState, created);
 		

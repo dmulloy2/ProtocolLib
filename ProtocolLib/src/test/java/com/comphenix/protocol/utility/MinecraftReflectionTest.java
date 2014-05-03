@@ -11,6 +11,7 @@ import net.minecraft.server.v1_7_R3.NBTCompressedStreamTools;
 import net.minecraft.server.v1_7_R3.ServerPing;
 import net.minecraft.server.v1_7_R3.ServerPingPlayerSample;
 import net.minecraft.server.v1_7_R3.ServerPingServerData;
+import net.minecraft.server.v1_7_R3.WatchableObject;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -103,5 +104,10 @@ public class MinecraftReflectionTest {
 	@Test
 	public void testChunkCoordIntPair() {
 		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
+	}
+	
+	@Test
+	public void testWatchableObject() {
+		assertEquals(WatchableObject.class, MinecraftReflection.getWatchableObjectClass());
 	}
 }

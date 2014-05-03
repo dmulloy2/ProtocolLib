@@ -25,6 +25,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.HashSet;
 import java.util.List;
@@ -85,12 +86,17 @@ public class MinecraftReflection {
 	public static final ReportType REPORT_NON_CRAFTBUKKIT_LIBRARY_PACKAGE = new ReportType("Cannot find standard Minecraft library location. Assuming MCPC.");
 	
 	/**
+	 * Regular expression that matches a canonical Java class.
+	 */
+	private static final String CANONICAL_REGEX = "(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*\\.)+\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*";
+	
+	/**
 	 * Regular expression that matches a Minecraft object.
 	 * <p>
 	 * Replaced by the method {@link #getMinecraftObjectRegex()}.
 	 */
 	@Deprecated
-	public static final String MINECRAFT_OBJECT = "net\\.minecraft(\\.\\w+)+";
+	public static final String MINECRAFT_OBJECT = "net\\.minecraft\\." + CANONICAL_REGEX;
 	
 	/**
 	 * Regular expression computed dynamically.
@@ -213,6 +219,15 @@ public class MinecraftReflection {
 				Matcher packageMatcher = PACKAGE_VERSION_MATCHER.matcher(CRAFTBUKKIT_PACKAGE);
 				if (packageMatcher.matches()) {
 					packageVersion = packageMatcher.group(1);
+				} else {
+					MinecraftVersion version = new MinecraftVersion(craftServer);
+					
+					// See if we need a package version
+					if (MinecraftVersion.SCARY_UPDATE.compareTo(version) <= 0) {
+						 // Just assume R1 - it's probably fine
+						packageVersion = "v" + version.getMajor() + "_" + version.getMinor() + "_R1";
+						System.err.println("[ProtocolLib] Assuming package version: " + packageVersion);
+					}
 				}
 				
 				// Libigot patch
@@ -241,7 +256,7 @@ public class MinecraftReflection {
 					// The package is usualy flat, so go with that assumption
 					String matcher = 
 							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? 
-									Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + "\\w+";
+									Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + CANONICAL_REGEX;
 					
 					// We'll still accept the default location, however
 					setDynamicPackageMatcher("(" + matcher + ")|(" + MINECRAFT_OBJECT + ")");
@@ -266,7 +281,7 @@ public class MinecraftReflection {
 			throw new IllegalStateException("Could not find Bukkit. Is it running?");
 		}
 	}
-
+	
 	/**
 	 * Retrieve the Minecraft library package string.
 	 * @return The library package.
@@ -1249,11 +1264,11 @@ public class MinecraftReflection {
 	public static Class<?> getWatchableObjectClass() {
 		try {
 			return getMinecraftClass("WatchableObject");
-		} catch (RuntimeException e) {					
+		} catch (RuntimeException e) {		
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
 							 requireModifier(Modifier.STATIC).
-							 parameterDerivedOf(DataOutput.class, 0).
+							 parameterDerivedOf(isUsingNetty() ? getPacketDataSerializerClass() : DataOutput.class, 0).
 							 parameterMatches(getMinecraftObjectMatcher(), 1).
 						    build());
 		
@@ -1270,19 +1285,37 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("ServerConnection");
 		} catch (RuntimeException e) {
-			FuzzyClassContract serverConnectionContract = FuzzyClassContract.newBuilder().
+			Method selected = null;
+			FuzzyClassContract.Builder serverConnectionContract = FuzzyClassContract.newBuilder().
 					constructor(FuzzyMethodContract.newBuilder().
 							parameterExactType(getMinecraftServerClass()).
-							parameterCount(1)).
-					method(FuzzyMethodContract.newBuilder().
-							parameterExactType(getNetServerHandlerClass())).
-					build();
+							parameterCount(1));
 			
-			Method selected = FuzzyReflection.fromClass(getMinecraftServerClass()).
-								getMethod(FuzzyMethodContract.newBuilder().
-										requireModifier(Modifier.ABSTRACT).
-										returnTypeMatches(serverConnectionContract).
-								build());
+			if (isUsingNetty()) {
+				serverConnectionContract.
+				method(FuzzyMethodContract.newBuilder().
+						parameterDerivedOf(InetAddress.class, 0).
+						parameterDerivedOf(int.class, 1).
+						parameterCount(2)
+				);
+				
+				selected = FuzzyReflection.fromClass(getMinecraftServerClass()).
+					getMethod(FuzzyMethodContract.newBuilder().
+							requireModifier(Modifier.PUBLIC).
+							returnTypeMatches(serverConnectionContract.build()).
+					build());
+				
+			} else {
+				serverConnectionContract.
+					method(FuzzyMethodContract.newBuilder().
+							parameterExactType(getNetServerHandlerClass()));
+				
+				selected = FuzzyReflection.fromClass(getMinecraftServerClass()).
+					getMethod(FuzzyMethodContract.newBuilder().
+							requireModifier(Modifier.ABSTRACT).
+							returnTypeMatches(serverConnectionContract.build()).
+					build());
+			}
 			
 			// Use the return type
 			return setMinecraftClass("ServerConnection", selected.getReturnType());
