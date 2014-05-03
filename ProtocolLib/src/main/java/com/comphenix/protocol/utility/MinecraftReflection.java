@@ -1787,7 +1787,7 @@ public class MinecraftReflection {
 				if (!craftItemStackFailed)
 					return getBukkitItemByMethod(minecraftItemStack);
 				
-				throw new RuntimeException("Cannot find CraftItemStack(net.mineraft.server.ItemStack).", e);
+				throw new RuntimeException("Cannot find CraftItemStack(net.minecraft.server.ItemStack).", e);
 			}
 		}
 		
@@ -1805,7 +1805,7 @@ public class MinecraftReflection {
 				craftNMSMethod = getCraftItemStackClass().getMethod("asCraftMirror", minecraftItemStack.getClass());
 			} catch (Exception e) {
 				craftItemStackFailed = true;
-				throw new RuntimeException("Cannot find CraftItemStack.asCraftMirror(net.mineraft.server.ItemStack).", e);
+				throw new RuntimeException("Cannot find CraftItemStack.asCraftMirror(net.minecraft.server.ItemStack).", e);
 			}
 		}
 		
