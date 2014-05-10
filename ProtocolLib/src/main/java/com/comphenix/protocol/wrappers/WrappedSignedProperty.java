@@ -11,6 +11,17 @@ import com.google.common.base.Objects;
  */
 public class WrappedSignedProperty extends AbstractWrapper {
 	/**
+	 * Construct a new wrapped signed property from the given values.
+	 * @param name - the name of the property.
+	 * @param value - the value of the property.
+	 * @param signature - the BASE64-encoded signature of the value.
+	 * @return The signed property.
+	 */
+	public WrappedSignedProperty(String name, String value, String signature) {
+		this(new Property(name, value, signature));
+	}
+	
+	/**
 	 * Construct a new wrapped signed property from a given handle.
 	 * @param handle - the handle.
 	 */
@@ -26,6 +37,17 @@ public class WrappedSignedProperty extends AbstractWrapper {
 	 */
 	public static WrappedSignedProperty fromHandle(Object handle) {
 		return new WrappedSignedProperty(handle);
+	}
+	
+	/**
+	 * Construct a new wrapped signed property from the given values.
+	 * @param name - the name of the property.
+	 * @param value - the value of the property.
+	 * @param signature - the BASE64-encoded signature of the value.
+	 * @return The signed property.
+	 */
+	public static WrappedSignedProperty fromValues(String name, String value, String signature) {
+		return new WrappedSignedProperty(name, value, signature);
 	}
 	
 	/**

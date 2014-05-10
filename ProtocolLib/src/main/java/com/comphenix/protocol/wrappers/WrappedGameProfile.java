@@ -1,8 +1,10 @@
 package com.comphenix.protocol.wrappers;
 
+import java.math.BigInteger;
 import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
@@ -16,6 +18,8 @@ import com.google.common.collect.Multimap;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.com.mojang.authlib.properties.Property;
+import net.minecraft.util.io.netty.handler.codec.base64.Base64;
+import net.minecraft.util.org.apache.commons.codec.binary.Base32;
 
 /**
  * Represents a wrapper for a game profile.
@@ -27,7 +31,8 @@ public class WrappedGameProfile extends AbstractWrapper {
 	private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAcccessorOrNull(GameProfile.class, "id", String.class);
 	
 	// Fetching game profile
-	private static FieldAccessor GET_PROFILE;
+	private static FieldAccessor PLAYER_PROFILE;
+	private static FieldAccessor OFFLINE_PROFILE;
 	
 	// Property map
 	private Multimap<String, WrappedSignedProperty> propertyMap;
@@ -40,18 +45,37 @@ public class WrappedGameProfile extends AbstractWrapper {
 	
 	/**
 	 * Retrieve the associated game profile of a player.
+	 * <p>
+	 * Note that this may not exist in the current Minecraft version.
 	 * @param player - the player.
 	 * @return The game profile.
 	 */
 	public static WrappedGameProfile fromPlayer(Player player) {
-		FieldAccessor accessor = GET_PROFILE;
+		FieldAccessor accessor = PLAYER_PROFILE;
 		Object nmsPlayer = BukkitUnwrapper.getInstance().unwrapItem(player);
 		
 		if (accessor == null) {
 			accessor = Accessors.getFieldAccessor(MinecraftReflection.getEntityHumanClass(), GameProfile.class, true);
-			GET_PROFILE = accessor;
+			PLAYER_PROFILE = accessor;
 		}
-		return WrappedGameProfile.fromHandle(GET_PROFILE.get(nmsPlayer));
+		return WrappedGameProfile.fromHandle(PLAYER_PROFILE.get(nmsPlayer));
+	}
+	
+	/**
+	 * Retrieve the associated game profile of an offline player.
+	 * <p>
+	 * Note that this may not exist in the current Minecraft version.
+	 * @param player - the offline player.
+	 * @return The game profile.
+	 */
+	public static WrappedGameProfile fromOfflinePlayer(OfflinePlayer player) {
+		FieldAccessor accessor = OFFLINE_PROFILE;
+		
+		if (accessor == null) {
+			accessor = Accessors.getFieldAccessor(player.getClass(), GameProfile.class, true);
+			OFFLINE_PROFILE = accessor;
+		}
+		return WrappedGameProfile.fromHandle(OFFLINE_PROFILE.get(player));
 	}
 	
 	/**
@@ -84,7 +108,21 @@ public class WrappedGameProfile extends AbstractWrapper {
 			
 			// Lenient - add missing data
 			if (missing > 0) {
-				id += StringUtils.repeat("-0", missing);
+				if (id.length() < 12) {
+					id += StringUtils.repeat("-0", missing);
+				} else if (id.length() >= 32) {
+					StringBuilder builder = new StringBuilder(id);
+					int position = 8; // Initial position
+					
+					while (missing > 0 && position < builder.length()) {
+						builder.insert(position, "-");
+						position += 5; // 4 in length, plus the hyphen
+						missing--;
+					}
+					id = builder.toString();
+				} else {
+					throw new IllegalArgumentException("Invalid partial UUID: " + id);
+				}
 			}
 			return UUID.fromString(id);
 		} catch (IllegalArgumentException e) {
