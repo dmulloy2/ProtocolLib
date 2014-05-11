@@ -697,8 +697,10 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 				);
 				
 				// These are illegal
-				for (int packetID : result.getPackets())
-					removePacketHandler(PacketType.findLegacy(packetID));
+				for (int packetID : result.getPackets()) {
+					removePacketHandler(PacketType.findLegacy(packetID, Sender.CLIENT));
+					removePacketHandler(PacketType.findLegacy(packetID, Sender.SERVER));
+				}
 			}
 		}
 	}

@@ -591,7 +591,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 	@Override
 	public boolean requireInputBuffer(int packetId) {
-		return inputBufferedPackets.contains(PacketType.findLegacy(packetId));
+		return inputBufferedPackets.contains(PacketType.findLegacy(packetId, Sender.CLIENT));
 	}
 	
 	/**

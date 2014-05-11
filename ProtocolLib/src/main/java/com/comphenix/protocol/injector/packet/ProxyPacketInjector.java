@@ -361,7 +361,8 @@ class ProxyPacketInjector implements PacketInjector {
 		
 		// Remove every packet handler
 		for (Integer id : previous.keySet().toArray(new Integer[0])) {
-			removePacketHandler(PacketType.findLegacy(id));
+			removePacketHandler(PacketType.findLegacy(id, Sender.CLIENT));
+			removePacketHandler(PacketType.findLegacy(id, Sender.SERVER));
 		}
 		
 		overwritten.clear();
