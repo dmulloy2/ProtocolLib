@@ -1,6 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.math.BigInteger;
 import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
@@ -18,8 +17,6 @@ import com.google.common.collect.Multimap;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.com.mojang.authlib.properties.Property;
-import net.minecraft.util.io.netty.handler.codec.base64.Base64;
-import net.minecraft.util.org.apache.commons.codec.binary.Base32;
 
 /**
  * Represents a wrapper for a game profile.
