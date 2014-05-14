@@ -40,6 +40,7 @@ public abstract class ClassSource {
 
 	/**
 	 * Construct a class source from a mapping of canonical names and the corresponding classes.
+	 * If the map is null, it will be interpreted as an empty map. If the map does not contain a Class with the specified name, or that string maps to NULL explicitly, a {@link ClassNotFoundException} will be thrown.
 	 * @param map - map of class names and classes.
 	 * @return The class source.
 	 */
