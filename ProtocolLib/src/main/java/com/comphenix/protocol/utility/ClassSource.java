@@ -47,7 +47,12 @@ public abstract class ClassSource {
 		return new ClassSource() {
 			@Override
 			public Class<?> loadClass(String canonicalName) throws ClassNotFoundException {
-				return map.get(canonicalName);
+				Class<?> loaded = map == null ? null : map.get(canonicalName);
+				if(loaded == null){
+					// Throw the appropriate exception if we can't load the class
+					throw new ClassNotFoundException("The specified class could not be found by this ClassLoader.");
+				}
+				return loaded;
 			}
 		};
 	}
