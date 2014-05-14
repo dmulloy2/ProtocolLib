@@ -14,7 +14,7 @@ public abstract class ClassSource {
 	public static ClassSource fromClassLoader() {
 		return fromClassLoader(ClassSource.class.getClassLoader());
 	}
-	
+
 	/**
 	 * Construct a class source from the default class loader and package.
 	 * @param packageName - the package that is prepended to every lookup.
@@ -23,7 +23,7 @@ public abstract class ClassSource {
 	public static ClassSource fromPackage(String packageName) {
 		return fromClassLoader().usingPackage(packageName);
 	}
-	
+
 	/**
 	 * Construct a class source from the given class loader.
 	 * @param loader - the class loader.
@@ -57,7 +57,20 @@ public abstract class ClassSource {
 			}
 		};
 	}
-	
+
+	/**
+	 * Retrieve a class source that will attempt lookups in each of the given sources in the order they are in the array, and return the first value that is found.
+	 * @param sources - the class sources.
+	 * @return A new class source.
+	 */
+	public static ClassSource attemptLoadFrom(final ClassSource... sources) {
+		ClassSource source = sources[0];
+		for(int i = 1; i < sources.length; i++){
+			source = source.retry(sources[i]);
+		}
+		return source;
+	}
+
 	/**
 	 * Retrieve a class source that will retry failed lookups in the given source.
 	 * @param other - the other class source.
@@ -75,7 +88,7 @@ public abstract class ClassSource {
 			}
 		};
 	}
-	
+
 	/**
 	 * Retrieve a class source that prepends a specific package name to every lookup.
 	 * @param packageName - the package name to prepend.
@@ -99,7 +112,7 @@ public abstract class ClassSource {
 	protected static String append(String a, String b) {
 		boolean left = a.endsWith(".");
 		boolean right = b.endsWith(".");
-		
+
 		// Only add a dot if necessary
 		if (left && right)
 			return a.substring(0, a.length() - 1) + b;
@@ -108,7 +121,7 @@ public abstract class ClassSource {
 		else
 			return a + "." + b;
 	}
-		
+
 	/**
 	 * Retrieve a class by name.
 	 * @param canonicalName - the full canonical name of the class.
