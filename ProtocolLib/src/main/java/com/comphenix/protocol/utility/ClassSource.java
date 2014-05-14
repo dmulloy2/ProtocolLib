@@ -60,13 +60,15 @@ public abstract class ClassSource {
 
 	/**
 	 * Retrieve a class source that will attempt lookups in each of the given sources in the order they are in the array, and return the first value that is found.
+	 * If the sources array is empty, null, or composed of all null elements, the returned ClassSource will be null. Null elements in the array are ignored.
 	 * @param sources - the class sources.
 	 * @return A new class source.
 	 */
 	public static ClassSource attemptLoadFrom(final ClassSource... sources) {
-		ClassSource source = sources[0];
+		ClassSource source = sources != null && sources.length >= 1 ? sources[0] : null;
 		for(int i = 1; i < sources.length; i++){
-			source = source.retry(sources[i]);
+			source = sources[i] == null ? source : 
+				source == null ? sources[i] : source.retry(sources[i]);
 		}
 		return source;
 	}
@@ -125,7 +127,7 @@ public abstract class ClassSource {
 	/**
 	 * Retrieve a class by name.
 	 * @param canonicalName - the full canonical name of the class.
-	 * @return The corresponding class 
+	 * @return The corresponding class. If the class is not found, NULL should <b>not</b> be returned, instead a {@code ClassNotFoundException} exception should be thrown.
 	 * @throws ClassNotFoundException If the class could not be found.
 	 */
 	public abstract Class<?> loadClass(String canonicalName) throws ClassNotFoundException;
