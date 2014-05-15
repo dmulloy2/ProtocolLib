@@ -58,14 +58,14 @@ To listen for packets sent by the server to a client, add a server-side listener
 ````java
 // Disable all sound effects
 protocolManager.addPacketListener(
-  new PacketAdapter(this, ConnectionSide.SERVER_SIDE, ListenerPriority.NORMAL, 0x3E) {
+  new PacketAdapter(this, ListenerPriority.NORMAL, 
+          PacketType.Play.Server.NAMED_SOUND_EFFECT) {
     @Override
     public void onPacketSending(PacketEvent event) {
-        // Item packets
-        switch (event.getPacketID()) {
-        case 0x3E: // Sound effect
+        // Item packets (id: 0x29)
+        if (event.getPacketType() == 
+                PacketType.Play.Server.NAMED_SOUND_EFFECT) {
             event.setCancelled(true);
-            break;
         }
     }
 });
@@ -76,22 +76,19 @@ censor by listening for Packet3Chat events:
 
 ````java
 // Censor
-protocolManager.addPacketListener(
-  new PacketAdapter(this, ConnectionSide.CLIENT_SIDE, ListenerPriority.NORMAL, 0x03) {
+protocolManager.addPacketListener(new PacketAdapter(this,
+        ListenerPriority.NORMAL, 
+        PacketType.Play.Client.CHAT) {
     @Override
     public void onPacketReceiving(PacketEvent event) {
-        if (event.getPacketID() == 0x03) {
-            try {
-                PacketContainer packet = event.getPacket();
-                String message = packet.getSpecificModifier(String.class).read(0);
-                
-                if (message.contains("shit") || message.contains("damn")) {
-                    event.setCancelled(true);
-                    event.getPlayer().sendMessage("Bad manners!");
-                }
-                		
-            } catch (FieldAccessException e) {
-                getLogger().log(Level.SEVERE, "Couldn't access field.", e);
+        if (event.getPacketType() == PacketType.Play.Client.CHAT) {
+            PacketContainer packet = event.getPacket();
+            String message = packet.getStrings().read(0);
+
+            if (message.contains("shit")
+                    || message.contains("damn")) {
+                event.setCancelled(true);
+                event.getPlayer().sendMessage("Bad manners!");
             }
         }
     }
@@ -115,19 +112,22 @@ fakeExplosion.e = new ArrayList<Object>();
 ````
 
 But with ProtocolLib, you can turn that into something more manageable. Notice that 
-you don't have to create an ArrayList this version:
+you don't have to create an ArrayList with this version:
 
 ````java
-PacketContainer fakeExplosion = protocolManager.createPacket(60);
 
-fakeExplosion.getSpecificModifier(double.class).
+fakeExplosion.getDoubles().
     write(0, player.getLocation().getX()).
     write(1, player.getLocation().getY()).
     write(2, player.getLocation().getZ());
-fakeExplosion.getSpecificModifier(float.class).
-    write(0, 3.0F);
+fakeExplosion.getFloat().write(0, 3.0F);
 
-protocolManager.sendServerPacket(player, fakeExplosion);
+try {
+    protocolManager.sendServerPacket(player, fakeExplosion);
+} catch (InvocationTargetException e) {
+    throw new RuntimeException(
+        "Cannot send packet " + fakeExplosion, e);
+}
 ````
 
 Compatiblity
