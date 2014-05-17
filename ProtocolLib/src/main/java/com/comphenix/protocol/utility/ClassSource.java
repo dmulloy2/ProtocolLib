@@ -64,7 +64,7 @@ public abstract class ClassSource {
 				try {
 					return ClassSource.this.loadClass(canonicalName);
 				} catch (ClassNotFoundException e) {
-					return other.getClass();
+					return other.loadClass(canonicalName);
 				}
 			}
 		};
