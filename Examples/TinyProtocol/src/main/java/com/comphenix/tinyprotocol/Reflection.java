@@ -9,8 +9,6 @@ import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 
-import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
-
 /**
  * An utility class that simplifies reflection in Bukkit plugins.
  * @author Kristian

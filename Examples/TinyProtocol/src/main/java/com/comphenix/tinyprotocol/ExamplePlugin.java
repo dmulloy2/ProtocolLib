@@ -1,6 +1,9 @@
 package com.comphenix.tinyprotocol;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -65,6 +68,26 @@ public class ExamplePlugin extends JavaPlugin {
 		};
 	}
 
+	@Override
+	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+		if (sender instanceof Player) {
+			Player player = (Player) sender;
+			
+			// Toggle injection
+			if (protocol.hasInjected(player)) {
+				protocol.uninjectPlayer(player);
+				sender.sendMessage(ChatColor.YELLOW + "Player " + player + " has been uninjected.");
+			} else {
+				protocol.injectPlayer(player);
+				sender.sendMessage(ChatColor.DARK_GREEN + "Player " + player + " has been injected.");
+			}
+			return true;
+		} else {
+			sender.sendMessage(ChatColor.RED + "Can only be invoked by a player.");
+		}
+		return false;
+	}  
+	
 	private void sendExplosion(Player player) {
 		try {
 			// Only visible for the client

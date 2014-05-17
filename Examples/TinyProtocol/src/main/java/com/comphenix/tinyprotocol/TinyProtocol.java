@@ -1,7 +1,10 @@
 package com.comphenix.tinyprotocol;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
@@ -36,7 +39,9 @@ import com.google.common.collect.MapMaker;
  * It now supports intercepting packets during login and status ping (such as OUT_SERVER_PING)!
  * @author Kristian
  */
-public abstract class TinyProtocol {	
+public abstract class TinyProtocol {
+	private static final AtomicInteger ID = new AtomicInteger(0);
+	
 	// Used in order to lookup a channel
 	private static final MethodInvoker getPlayerHandle = Reflection.getMethod("{obc}.entity.CraftPlayer", "getHandle");
 	private static final FieldAccessor<Object> getConnection = Reflection.getField("{nms}.EntityPlayer", "playerConnection", Object.class);
@@ -55,8 +60,11 @@ public abstract class TinyProtocol {
 	private static final FieldAccessor<GameProfile> getGameProfile = Reflection.getField(PACKET_LOGIN_IN_START, GameProfile.class, 0);
 	
 	// Speedup channel lookup
-	private Map<String, Channel> channelLookup = new MapMaker().weakKeys().makeMap();
+	private Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
 	private Listener listener;
+	
+	// Channels that have already been removed
+	private Set<Channel> uninjectedChannels = Collections.newSetFromMap(new MapMaker().weakKeys().<Channel, Boolean>makeMap());
 	
 	// List of network markers
 	private List<Object> networkManagers;
@@ -67,17 +75,28 @@ public abstract class TinyProtocol {
 	private ChannelInitializer<Channel> beginInitProtocol;
 	private ChannelInitializer<Channel> endInitProtocol;
 	
+	// Current handler name
+	private String handlerName;
+	
 	protected volatile boolean closed;
 	protected Plugin plugin;
 	
+	/**
+	 * Construct a new instance of TinyProtocol, and start intercepting packets for all connected clients and future clients. 
+	 * <p>
+	 * You can construct multiple instances per plugin.
+	 * @param plugin - the plugin.
+	 */
 	public TinyProtocol(Plugin plugin) {
 		this.plugin = plugin;
-		this.plugin.getServer().getPluginManager().registerEvents(
-			listener = createListener(), plugin);
+		
+		// Compute handler name
+		this.handlerName = getHandlerName();
 		
 		// Prepare existing players
+		registerBukkitEvents();
 		registerChannelHandler();
-		registerPlayers(plugin);	
+		registerPlayers(plugin);
 	}
 
 	private void createServerChannelHandler() {
@@ -91,7 +110,7 @@ public abstract class TinyProtocol {
                     	// Stop injecting channels
                     	if (closed)
                     		return;
-                    	injectChannel(channel);
+                    	injectChannelInternal(channel);
 					}
             	} catch (Exception e) {
             		plugin.getLogger().log(Level.SEVERE, "Cannot inject incomming channel " + channel, e);
@@ -117,6 +136,34 @@ public abstract class TinyProtocol {
                 ctx.fireChannelRead(msg);
         	}
         };
+	}
+	
+	/**
+	 * Register bukkit events.
+	 */
+	private void registerBukkitEvents() {
+		listener = new Listener() {
+			@EventHandler(priority = EventPriority.LOWEST)
+			public final void onPlayerLogin(PlayerLoginEvent e) {
+				if (closed) 
+					return;
+				Channel channel = getChannel(e.getPlayer());
+				
+				// Don't inject players that have been explicitly uninjected
+				if (!uninjectedChannels.contains(channel)) {
+					injectChannelInternal(channel);
+				}
+			}
+			
+			@EventHandler
+			public final void onPluginDisable(PluginDisableEvent e) {
+				if (e.getPlugin().equals(plugin)) {
+					close();
+				}
+			}
+		};
+		
+		this.plugin.getServer().getPluginManager().registerEvents(listener, plugin);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -240,31 +287,41 @@ public abstract class TinyProtocol {
 	}
 	
 	/**
-	 * Retrieve the name of the channel injector, default implementation is "tiny-" + plugin name.
+	 * Retrieve the name of the channel injector, default implementation is "tiny-" + plugin name + "-" + a unique ID.
 	 * <p>
-	 * Override this if you have multiple instances of TinyProtocol, and return a unique string per instance. 
+	 * Note that this method will only be invoked once. It is no longer necessary to override this to support multiple instances.
 	 * @return A unique channel handler name.
 	 */
 	protected String getHandlerName() {
-		return "tiny-" + plugin.getName();
+		return "tiny-" + plugin.getName() + "-" + ID.incrementAndGet();
 	}
 	
 	/**
 	 * Add a custom channel handler to the given player's channel pipeline, 
 	 * allowing us to intercept sent and received packets.
+	 * <p>
+	 * This will automatically be called when a player has logged in.
 	 * @param player - the player to inject.
 	 */
-	private void injectPlayer(Player player) {
-		injectChannel(getChannel(player)).player = player;
+	public void injectPlayer(Player player) {
+		injectChannelInternal(getChannel(player)).player = player;
 	}
 	
 	/**
 	 * Add a custom channel handler to the given channel.
 	 * @param player - the channel to inject.
+	 * @return The intercepted channel, or NULL if it has already been injected.
 	 */
-	private PacketInterceptor injectChannel(Channel channel) {
-		String handlerName = getHandlerName();
-		
+	public void injectChannel(Channel channel) {
+		injectChannelInternal(channel);
+	}
+	
+	/**
+	 * Add a custom channel handler to the given channel.
+	 * @param player - the channel to inject.
+	 * @return The packet interceptor.
+	 */
+	private PacketInterceptor injectChannelInternal(Channel channel) {
 		try {
 			PacketInterceptor interceptor = (PacketInterceptor) channel.pipeline().get(handlerName);
 			
@@ -272,6 +329,7 @@ public abstract class TinyProtocol {
 			if (interceptor == null) {
 				interceptor = new PacketInterceptor();
 				channel.pipeline().addBefore("packet_handler", handlerName, interceptor);
+				uninjectedChannels.remove(channel);
 			}
 			return interceptor;	
 		} catch (IllegalArgumentException e) {
@@ -285,7 +343,7 @@ public abstract class TinyProtocol {
 	 * @param player - the player.
 	 * @return The Netty channel.
 	 */
-	private Channel getChannel(Player player) {
+	public Channel getChannel(Player player) {
 		Channel channel = channelLookup.get(player.getName());
 		
 		// Lookup channel again
@@ -299,24 +357,50 @@ public abstract class TinyProtocol {
 	}
 	
 	/**
-	 * Create the Bukkit listener.
+	 * Uninject a specific player.
+	 * @param player - the injected player.
 	 */
-	private Listener createListener() {
-		return new Listener() {
-			@EventHandler(priority = EventPriority.LOWEST)
-			public final void onPlayerLogin(PlayerLoginEvent e) {
-				if (closed) 
-					return;
-				injectPlayer(e.getPlayer());
+	public void uninjectPlayer(Player player) {
+		uninjectChannel(getChannel(player));
+	}
+	
+	/**
+	 * Uninject a specific channel.
+	 * <p>
+	 * This will also disable the automatic channel injection that occurs when a player has properly logged in.
+	 * @param channel - the injected channel.
+	 */
+	public void uninjectChannel(final Channel channel) {
+		// No need to guard against this if we're closing
+		if (!closed) {
+			uninjectedChannels.add(channel);
+		}
+		
+		// See ChannelInjector in ProtocolLib, line 590
+		channel.eventLoop().execute(new Runnable() {
+			@Override
+			public void run() {
+				channel.pipeline().remove(handlerName);
 			}
-			
-			@EventHandler
-			public final void onPluginDisable(PluginDisableEvent e) {
-				if (e.getPlugin().equals(plugin)) {
-					close();
-				}
-			}
-		};
+		});
+	}
+	
+	/**
+	 * Determine if the given player has been injected by TinyProtocol.
+	 * @param player - the player.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public boolean hasInjected(Player player) {
+		return hasInjected(getChannel(player));
+	}
+	
+	/**
+	 * Determine if the given channel has been injected by TinyProtocol.
+	 * @param channel - the channel.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public boolean hasInjected(Channel channel) {
+		return channel.pipeline().get(handlerName) != null;
 	}
 	
 	/**
@@ -325,22 +409,11 @@ public abstract class TinyProtocol {
 	public final void close() {
 		if (!closed) {
 			closed = true;
-			// Compute this once
-			final String handlerName = getHandlerName();
 			
 			// Remove our handlers
 			for (Player player : plugin.getServer().getOnlinePlayers()) {
-				final Channel channel = getChannel(player);
-				
-				// See ChannelInjector in ProtocolLib, line 590
-				channel.eventLoop().execute(new Runnable() {
-					@Override
-					public void run() {
-						channel.pipeline().remove(handlerName);
-					}
-				});
+				uninjectPlayer(player);
 			}
-			
 			// Clean up Bukkit
 			HandlerList.unregisterAll(listener);
 			unregisterChannelHandler();
