@@ -1,5 +1,6 @@
 package com.comphenix.protocol.utility;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -57,18 +58,32 @@ public abstract class ClassSource {
 			}
 		};
 	}
+	
+	/**
+	 * @return A ClassLoader which will never successfully load a class.
+	 */
+	public static ClassSource empty(){
+		return fromMap(Collections.<String, Class<?>>emptyMap());
+	}
 
 	/**
 	 * Retrieve a class source that will attempt lookups in each of the given sources in the order they are in the array, and return the first value that is found.
-	 * If the sources array is empty, null, or composed of all null elements, the returned ClassSource will be null. Null elements in the array are ignored.
+	 * If the sources array is null or composed of any null elements, an exception will be thrown.
 	 * @param sources - the class sources.
 	 * @return A new class source.
 	 */
 	public static ClassSource attemptLoadFrom(final ClassSource... sources) {
-		ClassSource source = sources != null && sources.length >= 1 ? sources[0] : null;
+		if(sources.length == 0){ // Throws NPE if sources is null, which is what we want
+			return ClassSource.empty();
+		}
+		
+		ClassSource source = sources[0];
 		for(int i = 1; i < sources.length; i++){
-			source = sources[i] == null ? source : 
-				source == null ? sources[i] : source.retry(sources[i]);
+			if(source == null || sources[i] == null){
+				throw new IllegalArgumentException("Null values are not permitted as ClassSources.");
+			}
+			
+			source = source.retry(sources[i]);
 		}
 		return source;
 	}
