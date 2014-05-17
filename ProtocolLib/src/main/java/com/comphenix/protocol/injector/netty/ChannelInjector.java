@@ -8,6 +8,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
@@ -34,6 +35,7 @@ import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.error.Report.ReportBuilder;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
@@ -57,6 +59,7 @@ import com.google.common.collect.MapMaker;
 class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
 	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
+	public static final ReportType REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD = new ReportType("Cannot execute code in channel thread.");
 	
 	/**
 	 * Indicates that a packet has bypassed packet listeners.
@@ -166,7 +169,20 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				return false;
 			if (!originalChannel.isActive())
 				return false;
-			
+						
+			// Main thread? We should synchronize with the channel thread, otherwise we might see a 
+			// pipeline with only some of the handlers removed
+			if (Bukkit.isPrimaryThread()) {
+				// Just like in the close() method, we'll avoid blocking the main thread
+				executeInChannelThread(new Runnable() {
+					@Override
+					public void run() {
+						inject();
+					}
+				});
+				return false; // We don't know
+			}
+				
 			// Don't inject the same channel twice
 			if (findChannelHandler(originalChannel, ChannelInjector.class) != null) {
 				return false;
@@ -692,19 +708,43 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			    // the worker thread is waiting for the main thread to finish executing PlayerQuitEvent.
 				//
 				// TLDR: Concurrenty is hard.
-				originalChannel.eventLoop().submit(new Callable<Object>() {
+				executeInChannelThread(new Runnable() {
 					@Override
-					public Object call() throws Exception {
-						originalChannel.pipeline().remove(ChannelInjector.this);
-						originalChannel.pipeline().remove(finishHandler);
-						originalChannel.pipeline().remove(protocolEncoder);
-						return null;
+					public void run() {
+						for (ChannelHandler handler : new ChannelHandler[] { ChannelInjector.this, finishHandler, protocolEncoder }) {
+							try {
+								originalChannel.pipeline().remove(handler);
+							} catch (NoSuchElementException e) {
+								// Ignore
+							}
+						}
 					}
 				});
+				
 				// Clear cache
 				factory.invalidate(player);
 			}
 		}
+	}
+
+	/**
+	 * Execute a specific command in the channel thread.
+	 * <p>
+	 * Exceptions are printed through the standard error reporter mechanism.
+	 * @param command - the command to execute.
+	 */
+	private void executeInChannelThread(final Runnable command) {
+		originalChannel.eventLoop().execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					command.run();
+				} catch (Exception e) {
+					ProtocolLibrary.getErrorReporter().reportDetailed(ChannelInjector.this, 
+						Report.newBuilder(REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD).error(e).build());
+				}
+			}
+		});
 	}
 	
 	/**

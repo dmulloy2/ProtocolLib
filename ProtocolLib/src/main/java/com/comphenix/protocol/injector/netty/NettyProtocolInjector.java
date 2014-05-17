@@ -38,7 +38,7 @@ import com.google.common.collect.Lists;
 
 
 public class NettyProtocolInjector implements ChannelListener {   
-	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to to inject incoming channel %s.");
+	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to inject incoming channel %s.");
 	
     private volatile boolean injected;
     private volatile boolean closed;
