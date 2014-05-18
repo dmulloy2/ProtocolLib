@@ -77,13 +77,13 @@ public abstract class ClassSource {
 			return ClassSource.empty();
 		}
 		
-		ClassSource source = sources[0];
-		for(int i = 1; i < sources.length; i++){
-			if(source == null || sources[i] == null){
+		ClassSource source = null;
+		for(int i = 0; i < sources.length; i++){
+			if(sources[i] == null){
 				throw new IllegalArgumentException("Null values are not permitted as ClassSources.");
 			}
 			
-			source = source.retry(sources[i]);
+			source = source == null ? sources[i] : source.retry(sources[i]);
 		}
 		return source;
 	}
