@@ -3,6 +3,7 @@ package com.comphenix.tinyprotocol;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -204,7 +205,11 @@ public abstract class TinyProtocol {
 			// Remove channel handler
 			serverChannel.eventLoop().execute(new Runnable() {
 				public void run() {
-					pipeline.remove(serverChannelHandler);
+					try {
+						pipeline.remove(serverChannelHandler);
+					} catch (NoSuchElementException e) {
+						// That's fine
+					}
 				}
 			});
 		}
