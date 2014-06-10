@@ -382,7 +382,6 @@ public class StructureModifier<TField> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter) {
-		
 		StructureModifier<T> result = subtypeCache.get(fieldType);
 		
 		// Do we need to update the cache?
@@ -405,7 +404,7 @@ public class StructureModifier<TField> {
 			}
 			
 			// Cache structure modifiers
-			result = withFieldType(fieldType, filtered, defaults, converter);
+			result = withFieldType(fieldType, filtered, defaults);
 			
 			if (fieldType != null) {
 				subtypeCache.put(fieldType, result);
@@ -423,7 +422,6 @@ public class StructureModifier<TField> {
 		if (!Objects.equal(result.converter, converter)) {
 			result = result.withConverter(converter);
 		}
-		
 		return result;
 	}
 	
@@ -464,7 +462,20 @@ public class StructureModifier<TField> {
 	 * @param fieldType - common type of each field.
 	 * @param filtered - list of fields after filtering the original modifier.
 	 * @param defaults - list of default values after filtering the original.
-	 * @param converter - the new converter.
+	 * @param converter - the new converter
+	 * @return A new structure modifier.
+	 */
+	protected <T> StructureModifier<T> withFieldType(
+			Class fieldType, List<Field> filtered, Map<Field, Integer> defaults) {
+		return withFieldType(fieldType, filtered, defaults, null);
+	}
+	
+	/**
+	 * Create a new structure modifier for the new field type.
+	 * @param fieldType - common type of each field.
+	 * @param filtered - list of fields after filtering the original modifier.
+	 * @param defaults - list of default values after filtering the original.
+	 * @param converter - the new converter, or NULL.
 	 * @return A new structure modifier.
 	 */
 	protected <T> StructureModifier<T> withFieldType(
@@ -592,7 +603,6 @@ public class StructureModifier<TField> {
 				result.add(field);
 			}
 		}
-		
 		return result;
 	}
 }
