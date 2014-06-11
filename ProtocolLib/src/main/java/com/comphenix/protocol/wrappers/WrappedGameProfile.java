@@ -34,6 +34,9 @@ public class WrappedGameProfile extends AbstractWrapper {
 	// Property map
 	private Multimap<String, WrappedSignedProperty> propertyMap;
 	
+	// Parsed UUID
+	private volatile UUID parsedUUID;
+	
 	// Profile from a handle
 	private WrappedGameProfile(Object profile) {
 		super(GameProfile.class);
@@ -89,42 +92,42 @@ public class WrappedGameProfile extends AbstractWrapper {
 		if (CREATE_STRING_STRING != null) {
 			setHandle(CREATE_STRING_STRING.invoke(id, name));
 		} else {
-			setHandle(new GameProfile(parseUUID(id, name), name));
+			try {
+				setHandle(new GameProfile(parseUUID(id), name));
+			} catch (IllegalArgumentException e) {
+				throw new IllegalArgumentException("Cannot construct profile [" + id + ", " + name + "]", e);
+			}
 		}
 	}
 
-	private static UUID parseUUID(String id, String name) {
+	private static UUID parseUUID(String id) {
 		if (id == null)
 			return null;
+		// Interpret as zero
+		if (StringUtils.isBlank(id))
+			id = "0";
 		
-		try {
-			// Interpret as zero
-			if (StringUtils.isBlank(id))
-				id = "0";
-			int missing = 4 - StringUtils.countMatches(id, "-");
-			
-			// Lenient - add missing data
-			if (missing > 0) {
-				if (id.length() < 12) {
-					id += StringUtils.repeat("-0", missing);
-				} else if (id.length() >= 32) {
-					StringBuilder builder = new StringBuilder(id);
-					int position = 8; // Initial position
-					
-					while (missing > 0 && position < builder.length()) {
-						builder.insert(position, "-");
-						position += 5; // 4 in length, plus the hyphen
-						missing--;
-					}
-					id = builder.toString();
-				} else {
-					throw new IllegalArgumentException("Invalid partial UUID: " + id);
+		int missing = 4 - StringUtils.countMatches(id, "-");
+		
+		// Lenient - add missing data
+		if (missing > 0) {
+			if (id.length() < 12) {
+				id += StringUtils.repeat("-0", missing);
+			} else if (id.length() >= 32) {
+				StringBuilder builder = new StringBuilder(id);
+				int position = 8; // Initial position
+				
+				while (missing > 0 && position < builder.length()) {
+					builder.insert(position, "-");
+					position += 5; // 4 in length, plus the hyphen
+					missing--;
 				}
+				id = builder.toString();
+			} else {
+				throw new IllegalArgumentException("Invalid partial UUID: " + id);
 			}
-			return UUID.fromString(id);
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Cannot construct profile [" + id + ", " + name + "]", e);
 		}
+		return UUID.fromString(id);
 	}
 	
 	/**
@@ -156,6 +159,39 @@ public class WrappedGameProfile extends AbstractWrapper {
 
 	/**
 	 * Retrieve the UUID of the player.
+	 * <p>
+	 * Note that Minecraft 1.7.5 and earlier doesn't use UUIDs internally, and it may not be possible
+	 * to convert the string to an UUID.
+	 * <p>
+	 * We use the same lax conversion as in {@link #WrappedGameProfile(String, String)}.
+	 * @return The UUID, or NULL if the UUID is NULL.
+	 * @throws IllegalStateException If we cannot parse the internal ID as an UUID.
+	 */
+	public UUID getUUID() {
+		UUID uuid = parsedUUID;
+		
+		if (uuid == null) {
+			try {
+				if (GET_UUID_STRING != null) {
+					uuid = parseUUID(getId());
+				} else {
+					uuid = getProfile().getId();
+				}
+				// Cache for later
+				parsedUUID = uuid;
+			} catch (IllegalArgumentException e) {
+				throw new IllegalStateException("Cannot parse ID " + getId() + " as an UUID in player profile " + getName());
+			}
+		}
+		return uuid;
+	}
+	
+	/**
+	 * Retrieve the textual representation of the player's UUID.
+	 * <p>
+	 * Note that there's nothing stopping plugins from creating non-standard UUIDs.
+	 * <p>
+	 * In Minecraft 1.7.8 and later, this simply returns the string form of {@link #getUUID()}.
 	 * @return The UUID of the player, or NULL if not computed.
 	 */
 	public String getId() {
