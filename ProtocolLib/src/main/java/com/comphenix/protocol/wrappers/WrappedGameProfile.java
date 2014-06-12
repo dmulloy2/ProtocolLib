@@ -99,7 +99,40 @@ public class WrappedGameProfile extends AbstractWrapper {
 			}
 		}
 	}
-
+	
+	/**
+	 * Construct a new game profile with the given properties.
+	 * <p>
+	 * Note that at least one of the parameters must be non-null.
+	 * @param uuid - the UUID of the player, or NULL.
+	 * @param name - the name of the player, or NULL.
+	 */
+	public WrappedGameProfile(UUID uuid, String name) {
+		super(GameProfile.class);
+		
+		if (CREATE_STRING_STRING != null) {
+			setHandle(CREATE_STRING_STRING.invoke(uuid != null ? uuid.toString() : null, name));
+		} else {
+			setHandle(new GameProfile(uuid, name));
+		}
+	}
+	
+	/**
+	 * Construct a wrapper around an existing game profile.
+	 * @param profile - the underlying profile, or NULL.
+	 */
+	public static WrappedGameProfile fromHandle(Object handle) {
+		if (handle == null) 
+			return null;
+		return new WrappedGameProfile(handle);
+	}
+	
+	/**
+	 * Parse an UUID using very lax rules, as specified in {@link #WrappedGameProfile(UUID, String)}.
+	 * @param id - text.
+	 * @return The corresponding UUID.
+	 * @throws IllegalArgumentException If we cannot parse the text.
+	 */
 	private static UUID parseUUID(String id) {
 		if (id == null)
 			return null;
@@ -128,33 +161,6 @@ public class WrappedGameProfile extends AbstractWrapper {
 			}
 		}
 		return UUID.fromString(id);
-	}
-	
-	/**
-	 * Construct a new game profile with the given properties.
-	 * <p>
-	 * Note that at least one of the parameters must be non-null.
-	 * @param uuid - the UUID of the player, or NULL.
-	 * @param name - the name of the player, or NULL.
-	 */
-	public WrappedGameProfile(UUID uuid, String name) {
-		super(GameProfile.class);
-		
-		if (CREATE_STRING_STRING != null) {
-			setHandle(CREATE_STRING_STRING.invoke(uuid != null ? uuid.toString() : null, name));
-		} else {
-			setHandle(new GameProfile(uuid, name));
-		}
-	}
-	
-	/**
-	 * Construct a wrapper around an existing game profile.
-	 * @param profile - the underlying profile, or NULL.
-	 */
-	public static WrappedGameProfile fromHandle(Object handle) {
-		if (handle == null) 
-			return null;
-		return new WrappedGameProfile(handle);
 	}
 
 	/**
