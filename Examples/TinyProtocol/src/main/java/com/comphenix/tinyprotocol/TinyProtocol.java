@@ -152,7 +152,7 @@ public abstract class TinyProtocol {
 				
 				// Don't inject players that have been explicitly uninjected
 				if (!uninjectedChannels.contains(channel)) {
-					injectChannelInternal(channel);
+					injectPlayer(e.getPlayer());
 				}
 			}
 			
