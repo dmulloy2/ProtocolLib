@@ -54,7 +54,7 @@ class PluginVerifier {
 	/**
 	 * Contains a list of plugins that will detect and use ProtocolLib dynamically, instead of relying on the dependency system.
 	 */
-	private static final Set<String> DYNAMIC_DEPENDENCY = Sets.newHashSet("mcore");
+	private static final Set<String> DYNAMIC_DEPENDENCY = Sets.newHashSet("mcore", "MassiveCore");
 	
 	/**
 	 * Set of plugins that have been loaded after ProtocolLib.
