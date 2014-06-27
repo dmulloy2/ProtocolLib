@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,8 +55,8 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ClassAnalyser;
-import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
@@ -71,9 +72,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
+import com.google.common.collect.Maps;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -152,12 +151,7 @@ public class MinecraftReflection {
 	private static Class<?> itemStackArrayClass;
 	
 	// Cache of getBukkitEntity
-	private static Cache<Class<?>, MethodAccessor> getBukkitEntityCache = CacheBuilder.newBuilder().build(
-	  new CacheLoader<Class<?>, MethodAccessor>() {
-		public MethodAccessor load(java.lang.Class<?> paramK) throws Exception {
-			return Accessors.getMethodAccessor(paramK, "getBukkitEntity");
-		};
-	});
+	private static ConcurrentMap<Class<?>, MethodAccessor> getBukkitEntityCache = Maps.newConcurrentMap();
 	
 	// The current class source
 	private static ClassSource classSource;
@@ -394,7 +388,19 @@ public class MinecraftReflection {
 		
 		// We will have to do this dynamically, unfortunately
 		try {
-			return getBukkitEntityCache.apply(nmsObject.getClass()).invoke(nmsObject);
+			Class<?> clazz = nmsObject.getClass();
+			MethodAccessor accessor = getBukkitEntityCache.get(clazz);
+			
+			if (accessor == null) {
+				MethodAccessor created = Accessors.getMethodAccessor(clazz, "getBukkitEntity");
+				accessor = getBukkitEntityCache.putIfAbsent(clazz, created);
+				
+				// We won the race
+				if (accessor == null) {
+					accessor = created;
+				}
+			}
+			return accessor.invoke(nmsObject);
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Cannot get Bukkit entity from " + nmsObject, e);
 		}
