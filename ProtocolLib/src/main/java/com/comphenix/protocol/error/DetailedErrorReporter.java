@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +35,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.collections.ExpireHashMap;
 import com.comphenix.protocol.error.Report.ReportBuilder;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.reflect.PrettyPrinter;
@@ -83,7 +85,11 @@ public class DetailedErrorReporter implements ErrorReporter {
 	
 	// Map of global objects
 	protected Map<String, Object> globalParameters = new HashMap<String, Object>();
-
+	
+	// Reports to ignore
+	private ExpireHashMap<Report, Boolean> rateLimited = new ExpireHashMap<Report, Boolean>();
+	private Object rateLock = new Object();
+	
 	/**
 	 * Create a default error reporting system.
 	 */
@@ -218,7 +224,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	
 	@Override
 	public void reportDebug(Object sender, Report report) {
-		if (logger.isLoggable(Level.FINE)) {
+		if (logger.isLoggable(Level.FINE) && canReport(report)) {
 			reportLevel(Level.FINE, sender, report);
 		}
 	}
@@ -233,9 +239,31 @@ public class DetailedErrorReporter implements ErrorReporter {
 	
 	@Override
 	public void reportWarning(Object sender, Report report) {
-		if (logger.isLoggable(Level.WARNING)) {
+		if (logger.isLoggable(Level.WARNING) && canReport(report)) {
 			reportLevel(Level.WARNING, sender, report);
 		}
+	}
+	
+	/**
+	 * Determine if we should print the given report.
+	 * <p>
+	 * The default implementation will check for rate limits.
+	 * @param report - the report to check.
+	 * @return TRUE if we should print it, FALSE otherwise.
+	 */
+	protected boolean canReport(Report report) {
+		long rateLimit = report.getRateLimit();
+		
+		// Check for rate limit
+		if (rateLimit > 0) {
+			synchronized (rateLock) {
+				if (rateLimited.containsKey(report)) {
+					return false;
+				}
+				rateLimited.put(report, true, rateLimit, TimeUnit.NANOSECONDS);
+			}
+		}
+		return true;
 	}
 	
 	private void reportLevel(Level level, Object sender, Report report) {
@@ -292,6 +320,11 @@ public class DetailedErrorReporter implements ErrorReporter {
 				// NEVER SPAM THE CONSOLE
 				return;
 			}
+		}
+		
+		// Secondary rate limit
+		if (!canReport(report)) {
+			return;
 		}
 		
 		StringWriter text = new StringWriter();

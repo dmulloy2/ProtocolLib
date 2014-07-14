@@ -1,28 +1,35 @@
 package com.comphenix.protocol.wrappers;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.StringUtils;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
+import net.minecraft.util.com.mojang.authlib.properties.Property;
+
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.PluginContext;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.collection.ConvertedMultimap;
+import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.collect.Multimap;
-
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.com.mojang.authlib.properties.Property;
 
 /**
  * Represents a wrapper for a game profile.
  * @author Kristian
  */
 public class WrappedGameProfile extends AbstractWrapper {
+	public static final ReportType REPORT_INVALID_UUID = new ReportType("Plugin %s created a profile with '%s' as an UUID.");
+	
 	// Version 1.7.2 and 1.7.8 respectively
 	private static final ConstructorAccessor CREATE_STRING_STRING = Accessors.getConstructorAccessorOrNull(GameProfile.class, String.class, String.class);
 	private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAcccessorOrNull(GameProfile.class, "id", String.class);
@@ -82,21 +89,20 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * Construct a new game profile with the given properties.
 	 * <p>
 	 * Note that this constructor is very lenient when parsing UUIDs for backwards compatibility reasons. 
-	 * Thus - "", " ", "0" and "0-0-0-0" are all equivalent to the the UUID "00000000-0000-0000-0000-000000000000".
+	 * IDs that cannot be parsed as an UUID will be hashed and form a version 3 UUID instead.
+	 * <p>
+	 * This method is deprecated for Minecraft 1.7.8 and above.
 	 * @param id - the UUID of the player.
 	 * @param name - the name of the player.
 	 */
+	@Deprecated
 	public WrappedGameProfile(String id, String name) {
 		super(GameProfile.class);
 		
 		if (CREATE_STRING_STRING != null) {
 			setHandle(CREATE_STRING_STRING.invoke(id, name));
 		} else {
-			try {
-				setHandle(new GameProfile(parseUUID(id), name));
-			} catch (IllegalArgumentException e) {
-				throw new IllegalArgumentException("Cannot construct profile [" + id + ", " + name + "]", e);
-			}
+			setHandle(new GameProfile(parseUUID(id), name));
 		}
 	}
 	
@@ -134,33 +140,19 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * @throws IllegalArgumentException If we cannot parse the text.
 	 */
 	private static UUID parseUUID(String id) {
-		if (id == null)
-			return null;
-		// Interpret as zero
-		if (StringUtils.isBlank(id))
-			id = "0";
-		
-		int missing = 4 - StringUtils.countMatches(id, "-");
-		
-		// Lenient - add missing data
-		if (missing > 0) {
-			if (id.length() < 12) {
-				id += StringUtils.repeat("-0", missing);
-			} else if (id.length() >= 32) {
-				StringBuilder builder = new StringBuilder(id);
-				int position = 8; // Initial position
-				
-				while (missing > 0 && position < builder.length()) {
-					builder.insert(position, "-");
-					position += 5; // 4 in length, plus the hyphen
-					missing--;
-				}
-				id = builder.toString();
-			} else {
-				throw new IllegalArgumentException("Invalid partial UUID: " + id);
-			}
+		try {
+			return id != null ? UUID.fromString(id) : null;
+		} catch (IllegalArgumentException e) {
+			// Warn once every hour (per plugin)
+			ProtocolLibrary.getErrorReporter().reportWarning(
+				WrappedGameProfile.class, 
+				Report.newBuilder(REPORT_INVALID_UUID).
+					rateLimit(1, TimeUnit.HOURS).
+					messageParam(PluginContext.getPluginCaller(new Exception()), id)
+			);
+			
+			return UUID.nameUUIDFromBytes(id.getBytes(Charsets.UTF_8));
 		}
-		return UUID.fromString(id);
 	}
 
 	/**

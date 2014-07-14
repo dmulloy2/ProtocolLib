@@ -1,5 +1,8 @@
 package com.comphenix.protocol.error;
 
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
 import javax.annotation.Nullable;
 
 /**
@@ -7,11 +10,14 @@ import javax.annotation.Nullable;
  * 
  * @author Kristian
  */
-public class Report {
+public class Report {	
 	private final ReportType type;
 	private final Throwable exception;
 	private final Object[] messageParameters;
 	private final Object[] callerParameters;
+	
+	// Used to rate limit reports that are similar
+	private final long rateLimit;
 	
 	/**
 	 * Must be constructed through the factory method in Report.
@@ -21,6 +27,7 @@ public class Report {
 		private Throwable exception;
 		private Object[] messageParameters;
 		private Object[] callerParameters;
+		private long rateLimit;
 	
 		private ReportBuilder() {
 			// Don't allow
@@ -39,8 +46,8 @@ public class Report {
 		}
 		
 		/**
-		 * Set the current exception that occured.
-		 * @param exception - exception that occured.
+		 * Set the current exception that occurred.
+		 * @param exception - exception that occurred.
 		 * @return This builder, for chaining.
 		 */
 		public ReportBuilder error(@Nullable Throwable exception) {
@@ -69,11 +76,34 @@ public class Report {
 		}
 		
 		/**
+		 * Set the minimum number of nanoseconds to wait until a report of equal type and parameters 
+		 * is allowed to be printed again.
+		 * @param rateLimit - number of nanoseconds, or 0 to disable. Cannot be negative.
+		 * @return This builder, for chaining.
+		 */
+		public ReportBuilder rateLimit(long rateLimit) {
+			if (rateLimit < 0)
+				throw new IllegalArgumentException("Rate limit cannot be less than zero.");
+			this.rateLimit = rateLimit;
+			return this;
+		}
+		
+		/**
+		 * Set the minimum time to wait until a report of equal type and parameters is allowed to be printed again.
+		 * @param rateLimit - the time, or 0 to disable. Cannot be negative.
+		 * @param rateUnit - the unit of the rate limit.
+		 * @return This builder, for chaining.
+		 */
+		public ReportBuilder rateLimit(long rateLimit, TimeUnit rateUnit) {
+			return rateLimit(TimeUnit.NANOSECONDS.convert(rateLimit, rateUnit));
+		}
+		
+		/**
 		 * Construct a new report with the provided input.
 		 * @return A new report.
 		 */
 		public Report build() {
-			return new Report(type, exception, messageParameters, callerParameters);
+			return new Report(type, exception, messageParameters, callerParameters, rateLimit);
 		}
 	}
 	
@@ -85,7 +115,7 @@ public class Report {
 	public static ReportBuilder newBuilder(ReportType type) {
 		return new ReportBuilder().type(type);
 	}
-
+	
 	/**
 	 * Construct a new report with the given type and parameters.
 	 * @param exception - exception that occured in the caller method.
@@ -93,13 +123,28 @@ public class Report {
 	 * @param messageParameters - parameters used to construct the report message.
 	 * @param callerParameters - parameters from the caller method.
 	 */ 
-	protected Report(ReportType type, @Nullable Throwable exception, @Nullable Object[] messageParameters, @Nullable Object[] callerParameters) {
+	protected Report(ReportType type, @Nullable Throwable exception, 
+			@Nullable Object[] messageParameters, @Nullable Object[] callerParameters) {
+		this(type, exception, messageParameters, callerParameters, 0);
+	}
+
+	/**
+	 * Construct a new report with the given type and parameters.
+	 * @param exception - exception that occurred in the caller method.
+	 * @param type - the report type that will be used to construct the message.
+	 * @param messageParameters - parameters used to construct the report message.
+	 * @param callerParameters - parameters from the caller method.
+	 * @param rateLimit - minimum number of nanoseconds to wait until a report of equal type and parameters is allowed to be printed again.
+	 */ 
+	protected Report(ReportType type, @Nullable Throwable exception, 
+			@Nullable Object[] messageParameters, @Nullable Object[] callerParameters, long rateLimit) {
 		if (type == null)
 			throw new IllegalArgumentException("type cannot be NULL.");
 		this.type = type;
 		this.exception = exception;
 		this.messageParameters = messageParameters;
 		this.callerParameters = callerParameters;
+		this.rateLimit = rateLimit;
 	}
 	
 	/**
@@ -158,5 +203,38 @@ public class Report {
 	 */
 	public boolean hasCallerParameters() {
 		return callerParameters != null && callerParameters.length > 0;
+	}
+
+	/**
+	 * Retrieve desired  minimum number of nanoseconds until a report of the same type and parameters should be reprinted.
+	 * <p>
+	 * Note that this may be ignored or modified by the error reporter. Zero indicates no rate limit.
+	 * @return The number of nanoseconds. Never negative.
+	 */
+	public long getRateLimit() {
+		return rateLimit;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(callerParameters);
+		result = prime * result + Arrays.hashCode(messageParameters);
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj instanceof Report) {
+			Report other = (Report) obj;
+			return type == other.type && 
+				   Arrays.equals(callerParameters, other.callerParameters) && 
+				   Arrays.equals(messageParameters, other.messageParameters);
+		}
+		return false;
 	}
 }
