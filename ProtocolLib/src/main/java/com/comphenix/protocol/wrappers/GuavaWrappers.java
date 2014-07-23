@@ -15,6 +15,8 @@ import com.google.common.collect.Multiset;
  * @author Kristian
  */
 class GuavaWrappers {
+	private static volatile boolean USE_REFLECTION_FALLBACK = false;
+	
 	/**
 	 * Wrap a Bukkit multimap around Minecraft's internal multimap.
 	 * @param multimap - the multimap to wrap.
@@ -22,7 +24,12 @@ class GuavaWrappers {
 	 */
 	public static <TKey, TValue> Multimap<TKey, TValue> getBukkitMultimap(
 			final net.minecraft.util.com.google.common.collect.Multimap<TKey, TValue> multimap) {
-		return new Multimap<TKey, TValue>() {
+		
+		if (USE_REFLECTION_FALLBACK) {
+			return GuavaReflection.getBukkitMultimap(multimap);
+		}
+		
+		Multimap<TKey, TValue> result = new Multimap<TKey, TValue>() {
 			public Map<TKey, Collection<TValue>> asMap() {
 				return multimap.asMap();
 			}
@@ -109,12 +116,23 @@ class GuavaWrappers {
 				return multimap.values();
 			}			
 		};
+		
+		try {
+			result.size(); // Test 
+			return result;
+		} catch (LinkageError e) {
+			// Occurs on Cauldron 1.7.10
+			USE_REFLECTION_FALLBACK = true;
+			return GuavaReflection.getBukkitMultimap(multimap);
+		}
 	}
 	
-	public static <TValue> Multiset<TValue> getBukkitMultiset(net.minecraft.util.com.google.common.collect.Multiset<TValue> multiset2) {
-		return new Multiset<TValue>() {
-			private net.minecraft.util.com.google.common.collect.Multiset<TValue> multiset;
-
+	public static <TValue> Multiset<TValue> getBukkitMultiset(final net.minecraft.util.com.google.common.collect.Multiset<TValue> multiset) {
+		if (USE_REFLECTION_FALLBACK) {
+			return GuavaReflection.getBukkitMultiset(multiset);
+		}
+		
+		Multiset<TValue> result = new Multiset<TValue>() {
 			public int add(TValue arg0, int arg1) {
 				return multiset.add(arg0, arg1);
 			}
@@ -223,6 +241,14 @@ class GuavaWrappers {
 				return multiset.toString();
 			}
 		};
+		
+		try {
+			result.size(); // Test 
+			return result;
+		} catch (LinkageError e) {
+			USE_REFLECTION_FALLBACK = true;
+			return GuavaReflection.getBukkitMultiset(multiset);
+		}
 	}
 	
 	private static <TValue> Multiset.Entry<TValue> getBukkitEntry(final net.minecraft.util.com.google.common.collect.Multiset.Entry<TValue> entry) {
