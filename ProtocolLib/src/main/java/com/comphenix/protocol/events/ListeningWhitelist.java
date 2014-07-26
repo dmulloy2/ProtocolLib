@@ -218,7 +218,7 @@ public class ListeningWhitelist {
 		else if (whitelist == null)
 			return true;
 		else
-			return whitelist.getWhitelist().isEmpty();
+			return whitelist.getTypes().isEmpty();
 	}
 
 	@Override
@@ -294,9 +294,10 @@ public class ListeningWhitelist {
 	 * @author Kristian
 	 */
 	public static class Builder {
-		private ListenerPriority priority;
+		// Default values
+		private ListenerPriority priority = ListenerPriority.NORMAL;
 		private Set<PacketType> types = Sets.newHashSet();
-		private GamePhase gamePhase;
+		private GamePhase gamePhase = GamePhase.PLAYING;
 		private Set<ListenerOptions> options = Sets.newHashSet();
 		
 		/**

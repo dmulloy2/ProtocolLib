@@ -175,12 +175,15 @@ public class AsyncFilterManager implements AsynchronousManager {
 		ListeningWhitelist sendingWhitelist = listener.getSendingWhitelist();
 		ListeningWhitelist receivingWhitelist = listener.getReceivingWhitelist();
 		
+		if (!hasValidWhitelist(sendingWhitelist) && !hasValidWhitelist(receivingWhitelist)) {
+			throw new IllegalArgumentException("Listener has an empty sending and receiving whitelist.");
+		}
+		
 		// Add listener to either or both processing queue
 		if (hasValidWhitelist(sendingWhitelist)) {
 			PacketFilterManager.verifyWhitelist(listener, sendingWhitelist);
 			serverProcessingQueue.addListener(handler, sendingWhitelist);
 		}
-		
 		if (hasValidWhitelist(receivingWhitelist)) {
 			PacketFilterManager.verifyWhitelist(listener, receivingWhitelist);
 			clientProcessingQueue.addListener(handler, receivingWhitelist);
@@ -191,7 +194,6 @@ public class AsyncFilterManager implements AsynchronousManager {
 			handler.setNullPacketListener(new NullPacketListener(listener));
 			manager.addPacketListener(handler.getNullPacketListener());
 		}
-		
 		return handler;
 	}
 	
@@ -212,6 +214,35 @@ public class AsyncFilterManager implements AsynchronousManager {
 			clientTimeoutListeners.removeListener(listener, receiving).size() > 0) {
 			timeoutListeners.remove(listener);
 		}
+	}
+	
+	@Override
+	public void unregisterAsyncHandler(PacketListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener cannot be NULL.");
+		
+		AsyncListenerHandler handler = 
+					  findHandler(serverProcessingQueue, listener.getSendingWhitelist(), listener);
+		
+		if (handler == null) {
+			handler = findHandler(clientProcessingQueue, listener.getReceivingWhitelist(), listener);
+		}
+		unregisterAsyncHandler(handler);
+	}
+	
+	// Search for the first correct handler
+	private AsyncListenerHandler findHandler(PacketProcessingQueue queue, ListeningWhitelist search, PacketListener target) {
+		if (ListeningWhitelist.isEmpty(search)) 
+			return null;
+		
+		for (PacketType type : search.getTypes()) {
+			for (PrioritizedListener<AsyncListenerHandler> element : queue.getListener(type)) {
+				if (element.getListener().getAsyncListener() == target) {
+					return element.getListener();
+				}
+			}
+		}
+		return null;
 	}
 	
 	@Override

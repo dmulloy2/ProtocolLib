@@ -51,6 +51,12 @@ public interface AsynchronousManager {
 	public abstract void unregisterAsyncHandler(AsyncListenerHandler handler);
 
 	/**
+	 * Unregisters and closes the first asynchronous handler associated with the given listener.
+	 * @param handler - asynchronous handler.
+	 */
+	public abstract void unregisterAsyncHandler(PacketListener listener);
+	
+	/**
 	 * Unregisters every asynchronous handler associated with this plugin.
 	 * @param plugin - the original plugin.
 	 */
