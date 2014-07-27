@@ -26,13 +26,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimedTracker;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
+import com.comphenix.protocol.timing.TimedTracker;
 import com.comphenix.protocol.utility.WrappedScheduler;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -44,6 +47,8 @@ import com.google.common.base.Joiner;
  * @author Kristian
  */
 public class AsyncListenerHandler {
+	public static final ReportType REPORT_HANDLER_NOT_STARTED = new ReportType(
+		"Plugin %s did not start the asynchronous handler %s by calling start() or syncStart().");	
 
 	/**
 	 * Signal an end to packet processing.
@@ -54,6 +59,11 @@ public class AsyncListenerHandler {
 	 * Called when the threads have to wake up for something important.
 	 */
 	private static final PacketEvent WAKEUP_PACKET = new PacketEvent(new Object());
+	
+	/**
+	 * The expected number of ticks per second.
+	 */
+	private static final int TICKS_PER_SECOND = 20;
 	
 	// Unique worker ID
 	private static final AtomicInteger nextID = new AtomicInteger();
@@ -87,6 +97,9 @@ public class AsyncListenerHandler {
 	// Minecraft main thread
 	private Thread mainThread;
 	
+	// Warn plugins that the async listener handler must be started
+	private int warningTask;
+	
 	// Timing manager
 	private TimedListenerManager timedManager = TimedListenerManager.getInstance();
 	
@@ -105,6 +118,30 @@ public class AsyncListenerHandler {
 		this.mainThread = mainThread;
 		this.filterManager = filterManager;
 		this.listener = listener;
+		startWarningTask();
+	}
+	
+	private void startWarningTask() {
+		warningTask = filterManager.getScheduler().scheduleSyncDelayedTask(getPlugin(), new Runnable() {
+			@Override
+			public void run() {
+				ProtocolLibrary.getErrorReporter().reportWarning(AsyncListenerHandler.this, Report.
+						newBuilder(REPORT_HANDLER_NOT_STARTED).
+						messageParam(listener.getPlugin(), AsyncListenerHandler.this).
+						build()
+				);
+			}
+		}, 2 * TICKS_PER_SECOND);
+	}
+	
+	private void stopWarningTask() {
+		int taskId = warningTask;
+		
+		// Ensure we have a task to cancel
+		if (warningTask >= 0) {
+			filterManager.getScheduler().cancelTask(taskId);
+			warningTask = -1;
+		}
 	}
 	
 	/**
@@ -249,6 +286,7 @@ public class AsyncListenerHandler {
 		
 		final AsyncRunnable listenerLoop = getListenerLoop();
 		
+		stopWarningTask();
 		scheduleAsync(new Runnable() {
 			@Override
 			public void run() {
@@ -384,6 +422,8 @@ public class AsyncListenerHandler {
 		final int workerID = nextID.incrementAndGet();
 		
 		if (syncTask < 0) {
+			stopWarningTask();
+			
 			syncTask = filterManager.getScheduler().scheduleSyncRepeatingTask(getPlugin(), new Runnable() {
 				@Override
 				public void run() {
