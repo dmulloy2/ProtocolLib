@@ -40,18 +40,21 @@ public final class PluginContext {
 	/**
 	 * Lookup the plugin that this method invocation belongs to, and return its file name.
 	 * @param element - the method invocation.
-	 * @return Pluing name, or NULL if not found.
+	 * @return Plugin name, or NULL if not found.
 	 * 
 	 */
 	public static String getPluginName(StackTraceElement element) {
 		try {
+			if (Bukkit.getServer() == null)
+				return null;
 			CodeSource codeSource = Class.forName(element.getClassName()).getProtectionDomain().getCodeSource();
-			
+
 			if (codeSource != null) {
 				String encoding = codeSource.getLocation().getPath();
 				File path = new File(URLDecoder.decode(encoding, "UTF-8"));
-
-				if (folderContains(getPluginFolder(), path)) {
+				File plugins = getPluginFolder();
+				
+				if (plugins != null && folderContains(plugins, path)) {
 					return path.getName();
 				}
 			}
@@ -88,12 +91,12 @@ public final class PluginContext {
 	
 	/**
 	 * Retrieve the folder that contains every plugin on the server.
-	 * @return Folder with every plugin.
+	 * @return Folder with every plugin, or NULL if Bukkit has not been initialized yet.
 	 */
 	private static File getPluginFolder() {
 		File folder = pluginFolder;
 		
-		if (folder == null) { 
+		if (folder == null && Bukkit.getServer() != null) { 
 			Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
 			
 			if (plugins.length > 0) {
