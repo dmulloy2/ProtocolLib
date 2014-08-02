@@ -181,4 +181,13 @@ public interface PlayerInjectionHandler {
 	 * Close any lingering proxy injections.
 	 */
 	public abstract void close();
+	
+	/**
+	 * Determine if we have packet listeners with the given type that must be executed on the main thread.
+	 * <p>
+	 * This only applies for onPacketSending(), as it makes certain guarantees.
+	 * @param type - the packet type.
+	 * @return TRUE if we do, FALSE otherwise.
+	 */
+	public abstract boolean hasMainThreadListener(PacketType type);
 }

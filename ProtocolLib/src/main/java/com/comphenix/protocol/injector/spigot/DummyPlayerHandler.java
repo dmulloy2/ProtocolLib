@@ -3,8 +3,10 @@ package com.comphenix.protocol.injector.spigot;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
+
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
@@ -48,6 +50,11 @@ class DummyPlayerHandler extends AbstractPlayerHandler {
 	public void injectPlayer(Player player, ConflictStrategy strategy) {
 		// We don't care about strategy
 		injector.injectPlayer(player);
+	}
+	
+	@Override
+	public boolean hasMainThreadListener(PacketType type) {
+		return sendingFilters.contains(type);
 	}
 	
 	@Override

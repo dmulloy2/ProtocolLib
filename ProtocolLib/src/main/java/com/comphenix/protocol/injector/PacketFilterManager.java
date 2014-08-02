@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,6 +34,7 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -172,6 +174,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	// The current server
 	private Server server;
 	
+	// The current ProtocolLib library
+	private Plugin library;
+	
 	// The async packet handler
 	private AsyncFilterManager asyncFilterManager;
 	
@@ -292,6 +297,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 					buildInjector();
 		}
 		this.asyncFilterManager = builder.getAsyncManager();
+		this.library = builder.getLibrary();
 		
 		// Attempt to load the list of server and client packets
 		try {
@@ -771,26 +777,44 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
-	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
+	public void sendServerPacket(final Player receiver, final PacketContainer packet, NetworkMarker marker, final boolean filters) throws InvocationTargetException {
 		if (receiver == null)
 			throw new IllegalArgumentException("receiver cannot be NULL.");
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
+		
 		// We may have to enable player injection indefinitely after this
 		if (packetCreation.compareAndSet(false, true)) 
 			incrementPhases(GamePhase.PLAYING);
-	
-		// Inform the MONITOR packets
-		if (!filters) {
-			PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
+					
+		if (!filters) {			
+			// We may have to delay the packet due to non-asynchronous monitor listeners
+			if (!filters && !Bukkit.isPrimaryThread() && playerInjection.hasMainThreadListener(packet.getType())) {
+				final NetworkMarker copy = marker;
+				
+				server.getScheduler().scheduleSyncDelayedTask(library, new Runnable() {
+					@Override
+					public void run() {
+						try {
+							// Prevent infinite loops
+							if (!Bukkit.isPrimaryThread()) 
+								throw new IllegalStateException("Scheduled task was not executed on the main thread!");
+							sendServerPacket(receiver, packet, copy, filters);
+						} catch (Exception e) {
+							reporter.reportMinimal(library, "sendServerPacket-run()", e);
+						}
+					}
+				});
+				return;
+			}
 			
-			sendingListeners.invokePacketSending(
-					reporter, event, ListenerPriority.MONITOR);
+			PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
+			sendingListeners.invokePacketSending(reporter, event, ListenerPriority.MONITOR);
 			marker = NetworkMarker.getNetworkMarker(event);
 		}
 		playerInjection.sendServerPacket(receiver, packet, marker, filters);
 	}
-
+	
 	@Override
 	public void recieveClientPacket(Player sender, PacketContainer packet) throws IllegalAccessException, InvocationTargetException {
 		recieveClientPacket(sender, packet, null, true);

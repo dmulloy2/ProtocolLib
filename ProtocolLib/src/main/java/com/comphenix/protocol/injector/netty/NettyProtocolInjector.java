@@ -343,6 +343,11 @@ public class NettyProtocolInjector implements ChannelListener {
 			}
 			
 			@Override
+			public boolean hasMainThreadListener(PacketType type) {
+				return mainThreadFilters.contains(type);
+			}
+			
+			@Override
 			public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
 				injectionFactory.fromPlayer(player, listener).
 					recieveClientPacket(mcPacket);

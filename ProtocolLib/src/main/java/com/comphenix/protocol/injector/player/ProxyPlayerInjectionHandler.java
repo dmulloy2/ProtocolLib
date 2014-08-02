@@ -174,6 +174,11 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		}
 	}
 
+	@Override
+	public boolean hasMainThreadListener(PacketType type) {
+		return sendingFilters.contains(type.getLegacyId());
+	}
+	
 	/**
 	 * Sets how the server packets are read.
 	 * @param playerHook - the new injection method for reading server packets.
