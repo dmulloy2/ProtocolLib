@@ -260,7 +260,7 @@ class CommandPacket extends CommandBase {
 		}
 		
 		updatePacketListener();
-		sendMessageSilently(sender, ChatColor.BLUE + "Added listener " + getWhitelistInfo(listener));
+		sendMessageSilently(sender, ChatColor.YELLOW + "Added listener " + getWhitelistInfo(listener));
 	}
 	
 	private void executeRemoveCommand(CommandSender sender, Set<PacketType> removal) {
@@ -268,7 +268,7 @@ class CommandPacket extends CommandBase {
 		extendedTypes.removeAll(removal);
 		compareTypes.removeAll(removal);
 		updatePacketListener();
-		sendMessageSilently(sender, ChatColor.BLUE + "Removing packet types.");
+		sendMessageSilently(sender, ChatColor.YELLOW + "Removing packet types.");
 	}
 	
 	private void executeNamesCommand(CommandSender sender, Set<PacketType> types) {
@@ -276,7 +276,7 @@ class CommandPacket extends CommandBase {
 		
 		// Print the equivalent name of every given ID
 		for (PacketType type : types) {
-			messages.add(ChatColor.BLUE + type.toString());
+			messages.add(ChatColor.YELLOW + type.toString());
 		}
 		
 		if (sender instanceof Player && messages.size() > 0 && messages.size() > PAGE_LINE_COUNT) {

@@ -105,7 +105,7 @@ class CommandProtocol extends CommandBase {
 		Runnable notify = new Runnable() {
 			@Override
 			public void run() {
-				sender.sendMessage(ChatColor.BLUE + "[ProtocolLib] " + updater.getResult());
+				sender.sendMessage(ChatColor.YELLOW + "[ProtocolLib] " + updater.getResult());
 				
 				updater.removeListener(this);
 				updateFinished();
@@ -176,6 +176,6 @@ class CommandProtocol extends CommandBase {
 	
 	public void reloadConfiguration(CommandSender sender) {
 		plugin.reloadConfig();
-		sender.sendMessage(ChatColor.BLUE + "Reloaded configuration!");
+		sender.sendMessage(ChatColor.YELLOW + "Reloaded configuration!");
 	}
 }
