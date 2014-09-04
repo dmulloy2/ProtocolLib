@@ -302,6 +302,11 @@ public class NettyProtocolInjector implements ChannelListener {
 			private ChannelListener listener = NettyProtocolInjector.this;
 			
 			@Override
+			public int getProtocolVersion(Player player) {
+				return injectionFactory.fromPlayer(player, listener).getProtocolVersion();
+			}
+			
+			@Override
 			public void updatePlayer(Player player) {
 				injectionFactory.fromPlayer(player, listener).inject();
 			

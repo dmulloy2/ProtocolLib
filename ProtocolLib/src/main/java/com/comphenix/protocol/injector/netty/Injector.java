@@ -11,6 +11,12 @@ import com.comphenix.protocol.events.NetworkMarker;
  */
 interface Injector {
 	/**
+	 * Retrieve the current protocol version of the player.
+	 * @return Protocol version.
+	 */
+	public abstract int getProtocolVersion();
+	
+	/**
 	 * Inject the current channel.
 	 * <p>
 	 * Note that only active channels can be injected.

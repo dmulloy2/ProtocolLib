@@ -79,4 +79,9 @@ class ClosedInjector implements Injector {
 	public boolean isClosed() {
 		return true;
 	}
+
+	@Override
+	public int getProtocolVersion() {
+		return Integer.MIN_VALUE;
+	}
 }

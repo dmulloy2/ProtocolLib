@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.Set;
+
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
@@ -33,6 +34,13 @@ public interface PlayerInjectionHandler {
 		 */
 		BAIL_OUT;
 	}
+	
+	/**
+	 * Retrieve the protocol version of the given player.
+	 * @param player - the player.
+	 * @return The protocol version, or {@link Integer#MIN_VALUE}.
+	 */
+	public abstract int getProtocolVersion(Player player);
 	
 	/**
 	 * Retrieves how the server packets are read.

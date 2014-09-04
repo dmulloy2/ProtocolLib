@@ -4,6 +4,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
+
 import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Joiner;
@@ -195,6 +196,26 @@ public final class Accessors {
 		if (accessor instanceof SynchronizedFieldAccessor)
 			return accessor;
 		return new SynchronizedFieldAccessor(accessor);
+	}
+	
+	/**
+	 * Retrieve a method accessor that always return a constant value, regardless if input.
+	 * @param returnValue - the constant return value.
+	 * @param method - the method.
+	 * @return A constant method accessor.
+	 */
+	public static MethodAccessor getConstantAccessor(final Object returnValue, final Method method) {
+		return new MethodAccessor() {
+			@Override
+			public Object invoke(Object target, Object... args) {
+				return returnValue;
+			}
+			
+			@Override
+			public Method getMethod() {
+				return method;
+			}
+		};
 	}
 	
 	/**

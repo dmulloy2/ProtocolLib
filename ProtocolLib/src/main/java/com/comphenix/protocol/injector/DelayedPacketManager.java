@@ -85,6 +85,14 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	}
 
 	@Override
+	public int getProtocolVersion(Player player) {
+		if (delegate != null)
+			return delegate.getProtocolVersion(player);
+		else
+			return Integer.MIN_VALUE;
+	}
+	
+	@Override
 	public MinecraftVersion getMinecraftVersion() {
 		if (delegate != null)
 			return delegate.getMinecraftVersion();

@@ -41,7 +41,15 @@ import com.google.common.collect.ImmutableSet;
  * @author Kristian
  */
 public interface ProtocolManager extends PacketStream {
-
+	/**
+	 * Retrieve the protocol version of a given player.
+	 * <p>
+	 * This only really makes sense of a server that support clients of multiple Minecraft versions, such as Spigot #1628.
+	 * @param player - the player.
+	 * @return The associated protocol version, or {@link Integer#MIN_VALUE} if unknown.
+	 */
+	public int getProtocolVersion(Player player);
+	
 	/**
 	 * Send a packet to the given player.
 	 * <p>

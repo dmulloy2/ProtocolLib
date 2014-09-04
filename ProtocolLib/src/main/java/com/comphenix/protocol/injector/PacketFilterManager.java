@@ -317,6 +317,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	}
 	
 	@Override
+	public int getProtocolVersion(Player player) {
+		return playerInjection.getProtocolVersion(player);
+	}
+	
+	@Override
 	public MinecraftVersion getMinecraftVersion() {
 		return minecraftVersion;
 	}

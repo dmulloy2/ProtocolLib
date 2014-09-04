@@ -48,6 +48,7 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
+import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapMaker;
@@ -60,6 +61,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
 	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
 	public static final ReportType REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD = new ReportType("Cannot execute code in channel thread.");
+	public static final ReportType REPORT_CANNOT_FIND_GET_VERSION = new ReportType("Cannot find getVersion() in NetworkMananger");
 	
 	/**
 	 * Indicates that a packet has bypassed packet listeners.
@@ -157,6 +159,15 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			FuzzyReflection.fromObject(networkManager, true).
 				getFieldByType("channel", Channel.class), 
 			networkManager, true);
+	}
+	
+	/**
+	 * Get the version of the current protocol.
+	 * @return The version.
+	 */
+	@Override
+	public int getProtocolVersion() {
+		return MinecraftProtocolVersion.getCurrentVersion();
 	}
 		
 	@Override

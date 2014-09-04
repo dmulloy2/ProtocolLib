@@ -7,10 +7,12 @@ import java.net.InetSocketAddress;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 
 /**
  * Dummy player handler that simply delegates to its parent Spigot packet injector.
@@ -19,6 +21,12 @@ import com.comphenix.protocol.events.PacketEvent;
  */
 class DummyPlayerHandler extends AbstractPlayerHandler {
 	private SpigotPacketInjector injector;
+	
+	@Override
+	public int getProtocolVersion(Player player) {
+		// Just use the server version
+		return MinecraftProtocolVersion.getCurrentVersion();
+	}
 	
 	public DummyPlayerHandler(SpigotPacketInjector injector, PacketTypeSet sendingFilters) {
 		super(sendingFilters);
