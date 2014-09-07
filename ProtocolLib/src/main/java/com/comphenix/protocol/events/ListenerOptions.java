@@ -20,6 +20,11 @@ public enum ListenerOptions {
 	DISABLE_GAMEPHASE_DETECTION,
 	
 	/**
+	 * Do not verify that the owning plugin has a vaid plugin.yml.
+	 */
+	SKIP_PLUGIN_VERIFIER,
+	
+	/**
 	 * Notify ProtocolLib that {@link PacketListener#onPacketSending(PacketEvent)} is thread safe.
 	 */
 	ASYNC;

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -402,14 +401,18 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		
 		// A listener can only be added once
 		if (packetListeners.contains(listener))
-			return;
-		// Check plugin
-		printPluginWarnings(listener.getPlugin());
-		
+			return;		
 		ListeningWhitelist sending = listener.getSendingWhitelist();
 		ListeningWhitelist receiving = listener.getReceivingWhitelist();
 		boolean hasSending = sending != null && sending.isEnabled();
 		boolean hasReceiving = receiving != null && receiving.isEnabled();
+		
+		// Check plugin
+		if (!(hasSending && sending.getOptions().contains(ListenerOptions.SKIP_PLUGIN_VERIFIER)) &&
+			!(hasReceiving && receiving.getOptions().contains(ListenerOptions.SKIP_PLUGIN_VERIFIER))) {
+			
+			printPluginWarnings(listener.getPlugin());
+		}
 		
 		if (hasSending || hasReceiving) {
 			// Add listeners and hooks
