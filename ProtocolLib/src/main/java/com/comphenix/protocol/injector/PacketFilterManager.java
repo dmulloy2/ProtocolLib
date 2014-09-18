@@ -790,6 +790,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			throw new IllegalArgumentException("receiver cannot be NULL.");
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
+		if (packet.getType().getSender() == Sender.CLIENT)
+			throw new IllegalArgumentException("Packet of sender CLIENT cannot be sent to a client.");
 		
 		// We may have to enable player injection indefinitely after this
 		if (packetCreation.compareAndSet(false, true)) 
@@ -839,6 +841,9 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			throw new IllegalArgumentException("sender cannot be NULL.");
 		if (packet == null)
 			throw new IllegalArgumentException("packet cannot be NULL.");
+		if (packet.getType().getSender() == Sender.SERVER)
+			throw new IllegalArgumentException("Packet of sender SERVER cannot be sent to the server.");
+		
 		// And here too
 		if (packetCreation.compareAndSet(false, true)) 
 			incrementPhases(GamePhase.PLAYING);
