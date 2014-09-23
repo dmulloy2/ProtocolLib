@@ -126,7 +126,7 @@ public class NettyProtocolInjector implements ChannelListener {
 	                    	injectionFactory.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
 						}
                 	} catch (Exception e) {
-                		reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).
+                		reporter.reportDetailed(NettyProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).
                 				messageParam(channel).error(e));
                 	}
                 }
