@@ -68,6 +68,6 @@ public class BukkitInitialization {
 	 */
 	public static void initializePackage() {
 		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_7_R3", "org.bukkit.craftbukkit.v1_7_R3");
+		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_7_R4", "org.bukkit.craftbukkit.v1_7_R4");
 	}
 }
