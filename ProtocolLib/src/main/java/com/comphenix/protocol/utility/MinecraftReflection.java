@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -76,19 +76,19 @@ import com.google.common.collect.Maps;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
- * 
+ *
  * @author Kristian
  */
 public class MinecraftReflection {
 	public static final ReportType REPORT_CANNOT_FIND_MCPC_REMAPPER = new ReportType("Cannot find MCPC remapper.");
 	public static final ReportType REPORT_CANNOT_LOAD_CPC_REMAPPER = new ReportType("Unable to load MCPC remapper.");
 	public static final ReportType REPORT_NON_CRAFTBUKKIT_LIBRARY_PACKAGE = new ReportType("Cannot find standard Minecraft library location. Assuming MCPC.");
-	
+
 	/**
 	 * Regular expression that matches a canonical Java class.
 	 */
 	private static final String CANONICAL_REGEX = "(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*\\.)+\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*";
-	
+
 	/**
 	 * Regular expression that matches a Minecraft object.
 	 * <p>
@@ -96,33 +96,33 @@ public class MinecraftReflection {
 	 */
 	@Deprecated
 	public static final String MINECRAFT_OBJECT = "net\\.minecraft\\." + CANONICAL_REGEX;
-	
+
 	/**
 	 * Regular expression computed dynamically.
 	 */
 	private static String DYNAMIC_PACKAGE_MATCHER = null;
-	
+
 	/**
 	 * The Entity package in Forge 1.5.2
 	 */
 	private static final String FORGE_ENTITY_PACKAGE = "net.minecraft.entity";
-	
+
 	/**
 	 * The package name of all the classes that belongs to the native code in Minecraft.
 	 */
 	private static String MINECRAFT_PREFIX_PACKAGE = "net.minecraft.server";
-	
+
 	/**
 	 * The package with all the library classes.
 	 */
 	private static String MINECRAFT_LIBRARY_PACKAGE = "net.minecraft.util";
-	
+
 	/**
 	 * Represents a regular expression that will match the version string in a package:
 	 *    org.bukkit.craftbukkit.v1_6_R2      ->      v1_6_R2
 	 */
 	private static final Pattern PACKAGE_VERSION_MATCHER = Pattern.compile(".*\\.(v\\d+_\\d+_\\w*\\d+)");
-	
+
 	private static String MINECRAFT_FULL_PACKAGE = null;
 	private static String CRAFTBUKKIT_PACKAGE = null;
 
@@ -130,14 +130,14 @@ public class MinecraftReflection {
 	static CachedPackage minecraftPackage;
 	static CachedPackage craftbukkitPackage;
 	static CachedPackage libraryPackage;
-	
+
 	// org.bukkit.craftbukkit
 	private static Constructor<?> craftNMSConstructor;
 	private static Constructor<?> craftBukkitConstructor;
-	
+
 	// Matches classes
 	private static AbstractFuzzyMatcher<Class<?>> fuzzyMatcher;
-	
+
 	// New in 1.4.5
 	private static Method craftNMSMethod;
 	private static Method craftBukkitNMS;
@@ -146,28 +146,28 @@ public class MinecraftReflection {
 
 	// The NMS version
 	private static String packageVersion;
-	
+
 	// net.minecraft.server
 	private static Class<?> itemStackArrayClass;
-	
+
 	// Cache of getBukkitEntity
 	private static ConcurrentMap<Class<?>, MethodAccessor> getBukkitEntityCache = Maps.newConcurrentMap();
-	
+
 	// The current class source
 	private static ClassSource classSource;
-	
+
 	/**
 	 * Whether or not we're currently initializing the reflection handler.
 	 */
 	private static boolean initializing;
-	
+
 	// Whether or not we are using netty
 	private static Boolean cachedNetty;
-	
+
 	private MinecraftReflection() {
 		// No need to make this constructable.
 	}
-	
+
 	/**
 	 * Retrieve a regular expression that can match Minecraft package objects.
 	 * @return Minecraft package matcher.
@@ -177,7 +177,7 @@ public class MinecraftReflection {
 			getMinecraftPackage();
 		return DYNAMIC_PACKAGE_MATCHER;
 	}
-	
+
 	/**
 	 * Retrieve a abstract fuzzy class matcher for Minecraft objects.
 	 * @return A matcher for Minecraft objects.
@@ -187,7 +187,7 @@ public class MinecraftReflection {
 			fuzzyMatcher = FuzzyMatchers.matchRegex(getMinecraftObjectRegex(), 50);
 		return fuzzyMatcher;
 	}
-	
+
 	/**
 	 * Retrieve the name of the Minecraft server package.
 	 * @return Full canonical name of the Minecraft server package.
@@ -199,23 +199,23 @@ public class MinecraftReflection {
 		if (initializing)
 			throw new IllegalStateException("Already initializing minecraft package!");
 		initializing = true;
-		
+
 		Server craftServer = Bukkit.getServer();
-		
+
 		// This server should have a "getHandle" method that we can use
 		if (craftServer != null) {
 			try {
 				// The return type will tell us the full package, regardless of formating
 				Class<?> craftClass = craftServer.getClass();
 				CRAFTBUKKIT_PACKAGE = getPackage(craftClass.getCanonicalName());
-				
+
 				// Parse the package version
 				Matcher packageMatcher = PACKAGE_VERSION_MATCHER.matcher(CRAFTBUKKIT_PACKAGE);
 				if (packageMatcher.matches()) {
 					packageVersion = packageMatcher.group(1);
 				} else {
 					MinecraftVersion version = new MinecraftVersion(craftServer);
-					
+
 					// See if we need a package version
 					if (MinecraftVersion.SCARY_UPDATE.compareTo(version) <= 0) {
 						 // Just assume R1 - it's probably fine
@@ -223,19 +223,19 @@ public class MinecraftReflection {
 						System.err.println("[ProtocolLib] Assuming package version: " + packageVersion);
 					}
 				}
-				
+
 				// Libigot patch
 				handleLibigot();
-				
+
 				// Minecraft library package
 				handleLibraryPackage();
-				
+
 				// Next, do the same for CraftEntity.getHandle() in order to get the correct Minecraft package
 				Class<?> craftEntity = getCraftEntityClass();
 				Method getHandle = craftEntity.getMethod("getHandle");
-				
+
 				MINECRAFT_FULL_PACKAGE = getPackage(getHandle.getReturnType().getCanonicalName());
-				
+
 				// Pretty important invariantt
 				if (!MINECRAFT_FULL_PACKAGE.startsWith(MINECRAFT_PREFIX_PACKAGE)) {
 					// See if we got the Forge entity package
@@ -248,20 +248,20 @@ public class MinecraftReflection {
 					}
 
 					// The package is usualy flat, so go with that assumption
-					String matcher = 
-							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? 
+					String matcher =
+							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ?
 									Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + CANONICAL_REGEX;
-					
+
 					// We'll still accept the default location, however
 					setDynamicPackageMatcher("(" + matcher + ")|(" + MINECRAFT_OBJECT + ")");
-					
+
 				} else {
 					// Use the standard matcher
 					setDynamicPackageMatcher(MINECRAFT_OBJECT);
 				}
-				
+
 				return MINECRAFT_FULL_PACKAGE;
-						
+
 			} catch (SecurityException e) {
 				throw new RuntimeException("Security violation. Cannot get handle method.", e);
 			} catch (NoSuchMethodException e) {
@@ -269,13 +269,13 @@ public class MinecraftReflection {
 			} finally {
 				initializing = false;
 			}
-			
+
 		} else {
 			initializing = false;
 			throw new IllegalStateException("Could not find Bukkit. Is it running?");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the Minecraft library package string.
 	 * @return The library package.
@@ -284,17 +284,17 @@ public class MinecraftReflection {
 		getMinecraftPackage();
 		return MINECRAFT_LIBRARY_PACKAGE;
 	}
-	
+
 	private static void handleLibraryPackage() {
 		try {
 			MINECRAFT_LIBRARY_PACKAGE = "net.minecraft.util";
 			// Try loading Google GSON
 			getClassSource().loadClass(CachedPackage.combine(MINECRAFT_LIBRARY_PACKAGE, "com.google.gson.Gson"));
-			
+
 		} catch (Exception e) {
 			// Assume it's MCPC
 			MINECRAFT_LIBRARY_PACKAGE = "";
-			ProtocolLibrary.getErrorReporter().reportWarning(MinecraftReflection.class, 
+			ProtocolLibrary.getErrorReporter().reportWarning(MinecraftReflection.class,
 				Report.newBuilder(REPORT_NON_CRAFTBUKKIT_LIBRARY_PACKAGE));
 		}
 	}
@@ -307,18 +307,18 @@ public class MinecraftReflection {
 		getMinecraftPackage();
 		return packageVersion;
 	}
-	
+
 	/**
 	 * Update the dynamic package matcher.
 	 * @param regex - the Minecraft package regex.
 	 */
 	private static void setDynamicPackageMatcher(String regex) {
 		DYNAMIC_PACKAGE_MATCHER = regex;
-		
+
 		// Ensure that the matcher is regenerated
 		fuzzyMatcher = null;
 	}
-	
+
 	// Patch for Libigot
 	private static void handleLibigot() {
 		try {
@@ -327,7 +327,7 @@ public class MinecraftReflection {
 			// Try reverting the package to the old format
 			craftbukkitPackage = null;
 			CRAFTBUKKIT_PACKAGE = "org.bukkit.craftbukkit";
-			
+
 			// This might fail too
 			getCraftEntityClass();
 		}
@@ -341,16 +341,16 @@ public class MinecraftReflection {
 	public static void setMinecraftPackage(String minecraftPackage, String craftBukkitPackage) {
 		MINECRAFT_FULL_PACKAGE = minecraftPackage;
 		CRAFTBUKKIT_PACKAGE = craftBukkitPackage;
-		
+
 		// Make sure it exists
 		if (getMinecraftServerClass() == null) {
 			throw new IllegalArgumentException("Cannot find MinecraftServer for package " + minecraftPackage);
 		}
-			
+
 		// Standard matcher
 		setDynamicPackageMatcher(MINECRAFT_OBJECT);
 	}
-	
+
 	/**
 	 * Retrieve the name of the root CraftBukkit package.
 	 * @return Full canonical name of the root CraftBukkit package.
@@ -361,7 +361,7 @@ public class MinecraftReflection {
 			getMinecraftPackage();
 		return CRAFTBUKKIT_PACKAGE;
 	}
-	
+
 	/**
 	 * Retrieve the package name from a given canonical Java class name.
 	 * @param fullName - full Java class name.
@@ -369,13 +369,13 @@ public class MinecraftReflection {
 	 */
 	private static String getPackage(String fullName) {
 		int index = fullName.lastIndexOf(".");
-		
+
 		if (index > 0)
 			return fullName.substring(0, index);
 		else
 			return ""; // Default package
 	}
-	
+
 	/**
 	 * Dynamically retrieve the Bukkit entity from a given entity.
 	 * @param nmsObject - the NMS entity.
@@ -385,16 +385,16 @@ public class MinecraftReflection {
 	public static Object getBukkitEntity(Object nmsObject) {
 		if (nmsObject == null)
 			return null;
-		
+
 		// We will have to do this dynamically, unfortunately
 		try {
 			Class<?> clazz = nmsObject.getClass();
 			MethodAccessor accessor = getBukkitEntityCache.get(clazz);
-			
+
 			if (accessor == null) {
 				MethodAccessor created = Accessors.getMethodAccessor(clazz, "getBukkitEntity");
 				accessor = getBukkitEntityCache.putIfAbsent(clazz, created);
-				
+
 				// We won the race
 				if (accessor == null) {
 					accessor = created;
@@ -405,7 +405,7 @@ public class MinecraftReflection {
 			throw new IllegalArgumentException("Cannot get Bukkit entity from " + nmsObject, e);
 		}
 	}
-	
+
 	/**
 	 * Determine if a given object can be found within the package net.minecraft.server.
 	 * @param obj - the object to test.
@@ -414,7 +414,7 @@ public class MinecraftReflection {
 	public static boolean isMinecraftObject(@Nonnull Object obj) {
 		if (obj == null)
 			return false;
-		
+
 		// Doesn't matter if we don't check for the version here
 		return obj.getClass().getName().startsWith(MINECRAFT_PREFIX_PACKAGE);
 	}
@@ -430,7 +430,7 @@ public class MinecraftReflection {
 
 		return getMinecraftObjectMatcher().isMatch(clazz, null);
 	}
-	
+
 	/**
 	 * Determine if a given object is found in net.minecraft.server, and has the given name.
 	 * @param obj - the object to test.
@@ -440,11 +440,11 @@ public class MinecraftReflection {
 	public static boolean isMinecraftObject(@Nonnull Object obj, String className) {
 		if (obj == null)
 			return false;
-		
+
 		String javaName = obj.getClass().getName();
 		return javaName.startsWith(MINECRAFT_PREFIX_PACKAGE) && javaName.endsWith(className);
  	}
-			
+
 	/**
 	 * Determine if a given object is a ChunkPosition.
 	 * @param obj - the object to test.
@@ -453,7 +453,7 @@ public class MinecraftReflection {
 	public static boolean isChunkPosition(Object obj) {
 		return obj != null && getChunkPositionClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is an NMS ChunkCoordIntPar.
 	 * @param obj - the object.
@@ -462,7 +462,7 @@ public class MinecraftReflection {
 	public static boolean isChunkCoordIntPair(Object obj) {
 		return obj != null && getChunkCoordIntPair().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if a given object is a ChunkCoordinate.
 	 * @param obj - the object to test.
@@ -471,7 +471,7 @@ public class MinecraftReflection {
 	public static boolean isChunkCoordinates(Object obj) {
 		return obj != null && getChunkCoordinatesClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is actually a Minecraft packet.
 	 * @param obj - the given object.
@@ -480,7 +480,7 @@ public class MinecraftReflection {
 	public static boolean isPacketClass(Object obj) {
 		return obj != null && getPacketClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is a NetLoginHandler (PendingConnection)
 	 * @param obj - the given object.
@@ -489,7 +489,7 @@ public class MinecraftReflection {
 	public static boolean isLoginHandler(Object obj) {
 		return obj != null && getNetLoginHandlerClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is assignable to a NetServerHandler (PlayerConnection)
 	 * @param obj - the given object.
@@ -498,7 +498,7 @@ public class MinecraftReflection {
 	public static boolean isServerHandler(Object obj) {
 		return obj != null && getNetServerHandlerClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is actually a Minecraft packet.
 	 * @param obj - the given object.
@@ -507,7 +507,7 @@ public class MinecraftReflection {
 	public static boolean isMinecraftEntity(Object obj) {
 		return obj != null && getEntityClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is a NMS ItemStack.
 	 * @param value - the given object.
@@ -516,7 +516,7 @@ public class MinecraftReflection {
 	public static boolean isItemStack(Object value) {
 		return value != null && getItemStackClass().isAssignableFrom(value.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is a CraftPlayer class.
 	 * @param value - the given object.
@@ -525,7 +525,7 @@ public class MinecraftReflection {
 	public static boolean isCraftPlayer(Object value) {
 		return value != null && getCraftPlayerClass().isAssignableFrom(value.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is a Minecraft player entity.
 	 * @param obj - the given object.
@@ -543,7 +543,7 @@ public class MinecraftReflection {
 	public static boolean isWatchableObject(Object obj) {
 		return obj != null && getWatchableObjectClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is a data watcher object.
 	 * @param obj - the given object.
@@ -552,7 +552,7 @@ public class MinecraftReflection {
 	public static boolean isDataWatcher(Object obj) {
 		return obj != null && getDataWatcherClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is an IntHashMap object.
 	 * @param obj - the given object.
@@ -561,7 +561,7 @@ public class MinecraftReflection {
 	public static boolean isIntHashMap(Object obj) {
 		return obj != null && getIntHashMapClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Determine if the given object is a CraftItemStack instancey.
 	 * @param obj - the given object.
@@ -570,7 +570,7 @@ public class MinecraftReflection {
 	public static boolean isCraftItemStack(Object obj) {
 		return obj != null && getCraftItemStackClass().isAssignableFrom(obj.getClass());
 	}
-	
+
 	/**
 	 * Retrieve the EntityPlayer (NMS) class.
 	 * @return The entity class.
@@ -583,17 +583,17 @@ public class MinecraftReflection {
 				// A fairly stable method
 				Method detect = FuzzyReflection.fromClass(getCraftBukkitClass("CraftServer")).
 									getMethodByName("detectListNameConflict");
-				
+
 				// EntityPlayer is then the first parameter
 				return detect.getParameterTypes()[0];
-				
+
 			} catch (IllegalArgumentException ex) {
 				// Last resort
 				return fallbackMethodReturn("EntityPlayer", "entity.CraftPlayer", "getHandle");
 			}
 		}
 	}
-	
+
 	/**
 	 * Retrieve the EntityHuman class.
 	 * @return The entity human class.
@@ -602,7 +602,7 @@ public class MinecraftReflection {
 		// Assume its the direct superclass
 		return getEntityPlayerClass().getSuperclass();
 	}
-	
+
 	/**
 	 * Retrieve the GameProfile class in 1.7.2 and later.
 	 * @return The game profile class.
@@ -611,11 +611,11 @@ public class MinecraftReflection {
 	public static Class<?> getGameProfileClass() {
 		if (!isUsingNetty())
 			throw new IllegalStateException("GameProfile does not exist in version 1.6.4 and earlier.");
-		
+
 		// Yay, we can actually refer to it directly
 		return GameProfile.class;
 	}
-	
+
 	/**
 	 * Retrieve the entity (NMS) class.
 	 * @return The entity class.
@@ -627,7 +627,7 @@ public class MinecraftReflection {
 			return fallbackMethodReturn("Entity", "entity.CraftEntity", "getHandle");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the CraftChatMessage in Minecraft 1.7.2.
 	 * @return The CraftChatMessage class.
@@ -635,7 +635,7 @@ public class MinecraftReflection {
 	public static Class<?> getCraftChatMessage() {
 		return getCraftBukkitClass("util.CraftChatMessage");
 	}
-	
+
 	/**
 	 * Retrieve the WorldServer (NMS) class.
 	 * @return The WorldServer class.
@@ -647,7 +647,7 @@ public class MinecraftReflection {
 			return fallbackMethodReturn("WorldServer", "CraftWorld", "getHandle");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the World (NMS) class.
 	 * @return The world class.
@@ -659,7 +659,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("World", getWorldServerClass().getSuperclass());
 		}
 	}
-	
+
 	/**
 	 * Fallback on the return value of a named method in order to get a NMS class.
 	 * @param nmsClass - the expected name of the Minecraft class.
@@ -670,11 +670,11 @@ public class MinecraftReflection {
 	private static Class<?> fallbackMethodReturn(String nmsClass, String craftClass, String methodName) {
 		Class<?> result = FuzzyReflection.fromClass(getCraftBukkitClass(craftClass)).
 			    			getMethodByName(methodName).getReturnType();
-		
+
 		// Save the result
 		return setMinecraftClass(nmsClass, result);
 	}
-	
+
 	/**
 	 * Retrieve the packet class.
 	 * @return The packet class.
@@ -684,7 +684,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("Packet");
 		} catch (RuntimeException e) {
 			FuzzyClassContract paketContract = null;
-			
+
 			// What kind of class we're looking for (sanity check)
 			if (isUsingNetty()) {
 				paketContract = FuzzyClassContract.newBuilder().
@@ -695,7 +695,7 @@ public class MinecraftReflection {
 							    parameterDerivedOf(ByteBuf.class, 0).
 							    parameterExactType(byte[].class, 1).
 							    returnTypeVoid()).
-						build();	
+						build();
 			} else {
 				paketContract = FuzzyClassContract.newBuilder().
 					field(FuzzyFieldContract.newBuilder().
@@ -707,9 +707,9 @@ public class MinecraftReflection {
 					method(FuzzyMethodContract.newBuilder().
 						    parameterSuperOf(DataInputStream.class).
 						    returnTypeVoid()).
-					build();		
+					build();
 			}
-						
+
 			// Select a method with one Minecraft object parameter
 			Method selected = FuzzyReflection.fromClass(getNetServerHandlerClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
@@ -717,13 +717,13 @@ public class MinecraftReflection {
 							parameterCount(1).
 							build()
 					);
-		
+
 			// Save and return
 			Class<?> clazz = getTopmostClass(selected.getParameterTypes()[0]);
 			return setMinecraftClass("Packet", clazz);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the EnumProtocol class in 1.7.2.
 	 * @return The Enum protocol class.
@@ -741,7 +741,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("EnumProtocol", protocolMethod.getParameterTypes()[0]);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the IChatBaseComponent class.
 	 * @return The IChatBaseComponent.
@@ -750,7 +750,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("IChatBaseComponent");
 		} catch (RuntimeException e) {
-			return setMinecraftClass("IChatBaseComponent", 
+			return setMinecraftClass("IChatBaseComponent",
 				Accessors.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
 					getMethod().getReturnType().getComponentType()
 			);
@@ -769,10 +769,10 @@ public class MinecraftReflection {
 				Method getScoreboardDisplayName = FuzzyReflection.fromClass(getEntityClass()).
 					getMethodByParameters("getScoreboardDisplayName", getIChatBaseComponentClass(), new Class<?>[0]);
 				Class<?> baseClass = getIChatBaseComponentClass();
-				
+
 				for (AsmMethod method : ClassAnalyser.getDefault().getMethodCalls(getScoreboardDisplayName)) {
 					Class<?> owner = method.getOwnerClass();
-					
+
 					if (isMinecraftClass(owner) && baseClass.isAssignableFrom(owner)) {
 						return setMinecraftClass("ChatComponentText", owner);
 					}
@@ -783,7 +783,7 @@ public class MinecraftReflection {
 		}
 		throw new IllegalStateException("Cannot find ChatComponentText class.");
 	}
-	
+
 	/**
 	 * Attempt to find the ChatSerializer class.
 	 * @return The serializer class.
@@ -796,14 +796,14 @@ public class MinecraftReflection {
 			// Analyse the ASM
 			try {
 				List<AsmMethod> methodCalls = ClassAnalyser.getDefault().getMethodCalls(
-					PacketType.Play.Server.CHAT.getPacketClass(), 
+					PacketType.Play.Server.CHAT.getPacketClass(),
 					MinecraftMethods.getPacketReadByteBufMethod()
 				);
 				Class<?> packetSerializer = getPacketDataSerializerClass();
-				
+
 				for (AsmMethod method : methodCalls) {
 					Class<?> owner = method.getOwnerClass();
-					
+
 					if (isMinecraftClass(owner) && !owner.equals(packetSerializer)) {
 						return setMinecraftClass("ChatSerializer", owner);
 					}
@@ -814,7 +814,7 @@ public class MinecraftReflection {
 		}
 		throw new IllegalStateException("Cannot find ChatSerializer class.");
 	}
-	
+
 	/**
 	 * Retrieve the ServerPing class in Minecraft 1.7.2.
 	 * @return The ServerPing class.
@@ -822,25 +822,25 @@ public class MinecraftReflection {
 	public static Class<?> getServerPingClass() {
 		if (!isUsingNetty())
 			throw new IllegalStateException("ServerPing is only supported in 1.7.2.");
-		
+
 		try {
 			return getMinecraftClass("ServerPing");
 		} catch (RuntimeException e) {
 			Class<?> statusServerInfo = PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass();
-			
+
 			// Find a server ping object
 			AbstractFuzzyMatcher<Class<?>> serverPingContract = FuzzyClassContract.newBuilder().
 				field(FuzzyFieldContract.newBuilder().typeExact(String.class).build()).
 				field(FuzzyFieldContract.newBuilder().typeDerivedOf(getIChatBaseComponentClass()).build()).
 				build().
 			and(getMinecraftObjectMatcher());
-			
-			return setMinecraftClass("ServerPing", 
+
+			return setMinecraftClass("ServerPing",
 				FuzzyReflection.fromClass(statusServerInfo, true).
 					getField(FuzzyFieldContract.matchType(serverPingContract)).getType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the ServerPingServerData class in Minecraft 1.7.2.
 	 * @return The ServerPingServerData class.
@@ -848,22 +848,22 @@ public class MinecraftReflection {
 	public static Class<?> getServerPingServerDataClass() {
 		if (!isUsingNetty())
 			throw new IllegalStateException("ServerPingServerData is only supported in 1.7.2.");
-		
+
 		try {
 			return getMinecraftClass("ServerPingServerData");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
-			
+
 			// Find a server ping object
 			AbstractFuzzyMatcher<Class<?>> serverDataContract = FuzzyClassContract.newBuilder().
 				constructor(FuzzyMethodContract.newBuilder().parameterExactArray(String.class, int.class)).
 				build().
 			and(getMinecraftObjectMatcher());
-			
+
 			return setMinecraftClass("ServerPingServerData", getTypeFromField(serverPing, serverDataContract));
 		}
 	}
-	
+
 	/**
 	 * Retrieve the ServerPingPlayerSample class in Minecraft 1.7.2.
 	 * @return The ServerPingPlayerSample class.
@@ -871,12 +871,12 @@ public class MinecraftReflection {
 	public static Class<?> getServerPingPlayerSampleClass() {
 		if (!isUsingNetty())
 			throw new IllegalStateException("ServerPingPlayerSample is only supported in 1.7.2.");
-		
+
 		try {
 			return getMinecraftClass("ServerPingPlayerSample");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
-			
+
 			// Find a server ping object
 			AbstractFuzzyMatcher<Class<?>> serverPlayerContract = FuzzyClassContract.newBuilder().
 				constructor(FuzzyMethodContract.newBuilder().parameterExactArray(int.class, int.class)).
@@ -887,7 +887,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("ServerPingPlayerSample", getTypeFromField(serverPing, serverPlayerContract));
 		}
 	}
-	
+
 	/**
 	 * Retrieve the type of the field whose type matches.
 	 * @param clazz - the declaring type.
@@ -896,7 +896,7 @@ public class MinecraftReflection {
 	 */
 	private static Class<?> getTypeFromField(Class<?> clazz, AbstractFuzzyMatcher<Class<?>> fieldTypeMatcher) {
 		final FuzzyFieldContract fieldMatcher = FuzzyFieldContract.matchType(fieldTypeMatcher);
-		
+
 		return FuzzyReflection.fromClass(clazz, true).
 			getField(fieldMatcher).getType();
 	}
@@ -909,7 +909,7 @@ public class MinecraftReflection {
 	 */
 	public static boolean isUsingNetty() {
 		if (cachedNetty == null) {
-			try {	
+			try {
 				cachedNetty = getEnumProtocolClass() != null;
 			} catch (RuntimeException e) {
 				cachedNetty = false;
@@ -917,7 +917,7 @@ public class MinecraftReflection {
 		}
 		return cachedNetty;
 	}
-	
+
 	/**
 	 * Retrieve the least derived class, except Object.
 	 * @return Least derived super class.
@@ -925,14 +925,14 @@ public class MinecraftReflection {
 	private static Class<?> getTopmostClass(Class<?> clazz) {
 		while (true) {
 			Class<?> superClass = clazz.getSuperclass();
-			
+
 			if (superClass == Object.class || superClass == null)
 				return clazz;
 			else
 				clazz = superClass;
 		}
 	}
-	
+
 	/**
 	 * Retrieve the MinecraftServer class.
 	 * @return MinecraftServer class.
@@ -940,12 +940,12 @@ public class MinecraftReflection {
 	public static Class<?> getMinecraftServerClass() {
 		try {
 			return getMinecraftClass("MinecraftServer");
-		} catch (RuntimeException e) {		
+		} catch (RuntimeException e) {
 			useFallbackServer();
 			return getMinecraftClass("MinecraftServer");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NMS statistics class.
 	 * @return The statistics class.
@@ -954,7 +954,7 @@ public class MinecraftReflection {
 		// TODO: Implement fallback
 		return getMinecraftClass("Statistic");
 	}
-	
+
 	/**
 	 * Retrieve the NMS statistic list class.
 	 * @return The statistic list class.
@@ -963,7 +963,7 @@ public class MinecraftReflection {
 		// TODO: Implement fallback
 		return getMinecraftClass("StatisticList");
 	}
-	
+
 	/**
 	 * Fallback method that can determine the MinecraftServer and the ServerConfigurationManager.
 	 */
@@ -976,7 +976,7 @@ public class MinecraftReflection {
 						build()
 				);
 		Class<?>[] params = selected.getParameterTypes();
-		
+
 		// Jackpot - two classes at the same time!
 		setMinecraftClass("MinecraftServer", params[0]);
 		setMinecraftClass("ServerConfigurationManager", params[1]);
@@ -995,7 +995,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("ServerConfigurationManager");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NetLoginHandler class (or PendingConnection)
 	 * @return The NetLoginHandler class.
@@ -1013,12 +1013,12 @@ public class MinecraftReflection {
 					   parameterExactType(String.class, 2).
 					   build()
 					);
-			
+
 			// Save the pending connection reference
 			return setMinecraftClass("NetLoginHandler", selected.getParameterTypes()[0]);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NetServerHandler class (or PlayerConnection)
 	 * @return The NetServerHandler class.
@@ -1029,15 +1029,15 @@ public class MinecraftReflection {
 		} catch (RuntimeException e) {
 			try {
 				// Use the player connection field
-				return setMinecraftClass("NetServerHandler", 
+				return setMinecraftClass("NetServerHandler",
 					FuzzyReflection.fromClass(getEntityPlayerClass()).
 					getFieldByType("playerConnection", getNetHandlerClass()).getType()
 				);
-				
+
 			} catch (RuntimeException e1) {
 				// Okay, this must be on 1.7.2
 				Class<?> playerClass = getEntityPlayerClass();
-				
+
 				FuzzyClassContract playerConnection = FuzzyClassContract.newBuilder().
 					field(FuzzyFieldContract.newBuilder().typeExact(playerClass).build()).
 					constructor(FuzzyMethodContract.newBuilder().
@@ -1052,17 +1052,17 @@ public class MinecraftReflection {
 							build()
 					).
 					build();
-				
+
 				// If not, use duck typing
 				Class<?> fieldType = FuzzyReflection.fromClass(getEntityPlayerClass(), true).getField(
 					FuzzyFieldContract.newBuilder().typeMatches(playerConnection).build()
 				).getType();
-				
+
 				return setMinecraftClass("NetServerHandler", fieldType);
 			}
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NetworkManager class or its interface.
 	 * @return The NetworkManager class or its interface.
@@ -1077,12 +1077,12 @@ public class MinecraftReflection {
 							parameterSuperOf(getEntityPlayerClass(), 2).
 							build()
 				   );
-		
+
 			// And we're done
 			return setMinecraftClass("INetworkManager", selected.getParameterTypes()[1]);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NetHandler class (or Connection)
 	 * @return The NetHandler class.
@@ -1095,7 +1095,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("NetHandler", getNetLoginHandlerClass().getSuperclass());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NMS ItemStack class.
 	 * @return The ItemStack class.
@@ -1105,11 +1105,11 @@ public class MinecraftReflection {
 			return getMinecraftClass("ItemStack");
 		} catch (RuntimeException e) {
 			// Use the handle reference
-			return setMinecraftClass("ItemStack", 
+			return setMinecraftClass("ItemStack",
 					FuzzyReflection.fromClass(getCraftItemStackClass(), true).getFieldByName("handle").getType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the Block (NMS) class.
 	 * @return Block (NMS) class.
@@ -1120,7 +1120,7 @@ public class MinecraftReflection {
 		} catch (RuntimeException e) {
 			FuzzyReflection reflect = FuzzyReflection.fromClass(getItemStackClass());
 			Set<Class<?>> candidates = new HashSet<Class<?>>();
-			
+
 			// Minecraft objects in the constructor
 			for (Constructor<?> constructor : reflect.getConstructors()) {
 				for (Class<?> clazz : constructor.getParameterTypes()) {
@@ -1129,9 +1129,9 @@ public class MinecraftReflection {
 					}
 				}
 			}
-			
+
 			// Useful constructors
-			Method selected = 
+			Method selected =
 						reflect.getMethod(FuzzyMethodContract.newBuilder().
 							parameterMatches(FuzzyMatchers.matchAnyOf(candidates)).
 							returnTypeExact(float.class).
@@ -1139,7 +1139,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("Block", selected.getParameterTypes()[0]);
 		}
 	}
-		
+
 	/**
 	 * Retrieve the WorldType class.
 	 * @return The WorldType class.
@@ -1161,7 +1161,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("WorldType", selected.getParameterTypes()[3]);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the DataWatcher class.
 	 * @return The DataWatcher class.
@@ -1170,7 +1170,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("DataWatcher");
 		} catch (RuntimeException e) {
-			// Describe the DataWatcher 
+			// Describe the DataWatcher
 			FuzzyClassContract dataWatcherContract = FuzzyClassContract.newBuilder().
 				   field(FuzzyFieldContract.newBuilder().
 						 requireModifier(Modifier.STATIC).
@@ -1186,7 +1186,7 @@ public class MinecraftReflection {
 			FuzzyFieldContract fieldContract = FuzzyFieldContract.newBuilder().
 					typeMatches(dataWatcherContract).
 					build();
-			
+
 			// Get such a field and save the result
 			return setMinecraftClass("DataWatcher",
 						FuzzyReflection.fromClass(getEntityClass(), true).
@@ -1195,7 +1195,7 @@ public class MinecraftReflection {
 				   );
 		}
 	}
-	
+
 	/**
 	 * Retrieve the ChunkPosition class.
 	 * @return The ChunkPosition class.
@@ -1205,7 +1205,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("ChunkPosition");
 		} catch (RuntimeException e) {
 			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
-			
+
 			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
 			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder().
 					 banModifier(Modifier.STATIC).
@@ -1215,13 +1215,13 @@ public class MinecraftReflection {
 					 parameterExactType(int.class, 3).
 					 parameterExactType(int.class, 4).
 				    build();
-			
-			return setMinecraftClass("ChunkPosition", 
+
+			return setMinecraftClass("ChunkPosition",
 						FuzzyReflection.fromClass(normalChunkGenerator).
 						 getMethod(selected).getReturnType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the ChunkCoordinates class.
 	 * @return The ChunkPosition class.
@@ -1233,7 +1233,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("ChunkCoordinates", WrappedDataWatcher.getTypeClass(6));
 		}
 	}
-	
+
 	/**
 	 * Retrieve the ChunkCoordIntPair class.
 	 * @return The ChunkCoordIntPair class.
@@ -1241,12 +1241,12 @@ public class MinecraftReflection {
 	public static Class<?> getChunkCoordIntPair() {
 		if (!isUsingNetty())
 			throw new IllegalArgumentException("Not supported on 1.6.4 and older.");
-			
+
 		try {
 			return getMinecraftClass("ChunkCoordIntPair");
 		} catch (RuntimeException e) {
 			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
-			
+
 			AbstractFuzzyMatcher<Class<?>> chunkCoordIntContract = FuzzyClassContract.newBuilder().
 					   field(FuzzyFieldContract.newBuilder().
 							 typeDerivedOf(int.class)).
@@ -1256,13 +1256,13 @@ public class MinecraftReflection {
 							 parameterExactArray(int.class).
 							 returnDerivedOf( getChunkPositionClass() )).
 					  build().and(getMinecraftObjectMatcher());
-			
+
 			Field field = FuzzyReflection.fromClass(packet, true).getField(
 				FuzzyFieldContract.matchType(chunkCoordIntContract));
 			return setMinecraftClass("ChunkCoordIntPair", field.getType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the WatchableObject class.
 	 * @return The WatchableObject class.
@@ -1270,19 +1270,19 @@ public class MinecraftReflection {
 	public static Class<?> getWatchableObjectClass() {
 		try {
 			return getMinecraftClass("WatchableObject");
-		} catch (RuntimeException e) {		
+		} catch (RuntimeException e) {
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
 							 requireModifier(Modifier.STATIC).
 							 parameterDerivedOf(isUsingNetty() ? getPacketDataSerializerClass() : DataOutput.class, 0).
 							 parameterMatches(getMinecraftObjectMatcher(), 1).
 						    build());
-		
+
 			// Use the second parameter
 			return setMinecraftClass("WatchableObject", selected.getParameterTypes()[1]);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the ServerConnection abstract class.
 	 * @return The ServerConnection class.
@@ -1296,7 +1296,7 @@ public class MinecraftReflection {
 					constructor(FuzzyMethodContract.newBuilder().
 							parameterExactType(getMinecraftServerClass()).
 							parameterCount(1));
-			
+
 			if (isUsingNetty()) {
 				serverConnectionContract.
 				method(FuzzyMethodContract.newBuilder().
@@ -1304,30 +1304,30 @@ public class MinecraftReflection {
 						parameterDerivedOf(int.class, 1).
 						parameterCount(2)
 				);
-				
+
 				selected = FuzzyReflection.fromClass(getMinecraftServerClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
 							requireModifier(Modifier.PUBLIC).
 							returnTypeMatches(serverConnectionContract.build()).
 					build());
-				
+
 			} else {
 				serverConnectionContract.
 					method(FuzzyMethodContract.newBuilder().
 							parameterExactType(getNetServerHandlerClass()));
-				
+
 				selected = FuzzyReflection.fromClass(getMinecraftServerClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
 							requireModifier(Modifier.ABSTRACT).
 							returnTypeMatches(serverConnectionContract.build()).
 					build());
 			}
-			
+
 			// Use the return type
 			return setMinecraftClass("ServerConnection", selected.getReturnType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NBT base class.
 	 * @return The NBT base class.
@@ -1337,7 +1337,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("NBTBase");
 		} catch (RuntimeException e) {
 			Class<?> nbtBase = null;
-			
+
 			if (isUsingNetty()) {
 				FuzzyClassContract tagCompoundContract = FuzzyClassContract.newBuilder().
 						field(FuzzyFieldContract.newBuilder().
@@ -1346,17 +1346,17 @@ public class MinecraftReflection {
 							parameterDerivedOf(DataOutput.class).
 							parameterCount(1)).
 						build();
-				
+
 				Method selected = FuzzyReflection.fromClass(getPacketDataSerializerClass()).
 						getMethod(FuzzyMethodContract.newBuilder().
 							banModifier(Modifier.STATIC).
 							parameterCount(1).
 							parameterMatches(tagCompoundContract).
 							returnTypeVoid().
-							build()					
+							build()
 						 );
 				nbtBase = selected.getParameterTypes()[0].getSuperclass();
-				
+
 			} else {
 				FuzzyClassContract tagCompoundContract = FuzzyClassContract.newBuilder().
 					constructor(FuzzyMethodContract.newBuilder().
@@ -1365,18 +1365,18 @@ public class MinecraftReflection {
 					field(FuzzyFieldContract.newBuilder().
 						typeDerivedOf(Map.class)).
 					build();
-				
+
 				Method selected = FuzzyReflection.fromClass(getPacketClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
 						requireModifier(Modifier.STATIC).
 						parameterSuperOf(DataInputStream.class).
 						parameterCount(1).
 						returnTypeMatches(tagCompoundContract).
-						build()					
+						build()
 					 );
 				nbtBase = selected.getReturnType().getSuperclass();
 			}
-			
+
 			// That can't be correct
 			if (nbtBase == null || nbtBase.equals(Object.class)) {
 				throw new IllegalStateException("Unable to find NBT base class: " + nbtBase);
@@ -1386,7 +1386,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("NBTBase", nbtBase);
 		}
  	}
-	
+
 	/**
 	 * Retrieve the NBT read limiter class.
 	 * <p>
@@ -1396,7 +1396,7 @@ public class MinecraftReflection {
 	public static Class<?> getNBTReadLimiterClass() {
 		return getMinecraftClass("NBTReadLimiter");
 	}
-	
+
 	/**
 	 * Retrieve the NBT Compound class.
 	 * @return The NBT Compond class.
@@ -1406,7 +1406,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("NBTTagCompound");
 		} catch (RuntimeException e) {
 			return setMinecraftClass(
-				"NBTTagCompound", 
+				"NBTTagCompound",
 				NbtFactory.ofWrapper(NbtType.TAG_COMPOUND, "Test").getHandle().getClass()
 			);
 		}
@@ -1434,18 +1434,18 @@ public class MinecraftReflection {
 						  parameterCount(3).
 						  returnTypeVoid()).
 			build();
-			
+
 			Field selected = FuzzyReflection.fromClass(MinecraftReflection.getWorldServerClass(), true).
 					getField(FuzzyFieldContract.newBuilder().
 							   typeMatches(entityTrackerContract).
-							   build()					
+							   build()
 					);
-			
+
 			// Go by the defined type of this field
 			return setMinecraftClass("EntityTracker", selected.getType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NetworkListenThread class (NMS).
 	 * <p>
@@ -1466,18 +1466,18 @@ public class MinecraftReflection {
 					method(FuzzyMethodContract.newBuilder().
 						  parameterExactType(getNetServerHandlerClass())).
 			build();
-			
+
 			Field selected = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftServerClass(), true).
 					getField(FuzzyFieldContract.newBuilder().
 							   typeMatches(networkListenContract).
-							   build()					
+							   build()
 					);
-			
+
 			// Go by the defined type of this field
 			return setMinecraftClass("NetworkListenThread", selected.getType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the attribute snapshot class.
 	 * <p>
@@ -1490,44 +1490,45 @@ public class MinecraftReflection {
 		} catch (RuntimeException e) {
 			final Class<?> packetUpdateAttributes = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.UPDATE_ATTRIBUTES, true);
 			final String packetSignature = packetUpdateAttributes.getCanonicalName().replace('.', '/');
-			
+
 			// HACK - class is found by inspecting code
 			try {
 				ClassReader reader = new ClassReader(packetUpdateAttributes.getCanonicalName());
-				
+
 				reader.accept(new EmptyClassVisitor() {
 					@Override
 					public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
 						// The read method
 						if (desc.startsWith("(Ljava/io/DataInput")) {
 							return new EmptyMethodVisitor() {
-								public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+								@Override
+                                public void visitMethodInsn(int opcode, String owner, String name, String desc) {
 									if (opcode == Opcodes.INVOKESPECIAL && isConstructor(name)) {
 										String className = owner.replace('/', '.');
-										
+
 										// Use signature to distinguish between constructors
 										if (desc.startsWith("(L" + packetSignature)) {
 											setMinecraftClass("AttributeSnapshot", MinecraftReflection.getClass(className));
 										} else if (desc.startsWith("(Ljava/util/UUID;Ljava/lang/String")) {
 											setMinecraftClass("AttributeModifier", MinecraftReflection.getClass(className));
 										}
-									} 							
+									}
 								};
 							};
 						}
 						return null;
 					}
 				}, 0);
-				
+
 			} catch (IOException e1) {
 				throw new RuntimeException("Unable to read the content of Packet44UpdateAttributes.", e1);
 			}
-		
+
 			// If our dirty ASM trick failed, this will throw an exception
 			return getMinecraftClass("AttributeSnapshot");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the IntHashMap class.
 	 * @return IntHashMap class.
@@ -1561,12 +1562,12 @@ public class MinecraftReflection {
 			final AbstractFuzzyMatcher<Field> intHashField = FuzzyFieldContract.newBuilder().
 				typeMatches(getMinecraftObjectMatcher().and(intHashContract)).
 				build();
-			
+
 			// Use the type of the first field that matches
 			return setMinecraftClass("IntHashMap", FuzzyReflection.fromClass(parent).getField(intHashField).getType());
 		}
 	}
-	
+
 	/**
 	 * Retrieve the attribute modifier class.
 	 * @return Attribute modifier class.
@@ -1577,10 +1578,10 @@ public class MinecraftReflection {
 		} catch (RuntimeException e) {
 			// Initialize first
 			getAttributeSnapshotClass();
-			return getMinecraftClass("AttributeModifier"); 
+			return getMinecraftClass("AttributeModifier");
 		}
 	}
-	
+
 	/**
 	 * Retrieve the net.minecraft.server.MobEffect class.
 	 * @return The mob effect class.
@@ -1601,7 +1602,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("MobEffect", constructor.getParameterTypes()[1]);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the packet data serializer class that overrides ByteBuf.
 	 * @return The data serializer class.
@@ -1621,7 +1622,7 @@ public class MinecraftReflection {
 			return setMinecraftClass("PacketDataSerializer", method.getParameterTypes()[0]);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NBTCompressedStreamTools class.
 	 * @return The NBTCompressedStreamTools class.
@@ -1631,16 +1632,16 @@ public class MinecraftReflection {
 			return getMinecraftClass("NBTCompressedStreamTools");
 		} catch (RuntimeException e) {
 			Class<?> packetSerializer = getPacketDataSerializerClass();
-			
+
 			// Get the write NBT compound method
 			Method writeNbt = FuzzyReflection.fromClass(packetSerializer).
 					getMethodByParameters("writeNbt", getNBTCompoundClass());
-		
+
 			try {
 				// Now -- we inspect all the method calls within that method, and use the first foreign Minecraft class
 				for (AsmMethod method : ClassAnalyser.getDefault().getMethodCalls(writeNbt)) {
 					Class<?> owner = method.getOwnerClass();
-					
+
 					if (!packetSerializer.equals(owner) && isMinecraftClass(owner)) {
 						return setMinecraftClass("NBTCompressedStreamTools", owner);
 					}
@@ -1651,7 +1652,7 @@ public class MinecraftReflection {
 			throw new IllegalArgumentException("Unable to find NBTCompressedStreamTools.");
 		}
 	}
-	
+
 	/**
 	 * Retrieve an instance of the packet data serializer wrapper.
 	 * @param buffer - the buffer.
@@ -1659,14 +1660,14 @@ public class MinecraftReflection {
 	 */
 	public static ByteBuf getPacketDataSerializer(ByteBuf buffer) {
 		Class<?> packetSerializer = getPacketDataSerializerClass();
-		
+
 		try {
 			return (ByteBuf) packetSerializer.getConstructor(ByteBuf.class).newInstance(buffer);
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NMS tile entity class.
 	 * @return The tile entity class.
@@ -1674,7 +1675,7 @@ public class MinecraftReflection {
 	public static Class<?> getTileEntityClass() {
 		return getMinecraftClass("TileEntity");
 	}
-	
+
 	/**
 	 * Retrieve the google.gson.Gson class used by Minecraft.
 	 * @return The GSON class.
@@ -1688,7 +1689,7 @@ public class MinecraftReflection {
 			return setMinecraftLibraryClass("com.google.gson.Gson", match);
 		}
 	}
-	
+
 	/**
 	 * Determine if a given method retrieved by ASM is a constructor.
 	 * @param name - the name of the method.
@@ -1697,7 +1698,7 @@ public class MinecraftReflection {
 	private static boolean isConstructor(String name) {
 		return "<init>".equals(name);
 	}
-	
+
 	/**
 	 * Retrieve the ItemStack[] class.
 	 * @return The ItemStack[] class.
@@ -1707,7 +1708,7 @@ public class MinecraftReflection {
 			itemStackArrayClass = getArrayClass(getItemStackClass());
 		return itemStackArrayClass;
 	}
-	
+
 	/**
 	 * Retrieve the array class of a given component type.
 	 * @param componentType - type of each element in the array.
@@ -1717,7 +1718,7 @@ public class MinecraftReflection {
 		// Bit of a hack, but it works
 		return Array.newInstance(componentType, 0).getClass();
 	}
-	
+
 	/**
 	 * Retrieve the CraftItemStack class.
 	 * @return The CraftItemStack class.
@@ -1725,15 +1726,15 @@ public class MinecraftReflection {
 	public static Class<?> getCraftItemStackClass() {
 		return getCraftBukkitClass("inventory.CraftItemStack");
 	}
-	
+
 	/**
 	 * Retrieve the CraftPlayer class.
 	 * @return CraftPlayer class.
 	 */
-	public static Class<?> getCraftPlayerClass() { 
+	public static Class<?> getCraftPlayerClass() {
 		return getCraftBukkitClass("entity.CraftPlayer");
 	}
-	
+
 	/**
 	 * Retrieve the CraftWorld class.
 	 * @return The CraftWorld class.
@@ -1741,15 +1742,15 @@ public class MinecraftReflection {
 	public static Class<?> getCraftWorldClass() {
 		return getCraftBukkitClass("CraftWorld");
 	}
-	
+
 	/**
 	 * Retrieve the CraftEntity class.
 	 * @return CraftEntity class.
 	 */
-	public static Class<?> getCraftEntityClass() { 
+	public static Class<?> getCraftEntityClass() {
 		return getCraftBukkitClass("entity.CraftEntity");
 	}
-	
+
 	/**
 	 * Retrieve the CraftChatMessage introduced in 1.7.2
 	 * @return The CraftChatMessage class.
@@ -1767,7 +1768,7 @@ public class MinecraftReflection {
 		// Delegate this task to the method that can execute it
 		if (craftBukkitNMS != null)
 			return getBukkitItemByMethod(bukkitItemStack);
-		
+
 		if (craftBukkitConstructor == null) {
 			try {
 				craftBukkitConstructor = getCraftItemStackClass().getConstructor(ItemStack.class);
@@ -1775,11 +1776,11 @@ public class MinecraftReflection {
 				// See if this method works
 				if (!craftItemStackFailed)
 					return getBukkitItemByMethod(bukkitItemStack);
-		
+
 				throw new RuntimeException("Cannot find CraftItemStack(org.bukkit.inventory.ItemStack).", e);
 			}
 		}
-		
+
 		// Try to create the CraftItemStack
 		try {
 			return (ItemStack) craftBukkitConstructor.newInstance(bukkitItemStack);
@@ -1798,7 +1799,7 @@ public class MinecraftReflection {
 				throw new RuntimeException("Cannot find CraftItemStack.asCraftCopy(org.bukkit.inventory.ItemStack).", e);
 			}
 		}
-		
+
 		// Next, construct it
 		try {
 			Object nmsItemStack = craftBukkitNMS.invoke(null, bukkitItemStack);
@@ -1817,7 +1818,7 @@ public class MinecraftReflection {
 		// Delegate this task to the method that can execute it
 		if (craftNMSMethod != null)
 			return getBukkitItemByMethod(minecraftItemStack);
-		
+
 		if (craftNMSConstructor == null) {
 			try {
 				craftNMSConstructor = getCraftItemStackClass().getConstructor(minecraftItemStack.getClass());
@@ -1825,11 +1826,11 @@ public class MinecraftReflection {
 				// Give it a try
 				if (!craftItemStackFailed)
 					return getBukkitItemByMethod(minecraftItemStack);
-				
+
 				throw new RuntimeException("Cannot find CraftItemStack(net.minecraft.server.ItemStack).", e);
 			}
 		}
-		
+
 		// Try to create the CraftItemStack
 		try {
 			return (ItemStack) craftNMSConstructor.newInstance(minecraftItemStack);
@@ -1847,7 +1848,7 @@ public class MinecraftReflection {
 				throw new RuntimeException("Cannot find CraftItemStack.asCraftMirror(net.minecraft.server.ItemStack).", e);
 			}
 		}
-		
+
 		// Next, construct it
 		try {
 			return (ItemStack) craftNMSMethod.invoke(null, minecraftItemStack);
@@ -1855,7 +1856,7 @@ public class MinecraftReflection {
 			throw new RuntimeException("Cannot construct CraftItemStack.", e);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the net.minecraft.server ItemStack from a Bukkit ItemStack.
 	 * <p>
@@ -1867,38 +1868,34 @@ public class MinecraftReflection {
 		// Make sure this is a CraftItemStack
 		if (!isCraftItemStack(stack))
 			stack = getBukkitItemStack(stack);
-		
+
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		return unwrapper.unwrapItem(stack);
 	}
-	
+
 	/**
 	 * Retrieve the given class by name.
 	 * @param className - name of the class.
 	 * @return The class.
 	 */
-	@SuppressWarnings("rawtypes")
-	private static Class getClass(String className) {
+	private static Class<?> getClass(String className) {
 		try {
 			return MinecraftReflection.class.getClassLoader().loadClass(className);
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException("Cannot find class " + className, e);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the class object of a specific CraftBukkit class.
 	 * @param className - the specific CraftBukkit class.
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getCraftBukkitClass(String className) {
-		if (craftbukkitPackage == null)
-			craftbukkitPackage = new CachedPackage(getCraftBukkitPackage(), getClassSource());
-		return craftbukkitPackage.getPackageClass(className);
+	public static Class<?> getCraftBukkitClass(String className) {
+	    return getClass(getCraftBukkitPackage() + "." + className);
 	}
-	
+
 	/**
 	 * Retrieve the class object of a specific Minecraft class.
 	 * @param className - the specific Minecraft class.
@@ -1906,11 +1903,9 @@ public class MinecraftReflection {
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
 	public static Class<?> getMinecraftClass(String className) {
-		if (minecraftPackage == null)
-			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
-		return minecraftPackage.getPackageClass(className);
+	    return getClass(getMinecraftPackage() + "." + className);
 	}
-	
+
 	/**
 	 * Retrieve the class object of a specific Minecraft library class.
 	 * @param className - the specific library Minecraft class.
@@ -1918,11 +1913,9 @@ public class MinecraftReflection {
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
 	public static Class<?> getMinecraftLibraryClass(String className) {
-		if (libraryPackage == null)
-			libraryPackage = new CachedPackage(getMinecraftLibraryPackage(), getClassSource());
-		return libraryPackage.getPackageClass(className);
+	    return getClass(getMinecraftLibraryPackage() + "." + className);
 	}
-	
+
 	/**
 	 * Set the class object for the specific library class.
 	 * @param className - name of the Minecraft library class.
@@ -1935,7 +1928,7 @@ public class MinecraftReflection {
 		libraryPackage.setPackageClass(className, clazz);
 		return clazz;
 	}
-	
+
 	/**
 	 * Set the class object for the specific Minecraft class.
 	 * @param className - name of the Minecraft class.
@@ -1948,14 +1941,14 @@ public class MinecraftReflection {
 		minecraftPackage.setPackageClass(className, clazz);
 		return clazz;
 	}
-	
+
 	/**
 	 * Retrieve the current class source.
 	 * @return The class source.
 	 */
 	private static ClassSource getClassSource() {
 		ErrorReporter reporter = ProtocolLibrary.getErrorReporter();
-		
+
 		// Lazy pattern again
 		if (classSource == null) {
 			// Attempt to use MCPC
@@ -1966,14 +1959,14 @@ public class MinecraftReflection {
 					reporter.reportWarning(MinecraftReflection.class, Report.newBuilder(REPORT_CANNOT_FIND_MCPC_REMAPPER));
 			} catch (Exception e) {
 				reporter.reportWarning(MinecraftReflection.class, Report.newBuilder(REPORT_CANNOT_LOAD_CPC_REMAPPER));
-			} 
-			
+			}
+
 			// Just use the default class loader
 			classSource = ClassSource.fromClassLoader();
 		}
 		return classSource;
 	}
-	
+
 	/**
 	 * Retrieve the first class that matches a specified Minecraft name.
 	 * @param className - the specific Minecraft class.
@@ -1987,7 +1980,7 @@ public class MinecraftReflection {
 			return getMinecraftClass(className);
 		} catch (RuntimeException e1) {
 			Class<?> success = null;
-			
+
 			// Try every alias too
 			for (String alias : aliases) {
 				try {
@@ -1997,7 +1990,7 @@ public class MinecraftReflection {
 					// Swallov
 				}
 			}
-			
+
 			if (success != null) {
 				// Save it for later
 				minecraftPackage.setPackageClass(className, success);

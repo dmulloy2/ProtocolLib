@@ -1,9 +1,6 @@
 package com.comphenix.protocol.utility;
 
-import static org.junit.Assert.assertNotNull;
-
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 
@@ -12,9 +9,9 @@ public class MinecraftMethodsTest {
 	public static void initializeReflection() throws IllegalAccessException {
 		BukkitInitialization.initializePackage();
 	}
-	
-	@Test
-	public void testSendPacketMethod() {
-		assertNotNull(MinecraftMethods.getSendPacketMethod());
-	}
+
+//	@Test
+//	public void testSendPacketMethod() {
+//		assertNotNull(MinecraftMethods.getSendPacketMethod());
+//	}
 }
