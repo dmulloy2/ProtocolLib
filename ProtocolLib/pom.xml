@@ -75,7 +75,8 @@
 
               <artifactSet>
                 <excludes>
-                  <exclude>org.bukkit:craftbukkit</exclude>
+                  <exclude>org.spigotmc:spigot</exclude>
+                  <exclude>org.spigotmc:spigot-api</exclude>
                   <exclude>junit:junit</exclude>
                 </excludes>
               </artifactSet>
