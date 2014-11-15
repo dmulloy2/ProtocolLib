@@ -16,7 +16,8 @@ Currently maintained by dmulloy2 on behalf of [SpigotMC](http://www.spigotmc.org
 
 ### Resources
 
-* [JavaDoc](http://aadnk.github.com/ProtocolLib/Javadoc/) 
+* [Downloads](http://ci.shadowvolt.com/job/ProtocolLib)
+* [JavaDoc](http://aadnk.github.com/ProtocolLib/Javadoc/)
 
 
 Building
