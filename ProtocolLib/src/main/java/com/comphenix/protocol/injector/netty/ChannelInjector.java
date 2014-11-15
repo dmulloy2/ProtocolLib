@@ -19,6 +19,7 @@ import net.minecraft.util.io.netty.channel.ChannelHandler;
 import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
 import net.minecraft.util.io.netty.channel.ChannelInboundHandler;
 import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
+import net.minecraft.util.io.netty.channel.ChannelPipeline;
 import net.minecraft.util.io.netty.channel.ChannelPromise;
 import net.minecraft.util.io.netty.channel.socket.SocketChannel;
 import net.minecraft.util.io.netty.handler.codec.ByteToMessageDecoder;
@@ -33,6 +34,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.annotations.Spigot;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
@@ -79,6 +81,9 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// For retrieving the protocol
 	private static FieldAccessor PROTOCOL_ACCESSOR;
 
+	// Current version
+	private static volatile MethodAccessor PROTOCOL_VERSION;
+
 	// The factory that created this injector
 	private InjectionFactory factory;
 
@@ -114,7 +119,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private final ThreadLocal<Boolean> scheduleProcessPackets = new ThreadLocal<Boolean>() {
 		@Override
-		protected Boolean initialValue() {
+        protected Boolean initialValue() {
 			return true;
 		};
 	};
@@ -165,9 +170,27 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * Get the version of the current protocol.
 	 * @return The version.
 	 */
+	@Spigot(minimumBuild = 1628)
 	@Override
 	public int getProtocolVersion() {
-		return MinecraftProtocolVersion.getCurrentVersion();
+		MethodAccessor accessor = PROTOCOL_VERSION;
+
+		if (accessor == null) {
+			try {
+				accessor = Accessors.getMethodAccessor(networkManager.getClass(), "getVersion");
+
+			} catch (RuntimeException e) {
+				// Notify user
+				ProtocolLibrary.getErrorReporter().reportWarning(
+					this, Report.newBuilder(REPORT_CANNOT_FIND_GET_VERSION).error(e));
+
+				// Fallback method
+				accessor = Accessors.getConstantAccessor(
+						MinecraftProtocolVersion.getCurrentVersion(), null);
+			}
+			PROTOCOL_VERSION = accessor;
+		}
+		return (Integer) accessor.invoke(networkManager);
 	}
 
 	@Override
@@ -247,6 +270,26 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 			// Intercept all write methods
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
+				// Compatibility with Spigot 1.8 protocol hack
+				private final PipelineProxy pipelineProxy = new PipelineProxy(originalChannel.pipeline(), this) {
+					@Override
+					public ChannelPipeline addBefore(String baseName, String name, ChannelHandler handler) {
+						// Correct the position of the decoder
+						if ("decoder".equals(baseName)) {
+							if (super.get("protocol_lib_decoder") != null && guessSpigotHandler(handler)) {
+								super.addBefore("protocol_lib_decoder", name, handler);
+								return this;
+							}
+						}
+						return super.addBefore(baseName, name, handler);
+					}
+				};
+
+				@Override
+				public ChannelPipeline pipeline() {
+					return pipelineProxy;
+				}
+
 				@Override
 				protected <T> Callable<T> onMessageScheduled(final Callable<T> callable, FieldAccessor packetAccessor) {
 					final PacketEvent event = handleScheduled(callable, packetAccessor);
@@ -319,6 +362,18 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			injected = true;
 			return true;
 		}
+	}
+
+	/**
+	 * Determine if the given object is a Spigot channel handler.
+	 * @param handler - object to test.
+	 * @return TRUE if it is, FALSE if not or unknown.
+	 */
+	private boolean guessSpigotHandler(ChannelHandler handler) {
+		String className = handler != null ? handler.getClass().getCanonicalName() : null;
+
+		return "org.spigotmc.SpigotDecompressor".equals(className) ||
+			   "org.spigotmc.SpigotCompressor".equals(className);
 	}
 
 	/**
@@ -669,7 +724,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param player - current instance.
 	 */
 	@Override
-	public void setPlayer(Player player) {
+    public void setPlayer(Player player) {
 		this.player = player;
 	}
 
@@ -678,7 +733,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param updated - updated instance.
 	 */
 	@Override
-	public void setUpdatedPlayer(Player updated) {
+    public void setUpdatedPlayer(Player updated) {
 		this.updated = updated;
 	}
 
@@ -737,11 +792,12 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				// Clear cache
 				factory.invalidate(player);
 			}
-
-			// dmulloy2 - attempt to fix memory leakage
-			this.player = null;
-			this.updated = null;
 		}
+
+		// dmulloy2 - clear player instances
+		// Should fix memory leaks
+		this.player = null;
+		this.updated = null;
 	}
 
 	/**

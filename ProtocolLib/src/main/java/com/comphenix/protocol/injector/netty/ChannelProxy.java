@@ -24,21 +24,24 @@ import com.google.common.collect.Maps;
 abstract class ChannelProxy implements Channel {
 	// Mark that a certain object does not contain a message field
 	private static final FieldAccessor MARK_NO_MESSAGE = new FieldAccessor() {
-		public void set(Object instance, Object value) { }
-		public Object get(Object instance) { return null; }
-		public Field getField() { return null; };
+		@Override
+        public void set(Object instance, Object value) { }
+		@Override
+        public Object get(Object instance) { return null; }
+		@Override
+        public Field getField() { return null; };
 	};
 
 	// Looking up packets in inner classes
 	private static Map<Class<?>, FieldAccessor> MESSAGE_LOOKUP = Maps.newConcurrentMap();
-	
+
 	// The underlying channel
-	private Channel delegate;
-	private Class<?> messageClass;
-	
+	protected Channel delegate;
+	protected Class<?> messageClass;
+
 	// Event loop proxy
 	private transient EventLoopProxy loopProxy;
-	
+
 	public ChannelProxy(Channel delegate, Class<?> messageClass) {
 		this.delegate = delegate;
 		this.messageClass = messageClass;
@@ -51,7 +54,7 @@ abstract class ChannelProxy implements Channel {
 	 * @return The callable that will be scheduled, or NULL to cancel.
 	 */
 	protected abstract <T> Callable<T> onMessageScheduled(Callable<T> callable, FieldAccessor packetAccessor);
-	
+
 	/**
 	 * Invoked when a packet is scheduled for transmission in the event loop.
 	 * @param runnable - the runnable that contains a packet to be scheduled.
@@ -59,54 +62,61 @@ abstract class ChannelProxy implements Channel {
 	 * @return The runnable that will be scheduled, or NULL to cancel.
 	 */
 	protected abstract Runnable onMessageScheduled(Runnable runnable, FieldAccessor packetAccessor);
-	
-	public <T> Attribute<T> attr(AttributeKey<T> paramAttributeKey) {
+
+	@Override
+    public <T> Attribute<T> attr(AttributeKey<T> paramAttributeKey) {
 		return delegate.attr(paramAttributeKey);
 	}
 
-	public ChannelFuture bind(SocketAddress paramSocketAddress) {
+	@Override
+    public ChannelFuture bind(SocketAddress paramSocketAddress) {
 		return delegate.bind(paramSocketAddress);
 	}
 
-	public ChannelPipeline pipeline() {
+	@Override
+    public ChannelPipeline pipeline() {
 		return delegate.pipeline();
 	}
 
-	public ChannelFuture connect(SocketAddress paramSocketAddress) {
+	@Override
+    public ChannelFuture connect(SocketAddress paramSocketAddress) {
 		return delegate.connect(paramSocketAddress);
 	}
 
-	public ByteBufAllocator alloc() {
+	@Override
+    public ByteBufAllocator alloc() {
 		return delegate.alloc();
 	}
 
-	public ChannelPromise newPromise() {
+	@Override
+    public ChannelPromise newPromise() {
 		return delegate.newPromise();
 	}
 
-	public EventLoop eventLoop() {
+	@Override
+    public EventLoop eventLoop() {
 		if (loopProxy == null) {
 			loopProxy = new EventLoopProxy() {
 				@Override
 				protected EventLoop getDelegate() {
 					return delegate.eventLoop();
 				}
-				
+
 				@Override
 				protected Runnable schedulingRunnable(final Runnable runnable) {
 					final FieldAccessor accessor = getMessageAccessor(runnable);
-					
+
 					if (accessor != null) {
 						Runnable result = onMessageScheduled(runnable, accessor);;
 						return result != null ? result : getEmptyRunnable();
 					}
 					return runnable;
 				}
-				
+
 				@Override
 				protected <T> Callable<T> schedulingCallable(Callable<T> callable) {
 					FieldAccessor accessor = getMessageAccessor(callable);
-					
+
 					if (accessor != null) {
 						Callable<T> result = onMessageScheduled(callable, accessor);;
 						return result != null ? result : EventLoopProxy.<T>getEmptyCallable();
@@ -117,16 +127,16 @@ abstract class ChannelProxy implements Channel {
 		}
 		return loopProxy;
 	}
-	
+
 	/**
 	 * Retrieve a way to access the packet field of an object.
 	 * @param value - the object.
 	 * @return The packet field accessor, or NULL if not found.
 	 */
-	private FieldAccessor getMessageAccessor(Object value) {	
+	private FieldAccessor getMessageAccessor(Object value) {
 		Class<?> clazz = value.getClass();
 		FieldAccessor accessor = MESSAGE_LOOKUP.get(clazz);
-		
+
 		if (accessor == null) {
 			try {
 				accessor = Accessors.getFieldAccessor(clazz, messageClass, true);
@@ -139,137 +149,169 @@ abstract class ChannelProxy implements Channel {
 		return accessor != MARK_NO_MESSAGE ? accessor : null;
 	}
 
-	public ChannelFuture connect(SocketAddress paramSocketAddress1,
+	@Override
+    public ChannelFuture connect(SocketAddress paramSocketAddress1,
 			SocketAddress paramSocketAddress2) {
 		return delegate.connect(paramSocketAddress1, paramSocketAddress2);
 	}
 
-	public ChannelProgressivePromise newProgressivePromise() {
+	@Override
+    public ChannelProgressivePromise newProgressivePromise() {
 		return delegate.newProgressivePromise();
 	}
 
-	public Channel parent() {
+	@Override
+    public Channel parent() {
 		return delegate.parent();
 	}
 
-	public ChannelConfig config() {
+	@Override
+    public ChannelConfig config() {
 		return delegate.config();
 	}
 
-	public ChannelFuture newSucceededFuture() {
+	@Override
+    public ChannelFuture newSucceededFuture() {
 		return delegate.newSucceededFuture();
 	}
 
-	public boolean isOpen() {
+	@Override
+    public boolean isOpen() {
 		return delegate.isOpen();
 	}
 
-	public ChannelFuture disconnect() {
+	@Override
+    public ChannelFuture disconnect() {
 		return delegate.disconnect();
 	}
 
-	public boolean isRegistered() {
+	@Override
+    public boolean isRegistered() {
 		return delegate.isRegistered();
 	}
 
-	public ChannelFuture newFailedFuture(Throwable paramThrowable) {
+	@Override
+    public ChannelFuture newFailedFuture(Throwable paramThrowable) {
 		return delegate.newFailedFuture(paramThrowable);
 	}
 
-	public ChannelFuture close() {
+	@Override
+    public ChannelFuture close() {
 		return delegate.close();
 	}
 
-	public boolean isActive() {
+	@Override
+    public boolean isActive() {
 		return delegate.isActive();
 	}
 
-	@Deprecated
+	@Override
+    @Deprecated
 	public ChannelFuture deregister() {
 		return delegate.deregister();
 	}
 
-	public ChannelPromise voidPromise() {
+	@Override
+    public ChannelPromise voidPromise() {
 		return delegate.voidPromise();
 	}
 
-	public ChannelMetadata metadata() {
+	@Override
+    public ChannelMetadata metadata() {
 		return delegate.metadata();
 	}
 
-	public ChannelFuture bind(SocketAddress paramSocketAddress,
+	@Override
+    public ChannelFuture bind(SocketAddress paramSocketAddress,
 			ChannelPromise paramChannelPromise) {
 		return delegate.bind(paramSocketAddress, paramChannelPromise);
 	}
 
-	public SocketAddress localAddress() {
+	@Override
+    public SocketAddress localAddress() {
 		return delegate.localAddress();
 	}
 
-	public SocketAddress remoteAddress() {
+	@Override
+    public SocketAddress remoteAddress() {
 		return delegate.remoteAddress();
 	}
 
-	public ChannelFuture connect(SocketAddress paramSocketAddress,
+	@Override
+    public ChannelFuture connect(SocketAddress paramSocketAddress,
 			ChannelPromise paramChannelPromise) {
 		return delegate.connect(paramSocketAddress, paramChannelPromise);
 	}
 
-	public ChannelFuture closeFuture() {
+	@Override
+    public ChannelFuture closeFuture() {
 		return delegate.closeFuture();
 	}
 
-	public boolean isWritable() {
+	@Override
+    public boolean isWritable() {
 		return delegate.isWritable();
 	}
 
-	public Channel flush() {
+	@Override
+    public Channel flush() {
 		return delegate.flush();
 	}
 
-	public ChannelFuture connect(SocketAddress paramSocketAddress1,
+	@Override
+    public ChannelFuture connect(SocketAddress paramSocketAddress1,
 			SocketAddress paramSocketAddress2, ChannelPromise paramChannelPromise) {
 		return delegate.connect(paramSocketAddress1, paramSocketAddress2, paramChannelPromise);
 	}
 
-	public Channel read() {
+	@Override
+    public Channel read() {
 		return delegate.read();
 	}
 
-	public Unsafe unsafe() {
+	@Override
+    public Unsafe unsafe() {
 		return delegate.unsafe();
 	}
 
-	public ChannelFuture disconnect(ChannelPromise paramChannelPromise) {
+	@Override
+    public ChannelFuture disconnect(ChannelPromise paramChannelPromise) {
 		return delegate.disconnect(paramChannelPromise);
 	}
 
-	public ChannelFuture close(ChannelPromise paramChannelPromise) {
+	@Override
+    public ChannelFuture close(ChannelPromise paramChannelPromise) {
 		return delegate.close(paramChannelPromise);
 	}
 
-	@Deprecated
+	@Override
+    @Deprecated
 	public ChannelFuture deregister(ChannelPromise paramChannelPromise) {
 		return delegate.deregister(paramChannelPromise);
 	}
-	
-	public ChannelFuture write(Object paramObject) {
+
+	@Override
+    public ChannelFuture write(Object paramObject) {
 		return delegate.write(paramObject);
 	}
 
-	public ChannelFuture write(Object paramObject, ChannelPromise paramChannelPromise) {
+	@Override
+    public ChannelFuture write(Object paramObject, ChannelPromise paramChannelPromise) {
 		return delegate.write(paramObject, paramChannelPromise);
 	}
 
-	public ChannelFuture writeAndFlush(Object paramObject, ChannelPromise paramChannelPromise) {
+	@Override
+    public ChannelFuture writeAndFlush(Object paramObject, ChannelPromise paramChannelPromise) {
 		return delegate.writeAndFlush(paramObject, paramChannelPromise);
 	}
 
-	public ChannelFuture writeAndFlush(Object paramObject) {
+	@Override
+    public ChannelFuture writeAndFlush(Object paramObject) {
 		return delegate.writeAndFlush(paramObject);
 	}
 
-	public int compareTo(Channel o) {
+	@Override
+    public int compareTo(Channel o) {
 		return delegate.compareTo(o);
 	}
 }

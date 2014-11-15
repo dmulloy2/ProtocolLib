@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -21,36 +21,38 @@ import java.lang.reflect.Constructor;
 
 import org.bukkit.inventory.ItemStack;
 
+import com.comphenix.protocol.annotations.Spigot;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.CustomType;
 import com.google.common.base.Objects;
 
 /**
  * Represents a watchable object.
- * 
+ *
  * @author Kristian
  */
 public class WrappedWatchableObject extends AbstractWrapper {
 	// Whether or not the reflection machinery has been initialized
 	private static boolean hasInitialized;
-	
+
 	// The field containing the value itself
 	private static StructureModifier<Object> baseModifier;
-	
+
 	// Used to create new watchable objects
 	private static Constructor<?> watchableConstructor;
-	
+
 	// The watchable object class type
 	private static Class<?> watchableObjectClass;
-	
+
 	protected StructureModifier<Object> modifier;
-	
+
 	// Type of the stored value
 	private Class<?> typeClass;
-	
+
 	/**
 	 * Wrap a given raw Minecraft watchable object.
 	 * @param handle - the raw watchable object to wrap.
@@ -59,7 +61,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 		super(MinecraftReflection.getWatchableObjectClass());
 		load(handle);
 	}
-	
+
 	/**
 	 * Construct a watchable object from an index and a given value.
 	 * @param index - the index.
@@ -67,23 +69,23 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	 */
 	public WrappedWatchableObject(int index, Object value) {
 		super(MinecraftReflection.getWatchableObjectClass());
-		
+
 		if (value == null)
 			throw new IllegalArgumentException("Value cannot be NULL.");
-		
+
 		// Get the correct type ID
 		Integer typeID = WrappedDataWatcher.getTypeID(value.getClass());
-		
+
 		if (typeID != null) {
 			if (watchableConstructor == null) {
 				try {
 					watchableConstructor = MinecraftReflection.getWatchableObjectClass().
 											getConstructor(int.class, int.class, Object.class);
 				} catch (Exception e) {
-					throw new RuntimeException("Cannot get the WatchableObject(int, int, Object) constructor.", e); 
+					throw new RuntimeException("Cannot get the WatchableObject(int, int, Object) constructor.", e);
 				}
 			}
-			
+
 			// Create the object
 			try {
 				load(watchableConstructor.newInstance(typeID, index, getUnwrapped(value)));
@@ -94,20 +96,32 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			throw new IllegalArgumentException("Cannot watch the type " + value.getClass());
 		}
 	}
-	
+
+	/**
+	 * Construct a custom watchable object from an index, value and custom type.
+	 * @param index - the index.
+	 * @param primary - non-null value of specific types.
+	 * @param secondary - optional secondary value, if the type can store it.
+	 * @param type - the custom Spigot type.
+	 */
+	@Spigot(minimumBuild = 1628)
+	public WrappedWatchableObject(int index, Object value, Object secondary, CustomType type) {
+		this(index, type.newInstance(value, secondary));
+	}
+
 	// Wrap a NMS object
 	private void load(Object handle) {
 		initialize();
 		this.handle = handle;
 		this.modifier = baseModifier.withTarget(handle);
-		
+
 		// Make sure the type is correct
 		if (!watchableObjectClass.isAssignableFrom(handle.getClass())) {
 			throw new ClassCastException("Cannot cast the class " + handle.getClass().getName() +
 										 " to " + watchableObjectClass.getName());
 		}
 	}
-	
+
 	/**
 	 * Initialize reflection machinery.
 	 */
@@ -118,7 +132,16 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			baseModifier = new StructureModifier<Object>(watchableObjectClass, null, false);
 		}
 	}
-	
+
+	/**
+	 * Retrieve the custom type of this object.
+	 * @return The custom type, or NULL if not applicable.
+	 */
+	@Spigot(minimumBuild = 1628)
+	public CustomType getCustomType() {
+		return CustomType.fromValue(getValue());
+	}
+
 	/**
 	 * Retrieve the correct super type of the current value.
 	 * @return Super type.
@@ -127,7 +150,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public Class<?> getType() throws FieldAccessException {
 		return getWrappedType(getTypeRaw());
 	}
-	
+
 	/**
 	 * Retrieve the correct super type of the current value, given the raw NMS object.
 	 * @return Super type.
@@ -136,15 +159,15 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	private Class<?> getTypeRaw() throws FieldAccessException {
 		if (typeClass == null) {
 			typeClass = WrappedDataWatcher.getTypeClass(getTypeID());
-			
+
 			if (typeClass == null) {
 				throw new IllegalStateException("Unrecognized data type: " + getTypeID());
 			}
 		}
-		
+
 		return typeClass;
 	}
-	
+
 	/**
 	 * Retrieve the index of this watchable object. This is used to identify a value.
 	 * @return Object index.
@@ -153,7 +176,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public int getIndex() throws FieldAccessException {
 		return modifier.<Integer>withType(int.class).read(1);
 	}
-	
+
 	/**
 	 * Set the the index of this watchable object.
 	 * @param index - the new object index.
@@ -162,7 +185,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public void setIndex(int index) throws FieldAccessException {
 		modifier.<Integer>withType(int.class).write(1, index);
 	}
-	
+
 	/**
 	 * Retrieve the type ID of a watchable object.
 	 * <p>
@@ -208,7 +231,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public int getTypeID() throws FieldAccessException {
 		return modifier.<Integer>withType(int.class).read(0);
 	}
-	
+
 	/**
 	 * Set the type ID of a watchable object.
 	 * @see {@link #getTypeID()} for more information.
@@ -218,7 +241,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public void setTypeID(int id) throws FieldAccessException {
 		modifier.<Integer>withType(int.class).write(0, id);
 	}
-	
+
 	/**
 	 * Update the value field.
 	 * @param newValue - new value.
@@ -227,7 +250,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public void setValue(Object newValue) throws FieldAccessException {
 		setValue(newValue, true);
 	}
-	
+
 	/**
 	 * Update the value field.
 	 * @param newValue - new value.
@@ -240,15 +263,15 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			throw new IllegalArgumentException("Cannot watch a NULL value.");
 		if (!getType().isAssignableFrom(newValue.getClass()))
 			throw new IllegalArgumentException("Object " + newValue +  " must be of type " + getType().getName());
-		
+
 		// See if we should update the client to
 		if (updateClient)
 			setDirtyState(true);
-		
+
 		// Use the modifier to set the value
 		modifier.withType(Object.class).write(0, getUnwrapped(newValue));
 	}
-	
+
 	/**
 	 * Read the underlying value field.
 	 * @return The underlying value.
@@ -256,16 +279,43 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	private Object getNMSValue() {
 		return modifier.withType(Object.class).read(0);
 	}
-	
+
 	/**
 	 * Read the value field.
 	 * @return The watched value.
-	 * @throws FieldAccessException Unable to use reflection. 
+	 * @throws FieldAccessException Unable to use reflection.
 	 */
 	public Object getValue() throws FieldAccessException {
 		return getWrapped(modifier.withType(Object.class).read(0));
 	}
-	
+
+	/**
+	 * Retrieve the secondary value associated with this watchable object.
+	 * <p>
+	 * This is only applicable for certain {@link CustomType}.
+	 * @return The secondary value, or NULL if not found.
+	 */
+	@Spigot(minimumBuild = 1628)
+	public Object getSecondaryValue() {
+		CustomType type = getCustomType();
+		return type != null ? type.getSecondary(getValue()) : null;
+	}
+
+	/**
+	 * Set the secondary value.
+	 * @param secondary - the secondary value.
+	 * @throws IllegalStateException If this watchable object does not have a secondary value.
+	 */
+	@Spigot(minimumBuild = 1628)
+	public void setSecondaryValue(Object secondary) {
+		CustomType type = getCustomType();
+
+		if (type == null) {
+			throw new IllegalStateException(this + " does not have a custom type.");
+		}
+		type.setSecondary(getValue(), secondary);
+	}
+
 	/**
 	 * Set whether or not the value must be synchronized with the client.
 	 * @param dirty - TRUE if the value should be synchronized, FALSE otherwise.
@@ -274,7 +324,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public void setDirtyState(boolean dirty) throws FieldAccessException {
 		modifier.<Boolean>withType(boolean.class).write(0, dirty);
 	}
-	
+
 	/**
 	 * Retrieve whether or not the value must be synchronized with the client.
 	 * @return TRUE if the value should be synchronized, FALSE otherwise.
@@ -283,7 +333,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public boolean getDirtyState() throws FieldAccessException {
 		return modifier.<Boolean>withType(boolean.class).read(0);
 	}
-	
+
 	/**
 	 * Retrieve the wrapped object value, if needed.
 	 * @param value - the raw NMS object to wrap.
@@ -300,7 +350,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
     		return value;
     	}
 	}
-	
+
 	/**
 	 * Retrieve the wrapped type, if needed.
 	 * @param wrapped - the wrapped class type.
@@ -311,12 +361,12 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return ChunkPosition.class;
 		else if (unwrapped.equals(MinecraftReflection.getChunkCoordinatesClass()))
 			return WrappedChunkCoordinate.class;
-		else if (unwrapped.equals(MinecraftReflection.getItemStackClass())) 
+		else if (unwrapped.equals(MinecraftReflection.getItemStackClass()))
 			return ItemStack.class;
 		else
 			return unwrapped;
 	}
-	
+
 	/**
 	 * Retrieve the raw NMS value.
 	 * @param wrapped - the wrapped position.
@@ -333,9 +383,9 @@ public class WrappedWatchableObject extends AbstractWrapper {
     		return BukkitConverters.getItemStackConverter().getGeneric(
     				MinecraftReflection.getItemStackClass(), (ItemStack) wrapped);
     	else
-    		return wrapped;	
+    		return wrapped;
 	}
-	
+
 	/**
 	 * Retrieve the unwrapped type, if needed.
 	 * @param wrapped - the unwrapped class type.
@@ -343,7 +393,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	 */
 	static Class<?> getUnwrappedType(Class<?> wrapped) {
 		if (wrapped.equals(ChunkPosition.class))
-			return MinecraftReflection.getChunkPositionClass(); 
+			return MinecraftReflection.getChunkPositionClass();
 		else if (wrapped.equals(WrappedChunkCoordinate.class))
 			return MinecraftReflection.getChunkCoordinatesClass();
 		else if (ItemStack.class.isAssignableFrom(wrapped))
@@ -351,7 +401,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 		else
 			return wrapped;
 	}
-	
+
 	/**
 	 * Clone the current wrapped watchable object, along with any contained objects.
 	 * @return A deep clone of the current watchable object.
@@ -360,18 +410,18 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	public WrappedWatchableObject deepClone() throws FieldAccessException {
 		WrappedWatchableObject clone = new WrappedWatchableObject(
 				DefaultInstances.DEFAULT.getDefault(MinecraftReflection.getWatchableObjectClass()));
-		
+
 		clone.setDirtyState(getDirtyState());
 		clone.setIndex(getIndex());
 		clone.setTypeID(getTypeID());
 		clone.setValue(getClonedValue(), false);
 		return clone;
 	}
-	
+
 	// Helper
 	Object getClonedValue() throws FieldAccessException {
 		Object value = getNMSValue();
-		
+
 		// Only a limited set of references types are supported
 		if (MinecraftReflection.isChunkPosition(value)) {
 			EquivalentConverter<ChunkPosition> converter = ChunkPosition.getConverter();
@@ -383,7 +433,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return value;
 		}
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		// Quick checks
@@ -391,24 +441,24 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return true;
 		if (obj == null)
 			return false;
-		
+
 		if (obj instanceof WrappedWatchableObject) {
 			WrappedWatchableObject other = (WrappedWatchableObject) obj;
-			
+
 			return Objects.equal(getIndex(), other.getIndex()) &&
 				   Objects.equal(getTypeID(), other.getTypeID()) &&
 				   Objects.equal(getValue(), other.getValue());
 		}
-		
+
 		// No, this is not equivalent
 		return false;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hashCode(getIndex(), getTypeID(), getValue());
 	}
-	
+
 	@Override
 	public String toString() {
 		return String.format("[%s: %s (%s)]", getIndex(), getValue(), getType().getSimpleName());

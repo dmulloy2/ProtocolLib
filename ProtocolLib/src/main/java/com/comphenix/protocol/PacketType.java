@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 
 import org.bukkit.Bukkit;
 
+import com.comphenix.protocol.annotations.Spigot;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ObjectEnum;
@@ -25,7 +26,7 @@ import com.google.common.util.concurrent.Futures;
 /**
  * Represents the type of a packet in a specific protocol.
  * <p>
- * Note that vanilla Minecraft reuses packet IDs per protocol (ping, game, login), so you cannot 
+ * Note that vanilla Minecraft reuses packet IDs per protocol (ping, game, login), so you cannot
  * rely on IDs alone.
  * @author Kristian
  */
@@ -37,14 +38,14 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 * Represents an unknown legacy packet ID.
 	 */
 	public static final int UNKNOWN_PACKET = -1;
-	
+
 	/**
 	 * Packets sent during handshake.
 	 * @author Kristian
 	 */
 	public static class Handshake {
 		private static final Protocol PROTOCOL = Protocol.HANDSHAKING;
-		
+
 		/**
 		 * Incoming packets.
 		 * @author Kristian
@@ -55,12 +56,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			 * Legacy name: HANDSHAKE.
 			 */
 			public static final PacketType SET_PROTOCOL =             new PacketType(PROTOCOL, SENDER, 0x00, 2);
-			
+
 			private final static Client INSTANCE = new Client();
-			
+
 			// Prevent accidental construction
 			private Client() { super(PacketType.class); }
-			
+
 			public static Client getInstance() {
 				return INSTANCE;
 			}
@@ -68,7 +69,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return SENDER;
 			}
 		}
-		
+
 		/**
 		 * An empty enum, as the server will not send any packets in this protocol.
 		 * @author Kristian
@@ -85,26 +86,26 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return SENDER;
 			}
 		}
-		
+
 		public static Protocol getProtocol() {
 			return PROTOCOL;
 		}
 	}
-	
+
 	/**
 	 * Packets sent and received when logged into the game.
 	 * @author Kristian
 	 */
 	public static class Play {
 		private static final Protocol PROTOCOL = Protocol.PLAY;
-		
+
 		/**
 		 * Outgoing packets.
 		 * @author Kristian
 		 */
-		public static class Server extends ObjectEnum<PacketType> {		
+		public static class Server extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
-			
+
 			public static final PacketType KEEP_ALIVE =               new PacketType(PROTOCOL, SENDER, 0x00, 0);
 			public static final PacketType LOGIN =                    new PacketType(PROTOCOL, SENDER, 0x01, 1);
 			public static final PacketType CHAT =                     new PacketType(PROTOCOL, SENDER, 0x02, 3);
@@ -125,7 +126,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType SPAWN_ENTITY =             new PacketType(PROTOCOL, SENDER, 0x0E, 23);
 			public static final PacketType SPAWN_ENTITY_LIVING =      new PacketType(PROTOCOL, SENDER, 0x0F, 24);
 			public static final PacketType SPAWN_ENTITY_PAINTING =    new PacketType(PROTOCOL, SENDER, 0x10, 25);
-			public static final PacketType SPAWN_ENTITY_EXPERIENCE_ORB = 
+			public static final PacketType SPAWN_ENTITY_EXPERIENCE_ORB =
 			                                                          new PacketType(PROTOCOL, SENDER, 0x11, 26);
 			public static final PacketType ENTITY_VELOCITY =          new PacketType(PROTOCOL, SENDER, 0x12, 28);
 			public static final PacketType ENTITY_DESTROY =           new PacketType(PROTOCOL, SENDER, 0x13, 29);
@@ -173,18 +174,25 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType TAB_COMPLETE =             new PacketType(PROTOCOL, SENDER, 0x3A, 203);
 			public static final PacketType SCOREBOARD_OBJECTIVE =     new PacketType(PROTOCOL, SENDER, 0x3B, 206);
 			public static final PacketType SCOREBOARD_SCORE =         new PacketType(PROTOCOL, SENDER, 0x3C, 207);
-			public static final PacketType SCOREBOARD_DISPLAY_OBJECTIVE = 
+			public static final PacketType SCOREBOARD_DISPLAY_OBJECTIVE =
 			                                                          new PacketType(PROTOCOL, SENDER, 0x3D, 208);
 			public static final PacketType SCOREBOARD_TEAM =          new PacketType(PROTOCOL, SENDER, 0x3E, 209);
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x3F, 250);
 			public static final PacketType KICK_DISCONNECT =          new PacketType(PROTOCOL, SENDER, 0x40, 255);
-			
-			// The instance must 
+
+			@Spigot(minimumBuild = 1628)
+			public static final PacketType TITLE =        			  new PacketType(PROTOCOL, SENDER, 0x45, -1);
+			@Spigot(minimumBuild = 1628)
+			public static final PacketType TAB_HEADER =        		  new PacketType(PROTOCOL, SENDER, 0x47, -1);
+			@Spigot(minimumBuild = 1628)
+			public static final PacketType RESOURCE_PACK_SEND =       new PacketType(PROTOCOL, SENDER, 0x48, -1);
+
+			// The instance must
 			private final static Server INSTANCE = new Server();
-			
+
 			// Prevent accidental construction
 			private Server() { super(PacketType.class); }
-			
+
 			public static Sender getSender() {
 				return SENDER;
 			}
@@ -192,14 +200,14 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return INSTANCE;
 			}
 		}
-		
+
 		/**
 		 * Incoming packets.
 		 * @author Kristian
 		 */
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
-			
+
 			public static final PacketType KEEP_ALIVE =               new PacketType(PROTOCOL, SENDER, 0x00, 0);
 			public static final PacketType CHAT =                     new PacketType(PROTOCOL, SENDER, 0x01, 3);
 			public static final PacketType USE_ENTITY =               new PacketType(PROTOCOL, SENDER, 0x02, 7);
@@ -224,12 +232,15 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType SETTINGS =                 new PacketType(PROTOCOL, SENDER, 0x15, 204);
 			public static final PacketType CLIENT_COMMAND =           new PacketType(PROTOCOL, SENDER, 0x16, 205);
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x17, 250);
-			
+
+			@Spigot(minimumBuild = 1628)
+			public static final PacketType RESOURCE_PACK_STATUS =     new PacketType(PROTOCOL, SENDER, 0x19, -1);
+
 			private final static Client INSTANCE = new Client();
-			
+
 			// Prevent accidental construction
 			private Client() { super(PacketType.class); }
-			
+
 			public static Sender getSender() {
 				return SENDER;
 			}
@@ -237,96 +248,35 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return INSTANCE;
 			}
 		}
-		
+
 		public static Protocol getProtocol() {
 			return PROTOCOL;
 		}
 	}
-	
+
 	/**
 	 * Packets sent and received when querying the server in the multiplayer menu.
 	 * @author Kristian
 	 */
 	public static class Status {
 		private static final Protocol PROTOCOL = Protocol.STATUS;
-		
+
 		/**
 		 * Outgoing packets.
 		 * @author Kristian
 		 */
 		public static class Server extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
-			
+
 			public static final PacketType OUT_SERVER_INFO =          new PacketType(PROTOCOL, SENDER, 0x00, 255);
 			@SuppressWarnings("deprecation")
 			public static final PacketType OUT_PING =                 new PacketType(PROTOCOL, SENDER, 0x01, Packets.Server.PING_TIME);
-			
-			private final static Server INSTANCE = new Server();
-			
-			// Prevent accidental construction
-			private Server() { super(PacketType.class); }
-			
-			public static Sender getSender() {
-				return SENDER;
-			}
-			public static Server getInstance() {
-				return INSTANCE;
-			}
-		}
-		
-		/**
-		 * Incoming packets.
-		 * @author Kristian
-		 */
-		public static class Client extends ObjectEnum<PacketType> {
-			private final static Sender SENDER = Sender.CLIENT;		
-			
-			public static final PacketType IN_START =                 new PacketType(PROTOCOL, SENDER, 0x00, 254);
-			@SuppressWarnings("deprecation")
-			public static final PacketType IN_PING =                  new PacketType(PROTOCOL, SENDER, 0x01, Packets.Client.PING_TIME);
-			
-			private final static Client INSTANCE = new Client();
-			
-			// Prevent accidental construction
-			private Client() { super(PacketType.class); }
-			
-			public static Sender getSender() {
-				return SENDER;
-			}
-			public static Client getInstance() {
-				return INSTANCE;
-			}
-		}
-		
-		public static Protocol getProtocol() {
-			return PROTOCOL;
-		}
-	}
-	
-	/**
-	 * Packets sent and received when logging in to the server.
-	 * @author Kristian
-	 */
-	public static class Login {
-		private static final Protocol PROTOCOL = Protocol.LOGIN;
-		
-		/**
-		 * Outgoing packets.
-		 * @author Kristian
-		 */
-		public static class Server extends ObjectEnum<PacketType> {
-			private final static Sender SENDER = Sender.SERVER;
-			
-			public static final PacketType DISCONNECT =               new PacketType(PROTOCOL, SENDER, 0x00, 255);
-			public static final PacketType ENCRYPTION_BEGIN =         new PacketType(PROTOCOL, SENDER, 0x01, 253);
-			@SuppressWarnings("deprecation")
-			public static final PacketType SUCCESS =                  new PacketType(PROTOCOL, SENDER, 0x02, Packets.Server.LOGIN_SUCCESS);
 
 			private final static Server INSTANCE = new Server();
-			
+
 			// Prevent accidental construction
 			private Server() { super(PacketType.class); }
-			
+
 			public static Sender getSender() {
 				return SENDER;
 			}
@@ -334,23 +284,23 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return INSTANCE;
 			}
 		}
-		
+
 		/**
 		 * Incoming packets.
 		 * @author Kristian
 		 */
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
-			
+
+			public static final PacketType IN_START =                 new PacketType(PROTOCOL, SENDER, 0x00, 254);
 			@SuppressWarnings("deprecation")
-			public static final PacketType START =                    new PacketType(PROTOCOL, SENDER, 0x00, Packets.Client.LOGIN_START);
-			public static final PacketType ENCRYPTION_BEGIN =         new PacketType(PROTOCOL, SENDER, 0x01, 252);
+			public static final PacketType IN_PING =                  new PacketType(PROTOCOL, SENDER, 0x01, Packets.Client.PING_TIME);
 
 			private final static Client INSTANCE = new Client();
-			
+
 			// Prevent accidental construction
 			private Client() { super(PacketType.class); }
-			
+
 			public static Sender getSender() {
 				return SENDER;
 			}
@@ -358,19 +308,83 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return INSTANCE;
 			}
 		}
-		
+
 		public static Protocol getProtocol() {
 			return PROTOCOL;
 		}
 	}
-	
+
+	/**
+	 * Packets sent and received when logging in to the server.
+	 * @author Kristian
+	 */
+	public static class Login {
+		private static final Protocol PROTOCOL = Protocol.LOGIN;
+
+		/**
+		 * Outgoing packets.
+		 * @author Kristian
+		 */
+		public static class Server extends ObjectEnum<PacketType> {
+			private final static Sender SENDER = Sender.SERVER;
+
+			public static final PacketType DISCONNECT =               new PacketType(PROTOCOL, SENDER, 0x00, 255);
+			public static final PacketType ENCRYPTION_BEGIN =         new PacketType(PROTOCOL, SENDER, 0x01, 253);
+			@SuppressWarnings("deprecation")
+			public static final PacketType SUCCESS =                  new PacketType(PROTOCOL, SENDER, 0x02, Packets.Server.LOGIN_SUCCESS);
+
+			@Spigot(minimumBuild = 1628)
+			public static final PacketType LOGIN_COMPRESSION =        new PacketType(PROTOCOL, SENDER, 0x03, -1);
+
+			private final static Server INSTANCE = new Server();
+
+			// Prevent accidental construction
+			private Server() { super(PacketType.class); }
+
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Server getInstance() {
+				return INSTANCE;
+			}
+		}
+
+		/**
+		 * Incoming packets.
+		 * @author Kristian
+		 */
+		public static class Client extends ObjectEnum<PacketType> {
+			private final static Sender SENDER = Sender.CLIENT;
+
+			@SuppressWarnings("deprecation")
+			public static final PacketType START =                    new PacketType(PROTOCOL, SENDER, 0x00, Packets.Client.LOGIN_START);
+			public static final PacketType ENCRYPTION_BEGIN =         new PacketType(PROTOCOL, SENDER, 0x01, 252);
+
+			private final static Client INSTANCE = new Client();
+
+			// Prevent accidental construction
+			private Client() { super(PacketType.class); }
+
+			public static Sender getSender() {
+				return SENDER;
+			}
+			public static Client getInstance() {
+				return INSTANCE;
+			}
+		}
+
+		public static Protocol getProtocol() {
+			return PROTOCOL;
+		}
+	}
+
 	/**
 	 * Contains every packet Minecraft 1.6.4 packet removed in Minecraft 1.7.2.
 	 * @author Kristian
 	 */
 	public static class Legacy {
 		private static final Protocol PROTOCOL = Protocol.LEGACY;
-		
+
 		/**
 		 * Outgoing packets.
 		 * @author Kristian
@@ -378,7 +392,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		// Missing server packets: [10, 11, 12, 21, 107, 252]
 		public static class Server extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
-			
+
 			public static final PacketType PLAYER_FLYING =            PacketType.newLegacy(SENDER, 10);
 			public static final PacketType PLAYER_POSITION =          PacketType.newLegacy(SENDER, 11);
 			public static final PacketType PLAYER_POSITON_LOOK =      PacketType.newLegacy(SENDER, 12);
@@ -390,19 +404,19 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			 * Removed in Minecraft 1.7.2
 			 */
 			public static final PacketType SET_CREATIVE_SLOT =        PacketType.newLegacy(SENDER, 107);
-			
+
 			/**
 			 * Removed in Minecraft 1.7.2
 			 */
 			public static final PacketType KEY_RESPONSE =             PacketType.newLegacy(SENDER, 252);
-			
+
 			private final static Server INSTANCE = new Server();
-			
+
 			// Prevent accidental construction
-			private Server() { 
-				super(PacketType.class); 
+			private Server() {
+				super(PacketType.class);
 			}
-			
+
 			public static Sender getSender() {
 				return SENDER;
 			}
@@ -410,7 +424,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return INSTANCE;
 			}
 		}
-		
+
 		/**
 		 * Incoming packets.
 		 * @author Kristian
@@ -418,16 +432,16 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		// Missing client packets: [1, 9, 255]
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
-			
+
 			public static final PacketType LOGIN =                    PacketType.newLegacy(SENDER, 1);
 			public static final PacketType RESPAWN =                  PacketType.newLegacy(SENDER, 9);
 			public static final PacketType DISCONNECT =               PacketType.newLegacy(SENDER, 255);
-				
+
 			private final static Client INSTANCE = new Client();
-			
+
 			// Prevent accidental construction
 			private Client() { super(PacketType.class); }
-			
+
 			public static Sender getSender() {
 				return SENDER;
 			}
@@ -435,12 +449,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				return INSTANCE;
 			}
 		}
-		
+
 		public static Protocol getProtocol() {
 			return PROTOCOL;
 		}
 	}
-	
+
 	/**
 	 * Represents the different protocol or connection states.
 	 * @author Kristian
@@ -450,12 +464,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		PLAY,
 		STATUS,
 		LOGIN,
-		
+
 		/**
 		 * Only for packets removed in Minecraft 1.7.2
 		 */
 		LEGACY;
-		
+
 		/**
 		 * Retrieve the correct protocol enum from a given vanilla enum instance.
 		 * @param vanilla - the vanilla protocol enum instance.
@@ -463,7 +477,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		 */
 		public static Protocol fromVanilla(Enum<?> vanilla) {
 			String name = vanilla.name();
-			
+
 			if ("HANDSHAKING".equals(name))
 					return HANDSHAKING;
 			if ("PLAY".equals(name))
@@ -475,7 +489,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			throw new IllegalArgumentException("Unrecognized vanilla enum " + vanilla);
 		}
 	}
-	
+
 	/**
 	 * Represents the sender of this packet type.
 	 * @author Kristian
@@ -486,12 +500,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		 * Indicates that packets of this type will be sent by connected clients.
 		 */
 		CLIENT,
-		
+
 		/**
 		 * Indicate that packets of this type will be sent by the current server.
 		 */
 		SERVER;
-		
+
 		/**
 		 * Retrieve the equivialent connection side.
 		 * @return The connection side.
@@ -500,21 +514,21 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			return this == CLIENT ? ConnectionSide.CLIENT_SIDE : ConnectionSide.SERVER_SIDE;
 		}
 	}
-	
+
 	// Lookup of packet types
 	private static PacketTypeLookup LOOKUP;
-	
+
 	/**
 	 * Protocol version of all the current IDs.
 	 */
 	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.WORLD_UPDATE;
-	
+
 	private final Protocol protocol;
 	private final Sender sender;
 	private final int currentId;
 	private final int legacyId;
 	private final MinecraftVersion version;
-	
+
 	/**
 	 * Retrieve the current packet/legacy lookup.
 	 * @return The packet type lookup.
@@ -535,7 +549,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		}
 		return LOOKUP;
 	}
-	
+
 	/**
 	 * Find every packet type known to the current version of ProtocolLib.
 	 * @return Every packet type.
@@ -550,7 +564,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		sources.add(Status.Server.getInstance());
 		sources.add(Login.Client.getInstance());
 		sources.add(Login.Server.getInstance());
-		
+
 		// Add the missing types in earlier versions
 		if (!MinecraftReflection.isUsingNetty()) {
 			sources.add(Legacy.Client.getInstance());
@@ -558,7 +572,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		}
 		return Iterables.concat(sources);
 	}
-	
+
 	/**
 	 * Retrieve a packet type from a legacy (1.6.4 and below) packet ID.
 	 * @param packetId - the legacy packet ID.
@@ -567,12 +581,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 */
 	public static PacketType findLegacy(int packetId) {
 		PacketType type = getLookup().getFromLegacy(packetId);
-		
+
 		if (type != null)
 			return type;
 		throw new IllegalArgumentException("Cannot find legacy packet " + packetId);
 	}
-	
+
 	/**
 	 * Retrieve a packet type from a legacy (1.6.4 and below) packet ID.
 	 * @param packetId - the legacy packet ID.
@@ -584,12 +598,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		if (preference == null)
 			return findLegacy(packetId);
 		PacketType type = getLookup().getFromLegacy(packetId, preference);
-		
+
 		if (type != null)
 			return type;
 		throw new IllegalArgumentException("Cannot find legacy packet " + packetId);
 	}
-	
+
 	/**
 	 * Determine if the given legacy packet exists.
 	 * @param packetId - the legacy packet ID.
@@ -599,7 +613,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public static boolean hasLegacy(int packetId) {
 		return getLookup().getFromLegacy(packetId) != null;
 	}
-	
+
 	/**
 	 * Retrieve a packet type from a protocol, sender and packet ID.
 	 * <p>
@@ -615,13 +629,13 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 */
 	public static PacketType findCurrent(Protocol protocol, Sender sender, int packetId) {
 		PacketType type = getLookup().getFromCurrent(protocol, sender, packetId);
-		
+
 		if (type != null)
 			return type;
-		throw new IllegalArgumentException("Cannot find packet " + packetId + 
+		throw new IllegalArgumentException("Cannot find packet " + packetId +
 				"(Protocol: " + protocol + ", Sender: " + sender + ")");
 	}
-	
+
 	/**
 	 * Determine if the given packet exists.
 	 * @param protocol - the protocol.
@@ -632,7 +646,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public static boolean hasCurrent(Protocol protocol, Sender sender, int packetId) {
 		return getLookup().getFromCurrent(protocol, sender, packetId) != null;
 	}
-	
+
 	/**
 	 * Retrieve a packet type from a legacy ID.
 	 * <p>
@@ -644,18 +658,18 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 */
 	public static PacketType fromLegacy(int id, Sender sender) {
 		PacketType type = getLookup().getFromLegacy(id, sender);
-		
+
 		if (type == null) {
 			if (sender == null)
 				throw new IllegalArgumentException("Cannot find legacy packet " + id);
 			type = newLegacy(sender, id);
-			
+
 			// As below
 			scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
 		}
 		return type;
 	}
-	
+
 	/**
 	 * Retrieve a packet type from a protocol, sender and packet ID.
 	 * <p>
@@ -668,16 +682,16 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 */
 	public static PacketType fromCurrent(Protocol protocol, Sender sender, int packetId, int legacyId) {
 		PacketType type = getLookup().getFromCurrent(protocol, sender, packetId);
-		
+
 		if (type == null) {
 			type = new PacketType(protocol, sender, packetId, legacyId);
-			
+
 			// Many may be scheduled, but only the first will be executed
 			scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
 		}
 		return type;
 	}
-	
+
 	/**
 	 * Lookup a packet type from a packet class.
 	 * @param packetClass - the packet class.
@@ -685,12 +699,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 */
 	public static PacketType fromClass(Class<?> packetClass) {
 		PacketType type = PacketRegistry.getPacketType(packetClass);
-		
+
 		if (type != null)
 			return type;
 		throw new IllegalArgumentException("Class " + packetClass + " is not a registered packet.");
 	}
-	
+
 	/**
 	 * Retrieve every packet type with the given UPPER_CAMEL_CASE name.
 	 * <p>
@@ -701,7 +715,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public static Collection<PacketType> fromName(String name) {
 		return getLookup().getFromName(name);
 	}
-	
+
 	/**
 	 * Determine if a given class represents a packet class.
 	 * @param packetClass - the class to lookup.
@@ -710,11 +724,11 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public static boolean hasClass(Class<?> packetClass) {
 		return PacketRegistry.getPacketType(packetClass) != null;
 	}
-	
+
 	/**
 	 * Register a particular packet type.
 	 * <p>
-	 * Note that the registration will be performed on the main thread. 
+	 * Note that the registration will be performed on the main thread.
 	 * @param type - the type to register.
 	 * @param name - the name of the packet.
 	 * @return A future telling us if our instance was registered.
@@ -724,10 +738,10 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			@Override
 			public Boolean call() throws Exception {
 				ObjectEnum<PacketType> objEnum;
-				
+
 				// A bit ugly, but performance is critical
 				objEnum = getObjectEnum(type);
-				
+
 				if (objEnum.registerMember(type, name)) {
 					getLookup().addPacketTypes(Arrays.asList(type));
 					return true;
@@ -746,7 +760,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		}
 		return ProtocolLibrary.getExecutorSync().submit(callable);
 	}
-	
+
 	/**
 	 * Retrieve the correct object enum from a specific packet type.
 	 * @param type - the packet type.
@@ -755,25 +769,25 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public static ObjectEnum<PacketType> getObjectEnum(final PacketType type) {
 		switch (type.getProtocol()) {
 			case HANDSHAKING:
-				return type.isClient() ? Handshake.Client.getInstance() : Handshake.Server.getInstance(); 
+				return type.isClient() ? Handshake.Client.getInstance() : Handshake.Server.getInstance();
 			case PLAY:
-				return type.isClient() ? Play.Client.getInstance() : Play.Server.getInstance(); 
+				return type.isClient() ? Play.Client.getInstance() : Play.Server.getInstance();
 			case STATUS:
-				return type.isClient() ? Status.Client.getInstance() : Status.Server.getInstance(); 
+				return type.isClient() ? Status.Client.getInstance() : Status.Server.getInstance();
 			case LOGIN:
-				return type.isClient() ? Login.Client.getInstance() : Login.Server.getInstance(); 
+				return type.isClient() ? Login.Client.getInstance() : Login.Server.getInstance();
 			case LEGACY:
-				return type.isClient() ? Legacy.Client.getInstance() : Legacy.Server.getInstance(); 
+				return type.isClient() ? Legacy.Client.getInstance() : Legacy.Server.getInstance();
 			default:
 				throw new IllegalStateException("Unexpected protocol: " + type.getProtocol());
 		}
 	}
-	
+
 	/**
 	 * Construct a new packet type.
 	 * @param protocol - the current protocol.
 	 * @param sender - client or server.
-	 * @param currentId - the current packet ID, or 
+	 * @param currentId - the current packet ID, or
 	 * @param legacyId - the legacy packet ID.
 	 */
 	public PacketType(Protocol protocol, Sender sender, int currentId, int legacyId) {
@@ -795,7 +809,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		this.legacyId = legacyId;
 		this.version = version;
 	}
-	
+
 	/**
 	 * Construct a legacy packet type.
 	 * @param sender - client or server.
@@ -804,7 +818,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public static PacketType newLegacy(Sender sender, int legacyId) {
 		return new PacketType(Protocol.LEGACY, sender, PacketType.UNKNOWN_PACKET, legacyId, MinecraftVersion.WORLD_UPDATE);
 	}
-	
+
 	/**
 	 * Determine if this packet is supported on the current server.
 	 * @return Whether or not the packet is supported.
@@ -820,7 +834,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public Protocol getProtocol() {
 		return protocol;
 	}
-	
+
 	/**
 	 * Retrieve which sender will transmit packets of this type.
 	 * @return The sender of these packets.
@@ -828,7 +842,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public Sender getSender() {
 		return sender;
 	}
-	
+
 	/**
 	 * Determine if this packet was sent by the client.
 	 * @return TRUE if it was, FALSE otherwise.
@@ -836,7 +850,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public boolean isClient() {
 		return sender == Sender.CLIENT;
 	}
-	
+
 	/**
 	 * Determine if this packet was sent by the server.
 	 * @return TRUE if it was, FALSE otherwise.
@@ -844,7 +858,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public boolean isServer() {
 		return sender == Sender.SERVER;
 	}
-	
+
 	/**
 	 * Retrieve the current protocol ID for this packet type.
 	 * <p>
@@ -856,7 +870,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public int getCurrentId() {
 		return currentId;
 	}
-	
+
 	/**
 	 * Retrieve the equivalent packet class.
 	 * @return The packet class, or NULL if not found.
@@ -868,7 +882,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Retrieve the declared enum name of this packet type.
 	 * @return The enum name.
@@ -884,7 +898,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public MinecraftVersion getCurrentVersion() {
 		return version;
 	}
-	
+
 	/**
 	 * Retrieve the legacy (1.6.4 or below) protocol ID of the packet type.
 	 * <p>
@@ -899,22 +913,22 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	public int hashCode() {
 		return Objects.hashCode(protocol, sender, currentId, legacyId);
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this)
 			return true;
-		
+
 		if (obj instanceof PacketType) {
 			PacketType other = (PacketType) obj;
-			return protocol == other.protocol && 
-				   sender == other.sender && 
-				   currentId == other.currentId && 
+			return protocol == other.protocol &&
+				   sender == other.sender &&
+				   currentId == other.currentId &&
 				   legacyId == other.legacyId;
 		}
 		return false;
 	}
-	
+
 	@Override
 	public int compareTo(PacketType other) {
 		return ComparisonChain.start().
@@ -924,11 +938,11 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				compare(legacyId, other.getLegacyId()).
 				result();
 	}
-	
+
 	@Override
 	public String toString() {
 		Class<?> clazz = getPacketClass();;
-	
+
 		if (clazz == null)
 			return "UNREGISTERED [" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + "]";
 		else
