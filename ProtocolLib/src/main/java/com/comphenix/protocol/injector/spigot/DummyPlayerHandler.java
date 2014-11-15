@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;

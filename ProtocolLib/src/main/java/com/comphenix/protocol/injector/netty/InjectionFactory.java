@@ -3,7 +3,9 @@ package com.comphenix.protocol.injector.netty;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nonnull;
+
 import net.minecraft.util.io.netty.channel.Channel;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;

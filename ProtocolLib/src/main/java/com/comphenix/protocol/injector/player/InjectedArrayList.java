@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
@@ -32,11 +37,6 @@ import com.comphenix.protocol.injector.player.NetworkFieldInjector.FakePacket;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.MapMaker;
-
-import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
 
 /**
  * The array list that notifies when packets are sent by the server.

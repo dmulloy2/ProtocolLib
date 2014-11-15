@@ -1,6 +1,6 @@
 package com.comphenix.protocol.wrappers.nbt.io;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.BeforeClass;

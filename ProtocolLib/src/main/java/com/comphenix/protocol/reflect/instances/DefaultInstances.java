@@ -18,7 +18,8 @@
 package com.comphenix.protocol.reflect.instances;
 
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
 import javax.annotation.Nullable;
 

@@ -1,9 +1,9 @@
 package com.comphenix.protocol.wrappers;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner;

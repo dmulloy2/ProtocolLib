@@ -3,6 +3,7 @@ package com.comphenix.protocol.injector.server;
 import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
+
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 

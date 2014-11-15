@@ -11,6 +11,8 @@ Critically, different plugins that use this approach may _hook_ into the same cl
 with unpredictable outcomes. More than often this causes plugins to crash, but it may also 
 lead to more subtle bugs.
 
+Currently maintained by dmulloy2 on behalf of [SpigotMC](http://www.spigotmc.org/)
+
 
 ### Resources
 

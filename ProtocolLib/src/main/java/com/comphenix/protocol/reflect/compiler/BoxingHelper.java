@@ -17,7 +17,9 @@
 
 package com.comphenix.protocol.reflect.compiler;
 
-import net.sf.cglib.asm.*;
+import net.sf.cglib.asm.MethodVisitor;
+import net.sf.cglib.asm.Opcodes;
+import net.sf.cglib.asm.Type;
 
 /**
  * Used by the compiler to automatically box and unbox values.

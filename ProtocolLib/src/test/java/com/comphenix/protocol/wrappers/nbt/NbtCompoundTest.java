@@ -17,10 +17,11 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import com.comphenix.protocol.BukkitInitialization;
 
 public class NbtCompoundTest {

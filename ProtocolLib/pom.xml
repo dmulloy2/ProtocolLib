@@ -1,11 +1,12 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
   <version>3.5.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Provides read/write access to the Minecraft protocol.</description>
-  
+
   <properties>
     <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
     <powermock.version>1.5</powermock.version>
@@ -23,11 +24,11 @@
       <url>http://repo.comphenix.net/content/repositories/snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
- 
+
   <repositories>
     <repository>
-      <id>bukkit-rep</id>
-      <url>http://repo.bukkit.org/content/groups/public</url>
+      <id>md_5-repo</id>
+      <url>http://repo.md-5.net/content/repositories/public/</url>
     </repository>
     <repository>
       <id>comphenix-releases</id>
@@ -35,7 +36,7 @@
       <url>http://repo.comphenix.net/content/repositories/releases/</url>
     </repository>
   </repositories>
- 
+
   <build>
     <defaultGoal>clean install</defaultGoal>
     <sourceDirectory>src/main/java</sourceDirectory>
@@ -49,7 +50,7 @@
         </excludes>
       </resource>
     </resources>
-    
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -71,7 +72,7 @@
                   <shadedPattern>com.comphenix.net.sf</shadedPattern>
                 </relocation>
               </relocations>
-              
+
               <artifactSet>
                 <excludes>
                   <exclude>org.bukkit:craftbukkit</exclude>
@@ -82,7 +83,7 @@
           </execution>
         </executions>
       </plugin>
-      
+
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.3.2</version>
@@ -92,108 +93,108 @@
         </configuration>
       </plugin>
 
-	  <plugin>
-  	  	<groupId>org.apache.maven.plugins</groupId>
-  		<artifactId>maven-failsafe-plugin</artifactId>
-  		<version>2.12.4</version>
-  		<configuration>
-  			<workingDirectory>${basedir}/target/server/</workingDirectory>
-        	<argLine>-Xmx1024m -Xms1024M -Dnojline=true</argLine>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>2.12.4</version>
+        <configuration>
+          <workingDirectory>${basedir}/target/server/</workingDirectory>
+          <argLine>-Xmx1024m -Xms1024M -Dnojline=true</argLine>
         </configuration>
-  		<executions>
-    		<execution>
-     			<goals>
-      	  			<goal>integration-test</goal>
-        			<goal>verify</goal>
-     			</goals>
-    		</execution>
-  		</executions>
-	  </plugin>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
-  
+
   <reporting>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
         <version>2.5.2</version>
-          <configuration>
-            <threshold>High</threshold>
-            <effort>Default</effort>
-          </configuration>
+        <configuration>
+          <threshold>High</threshold>
+          <effort>Default</effort>
+        </configuration>
       </plugin>
     </plugins>
   </reporting>
-  
+
   <profiles>
-  <profile>
-    <id>release-sign-artifacts</id>
-    <activation>
-      <property>
-        <name>performRelease</name>
-        <value>true</value>
-      </property>
-    </activation>
-    <build>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-source-plugin</artifactId>
-          <version>2.2</version>
-          <executions>
-            <execution>
-              <id>attach-sources</id>
-              <goals>
-                <goal>jar</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-      
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.9</version>
-          <executions>
-            <execution>
-              <id>attach-javadocs</id>
-              <goals>
-                <goal>jar</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-            
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-gpg-plugin</artifactId>
-          <version>1.4</version>
-          <executions>
-            <execution>
-              <id>sign-artifacts</id>
-              <phase>verify</phase>
-              <goals>
-                <goal>sign</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-        
-      </plugins>
-    </build>
-  </profile>
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.9</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.4</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
   </profiles>
-  
+
   <url>http://dev.bukkit.org/server-mods/protocollib/</url>
   <name>ProtocolLib</name>
-  
+
   <scm>
     <connection>scm:git:git://github.com/aadnk/ProtocolLib.git</connection>
     <developerConnection>scm:git:git@github.com:aadnk/ProtocolLib.git</developerConnection>
     <url>https://github.com/aadnk/ProtocolLib</url>
   </scm>
-  
+
   <licenses>
     <license>
       <name>GNU GENERAL PUBLIC LICENSE - Version 2, June 1991</name>
@@ -201,63 +202,75 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-  
+
   <developers>
+    <developer>
+      <id>dmulloy2</id>
+      <name>Dan Mulloy</name>
+      <url>http://shadowvolt.com/</url>
+      <roles>
+        <role>developer</role>
+        <role>maintainer</role>
+      </roles>
+    </developer>
     <developer>
       <id>aadnk</id>
       <name>Kristian S. Stangeland</name>
       <email>kr_stang@hotmail.com</email>
       <url>http://comphenix.net/</url>
       <roles>
-        <role>developer</role>
-        <role>maintainer</role>
+        <role>former author</role>
       </roles>
       <timezone>1</timezone>
     </developer>
   </developers>
-  
+
   <dependencies>
-  	<dependency>
-  		<groupId>cglib</groupId>
-  		<artifactId>cglib-nodep</artifactId>
-  		<version>2.2.2</version>
-  		<scope>compile</scope>
-  	</dependency>
-  	<dependency>
-  		<groupId>com.comphenix.executors</groupId>
-  		<artifactId>BukkitExecutors</artifactId>
-  		<version>1.0.0</version>
-  		<scope>compile</scope>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.bukkit</groupId>
-  		<artifactId>craftbukkit</artifactId>
-  		<version>1.7.8-R0.1-SNAPSHOT</version>
-  		<scope>provided</scope>
-  	</dependency>
-  	<dependency>
-  		<groupId>junit</groupId>
-  		<artifactId>junit</artifactId>
-  		<version>4.10</version>
-  		<scope>test</scope>
-  	</dependency>
-	<dependency>
-		<groupId>org.mockito</groupId>
-		<artifactId>mockito-all</artifactId>
-		<version>1.8.4</version>
-		<scope>test</scope>
-	</dependency>
-	<dependency>
-  		<groupId>org.powermock</groupId>
-  		<artifactId>powermock-module-junit4</artifactId>
-  		<version>${powermock.version}</version>
-  		<scope>test</scope>
-	</dependency>
-	<dependency>
-		<groupId>org.powermock</groupId>
-		<artifactId>powermock-api-mockito</artifactId>
-		<version>${powermock.version}</version>
-		<scope>test</scope>
-	</dependency> 
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib-nodep</artifactId>
+      <version>2.2.2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.comphenix.executors</groupId>
+      <artifactId>BukkitExecutors</artifactId>
+      <version>1.0.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>1.7.10-R0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot</artifactId>
+      <version>1.7.10-R0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>1.8.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

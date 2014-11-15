@@ -18,6 +18,7 @@
 package com.comphenix.protocol.injector.player;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
@@ -25,8 +26,6 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.LazyLoader;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-
-import java.lang.reflect.Method;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;

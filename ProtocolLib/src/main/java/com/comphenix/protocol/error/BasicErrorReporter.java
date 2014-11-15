@@ -1,6 +1,7 @@
 package com.comphenix.protocol.error;
 
 import java.io.PrintStream;
+
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.error.Report.ReportBuilder;

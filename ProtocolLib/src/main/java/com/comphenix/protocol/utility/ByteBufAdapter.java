@@ -12,14 +12,14 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
+import net.minecraft.util.io.netty.buffer.AbstractByteBuf;
+import net.minecraft.util.io.netty.buffer.ByteBuf;
+import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
+
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.LimitInputStream;
-
-import net.minecraft.util.io.netty.buffer.AbstractByteBuf;
-import net.minecraft.util.io.netty.buffer.ByteBuf;
-import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
 
 /**
  * Construct a ByteBuf around an input stream and an output stream.

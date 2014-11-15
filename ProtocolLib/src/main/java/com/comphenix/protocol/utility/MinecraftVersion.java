@@ -24,8 +24,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bukkit.Server;
-import com.comphenix.protocol.ProtocolLibrary;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;

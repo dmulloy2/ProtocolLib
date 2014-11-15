@@ -17,7 +17,7 @@
 
 package com.comphenix.protocol.concurrency;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;

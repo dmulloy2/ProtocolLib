@@ -7,7 +7,13 @@
 // Somewhat modified by aadnk.
 package com.comphenix.protocol.metrics;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -28,7 +34,6 @@ import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Preconditions;
-import com.google.common.io.Files;
 
 /**
  * Check dev.bukkit.org to find updates for a given plugin, and download the updates if needed.

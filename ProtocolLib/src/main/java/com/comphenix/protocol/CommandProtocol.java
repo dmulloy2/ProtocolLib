@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;

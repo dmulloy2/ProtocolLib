@@ -8,10 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
-import com.comphenix.protocol.utility.SafeCacheBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import com.comphenix.protocol.utility.SafeCacheBuilder;
 import com.google.common.base.Function;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalListener;

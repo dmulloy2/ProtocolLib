@@ -25,8 +25,8 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimedTracker;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
+import com.comphenix.protocol.timing.TimedTracker;
 
 /**
  * Registry of synchronous packet listeners.

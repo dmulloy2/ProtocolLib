@@ -24,13 +24,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
-import org.bukkit.entity.Player;
 
 import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.Factory;
-import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.NoOp;
+
+import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;

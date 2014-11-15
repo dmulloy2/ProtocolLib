@@ -7,17 +7,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import javax.imageio.ImageIO;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
+import javax.imageio.ImageIO;
 
 import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.Unpooled;
 import net.minecraft.util.io.netty.handler.codec.base64.Base64;
 import net.minecraft.util.io.netty.util.IllegalReferenceCountException;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -28,6 +29,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.BukkitUtil;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Charsets;
@@ -46,13 +48,13 @@ public class WrappedServerPing extends AbstractWrapper {
 	/**
 	 * Lookup of Minecraft versions and ping version numbers.
 	 */
-	private static ImmutableMap<MinecraftVersion, Integer> VERSION_NUMBERS = 
+	private static ImmutableMap<MinecraftVersion, Integer> VERSION_NUMBERS =
 	  ImmutableMap.<MinecraftVersion, Integer>builder().
 		put(MinecraftVersion.WORLD_UPDATE, 4).
 		put(MinecraftVersion.SKIN_UPDATE, 5).
 		build();
 	private static MinecraftVersion LAST_VERSION = MinecraftVersion.SKIN_UPDATE;
-	
+
 	// Server ping fields
 	private static Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
 	private static ConstructorAccessor SERVER_PING_CONSTRUCTOR = Accessors.getConstructorAccessor(SERVER_PING);
@@ -60,11 +62,11 @@ public class WrappedServerPing extends AbstractWrapper {
 	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
 	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
 	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
-	
+
 	// For converting to the underlying array
-	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT = 
+	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
 		BukkitConverters.getArrayConverter(GameProfile.class, BukkitConverters.getWrappedGameProfileConverter());
-	
+
 	// Server ping player sample fields
 	private static Class<?> PLAYERS_CLASS = MinecraftReflection.getServerPingPlayerSampleClass();
 	private static ConstructorAccessor PLAYERS_CONSTRUCTOR = Accessors.getConstructorAccessor(PLAYERS_CLASS, int.class, int.class);
@@ -72,7 +74,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	private static FieldAccessor PLAYERS_PROFILES = Accessors.getFieldAccessor(PLAYERS_CLASS, GameProfile[].class, true);
 	private static FieldAccessor PLAYERS_MAXIMUM = PLAYERS_INTS[0];
 	private static FieldAccessor PLAYERS_ONLINE = PLAYERS_INTS[1];
-	
+
 	// Server ping serialization
 	private static Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
 	private static MethodAccessor GSON_TO_JSON = Accessors.getMethodAccessor(GSON_CLASS, "toJson", Object.class);
@@ -80,23 +82,23 @@ public class WrappedServerPing extends AbstractWrapper {
 	private static FieldAccessor PING_GSON = Accessors.getCached(Accessors.getFieldAccessor(
 		PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass(), GSON_CLASS, true
 	));
-	
+
 	// Server data fields
 	private static Class<?> VERSION_CLASS = MinecraftReflection.getServerPingServerDataClass();
 	private static ConstructorAccessor VERSION_CONSTRUCTOR = Accessors.getConstructorAccessor(VERSION_CLASS, String.class, int.class);
 	private static FieldAccessor VERSION_NAME = Accessors.getFieldAccessor(VERSION_CLASS, String.class, true);
 	private static FieldAccessor VERSION_PROTOCOL = Accessors.getFieldAccessor(VERSION_CLASS, int.class, true);
-	
+
 	// Get profile from player
 	private static FieldAccessor ENTITY_HUMAN_PROFILE = Accessors.getFieldAccessor(
 			MinecraftReflection.getEntityPlayerClass().getSuperclass(), GameProfile.class, true);
-	
+
 	// Inner class
 	private Object players; // may be NULL
 	private Object version;
-	
+
 	/**
-	 * Construct a new server ping initialized with a zero player count, and zero maximum. 
+	 * Construct a new server ping initialized with a zero player count, and zero maximum.
 	 * <p>
 	 * Note that the version string is set to 1.7.2.
 	 */
@@ -106,14 +108,14 @@ public class WrappedServerPing extends AbstractWrapper {
 		resetPlayers();
 		resetVersion();
 	}
-	
+
 	private WrappedServerPing(Object handle) {
 		super(MinecraftReflection.getServerPingClass());
 		setHandle(handle);
 		this.players = PLAYERS.get(handle);
 		this.version = VERSION.get(handle);
 	}
-	
+
 	/**
 	 * Set the player count and player maximum to the default values.
 	 */
@@ -121,14 +123,14 @@ public class WrappedServerPing extends AbstractWrapper {
 		players = PLAYERS_CONSTRUCTOR.invoke(0, 0);
 		PLAYERS.set(handle, players);
 	}
-	
+
 	/**
 	 * Reset the version string to the default state.
 	 */
 	protected void resetVersion() {
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 		MinecraftVersion minecraftVersion = LAST_VERSION;
-		
+
 		// Fetch the latest known version
 		if (manager != null) {
 			minecraftVersion = manager.getMinecraftVersion();
@@ -136,7 +138,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		version = VERSION_CONSTRUCTOR.invoke(minecraftVersion.toString(), VERSION_NUMBERS.get(minecraftVersion));
 		VERSION.set(handle, version);
 	}
-	
+
 	/**
 	 * Construct a wrapped server ping from a native NMS object.
 	 * @param handle - the native object.
@@ -145,7 +147,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public static WrappedServerPing fromHandle(Object handle) {
 		return new WrappedServerPing(handle);
 	}
-	
+
 	/**
 	 * Construct a wrapper server ping from an encoded JSON string.
 	 * @param json - the JSON string.
@@ -154,7 +156,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public static WrappedServerPing fromJson(String json) {
 		return fromHandle(GSON_FROM_JSON.invoke(PING_GSON.get(null), json, SERVER_PING));
 	}
-	
+
 	/**
 	 * Retrieve the message of the day.
 	 * @return The messge of the day.
@@ -162,7 +164,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public WrappedChatComponent getMotD() {
 		return WrappedChatComponent.fromHandle(DESCRIPTION.get(handle));
 	}
-	
+
 	/**
 	 * Set the message of the day.
 	 * @param description - message of the day.
@@ -178,7 +180,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public void setMotD(String message) {
 		setMotD(WrappedChatComponent.fromText(message));
 	}
-	
+
 	/**
 	 * Retrieve the compressed PNG file that is being displayed as a favicon.
 	 * @return The favicon, or NULL if no favicon will be displayed.
@@ -187,7 +189,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		String favicon = (String) FAVICON.get(handle);
 		return (favicon != null) ? CompressedImage.fromEncodedText(favicon) : null;
 	}
-	
+
 	/**
 	 * Set the compressed PNG file that is being displayed.
 	 * @param image - the new compressed image or NULL if no favicon should be displayed.
@@ -195,7 +197,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public void setFavicon(CompressedImage image) {
 		FAVICON.set(handle, (image != null) ? image.toEncodedText() : null);
 	}
-	
+
 	/**
 	 * Retrieve the displayed number of online players.
 	 * @see {@link #setPlayersOnline(int)} for more information.
@@ -207,11 +209,11 @@ public class WrappedServerPing extends AbstractWrapper {
 			throw new IllegalStateException("The player count has been hidden.");
 		return (Integer) PLAYERS_ONLINE.get(players);
 	}
-	
+
 	/**
 	 * Set the displayed number of online players.
 	 * <p>
-	 * As of 1.7.2, this is completely unrestricted, and can be both positive and 
+	 * As of 1.7.2, this is completely unrestricted, and can be both positive and
 	 * negative, as well as higher than the player maximum.
 	 * @param online - online players.
 	 */
@@ -220,7 +222,7 @@ public class WrappedServerPing extends AbstractWrapper {
 			resetPlayers();
 		PLAYERS_ONLINE.set(players, online);
 	}
-	
+
 	/**
 	 * Retrieve the displayed maximum number of players.
 	 * @see {@link #setPlayersMaximum(int)} for more information.
@@ -232,7 +234,7 @@ public class WrappedServerPing extends AbstractWrapper {
 			throw new IllegalStateException("The player maximum has been hidden.");
 		return (Integer) PLAYERS_MAXIMUM.get(players);
 	}
-	
+
 	/**
 	 * Set the displayed maximum number of players.
 	 * <p>
@@ -245,7 +247,7 @@ public class WrappedServerPing extends AbstractWrapper {
 			resetPlayers();
 		PLAYERS_MAXIMUM.set(players, maximum);
 	}
-	
+
 	/**
 	 * Set whether or not the player count and player maximum is visible.
 	 * <p>
@@ -258,13 +260,13 @@ public class WrappedServerPing extends AbstractWrapper {
 				// Recreate the count and maximum
 				Server server = Bukkit.getServer();
 				setPlayersMaximum(server.getMaxPlayers());
-				setPlayersOnline(server.getOnlinePlayers().length);
+				setPlayersOnline(BukkitUtil.getOnlinePlayers().size());
 			} else {
 				PLAYERS.set(handle, players = null);
 			}
 		}
 	}
-	
+
 	/**
 	 * Determine if the player count and maximum is visible.
 	 * <p>
@@ -274,7 +276,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public boolean isPlayersVisible() {
 		return players != null;
 	}
-	
+
 	/**
 	 * Retrieve a copy of all the logged in players.
 	 * @return Logged in players or an empty list if no player names will be displayed.
@@ -287,7 +289,7 @@ public class WrappedServerPing extends AbstractWrapper {
 			return ImmutableList.of();
 		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(playerProfiles));
 	}
-	
+
 	/**
 	 * Set the displayed list of logged in players.
 	 * @param profile - every logged in player.
@@ -297,21 +299,21 @@ public class WrappedServerPing extends AbstractWrapper {
 			resetPlayers();
 		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(GameProfile[].class, profile) : null);
 	}
-	
+
 	/**
 	 * Set the displayed lst of logged in players.
 	 * @param players - the players to display.
 	 */
 	public void setBukkitPlayers(Iterable<? extends Player> players) {
 		List<WrappedGameProfile> profiles = Lists.newArrayList();
-		
+
 		for (Player player : players) {
 			GameProfile profile = (GameProfile) ENTITY_HUMAN_PROFILE.get(BukkitUnwrapper.getInstance().unwrapItem(player));
 			profiles.add(WrappedGameProfile.fromHandle(profile));
 		}
 		setPlayers(profiles);
 	}
-	
+
 	/**
 	 * Retrieve the version name of the current server.
 	 * @return The version name.
@@ -319,7 +321,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public String getVersionName() {
 		return (String) VERSION_NAME.get(version);
 	}
-	
+
 	/**
 	 * Set the version name of the current server.
 	 * @param name - the new version name.
@@ -327,7 +329,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public void setVersionName(String name) {
 		VERSION_NAME.set(version, name);
 	}
-	
+
 	/**
 	 * Retrieve the protocol number.
 	 * @return The protocol.
@@ -335,7 +337,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public int getVersionProtocol() {
 		return (Integer) VERSION_PROTOCOL.get(version);
 	}
-	
+
 	/**
 	 * Set the version protocol
 	 * @param protocol - the protocol number.
@@ -343,7 +345,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public void setVersionProtocol(int protocol) {
 		VERSION_PROTOCOL.set(version, protocol);
 	}
-	
+
 	/**
 	 * Retrieve a deep copy of the current wrapper object.
 	 * @return The current object.
@@ -351,13 +353,13 @@ public class WrappedServerPing extends AbstractWrapper {
 	public WrappedServerPing deepClone() {
 		WrappedServerPing copy = new WrappedServerPing();
 		WrappedChatComponent motd = getMotD();
-		
+
 		copy.setPlayers(getPlayers());
 		copy.setFavicon(getFavicon());
 		copy.setMotD(motd != null ? motd.deepClone() : null);
 		copy.setVersionName(getVersionName());
 		copy.setVersionProtocol(getVersionProtocol());
-		
+
 		if (isPlayersVisible()) {
 			copy.setPlayersMaximum(getPlayersMaximum());
 			copy.setPlayersOnline(getPlayersOnline());
@@ -366,7 +368,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		}
 		return copy;
 	}
-	
+
 	/**
 	 * Retrieve the underlying JSON representation of this server ping.
 	 * @return The JSON representation.
@@ -374,12 +376,12 @@ public class WrappedServerPing extends AbstractWrapper {
 	public String toJson() {
 		return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), handle);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "WrappedServerPing< " + toJson() + ">";
 	}
-	
+
 	/**
 	 * Represents a compressed favicon.
 	 * @author Kristian
@@ -389,14 +391,14 @@ public class WrappedServerPing extends AbstractWrapper {
 		protected volatile String mime;
 		protected volatile byte[] data;
 		protected volatile String encoded;
-		
+
 		/**
 		 * Represents a compressed image with no content.
 		 */
 		protected CompressedImage() {
 			// Derived class should initialize some of the fields
 		}
-		
+
 		/**
 		 * Construct a new compressed image.
 		 * @param mime - the mime type.
@@ -416,7 +418,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		public static CompressedImage fromPng(InputStream input) throws IOException {
 			return new CompressedImage("image/png", ByteStreams.toByteArray(input));
 		}
-		
+
 		/**
 		 * Retrieve a compressed image from a byte array of a PNG file.
 		 * @param data - the file as a byte array.
@@ -425,7 +427,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		public static CompressedImage fromPng(byte[] data) {
 			return new CompressedImage("image/png", data);
 		}
-		
+
 		/**
 		 * Retrieve a compressed image from a base-64 encoded PNG file.
 		 * @param base64 - the base 64-encoded PNG.
@@ -439,7 +441,7 @@ public class WrappedServerPing extends AbstractWrapper {
 				throw new IllegalReferenceCountException("Must be a pure base64 encoded string. Cannot be an encoded text.", e);
 			}
 		}
-		
+
 		/**
 		 * Retrieve a compressed image from an image.
 		 * @param image - the image.
@@ -450,7 +452,7 @@ public class WrappedServerPing extends AbstractWrapper {
 			ImageIO.write(image, "png", output);
 			return new CompressedImage("image/png", output.toByteArray());
 		}
-		
+
 		/**
 		 * Retrieve a compressed image from an encoded text.
 		 * @param text - the encoded text.
@@ -459,17 +461,17 @@ public class WrappedServerPing extends AbstractWrapper {
 		public static CompressedImage fromEncodedText(String text) {
 			return new EncodedCompressedImage(text);
 		}
-		
+
 		/**
 		 * Retrieve the MIME type of the image.
-		 * <p> 
+		 * <p>
 		 * This is image/png in vanilla Minecraft.
 		 * @return The MIME type.
 		 */
 		public String getMime() {
 			return mime;
 		}
-		
+
 		/**
 		 * Retrieve a copy of the underlying data array.
 		 * @return The underlying compressed image.
@@ -477,7 +479,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		public byte[] getDataCopy() {
 			return getData().clone();
 		}
-		
+
 		/**
 		 * Retrieve the underlying data, with no copying.
 		 * @return The underlying data.
@@ -485,7 +487,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		protected byte[] getData() {
 			return data;
 		}
-		
+
 		/**
 		 * Uncompress and return the stored image.
 		 * @return The image.
@@ -494,7 +496,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		public BufferedImage getImage() throws IOException {
 			return ImageIO.read(new ByteArrayInputStream(getData()));
 		}
-		
+
 		/**
 		 * Convert the compressed image to encoded text.
 		 * @return The encoded text.
@@ -502,15 +504,15 @@ public class WrappedServerPing extends AbstractWrapper {
 		public String toEncodedText() {
 			if (encoded == null) {
 				final ByteBuf buffer = Unpooled.wrappedBuffer(getData());
-				String computed = "data:" + mime + ";base64," + 
+				String computed = "data:" + mime + ";base64," +
 					Base64.encode(buffer).toString(Charsets.UTF_8);
-				
+
 				encoded = computed;
 			}
 			return encoded;
 		}
 	}
-	
+
 	/**
 	 * Represents a compressed image that starts out as an encoded base 64 string.
 	 * @author Kristian
@@ -519,7 +521,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		public EncodedCompressedImage(String encoded) {
 			this.encoded =  Preconditions.checkNotNull(encoded, "encoded favicon cannot be NULL");
 		}
-		
+
 		/**
 		 * Ensure that we have decoded the content of the encoded text.
 		 */
@@ -528,7 +530,7 @@ public class WrappedServerPing extends AbstractWrapper {
 				decode();
 			}
 		}
-		
+
 		/**
 		 * Decode the encoded text.
 		 */
@@ -539,7 +541,7 @@ public class WrappedServerPing extends AbstractWrapper {
 				} else if (segment.startsWith("base64,")) {
 					byte[] encoded = segment.substring(7).getBytes(Charsets.UTF_8);
 					ByteBuf decoded = Base64.decode(Unpooled.wrappedBuffer(encoded));
-					
+
 					// Read into a byte array
 					byte[] data = new byte[decoded.readableBytes()];
 					decoded.readBytes(data);
@@ -549,19 +551,19 @@ public class WrappedServerPing extends AbstractWrapper {
 				}
 			}
 		}
-		
+
 		@Override
 		protected byte[] getData() {
 			initialize();
 			return super.getData();
 		}
-		
+
 		@Override
 		public String getMime() {
 			initialize();
 			return super.getMime();
 		}
-		
+
 		@Override
 		public String toEncodedText() {
 			return encoded;

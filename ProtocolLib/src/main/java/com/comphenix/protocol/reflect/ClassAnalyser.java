@@ -4,15 +4,15 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod.AsmOpcodes;
-import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
-import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
-import com.google.common.collect.Lists;
-
 import net.sf.cglib.asm.ClassReader;
 import net.sf.cglib.asm.MethodVisitor;
 import net.sf.cglib.asm.Opcodes;
 import net.sf.cglib.asm.Type;
+
+import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod.AsmOpcodes;
+import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
+import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
+import com.google.common.collect.Lists;
 
 public class ClassAnalyser {	
 	/**

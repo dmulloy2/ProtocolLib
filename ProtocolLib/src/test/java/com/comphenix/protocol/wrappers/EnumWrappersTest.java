@@ -1,13 +1,12 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.*;
-
-import net.minecraft.server.v1_7_R3.EnumChatVisibility;
-import net.minecraft.server.v1_7_R3.EnumClientCommand;
-import net.minecraft.server.v1_7_R3.EnumDifficulty;
-import net.minecraft.server.v1_7_R3.EnumEntityUseAction;
-import net.minecraft.server.v1_7_R3.EnumGamemode;
-import net.minecraft.server.v1_7_R3.EnumProtocol;
+import static org.junit.Assert.assertEquals;
+import net.minecraft.server.v1_7_R4.EnumChatVisibility;
+import net.minecraft.server.v1_7_R4.EnumClientCommand;
+import net.minecraft.server.v1_7_R4.EnumDifficulty;
+import net.minecraft.server.v1_7_R4.EnumEntityUseAction;
+import net.minecraft.server.v1_7_R4.EnumGamemode;
+import net.minecraft.server.v1_7_R4.EnumProtocol;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

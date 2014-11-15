@@ -3,6 +3,7 @@ package com.comphenix.protocol.wrappers;
 import java.security.PublicKey;
 
 import net.minecraft.util.com.mojang.authlib.properties.Property;
+
 import com.google.common.base.Objects;
 
 /**

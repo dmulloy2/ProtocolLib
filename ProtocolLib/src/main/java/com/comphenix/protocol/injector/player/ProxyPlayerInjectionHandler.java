@@ -26,7 +26,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +35,6 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.Packets;
 import com.comphenix.protocol.concurrency.BlockingHashMap;
@@ -52,8 +50,8 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.ListenerInvoker;
-import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.PlayerLoggedOutException;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.server.AbstractInputStreamLookup;
 import com.comphenix.protocol.injector.server.BukkitSocketInjector;

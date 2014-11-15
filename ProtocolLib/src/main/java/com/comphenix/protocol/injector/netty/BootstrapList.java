@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.Callable;
 
-import com.google.common.collect.Lists;
-
 import net.minecraft.util.io.netty.channel.Channel;
-
 // Hopefully, CB won't version these as well
 import net.minecraft.util.io.netty.channel.ChannelFuture;
 import net.minecraft.util.io.netty.channel.ChannelHandler;
+
+import com.google.common.collect.Lists;
 
 class BootstrapList implements List<Object> {
 	private List<Object> delegate;

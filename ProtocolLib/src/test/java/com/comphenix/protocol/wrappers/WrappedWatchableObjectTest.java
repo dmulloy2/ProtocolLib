@@ -1,9 +1,9 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_7_R3.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_7_R4.inventory.CraftItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;

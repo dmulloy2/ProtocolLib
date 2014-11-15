@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import com.comphenix.protocol.wrappers.nbt.NbtBase;
-import com.comphenix.protocol.wrappers.nbt.NbtType;
 
 /**
  * Represents a generic container for an NBT element.

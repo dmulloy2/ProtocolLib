@@ -26,7 +26,6 @@ import java.util.Set;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 

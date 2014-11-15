@@ -5,9 +5,10 @@ import java.lang.reflect.InvocationTargetException;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketStream;
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.PacketType.Sender;
-import com.google.common.base.Preconditions;import com.google.common.base.Objects;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 
 /**
  * Represents a packet that is scheduled for transmission at a later stage.

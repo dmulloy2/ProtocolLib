@@ -5,10 +5,6 @@ import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.google.common.collect.Maps;
-
 import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelConfig;
@@ -20,6 +16,10 @@ import net.minecraft.util.io.netty.channel.ChannelPromise;
 import net.minecraft.util.io.netty.channel.EventLoop;
 import net.minecraft.util.io.netty.util.Attribute;
 import net.minecraft.util.io.netty.util.AttributeKey;
+
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.google.common.collect.Maps;
 
 abstract class ChannelProxy implements Channel {
 	// Mark that a certain object does not contain a message field

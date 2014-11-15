@@ -17,7 +17,7 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +27,7 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_7_R3.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_7_R4.inventory.CraftItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;

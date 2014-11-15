@@ -23,6 +23,9 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -33,9 +36,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.NetworkProcessor;
 import com.google.common.collect.MapMaker;
-
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
 
 class ReadPacketModifier implements MethodInterceptor {
 	public static final ReportType REPORT_CANNOT_HANDLE_CLIENT_PACKET = new ReportType("Cannot handle client packet.");

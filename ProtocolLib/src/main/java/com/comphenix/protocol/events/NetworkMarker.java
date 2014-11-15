@@ -12,6 +12,8 @@ import java.util.PriorityQueue;
 
 import javax.annotation.Nonnull;
 
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.utility.ByteBufferInputStream;

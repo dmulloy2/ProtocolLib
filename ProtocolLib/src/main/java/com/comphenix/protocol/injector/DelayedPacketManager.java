@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 import javax.annotation.Nonnull;
 
 import org.bukkit.Location;
@@ -16,8 +17,8 @@ import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;

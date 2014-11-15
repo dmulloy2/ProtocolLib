@@ -22,19 +22,17 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.PriorityQueue;
+
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketOutputHandler;
 import com.comphenix.protocol.injector.NetworkProcessor;
 import com.google.common.collect.MapMaker;
-
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
 
 public class WritePacketModifier implements MethodInterceptor {
 	public static final ReportType REPORT_CANNOT_WRITE_SERVER_PACKET = new ReportType("Cannot write server packet.");
