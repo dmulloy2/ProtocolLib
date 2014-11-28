@@ -12,7 +12,7 @@ import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 public class TimingReportGenerator {
@@ -22,20 +22,21 @@ public class TimingReportGenerator {
 	private static final String PLUGIN_HEADER = "=== PLUGIN %s ===" + NEWLINE;
 	private static final String LISTENER_HEADER = " TYPE: %s " + NEWLINE;
 	private static final String SEPERATION_LINE = " " + Strings.repeat("-", 139) + NEWLINE;
-	private static final String STATISTICS_HEADER = 
+	private static final String STATISTICS_HEADER =
 		" Protocol:      Name:                         ID:                 Count:       Min (ms):       " +
 		"Max (ms):       Mean (ms):      Std (ms): " + NEWLINE;
 	private static final String STATISTICS_ROW =    " %-15s %-29s %-19s %-12d %-15.6f %-15.6f %-15.6f %.6f " + NEWLINE;
 	private static final String SUM_MAIN_THREAD = " => Time on main thread: %.6f ms" + NEWLINE;
 	
 	public void saveTo(File destination, TimedListenerManager manager) throws IOException {
+		Closer closer = Closer.create();
 		BufferedWriter writer = null;
 		Date started = manager.getStarted();
 		Date stopped = manager.getStopped();
 		long seconds = Math.abs((stopped.getTime() - started.getTime()) / 1000);
 		
 		try {
-			writer = Files.newWriter(destination, Charsets.UTF_8);
+			writer = closer.register(Files.newWriter(destination, Charsets.UTF_8));
 
 			// Write some timing information
 			writer.write(String.format(META_STARTED, started));
@@ -60,13 +61,8 @@ public class TimingReportGenerator {
 				// Next plugin
 				writer.write(NEWLINE);
 			}
-			
 		} finally {
-			if (writer != null) {
-				// Don't suppress exceptions
-				writer.flush();
-				Closeables.closeQuietly(writer);
-			}
+			closer.close();
 		}
 	}
 	
@@ -97,21 +93,21 @@ public class TimingReportGenerator {
 		}
 		// These are executed on the main thread
 		if (type == ListenerType.SYNC_SERVER_SIDE) {
-			destination.write(String.format(SUM_MAIN_THREAD, 
+			destination.write(String.format(SUM_MAIN_THREAD,
 				toMilli(sum.getCount() * sum.getMean())
 			));
 		}
 	}
 
 	private void printStatistic(Writer destination, PacketType key, final StatisticsStream stream) throws IOException {
-		destination.write(String.format(STATISTICS_ROW, 
-			key != null ? key.getProtocol() : "SUM", 
-			key != null ? key.name() : "-", 
+		destination.write(String.format(STATISTICS_ROW,
+			key != null ? key.getProtocol() : "SUM",
+			key != null ? key.name() : "-",
 			key != null ? getPacketId(key) : "-",
-			stream.getCount(), 
-			toMilli(stream.getMinimum()), 
-			toMilli(stream.getMaximum()), 
-			toMilli(stream.getMean()), 
+			stream.getCount(),
+			toMilli(stream.getMinimum()),
+			toMilli(stream.getMaximum()),
+			toMilli(stream.getMean()),
 			toMilli(stream.getStandardDeviation())
 		));
 	}

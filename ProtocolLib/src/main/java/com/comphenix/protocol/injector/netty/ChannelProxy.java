@@ -1,21 +1,21 @@
 package com.comphenix.protocol.injector.netty;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelConfig;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelMetadata;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelProgressivePromise;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
+
 import java.lang.reflect.Field;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.Callable;
-
-import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
-import net.minecraft.util.io.netty.channel.Channel;
-import net.minecraft.util.io.netty.channel.ChannelConfig;
-import net.minecraft.util.io.netty.channel.ChannelFuture;
-import net.minecraft.util.io.netty.channel.ChannelMetadata;
-import net.minecraft.util.io.netty.channel.ChannelPipeline;
-import net.minecraft.util.io.netty.channel.ChannelProgressivePromise;
-import net.minecraft.util.io.netty.channel.ChannelPromise;
-import net.minecraft.util.io.netty.channel.EventLoop;
-import net.minecraft.util.io.netty.util.Attribute;
-import net.minecraft.util.io.netty.util.AttributeKey;
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;

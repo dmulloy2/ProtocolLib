@@ -1,5 +1,9 @@
 package com.comphenix.protocol.utility;
 
+import io.netty.buffer.AbstractByteBuf;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -12,19 +16,14 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import net.minecraft.util.io.netty.buffer.AbstractByteBuf;
-import net.minecraft.util.io.netty.buffer.ByteBuf;
-import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
-
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.LimitInputStream;
 
 /**
  * Construct a ByteBuf around an input stream and an output stream.
  * <p>
- * Note that as streams usually don't support seeking, this implementation will ignore 
+ * Note that as streams usually don't support seeking, this implementation will ignore
  * all indexing in the byte buffer.
  * @author Kristian
  */
@@ -250,13 +249,13 @@ class ByteBufAdapter extends AbstractByteBuf {
 
 	@Override
 	public ByteBuf getBytes(int index, OutputStream dst, int length) throws IOException {
-		ByteStreams.copy(new LimitInputStream(input, length), dst);
+		ByteStreams.copy(ByteStreams.limit(input, length), dst);
 		return this;
 	}
 
 	@Override
 	public int getBytes(int index, GatheringByteChannel out, int length) throws IOException {
-		byte[] data = ByteStreams.toByteArray(new LimitInputStream(input, length));
+		byte[] data = ByteStreams.toByteArray(ByteStreams.limit(input, length));
 		
 		out.write(ByteBuffer.wrap(data));
 		return data.length;
@@ -299,7 +298,7 @@ class ByteBufAdapter extends AbstractByteBuf {
 
 	@Override
 	public int setBytes(int index, InputStream in, int length) throws IOException {
-		LimitInputStream limit = new LimitInputStream(in, length);
+		InputStream limit = ByteStreams.limit(in, length);
 		ByteStreams.copy(limit, output);
 		return length - limit.available();
 	}

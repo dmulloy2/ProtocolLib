@@ -34,14 +34,14 @@ import com.google.common.io.Files;
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
 @PrepareForTest(PluginDescriptionFile.class)
-public class SimpleCraftBukkitITCase {	
+public class SimpleCraftBukkitITCase {
 	// The fake plugin
 	private static volatile Plugin FAKE_PLUGIN = null;
 	
 	/**
 	 * The maximum amount of time to wait before a server has started.
 	 * <p>
-	 * We have to give it the ample time of 60 seconds, as a server may have to 
+	 * We have to give it the ample time of 60 seconds, as a server may have to
 	 * generate the spawn area in three worlds.
 	 */
 	private static final int TIMEOUT_MS = 60000;
@@ -125,13 +125,28 @@ public class SimpleCraftBukkitITCase {
 		
 		// Copy the ProtocolLib plugin to the server
 		if (pluginDirectory.exists()) {
-			Files.deleteDirectoryContents(pluginDirectory);
+			deleteFolder(pluginDirectory);
 		}
 			
 		pluginDirectory.mkdirs();
 		
 		File destination = new File(pluginDirectory, bestFile.getName()).getAbsoluteFile();
 		Files.copy(bestFile, destination);
+	}
+
+	private static void deleteFolder(File folder) {
+		if (folder.exists()) {
+			File[] files = folder.listFiles();
+			if (files != null) {
+				for (File file : files) {
+					if (file.isDirectory()) {
+						deleteFolder(file);
+					} else {
+						file.delete();
+					}
+				}
+			}
+		}
 	}
 	
 	/**

@@ -26,9 +26,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.server.v1_7_R4.AttributeModifier;
-import net.minecraft.server.v1_7_R4.AttributeSnapshot;
-import net.minecraft.server.v1_7_R4.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_8_R1.AttributeModifier;
+import net.minecraft.server.v1_8_R1.AttributeSnapshot;
+import net.minecraft.server.v1_8_R1.PacketPlayOutUpdateAttributes;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -36,7 +36,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.WorldType;
-import org.bukkit.craftbukkit.v1_7_R4.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_8_R1.inventory.CraftItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;

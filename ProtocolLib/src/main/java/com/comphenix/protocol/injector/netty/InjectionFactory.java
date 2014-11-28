@@ -1,10 +1,10 @@
 package com.comphenix.protocol.injector.netty;
 
+import io.netty.channel.Channel;
+
 import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nonnull;
-
-import net.minecraft.util.io.netty.channel.Channel;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -119,11 +119,11 @@ class InjectionFactory {
 	 * @return The channel injector, or a closed injector.
 	 */
 	@Nonnull
-	public Injector fromChannel(Channel channel, ChannelListener listener, TemporaryPlayerFactory playerFactory) {		
+	public Injector fromChannel(Channel channel, ChannelListener listener, TemporaryPlayerFactory playerFactory) {
 		if (closed)
 			return new ClosedInjector(null);
 		
-		Object networkManager = findNetworkManager(channel);	
+		Object networkManager = findNetworkManager(channel);
 		Player temporaryPlayer = playerFactory.createTemporaryPlayer(Bukkit.getServer());
 		ChannelInjector injector = new ChannelInjector(temporaryPlayer, networkManager, channel, listener, this);
 		

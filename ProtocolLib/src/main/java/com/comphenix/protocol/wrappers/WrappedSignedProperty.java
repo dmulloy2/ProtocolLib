@@ -2,9 +2,8 @@ package com.comphenix.protocol.wrappers;
 
 import java.security.PublicKey;
 
-import net.minecraft.util.com.mojang.authlib.properties.Property;
-
 import com.google.common.base.Objects;
+import com.mojang.authlib.properties.Property;
 
 /**
  * Represents a wrapper over a signed property.
@@ -68,7 +67,7 @@ public class WrappedSignedProperty extends AbstractWrapper {
 	}
 
 	/**
-	 * Retrieve the signature of the property (base64) as returned by the session server's /hasJoined. 
+	 * Retrieve the signature of the property (base64) as returned by the session server's /hasJoined.
 	 * @return The signature of the property.
 	 */
 	public String getSignature() {
@@ -76,7 +75,7 @@ public class WrappedSignedProperty extends AbstractWrapper {
 	}
 
 	/**
-	 * Retrieve the value of the property (base64) as return by the session server's /hasJoined 
+	 * Retrieve the value of the property (base64) as return by the session server's /hasJoined
 	 * @return  The value of the property.
 	 */
 	public String getValue() {
@@ -108,7 +107,7 @@ public class WrappedSignedProperty extends AbstractWrapper {
 	@Override
 	public boolean equals(Object object){
 		if (object instanceof WrappedSignedProperty) {
-			if (!super.equals(object)) 
+			if (!super.equals(object))
 				return false;
 			WrappedSignedProperty that = (WrappedSignedProperty) object;
 			return Objects.equal(this.getName(), that.getName())

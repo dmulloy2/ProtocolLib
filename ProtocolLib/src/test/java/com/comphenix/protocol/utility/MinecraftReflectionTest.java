@@ -4,12 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import net.minecraft.server.v1_7_R4.ChatComponentText;
-import net.minecraft.server.v1_7_R4.ChatSerializer;
-import net.minecraft.server.v1_7_R4.IChatBaseComponent;
-import net.minecraft.server.v1_7_R4.ServerPing;
-import net.minecraft.server.v1_7_R4.ServerPingPlayerSample;
-import net.minecraft.server.v1_7_R4.ServerPingServerData;
+import net.minecraft.server.v1_8_R1.ChatComponentText;
+import net.minecraft.server.v1_8_R1.ChatSerializer;
+import net.minecraft.server.v1_8_R1.IChatBaseComponent;
+import net.minecraft.server.v1_8_R1.ServerPing;
+import net.minecraft.server.v1_8_R1.ServerPingPlayerSample;
+import net.minecraft.server.v1_8_R1.ServerPingServerData;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;

@@ -3,9 +3,6 @@ package com.comphenix.protocol.wrappers;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.com.mojang.authlib.properties.Property;
-
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
@@ -22,6 +19,8 @@ import com.comphenix.protocol.wrappers.collection.ConvertedMultimap;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.collect.Multimap;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 
 /**
  * Represents a wrapper for a game profile.
@@ -88,7 +87,7 @@ public class WrappedGameProfile extends AbstractWrapper {
 	/**
 	 * Construct a new game profile with the given properties.
 	 * <p>
-	 * Note that this constructor is very lenient when parsing UUIDs for backwards compatibility reasons. 
+	 * Note that this constructor is very lenient when parsing UUIDs for backwards compatibility reasons.
 	 * IDs that cannot be parsed as an UUID will be hashed and form a version 3 UUID instead.
 	 * <p>
 	 * This method is deprecated for Minecraft 1.7.8 and above.
@@ -128,7 +127,7 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * @param profile - the underlying profile, or NULL.
 	 */
 	public static WrappedGameProfile fromHandle(Object handle) {
-		if (handle == null) 
+		if (handle == null)
 			return null;
 		return new WrappedGameProfile(handle);
 	}
@@ -145,7 +144,7 @@ public class WrappedGameProfile extends AbstractWrapper {
 		} catch (IllegalArgumentException e) {
 			// Warn once every hour (per plugin)
 			ProtocolLibrary.getErrorReporter().reportWarning(
-				WrappedGameProfile.class, 
+				WrappedGameProfile.class,
 				Report.newBuilder(REPORT_INVALID_UUID).
 					rateLimit(1, TimeUnit.HOURS).
 					messageParam(PluginContext.getPluginCaller(new Exception()), id)

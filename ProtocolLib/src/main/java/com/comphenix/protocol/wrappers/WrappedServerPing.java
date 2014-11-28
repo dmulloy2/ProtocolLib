@@ -1,5 +1,10 @@
 package com.comphenix.protocol.wrappers;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.base64.Base64;
+import io.netty.util.IllegalReferenceCountException;
+
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
@@ -9,12 +14,6 @@ import java.io.InputStream;
 import java.util.List;
 
 import javax.imageio.ImageIO;
-
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.io.netty.buffer.ByteBuf;
-import net.minecraft.util.io.netty.buffer.Unpooled;
-import net.minecraft.util.io.netty.handler.codec.base64.Base64;
-import net.minecraft.util.io.netty.util.IllegalReferenceCountException;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
@@ -39,6 +38,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
+import com.mojang.authlib.GameProfile;
 
 /**
  * Represents a server ping packet data.

@@ -8,10 +8,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import net.minecraft.server.v1_7_R4.IntHashMap;
+import net.minecraft.server.v1_8_R1.IntHashMap;
 
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_7_R4.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_8_R1.inventory.CraftItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;

@@ -1,5 +1,9 @@
 package com.comphenix.protocol.injector.netty;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.socket.SocketChannel;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -7,9 +11,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
-
-import net.minecraft.util.io.netty.channel.ChannelOption;
-import net.minecraft.util.io.netty.channel.socket.SocketChannel;
 
 /**
  * This class wraps a Netty {@link Channel} in a {@link Socket}. It overrides

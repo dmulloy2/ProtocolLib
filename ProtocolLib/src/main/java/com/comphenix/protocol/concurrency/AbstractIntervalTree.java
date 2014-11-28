@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -25,7 +25,6 @@ import java.util.TreeMap;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Range;
-import com.google.common.collect.Ranges;
 
 /**
  * Represents a generic store of intervals and associated values. No two intervals
@@ -68,7 +67,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 
 		@Override
 		public Range<TKey> getKey() {
-			return Ranges.closed(left.key, right.key);
+			return Range.closed(left.key, right.key);
 		}
 
 		@Override
@@ -130,7 +129,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 			this.state = state;
 			this.key = key;
 			this.value = value;
-		}	
+		}
 	}
 	
 	// To quickly look up ranges we'll index them by endpoints
@@ -155,7 +154,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 		checkBounds(lowerBound, upperBound);
 		NavigableMap<TKey, EndPoint> range = bounds.subMap(lowerBound, true, upperBound, true);
 		
-		EndPoint first = getNextEndPoint(lowerBound, true); 
+		EndPoint first = getNextEndPoint(lowerBound, true);
 		EndPoint last = getPreviousEndPoint(upperBound, true);
 		
 		// Used while resizing intervals
@@ -181,7 +180,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 		
 			if (next != null) {
 				removed.add(getEntry(last, next));
-			} 
+			}
 		}
 		
 		// Now remove both ranges
@@ -253,7 +252,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	
 	/**
 	 * Associates a given interval of keys with a certain value. Any previous
-	 * association will be overwritten in the given interval. 
+	 * association will be overwritten in the given interval.
 	 * <p>
 	 * Overlapping intervals are not permitted. A key can only be associated with a single value.
 	 * 
@@ -262,7 +261,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	 * @param value - the value, or NULL to reset this range.
 	 */
 	public void put(TKey lowerBound, TKey upperBound, TValue value) {
-		// While we don't permit overlapping intervals, we'll still allow overwriting existing intervals. 
+		// While we don't permit overlapping intervals, we'll still allow overwriting existing intervals.
 		remove(lowerBound, upperBound, true);
 		invokeEntryAdded(putUnsafe(lowerBound, upperBound, value));
 	}
@@ -423,7 +422,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 		if (point != null) {
 			Map.Entry<TKey, EndPoint> previous = bounds.floorEntry(inclusive ? point : decrementKey(point));
 		
-			if (previous != null) 
+			if (previous != null)
 				return previous.getValue();
 		}
 		return null;
@@ -439,7 +438,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 		if (point != null) {
 			Map.Entry<TKey, EndPoint> next = bounds.ceilingEntry(inclusive ? point : incrementKey(point));
 		
-			if (next != null) 
+			if (next != null)
 				return next.getValue();
 		}
 		return null;

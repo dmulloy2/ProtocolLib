@@ -1,5 +1,13 @@
 package com.comphenix.protocol.injector.netty;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -7,14 +15,6 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
-
-import net.minecraft.util.io.netty.channel.Channel;
-import net.minecraft.util.io.netty.channel.ChannelFuture;
-import net.minecraft.util.io.netty.channel.ChannelHandler;
-import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
-import net.minecraft.util.io.netty.channel.ChannelInboundHandler;
-import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
-import net.minecraft.util.io.netty.channel.ChannelInitializer;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -42,7 +42,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
 
-public class NettyProtocolInjector implements ChannelListener {   
+public class NettyProtocolInjector implements ChannelListener {
 	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to inject incoming channel %s.");
 	
     private volatile boolean injected;
@@ -234,7 +234,7 @@ public class NettyProtocolInjector implements ChannelListener {
             for (VolatileField field : bootstrapFields) {
             	Object value = field.getValue();
 
-            	// Undo the processed channels, if any 
+            	// Undo the processed channels, if any
             	if (value instanceof BootstrapList) {
             		((BootstrapList) value).close();
             	}

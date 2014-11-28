@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol.utility;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -37,8 +39,6 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.sf.cglib.asm.ClassReader;
 import net.sf.cglib.asm.MethodVisitor;
 import net.sf.cglib.asm.Opcodes;
@@ -73,6 +73,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
+import com.mojang.authlib.GameProfile;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.

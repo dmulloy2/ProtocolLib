@@ -1,5 +1,15 @@
 package com.comphenix.protocol.injector.netty;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.ProgressivePromise;
+import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -9,27 +19,19 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import net.minecraft.util.io.netty.channel.Channel;
-import net.minecraft.util.io.netty.channel.ChannelFuture;
-import net.minecraft.util.io.netty.channel.ChannelPromise;
-import net.minecraft.util.io.netty.channel.EventLoop;
-import net.minecraft.util.io.netty.channel.EventLoopGroup;
-import net.minecraft.util.io.netty.util.concurrent.EventExecutor;
-import net.minecraft.util.io.netty.util.concurrent.ProgressivePromise;
-import net.minecraft.util.io.netty.util.concurrent.Promise;
-import net.minecraft.util.io.netty.util.concurrent.ScheduledFuture;
-
 /**
  * An event loop proxy.
  * @author Kristian.
  */
 abstract class EventLoopProxy implements EventLoop {
 	private static final Runnable EMPTY_RUNNABLE = new Runnable() {
+		@Override
 		public void run() {
 			// Do nothing
 		}
 	};
 	private static final Callable<?> EMPTY_CALLABLE = new Callable<Object>() {
+		@Override
 		public Object call() throws Exception {
 			return null;
 		};
@@ -72,88 +74,108 @@ abstract class EventLoopProxy implements EventLoop {
 	 */
 	protected abstract <T> Callable<T> schedulingCallable(Callable<T> callable);
 	
+	@Override
 	public void execute(Runnable command) {
 		getDelegate().execute(schedulingRunnable(command));
 	}
 
-	public <T> net.minecraft.util.io.netty.util.concurrent.Future<T> submit(Callable<T> action) {
+	@Override
+	public <T> io.netty.util.concurrent.Future<T> submit(Callable<T> action) {
 		return getDelegate().submit(schedulingCallable(action));
 	}
 
-	public <T> net.minecraft.util.io.netty.util.concurrent.Future<T> submit(Runnable action, T arg1) {
+	@Override
+	public <T> io.netty.util.concurrent.Future<T> submit(Runnable action, T arg1) {
 		return getDelegate().submit(schedulingRunnable(action), arg1);
 	}
 
-	public net.minecraft.util.io.netty.util.concurrent.Future<?> submit(Runnable action) {
+	@Override
+	public io.netty.util.concurrent.Future<?> submit(Runnable action) {
 		return getDelegate().submit(schedulingRunnable(action));
 	}
 	
+	@Override
 	public <V> ScheduledFuture<V> schedule(Callable<V> action, long arg1, TimeUnit arg2) {
 		return getDelegate().schedule(schedulingCallable(action), arg1, arg2);
 	}
 
+	@Override
 	public ScheduledFuture<?> schedule(Runnable action, long arg1, TimeUnit arg2) {
 		return getDelegate().schedule(schedulingRunnable(action), arg1, arg2);
 	}
 
+	@Override
 	public ScheduledFuture<?> scheduleAtFixedRate(Runnable action, long arg1, long arg2, TimeUnit arg3) {
 		return getDelegate().scheduleAtFixedRate(schedulingRunnable(action), arg1, arg2, arg3);
 	}
 
+	@Override
 	public ScheduledFuture<?> scheduleWithFixedDelay(Runnable action, long arg1, long arg2, TimeUnit arg3) {
 		return getDelegate().scheduleWithFixedDelay(schedulingRunnable(action), arg1, arg2, arg3);
 	}
 	
 	// Boiler plate:
+	@Override
 	public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
 		return getDelegate().awaitTermination(timeout, unit);
 	}
 
+	@Override
 	public boolean inEventLoop() {
 		return getDelegate().inEventLoop();
 	}
 
+	@Override
 	public boolean inEventLoop(Thread arg0) {
 		return getDelegate().inEventLoop(arg0);
 	}
 
+	@Override
 	public boolean isShutdown() {
 		return getDelegate().isShutdown();
 	}
 
+	@Override
 	public boolean isTerminated() {
 		return getDelegate().isTerminated();
 	}
 
+	@Override
 	public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
 			throws InterruptedException {
 		return getDelegate().invokeAll(tasks);
 	}
 
+	@Override
 	public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout,
 			TimeUnit unit) throws InterruptedException {
 		return getDelegate().invokeAll(tasks, timeout, unit);
 	}
 
+	@Override
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException,
 			ExecutionException {
 		return getDelegate().invokeAny(tasks);
 	}
 
+	@Override
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
 		return getDelegate().invokeAny(tasks, timeout, unit);
 	}
 
+	@Override
 	public boolean isShuttingDown() {
 		return getDelegate().isShuttingDown();
 	}
 
+	@Override
 	public Iterator<EventExecutor> iterator() {
 		return getDelegate().iterator();
 	}
 
-	public <V> net.minecraft.util.io.netty.util.concurrent.Future<V> newFailedFuture(Throwable arg0) {
+	@Override
+	public <V> io.netty.util.concurrent.Future<V> newFailedFuture(Throwable arg0) {
 		return getDelegate().newFailedFuture(arg0);
 	}
 
@@ -162,47 +184,58 @@ abstract class EventLoopProxy implements EventLoop {
 		return getDelegate().next();
 	}
 	
+	@Override
 	public <V> ProgressivePromise<V> newProgressivePromise() {
 		return getDelegate().newProgressivePromise();
 	}
 
+	@Override
 	public <V> Promise<V> newPromise() {
 		return getDelegate().newPromise();
 	}
 
-	public <V> net.minecraft.util.io.netty.util.concurrent.Future<V> newSucceededFuture(V arg0) {
+	@Override
+	public <V> io.netty.util.concurrent.Future<V> newSucceededFuture(V arg0) {
 		return getDelegate().newSucceededFuture(arg0);
 	}
 	
+	@Override
 	public EventLoopGroup parent() {
 		return getDelegate().parent();
 	}
 
+	@Override
 	public ChannelFuture register(Channel arg0, ChannelPromise arg1) {
 		return getDelegate().register(arg0, arg1);
 	}
 
+	@Override
 	public ChannelFuture register(Channel arg0) {
 		return getDelegate().register(arg0);
 	}
 
-	public net.minecraft.util.io.netty.util.concurrent.Future<?> shutdownGracefully() {
+	@Override
+	public io.netty.util.concurrent.Future<?> shutdownGracefully() {
 		return getDelegate().shutdownGracefully();
 	}
 
-	public net.minecraft.util.io.netty.util.concurrent.Future<?> shutdownGracefully(long arg0, long arg1, TimeUnit arg2) {
+	@Override
+	public io.netty.util.concurrent.Future<?> shutdownGracefully(long arg0, long arg1, TimeUnit arg2) {
 		return getDelegate().shutdownGracefully(arg0, arg1, arg2);
 	}
 
-	public net.minecraft.util.io.netty.util.concurrent.Future<?> terminationFuture() {
+	@Override
+	public io.netty.util.concurrent.Future<?> terminationFuture() {
 		return getDelegate().terminationFuture();
 	}
 	
+	@Override
 	@Deprecated
 	public void shutdown() {
 		getDelegate().shutdown();
 	}
 	
+	@Override
 	@Deprecated
 	public List<Runnable> shutdownNow() {
 		return getDelegate().shutdownNow();

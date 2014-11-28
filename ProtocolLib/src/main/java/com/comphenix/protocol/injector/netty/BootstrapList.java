@@ -1,17 +1,17 @@
 package com.comphenix.protocol.injector.netty;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.Callable;
 
-import net.minecraft.util.io.netty.channel.Channel;
-// Hopefully, CB won't version these as well
-import net.minecraft.util.io.netty.channel.ChannelFuture;
-import net.minecraft.util.io.netty.channel.ChannelHandler;
-
 import com.google.common.collect.Lists;
+// Hopefully, CB won't version these as well
 
 class BootstrapList implements List<Object> {
 	private List<Object> delegate;
@@ -116,82 +116,102 @@ class BootstrapList implements List<Object> {
 	}
 
 	// Boiler plate
+	@Override
 	public synchronized int size() {
 		return delegate.size();
 	}
 
+	@Override
 	public synchronized boolean isEmpty() {
 		return delegate.isEmpty();
 	}
 
+	@Override
 	public boolean contains(Object o) {
 		return delegate.contains(o);
 	}
 
+	@Override
 	public synchronized Iterator<Object> iterator() {
 		return delegate.iterator();
 	}
 
+	@Override
 	public synchronized Object[] toArray() {
 		return delegate.toArray();
 	}
 
+	@Override
 	public synchronized <T> T[] toArray(T[] a) {
 		return delegate.toArray(a);
 	}
 
+	@Override
 	public synchronized boolean remove(Object o) {
 		return delegate.remove(o);
 	}
 
+	@Override
 	public synchronized boolean containsAll(Collection<?> c) {
 		return delegate.containsAll(c);
 	}
 
+	@Override
 	public synchronized boolean addAll(int index, Collection<? extends Object> c) {
 		return delegate.addAll(index, c);
 	}
 
+	@Override
 	public synchronized boolean removeAll(Collection<?> c) {
 		return delegate.removeAll(c);
 	}
 
+	@Override
 	public synchronized boolean retainAll(Collection<?> c) {
 		return delegate.retainAll(c);
 	}
 
+	@Override
 	public synchronized void clear() {
 		delegate.clear();
 	}
 
+	@Override
 	public synchronized Object get(int index) {
 		return delegate.get(index);
 	}
 
+	@Override
 	public synchronized void add(int index, Object element) {
 		delegate.add(index, element);
 	}
 
+	@Override
 	public synchronized Object remove(int index) {
 		return delegate.remove(index);
 	}
 
+	@Override
 	public synchronized int indexOf(Object o) {
 		return delegate.indexOf(o);
 	}
 
+	@Override
 	public synchronized int lastIndexOf(Object o) {
 		return delegate.lastIndexOf(o);
 	}
 
+	@Override
 	public synchronized ListIterator<Object> listIterator() {
 		return delegate.listIterator();
 	}
 
+	@Override
 	public synchronized ListIterator<Object> listIterator(int index) {
 		return delegate.listIterator(index);
 	}
 
+	@Override
 	public synchronized List<Object> subList(int fromIndex, int toIndex) {
 		return delegate.subList(fromIndex, toIndex);
 	}
