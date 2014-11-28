@@ -26,8 +26,6 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.metrics.Updater;
-import com.comphenix.protocol.metrics.Updater.UpdateType;
 import com.comphenix.protocol.timing.TimedListenerManager;
 import com.comphenix.protocol.timing.TimingReportGenerator;
 
@@ -43,13 +41,11 @@ class CommandProtocol extends CommandBase {
 	public static final String NAME = "protocol";
 
 	private Plugin plugin;
-	private Updater updater;
 	private ProtocolConfig config;
 
-	public CommandProtocol(ErrorReporter reporter, Plugin plugin, Updater updater, ProtocolConfig config) {
+	public CommandProtocol(ErrorReporter reporter, Plugin plugin, ProtocolConfig config) {
 		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
-		this.updater = updater;
 		this.config = config;
 	}
 
@@ -60,10 +56,6 @@ class CommandProtocol extends CommandBase {
 		// Only return TRUE if we executed the correct command
 		if (subCommand.equalsIgnoreCase("config") || subCommand.equalsIgnoreCase("reload"))
 			reloadConfiguration(sender);
-		else if (subCommand.equalsIgnoreCase("check"))
-			checkVersion(sender);
-		// else if (subCommand.equalsIgnoreCase("update"))
-		//	updateVersion(sender);
 		else if (subCommand.equalsIgnoreCase("timings"))
 			toggleTimings(sender, args);
 		else if (subCommand.equalsIgnoreCase("listeners"))
@@ -71,14 +63,6 @@ class CommandProtocol extends CommandBase {
 		else
 			return false;
 		return true;
-	}
-
-	public void checkVersion(final CommandSender sender) {
-		performUpdate(sender, UpdateType.NO_DOWNLOAD);
-	}
-
-	public void updateVersion(final CommandSender sender) {
-		performUpdate(sender, UpdateType.DEFAULT);
 	}
 
 	// Display every listener on the server
@@ -94,26 +78,6 @@ class CommandProtocol extends CommandBase {
 			sender.sendMessage(ChatColor.GOLD + "Asynchronous listeners:");
 			sender.sendMessage(ChatColor.GOLD + " " + listener);
 		}
-	}
-
-	private void performUpdate(final CommandSender sender, UpdateType type) {
-		if (updater.isChecking()) {
-			sender.sendMessage(ChatColor.RED + "Already checking for an update.");
-			return;
-		}
-
-		// Perform on an async thread
-		Runnable notify = new Runnable() {
-			@Override
-			public void run() {
-				sender.sendMessage(ChatColor.YELLOW + "[ProtocolLib] " + updater.getResult());
-
-				updater.removeListener(this);
-				updateFinished();
-			}
-		};
-		updater.start(type);
-		updater.addListener(notify);
 	}
 
 	private void toggleTimings(CommandSender sender, String[] args) {

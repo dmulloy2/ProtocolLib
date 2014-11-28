@@ -4,8 +4,11 @@
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
   <version>3.6.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <name>ProtocolLib</name>
+
   <description>Provides read/write access to the Minecraft protocol.</description>
+  <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
+  <packaging>jar</packaging>
 
   <properties>
     <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
@@ -14,15 +17,10 @@
 
   <distributionManagement>
     <repository>
-      <id>comphenix-releases</id>
-      <name>Comphenix Maven Releases</name>
-      <url>http://repo.comphenix.net/content/repositories/releases/</url>
+      <id>shadowvolt-repo</id>
+      <name>Shadowvolt Maven Repository</name>
+      <url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
     </repository>
-    <snapshotRepository>
-      <id>comphenix-snapshots</id>
-      <name>Comphenix Maven Snapshots</name>
-      <url>http://repo.comphenix.net/content/repositories/snapshots/</url>
-    </snapshotRepository>
   </distributionManagement>
 
   <repositories>
@@ -32,7 +30,6 @@
     </repository>
     <repository>
       <id>comphenix-releases</id>
-      <name>Comphenix Maven Releases</name>
       <url>http://repo.comphenix.net/content/repositories/releases/</url>
     </repository>
   </repositories>
@@ -93,26 +90,6 @@
           <target>1.6</target>
         </configuration>
       </plugin>
-
-      <!--
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.12.4</version>
-        <configuration>
-          <workingDirectory>${basedir}/target/server/</workingDirectory>
-          <argLine>-Xmx1024m -Xms1024M -Dnojline=true</argLine>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      -->
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -201,9 +178,6 @@
       </build>
     </profile>
   </profiles>
-
-  <url>http://dev.bukkit.org/server-mods/protocollib/</url>
-  <name>ProtocolLib</name>
 
   <scm>
     <connection>scm:git:git://github.com/aadnk/ProtocolLib.git</connection>

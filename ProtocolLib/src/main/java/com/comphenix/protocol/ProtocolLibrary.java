@@ -94,10 +94,6 @@ public class ProtocolLibrary extends JavaPlugin {
 	 */
 	public static final String MINECRAFT_LAST_RELEASE_DATE = "2013-12-10";
 
-	// Update information
-//	static final String BUKKIT_DEV_SLUG = "protocollib";
-//	static final int BUKKIT_DEV_ID = 45564;
-
 	// Different commands
 	private enum ProtocolCommand {
 		FILTER,
@@ -131,7 +127,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Structure compiler
 	private BackgroundCompiler backgroundCompiler;
 
-	// Used to clean up server packets that have expired. But mostly required to simulate
+	// Used to clean up server packets that have expired, but mostly required to simulate
 	// recieving client packets.
 	private int packetTask = -1;
 	private int tickCounter = 0;
@@ -143,13 +139,9 @@ public class ProtocolLibrary extends JavaPlugin {
 	// Settings/options
 	private int configExpectedMod = -1;
 
-    // Updater
-//  private Updater updater;
-//  private static boolean UPDATES_DISABLED;
-
-    // Logger
-    private Logger logger;
-    private Handler redirectHandler;
+	// Logger
+	private Logger logger;
+	private Handler redirectHandler;
 
 	// Commands
 	private CommandProtocol commandProtocol;
@@ -206,19 +198,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Handle unexpected Minecraft versions
 			MinecraftVersion version = verifyMinecraftVersion();
 
-			// TODO: Redo the update mechanism for Spigot?
-			// Set updater - this will not perform any update automatically
-//			updater = new Updater(this, BUKKIT_DEV_ID, getFile(), UpdateType.NO_DOWNLOAD, true);
-
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = PacketFilterManager.newBuilder().
-					classLoader(getClassLoader()).
-					server(getServer()).
-					library(this).
-					minecraftVersion(version).
-					unhookTask(unhookTask).
-					reporter(reporter).
-					build();
+			protocolManager = PacketFilterManager.newBuilder().classLoader(getClassLoader()).server(getServer()).library(this).minecraftVersion(version).unhookTask(unhookTask).reporter(reporter).build();
 
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -258,20 +239,22 @@ public class ProtocolLibrary extends JavaPlugin {
 		for (ProtocolCommand command : ProtocolCommand.values()) {
 			try {
 				switch (command) {
-					case PROTOCOL:
-						commandProtocol = new CommandProtocol(reporter, this, null, config); break;
-					case FILTER:
-						commandFilter = new CommandFilter(reporter, this, config); break;
-					case PACKET:
-						commandPacket = new CommandPacket(reporter, this, logger, commandFilter, protocolManager); break;
+				case PROTOCOL:
+					commandProtocol = new CommandProtocol(reporter, this, config);
+					break;
+				case FILTER:
+					commandFilter = new CommandFilter(reporter, this, config);
+					break;
+				case PACKET:
+					commandPacket = new CommandPacket(reporter, this, logger, commandFilter, protocolManager);
+					break;
 				}
 			} catch (OutOfMemoryError e) {
 				throw e;
 			} catch (ThreadDeath e) {
 				throw e;
 			} catch (Throwable e) {
-				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).
-					messageParam(command.name(), e.getMessage()).error(e));
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(command.name(), e.getMessage()).error(e));
 			}
 		}
 	}
@@ -325,13 +308,13 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 
-    private void setupBroadcastUsers(final String permission) {
-    	// Guard against multiple calls
-    	if (redirectHandler != null)
-    		return;
+	private void setupBroadcastUsers(final String permission) {
+		// Guard against multiple calls
+		if (redirectHandler != null)
+			return;
 
-    	// Broadcast information to every user too
-    	redirectHandler = new Handler() {
+		// Broadcast information to every user too
+		redirectHandler = new Handler() {
 			@Override
 			public void publish(LogRecord record) {
 				// Only display warnings and above
@@ -351,8 +334,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			}
 		};
 
-        logger.addHandler(redirectHandler);
-    }
+		logger.addHandler(redirectHandler);
+	}
 
 	@Override
 	public void onEnable() {
@@ -366,10 +349,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Silly plugin reloaders!
 			if (protocolManager == null) {
 				Logger directLogging = Logger.getLogger("Minecraft");
-				String[] message = new String[] {
-						" PROTOCOLLIB DOES NOT SUPPORT PLUGIN RELOADERS. ",
-						" PLEASE USE THE BUILT-IN RELOAD COMMAND. ",
-				};
+				String[] message = new String[] { " PROTOCOLLIB DOES NOT SUPPORT PLUGIN RELOADERS. ", " PLEASE USE THE BUILT-IN RELOAD COMMAND. ", };
 
 				// Print as severe
 				for (String line : ChatExtensions.toFlowerBox(message, "*", 3, 1)) {
@@ -442,12 +422,11 @@ public class ProtocolLibrary extends JavaPlugin {
 					logger.warning("Version " + current + " is lower than the minimum " + minimum);
 				if (current.compareTo(maximum) > 0)
 					logger.warning("Version " + current + " has not yet been tested! Proceed with caution.");
-	 		}
+			}
 			return current;
 
 		} catch (Exception e) {
-			reporter.reportWarning(this,
-				Report.newBuilder(REPORT_CANNOT_PARSE_MINECRAFT_VERSION).error(e).messageParam(maximum));
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_PARSE_MINECRAFT_VERSION).error(e).messageParam(maximum));
 
 			// Unknown version - just assume it is the latest
 			return maximum;
@@ -492,10 +471,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			// We don't need to set internal classes or instances to NULL - that would break the other loaded plugin
 			skipDisable = true;
 
-			throw new IllegalStateException(
-					String.format("Detected a newer version of ProtocolLib (%s) in plugin folder than the current (%s). Disabling.",
-							newestVersion.getVersion(), currentVersion.getVersion())
-			);
+			throw new IllegalStateException(String.format("Detected a newer version of ProtocolLib (%s) in plugin folder than the current (%s). Disabling.", newestVersion.getVersion(), currentVersion.getVersion()));
 		}
 	}
 
@@ -514,9 +490,7 @@ public class ProtocolLibrary extends JavaPlugin {
 				throw new RuntimeException("plugin.yml might be corrupt.");
 
 		} catch (RuntimeException e) {
-			reporter.reportWarning(this,
-					Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(name, e.getMessage()).error(e)
-			);
+			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(name, e.getMessage()).error(e));
 		}
 	}
 
@@ -541,18 +515,12 @@ public class ProtocolLibrary extends JavaPlugin {
 					// We KNOW we're on the main thread at the moment
 					manager.sendProcessedPackets(tickCounter++, true);
 
-                    // House keeping
-                    updateConfiguration();
-
-                    // Check for updates too
-//                  if (!UPDATES_DISABLED && (tickCounter % 20) == 0) {
-//                      checkUpdates();
-//                  }
-                }
-            }, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
-
-        } catch (OutOfMemoryError e) {
-            throw e;
+					// House keeping
+					updateConfiguration();
+				}
+			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
+		} catch (OutOfMemoryError e) {
+			throw e;
 		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
@@ -571,37 +539,11 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 
-//	private void checkUpdates() {
-//		// Ignore milliseconds - it's pointless
-//		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
-//
-//		try {
-//			long updateTime = config.getAutoLastTime() + config.getAutoDelay();
-//
-//			// Should we update?
-//			if (currentTime > updateTime && !updater.isChecking()) {
-//				// Initiate the update as if it came from the console
-//				if (config.isAutoDownload())
-//					commandProtocol.updateVersion(getServer().getConsoleSender());
-//				else if (config.isAutoNotify())
-//					commandProtocol.checkVersion(getServer().getConsoleSender());
-//				else
-//					commandProtocol.updateFinished();
-//			}
-//		} catch (Exception e) {
-//			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e));
-//			UPDATES_DISABLED = true;
-//		}
-//	}
-
 	@Override
 	public void onDisable() {
 		if (skipDisable) {
 			return;
 		}
-
-		// Bukkit will shut down tasks on our executors
-		// ...
 
 		// Disable compiler
 		if (backgroundCompiler != null) {
@@ -632,12 +574,6 @@ public class ProtocolLibrary extends JavaPlugin {
 
 		// To clean up global parameters
 		reporter = new BasicErrorReporter();
-
-		// Leaky ClassLoader begone!
-//		if (updater == null || updater.getResult() != UpdateResult.SUCCESS) {
-//			CleanupStaticMembers cleanup = new CleanupStaticMembers(getClassLoader(), reporter);
-//			cleanup.resetAll();
-//		}
 	}
 
 	// Get the Bukkit logger first, before we try to create our own
