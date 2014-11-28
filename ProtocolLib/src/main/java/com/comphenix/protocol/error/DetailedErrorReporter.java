@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -49,13 +49,13 @@ import com.google.common.primitives.Primitives;
  */
 public class DetailedErrorReporter implements ErrorReporter {
 	/**
-	 * Report format for printing the current exception count. 
+	 * Report format for printing the current exception count.
 	 */
 	public static final ReportType REPORT_EXCEPTION_COUNT = new ReportType("Internal exception count: %s!");
 	
 	public static final String SECOND_LEVEL_PREFIX = "  ";
 	public static final String DEFAULT_PREFIX = "  ";
-	public static final String DEFAULT_SUPPORT_URL = "http://dev.bukkit.org/server-mods/protocollib/";
+	public static final String DEFAULT_SUPPORT_URL = "https://github.com/dmulloy2/ProtocolLib/issues";
 
 	// Users that are informed about errors in the chat
 	public static final String ERROR_PERMISSION = "protocol.info";
@@ -272,7 +272,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 		// Print the main warning
 		if (report.getException() != null) {
 			logger.log(level, message, report.getException());
-		} else {			
+		} else {
 			logger.log(level, message);
 			
 			// Remember the call stack
@@ -336,7 +336,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	    writer.println("at " + supportURL + " with the following data:");
 	    
 	    // Now, let us print important exception information
-		writer.println("          ===== STACK TRACE =====");
+		writer.println("Stack Trace:");
 
 		if (report.getException() != null) {
 			report.getException().printStackTrace(writer);
@@ -346,7 +346,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 		}
 		
 		// Data dump!
-		writer.println("          ===== DUMP =====");
+		writer.println("Dump:");
 		
 		// Relevant parameters
 		if (report.hasCallerParameters()) {
@@ -356,7 +356,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 		// Global parameters
 		for (String param : globalParameters()) {
 			writer.println(SECOND_LEVEL_PREFIX + param + ":");
-			writer.println(addPrefix(getStringDescription(getGlobalParameter(param)), 
+			writer.println(addPrefix(getStringDescription(getGlobalParameter(param)),
 					SECOND_LEVEL_PREFIX + SECOND_LEVEL_PREFIX));
 		}
 		
@@ -376,7 +376,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 			writer.println(addPrefix(Bukkit.getServer().getVersion(), SECOND_LEVEL_PREFIX));
 			
 			// Inform of this occurrence
-			if (ERROR_PERMISSION != null) {	
+			if (ERROR_PERMISSION != null) {
 				Bukkit.getServer().broadcast(
 						String.format("Error %s (%s) occured in %s.", report.getReportMessage(), report.getException(), sender),
 						ERROR_PERMISSION
