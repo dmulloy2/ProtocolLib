@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -42,6 +42,11 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	 * Regular expression used to parse version strings.
 	 */
 	private static final String VERSION_PATTERN = ".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)";
+
+	/**
+	 * Version 1.8 - the "bountiful" update.
+	 */
+	public static final MinecraftVersion BOUNTIFUL_UPDATE = new MinecraftVersion("1.8");
 	
 	/**
 	 * Version 1.7.8 - the update that changed the skin format (and distribution - R.I.P. player disguise)
@@ -73,7 +78,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	private final int build;
 
 	// The development stage
-	private final String development; 
+	private final String development;
 	
 	// Snapshot?
 	private final SnapshotVersion snapshot;
@@ -165,7 +170,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 		String[] elements = version.split("\\.");
 		int[] numbers = new int[3];
 		
-		// Make sure it's even a valid version 
+		// Make sure it's even a valid version
 		if (elements.length < 1)
 			throw new IllegalStateException("Corrupt MC version: " + version);
 	
@@ -231,7 +236,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 		if (getDevelopmentStage() == null)
 			return String.format("%s.%s.%s", getMajor(), getMinor(), getBuild());
 		else
-			return String.format("%s.%s.%s-%s%s", getMajor(), getMinor(), getBuild(), 
+			return String.format("%s.%s.%s-%s%s", getMajor(), getMinor(), getBuild(),
 					getDevelopmentStage(), isSnapshot() ? snapshot : "");
 	}
 	
@@ -260,8 +265,8 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 		if (obj instanceof MinecraftVersion) {
 			MinecraftVersion other = (MinecraftVersion) obj;
 			
-			return getMajor() == other.getMajor() && 
-				   getMinor() == other.getMinor() && 
+			return getMajor() == other.getMajor() &&
+				   getMinor() == other.getMinor() &&
 				   getBuild() == other.getBuild() &&
 				   Objects.equal(getDevelopmentStage(), other.getDevelopmentStage());
 		}

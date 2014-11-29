@@ -87,12 +87,12 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The maximum version ProtocolLib has been tested with,
 	 */
-	public static final String MAXIMUM_MINECRAFT_VERSION = "1.7.10";
+	public static final String MAXIMUM_MINECRAFT_VERSION = "1.8";
 
 	/**
 	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2013-12-10";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2014-09-02";
 
 	// Different commands
 	private enum ProtocolCommand {
