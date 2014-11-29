@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -66,6 +66,7 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
+import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.ChunkPosition;
@@ -223,7 +224,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-	 * Retrieves the underlying Minecraft packet. 
+	 * Retrieves the underlying Minecraft packet.
 	 * @return Underlying Minecraft packet.
 	 */
 	public Object getHandle() {
@@ -362,10 +363,10 @@ public class PacketContainer implements Serializable {
 	 * internal Minecraft ItemStack.
 	 * @return A modifier for ItemStack array fields.
 	 */
-	public StructureModifier<ItemStack[]> getItemArrayModifier() {		
+	public StructureModifier<ItemStack[]> getItemArrayModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<ItemStack[]>withType(
-				MinecraftReflection.getItemStackArrayClass(), 
+				MinecraftReflection.getItemStackArrayClass(),
 				BukkitConverters.getIgnoreNull(new ItemStackArrayConverter()));
 	}
 	
@@ -376,9 +377,9 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier for maps of statistics.
 	 */
 	public StructureModifier<Map<WrappedStatistic, Integer>> getStatisticMaps() {
-		return structureModifier.withType(Map.class, 
+		return structureModifier.withType(Map.class,
 			BukkitConverters.<WrappedStatistic, Integer>getMapConverter(
-				MinecraftReflection.getStatisticClass(), 
+				MinecraftReflection.getStatisticClass(),
 				BukkitConverters.getWrappedStatisticConverter()
 			)
 		);
@@ -394,7 +395,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WorldType> getWorldTypeModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WorldType>withType(
-				MinecraftReflection.getWorldTypeClass(), 
+				MinecraftReflection.getWorldTypeClass(),
 				BukkitConverters.getWorldTypeConverter());
 	}
 	
@@ -405,7 +406,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WrappedDataWatcher> getDataWatcherModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedDataWatcher>withType(
-				MinecraftReflection.getDataWatcherClass(), 
+				MinecraftReflection.getDataWatcherClass(),
 				BukkitConverters.getDataWatcherConverter());
 	}
 	
@@ -414,7 +415,7 @@ public class PacketContainer implements Serializable {
 	 * <p>
 	 * Note that entities are transmitted by integer ID, and the type may not be enough
 	 * to distinguish between entities and other values. Thus, this structure modifier
-	 * MAY return null or invalid entities for certain fields. Using the correct index 
+	 * MAY return null or invalid entities for certain fields. Using the correct index
 	 * is essential.
 	 * 
 	 * @param world - the world each entity is currently occupying.
@@ -432,7 +433,7 @@ public class PacketContainer implements Serializable {
 	 * <p>
 	 * Note that entities are transmitted by integer ID, and the type may not be enough
 	 * to distinguish between entities and other values. Thus, this structure modifier
-	 * MAY return null or invalid entities for certain fields. Using the correct index 
+	 * MAY return null or invalid entities for certain fields. Using the correct index
 	 * is essential.
 	 * 
 	 * @param event - the original packet event.
@@ -445,15 +446,29 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Retrieves a read/write structure for chunk positions.
+	 * 
+	 * @deprecated ChunkPosition no longer exists.
 	 * @return A modifier for a ChunkPosition.
 	 */
+	@Deprecated
 	public StructureModifier<ChunkPosition> getPositionModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.withType(
 				MinecraftReflection.getChunkPositionClass(),
 				ChunkPosition.getConverter());
 	}
-	
+
+	/**
+	 * Retrieves a read/write structure for block positions.
+	 * @return A modifier for a BlockPosition.
+	 */
+	public StructureModifier<BlockPosition> getBlockPositionModifier() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.withType(
+				MinecraftReflection.getBlockPositionClass(),
+				BlockPosition.getConverter());
+	}
+
 	/**
 	 * Retrieves a read/write structure for wrapped ChunkCoordIntPairs.
 	 * @return A modifier for ChunkCoordIntPair.
@@ -488,7 +503,7 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					MinecraftReflection.getAttributeSnapshotClass(), 
+					MinecraftReflection.getAttributeSnapshotClass(),
 					BukkitConverters.getWrappedAttributeConverter())
 		);
 	}
@@ -498,18 +513,39 @@ public class PacketContainer implements Serializable {
 	 * <p>
 	 * This modifier will automatically marshall between the visible ProtocolLib ChunkPosition and the
 	 * internal Minecraft ChunkPosition.
+	 * 
+	 * @deprecated ChunkPosition no longer exists.
 	 * @return A modifier for ChunkPosition list fields.
 	 */
+	@Deprecated
 	public StructureModifier<List<ChunkPosition>> getPositionCollectionModifier() {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					MinecraftReflection.getChunkPositionClass(), 
+					MinecraftReflection.getChunkPositionClass(),
 					ChunkPosition.getConverter())
 		);
 	}
-	
+
+	/**
+	 * Retrieves a read/write structure for collections of chunk positions.
+	 * <p>
+	 * This modifier will automatically marshall between the visible ProtocolLib BlockPosition and the
+	 * internal Minecraft BlockPosition.
+	 *
+	 * @return A modifier for ChunkPosition list fields.
+	 */
+	public StructureModifier<List<BlockPosition>> getBlockPositionCollectionModifier() {
+		// Convert to and from the ProtocolLib wrapper
+		return structureModifier.withType(
+			Collection.class,
+			BukkitConverters.getListConverter(
+					MinecraftReflection.getBlockPositionClass(),
+					BlockPosition.getConverter())
+		);
+	}
+
 	/**
 	 * Retrieves a read/write structure for collections of watchable objects.
 	 * <p>
@@ -522,7 +558,7 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					MinecraftReflection.getWatchableObjectClass(), 
+					MinecraftReflection.getWatchableObjectClass(),
 					BukkitConverters.getWatchableObjectConverter())
 		);
 	}
@@ -663,7 +699,7 @@ public class PacketContainer implements Serializable {
 	 * Create a shallow copy of the current packet.
 	 * <p>
 	 * This merely writes the content of each field to the new class directly,
-	 * without performing any expensive copies. 
+	 * without performing any expensive copies.
 	 * 
 	 * @return A shallow copy of the current packet.
 	 */
@@ -683,7 +719,7 @@ public class PacketContainer implements Serializable {
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
-		Object clonedPacket = null; 
+		Object clonedPacket = null;
 		
 		// Fall back on the alternative (but slower) method of reading and writing back the packet
 		if (CLONING_UNSUPPORTED.contains(type)) {
@@ -696,13 +732,14 @@ public class PacketContainer implements Serializable {
 		
 	// To save space, we'll skip copying the inflated buffers in packet 51 and 56
 	private static Function<BuilderParameters, Cloner> getSpecializedDeepClonerFactory() {
-		// Look at what you've made me do Java, look at it!! 
+		// Look at what you've made me do Java, look at it!!
 		return new Function<BuilderParameters, Cloner>() {
 			@Override
 			public Cloner apply(@Nullable BuilderParameters param) {
 				return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
 					this.writer = new ObjectWriter() {
-						protected void transformField(StructureModifier<Object> modifierSource, 
+						@Override
+						protected void transformField(StructureModifier<Object> modifierSource,
 													  StructureModifier<Object> modifierDest, int fieldIndex) {
 							// No need to clone inflated buffers
 							if (modifierSource.getField(fieldIndex).getName().startsWith("inflatedBuffer"))
@@ -717,7 +754,7 @@ public class PacketContainer implements Serializable {
 	}
 	
 	private void writeObject(ObjectOutputStream output) throws IOException {
-	    // Default serialization 
+	    // Default serialization
 		output.defaultWriteObject();
 
 		// We'll take care of NULL packets as well
@@ -735,7 +772,7 @@ public class PacketContainer implements Serializable {
 				// Call the write-method
 				output.writeInt(-1);
 				getMethodLazily(writeMethods, handle.getClass(), "write", DataOutput.class).
-					invoke(handle, new DataOutputStream(output));	
+					invoke(handle, new DataOutputStream(output));
 			}
 		
 		} catch (IllegalArgumentException e) {
@@ -803,7 +840,7 @@ public class PacketContainer implements Serializable {
 	 * @param parameterClass - the one parameter type in the method.
 	 * @return Reflected method.
 	 */
-	private Method getMethodLazily(ConcurrentMap<Class<?>, Method> lookup, 
+	private Method getMethodLazily(ConcurrentMap<Class<?>, Method> lookup,
 								   Class<?> handleClass, String methodName, Class<?> parameterClass) {
 		Method method = lookup.get(handleClass);
 		
@@ -833,13 +870,14 @@ public class PacketContainer implements Serializable {
 	private static class ItemStackArrayConverter implements EquivalentConverter<ItemStack[]> {
 		final EquivalentConverter<ItemStack> stackConverter = BukkitConverters.getItemStackConverter();
 		
+		@Override
 		public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
 			Class<?> nmsStack = MinecraftReflection.getItemStackClass();
 			Object[] result = (Object[]) Array.newInstance(nmsStack, specific.length);
 			
 			// Unwrap every item
 			for (int i = 0; i < result.length; i++) {
-				result[i] = stackConverter.getGeneric(nmsStack, specific[i]); 
+				result[i] = stackConverter.getGeneric(nmsStack, specific[i]);
 			}
 			return result;
 		}
