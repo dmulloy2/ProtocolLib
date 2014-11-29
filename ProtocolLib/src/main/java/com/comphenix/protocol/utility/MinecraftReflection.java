@@ -418,10 +418,21 @@ public class MinecraftReflection {
 	/**
 	 * Determine if a given object is a ChunkPosition.
 	 * @param obj - the object to test.
+	 * @deprecated ChunkPosition no longer exists
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
+	@Deprecated
 	public static boolean isChunkPosition(Object obj) {
 		return obj != null && getChunkPositionClass().isAssignableFrom(obj.getClass());
+	}
+
+	/**
+	 * Determine if a given object is a BlockPosition.
+	 * @param obj - the object to test.
+	 * @return TRUE if it can, FALSE otherwise.
+	 */
+	public static boolean isBlockPosition(Object obj) {
+		return obj != null && getBlockPositionClass().isAssignableFrom(obj.getClass());
 	}
 
 	/**
@@ -1167,26 +1178,53 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieve the ChunkPosition class.
+	 * Retrieves the ChunkPosition class.
+	 * 
+	 * @deprecated ChunkPosition no longer exists. Replaced by BlockPosition.
 	 * @return The ChunkPosition class.
 	 */
+	@Deprecated
 	public static Class<?> getChunkPositionClass() {
 		try {
 			return getMinecraftClass("ChunkPosition");
 		} catch (RuntimeException e) {
+			return getBlockPositionClass();
+//			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
+//
+//			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
+//			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder()
+//					.banModifier(Modifier.STATIC)
+//					.parameterMatches(getMinecraftObjectMatcher(), 0)
+//					.parameterExactType(String.class, 1)
+//					.parameterExactType(int.class, 2)
+//					.parameterExactType(int.class, 3)
+//					.parameterExactType(int.class, 4)
+//					.build();
+//
+//			return setMinecraftClass("ChunkPosition",
+//					FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType());
+		}
+	}
+
+	/**
+	 * Retrieves the BlockPosition class.
+	 * @return The BlockPosition class.
+	 */
+	public static Class<?> getBlockPositionClass() {
+		try {
+			return getMinecraftClass("BlockPosition");
+		} catch (RuntimeException e) {
 			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
 
-			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
+			// BlockPosition findNearestMapFeature(World, String, BlockPosition)
 			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder()
 					.banModifier(Modifier.STATIC)
 					.parameterMatches(getMinecraftObjectMatcher(), 0)
 					.parameterExactType(String.class, 1)
-					.parameterExactType(int.class, 2)
-					.parameterExactType(int.class, 3)
-					.parameterExactType(int.class, 4)
+					.parameterMatches(getMinecraftObjectMatcher(), 1)
 					.build();
 
-			return setMinecraftClass("ChunkPosition",
+			return setMinecraftClass("BlockPosition",
 					FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType());
 		}
 	}

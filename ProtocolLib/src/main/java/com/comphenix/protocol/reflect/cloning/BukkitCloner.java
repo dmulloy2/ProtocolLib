@@ -40,8 +40,7 @@ public class BukkitCloner implements Cloner {
 		List<Class<?>> classes = Lists.newArrayList();
 		
 		classes.add(MinecraftReflection.getItemStackClass());
-		// TODO: Chunk position does not exist
-		// classes.add(MinecraftReflection.getChunkPositionClass());
+		classes.add(MinecraftReflection.getBlockPositionClass());
 		classes.add(MinecraftReflection.getDataWatcherClass());
 
 		if (MinecraftReflection.isUsingNetty()) {
