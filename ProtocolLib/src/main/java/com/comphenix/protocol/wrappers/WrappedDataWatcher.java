@@ -37,22 +37,18 @@ import javax.annotation.Nullable;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
-import com.comphenix.protocol.annotations.Spigot;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.ReadOnlyFieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
 
 /**
  * Wraps a DataWatcher that is used to transmit arbitrary key-value pairs with a given entity.
@@ -60,129 +56,127 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject> {
-	/**
-	 * Every custom watchable type in Spigot #1628 and above.
-	 * @author Kristian
-	 */
-	@Spigot(minimumBuild = 1628)
-	public enum CustomType {
-		BYTE_SHORT("org.spigotmc.ProtocolData$ByteShort", 		0, 	short.class),
-		DUAL_BYTE("org.spigotmc.ProtocolData$DualByte", 		0, 	byte.class, byte.class),
-		HIDDEN_BYTE("org.spigotmc.ProtocolData$HiddenByte", 	0, 	byte.class),
-		INT_BYTE("org.spigotmc.ProtocolData$IntByte", 			2, 	int.class, byte.class),
-		DUAL_INT("org.spigotmc.ProtocolData$DualInt", 			2, 	int.class, int.class);
-
-		private Class<?> spigotClass;
-		private ConstructorAccessor constructor;
-		private FieldAccessor secondaryValue;
-		private int typeId;
-
-		private CustomType(String className, int typeId, Class<?>... parameters) {
-			try {
-				this.spigotClass = Class.forName(className);
-				this.constructor = Accessors.getConstructorAccessor(spigotClass, parameters);
-				this.secondaryValue = parameters.length > 1 ? Accessors.getFieldAccessor(spigotClass, "value2", true) : null;
-
-			} catch (ClassNotFoundException e) {
-				System.out.println("[ProtocolLib] Unable to find " + className);
-				this.spigotClass = null;
-			}
-			this.typeId = typeId;
-		}
-
-		/**
-		 * Construct a new instance of this Spigot type.
-		 * @param value - the value. Cannot be NULL.
-		 * @return The instance to construct.
-		 */
-		Object newInstance(Object value) {
-			return newInstance(value, null);
-		}
-
-		/**
-		 * Construct a new instance of this Spigot type.
-		 * <p>
-		 * The secondary value may be NULL if this custom type does not contain a secondary value.
-		 * @param value - the value.
-		 * @param secondary - optional secondary value.
-		 * @return
-		 */
-		Object newInstance(Object value, Object secondary) {
-			Preconditions.checkNotNull(value, "value cannot be NULL.");
-
-			if (hasSecondary()) {
-				return constructor.invoke(value, secondary);
-			} else {
-				if (secondary != null) {
-					throw new IllegalArgumentException("Cannot construct " + this + " with a secondary value");
-				}
-				return constructor.invoke(value);
-			}
-		}
-
-		/**
-		 * Set the secondary value of a given type.
-		 * @param instance - the instance.
-		 * @param secondary - the secondary value.
-		 */
-		void setSecondary(Object instance, Object secondary)  {
-			if (!hasSecondary()) {
-				throw new IllegalArgumentException(this + " does not have a secondary value.");
-			}
-			secondaryValue.set(instance, secondary);
-		}
-
-		/**
-		 * Get the secondary value of a type.
-		 * @param instance - the instance.
-		 * @return The secondary value.
-		 */
-		Object getSecondary(Object instance) {
-			if (!hasSecondary()) {
-				throw new IllegalArgumentException(this + " does not have a secondary value.");
-			}
-			return secondaryValue.get(instance);
-		}
-
-		/**
-		 * Determine if this type has a secondary value.
-		 * @return TRUE if it does, FALSE otherwise.
-		 */
-		public boolean hasSecondary() {
-			return secondaryValue != null;
-		}
-
-		/**
-		 * Underlying Spigot class.
-		 * @return The class.
-		 */
-		public Class<?> getSpigotClass() {
-			return spigotClass;
-		}
-
-		/**
-		 * The equivalent type ID.
-		 * @return The equivalent ID.
-		 */
-		public int getTypeId() {
-			return typeId;
-		}
-
-		/**
-		 * Retrieve the custom Spigot type of a value.
-		 * @param value - the value.
-		 * @return The Spigot type, or NULL if not found.
-		 */
-		@Spigot(minimumBuild = 1628)
-		public static CustomType fromValue(Object value) {
-			for (CustomType type : CustomType.values()) {
-				if (type.getSpigotClass().isInstance(value)) {
-					return type;
-				}
-			}
-			return null;
-		}
-	}
+//	/**
+//	 * Every custom watchable type in Spigot #1628 and above.
+//	 * @author Kristian
+//	 */
+//	public enum CustomType {
+//		BYTE_SHORT("org.spigotmc.ProtocolData$ByteShort", 		0, 	short.class),
+//		DUAL_BYTE("org.spigotmc.ProtocolData$DualByte", 		0, 	byte.class, byte.class),
+//		HIDDEN_BYTE("org.spigotmc.ProtocolData$HiddenByte", 	0, 	byte.class),
+//		INT_BYTE("org.spigotmc.ProtocolData$IntByte", 			2, 	int.class, byte.class),
+//		DUAL_INT("org.spigotmc.ProtocolData$DualInt", 			2, 	int.class, int.class);
+//
+//		private Class<?> spigotClass;
+//		private ConstructorAccessor constructor;
+//		private FieldAccessor secondaryValue;
+//		private int typeId;
+//
+//		private CustomType(String className, int typeId, Class<?>... parameters) {
+//			try {
+//				this.spigotClass = Class.forName(className);
+//				this.constructor = Accessors.getConstructorAccessor(spigotClass, parameters);
+//				this.secondaryValue = parameters.length > 1 ? Accessors.getFieldAccessor(spigotClass, "value2", true) : null;
+//
+//			} catch (ClassNotFoundException e) {
+//				System.out.println("[ProtocolLib] Unable to find " + className);
+//				this.spigotClass = null;
+//			}
+//			this.typeId = typeId;
+//		}
+//
+//		/**
+//		 * Construct a new instance of this Spigot type.
+//		 * @param value - the value. Cannot be NULL.
+//		 * @return The instance to construct.
+//		 */
+//		Object newInstance(Object value) {
+//			return newInstance(value, null);
+//		}
+//
+//		/**
+//		 * Construct a new instance of this Spigot type.
+//		 * <p>
+//		 * The secondary value may be NULL if this custom type does not contain a secondary value.
+//		 * @param value - the value.
+//		 * @param secondary - optional secondary value.
+//		 * @return
+//		 */
+//		Object newInstance(Object value, Object secondary) {
+//			Preconditions.checkNotNull(value, "value cannot be NULL.");
+//
+//			if (hasSecondary()) {
+//				return constructor.invoke(value, secondary);
+//			} else {
+//				if (secondary != null) {
+//					throw new IllegalArgumentException("Cannot construct " + this + " with a secondary value");
+//				}
+//				return constructor.invoke(value);
+//			}
+//		}
+//
+//		/**
+//		 * Set the secondary value of a given type.
+//		 * @param instance - the instance.
+//		 * @param secondary - the secondary value.
+//		 */
+//		void setSecondary(Object instance, Object secondary)  {
+//			if (!hasSecondary()) {
+//				throw new IllegalArgumentException(this + " does not have a secondary value.");
+//			}
+//			secondaryValue.set(instance, secondary);
+//		}
+//
+//		/**
+//		 * Get the secondary value of a type.
+//		 * @param instance - the instance.
+//		 * @return The secondary value.
+//		 */
+//		Object getSecondary(Object instance) {
+//			if (!hasSecondary()) {
+//				throw new IllegalArgumentException(this + " does not have a secondary value.");
+//			}
+//			return secondaryValue.get(instance);
+//		}
+//
+//		/**
+//		 * Determine if this type has a secondary value.
+//		 * @return TRUE if it does, FALSE otherwise.
+//		 */
+//		public boolean hasSecondary() {
+//			return secondaryValue != null;
+//		}
+//
+//		/**
+//		 * Underlying Spigot class.
+//		 * @return The class.
+//		 */
+//		public Class<?> getSpigotClass() {
+//			return spigotClass;
+//		}
+//
+//		/**
+//		 * The equivalent type ID.
+//		 * @return The equivalent ID.
+//		 */
+//		public int getTypeId() {
+//			return typeId;
+//		}
+//
+//		/**
+//		 * Retrieve the custom Spigot type of a value.
+//		 * @param value - the value.
+//		 * @return The Spigot type, or NULL if not found.
+//		 */
+//		public static CustomType fromValue(Object value) {
+//			for (CustomType type : CustomType.values()) {
+//				if (type.getSpigotClass().isInstance(value)) {
+//					return type;
+//				}
+//			}
+//			return null;
+//		}
+//	}
 
 	/**
 	 * Used to assign integer IDs to given types.
@@ -434,23 +428,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @throws FieldAccessException Cannot read underlying field.
      */
     public Object getObject(int index) throws FieldAccessException {
-    	// The get method will take care of concurrency
-    	WrappedWatchableObject object = getWrappedObject(index);
-    	return object != null ? object.getValue() : null;
-    }
-
-    /**
-     * Retrieve the wrapped object by index.
-     * @param index - the index.
-     * @return The corresponding wrapper, or NULL.
-     */
-    @Spigot(minimumBuild = 1628)
-    public WrappedWatchableObject getWrappedObject(int index) {
-    	// The get method will take care of concurrency
     	Object watchable = getWatchedObject(index);
 
     	if (watchable != null) {
-    		return new WrappedWatchableObject(watchable);
+    		return new WrappedWatchableObject(watchable).getValue();
     	} else {
     		return null;
     	}
@@ -620,21 +601,20 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
     	}
     }
 
-    /**
-     * Set a watched byte with an optional secondary value.
-     * @param index - index of the watched byte.
-     * @param newValue - the new watched value.
-     * @param secondary - optional secondary value.
-     * @param update - whether or not to refresh every listening client.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    @Spigot(minimumBuild = 1628)
-    public void setObject(int index, Object newValue, Object secondary, boolean update, CustomType type) throws FieldAccessException {
-		Object created = type.newInstance(newValue, secondary);
-
-		// Now update the watcher
-		setObject(index, created, update);
-    }
+//    /**
+//     * Set a watched byte with an optional secondary value.
+//     * @param index - index of the watched byte.
+//     * @param newValue - the new watched value.
+//     * @param secondary - optional secondary value.
+//     * @param update - whether or not to refresh every listening client.
+//     * @throws FieldAccessException Cannot read underlying field.
+//     */
+//    public void setObject(int index, Object newValue, Object secondary, boolean update, CustomType type) throws FieldAccessException {
+//		Object created = type.newInstance(newValue, secondary);
+//
+//		// Now update the watcher
+//		setObject(index, created, update);
+//    }
 
     private Object getWatchedObject(int index) throws FieldAccessException {
     	// We use the get-method first and foremost
@@ -738,7 +718,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		initializeSpigot(fuzzy);
 
 		// Any custom types
-		CUSTOM_MAP = initializeCustom();
+		// CUSTOM_MAP = initializeCustom();
 
 		// Initialize static type type
 		TYPE_MAP = (Map<Class<?>, Integer>) TYPE_MAP_ACCESSOR.get(null);
@@ -757,17 +737,17 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		initializeMethods(fuzzy);
 	}
 
-	// For Spigot's bountiful update patch
-	private static Map<Class<?>, Integer> initializeCustom() {
-		Map<Class<?>, Integer> map = Maps.newHashMap();
-
-		for (CustomType type : CustomType.values()) {
-			if (type.getSpigotClass() != null) {
-				map.put(type.getSpigotClass(), type.getTypeId());
-			}
-		}
-		return map;
-	}
+//	// For Spigot's bountiful update patch
+//	private static Map<Class<?>, Integer> initializeCustom() {
+//		Map<Class<?>, Integer> map = Maps.newHashMap();
+//
+//		for (CustomType type : CustomType.values()) {
+//			if (type.getSpigotClass() != null) {
+//				map.put(type.getSpigotClass(), type.getTypeId());
+//			}
+//		}
+//		return map;
+//	}
 
 	// TODO: Remove, as this was fixed in build #1189 of Spigot
 	private static void initializeSpigot(FuzzyReflection fuzzy) {

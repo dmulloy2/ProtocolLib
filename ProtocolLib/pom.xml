@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
-  <version>3.6.1-SNAPSHOT</version>
+  <version>3.6.2-SNAPSHOT</version>
   <name>ProtocolLib</name>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
