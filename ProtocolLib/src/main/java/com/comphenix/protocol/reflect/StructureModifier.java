@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -119,7 +119,7 @@ public class StructureModifier<TField> {
 		List<Field> fields = getFields(targetType, superclassExclude);
 		Map<Field, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<Field, Integer>();
 		
-		initialize(targetType, Object.class, fields, defaults, null, 
+		initialize(targetType, Object.class, fields, defaults, null,
 				   new ConcurrentHashMap<Class, StructureModifier>(), useStructureCompiler);
 	}
 	
@@ -135,8 +135,8 @@ public class StructureModifier<TField> {
 	 * @param other - information to set.
 	 */
 	protected void initialize(StructureModifier<TField> other) {
-		initialize(other.targetType, other.fieldType, other.data, 
-				   other.defaultFields, other.converter, other.subtypeCache, 
+		initialize(other.targetType, other.fieldType, other.data,
+				   other.defaultFields, other.converter, other.subtypeCache,
 				   other.useStructureCompiler);
 	}
 	
@@ -149,7 +149,7 @@ public class StructureModifier<TField> {
 	 * @param converter - converts between the common field type and the actual type the consumer expects.
 	 * @param subTypeCache - a structure modifier cache.
 	 */
-	protected void initialize(Class targetType, Class fieldType, 
+	protected void initialize(Class targetType, Class fieldType,
 			  List<Field> data, Map<Field, Integer> defaultFields,
 			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache) {
 		initialize(targetType, fieldType, data, defaultFields, converter, subTypeCache, true);
@@ -165,7 +165,7 @@ public class StructureModifier<TField> {
 	 * @param subTypeCache - a structure modifier cache.
 	 * @param useStructureCompiler - whether or not to automatically compile this structure modifier.
 	 */
-	protected void initialize(Class targetType, Class fieldType, 
+	protected void initialize(Class targetType, Class fieldType,
 			  List<Field> data, Map<Field, Integer> defaultFields,
 			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache,
 			  boolean useStructureCompiler) {
@@ -187,21 +187,22 @@ public class StructureModifier<TField> {
 	 */
 	@SuppressWarnings("unchecked")
 	public TField read(int fieldIndex) throws FieldAccessException {
-		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new FieldAccessException("Field index must be within 0 - count", 
-					new IndexOutOfBoundsException("Out of bounds"));
+		if (fieldIndex < 0)
+			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
+		if (fieldIndex >= data.size())
+			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
 		if (target == null)
-			throw new IllegalStateException("Cannot read from a NULL target.");
-		
+			throw new IllegalStateException("Cannot read from a null target");
+
 		try {
 			Object result = FieldUtils.readField(data.get(fieldIndex), target, true);
-			
+
 			// Use the converter, if we have it
 			if (needConversion())
 				return converter.getSpecific(result);
 			else
 				return (TField) result;
-			
+
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Cannot read field due to a security limitation.", e);
 		}
@@ -282,7 +283,7 @@ public class StructureModifier<TField> {
 	 */
 	public StructureModifier<TField> write(int fieldIndex, TField value) throws FieldAccessException {
 		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new FieldAccessException("Field index must be within 0 - count", 
+			throw new FieldAccessException("Field index must be within 0 - count",
 					new IndexOutOfBoundsException("Out of bounds"));
 		if (target == null)
 			throw new IllegalStateException("Cannot write to a NULL target.");
@@ -364,7 +365,7 @@ public class StructureModifier<TField> {
 		// Write a default instance to every field
 		for (Field field : defaultFields.keySet()) {
 			try {
-				FieldUtils.writeField(field, target, 
+				FieldUtils.writeField(field, target,
 						generator.getDefault(field.getType()), true);
 			} catch (IllegalAccessException e) {
 				throw new FieldAccessException("Cannot write to field due to a security limitation.", e);
@@ -410,7 +411,7 @@ public class StructureModifier<TField> {
 				subtypeCache.put(fieldType, result);
 				
 				// Automatically compile the structure modifier
-				if (useStructureCompiler && BackgroundCompiler.getInstance() != null) 
+				if (useStructureCompiler && BackgroundCompiler.getInstance() != null)
 					BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
 			}
 		}
@@ -479,12 +480,12 @@ public class StructureModifier<TField> {
 	 * @return A new structure modifier.
 	 */
 	protected <T> StructureModifier<T> withFieldType(
-			Class fieldType, List<Field> filtered, 
+			Class fieldType, List<Field> filtered,
 			Map<Field, Integer> defaults, EquivalentConverter<T> converter) {
 		
 		StructureModifier<T> result = new StructureModifier<T>();
-		result.initialize(targetType, fieldType, filtered, defaults, 
-						  converter, new ConcurrentHashMap<Class, StructureModifier>(), 
+		result.initialize(targetType, fieldType, filtered, defaults,
+						  converter, new ConcurrentHashMap<Class, StructureModifier>(),
 						  useStructureCompiler);
 		return result;
 	}
@@ -596,7 +597,7 @@ public class StructureModifier<TField> {
 			int mod = field.getModifiers();
 			
 			// Ignore static and "abstract packet" fields
-			if (!Modifier.isStatic(mod) && 
+			if (!Modifier.isStatic(mod) &&
 					(superclassExclude == null || !field.getDeclaringClass().equals(superclassExclude)
 				)) {
 				

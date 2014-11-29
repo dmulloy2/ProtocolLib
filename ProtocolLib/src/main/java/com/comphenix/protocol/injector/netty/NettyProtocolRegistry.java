@@ -14,8 +14,8 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 /**
@@ -107,42 +107,57 @@ public class NettyProtocolRegistry {
 	 * Load the packet lookup tables in each protocol.
 	 */
 	private synchronized void initialize() {
-		final Object[] protocols = enumProtocol.getEnumConstants();
-		List<Map<Integer, Class<?>>> serverMaps = Lists.newArrayList();
-		List<Map<Integer, Class<?>>> clientMaps = Lists.newArrayList();
-		StructureModifier<Object> modifier = null;
-		
-		// Result
+		Object[] protocols = enumProtocol.getEnumConstants();
+
+		// ID to Packet class maps
+		Map<Object, Map<Integer, Class<?>>> serverMaps = Maps.newLinkedHashMap();
+		Map<Object, Map<Integer, Class<?>>> clientMaps = Maps.newLinkedHashMap();
+
 		Register result = new Register();
-		
+		StructureModifier<Object> modifier = null;
+
+		// Iterate through the protocols
 		for (Object protocol : protocols) {
 			if (modifier == null)
 				modifier = new StructureModifier<Object>(protocol.getClass().getSuperclass(), false);
-			StructureModifier<Map<Integer, Class<?>>> maps = modifier.withTarget(protocol).withType(Map.class);
-			
-			serverMaps.add(maps.read(0));
-			clientMaps.add(maps.read(1));
+			StructureModifier<Map<Object, Map<Integer, Class<?>>>> maps = modifier.withTarget(protocol).withType(Map.class);
+			for (Entry<Object, Map<Integer, Class<?>>> entry : maps.read(0).entrySet()) {
+				String direction = entry.getKey().toString();
+				if (direction.contains("CLIENTBOUND")) { // Sent by Server
+					serverMaps.put(protocol, entry.getValue());
+				} else if (direction.contains("SERVERBOUND")) { // Sent by Client
+					clientMaps.put(protocol, entry.getValue());
+				}
+			}
 		}
+
 		// Maps we have to occationally check have changed
-		for (Map<Integer, Class<?>> map : Iterables.concat(serverMaps, clientMaps)) {
+		for (Map<Integer, Class<?>> map : serverMaps.values()) {
+			result.containers.add(new MapContainer(map));
+		}
+
+		for (Map<Integer, Class<?>> map : clientMaps.values()) {
 			result.containers.add(new MapContainer(map));
 		}
  		
-		// Heuristic - there are more server packets than client packets
-		if (sum(clientMaps) > sum(serverMaps)) {
-			// Swap if this is violated
-			List<Map<Integer, Class<?>>> temp = serverMaps;
-			serverMaps = clientMaps;
-			clientMaps = temp;
-		}
-		
+//		// Heuristic - there are more server packets than client packets
+//		if (sum(clientMaps) > sum(serverMaps)) {
+//			// Swap if this is violated
+//			List<Map<Integer, Class<?>>> temp = serverMaps;
+//			serverMaps = clientMaps;
+//			clientMaps = temp;
+//		}
+
 		for (int i = 0; i < protocols.length; i++) {
-			Enum<?> enumProtocol = (Enum<?>) protocols[i];
+			Object protocol = protocols[i];
+			Enum<?> enumProtocol = (Enum<?>) protocol;
 			Protocol equivalent = Protocol.fromVanilla(enumProtocol);
 			
 			// Associate known types
-			associatePackets(result, serverMaps.get(i), equivalent, Sender.SERVER);
-			associatePackets(result, clientMaps.get(i), equivalent, Sender.CLIENT);
+			if (serverMaps.containsKey(protocol))
+				associatePackets(result, serverMaps.get(protocol), equivalent, Sender.SERVER);
+			if (clientMaps.containsKey(protocol))
+				associatePackets(result, clientMaps.get(protocol), equivalent, Sender.CLIENT);
 		}
 		// Exchange (thread safe, as we have only one writer)
 		this.register = result;
@@ -160,16 +175,16 @@ public class NettyProtocolRegistry {
 		}
 	}
 	
-	/**
-	 * Retrieve the number of mapping in all the maps.
-	 * @param maps - iterable of maps.
-	 * @return The sum of all the entries.
-	 */
-	private int sum(Iterable<? extends Map<Integer, Class<?>>> maps) {
-		int count = 0;
-		
-		for (Map<Integer, Class<?>> map : maps) 
-			count += map.size();
-		return count;
-	}
+//	/**
+//	 * Retrieve the number of mapping in all the maps.
+//	 * @param maps - iterable of maps.
+//	 * @return The sum of all the entries.
+//	 */
+//	private int sum(Iterable<? extends Map<Integer, Class<?>>> maps) {
+//		int count = 0;
+//
+//		for (Map<Integer, Class<?>> map : maps)
+//			count += map.size();
+//		return count;
+//	}
 }

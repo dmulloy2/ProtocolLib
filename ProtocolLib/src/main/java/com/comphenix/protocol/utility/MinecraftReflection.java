@@ -114,11 +114,6 @@ public class MinecraftReflection {
 	private static String MINECRAFT_PREFIX_PACKAGE = "net.minecraft.server";
 
 	/**
-	 * The package with all the library classes.
-	 */
-	private static String MINECRAFT_LIBRARY_PACKAGE = "net.minecraft.util";
-
-	/**
 	 * Represents a regular expression that will match the version string in a package:
 	 *    org.bukkit.craftbukkit.v1_6_R2      ->      v1_6_R2
 	 */
@@ -228,9 +223,6 @@ public class MinecraftReflection {
 				// Libigot patch
 				handleLibigot();
 
-				// Minecraft library package
-				handleLibraryPackage();
-
 				// Next, do the same for CraftEntity.getHandle() in order to get the correct Minecraft package
 				Class<?> craftEntity = getCraftEntityClass();
 				Method getHandle = craftEntity.getMethod("getHandle");
@@ -274,29 +266,6 @@ public class MinecraftReflection {
 		} else {
 			initializing = false;
 			throw new IllegalStateException("Could not find Bukkit. Is it running?");
-		}
-	}
-
-	/**
-	 * Retrieve the Minecraft library package string.
-	 * @return The library package.
-	 */
-	private static String getMinecraftLibraryPackage() {
-		getMinecraftPackage();
-		return MINECRAFT_LIBRARY_PACKAGE;
-	}
-
-	private static void handleLibraryPackage() {
-		try {
-			MINECRAFT_LIBRARY_PACKAGE = "net.minecraft.util";
-			// Try loading Google GSON
-			getClassSource().loadClass(CachedPackage.combine(MINECRAFT_LIBRARY_PACKAGE, "com.google.gson.Gson"));
-
-		} catch (Exception e) {
-			// Assume it's MCPC
-			MINECRAFT_LIBRARY_PACKAGE = "";
-			ProtocolLibrary.getErrorReporter().reportWarning(MinecraftReflection.class,
-				Report.newBuilder(REPORT_NON_CRAFTBUKKIT_LIBRARY_PACKAGE));
 		}
 	}
 
@@ -1208,18 +1177,17 @@ public class MinecraftReflection {
 			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
 
 			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
-			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder().
-					 banModifier(Modifier.STATIC).
-					 parameterMatches(getMinecraftObjectMatcher(), 0).
-					 parameterExactType(String.class, 1).
-					 parameterExactType(int.class, 2).
-					 parameterExactType(int.class, 3).
-					 parameterExactType(int.class, 4).
-				    build();
+			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder()
+					.banModifier(Modifier.STATIC)
+					.parameterMatches(getMinecraftObjectMatcher(), 0)
+					.parameterExactType(String.class, 1)
+					.parameterExactType(int.class, 2)
+					.parameterExactType(int.class, 3)
+					.parameterExactType(int.class, 4)
+					.build();
 
 			return setMinecraftClass("ChunkPosition",
-						FuzzyReflection.fromClass(normalChunkGenerator).
-						 getMethod(selected).getReturnType());
+					FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType());
 		}
 	}
 
@@ -1682,13 +1650,7 @@ public class MinecraftReflection {
 	 * @return The GSON class.
 	 */
 	public static Class<?> getMinecraftGsonClass() {
-		try {
-			return getMinecraftLibraryClass("com.google.gson.Gson");
-		} catch (RuntimeException e) {
-			Class<?> match = FuzzyReflection.fromClass(PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass()).
-					getFieldByType(".*\\.google\\.gson\\.Gson").getType();
-			return setMinecraftLibraryClass("com.google.gson.Gson", match);
-		}
+		return getClass("org.bukkit.craftbukkit.libs.com.google.gson.Gson");
 	}
 
 	/**
@@ -1905,29 +1867,6 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getMinecraftClass(String className) {
 	    return getClass(getMinecraftPackage() + "." + className);
-	}
-
-	/**
-	 * Retrieve the class object of a specific Minecraft library class.
-	 * @param className - the specific library Minecraft class.
-	 * @return Class object.
-	 * @throws RuntimeException If we are unable to find the given class.
-	 */
-	public static Class<?> getMinecraftLibraryClass(String className) {
-	    return getClass(getMinecraftLibraryPackage() + "." + className);
-	}
-
-	/**
-	 * Set the class object for the specific library class.
-	 * @param className - name of the Minecraft library class.
-	 * @param clazz - the new class object.
-	 * @return The provided clazz object.
-	 */
-	private static Class<?> setMinecraftLibraryClass(String className, Class<?> clazz) {
-		if (libraryPackage == null)
-			libraryPackage = new CachedPackage(getMinecraftLibraryPackage(), getClassSource());
-		libraryPackage.setPackageClass(className, clazz);
-		return clazz;
 	}
 
 	/**

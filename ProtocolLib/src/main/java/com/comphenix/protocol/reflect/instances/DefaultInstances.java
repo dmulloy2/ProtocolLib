@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -125,7 +125,7 @@ public class DefaultInstances implements InstanceProvider {
 	}
 	
 	/**
-	 * Retrieve the the maximum height of the hierachy of creates types. 
+	 * Retrieve the the maximum height of the hierachy of creates types.
 	 * @return Maximum height.
 	 */
 	public int getMaximumRecursion() {
@@ -220,7 +220,7 @@ public class DefaultInstances implements InstanceProvider {
 			if (getDefaultInternal(type, providers, recursionLevel) == null) {
 				return true;
 			}
-		}	
+		}
 		
 		return false;
 	}
@@ -249,7 +249,6 @@ public class DefaultInstances implements InstanceProvider {
 	
 	@SuppressWarnings("unchecked")
 	private <T> T getDefaultInternal(Class<T> type, List<InstanceProvider> providers, int recursionLevel) {
-			
 		// The instance providiers should protect themselves against recursion
 		try {
 			for (InstanceProvider generator : providers) {
@@ -276,12 +275,13 @@ public class DefaultInstances implements InstanceProvider {
 				Object[] params = new Object[parameterCount];
 				Class<?>[] types = minimum.getParameterTypes();
 				
-				// Fill out 
+				// Fill out
 				for (int i = 0; i < parameterCount; i++) {
 					params[i] = getDefaultInternal(types[i], providers, recursionLevel + 1);
 					
 					// Did we break the non-null contract?
 					if (params[i] == null && nonNull) {
+						System.out.println("Nonnull contract broken.");
 						return null;
 					}
 				}
@@ -316,7 +316,7 @@ public class DefaultInstances implements InstanceProvider {
 	}
 	
 	/**
-	 * Used by the default instance provider to create a class from a given constructor. 
+	 * Used by the default instance provider to create a class from a given constructor.
 	 * The default method uses reflection.
 	 * @param type - the type to create.
 	 * @param constructor - the constructor to use.
@@ -326,10 +326,10 @@ public class DefaultInstances implements InstanceProvider {
 	 */
 	protected <T> T createInstance(Class<T> type, Constructor<T> constructor, Class<?>[] types, Object[] params) {
 		try {
-			return (T) constructor.newInstance(params);
+			return constructor.newInstance(params);
 		} catch (Exception e) {
-			//e.printStackTrace();
-			// Cannot create it
+			// System.out.println("Failed to create instance " + constructor);
+			// e.printStackTrace();
 			return null;
 		}
 	}

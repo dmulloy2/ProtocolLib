@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.comphenix.protocol.reflect.FieldUtils;
+import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 // Will have to be updated for every version though
 
@@ -68,6 +69,6 @@ public class BukkitInitialization {
 	 */
 	public static void initializePackage() {
 		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage("net.minecraft.server.v1_7_R4", "org.bukkit.craftbukkit.v1_7_R4");
+		MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
 	}
 }
