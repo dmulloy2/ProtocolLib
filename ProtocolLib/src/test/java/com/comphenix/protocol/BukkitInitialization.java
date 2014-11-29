@@ -42,9 +42,9 @@ public class BukkitInitialization {
 				Block.R(); // Block.register();
 				Item.t(); // Item.register();
 				StatisticList.a(); // StatisticList.register();
-			} catch (Exception e) {
+			} catch (Throwable ex) {
 				// Swallow
-				e.printStackTrace();
+				ex.printStackTrace();
 			}
 
 			// Mock the server object
