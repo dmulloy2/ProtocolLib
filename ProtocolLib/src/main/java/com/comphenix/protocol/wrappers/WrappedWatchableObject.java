@@ -353,6 +353,8 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	static Class<?> getWrappedType(Class<?> unwrapped) {
 		if (unwrapped.equals(MinecraftReflection.getChunkPositionClass()))
 			return ChunkPosition.class;
+		else if (unwrapped.equals(MinecraftReflection.getBlockPositionClass()))
+			return BlockPosition.class;
 		else if (unwrapped.equals(MinecraftReflection.getChunkCoordinatesClass()))
 			return WrappedChunkCoordinate.class;
 		else if (unwrapped.equals(MinecraftReflection.getItemStackClass()))
@@ -367,17 +369,17 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	 * @return The raw NMS object.
 	 */
 	static Object getUnwrapped(Object wrapped) {
-    	// Convert special cases
+		// Convert special cases
 		if (wrapped instanceof ChunkPosition)
-			return ChunkPosition.getConverter().getGeneric(
-				MinecraftReflection.getChunkPositionClass(), (ChunkPosition) wrapped);
+			return ChunkPosition.getConverter().getGeneric(MinecraftReflection.getChunkPositionClass(), (ChunkPosition) wrapped);
+		else if (wrapped instanceof BlockPosition)
+			return BlockPosition.getConverter().getGeneric(MinecraftReflection.getBlockPositionClass(), (BlockPosition) wrapped);
 		else if (wrapped instanceof WrappedChunkCoordinate)
-    		return ((WrappedChunkCoordinate) wrapped).getHandle();
-    	else if (wrapped instanceof ItemStack)
-    		return BukkitConverters.getItemStackConverter().getGeneric(
-    				MinecraftReflection.getItemStackClass(), (ItemStack) wrapped);
-    	else
-    		return wrapped;
+			return ((WrappedChunkCoordinate) wrapped).getHandle();
+		else if (wrapped instanceof ItemStack)
+			return BukkitConverters.getItemStackConverter().getGeneric(MinecraftReflection.getItemStackClass(), (ItemStack) wrapped);
+		else
+			return wrapped;
 	}
 
 	/**
@@ -388,6 +390,8 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	static Class<?> getUnwrappedType(Class<?> wrapped) {
 		if (wrapped.equals(ChunkPosition.class))
 			return MinecraftReflection.getChunkPositionClass();
+		else if (wrapped.equals(BlockPosition.class))
+			return MinecraftReflection.getBlockPositionClass();
 		else if (wrapped.equals(WrappedChunkCoordinate.class))
 			return MinecraftReflection.getChunkCoordinatesClass();
 		else if (ItemStack.class.isAssignableFrom(wrapped))
@@ -417,7 +421,10 @@ public class WrappedWatchableObject extends AbstractWrapper {
 		Object value = getNMSValue();
 
 		// Only a limited set of references types are supported
-		if (MinecraftReflection.isChunkPosition(value)) {
+		if (MinecraftReflection.isBlockPosition(value)) {
+			EquivalentConverter<BlockPosition> converter = BlockPosition.getConverter();
+			return converter.getGeneric(MinecraftReflection.getBlockPositionClass(), converter.getSpecific(value));
+		} else if (MinecraftReflection.isChunkPosition(value)) {
 			EquivalentConverter<ChunkPosition> converter = ChunkPosition.getConverter();
 			return converter.getGeneric(MinecraftReflection.getChunkPositionClass(), converter.getSpecific(value));
 		} else if (MinecraftReflection.isItemStack(value)) {

@@ -423,7 +423,8 @@ public class MinecraftReflection {
 	 */
 	@Deprecated
 	public static boolean isChunkPosition(Object obj) {
-		return obj != null && getChunkPositionClass().isAssignableFrom(obj.getClass());
+		Class<?> chunkPosition = getChunkPositionClass();
+		return obj != null && chunkPosition != null && chunkPosition.isAssignableFrom(obj.getClass());
 	}
 
 	/**
@@ -447,10 +448,13 @@ public class MinecraftReflection {
 	/**
 	 * Determine if a given object is a ChunkCoordinate.
 	 * @param obj - the object to test.
+	 * @deprecated ChunkCoordinate(s) does not exist.
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
+	@Deprecated
 	public static boolean isChunkCoordinates(Object obj) {
-		return obj != null && getChunkCoordinatesClass().isAssignableFrom(obj.getClass());
+		Class<?> chunkCoordinates = getChunkCoordinatesClass();
+		return obj != null && chunkCoordinates != null && chunkCoordinates.isAssignableFrom(obj.getClass());
 	}
 
 	/**
@@ -1188,7 +1192,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("ChunkPosition");
 		} catch (RuntimeException e) {
-			return getBlockPositionClass();
+			return null;
 //			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
 //
 //			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
@@ -1233,6 +1237,7 @@ public class MinecraftReflection {
 	 * Retrieve the ChunkCoordinates class.
 	 * @return The ChunkPosition class.
 	 */
+	@Deprecated
 	public static Class<?> getChunkCoordinatesClass() {
 		try {
 			return getMinecraftClass("ChunkCoordinates");
