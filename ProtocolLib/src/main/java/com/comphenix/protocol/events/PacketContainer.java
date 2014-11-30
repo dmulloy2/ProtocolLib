@@ -594,13 +594,27 @@ public class PacketContainer implements Serializable {
 	 * Retrieves a read/write structure for chat components in Minecraft 1.7.2.
 	 * <p>
 	 * This modifier will automatically marshall between WrappedChatComponent and the
-	 * internal Minecraft GameProfile.
+	 * internal Minecraft IChatBaseComponent.
 	 * @return A modifier for ChatComponent fields.
 	 */
 	public StructureModifier<WrappedChatComponent> getChatComponents() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedChatComponent>withType(
 				MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
+	}
+
+	/**
+	 * Retrieves a read/write structure for arrays of chat components.
+	 * <p>
+	 * This modifier will automatically marshall between WrappedChatComponent and the
+	 * internal Minecraft IChatBaseComponent.
+	 * @return A modifier for ItemStack array fields.
+	 */
+	public StructureModifier<WrappedChatComponent[]> getChatComponentArrays() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.<WrappedChatComponent[]>withType(
+				MinecraftReflection.getIChatBaseComponentClass(),
+				BukkitConverters.getIgnoreNull(new WrappedChatComponentArrayConverter()));
 	}
 	
 	/**
@@ -897,6 +911,43 @@ public class PacketContainer implements Serializable {
 		@Override
 		public Class<ItemStack[]> getSpecificType() {
 			return ItemStack[].class;
+		}
+	}
+
+	/**
+	 * Represents an equivalent converter for ChatComponent arrays.
+	 * @author Kristian
+	 */
+	private static class WrappedChatComponentArrayConverter implements EquivalentConverter<WrappedChatComponent[]> {
+		final EquivalentConverter<WrappedChatComponent> componentConverter = BukkitConverters.getWrappedChatComponentConverter();
+		
+		@Override
+		public Object getGeneric(Class<?>genericType, WrappedChatComponent[] specific) {
+			Class<?> nmsComponent = MinecraftReflection.getIChatBaseComponentClass();
+			Object[] result = (Object[]) Array.newInstance(nmsComponent, specific.length);
+			
+			// Unwrap every item
+			for (int i = 0; i < result.length; i++) {
+				result[i] = componentConverter.getGeneric(nmsComponent, specific[i]);
+			}
+			return result;
+		}
+		
+		@Override
+		public WrappedChatComponent[] getSpecific(Object generic) {
+			Object[] input = (Object[]) generic;
+			WrappedChatComponent[] result = new WrappedChatComponent[input.length];
+			
+			// Add the wrapper
+			for (int i = 0; i < result.length; i++) {
+				result[i] = componentConverter.getSpecific(input[i]);
+			}
+			return result;
+		}
+		
+		@Override
+		public Class<WrappedChatComponent[]> getSpecificType() {
+			return WrappedChatComponent[].class;
 		}
 	}
 }
