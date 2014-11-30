@@ -52,6 +52,13 @@ public abstract class EnumWrappers {
 		CREATIVE, 
 		ADVENTURE;
 	}
+	
+	public enum ResourcePackStatus {
+	    SUCCESSFULLY_LOADED,
+	    DECLINED,
+	    FAILED_DOWNLOAD,
+	    ACCEPTED
+	}
 
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
@@ -59,6 +66,7 @@ public abstract class EnumWrappers {
 	private static Class<?> DIFFICULTY_CLASS = null;
 	private static Class<?> ENTITY_USE_ACTION_CLASS = null;
 	private static Class<?> GAMEMODE_CLASS = null;
+	private static Class<?> RESOURCE_PACK_CLASS = null;
 	
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = Maps.newHashMap();
@@ -76,6 +84,7 @@ public abstract class EnumWrappers {
 		DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
 		ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
+		RESOURCE_PACK_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
 		
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -83,6 +92,7 @@ public abstract class EnumWrappers {
 		associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());
 		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
 		associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
+		associate(RESOURCE_PACK_CLASS, ResourcePackStatus.class, getResourcePackStatusConverter());
 	}
 	
 	private static void associate(Class<?> nativeClass, Class<?> wrapperClass, EquivalentConverter<?> converter) {
@@ -133,6 +143,10 @@ public abstract class EnumWrappers {
 		initialize();
 		return GAMEMODE_CLASS;
 	}
+	public static Class<?> getResourcePackStatusClass() {
+        initialize();
+        return RESOURCE_PACK_CLASS;
+    }
 	
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
@@ -153,6 +167,9 @@ public abstract class EnumWrappers {
 	public static EquivalentConverter<NativeGameMode> getGameModeConverter() {
 		return new EnumConverter<NativeGameMode>(NativeGameMode.class);
 	}
+	public static EquivalentConverter<ResourcePackStatus> getResourcePackStatusConverter() {
+        return new EnumConverter<ResourcePackStatus>(ResourcePackStatus.class);
+    }
 	
 	// The common enum converter
 	@SuppressWarnings({"rawtypes", "unchecked"})

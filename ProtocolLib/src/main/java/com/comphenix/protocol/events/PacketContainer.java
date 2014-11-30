@@ -75,6 +75,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
+import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -639,6 +640,16 @@ public class PacketContainer implements Serializable {
 		return structureModifier.<NativeGameMode>withType(
 				EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
 	}
+	
+	/**
+     * Retrieve a read/write structure for the NativeGameMode enum in 1.8.0.
+     * @return A modifier for NativeGameMode enum fields.
+     */
+    public StructureModifier<ResourcePackStatus> getResourcePackStatus() {
+        // Convert to and from the wrapper
+        return structureModifier.<ResourcePackStatus>withType(
+                EnumWrappers.getResourcePackStatusClass(), EnumWrappers.getResourcePackStatusConverter());
+    }
 	
 	/**
 	 * Retrieves the ID of this packet.
