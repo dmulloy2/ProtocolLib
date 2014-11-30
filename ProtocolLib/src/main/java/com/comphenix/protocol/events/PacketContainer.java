@@ -608,7 +608,7 @@ public class PacketContainer implements Serializable {
 	 * <p>
 	 * This modifier will automatically marshall between WrappedChatComponent and the
 	 * internal Minecraft IChatBaseComponent.
-	 * @return A modifier for ItemStack array fields.
+	 * @return A modifier for ChatComponent array fields.
 	 */
 	public StructureModifier<WrappedChatComponent[]> getChatComponentArrays() {
 		// Convert to and from the Bukkit wrapper
@@ -916,7 +916,7 @@ public class PacketContainer implements Serializable {
 
 	/**
 	 * Represents an equivalent converter for ChatComponent arrays.
-	 * @author Kristian
+	 * @author dmulloy2
 	 */
 	private static class WrappedChatComponentArrayConverter implements EquivalentConverter<WrappedChatComponent[]> {
 		final EquivalentConverter<WrappedChatComponent> componentConverter = BukkitConverters.getWrappedChatComponentConverter();
