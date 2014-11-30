@@ -16,28 +16,29 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public abstract class EnumWrappers {
-	public enum ClientCommand {		
-		PERFORM_RESPAWN, 
-		REQUEST_STATS, 
+	public enum ClientCommand {
+		PERFORM_RESPAWN,
+		REQUEST_STATS,
 		OPEN_INVENTORY_ACHIEVEMENT;
 	}
 	
 	public enum ChatVisibility {
-		FULL, 
-		SYSTEM, 
+		FULL,
+		SYSTEM,
 		HIDDEN;
 	}
 	
 	public enum Difficulty {
-		PEACEFUL, 
-		EASY, 
-		NORMAL, 
+		PEACEFUL,
+		EASY,
+		NORMAL,
 		HARD;
 	}
 	
 	public enum EntityUseAction {
-		INTERACT, 
-		ATTACK;
+		INTERACT,
+		ATTACK,
+		INTERACT_AT;
 	}
 	
 	/**
@@ -47,10 +48,16 @@ public abstract class EnumWrappers {
 	 * @author Kristian
 	 */
 	public enum NativeGameMode {
-		NONE, 
-		SURVIVAL, 
-		CREATIVE, 
-		ADVENTURE;
+		NOT_SET,
+		SURVIVAL,
+		CREATIVE,
+		ADVENTURE,
+		SPECTATOR,
+
+		/**
+		 * @deprecated Replaced by NOT_SET
+		 */
+		NONE;
 	}
 
 	private static Class<?> PROTOCOL_CLASS = null;
