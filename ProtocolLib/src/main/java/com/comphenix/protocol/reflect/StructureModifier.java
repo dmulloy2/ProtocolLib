@@ -282,11 +282,12 @@ public class StructureModifier<TField> {
 	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
 	public StructureModifier<TField> write(int fieldIndex, TField value) throws FieldAccessException {
-		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new FieldAccessException("Field index must be within 0 - count",
-					new IndexOutOfBoundsException("Out of bounds"));
+		if (fieldIndex < 0)
+			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
+		if (fieldIndex >= data.size())
+			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
 		if (target == null)
-			throw new IllegalStateException("Cannot write to a NULL target.");
+			throw new IllegalStateException("Cannot write to a null target");
 		
 		// Use the converter, if it exists
 		Object obj = needConversion() ? converter.getGeneric(getFieldType(fieldIndex), value) : value;
