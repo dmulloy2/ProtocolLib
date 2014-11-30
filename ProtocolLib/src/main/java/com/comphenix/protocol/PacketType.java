@@ -270,8 +270,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
 
 			public static final PacketType OUT_SERVER_INFO =          new PacketType(PROTOCOL, SENDER, 0x00, 255);
-			@SuppressWarnings("deprecation")
-			public static final PacketType OUT_PING =                 new PacketType(PROTOCOL, SENDER, 0x01, Packets.Server.PING_TIME);
+			public static final PacketType OUT_PING =                 new PacketType(PROTOCOL, SENDER, 0x01, 230);
 
 			private final static Server INSTANCE = new Server();
 
@@ -294,8 +293,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType IN_START =                 new PacketType(PROTOCOL, SENDER, 0x00, 254);
-			@SuppressWarnings("deprecation")
-			public static final PacketType IN_PING =                  new PacketType(PROTOCOL, SENDER, 0x01, Packets.Client.PING_TIME);
+			public static final PacketType IN_PING =                  new PacketType(PROTOCOL, SENDER, 0x01, 230);
 
 			private final static Client INSTANCE = new Client();
 
@@ -331,8 +329,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 
 			public static final PacketType DISCONNECT =               new PacketType(PROTOCOL, SENDER, 0x00, 255);
 			public static final PacketType ENCRYPTION_BEGIN =         new PacketType(PROTOCOL, SENDER, 0x01, 253);
-			@SuppressWarnings("deprecation")
-			public static final PacketType SUCCESS =                  new PacketType(PROTOCOL, SENDER, 0x02, Packets.Server.LOGIN_SUCCESS);
+			public static final PacketType SUCCESS =                  new PacketType(PROTOCOL, SENDER, 0x02, 232);
 			public static final PacketType SET_COMPRESSION =          new PacketType(PROTOCOL, SENDER, 0x03, -1);
 
 			private final static Server INSTANCE = new Server();
@@ -355,8 +352,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		public static class Client extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.CLIENT;
 
-			@SuppressWarnings("deprecation")
-			public static final PacketType START =                    new PacketType(PROTOCOL, SENDER, 0x00, Packets.Client.LOGIN_START);
+			public static final PacketType START =                    new PacketType(PROTOCOL, SENDER, 0x00, 231);
 			public static final PacketType ENCRYPTION_BEGIN =         new PacketType(PROTOCOL, SENDER, 0x01, 252);
 
 			private final static Client INSTANCE = new Client();
@@ -520,7 +516,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	/**
 	 * Protocol version of all the current IDs.
 	 */
-	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.WORLD_UPDATE;
+	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.BOUNTIFUL_UPDATE;
 
 	private final Protocol protocol;
 	private final Sender sender;
@@ -940,7 +936,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 
 	@Override
 	public String toString() {
-		Class<?> clazz = getPacketClass();;
+		Class<?> clazz = getPacketClass();
 
 		if (clazz == null)
 			return "UNREGISTERED [" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + "]";
