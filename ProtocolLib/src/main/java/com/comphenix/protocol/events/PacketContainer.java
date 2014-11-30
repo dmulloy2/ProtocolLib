@@ -642,8 +642,8 @@ public class PacketContainer implements Serializable {
 	}
 	
 	/**
-     * Retrieve a read/write structure for the NativeGameMode enum in 1.8.0.
-     * @return A modifier for NativeGameMode enum fields.
+     * Retrieve a read/write structure for the ResourcePackStatus enum in 1.8.0.
+     * @return A modifier for ResourcePackStatus enum fields.
      */
     public StructureModifier<ResourcePackStatus> getResourcePackStatus() {
         // Convert to and from the wrapper
