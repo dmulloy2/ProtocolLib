@@ -21,26 +21,26 @@ public abstract class EnumWrappers {
 		REQUEST_STATS,
 		OPEN_INVENTORY_ACHIEVEMENT;
 	}
-	
+
 	public enum ChatVisibility {
 		FULL,
 		SYSTEM,
 		HIDDEN;
 	}
-	
+
 	public enum Difficulty {
 		PEACEFUL,
 		EASY,
 		NORMAL,
 		HARD;
 	}
-	
+
 	public enum EntityUseAction {
 		INTERACT,
 		ATTACK,
 		INTERACT_AT;
 	}
-	
+
 	/**
 	 * Represents a native game mode in Minecraft.
 	 * <p>
@@ -60,43 +60,58 @@ public abstract class EnumWrappers {
 		NONE;
 	}
 
+	public enum ResourcePackStatus {
+		SUCCESSFULLY_LOADED,
+		DECLINED,
+		FAILED_DOWNLOAD,
+		ACCEPTED;
+	}
+
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
 	private static Class<?> CHAT_VISIBILITY_CLASS = null;
 	private static Class<?> DIFFICULTY_CLASS = null;
 	private static Class<?> ENTITY_USE_ACTION_CLASS = null;
 	private static Class<?> GAMEMODE_CLASS = null;
-	
+	private static Class<?> RESOURCE_PACK_STATUS_CLASS = null;
+
+	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = Maps.newHashMap();
-	
+
 	/**
 	 * Initialize the wrappers, if we haven't already.
 	 */
 	private static void initialize() {
 		if (!MinecraftReflection.isUsingNetty())
 			throw new IllegalArgumentException("Not supported on 1.6.4 and earlier.");
-		
+
+		if (INITIALIZED)
+			return;
+
 		PROTOCOL_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
 		CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
 		CHAT_VISIBILITY_CLASS = getEnum(PacketType.Play.Client.SETTINGS.getPacketClass(), 0);
 		DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
 		ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
-		
+		RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
+
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
 		associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
 		associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());
 		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
 		associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
+		associate(RESOURCE_PACK_STATUS_CLASS, ResourcePackStatus.class, getResourcePackStatusConverter());
+		INITIALIZED = true;
 	}
-	
+
 	private static void associate(Class<?> nativeClass, Class<?> wrapperClass, EquivalentConverter<?> converter) {
 		FROM_NATIVE.put(nativeClass, converter);
 		FROM_WRAPPER.put(wrapperClass, converter);
 	}
-	
+
 	/**
 	 * Retrieve the enum field with the given declaration index (in relation to the other enums).
 	 * @param clazz - the declaration class.
@@ -106,66 +121,85 @@ public abstract class EnumWrappers {
 	private static Class<?> getEnum(Class<?> clazz, int index) {
 		return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
 	}
-	
+
 	public static Map<Class<?>, EquivalentConverter<?>> getFromNativeMap() {
 		return FROM_NATIVE;
 	}
-	
+
 	public static Map<Class<?>, EquivalentConverter<?>> getFromWrapperMap() {
 		return FROM_WRAPPER;
 	}
-	
+
 	// Get the native enum classes
 	public static Class<?> getProtocolClass() {
 		initialize();
 		return PROTOCOL_CLASS;
 	}
+
 	public static Class<?> getClientCommandClass() {
 		initialize();
 		return CLIENT_COMMAND_CLASS;
 	}
+
 	public static Class<?> getChatVisibilityClass() {
 		initialize();
 		return CHAT_VISIBILITY_CLASS;
 	}
+
 	public static Class<?> getDifficultyClass() {
 		initialize();
 		return DIFFICULTY_CLASS;
 	}
+
 	public static Class<?> getEntityUseActionClass() {
 		initialize();
 		return ENTITY_USE_ACTION_CLASS;
 	}
+
 	public static Class<?> getGameModeClass() {
 		initialize();
 		return GAMEMODE_CLASS;
 	}
-	
+
+	public static Class<?> getResourcePackStatusClass() {
+		initialize();
+		return RESOURCE_PACK_STATUS_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<Protocol>(Protocol.class);
 	}
+
 	public static EquivalentConverter<ClientCommand> getClientCommandConverter() {
 		return new EnumConverter<ClientCommand>(ClientCommand.class);
 	}
+
 	public static EquivalentConverter<ChatVisibility> getChatVisibilityConverter() {
 		return new EnumConverter<ChatVisibility>(ChatVisibility.class);
 	}
+
 	public static EquivalentConverter<Difficulty> getDifficultyConverter() {
 		return new EnumConverter<Difficulty>(Difficulty.class);
 	}
+
 	public static EquivalentConverter<EntityUseAction> getEntityUseActionConverter() {
 		return new EnumConverter<EntityUseAction>(EntityUseAction.class);
 	}
+
 	public static EquivalentConverter<NativeGameMode> getGameModeConverter() {
 		return new EnumConverter<NativeGameMode>(NativeGameMode.class);
 	}
-	
+
+	public static EquivalentConverter<ResourcePackStatus> getResourcePackStatusConverter() {
+		return new EnumConverter<ResourcePackStatus>(ResourcePackStatus.class);
+	}
+
 	// The common enum converter
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
 		private Class<T> specificType;
-		
+
 		public EnumConverter(Class<T> specificType) {
 			this.specificType = specificType;
 		}
