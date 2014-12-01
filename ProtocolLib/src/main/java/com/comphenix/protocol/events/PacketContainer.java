@@ -705,7 +705,7 @@ public class PacketContainer implements Serializable {
 	}
 
     /**
-     * Retrieve a read/write structure for the TitleAction enum in 1.8.0.
+     * Retrieve a read/write structure for the TitleAction enum in 1.8.
      * @return A modifier for TitleAction enum fields.
      */
     public StructureModifier<TitleAction> getTitleActions() {
@@ -715,7 +715,7 @@ public class PacketContainer implements Serializable {
     }
     
     /**
-     * Retrieve a read/write structure for the WorldBorderAction enum in 1.8.0.
+     * Retrieve a read/write structure for the WorldBorderAction enum in 1.8.
      * @return A modifier for WorldBorderAction enum fields.
      */
     public StructureModifier<WorldBorderAction> getWorldBorderActions() {
@@ -725,8 +725,8 @@ public class PacketContainer implements Serializable {
     }
     
     /**
-     * Retrieve a read/write structure for the CombatEvent enum in 1.8.0.
-     * @return A modifier for CombatEvent enum fields.
+     * Retrieve a read/write structure for the CombatEventType enum in 1.8.
+     * @return A modifier for CombatEventType enum fields.
      */
     public StructureModifier<CombatEventType> getCombatEvents() {
         // Convert to and from the wrapper
