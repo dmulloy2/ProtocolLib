@@ -178,15 +178,15 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType SCOREBOARD_TEAM =          new PacketType(PROTOCOL, SENDER, 0x3E, 209);
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x3F, 250);
 			public static final PacketType KICK_DISCONNECT =          new PacketType(PROTOCOL, SENDER, 0x40, 255);
-			public static final PacketType SERVER_DIFFICULTY =        new PacketType(PROTOCOL, SENDER, 0x41, -1);
-			public static final PacketType COMBAT_EVENT =             new PacketType(PROTOCOL, SENDER, 0x42, -1);
+			public static final PacketType SERVER_DIFFICULTY =        new PacketType(PROTOCOL, SENDER, 0x41, 65); // 65
+			public static final PacketType COMBAT_EVENT =             new PacketType(PROTOCOL, SENDER, 0x42, 66); // 66
 			public static final PacketType CAMERA =                   new PacketType(PROTOCOL, SENDER, 0x43, -1);
-			public static final PacketType WORLD_BORDER =             new PacketType(PROTOCOL, SENDER, 0x44, -1);
-			public static final PacketType TITLE =                    new PacketType(PROTOCOL, SENDER, 0x45, -1);
+			public static final PacketType WORLD_BORDER =             new PacketType(PROTOCOL, SENDER, 0x44, 68); // 68
+			public static final PacketType TITLE =                    new PacketType(PROTOCOL, SENDER, 0x45, 69); // 69
 			public static final PacketType SET_COMPRESSION =          new PacketType(PROTOCOL, SENDER, 0x46, -1);
 			public static final PacketType PLAYER_LIST_HEADER_FOOTER =
-				                                                   	  new PacketType(PROTOCOL, SENDER, 0x47, -1);
-			public static final PacketType RESOURCE_PACK_SEND =       new PacketType(PROTOCOL, SENDER, 0x48, -1);
+				                                                   	  new PacketType(PROTOCOL, SENDER, 0x47, 71); // 71
+			public static final PacketType RESOURCE_PACK_SEND =       new PacketType(PROTOCOL, SENDER, 0x48, 72); // 72
 			public static final PacketType UPDATE_ENTITY_NBT =        new PacketType(PROTOCOL, SENDER, 0x49, -1);
 
 			// The instance must
@@ -235,7 +235,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType CLIENT_COMMAND =           new PacketType(PROTOCOL, SENDER, 0x16, 205);
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x17, 250);
 			public static final PacketType SPECTATE =                 new PacketType(PROTOCOL, SENDER, 0x18, -1);
-			public static final PacketType RESOURCE_PACK_STATUS =     new PacketType(PROTOCOL, SENDER, 0x19, -1);
+			public static final PacketType RESOURCE_PACK_STATUS =     new PacketType(PROTOCOL, SENDER, 0x19, 25); //25
 
 			private final static Client INSTANCE = new Client();
 
