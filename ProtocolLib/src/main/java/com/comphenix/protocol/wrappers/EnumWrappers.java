@@ -67,6 +67,29 @@ public abstract class EnumWrappers {
 		ACCEPTED;
 	}
 
+	public enum TitleAction {
+		TITLE,
+		SUBTITLE,
+		TIMES,
+		CLEAR,
+		RESET;
+	}
+
+	public enum WorldBorderAction {
+		SET_SIZE,
+		LERP_SIZE,
+		SET_CENTER,
+		INITIALIZE,
+		SET_WARNING_TIME,
+		SET_WARNING_BLOCKS;
+	}
+
+	public enum CombatEventType {
+		ENTER_COMBAT,
+		END_COMBAT,
+		ENTITY_DIED;
+	}
+
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
 	private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -74,6 +97,9 @@ public abstract class EnumWrappers {
 	private static Class<?> ENTITY_USE_ACTION_CLASS = null;
 	private static Class<?> GAMEMODE_CLASS = null;
 	private static Class<?> RESOURCE_PACK_STATUS_CLASS = null;
+	private static Class<?> TITLE_ACTION_CLASS = null;
+	private static Class<?> WORLD_BORDER_ACTION_CLASS = null;
+	private static Class<?> COMBAT_EVENT_TYPE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -96,6 +122,9 @@ public abstract class EnumWrappers {
 		ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
 		RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
+		TITLE_ACTION_CLASS = getEnum(PacketType.Play.Server.TITLE.getPacketClass(), 0);
+		WORLD_BORDER_ACTION_CLASS = getEnum(PacketType.Play.Server.WORLD_BORDER.getPacketClass(), 0);
+		COMBAT_EVENT_TYPE_CLASS = getEnum(PacketType.Play.Server.COMBAT_EVENT.getPacketClass(), 0);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -104,6 +133,9 @@ public abstract class EnumWrappers {
 		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
 		associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
 		associate(RESOURCE_PACK_STATUS_CLASS, ResourcePackStatus.class, getResourcePackStatusConverter());
+		associate(TITLE_ACTION_CLASS, TitleAction.class, getTitleActionConverter());
+		associate(WORLD_BORDER_ACTION_CLASS, WorldBorderAction.class, getWorldBorderActionConverter());
+		associate(COMBAT_EVENT_TYPE_CLASS, CombatEventType.class, getCombatEventTypeConverter());
 		INITIALIZED = true;
 	}
 
@@ -166,6 +198,21 @@ public abstract class EnumWrappers {
 		return RESOURCE_PACK_STATUS_CLASS;
 	}
 
+	public static Class<?> getTitleActionClass() {
+		initialize();
+		return TITLE_ACTION_CLASS;
+	}
+
+	public static Class<?> getWorldBorderActionClass() {
+		initialize();
+		return WORLD_BORDER_ACTION_CLASS;
+	}
+
+	public static Class<?> getCombatEventTypeClass() {
+		initialize();
+		return COMBAT_EVENT_TYPE_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<Protocol>(Protocol.class);
@@ -193,6 +240,18 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<ResourcePackStatus> getResourcePackStatusConverter() {
 		return new EnumConverter<ResourcePackStatus>(ResourcePackStatus.class);
+	}
+
+	public static EquivalentConverter<TitleAction> getTitleActionConverter() {
+		return new EnumConverter<TitleAction>(TitleAction.class);
+	}
+
+	public static EquivalentConverter<WorldBorderAction> getWorldBorderActionConverter() {
+		return new EnumConverter<WorldBorderAction>(WorldBorderAction.class);
+	}
+
+	public static EquivalentConverter<CombatEventType> getCombatEventTypeConverter() {
+		return new EnumConverter<CombatEventType>(CombatEventType.class);
 	}
 
 	// The common enum converter

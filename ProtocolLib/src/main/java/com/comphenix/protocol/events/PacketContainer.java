@@ -73,10 +73,13 @@ import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
 import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
+import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
+import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -700,6 +703,36 @@ public class PacketContainer implements Serializable {
 		return structureModifier.<ResourcePackStatus>withType(
 				EnumWrappers.getResourcePackStatusClass(), EnumWrappers.getResourcePackStatusConverter());
 	}
+
+    /**
+     * Retrieve a read/write structure for the TitleAction enum in 1.8.0.
+     * @return A modifier for TitleAction enum fields.
+     */
+    public StructureModifier<TitleAction> getTitleActions() {
+        // Convert to and from the wrapper
+        return structureModifier.<TitleAction>withType(
+                EnumWrappers.getTitleActionClass(), EnumWrappers.getTitleActionConverter());
+    }
+    
+    /**
+     * Retrieve a read/write structure for the WorldBorderAction enum in 1.8.0.
+     * @return A modifier for WorldBorderAction enum fields.
+     */
+    public StructureModifier<WorldBorderAction> getWorldBorderActions() {
+        // Convert to and from the wrapper
+        return structureModifier.<WorldBorderAction>withType(
+                EnumWrappers.getWorldBorderActionClass(), EnumWrappers.getWorldBorderActionConverter());
+    }
+    
+    /**
+     * Retrieve a read/write structure for the CombatEvent enum in 1.8.0.
+     * @return A modifier for CombatEvent enum fields.
+     */
+    public StructureModifier<CombatEventType> getCombatEvents() {
+        // Convert to and from the wrapper
+        return structureModifier.<CombatEventType>withType(
+                EnumWrappers.getCombatEventTypeClass(), EnumWrappers.getCombatEventTypeConverter());
+    }
 
 	/**
 	 * Retrieves the ID of this packet.
