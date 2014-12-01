@@ -742,6 +742,10 @@ public class MinecraftReflection {
 		}
 	}
 
+	public static Class<?> getIChatBaseComponentArrayClass() {
+		return getArrayClass(getIChatBaseComponentClass());
+	}
+
 	/**
 	 * Retrieve the NMS chat component text class.
 	 * @return The chat component class.

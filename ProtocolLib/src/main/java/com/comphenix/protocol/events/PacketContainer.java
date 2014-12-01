@@ -614,7 +614,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WrappedChatComponent[]> getChatComponentArrays() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedChatComponent[]>withType(
-				MinecraftReflection.getIChatBaseComponentClass(),
+				MinecraftReflection.getIChatBaseComponentArrayClass(),
 				BukkitConverters.getIgnoreNull(new WrappedChatComponentArrayConverter()));
 	}
 	
