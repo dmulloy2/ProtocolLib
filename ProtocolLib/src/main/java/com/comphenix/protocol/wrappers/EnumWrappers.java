@@ -1,15 +1,14 @@
 package com.comphenix.protocol.wrappers;
 
-import java.util.Map;
-
-import org.bukkit.GameMode;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
+import org.bukkit.GameMode;
+
+import java.util.Map;
 
 /**
  * Represents a generic enum converter.
@@ -67,6 +66,14 @@ public abstract class EnumWrappers {
 		ACCEPTED;
 	}
 
+	public enum PlayerInfoAction {
+		ADD_PLAYER,
+		UPDATE_GAMEMODE,
+		UPDATE_LATENCY,
+		UPDATE_DISPLAY_NAME,
+		REMOVE_PLAYER;
+	}
+
 	public enum TitleAction {
 		TITLE,
 		SUBTITLE,
@@ -97,6 +104,7 @@ public abstract class EnumWrappers {
 	private static Class<?> ENTITY_USE_ACTION_CLASS = null;
 	private static Class<?> GAMEMODE_CLASS = null;
 	private static Class<?> RESOURCE_PACK_STATUS_CLASS = null;
+	private static Class<?> PLAYER_INFO_ACTION_CLASS = null;
 	private static Class<?> TITLE_ACTION_CLASS = null;
 	private static Class<?> WORLD_BORDER_ACTION_CLASS = null;
 	private static Class<?> COMBAT_EVENT_TYPE_CLASS = null;
@@ -122,6 +130,7 @@ public abstract class EnumWrappers {
 		ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
 		RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
+		PLAYER_INFO_ACTION_CLASS = getEnum(PacketType.Play.Server.PLAYER_INFO.getPacketClass(), 0);
 		TITLE_ACTION_CLASS = getEnum(PacketType.Play.Server.TITLE.getPacketClass(), 0);
 		WORLD_BORDER_ACTION_CLASS = getEnum(PacketType.Play.Server.WORLD_BORDER.getPacketClass(), 0);
 		COMBAT_EVENT_TYPE_CLASS = getEnum(PacketType.Play.Server.COMBAT_EVENT.getPacketClass(), 0);
@@ -133,6 +142,7 @@ public abstract class EnumWrappers {
 		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
 		associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
 		associate(RESOURCE_PACK_STATUS_CLASS, ResourcePackStatus.class, getResourcePackStatusConverter());
+		associate(PLAYER_INFO_ACTION_CLASS, PlayerInfoAction.class, getPlayerInfoActionConverter());
 		associate(TITLE_ACTION_CLASS, TitleAction.class, getTitleActionConverter());
 		associate(WORLD_BORDER_ACTION_CLASS, WorldBorderAction.class, getWorldBorderActionConverter());
 		associate(COMBAT_EVENT_TYPE_CLASS, CombatEventType.class, getCombatEventTypeConverter());
@@ -198,6 +208,11 @@ public abstract class EnumWrappers {
 		return RESOURCE_PACK_STATUS_CLASS;
 	}
 
+	public static Class<?> getPlayerInfoActionClass() {
+		initialize();
+		return PLAYER_INFO_ACTION_CLASS;
+	}
+
 	public static Class<?> getTitleActionClass() {
 		initialize();
 		return TITLE_ACTION_CLASS;
@@ -240,6 +255,10 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<ResourcePackStatus> getResourcePackStatusConverter() {
 		return new EnumConverter<ResourcePackStatus>(ResourcePackStatus.class);
+	}
+
+	public static EquivalentConverter<PlayerInfoAction> getPlayerInfoActionConverter() {
+		return new EnumConverter<PlayerInfoAction>(PlayerInfoAction.class);
 	}
 
 	public static EquivalentConverter<TitleAction> getTitleActionConverter() {
