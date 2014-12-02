@@ -1,14 +1,15 @@
 package com.comphenix.protocol.wrappers;
 
+import java.util.Map;
+
+import org.bukkit.GameMode;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
-import org.bukkit.GameMode;
-
-import java.util.Map;
 
 /**
  * Represents a generic enum converter.
