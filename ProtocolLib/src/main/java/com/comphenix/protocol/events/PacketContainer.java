@@ -80,6 +80,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
 import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.PlayerInfoAction;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -683,7 +684,7 @@ public class PacketContainer implements Serializable {
 		return structureModifier.<EntityUseAction>withType(
 				EnumWrappers.getEntityUseActionClass(), EnumWrappers.getEntityUseActionConverter());
 	}
-	
+
 	/**
 	 * Retrieve a read/write structure for the NativeGameMode enum in 1.7.2.
 	 * @return A modifier for NativeGameMode enum fields.
@@ -704,6 +705,15 @@ public class PacketContainer implements Serializable {
 				EnumWrappers.getResourcePackStatusClass(), EnumWrappers.getResourcePackStatusConverter());
 	}
 
+	/**
+	 * Retrieve a read/write structure for the PlayerInfo enum in 1.8
+	 * @return A modifier for PlayerInfoAction enum fields.
+	 */
+	public StructureModifier<PlayerInfoAction> getPlayerInfoAction() {
+		// Convert to and from the wrapper
+		return structureModifier.<PlayerInfoAction>withType(
+				EnumWrappers.getPlayerInfoActionClass(), EnumWrappers.getPlayerInfoActionConverter());
+	}
     /**
      * Retrieve a read/write structure for the TitleAction enum in 1.8.
      * @return A modifier for TitleAction enum fields.
