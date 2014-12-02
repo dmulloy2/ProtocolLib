@@ -133,19 +133,18 @@ try {
 }
 ````
 
-Compatiblity
+Compatibility
 ------------
 
 One of the main goals of this project was to achieve maximum compatibility with CraftBukkit. And the end
-result is quite flexible - in tests I successfully ran an unmodified ProtocolLib on CraftBukkit 1.8.0, and
-it should be resiliant against future changes. It's likely that I won't have to update ProtocolLib for
-anything but bug and performance fixes. 
+result is quite flexible. Aside from netty package changes, it should be resilient against future changes.
+It's likely that I won't have to update ProtocolLib for anything but bug fixes and new features.
 
 How is this possible? It all comes down to reflection in the end. Essentially, no name is hard coded - 
 every field, method and class is deduced by looking at field types, package names or parameter
 types. It's remarkably consistent across different versions.
 
 
-### Incompatiblity
+### Incompatibility
 
 The following plugins (to be expanded) are not compatible with ProtocolLib:
