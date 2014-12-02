@@ -711,7 +711,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<PlayerInfoAction> getPlayerInfoAction() {
 		// Convert to and from the wrapper
-		return structureModifier.<PlayerInfoAction> withType(
+		return structureModifier.<PlayerInfoAction>withType(
 				EnumWrappers.getPlayerInfoActionClass(), EnumWrappers.getPlayerInfoActionConverter());
 	}
 
