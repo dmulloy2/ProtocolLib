@@ -98,28 +98,28 @@ public abstract class EnumWrappers {
 		ENTITY_DIED;
 	}
 
-	public enum PlayerDiggingAction {
-	    START_DESTROY_BLOCK,
-        ABORT_DESTROY_BLOCK,
-        STOP_DESTROY_BLOCK,
-        DROP_ALL_ITEMS,
-        DROP_ITEM,
-        RELEASE_USE_ITEM;
+	public enum PlayerDigType {
+		START_DESTROY_BLOCK,
+		ABORT_DESTROY_BLOCK,
+		STOP_DESTROY_BLOCK,
+		DROP_ALL_ITEMS,
+		DROP_ITEM,
+		RELEASE_USE_ITEM;
 	}
 
-	public enum EntityAction {
-	    START_SNEAKING,
-        STOP_SNEAKING,
-        STOP_SLEEPING,
-        START_SPRINTING,
-        STOP_SPRINTING,
-        RIDING_JUMP,
-        OPEN_INVENTORY;
+	public enum PlayerAction {
+		START_SNEAKING,
+		STOP_SNEAKING,
+		STOP_SLEEPING,
+		START_SPRINTING,
+		STOP_SPRINTING,
+		RIDING_JUMP,
+		OPEN_INVENTORY;
 	}
 
-	public enum UpdateScoreAction {
-	    CHANGE,
-	    REMOVE;
+	public enum ScoreboardAction {
+		CHANGE,
+		REMOVE;
 	}
 
 	private static Class<?> PROTOCOL_CLASS = null;
@@ -133,9 +133,9 @@ public abstract class EnumWrappers {
 	private static Class<?> TITLE_ACTION_CLASS = null;
 	private static Class<?> WORLD_BORDER_ACTION_CLASS = null;
 	private static Class<?> COMBAT_EVENT_TYPE_CLASS = null;
-	private static Class<?> PLAYER_DIGGING_ACTION_CLASS = null;
-	private static Class<?> ENTITY_ACTION_CLASS = null;
-	private static Class<?> UPDATE_SCORE_ACTION_CLASS = null;
+	private static Class<?> PLAYER_DIG_TYPE_CLASS = null;
+	private static Class<?> PLAYER_ACTION_CLASS = null;
+	private static Class<?> SCOREBOARD_ACTION_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -162,9 +162,9 @@ public abstract class EnumWrappers {
 		TITLE_ACTION_CLASS = getEnum(PacketType.Play.Server.TITLE.getPacketClass(), 0);
 		WORLD_BORDER_ACTION_CLASS = getEnum(PacketType.Play.Server.WORLD_BORDER.getPacketClass(), 0);
 		COMBAT_EVENT_TYPE_CLASS = getEnum(PacketType.Play.Server.COMBAT_EVENT.getPacketClass(), 0);
-		PLAYER_DIGGING_ACTION_CLASS = getEnum(PacketType.Play.Client.BLOCK_DIG.getPacketClass(), 0);
-		ENTITY_ACTION_CLASS = getEnum(PacketType.Play.Client.ENTITY_ACTION.getPacketClass(), 0);
-		UPDATE_SCORE_ACTION_CLASS = getEnum(PacketType.Play.Server.SCOREBOARD_SCORE.getPacketClass(), 0);
+		PLAYER_DIG_TYPE_CLASS = getEnum(PacketType.Play.Client.BLOCK_DIG.getPacketClass(), 0);
+		PLAYER_ACTION_CLASS = getEnum(PacketType.Play.Client.ENTITY_ACTION.getPacketClass(), 0);
+		SCOREBOARD_ACTION_CLASS = getEnum(PacketType.Play.Server.SCOREBOARD_SCORE.getPacketClass(), 0);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -177,9 +177,9 @@ public abstract class EnumWrappers {
 		associate(TITLE_ACTION_CLASS, TitleAction.class, getTitleActionConverter());
 		associate(WORLD_BORDER_ACTION_CLASS, WorldBorderAction.class, getWorldBorderActionConverter());
 		associate(COMBAT_EVENT_TYPE_CLASS, CombatEventType.class, getCombatEventTypeConverter());
-		associate(PLAYER_DIGGING_ACTION_CLASS, PlayerDiggingAction.class, getPlayerDiggingActionConverter());
-		associate(ENTITY_ACTION_CLASS, EntityAction.class, getEntityActionConverter());
-		associate(UPDATE_SCORE_ACTION_CLASS, UpdateScoreAction.class, getUpdateScoreActionConverter());
+		associate(PLAYER_DIG_TYPE_CLASS, PlayerDigType.class, getPlayerDiggingActionConverter());
+		associate(PLAYER_ACTION_CLASS, PlayerAction.class, getEntityActionConverter());
+		associate(SCOREBOARD_ACTION_CLASS, ScoreboardAction.class, getUpdateScoreActionConverter());
 		INITIALIZED = true;
 	}
 
@@ -262,20 +262,20 @@ public abstract class EnumWrappers {
 		return COMBAT_EVENT_TYPE_CLASS;
 	}
 
-	public static Class<?> getPlayerDiggingActionClass() {
-        initialize();
-        return PLAYER_DIGGING_ACTION_CLASS;
-    }
+	public static Class<?> getPlayerDigTypeClass() {
+		initialize();
+		return PLAYER_DIG_TYPE_CLASS;
+	}
 
-	public static Class<?> getEntityActionClass() {
-        initialize();
-        return ENTITY_ACTION_CLASS;
-    }
+	public static Class<?> getPlayerActionClass() {
+		initialize();
+		return PLAYER_ACTION_CLASS;
+	}
 
-	public static Class<?> getUpdateScoreActionClass() {
-        initialize();
-        return UPDATE_SCORE_ACTION_CLASS;
-    }
+	public static Class<?> getScoreboardActionClass() {
+		initialize();
+		return SCOREBOARD_ACTION_CLASS;
+	}
 
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
@@ -322,17 +322,17 @@ public abstract class EnumWrappers {
 		return new EnumConverter<CombatEventType>(CombatEventType.class);
 	}
 
-	public static EquivalentConverter<PlayerDiggingAction> getPlayerDiggingActionConverter() {
-        return new EnumConverter<PlayerDiggingAction>(PlayerDiggingAction.class);
-    }
+	public static EquivalentConverter<PlayerDigType> getPlayerDiggingActionConverter() {
+		return new EnumConverter<PlayerDigType>(PlayerDigType.class);
+	}
 
-	public static EquivalentConverter<EntityAction> getEntityActionConverter() {
-        return new EnumConverter<EntityAction>(EntityAction.class);
-    }
+	public static EquivalentConverter<PlayerAction> getEntityActionConverter() {
+		return new EnumConverter<PlayerAction>(PlayerAction.class);
+	}
 
-	public static EquivalentConverter<UpdateScoreAction> getUpdateScoreActionConverter() {
-        return new EnumConverter<UpdateScoreAction>(UpdateScoreAction.class);
-    }
+	public static EquivalentConverter<ScoreboardAction> getUpdateScoreActionConverter() {
+		return new EnumConverter<ScoreboardAction>(ScoreboardAction.class);
+	}
 
 	// The common enum converter
 	@SuppressWarnings({ "rawtypes", "unchecked" })

@@ -75,14 +75,14 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
 import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
 import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
-import com.comphenix.protocol.wrappers.EnumWrappers.EntityAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDiggingAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.PlayerAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType;
 import com.comphenix.protocol.wrappers.EnumWrappers.PlayerInfoAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
+import com.comphenix.protocol.wrappers.EnumWrappers.ScoreboardAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.UpdateScoreAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
@@ -749,33 +749,33 @@ public class PacketContainer implements Serializable {
     }
     
     /**
-     * Retrieve a read/write structure for the PlayerDiggingAction enum in 1.8.
-     * @return A modifier for PlayerDiggingAction enum fields.
+     * Retrieve a read/write structure for the PlayerDigType enum in 1.8.
+     * @return A modifier for PlayerDigType enum fields.
      */
-    public StructureModifier<PlayerDiggingAction> getPlayerDiggingActions() {
+    public StructureModifier<PlayerDigType> getPlayerDigTypes() {
         // Convert to and from the wrapper
-        return structureModifier.<PlayerDiggingAction>withType(
-                EnumWrappers.getPlayerDiggingActionClass(), EnumWrappers.getPlayerDiggingActionConverter());
+        return structureModifier.<PlayerDigType>withType(
+                EnumWrappers.getPlayerDigTypeClass(), EnumWrappers.getPlayerDiggingActionConverter());
     }
     
     /**
-     * Retrieve a read/write structure for the EntityAction enum in 1.8.
-     * @return A modifier for EntityAction enum fields.
+     * Retrieve a read/write structure for the PlayerAction enum in 1.8.
+     * @return A modifier for PlayerAction enum fields.
      */
-    public StructureModifier<EntityAction> getEntityActions() {
+    public StructureModifier<PlayerAction> getPlayerActions() {
         // Convert to and from the wrapper
-        return structureModifier.<EntityAction>withType(
-                EnumWrappers.getEntityActionClass(), EnumWrappers.getEntityActionConverter());
+        return structureModifier.<PlayerAction>withType(
+                EnumWrappers.getPlayerActionClass(), EnumWrappers.getEntityActionConverter());
     }
     
     /**
-     * Retrieve a read/write structure for the UpdateScoreAction enum in 1.8.
-     * @return A modifier for UpdateScoreAction enum fields.
+     * Retrieve a read/write structure for the ScoreboardAction enum in 1.8.
+     * @return A modifier for ScoreboardAction enum fields.
      */
-    public StructureModifier<UpdateScoreAction> getUpdateScoreActions() {
+    public StructureModifier<ScoreboardAction> getScoreboardActions() {
         // Convert to and from the wrapper
-        return structureModifier.<UpdateScoreAction>withType(
-                EnumWrappers.getUpdateScoreActionClass(), EnumWrappers.getUpdateScoreActionConverter());
+        return structureModifier.<ScoreboardAction>withType(
+                EnumWrappers.getScoreboardActionClass(), EnumWrappers.getUpdateScoreActionConverter());
     }
 
 	/**
