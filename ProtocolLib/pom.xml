@@ -241,15 +241,13 @@
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
       <version>1.8-R0.1-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>C:/lib/SpigotAPI.jar</systemPath>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
       <version>1.8-R0.1-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>C:/lib/Spigot.jar</systemPath>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
