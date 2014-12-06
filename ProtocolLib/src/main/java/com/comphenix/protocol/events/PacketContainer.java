@@ -507,7 +507,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<Vector> getVectors() {
 		// Automatically marshal between Vec3d and the Bukkit wrapper
 		return structureModifier.withType(
-				MinecraftReflection.getVec3dClass(),
+				MinecraftReflection.getVec3DClass(),
 				BukkitConverters.getVectorConverter());
 	}
 

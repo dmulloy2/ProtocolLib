@@ -1241,9 +1241,9 @@ public class MinecraftReflection {
 	 * Retrieves the Vec3d class.
 	 * @return The Vec3d class.
 	 */
-	public static Class<?> getVec3dClass() {
+	public static Class<?> getVec3DClass() {
 		try {
-			return getMinecraftClass("Vec3d");
+			return getMinecraftClass("Vec3D");
 		} catch (RuntimeException e) {
 			// TODO: Figure out a fuzzy field contract
 			return null;

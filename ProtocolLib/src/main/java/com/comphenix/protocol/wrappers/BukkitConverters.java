@@ -821,7 +821,7 @@ public class BukkitConverters {
 			protected Object getGenericValue(Class<?> genericType, Vector specific) {
 				if (vec3dConstructor == null) {
 					try {
-						vec3dConstructor = MinecraftReflection.getVec3dClass().getConstructor(
+						vec3dConstructor = MinecraftReflection.getVec3DClass().getConstructor(
 								double.class, double.class, double.class);
 					} catch (Throwable ex) {
 						throw new RuntimeException("Could not find Vec3d constructor (double, double, double)");
@@ -838,7 +838,7 @@ public class BukkitConverters {
 			@Override
 			protected Vector getSpecificValue(Object generic) {
 				if (vec3dModifier == null) {
-					vec3dModifier = new StructureModifier<Object>(MinecraftReflection.getVec3dClass(), false);
+					vec3dModifier = new StructureModifier<Object>(MinecraftReflection.getVec3DClass(), false);
 				}
 
 				StructureModifier<Double> doubles = vec3dModifier.withTarget(generic).withType(double.class);
