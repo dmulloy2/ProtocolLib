@@ -19,11 +19,10 @@ Currently maintained by dmulloy2 on behalf of [SpigotMC](http://www.spigotmc.org
 * [Downloads](http://ci.shadowvolt.com/job/ProtocolLib)
 * [JavaDoc](http://ci.shadowvolt.com/job/ProtocolLib/javadoc)
 
+Compilation
+----------
 
-Building
---------
-You can compile this project yourself by using the latest version of Maven.
-
+ProtocolLib requires Maven, as well as Spigot and SpigotAPI, which can be found [here](http://www.spigotmc.org/wiki/buildtools/).
 
 A new API
 ---------
