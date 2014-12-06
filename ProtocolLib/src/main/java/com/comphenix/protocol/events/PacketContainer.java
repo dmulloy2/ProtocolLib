@@ -45,6 +45,7 @@ import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
@@ -498,7 +499,18 @@ public class PacketContainer implements Serializable {
 				MinecraftReflection.getNBTBaseClass(),
 				BukkitConverters.getNbtConverter());
 	}
-	
+
+	/**
+	 * Retrieves a read/write structure for Vectors.
+	 * @return A modifier for Vectors.
+	 */
+	public StructureModifier<Vector> getVectors() {
+		// Automatically marshal between Vec3d and the Bukkit wrapper
+		return structureModifier.withType(
+				MinecraftReflection.getVec3dClass(),
+				BukkitConverters.getVectorConverter());
+	}
+
 	/**
 	 * Retrieves a read/write structure for collections of attribute snapshots.
 	 * <p>

@@ -1238,6 +1238,19 @@ public class MinecraftReflection {
 	}
 
 	/**
+	 * Retrieves the Vec3d class.
+	 * @return The Vec3d class.
+	 */
+	public static Class<?> getVec3dClass() {
+		try {
+			return getMinecraftClass("Vec3d");
+		} catch (RuntimeException e) {
+			// TODO: Figure out a fuzzy field contract
+			return null;
+		}
+	}
+
+	/**
 	 * Retrieve the ChunkCoordinates class.
 	 * @return The ChunkPosition class.
 	 */

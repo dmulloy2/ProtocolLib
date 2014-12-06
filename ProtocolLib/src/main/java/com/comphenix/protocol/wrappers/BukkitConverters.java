@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -35,6 +35,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -107,7 +108,7 @@ public class BukkitConverters {
 		// Fetch CraftWorld field
 		try {
 			craftWorldField = Accessors.getFieldAccessor(
-				MinecraftReflection.getNmsWorldClass(), 
+				MinecraftReflection.getNmsWorldClass(),
 				MinecraftReflection.getCraftWorldClass(), true);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -121,6 +122,7 @@ public class BukkitConverters {
 	 * @param <T> - type that can be converted.
 	 */
 	private static abstract class IgnoreNullConverter<TType> implements EquivalentConverter<TType> {
+		@Override
 		public final Object getGeneric(Class<?> genericType, TType specific) {
 			if (specific != null)
 				return getGenericValue(genericType, specific);
@@ -448,6 +450,7 @@ public class BukkitConverters {
 				return specific.getHandle();
 			}
 			
+			@Override
 			protected WrappedWatchableObject getSpecificValue(Object generic) {
 				if (MinecraftReflection.isWatchableObject(generic))
 					return new WrappedWatchableObject(generic);
@@ -518,7 +521,7 @@ public class BukkitConverters {
 					
 				} catch (Exception e) {
 					throw new FieldAccessException("Cannot find the WorldType.getType() method.", e);
-				}	
+				}
 			}
 
 			@Override
@@ -582,7 +585,7 @@ public class BukkitConverters {
 	 * @return A converter between the underlying NMS entity and Bukkit's wrapper.
 	 */
 	public static EquivalentConverter<Entity> getEntityConverter(World world) {
-		final WeakReference<ProtocolManager> managerRef = 
+		final WeakReference<ProtocolManager> managerRef =
 				new WeakReference<ProtocolManager>(ProtocolLibrary.getProtocolManager());
 
 		return new WorldSpecificConverter<Entity>(world) {
@@ -729,7 +732,7 @@ public class BukkitConverters {
 	 * Retrieve the converter used to convert between a NMS World and a Bukkit world.
 	 * @return The world converter.
 	 */
-	public static EquivalentConverter<World> getWorldConverter() {		
+	public static EquivalentConverter<World> getWorldConverter() {
 		return new IgnoreNullConverter<World>() {
 			@Override
 			protected Object getGenericValue(Class<?> genericType, World specific) {
@@ -752,7 +755,7 @@ public class BukkitConverters {
 	 * Retrieve the converter used to convert between a PotionEffect and the equivalent NMS Mobeffect.
 	 * @return The potion effect converter.
 	 */
-	public static EquivalentConverter<PotionEffect> getPotionEffectConverter() {		
+	public static EquivalentConverter<PotionEffect> getPotionEffectConverter() {
 		return new IgnoreNullConverter<PotionEffect>() {
 			@Override
 			protected Object getGenericValue(Class<?> genericType, PotionEffect specific) {
@@ -769,7 +772,7 @@ public class BukkitConverters {
 				// Create the generic value
 				try {
 					return mobEffectConstructor.newInstance(
-						specific.getType().getId(), specific.getDuration(), 
+						specific.getType().getId(), specific.getDuration(),
 						specific.getAmplifier(), specific.isAmbient());
 				} catch (Exception e) {
 					throw new RuntimeException("Cannot construct MobEffect.", e);
@@ -796,6 +799,56 @@ public class BukkitConverters {
 			public Class<PotionEffect> getSpecificType() {
 				return PotionEffect.class;
 			}
+		};
+	}
+
+	private static Constructor<?> vec3dConstructor;
+	private static StructureModifier<Object> vec3dModifier;
+
+	/**
+	 * Retrieve the converter used to convert between a Vector and the equivalent NMS Vec3d.
+	 * @return The Vector converter.
+	 */
+	public static EquivalentConverter<Vector> getVectorConverter() {
+		return new IgnoreNullConverter<Vector>() {
+
+			@Override
+			public Class<Vector> getSpecificType() {
+				return Vector.class;
+			}
+
+			@Override
+			protected Object getGenericValue(Class<?> genericType, Vector specific) {
+				if (vec3dConstructor == null) {
+					try {
+						vec3dConstructor = MinecraftReflection.getVec3dClass().getConstructor(
+								double.class, double.class, double.class);
+					} catch (Throwable ex) {
+						throw new RuntimeException("Could not find Vec3d constructor (double, double, double)");
+					}
+				}
+
+				try {
+					return vec3dConstructor.newInstance(specific.getX(), specific.getY(), specific.getZ());
+				} catch (Throwable ex) {
+					throw new RuntimeException("Could not construct Vec3d.", ex);
+				}
+			}
+
+			@Override
+			protected Vector getSpecificValue(Object generic) {
+				if (vec3dModifier == null) {
+					vec3dModifier = new StructureModifier<Object>(MinecraftReflection.getVec3dClass(), false);
+				}
+
+				StructureModifier<Double> doubles = vec3dModifier.withTarget(generic).withType(double.class);
+				return new Vector(
+						doubles.read(0), /* x */
+						doubles.read(1), /* y */
+						doubles.read(2)  /* z */
+				);
+			}
+
 		};
 	}
 	
@@ -832,7 +885,6 @@ public class BukkitConverters {
 	 */
 	public static Unwrapper asUnwrapper(final Class<?> nativeType, final EquivalentConverter<Object> converter) {
 		return new Unwrapper() {
-			@SuppressWarnings("rawtypes")
 			@Override
 			public Object unwrapItem(Object wrappedObject) {
 				Class<?> type = PacketConstructor.getClass(wrappedObject);
@@ -842,7 +894,7 @@ public class BukkitConverters {
 					if (wrappedObject instanceof Class)
 						return nativeType;
 					else
-						return converter.getGeneric((Class) nativeType, wrappedObject);
+						return converter.getGeneric(nativeType, wrappedObject);
 				}
 				return null;
 			}
@@ -857,7 +909,7 @@ public class BukkitConverters {
 	public static Map<Class<?>, EquivalentConverter<Object>> getConvertersForSpecific() {
 		if (specificConverters == null) {
 			// Generics doesn't work, as usual
-			ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder = 
+			ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder =
 				   ImmutableMap.<Class<?>, EquivalentConverter<Object>>builder().
 				put(WrappedDataWatcher.class, (EquivalentConverter) getDataWatcherConverter()).
 				put(ItemStack.class, (EquivalentConverter) getItemStackConverter()).
@@ -865,13 +917,13 @@ public class BukkitConverters {
 				put(NbtCompound.class, (EquivalentConverter) getNbtConverter()).
 				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter()).
 				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter()).
-				put(World.class, (EquivalentConverter) getWorldConverter());	
+				put(World.class, (EquivalentConverter) getWorldConverter());
 			
 			// Types added in 1.7.2
 			if (MinecraftReflection.isUsingNetty()) {
 				builder.put(Material.class, (EquivalentConverter) getBlockConverter());
 				builder.put(WrappedGameProfile.class, (EquivalentConverter) getWrappedGameProfileConverter());
-				builder.put(WrappedChatComponent.class, (EquivalentConverter) getWrappedChatComponentConverter());	
+				builder.put(WrappedChatComponent.class, (EquivalentConverter) getWrappedChatComponentConverter());
 				builder.put(WrappedServerPing.class, (EquivalentConverter) getWrappedServerPingConverter());
 				builder.put(WrappedStatistic.class, (EquivalentConverter) getWrappedStatisticConverter());
 				
@@ -880,7 +932,7 @@ public class BukkitConverters {
 				}
 			}
 			
-			if (hasWorldType) 
+			if (hasWorldType)
 				builder.put(WorldType.class, (EquivalentConverter) getWorldTypeConverter());
 			if (hasAttributeSnapshot)
 				builder.put(WrappedAttribute.class, (EquivalentConverter) getWrappedAttributeConverter());
