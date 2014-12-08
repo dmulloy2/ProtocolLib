@@ -1,5 +1,14 @@
 package com.comphenix.tinyprotocol;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -7,17 +16,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-// These are not versioned, but they require CraftBukkit
-import net.minecraft.util.io.netty.channel.Channel;
-import net.minecraft.util.io.netty.channel.ChannelDuplexHandler;
-import net.minecraft.util.io.netty.channel.ChannelFuture;
-import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
-import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
-import net.minecraft.util.io.netty.channel.ChannelInitializer;
-import net.minecraft.util.io.netty.channel.ChannelPipeline;
-import net.minecraft.util.io.netty.channel.ChannelPromise;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -33,6 +31,7 @@ import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
 import com.comphenix.tinyprotocol.Reflection.MethodInvoker;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
+import com.mojang.authlib.GameProfile;
 
 /**
  * Represents a very tiny alternative to ProtocolLib in 1.7.2.
@@ -83,7 +82,7 @@ public abstract class TinyProtocol {
 	protected Plugin plugin;
 	
 	/**
-	 * Construct a new instance of TinyProtocol, and start intercepting packets for all connected clients and future clients. 
+	 * Construct a new instance of TinyProtocol, and start intercepting packets for all connected clients and future clients.
 	 * <p>
 	 * You can construct multiple instances per plugin.
 	 * @param plugin - the plugin.
@@ -146,7 +145,7 @@ public abstract class TinyProtocol {
 		listener = new Listener() {
 			@EventHandler(priority = EventPriority.LOWEST)
 			public final void onPlayerLogin(PlayerLoginEvent e) {
-				if (closed) 
+				if (closed)
 					return;
 				Channel channel = getChannel(e.getPlayer());
 				
@@ -182,7 +181,7 @@ public abstract class TinyProtocol {
 			List<Object> list = Reflection.getField(serverConnection.getClass(), List.class, i).get(serverConnection);
 			
 			for (Object item : list) {
-				if (!ChannelFuture.class.isInstance(item)) 
+				if (!ChannelFuture.class.isInstance(item))
 					break;
 				
 				// Channel future that contains the server connection
@@ -204,6 +203,7 @@ public abstract class TinyProtocol {
 			
 			// Remove channel handler
 			serverChannel.eventLoop().execute(new Runnable() {
+				@Override
 				public void run() {
 					try {
 						pipeline.remove(serverChannelHandler);
@@ -302,7 +302,7 @@ public abstract class TinyProtocol {
 	}
 	
 	/**
-	 * Add a custom channel handler to the given player's channel pipeline, 
+	 * Add a custom channel handler to the given player's channel pipeline,
 	 * allowing us to intercept sent and received packets.
 	 * <p>
 	 * This will automatically be called when a player has logged in.
@@ -336,7 +336,7 @@ public abstract class TinyProtocol {
 				channel.pipeline().addBefore("packet_handler", handlerName, interceptor);
 				uninjectedChannels.remove(channel);
 			}
-			return interceptor;	
+			return interceptor;
 		} catch (IllegalArgumentException e) {
 			// Try again
 			return (PacketInterceptor) channel.pipeline().get(handlerName);
@@ -429,7 +429,7 @@ public abstract class TinyProtocol {
 	 * Channel handler that is inserted into the player's channel pipeline, allowing us to intercept sent and received packets.
 	 * @author Kristian
 	 */
-	private final class PacketInterceptor extends ChannelDuplexHandler {		
+	private final class PacketInterceptor extends ChannelDuplexHandler {
 		// Updated by the login event
 		public volatile Player player;
 		
@@ -450,7 +450,7 @@ public abstract class TinyProtocol {
 			}
 		}
 		@Override
-		public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {			
+		public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
 			try {
 				msg = onPacketOutAsync(player, ctx.channel(), msg);
 			} catch (Exception e) {

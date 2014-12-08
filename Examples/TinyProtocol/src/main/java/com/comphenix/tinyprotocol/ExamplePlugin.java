@@ -1,5 +1,7 @@
 package com.comphenix.tinyprotocol;
 
+import io.netty.channel.Channel;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -9,8 +11,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.tinyprotocol.Reflection.ConstructorInvoker;
 import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
-
-import net.minecraft.util.io.netty.channel.Channel;
 
 public class ExamplePlugin extends JavaPlugin {
 	// Chat packets
@@ -86,7 +86,7 @@ public class ExamplePlugin extends JavaPlugin {
 			sender.sendMessage(ChatColor.RED + "Can only be invoked by a player.");
 		}
 		return false;
-	}  
+	}
 	
 	private void sendExplosion(Player player) {
 		try {

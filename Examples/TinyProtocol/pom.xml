@@ -3,32 +3,18 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.tinyprotocol</groupId>
   <artifactId>TinyProtocol</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <name>TinyProtocol</name>
   <description>Intercept packets without ProtocolLib.</description>
 
-  <distributionManagement>
-    <repository>
-      <id>comphenix-releases</id>
-      <name>Comphenix Maven Releases</name>
-      <url>http://repo.comphenix.net/content/repositories/releases/</url>
-    </repository>
-    <snapshotRepository>
-      <id>comphenix-snapshots</id>
-      <name>Comphenix Maven Snapshots</name>
-      <url>http://repo.comphenix.net/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
-
   <repositories>
     <repository>
-      <id>md_5-repo</id>
-      <url>http://repo.md-5.net/content/repositories/public/</url>
+      <id>spigot-repo</id>
+      <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
     <repository>
-      <id>comphenix-rep</id>
-      <name>Comphenix Maven Releases</name>
-      <url>http://repo.comphenix.net/content/groups/public</url>
+      <id>shadowvolt-repo</id>
+      <url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
     </repository>
   </repositories>
 
@@ -56,12 +42,13 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.7.10-R0.1-SNAPSHOT</version>
+      <version>1.8-R0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.7.10-R0.1-SNAPSHOT</version>
+      <version>1.8-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
