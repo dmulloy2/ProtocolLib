@@ -1,27 +1,31 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.itemdisguise</groupId>
   <artifactId>ItemDisguise</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <name>Item Disguise</name>
   <description>Change the appearance of inventory items.</description>
-  
+
   <properties>
     <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
   </properties>
-  
+
   <repositories>
     <repository>
-      <id>bukkit-rep</id>
-      <url>http://repo.bukkit.org/content/groups/public</url>
+      <id>spigot-repo</id>
+      <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
     <repository>
-      <id>comphenix-rep</id>
-      <name>Comphenix Maven Releases</name>
-      <url>http://repo.comphenix.net/content/groups/public</url>
+      <id>comphenix-releases</id>
+      <url>http://repo.comphenix.net/content/repositories/releases/</url>
+    </repository>
+    <repository>
+      <id>shadowvolt-repo</id>
+      <url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
     </repository>
   </repositories>
-  
+
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <resources>
@@ -43,13 +47,13 @@
       </plugin>
     </plugins>
   </build>
-  
+
   <scm>
     <connection>scm:git:git://github.com/aadnk/ProtocolLib.git</connection>
     <developerConnection>scm:git:git@github.com:aadnk/ProtocolLib.git</developerConnection>
     <url>https://github.com/aadnk/ProtocolLib</url>
   </scm>
-  
+
   <licenses>
     <license>
       <name>GNU GENERAL PUBLIC LICENSE - Version 2, June 1991</name>
@@ -58,15 +62,21 @@
     </license>
   </licenses>
   <dependencies>
-  	<dependency>
-  		<groupId>org.bukkit</groupId>
-  		<artifactId>bukkit</artifactId>
-  		<version>1.3.2-R1.0</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>com.comphenix.protocol</groupId>
-  		<artifactId>ProtocolLib</artifactId>
-  		<version>1.3.2</version>
-  	</dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>1.8-R0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot</artifactId>
+      <version>1.8-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.comphenix.protocol</groupId>
+      <artifactId>ProtocolLib</artifactId>
+      <version>3.6.3-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 </project>
