@@ -11,41 +11,57 @@ Critically, different plugins that use this approach may _hook_ into the same cl
 with unpredictable outcomes. More than often this causes plugins to crash, but it may also 
 lead to more subtle bugs.
 
-Currently maintained by dmulloy2 on behalf of [SpigotMC](http://www.spigotmc.org/)
-
+Currently maintained by dmulloy2 on behalf of [Spigot](http://www.spigotmc.org/).
 
 ### Resources
 
+* [Resource Page](http://www.spigotmc.org/resources/protocollib.1997/)
 * [Downloads](http://ci.shadowvolt.com/job/ProtocolLib)
 * [JavaDoc](http://ci.shadowvolt.com/job/ProtocolLib/javadoc)
 
 Compilation
 ----------
 
-ProtocolLib requires Maven, as well as Spigot and SpigotAPI, which can be found [here](http://www.spigotmc.org/wiki/buildtools/).
+ProtocolLib is built with Maven and requires Spigot and SpigotAPI, which can be found [here](http://www.spigotmc.org/wiki/buildtools/).
 
 A new API
 ---------
 
 __ProtocolLib__ attempts to solve this problem by providing a event API, much like Bukkit, 
-that allow plugins to monitor, modify or cancel packets sent and received. But more importantly, 
+that allows plugins to monitor, modify, or cancel packets sent and received. But, more importantly, 
 the API also hides all the gritty, obfuscated classes with a simple index based read/write system. 
 You no longer have to reference CraftBukkit!
 
-
 ### Using ProtocolLib
 
-To use the library, first add ProtocolLib.jar to your Java build path. Then, add ProtocolLib
+To use this library, first add ProtocolLib.jar to your Java build path. Then, add ProtocolLib
 as a dependency (or soft-dependency, if you can live without it) to your plugin.yml file:
 
 ````yml
 depends: [ProtocolLib]
 ````
 
-Future versions will be available in a public Maven repository, possibly on Maven central. But it
-will always be possible to reference ProtocolLib manually.
+You can also add ProtocolLib as a Maven dependency:
 
-Then get a reference to ProtocolManager in onLoad() and you're good to go.
+````xml
+<repositories>
+  <repository>
+    <id>shadowvolt-repo</id>
+    <url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
+  </repository>
+  ...
+</repository>
+
+<dependencies>
+  <dependency>
+    <groupId>com.comphenix.protocol</groupId>
+    <artifactId>ProtocolLib</artifactId>
+    <version>3.6.3-SNAPSHOT</version>
+  </dependency>
+</dependencies>
+````
+
+Then get a reference to ProtocolManager in onLoad() or onEnable() and you're good to go.
 
 ````java
 private ProtocolManager protocolManager;
