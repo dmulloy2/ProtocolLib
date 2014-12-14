@@ -163,3 +163,4 @@ types. It's remarkably consistent across different versions.
 ### Incompatibility
 
 The following plugins (to be expanded) are not compatible with ProtocolLib:
+* TagAPI
