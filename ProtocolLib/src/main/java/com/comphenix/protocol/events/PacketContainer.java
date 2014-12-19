@@ -85,6 +85,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
 import com.comphenix.protocol.wrappers.EnumWrappers.ScoreboardAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -648,6 +649,23 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the wrapper
 		return structureModifier.<WrappedServerPing>withType(
 				MinecraftReflection.getServerPingClass(), BukkitConverters.getWrappedServerPingConverter());
+	}
+	
+	/**
+	 * Retrieve a read/write structure for the PlayerInfoData list fields in the following packet: <br>
+	 * <ul>
+	 *   <li>{@link PacketType.Play.Server.PLAYER_INFO}</li>
+	 * </ul>
+	 * @return A modifier for PlayerInfoData list fields.
+	 */
+	public StructureModifier<List<PlayerInfoData>> getPlayerInfoDataLists() {
+		// Convert to and from the ProtocolLib wrapper
+		return structureModifier.withType(
+			Collection.class,
+			BukkitConverters.getListConverter(
+					MinecraftReflection.getPlayerInfoDataClass(),
+					PlayerInfoData.getConverter())
+		);
 	}
 	
 	/**

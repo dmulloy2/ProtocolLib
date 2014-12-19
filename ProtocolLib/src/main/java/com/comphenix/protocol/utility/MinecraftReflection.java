@@ -1897,6 +1897,24 @@ public class MinecraftReflection {
 	}
 
 	/**
+	 * Retrieve the PlayerInfoData class in 1.8.
+	 * @return The PlayerInfoData class
+	 */
+	public static Class<?> getPlayerInfoDataClass() {
+		return getMinecraftClass("PlayerInfoData");
+	}
+
+	/**
+	 * Determine if the given object is a PlayerInfoData.
+	 * @param obj - the given object.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public static boolean isPlayerInfoData(Object obj) {
+		Class<?> clazz = getPlayerInfoDataClass();
+		return clazz != null && obj.getClass().equals(clazz);
+	}
+
+	/**
 	 * Retrieve the given class by name.
 	 * @param className - name of the class.
 	 * @return The class.
