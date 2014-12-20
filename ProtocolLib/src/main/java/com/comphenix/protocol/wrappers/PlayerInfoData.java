@@ -95,8 +95,9 @@ public class PlayerInfoData {
 					StructureModifier<Integer> ints = modifier.withType(int.class);
 					int ping = ints.read(0);
 
-					StructureModifier<PacketContainer> containers = modifier.withType(PacketContainer.class);
-					PacketContainer container = containers.read(0);
+					StructureModifier<Object> packets = modifier.withType(
+							MinecraftReflection.getMinecraftClass("PacketPlayOutPlayerInfo"));
+					Object packet = packets.read(0);
 
 					StructureModifier<NativeGameMode> gameModes = modifier.withType(
 							EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
@@ -110,7 +111,7 @@ public class PlayerInfoData {
 							MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 					WrappedChatComponent displayName = displayNames.read(0);
 					
-					return new PlayerInfoData(container, gameMode, ping, gameProfile, displayName);
+					return new PlayerInfoData(PacketContainer.fromPacket(packet), gameMode, ping, gameProfile, displayName);
 				}
 
 				// Otherwise, return NULL
