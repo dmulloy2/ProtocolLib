@@ -3,13 +3,14 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.google.common.base.Objects;
+
+import java.lang.reflect.Constructor;
 
 /**
  * @author dmulloy2
@@ -18,12 +19,14 @@ import com.google.common.base.Objects;
 public class PlayerInfoData {
 	private static Constructor<?> constructor;
 
+	protected final PacketContainer packet;
 	protected final int ping;
 	protected final NativeGameMode gameMode;
 	protected final WrappedGameProfile profile;
 	protected final WrappedChatComponent displayName;
 
-	public PlayerInfoData(int ping, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName) {
+	public PlayerInfoData(PacketContainer packet, NativeGameMode gameMode, int ping, WrappedGameProfile profile, WrappedChatComponent displayName) {
+		this.packet = packet;
 		this.ping = ping;
 		this.gameMode = gameMode;
 		this.profile = profile;
@@ -57,8 +60,9 @@ public class PlayerInfoData {
 				if (constructor == null) {
 					try {
 						constructor = MinecraftReflection.getPlayerInfoDataClass().getConstructor(
-								int.class,
+								MinecraftReflection.getMinecraftClass("PacketPlayOutPlayerInfo"),
 								EnumWrappers.getGameModeClass(),
+								int.class,
 								MinecraftReflection.getGameProfileClass(),
 								MinecraftReflection.getIChatBaseComponentClass()
 						);
@@ -70,8 +74,9 @@ public class PlayerInfoData {
 				// Construct the underlying PlayerInfoData
 				try {
 					Object result = constructor.newInstance(
-							specific.ping,
+							specific.packet.getHandle(),
 							EnumWrappers.getGameModeConverter().getGeneric(EnumWrappers.getGameModeClass(), specific.gameMode),
+							specific.ping,
 							specific.profile.handle,
 							specific.displayName.handle
 					);
@@ -90,6 +95,9 @@ public class PlayerInfoData {
 					StructureModifier<Integer> ints = modifier.withType(int.class);
 					int ping = ints.read(0);
 
+					StructureModifier<PacketContainer> containers = modifier.withType(PacketContainer.class);
+					PacketContainer container = containers.read(0);
+
 					StructureModifier<NativeGameMode> gameModes = modifier.withType(
 							EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
 					NativeGameMode gameMode = gameModes.read(0);
@@ -102,7 +110,7 @@ public class PlayerInfoData {
 							MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 					WrappedChatComponent displayName = displayNames.read(0);
 					
-					return new PlayerInfoData(ping, gameMode, gameProfile, displayName);
+					return new PlayerInfoData(container, gameMode, ping, gameProfile, displayName);
 				}
 
 				// Otherwise, return NULL
