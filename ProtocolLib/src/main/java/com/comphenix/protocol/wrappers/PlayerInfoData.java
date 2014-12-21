@@ -3,14 +3,14 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
+
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.google.common.base.Objects;
-
-import java.lang.reflect.Constructor;
 
 /**
  * @author dmulloy2
@@ -20,8 +20,8 @@ public class PlayerInfoData {
 	private static Constructor<?> constructor;
 
 	protected final PacketContainer packet;
-	protected final int ping;
 	protected final NativeGameMode gameMode;
+	protected final int ping;
 	protected final WrappedGameProfile profile;
 	protected final WrappedChatComponent displayName;
 
@@ -33,12 +33,16 @@ public class PlayerInfoData {
 		this.displayName = displayName;
 	}
 
-	public int getPing() {
-		return ping;
+	public PacketContainer getPacket() {
+		return packet;
 	}
 
 	public NativeGameMode getGameMode() {
 		return gameMode;
+	}
+
+	public int getPing() {
+		return ping;
 	}
 
 	public WrappedGameProfile getProfile() {
@@ -82,7 +86,7 @@ public class PlayerInfoData {
 					);
 					return result;
 				} catch (Exception e) {
-					throw new RuntimeException("Cannot construct BlockPosition.", e);
+					throw new RuntimeException("Failed to construct PlayerInfoData.", e);
 				}
 			}
 
@@ -114,7 +118,7 @@ public class PlayerInfoData {
 					return new PlayerInfoData(PacketContainer.fromPacket(packet), gameMode, ping, gameProfile, displayName);
 				}
 
-				// Otherwise, return NULL
+				// Otherwise, return null
 				return null;
 			}
 
@@ -135,7 +139,7 @@ public class PlayerInfoData {
 		// Only compare objects of similar type
 		if (obj instanceof PlayerInfoData) {
 			PlayerInfoData other = (PlayerInfoData) obj;
-			return ping == other.ping && gameMode == other.gameMode
+			return packet.equals(other.packet) && gameMode == other.gameMode && ping == other.ping
 					&& profile.equals(other.profile) && displayName.equals(other.displayName);
 		}
 		return false;
@@ -143,11 +147,11 @@ public class PlayerInfoData {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(ping, gameMode, profile, displayName);
+		return Objects.hashCode(packet, gameMode, ping, profile, displayName);
 	}
 
 	@Override
 	public String toString() {
-		return String.format("PlayerInfoData[ping=%s,gameMode=%s,profile=%s,displayName=%s]", ping, gameMode, profile, displayName);
+		return String.format("PlayerInfoData[gameMode=%s,ping=%s,profile=%s,displayName=%s]", gameMode, ping, profile, displayName);
 	}
 }
