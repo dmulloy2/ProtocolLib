@@ -48,12 +48,12 @@ public class WrappedServerPing extends AbstractWrapper {
 	/**
 	 * Lookup of Minecraft versions and ping version numbers.
 	 */
-	private static ImmutableMap<MinecraftVersion, Integer> VERSION_NUMBERS =
-	  ImmutableMap.<MinecraftVersion, Integer>builder().
-		put(MinecraftVersion.WORLD_UPDATE, 4).
-		put(MinecraftVersion.SKIN_UPDATE, 5).
-		build();
-	private static MinecraftVersion LAST_VERSION = MinecraftVersion.SKIN_UPDATE;
+	private static ImmutableMap<MinecraftVersion, Integer> VERSION_NUMBERS = ImmutableMap.<MinecraftVersion, Integer>builder()
+			.put(MinecraftVersion.WORLD_UPDATE, 4)
+			.put(MinecraftVersion.SKIN_UPDATE, 5)
+			.put(MinecraftVersion.BOUNTIFUL_UPDATE, 47)
+			.build();
+	private static MinecraftVersion LAST_VERSION = MinecraftVersion.BOUNTIFUL_UPDATE;
 
 	// Server ping fields
 	private static Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
@@ -100,7 +100,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	/**
 	 * Construct a new server ping initialized with a zero player count, and zero maximum.
 	 * <p>
-	 * Note that the version string is set to 1.7.2.
+	 * Note that the version string is set to 1.8.
 	 */
 	public WrappedServerPing() {
 		super(MinecraftReflection.getServerPingClass());
