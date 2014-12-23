@@ -78,7 +78,7 @@ public class MinecraftMethods {
 	/**
 	 * Retrieve the disconnect method for a given player connection.
 	 * @param playerConnection - the player connection.
-	 * @return The 
+	 * @return The
 	 */
 	public static Method getDisconnectMethod(Class<? extends Object> playerConnection) {
 		try {
@@ -168,9 +168,13 @@ public class MinecraftMethods {
 				@Override
 				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy)
 						throws Throwable {
-					if (method.getName().contains("read"))
+					/* if (method.getName().contains("read"))
 						throw new ReadMethodException();
 					if (method.getName().contains("write"))
+						throw new WriteMethodException(); */
+					if (method.getName().equals("a"))
+						throw new ReadMethodException();
+					if (method.getName().equals("b"))
 						throw new WriteMethodException();
 					return proxy.invokeSuper(obj, args);
 				}
@@ -178,7 +182,7 @@ public class MinecraftMethods {
 			
 			// Create our proxy object
 			Object javaProxy = enhancer.create(
-				new Class<?>[] { ByteBuf.class }, 
+				new Class<?>[] { ByteBuf.class },
 				new Object[]   { UnpooledByteBufAllocator.DEFAULT.buffer() }
 			);
 			
@@ -194,7 +198,7 @@ public class MinecraftMethods {
 					if (e.getCause() instanceof ReadMethodException)
 						// Must be the reader
 						packetReadByteBuf = method;
-					else if (e.getCause() instanceof WriteMethodException) 
+					else if (e.getCause() instanceof WriteMethodException)
 						packetWriteByteBuf = method;
 					else
 						throw new RuntimeException("Inner exception.", e);
@@ -219,7 +223,7 @@ public class MinecraftMethods {
 
 		public ReadMethodException() {
 			super("A read method was executed.");
-		}	
+		}
 	}
 	
 	/**
@@ -231,6 +235,6 @@ public class MinecraftMethods {
 		
 		public WriteMethodException() {
 			super("A write method was executed.");
-		}	
+		}
 	}
 }
