@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Server;
 
 import com.comphenix.protocol.ProtocolLibrary;
@@ -309,5 +310,15 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	 */
 	public static MinecraftVersion fromServerVersion(String serverVersion) {
 		return new MinecraftVersion(extractVersion(serverVersion));
+	}
+
+	private static MinecraftVersion currentVersion;
+
+	public static MinecraftVersion getCurrentVersion() {
+		if (currentVersion == null) {
+			currentVersion = new MinecraftVersion(Bukkit.getVersion());
+		}
+
+		return currentVersion;
 	}
 }

@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -26,12 +26,14 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.comphenix.protocol.PacketStream;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.primitives.Longs;
 
 /**
@@ -123,11 +125,11 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	
 	/**
 	 * Retrieve the time the packet was initially queued for asynchronous processing.
-	 * @return The initial time in number of milliseconds since 01.01.1970 00:00. 
+	 * @return The initial time in number of milliseconds since 01.01.1970 00:00.
 	 */
 	public long getInitialTime() {
 		return initialTime;
-	}	
+	}
 
 	/**
 	 * Retrieve the time the packet will be forcefully rejected.
@@ -209,11 +211,11 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * Increment the number of times the current packet must be signalled as done before its transmitted.
 	 * <p>
 	 * This is useful if an asynchronous listener is waiting for further information before the
-	 * packet can be sent to the user. A packet listener <b>MUST</b> eventually call 
+	 * packet can be sent to the user. A packet listener <b>MUST</b> eventually call
 	 * {@link AsyncFilterManager#signalPacketTransmission(PacketEvent)},
-	 * even if the packet is cancelled, after this method is called. 
+	 * even if the packet is cancelled, after this method is called.
 	 * <p>
-	 * It is recommended that processing outside a packet listener is wrapped in a synchronized block 
+	 * It is recommended that processing outside a packet listener is wrapped in a synchronized block
 	 * using the {@link #getProcessingLock()} method.
 	 * 
 	 * @return The new processing delay.
@@ -331,7 +333,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	}
 
 	/**
-	 * Set the current asynchronous listener handler. 
+	 * Set the current asynchronous listener handler.
 	 * <p>
 	 * Used by the worker to update the value.
 	 * @param listenerHandler - new listener handler.
@@ -415,6 +417,10 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 				} else if (methods.size() == 1) {
 					// We're in 1.2.5
 					alwaysSync = true;
+				} else if (MinecraftVersion.getCurrentVersion().equals(MinecraftVersion.BOUNTIFUL_UPDATE)) {
+					// The centralized async marker was removed in 1.8
+					// The only packet I know for sure is async is incoming chat
+					return event.getPacketType() == PacketType.Play.Client.CHAT;
 				} else {
 					System.err.println("[ProtocolLib] Cannot determine asynchronous state of packets!");
 					alwaysSync = true;
@@ -426,7 +432,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 			return false;
 		} else {
 			try {
-				// Wrap exceptions 
+				// Wrap exceptions
 				return (Boolean) isMinecraftAsync.invoke(event.getPacket().getHandle());
 			} catch (IllegalArgumentException e) {
 				throw new FieldAccessException("Illegal argument", e);
