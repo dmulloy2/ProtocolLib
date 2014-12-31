@@ -419,8 +419,20 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 					alwaysSync = true;
 				} else if (MinecraftVersion.getCurrentVersion().equals(MinecraftVersion.BOUNTIFUL_UPDATE)) {
 					// The centralized async marker was removed in 1.8
-					// The only packet I know for sure is async is incoming chat
-					return event.getPacketType() == PacketType.Play.Client.CHAT;
+					// Incoming chat packets can be async
+					if (event.getPacketType() == PacketType.Play.Client.CHAT) {
+						String content = event.getPacket().getStrings().readSafely(0);
+						if (content != null) {
+							// Incoming chat packets are async only if they aren't commands
+							return ! content.startsWith("/");
+						} else {
+							System.err.println("[ProtocolLib] Failed to determine contents of incoming chat packet!");
+							alwaysSync = true;
+						}
+					} else {
+						// TODO: Find more cases of async packets
+						return false;
+					}
 				} else {
 					System.err.println("[ProtocolLib] Cannot determine asynchronous state of packets!");
 					alwaysSync = true;
