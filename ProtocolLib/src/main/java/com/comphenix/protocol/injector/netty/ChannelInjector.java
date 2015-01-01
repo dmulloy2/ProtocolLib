@@ -600,7 +600,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private void disconnect(String message) {
 		// If we're logging in, we can only close the channel
-		if (playerConnection == null || player instanceof Factory) {
+		if (playerConnection == null || player.get() instanceof Factory) {
 			originalChannel.disconnect();
 		} else {
 			// Call the disconnect method
@@ -632,7 +632,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private void invokeSendPacket(Object packet) {
 		// Attempt to send the packet with NetworkMarker.handle(), or the PlayerConnection if its active
 		try {
-			if (player instanceof Factory) {
+			if (player.get() instanceof Factory) {
 				MinecraftMethods.getNetworkManagerHandleMethod().invoke(networkManager, packet, new GenericFutureListener[0]);
 			} else {
 				MinecraftMethods.getSendPacketMethod().invoke(getPlayerConnection(), packet);
