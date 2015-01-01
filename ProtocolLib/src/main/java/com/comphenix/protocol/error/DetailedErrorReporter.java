@@ -35,6 +35,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.collections.ExpireHashMap;
 import com.comphenix.protocol.error.Report.ReportBuilder;
 import com.comphenix.protocol.events.PacketAdapter;
@@ -456,7 +457,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 				apacheCommonsMissing = true;
 			} catch (Exception e) {
 				// Don't use the error logger to log errors in error logging (that could lead to infinite loops)
-				System.err.print("[ProtocolLib] Warning: Cannot convert to a String with Apache: " + e.getMessage());
+				ProtocolLibrary.log(Level.WARNING, "Cannot convert to a String with Apache: " + e.getMessage());
 			}
 			
 			// Use our custom object printer instead

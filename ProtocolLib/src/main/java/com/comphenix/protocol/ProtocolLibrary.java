@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -140,7 +141,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	private int configExpectedMod = -1;
 
 	// Logger
-	private Logger logger;
+	private static Logger logger;
 	private Handler redirectHandler;
 
 	// Commands
@@ -651,5 +652,15 @@ public class ProtocolLibrary extends JavaPlugin {
 	 */
 	public static ListeningScheduledExecutorService getExecutorSync() {
 		return executorSync;
+	}
+
+	// ---- Logging
+
+	public static void log(Level level, String message, Object... args) {
+		logger.log(level, MessageFormat.format(message, args));
+	}
+
+	public static void log(String message, Object... args) {
+		log(Level.INFO, message, args);
 	}
 }

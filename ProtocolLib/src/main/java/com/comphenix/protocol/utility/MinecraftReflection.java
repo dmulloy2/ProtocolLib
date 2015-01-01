@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -216,7 +217,7 @@ public class MinecraftReflection {
 					if (MinecraftVersion.SCARY_UPDATE.compareTo(version) <= 0) {
 						 // Just assume R1 - it's probably fine
 						packageVersion = "v" + version.getMajor() + "_" + version.getMinor() + "_R1";
-						System.err.println("[ProtocolLib] Assuming package version: " + packageVersion);
+						ProtocolLibrary.log(Level.WARNING, "Assuming package version: " + packageVersion);
 					}
 				}
 

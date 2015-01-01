@@ -24,9 +24,11 @@ import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
@@ -426,7 +428,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 							// Incoming chat packets are async only if they aren't commands
 							return ! content.startsWith("/");
 						} else {
-							System.err.println("[ProtocolLib] Failed to determine contents of incoming chat packet!");
+							ProtocolLibrary.log(Level.WARNING, "Failed to determine contents of incoming chat packet!");
 							alwaysSync = true;
 						}
 					} else {
@@ -434,7 +436,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 						return false;
 					}
 				} else {
-					System.err.println("[ProtocolLib] Cannot determine asynchronous state of packets!");
+					ProtocolLibrary.log(Level.WARNING, "Cannot determine asynchronous state of packets!");
 					alwaysSync = true;
 				}
 			}

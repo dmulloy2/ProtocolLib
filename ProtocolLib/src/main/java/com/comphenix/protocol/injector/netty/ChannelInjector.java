@@ -14,6 +14,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.TypeParameterMatcher;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -84,9 +85,10 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// The factory that created this injector
 	private InjectionFactory factory;
 
-	// The player, or temporary player
-	private Player player;
-	private Player updated;
+	// The player
+	private WeakReference<Player> player;
+	private WeakReference<Player> updated;
+	private String playerName;
 
 	// The player connection
 	private Object playerConnection;
@@ -149,7 +151,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param factory - the factory that created this injector
 	 */
 	public ChannelInjector(Player player, Object networkManager, Channel channel, ChannelListener channelListener, InjectionFactory factory) {
-		this.player =  Preconditions.checkNotNull(player, "player cannot be NULL");
+		this.player =  new WeakReference<Player>(Preconditions.checkNotNull(player, "player cannot be NULL"));
 		this.networkManager =  Preconditions.checkNotNull(networkManager, "networkMananger cannot be NULL");
 		this.originalChannel = Preconditions.checkNotNull(channel, "channel cannot be NULL");
 		this.channelListener = Preconditions.checkNotNull(channelListener, "channelListener cannot be NULL");
@@ -486,6 +488,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Reset queue
 			finishQueue.clear();
 
+			if (player.get() == null) {
+				ProtocolLibrary.log("Failed to intercept client packet for {0}: Invalid player.", playerName);
+				return;
+			}
+
 			for (ListIterator<Object> it = packets.listIterator(); it.hasNext(); ) {
 				Object input = it.next();
 				Class<?> packetClass = input.getClass();
@@ -498,6 +505,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					byteBuffer.resetReaderIndex();
 					marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
 				}
+
 				PacketEvent output = channelListener.onPacketReceiving(this, input, marker);
 
 				// Handle packet changes
@@ -674,7 +682,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private Object getPlayerConnection() {
 		if (playerConnection == null) {
-			playerConnection = MinecraftFields.getPlayerConnection(player);
+			playerConnection = MinecraftFields.getPlayerConnection(player.get());
 		}
 		return playerConnection;
 	}
@@ -693,7 +701,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	@Override
 	public Player getPlayer() {
-		return player;
+		return player.get();
 	}
 
 	/**
@@ -702,7 +710,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	@Override
     public void setPlayer(Player player) {
-		this.player = player;
+		this.player = new WeakReference<Player>(Preconditions.checkNotNull(player, "player cannot be null"));
 	}
 
 	/**
@@ -711,7 +719,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	@Override
     public void setUpdatedPlayer(Player updated) {
-		this.updated = updated;
+		this.updated = new WeakReference<Player>(Preconditions.checkNotNull(updated, "updated cannot be null"));;
 	}
 
 	@Override
@@ -752,7 +760,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				// we end up with a deadlock. The main thread is waiting for the worker thread to process the task, and
 			    // the worker thread is waiting for the main thread to finish executing PlayerQuitEvent.
 				//
-				// TLDR: Concurrenty is hard.
+				// TLDR: Concurrency is hard.
 				executeInChannelThread(new Runnable() {
 					@Override
 					public void run() {
@@ -767,14 +775,14 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				});
 
 				// Clear cache
-				factory.invalidate(player);
+				factory.invalidate(player.get());
 			}
 		}
 
-		// dmulloy2 - clear player instances
-		// Should fix memory leaks
-		this.player = null;
-		this.updated = null;
+		// Clear player references
+		// Should help fix memory leaks
+		player.clear();
+		updated.clear();
 	}
 
 	/**
@@ -845,12 +853,12 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		@Override
 		public Player getPlayer() {
-			return injector.player;
+			return injector.player.get();
 		}
 
 		@Override
 		public Player getUpdatedPlayer() {
-			return injector.updated;
+			return injector.updated.get();
 		}
 
 		@Override
@@ -860,7 +868,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		@Override
 		public void setUpdatedPlayer(Player updatedPlayer) {
-			injector.player = updatedPlayer;
+			injector.player = new WeakReference<Player>(updatedPlayer);
 		}
 
 		public ChannelInjector getChannelInjector() {
