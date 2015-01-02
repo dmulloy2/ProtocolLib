@@ -23,20 +23,18 @@ public class WrappedChatComponent extends AbstractWrapper {
 	
 	static {
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER);
-		
+
 		// Retrieve the correct methods
-		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(
-			fuzzy.getMethodByParameters("serialize", String.class, new Class<?>[] { COMPONENT }));
-		DESERIALIZE_COMPONENT = Accessors.getMethodAccessor(
-				fuzzy.getMethodByParameters("serialize", COMPONENT, new Class<?>[] { String.class }));
-	
+		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("a", /* serialize */
+				String.class, new Class<?>[] { COMPONENT }));
+		DESERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("a", /* serialize */
+				COMPONENT, new Class<?>[] { String.class }));
+
 		// Get a component from a standard Minecraft message
-		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(
-			MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
-		
+		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
+
 		// And the component text constructor
-		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(
-				MinecraftReflection.getChatComponentTextClass(), String.class);
+		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
 	}
 	
 	private transient String cache;
@@ -49,7 +47,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 	
 	/**
 	 * Construct a new chat component wrapper around the given NMS object.
-	 * @param handle - the NMS object. 
+	 * @param handle - the NMS object.
 	 * @return The wrapper.
 	 */
 	public static WrappedChatComponent fromHandle(Object handle) {
