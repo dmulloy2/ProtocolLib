@@ -87,6 +87,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// The player, or temporary player
 	private Player player;
 	private Player updated;
+	private String playerName;
 
 	// The player connection
 	private Object playerConnection;
@@ -498,6 +499,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					byteBuffer.resetReaderIndex();
 					marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
 				}
+
 				PacketEvent output = channelListener.onPacketReceiving(this, input, marker);
 
 				// Handle packet changes
@@ -579,7 +581,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param buffer - the buffer.
 	 * @return The bytes.
 	 */
-	private byte[] getBytes(ByteBuf buffer){
+	private byte[] getBytes(ByteBuf buffer) {
 		byte[] data = new byte[buffer.readableBytes()];
 
 		buffer.readBytes(data);
@@ -693,6 +695,10 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	@Override
 	public Player getPlayer() {
+		if (player == null && playerName != null) {
+			return Bukkit.getPlayer(playerName);
+		}
+
 		return player;
 	}
 
@@ -703,6 +709,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	@Override
     public void setPlayer(Player player) {
 		this.player = player;
+		this.playerName = player.getName();
 	}
 
 	/**
@@ -712,6 +719,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	@Override
     public void setUpdatedPlayer(Player updated) {
 		this.updated = updated;
+		this.playerName = updated.getName();
 	}
 
 	@Override
@@ -752,7 +760,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				// we end up with a deadlock. The main thread is waiting for the worker thread to process the task, and
 			    // the worker thread is waiting for the main thread to finish executing PlayerQuitEvent.
 				//
-				// TLDR: Concurrenty is hard.
+				// TLDR: Concurrency is hard.
 				executeInChannelThread(new Runnable() {
 					@Override
 					public void run() {
@@ -771,8 +779,8 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			}
 		}
 
-		// dmulloy2 - clear player instances
-		// Should fix memory leaks
+		// Clear player instances
+		// Should help fix memory leaks
 		this.player = null;
 		this.updated = null;
 	}
@@ -845,7 +853,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		@Override
 		public Player getPlayer() {
-			return injector.player;
+			return injector.getPlayer();
 		}
 
 		@Override
@@ -860,7 +868,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		@Override
 		public void setUpdatedPlayer(Player updatedPlayer) {
-			injector.player = updatedPlayer;
+			injector.setPlayer(updatedPlayer);
 		}
 
 		public ChannelInjector getChannelInjector() {
