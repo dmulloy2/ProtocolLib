@@ -654,7 +654,7 @@ public class ProtocolLibrary extends JavaPlugin {
 		return executorSync;
 	}
 
-	// ---- Logging
+	// ---- Logging Methods
 
 	public static void log(Level level, String message, Object... args) {
 		logger.log(level, MessageFormat.format(message, args));

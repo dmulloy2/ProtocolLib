@@ -18,7 +18,6 @@
 package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
-import java.util.logging.Level;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -185,7 +184,7 @@ public class VolatileField {
 				currentSet = false;
 			} else {
 				// This can be a bad sign
-				ProtocolLibrary.log(Level.WARNING, "Unable to switch %s to %s. Expected %s but got %s.",
+				ProtocolLibrary.log("Unable to switch {0} to {1}. Expected {2}, but got {3}.",
 						getField().toGenericString(), previous, current, getValue());
 			}
 		}

@@ -79,7 +79,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 //				this.secondaryValue = parameters.length > 1 ? Accessors.getFieldAccessor(spigotClass, "value2", true) : null;
 //
 //			} catch (ClassNotFoundException e) {
-//				System.out.println("[ProtocolLib] Unable to find " + className);
+//				ProtocolLibrary.log(Level.WARNING, "Unable to find " + className);
 //				this.spigotClass = null;
 //			}
 //			this.typeId = typeId;

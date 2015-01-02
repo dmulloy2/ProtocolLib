@@ -20,11 +20,13 @@ package com.comphenix.protocol.reflect.instances;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
 import javax.annotation.Nullable;
 
 import net.sf.cglib.proxy.Enhancer;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
@@ -281,7 +283,7 @@ public class DefaultInstances implements InstanceProvider {
 					
 					// Did we break the non-null contract?
 					if (params[i] == null && nonNull) {
-						System.out.println("Nonnull contract broken.");
+						ProtocolLibrary.log(Level.WARNING, "Nonnull contract broken.");
 						return null;
 					}
 				}
@@ -328,8 +330,6 @@ public class DefaultInstances implements InstanceProvider {
 		try {
 			return constructor.newInstance(params);
 		} catch (Exception e) {
-			// System.out.println("Failed to create instance " + constructor);
-			// e.printStackTrace();
 			return null;
 		}
 	}
