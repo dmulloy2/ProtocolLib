@@ -786,13 +786,13 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 				// Clear cache
 				factory.invalidate(player);
+
+				// Clear player instances
+				// Should help fix memory leaks
+				this.player = null;
+				this.updated = null;
 			}
 		}
-
-		// Clear player instances
-		// Should help fix memory leaks
-		this.player = null;
-		this.updated = null;
 	}
 
 	/**
