@@ -1,5 +1,7 @@
 package com.comphenix.protocol.injector.player;
 
+import io.netty.channel.Channel;
+
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -76,7 +78,7 @@ public interface PlayerInjectionHandler {
 	public abstract void addPacketHandler(PacketType type, Set<ListenerOptions> options);
 
 	/**
-	 * Remove an underlying packet handler of this type.  
+	 * Remove an underlying packet handler of this type.
 	 * @param type - packet type to unregister.
 	 */
 	public abstract void removePacketHandler(PacketType type);
@@ -127,7 +129,7 @@ public interface PlayerInjectionHandler {
 	 * Send the given packet to the given receiver.
 	 * @param receiver - the player receiver.
 	 * @param packet - the packet to send.
-	 * @param marker 
+	 * @param marker
 	 * @param filters - whether or not to invoke the packet filters.
 	 * @throws InvocationTargetException If an error occurred during sending.
 	 */
@@ -159,7 +161,7 @@ public interface PlayerInjectionHandler {
 	/**
 	 * Determine if a listener is valid or not.
 	 * <p>
-	 * If not, a warning will be printed to the console. 
+	 * If not, a warning will be printed to the console.
 	 * @param listener - listener to check.
 	 */
 	public abstract void checkListener(PacketListener listener);
@@ -198,4 +200,6 @@ public interface PlayerInjectionHandler {
 	 * @return TRUE if we do, FALSE otherwise.
 	 */
 	public abstract boolean hasMainThreadListener(PacketType type);
+
+	public abstract Channel getChannel(Player player);
 }

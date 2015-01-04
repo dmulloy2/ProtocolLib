@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol.injector;
 
+import io.netty.channel.Channel;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -67,6 +69,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.netty.NettyProtocolInjector;
+import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
@@ -831,6 +834,22 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			marker = NetworkMarker.getNetworkMarker(event);
 		}
 		playerInjection.sendServerPacket(receiver, packet, marker, filters);
+	}
+
+	@Override
+	public void sendWirePacket(Player receiver, int id, byte[] bytes) throws InvocationTargetException {
+		WirePacket packet = new WirePacket(id, bytes);
+		sendWirePacket(receiver, packet);
+	}
+
+	@Override
+	public void sendWirePacket(Player receiver, WirePacket packet) throws InvocationTargetException {
+		Channel channel = playerInjection.getChannel(receiver);
+		if (channel == null) {
+			throw new InvocationTargetException(new NullPointerException(), "Failed to obtain channel for " + receiver.getName());
+		}
+
+		channel.writeAndFlush(packet);
 	}
 
 	@Override

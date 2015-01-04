@@ -27,6 +27,7 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -45,6 +46,7 @@ import com.google.common.collect.Sets;
 public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	// Registering packet IDs that are not supported
 	public static final ReportType REPORT_CANNOT_SEND_QUEUED_PACKET = new ReportType("Cannot send queued packet %s.");
+	public static final ReportType REPORT_CANNOT_SEND_QUEUED_WIRE_PACKET = new ReportType("Cannot send queued wire packet %s.");
 	public static final ReportType REPORT_CANNOT_REGISTER_QUEUED_LISTENER = new ReportType("Cannot register queued listener %s.");
 	
 	private volatile InternalManager delegate;
@@ -104,7 +106,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	/**
 	 * Update the delegate to the underlying manager.
 	 * <p>
-	 * This will prompt this packet manager to immediately transmit and 
+	 * This will prompt this packet manager to immediately transmit and
 	 * register all queued packets an listeners.
 	 * @param delegate - delegate to the new manager.
 	 */
@@ -130,7 +132,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 						delegate.addPacketListener(listener);
 					} catch (IllegalArgumentException e) {
 						// Inform about this plugin error
-						reporter.reportWarning(this, 
+						reporter.reportWarning(this,
 							Report.newBuilder(REPORT_CANNOT_REGISTER_QUEUED_LISTENER).
 								callerParam(delegate).messageParam(listener).error(e));
 					}
@@ -150,7 +152,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 		}
 	}
 
-	private Runnable queuedAddPacket(final ConnectionSide side, final Player player, final PacketContainer packet, 
+	private Runnable queuedAddPacket(final ConnectionSide side, final Player player, final PacketContainer packet,
 									 final NetworkMarker marker, final boolean filtered) {
 		
 		return new Runnable() {
@@ -170,10 +172,10 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 					}
 				} catch (Exception e) {
 					// Inform about this plugin error
-					reporter.reportWarning(this, 
+					reporter.reportWarning(this,
 						Report.newBuilder(REPORT_CANNOT_SEND_QUEUED_PACKET).
 							callerParam(delegate).messageParam(packet).error(e));
-				} 
+				}
 			}
 		};
 	}
@@ -204,6 +206,36 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 			delegate.sendServerPacket(receiver, packet, marker, filters);
 		} else {
 			queuedActions.add(queuedAddPacket(ConnectionSide.SERVER_SIDE, receiver, packet, marker, filters));
+		}
+	}
+
+	@Override
+	public void sendWirePacket(Player receiver, int id, byte[] bytes) throws InvocationTargetException {
+		WirePacket packet = new WirePacket(id, bytes);
+		sendWirePacket(receiver, packet);
+	}
+
+	@Override
+	public void sendWirePacket(final Player receiver, final WirePacket packet) throws InvocationTargetException {
+		if (delegate != null) {
+			delegate.sendWirePacket(receiver, packet);
+		} else {
+			queuedActions.add(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						delegate.sendWirePacket(receiver, packet);
+					} catch (Throwable ex) {
+						// Inform about this plugin error
+						reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_QUEUED_WIRE_PACKET)
+								.callerParam(delegate)
+								.messageParam(packet)
+								.error(ex));
+					}
+				}
+
+			});
 		}
 	}
 
@@ -405,7 +437,7 @@ public class DelayedPacketManager implements ProtocolManager, InternalManager {
 	
 	@Override
 	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
-		if (delegate != null) 
+		if (delegate != null)
 			delegate.updateEntity(entity, observers);
 		else
 			EntityUtilities.updateEntity(entity, observers);

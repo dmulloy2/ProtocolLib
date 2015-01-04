@@ -2,20 +2,22 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
 package com.comphenix.protocol.injector.player;
+
+import io.netty.channel.Channel;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
@@ -94,7 +96,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private WeakReference<PlayerInjector> lastSuccessfulHook;
 	
 	// Dummy injection
-	private ConcurrentMap<Player, PlayerInjector> dummyInjectors = 
+	private ConcurrentMap<Player, PlayerInjector> dummyInjectors =
 			SafeCacheBuilder.newBuilder().
 			expireAfterWrite(30, TimeUnit.SECONDS).
 			build(BlockingHashMap.<Player, PlayerInjector>newInvalidCacheLoader());
@@ -128,7 +130,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private Predicate<GamePhase> injectionFilter;
 	
 	public ProxyPlayerInjectionHandler(
-			ErrorReporter reporter, Predicate<GamePhase> injectionFilter, 
+			ErrorReporter reporter, Predicate<GamePhase> injectionFilter,
 			ListenerInvoker invoker, Set<PacketListener> packetListeners, Server server, MinecraftVersion version) {
 		
 		this.reporter = reporter;
@@ -175,7 +177,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			return loginPlayerHook;
 		case PLAYING:
 			return playingPlayerHook;
-		default: 
+		default:
 			throw new IllegalArgumentException("Cannot retrieve injection hook for both phases at the same time.");
 		}
 	}
@@ -230,9 +232,9 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	private PlayerInjector getHookInstance(Player player, PlayerInjectHooks hook) throws IllegalAccessException {
 		// Construct the correct player hook
 		switch (hook) {
-		case NETWORK_HANDLER_FIELDS: 
+		case NETWORK_HANDLER_FIELDS:
 			return new NetworkFieldInjector(reporter, player, invoker, sendingFilters);
-		case NETWORK_MANAGER_OBJECT: 
+		case NETWORK_MANAGER_OBJECT:
 			return new NetworkObjectInjector(reporter, player, invoker, sendingFilters);
 		case NETWORK_SERVER_OBJECT:
 			return new NetworkServerInjector(reporter, player, invoker, sendingFilters, serverInjection);
@@ -373,8 +375,8 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 					
 				} catch (Exception e) {
 					// Mark this injection attempt as a failure
-					reporter.reportDetailed(this, 
-							Report.newBuilder(REPORT_PLAYER_HOOK_FAILED).messageParam(tempHook).callerParam(player, injectionPoint, phase).error(e) 
+					reporter.reportDetailed(this,
+							Report.newBuilder(REPORT_PLAYER_HOOK_FAILED).messageParam(tempHook).callerParam(player, injectionPoint, phase).error(e)
 					);
 					hookFailed = true;
 				}
@@ -401,7 +403,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			// Update values
 			if (injector != null)
 				lastSuccessfulHook = new WeakReference<PlayerInjector>(injector);
-			if (permanentHook != getPlayerHook(phase)) 
+			if (permanentHook != getPlayerHook(phase))
 				setPlayerHook(phase, tempHook);
 			
 			// Save injector
@@ -458,7 +460,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			if (injector != null) {
 				injector.setUpdatedPlayer(player);
 			} else {
-				inputStreamLookup.setSocketInjector(player.getAddress(), 
+				inputStreamLookup.setSocketInjector(player.getAddress(),
 						new BukkitSocketInjector(player));
 			}
 		}
@@ -547,7 +549,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			injector.sendServerPacket(packet.getHandle(), marker, filters);
 		} else {
 			throw new PlayerLoggedOutException(String.format(
-					"Unable to send packet %s (%s): Player %s has logged out.", 
+					"Unable to send packet %s (%s): Player %s has logged out.",
 					packet.getType(), packet, receiver
 			));
 		}
@@ -569,7 +571,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 			injector.processPacket(mcPacket);
 		else
 			throw new PlayerLoggedOutException(String.format(
-					"Unable to receieve packet %s. Player %s has logged out.", 
+					"Unable to receieve packet %s. Player %s has logged out.",
 					mcPacket, player
 			));
 	}
@@ -691,7 +693,7 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 	/**
 	 * Determine if a listener is valid or not.
 	 * <p>
-	 * If not, a warning will be printed to the console. 
+	 * If not, a warning will be printed to the console.
 	 * @param listener - listener to check.
 	 */
 	@Override
@@ -703,8 +705,8 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 
 			// We won't prevent the listener, as it may still have valid packets
 			if (result != null) {
-				reporter.reportWarning(this, 
-						Report.newBuilder(REPORT_UNSUPPPORTED_LISTENER).messageParam(PacketAdapter.getPluginName(listener), result) 
+				reporter.reportWarning(this,
+						Report.newBuilder(REPORT_UNSUPPPORTED_LISTENER).messageParam(PacketAdapter.getPluginName(listener), result)
 				);
 				
 				// These are illegal
@@ -752,5 +754,10 @@ class ProxyPlayerInjectionHandler implements PlayerInjectionHandler {
 		
 		playerInjection.clear();
 		invoker = null;
+	}
+
+	@Override
+	public Channel getChannel(Player player) {
+		throw new UnsupportedOperationException();
 	}
 }

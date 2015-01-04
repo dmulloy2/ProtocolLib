@@ -373,6 +373,16 @@ public class NettyProtocolInjector implements ChannelListener {
 			public void handleDisconnect(Player player) {
 				injectionFactory.fromPlayer(player, listener).close();
 			}
+
+			@Override
+			public Channel getChannel(Player player) {
+				Injector injector = injectionFactory.fromPlayer(player, listener);
+				if (injector instanceof ChannelInjector) {
+					return ((ChannelInjector) injector).getChannel();
+				}
+
+				return null;
+			}
 		};
 	}
 	

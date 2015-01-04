@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -24,6 +24,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.netty.WirePacket;
 
 /**
  * Represents a object capable of sending or receiving packets.
@@ -37,7 +38,7 @@ public interface PacketStream {
 	 * @param packet - packet to send.
 	 * @throws InvocationTargetException - if an error occured when sending the packet.
 	 */
-	public void sendServerPacket(Player receiver, PacketContainer packet) 
+	public void sendServerPacket(Player receiver, PacketContainer packet)
 			throws InvocationTargetException;
 
 	/**
@@ -61,6 +62,22 @@ public interface PacketStream {
 	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters)
 			throws InvocationTargetException;
 
+	/**
+	 * Send a wire packet to the given player.
+	 * @param receiver - the receiver.
+	 * @param id - packet id.
+	 * @param bytes - packet bytes.
+	 * @throws InvocationTargetException if an error occured when sending the packet.
+	 */
+	public void sendWirePacket(Player receiver, int id, byte[] bytes) throws InvocationTargetException;
+
+	/**
+	 * Send a wire packet to the given player.
+	 * @param receiver - the receiver.
+	 * @param packet - packet to send.
+	 * @throws InvocationTargetException if an error occured when sending the packet.
+	 */
+	public void sendWirePacket(Player receiver, WirePacket packet) throws InvocationTargetException;
 
 	/**
 	 * Simulate recieving a certain packet from a given player.
@@ -69,7 +86,7 @@ public interface PacketStream {
 	 * @throws InvocationTargetException If the reflection machinery failed.
 	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet) 
+	public void recieveClientPacket(Player sender, PacketContainer packet)
 			throws IllegalAccessException, InvocationTargetException;
 
 	/**

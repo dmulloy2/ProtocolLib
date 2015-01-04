@@ -1,5 +1,7 @@
 package com.comphenix.protocol.injector.spigot;
 
+import io.netty.channel.Channel;
+
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
@@ -81,5 +83,10 @@ class DummyPlayerHandler extends AbstractPlayerHandler {
 	@Override
 	public void updatePlayer(Player player) {
 		// Do nothing
+	}
+
+	@Override
+	public Channel getChannel(Player player) {
+		throw new UnsupportedOperationException();
 	}
 }
