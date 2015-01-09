@@ -80,7 +80,7 @@ public class PlayerInfoData {
 							specific.profile.handle,
 							specific.ping,
 							EnumWrappers.getGameModeConverter().getGeneric(EnumWrappers.getGameModeClass(), specific.gameMode),
-							specific.displayName.handle
+							specific.displayName != null ? specific.displayName.handle : null
 					);
 					return result;
 				} catch (Exception e) {
