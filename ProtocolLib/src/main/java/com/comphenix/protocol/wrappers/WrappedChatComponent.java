@@ -25,9 +25,9 @@ public class WrappedChatComponent extends AbstractWrapper {
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER);
 
 		// Retrieve the correct methods
-		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("a", /* serialize */
+		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("serialize", /* a */
 				String.class, new Class<?>[] { COMPONENT }));
-		DESERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("a", /* serialize */
+		DESERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("deserialize", /* a */
 				COMPONENT, new Class<?>[] { String.class }));
 
 		// Get a component from a standard Minecraft message

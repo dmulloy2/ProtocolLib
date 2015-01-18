@@ -11,8 +11,7 @@ import javax.annotation.Nonnull;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.InputSupplier;
+import com.google.common.io.ByteSource;
 import com.google.common.primitives.Bytes;
 
 /**
@@ -39,27 +38,26 @@ public class LegacyNetworkMarker extends NetworkMarker {
 		return ByteBuffer.wrap(Bytes.concat(new byte[] { (byte) type.getLegacyId() }, buffer.array()));
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	protected DataInputStream addHeader(final DataInputStream input, final PacketType type) {
-		InputSupplier<InputStream> header = new InputSupplier<InputStream>() {
+		ByteSource header = new ByteSource() {
 			@Override
-			public InputStream getInput() throws IOException {
+			public InputStream openStream() throws IOException {
 				byte[] data = new byte[] { (byte) type.getLegacyId() };
 				return new ByteArrayInputStream(data);
 			}
 		};
 
-		InputSupplier<InputStream> data = new InputSupplier<InputStream>() {
+		ByteSource data = new ByteSource() {
 			@Override
-			public InputStream getInput() throws IOException {
+			public InputStream openStream() throws IOException {
 				return input;
 			}
 		};
 		
 		// Combine them into a single stream
 		try {
-			return new DataInputStream(ByteStreams.join((InputSupplier) header, (InputSupplier) data).getInput());
+			return new DataInputStream(ByteSource.concat(header, data).openStream());
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot add header.", e);
 		}

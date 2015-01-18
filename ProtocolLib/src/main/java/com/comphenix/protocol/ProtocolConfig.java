@@ -77,10 +77,6 @@ public class ProtocolConfig {
 	private int modCount;
 	
 	public ProtocolConfig(Plugin plugin) {
-		this(plugin, plugin.getConfig());
-	}
-	
-	public ProtocolConfig(Plugin plugin, Configuration config) {
 		this.plugin = plugin;
 		reloadConfig();
 	}

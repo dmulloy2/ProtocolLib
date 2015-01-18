@@ -441,7 +441,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				playerInjection.checkListener(listener);
 			}
 			if (hasSending)
-				incrementPhases(processPhase(sending, ConnectionSide.SERVER_SIDE));
+				incrementPhases(processPhase(sending));
 
 			// Handle receivers after senders
 			if (hasReceiving) {
@@ -450,7 +450,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 				enablePacketFilters(listener, receiving.getTypes());
 			}
 			if (hasReceiving)
-				incrementPhases(processPhase(receiving, ConnectionSide.CLIENT_SIDE));
+				incrementPhases(processPhase(receiving));
 
 			// Inform our injected hooks
 			packetListeners.add(listener);
@@ -458,7 +458,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		}
 	}
 
-	private GamePhase processPhase(ListeningWhitelist whitelist, ConnectionSide side) {
+	private GamePhase processPhase(ListeningWhitelist whitelist) {
 		// Determine if this is a login packet, ensuring that gamephase detection is enabled
 		if (!whitelist.getGamePhase().hasLogin() &&
 			!whitelist.getOptions().contains(ListenerOptions.DISABLE_GAMEPHASE_DETECTION)) {
@@ -571,11 +571,11 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 		// Remove listeners and phases
 		if (sending != null && sending.isEnabled()) {
 			sendingRemoved = sendingListeners.removeListener(listener, sending);
-			decrementPhases(processPhase(sending, ConnectionSide.SERVER_SIDE));
+			decrementPhases(processPhase(sending));
 		}
 		if (receiving != null && receiving.isEnabled()) {
 			receivingRemoved = recievedListeners.removeListener(listener, receiving);
-			decrementPhases(processPhase(receiving, ConnectionSide.CLIENT_SIDE));
+			decrementPhases(processPhase(receiving));
 		}
 
 		// Remove hooks, if needed

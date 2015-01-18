@@ -12,7 +12,6 @@ import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 public class TimingReportGenerator {
@@ -29,14 +28,13 @@ public class TimingReportGenerator {
 	private static final String SUM_MAIN_THREAD = " => Time on main thread: %.6f ms" + NEWLINE;
 	
 	public void saveTo(File destination, TimedListenerManager manager) throws IOException {
-		Closer closer = Closer.create();
 		BufferedWriter writer = null;
 		Date started = manager.getStarted();
 		Date stopped = manager.getStopped();
 		long seconds = Math.abs((stopped.getTime() - started.getTime()) / 1000);
 		
 		try {
-			writer = closer.register(Files.newWriter(destination, Charsets.UTF_8));
+			writer = Files.newWriter(destination, Charsets.UTF_8);
 
 			// Write some timing information
 			writer.write(String.format(META_STARTED, started));
@@ -62,7 +60,9 @@ public class TimingReportGenerator {
 				writer.write(NEWLINE);
 			}
 		} finally {
-			closer.close();
+			if (writer != null) {
+				writer.flush();
+			}
 		}
 	}
 	

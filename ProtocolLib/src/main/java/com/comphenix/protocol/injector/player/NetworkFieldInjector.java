@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -58,7 +58,7 @@ class NetworkFieldInjector extends PlayerInjector {
 		// Nothing
 	}
 	
-	// After commit 336a4e00668fd2518c41242755ed6b3bdc3b0e6c (Update CraftBukkit to Minecraft 1.4.4.), 
+	// After commit 336a4e00668fd2518c41242755ed6b3bdc3b0e6c (Update CraftBukkit to Minecraft 1.4.4.),
 	// CraftBukkit stopped redirecting map chunk and map chunk bulk packets to a separate queue.
 	// Thus, NetworkFieldInjector can safely handle every packet (though not perfectly - some packets
 	// will be slightly processed).
@@ -77,9 +77,7 @@ class NetworkFieldInjector extends PlayerInjector {
 	// Determine if we're listening
 	private IntegerSet sendingFilters;
 
-	public NetworkFieldInjector(ErrorReporter reporter, Player player, 
-								ListenerInvoker manager, IntegerSet sendingFilters) throws IllegalAccessException {
-		
+	public NetworkFieldInjector(ErrorReporter reporter, Player player, ListenerInvoker manager, IntegerSet sendingFilters) {
 		super(reporter, player, manager);
 		this.sendingFilters = sendingFilters;
 	}
@@ -178,6 +176,7 @@ class NetworkFieldInjector extends PlayerInjector {
 		}
 	}
 	
+	@Override
 	@SuppressWarnings("unchecked")
 	protected void cleanHook() {
 		// Clean up

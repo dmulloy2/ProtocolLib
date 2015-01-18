@@ -160,19 +160,16 @@ public class PipelineProxy implements ChannelPipeline {
 	}
 
 	// We have to call the depreciated methods to properly implement the proxy
-	@SuppressWarnings("deprecation")
 	@Override
 	public ChannelFuture deregister() {
 		return pipeline.deregister();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public ChannelFuture deregister(ChannelPromise arg0) {
 		return pipeline.deregister(arg0);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public ChannelPipeline fireChannelUnregistered() {
 		pipeline.fireChannelUnregistered();

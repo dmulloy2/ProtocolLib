@@ -110,7 +110,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * Create a container for asyncronous packets.
 	 * @param initialTime - the current time in milliseconds since 01.01.1970 00:00.
 	 */
-	AsyncMarker(PacketStream packetStream, long sendingIndex, long sendingDelta, long initialTime, long timeoutDelta) {
+	AsyncMarker(PacketStream packetStream, long sendingIndex, long initialTime, long timeoutDelta) {
 		if (packetStream == null)
 			throw new IllegalArgumentException("packetStream cannot be NULL");
 		

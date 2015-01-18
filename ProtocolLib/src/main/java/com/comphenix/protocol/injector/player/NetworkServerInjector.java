@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -53,7 +53,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
- * Represents a player hook into the NetServerHandler class. 
+ * Represents a player hook into the NetServerHandler class.
  * 
  * @author Kristian
  */
@@ -79,10 +79,9 @@ class NetworkServerInjector extends PlayerInjector {
 	private final ObjectWriter writer = new ObjectWriter();
 	
 	public NetworkServerInjector(
-			ErrorReporter reporter, Player player, 
-			ListenerInvoker invoker, IntegerSet sendingFilters, 
-			InjectedServerConnection serverInjection) throws IllegalAccessException {
-		
+			ErrorReporter reporter, Player player,
+			ListenerInvoker invoker, IntegerSet sendingFilters,
+			InjectedServerConnection serverInjection) {
 		super(reporter, player, invoker);
 		this.sendingFilters = sendingFilters;
 		this.serverInjection = serverInjection;
@@ -147,7 +146,7 @@ class NetworkServerInjector extends PlayerInjector {
 			}
 			
 			throw new RuntimeException(
-					"Cannot hook player: Unable to find a valid constructor for the " 
+					"Cannot hook player: Unable to find a valid constructor for the "
 						+ serverHandlerClass.getName() + " object.");
 		}
 	}
@@ -177,7 +176,7 @@ class NetworkServerInjector extends PlayerInjector {
 		};
 		Callback noOpCallback = NoOp.INSTANCE;
 		
-		// Share callback filter - that way, we avoid generating a new class for 
+		// Share callback filter - that way, we avoid generating a new class for
 		// every logged in player.
 		if (callbackFilter == null) {
 			callbackFilter = new SendMethodFilter();
@@ -197,7 +196,7 @@ class NetworkServerInjector extends PlayerInjector {
 		
 		// Use the existing server proxy when we create one
 		if (proxyInstance != null && proxyInstance != serverHandler) {
-			serverInstances = DefaultInstances.fromArray(generator, 
+			serverInstances = DefaultInstances.fromArray(generator,
 					ExistingGenerator.fromObjectArray(new Object[] { proxyInstance }));
 		} else {
 			serverInstances = DefaultInstances.fromArray(generator);
@@ -288,7 +287,7 @@ class NetworkServerInjector extends PlayerInjector {
 	 * @param value - the new value.
 	 */
 	private void setDisconnect(Object handler, boolean value) {
-		// Set it 
+		// Set it
 		try {
 			// Load the field
 			if (disconnectField == null) {
@@ -296,7 +295,7 @@ class NetworkServerInjector extends PlayerInjector {
 			}
 			FieldUtils.writeField(disconnectField, handler, value);
 		
-		} catch (IllegalArgumentException e) {			
+		} catch (IllegalArgumentException e) {
 			// Assume it's the first ...
 			if (disconnectField == null) {
 				disconnectField = FuzzyReflection.fromObject(handler).getFieldByType("disconnected", boolean.class);

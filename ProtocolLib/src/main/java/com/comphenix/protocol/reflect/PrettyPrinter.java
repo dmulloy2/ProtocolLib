@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -65,7 +65,7 @@ public class PrettyPrinter {
 	 * Print the content of an object.
 	 * @param object - the object to serialize.
 	 * @return String representation of the class.
-	 * @throws IllegalAccessException 
+	 * @throws IllegalAccessException
 	 */
 	public static String printObject(Object object) throws IllegalAccessException {
 		if (object == null)
@@ -79,7 +79,7 @@ public class PrettyPrinter {
 	 * @param object - the object to serialize.
 	 * @param stop - superclass that will stop the process.
 	 * @return String representation of the class.
-	 * @throws IllegalAccessException 
+	 * @throws IllegalAccessException
 	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop) throws IllegalAccessException {
 		if (object == null)
@@ -93,7 +93,7 @@ public class PrettyPrinter {
 	 * @param object - the object to serialize.
 	 * @param stop - superclass that will stop the process.
 	 * @return String representation of the class.
-	 * @throws IllegalAccessException 
+	 * @throws IllegalAccessException
 	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop, int hierachyDepth) throws IllegalAccessException {
 		return printObject(object, start, stop, hierachyDepth, ObjectPrinter.DEFAULT);
@@ -106,7 +106,7 @@ public class PrettyPrinter {
 	 * @param hierachyDepth - maximum recursion level.
 	 * @param printer - a generic object printer.
 	 * @return String representation of the class.
-	 * @throws IllegalAccessException 
+	 * @throws IllegalAccessException
 	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop, int hierachyDepth, ObjectPrinter printer) throws IllegalAccessException {
 		if (object == null)
@@ -124,14 +124,14 @@ public class PrettyPrinter {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	private static void printIterables(StringBuilder output, Iterable iterable, Class<?> current, Class<?> stop, 
-									   Set<Object> previous, int hierachyIndex, ObjectPrinter printer) throws IllegalAccessException {	
+	private static void printIterables(StringBuilder output, Iterable iterable, Class<?> stop,
+									   Set<Object> previous, int hierachyIndex, ObjectPrinter printer) throws IllegalAccessException {
 		
 		boolean first = true;
 		output.append("(");
 		
 		for (Object value : iterable) {
-			if (first) 
+			if (first)
 				first = false;
 			else
 				output.append(", ");
@@ -153,8 +153,8 @@ public class PrettyPrinter {
 	 * @param hierachyIndex - hierachy index.
 	 * @throws IllegalAccessException If any reflection went wrong.
 	 */
-	private static void printMap(StringBuilder output, Map<Object, Object> map, Class<?> current, Class<?> stop, 
-			   Set<Object> previous, int hierachyIndex, ObjectPrinter printer) throws IllegalAccessException {	
+	private static void printMap(StringBuilder output, Map<Object, Object> map, Class<?> current, Class<?> stop,
+			   Set<Object> previous, int hierachyIndex, ObjectPrinter printer) throws IllegalAccessException {
 
 		boolean first = true;
 		output.append("[");
@@ -173,8 +173,8 @@ public class PrettyPrinter {
 		output.append("]");
 	}
 	
-	private static void printArray(StringBuilder output, Object array, Class<?> current, Class<?> stop, 
-								   Set<Object> previous, int hierachyIndex, ObjectPrinter printer) throws IllegalAccessException {	
+	private static void printArray(StringBuilder output, Object array, Class<?> current, Class<?> stop,
+								   Set<Object> previous, int hierachyIndex, ObjectPrinter printer) throws IllegalAccessException {
 		
 		Class<?> component = current.getComponentType();
 		boolean first = true;
@@ -184,7 +184,7 @@ public class PrettyPrinter {
 		output.append("[");
 		
 		for (int i = 0; i < Array.getLength(array); i++) {
-			if (first) 
+			if (first)
 				first = false;
 			else
 				output.append(", ");
@@ -205,8 +205,8 @@ public class PrettyPrinter {
 	}
 	
 	// Internal recursion method
-	private static void printObject(StringBuilder output, Object object, Class<?> current, Class<?> stop, 
-									Set<Object> previous, int hierachyIndex, boolean first, 
+	private static void printObject(StringBuilder output, Object object, Class<?> current, Class<?> stop,
+									Set<Object> previous, int hierachyIndex, boolean first,
 									ObjectPrinter printer) throws IllegalAccessException {
 		
 		// See if we're supposed to skip this class
@@ -247,14 +247,14 @@ public class PrettyPrinter {
 		printObject(output, object, current.getSuperclass(), stop, previous, hierachyIndex, first, printer);
 	}
 
-	private static void printValue(StringBuilder output, Object value, Class<?> stop, 
+	private static void printValue(StringBuilder output, Object value, Class<?> stop,
 								   Set<Object> previous, int hierachyIndex, ObjectPrinter printer) throws IllegalAccessException {
 		// Handle the NULL case
 		printValue(output, value, value != null ? value.getClass() : null, stop, previous, hierachyIndex, printer);
 	}
 	
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	private static void printValue(StringBuilder output, Object value, Class<?> type, 
+	private static void printValue(StringBuilder output, Object value, Class<?> type,
 								   Class<?> stop, Set<Object> previous, int hierachyIndex,
 								   ObjectPrinter printer) throws IllegalAccessException {
 	
@@ -270,7 +270,7 @@ public class PrettyPrinter {
 		} else if (type.isArray()) {
 			printArray(output, value, type, stop, previous, hierachyIndex, printer);
 		} else if (Iterable.class.isAssignableFrom(type)) {
-			printIterables(output, (Iterable) value, type, stop, previous, hierachyIndex, printer);
+			printIterables(output, (Iterable) value, stop, previous, hierachyIndex, printer);
 		} else if (Map.class.isAssignableFrom(type)) {
 			printMap(output, (Map<Object, Object>) value, type, stop, previous, hierachyIndex, printer);
 		} else if (ClassLoader.class.isAssignableFrom(type) || previous.contains(value)) {

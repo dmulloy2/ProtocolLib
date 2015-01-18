@@ -225,7 +225,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 					if (packet instanceof WirePacket) {
 						// Special case for wire format
-						ChannelInjector.this.encodeWirePacket(ctx, (WirePacket) packet, output);
+						ChannelInjector.this.encodeWirePacket((WirePacket) packet, output);
 					} else {
 						ChannelInjector.this.encode(ctx, packet, output);
 					}
@@ -356,7 +356,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private boolean guessCompression(ChannelHandler handler) {
 		String className = handler != null ? handler.getClass().getCanonicalName() : null;
-		return className.contains("PacketCompressor") || className.contains("PacketDecompressor");
+		return className.contains("Compressor") || className.contains("Decompressor");
 	}
 
 	/**
@@ -386,7 +386,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		super.exceptionCaught(ctx, cause);
 	}
 
-	protected void encodeWirePacket(ChannelHandlerContext ctx, WirePacket packet, ByteBuf output) throws Exception {
+	protected void encodeWirePacket(WirePacket packet, ByteBuf output) throws Exception {
 		packet.writeId(output);
 		packet.writeBytes(output);
 	}

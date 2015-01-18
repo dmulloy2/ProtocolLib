@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -81,7 +81,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	/**
 	 * Initialize a asynchronous filter manager.
 	 * <p>
-	 * <b>Internal method</b>. Retrieve the global asynchronous manager from the protocol manager instead. 
+	 * <b>Internal method</b>. Retrieve the global asynchronous manager from the protocol manager instead.
 	 * @param reporter - desired error reporter.
 	 * @param scheduler - task scheduler.
 	 */
@@ -148,7 +148,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		ImmutableSet.Builder<PacketListener> builder = ImmutableSet.builder();
 		
 		// Add every asynchronous packet listener
-		for (PrioritizedListener<AsyncListenerHandler> handler : 
+		for (PrioritizedListener<AsyncListenerHandler> handler :
 				Iterables.concat(serverProcessingQueue.values(), clientProcessingQueue.values())) {
 			builder.add(handler.getListener().getAsyncListener());
 		}
@@ -221,7 +221,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		if (listener == null)
 			throw new IllegalArgumentException("listener cannot be NULL.");
 		
-		AsyncListenerHandler handler = 
+		AsyncListenerHandler handler =
 					  findHandler(serverProcessingQueue, listener.getSendingWhitelist(), listener);
 		
 		if (handler == null) {
@@ -232,7 +232,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	// Search for the first correct handler
 	private AsyncListenerHandler findHandler(PacketProcessingQueue queue, ListeningWhitelist search, PacketListener target) {
-		if (ListeningWhitelist.isEmpty(search)) 
+		if (ListeningWhitelist.isEmpty(search))
 			return null;
 		
 		for (PacketType type : search.getTypes()) {
@@ -250,7 +250,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		if (handler == null)
 			throw new IllegalArgumentException("listenerToken cannot be NULL");
 		
-		handler.cancel();	
+		handler.cancel();
 	}
 	
 	// Called by AsyncListenerHandler
@@ -295,7 +295,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	private void unregisterAsyncHandlers(PacketProcessingQueue processingQueue, Plugin plugin) {
 		
 		// Iterate through every packet listener
-		for (PrioritizedListener<AsyncListenerHandler> listener : processingQueue.values()) {			
+		for (PrioritizedListener<AsyncListenerHandler> listener : processingQueue.values()) {
 			// Remove the listener
 			if (Objects.equal(listener.getListener().getPlugin(), plugin)) {
 				unregisterAsyncHandler(listener.getListener());
@@ -362,7 +362,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * @return Asynchronous marker.
 	 */
 	public AsyncMarker createAsyncMarker() {
-		return createAsyncMarker(AsyncMarker.DEFAULT_SENDING_DELTA, AsyncMarker.DEFAULT_TIMEOUT_DELTA);
+		return createAsyncMarker(AsyncMarker.DEFAULT_TIMEOUT_DELTA);
 	}
 	
 	/**
@@ -371,14 +371,13 @@ public class AsyncFilterManager implements AsynchronousManager {
 	 * @param timeoutDelta - how long (in ms) until the packet expire.
 	 * @return An async marker.
 	 */
-	public AsyncMarker createAsyncMarker(long sendingDelta, long timeoutDelta) {
-		return createAsyncMarker(sendingDelta, timeoutDelta, 
-								 currentSendingIndex.incrementAndGet(), System.currentTimeMillis());
+	public AsyncMarker createAsyncMarker(long timeoutDelta) {
+		return createAsyncMarker(timeoutDelta, currentSendingIndex.incrementAndGet());
 	}
 	
 	// Helper method
-	private AsyncMarker createAsyncMarker(long sendingDelta, long timeoutDelta, long sendingIndex, long currentTime) {
-		return new AsyncMarker(manager, sendingIndex, sendingDelta, System.currentTimeMillis(), timeoutDelta);
+	private AsyncMarker createAsyncMarker(long timeoutDelta, long sendingIndex) {
+		return new AsyncMarker(manager, sendingIndex, System.currentTimeMillis(), timeoutDelta);
 	}
 	
 	@Override

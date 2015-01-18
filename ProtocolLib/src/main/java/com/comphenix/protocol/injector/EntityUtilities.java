@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -53,7 +53,7 @@ class EntityUtilities {
 	private static Method scanPlayersMethod;
 
 	/*
-	 * While this function may look pretty bad, it's essentially just a reflection-warped 
+	 * While this function may look pretty bad, it's essentially just a reflection-warped
 	 * version of the following:
 	 * 
 	 *  	@SuppressWarnings("unchecked")
@@ -133,7 +133,7 @@ class EntityUtilities {
 			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 
 			if (trackerEntry == null) {
-				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + 
+				throw new IllegalArgumentException("Cannot find entity trackers for " + entity +
 						(entity.isDead() ? " - entity is dead." : "."));
 			}
 			if (trackedPlayersField == null) {
@@ -152,8 +152,6 @@ class EntityUtilities {
 			
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Security limitation prevented access to the list of tracked players.", e);
-		} catch (InvocationTargetException e) {
-			throw new FieldAccessException("Exception occurred in Minecraft.", e);
 		}
 	}
 	
@@ -162,9 +160,9 @@ class EntityUtilities {
 	 * @param world - world server.
 	 * @param entityID - entity ID.
 	 * @return The entity tracker entry.
-	 * @throws FieldAccessException 
+	 * @throws FieldAccessException
 	 */
-	private static Object getEntityTrackerEntry(World world, int entityID) throws FieldAccessException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+	private static Object getEntityTrackerEntry(World world, int entityID) throws FieldAccessException, IllegalArgumentException {
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		Object worldServer = unwrapper.unwrapItem(world);
 
@@ -183,9 +181,9 @@ class EntityUtilities {
 		
 		if (trackedEntitiesField == null) {
 			@SuppressWarnings("rawtypes")
-			Set<Class> ignoredTypes = new HashSet<Class>(); 
+			Set<Class> ignoredTypes = new HashSet<Class>();
 			
-			// Well, this is more difficult. But we're looking for a Minecraft object that is not 
+			// Well, this is more difficult. But we're looking for a Minecraft object that is not
 			// created by the constructor(s).
 			for (Constructor<?> constructor : tracker.getClass().getConstructors()) {
 				for (Class<?> type : constructor.getParameterTypes()) {

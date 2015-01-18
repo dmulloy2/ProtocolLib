@@ -104,12 +104,12 @@ public class StreamSerializer {
 			if (READ_ITEM_METHOD == null) {
 				READ_ITEM_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("i", /* readItemStack */
+						getMethodByParameters("readItemStack", /* i */
 								MinecraftReflection.getItemStackClass(), new Class<?>[0])
 				);
 			}
+
 			nmsItem = READ_ITEM_METHOD.invoke(ByteBufAdapter.packetReader(input));
-			
 		} else {
 			if (READ_ITEM_METHOD == null) {
 				READ_ITEM_METHOD = Accessors.getMethodAccessor(
@@ -121,6 +121,7 @@ public class StreamSerializer {
 						build())
 					);
 			}
+
 			nmsItem = READ_ITEM_METHOD.invoke(null, input);
 		}
 	
@@ -147,12 +148,12 @@ public class StreamSerializer {
 			if (READ_NBT_METHOD == null) {
 				READ_NBT_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("h", /* readNbtCompound */
+						getMethodByParameters("readNbtCompound", /* h */
 								MinecraftReflection.getNBTCompoundClass(), new Class<?>[0])
 				);
 			}
+
 			nmsCompound = READ_NBT_METHOD.invoke(ByteBufAdapter.packetReader(input));
-			
 		} else {
 			if (READ_NBT_METHOD == null) {
 				READ_NBT_METHOD = Accessors.getMethodAccessor(
@@ -200,12 +201,12 @@ public class StreamSerializer {
 			if (READ_STRING_METHOD == null) {
 				READ_STRING_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("c", /* readString */
+						getMethodByParameters("readString", /* c */
 								String.class, new Class<?>[] { int.class })
 				);
 			}
+
 			return (String) READ_STRING_METHOD.invoke(ByteBufAdapter.packetReader(input), maximumLength);
-			
 		} else {
 			if (READ_STRING_METHOD == null) {
 				READ_STRING_METHOD = Accessors.getMethodAccessor(
@@ -218,6 +219,7 @@ public class StreamSerializer {
 						build())
 					);
 			}
+
 			return (String) READ_STRING_METHOD.invoke(null, input, maximumLength);
 		}
 	}
@@ -259,12 +261,12 @@ public class StreamSerializer {
 			if (WRITE_ITEM_METHOD == null) {
 				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("a", /* writeStack */
+						getMethodByParameters("writeStack", /* a */
 								MinecraftReflection.getItemStackClass())
 				);
 			}
+
 			WRITE_ITEM_METHOD.invoke(ByteBufAdapter.packetWriter(output), nmsItem);
-			
 		} else {
 			if (WRITE_ITEM_METHOD == null)
 				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
@@ -275,6 +277,7 @@ public class StreamSerializer {
 						parameterDerivedOf(DataOutput.class, 1).
 						build())
 			);
+
 			WRITE_ITEM_METHOD.invoke(null, nmsItem, output);
 		}
 	}
@@ -299,12 +302,12 @@ public class StreamSerializer {
 			if (WRITE_NBT_METHOD == null) {
 				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("a", /* writeNbtCompound */
+						getMethodByParameters("writeNbtCompound", /* a */
 								MinecraftReflection.getNBTCompoundClass())
 				);
 			}
+
 			WRITE_NBT_METHOD.invoke(ByteBufAdapter.packetWriter(output), handle);
-			
 		} else {
 			if (WRITE_NBT_METHOD == null) {
 				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
@@ -317,6 +320,7 @@ public class StreamSerializer {
 						build())
 				);
 			}
+
 			WRITE_NBT_METHOD.invoke(null, handle, output);
 		}
 	}
@@ -339,12 +343,12 @@ public class StreamSerializer {
 			if (WRITE_STRING_METHOD == null) {
 				WRITE_STRING_METHOD = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("a", /* writeString */
+						getMethodByParameters("writeString", /* a */
 								String.class)
 				);
 			}
+
 			WRITE_STRING_METHOD.invoke(ByteBufAdapter.packetWriter(output), text);
-			
 		} else {
 			if (WRITE_STRING_METHOD == null) {
 				WRITE_STRING_METHOD = Accessors.getMethodAccessor(
@@ -357,6 +361,7 @@ public class StreamSerializer {
 						build())
 				);
 			}
+
 			WRITE_STRING_METHOD.invoke(null, text, output);
 		}
 	}
@@ -371,12 +376,12 @@ public class StreamSerializer {
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public String serializeItemStack(ItemStack stack) throws IOException {
-		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		 DataOutputStream dataOutput = new DataOutputStream(outputStream);
-		 
-		 serializeItemStack(dataOutput, stack);
-		 
-		 // Serialize that array
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		DataOutputStream dataOutput = new DataOutputStream(outputStream);
+
+		serializeItemStack(dataOutput, stack);
+
+		// Serialize that array
 		return Base64Coder.encodeLines(outputStream.toByteArray());
 	}
 }
