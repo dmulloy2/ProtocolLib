@@ -78,6 +78,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
+import com.comphenix.protocol.wrappers.EnumWrappers.Particle;
 import com.comphenix.protocol.wrappers.EnumWrappers.PlayerAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType;
 import com.comphenix.protocol.wrappers.EnumWrappers.PlayerInfoAction;
@@ -739,7 +740,7 @@ public class PacketContainer implements Serializable {
 	}
 
 	/**
-	 * Retrieve a read/write structure for the PlayerInfo enum in 1.8
+	 * Retrieve a read/write structure for the PlayerInfo enum in 1.8.
 	 * @return A modifier for PlayerInfoAction enum fields.
 	 */
 	public StructureModifier<PlayerInfoAction> getPlayerInfoAction() {
@@ -806,6 +807,16 @@ public class PacketContainer implements Serializable {
         // Convert to and from the wrapper
         return structureModifier.<ScoreboardAction>withType(
                 EnumWrappers.getScoreboardActionClass(), EnumWrappers.getUpdateScoreActionConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for the Particle enum in 1.8.
+     * @return A modifier for Particle enum fields.
+     */
+    public StructureModifier<Particle> getParticles() {
+    	// Convert to and from the wrapper
+    	return structureModifier.<Particle>withType(
+    			EnumWrappers.getParticleClass(), EnumWrappers.getParticleConverter());
     }
 
 	/**

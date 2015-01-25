@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.bukkit.GameMode;
@@ -122,6 +123,79 @@ public abstract class EnumWrappers {
 		REMOVE;
 	}
 
+	public enum Particle {
+		EXPLOSION_NORMAL(0, true),
+		EXPLOSION_LARGE(1, true),
+		EXPLOSION_HUGE(2, true),
+		FIREWORKS_SPARK(3, false),
+		WATER_BUBBLE(4, false),
+		WATER_SPLASH(5, false),
+		WATER_WAKE(6, false),
+		SUSPENDED(7, false),
+		SUSPENDED_DEPTH(8, false),
+		CRIT(9, false),
+		CRIT_MAGIC(10, false),
+		SMOKE_NORMAL(11, false),
+		SMOKE_LARGE(12, false),
+		SPELL(13, false),
+		SPELL_INSTANT(14, false),
+		SPELL_MOB(15, false),
+		SPELL_MOB_AMBIENT(16, false),
+		SPELL_WITCH(17, false),
+		DRIP_WATER(18, false),
+		DRIP_LAVA(19, false),
+		VILLAGER_ANGRY(20, false),
+		VILLAGER_HAPPY(21, false),
+		TOWN_AURA(22, false),
+		NOTE(23, false),
+		PORTAL(24, false),
+		ENCHANTMENT_TABLE(25, false),
+		FLAME(26, false),
+		LAVA(27, false),
+		FOOTSTEP(28, false),
+		CLOUD(29, false),
+		REDSTONE(30, false),
+		SNOWBALL(31, false),
+		SNOW_SHOVEL(32, false),
+		SLIME(33, false),
+		HEART(34, false),
+		BARRIER(35, false),
+		ITEM_CRACK(36, false),
+		BLOCK_CRACK(37, false),
+		BLOCK_DUST(38, false),
+		WATER_DROP(39, false),
+		ITEM_TAKE(40, false),
+		MOB_APPEARANCE(41, true);
+
+		private static final Map<Integer, Particle> BY_ID;
+		static {
+			BY_ID = new HashMap<Integer, Particle>();
+			for (Particle particle : values()) {
+				BY_ID.put(particle.getId(), particle);
+			}
+		}
+
+		private final int id;
+		private final boolean longDistance;
+
+		private Particle(int id, boolean longDistance) {
+			this.id = id;
+			this.longDistance = longDistance;
+		}
+
+		public int getId() {
+			return id;
+		}
+
+		public boolean isLongDistance() {
+			return longDistance;
+		}
+
+		public static Particle getById(int id) {
+			return BY_ID.get(id);
+		}
+	}
+
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
 	private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -136,6 +210,7 @@ public abstract class EnumWrappers {
 	private static Class<?> PLAYER_DIG_TYPE_CLASS = null;
 	private static Class<?> PLAYER_ACTION_CLASS = null;
 	private static Class<?> SCOREBOARD_ACTION_CLASS = null;
+	private static Class<?> PARTICLE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -165,6 +240,7 @@ public abstract class EnumWrappers {
 		PLAYER_DIG_TYPE_CLASS = getEnum(PacketType.Play.Client.BLOCK_DIG.getPacketClass(), 0);
 		PLAYER_ACTION_CLASS = getEnum(PacketType.Play.Client.ENTITY_ACTION.getPacketClass(), 0);
 		SCOREBOARD_ACTION_CLASS = getEnum(PacketType.Play.Server.SCOREBOARD_SCORE.getPacketClass(), 0);
+		PARTICLE_CLASS = getEnum(PacketType.Play.Server.WORLD_PARTICLES.getPacketClass(), 0);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -180,6 +256,7 @@ public abstract class EnumWrappers {
 		associate(PLAYER_DIG_TYPE_CLASS, PlayerDigType.class, getPlayerDiggingActionConverter());
 		associate(PLAYER_ACTION_CLASS, PlayerAction.class, getEntityActionConverter());
 		associate(SCOREBOARD_ACTION_CLASS, ScoreboardAction.class, getUpdateScoreActionConverter());
+		associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
 		INITIALIZED = true;
 	}
 
@@ -277,6 +354,11 @@ public abstract class EnumWrappers {
 		return SCOREBOARD_ACTION_CLASS;
 	}
 
+	public static Class<?> getParticleClass() {
+		initialize();
+		return PARTICLE_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<Protocol>(Protocol.class);
@@ -332,6 +414,10 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<ScoreboardAction> getUpdateScoreActionConverter() {
 		return new EnumConverter<ScoreboardAction>(ScoreboardAction.class);
+	}
+
+	public static EquivalentConverter<Particle> getParticleConverter() {
+		return new EnumConverter<Particle>(Particle.class);
 	}
 
 	// The common enum converter
