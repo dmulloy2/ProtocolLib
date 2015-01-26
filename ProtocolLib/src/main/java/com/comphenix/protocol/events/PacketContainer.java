@@ -88,6 +88,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
@@ -610,6 +611,19 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedGameProfile>withType(
 				GameProfile.class, BukkitConverters.getWrappedGameProfileConverter());
+	}
+	
+	/**
+	 * Retrieves a read/write structure for BlockData in Minecraft 1.8.
+	 * <p>
+	 * This modifier will automatically marshall between WrappedBlockData and the
+	 * internal Minecraft BlockData.
+	 * @return A modifier for BlockData fields.
+	 */
+	public StructureModifier<WrappedBlockData> getBlockData() {
+		// Conver to and from our wrapper
+		return structureModifier.<WrappedBlockData>withType(
+				MinecraftReflection.getIBlockDataClass(), BukkitConverters.getWrappedBlockDataConverter());
 	}
 	
 	/**

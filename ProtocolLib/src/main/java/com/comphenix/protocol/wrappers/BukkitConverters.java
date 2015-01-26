@@ -395,7 +395,7 @@ public class BukkitConverters {
 	
 	/**
 	 * Retrieve a converter for wrapped chat components.
-	 * @return Wrapped chat componetns.
+	 * @return Wrapped chat component.
 	 */
 	public static EquivalentConverter<WrappedChatComponent> getWrappedChatComponentConverter() {
 		return new IgnoreNullConverter<WrappedChatComponent>() {
@@ -412,6 +412,29 @@ public class BukkitConverters {
 			@Override
 			public Class<WrappedChatComponent> getSpecificType() {
 				return WrappedChatComponent.class;
+			}
+		};
+	}
+	
+	/**
+	 * Retrieve a converter for wrapped block data.
+	 * @return Wrapped block data.
+	 */
+	public static EquivalentConverter<WrappedBlockData> getWrappedBlockDataConverter() {
+		return new IgnoreNullConverter<WrappedBlockData>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, WrappedBlockData specific) {
+				return specific.getHandle();
+			}
+			
+			@Override
+			protected WrappedBlockData getSpecificValue(Object generic) {
+				return new WrappedBlockData(generic);
+			}
+			
+			@Override
+			public Class<WrappedBlockData> getSpecificType() {
+				return WrappedBlockData.class;
 			}
 		};
 	}

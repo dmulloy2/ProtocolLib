@@ -1916,6 +1916,24 @@ public class MinecraftReflection {
 	}
 
 	/**
+	 * Retrieve the IBlockData class in 1.8.
+	 * @return The IBlockData class
+	 */
+	public static Class<?> getIBlockDataClass() {
+		return getMinecraftClass("IBlockData");
+	}
+
+	/**
+	 * Determine if the given object is an IBlockData.
+	 * @param obj - the given object.
+	 * @return TRUE if it is, FALSE otherwise.
+	 */
+	public static boolean isIBlockData(Object obj) {
+		Class<?> clazz = getIBlockDataClass();
+		return clazz != null && obj.getClass().equals(clazz);
+	}
+
+	/**
 	 * Retrieve the given class by name.
 	 * @param className - name of the class.
 	 * @return The class.
