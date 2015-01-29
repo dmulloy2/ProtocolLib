@@ -193,7 +193,7 @@ public class StructureModifier<TField> {
 		if (fieldIndex < 0)
 			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
 
-		if (fieldIndex == 0 && data.size() == 0)
+		if (data.size() == 0)
 			throw new FieldAccessException(String.format("No field with type %s exists in class %s.", targetType.getName(),
 					target.getClass().getName()));
 
@@ -294,8 +294,9 @@ public class StructureModifier<TField> {
 		if (fieldIndex < 0)
 			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
 
-		if (fieldIndex == 0 && data.size() == 0)
-			throw new FieldAccessException(String.format("No field with type %s exists in class %s.", targetType.getName(), target.getClass().getName()));
+		if (data.size() == 0)
+			throw new FieldAccessException(String.format("No field with type %s exists in class %s.", targetType.getName(),
+					target.getClass().getName()));
 
 		if (fieldIndex >= data.size())
 			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
