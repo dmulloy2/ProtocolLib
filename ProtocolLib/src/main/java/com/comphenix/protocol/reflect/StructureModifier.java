@@ -187,27 +187,33 @@ public class StructureModifier<TField> {
 	 */
 	@SuppressWarnings("unchecked")
 	public TField read(int fieldIndex) throws FieldAccessException {
+		if (target == null)
+			throw new IllegalStateException("Cannot read from a null target!");
+
 		if (fieldIndex < 0)
 			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
+
+		if (fieldIndex == 0 && data.size() == 0)
+			throw new FieldAccessException(String.format("No field with type %s exists in class %s.", targetType.getName(),
+					target.getClass().getName()));
+
 		if (fieldIndex >= data.size())
 			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
-		if (target == null)
-			throw new IllegalStateException("Cannot read from a null target");
 
 		try {
 			Object result = FieldUtils.readField(data.get(fieldIndex), target, true);
 
 			// Use the converter, if we have it
-			if (needConversion())
+			if (needConversion()) {
 				return converter.getSpecific(result);
-			else
+			} else {
 				return (TField) result;
-
+			}
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Cannot read field due to a security limitation.", e);
 		}
 	}
-
+	
 	/**
 	 * Reads the value of a field if and ONLY IF it exists.
 	 * @param fieldIndex - index of the field.
@@ -282,22 +288,27 @@ public class StructureModifier<TField> {
 	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
 	public StructureModifier<TField> write(int fieldIndex, TField value) throws FieldAccessException {
+		if (target == null)
+			throw new IllegalStateException("Cannot read from a null target!");
+
 		if (fieldIndex < 0)
 			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
+
+		if (fieldIndex == 0 && data.size() == 0)
+			throw new FieldAccessException(String.format("No field with type %s exists in class %s.", targetType.getName(), target.getClass().getName()));
+
 		if (fieldIndex >= data.size())
 			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
-		if (target == null)
-			throw new IllegalStateException("Cannot write to a null target");
-		
+
 		// Use the converter, if it exists
 		Object obj = needConversion() ? converter.getGeneric(getFieldType(fieldIndex), value) : value;
-		
+
 		try {
 			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Cannot read field due to a security limitation.", e);
 		}
-		
+
 		// Make this method chainable
 		return this;
 	}
