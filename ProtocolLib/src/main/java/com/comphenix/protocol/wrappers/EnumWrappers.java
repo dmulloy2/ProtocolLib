@@ -46,6 +46,7 @@ public abstract class EnumWrappers {
 	 * Represents a native game mode in Minecraft.
 	 * <p>
 	 * Not to be confused with {@link GameMode} in Bukkit.
+	 * 
 	 * @author Kristian
 	 */
 	public enum NativeGameMode {
@@ -59,6 +60,49 @@ public abstract class EnumWrappers {
 		 * @deprecated Replaced by NOT_SET
 		 */
 		NONE;
+
+		/**
+		 * Gets this NativeGameMode's Bukkit equivalent.
+		 * <p>
+		 * Note: There is not a Bukkit equivalent for NOT_SET or NONE
+		 * 
+		 * @return The Bukkit equivalent, or null if one does not exist.
+		 */
+		public GameMode toBukkit() {
+			switch (this) {
+				case ADVENTURE:
+					return GameMode.ADVENTURE;
+				case CREATIVE:
+					return GameMode.CREATIVE;
+				case SPECTATOR:
+					return GameMode.SPECTATOR;
+				case SURVIVAL:
+					return GameMode.SURVIVAL;
+				default:
+					return null;
+			}
+		}
+
+		/**
+		 * Obtains the given GameMode's NativeGameMode equivalent.
+		 * 
+		 * @param mode Bukkit GameMode
+		 * @return The NativeGameMode equivalent, or null if one does not exist.
+		 */
+		public static NativeGameMode fromBukkit(GameMode mode) {
+			switch (mode) {
+				case ADVENTURE:
+					return ADVENTURE;
+				case CREATIVE:
+					return CREATIVE;
+				case SPECTATOR:
+					return SPECTATOR;
+				case SURVIVAL:
+					return SURVIVAL;
+				default:
+					return null;
+			}
+		}
 	}
 
 	public enum ResourcePackStatus {
