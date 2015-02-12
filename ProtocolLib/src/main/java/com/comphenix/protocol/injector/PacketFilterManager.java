@@ -81,7 +81,7 @@ import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
 import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.utility.BukkitUtil;
+import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -509,7 +509,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 					unhookTask.cancel();
 				else
 					// Inject our hook into already existing players
-					initializePlayers(BukkitUtil.getOnlinePlayers());
+					initializePlayers(Util.getOnlinePlayers());
 			}
 		}
 	}
@@ -530,7 +530,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 					@Override
 					public void run() {
 						// Inject our hook into already existing players
-						uninitializePlayers(BukkitUtil.getOnlinePlayers());
+						uninitializePlayers(Util.getOnlinePlayers());
 					}
 				});
 			}
@@ -710,7 +710,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	@Override
 	public void broadcastServerPacket(PacketContainer packet) {
 		Preconditions.checkNotNull(packet, "packet cannot be NULL.");
-		broadcastServerPacket(packet, BukkitUtil.getOnlinePlayers());
+		broadcastServerPacket(packet, Util.getOnlinePlayers());
 	}
 
 	@Override

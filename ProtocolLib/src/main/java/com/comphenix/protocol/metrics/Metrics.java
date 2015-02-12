@@ -69,7 +69,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 
-import com.comphenix.protocol.utility.BukkitUtil;
+import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.utility.WrappedScheduler;
 
 /**
@@ -375,7 +375,7 @@ public class Metrics {
         boolean onlineMode = Bukkit.getServer().getOnlineMode(); // TRUE if online mode is enabled
         String pluginVersion = description.getVersion();
         String serverVersion = Bukkit.getVersion();
-        int playersOnline = BukkitUtil.getOnlinePlayers().size();
+        int playersOnline = Util.getOnlinePlayers().size();
 
         // END server software specific section -- all code below does not use any code outside of this class / Java
 

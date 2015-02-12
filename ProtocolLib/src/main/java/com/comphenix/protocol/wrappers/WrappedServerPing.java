@@ -28,7 +28,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.BukkitUtil;
+import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Charsets;
@@ -260,7 +260,7 @@ public class WrappedServerPing extends AbstractWrapper {
 				// Recreate the count and maximum
 				Server server = Bukkit.getServer();
 				setPlayersMaximum(server.getMaxPlayers());
-				setPlayersOnline(BukkitUtil.getOnlinePlayers().size());
+				setPlayersOnline(Util.getOnlinePlayers().size());
 			} else {
 				PLAYERS.set(handle, players = null);
 			}
