@@ -24,12 +24,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.PluginContext;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.instances.BannedGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -178,6 +182,8 @@ public class StructureModifier<TField> {
 		this.subtypeCache = subTypeCache;
 		this.useStructureCompiler = useStructureCompiler;
 	}
+
+	private static final List<String> BROKEN_PLUGINS = Util.asList("TagAPI");
 	
 	/**
 	 * Reads the value of a field given its index.
@@ -185,8 +191,22 @@ public class StructureModifier<TField> {
 	 * @return Value of the field.
 	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
-	@SuppressWarnings("unchecked")
 	public TField read(int fieldIndex) throws FieldAccessException {
+		try {
+			return readInternal(fieldIndex);
+		} catch (FieldAccessException ex) {
+			String plugin = PluginContext.getPluginCaller(ex);
+			if (BROKEN_PLUGINS.contains(plugin)) {
+				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by broken plugin {0}.", plugin);
+				ProtocolLibrary.log(Level.WARNING, "It is advised that you remove it.");
+			}
+
+			throw ex;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private TField readInternal(int fieldIndex) throws FieldAccessException {
 		if (target == null)
 			throw new IllegalStateException("Cannot read from a null target!");
 
@@ -288,6 +308,20 @@ public class StructureModifier<TField> {
 	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
 	public StructureModifier<TField> write(int fieldIndex, TField value) throws FieldAccessException {
+		try {
+			return writeInternal(fieldIndex, value);
+		} catch (FieldAccessException ex) {
+			String plugin = PluginContext.getPluginCaller(ex);
+			if (BROKEN_PLUGINS.contains(plugin)) {
+				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by broken plugin {0}.", plugin);
+				ProtocolLibrary.log(Level.WARNING, "It is advised that you remove it.");
+			}
+
+			throw ex;
+		}
+	}
+
+	private StructureModifier<TField> writeInternal(int fieldIndex, TField value) throws FieldAccessException {
 		if (target == null)
 			throw new IllegalStateException("Cannot read from a null target!");
 

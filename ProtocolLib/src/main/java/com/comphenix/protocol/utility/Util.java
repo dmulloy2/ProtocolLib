@@ -1,6 +1,7 @@
 package com.comphenix.protocol.utility;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -44,5 +45,14 @@ public class Util {
 		}
 
 		return (List<Player>) Bukkit.getOnlinePlayers();
+	}
+
+	public static <E> List<E> asList(E... elements) {
+		List<E> list = new ArrayList<E>();
+		for (E element : elements) {
+			list.add(element);
+		}
+
+		return list;
 	}
 }

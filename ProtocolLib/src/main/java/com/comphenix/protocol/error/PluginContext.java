@@ -34,6 +34,7 @@ public final class PluginContext {
 				return caller;
 			}
 		}
+
 		return null;
 	}
 	
@@ -41,25 +42,25 @@ public final class PluginContext {
 	 * Lookup the plugin that this method invocation belongs to, and return its file name.
 	 * @param element - the method invocation.
 	 * @return Plugin name, or NULL if not found.
-	 * 
 	 */
 	public static String getPluginName(StackTraceElement element) {
 		try {
-			if (Bukkit.getServer() == null)
+			if (Bukkit.getServer() == null) {
 				return null;
+			}
+	
 			CodeSource codeSource = Class.forName(element.getClassName()).getProtectionDomain().getCodeSource();
-
 			if (codeSource != null) {
 				String encoding = codeSource.getLocation().getPath();
 				File path = new File(URLDecoder.decode(encoding, "UTF-8"));
 				File plugins = getPluginFolder();
 				
 				if (plugins != null && folderContains(plugins, path)) {
-					return path.getName();
+					return path.getName().replaceAll(".jar", "");
 				}
 			}
+
 			return null; // Cannot find it
-			
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException("Cannot lookup plugin name.", e);
 		} catch (ClassNotFoundException e) {
@@ -86,6 +87,7 @@ public final class PluginContext {
 		        return true;
 		    file = file.getParentFile();
 		}
+
 		return false;
 	}
 	
@@ -96,7 +98,7 @@ public final class PluginContext {
 	private static File getPluginFolder() {
 		File folder = pluginFolder;
 		
-		if (folder == null && Bukkit.getServer() != null) { 
+		if (folder == null && Bukkit.getServer() != null) {
 			Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
 			
 			if (plugins.length > 0) {
@@ -104,6 +106,7 @@ public final class PluginContext {
 				pluginFolder = folder;
 			}
 		}
+
 		return folder;
 	}
 }
