@@ -29,8 +29,8 @@
       <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
     <repository>
-      <id>comphenix-repo</id>
-      <url>http://repo.comphenix.net/content/groups/public/</url>
+      <id>shadowvolt-repo</id>
+      <url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
     </repository>
   </repositories>
 
