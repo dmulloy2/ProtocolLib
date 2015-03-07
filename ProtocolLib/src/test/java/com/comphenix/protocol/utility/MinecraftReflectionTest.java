@@ -4,12 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import net.minecraft.server.v1_8_R1.ChatComponentText;
-import net.minecraft.server.v1_8_R1.ChatSerializer;
-import net.minecraft.server.v1_8_R1.IChatBaseComponent;
-import net.minecraft.server.v1_8_R1.ServerPing;
-import net.minecraft.server.v1_8_R1.ServerPingPlayerSample;
-import net.minecraft.server.v1_8_R1.ServerPingServerData;
+import net.minecraft.server.v1_8_R2.ChatComponentText;
+import net.minecraft.server.v1_8_R2.IChatBaseComponent;
+import net.minecraft.server.v1_8_R2.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.v1_8_R2.ServerPing;
+import net.minecraft.server.v1_8_R2.ServerPing.ServerData;
+import net.minecraft.server.v1_8_R2.ServerPing.ServerPingPlayerSample;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -96,7 +96,7 @@ public class MinecraftReflectionTest {
 
 	@Test
 	public void testServerPingServerData() {
-		assertEquals(ServerPingServerData.class, MinecraftReflection.getServerPingServerDataClass());
+		assertEquals(ServerData.class, MinecraftReflection.getServerPingServerDataClass());
 	}
 
 //	@Test

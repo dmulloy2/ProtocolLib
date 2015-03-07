@@ -3,21 +3,20 @@ package com.comphenix.protocol;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import net.minecraft.server.v1_8_R1.Block;
-import net.minecraft.server.v1_8_R1.Item;
-import net.minecraft.server.v1_8_R1.StatisticList;
+import net.minecraft.server.v1_8_R2.Block;
+import net.minecraft.server.v1_8_R2.Item;
+import net.minecraft.server.v1_8_R2.StatisticList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_8_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_8_R2.inventory.CraftItemFactory;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
-// Will have to be updated for every version though
 
 /**
  * Used to ensure that ProtocolLib and Bukkit is prepared to be tested.
@@ -39,7 +38,7 @@ public class BukkitInitialization {
 			initializePackage();
 
 			try {
-				Block.R(); // Block.register();
+				Block.S(); // Block.register();
 				Item.t(); // Item.register();
 				StatisticList.a(); // StatisticList.register();
 			} catch (Throwable ex) {

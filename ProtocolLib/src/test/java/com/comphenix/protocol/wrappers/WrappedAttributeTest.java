@@ -4,11 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collection;
 import java.util.List;
 
-import net.minecraft.server.v1_8_R1.AttributeModifier;
-import net.minecraft.server.v1_8_R1.AttributeSnapshot;
-import net.minecraft.server.v1_8_R1.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_8_R2.AttributeModifier;
+import net.minecraft.server.v1_8_R2.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_8_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -33,13 +34,13 @@ public class WrappedAttributeTest {
 	@Before
 	public void setUp() {
 		// Create a couple of modifiers
-		doubleModifier = 
+		doubleModifier =
 			WrappedAttributeModifier.newBuilder().
 			name("Double Damage").
 			amount(1).
 			operation(Operation.ADD_PERCENTAGE).
 			build();
-		constantModifier = 
+		constantModifier =
 			WrappedAttributeModifier.newBuilder().
 			name("Damage Bonus").
 			amount(5).
@@ -84,9 +85,15 @@ public class WrappedAttributeTest {
 		for (WrappedAttributeModifier wrapper : attribute.getModifiers()) {
 			modifiers.add((AttributeModifier) wrapper.getHandle());
 		}
-		return new AttributeSnapshot(
-			(PacketPlayOutUpdateAttributes) attribute.getParentPacket().getHandle(), 
-			attribute.getAttributeKey(), attribute.getBaseValue(), modifiers);
+
+		class PacketAccessor extends PacketPlayOutUpdateAttributes {
+
+			public AttributeSnapshot attributeSnapshot(String string, double d, Collection<AttributeModifier> coll) {
+				return new AttributeSnapshot(string, d, coll);
+			}
+		}
+
+		return new PacketAccessor().attributeSnapshot(attribute.getAttributeKey(), attribute.getBaseValue(), modifiers);
 	}
 	
 	private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {

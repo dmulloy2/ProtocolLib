@@ -21,12 +21,13 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.server.v1_8_R1.AttributeModifier;
-import net.minecraft.server.v1_8_R1.AttributeSnapshot;
-import net.minecraft.server.v1_8_R1.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_8_R2.AttributeModifier;
+import net.minecraft.server.v1_8_R2.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_8_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -34,7 +35,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.WorldType;
-import org.bukkit.craftbukkit.v1_8_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_8_R2.inventory.CraftItemFactory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.junit.BeforeClass;
@@ -366,8 +367,17 @@ public class PacketContainerTest {
 		// Initialize some test data
 		List<AttributeModifier> modifiers = Lists.newArrayList(
 			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, 0));
-		AttributeSnapshot snapshot = new AttributeSnapshot(
-				(PacketPlayOutUpdateAttributes) attribute.getHandle(), "generic.Maxhealth", 20.0, modifiers);
+
+		// TODO This is hopefully just a temporary solution,
+		// but situations like this might be issues elsewhere
+		class PacketAccessor extends PacketPlayOutUpdateAttributes {
+
+			public AttributeSnapshot attributeSnapshot(String string, double d, Collection<AttributeModifier> coll) {
+				return new AttributeSnapshot(string, d, coll);
+			}
+		};
+
+		AttributeSnapshot snapshot = new PacketAccessor().attributeSnapshot("generic.Maxhealth", 20.0, modifiers);
 
 		attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 		PacketContainer cloned = attribute.deepClone();

@@ -781,28 +781,18 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getChatSerializerClass() {
 		try {
-			return getMinecraftClass("ChatSerializer");
+			return getMinecraftClass("IChatBaseComponent.ChatSerializer");
 		} catch (RuntimeException e) {
-			// Analyse the ASM
+			// ChatSerializer was moved into IChatBaseComponent in 1.8.3,
+			// but it was independent in 1.7-1.8
 			try {
-				List<AsmMethod> methodCalls = ClassAnalyser.getDefault().getMethodCalls(
-					PacketType.Play.Server.CHAT.getPacketClass(),
-					MinecraftMethods.getPacketReadByteBufMethod()
-				);
-				Class<?> packetSerializer = getPacketDataSerializerClass();
-
-				for (AsmMethod method : methodCalls) {
-					Class<?> owner = method.getOwnerClass();
-
-					if (isMinecraftClass(owner) && !owner.equals(packetSerializer)) {
-						return setMinecraftClass("ChatSerializer", owner);
-					}
-				}
-			} catch (Exception e1) {
-				throw new IllegalStateException("Cannot find ChatSerializer class.", e);
+				return getMinecraftClass("ChatSerializer");
+			} catch (RuntimeException e1) {
+				// TODO: Figure out a good fallback
 			}
+
+			throw new IllegalStateException("Could not find ChatSerializer class.", e);
 		}
-		throw new IllegalStateException("Cannot find ChatSerializer class.");
 	}
 
 	/**
@@ -840,7 +830,7 @@ public class MinecraftReflection {
 			throw new IllegalStateException("ServerPingServerData is only supported in 1.7.2.");
 
 		try {
-			return getMinecraftClass("ServerPingServerData");
+			return getMinecraftClass("ServerPing.ServerData");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
 
@@ -863,7 +853,7 @@ public class MinecraftReflection {
 			throw new IllegalStateException("ServerPingPlayerSample is only supported in 1.7.2.");
 
 		try {
-			return getMinecraftClass("ServerPingPlayerSample");
+			return getMinecraftClass("ServerPing.ServerPingPlayerSample");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
 
