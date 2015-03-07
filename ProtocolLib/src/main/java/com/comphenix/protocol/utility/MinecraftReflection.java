@@ -74,6 +74,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
 import com.mojang.authlib.GameProfile;
 
 /**
@@ -781,16 +782,9 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getChatSerializerClass() {
 		try {
-			return getMinecraftClass("IChatBaseComponent.ChatSerializer");
+			return getMinecraftClass("IChatBaseComponent$ChatSerializer", "ChatSerializer");
 		} catch (RuntimeException e) {
-			// ChatSerializer was moved into IChatBaseComponent in 1.8.3,
-			// but it was independent in 1.7-1.8
-			try {
-				return getMinecraftClass("ChatSerializer");
-			} catch (RuntimeException e1) {
-				// TODO: Figure out a good fallback
-			}
-
+			// TODO: Figure out a functional fallback
 			throw new IllegalStateException("Could not find ChatSerializer class.", e);
 		}
 	}
@@ -830,7 +824,7 @@ public class MinecraftReflection {
 			throw new IllegalStateException("ServerPingServerData is only supported in 1.7.2.");
 
 		try {
-			return getMinecraftClass("ServerPing.ServerData");
+			return getMinecraftClass("ServerPing$ServerData", "ServerPingServerData");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
 
@@ -853,7 +847,7 @@ public class MinecraftReflection {
 			throw new IllegalStateException("ServerPingPlayerSample is only supported in 1.7.2.");
 
 		try {
-			return getMinecraftClass("ServerPing.ServerPingPlayerSample");
+			return getMinecraftClass("ServerPing$ServerPingPlayerSample", "ServerPingPlayerSample");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
 
@@ -1697,11 +1691,11 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieve the google.gson.Gson class used by Minecraft.
+	 * Retrieve the Gson class used by Minecraft.
 	 * @return The GSON class.
 	 */
 	public static Class<?> getMinecraftGsonClass() {
-		return getClass("org.bukkit.craftbukkit.libs.com.google.gson.Gson");
+		return Gson.class;
 	}
 
 	/**
@@ -1942,10 +1936,13 @@ public class MinecraftReflection {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	public static Class<?> getCraftBukkitClass(String className) {
-	    return getClass(getCraftBukkitPackage() + "." + className);
+	@SuppressWarnings("rawtypes")
+	public static Class getCraftBukkitClass(String className) {
+		if (craftbukkitPackage == null)
+			craftbukkitPackage = new CachedPackage(getCraftBukkitPackage(), getClassSource());
+		return craftbukkitPackage.getPackageClass(className);
 	}
-
+	
 	/**
 	 * Retrieve the class object of a specific Minecraft class.
 	 * @param className - the specific Minecraft class.
@@ -1953,7 +1950,9 @@ public class MinecraftReflection {
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
 	public static Class<?> getMinecraftClass(String className) {
-	    return getClass(getMinecraftPackage() + "." + className);
+		if (minecraftPackage == null)
+			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
+		return minecraftPackage.getPackageClass(className);
 	}
 
 	/**
