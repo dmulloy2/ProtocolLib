@@ -1500,7 +1500,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getAttributeSnapshotClass() {
 		try {
-			return getMinecraftClass("AttributeSnapshot");
+			return getMinecraftClass("PacketPlayOutUpdateAttributes$AttributeSnapshot", "AttributeSnapshot");
 		} catch (RuntimeException e) {
 			final Class<?> packetUpdateAttributes = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.UPDATE_ATTRIBUTES, true);
 			final String packetSignature = packetUpdateAttributes.getCanonicalName().replace('.', '/');
