@@ -420,10 +420,8 @@ public class MinecraftReflection {
 	/**
 	 * Determine if a given object is a ChunkPosition.
 	 * @param obj - the object to test.
-	 * @deprecated ChunkPosition no longer exists
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
-	@Deprecated
 	public static boolean isChunkPosition(Object obj) {
 		Class<?> chunkPosition = getChunkPositionClass();
 		return obj != null && chunkPosition != null && chunkPosition.isAssignableFrom(obj.getClass());
@@ -567,16 +565,15 @@ public class MinecraftReflection {
 			return getMinecraftClass("EntityPlayer");
 		} catch (RuntimeException e) {
 			try {
-				// A fairly stable method
-				Method detect = FuzzyReflection.fromClass(getCraftBukkitClass("CraftServer")).
-									getMethodByName("detectListNameConflict");
+				// Grab CraftPlayer's handle
+				Method getHandle = FuzzyReflection
+						.fromClass(getCraftBukkitClass("entity.CraftPlayer"))
+						.getMethodByName("getHandle");
 
-				// EntityPlayer is then the first parameter
-				return detect.getParameterTypes()[0];
-
-			} catch (IllegalArgumentException ex) {
-				// Last resort
-				return fallbackMethodReturn("EntityPlayer", "entity.CraftPlayer", "getHandle");
+				// EntityPlayer is the return type
+				return setMinecraftClass("EntityPlayer", getHandle.getReturnType());
+			} catch (IllegalArgumentException e1) {
+				throw new RuntimeException("Could not find EntityPlayer class.", e1);
 			}
 		}
 	}
@@ -609,7 +606,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getEntityClass() {
 		try {
-		return getMinecraftClass("Entity");
+			return getMinecraftClass("Entity");
 		} catch (RuntimeException e) {
 			return fallbackMethodReturn("Entity", "entity.CraftEntity", "getHandle");
 		}
@@ -828,13 +825,14 @@ public class MinecraftReflection {
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
 
-			// Find a server ping object
-			AbstractFuzzyMatcher<Class<?>> serverDataContract = FuzzyClassContract.newBuilder().
-				constructor(FuzzyMethodContract.newBuilder().parameterExactArray(String.class, int.class)).
-				build().
-			and(getMinecraftObjectMatcher());
+			for (Field field : FuzzyReflection.fromClass(serverPing, true).getFields()) {
+				Class<?> clazz = field.getType();
+				if (clazz.getName().contains("ServerData")) {
+					return setMinecraftClass("ServerData", clazz);
+				}
+			}
 
-			return setMinecraftClass("ServerPingServerData", getTypeFromField(serverPing, serverDataContract));
+			throw new IllegalStateException("Could not find ServerData class.");
 		}
 	}
 
@@ -1172,30 +1170,27 @@ public class MinecraftReflection {
 
 	/**
 	 * Retrieves the ChunkPosition class.
-	 * 
-	 * @deprecated ChunkPosition no longer exists. Replaced by BlockPosition.
+	 *
 	 * @return The ChunkPosition class.
 	 */
-	@Deprecated
 	public static Class<?> getChunkPositionClass() {
 		try {
 			return getMinecraftClass("ChunkPosition");
 		} catch (RuntimeException e) {
-			return null;
-//			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
-//
-//			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
-//			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder()
-//					.banModifier(Modifier.STATIC)
-//					.parameterMatches(getMinecraftObjectMatcher(), 0)
-//					.parameterExactType(String.class, 1)
-//					.parameterExactType(int.class, 2)
-//					.parameterExactType(int.class, 3)
-//					.parameterExactType(int.class, 4)
-//					.build();
-//
-//			return setMinecraftClass("ChunkPosition",
-//					FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType());
+			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
+
+			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
+			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder()
+					.banModifier(Modifier.STATIC)
+					.parameterMatches(getMinecraftObjectMatcher(), 0)
+					.parameterExactType(String.class, 1)
+					.parameterExactType(int.class, 2)
+					.parameterExactType(int.class, 3)
+					.parameterExactType(int.class, 4)
+					.build();
+
+			return setMinecraftClass("ChunkPosition",
+					FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType());
 		}
 	}
 
@@ -1223,8 +1218,8 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieves the Vec3d class.
-	 * @return The Vec3d class.
+	 * Retrieves the Vec3D class.
+	 * @return The Vec3D class.
 	 */
 	public static Class<?> getVec3DClass() {
 		try {
@@ -1239,7 +1234,6 @@ public class MinecraftReflection {
 	 * Retrieve the ChunkCoordinates class.
 	 * @return The ChunkPosition class.
 	 */
-	@Deprecated
 	public static Class<?> getChunkCoordinatesClass() {
 		try {
 			return getMinecraftClass("ChunkCoordinates");
@@ -1886,7 +1880,7 @@ public class MinecraftReflection {
 	 * @return The PlayerInfoData class
 	 */
 	public static Class<?> getPlayerInfoDataClass() {
-		return getMinecraftClass("PlayerInfoData");
+		return getMinecraftClass("PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
 	}
 
 	/**
@@ -1936,8 +1930,7 @@ public class MinecraftReflection {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Class getCraftBukkitClass(String className) {
+	public static Class<?> getCraftBukkitClass(String className) {
 		if (craftbukkitPackage == null)
 			craftbukkitPackage = new CachedPackage(getCraftBukkitPackage(), getClassSource());
 		return craftbukkitPackage.getPackageClass(className);
@@ -1990,6 +1983,7 @@ public class MinecraftReflection {
 			// Just use the default class loader
 			classSource = ClassSource.fromClassLoader();
 		}
+
 		return classSource;
 	}
 
@@ -2004,7 +1998,7 @@ public class MinecraftReflection {
 		try {
 			// Try the main class first
 			return getMinecraftClass(className);
-		} catch (RuntimeException e1) {
+		} catch (RuntimeException e) {
 			Class<?> success = null;
 
 			// Try every alias too
@@ -2012,8 +2006,8 @@ public class MinecraftReflection {
 				try {
 					success = getMinecraftClass(alias);
 					break;
-				} catch (RuntimeException e2) {
-					// Swallov
+				} catch (RuntimeException e1) {
+					// Just swallow it...
 				}
 			}
 
@@ -2023,11 +2017,7 @@ public class MinecraftReflection {
 				return success;
 			} else {
 				// Hack failed
-				throw new RuntimeException(
-					String.format("Unable to find %s (%s)",
-								  className,
-								  Joiner.on(", ").join(aliases))
-					);
+				throw new RuntimeException(String.format("Unable to find %s (%s)", className, Joiner.on(", ").join(aliases)));
 			}
 		}
 	}
