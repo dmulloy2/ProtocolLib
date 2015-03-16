@@ -42,7 +42,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	/**
 	 * Regular expression used to parse version strings.
 	 */
-	private static final String VERSION_PATTERN = ".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)";
+	private static final Pattern VERSION_PATTERN = Pattern.compile(".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)");
 
 	/**
 	 * Version 1.8 - the "bountiful" update.
@@ -293,8 +293,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	 * @throws IllegalStateException If we could not parse the version string.
 	 */
 	public static String extractVersion(String text) {
-		Pattern versionPattern = Pattern.compile(VERSION_PATTERN);
-		Matcher version = versionPattern.matcher(text);
+		Matcher version = VERSION_PATTERN.matcher(text);
 		
 		if (version.matches() && version.group(1) != null) {
 			return version.group(1);
