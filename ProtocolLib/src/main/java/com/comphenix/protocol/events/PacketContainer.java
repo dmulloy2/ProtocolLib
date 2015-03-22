@@ -537,10 +537,8 @@ public class PacketContainer implements Serializable {
 	 * This modifier will automatically marshall between the visible ProtocolLib ChunkPosition and the
 	 * internal Minecraft ChunkPosition.
 	 * 
-	 * @deprecated ChunkPosition no longer exists.
 	 * @return A modifier for ChunkPosition list fields.
 	 */
-	@Deprecated
 	public StructureModifier<List<ChunkPosition>> getPositionCollectionModifier() {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
