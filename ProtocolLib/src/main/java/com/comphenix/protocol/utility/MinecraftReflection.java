@@ -1177,7 +1177,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("ChunkPosition");
 		} catch (RuntimeException e) {
-			Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
+			/* Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
 
 			// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
 			FuzzyMethodContract selected = FuzzyMethodContract.newBuilder()
@@ -1189,8 +1189,8 @@ public class MinecraftReflection {
 					.parameterExactType(int.class, 4)
 					.build();
 
-			return setMinecraftClass("ChunkPosition",
-					FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType());
+			return setMinecraftClass("ChunkPosition", FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType()); */
+			return null;
 		}
 	}
 
