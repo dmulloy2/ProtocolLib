@@ -404,7 +404,6 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	 * @return TRUE if it does, FALSE otherwise.
 	 */
 	public boolean isMinecraftAsync(PacketEvent event) throws FieldAccessException {
-		
 		if (isMinecraftAsync == null && !alwaysSync) {
 			try {
 				isMinecraftAsync = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethodByName("a_.*");
@@ -419,7 +418,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 				} else if (methods.size() == 1) {
 					// We're in 1.2.5
 					alwaysSync = true;
-				} else if (MinecraftVersion.getCurrentVersion().equals(MinecraftVersion.BOUNTIFUL_UPDATE)) {
+				} else if (MinecraftVersion.getCurrentVersion().isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE)) {
 					// The centralized async marker was removed in 1.8
 					// Incoming chat packets can be async
 					if (event.getPacketType() == PacketType.Play.Client.CHAT) {
@@ -436,7 +435,8 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 						return false;
 					}
 				} else {
-					ProtocolLibrary.log(Level.WARNING, "Cannot determine asynchronous state of packets!");
+					ProtocolLibrary.log(Level.INFO, "Could not determine asynchronous state of packets.");
+					ProtocolLibrary.log(Level.INFO, "This can probably be ignored.");
 					alwaysSync = true;
 				}
 			}

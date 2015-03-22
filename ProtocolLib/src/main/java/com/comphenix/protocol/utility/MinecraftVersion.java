@@ -255,6 +255,13 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 					compare(getSnapshot(), o.getSnapshot(), Ordering.natural().nullsFirst()).
 					result();
 	}
+
+	public boolean isAtLeast(MinecraftVersion other) {
+		if (other == null)
+			return false;
+
+		return compareTo(other) >= 0;
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
