@@ -253,6 +253,7 @@ public class NettyProtocolInjector implements ChannelListener {
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
 			return packetQueued(container, injector.getPlayer(), marker);
 		}
+
 		// Don't change anything
 		return null;
     }
@@ -265,6 +266,7 @@ public class NettyProtocolInjector implements ChannelListener {
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
 			return packetReceived(container, injector.getPlayer(), marker);
 		}
+
 		// Don't change anything
 		return null;
 	}
@@ -314,8 +316,8 @@ public class NettyProtocolInjector implements ChannelListener {
 			@Override
 			public void updatePlayer(Player player) {
 				injectionFactory.fromPlayer(player, listener).inject();
-			
 			}
+
 			@Override
 			public void injectPlayer(Player player, ConflictStrategy strategy) {
 				injectionFactory.fromPlayer(player, listener).inject();

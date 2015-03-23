@@ -81,10 +81,10 @@ import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
 import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -1008,6 +1008,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 	/**
 	 * Register this protocol manager on Bukkit.
+	 * 
 	 * @param manager - Bukkit plugin manager that provides player join/leave events.
 	 * @param plugin - the parent plugin.
 	 */
@@ -1020,26 +1021,31 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 		try {
 			manager.registerEvents(new Listener() {
+
 				@EventHandler(priority = EventPriority.LOWEST)
-			    public void onPlayerLogin(PlayerLoginEvent event) {
+				public void onPlayerLogin(PlayerLoginEvent event) {
 					PacketFilterManager.this.onPlayerLogin(event);
 				}
+
 				@EventHandler(priority = EventPriority.LOWEST)
-			    public void onPrePlayerJoin(PlayerJoinEvent event) {
+				public void onPrePlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPrePlayerJoin(event);
 				}
+
 				@EventHandler(priority = EventPriority.MONITOR)
-			    public void onPlayerJoin(PlayerJoinEvent event) {
+				public void onPlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPlayerJoin(event);
-			    }
+				}
+
 				@EventHandler(priority = EventPriority.MONITOR)
-			    public void onPlayerQuit(PlayerQuitEvent event) {
+				public void onPlayerQuit(PlayerQuitEvent event) {
 					PacketFilterManager.this.onPlayerQuit(event);
-			    }
+				}
+
 				@EventHandler(priority = EventPriority.MONITOR)
-			    public void onPluginDisabled(PluginDisableEvent event) {
+				public void onPluginDisabled(PluginDisableEvent event) {
 					PacketFilterManager.this.onPluginDisabled(event, plugin);
-			    }
+				}
 
 			}, plugin);
 

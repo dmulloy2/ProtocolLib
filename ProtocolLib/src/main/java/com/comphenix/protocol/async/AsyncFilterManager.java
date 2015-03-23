@@ -305,22 +305,28 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	/**
 	 * Enqueue a packet for asynchronous processing.
+	 * 
 	 * @param syncPacket - synchronous packet event.
 	 * @param asyncMarker - the asynchronous marker to use.
 	 */
 	public synchronized void enqueueSyncPacket(PacketEvent syncPacket, AsyncMarker asyncMarker) {
 		PacketEvent newEvent = PacketEvent.fromSynchronous(syncPacket, asyncMarker);
-		
+
 		if (asyncMarker.isQueued() || asyncMarker.isTransmitted())
 			throw new IllegalArgumentException("Cannot queue a packet that has already been queued.");
-		
+
 		asyncMarker.setQueuedSendingIndex(asyncMarker.getNewSendingIndex());
-		
-		// Start the process
-		getSendingQueue(syncPacket).enqueue(newEvent);
-		
-		// We know this is occuring on the main thread, so pass TRUE
-		getProcessingQueue(syncPacket).enqueue(newEvent, true);
+
+		// The player is only be null when they're logged out,
+		// so this should be a pretty safe check
+		Player player = newEvent.getPlayer();
+		if (player != null) {
+			// Start the process
+			getSendingQueue(syncPacket).enqueue(newEvent);
+
+			// We know this is occuring on the main thread, so pass TRUE
+			getProcessingQueue(syncPacket).enqueue(newEvent, true);
+		}
 	}
 	
 	@Override
