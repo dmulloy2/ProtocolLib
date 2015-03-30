@@ -448,10 +448,8 @@ public class MinecraftReflection {
 	/**
 	 * Determine if a given object is a ChunkCoordinate.
 	 * @param obj - the object to test.
-	 * @deprecated ChunkCoordinate(s) does not exist.
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
-	@Deprecated
 	public static boolean isChunkCoordinates(Object obj) {
 		Class<?> chunkCoordinates = getChunkCoordinatesClass();
 		return obj != null && chunkCoordinates != null && chunkCoordinates.isAssignableFrom(obj.getClass());
@@ -599,8 +597,7 @@ public class MinecraftReflection {
 		try {
 			return GameProfile.class;
 		} catch (Throwable ex) {
-			// As far as I can tell, the named entity spawn packet is the only packet that uses GameProfiles
-			FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Play.Server.NAMED_ENTITY_SPAWN.getPacketClass(), true);
+			FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Login.Client.START.getPacketClass(), true);
 			FuzzyFieldContract contract = FuzzyFieldContract.newBuilder()
 					.banModifier(Modifier.STATIC)
 					.typeMatches(FuzzyMatchers.matchRegex("(.*)(GameProfile)", 1))
