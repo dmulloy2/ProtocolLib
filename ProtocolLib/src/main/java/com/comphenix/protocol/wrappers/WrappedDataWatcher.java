@@ -1,4 +1,4 @@
-/*
+/**
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
@@ -14,7 +14,6 @@
  *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
-
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
@@ -31,14 +30,12 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
 
 import javax.annotation.Nullable;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
@@ -62,15 +59,15 @@ import com.google.common.collect.Maps;
  */
 public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject> {
 	/**
-	 * Every custom watchable type in Spigot #1628 and above.
+	 * Every custom watchable type in the Spigot protocol hack.
 	 * @author Kristian
 	 */
 	public enum CustomType {
-		BYTE_SHORT("org.spigotmc.ProtocolData$ByteShort", 		0, 	short.class),
-		DUAL_BYTE("org.spigotmc.ProtocolData$DualByte", 		0, 	byte.class, byte.class),
-		HIDDEN_BYTE("org.spigotmc.ProtocolData$HiddenByte", 	0, 	byte.class),
-		INT_BYTE("org.spigotmc.ProtocolData$IntByte", 			2, 	int.class, byte.class),
-		DUAL_INT("org.spigotmc.ProtocolData$DualInt", 			2, 	int.class, int.class);
+		BYTE_SHORT("org.spigotmc.ProtocolData$ByteShort",   0, short.class),
+		DUAL_BYTE("org.spigotmc.ProtocolData$DualByte",     0, byte.class, byte.class),
+		HIDDEN_BYTE("org.spigotmc.ProtocolData$HiddenByte", 0, byte.class),
+		INT_BYTE("org.spigotmc.ProtocolData$IntByte",       2, int.class, byte.class),
+		DUAL_INT("org.spigotmc.ProtocolData$DualInt",       2, int.class, int.class);
 
 		private Class<?> spigotClass;
 		private ConstructorAccessor constructor;
@@ -82,11 +79,11 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 				this.spigotClass = Class.forName(className);
 				this.constructor = Accessors.getConstructorAccessor(spigotClass, parameters);
 				this.secondaryValue = parameters.length > 1 ? Accessors.getFieldAccessor(spigotClass, "value2", true) : null;
-
 			} catch (ClassNotFoundException e) {
-				ProtocolLibrary.log(Level.WARNING, "Unable to find " + className);
+				// ProtocolLibrary.log(Level.WARNING, "Unable to find " + className);
 				this.spigotClass = null;
 			}
+
 			this.typeId = typeId;
 		}
 
