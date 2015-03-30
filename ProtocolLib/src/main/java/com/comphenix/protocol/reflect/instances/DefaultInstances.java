@@ -290,7 +290,6 @@ public class DefaultInstances implements InstanceProvider {
 
 				return createInstance(type, minimum, types, params);
 			}
-			
 		} catch (Exception e) {
 			// Nope, we couldn't create this type. Might for instance be NotConstructableException.
 		}

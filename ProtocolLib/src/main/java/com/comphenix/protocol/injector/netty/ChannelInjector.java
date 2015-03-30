@@ -50,9 +50,9 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapMaker;
-import com.mojang.authlib.GameProfile;
 
 /**
  * Represents a channel injector.
@@ -563,13 +563,14 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			PACKET_LOGIN_CLIENT = loginClass;
 		}
 		if (loginClient == null) {
-			loginClient = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, GameProfile.class, true);
+			loginClient = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, MinecraftReflection.getGameProfileClass(), true);
 			LOGIN_GAME_PROFILE = loginClient;
 		}
 
 		// See if we are dealing with the login packet
 		if (loginClass.equals(packetClass)) {
-			GameProfile profile = (GameProfile) loginClient.get(packet);
+			// GameProfile profile = (GameProfile) loginClient.get(packet);
+			WrappedGameProfile profile = WrappedGameProfile.fromHandle(loginClient.get(packet));
 
 			// Save the channel injector
 			factory.cacheInjector(profile.getName(), this);

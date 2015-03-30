@@ -40,12 +40,21 @@ public class BukkitCloner implements Cloner {
 		List<Class<?>> classes = Lists.newArrayList();
 		
 		classes.add(MinecraftReflection.getItemStackClass());
-		classes.add(MinecraftReflection.getBlockPositionClass());
 		classes.add(MinecraftReflection.getDataWatcherClass());
+
+		// Try to add position classes
+		try {
+			classes.add(MinecraftReflection.getBlockPositionClass());
+		} catch (Throwable ex) { }
+
+		try {
+			classes.add(MinecraftReflection.getChunkPositionClass());
+		} catch (Throwable ex) { }
 
 		if (MinecraftReflection.isUsingNetty()) {
 			classes.add(MinecraftReflection.getServerPingClass());
 		}
+
 		this.clonableClasses = classes.toArray(new Class<?>[0]);
 	}
 			

@@ -12,7 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
-    <powermock.version>1.5</powermock.version>
+    <jarName>ProtocolLib</jarName>
   </properties>
 
   <distributionManagement>
@@ -75,6 +75,7 @@
                   <exclude>org.spigotmc:spigot</exclude>
                   <exclude>org.spigotmc:spigot-api</exclude>
                   <exclude>junit:junit</exclude>
+                  <exclude>com.google*</exclude>
                 </excludes>
               </artifactSet>
             </configuration>
@@ -99,7 +100,7 @@
           <archive>
             <addMavenDescriptor>false</addMavenDescriptor>
           </archive>
-          <finalName>${project.name}</finalName>
+          <finalName>${jarName}</finalName>
         </configuration>
       </plugin>
 
@@ -186,6 +187,62 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>backwards-compat</id>
+
+      <properties>
+        <jarName>ProtocolLib-Legacy</jarName>
+      </properties>
+
+      <build>
+        <plugins>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>2.3</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <shadedArtifactAttached>false</shadedArtifactAttached>
+                  <createDependencyReducedPom>false</createDependencyReducedPom>
+
+                  <relocations>
+                    <relocation>
+                      <pattern>net.sf</pattern>
+                      <shadedPattern>com.comphenix.net.sf</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.google.common</pattern>
+                      <shadedPattern>com.comphenix.protocol.compat.com.google.common</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.netty</pattern>
+                      <shadedPattern>net.minecraft.util.io.netty</shadedPattern>
+                    </relocation>
+                  </relocations>
+
+                  <artifactSet>
+                    <excludes>
+                      <exclude>org.spigotmc:spigot</exclude>
+                      <exclude>org.spigotmc:spigot-api</exclude>
+                      <exclude>junit:junit</exclude>
+                    </excludes>
+                  </artifactSet>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins>
+      </build>
+
+    </profile>
   </profiles>
 
   <scm>
@@ -264,14 +321,24 @@
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-module-junit4</artifactId>
-      <version>${powermock.version}</version>
+      <version>1.5</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-api-mockito</artifactId>
-      <version>${powermock.version}</version>
+      <version>1.5</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>17.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-all</artifactId>
+      <version>4.0.26.Final</version>
     </dependency>
   </dependencies>
 </project>

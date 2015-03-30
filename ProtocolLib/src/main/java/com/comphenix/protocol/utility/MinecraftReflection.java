@@ -596,8 +596,17 @@ public class MinecraftReflection {
 		if (!isUsingNetty())
 			throw new IllegalStateException("GameProfile does not exist in version 1.6.4 and earlier.");
 
-		// Yay, we can actually refer to it directly
-		return GameProfile.class;
+		try {
+			return GameProfile.class;
+		} catch (Throwable ex) {
+			// As far as I can tell, the named entity spawn packet is the only packet that uses GameProfiles
+			FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Play.Server.NAMED_ENTITY_SPAWN.getPacketClass(), true);
+			FuzzyFieldContract contract = FuzzyFieldContract.newBuilder()
+					.banModifier(Modifier.STATIC)
+					.typeMatches(FuzzyMatchers.matchRegex("(.*)(GameProfile)", 1))
+					.build();
+			return reflection.getField(contract).getType();
+		}
 	}
 
 	/**

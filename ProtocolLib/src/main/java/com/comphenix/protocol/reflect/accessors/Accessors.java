@@ -52,7 +52,7 @@ public final class Accessors {
 	 * @return The field accessor.
 	 * @throws IllegalArgumentException If the field cannot be found.
 	 */
-	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
+	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {
 		// Get a field accessor
 		Field field = FuzzyReflection.fromClass(instanceClass, forceAccess).getFieldByType(null, fieldClass);
 		return Accessors.getFieldAccessor(field);
@@ -65,7 +65,7 @@ public final class Accessors {
 	 * @param forceAccess - whether or not to look for private and protected fields.
 	 * @return The accessors.
 	 */
-	public static FieldAccessor[] getFieldAccessorArray(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {	
+	public static FieldAccessor[] getFieldAccessorArray(Class<?> instanceClass, Class<?> fieldClass, boolean forceAccess) {
 		List<Field> fields = FuzzyReflection.fromClass(instanceClass, forceAccess).getFieldListByType(fieldClass);
 		FieldAccessor[] accessors = new FieldAccessor[fields.size()];
 		
@@ -83,7 +83,7 @@ public final class Accessors {
 	 * @return The value of that field.
 	 * @throws IllegalArgumentException If the field cannot be found.
 	 */
-	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, String fieldName, boolean forceAccess) {	
+	public static FieldAccessor getFieldAccessor(Class<?> instanceClass, String fieldName, boolean forceAccess) {
 		return Accessors.getFieldAccessor(ExactReflection.fromClass(instanceClass, true).getField(fieldName));
 	}
 
@@ -120,9 +120,23 @@ public final class Accessors {
 			 
 			 // Verify the type
 			 if (fieldType.isAssignableFrom(accessor.getField().getType())) {
-				 return accessor; 
+				 return accessor;
 			 }
 			 return null;
+		 } catch (IllegalArgumentException e) {
+			 return null;
+		 }
+	}
+
+	/**
+	 * Retrieve a method accessor for a field with the given name and equivalent type, or NULL.
+	 * @param clazz - the declaration class.
+	 * @param methodName - the method name.
+	 * @return The method accessor, or NULL if not found.
+	 */
+	public static MethodAccessor getMethodAcccessorOrNull(Class<?> clazz, String methodName) {
+		 try {
+			 return Accessors.getMethodAccessor(clazz, methodName);
 		 } catch (IllegalArgumentException e) {
 			 return null;
 		 }
@@ -145,7 +159,7 @@ public final class Accessors {
 	/**
 	 * Retrieve a field accessor that will cache the content of the field.
 	 * <p>
-	 * Note that we don't check if the underlying field has changed after the value has been cached, 
+	 * Note that we don't check if the underlying field has changed after the value has been cached,
 	 * so it's best to use this on final fields.
 	 * @param inner - the accessor.
 	 * @return A cached field accessor.

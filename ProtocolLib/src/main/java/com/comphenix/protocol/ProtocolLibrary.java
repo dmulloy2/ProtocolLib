@@ -83,7 +83,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The minimum version ProtocolLib has been tested with.
 	 */
-	public static final String MINIMUM_MINECRAFT_VERSION = "1.8";
+	public static final String MINIMUM_MINECRAFT_VERSION = "1.0";
 
 	/**
 	 * The maximum version ProtocolLib has been tested with,
