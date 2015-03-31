@@ -74,7 +74,6 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
 import com.mojang.authlib.GameProfile;
 
 /**
@@ -1695,7 +1694,11 @@ public class MinecraftReflection {
 	 * @return The GSON class.
 	 */
 	public static Class<?> getMinecraftGsonClass() {
-		return Gson.class;
+		try {
+			return getClass("com.google.gson.Gson");
+		} catch (RuntimeException e) {
+			return getClass("org.bukkit.craftbukkit.libs.com.google.gson.Gson");
+		}
 	}
 
 	/**

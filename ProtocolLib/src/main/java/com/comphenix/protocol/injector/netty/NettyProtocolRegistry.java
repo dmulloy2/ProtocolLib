@@ -111,8 +111,8 @@ public class NettyProtocolRegistry {
 	private synchronized void initialize() {
 		Object[] protocols = enumProtocol.getEnumConstants();
 
-		// TODO: Fins a better less than 1.7 check
-		if (MinecraftVersion.getCurrentVersion().compareTo(MinecraftVersion.BOUNTIFUL_UPDATE) <= 0) {
+		// TODO: Find a better less than 1.7 check
+		if (MinecraftVersion.getCurrentVersion().compareTo(MinecraftVersion.BOUNTIFUL_UPDATE) < 0) {
 			initialize17();
 			return;
 		}
