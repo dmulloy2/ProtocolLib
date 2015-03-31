@@ -12,6 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
+    <project.build.number></project.build.number>
     <jarName>ProtocolLib</jarName>
   </properties>
 
@@ -131,6 +132,18 @@
   </reporting>
 
   <profiles>
+    <profile>
+      <id>jenkins</id>
+      <activation>
+        <property>
+          <name>env.BUILD_NUMBER</name>
+        </property>
+      </activation>
+      <properties>
+        <project.build.number>-b${env.BUILD_NUMBER}</project.build.number>
+      </properties>
+    </profile>
+
     <profile>
       <id>release-sign-artifacts</id>
       <activation>
