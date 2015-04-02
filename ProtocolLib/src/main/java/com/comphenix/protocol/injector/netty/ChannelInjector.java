@@ -252,6 +252,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			originalChannel.pipeline().addBefore("decoder", "protocol_lib_decoder", this);
 			originalChannel.pipeline().addBefore("protocol_lib_decoder", "protocol_lib_finish", finishHandler);
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
+			originalChannel.pipeline().addLast("protocol_lib_exception_handler", new ExceptionHandler());
 
 			// Intercept all write methods
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
