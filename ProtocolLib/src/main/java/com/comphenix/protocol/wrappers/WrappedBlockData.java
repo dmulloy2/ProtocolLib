@@ -16,11 +16,14 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Modifier;
+
 import org.bukkit.Material;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
@@ -40,12 +43,16 @@ public class WrappedBlockData extends AbstractWrapper {
 
 	static {
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(BLOCK);
-		FROM_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("fromLegacyData", IBLOCK_DATA,
-				new Class<?>[] { int.class }));
+		FuzzyMethodContract contract = FuzzyMethodContract.newBuilder()
+				.banModifier(Modifier.STATIC)
+				.parameterExactType(int.class)
+				.returnTypeExact(IBLOCK_DATA)
+				.build();
+		FROM_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 
 		fuzzy = FuzzyReflection.fromClass(MAGIC_NUMBERS);
 		GET_NMS_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getBlock", BLOCK,
-				new Class<?>[] { int.class }));
+				new Class<?>[] { Material.class }));
 
 		fuzzy = FuzzyReflection.fromClass(IBLOCK_DATA);
 		GET_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getBlock", BLOCK,
@@ -80,7 +87,7 @@ public class WrappedBlockData extends AbstractWrapper {
 	 * @param data New data
 	 */
 	public void setTypeAndData(Material type, int data) {
-		Object nmsBlock = GET_NMS_BLOCK.invoke(null, type.getId());
+		Object nmsBlock = GET_NMS_BLOCK.invoke(null, type);
 		Object blockData = FROM_LEGACY_DATA.invoke(nmsBlock, data);
 		setHandle(blockData);
 	}
@@ -101,8 +108,13 @@ public class WrappedBlockData extends AbstractWrapper {
 	 * @return New BlockData
 	 */
 	public static WrappedBlockData createData(Material type, int data) {
-		Object nmsBlock = GET_NMS_BLOCK.invoke(null, type.getId());
+		Object nmsBlock = GET_NMS_BLOCK.invoke(null, type);
 		Object blockData = FROM_LEGACY_DATA.invoke(nmsBlock, data);
 		return new WrappedBlockData(blockData);
+	}
+
+	@Override
+	public String toString() {
+		return "WrappedBlockData[handle=" + handle + "]";
 	}
 }
