@@ -1,6 +1,6 @@
 /**
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2012 Kristian S. Stangeland
+ *  Copyright (C) 2015 dmulloy2
  *
  *  This program is free software; you can redistribute it and/or modify it under the terms of the
  *  GNU General Public License as published by the Free Software Foundation; either version 2 of
