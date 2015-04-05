@@ -1,7 +1,6 @@
 package com.comphenix.protocol.error;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.CodeSource;
 
@@ -29,7 +28,6 @@ public final class PluginContext {
 		
 		for (int i = 1; i < elements.length; i++) {
 			String caller = getPluginName(elements[i]);
-			
 			if (caller != null && !caller.equals(current)) {
 				return caller;
 			}
@@ -59,13 +57,11 @@ public final class PluginContext {
 					return path.getName().replaceAll(".jar", "");
 				}
 			}
-
-			return null; // Cannot find it
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Cannot lookup plugin name.", e);
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException("Cannot lookup plugin name.", e);
+		} catch (Throwable ex) {
+			// throw new RuntimeException("Cannot lookup plugin name.", ex);
 		}
+
+		return null; // Cannot find it
 	}
 	
 	/**

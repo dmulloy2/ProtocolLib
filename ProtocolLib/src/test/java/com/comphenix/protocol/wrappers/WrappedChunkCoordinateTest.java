@@ -1,9 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 
@@ -12,7 +9,8 @@ public class WrappedChunkCoordinateTest {
 	public static void initializeBukkit() throws IllegalAccessException {
 		BukkitInitialization.initializePackage();
 	}
-	
+
+	/* ChunkCoordinates don't exist anymore
 	@Test
 	public void test() {
 		WrappedChunkCoordinate coordinate = new WrappedChunkCoordinate(1, 2, 3);
@@ -20,5 +18,5 @@ public class WrappedChunkCoordinateTest {
 		assertEquals(1, coordinate.getX());
 		assertEquals(2, coordinate.getY());
 		assertEquals(3, coordinate.getZ());
-	}
+	} */
 }

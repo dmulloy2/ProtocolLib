@@ -26,7 +26,7 @@ public class WrappedGameProfileTest {
 	}
 	
 	@SuppressWarnings("deprecation")
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = RuntimeException.class)
 	public void testNullFailure() {
 		new WrappedGameProfile((String)null, null);
 	}

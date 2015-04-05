@@ -1,4 +1,4 @@
-/*
+/**
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
@@ -14,7 +14,6 @@
  *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
-
 package com.comphenix.protocol;
 
 import java.io.File;
@@ -93,7 +92,7 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2014-09-02";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2015-02-20";
 
 	// Different commands
 	private enum ProtocolCommand {
@@ -200,7 +199,14 @@ public class ProtocolLibrary extends JavaPlugin {
 			MinecraftVersion version = verifyMinecraftVersion();
 
 			unhookTask = new DelayedSingleTask(this);
-			protocolManager = PacketFilterManager.newBuilder().classLoader(getClassLoader()).server(getServer()).library(this).minecraftVersion(version).unhookTask(unhookTask).reporter(reporter).build();
+			protocolManager = PacketFilterManager.newBuilder()
+					.classLoader(getClassLoader())
+					.server(getServer())
+					.library(this)
+					.minecraftVersion(version)
+					.unhookTask(unhookTask)
+					.reporter(reporter)
+					.build();
 
 			// Setup error reporter
 			detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -255,7 +261,8 @@ public class ProtocolLibrary extends JavaPlugin {
 			} catch (ThreadDeath e) {
 				throw e;
 			} catch (Throwable e) {
-				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(command.name(), e.getMessage()).error(e));
+				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND)
+						.messageParam(command.name(), e.getMessage()).error(e));
 			}
 		}
 	}
@@ -347,15 +354,19 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Don't do anything else!
 			if (manager == null)
 				return;
+
 			// Silly plugin reloaders!
 			if (protocolManager == null) {
 				Logger directLogging = Logger.getLogger("Minecraft");
-				String[] message = new String[] { " PROTOCOLLIB DOES NOT SUPPORT PLUGIN RELOADERS. ", " PLEASE USE THE BUILT-IN RELOAD COMMAND. ", };
+				String[] message = new String[] {
+						" ProtocolLib does not support plugin reloaders! ", " Please use the built-in reload command! "
+				};
 
 				// Print as severe
 				for (String line : ChatExtensions.toFlowerBox(message, "*", 3, 1)) {
 					directLogging.severe(line);
 				}
+
 				disablePlugin();
 				return;
 			}
@@ -472,7 +483,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			// We don't need to set internal classes or instances to NULL - that would break the other loaded plugin
 			skipDisable = true;
 
-			throw new IllegalStateException(String.format("Detected a newer version of ProtocolLib (%s) in plugin folder than the current (%s). Disabling.", newestVersion.getVersion(), currentVersion.getVersion()));
+			throw new IllegalStateException(String.format(
+					"Detected a newer version of ProtocolLib (%s) in plugin folder than the current (%s). Disabling.",
+					newestVersion.getVersion(), currentVersion.getVersion()));
 		}
 	}
 

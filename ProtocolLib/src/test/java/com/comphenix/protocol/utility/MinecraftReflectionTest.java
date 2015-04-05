@@ -6,10 +6,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import net.minecraft.server.v1_8_R2.ChatComponentText;
 import net.minecraft.server.v1_8_R2.IChatBaseComponent;
-import net.minecraft.server.v1_8_R2.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.v1_8_R2.ServerPing;
-import net.minecraft.server.v1_8_R2.ServerPing.ServerData;
-import net.minecraft.server.v1_8_R2.ServerPing.ServerPingPlayerSample;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -64,10 +60,10 @@ public class MinecraftReflectionTest {
 		MinecraftReflection.getBukkitEntity("Hello");
 	}
 
-//	@Test
-//	public void testNbtStreamTools() {
-//		assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
-//	}
+	/* @Test
+	public void testNbtStreamTools() {
+		assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
+	} */
 
 	@Test
 	public void testChatComponent() {
@@ -79,7 +75,7 @@ public class MinecraftReflectionTest {
 		assertEquals(ChatComponentText.class, MinecraftReflection.getChatComponentTextClass());
 	}
 
-	@Test
+	/* @Test
 	public void testChatSerializer() {
 		assertEquals(ChatSerializer.class, MinecraftReflection.getChatSerializerClass());
 	}
@@ -99,13 +95,13 @@ public class MinecraftReflectionTest {
 		assertEquals(ServerData.class, MinecraftReflection.getServerPingServerDataClass());
 	}
 
-//	@Test
-//	public void testChunkCoordIntPair() {
-//		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
-//	}
+	@Test
+	public void testChunkCoordIntPair() {
+		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
+	}
 
-//	@Test
-//	public void testWatchableObject() {
-//		assertEquals(WatchableObject.class, MinecraftReflection.getWatchableObjectClass());
-//	}
+	@Test
+	public void testWatchableObject() {
+		assertEquals(WatchableObject.class, MinecraftReflection.getWatchableObjectClass());
+	} */
 }

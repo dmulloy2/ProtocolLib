@@ -53,7 +53,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ClassAnalyser;
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
@@ -1877,11 +1876,25 @@ public class MinecraftReflection {
 	 */
 	public static Object getMinecraftItemStack(ItemStack stack) {
 		// Make sure this is a CraftItemStack
-		if (!isCraftItemStack(stack))
+		/* if (!isCraftItemStack(stack))
 			stack = getBukkitItemStack(stack);
 
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
-		return unwrapper.unwrapItem(stack);
+		return unwrapper.unwrapItem(stack); */
+
+		if (craftBukkitNMS == null) {
+			try {
+				craftBukkitNMS = getCraftItemStackClass().getMethod("asNMSCopy", ItemStack.class);
+			} catch (Throwable ex) {
+				throw new RuntimeException("Could not find CraftItemStack.asNMSCopy.", ex);
+			}
+		}
+
+		try {
+			return craftBukkitNMS.invoke(null, stack);
+		} catch (Throwable ex) {
+			throw new RuntimeException("Could not obtain NMS ItemStack.", ex);
+		}
 	}
 
 	/**

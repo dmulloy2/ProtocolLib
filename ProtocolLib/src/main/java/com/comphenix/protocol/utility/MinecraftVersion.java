@@ -320,6 +320,10 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 
 	private static MinecraftVersion currentVersion;
 
+	public static void setCurrentVersion(MinecraftVersion version) {
+		currentVersion = version;
+	}
+
 	public static MinecraftVersion getCurrentVersion() {
 		if (currentVersion == null) {
 			currentVersion = fromServerVersion(Bukkit.getVersion());

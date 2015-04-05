@@ -166,47 +166,43 @@ public class MinecraftMethods {
 			enhancer.setSuperclass(MinecraftReflection.getPacketDataSerializerClass());
 			enhancer.setCallback(new MethodInterceptor() {
 				@Override
-				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy)
-						throws Throwable {
-					/* if (method.getName().contains("read"))
+				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+					if (method.getName().contains("read"))
 						throw new ReadMethodException();
 					if (method.getName().contains("write"))
-						throw new WriteMethodException(); */
-					if (method.getName().equals("a"))
-						throw new ReadMethodException();
-					if (method.getName().equals("b"))
 						throw new WriteMethodException();
 					return proxy.invokeSuper(obj, args);
 				}
 			});
-			
+
 			// Create our proxy object
 			Object javaProxy = enhancer.create(
-				new Class<?>[] { ByteBuf.class },
-				new Object[]   { UnpooledByteBufAllocator.DEFAULT.buffer() }
+					new Class<?>[] { ByteBuf.class },
+					new Object[] { UnpooledByteBufAllocator.DEFAULT.buffer() }
 			);
-			
-			Object lookPacket = new PacketContainer(PacketType.Play.Client.BLOCK_PLACE).getHandle();
-			List<Method> candidates = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).
-				getMethodListByParameters(Void.TYPE, new Class<?>[] { MinecraftReflection.getPacketDataSerializerClass() });
-			
+
+			Object lookPacket = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW).getHandle();
+			List<Method> candidates = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass())
+					.getMethodListByParameters(Void.TYPE, new Class<?>[] { MinecraftReflection.getPacketDataSerializerClass() });
+
 			// Look through all the methods
 			for (Method method : candidates) {
 				try {
 					method.invoke(lookPacket, javaProxy);
 				} catch (InvocationTargetException e) {
-					if (e.getCause() instanceof ReadMethodException)
+					if (e.getCause() instanceof ReadMethodException) {
 						// Must be the reader
 						packetReadByteBuf = method;
-					else if (e.getCause() instanceof WriteMethodException)
+					} else if (e.getCause() instanceof WriteMethodException) {
 						packetWriteByteBuf = method;
-					else
-						throw new RuntimeException("Inner exception.", e);
+					} else {
+						// throw new RuntimeException("Inner exception.", e);
+					}
 				} catch (Exception e) {
 					throw new RuntimeException("Generic reflection error.", e);
 				}
 			}
-			
+
 			if (packetReadByteBuf == null)
 				throw new IllegalStateException("Unable to find Packet.read(PacketDataSerializer)");
 			if (packetWriteByteBuf == null)

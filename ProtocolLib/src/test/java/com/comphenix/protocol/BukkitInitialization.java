@@ -3,9 +3,6 @@ package com.comphenix.protocol;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import net.minecraft.server.v1_8_R2.Block;
-import net.minecraft.server.v1_8_R2.Item;
-import net.minecraft.server.v1_8_R2.StatisticList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -17,6 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 /**
  * Used to ensure that ProtocolLib and Bukkit is prepared to be tested.
@@ -37,14 +35,24 @@ public class BukkitInitialization {
 
 			initializePackage();
 
+			/* "Accessed X before bootstrap!
 			try {
-				Block.S(); // Block.register();
-				Item.t(); // Item.register();
-				StatisticList.a(); // StatisticList.register();
+				Block.S(); // Block.register()
 			} catch (Throwable ex) {
-				// Swallow
-				ex.printStackTrace();
+				System.err.println("Failed to register blocks: " + ex);
 			}
+
+			try {
+				Item.t(); // Item.register()
+			} catch (Throwable ex) {
+				System.err.println("Failed to register items: " + ex);
+			}
+
+			try {
+				StatisticList.a(); // StatisticList.register()
+			} catch (Throwable ex) {
+				System.err.println("Failed to register statistics: " + ex);
+			} */
 
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
@@ -69,5 +77,6 @@ public class BukkitInitialization {
 	public static void initializePackage() {
 		// Initialize reflection
 		MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
+		MinecraftVersion.setCurrentVersion(MinecraftVersion.BOUNTIFUL_UPDATE);
 	}
 }

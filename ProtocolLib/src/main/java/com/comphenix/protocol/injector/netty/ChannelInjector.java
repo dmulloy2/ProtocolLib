@@ -3,8 +3,8 @@ package com.comphenix.protocol.injector.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
@@ -17,6 +17,7 @@ import io.netty.util.internal.TypeParameterMatcher;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
@@ -126,9 +127,6 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private ByteToMessageDecoder vanillaDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
 
-	// Our extra handlers
-	private MessageToByteEncoder<Object> protocolEncoder;
-	private ChannelInboundHandler finishHandler;
 	private Deque<PacketEvent> finishQueue = new ArrayDeque<PacketEvent>();
 
 	// The channel listener
@@ -220,7 +218,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					"encode", ChannelHandlerContext.class, Object.class, ByteBuf.class);
 
 			// Intercept sent packets
-			protocolEncoder = new MessageToByteEncoder<Object>() {
+			MessageToByteEncoder<Object> protocolEncoder = new MessageToByteEncoder<Object>() {
 				@Override
 				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 					if (packet instanceof WirePacket) {
@@ -239,7 +237,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			};
 
 			// Intercept recieved packets
-			finishHandler = new ChannelInboundHandlerAdapter() {
+			ChannelInboundHandlerAdapter finishHandler = new ChannelInboundHandlerAdapter() {
 				@Override
 				public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 					// Execute context first
@@ -248,11 +246,24 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				}
 			};
 
+			ChannelHandlerAdapter exceptionHandler = new ChannelHandlerAdapter() {
+				@Override
+				public void exceptionCaught(ChannelHandlerContext context, Throwable ex) throws Exception {
+					if (ex instanceof ClosedChannelException) {
+						// Ignore
+					} else {
+						// TODO Actually handle exceptions?
+						System.err.println("[ProtocolLib] Encountered an uncaught exception in the channel pipeline:");
+						ex.printStackTrace();
+					}
+				}
+			};
+
 			// Insert our handlers - note that we effectively replace the vanilla encoder/decoder
 			originalChannel.pipeline().addBefore("decoder", "protocol_lib_decoder", this);
 			originalChannel.pipeline().addBefore("protocol_lib_decoder", "protocol_lib_finish", finishHandler);
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
-			originalChannel.pipeline().addLast("protocol_lib_exception_handler", new ExceptionHandler());
+			originalChannel.pipeline().addLast("protocol_lib_exception_handler", exceptionHandler);
 
 			// Intercept all write methods
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
@@ -267,6 +278,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 								return this;
 							}
 						}
+
 						return super.addBefore(baseName, name, handler);
 					}
 				};
@@ -776,7 +788,11 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				executeInChannelThread(new Runnable() {
 					@Override
 					public void run() {
-						for (ChannelHandler handler : new ChannelHandler[] { ChannelInjector.this, finishHandler, protocolEncoder }) {
+						String[] handlers = new String[] {
+								"protocol_lib_decoder", "protocol_lib_finish", "protocol_lib_encoder", "protocol_lib_exception_handler"
+						};
+
+						for (String handler : handlers) {
 							try {
 								originalChannel.pipeline().remove(handler);
 							} catch (NoSuchElementException e) {

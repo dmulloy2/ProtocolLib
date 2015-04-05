@@ -1,12 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
-
-import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_8_R2.inventory.CraftItemFactory;
-import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -22,12 +17,12 @@ public class WrappedWatchableObjectTest {
 		BukkitInitialization.initializeItemMeta();
 	}
 	
-	@Test
+	/* @Test
 	public void testItemStack() {
 		final ItemStack stack = new ItemStack(Material.GOLD_AXE);
 		final WrappedWatchableObject test = new WrappedWatchableObject(0, stack);
 	
 		ItemStack value = (ItemStack) test.getValue();
 		assertEquals(value.getType(), stack.getType());
-	}
+	} */
 }
