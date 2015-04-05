@@ -10,18 +10,16 @@ import java.io.IOException;
 
 import net.minecraft.server.v1_8_R2.IntHashMap;
 
-import org.bukkit.craftbukkit.v1_8_R2.inventory.CraftItemFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.BukkitInitialization;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
-@PrepareForTest(CraftItemFactory.class)
+//@PrepareForTest(CraftItemFactory.class)
 public class StreamSerializerTest {
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {

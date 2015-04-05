@@ -1,17 +1,5 @@
 package com.comphenix.protocol;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_8_R2.inventory.CraftItemFactory;
-import org.bukkit.inventory.ItemFactory;
-import org.bukkit.inventory.meta.ItemMeta;
-
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -22,20 +10,21 @@ import com.comphenix.protocol.utility.MinecraftVersion;
  * @author Kristian
  */
 public class BukkitInitialization {
-	private static boolean initialized;
+	// private static boolean initialized;
 
 	/**
 	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing.
 	 * @throws IllegalAccessException If we are unable to initialize Bukkit.
 	 */
 	public static void initializeItemMeta() throws IllegalAccessException {
+		/* None of this works in 1.8
 		if (!initialized) {
 			// Denote that we're done
 			initialized = true;
 
 			initializePackage();
 
-			/* "Accessed X before bootstrap!
+			// "Accessed X before bootstrap!
 			try {
 				Block.S(); // Block.register()
 			} catch (Throwable ex) {
@@ -52,7 +41,7 @@ public class BukkitInitialization {
 				StatisticList.a(); // StatisticList.register()
 			} catch (Throwable ex) {
 				System.err.println("Failed to register statistics: " + ex);
-			} */
+			}
 
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
@@ -68,7 +57,7 @@ public class BukkitInitialization {
 
 			// And the fake item factory
 			FieldUtils.writeStaticField(CraftItemFactory.class, "instance", mockedFactory, true);
-		}
+		} */
 	}
 
 	/**

@@ -26,12 +26,10 @@ import java.util.UUID;
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.WorldType;
-import org.bukkit.craftbukkit.v1_8_R2.inventory.CraftItemFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
@@ -46,7 +44,7 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
-@PrepareForTest(CraftItemFactory.class)
+//@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
 	// Helper converters
 	// private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
