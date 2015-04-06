@@ -270,7 +270,7 @@ public class FieldUtils {
 	 * @throws IllegalAccessException if the field is not made accessible
 	 */
 	public static Object readField(Field field, Object target, boolean forceAccess) throws IllegalAccessException {
-		if (field == null) 
+		if (field == null)
 			throw new IllegalArgumentException("The field must not be null");
 		
 		if (forceAccess && !field.isAccessible()) {
@@ -392,6 +392,22 @@ public class FieldUtils {
 		}
 		// already forced access above, don't repeat it here:
 		writeStaticField(field, value);
+	}
+
+	public static void writeStaticFinalField(Class<?> clazz, String fieldName, Object value, boolean forceAccess) throws Exception {
+		Field field = getField(clazz, fieldName, forceAccess);
+		if (field == null) {
+			throw new IllegalArgumentException("Cannot locate field " + fieldName + " in " + clazz);
+		}
+
+		field.setAccessible(true);
+
+		Field modifiersField = Field.class.getDeclaredField("modifiers");
+		modifiersField.setAccessible(true);
+		modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+		field.setAccessible(true);
+		field.set(null, value);
 	}
 
 	/**

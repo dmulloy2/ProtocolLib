@@ -1,8 +1,19 @@
 package com.comphenix.protocol;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import net.minecraft.server.v1_8_R2.DispenserRegistry;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.inventory.ItemFactory;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.ItemFactoryDelegate;
 
 /**
  * Used to ensure that ProtocolLib and Bukkit is prepared to be tested.
@@ -10,54 +21,42 @@ import com.comphenix.protocol.utility.MinecraftVersion;
  * @author Kristian
  */
 public class BukkitInitialization {
-	// private static boolean initialized;
+	private static boolean initialized;
 
 	/**
 	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing.
 	 * @throws IllegalAccessException If we are unable to initialize Bukkit.
 	 */
 	public static void initializeItemMeta() throws IllegalAccessException {
-		/* None of this works in 1.8
+		// None of this works in 1.8
 		if (!initialized) {
 			// Denote that we're done
 			initialized = true;
 
 			initializePackage();
 
-			// "Accessed X before bootstrap!
-			try {
-				Block.S(); // Block.register()
-			} catch (Throwable ex) {
-				System.err.println("Failed to register blocks: " + ex);
-			}
-
-			try {
-				Item.t(); // Item.register()
-			} catch (Throwable ex) {
-				System.err.println("Failed to register items: " + ex);
-			}
-
-			try {
-				StatisticList.a(); // StatisticList.register()
-			} catch (Throwable ex) {
-				System.err.println("Failed to register statistics: " + ex);
-			}
+			DispenserRegistry.c(); // Basically registers everything
 
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
-			ItemFactory mockedFactory = mock(CraftItemFactory.class);
 			ItemMeta mockedMeta = mock(ItemMeta.class);
+			ItemFactory mockedFactory = new ItemFactoryDelegate(mockedMeta);
 
 			when(mockedServer.getItemFactory()).thenReturn(mockedFactory);
 			when(mockedServer.isPrimaryThread()).thenReturn(true);
-			when(mockedFactory.getItemMeta(any(Material.class))).thenReturn(mockedMeta);
+			// when(mockedFactory.getItemMeta(any(Material.class))).thenReturn(mockedMeta);
 
 			// Inject this fake server
 			FieldUtils.writeStaticField(Bukkit.class, "server", mockedServer, true);
 
-			// And the fake item factory
-			FieldUtils.writeStaticField(CraftItemFactory.class, "instance", mockedFactory, true);
-		} */
+			// TODO Figure this out
+			/* try {
+				FieldUtils.writeStaticFinalField(CraftItemFactory.class, "instance", mockedFactory, true);
+			} catch (Exception ex) {
+				System.err.println("Failed to inject fake item factory: ");
+				ex.printStackTrace();
+			} */
+		}
 	}
 
 	/**

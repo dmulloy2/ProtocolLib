@@ -18,14 +18,20 @@ package com.comphenix.protocol.events;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.lang.reflect.Array;
 import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.WorldType;
+import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,12 +40,18 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.Util;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.google.common.base.Objects;
 
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -47,8 +59,8 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 //@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
 	// Helper converters
-	// private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
-	// private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
+	private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
+	private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
 
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {
@@ -139,6 +151,7 @@ public class PacketContainerTest {
 		testPrimitive(explosion.getStrings(), 0, null, "hello");
 	}
 
+	// TODO Rewrite with chat components
 	/* @Test
 	public void testGetStringArrays() {
 		PacketContainer explosion = new PacketContainer(PacketType.Play.Server.UPDATE_SIGN);
@@ -161,7 +174,7 @@ public class PacketContainerTest {
 		assertArrayEquals(testArray, integers.read(0));
 	}
 
-	/* @Test
+	@Test
 	public void testGetItemModifier() {
 		PacketContainer windowClick = new PacketContainer(PacketType.Play.Client.WINDOW_CLICK);
 
@@ -174,9 +187,9 @@ public class PacketContainerTest {
 		// Insert the goldaxe and check if it's there
 		items.write(0, goldAxe);
 		assertTrue("Item " + goldAxe + " != " + items.read(0), equivalentItem(goldAxe, items.read(0)));
-	} */
+	}
 
-	/* @Test
+	@Test
 	public void testGetItemArrayModifier() {
 		PacketContainer windowItems = new PacketContainer(PacketType.Play.Server.WINDOW_ITEMS);
 		StructureModifier<ItemStack[]> itemAccess = windowItems.getItemArrayModifier();
@@ -197,13 +210,10 @@ public class PacketContainerTest {
 
 		// Check that it is equivalent
 		for (int i = 0; i < itemArray.length; i++) {
-			System.out.println(i);
-			ItemStack element = itemArray[i];
-			System.out.println(element);
-			ItemStack original = comparison[i];
-			System.out.println(original);
+			ItemStack original = itemArray[i];
+			ItemStack written = comparison[i];
 
-			assertTrue(String.format("Array element %s is not the same: %s != %s", i, element, original), equivalentItem(element, original));
+			assertTrue(String.format("Array element %s is not the same: %s != %s", i, original, written), equivalentItem(original, written));
 		}
 	}
 
@@ -215,7 +225,7 @@ public class PacketContainerTest {
 		} else {
 			return first.getType().equals(second.getType());
 		}
-	} */
+	}
 
 	@Test
 	public void testGetWorldTypeModifier() {
@@ -235,7 +245,7 @@ public class PacketContainerTest {
 		assertEquals(testValue, worldAccess.read(0));
 	}
 
-	/* @Test
+	@Test
 	public void testGetNbtModifier() {
 		PacketContainer updateTileEntity = new PacketContainer(PacketType.Play.Server.TILE_ENTITY_DATA);
 
@@ -249,7 +259,7 @@ public class PacketContainerTest {
 
 		assertEquals(compound.getString("test"), result.getString("test"));
 		assertEquals(compound.getList("ages"), result.getList("ages"));
-	} */
+	}
 
 	@Test
 	public void testGetDataWatcherModifier() {
@@ -345,6 +355,7 @@ public class PacketContainerTest {
 		assertEquals("Test", copy.getStrings().read(0));
 	}
 
+	// TODO Deal with inner classes
 	/* @Test
 	public void testAttributeList() {
 		PacketContainer attribute = new PacketContainer(PacketType.Play.Server.UPDATE_ATTRIBUTES);
@@ -361,6 +372,7 @@ public class PacketContainerTest {
 			public AttributeSnapshot attributeSnapshot(String string, double d, Collection<AttributeModifier> coll) {
 				return new AttributeSnapshot(string, d, coll);
 			}
+
 		};
 
 		AttributeSnapshot snapshot = new PacketAccessor().attributeSnapshot("generic.Maxhealth", 20.0, modifiers);
@@ -372,7 +384,7 @@ public class PacketContainerTest {
 		assertEquals(
 				ToStringBuilder.reflectionToString(snapshot, ToStringStyle.SHORT_PREFIX_STYLE),
 				ToStringBuilder.reflectionToString(clonedSnapshot, ToStringStyle.SHORT_PREFIX_STYLE));
-	}
+	} */
 
 	@Test
 	public void testBlocks() {
@@ -380,8 +392,9 @@ public class PacketContainerTest {
 		blockAction.getBlocks().write(0, Material.STONE);
 
 		assertEquals(Material.STONE, blockAction.getBlocks().read(0));
-	} */
+	}
 
+	// TODO Rewrite with MobEffects
 	/* @Test
 	@SuppressWarnings("deprecation")
 	public void testPotionEffect() {
@@ -398,13 +411,15 @@ public class PacketContainerTest {
 		assertEquals(effect.getDuration(), (short) packet.getShorts().read(0));
 	} */
 
-	/* Fails due to weird logger configuration stuff
+	private static final List<PacketType> BLACKLISTED = Util.asList(
+			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD, PacketType.Play.Server.MAP_CHUNK
+	);
+
 	@Test
 	public void testDeepClone() {
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (type == PacketType.Play.Client.CUSTOM_PAYLOAD) {
-				// TODO Handle data serializers
+			if (BLACKLISTED.contains(type)) {
 				continue;
 			}
 
@@ -452,7 +467,7 @@ public class PacketContainerTest {
 				throw new RuntimeException("Failed to serialize packet " + type, e);
 			}
 		}
-	} */
+	}
 
 	@Test
 	public void testPacketType() {
@@ -460,7 +475,7 @@ public class PacketContainerTest {
 	}
 
 	// Convert to objects that support equals()
-	/* private void testEquality(Object a, Object b) {
+	private void testEquality(Object a, Object b) {
 		if (a != null && b != null) {
 			if (MinecraftReflection.isDataWatcher(a)) {
 				a = watchConvert.getSpecific(a);
@@ -482,14 +497,14 @@ public class PacketContainerTest {
 		}
 
 		assertEquals(a, b);
-	} */
+	}
 
 	/**
 	 * Get the underlying array as an object array.
 	 * @param val - array wrapped as an Object.
 	 * @return An object array.
 	 */
-	/* private Object[] getArray(Object val) {
+	private Object[] getArray(Object val) {
 		if (val instanceof Object[])
 			return (Object[]) val;
 		if (val == null)
@@ -501,5 +516,5 @@ public class PacketContainerTest {
 		for (int i = 0; i < arrlength; ++i)
 			outputArray[i] = Array.get(val, i);
 		return outputArray;
-	} */
+	}
 }

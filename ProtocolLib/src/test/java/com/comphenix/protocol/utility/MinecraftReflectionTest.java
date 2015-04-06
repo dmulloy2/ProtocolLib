@@ -5,7 +5,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import net.minecraft.server.v1_8_R2.ChatComponentText;
+import net.minecraft.server.v1_8_R2.ChunkCoordIntPair;
 import net.minecraft.server.v1_8_R2.IChatBaseComponent;
+import net.minecraft.server.v1_8_R2.ServerPing;
+import net.minecraft.server.v1_8_R2.ServerPing.ServerData;
+import net.minecraft.server.v1_8_R2.ServerPing.ServerPingPlayerSample;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -78,7 +82,7 @@ public class MinecraftReflectionTest {
 	/* @Test
 	public void testChatSerializer() {
 		assertEquals(ChatSerializer.class, MinecraftReflection.getChatSerializerClass());
-	}
+	} */
 
 	@Test
 	public void testServerPing() {
@@ -100,7 +104,7 @@ public class MinecraftReflectionTest {
 		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
 	}
 
-	@Test
+	/* @Test
 	public void testWatchableObject() {
 		assertEquals(WatchableObject.class, MinecraftReflection.getWatchableObjectClass());
 	} */

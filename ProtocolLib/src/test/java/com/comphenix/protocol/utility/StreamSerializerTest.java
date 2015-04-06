@@ -10,6 +10,8 @@ import java.io.IOException;
 
 import net.minecraft.server.v1_8_R2.IntHashMap;
 
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +33,7 @@ public class StreamSerializerTest {
 		assertEquals(IntHashMap.class, MinecraftReflection.getIntHashMapClass());
 	}
 	
-	/* @Test
+	@Test
 	public void testSerializer() throws IOException {
 		ItemStack before = new ItemStack(Material.GOLD_AXE);
 		
@@ -41,7 +43,7 @@ public class StreamSerializerTest {
 	
 		assertEquals(before.getType(), after.getType());
 		assertEquals(before.getAmount(), after.getAmount());
-	} */
+	}
 	
 	@Test
 	public void testStrings() throws IOException {
@@ -58,9 +60,9 @@ public class StreamSerializerTest {
 		
 		assertEquals(initial, deserialized);
 	}
-	
-	/* TODO This is actually an issue
-	@Test
+
+	// TODO This is an actual issue
+	/* @Test
 	public void testCompound() throws IOException {
 		StreamSerializer serializer = new StreamSerializer();
 		NbtCompound initial = NbtFactory.ofCompound("tag");

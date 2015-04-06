@@ -720,12 +720,13 @@ public class BukkitConverters {
 		// Initialize if we have't already
 		if (GET_BLOCK == null || GET_BLOCK_ID == null) {
 			Class<?> block = MinecraftReflection.getBlockClass();
-			
+
 			FuzzyMethodContract getIdContract = FuzzyMethodContract.newBuilder().
 					parameterExactArray(block).
 					requireModifier(Modifier.STATIC).
 					build();
 			FuzzyMethodContract getBlockContract = FuzzyMethodContract.newBuilder().
+					returnTypeExact(block).
 					parameterExactArray(int.class).
 					requireModifier(Modifier.STATIC).
 					build();
