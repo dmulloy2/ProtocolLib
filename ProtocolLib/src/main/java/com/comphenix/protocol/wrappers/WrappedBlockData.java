@@ -45,7 +45,7 @@ public class WrappedBlockData extends AbstractWrapper {
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(BLOCK);
 		FuzzyMethodContract contract = FuzzyMethodContract.newBuilder()
 				.banModifier(Modifier.STATIC)
-				.parameterExactType(int.class)
+				.parameterExactArray(int.class)
 				.returnTypeExact(IBLOCK_DATA)
 				.build();
 		FROM_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));

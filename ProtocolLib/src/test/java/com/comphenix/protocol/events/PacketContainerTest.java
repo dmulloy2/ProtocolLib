@@ -27,11 +27,15 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.UUID;
 
+import net.minecraft.server.v1_8_R2.MobEffect;
+
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.WorldType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,11 +44,14 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.Util;
+import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
@@ -52,6 +59,7 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -77,7 +85,7 @@ public class PacketContainerTest {
 		assertEquals(testValue, modifier.read(0));
 	}
 
-	/* private <T> void testObjectArray(StructureModifier<T[]> modifier, int index, T[] initialValue, T[] testValue) {
+	private <T> void testObjectArray(StructureModifier<T[]> modifier, int index, T[] initialValue, T[] testValue) {
 		// Check initial value
 		assertNull(modifier.read(index));
 		modifier.writeDefaults();
@@ -88,7 +96,7 @@ public class PacketContainerTest {
 		// Test assignment
 		modifier.write(index, testValue);
 		assertArrayEquals(testValue, modifier.read(0));
-	} */
+	}
 
 	@Test
 	public void testGetByteArrays() {
@@ -151,12 +159,18 @@ public class PacketContainerTest {
 		testPrimitive(explosion.getStrings(), 0, null, "hello");
 	}
 
-	// TODO Rewrite with chat components
-	/* @Test
+	@Test
 	public void testGetStringArrays() {
-		PacketContainer explosion = new PacketContainer(PacketType.Play.Server.UPDATE_SIGN);
-		testObjectArray(explosion.getStringArrays(), 0, new String[0], new String[] { "hello", "world" });
-	} */
+		PacketContainer tabComplete = new PacketContainer(PacketType.Play.Server.TAB_COMPLETE);
+		testObjectArray(tabComplete.getStringArrays(), 0, new String[0], new String[] { "hello", "world" });
+	}
+
+	@Test
+	public void testGetChatComponentArrays() {
+		PacketContainer signChange = new PacketContainer(PacketType.Play.Server.UPDATE_SIGN);
+		testObjectArray(signChange.getChatComponentArrays(), 0, new WrappedChatComponent[0],
+				WrappedChatComponent.fromChatMessage("hello world"));
+	}
 
 	@Test
 	public void testGetIntegerArrays() {
@@ -287,24 +301,23 @@ public class PacketContainerTest {
 	//  @Test
 	//  public void testGetPositionModifier() { }
 
-	// TODO: Rewrite this with BlockPosition collections
-	/* @Test
+	@Test
 	public void testGetPositionCollectionModifier() {
 		PacketContainer explosionPacket = new PacketContainer(PacketType.Play.Server.EXPLOSION);
-		StructureModifier<List<ChunkPosition>> positionAccessor = explosionPacket.getPositionCollectionModifier();
+		StructureModifier<List<BlockPosition>> positionAccessor = explosionPacket.getBlockPositionCollectionModifier();
 
 		assertNull(positionAccessor.read(0));
 
-		List<ChunkPosition> positions = Lists.newArrayList();
-		positions.add(new ChunkPosition(1, 2, 3));
-		positions.add(new ChunkPosition(3, 4, 5));
+		List<BlockPosition> positions = Lists.newArrayList();
+		positions.add(new BlockPosition(1, 2, 3));
+		positions.add(new BlockPosition(3, 4, 5));
 
 		// Insert and read back
 		positionAccessor.write(0, positions);
-		List<ChunkPosition> cloned = positionAccessor.read(0);
+		List<BlockPosition> cloned = positionAccessor.read(0);
 
 		assertEquals(positions, cloned);
-	} */
+	}
 
 	@Test
 	public void testGetWatchableCollectionModifier() {
@@ -394,22 +407,36 @@ public class PacketContainerTest {
 		assertEquals(Material.STONE, blockAction.getBlocks().read(0));
 	}
 
-	// TODO Rewrite with MobEffects
-	/* @Test
+	@Test
+	public void testBlockData() {
+		PacketContainer blockChange = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
+
+		Material material = Material.GLOWSTONE;
+		WrappedBlockData data = WrappedBlockData.createData(material);
+		blockChange.getBlockData().write(0, data);
+
+		WrappedBlockData read = blockChange.getBlockData().read(0);
+		assertEquals(material, read.getType());
+	}
+
+	@Test
 	@SuppressWarnings("deprecation")
 	public void testPotionEffect() {
 		PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
+		MobEffect mobEffect = new MobEffect(effect.getType().getId(), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(),
+				effect.hasParticles());
 
 		// The constructor we want to call
 		PacketConstructor creator = PacketConstructor.DEFAULT.withPacket(
 				PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[] { int.class, MobEffect.class });
-		PacketContainer packet = creator.createPacket(1, effect);
+		PacketContainer packet = creator.createPacket(1, mobEffect);
 
 		assertEquals(1, (int) packet.getIntegers().read(0));
 		assertEquals(effect.getType().getId(), (byte) packet.getBytes().read(0));
 		assertEquals(effect.getAmplifier(), (byte) packet.getBytes().read(1));
-		assertEquals(effect.getDuration(), (short) packet.getShorts().read(0));
-	} */
+		assertEquals(effect.getDuration(), (int) packet.getIntegers().read(1));
+		assertEquals(effect.hasParticles(), packet.getBytes().read(2) == (effect.hasParticles() ? 1 : 0));
+	}
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(
 			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD, PacketType.Play.Server.MAP_CHUNK

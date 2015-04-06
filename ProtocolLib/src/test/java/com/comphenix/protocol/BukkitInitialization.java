@@ -28,7 +28,6 @@ public class BukkitInitialization {
 	 * @throws IllegalAccessException If we are unable to initialize Bukkit.
 	 */
 	public static void initializeItemMeta() throws IllegalAccessException {
-		// None of this works in 1.8
 		if (!initialized) {
 			// Denote that we're done
 			initialized = true;
