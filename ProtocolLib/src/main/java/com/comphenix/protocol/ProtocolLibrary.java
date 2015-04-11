@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -371,6 +372,9 @@ public class ProtocolLibrary extends JavaPlugin {
 				return;
 			}
 
+			// Check for incompatible plugins
+			checkForIncompatibility(manager);
+
 			// Initialize background compiler
 			if (backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
 				backgroundCompiler = new BackgroundCompiler(getClassLoader(), reporter);
@@ -392,7 +396,6 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Worker that ensures that async packets are eventually sent
 			// It also performs the update check.
 			createPacketTask(server);
-
 		} catch (OutOfMemoryError e) {
 			throw e;
 		} catch (ThreadDeath e) {
@@ -419,6 +422,26 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 
+	private void checkForIncompatibility(PluginManager manager) {
+		// Plugin authors: Notify me to remove these
+		String[] incompatible = { };
+
+		for (String plugin : incompatible) {
+			if (manager.getPlugin(plugin) != null) {
+				// Check for versions, etc.
+				logger.severe("Detected incompatible plugin: " + plugin);
+			}
+		}
+
+		// Special case for TagAPI and iTag
+		if (manager.getPlugin("TagAPI") != null) {
+			Plugin iTag = manager.getPlugin("iTag");
+			if (iTag == null || iTag.getDescription().getVersion().startsWith("1.0")) {
+				logger.severe("Detected incompatible plugin: TagAPI");
+			}
+		}
+	}
+
 	// Used to check Minecraft version
 	private MinecraftVersion verifyMinecraftVersion() {
 		MinecraftVersion minimum = new MinecraftVersion(MINIMUM_MINECRAFT_VERSION);
@@ -435,8 +458,8 @@ public class ProtocolLibrary extends JavaPlugin {
 				if (current.compareTo(maximum) > 0)
 					logger.warning("Version " + current + " has not yet been tested! Proceed with caution.");
 			}
-			return current;
 
+			return current;
 		} catch (Exception e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_PARSE_MINECRAFT_VERSION).error(e).messageParam(maximum));
 
@@ -460,7 +483,6 @@ public class ProtocolLibrary extends JavaPlugin {
 			for (File candidate : pluginFolder.listFiles()) {
 				if (candidate.isFile() && !candidate.equals(loadedFile)) {
 					Matcher match = ourPlugin.matcher(candidate.getName());
-
 					if (match.matches()) {
 						MinecraftVersion version = new MinecraftVersion(match.group(1));
 
@@ -473,7 +495,6 @@ public class ProtocolLibrary extends JavaPlugin {
 					}
 				}
 			}
-
 		} catch (Exception e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DETECT_CONFLICTING_PLUGINS).error(e));
 		}
@@ -498,11 +519,11 @@ public class ProtocolLibrary extends JavaPlugin {
 			PluginCommand command = getCommand(name);
 
 			// Try to load the command
-			if (command != null)
+			if (command != null) {
 				command.setExecutor(executor);
-			else
+			} else {
 				throw new RuntimeException("plugin.yml might be corrupt.");
-
+			}
 		} catch (RuntimeException e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(name, e.getMessage()).error(e));
 		}

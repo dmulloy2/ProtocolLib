@@ -23,6 +23,7 @@ import java.io.IOException;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketListener;
@@ -60,6 +61,8 @@ class CommandProtocol extends CommandBase {
 			toggleTimings(sender, args);
 		else if (subCommand.equalsIgnoreCase("listeners"))
 			printListeners(sender);
+		else if (subCommand.equalsIgnoreCase("version"))
+			printVersion(sender);
 		else
 			return false;
 		return true;
@@ -69,13 +72,14 @@ class CommandProtocol extends CommandBase {
 	private void printListeners(final CommandSender sender) {
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 
+		sender.sendMessage(ChatColor.GOLD + "Packet listeners:");
 		for (PacketListener listener : manager.getPacketListeners()) {
-			sender.sendMessage(ChatColor.GOLD + "Packet listeners:");
 			sender.sendMessage(ChatColor.GOLD + " " + listener);
 		}
+
 		// Along with every asynchronous listener
+		sender.sendMessage(ChatColor.GOLD + "Asynchronous listeners:");
 		for (PacketListener listener : manager.getAsynchronousManager().getAsyncHandlers()) {
-			sender.sendMessage(ChatColor.GOLD + "Asynchronous listeners:");
 			sender.sendMessage(ChatColor.GOLD + " " + listener);
 		}
 	}
@@ -123,10 +127,17 @@ class CommandProtocol extends CommandBase {
 			// Print to a text file
 			generator.saveTo(destination, manager);
 			manager.clear();
-
 		} catch (IOException e) {
 			reporter.reportMinimal(plugin, "saveTimings()", e);
 		}
+	}
+
+	private void printVersion(CommandSender sender) {
+		PluginDescriptionFile desc = plugin.getDescription();
+
+		sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " v" + ChatColor.GREEN + desc.getVersion());
+		sender.sendMessage("Authors: " + ChatColor.GREEN + "dmulloy2 " + ChatColor.WHITE + " and " + ChatColor.GREEN + "Comphenix");
+		sender.sendMessage("Issues: " + ChatColor.GREEN + "https://github.com/dmulloy2/ProtocolLib/issues");
 	}
 
 	/**

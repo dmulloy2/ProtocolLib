@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -66,6 +66,7 @@ abstract class CommandBase implements CommandExecutor {
 				reporter.reportWarning(this, Report.newBuilder(REPORT_UNEXPECTED_COMMAND).messageParam(this));
 				return false;
 			}
+
 			if (permission != null && !sender.hasPermission(permission)) {
 				sender.sendMessage(ChatColor.RED + "You haven't got permission to run this command.");
 				return true;
@@ -75,13 +76,12 @@ abstract class CommandBase implements CommandExecutor {
 			if (args != null && args.length >= minimumArgumentCount) {
 				return handleCommand(sender, args);
 			} else {
-				sender.sendMessage(ChatColor.RED + "Insufficient commands. You need at least " + minimumArgumentCount);
+				sender.sendMessage(ChatColor.RED + "Insufficient arguments. You need at least " + minimumArgumentCount);
 				return false;
 			}
-			
-		} catch (Exception e) {
-			reporter.reportDetailed(this, 
-					Report.newBuilder(REPORT_COMMAND_ERROR).error(e).messageParam(name).callerParam(sender, label, args)
+		} catch (Throwable ex) {
+			reporter.reportDetailed(this,
+					Report.newBuilder(REPORT_COMMAND_ERROR).error(ex).messageParam(name).callerParam(sender, label, args)
 			);
 			return true;
 		}
