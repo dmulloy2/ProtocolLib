@@ -74,13 +74,13 @@ class CommandProtocol extends CommandBase {
 
 		sender.sendMessage(ChatColor.GOLD + "Packet listeners:");
 		for (PacketListener listener : manager.getPacketListeners()) {
-			sender.sendMessage(ChatColor.GOLD + " " + listener);
+			sender.sendMessage(ChatColor.GOLD + " - " + listener);
 		}
 
 		// Along with every asynchronous listener
 		sender.sendMessage(ChatColor.GOLD + "Asynchronous listeners:");
 		for (PacketListener listener : manager.getAsynchronousManager().getAsyncHandlers()) {
-			sender.sendMessage(ChatColor.GOLD + " " + listener);
+			sender.sendMessage(ChatColor.GOLD + " - " + listener);
 		}
 	}
 
@@ -136,8 +136,8 @@ class CommandProtocol extends CommandBase {
 		PluginDescriptionFile desc = plugin.getDescription();
 
 		sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " v" + ChatColor.GREEN + desc.getVersion());
-		sender.sendMessage("Authors: " + ChatColor.GREEN + "dmulloy2 " + ChatColor.WHITE + " and " + ChatColor.GREEN + "Comphenix");
-		sender.sendMessage("Issues: " + ChatColor.GREEN + "https://github.com/dmulloy2/ProtocolLib/issues");
+		sender.sendMessage(ChatColor.WHITE + "Authors: " + ChatColor.GREEN + "dmulloy2" + ChatColor.WHITE + " and " + ChatColor.GREEN + "Comphenix");
+		sender.sendMessage(ChatColor.WHITE + "Issues: " + ChatColor.GREEN + "https://github.com/dmulloy2/ProtocolLib/issues");
 	}
 
 	/**

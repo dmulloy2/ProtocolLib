@@ -39,9 +39,6 @@ public class MinecraftProtocolVersion {
 		map.put(new MinecraftVersion(1, 7, 1), 4);
 		map.put(new MinecraftVersion(1, 7, 6), 5);
 		map.put(new MinecraftVersion(1, 8, 0), 47);
-		
-		// Unknown number
-		map.put(new MinecraftVersion(1, 8, 1), Integer.MIN_VALUE);
 		return map;
 	}
 	

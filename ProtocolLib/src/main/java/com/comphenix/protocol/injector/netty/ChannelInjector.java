@@ -82,6 +82,9 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// For retrieving the protocol
 	private static FieldAccessor PROTOCOL_ACCESSOR;
 
+	// For retrieving the protocol version
+	private static MethodAccessor PROTOCOL_VERSION;
+
 	// The factory that created this injector
 	private InjectionFactory factory;
 
@@ -156,10 +159,8 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		this.processor = new NetworkProcessor(ProtocolLibrary.getErrorReporter());
 
 		// Get the channel field
-		this.channelField = new VolatileField(
-			FuzzyReflection.fromObject(networkManager, true).
-				getFieldByType("channel", Channel.class),
-			networkManager, true);
+		this.channelField = new VolatileField(FuzzyReflection.fromObject(networkManager, true).getFieldByType("channel", Channel.class),
+				networkManager, true);
 	}
 
 	/**
@@ -168,7 +169,19 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	@Override
 	public int getProtocolVersion() {
-		return MinecraftProtocolVersion.getCurrentVersion();
+		MethodAccessor accessor = PROTOCOL_VERSION;
+		if (accessor == null) {
+			try {
+				accessor = Accessors.getMethodAccessor(networkManager.getClass(), "getVersion");
+			} catch (Throwable ex) {
+			}
+		}
+
+		if (accessor != null) {
+			return (Integer) accessor.invoke(networkManager);
+		} else {
+			return MinecraftProtocolVersion.getCurrentVersion();
+		}
 	}
 
 	@Override
