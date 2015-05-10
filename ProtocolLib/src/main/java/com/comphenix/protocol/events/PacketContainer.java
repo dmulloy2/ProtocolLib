@@ -87,6 +87,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
 import com.comphenix.protocol.wrappers.EnumWrappers.ScoreboardAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
+import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
@@ -459,11 +460,8 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Retrieves a read/write structure for chunk positions.
-	 * 
-	 * @deprecated ChunkPosition no longer exists.
 	 * @return A modifier for a ChunkPosition.
 	 */
-	@Deprecated
 	public StructureModifier<ChunkPosition> getPositionModifier() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.withType(
@@ -616,13 +614,28 @@ public class PacketContainer implements Serializable {
 	 * Retrieves a read/write structure for BlockData in Minecraft 1.8.
 	 * <p>
 	 * This modifier will automatically marshall between WrappedBlockData and the
-	 * internal Minecraft BlockData.
+	 * internal Minecraft IBlockData.
 	 * @return A modifier for BlockData fields.
 	 */
 	public StructureModifier<WrappedBlockData> getBlockData() {
-		// Conver to and from our wrapper
+		// Convert to and from our wrapper
 		return structureModifier.<WrappedBlockData>withType(
 				MinecraftReflection.getIBlockDataClass(), BukkitConverters.getWrappedBlockDataConverter());
+	}
+
+	/**
+	 * Retrieves a read/write structure for MultiBlockChangeInfo arrays in Minecraft 1.8.
+	 * <p>
+	 * This modifier will automatically marshall between MultiBlockChangeInfo and the
+	 * internal Minecraft MultiBlockChangeInfo.
+	 * @return A modifier for BlockData fields.
+	 */
+	public StructureModifier<MultiBlockChangeInfo[]> getMultiBlockChangeInfoArrays() {
+		ChunkCoordIntPair chunk = getChunkCoordIntPairs().read(0);
+
+		// Convert to and from our wrapper
+		return structureModifier.<MultiBlockChangeInfo[]>withType(
+				MinecraftReflection.getMultiBlockChangeInfoArrayClass(), MultiBlockChangeInfo.getArrayConverter(chunk));
 	}
 	
 	/**

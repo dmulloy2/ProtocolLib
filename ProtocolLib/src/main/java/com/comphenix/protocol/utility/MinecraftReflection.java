@@ -1924,13 +1924,19 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Determine if the given object is an IBlockData.
-	 * @param obj - the given object.
-	 * @return TRUE if it is, FALSE otherwise.
+	 * Retrieve the MultiBlockChangeInfo class in 1.8.
+	 * @return The MultiBlockChangeInfo class
 	 */
-	public static boolean isIBlockData(Object obj) {
-		Class<?> clazz = getIBlockDataClass();
-		return clazz != null && obj.getClass().equals(clazz);
+	public static Class<?> getMultiBlockChangeInfoClass() {
+		return getMinecraftClass("PacketPlayOutMultiBlockChange$MultiBlockChangeInfo");
+	}
+
+	/**
+	 * Retrieve the MultiBlockChangeInfo array class in 1.8.
+	 * @return The MultiBlockChangeInfo array class
+	 */
+	public static Class<?> getMultiBlockChangeInfoArrayClass() {
+		return getArrayClass(getMultiBlockChangeInfoClass());
 	}
 
 	/**
