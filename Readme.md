@@ -46,8 +46,8 @@ You can also add ProtocolLib as a Maven dependency:
 ````xml
 <repositories>
   <repository>
-    <id>shadowvolt-repo</id>
-    <url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
+    <id>dmulloy2-repo</id>
+    <url>http://repo.dmulloy2.net/content/groups/public/</url>
   </repository>
   ...
 </repository>
