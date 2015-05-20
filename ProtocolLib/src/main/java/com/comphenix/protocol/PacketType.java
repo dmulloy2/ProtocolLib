@@ -602,7 +602,6 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	/**
 	 * Determine if the given legacy packet exists.
 	 * @param packetId - the legacy packet ID.
-	 * @param preference - the sender preference.
 	 * @return TRUE if it does, FALSE otherwise.
 	 */
 	public static boolean hasLegacy(int packetId) {
