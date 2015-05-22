@@ -2035,7 +2035,7 @@ public class MinecraftReflection {
 					success = getMinecraftClass(alias);
 					break;
 				} catch (RuntimeException e1) {
-					e1.printStackTrace(); // TODO DEBUG
+					// e1.printStackTrace();
 				}
 			}
 
