@@ -27,7 +27,7 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.server.v1_8_R2.MobEffect;
+import net.minecraft.server.v1_8_R3.MobEffect;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;

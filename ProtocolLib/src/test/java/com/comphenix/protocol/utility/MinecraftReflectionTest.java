@@ -4,12 +4,15 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import net.minecraft.server.v1_8_R2.ChatComponentText;
-import net.minecraft.server.v1_8_R2.ChunkCoordIntPair;
-import net.minecraft.server.v1_8_R2.IChatBaseComponent;
-import net.minecraft.server.v1_8_R2.ServerPing;
-import net.minecraft.server.v1_8_R2.ServerPing.ServerData;
-import net.minecraft.server.v1_8_R2.ServerPing.ServerPingPlayerSample;
+import net.minecraft.server.v1_8_R3.ChatComponentText;
+import net.minecraft.server.v1_8_R3.ChunkCoordIntPair;
+import net.minecraft.server.v1_8_R3.DataWatcher.WatchableObject;
+import net.minecraft.server.v1_8_R3.IChatBaseComponent;
+import net.minecraft.server.v1_8_R3.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.v1_8_R3.NBTCompressedStreamTools;
+import net.minecraft.server.v1_8_R3.ServerPing;
+import net.minecraft.server.v1_8_R3.ServerPing.ServerData;
+import net.minecraft.server.v1_8_R3.ServerPing.ServerPingPlayerSample;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -18,7 +21,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
-import com.google.common.collect.Maps;
 
 public class MinecraftReflectionTest {
 	// Mocking objects
@@ -37,7 +39,7 @@ public class MinecraftReflectionTest {
 		// Set up a package with no class loader knowledge
 		MinecraftReflection.minecraftPackage = new CachedPackage(
 			MinecraftReflection.getMinecraftPackage(),
-			ClassSource.fromMap(Maps.<String, Class<?>>newHashMap())
+			ClassSource.fromClassLoader()
 		);
 	}
 
@@ -64,10 +66,10 @@ public class MinecraftReflectionTest {
 		MinecraftReflection.getBukkitEntity("Hello");
 	}
 
-	/* @Test
+	@Test
 	public void testNbtStreamTools() {
 		assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
-	} */
+	}
 
 	@Test
 	public void testChatComponent() {
@@ -79,10 +81,10 @@ public class MinecraftReflectionTest {
 		assertEquals(ChatComponentText.class, MinecraftReflection.getChatComponentTextClass());
 	}
 
-	/* @Test
+	@Test
 	public void testChatSerializer() {
 		assertEquals(ChatSerializer.class, MinecraftReflection.getChatSerializerClass());
-	} */
+	}
 
 	@Test
 	public void testServerPing() {
@@ -104,8 +106,8 @@ public class MinecraftReflectionTest {
 		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
 	}
 
-	/* @Test
+	@Test
 	public void testWatchableObject() {
 		assertEquals(WatchableObject.class, MinecraftReflection.getWatchableObjectClass());
-	} */
+	}
 }

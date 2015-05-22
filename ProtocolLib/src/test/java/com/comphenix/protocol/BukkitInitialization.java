@@ -2,7 +2,7 @@ package com.comphenix.protocol;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import net.minecraft.server.v1_8_R2.DispenserRegistry;
+import net.minecraft.server.v1_8_R3.DispenserRegistry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;

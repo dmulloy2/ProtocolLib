@@ -1281,7 +1281,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getWatchableObjectClass() {
 		try {
-			return getMinecraftClass("WatchableObject");
+			return getMinecraftClass("DataWatcher$WatchableObject", "WatchableObject");
 		} catch (RuntimeException e) {
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
@@ -2035,7 +2035,7 @@ public class MinecraftReflection {
 					success = getMinecraftClass(alias);
 					break;
 				} catch (RuntimeException e1) {
-					// Just swallow it...
+					e1.printStackTrace(); // TODO DEBUG
 				}
 			}
 
