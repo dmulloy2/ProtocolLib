@@ -13,8 +13,8 @@
       <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
     <repository>
-      <id>shadowvolt-repo</id>
-      <url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
+      <id>dmulloy2-repo</id>
+      <url>http://repo.dmulloy2.net/content/groups/public/</url>
     </repository>
   </repositories>
 
@@ -42,12 +42,12 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.8.3-R0.1-SNAPSHOT</version>
+      <version>1.8.6-R0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.8.3-R0.1-SNAPSHOT</version>
+      <version>1.8.6-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
