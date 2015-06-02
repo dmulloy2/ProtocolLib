@@ -10,12 +10,15 @@ import net.minecraft.server.v1_8_R3.DataWatcher.WatchableObject;
 import net.minecraft.server.v1_8_R3.IChatBaseComponent;
 import net.minecraft.server.v1_8_R3.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.v1_8_R3.NBTCompressedStreamTools;
+import net.minecraft.server.v1_8_R3.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 import net.minecraft.server.v1_8_R3.ServerPing;
 import net.minecraft.server.v1_8_R3.ServerPing.ServerData;
 import net.minecraft.server.v1_8_R3.ServerPing.ServerPingPlayerSample;
 
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,8 +70,8 @@ public class MinecraftReflectionTest {
 	}
 
 	@Test
-	public void testNbtStreamTools() {
-		assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
+	public void testAttributeSnapshot() {
+		assertEquals(AttributeSnapshot.class, MinecraftReflection.getAttributeSnapshotClass());
 	}
 
 	@Test
@@ -87,6 +90,11 @@ public class MinecraftReflectionTest {
 	}
 
 	@Test
+	public void testChunkCoordIntPair() {
+		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
+	}
+
+	@Test
 	public void testServerPing() {
 		assertEquals(ServerPing.class, MinecraftReflection.getServerPingClass());
 	}
@@ -102,12 +110,19 @@ public class MinecraftReflectionTest {
 	}
 
 	@Test
-	public void testChunkCoordIntPair() {
-		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
+	public void testNbtStreamTools() {
+		assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
 	}
 
 	@Test
 	public void testWatchableObject() {
 		assertEquals(WatchableObject.class, MinecraftReflection.getWatchableObjectClass());
+	}
+
+	@Test
+	public void testItemStacks() {
+		ItemStack stack = new ItemStack(Material.GOLD_SWORD);
+		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
+		assertEquals(stack, MinecraftReflection.getBukkitItemStack(nmsStack));
 	}
 }

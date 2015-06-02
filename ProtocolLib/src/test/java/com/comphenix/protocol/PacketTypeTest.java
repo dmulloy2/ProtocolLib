@@ -1,7 +1,7 @@
 package com.comphenix.protocol;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,9 +33,7 @@ public class PacketTypeTest {
 			PacketType type = entry.getKey();
 			Class<?> clazz = entry.getValue();
 
-			if (type.isDynamic()) {
-				fail("Packet " + clazz + " does not have a corresponding PacketType!");
-			}
+			assertFalse("Packet " + clazz + " does not have a corresponding PacketType!", type.isDynamic());
 		}
 	}
 }

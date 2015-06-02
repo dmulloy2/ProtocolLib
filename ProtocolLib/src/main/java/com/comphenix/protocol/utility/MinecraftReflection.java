@@ -21,14 +21,16 @@ import io.netty.buffer.ByteBuf;
 
 import java.io.DataInputStream;
 import java.io.DataOutput;
-import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,10 +41,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
-
-import net.sf.cglib.asm.ClassReader;
-import net.sf.cglib.asm.MethodVisitor;
-import net.sf.cglib.asm.Opcodes;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
@@ -59,8 +57,6 @@ import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
-import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
@@ -127,18 +123,8 @@ public class MinecraftReflection {
 	static CachedPackage craftbukkitPackage;
 	static CachedPackage libraryPackage;
 
-	// org.bukkit.craftbukkit
-	private static Constructor<?> craftNMSConstructor;
-	private static Constructor<?> craftBukkitConstructor;
-
 	// Matches classes
 	private static AbstractFuzzyMatcher<Class<?>> fuzzyMatcher;
-
-	// New in 1.4.5
-	private static Method craftNMSMethod;
-	private static Method craftBukkitNMS;
-	private static Method craftBukkitOBC;
-	private static boolean craftItemStackFailed;
 
 	// The NMS version
 	private static String packageVersion;
@@ -783,7 +769,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getChatSerializerClass() {
 		try {
-			return getMinecraftClass("IChatBaseComponent$ChatSerializer", "ChatSerializer");
+			return getMinecraftClass("ChatSerializer", "IChatBaseComponent$ChatSerializer");
 		} catch (RuntimeException e) {
 			// TODO: Figure out a functional fallback
 			throw new IllegalStateException("Could not find ChatSerializer class.", e);
@@ -825,18 +811,10 @@ public class MinecraftReflection {
 			throw new IllegalStateException("ServerPingServerData is only supported in 1.7.2.");
 
 		try {
-			return getMinecraftClass("ServerPing$ServerData", "ServerPingServerData");
+			return getMinecraftClass("ServerPingServerData", "ServerPing$ServerData");
 		} catch (RuntimeException e) {
-			Class<?> serverPing = getServerPingClass();
-
-			for (Field field : FuzzyReflection.fromClass(serverPing, true).getFields()) {
-				Class<?> clazz = field.getType();
-				if (clazz.getName().contains("ServerData")) {
-					return setMinecraftClass("ServerData", clazz);
-				}
-			}
-
-			throw new IllegalStateException("Could not find ServerData class.");
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(getServerPingClass(), true);
+			return setMinecraftClass("ServerPingServerData", fuzzy.getFieldByType("(.*)(ServerData)(.*)").getType());
 		}
 	}
 
@@ -849,7 +827,7 @@ public class MinecraftReflection {
 			throw new IllegalStateException("ServerPingPlayerSample is only supported in 1.7.2.");
 
 		try {
-			return getMinecraftClass("ServerPing$ServerPingPlayerSample", "ServerPingPlayerSample");
+			return getMinecraftClass("ServerPingPlayerSample", "ServerPing$ServerPingPlayerSample");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
 
@@ -1281,7 +1259,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getWatchableObjectClass() {
 		try {
-			return getMinecraftClass("DataWatcher$WatchableObject", "WatchableObject");
+			return getMinecraftClass("WatchableObject", "DataWatcher$WatchableObject");
 		} catch (RuntimeException e) {
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
@@ -1498,46 +1476,17 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getAttributeSnapshotClass() {
 		try {
-			return getMinecraftClass("PacketPlayOutUpdateAttributes$AttributeSnapshot", "AttributeSnapshot");
-		} catch (RuntimeException e) {
-			final Class<?> packetUpdateAttributes = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.UPDATE_ATTRIBUTES, true);
-			final String packetSignature = packetUpdateAttributes.getCanonicalName().replace('.', '/');
-
-			// HACK - class is found by inspecting code
+			return getMinecraftClass("AttributeSnapshot", "PacketPlayOutUpdateAttributes$AttributeSnapshot");
+		} catch (RuntimeException ex) {
 			try {
-				ClassReader reader = new ClassReader(packetUpdateAttributes.getCanonicalName());
-
-				reader.accept(new EmptyClassVisitor() {
-					@Override
-					public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-						// The read method
-						if (desc.startsWith("(Ljava/io/DataInput")) {
-							return new EmptyMethodVisitor() {
-								@Override
-                                public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-									if (opcode == Opcodes.INVOKESPECIAL && isConstructor(name)) {
-										String className = owner.replace('/', '.');
-
-										// Use signature to distinguish between constructors
-										if (desc.startsWith("(L" + packetSignature)) {
-											setMinecraftClass("AttributeSnapshot", MinecraftReflection.getClass(className));
-										} else if (desc.startsWith("(Ljava/util/UUID;Ljava/lang/String")) {
-											setMinecraftClass("AttributeModifier", MinecraftReflection.getClass(className));
-										}
-									}
-								};
-							};
-						}
-						return null;
-					}
-				}, 0);
-
-			} catch (IOException e1) {
-				throw new RuntimeException("Unable to read the content of Packet44UpdateAttributes.", e1);
+				// It should be the parameter of a list in the update attributes packet
+				FuzzyReflection fuzzy = FuzzyReflection.fromClass(PacketType.Play.Server.UPDATE_ATTRIBUTES.getPacketClass(), true);
+				Field field = fuzzy.getFieldByType("attributes", Collection.class);
+				Type param = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+				return setMinecraftClass("AttributeSnapshot", (Class<?>) param);
+			} catch (Throwable ex1) {
+				return getMinecraftClass("AttributeSnapshot");
 			}
-
-			// If our dirty ASM trick failed, this will throw an exception
-			return getMinecraftClass("AttributeSnapshot");
 		}
 	}
 
@@ -1701,15 +1650,6 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Determine if a given method retrieved by ASM is a constructor.
-	 * @param name - the name of the method.
-	 * @return TRUE if it is, FALSE otherwise.
-	 */
-	private static boolean isConstructor(String name) {
-		return "<init>".equals(name);
-	}
-
-	/**
 	 * Retrieve the ItemStack[] class.
 	 * @return The ItemStack[] class.
 	 */
@@ -1770,134 +1710,6 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieve a CraftItemStack from a given ItemStack.
-	 * @param bukkitItemStack - the Bukkit ItemStack to convert.
-	 * @return A CraftItemStack as an ItemStack.
-	 */
-	public static ItemStack getBukkitItemStack(ItemStack bukkitItemStack) {
-		// Delegate this task to the method that can execute it
-		if (craftBukkitNMS != null)
-			return getBukkitItemByMethod(bukkitItemStack);
-
-		if (craftBukkitConstructor == null) {
-			try {
-				craftBukkitConstructor = getCraftItemStackClass().getConstructor(ItemStack.class);
-			} catch (Exception e) {
-				// See if this method works
-				if (!craftItemStackFailed)
-					return getBukkitItemByMethod(bukkitItemStack);
-
-				throw new RuntimeException("Cannot find CraftItemStack(org.bukkit.inventory.ItemStack).", e);
-			}
-		}
-
-		// Try to create the CraftItemStack
-		try {
-			return (ItemStack) craftBukkitConstructor.newInstance(bukkitItemStack);
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot construct CraftItemStack.", e);
-		}
-	}
-
-	private static ItemStack getBukkitItemByMethod(ItemStack bukkitItemStack) {
-		if (craftBukkitNMS == null) {
-			try {
-				craftBukkitNMS = getCraftItemStackClass().getMethod("asNMSCopy", ItemStack.class);
-				craftBukkitOBC = getCraftItemStackClass().getMethod("asCraftMirror", MinecraftReflection.getItemStackClass());
-			} catch (Exception e) {
-				craftItemStackFailed = true;
-				throw new RuntimeException("Cannot find CraftItemStack.asCraftCopy(org.bukkit.inventory.ItemStack).", e);
-			}
-		}
-
-		// Next, construct it
-		try {
-			Object nmsItemStack = craftBukkitNMS.invoke(null, bukkitItemStack);
-			return (ItemStack) craftBukkitOBC.invoke(null, nmsItemStack);
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot construct CraftItemStack.", e);
-		}
-	}
-
-	/**
-	 * Retrieve the Bukkit ItemStack from a given net.minecraft.server ItemStack.
-	 * @param minecraftItemStack - the NMS ItemStack to wrap.
-	 * @return The wrapped ItemStack.
-	 */
-	public static ItemStack getBukkitItemStack(Object minecraftItemStack) {
-		// Delegate this task to the method that can execute it
-		if (craftNMSMethod != null)
-			return getBukkitItemByMethod(minecraftItemStack);
-
-		if (craftNMSConstructor == null) {
-			try {
-				craftNMSConstructor = getCraftItemStackClass().getConstructor(minecraftItemStack.getClass());
-			} catch (Exception e) {
-				// Give it a try
-				if (!craftItemStackFailed)
-					return getBukkitItemByMethod(minecraftItemStack);
-
-				throw new RuntimeException("Cannot find CraftItemStack(net.minecraft.server.ItemStack).", e);
-			}
-		}
-
-		// Try to create the CraftItemStack
-		try {
-			return (ItemStack) craftNMSConstructor.newInstance(minecraftItemStack);
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot construct CraftItemStack.", e);
-		}
-	}
-
-	private static ItemStack getBukkitItemByMethod(Object minecraftItemStack) {
-		if (craftNMSMethod == null) {
-			try {
-				craftNMSMethod = getCraftItemStackClass().getMethod("asCraftMirror", minecraftItemStack.getClass());
-			} catch (Exception e) {
-				craftItemStackFailed = true;
-				throw new RuntimeException("Cannot find CraftItemStack.asCraftMirror(net.minecraft.server.ItemStack).", e);
-			}
-		}
-
-		// Next, construct it
-		try {
-			return (ItemStack) craftNMSMethod.invoke(null, minecraftItemStack);
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot construct CraftItemStack.", e);
-		}
-	}
-
-	/**
-	 * Retrieve the net.minecraft.server ItemStack from a Bukkit ItemStack.
-	 * <p>
-	 * By convention, item stacks that contain air are usually represented as NULL.
-	 * @param stack - the Bukkit ItemStack to convert.
-	 * @return The NMS ItemStack, or NULL if the stack represents air.
-	 */
-	public static Object getMinecraftItemStack(ItemStack stack) {
-		// Make sure this is a CraftItemStack
-		/* if (!isCraftItemStack(stack))
-			stack = getBukkitItemStack(stack);
-
-		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
-		return unwrapper.unwrapItem(stack); */
-
-		if (craftBukkitNMS == null) {
-			try {
-				craftBukkitNMS = getCraftItemStackClass().getMethod("asNMSCopy", ItemStack.class);
-			} catch (Throwable ex) {
-				throw new RuntimeException("Could not find CraftItemStack.asNMSCopy.", ex);
-			}
-		}
-
-		try {
-			return craftBukkitNMS.invoke(null, stack);
-		} catch (Throwable ex) {
-			throw new RuntimeException("Could not obtain NMS ItemStack.", ex);
-		}
-	}
-
-	/**
 	 * Retrieve the PlayerInfoData class in 1.8.
 	 * @return The PlayerInfoData class
 	 */
@@ -1937,6 +1749,35 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getMultiBlockChangeInfoArrayClass() {
 		return getArrayClass(getMultiBlockChangeInfoClass());
+	}
+
+	private static MethodAccessor asCraftMirror;
+	private static MethodAccessor asNMSCopy;
+
+	/**
+	 * Retrieve a CraftItemStack from a given ItemStack.
+	 * @param bukkitItemStack - the Bukkit ItemStack to convert.
+	 * @return A CraftItemStack as an ItemStack.
+	 */
+	public static ItemStack getBukkitItemStack(Object nmsItem) {
+		if (asCraftMirror == null) {
+			asCraftMirror = Accessors.getMethodAccessor(getCraftItemStackClass(), "asCraftMirror", getItemStackClass());
+		}
+
+		return (ItemStack) asCraftMirror.invoke(null, nmsItem);
+	}
+
+	/**
+	 * Retrieve the Bukkit ItemStack from a given net.minecraft.server ItemStack.
+	 * @param minecraftItemStack - the NMS ItemStack to wrap.
+	 * @return The wrapped ItemStack.
+	 */
+	public static Object getMinecraftItemStack(ItemStack stack) {
+		if (asNMSCopy == null) {
+			asNMSCopy = Accessors.getMethodAccessor(getCraftItemStackClass(), "asNMSCopy", ItemStack.class);
+		}
+
+		return asNMSCopy.invoke(null, stack);
 	}
 
 	/**

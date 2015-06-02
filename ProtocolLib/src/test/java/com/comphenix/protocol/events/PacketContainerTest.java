@@ -24,10 +24,14 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
+import net.minecraft.server.v1_8_R3.AttributeModifier;
 import net.minecraft.server.v1_8_R3.MobEffect;
+import net.minecraft.server.v1_8_R3.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_8_R3.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
@@ -368,8 +372,7 @@ public class PacketContainerTest {
 		assertEquals("Test", copy.getStrings().read(0));
 	}
 
-	// TODO Deal with inner classes
-	/* @Test
+	@Test
 	public void testAttributeList() {
 		PacketContainer attribute = new PacketContainer(PacketType.Play.Server.UPDATE_ATTRIBUTES);
 		attribute.getIntegers().write(0, 123); // Entity ID
@@ -378,26 +381,33 @@ public class PacketContainerTest {
 		List<AttributeModifier> modifiers = Lists.newArrayList(
 			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, 0));
 
-		// TODO This is hopefully just a temporary solution,
-		// but situations like this might be issues elsewhere
-		class PacketAccessor extends PacketPlayOutUpdateAttributes {
-
-			public AttributeSnapshot attributeSnapshot(String string, double d, Collection<AttributeModifier> coll) {
-				return new AttributeSnapshot(string, d, coll);
-			}
-
-		};
-
-		AttributeSnapshot snapshot = new PacketAccessor().attributeSnapshot("generic.Maxhealth", 20.0, modifiers);
-
+		// Obtain an AttributeSnapshot instance. This is complicated by the fact that AttributeSnapshots
+		// are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
+		// members of the packet itself)
+		PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
+		AttributeSnapshot snapshot = packet.new AttributeSnapshot("generic.Maxhealth", 20.0D, modifiers);
 		attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
+
 		PacketContainer cloned = attribute.deepClone();
 		AttributeSnapshot clonedSnapshot = (AttributeSnapshot) cloned.getSpecificModifier(List.class).read(0).get(0);
 
-		assertEquals(
-				ToStringBuilder.reflectionToString(snapshot, ToStringStyle.SHORT_PREFIX_STYLE),
-				ToStringBuilder.reflectionToString(clonedSnapshot, ToStringStyle.SHORT_PREFIX_STYLE));
-	} */
+		// Compare the fields, because apparently the packet is a field in AttributeSnapshot
+		for (Field field : AttributeSnapshot.class.getDeclaredFields()) {
+			try {
+				// Skip the packet
+				if (field.getType().equals(packet.getClass())) {
+					continue;
+				}
+
+				field.setAccessible(true);
+				assertEquals(field.get(snapshot), field.get(clonedSnapshot));
+			} catch (AssertionError e) {
+				throw e;
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
 
 	@Test
 	public void testBlocks() {

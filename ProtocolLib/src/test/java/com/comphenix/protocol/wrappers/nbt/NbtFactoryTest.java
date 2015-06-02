@@ -64,11 +64,13 @@ public class NbtFactoryTest {
 		assertEquals(compound.getInteger("age"), cloned.getInteger("age"));
 		assertEquals(compound.getList("nicknames"), cloned.getList("nicknames"));
 	}
+
+	// TODO See StreamSerializerTest
 	
 	/* @Test
 	public void testItemTag() {
-		ItemStack test = new ItemStack(Material.GOLD_AXE);
-		ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
+		ItemStack test = new ItemStack(Items.GOLDEN_AXE);
+		org.bukkit.inventory.ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
 		
 		NbtCompound compound = NbtFactory.ofCompound("tag");
 		compound.put("name", "Test Testerson");

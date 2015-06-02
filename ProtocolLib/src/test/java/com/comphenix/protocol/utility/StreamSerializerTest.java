@@ -61,7 +61,9 @@ public class StreamSerializerTest {
 		assertEquals(initial, deserialized);
 	}
 
-	// TODO This is an actual issue
+	// TODO This is an actual issue, probably need to fix the NBT API
+	// For future reference, items are saved in the ChunkRegionLoader and TileEntityChest
+
 	/* @Test
 	public void testCompound() throws IOException {
 		StreamSerializer serializer = new StreamSerializer();
