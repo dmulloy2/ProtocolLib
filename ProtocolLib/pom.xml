@@ -18,11 +18,11 @@
 
   <distributionManagement>
     <repository>
-      <id>dmulloy2-repo</id>
+      <id>dmulloy2-releases</id>
       <url>http://repo.dmulloy2.net/content/repositories/releases/</url>
     </repository>
     <snapshotRepository>
-      <id>dmulloy2-repo</id>
+      <id>dmulloy2-snapshots</id>
       <url>http://repo.dmulloy2.net/content/repositories/snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
@@ -314,13 +314,13 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.8.6-R0.1-SNAPSHOT</version>
+      <version>1.8.7-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.8.6-R0.1-SNAPSHOT</version>
+      <version>1.8.7-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
