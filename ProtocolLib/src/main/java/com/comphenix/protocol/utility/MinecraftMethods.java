@@ -41,7 +41,7 @@ public class MinecraftMethods {
 	 */
 	public static Method getSendPacketMethod() {
 		if (sendPacketMethod == null) {
-			Class<?> serverHandlerClass = MinecraftReflection.getNetServerHandlerClass();
+			Class<?> serverHandlerClass = MinecraftReflection.getPlayerConnectionClass();
 
 			try {
 				sendPacketMethod = FuzzyReflection.fromClass(serverHandlerClass).getMethodByName("sendPacket.*");

@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.google.common.base.Preconditions;
 
 /**
  * Retrieve the content of well-known fields in Minecraft.
@@ -29,7 +30,7 @@ public class MinecraftFields {
 		
 		if (NETWORK_ACCESSOR == null) {
 			Class<?> networkClass = MinecraftReflection.getNetworkManagerClass();
-			Class<?> connectionClass = MinecraftReflection.getNetServerHandlerClass();
+			Class<?> connectionClass = MinecraftReflection.getPlayerConnectionClass();
 			NETWORK_ACCESSOR = Accessors.getFieldAccessor(connectionClass, networkClass, true);
 		}
 		// Retrieve the network manager
@@ -41,7 +42,7 @@ public class MinecraftFields {
 	}
 	
 	/**
-	 * Retrieve the player connection (or NetServerHandler) associated with a player.
+	 * Retrieve the PlayerConnection (or NetServerHandler) associated with a player.
 	 * @param player - the player.
 	 * @return The player connection.
 	 */
@@ -51,8 +52,10 @@ public class MinecraftFields {
 	
 	// Retrieve player connection from a native instance
 	private static Object getPlayerConnection(Object nmsPlayer) {
+		Preconditions.checkNotNull(nmsPlayer, "nmsPlayer cannot be null!");
+
 		if (CONNECTION_ACCESSOR == null) {
-			Class<?> connectionClass = MinecraftReflection.getNetServerHandlerClass();
+			Class<?> connectionClass = MinecraftReflection.getPlayerConnectionClass();
 			CONNECTION_ACCESSOR = Accessors.getFieldAccessor(nmsPlayer.getClass(), connectionClass, true);
 		}
 		return CONNECTION_ACCESSOR.get(nmsPlayer);

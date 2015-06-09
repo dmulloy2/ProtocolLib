@@ -188,7 +188,7 @@ public abstract class PlayerInjector implements SocketInjector {
 			// Retrieve the server handler
 			if (serverHandlerField == null) {
 				serverHandlerField = FuzzyReflection.fromObject(notchEntity).getFieldByType(
-									  "NetServerHandler", MinecraftReflection.getNetServerHandlerClass());
+									  "NetServerHandler", MinecraftReflection.getPlayerConnectionClass());
 				proxyServerField = getProxyField(notchEntity, serverHandlerField);
 			}
 			
@@ -402,7 +402,7 @@ public abstract class PlayerInjector implements SocketInjector {
 					FuzzyReflection reflection = FuzzyReflection.fromObject(currentHandler, true);
 					
 					// It might be
-					return reflection.getFieldByType("NetServerHandler", MinecraftReflection.getNetServerHandlerClass());
+					return reflection.getFieldByType("NetServerHandler", MinecraftReflection.getPlayerConnectionClass());
 					
 				} catch (RuntimeException e) {
 					// Damn
@@ -428,7 +428,7 @@ public abstract class PlayerInjector implements SocketInjector {
 		Class<?> clazz = obj.getClass();
 		
 		return MinecraftReflection.getNetLoginHandlerClass().equals(clazz) ||
-			   MinecraftReflection.getNetServerHandlerClass().equals(clazz);
+			   MinecraftReflection.getPlayerConnectionClass().equals(clazz);
 	}
 	
 	/**
@@ -601,7 +601,7 @@ public abstract class PlayerInjector implements SocketInjector {
 						final Object handler = getNetHandler(true);
 						
 						// Is this a net server class?
-						if (MinecraftReflection.getNetServerHandlerClass().isAssignableFrom(handler.getClass())) {
+						if (MinecraftReflection.getPlayerConnectionClass().isAssignableFrom(handler.getClass())) {
 							setUpdatedPlayer(
 								(Player) MinecraftReflection.getBukkitEntity(getEntityPlayer(handler))
 							);

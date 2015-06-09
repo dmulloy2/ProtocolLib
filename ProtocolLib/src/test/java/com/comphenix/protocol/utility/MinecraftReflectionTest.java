@@ -11,6 +11,7 @@ import net.minecraft.server.v1_8_R3.IChatBaseComponent;
 import net.minecraft.server.v1_8_R3.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.v1_8_R3.NBTCompressedStreamTools;
 import net.minecraft.server.v1_8_R3.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_8_R3.PlayerConnection;
 import net.minecraft.server.v1_8_R3.ServerPing;
 import net.minecraft.server.v1_8_R3.ServerPing.ServerData;
 import net.minecraft.server.v1_8_R3.ServerPing.ServerPingPlayerSample;
@@ -92,6 +93,11 @@ public class MinecraftReflectionTest {
 	@Test
 	public void testChunkCoordIntPair() {
 		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
+	}
+
+	@Test
+	public void testPlayerConnection() {
+		assertEquals(PlayerConnection.class, MinecraftReflection.getPlayerConnectionClass());
 	}
 
 	@Test

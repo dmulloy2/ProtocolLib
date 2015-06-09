@@ -126,7 +126,7 @@ class NetworkServerInjector extends PlayerInjector {
 			return;
 		
 		if (!tryInjectManager()) {
-			Class<?> serverHandlerClass = MinecraftReflection.getNetServerHandlerClass();
+			Class<?> serverHandlerClass = MinecraftReflection.getPlayerConnectionClass();
 			
 			// Try to override the proxied object
 			if (proxyServerField != null) {

@@ -463,7 +463,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isServerHandler(Object obj) {
-		return obj != null && getNetServerHandlerClass().isAssignableFrom(obj.getClass());
+		return obj != null && getPlayerConnectionClass().isAssignableFrom(obj.getClass());
 	}
 
 	/**
@@ -685,7 +685,7 @@ public class MinecraftReflection {
 			}
 
 			// Select a method with one Minecraft object parameter
-			Method selected = FuzzyReflection.fromClass(getNetServerHandlerClass()).
+			Method selected = FuzzyReflection.fromClass(getPlayerConnectionClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
 							parameterMatches(paketContract, 0).
 							parameterCount(1).
@@ -974,16 +974,16 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieve the NetServerHandler class (or PlayerConnection)
-	 * @return The NetServerHandler class.
+	 * Retrieve the PlayerConnection class (or NetServerHandler)
+	 * @return The PlayerConnection class.
 	 */
-	public static Class<?> getNetServerHandlerClass() {
+	public static Class<?> getPlayerConnectionClass() {
 		try  {
-			return getMinecraftClass("NetServerHandler", "PlayerConnection");
+			return getMinecraftClass("PlayerConnection", "NetServerHandler");
 		} catch (RuntimeException e) {
 			try {
 				// Use the player connection field
-				return setMinecraftClass("NetServerHandler",
+				return setMinecraftClass("PlayerConnection",
 					FuzzyReflection.fromClass(getEntityPlayerClass()).
 					getFieldByType("playerConnection", getNetHandlerClass()).getType()
 				);
@@ -1012,7 +1012,7 @@ public class MinecraftReflection {
 					FuzzyFieldContract.newBuilder().typeMatches(playerConnection).build()
 				).getType();
 
-				return setMinecraftClass("NetServerHandler", fieldType);
+				return setMinecraftClass("PlayerConnection", fieldType);
 			}
 		}
 	}
@@ -1025,7 +1025,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("INetworkManager", "NetworkManager");
 		} catch (RuntimeException e) {
-			Constructor<?> selected = FuzzyReflection.fromClass(getNetServerHandlerClass()).
+			Constructor<?> selected = FuzzyReflection.fromClass(getPlayerConnectionClass()).
 					getConstructor(FuzzyMethodContract.newBuilder().
 							parameterSuperOf(getMinecraftServerClass(), 0).
 							parameterSuperOf(getEntityPlayerClass(), 2).
@@ -1304,7 +1304,7 @@ public class MinecraftReflection {
 			} else {
 				serverConnectionContract.
 					method(FuzzyMethodContract.newBuilder().
-							parameterExactType(getNetServerHandlerClass()));
+							parameterExactType(getPlayerConnectionClass()));
 
 				selected = FuzzyReflection.fromClass(getMinecraftServerClass()).
 					getMethod(FuzzyMethodContract.newBuilder().
@@ -1454,7 +1454,7 @@ public class MinecraftReflection {
 					field(FuzzyFieldContract.newBuilder().
 						  typeDerivedOf(List.class)).
 					method(FuzzyMethodContract.newBuilder().
-						  parameterExactType(getNetServerHandlerClass())).
+						  parameterExactType(getPlayerConnectionClass())).
 			build();
 
 			Field selected = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftServerClass(), true).

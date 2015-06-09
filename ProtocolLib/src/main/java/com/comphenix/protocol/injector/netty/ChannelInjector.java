@@ -64,6 +64,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
 	public static final ReportType REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD = new ReportType("Cannot execute code in channel thread.");
 	public static final ReportType REPORT_CANNOT_FIND_GET_VERSION = new ReportType("Cannot find getVersion() in NetworkMananger");
+	public static final ReportType REPORT_CANNOT_SEND_PACKET = new ReportType("Unable to send packet %s to %s");
 
 	/**
 	 * Indicates that a packet has bypassed packet listeners.
@@ -668,8 +669,9 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			} else {
 				MinecraftMethods.getSendPacketMethod().invoke(getPlayerConnection(), packet);
 			}
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to send server packet " + packet, e);
+		} catch (Throwable ex) {
+			ProtocolLibrary.getErrorReporter().reportWarning(factory.getPlugin(),
+					Report.newBuilder(REPORT_CANNOT_SEND_PACKET).messageParam(packet, playerName).error(ex).build());
 		}
 	}
 
