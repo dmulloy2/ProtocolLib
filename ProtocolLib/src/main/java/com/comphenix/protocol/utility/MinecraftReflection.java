@@ -1740,7 +1740,7 @@ public class MinecraftReflection {
 	 * @return The MultiBlockChangeInfo class
 	 */
 	public static Class<?> getMultiBlockChangeInfoClass() {
-		return getMinecraftClass("PacketPlayOutMultiBlockChange$MultiBlockChangeInfo");
+		return getMinecraftClass("MultiBlockChangeInfo", "PacketPlayOutMultiBlockChange$MultiBlockChangeInfo");
 	}
 
 	/**

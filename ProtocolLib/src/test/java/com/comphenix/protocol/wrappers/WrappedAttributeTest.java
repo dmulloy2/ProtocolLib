@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Collection;
 import java.util.List;
 
 import net.minecraft.server.v1_8_R3.AttributeModifier;
@@ -86,16 +85,10 @@ public class WrappedAttributeTest {
 			modifiers.add((AttributeModifier) wrapper.getHandle());
 		}
 
-		class PacketAccessor extends PacketPlayOutUpdateAttributes {
-
-			public AttributeSnapshot attributeSnapshot(String string, double d, Collection<AttributeModifier> coll) {
-				return new AttributeSnapshot(string, d, coll);
-			}
-		}
-
-		return new PacketAccessor().attributeSnapshot(attribute.getAttributeKey(), attribute.getBaseValue(), modifiers);
+		PacketPlayOutUpdateAttributes accessor = new PacketPlayOutUpdateAttributes();
+		return accessor.new AttributeSnapshot(attribute.getAttributeKey(), attribute.getBaseValue(), modifiers);
 	}
-	
+
 	private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
 		return new AttributeModifier(modifier.getUUID(), modifier.getName(), modifier.getAmount(), modifier.getOperation().getId());
 	}

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import net.minecraft.server.v1_8_R3.ChatComponentText;
 import net.minecraft.server.v1_8_R3.ChunkCoordIntPair;
 import net.minecraft.server.v1_8_R3.DataWatcher.WatchableObject;
+import net.minecraft.server.v1_8_R3.IBlockData;
 import net.minecraft.server.v1_8_R3.IChatBaseComponent;
 import net.minecraft.server.v1_8_R3.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.v1_8_R3.NBTCompressedStreamTools;
@@ -93,6 +94,11 @@ public class MinecraftReflectionTest {
 	@Test
 	public void testChunkCoordIntPair() {
 		assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
+	}
+
+	@Test
+	public void testIBlockData() {
+		assertEquals(IBlockData.class, MinecraftReflection.getIBlockDataClass());
 	}
 
 	@Test

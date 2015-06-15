@@ -117,4 +117,14 @@ public class WrappedBlockData extends AbstractWrapper {
 	public String toString() {
 		return "WrappedBlockData[handle=" + handle + "]";
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof WrappedBlockData) {
+			WrappedBlockData that = (WrappedBlockData) o;
+			return this.getType() == that.getType();
+		}
+
+		return false;
+	}
 }
