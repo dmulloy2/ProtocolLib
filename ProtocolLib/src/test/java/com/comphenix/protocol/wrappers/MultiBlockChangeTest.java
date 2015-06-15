@@ -48,12 +48,15 @@ public class MultiBlockChangeTest {
 		WrappedBlockData blockData = WrappedBlockData.createData(Material.STONE);
 		MultiBlockChangeInfo info = new MultiBlockChangeInfo(location, blockData, chunk);
 
-		Object generic = MultiBlockChangeInfo.getConverter(chunk).getGeneric(MinecraftReflection.getMultiBlockChangeInfoClass(), info);
-		MultiBlockChangeInfo back = MultiBlockChangeInfo.getConverter(chunk).getSpecific(generic);
+		MultiBlockChangeInfo[] array = { info, info };
 
-		assertEquals(info.getX(), back.getX());
-		assertEquals(info.getY(), back.getY());
-		assertEquals(info.getZ(), back.getZ());
-		assertEquals(info.getData(), back.getData());
+		Object generic = MultiBlockChangeInfo.getArrayConverter(chunk).getGeneric(MinecraftReflection.getMultiBlockChangeInfoArrayClass(),
+				array);
+		MultiBlockChangeInfo[] back = MultiBlockChangeInfo.getArrayConverter(chunk).getSpecific(generic);
+
+		assertEquals(info.getX(), back[0].getX());
+		assertEquals(info.getY(), back[0].getY());
+		assertEquals(info.getZ(), back[0].getZ());
+		assertEquals(info.getData(), back[0].getData());
 	}
 }

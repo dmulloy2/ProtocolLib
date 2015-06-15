@@ -35,6 +35,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 
 public class MultiBlockChangeInfo {
 	private static Constructor<?> constructor;
+	private static Class<?> nmsClass = MinecraftReflection.getMultiBlockChangeInfoClass();
 
 	private short location;
 	private WrappedBlockData data;
@@ -181,7 +182,7 @@ public class MultiBlockChangeInfo {
 			public Object getGeneric(Class<?> genericType, MultiBlockChangeInfo specific) {
 				try {
 					if (constructor == null) {
-						constructor = MinecraftReflection.getMultiBlockChangeInfoClass().getConstructor(
+						constructor = nmsClass.getConstructor(
 								PacketType.Play.Server.MULTI_BLOCK_CHANGE.getPacketClass(),
 								short.class,
 								MinecraftReflection.getIBlockDataClass()
@@ -224,11 +225,11 @@ public class MultiBlockChangeInfo {
 
 			@Override
 			public Object getGeneric(Class<?> genericType, MultiBlockChangeInfo[] specific) {
-				Object[] result = (Object[]) Array.newInstance(genericType, specific.length);
+				Object[] result = (Object[]) Array.newInstance(nmsClass, specific.length);
 
 				// Wrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = converter.getGeneric(genericType, specific[i]);
+					result[i] = converter.getGeneric(nmsClass, specific[i]);
 				}
 
 				return result;
