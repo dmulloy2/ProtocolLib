@@ -2,7 +2,9 @@ language: java
 jdk:
   - oraclejdk8
   - oraclejdk7
-  - openjdk6
+script: mvn clean install -U
+before_install: cd ProtocolLib
+install: true
 notifications:
   email:
     recipients:
