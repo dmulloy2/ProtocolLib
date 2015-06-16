@@ -47,6 +47,12 @@ public class MultiBlockChangeInfo {
 		this.chunk = chunk;
 	}
 
+	public MultiBlockChangeInfo(Location location, WrappedBlockData data) {
+		this.data = data;
+		this.chunk = new ChunkCoordIntPair(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+		this.setLocation(location);
+	}
+
 	/**
 	 * Returns this block change's absolute Location in a given World.
 	 * 
@@ -54,7 +60,7 @@ public class MultiBlockChangeInfo {
 	 * @return This block change's absolute Location
 	 */
 	public Location getLocation(World world) {
-		return new Location(world, getX(), getY(), getZ());
+		return new Location(world, getAbsoluteX(), getY(), getAbsoluteZ());
 	}
 
 	/**
@@ -63,30 +69,48 @@ public class MultiBlockChangeInfo {
 	 * @param location This block change's new location
 	 */
 	public void setLocation(Location location) {
-		int x = location.getBlockX() - getChunkX() << 4;
-		int y = location.getBlockY();
-		int z = location.getBlockZ() - getChunkZ() << 4;
+		setLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+	}
+
+	/**
+	 * Sets this block change's absolute coordinates.
+	 *
+	 * @param x X coordinate
+	 * @param y Y coordinate
+	 * @param z Z coordinate
+	 */
+	public void setLocation(int x, int y, int z) {
+		x = x & 15;
+		z = z & 15;
 
 		this.location = (short) (x << 12 | z << 8 | y);
 	}
 
 	/**
-	 * Gets this block change's absolute x coordinate
+	 * Gets this block change's relative x coordinate.
 	 * 
-	 * @return X coordinate
+	 * @return Relative X coordinate
 	 */
 	public int getX() {
-		return getChunkX() + (location >> 12 & 15);
+		return location >> 12 & 15;
 	}
 
 	/**
-	 * Sets this block change's absolute x coordinate
+	 * Gets this block change's absolute x coordinate.
+	 *
+	 * @return Absolute X coordinate
+	 */
+	public int getAbsoluteX() {
+		return (chunk.getChunkX() << 4) + getX();
+	}
+
+	/**
+	 * Sets this block change's absolute x coordinate.
 	 * 
 	 * @param x New x coordinate
 	 */
 	public void setX(int x) {
-		x -= getChunkX() << 4;
-		this.location = (short) (x << 12 | getZ() << 8 | getY());
+		setLocation(x, getY(), getZ());
 	}
 
 	/**
@@ -104,34 +128,34 @@ public class MultiBlockChangeInfo {
 	 * @param y New y coordinate
 	 */
 	public void setY(int y) {
-		this.location = (short) (getX() << 12 | getZ() << 8 | y);
+		setLocation(getX(), y, getZ());
+	}
+
+	/**
+	 * Gets this block change's relative z coordinate.
+	 * 
+	 * @return Relative Z coordinate
+	 */
+	public int getZ() {
+		return location >> 8 & 15;
 	}
 
 	/**
 	 * Gets this block change's absolute z coordinate.
-	 * 
-	 * @return Z coordinate
+	 *
+	 * @return Absolute Z coordinate
 	 */
-	public int getZ() {
-		return getChunkZ() + (location >> 8 & 15);
+	public int getAbsoluteZ() {
+		return (chunk.getChunkZ() << 4) + getZ();
 	}
 
 	/**
-	 * Sets this block change's absolute z coordinate.
+	 * Sets this block change's relative z coordinate.
 	 * 
 	 * @param z New z coordinate
 	 */
 	public void setZ(int z) {
-		z -= getChunkZ() << 4;
-		this.location = (short) (getX() << 12 | getZ() << 8 | getY());
-	}
-
-	private int getChunkX() {
-		return chunk.getChunkX() << 4;
-	}
-
-	private int getChunkZ() {
-		return chunk.getChunkZ() << 4;
+		setLocation(getX(), getY(), z);
 	}
 
 	/**

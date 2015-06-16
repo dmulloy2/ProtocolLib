@@ -18,11 +18,13 @@ package com.comphenix.protocol.wrappers;
 
 import static org.junit.Assert.assertEquals;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
@@ -38,22 +40,25 @@ public class MultiBlockChangeTest {
 
 	@Test
 	public void test() {
-		int x = 10;
-		int y = 128;
-		int z = 7;
+		int x = 42;
+		int y = 64;
+		int z = 70;
 
-		short location = (short) (x << 12 | z << 8 | y);
-
-		ChunkCoordIntPair chunk = new ChunkCoordIntPair(1, 2);
+		Location loc = new Location(null, x, y, z);
+		ChunkCoordIntPair chunk = new ChunkCoordIntPair(x >> 4, z >> 4);
 		WrappedBlockData blockData = WrappedBlockData.createData(Material.STONE);
-		MultiBlockChangeInfo info = new MultiBlockChangeInfo(location, blockData, chunk);
+		MultiBlockChangeInfo info = new MultiBlockChangeInfo(loc, blockData);
+
+		// Make sure the location is correct
+		assertEquals(loc, info.getLocation(null));
 
 		MultiBlockChangeInfo[] array = { info, info };
 
-		Object generic = MultiBlockChangeInfo.getArrayConverter(chunk).getGeneric(MinecraftReflection.getMultiBlockChangeInfoArrayClass(),
-				array);
-		MultiBlockChangeInfo[] back = MultiBlockChangeInfo.getArrayConverter(chunk).getSpecific(generic);
+		EquivalentConverter<MultiBlockChangeInfo[]> converter = MultiBlockChangeInfo.getArrayConverter(chunk);
+		Object generic = converter.getGeneric(MinecraftReflection.getMultiBlockChangeInfoArrayClass(), array);
+		MultiBlockChangeInfo[] back = converter.getSpecific(generic);
 
+		// Make sure our conversions are correct
 		assertEquals(info.getX(), back[0].getX());
 		assertEquals(info.getY(), back[0].getY());
 		assertEquals(info.getZ(), back[0].getZ());
