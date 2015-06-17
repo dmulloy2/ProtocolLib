@@ -1,4 +1,4 @@
-ProtocolLib ![](https://travis-ci.org/dmulloy2/ProtocolLib.svg?branch=master)
+ProtocolLib ![https://travis-ci.org/dmulloy2/ProtocolLib](https://travis-ci.org/dmulloy2/ProtocolLib.svg?branch=master)
 ===========
 
 Certain tasks are impossible to perform with the standard Bukkit API, and may require 
