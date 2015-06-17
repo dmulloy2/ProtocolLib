@@ -181,7 +181,7 @@ abstract class EventLoopProxy implements EventLoop {
 
 	@Override
 	public EventLoop next() {
-		return getDelegate().next();
+		return ((EventLoopGroup) getDelegate()).next();
 	}
 	
 	@Override
