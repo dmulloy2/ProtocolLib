@@ -158,6 +158,7 @@ public class NbtBinarySerializer {
 	
 	/**
 	 * Load an NBT list from a stream.
+	 * @param <T> Type
 	 * @param source - the input stream.
 	 * @return An NBT list.
 	 */
