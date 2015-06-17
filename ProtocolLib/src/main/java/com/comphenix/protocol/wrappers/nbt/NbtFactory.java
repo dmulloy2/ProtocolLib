@@ -444,6 +444,7 @@ public class NbtFactory {
 	
 	/**
 	 * Construct a NBT list of out an array of values.
+	 * @param <T> Type
 	 * @param name - name of this list.
 	 * @param elements - elements to add.
 	 * @return The new filled NBT list.
@@ -454,6 +455,7 @@ public class NbtFactory {
 	
 	/**
 	 * Construct a NBT list of out a list of values.
+	 * @param <T> Type
 	 * @param name - name of this list.
 	 * @param elements - elements to add.
 	 * @return The new filled NBT list.

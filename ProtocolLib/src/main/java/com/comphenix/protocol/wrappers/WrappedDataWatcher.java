@@ -338,6 +338,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Retrieve the type of a given ID, if it's allowed to be watched.
+	 * @param id - id to get type for
 	 * @return The type using a given ID, or NULL if it cannot be watched.
 	 * @throws FieldAccessException If we cannot initialize the reflection machinery.
 	 */

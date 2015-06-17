@@ -338,8 +338,9 @@ public abstract class NetworkMarker {
 	 * Return an input stream without the header in the current packet.
 	 * <p>
 	 * It's safe to modify the input stream.
-	 * @throws IOException If integer reading fails
+	 * @param input - input stream
 	 * @return An input stream without the header
+	 * @throws IOException If integer reading fails
 	 */
 	protected abstract DataInputStream skipHeader(DataInputStream input) throws IOException;
 	

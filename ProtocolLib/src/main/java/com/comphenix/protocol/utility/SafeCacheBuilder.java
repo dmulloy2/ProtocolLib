@@ -209,6 +209,8 @@ public class SafeCacheBuilder<K, V> {
 	 * incompatible with the listener, you will likely experience a
 	 * {@link ClassCastException} at some <i>undefined</i> point in the future.
 	 * 
+	 * @param <K1> Key type
+	 * @param <V1> Value type
 	 * @param listener - removal listener
 	 * @return This for chaining
 	 * 
@@ -307,7 +309,10 @@ public class SafeCacheBuilder<K, V> {
 	 * Returns the cache wrapped as a ConcurrentMap.
 	 * <p>
 	 * We can't return the direct Cache instance as it changed in Guava 13.
-	 * @return The cache as a map.
+	 * @param <K1> Key type
+	 * @param <V1> Value type
+	 * @param loader - cache loader
+	 * @return The cache as a a map.
 	 */
 	@SuppressWarnings("unchecked")
 	public <K1 extends K, V1 extends V> ConcurrentMap<K1, V1> build(CacheLoader<? super K1, V1> loader) {

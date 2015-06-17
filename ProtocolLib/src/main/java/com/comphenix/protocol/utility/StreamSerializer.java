@@ -187,7 +187,7 @@ public class StreamSerializer {
 	 * @param input - the input stream.
 	 * @param maximumLength - the maximum length of the string.
 	 * @return The deserialized string.
-	 * @throws IOException
+	 * @throws IOException If deserializing fails
 	 */
 	public String deserializeString(@Nonnull DataInputStream input, int maximumLength) throws IOException {
 		if (input == null)
