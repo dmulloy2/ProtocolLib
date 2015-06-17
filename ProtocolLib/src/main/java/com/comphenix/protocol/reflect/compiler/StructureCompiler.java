@@ -157,7 +157,7 @@ public final class StructureCompiler {
 	
 	/**
 	 * Lookup the current class loader for any previously generated classes before we attempt to generate something.
-	 * @param <TKey> Type
+	 * @param <TField> Type
 	 * @param source - the structure modifier to look up.
 	 * @return TRUE if we successfully found a previously generated class, FALSE otherwise.
 	 */
@@ -192,6 +192,7 @@ public final class StructureCompiler {
 	 * <p>
 	 * WARNING: Do NOT call this method in the main thread. Compiling may easily take 10 ms, which is already
 	 * over 1/4 of a tick (50 ms). Let the background thread automatically compile the structure modifiers instead.
+	 * @param <TField> Type
 	 * @param source - structure modifier to compile.
 	 * @return A compiled structure modifier.
 	 */

@@ -321,7 +321,6 @@ public class CommandFilter extends CommandBase {
 	 * @param event - the event.
 	 * @param handler - failure handler.
 	 * @return TRUE if we should, FALSE otherwise.
-	 * @throws ScriptException If one of the filters failed.
 	 */
 	public boolean filterEvent(PacketEvent event, FilterFailedHandler handler) {
 		for (Iterator<Filter> it = filters.iterator(); it.hasNext(); ) {

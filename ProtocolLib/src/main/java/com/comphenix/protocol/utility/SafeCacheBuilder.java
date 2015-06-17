@@ -61,7 +61,7 @@ public class SafeCacheBuilder<K, V> {
 	 * 
 	 * @throws IllegalArgumentException if {@code concurrencyLevel} is
 	 *         nonpositive
-	 * @throws IllegalStateExeption if a concurrency level was already set
+	 * @throws IllegalStateException if a concurrency level was already set
 	 */
 	public SafeCacheBuilder<K, V> concurrencyLevel(int concurrencyLevel) {
 		builder.concurrencyLevel(concurrencyLevel);
@@ -121,6 +121,8 @@ public class SafeCacheBuilder<K, V> {
 	 * @param duration the length of time after an entry is created that it
 	 *            should be automatically removed
 	 * @param unit the unit that {@code duration} is expressed in
+	 * @return This for chaining
+	 * 
 	 * @throws IllegalArgumentException if {@code duration} is negative
 	 * @throws IllegalStateException if the time to live or time to idle was
 	 *             already set
@@ -137,6 +139,9 @@ public class SafeCacheBuilder<K, V> {
 	 * size eight. Providing a large enough estimate at construction time avoids
 	 * the need for expensive resizing operations later, but setting this value
 	 * unnecessarily high wastes memory.
+	 * 
+	 * @param initialCapacity - initial capacity
+	 * @return This for chaining
 	 * 
 	 * @throws IllegalArgumentException if {@code initialCapacity} is negative
 	 * @throws IllegalStateException if an initial capacity was already set
@@ -162,6 +167,8 @@ public class SafeCacheBuilder<K, V> {
 	 * without a code change.
 	 * 
 	 * @param size the maximum size of the cache
+	 * @return This for chaining
+	 * 
 	 * @throws IllegalArgumentException if {@code size} is negative
 	 * @throws IllegalStateException if a maximum size was already set
 	 */
@@ -202,6 +209,9 @@ public class SafeCacheBuilder<K, V> {
 	 * incompatible with the listener, you will likely experience a
 	 * {@link ClassCastException} at some <i>undefined</i> point in the future.
 	 * 
+	 * @param listener - removal listener
+	 * @return This for chaining
+	 * 
 	 * @throws IllegalStateException if a removal listener was already set
 	 */
 	@SuppressWarnings("unchecked")
@@ -218,6 +228,9 @@ public class SafeCacheBuilder<K, V> {
 	 * The primary intent of this method is to facilitate testing of caches
 	 * which have been configured with {@link #expireAfterWrite} or
 	 * {@link #expireAfterAccess}.
+	 * 
+	 * @param ticker - ticker
+	 * @return This for chaining
 	 * 
 	 * @throws IllegalStateException if a ticker was already set
 	 */
@@ -242,6 +255,8 @@ public class SafeCacheBuilder<K, V> {
 	 * <b>Note:</b> when this method is used, the resulting cache will use
 	 * identity ({@code ==}) comparison to determine equality of values.
 	 * 
+	 * @return This for chaining
+	 * 
 	 * @throws IllegalStateException if the value strength was already set
 	 */
 	public SafeCacheBuilder<K, V> softValues() {
@@ -256,6 +271,8 @@ public class SafeCacheBuilder<K, V> {
 	 * <p>
 	 * <b>Warning:</b> when this method is used, the resulting cache will use
 	 * identity ({@code ==}) comparison to determine equality of keys.
+	 * 
+	 * @return This for chaining
 	 * 
 	 * @throws IllegalStateException if the key strength was already set
 	 */
@@ -276,6 +293,8 @@ public class SafeCacheBuilder<K, V> {
 	 * <p>
 	 * <b>Note:</b> when this method is used, the resulting cache will use
 	 * identity ({@code ==}) comparison to determine equality of values.
+	 * 
+	 * @return This for chaining
 	 * 
 	 * @throws IllegalStateException if the value strength was already set
 	 */

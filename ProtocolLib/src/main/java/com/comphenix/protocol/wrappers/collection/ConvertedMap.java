@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -84,6 +84,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 
 	/**
 	 * Convert a value from the inner map to the outer visible map.
+	 * @param key - unused value.
 	 * @param inner - the inner value.
 	 * @return The outer value.
 	 */
@@ -93,6 +94,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 	
 	/**
 	 * Convert a value from the outer map to the internal inner map.
+	 * @param key - unused value.
 	 * @param outer - the outer value.
 	 * @return The inner value.
 	 */
@@ -161,7 +163,8 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
      *
      * @return a string representation of this map
      */
-    public String toString() {
+    @Override
+	public String toString() {
         Iterator<Entry<Key, VOuter>> i = entrySet().iterator();
         if (!i.hasNext())
             return "{}";
@@ -189,7 +192,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
      * @return The converted set of entries.
      */
 	static <Key, VInner, VOuter> Set<Entry<Key, VOuter>> convertedEntrySet(
-			final Collection<Entry<Key, VInner>> entries, 
+			final Collection<Entry<Key, VInner>> entries,
 			final BiFunction<Key, VOuter, VInner> innerFunction,
 			final BiFunction<Key, VInner, VOuter> outerFunction) {
 		
@@ -209,7 +212,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 
 					@Override
 					public VInner setValue(VInner value) {
-						return innerFunction.apply(getKey(), outer.setValue(outerFunction.apply(getKey(), value))); 
+						return innerFunction.apply(getKey(), outer.setValue(outerFunction.apply(getKey(), value)));
 					}
 					
 					@Override
@@ -235,7 +238,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 					@Override
 					public VOuter setValue(VOuter value) {
 						final VInner converted = innerFunction.apply(getKey(), value);
-						return outerFunction.apply(getKey(), inner.setValue(converted)); 
+						return outerFunction.apply(getKey(), inner.setValue(converted));
 					}
 					
 					@Override

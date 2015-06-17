@@ -121,13 +121,14 @@ public class WrappedAttribute extends AbstractWrapper {
 	 */
 	public PacketContainer getParentPacket() {
 		return new PacketContainer(
-			PacketType.Play.Server.UPDATE_ATTRIBUTES, 
+			PacketType.Play.Server.UPDATE_ATTRIBUTES,
 			modifier.withType(MinecraftReflection.getPacketClass()).read(0)
 		);
 	}
 	
 	/**
 	 * Determine if the attribute has a given attribute modifier, identified by UUID.
+	 * @param id - the id to check for.
 	 * @return TRUE if it does, FALSE otherwise.
 	 */
 	public boolean hasModifier(UUID id) {
@@ -154,13 +155,13 @@ public class WrappedAttribute extends AbstractWrapper {
 	 * Retrieve an immutable set of all the attribute modifiers that will compute the final value of this attribute.
 	 * @return Every attribute modifier.
 	 */
-	public Set<WrappedAttributeModifier> getModifiers() {		
+	public Set<WrappedAttributeModifier> getModifiers() {
 		if (attributeModifiers == null) {
 			@SuppressWarnings("unchecked")
 			Collection<Object> collection = (Collection<Object>) modifier.withType(Collection.class).read(0);
 
 			// Convert to an equivalent wrapper
-			ConvertedSet<Object, WrappedAttributeModifier> converted = 
+			ConvertedSet<Object, WrappedAttributeModifier> converted =
 			  new ConvertedSet<Object, WrappedAttributeModifier>(getSetSafely(collection)) {
 				@Override
 				protected Object toInner(WrappedAttributeModifier outer) {
@@ -197,7 +198,7 @@ public class WrappedAttribute extends AbstractWrapper {
 			return getBaseValue() == other.getBaseValue() &&
 				   Objects.equal(getAttributeKey(), other.getAttributeKey()) &&
 				   Sets.symmetricDifference(
-						  getModifiers(), 
+						  getModifiers(),
 						  other.getModifiers()
 				   ).isEmpty();
 		}
@@ -229,7 +230,7 @@ public class WrappedAttribute extends AbstractWrapper {
 							x += modifier.getAmount();
 							break;
 						case 1: // Multiply percentage
-							y += x * modifier.getAmount(); 
+							y += x * modifier.getAmount();
 							break;
 						case 2:
 							y *= 1 + modifier.getAmount();
@@ -280,7 +281,7 @@ public class WrappedAttribute extends AbstractWrapper {
 	}
 	
 	/**
-	 * Represents a builder for wrapped attributes. 
+	 * Represents a builder for wrapped attributes.
 	 * <p>
 	 * Use {@link WrappedAttribute#newBuilder()} to construct it.
 	 * @author Kristian
@@ -390,9 +391,9 @@ public class WrappedAttribute extends AbstractWrapper {
 
 			try {
 				Object handle = ATTRIBUTE_CONSTRUCTOR.newInstance(
-					packet.getHandle(), 
-					attributeKey, 
-					baseValue, 
+					packet.getHandle(),
+					attributeKey,
+					baseValue,
 					getUnwrappedModifiers());
 
 				// Create it

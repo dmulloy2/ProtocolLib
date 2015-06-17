@@ -52,7 +52,7 @@ import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 
 /**
- * Offload all the work to Spigot, if possible. 
+ * Offload all the work to Spigot, if possible.
  * 
  * @author Kristian
  */
@@ -104,11 +104,14 @@ public class SpigotPacketInjector implements SpigotPacketListener {
 	private PacketInjector proxyPacketInjector;
 	
 	// Background task
-	private static final int BACKGROUND_DELAY = 30 * PacketFilterManager.TICKS_PER_SECOND; 
+	private static final int BACKGROUND_DELAY = 30 * PacketFilterManager.TICKS_PER_SECOND;
 	private int backgroundId;
 	
 	/**
 	 * Create a new spigot injector.
+	 * @param reporter - error reporter
+	 * @param invoker - listener invoker
+	 * @param server - server
 	 */
 	public SpigotPacketInjector(ErrorReporter reporter, ListenerInvoker invoker, Server server) {
 		this.reporter = reporter;

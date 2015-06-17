@@ -48,6 +48,7 @@ public class NbtTextSerializer {
 
 	/**
 	 * Serialize a NBT tag to a base-64 encoded string.
+	 * @param <TType> Type
 	 * @param value - the NBT tag to serialize.
 	 * @return The NBT tag in base-64 form.
 	 */
@@ -63,6 +64,7 @@ public class NbtTextSerializer {
 	
 	/**
 	 * Deserialize a NBT tag from a base-64 encoded string.
+	 * @param <TType> Type
 	 * @param input - the base-64 string.
 	 * @return The NBT tag contained in the string.
 	 * @throws IOException If we are unable to parse the input.
@@ -87,6 +89,7 @@ public class NbtTextSerializer {
 	
 	/**
 	 * Deserialize a NBT list from a base-64 encoded string.
+	 * @param <T> Type
 	 * @param input - the base-64 string.
 	 * @return The NBT tag contained in the string.
 	 * @throws IOException If we are unable to parse the input.

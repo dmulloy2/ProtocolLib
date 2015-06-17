@@ -69,6 +69,7 @@ public class NbtConfigurationSerializer {
 
 	/**
 	 * Write the content of a NBT tag to a configuration section.
+	 * @param <TType> Type
 	 * @param value - the NBT tag to write.
 	 * @param destination - the destination section.
 	 */
@@ -143,7 +144,7 @@ public class NbtConfigurationSerializer {
 			private Integer getNextIndex() {
 				Integer listIndex = workingIndex.get(current);
 				
-				if (listIndex != null) 
+				if (listIndex != null)
 					return workingIndex.put(current, listIndex + 1);
 				else
 					return null;
@@ -167,7 +168,8 @@ public class NbtConfigurationSerializer {
 	}
 	
 	/**
-	 * Read a NBT tag from a root configuration. 
+	 * Read a NBT tag from a root configuration.
+	 * @param <TType> Type
 	 * @param root - configuration that contains the NBT tag.
 	 * @param nodeName - name of the NBT tag.
 	 * @return The read NBT tag.
@@ -178,7 +180,7 @@ public class NbtConfigurationSerializer {
 	}
 	
 	/**
-	 * Read a NBT compound from a root configuration. 
+	 * Read a NBT compound from a root configuration.
 	 * @param root - configuration that contains the NBT compound.
 	 * @param nodeName - name of the NBT compound.
 	 * @return The read NBT compound.
@@ -188,7 +190,8 @@ public class NbtConfigurationSerializer {
 	}
 	
 	/**
-	 * Read a NBT compound from a root configuration. 
+	 * Read a NBT compound from a root configuration.
+	 * @param <T> Type
 	 * @param root - configuration that contains the NBT compound.
 	 * @param nodeName - name of the NBT compound.
 	 * @return The read NBT compound.
@@ -248,7 +251,7 @@ public class NbtConfigurationSerializer {
 				ConfigurationSection section = (ConfigurationSection) node;
 				
 				// As above
-				for (String key : section.getKeys(false)) 
+				for (String key : section.getKeys(false))
 					compound.put(readNode(section, key));
 				return (NbtWrapper<?>) compound;
 			}
@@ -315,7 +318,7 @@ public class NbtConfigurationSerializer {
 	 * @return An equivalent byte array.
 	 */
 	private static byte[] toByteArray(int[] data) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);        
+        ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);
         IntBuffer intBuffer = byteBuffer.asIntBuffer();
         
         intBuffer.put(data);

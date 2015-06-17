@@ -46,7 +46,7 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
 	
 	/**
 	 * Add a NBT list or NBT compound to the list.
-	 * @param element
+	 * @param element Element to add
 	 */
 	public abstract void add(NbtBase<TType> element);
 

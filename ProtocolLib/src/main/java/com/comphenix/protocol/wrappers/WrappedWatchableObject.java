@@ -184,7 +184,6 @@ public class WrappedWatchableObject extends AbstractWrapper {
 
 	/**
 	 * Retrieve the type ID of a watchable object.
-	 * <p>
 	 * <table border=1>
 	 * <caption>Type to Value</caption>
 	 * <tbody>

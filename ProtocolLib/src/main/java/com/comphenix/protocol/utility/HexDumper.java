@@ -133,7 +133,6 @@ public class HexDumper {
 	 * Append the hex dump of the given data to the string builder, using the current formatting settings.
 	 * @param appendable - appendable source.
 	 * @param data - the data to dump.
-	 * @param length - the number of bytes to dump.
 	 * @throws IOException Any underlying IO exception.
 	 */
 	public void appendTo(Appendable appendable, byte[] data) throws IOException {

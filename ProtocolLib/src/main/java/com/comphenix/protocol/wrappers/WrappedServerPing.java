@@ -445,6 +445,7 @@ public class WrappedServerPing extends AbstractWrapper {
 		/**
 		 * Retrieve a compressed image from an image.
 		 * @param image - the image.
+		 * @return A compressed image from an image.
 		 * @throws IOException If we were unable to compress the image.
 		 */
 		public static CompressedImage fromPng(RenderedImage image) throws IOException {

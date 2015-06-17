@@ -322,6 +322,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Retrieve the ID of a given type, if it's allowed to be watched.
+	 * @param clazz - Class to check for.
 	 * @return The ID, or NULL if it cannot be watched.
 	 * @throws FieldAccessException If we cannot initialize the reflection machinery.
 	 */
@@ -609,7 +610,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @param newValue - the new watched value.
      * @param secondary - optional secondary value.
      * @param update - whether or not to refresh every listening client.
-     * @throws FieldAccessException Cannot read underlying field.
+     * @param type - custom type.
+     * @throws FieldAccessException If we cannot read the underlying field.
      */
     public void setObject(int index, Object newValue, Object secondary, boolean update, CustomType type) throws FieldAccessException {
 		Object created = type.newInstance(newValue, secondary);

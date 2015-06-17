@@ -339,6 +339,7 @@ public abstract class NetworkMarker {
 	 * <p>
 	 * It's safe to modify the input stream.
 	 * @throws IOException If integer reading fails
+	 * @return An input stream without the header
 	 */
 	protected abstract DataInputStream skipHeader(DataInputStream input) throws IOException;
 	

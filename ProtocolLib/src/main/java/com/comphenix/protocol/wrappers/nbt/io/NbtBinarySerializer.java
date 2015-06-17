@@ -102,6 +102,7 @@ public class NbtBinarySerializer {
 
 	/**
 	 * Load an NBT tag from a stream.
+	 * @param <TType> Type
 	 * @param source - the input stream.
 	 * @return An NBT tag.
 	 */

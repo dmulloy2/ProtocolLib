@@ -210,6 +210,8 @@ public class BukkitConverters {
 	
 	/**
 	 * Retrieve an equivalent converter for a map of generic keys and primitive values.
+	 * @param <T> Key type
+	 * @param <U> Value type
 	 * @param genericKeyType - the generic key type.
 	 * @param keyConverter - an equivalent converter for the generic type.
 	 * @return An equivalent converter.
@@ -264,6 +266,7 @@ public class BukkitConverters {
 	
 	/**
 	 * Retrieve an equivalent converter for a list of generic items.
+	 * @param <T> Type
 	 * @param genericItemType - the generic item type.
 	 * @param itemConverter - an equivalent converter for the generic type.
 	 * @return An equivalent converter.
@@ -320,6 +323,7 @@ public class BukkitConverters {
 	
 	/**
 	 * Retrieve an equivalent converter for an array of generic items.
+	 * @param <T> Type
 	 * <p>
 	 * The array is wrapped in a list.
 	 * @param genericItemType - the generic item type.
@@ -878,6 +882,7 @@ public class BukkitConverters {
 	
  	/**
 	 * Wraps a given equivalent converter in NULL checks, ensuring that such values are ignored.
+	 * @param <TType> Type
 	 * @param delegate - the underlying equivalent converter.
 	 * @return A equivalent converter that ignores NULL values.
 	 */

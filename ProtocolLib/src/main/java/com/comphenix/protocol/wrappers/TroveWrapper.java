@@ -51,6 +51,7 @@ public class TroveWrapper {
 	 */
 	public static ReadOnlyFieldAccessor wrapMapField(final FieldAccessor accessor, final Function<Integer, Integer> noEntryTransform) {
 		return new ReadOnlyFieldAccessor() {
+			@Override
 			public Object get(Object instance) {
 				Object troveMap = accessor.get(instance);
 				
@@ -59,6 +60,7 @@ public class TroveWrapper {
 					TroveWrapper.transformNoEntryValue(troveMap, noEntryTransform);
 				return getDecoratedMap(troveMap);
 			}
+			@Override
 			public Field getField() {
 				return accessor.getField();
 			}
@@ -72,9 +74,11 @@ public class TroveWrapper {
 	 */
 	public static ReadOnlyFieldAccessor wrapSetField(final FieldAccessor accessor) {
 		return new ReadOnlyFieldAccessor() {
+			@Override
 			public Object get(Object instance) {
 				return getDecoratedSet(accessor.get(instance));
 			}
+			@Override
 			public Field getField() {
 				return accessor.getField();
 			}
@@ -88,9 +92,11 @@ public class TroveWrapper {
 	 */
 	public static ReadOnlyFieldAccessor wrapListField(final FieldAccessor accessor) {
 		return new ReadOnlyFieldAccessor() {
+			@Override
 			public Object get(Object instance) {
 				return getDecoratedList(accessor.get(instance));
 			}
+			@Override
 			public Field getField() {
 				return accessor.getField();
 			}
@@ -99,6 +105,8 @@ public class TroveWrapper {
 	
 	/**
 	 * Retrieve a Java wrapper for the corresponding Trove map.
+	 * @param <TKey> Key type
+	 * @param <TValue> Value type
 	 * @param troveMap - the trove map to wrap.
 	 * @return The wrapped GNU Trove map.
 	 * @throws IllegalStateException If GNU Trove cannot be found in the class map.
@@ -113,6 +121,7 @@ public class TroveWrapper {
 	
 	/**
 	 * Retrieve a Java wrapper for the corresponding Trove set.
+	 * @param <TValue> Type
 	 * @param troveSet - the trove set to wrap.
 	 * @return The wrapped GNU Trove set.
 	 * @throws IllegalStateException If GNU Trove cannot be found in the class map.
@@ -127,6 +136,7 @@ public class TroveWrapper {
 	
 	/**
 	 * Retrieve a Java wrapper for the corresponding Trove list.
+	 * @param <TValue> Type
 	 * @param troveList - the trove list to wrap.
 	 * @return The wrapped GNU Trove list.
 	 * @throws IllegalStateException If GNU Trove cannot be found in the class map.
@@ -185,7 +195,7 @@ public class TroveWrapper {
 	}
 	
 	/**
-	 * Retrieve the corresponding decorator. 
+	 * Retrieve the corresponding decorator.
 	 * @param trove - the trove class.
 	 * @return The wrapped trove class.
 	 */

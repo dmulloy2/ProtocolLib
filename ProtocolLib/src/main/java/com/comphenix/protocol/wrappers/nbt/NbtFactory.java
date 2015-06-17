@@ -94,6 +94,8 @@ public class NbtFactory {
 	 * Get a NBT wrapper from a NBT base.
 	 * <p>
 	 * This may clone the content if the NbtBase is not a NbtWrapper.
+	 * 
+	 * @param <T> Type
 	 * @param base - the base class.
 	 * @return A NBT wrapper.
 	 */
@@ -282,6 +284,7 @@ public class NbtFactory {
 	 * Initialize a NBT wrapper.
 	 * <p>
 	 * Use {@link #fromNMS(Object, String)} instead.
+	 * @param <T> Type
 	 * @param handle - the underlying net.minecraft.server object to wrap.
 	 * @return A NBT wrapper.
 	 */
@@ -301,6 +304,7 @@ public class NbtFactory {
 	
 	/**
 	 * Initialize a NBT wrapper with a name.
+	 * @param <T> Type
 	 * @param name - the name of the tag, or NULL if not valid.
 	 * @param handle - the underlying net.minecraft.server object to wrap.
 	 * @return A NBT wrapper.
@@ -460,6 +464,7 @@ public class NbtFactory {
 	
 	/**
 	 * Create a new NBT wrapper from a given type.
+	 * @param <T> Type
 	 * @param type - the NBT type.
 	 * @param name - the name of the NBT tag.
 	 * @return The new wrapped NBT tag.
@@ -539,6 +544,7 @@ public class NbtFactory {
 	
 	/**
 	 * Create a new NBT wrapper from a given type.
+	 * @param <T> Type
 	 * @param type - the NBT type.
 	 * @param name - the name of the NBT tag.
 	 * @param value - the value of the new tag.
@@ -555,6 +561,7 @@ public class NbtFactory {
 	
 	/**
 	 * Create a new NBT wrapper from a given type.
+	 * @param <T> Type
 	 * @param type - type of the NBT value.
 	 * @param name - the name of the NBT tag.
 	 * @param value - the value of the new tag.

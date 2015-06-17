@@ -443,9 +443,10 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	/**
 	 * Retrieves the current net handler for this player.
-	 * @boolean refresh - Whether or not to refresh
+	 * @param refresh - Whether or not to refresh
 	 * @return Current net handler.
 	 * @throws IllegalAccessException Unable to find or retrieve net handler.
+	 * @return The current net handler for this player
 	 */
 	protected Object getNetHandler(boolean refresh) throws IllegalAccessException {
 		// What a mess
@@ -564,7 +565,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	/**
 	 * Determine if this inject method can even be attempted.
-	 * @param GamePhase - Game phase
+	 * @param state - Game phase
 	 * @return TRUE if can be attempted, though possibly with failure, FALSE otherwise.
 	 */
 	public abstract boolean canInject(GamePhase state);

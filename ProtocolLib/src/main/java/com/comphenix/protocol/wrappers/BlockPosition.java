@@ -50,6 +50,9 @@ public class BlockPosition {
 
 	/**
 	 * Construct an immutable 3D vector.
+	 * @param x - x coordinate
+	 * @param y - y coordinate
+	 * @param z - z coordinate
 	 */
 	public BlockPosition(int x, int y, int z) {
 		this.x = x;

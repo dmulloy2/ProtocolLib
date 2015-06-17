@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -48,7 +48,7 @@ import com.google.common.base.Joiner;
  */
 public class AsyncListenerHandler {
 	public static final ReportType REPORT_HANDLER_NOT_STARTED = new ReportType(
-		"Plugin %s did not start the asynchronous handler %s by calling start() or syncStart().");	
+		"Plugin %s did not start the asynchronous handler %s by calling start() or syncStart().");
 
 	/**
 	 * Signal an end to packet processing.
@@ -209,6 +209,7 @@ public class AsyncListenerHandler {
 	 * close a specific worker is less efficient than stopping an arbitrary worker.
 	 * <p>
 	 * <b>Warning</b>: Never call the run() method in the main thread.
+	 * @return The listener loop
 	 */
 	public AsyncRunnable getListenerLoop() {
 		return new AsyncRunnable() {
@@ -315,7 +316,7 @@ public class AsyncListenerHandler {
 	 *     public Void apply(&#64;Nullable AsyncRunnable workerLoop) {
 	 *         Thread thread = Thread.currentThread();
 	 *         int prevPriority = thread.getPriority();
-	 *	       
+	 *	
 	 *         thread.setPriority(Thread.MIN_PRIORITY);
 	 *         workerLoop.run();
 	 *         thread.setPriority(prevPriority);
@@ -357,9 +358,9 @@ public class AsyncListenerHandler {
 	 * @return A friendly thread name.
 	 */
 	public String getFriendlyWorkerName(int id) {
-		return String.format("Protocol Worker #%s - %s - [recv: %s, send: %s]", 
-				id, 
-				PacketAdapter.getPluginName(listener), 
+		return String.format("Protocol Worker #%s - %s - [recv: %s, send: %s]",
+				id,
+				PacketAdapter.getPluginName(listener),
 				fromWhitelist(listener.getReceivingWhitelist()),
 				fromWhitelist(listener.getSendingWhitelist())
 		);
@@ -383,8 +384,8 @@ public class AsyncListenerHandler {
 	 * This is useful if you need to synchronize with the main thread in your packet listener, but
 	 * you're not performing any expensive processing.
 	 * <p>
-	 * <b>Note</b>: Use a asynchronous worker if the packet listener may use more than 0.5 ms 
-	 * of processing time on a single packet. Do as much as possible on the worker thread, and schedule synchronous tasks 
+	 * <b>Note</b>: Use a asynchronous worker if the packet listener may use more than 0.5 ms
+	 * of processing time on a single packet. Do as much as possible on the worker thread, and schedule synchronous tasks
 	 * to use the Bukkit API instead.
 	 * @return TRUE if the synchronized processing was successfully started, FALSE if it's already running.
 	 * @throws IllegalStateException If we couldn't start the underlying task.
@@ -399,12 +400,12 @@ public class AsyncListenerHandler {
 	 * This is useful if you need to synchronize with the main thread in your packet listener, but
 	 * you're not performing any expensive processing.
 	 * <p>
-	 * The processing time parameter gives the upper bound for the amount of time spent processing pending packets. 
-	 * It should be set to a fairly low number, such as 0.5 ms or 1% of a game tick - to reduce the impact 
+	 * The processing time parameter gives the upper bound for the amount of time spent processing pending packets.
+	 * It should be set to a fairly low number, such as 0.5 ms or 1% of a game tick - to reduce the impact
 	 * on the main thread. Never go beyond 50 milliseconds.
 	 * <p>
-	 * <b>Note</b>: Use a asynchronous worker if the packet listener may exceed the ideal processing time 
-	 * on a single packet. Do as much as possible on the worker thread, and schedule synchronous tasks 
+	 * <b>Note</b>: Use a asynchronous worker if the packet listener may exceed the ideal processing time
+	 * on a single packet. Do as much as possible on the worker thread, and schedule synchronous tasks
 	 * to use the Bukkit API instead.
 	 * 
 	 * @param time - the amount of processing time alloted per game tick (20 ticks per second).
@@ -503,7 +504,7 @@ public class AsyncListenerHandler {
 	}
 	
 	/**
-	 * Set the current number of workers. 
+	 * Set the current number of workers.
 	 * <p>
 	 * This method can only be called with a count of zero when the listener is closing.
 	 * @param count - new number of workers.
@@ -563,7 +564,7 @@ public class AsyncListenerHandler {
 	 */
 	private void listenerLoop(int workerID) {
 		// Danger, danger!
-		if (Thread.currentThread().getId() == mainThread.getId()) 
+		if (Thread.currentThread().getId() == mainThread.getId())
 			throw new IllegalStateException("Do not call this method from the main thread.");
 		if (cancelled)
 			throw new IllegalStateException("Listener has been cancelled. Create a new listener instead.");
@@ -584,7 +585,7 @@ public class AsyncListenerHandler {
 					// This is a bit slow, but it should be safe
 					synchronized (stopLock) {
 						// Are we the one who is supposed to stop?
-						if (stoppedTasks.contains(workerID)) 
+						if (stoppedTasks.contains(workerID))
 							return;
 						if (waitForStops())
 							return;
@@ -616,7 +617,7 @@ public class AsyncListenerHandler {
 		AsyncMarker marker = packet.getAsyncMarker();
 		
 		// Here's the core of the asynchronous processing
-		try {	
+		try {
 			synchronized (marker.getProcessingLock()) {
 				marker.setListenerHandler(this);
 				marker.setWorkerID(workerID);
@@ -624,7 +625,7 @@ public class AsyncListenerHandler {
 				// We're not THAT worried about performance here
 				if (timedManager.isTiming()) {
 					// Retrieve the tracker to use
-					TimedTracker tracker = timedManager.getTracker(listener, 
+					TimedTracker tracker = timedManager.getTracker(listener,
 						packet.isServerPacket() ? ListenerType.ASYNC_SERVER_SIDE : ListenerType.ASYNC_CLIENT_SIDE);
 					long token = tracker.beginTracking();
 					
