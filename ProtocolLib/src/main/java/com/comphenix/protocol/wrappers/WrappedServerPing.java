@@ -175,7 +175,7 @@ public class WrappedServerPing extends AbstractWrapper {
 
 	/**
 	 * Set the message of the day.
-	 * @param description - the message.
+	 * @param message - the message.
 	 */
 	public void setMotD(String message) {
 		setMotD(WrappedChatComponent.fromText(message));
@@ -200,9 +200,9 @@ public class WrappedServerPing extends AbstractWrapper {
 
 	/**
 	 * Retrieve the displayed number of online players.
-	 * @see {@link #setPlayersOnline(int)} for more information.
 	 * @return The displayed number.
 	 * @throws IllegalStateException If the player count has been hidden via {@link #setPlayersVisible(boolean)}.
+	 * @see #setPlayersOnline(int)
 	 */
 	public int getPlayersOnline() {
 		if (players == null)
@@ -225,9 +225,9 @@ public class WrappedServerPing extends AbstractWrapper {
 
 	/**
 	 * Retrieve the displayed maximum number of players.
-	 * @see {@link #setPlayersMaximum(int)} for more information.
 	 * @return The maximum number.
 	 * @throws IllegalStateException If the player maximum has been hidden via {@link #setPlayersVisible(boolean)}.
+	 * @see #setPlayersMaximum(int)
 	 */
 	public int getPlayersMaximum() {
 		if (players == null)

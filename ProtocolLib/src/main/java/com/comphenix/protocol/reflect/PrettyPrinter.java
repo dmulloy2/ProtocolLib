@@ -62,10 +62,10 @@ public class PrettyPrinter {
 	public final static int RECURSE_DEPTH = 3;
 
 	/**
-	 * Print the content of an object.
+	 * Print the contents of an object.
 	 * @param object - the object to serialize.
 	 * @return String representation of the class.
-	 * @throws IllegalAccessException
+	 * @throws IllegalAccessException If the object is null
 	 */
 	public static String printObject(Object object) throws IllegalAccessException {
 		if (object == null)
@@ -75,11 +75,12 @@ public class PrettyPrinter {
 	}
 	
 	/**
-	 * Print the content of an object.
+	 * Print the contents of an object.
 	 * @param object - the object to serialize.
+	 * @param start - class to start at.
 	 * @param stop - superclass that will stop the process.
-	 * @return String representation of the class.
-	 * @throws IllegalAccessException
+	 * @return String representation of the class
+	 * @throws IllegalAccessException If the object is null
 	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop) throws IllegalAccessException {
 		if (object == null)
@@ -89,24 +90,27 @@ public class PrettyPrinter {
 	}
 	
 	/**
-	 * Print the content of an object.
+	 * Print the contents of an object.
 	 * @param object - the object to serialize.
+	 * @param start - class to start at.
 	 * @param stop - superclass that will stop the process.
+	 * @param hierachyDepth - maximum recursion level.
 	 * @return String representation of the class.
-	 * @throws IllegalAccessException
+	 * @throws IllegalAccessException If the object is null
 	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop, int hierachyDepth) throws IllegalAccessException {
 		return printObject(object, start, stop, hierachyDepth, ObjectPrinter.DEFAULT);
 	}
 	
 	/**
-	 * Print the content of an object.
+	 * Print the contents of an object.
 	 * @param object - the object to serialize.
+	 * @param start - class to start at.
 	 * @param stop - superclass that will stop the process.
 	 * @param hierachyDepth - maximum recursion level.
 	 * @param printer - a generic object printer.
 	 * @return String representation of the class.
-	 * @throws IllegalAccessException
+	 * @throws IllegalAccessException If the object is null
 	 */
 	public static String printObject(Object object, Class<?> start, Class<?> stop, int hierachyDepth, ObjectPrinter printer) throws IllegalAccessException {
 		if (object == null)

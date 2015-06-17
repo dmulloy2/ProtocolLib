@@ -129,7 +129,7 @@ public interface PlayerInjectionHandler {
 	 * Send the given packet to the given receiver.
 	 * @param receiver - the player receiver.
 	 * @param packet - the packet to send.
-	 * @param marker
+	 * @param marker - network marker.
 	 * @param filters - whether or not to invoke the packet filters.
 	 * @throws InvocationTargetException If an error occurred during sending.
 	 */

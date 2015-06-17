@@ -28,6 +28,8 @@ public class SafeCacheBuilder<K, V> {
 
 	/**
 	 * Construct a new safe cache builder.
+	 * @param <K> Key type
+	 * @param <V> Value type
 	 * 
 	 * @return A new cache builder.
 	 */
@@ -54,9 +56,12 @@ public class SafeCacheBuilder<K, V> {
 	 * <b>Note:</b>The default may change in the future. If you care about this
 	 * value, you should always choose it explicitly.
 	 * 
+	 * @param concurrencyLevel New concurrency level
+	 * @return This for chaining
+	 * 
 	 * @throws IllegalArgumentException if {@code concurrencyLevel} is
-	 *             nonpositive
-	 * @throws IllegalStateException if a concurrency level was already set
+	 *         nonpositive
+	 * @throws IllegalStateExeption if a concurrency level was already set
 	 */
 	public SafeCacheBuilder<K, V> concurrencyLevel(int concurrencyLevel) {
 		builder.concurrencyLevel(concurrencyLevel);
@@ -66,8 +71,7 @@ public class SafeCacheBuilder<K, V> {
 	/**
 	 * Specifies that each entry should be automatically removed from the cache
 	 * once a fixed duration has elapsed after the entry's creation, or last
-	 * access. Access time is reset by {@link com.google.common.cache.Cache#get Cache.get()} and
-	 * {@link com.google.common.cache.Cache#getUnchecked Cache.getUnchecked()}, 
+	 * access. Access time is reset by {@link com.google.common.cache.Cache#get Cache.get()},
 	 * but not by operations on the view returned by
 	 * {@link com.google.common.cache.Cache#asMap() Cache.asMap()}.
 	 * 
@@ -86,6 +90,8 @@ public class SafeCacheBuilder<K, V> {
 	 * @param duration the length of time after an entry is last accessed that
 	 *            it should be automatically removed
 	 * @param unit the unit that {@code duration} is expressed in
+	 * @return This for chaining
+	 * 
 	 * @throws IllegalArgumentException if {@code duration} is negative
 	 * @throws IllegalStateException if the time to idle or time to live was
 	 *             already set
@@ -280,7 +286,7 @@ public class SafeCacheBuilder<K, V> {
 	
 	/**
 	 * Returns the cache wrapped as a ConcurrentMap.
-	 * <>
+	 * <p>
 	 * We can't return the direct Cache instance as it changed in Guava 13.
 	 * @return The cache as a map.
 	 */

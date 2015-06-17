@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -32,7 +32,7 @@ import com.google.common.collect.Sets;
 /**
  * Determines which packets will be observed by a listener, and with what priority.
 
- * @author Kristian 
+ * @author Kristian
  */
 public class ListeningWhitelist {
 	/**
@@ -60,7 +60,7 @@ public class ListeningWhitelist {
 	 * <p>
 	 * Deprecated: Use {@link #newBuilder()} instead.
 	 * @param priority - the listener priority.
-	 * @param whitelist - set of IDs to observe/enable. 
+	 * @param whitelist - set of IDs to observe/enable.
 	 */
 	@Deprecated
 	public ListeningWhitelist(ListenerPriority priority, Set<Integer> whitelist) {
@@ -192,7 +192,7 @@ public class ListeningWhitelist {
 	/**
 	 * Determine if any of the given IDs can be found in the whitelist.
 	 * @param whitelist - whitelist to test.
-	 * @param idList - list of packet IDs to find. 
+	 * @param idList - list of packet IDs to find.
 	 * @return TRUE if any of the packets in the list can be found in the whitelist, FALSE otherwise.
 	 */
 	public static boolean containsAny(ListeningWhitelist whitelist, int... idList) {
@@ -442,7 +442,7 @@ public class ListeningWhitelist {
 		
 		/**
 		 * Set the options to copy when constructing new whitelists.
-		 * @param options - the options array.
+		 * @param serverOptions - the options array.
 		 * @return This builder, for chaining.
 		 */
 		public Builder options(ListenerOptions[] serverOptions) {
@@ -452,7 +452,7 @@ public class ListeningWhitelist {
 		
 		/**
 		 * Options to merge into the current set of options.
-		 * @param options - the options array.
+		 * @param serverOptions - the options array.
 		 * @return This builder, for chaining.
 		 */
 		public Builder mergeOptions(ListenerOptions... serverOptions) {
@@ -461,7 +461,7 @@ public class ListeningWhitelist {
 		
 		/**
 		 * Options to merge into the current set of options.
-		 * @param options - the options array.
+		 * @param serverOptions - the options array.
 		 * @return This builder, for chaining.
 		 */
 		public Builder mergeOptions(Collection<ListenerOptions> serverOptions) {

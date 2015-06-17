@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -36,16 +36,18 @@ import com.google.common.collect.HashBiMap;
 public class ObjectEnum<T> implements Iterable<T> {
 	// Used to convert between IDs and names
 	protected BiMap<T, String> members = HashBiMap.create();
-	
+
 	/**
 	 * Registers every declared integer field.
+	 * @param fieldType Field type
 	 */
 	public ObjectEnum(Class<T> fieldType) {
 		registerAll(fieldType);
 	}
-	
+
 	/**
 	 * Registers every public assignable static field as a member.
+	 * @param fieldType Field type
 	 */
 	@SuppressWarnings("unchecked")
 	protected void registerAll(Class<T> fieldType) {
@@ -56,7 +58,7 @@ public class ObjectEnum<T> implements Iterable<T> {
 					T value = (T) entry.get(null);
 					
 					if (value == null)
-						throw new IllegalArgumentException("Field " + entry + " was NULL. Remember to " + 
+						throw new IllegalArgumentException("Field " + entry + " was NULL. Remember to " +
 								"construct the object after the field has been declared.");
 					registerMember(value, entry.getName());
 				}
@@ -77,7 +79,7 @@ public class ObjectEnum<T> implements Iterable<T> {
 	 */
 	public boolean registerMember(T instance, String name) {
 		if (!members.containsKey(instance)) {
-			members.put(instance, name);	
+			members.put(instance, name);
 			return true;
 		}
 		return false;

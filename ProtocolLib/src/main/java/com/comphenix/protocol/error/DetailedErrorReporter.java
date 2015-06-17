@@ -93,6 +93,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	
 	/**
 	 * Create a default error reporting system.
+	 * @param plugin - the plugin owner.
 	 */
 	public DetailedErrorReporter(Plugin plugin) {
 		this(plugin, DEFAULT_PREFIX, DEFAULT_SUPPORT_URL);

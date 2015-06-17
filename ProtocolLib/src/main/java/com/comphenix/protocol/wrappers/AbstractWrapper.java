@@ -12,7 +12,7 @@ public abstract class AbstractWrapper {
 	
 	/**
 	 * Construct a new NMS wrapper.
-	 * @param handle - the wrapped NMS object.
+	 * @param handleType - the NMS handle type.
 	 */
 	public AbstractWrapper(Class<?> handleType) {
 		this.handleType = Preconditions.checkNotNull(handleType, "handleType cannot be NULL");

@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -66,7 +66,7 @@ public class ChatExtensions {
 	 * @param message - the message to send.
 	 * @throws InvocationTargetException If we were unable to send the message.
 	 */
-	public void sendMessageSilently(CommandSender receiver, String message) throws InvocationTargetException { 
+	public void sendMessageSilently(CommandSender receiver, String message) throws InvocationTargetException {
 		if (receiver == null)
 			throw new IllegalArgumentException("receiver cannot be NULL.");
 		if (message == null)
@@ -172,6 +172,7 @@ public class ChatExtensions {
 	 * @param marginChar - the character to use as margin.
 	 * @param marginWidth - the width (in characters) of the left and right margin.
 	 * @param marginHeight - the height (in characters) of the top and buttom margin.
+	 * @return Flowerboxed message
 	 */
 	public static String[] toFlowerBox(String[] message, String marginChar, int marginWidth, int marginHeight) {
 		String[] output = new String[message.length + marginHeight * 2];

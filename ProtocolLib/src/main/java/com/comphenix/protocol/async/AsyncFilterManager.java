@@ -373,7 +373,6 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	/**
 	 * Construct an async marker with the given sending priority delta and timeout delta.
-	 * @param sendingDelta - how many packets we're willing to wait.
 	 * @param timeoutDelta - how long (in ms) until the packet expire.
 	 * @return An async marker.
 	 */
@@ -473,6 +472,8 @@ public class AsyncFilterManager implements AsynchronousManager {
 	
 	/**
 	 * Send any due packets, or clean up packets that have expired.
+	 * @param tickCounter Tick counter
+	 * @param onMainThread Whether or not to execute on the main thread
 	 */
 	public void sendProcessedPackets(int tickCounter, boolean onMainThread) {
 		// The server queue is unlikely to need checking that often

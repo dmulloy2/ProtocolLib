@@ -164,10 +164,9 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Creates a packet container for an existing packet.
-	 * <p>
-	 * Deprecated: Use {@link #PacketContainer(PacketType, Object))} instead.
 	 * @param id - ID of the given packet.
 	 * @param handle - contained packet.
+	 * @deprecated Use {@link #PacketContainer(PacketType, Object)} instead
 	 */
 	@Deprecated
 	public PacketContainer(int id, Object handle) {
@@ -176,11 +175,10 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Creates a packet container for an existing packet.
-	 * <p>
-	 * Deprecated: Use {@link #PacketContainer(PacketType, Object, StructureModifier))} instead.
 	 * @param id - ID of the given packet.
 	 * @param handle - contained packet.
 	 * @param structure - structure modifier.
+	 * @deprecated Use {@link #PacketContainer(PacketType, Object, StructureModifier)} instead
 	 */
 	@Deprecated
 	public PacketContainer(int id, Object handle, StructureModifier<Object> structure) {
@@ -197,7 +195,7 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Creates a packet container for an existing packet.
-	 * @param id - ID of the given packet.
+	 * @param type - Type of the given packet.
 	 * @param handle - contained packet.
 	 */
 	public PacketContainer(PacketType type, Object handle) {
@@ -206,7 +204,7 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Creates a packet container for an existing packet.
-	 * @param id - ID of the given packet.
+	 * @param type - Type of the given packet.
 	 * @param handle - contained packet.
 	 * @param structure - structure modifier.
 	 */
@@ -255,6 +253,7 @@ public class PacketContainer implements Serializable {
 	
 	/**
 	 * Retrieves a read/write structure for every field with the given type.
+	 * @param <T> Type
 	 * @param primitiveType - the type to find.
 	 * @return A modifier for this specific type.
 	 */
@@ -681,7 +680,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieve a read/write structure for the PlayerInfoData list fields in the following packet: <br>
 	 * <ul>
-	 *   <li>{@link PacketType.Play.Server.PLAYER_INFO}</li>
+	 *   <li>{@link PacketType.Play.Server#PLAYER_INFO}
 	 * </ul>
 	 * @return A modifier for PlayerInfoData list fields.
 	 */

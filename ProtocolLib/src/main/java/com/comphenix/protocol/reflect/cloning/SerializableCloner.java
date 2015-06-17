@@ -26,6 +26,7 @@ public class SerializableCloner implements Cloner {
 
     /**
      * Clone the given object using serialization.
+     * @param <T> Type
      * @param obj - the object to clone.
      * @return The cloned object.
      * @throws RuntimeException If we were unable to clone the object.

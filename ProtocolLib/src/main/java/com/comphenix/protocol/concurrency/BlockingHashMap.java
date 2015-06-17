@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -48,6 +48,8 @@ public class BlockingHashMap<TKey, TValue> {
 	
 	/**
 	 * Retrieve a cache loader that will always throw an exception.
+	 * @param <TKey> Type of the key
+	 * @param <TValue> Type of the value
 	 * @return An invalid cache loader.
 	 */
 	public static <TKey, TValue> CacheLoader<TKey, TValue> newInvalidCacheLoader() {
@@ -83,6 +85,8 @@ public class BlockingHashMap<TKey, TValue> {
 	
 	/**
 	 * Initialize a new map.
+	 * @param <TKey> Type of the key
+	 * @param <TValue> Type of the value
 	 * @return The created map.
 	 */
 	public static <TKey, TValue> BlockingHashMap<TKey, TValue> create() {
@@ -91,7 +95,7 @@ public class BlockingHashMap<TKey, TValue> {
 	
 	/**
 	 * Waits until a value has been associated with the given key, and then retrieves that value.
-	 * @param key - the key whose associated value is to be returned 
+	 * @param key - the key whose associated value is to be returned
 	 * @return The value to which the specified key is mapped.
 	 * @throws InterruptedException If the current thread got interrupted while waiting.
 	 */
@@ -118,7 +122,7 @@ public class BlockingHashMap<TKey, TValue> {
 	
 	/**
 	 * Waits until a value has been associated with the given key, and then retrieves that value.
-	 * @param key - the key whose associated value is to be returned 
+	 * @param key - the key whose associated value is to be returned
 	 * @param timeout - the amount of time to wait until an association has been made.
 	 * @param unit - unit of timeout.
 	 * @return The value to which the specified key is mapped, or NULL if the timeout elapsed.
@@ -133,7 +137,7 @@ public class BlockingHashMap<TKey, TValue> {
 	 * <p>
 	 * If timeout is zero, this method will return immediately if it can't find an socket injector.
 	 * 
-	 * @param key - the key whose associated value is to be returned 
+	 * @param key - the key whose associated value is to be returned
 	 * @param timeout - the amount of time to wait until an association has been made.
 	 * @param unit - unit of timeout.
 	 * @param ignoreInterrupted - TRUE if we should ignore the thread being interrupted, FALSE otherwise.

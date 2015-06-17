@@ -23,6 +23,7 @@ public class HexDumper {
 	/**
 	 * Retrieve a hex dumper tuned for lines of 80 characters:
 	 * <table border="1">
+	 * <caption>Values</caption>
 	 * <tr>
 	 *     <th>Property</th>
 	 *     <th>Value</th>
@@ -118,7 +119,7 @@ public class HexDumper {
 	 * Set the number of groups in each line. This is limited by the supply of bytes in the byte array.
 	 * <p>
 	 * Use {@link Integer#MAX_VALUE} to effectively disable lines.
-	 * @param groupLength - the length of each group.
+	 * @param groupCount - the count of groups.
 	 * @return This instance, for chaining.
 	 */
 	public HexDumper groupCount(int groupCount) {
@@ -132,7 +133,6 @@ public class HexDumper {
 	 * Append the hex dump of the given data to the string builder, using the current formatting settings.
 	 * @param appendable - appendable source.
 	 * @param data - the data to dump.
-	 * @param start - the starting index of the data.
 	 * @param length - the number of bytes to dump.
 	 * @throws IOException Any underlying IO exception.
 	 */
@@ -158,8 +158,6 @@ public class HexDumper {
 	 * Append the hex dump of the given data to the string builder, using the current formatting settings.
 	 * @param builder - the builder.
 	 * @param data - the data to dump.
-	 * @param start - the starting index of the data.
-	 * @param length - the number of bytes to dump.
 	 */
 	public void appendTo(StringBuilder builder, byte[] data) {
 		appendTo(builder, data, 0, data.length);

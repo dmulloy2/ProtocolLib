@@ -295,7 +295,7 @@ public class CommandFilter extends CommandBase {
 				@Override
 				public boolean handle(PacketEvent event, Filter filter, Exception ex) {
 					reporter.reportMinimal(plugin, "filterEvent(PacketEvent)", ex, event);
-					reporter.reportWarning(this, 
+					reporter.reportWarning(this,
 							Report.newBuilder(REPORT_FILTER_REMOVED_FOR_ERROR).messageParam(filter.getName(), ex.getClass().getSimpleName())
 					);
 					return false;
@@ -321,7 +321,7 @@ public class CommandFilter extends CommandBase {
 	 * @param event - the event.
 	 * @param handler - failure handler.
 	 * @return TRUE if we should, FALSE otherwise.
-	 * @throws FilterFailedException If one of the filters failed.
+	 * @throws ScriptException If one of the filters failed.
 	 */
 	public boolean filterEvent(PacketEvent event, FilterFailedHandler handler) {
 		for (Iterator<Filter> it = filters.iterator(); it.hasNext(); ) {
@@ -389,7 +389,7 @@ public class CommandFilter extends CommandBase {
 				
 				// Make sure we can use the conversable interface
 				if (sender instanceof Conversable) {
-					final MultipleLinesPrompt prompt = 
+					final MultipleLinesPrompt prompt =
 							new MultipleLinesPrompt(new CompilationSuccessCanceller(), "function(event, packet) {");
 					
 					new ConversationFactory(plugin).
@@ -424,7 +424,7 @@ public class CommandFilter extends CommandBase {
 										whom.sendRawMessage(ChatColor.RED + "Cancelled filter.");
 									}
 								} catch (Exception e) {
-									reporter.reportDetailed(this, 
+									reporter.reportDetailed(this,
 											Report.newBuilder(REPORT_CANNOT_HANDLE_CONVERSATION).error(e).callerParam(event)
 									);
 								}

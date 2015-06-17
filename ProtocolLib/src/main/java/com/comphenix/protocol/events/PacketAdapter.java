@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -50,7 +50,7 @@ public abstract class PacketAdapter implements PacketListener {
 	 */
 	public PacketAdapter(@Nonnull AdapterParameteters params) {
 		this(
-			checkValidity(params).plugin, params.connectionSide, params.listenerPriority, 
+			checkValidity(params).plugin, params.connectionSide, params.listenerPriority,
 			params.gamePhase, params.options, params.packets
 		);
 	}
@@ -58,7 +58,6 @@ public abstract class PacketAdapter implements PacketListener {
 	/**
 	 * Initialize a packet listener with the given parameters.
 	 * @param plugin - the plugin.
-	 * @param listenerPriority - the priority.
 	 * @param types - the packet types.
 	 */
 	public PacketAdapter(Plugin plugin, PacketType... types) {
@@ -241,7 +240,7 @@ public abstract class PacketAdapter implements PacketListener {
 	 */
 	@Deprecated
 	public PacketAdapter(
-			Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, 
+			Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority,
 			GamePhase gamePhase, ListenerOptions[] options, Integer... packets) {
 		
 		this(plugin, connectionSide, listenerPriority, gamePhase, options,
@@ -251,7 +250,7 @@ public abstract class PacketAdapter implements PacketListener {
 	
 	// For internal use only
 	private PacketAdapter(
-			Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority, 
+			Plugin plugin, ConnectionSide connectionSide, ListenerPriority listenerPriority,
 			GamePhase gamePhase, ListenerOptions[] options, PacketType... packets) {
 		
 		if (plugin == null)
@@ -272,7 +271,7 @@ public abstract class PacketAdapter implements PacketListener {
 		
 		// Special case that allows us to specify optionIntercept().
 		if (connectionSide == ConnectionSide.BOTH) {
-			serverOptions = except(serverOptions, new ListenerOptions[0], 
+			serverOptions = except(serverOptions, new ListenerOptions[0],
 					ListenerOptions.INTERCEPT_INPUT_BUFFER);
 		}
 		
@@ -360,10 +359,10 @@ public abstract class PacketAdapter implements PacketListener {
 	}
 	
 	@Override
-	public String toString() {		
-		// This is used by the error reporter 
-		return String.format("PacketAdapter[plugin=%s, sending=%s, receiving=%s]", 
-				getPluginName(this), 
+	public String toString() {
+		// This is used by the error reporter
+		return String.format("PacketAdapter[plugin=%s, sending=%s, receiving=%s]",
+				getPluginName(this),
 				sendingWhitelist,
 				receivingWhitelist);
 	}
@@ -441,7 +440,7 @@ public abstract class PacketAdapter implements PacketListener {
 		}
 		
 		/**
-		 * Set this adapter to also look for client-side packets. 
+		 * Set this adapter to also look for client-side packets.
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters clientSide() {
@@ -449,7 +448,7 @@ public abstract class PacketAdapter implements PacketListener {
 		}
 		
 		/**
-		 * Set this adapter to also look for server-side packets. 
+		 * Set this adapter to also look for server-side packets.
 		 * @return This builder, for chaining.
 		 */
 		public AdapterParameteters serverSide() {
@@ -457,7 +456,7 @@ public abstract class PacketAdapter implements PacketListener {
 		}
 		
 		/**
-		 * Set the the event priority, where the execution is in ascending order from lowest to highest. 
+		 * Set the the event priority, where the execution is in ascending order from lowest to highest.
 		 * <p>
 		 * Default is {@link ListenerPriority#NORMAL}.
 		 * @param listenerPriority - the new event priority.

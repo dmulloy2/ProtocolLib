@@ -823,6 +823,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 * Construct a legacy packet type.
 	 * @param sender - client or server.
 	 * @param legacyId - the legacy packet ID.
+	 * @return Legacy packet type
 	 */
 	public static PacketType newLegacy(Sender sender, int legacyId) {
 		return new PacketType(Protocol.LEGACY, sender, PacketType.UNKNOWN_PACKET, legacyId, MinecraftVersion.WORLD_UPDATE);

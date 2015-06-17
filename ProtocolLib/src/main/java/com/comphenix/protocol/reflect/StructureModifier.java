@@ -393,6 +393,7 @@ public class StructureModifier<TField> {
 	
 	/**
 	 * Retrieves a structure modifier that only reads and writes fields of a given type.
+	 * @param <T> Type
 	 * @param fieldType - the type, or supertype, of every field to modify.
 	 * @return A structure modifier for fields of this type.
 	 */
@@ -424,6 +425,7 @@ public class StructureModifier<TField> {
 	
 	/**
 	 * Retrieves a structure modifier that only reads and writes fields of a given type.
+	 * @param <T> Type
 	 * @param fieldType - the type, or supertype, of every field to modify.
 	 * @param converter - converts objects into the given type.
 	 * @return A structure modifier for fields of this type.
@@ -507,10 +509,10 @@ public class StructureModifier<TField> {
 	
 	/**
 	 * Create a new structure modifier for the new field type.
+	 * @param <T> Type
 	 * @param fieldType - common type of each field.
 	 * @param filtered - list of fields after filtering the original modifier.
 	 * @param defaults - list of default values after filtering the original.
-	 * @param converter - the new converter
 	 * @return A new structure modifier.
 	 */
 	protected <T> StructureModifier<T> withFieldType(
@@ -520,6 +522,7 @@ public class StructureModifier<TField> {
 	
 	/**
 	 * Create a new structure modifier for the new field type.
+	 * @param <T> Type
 	 * @param fieldType - common type of each field.
 	 * @param filtered - list of fields after filtering the original modifier.
 	 * @param defaults - list of default values after filtering the original.

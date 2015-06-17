@@ -116,7 +116,10 @@ public class InterceptWritePacket {
 	
 	/**
 	 * Construct a new instance of the proxy object.
-	 * @return New instance of proxy, or NULL if we failed.
+	 * @param proxyObject - Object to construct proxy of
+	 * @param event - Packet event
+	 * @param marker - Network marker
+	 * @return New instance of the proxy, or null if we failed.
 	 */
 	@SuppressWarnings("deprecation")
 	public Object constructProxy(Object proxyObject, PacketEvent event, NetworkMarker marker) {

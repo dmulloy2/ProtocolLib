@@ -147,7 +147,7 @@ public class WrappedGameProfile extends AbstractWrapper {
 	/**
 	 * Construct a wrapper around an existing game profile.
 	 * 
-	 * @param profile - the underlying profile, or NULL.
+	 * @param handle - the underlying profile, or NULL.
 	 */
 	public static WrappedGameProfile fromHandle(Object handle) {
 		if (handle == null)

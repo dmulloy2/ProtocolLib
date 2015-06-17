@@ -6,7 +6,7 @@ package com.comphenix.protocol.timing;
  */
 public class StatisticsStream extends OnlineComputation {
 	// This algorithm is due to Donald Knuth, as described in:
-	//     Donald E. Knuth (1998). The Art of Computer Programming, volume 2: 
+	//     Donald E. Knuth (1998). The Art of Computer Programming, volume 2:
 	//	   Seminumerical Algorithms, 3rd edn., p. 232. Boston: Addison-Wesley.
 	
     private int count = 0;
@@ -51,7 +51,7 @@ public class StatisticsStream extends OnlineComputation {
     	// As per Knuth
     	count++;
     	mean += delta / count;
-    	m2 += delta * (value - mean); 
+    	m2 += delta * (value - mean);
     	
     	// Update extremes
     	if (value < minimum)
@@ -107,6 +107,7 @@ public class StatisticsStream extends OnlineComputation {
     /**
      * Combine the two statistics.
      * @param other - the other statistics.
+     * @return Combined statistics
      */
     public StatisticsStream add(StatisticsStream other) {
     	// Special cases
@@ -147,8 +148,8 @@ public class StatisticsStream extends OnlineComputation {
     	if (count == 0)
     		return "StatisticsStream [Nothing recorded]";
     	
-		return String.format("StatisticsStream [Average: %.3f, SD: %.3f, Min: %.3f, Max: %.3f, Count: %s]", 
-			getMean(), getStandardDeviation(), 
+		return String.format("StatisticsStream [Average: %.3f, SD: %.3f, Min: %.3f, Max: %.3f, Count: %s]",
+			getMean(), getStandardDeviation(),
 			getMinimum(), getMaximum(), getCount());
     }
 }

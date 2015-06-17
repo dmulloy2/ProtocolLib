@@ -15,7 +15,6 @@ public class WrappedSignedProperty extends AbstractWrapper {
 	 * @param name - the name of the property.
 	 * @param value - the value of the property.
 	 * @param signature - the BASE64-encoded signature of the value.
-	 * @return The signed property.
 	 */
 	public WrappedSignedProperty(String name, String value, String signature) {
 		this(new Property(name, value, signature));

@@ -10,7 +10,7 @@ import com.google.common.collect.Maps;
  * Tracks the invocation time for a particular plugin against a list of packets.
  * @author Kristian
  */
-public class TimedTracker {	
+public class TimedTracker {
 	// Table of packets and invocations
 	private Map<PacketType, StatisticsStream> packets = Maps.newHashMap();
 	private int observations;
@@ -26,7 +26,7 @@ public class TimedTracker {
 	/**
 	 * Stop and record the execution time since the creation of the given tracking token.
 	 * @param trackingToken - the tracking token.
-	 * @param packetId - the packet ID.
+	 * @param type - the packet type.
 	 */
 	public synchronized void endTracking(long trackingToken, PacketType type) {
 		StatisticsStream stream = packets.get(type);
@@ -57,7 +57,7 @@ public class TimedTracker {
 		
 		for (Entry<PacketType, StatisticsStream> entry : packets.entrySet()) {
 			clone.put(
-				entry.getKey(), 
+				entry.getKey(),
 				new StatisticsStream(entry.getValue())
 			);
 		}

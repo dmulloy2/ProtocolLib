@@ -156,8 +156,8 @@ public class DefaultInstances implements InstanceProvider {
 	 *   <li>Enums. Returns the first declared element.</li>
 	 *   <li>Collection interfaces, such as List and Set. Returns the most appropriate empty container.</li>
 	 *   <li>Any type with a public constructor that has parameters with defaults.</li>
-	 *   </ul>
 	 * </ul>
+	 * @param <T> Type
 	 * @param type - the type to construct a default value.
 	 * @return A default value/instance, or NULL if not possible.
 	 */
@@ -167,6 +167,7 @@ public class DefaultInstances implements InstanceProvider {
 	
 	/**
 	 * Retrieve the constructor with the fewest number of parameters.
+	 * @param <T> Type
 	 * @param type - type to construct.
 	 * @return A constructor with the fewest number of parameters, or NULL if the type has no constructors.
 	 */
@@ -239,8 +240,8 @@ public class DefaultInstances implements InstanceProvider {
 	 *   <li>Enums. Returns the first declared element.</li>
 	 *   <li>Collection interfaces, such as List and Set. Returns the most appropriate empty container.</li>
 	 *   <li>Any type with a public constructor that has parameters with defaults.</li>
-	 *   </ul>
 	 * </ul>
+	 * @param <T> Type
 	 * @param type - the type to construct a default value.
 	 * @param providers - instance providers used during the construction.
 	 * @return A default value/instance, or NULL if not possible.
@@ -319,6 +320,7 @@ public class DefaultInstances implements InstanceProvider {
 	/**
 	 * Used by the default instance provider to create a class from a given constructor.
 	 * The default method uses reflection.
+	 * @param <T> Type
 	 * @param type - the type to create.
 	 * @param constructor - the constructor to use.
 	 * @param types - type of each parameter in order.

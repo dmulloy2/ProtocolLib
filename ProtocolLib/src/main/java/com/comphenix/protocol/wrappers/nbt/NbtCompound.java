@@ -19,18 +19,18 @@ import javax.annotation.Nonnull;
  */
 public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>> {
 	@Override
-	@Deprecated()
+	@Deprecated
 	public Map<String, NbtBase<?>> getValue();
 	
 	/**
 	 * Determine if an entry with the given key exists or not.
-	 * @param key - the key to lookup. 
+	 * @param key - the key to lookup.
 	 * @return TRUE if an entry with the given key exists, FALSE otherwise.
 	 */
 	public abstract boolean containsKey(String key);
 
 	/**
-	 * Retrieve a Set view of the keys of each entry in this compound. 
+	 * Retrieve a Set view of the keys of each entry in this compound.
 	 * @return The keys of each entry.
 	 */
 	public abstract Set<String> getKeys();
@@ -260,7 +260,7 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	public abstract NbtCompound put(String key, int[] value);
 	
 	/**
-	 * Associates a given Java primitive value, list, map or NbtBase<?> with a certain key.
+	 * Associates a given Java primitive value, list, map or NbtBase with a certain key.
 	 * <p>
 	 * If the value is NULL, the corresponding key is removed. Any Map or List will be converted
 	 * to a corresponding NbtCompound or NbtList.
@@ -341,5 +341,6 @@ public interface NbtCompound extends NbtBase<Map<String, NbtBase<?>>>, Iterable<
 	 * Retrieve an iterator view of the NBT tags stored in this compound.
 	 * @return The tags stored in this compound.
 	 */
+	@Override
 	public abstract Iterator<NbtBase<?>> iterator();
 }

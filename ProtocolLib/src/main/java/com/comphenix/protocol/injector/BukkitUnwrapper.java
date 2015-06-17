@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -38,8 +38,8 @@ import com.google.common.primitives.Primitives;
  * <p>
  * Typical conversions include:
  * <ul>
- * <li>org.bukkit.entity.Player -> net.minecraft.server.EntityPlayer</li>
- * <li>org.bukkit.World -> net.minecraft.server.WorldServer</li>
+ * <li>org.bukkit.entity.Player to net.minecraft.server.EntityPlayer</li>
+ * <li>org.bukkit.World to net.minecraft.server.WorldServer</li>
  * </ul>
  * 
  * @author Kristian
@@ -91,7 +91,7 @@ public class BukkitUnwrapper implements Unwrapper {
 	@Override
 	public Object unwrapItem(Object wrappedObject) {
 		// Special case
-		if (wrappedObject == null) 
+		if (wrappedObject == null)
 			return null;
 		Class<?> currentClass = PacketConstructor.getClass(wrappedObject);
 		
@@ -149,7 +149,7 @@ public class BukkitUnwrapper implements Unwrapper {
 		try {
 			final Method find = type.getMethod("getHandle");
 			
-			// It's thread safe, as getMethod should return the same handle 
+			// It's thread safe, as getMethod should return the same handle
 			Unwrapper methodUnwrapper = new Unwrapper() {
 				@Override
 				public Object unwrapItem(Object wrappedObject) {
@@ -159,7 +159,7 @@ public class BukkitUnwrapper implements Unwrapper {
 						return find.invoke(wrappedObject);
 						
 					} catch (IllegalArgumentException e) {
-						reporter.reportDetailed(this, 
+						reporter.reportDetailed(this,
 								Report.newBuilder(REPORT_ILLEGAL_ARGUMENT).error(e).callerParam(wrappedObject, find)
 						);
 					} catch (IllegalAccessException e) {
@@ -178,7 +178,7 @@ public class BukkitUnwrapper implements Unwrapper {
 			return methodUnwrapper;
 			
 		} catch (SecurityException e) {
-			reporter.reportDetailed(this, 
+			reporter.reportDetailed(this,
 					Report.newBuilder(REPORT_SECURITY_LIMITATION).error(e).callerParam(type)
 			);
 		} catch (NoSuchMethodException e) {
@@ -188,7 +188,7 @@ public class BukkitUnwrapper implements Unwrapper {
 			if (fieldUnwrapper != null)
 				return fieldUnwrapper;
 			else
-				reporter.reportDetailed(this, 
+				reporter.reportDetailed(this,
 						Report.newBuilder(REPORT_CANNOT_FIND_UNWRAP_METHOD).error(e).callerParam(type));
 		}
 		
@@ -214,7 +214,7 @@ public class BukkitUnwrapper implements Unwrapper {
 							return checkClass((Class<?>) wrappedObject, type, find.getType());
 						return FieldUtils.readField(find, wrappedObject, true);
 					} catch (IllegalAccessException e) {
-						reporter.reportDetailed(this, 
+						reporter.reportDetailed(this,
 								Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e).callerParam(wrappedObject, find)
 						);
 						return null;
@@ -227,7 +227,7 @@ public class BukkitUnwrapper implements Unwrapper {
 			
 		} else {
 			// Inform about this too
-			reporter.reportDetailed(this, 
+			reporter.reportDetailed(this,
 					Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(find)
 			);
 			return null;

@@ -65,7 +65,7 @@ public class PacketTypeSet {
 	
 	/**
 	 * Remove the given types from the set.
-	 * @param type - the types to remove.
+	 * @param types Types to remove
 	 */
 	public synchronized void removeAll(Iterable<? extends PacketType> types) {
 		for (PacketType type : types) {
@@ -101,7 +101,7 @@ public class PacketTypeSet {
 	}
 	
 	/**
-	 * Determine if the type of a packet is in the current set. 
+	 * Determine if the type of a packet is in the current set.
 	 * @param packet - the packet.
 	 * @return TRUE if it is, FALSE otherwise.
 	 */

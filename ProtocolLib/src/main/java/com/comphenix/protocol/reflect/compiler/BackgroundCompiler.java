@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -158,6 +158,7 @@ public class BackgroundCompiler {
 	
 	/**
 	 * Ensure that the given structure modifier is eventually compiled.
+	 * @param <TKey> Type
 	 * @param uncompiled - structure modifier to compile.
 	 * @param listener - listener responsible for responding to the compilation.
 	 */
@@ -181,7 +182,7 @@ public class BackgroundCompiler {
 				List list = listeners.get(key);
 				
 				if (!listeners.containsKey(key)) {
-					listeners.put(key, (List) Lists.newArrayList(listener)); 
+					listeners.put(key, (List) Lists.newArrayList(listener));
 				} else {
 					// We're currently compiling
 					list.add(listener);
@@ -261,8 +262,8 @@ public class BackgroundCompiler {
 				}
 				
 			} catch (RejectedExecutionException e) {
-				// Occures when the underlying queue is overflowing. Since the compilation  
-				// is only an optmization and not really essential we'll just log this failure 
+				// Occures when the underlying queue is overflowing. Since the compilation
+				// is only an optmization and not really essential we'll just log this failure
 				// and move on.
 				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SCHEDULE_COMPILATION).error(e));
 			}
@@ -271,6 +272,7 @@ public class BackgroundCompiler {
 	
 	/**
 	 * Add a compile listener if we are still waiting for the structure modifier to be compiled.
+	 * @param <TKey> Type
 	 * @param uncompiled - the structure modifier that may get compiled.
 	 * @param listener - the listener to invoke in that case.
 	 */
@@ -280,7 +282,7 @@ public class BackgroundCompiler {
 			StructureKey key = new StructureKey(uncompiled);
 			
 			@SuppressWarnings("rawtypes")
-			List list = listeners.get(key); 
+			List list = listeners.get(key);
 			
 			if (list != null) {
 				list.add(listener);

@@ -423,7 +423,7 @@ public class ProtocolConfig {
 	
 	/**
 	 * Set the starting injection method to use.
-	 * @return Injection method.
+	 * @param hook Injection method
 	 */
 	public void setInjectionMethod(PlayerInjectHooks hook) {
 		setConfig(global, INJECTION_METHOD, hook.name());

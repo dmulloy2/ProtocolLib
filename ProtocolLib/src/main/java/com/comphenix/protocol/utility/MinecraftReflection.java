@@ -1752,12 +1752,14 @@ public class MinecraftReflection {
 	}
 
 	private static MethodAccessor asCraftMirror;
+	private static MethodAccessor asCraftCopy;
 	private static MethodAccessor asNMSCopy;
 
 	/**
-	 * Retrieve a CraftItemStack from a given ItemStack.
-	 * @param bukkitItemStack - the Bukkit ItemStack to convert.
-	 * @return A CraftItemStack as an ItemStack.
+	 * Retrieve a CraftItemStack from a given NMS ItemStack.
+	 * 
+	 * @param nmsItem - the NMS ItemStack to convert.
+	 * @return A CraftItemStack as a NMS ItemStack.
 	 */
 	public static ItemStack getBukkitItemStack(Object nmsItem) {
 		if (asCraftMirror == null) {
@@ -1768,9 +1770,24 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieve the Bukkit ItemStack from a given net.minecraft.server ItemStack.
-	 * @param minecraftItemStack - the NMS ItemStack to wrap.
-	 * @return The wrapped ItemStack.
+	 * Retrieve a CraftItemStack from a given ItemStack.
+	 * 
+	 * @param stack - the Bukkit ItemStack to convert.
+	 * @return A CraftItemStack as an ItemStack.
+	 */
+	public static ItemStack getCraftItemStack(ItemStack stack) {
+		if (asCraftCopy == null) {
+			asCraftCopy = Accessors.getMethodAccessor(getCraftItemStackClass(), "asCraftCopy", ItemStack.class);
+		}
+
+		return (ItemStack) asCraftCopy.invoke(null, stack);
+	}
+
+	/**
+	 * Retrieve the NMS ItemStack from a given ItemStack.
+	 * 
+	 * @param stack - the ItemStack to convert.
+	 * @return The NMS ItemStack.
 	 */
 	public static Object getMinecraftItemStack(ItemStack stack) {
 		if (asNMSCopy == null) {

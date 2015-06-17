@@ -200,6 +200,7 @@ public class VolatileField {
 	
 	/**
 	 * Determine whether or not we'll need to revert the value.
+	 * @return True if it is set, false if not.
 	 */
 	public boolean isCurrentSet() {
 		return currentSet;

@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -38,7 +38,7 @@ import com.google.common.primitives.Primitives;
  */
 public class PacketConstructor {
 	/**
-	 * A packet constructor that automatically converts Bukkit types to their NMS conterpart. 
+	 * A packet constructor that automatically converts Bukkit types to their NMS conterpart.
 	 * <p>
 	 * Remember to call withPacket().
 	 */
@@ -59,7 +59,7 @@ public class PacketConstructor {
 	private PacketConstructor(Constructor<?> constructorMethod) {
 		this.constructorMethod = constructorMethod;
 		this.unwrappers = Lists.newArrayList((Unwrapper) new BukkitUnwrapper(new RethrowErrorReporter() ));
-		this.unwrappers.addAll(BukkitConverters.getUnwrappers()); 
+		this.unwrappers.addAll(BukkitConverters.getUnwrappers());
 	}
 	
 	private PacketConstructor(PacketType type, Constructor<?> constructorMethod, List<Unwrapper> unwrappers, Unwrapper[] paramUnwrapper) {
@@ -104,7 +104,7 @@ public class PacketConstructor {
 	/**
 	 * Create a packet constructor that creates packets using the given ID.
 	 * <p>
-	 * Note that if you pass a Class<?> as a value, it will use its type directly.
+	 * Note that if you pass a Class as a value, it will use its type directly.
 	 * <p>
 	 * Deprecated: Use {@link #withPacket(PacketType, Object[])} instead.
 	 * @param id - legacy (1.6.4) packet ID.
@@ -120,7 +120,7 @@ public class PacketConstructor {
 	/**
 	 * Create a packet constructor that creates packets using the given types.
 	 * <p>
-	 * Note that if you pass a Class<?> as a value, it will use its type directly.
+	 * Note that if you pass a Class as a value, it will use its type directly.
 	 * @param type - the type of the packet to create.
 	 * @param values - the values that will match each parameter in the desired constructor.
 	 * @return A packet constructor with these types.
@@ -129,7 +129,7 @@ public class PacketConstructor {
 	public PacketConstructor withPacket(PacketType type, Object[] values) {
 		Class<?>[] types = new Class<?>[values.length];
 		Throwable lastException = null;
-		Unwrapper[] paramUnwrapper = new Unwrapper[values.length];		
+		Unwrapper[] paramUnwrapper = new Unwrapper[values.length];
 		
 		for (int i = 0; i < types.length; i++) {
 			// Default type
@@ -258,7 +258,7 @@ public class PacketConstructor {
 		/**
 		 * Convert the given wrapped object to the equivalent net.minecraft.server object.
 		 * <p>
-		 * Note that we may pass in a class instead of object - in that case, the unwrapper should 
+		 * Note that we may pass in a class instead of object - in that case, the unwrapper should
 		 * return the equivalent NMS class.
 		 * @param wrappedObject - wrapped object or class.
 		 * @return The equivalent net.minecraft.server object or class.

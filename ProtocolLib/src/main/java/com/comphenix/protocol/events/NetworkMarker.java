@@ -24,12 +24,12 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 
 /**
- * Marker containing the serialized packet data seen from the network, 
+ * Marker containing the serialized packet data seen from the network,
  * or output handlers that will serialize the current packet.
  * 
  * @author Kristian
  */
-public abstract class NetworkMarker {	
+public abstract class NetworkMarker {
 	public static class EmptyBufferMarker extends NetworkMarker {
 		public EmptyBufferMarker(@Nonnull ConnectionSide side) {
 			super(side, (byte[]) null, null);
@@ -48,7 +48,7 @@ public abstract class NetworkMarker {
 		@Override
 		protected DataInputStream addHeader(DataInputStream input, PacketType type) {
 			throw new IllegalStateException("Buffer is empty.");
-		}		
+		}
 	}
 	
 	// Custom network handler
@@ -68,8 +68,9 @@ public abstract class NetworkMarker {
 	
 	/**
 	 * Construct a new network marker.
-	 * @param side - whether or not this marker belongs to a client or server packet. 
+	 * @param side - which side this marker belongs to.
 	 * @param inputBuffer - the read serialized packet data.
+	 * @param type - packet type
 	 */
 	public NetworkMarker(@Nonnull ConnectionSide side, ByteBuffer inputBuffer, PacketType type) {
 		this.side = Preconditions.checkNotNull(side, "side cannot be NULL.");
@@ -81,9 +82,9 @@ public abstract class NetworkMarker {
 	 * Construct a new network marker.
 	 * <p>
 	 * The input buffer is only non-null for client-side packets.
-	 * @param side - whether or not this marker belongs to a client or server packet. 
+	 * @param side - which side this marker belongs to.
 	 * @param inputBuffer - the read serialized packet data.
-	 * @param handler - handle skipping headers.
+	 * @param type - packet type
 	 */
 	public NetworkMarker(@Nonnull ConnectionSide side, byte[] inputBuffer, PacketType type) {
 		this.side = Preconditions.checkNotNull(side, "side cannot be NULL.");
@@ -115,7 +116,7 @@ public abstract class NetworkMarker {
 	/**
 	 * Retrieve the serialized packet data (excluding the header by default) from the network input stream.
 	 * <p>
-	 * The returned buffer is read-only. If the parent event is a server side packet this 
+	 * The returned buffer is read-only. If the parent event is a server side packet this
 	 * method throws {@link IllegalStateException}.
 	 * <p>
 	 * It returns NULL if the packet was transmitted by a plugin locally.
@@ -128,7 +129,7 @@ public abstract class NetworkMarker {
 	/**
 	 * Retrieve the serialized packet data from the network input stream.
 	 * <p>
-	 * The returned buffer is read-only. If the parent event is a server side packet this 
+	 * The returned buffer is read-only. If the parent event is a server side packet this
 	 * method throws {@link IllegalStateException}.
 	 * <p>
 	 * It returns NULL if the packet was transmitted by a plugin locally.
@@ -143,7 +144,7 @@ public abstract class NetworkMarker {
 			ByteBuffer result = inputBuffer.asReadOnlyBuffer();
 			
 			try {
-				if (excludeHeader) 
+				if (excludeHeader)
 					result = skipHeader(result);
 				else
 					result = addHeader(result, type);
@@ -158,7 +159,7 @@ public abstract class NetworkMarker {
 	/**
 	 * Retrieve the serialized packet data (excluding the header by default) as an input stream.
 	 * <p>
-	 * The data is exactly the same as in {@link #getInputBuffer()}. 
+	 * The data is exactly the same as in {@link #getInputBuffer()}.
 	 * @see #getInputBuffer()
 	 * @return The incoming serialized packet data as a stream, or NULL if the packet was transmitted locally.
 	 */
@@ -169,7 +170,7 @@ public abstract class NetworkMarker {
 	/**
 	 * Retrieve the serialized packet data as an input stream.
 	 * <p>
-	 * The data is exactly the same as in {@link #getInputBuffer()}. 
+	 * The data is exactly the same as in {@link #getInputBuffer()}.
 	 * @see #getInputBuffer()
 	 * @param excludeHeader - whether or not to exclude the packet ID header.
 	 * @return The incoming serialized packet data as a stream, or NULL if the packet was transmitted locally.
@@ -186,7 +187,7 @@ public abstract class NetworkMarker {
 		);
 		
 		try {
-			if (excludeHeader) 
+			if (excludeHeader)
 				input = skipHeader(input);
 			else
 				input = addHeader(input, type);
@@ -207,7 +208,7 @@ public abstract class NetworkMarker {
 	/**
 	 * Enqueue the given output handler for managing how the current packet will be written to the network stream.
 	 * <p>
-	 * Note that output handlers are not serialized, as most consumers will probably implement them using anonymous classes. 
+	 * Note that output handlers are not serialized, as most consumers will probably implement them using anonymous classes.
 	 * It is not safe to serialize anonymous classes, as their name depend on the order in which they are declared in the parent class.
 	 * <p>
 	 * This can only be invoked on server side packet events.
@@ -261,10 +262,10 @@ public abstract class NetworkMarker {
 	}
 	
 	/**
-	 * Add a listener that is invoked after a packet has been successfully sent to the client, or received 
-	 * by the server. 
+	 * Add a listener that is invoked after a packet has been successfully sent to the client, or received
+	 * by the server.
 	 * <p>
-	 * Received packets are not guarenteed to have been fully processed, but packets passed 
+	 * Received packets are not guarenteed to have been fully processed, but packets passed
 	 * to {@link ProtocolManager#recieveClientPacket(Player, PacketContainer)} will be processed after the
 	 * current packet event.
 	 * <p>
@@ -324,7 +325,9 @@ public abstract class NetworkMarker {
 	 * Return a byte buffer without the header in the current packet.
 	 * <p>
 	 * It's safe to modify the position of the buffer.
-	 * @param buffer - a read-only byte source. 
+	 * @param buffer - a read-only byte source.
+	 * @return A byte buffer without the header in the current packet.
+	 * @throws IOException If integer reading fails
 	 */
 	protected ByteBuffer skipHeader(ByteBuffer buffer) throws IOException {
 		skipHeader(new DataInputStream(new ByteBufferInputStream(buffer)));
@@ -335,13 +338,14 @@ public abstract class NetworkMarker {
 	 * Return an input stream without the header in the current packet.
 	 * <p>
 	 * It's safe to modify the input stream.
+	 * @throws IOException If integer reading fails
 	 */
 	protected abstract DataInputStream skipHeader(DataInputStream input) throws IOException;
 	
 	/**
 	 * Return the byte buffer prepended with the packet header.
-	 * @param buffer - the read-only byte buffer. 
-	 * @param type - the current packet. 
+	 * @param buffer - the read-only byte buffer.
+	 * @param type - the current packet.
 	 * @return The byte buffer.
 	 */
 	protected abstract ByteBuffer addHeader(ByteBuffer buffer, PacketType type);
@@ -349,7 +353,7 @@ public abstract class NetworkMarker {
 	/**
 	 * Return the input stream prepended with the packet header.
 	 * @param input - the input stream.
-	 * @param type - the current packet. 
+	 * @param type - the current packet.
 	 * @return The byte buffer.
 	 */
 	protected abstract DataInputStream addHeader(DataInputStream input, PacketType type);

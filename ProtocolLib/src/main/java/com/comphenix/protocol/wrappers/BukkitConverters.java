@@ -210,8 +210,8 @@ public class BukkitConverters {
 	
 	/**
 	 * Retrieve an equivalent converter for a map of generic keys and primitive values.
-	 * @param genericItemType - the generic item type.
-	 * @param itemConverter - an equivalent converter for the generic type.
+	 * @param genericKeyType - the generic key type.
+	 * @param keyConverter - an equivalent converter for the generic type.
 	 * @return An equivalent converter.
 	 */
 	public static <T, U> EquivalentConverter<Map<T, U>> getMapConverter(
@@ -1006,7 +1006,7 @@ public class BukkitConverters {
 	}
 	
 	/**
-	 * Retrieve every NMS <-> Bukkit converter as unwrappers.
+	 * Retrieve every NMS to/from Bukkit converter as unwrappers.
 	 * @return Every unwrapper.
 	 */
 	public static List<Unwrapper> getUnwrappers() {

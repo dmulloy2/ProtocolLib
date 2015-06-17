@@ -78,7 +78,7 @@ public final class Accessors {
 	/**
 	 * Retrieve an accessor for the first field of the given type.
 	 * @param instanceClass - the type of the instance to retrieve.
-	 * @param fieldClass - type of the field to retrieve.
+	 * @param fieldName - name of the field to retrieve.
 	 * @param forceAccess - whether or not to look for private and protected fields.
 	 * @return The value of that field.
 	 * @throws IllegalArgumentException If the field cannot be found.

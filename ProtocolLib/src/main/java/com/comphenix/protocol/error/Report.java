@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
  * 
  * @author Kristian
  */
-public class Report {	
+public class Report {
 	private final ReportType type;
 	private final Throwable exception;
 	private final Object[] messageParameters;
@@ -76,7 +76,7 @@ public class Report {
 		}
 		
 		/**
-		 * Set the minimum number of nanoseconds to wait until a report of equal type and parameters 
+		 * Set the minimum number of nanoseconds to wait until a report of equal type and parameters
 		 * is allowed to be printed again.
 		 * @param rateLimit - number of nanoseconds, or 0 to disable. Cannot be negative.
 		 * @return This builder, for chaining.
@@ -122,8 +122,8 @@ public class Report {
 	 * @param type - the report type that will be used to construct the message.
 	 * @param messageParameters - parameters used to construct the report message.
 	 * @param callerParameters - parameters from the caller method.
-	 */ 
-	protected Report(ReportType type, @Nullable Throwable exception, 
+	 */
+	protected Report(ReportType type, @Nullable Throwable exception,
 			@Nullable Object[] messageParameters, @Nullable Object[] callerParameters) {
 		this(type, exception, messageParameters, callerParameters, 0);
 	}
@@ -135,8 +135,8 @@ public class Report {
 	 * @param messageParameters - parameters used to construct the report message.
 	 * @param callerParameters - parameters from the caller method.
 	 * @param rateLimit - minimum number of nanoseconds to wait until a report of equal type and parameters is allowed to be printed again.
-	 */ 
-	protected Report(ReportType type, @Nullable Throwable exception, 
+	 */
+	protected Report(ReportType type, @Nullable Throwable exception,
 			@Nullable Object[] messageParameters, @Nullable Object[] callerParameters, long rateLimit) {
 		if (type == null)
 			throw new IllegalArgumentException("type cannot be NULL.");
@@ -157,7 +157,7 @@ public class Report {
 	
 	/**
 	 * Retrieve the message parameters that will be used to construc the report message.
-	 * <p<
+	 * <p>
 	 * This should not be confused with the method parameters of the caller method.
 	 * @return Message parameters.
 	 */
@@ -231,8 +231,8 @@ public class Report {
 			return true;
 		if (obj instanceof Report) {
 			Report other = (Report) obj;
-			return type == other.type && 
-				   Arrays.equals(callerParameters, other.callerParameters) && 
+			return type == other.type &&
+				   Arrays.equals(callerParameters, other.callerParameters) &&
 				   Arrays.equals(messageParameters, other.messageParameters);
 		}
 		return false;

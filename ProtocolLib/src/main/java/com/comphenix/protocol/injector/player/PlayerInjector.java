@@ -156,6 +156,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	/**
 	 * Initialize all fields for this player injector, if it hasn't already.
+	 * @param injectionSource - Injection source
 	 * @throws IllegalAccessException An error has occured.
 	 */
 	public void initialize(Object injectionSource) throws IllegalAccessException {
@@ -442,6 +443,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	/**
 	 * Retrieves the current net handler for this player.
+	 * @boolean refresh - Whether or not to refresh
 	 * @return Current net handler.
 	 * @throws IllegalAccessException Unable to find or retrieve net handler.
 	 */
@@ -562,6 +564,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	
 	/**
 	 * Determine if this inject method can even be attempted.
+	 * @param GamePhase - Game phase
 	 * @return TRUE if can be attempted, though possibly with failure, FALSE otherwise.
 	 */
 	public abstract boolean canInject(GamePhase state);

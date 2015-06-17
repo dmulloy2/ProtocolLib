@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -40,9 +40,9 @@ import com.google.common.base.Objects;
 import com.google.common.primitives.Primitives;
 
 // public class CompiledStructureModifierPacket20<TField> extends CompiledStructureModifier<TField> {
-//	
+//
 //		private Packet20NamedEntitySpawn typedTarget;
-//	
+//
 //		public CompiledStructureModifierPacket20(StructureModifier<TField> other, StructureCompiler compiler) {
 //			super();
 //			initialize(other);
@@ -50,12 +50,12 @@ import com.google.common.primitives.Primitives;
 //			this.typedTarget = (Packet20NamedEntitySpawn) target;
 //			this.compiler = compiler;
 //		}
-//	
+//
 //		@Override
 //		protected Object readGenerated(int fieldIndex) throws FieldAccessException {
-//	
+//
 //			Packet20NamedEntitySpawn target = typedTarget;
-//			
+//
 //			switch (fieldIndex) {
 //			case 0: return (Object) target.a;
 //			case 1: return (Object) target.b;
@@ -69,12 +69,12 @@ import com.google.common.primitives.Primitives;
 //				throw new FieldAccessException("Invalid index " + fieldIndex);
 //			}
 //		}
-//	
+//
 //		@Override
 //		protected StructureModifier<TField> writeGenerated(int index, Object value) throws FieldAccessException {
-//			
+//
 //			Packet20NamedEntitySpawn target = typedTarget;
-//			
+//
 //			switch (index) {
 //			case 0: target.a = (Integer) value; break;
 //			case 1: target.b = (String) value; break;
@@ -87,7 +87,7 @@ import com.google.common.primitives.Primitives;
 //			default:
 //				throw new FieldAccessException("Invalid index " + index);
 //			}
-//			
+//
 //			// Chaining
 //			return this;
 //		}
@@ -157,6 +157,7 @@ public final class StructureCompiler {
 	
 	/**
 	 * Lookup the current class loader for any previously generated classes before we attempt to generate something.
+	 * @param <TKey> Type
 	 * @param source - the structure modifier to look up.
 	 * @return TRUE if we successfully found a previously generated class, FALSE otherwise.
 	 */
@@ -179,7 +180,7 @@ public final class StructureCompiler {
 				return true;
 			}
 		} catch (ClassNotFoundException e) {
-			// That's ok. 
+			// That's ok.
 		}
 		
 		// We need to compile the class
@@ -189,7 +190,7 @@ public final class StructureCompiler {
 	/**
 	 * Compiles the given structure modifier.
 	 * <p>
-	 * WARNING: Do NOT call this method in the main thread. Compiling may easily take 10 ms, which is already 
+	 * WARNING: Do NOT call this method in the main thread. Compiling may easily take 10 ms, which is already
 	 * over 1/4 of a tick (50 ms). Let the background thread automatically compile the structure modifiers instead.
 	 * @param source - structure modifier to compile.
 	 * @return A compiled structure modifier.
@@ -233,7 +234,7 @@ public final class StructureCompiler {
 			throw new RuntimeException("Error occured while instancing generated class.", e);
 		} catch (NoSuchMethodException e) {
 			throw new IllegalStateException("Cannot happen.", e);
-		} 
+		}
 	}
 	
 	/**
@@ -254,8 +255,8 @@ public final class StructureCompiler {
 		Class<?> targetType = source.getTargetType();
 	
 		// Concat class and field type
-		return "CompiledStructure$" + 
-				getSafeTypeName(targetType) + "$" + 
+		return "CompiledStructure$" +
+				getSafeTypeName(targetType) + "$" +
 				getSafeTypeName(source.getFieldType());
 	}
 	
@@ -274,7 +275,7 @@ public final class StructureCompiler {
 		String targetName = targetType.getName().replace('.', '/');
 		
 		// Define class
-		cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, PACKAGE_NAME + "/" + className, 
+		cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, PACKAGE_NAME + "/" + className,
 				 null, COMPILED_CLASS, null);
 
 		createFields(cw, targetSignature);
@@ -288,7 +289,7 @@ public final class StructureCompiler {
 		// Call the define method
 		try {
 			if (defineMethod == null) {
-				Method defined = ClassLoader.class.getDeclaredMethod("defineClass", 
+				Method defined = ClassLoader.class.getDeclaredMethod("defineClass",
 					new Class<?>[] { String.class, byte[].class, int.class, int.class });
 			
 				// Awesome. Now, create and return it.
@@ -351,7 +352,7 @@ public final class StructureCompiler {
 		
 		String methodDescriptor = "(ILjava/lang/Object;)L" + SUPER_CLASS + ";";
 		String methodSignature = "(ILjava/lang/Object;)L" + SUPER_CLASS + "<Ljava/lang/Object;>;";
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "writeGenerated", methodDescriptor, methodSignature, 
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "writeGenerated", methodDescriptor, methodSignature,
 									new String[] { FIELD_EXCEPTION_CLASS });
 		BoxingHelper boxingHelper = new BoxingHelper(mv);
 		
@@ -437,7 +438,7 @@ public final class StructureCompiler {
 	}
 
 	private void createReadMethod(ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "readGenerated", "(I)Ljava/lang/Object;", null, 
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "readGenerated", "(I)Ljava/lang/Object;", null,
 									new String[] { "com/comphenix/protocol/reflect/FieldAccessException" });
 		BoxingHelper boxingHelper = new BoxingHelper(mv);
 		
@@ -508,8 +509,8 @@ public final class StructureCompiler {
 	}
 
 	private void createConstructor(ClassWriter cw, String className, String targetSignature, String targetName) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", 
-				"(L" + SUPER_CLASS + ";L" + PACKAGE_NAME + "/StructureCompiler;)V", 
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>",
+				"(L" + SUPER_CLASS + ";L" + PACKAGE_NAME + "/StructureCompiler;)V",
 				"(L" + SUPER_CLASS + "<Ljava/lang/Object;>;L" + PACKAGE_NAME + "/StructureCompiler;)V", null);
 		String fullClassName = PACKAGE_NAME + "/" + className;
 	

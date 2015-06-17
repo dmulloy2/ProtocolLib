@@ -201,7 +201,7 @@ public class NettyProtocolInjector implements ChannelListener {
     
     /**
      * Inject our packet handling into a specific player.
-     * @param player
+     * @param player Player to inject into
      */
     public void injectPlayer(Player player) {
     	injectionFactory.fromPlayer(player, this).inject();

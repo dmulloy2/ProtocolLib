@@ -23,7 +23,7 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
 	public static String EMPTY_NAME = "";
 	
 	/**
-	 * Get the type of each element. 
+	 * Get the type of each element.
 	 * <p>
 	 * This will be {@link NbtType#TAG_END TAG_END} if the NBT list has just been created.
 	 * @return Element type.
@@ -51,56 +51,56 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
 	public abstract void add(NbtBase<TType> element);
 
 	/**
-	 * Add a new string element to the list. 
+	 * Add a new string element to the list.
 	 * @param value - the string element to add.
 	 * @throws IllegalArgumentException If this is not a list of strings.
 	 */
 	public abstract void add(String value);
 
 	/**
-	 * Add a new byte element to the list. 
+	 * Add a new byte element to the list.
 	 * @param value - the byte element to add.
 	 * @throws IllegalArgumentException If this is not a list of bytes.
 	 */
 	public abstract void add(byte value);
 
 	/**
-	 * Add a new short element to the list. 
+	 * Add a new short element to the list.
 	 * @param value - the short element to add.
 	 * @throws IllegalArgumentException If this is not a list of shorts.
 	 */
 	public abstract void add(short value);
 
 	/**
-	 * Add a new integer element to the list. 
+	 * Add a new integer element to the list.
 	 * @param value - the string element to add.
 	 * @throws IllegalArgumentException If this is not a list of integers.
 	 */
 	public abstract void add(int value);
 
 	/**
-	 * Add a new long element to the list. 
+	 * Add a new long element to the list.
 	 * @param value - the string element to add.
 	 * @throws IllegalArgumentException If this is not a list of longs.
 	 */
 	public abstract void add(long value);
 
 	/**
-	 * Add a new double element to the list. 
+	 * Add a new double element to the list.
 	 * @param value - the double element to add.
 	 * @throws IllegalArgumentException If this is not a list of doubles.
 	 */
 	public abstract void add(double value);
 
 	/**
-	 * Add a new byte array element to the list. 
+	 * Add a new byte array element to the list.
 	 * @param value - the byte array element to add.
 	 * @throws IllegalArgumentException If this is not a list of byte arrays.
 	 */
 	public abstract void add(byte[] value);
 
 	/**
-	 * Add a new int array element to the list. 
+	 * Add a new int array element to the list.
 	 * @param value - the int array element to add.
 	 * @throws IllegalArgumentException If this is not a list of int arrays.
 	 */
@@ -116,7 +116,7 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
 	 * Retrieve an element by index.
 	 * @param index - index of the element to retrieve.
 	 * @return The element to retrieve.
-	 * @throws IndexOutOfBoundsException If the index is out of range (index < 0 || index >= size())
+	 * @throws IndexOutOfBoundsException If the index is out of range
 	 */
 	public abstract TType getValue(int index);
 	
@@ -135,5 +135,6 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
 	/**
 	 * Iterate over all the elements in this list.
 	 */
+	@Override
 	public abstract Iterator<TType> iterator();
 }

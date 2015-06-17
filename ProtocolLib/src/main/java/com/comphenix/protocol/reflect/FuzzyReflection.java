@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -93,6 +93,7 @@ public class FuzzyReflection {
 	
 	/**
 	 * Retrieve the value of the first field of the given type.
+	 * @param <T> Type
 	 * @param instance - the instance to retrieve from.
 	 * @param fieldClass - type of the field to retrieve.
 	 * @param forceAccess - whether or not to look for private and protected fields.
@@ -107,6 +108,7 @@ public class FuzzyReflection {
 	
 	/**
 	 * Retrieves the underlying class.
+	 * @return The underlying class.
 	 */
 	public Class<?> getSource() {
 		return source;
@@ -117,7 +119,7 @@ public class FuzzyReflection {
 	 * @return The singleton instance.
 	 * @throws IllegalStateException If the class has no singleton.
 	 */
-	public Object getSingleton() {	
+	public Object getSingleton() {
 		Method method = null;
 		Field field = null;
 		
@@ -203,12 +205,12 @@ public class FuzzyReflection {
 		
 		for (Method method : getMethods()) {
 			if (match.matcher(method.getName()).matches()) {
-				// Right - this is probably it. 
+				// Right - this is probably it.
 				return method;
 			}
 		}
 
-		throw new IllegalArgumentException("Unable to find a method with the pattern " + 
+		throw new IllegalArgumentException("Unable to find a method with the pattern " +
 									nameRegex + " in " + source.getName());
 	}
 	
@@ -341,13 +343,13 @@ public class FuzzyReflection {
 		
 		for (Field field : getFields()) {
 			if (match.matcher(field.getName()).matches()) {
-				// Right - this is probably it. 
+				// Right - this is probably it.
 				return field;
 			}
 		}
 		
 		// Looks like we're outdated. Too bad.
-		throw new IllegalArgumentException("Unable to find a field with the pattern " + 
+		throw new IllegalArgumentException("Unable to find a field with the pattern " +
 									nameRegex + " in " + source.getName());
 	}
 	
@@ -428,7 +430,7 @@ public class FuzzyReflection {
 	/**
 	 * Retrieves a field by type.
 	 * <p>
-	 * Note that the type is matched using the full canonical representation, i.e.: 
+	 * Note that the type is matched using the full canonical representation, i.e.:
 	 * <ul>
 	 *     <li>java.util.List</li>
 	 *     <li>net.comphenix.xp.ExperienceMod</li>
@@ -451,14 +453,14 @@ public class FuzzyReflection {
 		}
 		
 		// Looks like we're outdated. Too bad.
-		throw new IllegalArgumentException("Unable to find a field with the type " + 
+		throw new IllegalArgumentException("Unable to find a field with the type " +
 										   typeRegex + " in " + source.getName());
 	}
 	
 	/**
 	 * Retrieves a field by type.
 	 * <p>
-	 * Note that the type is matched using the full canonical representation, i.e.: 
+	 * Note that the type is matched using the full canonical representation, i.e.:
 	 * <ul>
 	 *     <li>java.util.List</li>
 	 *     <li>net.comphenix.xp.ExperienceMod</li>
@@ -483,7 +485,7 @@ public class FuzzyReflection {
 		}
 		
 		// Looks like we're outdated. Too bad.
-		throw new IllegalArgumentException("Unable to find a field with the type " + 
+		throw new IllegalArgumentException("Unable to find a field with the type " +
 									       typeRegex + " in " + source.getName());
 	}
 	
@@ -505,7 +507,7 @@ public class FuzzyReflection {
 	}
 	
 	/**
-	 * Retrieve every method as a map over names. 
+	 * Retrieve every method as a map over names.
 	 * <p>
 	 * Note that overloaded methods will only occur once in the resulting map.
 	 * @param methods - every method.

@@ -87,7 +87,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		
 		/**
 		 * Set the exact name of the member we are matching.
-		 * <p<
+		 * <p>
 		 * This will overwrite the regular expression rule.
 		 * @param name - exact name.
 		 * @return This builder, for chaining.
@@ -137,7 +137,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		}
 		
 		/**
-		 * Construct a new instance of the current type.		
+		 * Construct a new instance of the current type.
 		 * @return New instance.
 		 */
 		@Nonnull
@@ -232,7 +232,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	@Override
 	protected int calculateRoundNumber() {
 		// Sanity check
-		if (!sealed) 
+		if (!sealed)
 			throw new IllegalStateException("Cannot calculate round number during construction.");
 		
 		// NULL is zero
@@ -255,7 +255,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 		
 		// Build our representation
 		if (modifiersRequired != Integer.MAX_VALUE || modifiersBanned != 0) {
-			map.put("modifiers", String.format("[required: %s, banned: %s]", 
+			map.put("modifiers", String.format("[required: %s, banned: %s]",
 				   getBitView(modifiersRequired, 16),
 				   getBitView(modifiersBanned, 16))
 			);
@@ -298,7 +298,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(modifiersBanned, modifiersRequired, 
+		return Objects.hashCode(modifiersBanned, modifiersRequired,
 					nameRegex != null ? nameRegex.pattern() : null, declaringMatcher);
 	}
 }

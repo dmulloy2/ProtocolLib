@@ -149,6 +149,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
 	 * @param lowerBound - lowest value to remove.
 	 * @param upperBound - highest value to remove.
 	 * @param preserveDifference - whether or not to preserve the intervals that are partially outside.
+	 * @return Intervals that were removed
 	 */
 	public Set<Entry> remove(TKey lowerBound, TKey upperBound, boolean preserveDifference) {
 		checkBounds(lowerBound, upperBound);

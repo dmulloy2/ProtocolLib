@@ -14,7 +14,7 @@ import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
 import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
 import com.google.common.collect.Lists;
 
-public class ClassAnalyser {	
+public class ClassAnalyser {
 	/**
 	 * Represents a method in ASM.
 	 * <p>
@@ -68,7 +68,7 @@ public class ClassAnalyser {
 		/**
 		 * Retrieve the associated owner class.
 		 * @return The owner class.
-		 * @throws ClassNotFoundException
+		 * @throws ClassNotFoundException If the class was not found
 		 */
 		public Class<?> getOwnerClass() throws ClassNotFoundException {
 			return AsmMethod.class.getClassLoader().loadClass(getOwnerName().replace('/', '.'));

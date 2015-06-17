@@ -268,7 +268,7 @@ public class Metrics {
     /**
      * Enables metrics for the server by setting "opt-out" to false in the config file and starting the metrics task.
      *
-     * @throws java.io.IOException
+     * @throws IOException If configuration saving fails
      */
     public void enable() throws IOException {
         // This has to be synchronized or it can collide with the check in the task.
@@ -289,7 +289,7 @@ public class Metrics {
     /**
      * Disables metrics for the server by setting "opt-out" to true in the config file and canceling the metrics task.
      *
-     * @throws java.io.IOException
+     * @throws IOException If configuration saving fails
      */
     public void disable() throws IOException {
         // This has to be synchronized or it can collide with the check in the task.
@@ -327,6 +327,8 @@ public class Metrics {
 
     /**
      * Generic method that posts a plugin to the metrics website
+     * 
+     * @throws IOException If posting fails
      */
     private void postPlugin(final boolean isPing) throws IOException {
         // Server software specific section
@@ -496,8 +498,8 @@ public class Metrics {
     /**
      * GZip compress a string of bytes
      *
-     * @param input
-     * @return
+     * @param input Input to compress
+     * @return Compressed string
      */
     public static byte[] gzip(String input) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -532,14 +534,7 @@ public class Metrics {
         }
     }
 
-    /**
-     * Appends a json encoded key/value pair to the given string builder.
-     *
-     * @param json
-     * @param key
-     * @param value
-     * @throws UnsupportedEncodingException
-     */
+    // Appends a json encoded key/value pair to the given string builder.
     private static void appendJSONPair(StringBuilder json, String key, String value) throws UnsupportedEncodingException {
         boolean isValueNumeric = false;
 
@@ -566,12 +561,7 @@ public class Metrics {
         }
     }
 
-    /**
-     * Escape a string to create a valid JSON string
-     *
-     * @param text
-     * @return
-     */
+    // Escape a string to create a valid JSON string
     private static String escapeJSON(String text) {
         StringBuilder builder = new StringBuilder();
 
@@ -612,12 +602,7 @@ public class Metrics {
         return builder.toString();
     }
 
-    /**
-     * Encode text as UTF-8
-     *
-     * @param text the text to encode
-     * @return the encoded text, as UTF-8
-     */
+    // Encode text as UTF-8
     private static String urlEncode(final String text) throws UnsupportedEncodingException {
         return URLEncoder.encode(text, "UTF-8");
     }

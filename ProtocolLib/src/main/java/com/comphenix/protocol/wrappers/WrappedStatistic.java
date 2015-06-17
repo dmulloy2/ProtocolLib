@@ -36,7 +36,7 @@ public class WrappedStatistic extends AbstractWrapper {
 	}
 	
 	/**
-	 * Construct a new wrapper from a given underlying statistics. 
+	 * Construct a new wrapper from a given underlying statistics.
 	 * @param handle - the statistics.
 	 * @return The wrapped statistics.
 	 */
@@ -46,7 +46,7 @@ public class WrappedStatistic extends AbstractWrapper {
 	
 	/**
 	 * Construct a wrapper around an existing game profile.
-	 * @param profile - the underlying profile.
+	 * @param name - statistic name.
 	 * @return The wrapped statistics, or NULL if not found.
 	 */
 	public static WrappedStatistic fromName(String name) {
@@ -60,9 +60,10 @@ public class WrappedStatistic extends AbstractWrapper {
 	 */
 	public static Iterable<WrappedStatistic> values() {
 		@SuppressWarnings("unchecked")
-		Map<Object, Object> map = (Map<Object, Object>) MAP_ACCESSOR.get(null); 
+		Map<Object, Object> map = (Map<Object, Object>) MAP_ACCESSOR.get(null);
 		
 		return Iterables.transform(map.values(), new Function<Object, WrappedStatistic>() {
+			@Override
 			public WrappedStatistic apply(Object handle) {
 				return fromHandle(handle);
 			};

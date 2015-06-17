@@ -42,11 +42,12 @@ public interface SocketInjector {
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
 	 * @throws InvocationTargetException If an error occured when sending the packet.
 	 */
-	public abstract void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) 
+	public abstract void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered)
 			throws InvocationTargetException;
 
 	/**
 	 * Retrieve the hooked player.
+	 * @return The hooked player.
 	 */
 	public abstract Player getPlayer();
 
@@ -57,7 +58,7 @@ public interface SocketInjector {
 	public abstract Player getUpdatedPlayer();
 
 	/**
-	 * Invoked when a delegated socket injector transfers the state of one injector to the next. 
+	 * Invoked when a delegated socket injector transfers the state of one injector to the next.
 	 * @param delegate - the new injector.
 	 */
 	public abstract void transferState(SocketInjector delegate);

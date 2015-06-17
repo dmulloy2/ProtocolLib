@@ -36,7 +36,7 @@ public class NetworkProcessor {
 	 */
 	public byte[] processOutput(PacketEvent event, NetworkMarker marker, final byte[] input) {
 		// Bit of a hack - but we need the performance
-		PriorityQueue<PacketOutputHandler> handlers = (PriorityQueue<PacketOutputHandler>) 
+		PriorityQueue<PacketOutputHandler> handlers = (PriorityQueue<PacketOutputHandler>)
 			marker.getOutputHandlers();
 		byte[] output = input;
 		
@@ -66,6 +66,7 @@ public class NetworkProcessor {
 
 	/**
 	 * Invoke the post listeners and packet transmission, if any.
+	 * @param event - PacketEvent
 	 * @param marker - the network marker, or NULL.
 	 */
 	public void invokePostEvent(PacketEvent event, NetworkMarker marker) {

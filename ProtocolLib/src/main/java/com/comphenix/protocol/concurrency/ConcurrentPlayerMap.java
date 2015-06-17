@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -70,6 +69,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	
 	/**
 	 * Construct a new concurrent player map that uses each player's address as key.
+	 * @param <T> Parameter type
 	 * @return Concurrent player map.
 	 */
 	public static <T> ConcurrentPlayerMap<T> usingAddress() {
@@ -78,6 +78,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	
 	/**
 	 * Construct a new concurrent player map that uses each player's name as key.
+	 * @param <T> Parameter type
 	 * @return Concurrent player map.
 	 */
 	public static <T> ConcurrentPlayerMap<T> usingName() {
@@ -177,7 +178,6 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * Lookup a player by key in the cache, optionally searching every online player.
 	 * @param key - the key of the player we are locating.
 	 * @return The player, or NULL if not found.
-	 * @throws ExecutionException
 	 */
 	protected Player lookupPlayer(Object key) {
 		try {
@@ -293,7 +293,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	private Iterator<Entry<Player, TValue>> entryIterator() {
 		// Skip entries with stale data
 		final Iterator<Entry<Object, TValue>> source = valueLookup.entrySet().iterator();
-		final AbstractIterator<Entry<Player,TValue>> filtered = 
+		final AbstractIterator<Entry<Player,TValue>> filtered =
 		  new AbstractIterator<Entry<Player,TValue>>() {
 			@Override
 			protected Entry<Player, TValue> computeNext() {
@@ -315,12 +315,15 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 		
 		// We can't return AbstractIterator directly, as it doesn't permitt the remove() method
 		return new Iterator<Entry<Player, TValue>>() {
+			@Override
 			public boolean hasNext() {
 				return filtered.hasNext();
 			}
+			@Override
 			public Entry<Player, TValue> next() {
 				return filtered.next();
 			}
+			@Override
 			public void remove() {
 				source.remove();
 			}

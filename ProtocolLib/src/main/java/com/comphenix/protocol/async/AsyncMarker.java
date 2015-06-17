@@ -402,6 +402,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 	/**
 	 * Determine if Minecraft allows asynchronous processing of this packet.
 	 * @return TRUE if it does, FALSE otherwise.
+	 * @throws FieldAccessException If determining fails for some reasaon
 	 */
 	public boolean isMinecraftAsync(PacketEvent event) throws FieldAccessException {
 		if (isMinecraftAsync == null && !alwaysSync) {

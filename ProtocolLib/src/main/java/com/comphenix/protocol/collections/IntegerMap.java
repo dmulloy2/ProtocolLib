@@ -18,6 +18,7 @@ public class IntegerMap<T> {
 	
 	/**
 	 * Construct a new integer map.
+	 * @param <T> Parameter type
 	 * @return A new integer map.
 	 */
 	public static <T> IntegerMap<T> newMap() {
@@ -51,7 +52,7 @@ public class IntegerMap<T> {
 	public T put(int key, T value) {
 		ensureCapacity(key);
 		
-		T old = array[key];	
+		T old = array[key];
 		array[key] = Preconditions.checkNotNull(value, "value cannot be NULL");
 		
 		if (old == null)

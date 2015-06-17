@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -96,7 +96,7 @@ public class PacketRegistry {
 			return NETTY.getPacketTypeLookup().containsKey(type);
 		
 		// Look up the correct type
-		return type.isClient() ? 
+		return type.isClient() ?
 			LEGACY.getClientPackets().contains(type.getLegacyId()) :
 			LEGACY.getServerPackets().contains(type.getLegacyId());
 	}
@@ -120,7 +120,7 @@ public class PacketRegistry {
 					);
 				}
 			} catch (CannotFindTroveNoEntryValue e) {
-				ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class, 
+				ProtocolLibrary.getErrorReporter().reportWarning(PacketRegistry.class,
 					Report.newBuilder(REPORT_CANNOT_CORRECT_TROVE_MAP).error(e.getCause()));
 			}
 		}
@@ -139,6 +139,7 @@ public class PacketRegistry {
 		if (NETTY != null) {
 			@SuppressWarnings("unchecked")
 			Map<Class, Integer> result = (Map)Maps.transformValues(NETTY.getPacketClassLookup(), new Function<PacketType, Integer>() {
+				@Override
 				public Integer apply(PacketType type) {
 					return type.getLegacyId();
 				};
@@ -161,6 +162,7 @@ public class PacketRegistry {
 			return result;
 		}
 		return Maps.transformValues(LEGACY.getPacketToID(), new Function<Integer, PacketType>() {
+			@Override
 			public PacketType apply(Integer packetId) {
 				return PacketType.findLegacy(packetId);
 			};
@@ -288,7 +290,7 @@ public class PacketRegistry {
 	 * @param types - packet type.
 	 * @return Set of integers.
 	 */
-	public static Set<Integer> toLegacy(Set<PacketType> types) { 
+	public static Set<Integer> toLegacy(Set<PacketType> types) {
 		Set<Integer> result = Sets.newHashSet();
 		
 		for (PacketType type : types)
@@ -298,20 +300,20 @@ public class PacketRegistry {
 	
 	/**
 	 * Convert a set of legacy packet IDs to packet types.
-	 * @param types - legacy packet IDs.
+	 * @param ids - legacy packet IDs.
 	 * @return Set of packet types.
 	 */
-	public static Set<PacketType> toPacketTypes(Set<Integer> ids) { 
+	public static Set<PacketType> toPacketTypes(Set<Integer> ids) {
 		return toPacketTypes(ids, null);
 	}
 	
 	/**
 	 * Convert a set of legacy packet IDs to packet types.
-	 * @param types - legacy packet IDs.
+	 * @param ids - legacy packet IDs.
 	 * @param preference - the sender preference, if any.
 	 * @return Set of packet types.
 	 */
-	public static Set<PacketType> toPacketTypes(Set<Integer> ids, Sender preference) { 
+	public static Set<PacketType> toPacketTypes(Set<Integer> ids, Sender preference) {
 		Set<PacketType> result = Sets.newHashSet();
 		
 		for (int id : ids)
@@ -417,7 +419,7 @@ public class PacketRegistry {
 		} else {
 			final int id = LEGACY.getPacketID(packet);
 			
-			return PacketType.hasLegacy(id) ? 
+			return PacketType.hasLegacy(id) ?
 					PacketType.fromLegacy(id, sender) : null;
 		}
 	}

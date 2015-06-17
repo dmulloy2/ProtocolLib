@@ -223,7 +223,8 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	private boolean debug;
 
 	/**
-	 * Only create instances of this class if protocol lib is disabled.
+	 * Only create instances of this class if ProtocolLib is disabled.
+	 * @param builder - PacketFilterBuilder
 	 */
 	public PacketFilterManager(PacketFilterBuilder builder) {
 		// Used to determine if injection is needed
