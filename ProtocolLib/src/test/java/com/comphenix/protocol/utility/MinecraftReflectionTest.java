@@ -24,10 +24,20 @@ import org.bukkit.inventory.ItemStack;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import com.comphenix.protocol.BukkitInitialization;
 
+@RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
+@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
 public class MinecraftReflectionTest {
+
+	@BeforeClass
+	public static void initializeBukkit() throws IllegalAccessException {
+		BukkitInitialization.initializeItemMeta();
+	}
+
 	// Mocking objects
 	private interface FakeEntity {
 		public Entity getBukkitEntity();
@@ -35,17 +45,6 @@ public class MinecraftReflectionTest {
 
 	private interface FakeBlock {
 		public Block getBukkitEntity();
-	}
-
-	@BeforeClass
-	public static void initializeReflection() throws IllegalAccessException {
-		BukkitInitialization.initializePackage();
-
-		// Set up a package with no class loader knowledge
-		MinecraftReflection.minecraftPackage = new CachedPackage(
-			MinecraftReflection.getMinecraftPackage(),
-			ClassSource.fromClassLoader()
-		);
 	}
 
 	@AfterClass
