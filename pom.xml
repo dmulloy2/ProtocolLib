@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib-Parent</artifactId>
-  <version>3</version>
+  <version>dev-SNAPSHOT</version>
   <name>ProtocolLib-Parent</name>
 
   <modules>
