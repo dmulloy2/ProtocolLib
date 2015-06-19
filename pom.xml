@@ -55,6 +55,9 @@
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.7</version>
+        <configuration>
+          <failOnError>false</failOnError>
+        </configuration>
         <executions>
           <execution>
             <phase>install</phase>
@@ -74,6 +77,7 @@
         <version>2.7</version>
         <configuration>
           <aggregate>true</aggregate>
+          <failOnError>false</failOnError>
         </configuration>
       </plugin>
       <plugin>
