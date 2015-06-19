@@ -35,10 +35,10 @@
       <id>spigot-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
-    <repository>
+    <!--<repository>
       <id>md_5-repo</id>
       <url>http://repo.md-5.net/content/groups/public/</url>
-    </repository>
+    </repository>-->
   </repositories>
 
   <build>
