@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.comphenix.protocol</groupId>
+  <artifactId>ProtocolLib-Parent</artifactId>
+  <version>3</version>
+  <name>ProtocolLib-Parent</name>
+
+  <modules>
+    <module>ProtocolLib</module>
+    <module>Modules/ProtocolLib-ShadedNetty</module>
+  </modules>
+
+  <description>Provides read/write access to the Minecraft protocol.</description>
+  <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
+  <packaging>pom</packaging>
+
+  <distributionManagement>
+    <repository>
+      <id>dmulloy2-releases</id>
+      <url>http://repo.dmulloy2.net/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>dmulloy2-snapshots</id>
+      <url>http://repo.dmulloy2.net/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>spigot-repo</id>
+      <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+    </repository>
+    <repository>
+      <id>dmulloy2-repo</id>
+      <url>http://repo.dmulloy2.net/content/groups/public/</url>
+    </repository>
+    <repository>
+      <id>md_5-repo</id>
+      <url>http://repo.md-5.net/content/groups/public/</url>
+    </repository>
+  </repositories>
+
+  <build>
+    <defaultGoal>clean package install</defaultGoal>
+    <finalName>${project.name}</finalName>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
