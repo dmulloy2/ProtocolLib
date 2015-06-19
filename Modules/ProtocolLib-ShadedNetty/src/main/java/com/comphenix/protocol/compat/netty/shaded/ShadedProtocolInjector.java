@@ -1,12 +1,20 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -16,10 +24,21 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
 
+import net.minecraft.util.io.netty.channel.Channel;
+import net.minecraft.util.io.netty.channel.ChannelFuture;
+import net.minecraft.util.io.netty.channel.ChannelHandler;
+import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
+import net.minecraft.util.io.netty.channel.ChannelInboundHandler;
+import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
+import net.minecraft.util.io.netty.channel.ChannelInitializer;
+
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.compat.netty.ChannelInjector;
+import com.comphenix.protocol.compat.netty.ProtocolInjector;
+import com.comphenix.protocol.compat.netty.WrappedChannel;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -30,6 +49,9 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
+import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.netty.Injector;
+import com.comphenix.protocol.injector.netty.NettyNetworkMarker;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
@@ -41,8 +63,7 @@ import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
 
-
-public class NettyProtocolInjector implements ChannelListener {
+public class ShadedProtocolInjector implements ProtocolInjector {
 	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to inject incoming channel %s.");
 	
     private volatile boolean injected;
@@ -53,7 +74,7 @@ public class NettyProtocolInjector implements ChannelListener {
     private List<VolatileField> bootstrapFields = Lists.newArrayList();
     
     // The channel injector factory
-    private InjectionFactory injectionFactory;
+    private ShadedInjectionFactory injectionFactory;
     
     // List of network managers
     private volatile List<Object> networkManagers;
@@ -73,8 +94,8 @@ public class NettyProtocolInjector implements ChannelListener {
     private ErrorReporter reporter;
     private boolean debug;
     
-    public NettyProtocolInjector(Plugin plugin, ListenerInvoker invoker, ErrorReporter reporter) {
-    	this.injectionFactory = new InjectionFactory(plugin);
+    public ShadedProtocolInjector(Plugin plugin, ListenerInvoker invoker, ErrorReporter reporter) {
+    	this.injectionFactory = new ShadedInjectionFactory(plugin);
 		this.invoker = invoker;
 		this.reporter = reporter;
 	}
@@ -88,6 +109,7 @@ public class NettyProtocolInjector implements ChannelListener {
      * Set whether or not the debug mode is enabled.
      * @param debug - TRUE if it is, FALSE otherwise.
      */
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
@@ -95,7 +117,8 @@ public class NettyProtocolInjector implements ChannelListener {
 	/**
      * Inject into the spigot connection class.
      */
-    @SuppressWarnings("unchecked")
+    @Override
+	@SuppressWarnings("unchecked")
 	public synchronized void inject() {
         if (injected)
             throw new IllegalStateException("Cannot inject twice.");
@@ -128,10 +151,10 @@ public class NettyProtocolInjector implements ChannelListener {
                 	try {
 	                    // This can take a while, so we need to stop the main thread from interfering
 	                    synchronized (networkManagers) {
-	                    	injectionFactory.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
+	                    	injectionFactory.fromChannel(channel, ShadedProtocolInjector.this, playerFactory).inject();
 						}
                 	} catch (Exception e) {
-                		reporter.reportDetailed(NettyProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).
+                		reporter.reportDetailed(ShadedProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).
                 				messageParam(channel).error(e));
                 	}
                 }
@@ -174,7 +197,7 @@ public class NettyProtocolInjector implements ChannelListener {
             	}
             	
             	// Synchronize with each list before we attempt to replace them.
-				field.setValue(new BootstrapList(list, connectionHandler));
+				field.setValue(new ShadedBootstrapList(list, connectionHandler));
             }
 
             injected = true;
@@ -227,7 +250,8 @@ public class NettyProtocolInjector implements ChannelListener {
     /**
      * Clean up any remaning injections.
      */
-    public synchronized void close() {
+    @Override
+	public synchronized void close() {
         if (!closed) {
             closed = true;
 
@@ -235,8 +259,8 @@ public class NettyProtocolInjector implements ChannelListener {
             	Object value = field.getValue();
 
             	// Undo the processed channels, if any
-            	if (value instanceof BootstrapList) {
-            		((BootstrapList) value).close();
+            	if (value instanceof ShadedBootstrapList) {
+            		((ShadedBootstrapList) value).close();
             	}
             	field.revertValue();
             }
@@ -304,9 +328,10 @@ public class NettyProtocolInjector implements ChannelListener {
 	}
     
 	// Server side
+	@Override
 	public PlayerInjectionHandler getPlayerInjector() {
 		return new AbstractPlayerHandler(sendingFilters) {
-			private ChannelListener listener = NettyProtocolInjector.this;
+			private ChannelListener listener = ShadedProtocolInjector.this;
 			
 			@Override
 			public int getProtocolVersion(Player player) {
@@ -377,7 +402,7 @@ public class NettyProtocolInjector implements ChannelListener {
 			}
 
 			@Override
-			public Channel getChannel(Player player) {
+			public WrappedChannel getChannel(Player player) {
 				Injector injector = injectionFactory.fromPlayer(player, listener);
 				if (injector instanceof ChannelInjector) {
 					return ((ChannelInjector) injector).getChannel();
@@ -393,12 +418,13 @@ public class NettyProtocolInjector implements ChannelListener {
 	 * @return The packet injector.
 	 */
 	// Client side
+	@Override
 	public PacketInjector getPacketInjector() {
 		return new AbstractPacketInjector(reveivedFilters) {
 			@Override
 			public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
 				NetworkMarker marker = buffered != null ? new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
-				injectionFactory.fromPlayer(client, NettyProtocolInjector.this).
+				injectionFactory.fromPlayer(client, ShadedProtocolInjector.this).
 					saveMarker(packet.getHandle(), marker);
 				return packetReceived(packet, client, marker);
 			}

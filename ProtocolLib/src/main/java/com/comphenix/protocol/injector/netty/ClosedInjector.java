@@ -9,7 +9,7 @@ import com.comphenix.protocol.events.NetworkMarker;
  * Represents a closed injector.
  * @author Kristian
  */
-class ClosedInjector implements Injector {
+public class ClosedInjector implements Injector {
 	private Player player;
 
 	/**

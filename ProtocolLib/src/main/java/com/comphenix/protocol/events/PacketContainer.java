@@ -17,9 +17,6 @@
 
 package com.comphenix.protocol.events;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
@@ -50,6 +47,8 @@ import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.compat.netty.Netty;
+import com.comphenix.protocol.compat.netty.WrappedByteBuf;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -102,7 +101,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.mojang.authlib.GameProfile;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -606,7 +604,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WrappedGameProfile> getGameProfiles() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedGameProfile>withType(
-				GameProfile.class, BukkitConverters.getWrappedGameProfileConverter());
+				MinecraftReflection.getGameProfileClass(), BukkitConverters.getWrappedGameProfileConverter());
 	}
 	
 	/**
@@ -930,12 +928,11 @@ public class PacketContainer implements Serializable {
 
 		try {
 			if (MinecraftReflection.isUsingNetty()) {
-				ByteBuf buffer = createPacketBuffer();
-				MinecraftMethods.getPacketWriteByteBufMethod().invoke(handle, buffer);
-				
+				WrappedByteBuf buffer = createPacketBuffer();
+				MinecraftMethods.getPacketWriteByteBufMethod().invoke(handle, buffer.getHandle());
+
 				output.writeInt(buffer.readableBytes());
 				buffer.readBytes(output, buffer.readableBytes());
-				
 			} else {
 				// Call the write-method
 				output.writeInt(-1);
@@ -968,10 +965,10 @@ public class PacketContainer implements Serializable {
 			// Call the read method
 			try {
 				if (MinecraftReflection.isUsingNetty()) {
-					ByteBuf buffer = createPacketBuffer();
+					WrappedByteBuf buffer = createPacketBuffer();
 					buffer.writeBytes(input, input.readInt());
 					
-					MinecraftMethods.getPacketReadByteBufMethod().invoke(handle, buffer);
+					MinecraftMethods.getPacketReadByteBufMethod().invoke(handle, buffer.getHandle());
 				} else {
 					if (input.readInt() != -1)
 						throw new IllegalArgumentException("Cannot load a packet from 1.7.2 in 1.6.4.");
@@ -996,8 +993,8 @@ public class PacketContainer implements Serializable {
 	 * Construct a new packet data serializer.
 	 * @return The packet data serializer.
 	 */
-	private ByteBuf createPacketBuffer() {
-		return MinecraftReflection.getPacketDataSerializer(UnpooledByteBufAllocator.DEFAULT.buffer());
+	private WrappedByteBuf createPacketBuffer() {
+		return Netty.createPacketBuffer();
 	}
 
 	// ---- Metadata

@@ -1,16 +1,35 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.channel.Channel;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.util.io.netty.channel.Channel;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.injector.netty.ChannelInjector.ChannelSocketInjector;
+import com.comphenix.protocol.compat.netty.shaded.ShadedChannelInjector.ChannelSocketInjector;
+import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.netty.ClosedInjector;
+import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -24,7 +43,7 @@ import com.google.common.collect.MapMaker;
  * Note that the factory will return {@link ClosedInjector} when the factory is closed.
  * @author Kristian
  */
-class InjectionFactory {
+public class ShadedInjectionFactory {
 	// This should work as long as the injectors are, uh, injected
 	private final ConcurrentMap<Player, Injector> playerLookup = new MapMaker().weakKeys().weakValues().makeMap();
 	private final ConcurrentMap<String, Injector> nameLookup = new MapMaker().weakValues().makeMap();
@@ -35,7 +54,7 @@ class InjectionFactory {
 	// The current plugin
 	private final Plugin plugin;
 	
-	public InjectionFactory(Plugin plugin) {
+	public ShadedInjectionFactory(Plugin plugin) {
 		this.plugin = plugin;
 	}
 	
@@ -74,14 +93,14 @@ class InjectionFactory {
 		Channel channel = FuzzyReflection.getFieldValue(networkManager, Channel.class, true);
 		
 		// See if a channel has already been created
-		injector = (ChannelInjector) ChannelInjector.findChannelHandler(channel, ChannelInjector.class);
+		injector = (ShadedChannelInjector) ShadedChannelInjector.findChannelHandler(channel, ShadedChannelInjector.class);
 		
 		if (injector != null) {
 			// Update the player instance
 			playerLookup.remove(injector.getPlayer());
 			injector.setPlayer(player);
 		} else {
-			injector = new ChannelInjector(player, networkManager, channel, listener, this);
+			injector = new ShadedChannelInjector(player, networkManager, channel, listener, this);
 		}
 		
 		// Cache injector and return
@@ -125,7 +144,7 @@ class InjectionFactory {
 		
 		Object networkManager = findNetworkManager(channel);
 		Player temporaryPlayer = playerFactory.createTemporaryPlayer(Bukkit.getServer());
-		ChannelInjector injector = new ChannelInjector(temporaryPlayer, networkManager, channel, listener, this);
+		ShadedChannelInjector injector = new ShadedChannelInjector(temporaryPlayer, networkManager, channel, listener, this);
 		
 		// Initialize temporary player
 		TemporaryPlayerFactory.setInjectorInPlayer(temporaryPlayer, new ChannelSocketInjector(injector));
@@ -170,7 +189,7 @@ class InjectionFactory {
 	 * @param player - the temporary player, or normal Bukkit player.
 	 * @return The associated injector, or NULL if this is a Bukkit player.
 	 */
-	private ChannelInjector getTemporaryInjector(Player player) {
+	private ShadedChannelInjector getTemporaryInjector(Player player) {
 		SocketInjector injector = TemporaryPlayerFactory.getInjectorFromPlayer(player);
 		
 		if (injector != null) {
@@ -186,7 +205,7 @@ class InjectionFactory {
 	 */
 	private Object findNetworkManager(Channel channel) {
 		// Find the network manager
-		Object networkManager = ChannelInjector.findChannelHandler(channel, MinecraftReflection.getNetworkManagerClass());
+		Object networkManager = ShadedChannelInjector.findChannelHandler(channel, MinecraftReflection.getNetworkManagerClass());
 		
 		if (networkManager != null)
 			return networkManager;

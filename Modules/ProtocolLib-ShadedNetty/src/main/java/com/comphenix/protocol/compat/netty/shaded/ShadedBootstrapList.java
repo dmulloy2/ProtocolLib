@@ -1,8 +1,20 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -10,10 +22,13 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.Callable;
 
-import com.google.common.collect.Lists;
-// Hopefully, CB won't version these as well
+import net.minecraft.util.io.netty.channel.Channel;
+import net.minecraft.util.io.netty.channel.ChannelFuture;
+import net.minecraft.util.io.netty.channel.ChannelHandler;
 
-class BootstrapList implements List<Object> {
+import com.google.common.collect.Lists;
+
+public class ShadedBootstrapList implements List<Object> {
 	private List<Object> delegate;
 	private ChannelHandler handler;
 	
@@ -22,7 +37,7 @@ class BootstrapList implements List<Object> {
 	 * @param delegate - the delegate.
 	 * @param handler - the channel handler to add.
 	 */
-	public BootstrapList(List<Object> delegate, ChannelHandler handler) {
+	public ShadedBootstrapList(List<Object> delegate, ChannelHandler handler) {
 		this.delegate = delegate;
 		this.handler = handler;
 		

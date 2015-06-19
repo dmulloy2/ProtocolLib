@@ -8,15 +8,14 @@ import java.util.Set;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.compat.guava.Guava;
 import com.comphenix.protocol.events.ConnectionSide;
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 
 class PacketTypeParser {
-	public final static Range<Integer> DEFAULT_MAX_RANGE = Range.closed(0, 255);
+	public final static Range<Integer> DEFAULT_MAX_RANGE = Guava.closedRange(0, 255);
 	
 	private Sender side = null;
 	private Protocol protocol = null;
@@ -72,7 +71,7 @@ class PacketTypeParser {
 		}
 		
 		for (Range<Integer> range : ranges) {
-			for (Integer id : ContiguousSet.create(range, DiscreteDomain.integers())) {
+			for (Integer id : Guava.toSet(range)) {
 				// Deprecated packets
 				if (protocol == null) {
 					if (PacketType.hasLegacy(id)) {

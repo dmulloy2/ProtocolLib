@@ -4,12 +4,11 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 
-
 /**
  * Represents a listener for received or sent packets.
  * @author Kristian
  */
-interface ChannelListener {
+public interface ChannelListener {
 	/**
 	 * Invoked when a packet is being sent to the client.
 	 * <p>

@@ -1,7 +1,5 @@
 package com.comphenix.protocol.injector.player;
 
-import io.netty.channel.Channel;
-
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -11,6 +9,7 @@ import java.util.Set;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.compat.netty.WrappedChannel;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
@@ -201,5 +200,5 @@ public interface PlayerInjectionHandler {
 	 */
 	public abstract boolean hasMainThreadListener(PacketType type);
 
-	public abstract Channel getChannel(Player player);
+	public abstract WrappedChannel getChannel(Player player);
 }

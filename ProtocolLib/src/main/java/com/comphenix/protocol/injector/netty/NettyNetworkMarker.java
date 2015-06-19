@@ -10,7 +10,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 
-class NettyNetworkMarker extends NetworkMarker {
+public class NettyNetworkMarker extends NetworkMarker {
 	public NettyNetworkMarker(@Nonnull ConnectionSide side, byte[] inputBuffer) {
 		super(side, inputBuffer, null);
 	}

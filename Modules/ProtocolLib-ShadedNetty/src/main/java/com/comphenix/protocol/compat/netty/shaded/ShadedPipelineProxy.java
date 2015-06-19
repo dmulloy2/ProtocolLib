@@ -1,12 +1,20 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
-import io.netty.util.concurrent.EventExecutorGroup;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.net.SocketAddress;
 import java.util.Iterator;
@@ -14,15 +22,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.minecraft.util.io.netty.channel.Channel;
+import net.minecraft.util.io.netty.channel.ChannelFuture;
+import net.minecraft.util.io.netty.channel.ChannelHandler;
+import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
+import net.minecraft.util.io.netty.channel.ChannelPipeline;
+import net.minecraft.util.io.netty.channel.ChannelPromise;
+import net.minecraft.util.io.netty.util.concurrent.EventExecutorGroup;
+
 /**
  * A pipeline proxy.
  * @author Kristian
  */
-public class PipelineProxy implements ChannelPipeline {
+public class ShadedPipelineProxy implements ChannelPipeline {
 	protected final ChannelPipeline pipeline;
 	protected final Channel channel;
 
-	public PipelineProxy(ChannelPipeline pipeline, Channel channel) {
+	public ShadedPipelineProxy(ChannelPipeline pipeline, Channel channel) {
 		this.pipeline = pipeline;
 		this.channel = channel;
 	}

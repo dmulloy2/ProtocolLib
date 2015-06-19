@@ -23,8 +23,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
+import com.comphenix.protocol.compat.guava.Guava;
 import com.google.common.collect.Range;
 
 /**
@@ -68,7 +67,7 @@ class RangeParser {
 					throw new IllegalArgumentException("Cannot form a range without a upper limit.");
 
 				// This is a proper range
-				range = Range.closed(Integer.parseInt(current), Integer.parseInt(tokens.get(i + 2)));
+				range = Guava.closedRange(Integer.parseInt(current), Integer.parseInt(tokens.get(i + 2)));
 				ranges.add(range);
 				
 				// Skip the two next tokens
@@ -76,7 +75,7 @@ class RangeParser {
 				
 			} else {
 				// Just a single number
-				range = Range.singleton(Integer.parseInt(current));
+				range = Guava.singleton(Integer.parseInt(current));
 				ranges.add(range);
 			}
 			
@@ -102,7 +101,7 @@ class RangeParser {
 		
 		// Set every ID
 		for (Range<Integer> range : ranges) {
-			for (int id : ContiguousSet.create(range, DiscreteDomain.integers())) {
+			for (int id : Guava.toSet(range)) {
 				set[id] = true;
 			}
 		}
@@ -115,7 +114,7 @@ class RangeParser {
 				}
 			} else {
 				if (start >= 0) {
-					result.add(Range.closed(start, i - 1));
+					result.add(Guava.closedRange(start, i - 1));
 					start = -1;
 				}
 			}

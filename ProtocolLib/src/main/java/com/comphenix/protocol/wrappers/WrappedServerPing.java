@@ -1,10 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.base64.Base64;
-import io.netty.util.IllegalReferenceCountException;
-
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
@@ -22,6 +17,8 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.compat.netty.Netty;
+import com.comphenix.protocol.compat.netty.WrappedByteBuf;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -38,7 +35,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
-import com.mojang.authlib.GameProfile;
 
 /**
  * Represents a server ping packet data.
@@ -55,6 +51,9 @@ public class WrappedServerPing extends AbstractWrapper {
 			.build();
 	private static MinecraftVersion LAST_VERSION = MinecraftVersion.BOUNTIFUL_UPDATE;
 
+	private static Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
+	private static Class<?> GAME_PROFILE_ARRAY = MinecraftReflection.getArrayClass(GAME_PROFILE);
+
 	// Server ping fields
 	private static Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
 	private static ConstructorAccessor SERVER_PING_CONSTRUCTOR = Accessors.getConstructorAccessor(SERVER_PING);
@@ -65,13 +64,13 @@ public class WrappedServerPing extends AbstractWrapper {
 
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
-		BukkitConverters.getArrayConverter(GameProfile.class, BukkitConverters.getWrappedGameProfileConverter());
+		BukkitConverters.getArrayConverter(GAME_PROFILE, BukkitConverters.getWrappedGameProfileConverter());
 
 	// Server ping player sample fields
 	private static Class<?> PLAYERS_CLASS = MinecraftReflection.getServerPingPlayerSampleClass();
 	private static ConstructorAccessor PLAYERS_CONSTRUCTOR = Accessors.getConstructorAccessor(PLAYERS_CLASS, int.class, int.class);
 	private static FieldAccessor[] PLAYERS_INTS = Accessors.getFieldAccessorArray(PLAYERS_CLASS, int.class, true);
-	private static FieldAccessor PLAYERS_PROFILES = Accessors.getFieldAccessor(PLAYERS_CLASS, GameProfile[].class, true);
+	private static FieldAccessor PLAYERS_PROFILES = Accessors.getFieldAccessor(PLAYERS_CLASS, GAME_PROFILE_ARRAY, true);
 	private static FieldAccessor PLAYERS_MAXIMUM = PLAYERS_INTS[0];
 	private static FieldAccessor PLAYERS_ONLINE = PLAYERS_INTS[1];
 
@@ -91,7 +90,7 @@ public class WrappedServerPing extends AbstractWrapper {
 
 	// Get profile from player
 	private static FieldAccessor ENTITY_HUMAN_PROFILE = Accessors.getFieldAccessor(
-			MinecraftReflection.getEntityPlayerClass().getSuperclass(), GameProfile.class, true);
+			MinecraftReflection.getEntityPlayerClass().getSuperclass(), GAME_PROFILE, true);
 
 	// Inner class
 	private Object players; // may be NULL
@@ -297,7 +296,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
 		if (players == null)
 			resetPlayers();
-		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(GameProfile[].class, profile) : null);
+		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(GAME_PROFILE_ARRAY, profile) : null);
 	}
 
 	/**
@@ -308,9 +307,10 @@ public class WrappedServerPing extends AbstractWrapper {
 		List<WrappedGameProfile> profiles = Lists.newArrayList();
 
 		for (Player player : players) {
-			GameProfile profile = (GameProfile) ENTITY_HUMAN_PROFILE.get(BukkitUnwrapper.getInstance().unwrapItem(player));
+			Object profile = ENTITY_HUMAN_PROFILE.get(BukkitUnwrapper.getInstance().unwrapItem(player));
 			profiles.add(WrappedGameProfile.fromHandle(profile));
 		}
+
 		setPlayers(profiles);
 	}
 
@@ -438,7 +438,7 @@ public class WrappedServerPing extends AbstractWrapper {
 				return new EncodedCompressedImage("data:image/png;base64," + base64);
 			} catch (IllegalArgumentException e) {
 				// Remind the caller
-				throw new IllegalReferenceCountException("Must be a pure base64 encoded string. Cannot be an encoded text.", e);
+				throw new IllegalArgumentException("Must be a pure base64 encoded string. Cannot be an encoded text.", e);
 			}
 		}
 
@@ -504,12 +504,9 @@ public class WrappedServerPing extends AbstractWrapper {
 		 */
 		public String toEncodedText() {
 			if (encoded == null) {
-				final ByteBuf buffer = Unpooled.wrappedBuffer(getData());
-				String computed = "data:" + mime + ";base64," +
-					Base64.encode(buffer).toString(Charsets.UTF_8);
-
-				encoded = computed;
+				encoded = Netty.toEncodedText(this);
 			}
+
 			return encoded;
 		}
 	}
@@ -541,7 +538,7 @@ public class WrappedServerPing extends AbstractWrapper {
 					this.mime = segment.substring(5);
 				} else if (segment.startsWith("base64,")) {
 					byte[] encoded = segment.substring(7).getBytes(Charsets.UTF_8);
-					ByteBuf decoded = Base64.decode(Unpooled.wrappedBuffer(encoded));
+					WrappedByteBuf decoded = Netty.decode(encoded);
 
 					// Read into a byte array
 					byte[] data = new byte[decoded.readableBytes()];

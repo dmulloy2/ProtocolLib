@@ -1,8 +1,20 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.socket.SocketChannel;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +24,10 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 
+import net.minecraft.util.io.netty.channel.Channel;
+import net.minecraft.util.io.netty.channel.ChannelOption;
+import net.minecraft.util.io.netty.channel.socket.SocketChannel;
+
 /**
  * This class wraps a Netty {@link Channel} in a {@link Socket}. It overrides
  * all methods in {@link Socket} to ensure that calls are not mistakingly made
@@ -20,15 +36,15 @@ import java.net.SocketException;
  * {@link UnsupportedOperationException}.
  */
 // Thanks MD5. :)
-class NettySocketAdaptor extends Socket {
+public class ShadedSocketAdapter extends Socket {
     private final SocketChannel ch;
 
-    private NettySocketAdaptor(SocketChannel ch) {
+    private ShadedSocketAdapter(SocketChannel ch) {
         this.ch = ch;
     }
 
-    public static NettySocketAdaptor adapt(SocketChannel ch) {
-        return new NettySocketAdaptor(ch);
+    public static ShadedSocketAdapter adapt(SocketChannel ch) {
+        return new ShadedSocketAdapter(ch);
     }
 
     @Override
@@ -54,7 +70,7 @@ class NettySocketAdaptor extends Socket {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof NettySocketAdaptor && ch.equals(((NettySocketAdaptor) obj).ch);
+        return obj instanceof ShadedSocketAdapter && ch.equals(((ShadedSocketAdapter) obj).ch);
     }
 
     @Override

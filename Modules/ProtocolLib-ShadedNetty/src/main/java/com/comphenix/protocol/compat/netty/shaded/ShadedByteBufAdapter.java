@@ -1,8 +1,20 @@
-package com.comphenix.protocol.utility;
-
-import io.netty.buffer.AbstractByteBuf;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -16,9 +28,15 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
+import net.minecraft.util.io.netty.buffer.AbstractByteBuf;
+import net.minecraft.util.io.netty.buffer.ByteBuf;
+import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
+
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.LimitInputStream;
 
 /**
  * Construct a ByteBuf around an input stream and an output stream.
@@ -27,7 +45,7 @@ import com.google.common.io.ByteStreams;
  * all indexing in the byte buffer.
  * @author Kristian
  */
-class ByteBufAdapter extends AbstractByteBuf {
+public class ShadedByteBufAdapter extends AbstractByteBuf {
 	private DataInputStream input;
 	private DataOutputStream output;
 	
@@ -37,7 +55,7 @@ class ByteBufAdapter extends AbstractByteBuf {
 	
 	private static final int CAPACITY = Short.MAX_VALUE;
 	
-	private ByteBufAdapter(DataInputStream input, DataOutputStream output) {
+	private ShadedByteBufAdapter(DataInputStream input, DataOutputStream output) {
 		// Just pick a figure
 		super(CAPACITY);
 		this.input = input;
@@ -68,7 +86,7 @@ class ByteBufAdapter extends AbstractByteBuf {
 	 * @return A packet serializer with a wrapped byte buf adapter.
 	 */
 	public static ByteBuf packetReader(DataInputStream input) {
-		return MinecraftReflection.getPacketDataSerializer(new ByteBufAdapter(input, null));
+		return (ByteBuf) MinecraftReflection.getPacketDataSerializer(new ShadedByteBufAdapter(input, null));
 	}
 	
 	/**
@@ -77,7 +95,7 @@ class ByteBufAdapter extends AbstractByteBuf {
 	 * @return A packet serializer with a wrapped byte buf adapter.
 	 */
 	public static ByteBuf packetWriter(DataOutputStream output) {
-		return MinecraftReflection.getPacketDataSerializer(new ByteBufAdapter(null, output));
+		return (ByteBuf) MinecraftReflection.getPacketDataSerializer(new ShadedByteBufAdapter(null, output));
 	}
 	
 	@Override
@@ -249,13 +267,13 @@ class ByteBufAdapter extends AbstractByteBuf {
 
 	@Override
 	public ByteBuf getBytes(int index, OutputStream dst, int length) throws IOException {
-		ByteStreams.copy(ByteStreams.limit(input, length), dst);
+		ByteStreams.copy(new LimitInputStream(input, length), dst);
 		return this;
 	}
 
 	@Override
 	public int getBytes(int index, GatheringByteChannel out, int length) throws IOException {
-		byte[] data = ByteStreams.toByteArray(ByteStreams.limit(input, length));
+		byte[] data = ByteStreams.toByteArray(new LimitInputStream(input, length));
 		
 		out.write(ByteBuffer.wrap(data));
 		return data.length;
@@ -298,7 +316,7 @@ class ByteBufAdapter extends AbstractByteBuf {
 
 	@Override
 	public int setBytes(int index, InputStream in, int length) throws IOException {
-		InputStream limit = ByteStreams.limit(in, length);
+		LimitInputStream limit = new LimitInputStream(in, length);
 		ByteStreams.copy(limit, output);
 		return length - limit.available();
 	}

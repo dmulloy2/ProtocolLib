@@ -1,18 +1,20 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerAdapter;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.MessageToByteEncoder;
-import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.internal.TypeParameterMatcher;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
@@ -27,6 +29,19 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
+import net.minecraft.util.io.netty.buffer.ByteBuf;
+import net.minecraft.util.io.netty.channel.Channel;
+import net.minecraft.util.io.netty.channel.ChannelHandler;
+import net.minecraft.util.io.netty.channel.ChannelHandlerAdapter;
+import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
+import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
+import net.minecraft.util.io.netty.channel.ChannelPipeline;
+import net.minecraft.util.io.netty.channel.ChannelPromise;
+import net.minecraft.util.io.netty.channel.socket.SocketChannel;
+import net.minecraft.util.io.netty.handler.codec.ByteToMessageDecoder;
+import net.minecraft.util.io.netty.handler.codec.MessageToByteEncoder;
+import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
+import net.minecraft.util.io.netty.util.internal.TypeParameterMatcher;
 import net.sf.cglib.proxy.Factory;
 
 import org.bukkit.Bukkit;
@@ -35,12 +50,18 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.compat.netty.ChannelInjector;
+import com.comphenix.protocol.compat.netty.WrappedByteBuf;
+import com.comphenix.protocol.compat.netty.WrappedChannel;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.NetworkProcessor;
+import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.netty.NettyNetworkMarker;
+import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.server.SocketInjector;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
@@ -59,7 +80,7 @@ import com.google.common.collect.MapMaker;
  * Represents a channel injector.
  * @author Kristian
  */
-class ChannelInjector extends ByteToMessageDecoder implements Injector {
+public class ShadedChannelInjector extends ByteToMessageDecoder implements ChannelInjector {
 	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
 	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
 	public static final ReportType REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD = new ReportType("Cannot execute code in channel thread.");
@@ -69,7 +90,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	/**
 	 * Indicates that a packet has bypassed packet listeners.
 	 */
-	private static final PacketEvent BYPASSED_PACKET = new PacketEvent(ChannelInjector.class);
+	private static final PacketEvent BYPASSED_PACKET = new PacketEvent(ShadedChannelInjector.class);
 
 	// The login packet
 	private static Class<?> PACKET_LOGIN_CLIENT = null;
@@ -87,7 +108,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private static MethodAccessor PROTOCOL_VERSION;
 
 	// The factory that created this injector
-	private InjectionFactory factory;
+	private ShadedInjectionFactory factory;
 
 	// The player, or temporary player
 	private Player player;
@@ -151,7 +172,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param channelListener - a listener.
 	 * @param factory - the factory that created this injector
 	 */
-	public ChannelInjector(Player player, Object networkManager, Channel channel, ChannelListener channelListener, InjectionFactory factory) {
+	public ShadedChannelInjector(Player player, Object networkManager, Channel channel, ChannelListener channelListener, ShadedInjectionFactory factory) {
 		this.player =  Preconditions.checkNotNull(player, "player cannot be NULL");
 		this.networkManager =  Preconditions.checkNotNull(networkManager, "networkMananger cannot be NULL");
 		this.originalChannel = Preconditions.checkNotNull(channel, "channel cannot be NULL");
@@ -210,7 +231,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			}
 
 			// Don't inject the same channel twice
-			if (findChannelHandler(originalChannel, ChannelInjector.class) != null) {
+			if (findChannelHandler(originalChannel, ShadedChannelInjector.class) != null) {
 				return false;
 			}
 
@@ -237,16 +258,16 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 					if (packet instanceof WirePacket) {
 						// Special case for wire format
-						ChannelInjector.this.encodeWirePacket((WirePacket) packet, output);
+						ShadedChannelInjector.this.encodeWirePacket((WirePacket) packet, new ShadedByteBuf(output));
 					} else {
-						ChannelInjector.this.encode(ctx, packet, output);
+						ShadedChannelInjector.this.encode(ctx, packet, output);
 					}
 				}
 
 				@Override
 				public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
 					super.write(ctx, packet, promise);
-					ChannelInjector.this.finalWrite(ctx, packet, promise);
+					ShadedChannelInjector.this.finalWrite(ctx, packet, promise);
 				}
 			};
 
@@ -256,7 +277,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 					// Execute context first
 					ctx.fireChannelRead(msg);
-					ChannelInjector.this.finishRead(ctx, msg);
+					ShadedChannelInjector.this.finishRead(ctx, msg);
 				}
 			};
 
@@ -280,9 +301,9 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			originalChannel.pipeline().addLast("protocol_lib_exception_handler", exceptionHandler);
 
 			// Intercept all write methods
-			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
+			channelField.setValue(new ShadedChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
 				// Compatibility with Spigot 1.8
-				private final PipelineProxy pipelineProxy = new PipelineProxy(originalChannel.pipeline(), this) {
+				private final ShadedPipelineProxy pipelineProxy = new ShadedPipelineProxy(originalChannel.pipeline(), this) {
 					@Override
 					public ChannelPipeline addBefore(String baseName, String name, ChannelHandler handler) {
 						// Correct the position of the decoder
@@ -351,7 +372,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						NetworkMarker marker = getMarker(original);
 
 						if (marker != null)	{
-							PacketEvent result = new PacketEvent(ChannelInjector.class);
+							PacketEvent result = new PacketEvent(ShadedChannelInjector.class);
 							result.setNetworkMarker(marker);
 							return result;
 						} else {
@@ -392,7 +413,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @return The resulting message/packet.
 	 */
 	private PacketEvent processSending(Object message) {
-		return channelListener.onPacketSending(ChannelInjector.this, message, getMarker(message));
+		return channelListener.onPacketSending(ShadedChannelInjector.this, message, getMarker(message));
 	}
 
 	/**
@@ -413,7 +434,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		super.exceptionCaught(ctx, cause);
 	}
 
-	protected void encodeWirePacket(WirePacket packet, ByteBuf output) throws Exception {
+	protected void encodeWirePacket(WirePacket packet, WrappedByteBuf output) throws Exception {
 		packet.writeId(output);
 		packet.writeBytes(output);
 	}
@@ -841,7 +862,7 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				try {
 					command.run();
 				} catch (Exception e) {
-					ProtocolLibrary.getErrorReporter().reportDetailed(ChannelInjector.this,
+					ProtocolLibrary.getErrorReporter().reportDetailed(ShadedChannelInjector.this,
 						Report.newBuilder(REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD).error(e).build());
 				}
 			}
@@ -867,16 +888,16 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * Represents a socket injector that foreards to the current channel injector.
 	 * @author Kristian
 	 */
-	static class ChannelSocketInjector implements SocketInjector {
-		private final ChannelInjector injector;
+	public static class ChannelSocketInjector implements SocketInjector {
+		private final ShadedChannelInjector injector;
 
-		public ChannelSocketInjector(ChannelInjector injector) {
+		public ChannelSocketInjector(ShadedChannelInjector injector) {
 			this.injector = Preconditions.checkNotNull(injector, "injector cannot be NULL");
 		}
 
 		@Override
 		public Socket getSocket() throws IllegalAccessException {
-			return NettySocketAdaptor.adapt((SocketChannel) injector.originalChannel);
+			return ShadedSocketAdapter.adapt((SocketChannel) injector.originalChannel);
 		}
 
 		@Override
@@ -914,12 +935,13 @@ class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			injector.setPlayer(updatedPlayer);
 		}
 
-		public ChannelInjector getChannelInjector() {
+		public ShadedChannelInjector getChannelInjector() {
 			return injector;
 		}
 	}
 
-	public Channel getChannel() {
-		return originalChannel;
+	@Override
+	public WrappedChannel getChannel() {
+		return new ShadedChannel(originalChannel);
 	}
 }

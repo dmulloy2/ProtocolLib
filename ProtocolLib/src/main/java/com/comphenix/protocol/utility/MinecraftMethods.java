@@ -1,10 +1,5 @@
 package com.comphenix.protocol.utility;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.concurrent.GenericFutureListener;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -15,6 +10,7 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.compat.netty.Netty;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 
@@ -98,7 +94,7 @@ public class MinecraftMethods {
 	public static Method getNetworkManagerHandleMethod() {
 		if (networkManagerHandle == null) {
 			networkManagerHandle = FuzzyReflection.fromClass(MinecraftReflection.getNetworkManagerClass(), true).
-					getMethodByParameters("handle", MinecraftReflection.getPacketClass(), GenericFutureListener[].class);
+					getMethodByParameters("handle", MinecraftReflection.getPacketClass(), Netty.getGenericFutureListenerArray());
 			networkManagerHandle.setAccessible(true);
 		}
 		return networkManagerHandle;
@@ -113,7 +109,7 @@ public class MinecraftMethods {
 	public static Method getNetworkManagerReadPacketMethod() {
 		if (networkManagerPacketRead == null) {
 			networkManagerPacketRead = FuzzyReflection.fromClass(MinecraftReflection.getNetworkManagerClass(), true).
-					getMethodByParameters("packetRead", ChannelHandlerContext.class, MinecraftReflection.getPacketClass());
+					getMethodByParameters("packetRead", Netty.getChannelHandlerContext(), MinecraftReflection.getPacketClass());
 			networkManagerPacketRead.setAccessible(true);
 		}
 		return networkManagerPacketRead;
@@ -177,8 +173,8 @@ public class MinecraftMethods {
 
 			// Create our proxy object
 			Object javaProxy = enhancer.create(
-					new Class<?>[] { ByteBuf.class },
-					new Object[] { UnpooledByteBufAllocator.DEFAULT.buffer() }
+					new Class<?>[] { MinecraftReflection.getByteBufClass() },
+					new Object[] { Netty.allocateUnpooled().getHandle() }
 			);
 
 			Object lookPacket = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW).getHandle();

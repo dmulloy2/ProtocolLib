@@ -14,42 +14,25 @@
  *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
-package com.comphenix.protocol.injector.netty;
+package com.comphenix.protocol.compat.netty.shaded;
 
-import com.comphenix.protocol.compat.netty.WrappedByteBuf;
+import net.minecraft.util.io.netty.channel.Channel;
+
+import com.comphenix.protocol.compat.netty.WrappedChannel;
 
 /**
  * @author dmulloy2
  */
 
-public class WirePacket {
-	private final int id;
-	private final byte[] bytes;
+public class ShadedChannel implements WrappedChannel {
+	private final Channel channel;
 
-	public WirePacket(int id, byte[] bytes) {
-		this.id = id;
-		this.bytes = bytes;
+	public ShadedChannel(Channel channel) {
+		this.channel = channel;
 	}
 
-	public int getId() {
-		return id;
-	}
-
-	public byte[] getBytes() {
-		return bytes;
-	}
-
-	public void writeId(WrappedByteBuf output) {
-		int i = id;
-		while ((i & -128) != 0) {
-			output.writeByte(i & 127 | 128);
-			i >>>= 7;
-		}
-
-		output.writeByte(i);
-	}
-
-	public void writeBytes(WrappedByteBuf output) {
-		output.writeBytes(bytes);
+	@Override
+	public void writeAndFlush(Object packet) {
+		channel.writeAndFlush(packet);
 	}
 }

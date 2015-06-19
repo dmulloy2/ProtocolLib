@@ -9,7 +9,7 @@ import com.comphenix.protocol.events.NetworkMarker;
  * Represents an injected client connection.
  * @author Kristian
  */
-interface Injector {
+public interface Injector {
 	/**
 	 * Retrieve the current protocol version of the player.
 	 * @return Protocol version.

@@ -1,29 +1,45 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.ProgressivePromise;
-import io.netty.util.concurrent.Promise;
-import io.netty.util.concurrent.ScheduledFuture;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import net.minecraft.util.io.netty.channel.Channel;
+import net.minecraft.util.io.netty.channel.ChannelFuture;
+import net.minecraft.util.io.netty.channel.ChannelPromise;
+import net.minecraft.util.io.netty.channel.EventLoop;
+import net.minecraft.util.io.netty.channel.EventLoopGroup;
+import net.minecraft.util.io.netty.util.concurrent.EventExecutor;
+import net.minecraft.util.io.netty.util.concurrent.Future;
+import net.minecraft.util.io.netty.util.concurrent.ProgressivePromise;
+import net.minecraft.util.io.netty.util.concurrent.Promise;
+import net.minecraft.util.io.netty.util.concurrent.ScheduledFuture;
 
 /**
  * An event loop proxy.
  * @author Kristian.
  */
-abstract class EventLoopProxy implements EventLoop {
+abstract class ShadedEventLoopProxy implements EventLoop {
 	private static final Runnable EMPTY_RUNNABLE = new Runnable() {
 		@Override
 		public void run() {
@@ -80,17 +96,17 @@ abstract class EventLoopProxy implements EventLoop {
 	}
 
 	@Override
-	public <T> io.netty.util.concurrent.Future<T> submit(Callable<T> action) {
+	public <T> Future<T> submit(Callable<T> action) {
 		return getDelegate().submit(schedulingCallable(action));
 	}
 
 	@Override
-	public <T> io.netty.util.concurrent.Future<T> submit(Runnable action, T arg1) {
+	public <T> Future<T> submit(Runnable action, T arg1) {
 		return getDelegate().submit(schedulingRunnable(action), arg1);
 	}
 
 	@Override
-	public io.netty.util.concurrent.Future<?> submit(Runnable action) {
+	public Future<?> submit(Runnable action) {
 		return getDelegate().submit(schedulingRunnable(action));
 	}
 	
@@ -141,13 +157,13 @@ abstract class EventLoopProxy implements EventLoop {
 	}
 
 	@Override
-	public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+	public <T> List<java.util.concurrent.Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
 			throws InterruptedException {
 		return getDelegate().invokeAll(tasks);
 	}
 
 	@Override
-	public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout,
+	public <T> List<java.util.concurrent.Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout,
 			TimeUnit unit) throws InterruptedException {
 		return getDelegate().invokeAll(tasks, timeout, unit);
 	}
@@ -175,7 +191,7 @@ abstract class EventLoopProxy implements EventLoop {
 	}
 
 	@Override
-	public <V> io.netty.util.concurrent.Future<V> newFailedFuture(Throwable arg0) {
+	public <V> Future<V> newFailedFuture(Throwable arg0) {
 		return getDelegate().newFailedFuture(arg0);
 	}
 
@@ -195,7 +211,7 @@ abstract class EventLoopProxy implements EventLoop {
 	}
 
 	@Override
-	public <V> io.netty.util.concurrent.Future<V> newSucceededFuture(V arg0) {
+	public <V> Future<V> newSucceededFuture(V arg0) {
 		return getDelegate().newSucceededFuture(arg0);
 	}
 	
@@ -215,17 +231,17 @@ abstract class EventLoopProxy implements EventLoop {
 	}
 
 	@Override
-	public io.netty.util.concurrent.Future<?> shutdownGracefully() {
+	public Future<?> shutdownGracefully() {
 		return getDelegate().shutdownGracefully();
 	}
 
 	@Override
-	public io.netty.util.concurrent.Future<?> shutdownGracefully(long arg0, long arg1, TimeUnit arg2) {
+	public Future<?> shutdownGracefully(long arg0, long arg1, TimeUnit arg2) {
 		return getDelegate().shutdownGracefully(arg0, arg1, arg2);
 	}
 
 	@Override
-	public io.netty.util.concurrent.Future<?> terminationFuture() {
+	public Future<?> terminationFuture() {
 		return getDelegate().terminationFuture();
 	}
 	

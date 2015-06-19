@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.utility;
 
-import io.netty.buffer.ByteBuf;
-
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.lang.reflect.Array;
@@ -69,7 +67,6 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
-import com.mojang.authlib.GameProfile;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -571,6 +568,7 @@ public class MinecraftReflection {
 
 	/**
 	 * Retrieve the GameProfile class in 1.7.2 and later.
+	 * 
 	 * @return The game profile class.
 	 * @throws IllegalStateException If we are running 1.6.4 or earlier.
 	 */
@@ -579,14 +577,18 @@ public class MinecraftReflection {
 			throw new IllegalStateException("GameProfile does not exist in version 1.6.4 and earlier.");
 
 		try {
-			return GameProfile.class;
+			return getClass("com.mojang.authlib.GameProfile");
 		} catch (Throwable ex) {
-			FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Login.Client.START.getPacketClass(), true);
-			FuzzyFieldContract contract = FuzzyFieldContract.newBuilder()
-					.banModifier(Modifier.STATIC)
-					.typeMatches(FuzzyMatchers.matchRegex("(.*)(GameProfile)", 1))
-					.build();
-			return reflection.getField(contract).getType();
+			try {
+				return getClass("net.minecraft.util.com.mojang.authlib.GameProfile");
+			} catch (Throwable ex1) {
+				FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Login.Client.START.getPacketClass(), true);
+				FuzzyFieldContract contract = FuzzyFieldContract.newBuilder()
+						.banModifier(Modifier.STATIC)
+						.typeMatches(FuzzyMatchers.matchRegex("(.*)(GameProfile)", 1))
+						.build();
+				return reflection.getField(contract).getType();
+			}
 		}
 	}
 
@@ -663,10 +665,10 @@ public class MinecraftReflection {
 			if (isUsingNetty()) {
 				paketContract = FuzzyClassContract.newBuilder().
 						method(FuzzyMethodContract.newBuilder().
-							    parameterDerivedOf(ByteBuf.class).
+							    parameterDerivedOf(getByteBufClass()).
 							    returnTypeVoid()).
 						method(FuzzyMethodContract.newBuilder().
-							    parameterDerivedOf(ByteBuf.class, 0).
+							    parameterDerivedOf(getByteBufClass(), 0).
 							    parameterExactType(byte[].class, 1).
 							    returnTypeVoid()).
 						build();
@@ -695,6 +697,14 @@ public class MinecraftReflection {
 			// Save and return
 			Class<?> clazz = getTopmostClass(selected.getParameterTypes()[0]);
 			return setMinecraftClass("Packet", clazz);
+		}
+	}
+
+	public static Class<?> getByteBufClass() {
+		try {
+			return getClass("io.netty.buffer.ByteBuf");
+		} catch (Throwable ex) {
+			return getClass("net.minecraft.util.io.netty.buffer.ByteBuf");
 		}
 	}
 
@@ -834,7 +844,7 @@ public class MinecraftReflection {
 			// Find a server ping object
 			AbstractFuzzyMatcher<Class<?>> serverPlayerContract = FuzzyClassContract.newBuilder().
 				constructor(FuzzyMethodContract.newBuilder().parameterExactArray(int.class, int.class)).
-				field(FuzzyFieldContract.newBuilder().typeExact(GameProfile[].class)).
+				field(FuzzyFieldContract.newBuilder().typeExact(getArrayClass(getGameProfileClass()))).
 				build().
 			and(getMinecraftObjectMatcher());
 
@@ -1576,7 +1586,7 @@ public class MinecraftReflection {
 			Method method = FuzzyReflection.fromClass(packet).getMethod(
 					FuzzyMethodContract.newBuilder().
 					parameterCount(1).
-					parameterDerivedOf(ByteBuf.class).
+					parameterDerivedOf(getByteBufClass()).
 					returnTypeVoid().
 					build()
 				);
@@ -1611,21 +1621,6 @@ public class MinecraftReflection {
 				throw new RuntimeException("Unable to analyse class.", e1);
 			}
 			throw new IllegalArgumentException("Unable to find NBTCompressedStreamTools.");
-		}
-	}
-
-	/**
-	 * Retrieve an instance of the packet data serializer wrapper.
-	 * @param buffer - the buffer.
-	 * @return The instance.
-	 */
-	public static ByteBuf getPacketDataSerializer(ByteBuf buffer) {
-		Class<?> packetSerializer = getPacketDataSerializerClass();
-
-		try {
-			return (ByteBuf) packetSerializer.getConstructor(ByteBuf.class).newInstance(buffer);
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
 	}
 
@@ -1922,5 +1917,20 @@ public class MinecraftReflection {
 	 */
 	public static String getNetLoginHandlerName() {
 		return getNetLoginHandlerClass().getSimpleName();
+	}
+
+	/**
+	 * Retrieve an instance of the packet data serializer wrapper.
+	 * @param buffer - the buffer.
+	 * @return The instance.
+	 */
+	public static Object getPacketDataSerializer(Object buffer) {
+		Class<?> packetSerializer = getPacketDataSerializerClass();
+
+		try {
+			return packetSerializer.getConstructor(getByteBufClass()).newInstance(buffer);
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot construct packet serializer.", e);
+		}
 	}
 }

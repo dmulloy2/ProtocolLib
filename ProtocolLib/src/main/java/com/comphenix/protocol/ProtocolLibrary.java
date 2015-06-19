@@ -697,4 +697,8 @@ public class ProtocolLibrary extends JavaPlugin {
 	public static void log(String message, Object... args) {
 		log(Level.INFO, message, args);
 	}
+
+	public static Logger getStaticLogger() {
+		return logger;
+	}
 }

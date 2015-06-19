@@ -1,46 +1,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib</artifactId>
-  <version>3.6.3-SNAPSHOT</version>
+  <version>3.6.4-SNAPSHOT</version>
   <name>ProtocolLib</name>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
   <packaging>jar</packaging>
 
+  <parent>
+    <groupId>com.comphenix.protocol</groupId>
+    <artifactId>ProtocolLib-Parent</artifactId>
+    <version>3</version>
+    <relativePath>../</relativePath>
+  </parent>
+
   <properties>
     <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
     <project.build.number></project.build.number>
-    <jarName>ProtocolLib</jarName>
   </properties>
-
-  <distributionManagement>
-    <repository>
-      <id>dmulloy2-releases</id>
-      <url>http://repo.dmulloy2.net/content/repositories/releases/</url>
-    </repository>
-    <snapshotRepository>
-      <id>dmulloy2-snapshots</id>
-      <url>http://repo.dmulloy2.net/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <repositories>
-    <repository>
-      <id>spigot-repo</id>
-      <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
-    </repository>
-    <repository>
-      <id>dmulloy2-repo</id>
-      <url>http://repo.dmulloy2.net/content/groups/public/</url>
-    </repository>
-    <repository>
-      <id>md_5-repo</id>
-      <url>http://repo.md-5.net/content/groups/public/</url>
-    </repository>
-  </repositories>
 
   <build>
     <defaultGoal>clean install</defaultGoal>
@@ -107,7 +86,7 @@
           <archive>
             <addMavenDescriptor>false</addMavenDescriptor>
           </archive>
-          <finalName>${jarName}</finalName>
+          <finalName>ProtocolLib</finalName>
         </configuration>
       </plugin>
 
@@ -284,15 +263,5 @@
       <version>1.5</version>
       <scope>test</scope>
     </dependency>
-    <!--<dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>17.0</version>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
-      <version>4.0.26.Final</version>
-    </dependency>-->
   </dependencies>
 </project>

@@ -1,0 +1,273 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>ShadedNetty</artifactId>
+  <version>3.6.4-SNAPSHOT</version>
+  <name>ShadedNetty</name>
+
+  <description>Provides read/write access to the Minecraft protocol.</description>
+  <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.comphenix.protocol</groupId>
+    <artifactId>ProtocolLib-Parent</artifactId>
+    <version>3</version>
+    <relativePath>../../</relativePath>
+  </parent>
+
+  <properties>
+    <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
+    <project.build.number></project.build.number>
+  </properties>
+
+  <build>
+    <defaultGoal>clean install</defaultGoal>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <excludes>
+          <exclude>**/*.java</exclude>
+        </excludes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.3</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+
+              <relocations>
+                <relocation>
+                  <pattern>net.sf</pattern>
+                  <shadedPattern>com.comphenix.net.sf</shadedPattern>
+                </relocation>
+              </relocations>
+
+              <artifactSet>
+                <excludes>
+                  <exclude>org.spigotmc:spigot</exclude>
+                  <exclude>org.spigotmc:spigot-api</exclude>
+                  <exclude>junit:junit</exclude>
+                </excludes>
+              </artifactSet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.2</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.5</version>
+        <configuration>
+          <archive>
+            <addMavenDescriptor>false</addMavenDescriptor>
+          </archive>
+          <finalName>ProtocolLib</finalName>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>2.5.2</version>
+        <configuration>
+          <threshold>High</threshold>
+          <effort>Default</effort>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <profiles>
+    <profile>
+      <id>jenkins</id>
+      <activation>
+        <property>
+          <name>env.BUILD_NUMBER</name>
+        </property>
+      </activation>
+      <properties>
+        <project.build.number>-b${env.BUILD_NUMBER}</project.build.number>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.4</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.1</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <scm>
+    <connection>scm:git:git://github.com/dmulloy2/ProtocolLib.git</connection>
+    <developerConnection>scm:git:git@github.com:dmulloy2/ProtocolLib.git</developerConnection>
+    <url>https://github.com/dmulloy2/ProtocolLib</url>
+  </scm>
+
+  <licenses>
+    <license>
+      <name>GNU GENERAL PUBLIC LICENSE - Version 2, June 1991</name>
+      <url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>dmulloy2</id>
+      <name>Dan Mulloy</name>
+      <url>http://shadowvolt.com/</url>
+      <roles>
+        <role>developer</role>
+        <role>maintainer</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>aadnk</id>
+      <name>Kristian S. Stangeland</name>
+      <email>kr_stang@hotmail.com</email>
+      <url>http://comphenix.net/</url>
+      <roles>
+        <role>former author</role>
+      </roles>
+      <timezone>1</timezone>
+    </developer>
+  </developers>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.comphenix.protocol</groupId>
+      <artifactId>ProtocolLib</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib-nodep</artifactId>
+      <version>2.2.2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.comphenix.executors</groupId>
+      <artifactId>BukkitExecutors</artifactId>
+      <version>1.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>1.7.10-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot</artifactId>
+      <version>1.7.10-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>1.8.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>1.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito</artifactId>
+      <version>1.5</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

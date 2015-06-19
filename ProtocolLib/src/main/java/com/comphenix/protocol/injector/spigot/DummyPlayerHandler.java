@@ -1,7 +1,5 @@
 package com.comphenix.protocol.injector.spigot;
 
-import io.netty.channel.Channel;
-
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
@@ -9,6 +7,7 @@ import java.net.InetSocketAddress;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.compat.netty.WrappedChannel;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
@@ -86,7 +85,7 @@ class DummyPlayerHandler extends AbstractPlayerHandler {
 	}
 
 	@Override
-	public Channel getChannel(Player player) {
+	public WrappedChannel getChannel(Player player) {
 		throw new UnsupportedOperationException();
 	}
 }

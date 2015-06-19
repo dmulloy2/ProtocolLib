@@ -13,6 +13,7 @@ import javax.annotation.Nonnull;
 import org.bukkit.inventory.ItemStack;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
+import com.comphenix.protocol.compat.netty.Netty;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
@@ -109,7 +110,7 @@ public class StreamSerializer {
 				);
 			}
 
-			nmsItem = READ_ITEM_METHOD.invoke(ByteBufAdapter.packetReader(input));
+			nmsItem = READ_ITEM_METHOD.invoke(Netty.packetReader(input).getHandle());
 		} else {
 			if (READ_ITEM_METHOD == null) {
 				READ_ITEM_METHOD = Accessors.getMethodAccessor(
@@ -153,7 +154,7 @@ public class StreamSerializer {
 				);
 			}
 
-			nmsCompound = READ_NBT_METHOD.invoke(ByteBufAdapter.packetReader(input));
+			nmsCompound = READ_NBT_METHOD.invoke(Netty.packetReader(input).getHandle());
 		} else {
 			if (READ_NBT_METHOD == null) {
 				READ_NBT_METHOD = Accessors.getMethodAccessor(
@@ -206,7 +207,7 @@ public class StreamSerializer {
 				);
 			}
 
-			return (String) READ_STRING_METHOD.invoke(ByteBufAdapter.packetReader(input), maximumLength);
+			return (String) READ_STRING_METHOD.invoke(Netty.packetReader(input).getHandle(), maximumLength);
 		} else {
 			if (READ_STRING_METHOD == null) {
 				READ_STRING_METHOD = Accessors.getMethodAccessor(
@@ -266,7 +267,7 @@ public class StreamSerializer {
 				);
 			}
 
-			WRITE_ITEM_METHOD.invoke(ByteBufAdapter.packetWriter(output), nmsItem);
+			WRITE_ITEM_METHOD.invoke(Netty.packetWriter(output).getHandle(), nmsItem);
 		} else {
 			if (WRITE_ITEM_METHOD == null)
 				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
@@ -307,7 +308,7 @@ public class StreamSerializer {
 				);
 			}
 
-			WRITE_NBT_METHOD.invoke(ByteBufAdapter.packetWriter(output), handle);
+			WRITE_NBT_METHOD.invoke(Netty.packetWriter(output).getHandle(), handle);
 		} else {
 			if (WRITE_NBT_METHOD == null) {
 				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
@@ -348,7 +349,7 @@ public class StreamSerializer {
 				);
 			}
 
-			WRITE_STRING_METHOD.invoke(ByteBufAdapter.packetWriter(output), text);
+			WRITE_STRING_METHOD.invoke(Netty.packetWriter(output).getHandle(), text);
 		} else {
 			if (WRITE_STRING_METHOD == null) {
 				WRITE_STRING_METHOD = Accessors.getMethodAccessor(

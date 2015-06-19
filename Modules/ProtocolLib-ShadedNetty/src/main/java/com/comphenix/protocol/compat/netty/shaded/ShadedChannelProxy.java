@@ -1,27 +1,43 @@
-package com.comphenix.protocol.injector.netty;
-
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelConfig;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelMetadata;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelProgressivePromise;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.util.Attribute;
-import io.netty.util.AttributeKey;
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2015 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
+package com.comphenix.protocol.compat.netty.shaded;
 
 import java.lang.reflect.Field;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import net.minecraft.util.io.netty.buffer.ByteBufAllocator;
+import net.minecraft.util.io.netty.channel.Channel;
+import net.minecraft.util.io.netty.channel.ChannelConfig;
+import net.minecraft.util.io.netty.channel.ChannelFuture;
+import net.minecraft.util.io.netty.channel.ChannelMetadata;
+import net.minecraft.util.io.netty.channel.ChannelPipeline;
+import net.minecraft.util.io.netty.channel.ChannelProgressivePromise;
+import net.minecraft.util.io.netty.channel.ChannelPromise;
+import net.minecraft.util.io.netty.channel.EventLoop;
+import net.minecraft.util.io.netty.util.Attribute;
+import net.minecraft.util.io.netty.util.AttributeKey;
+
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.collect.Maps;
 
-abstract class ChannelProxy implements Channel {
+public abstract class ShadedChannelProxy implements Channel {
 	// Mark that a certain object does not contain a message field
 	private static final FieldAccessor MARK_NO_MESSAGE = new FieldAccessor() {
 		@Override
@@ -40,9 +56,9 @@ abstract class ChannelProxy implements Channel {
 	protected Class<?> messageClass;
 
 	// Event loop proxy
-	private transient EventLoopProxy loopProxy;
+	private transient ShadedEventLoopProxy loopProxy;
 
-	public ChannelProxy(Channel delegate, Class<?> messageClass) {
+	public ShadedChannelProxy(Channel delegate, Class<?> messageClass) {
 		this.delegate = delegate;
 		this.messageClass = messageClass;
 	}
@@ -96,7 +112,7 @@ abstract class ChannelProxy implements Channel {
 	@Override
     public EventLoop eventLoop() {
 		if (loopProxy == null) {
-			loopProxy = new EventLoopProxy() {
+			loopProxy = new ShadedEventLoopProxy() {
 				@Override
 				protected EventLoop getDelegate() {
 					return delegate.eventLoop();
@@ -119,7 +135,7 @@ abstract class ChannelProxy implements Channel {
 
 					if (accessor != null) {
 						Callable<T> result = onMessageScheduled(callable, accessor);;
-						return result != null ? result : EventLoopProxy.<T>getEmptyCallable();
+						return result != null ? result : ShadedEventLoopProxy.<T>getEmptyCallable();
 					}
 					return callable;
 				}

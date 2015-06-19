@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.injector;
 
-import io.netty.channel.Channel;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -56,6 +54,9 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
+import com.comphenix.protocol.compat.netty.Netty;
+import com.comphenix.protocol.compat.netty.ProtocolInjector;
+import com.comphenix.protocol.compat.netty.WrappedChannel;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -68,7 +69,6 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.netty.NettyProtocolInjector;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 import com.comphenix.protocol.injector.packet.PacketInjector;
@@ -205,7 +205,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 	private SpigotPacketInjector spigotInjector;
 
 	// Netty injector (for 1.7.2)
-	private NettyProtocolInjector nettyInjector;
+	private ProtocolInjector nettyInjector;
 
 	// Plugin verifier
 	private PluginVerifier pluginVerifier;
@@ -273,7 +273,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 		// Use the correct injection type
 		if (MinecraftReflection.isUsingNetty()) {
-			this.nettyInjector = new NettyProtocolInjector(builder.getLibrary(), this, reporter);
+			this.nettyInjector = Netty.getProtocolInjector(builder.getLibrary(), this, reporter);
 			this.playerInjection = nettyInjector.getPlayerInjector();
 			this.packetInjector = nettyInjector.getPacketInjector();
 
@@ -845,7 +845,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 
 	@Override
 	public void sendWirePacket(Player receiver, WirePacket packet) throws InvocationTargetException {
-		Channel channel = playerInjection.getChannel(receiver);
+		WrappedChannel channel = playerInjection.getChannel(receiver);
 		if (channel == null) {
 			throw new InvocationTargetException(new NullPointerException(), "Failed to obtain channel for " + receiver.getName());
 		}
