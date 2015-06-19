@@ -22,13 +22,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-import net.minecraft.util.com.google.common.io.ByteStreams;
-import net.minecraft.util.com.google.common.io.InputSupplier;
-
 import com.comphenix.protocol.PacketType;
 import com.google.common.collect.DiscreteDomains;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.InputSupplier;
 
 /**
  * @author dmulloy2

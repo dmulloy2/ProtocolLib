@@ -4,10 +4,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoadOrder;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.collect.Sets;
 
 /**
@@ -73,10 +75,16 @@ class PluginVerifier {
 	public PluginVerifier(Plugin dependency) {
 		if (dependency == null)
 			throw new IllegalArgumentException("dependency cannot be NULL.");
-		// This would screw with the assumption in hasDependency(Plugin, Plugin)
-		if (safeConversion(dependency.getDescription().getLoadBefore()).size() > 0)
-			throw new IllegalArgumentException("dependency cannot have a load directives.");
-		
+
+		try {
+			// This would screw with the assumption in hasDependency(Plugin, Plugin)
+			if (safeConversion(dependency.getDescription().getLoadBefore()).size() > 0)
+				throw new IllegalArgumentException("dependency cannot have a load directives.");
+		} catch (LinkageError e) {
+			// They're probably using an ancient version of Bukkit
+			ProtocolLibrary.log(Level.WARNING, "Failed to determine loadBefore: " + e);
+		}
+
 		this.dependency = dependency;
 	}
 
@@ -93,7 +101,7 @@ class PluginVerifier {
 		if (plugin != null)
 			return plugin;
 		else
-			throw new PluginNotFoundException("Cannot find plugin " + pluginName); 
+			throw new PluginNotFoundException("Cannot find plugin " + pluginName);
 	}
 	
 	/**
@@ -153,7 +161,7 @@ class PluginVerifier {
 	/**
 	 * Determine if a given plugin is guarenteed to be loaded before the other.
 	 * <p>
-	 * Note that the before plugin is assumed to have no "load" directives - that is, plugins to be 
+	 * Note that the before plugin is assumed to have no "load" directives - that is, plugins to be
 	 * loaded after itself. The after plugin may have "load" directives, but it is irrelevant for our purposes.
 	 * @param beforePlugin - the plugin that is loaded first.
 	 * @param afterPlugin - the plugin that is loaded last.
@@ -166,7 +174,7 @@ class PluginVerifier {
 		}
 		
 		// No dependency - check the load order
-		if (beforePlugin.getDescription().getLoad() == PluginLoadOrder.STARTUP && 
+		if (beforePlugin.getDescription().getLoad() == PluginLoadOrder.STARTUP &&
 			afterPlugin.getDescription().getLoad() == PluginLoadOrder.POSTWORLD) {
 			return true;
 		}
@@ -177,14 +185,14 @@ class PluginVerifier {
 	 * Determine if a plugin has a given dependency, either directly or indirectly.
 	 * @param plugin - the plugin to check.
 	 * @param dependency - the dependency to find.
-	 * @return TRUE if the plugin has the given dependency, FALSE otherwise. 
+	 * @return TRUE if the plugin has the given dependency, FALSE otherwise.
 	 */
 	private boolean hasDependency(Plugin plugin, Plugin dependency) {
 		return hasDependency(plugin, dependency, Sets.<String>newHashSet());
 	}
 	
 	/**
-	 * Convert a list to a set. 
+	 * Convert a list to a set.
 	 * <p>
 	 * A null list will be converted to an empty set.
 	 * @param list - the list to convert.

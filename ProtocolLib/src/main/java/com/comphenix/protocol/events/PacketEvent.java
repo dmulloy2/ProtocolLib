@@ -2,16 +2,16 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
@@ -39,7 +39,7 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
 /**
- * Represents a packet sending or receiving event. Changes to the packet will be 
+ * Represents a packet sending or receiving event. Changes to the packet will be
  * reflected in the final version to be sent or received. It is also possible to cancel an event.
  * @author Kristian
  */
@@ -47,7 +47,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	public static final ReportType REPORT_CHANGING_PACKET_TYPE_IS_CONFUSING = new ReportType(
 			"Plugin %s changed packet type from %s to %s in packet listener. This is confusing for other plugins! (Not an error, though!)");
 	
-	private static final SetMultimap<PacketType, PacketType> CHANGE_WARNINGS = 
+	private static final SetMultimap<PacketType, PacketType> CHANGE_WARNINGS =
 			Multimaps.synchronizedSetMultimap(HashMultimap.<PacketType, PacketType>create());
 	
 	/**
@@ -229,7 +229,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 		if (this.packet != null && !Objects.equal(oldType, newType)) {
 			// Only report this once
 			if (CHANGE_WARNINGS.put(oldType, newType)) {
-				ProtocolLibrary.getErrorReporter().reportWarning(this, 
+				ProtocolLibrary.getErrorReporter().reportWarning(this,
 						Report.newBuilder(REPORT_CHANGING_PACKET_TYPE_IS_CONFUSING).
 						messageParam(oldType, newType).
 						build());
@@ -261,6 +261,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * Retrieves whether or not the packet should be cancelled.
 	 * @return TRUE if it should be cancelled, FALSE otherwise.
 	 */
+	@Override
 	public boolean isCancelled() {
 		return cancel;
 	}
@@ -307,6 +308,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * 
 	 * @param cancel - TRUE if it should be cancelled, FALSE otherwise.
 	 */
+	@Override
 	public void setCancelled(boolean cancel) {
 		if (readOnly)
 			throw new IllegalStateException("The packet event is read-only.");
@@ -354,12 +356,12 @@ public class PacketEvent extends EventObject implements Cancellable {
 		return asyncMarker;
 	}
 	/**
-	 * Set the asynchronous marker. 
+	 * Set the asynchronous marker.
 	 * <p>
 	 * If the marker is non-null at the end of an synchronous event processing, the packet will be scheduled
 	 * to be processed asynchronously with the given settings.
 	 * <p>
-	 * Note that if there are no asynchronous events that can receive this packet, the marker should be NULL. 
+	 * Note that if there are no asynchronous events that can receive this packet, the marker should be NULL.
 	 * @param asyncMarker - the new asynchronous marker, or NULL.
 	 * @throws IllegalStateException If the current event is asynchronous.
 	 */
@@ -425,7 +427,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	}
 	
 	private void writeObject(ObjectOutputStream output) throws IOException {
-	    // Default serialization 
+	    // Default serialization
 		output.defaultWriteObject();
 
 		// Write the name of the player (or NULL if it's not set)
@@ -439,10 +441,15 @@ public class PacketEvent extends EventObject implements Cancellable {
 		final SerializedOfflinePlayer serialized = (SerializedOfflinePlayer) input.readObject();
 		
 		// Better than nothing
-	    if (serialized != null) {	    			
+	    if (serialized != null) {
 	    	// Store it, to prevent weak reference from cleaning up the reference
 	    	offlinePlayer = serialized.getPlayer();
 	    	playerReference = new WeakReference<Player>(offlinePlayer);
 	    }
+	}
+
+	@Override
+	public String toString() {
+		return "PacketEvent[player=" + getPlayer() + ", packet=" + packet + "]";
 	}
 }

@@ -656,4 +656,9 @@ public class StructureModifier<TField> {
 		}
 		return result;
 	}
+
+	@Override
+	public String toString() {
+		return "StructureModifier[fieldType=" + fieldType + ", data=" + data + "]";
+	}
 }

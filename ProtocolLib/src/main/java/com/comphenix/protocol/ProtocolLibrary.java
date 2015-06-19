@@ -261,6 +261,8 @@ public class ProtocolLibrary extends JavaPlugin {
 				throw e;
 			} catch (ThreadDeath e) {
 				throw e;
+			} catch (LinkageError e) {
+				logger.warning("Failed to register command " + command.name() + ": " + e);
 			} catch (Throwable e) {
 				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND)
 						.messageParam(command.name(), e.getMessage()).error(e));

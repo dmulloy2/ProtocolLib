@@ -1166,4 +1166,9 @@ public class PacketContainer implements Serializable {
 			return WrappedChatComponent[].class;
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "PacketContainer[type=" + type + ", structureModifier=" + structureModifier + "]";
+	}
 }

@@ -122,11 +122,19 @@ public class DetailedErrorReporter implements ErrorReporter {
 			throw new IllegalArgumentException("Plugin cannot be NULL.");
 		
 		this.pluginReference = new WeakReference<Plugin>(plugin);
-		this.pluginName = plugin.getName();
+		this.pluginName = getNameSafely(plugin);
 		this.prefix = prefix;
 		this.supportURL = supportURL;
 		this.maxErrorCount = maxErrorCount;
 		this.logger = logger;
+	}
+
+	private String getNameSafely(Plugin plugin) {
+		try {
+			return plugin.getName();
+		} catch (LinkageError e) {
+			return "ProtocolLib";
+		}
 	}
 
 	// Attempt to get the logger.
