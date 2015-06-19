@@ -65,6 +65,7 @@ public abstract class NettyChannelProxy implements Channel {
 
 	/**
 	 * Invoked when a packet is scheduled for transmission in the event loop.
+	 * @param <T> Type
 	 * @param callable - callable to schedule for execution.
 	 * @param packetAccessor - accessor for modifying the packet in the callable.
 	 * @return The callable that will be scheduled, or NULL to cancel.

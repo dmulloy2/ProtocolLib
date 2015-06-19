@@ -69,7 +69,7 @@ public class NettyInjectionFactory {
 	/**
 	 * Construct or retrieve a channel injector from an existing Bukkit player.
 	 * @param player - the existing Bukkit player.
-	 * @param channelListener - the listener.
+	 * @param listener - the listener.
 	 * @return A new injector, an existing injector associated with this player, or a closed injector.
 	 */
 	@Nonnull
@@ -112,7 +112,8 @@ public class NettyInjectionFactory {
 	 * Retrieve a cached injector from a name.
 	 * <p>
 	 * The injector may be NULL if the plugin has been reloaded during a player login.
-	 * @param address - the name.
+	 * @param name - the name.
+	 * @param player - the player.
 	 * @return The cached injector, or a closed injector if it could not be found.
 	 */
 	public Injector fromName(String name, Player player) {
@@ -132,9 +133,8 @@ public class NettyInjectionFactory {
 	/**
 	 * Construct a new channel injector for the given channel.
 	 * @param channel - the channel.
+	 * @param listener - the listener.
 	 * @param playerFactory - a temporary player creator.
-	 * @param channelListener - the listener.
-	 * @param loader - the current (plugin) class loader.
 	 * @return The channel injector, or a closed injector.
 	 */
 	@Nonnull

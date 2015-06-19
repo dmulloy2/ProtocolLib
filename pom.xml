@@ -28,12 +28,12 @@
 
   <repositories>
     <repository>
-      <id>spigot-repo</id>
-      <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
-    </repository>
-    <repository>
       <id>dmulloy2-repo</id>
       <url>http://repo.dmulloy2.net/content/groups/public/</url>
+    </repository>
+    <repository>
+      <id>spigot-repo</id>
+      <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
     <repository>
       <id>md_5-repo</id>
