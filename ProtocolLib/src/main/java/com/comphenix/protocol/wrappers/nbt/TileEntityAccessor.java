@@ -46,16 +46,14 @@ class TileEntityAccessor<T extends BlockState> {
 	private boolean writeDetected;
 	private boolean readDetected;
 
-	private TileEntityAccessor() {
+	public TileEntityAccessor() {
 		// Do nothing
 	}
 
 	/**
 	 * Construct a new tile entity accessor.
 	 * @param tileEntityField - the tile entity field.
-	 * @param tileEntity - the tile entity.
-	 * @param tile - the block state.
-	 * @throws IOException Cannot read tile entity.
+	 * @param state - the block state.
 	 */
 	private TileEntityAccessor(FieldAccessor tileEntityField, T state) {
 		if (tileEntityField != null) {
@@ -64,7 +62,7 @@ class TileEntityAccessor<T extends BlockState> {
 
 			// Possible read/write methods
 			try {
-				findMethodsUsingASM(type);
+				findMethodsUsingASM();
 			} catch (IOException ex1) {
 				try {
 					// Much slower though
@@ -84,12 +82,11 @@ class TileEntityAccessor<T extends BlockState> {
 
 	/**
 	 * Find the read/write methods in TileEntity.
-	 * @param tileEntityClass - the tile entity class.
-	 * @param nbtCompoundClass - the compound clas.
 	 * @throws IOException If we cannot find these methods.
 	 */
-	private void findMethodsUsingASM(final Class<?> tileEntityClass) throws IOException {
+	private void findMethodsUsingASM() throws IOException {
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
+		final Class<?> tileEntityClass = MinecraftReflection.getTileEntityClass();
 		final ClassReader reader = new ClassReader(tileEntityClass.getCanonicalName());
 
 		final String tagCompoundName = getJarName(MinecraftReflection.getNBTCompoundClass());
