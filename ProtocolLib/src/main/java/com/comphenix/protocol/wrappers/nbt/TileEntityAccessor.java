@@ -46,7 +46,7 @@ class TileEntityAccessor<T extends BlockState> {
 	private boolean writeDetected;
 	private boolean readDetected;
 
-	public TileEntityAccessor() {
+	private TileEntityAccessor() {
 		// Do nothing
 	}
 
