@@ -12,6 +12,9 @@ import com.google.common.base.Objects;
  * @author Kristian
  */
 public class WrappedSignedProperty extends AbstractWrapper {
+	private static final String CLASS_NAME = "com.mojang.authlib.properties.Property";
+	private static final String UTIL_PACKAGE = "net.minecraft.util.";
+
 	private static Class<?> PROPERTY;
 	private static ConstructorAccessor CONSTRUCTOR;
 	private static MethodAccessor GET_NAME;
@@ -22,21 +25,25 @@ public class WrappedSignedProperty extends AbstractWrapper {
 
 	static {
 		try {
-			PROPERTY = Class.forName("com.mojang.authlib.properties.Property");
+			PROPERTY = Class.forName(CLASS_NAME);
 		} catch (ClassNotFoundException ex) {
 			try {
-				PROPERTY = Class.forName("net.minecraft.util.com.mojang.authlib.properties.Property");
+				PROPERTY = Class.forName(UTIL_PACKAGE + CLASS_NAME);
 			} catch (ClassNotFoundException ex1) {
-				throw new RuntimeException("Failed to obtain Property class", ex);
+				throw new RuntimeException("Failed to obtain Property class.", ex1);
 			}
 		}
 
-		CONSTRUCTOR = Accessors.getConstructorAccessor(PROPERTY, String.class, String.class, String.class);
-		GET_NAME = Accessors.getMethodAccessor(PROPERTY, "getName");
-		GET_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "getSignature");
-		GET_VALUE = Accessors.getMethodAccessor(PROPERTY, "getValue");
-		HAS_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "hasSignature");
-		IS_SIGNATURE_VALID = Accessors.getMethodAccessor(PROPERTY, "isSigntureValid", PublicKey.class);
+		try {
+			CONSTRUCTOR = Accessors.getConstructorAccessor(PROPERTY, String.class, String.class, String.class);
+			GET_NAME = Accessors.getMethodAccessor(PROPERTY, "getName");
+			GET_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "getSignature");
+			GET_VALUE = Accessors.getMethodAccessor(PROPERTY, "getValue");
+			HAS_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "hasSignature");
+			IS_SIGNATURE_VALID = Accessors.getMethodAccessor(PROPERTY, "isSignatureValid", PublicKey.class);
+		} catch (Throwable ex) {
+			throw new RuntimeException("Failed to obtain methods for Property.", ex);
+		}
 	}
 	
 	/**
