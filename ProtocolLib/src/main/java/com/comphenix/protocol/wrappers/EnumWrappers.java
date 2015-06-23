@@ -489,6 +489,15 @@ public abstract class EnumWrappers {
 		return new EnumConverter<Particle>(Particle.class);
 	}
 
+	/**
+	 * Retrieve a generic enum converter for use with StructureModifiers.
+	 * @param enumClass - Enum class
+	 * @return A generic enum converter
+	 */
+	public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<T> enumClass) {
+		return new EnumConverter<T>(enumClass);
+	}
+
 	// The common enum converter
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
