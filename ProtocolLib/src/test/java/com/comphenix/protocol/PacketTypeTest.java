@@ -16,7 +16,7 @@ import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
 public class PacketTypeTest {
 
 	@BeforeClass
-	public static void initializeReflection() throws IllegalAccessException {
+	public static void initializeReflection() {
 		BukkitInitialization.initializePackage();
 	}
 

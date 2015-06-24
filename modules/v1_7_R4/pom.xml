@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>ShadedNetty</artifactId>
+  <artifactId>ProtocolLib-v1_7_R4</artifactId>
+  <name>ProtocolLib-v1_7_R4</name>
   <version>3.6.4-SNAPSHOT</version>
-  <name>ShadedNetty</name>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
@@ -12,7 +12,7 @@
   <parent>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib-Parent</artifactId>
-    <version>dev-SNAPSHOT</version>
+    <version>v3-SNAPSHOT</version>
     <relativePath>../../</relativePath>
   </parent>
 
@@ -87,6 +87,21 @@
             <addMavenDescriptor>false</addMavenDescriptor>
           </archive>
           <finalName>ProtocolLib</finalName>
+          <outputDirectory>../../target/</outputDirectory>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.7</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <id>attach-javadocs</id>
+          </execution>
+        </executions>
+        <configuration>
+          <skip>true</skip>
         </configuration>
       </plugin>
 
@@ -218,8 +233,7 @@
     <dependency>
       <groupId>com.comphenix.protocol</groupId>
       <artifactId>ProtocolLib</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
+      <version>3.6.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>cglib</groupId>

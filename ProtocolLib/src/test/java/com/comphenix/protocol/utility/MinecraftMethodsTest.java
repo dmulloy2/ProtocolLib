@@ -8,8 +8,9 @@ import org.junit.Test;
 import com.comphenix.protocol.BukkitInitialization;
 
 public class MinecraftMethodsTest {
+
 	@BeforeClass
-	public static void initializeReflection() throws IllegalAccessException {
+	public static void initializeReflection() {
 		BukkitInitialization.initializePackage();
 	}
 

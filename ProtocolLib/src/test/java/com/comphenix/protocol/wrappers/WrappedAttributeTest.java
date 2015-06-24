@@ -26,7 +26,7 @@ public class WrappedAttributeTest {
 	private WrappedAttribute attribute;
 	
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 

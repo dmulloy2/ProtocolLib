@@ -8,8 +8,9 @@ import org.junit.Test;
 import com.comphenix.protocol.BukkitInitialization;
 
 public class ChunkCoordIntPairTest {
+
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 

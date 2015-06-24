@@ -13,8 +13,9 @@ import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
 import com.google.common.io.Resources;
 
 public class WrappedServerPingTest {
+
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 

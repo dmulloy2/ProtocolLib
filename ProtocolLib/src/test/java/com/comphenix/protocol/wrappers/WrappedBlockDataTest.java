@@ -32,7 +32,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 public class WrappedBlockDataTest {
 
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 

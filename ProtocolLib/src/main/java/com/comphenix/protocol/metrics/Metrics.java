@@ -535,7 +535,7 @@ public class Metrics {
     }
 
     // Appends a json encoded key/value pair to the given string builder.
-    private static void appendJSONPair(StringBuilder json, String key, String value) throws UnsupportedEncodingException {
+    private static void appendJSONPair(StringBuilder json, String key, String value) {
         boolean isValueNumeric = false;
 
         try {

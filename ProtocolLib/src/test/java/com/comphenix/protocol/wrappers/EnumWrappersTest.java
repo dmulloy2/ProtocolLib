@@ -27,7 +27,7 @@ public class EnumWrappersTest {
 	}
 	
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 	

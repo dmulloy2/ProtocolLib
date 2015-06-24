@@ -11,8 +11,9 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.google.common.base.Charsets;
 
 public class WrappedGameProfileTest {
+
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 	

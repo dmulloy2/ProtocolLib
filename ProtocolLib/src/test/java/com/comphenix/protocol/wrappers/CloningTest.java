@@ -9,8 +9,9 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner;
 
 public class CloningTest {
+
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 	

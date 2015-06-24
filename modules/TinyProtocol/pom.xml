@@ -3,9 +3,16 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.tinyprotocol</groupId>
   <artifactId>TinyProtocol</artifactId>
-  <version>0.2.0</version>
+  <version>1.0.0-SNAPSHOT</version>
   <name>TinyProtocol</name>
   <description>Intercept packets without ProtocolLib.</description>
+
+  <parent>
+    <groupId>com.comphenix.protocol</groupId>
+    <artifactId>ProtocolLib-Parent</artifactId>
+    <version>v3-SNAPSHOT</version>
+    <relativePath>../</relativePath>
+  </parent>
 
   <repositories>
     <repository>
@@ -35,6 +42,34 @@
           <target>1.6</target>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.5</version>
+        <configuration>
+          <archive>
+            <addMavenDescriptor>false</addMavenDescriptor>
+          </archive>
+          <finalName>TinyProtocol</finalName>
+          <outputDirectory>../../target/</outputDirectory>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.7</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <id>attach-javadocs</id>
+          </execution>
+        </executions>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
@@ -42,12 +77,12 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.8.6-R0.1-SNAPSHOT</version>
+      <version>1.8.7-R0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.8.6-R0.1-SNAPSHOT</version>
+      <version>1.8.7-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

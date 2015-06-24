@@ -3,12 +3,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib-Parent</artifactId>
-  <version>dev-SNAPSHOT</version>
+  <version>v3-SNAPSHOT</version>
   <name>ProtocolLib-Parent</name>
 
   <modules>
     <module>ProtocolLib</module>
-    <module>Modules/ProtocolLib-ShadedNetty</module>
+    <module>modules/v1_7_R4</module>
+    <module>modules/TinyProtocol</module>
   </modules>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
