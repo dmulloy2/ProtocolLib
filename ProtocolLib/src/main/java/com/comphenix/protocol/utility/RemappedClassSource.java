@@ -24,6 +24,7 @@ package com.comphenix.protocol.utility;
 import java.lang.reflect.Method;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Server;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.MethodUtils;
@@ -56,11 +57,17 @@ class RemappedClassSource extends ClassSource {
 	 */
 	public RemappedClassSource initialize() {
 		try {
-			if (Bukkit.getServer() == null || !Bukkit.getServer().getVersion().contains("MCPC-Plus")) {
+			Server server = Bukkit.getServer();
+			if (server == null) {
+				throw new IllegalStateException("Bukkit not initialized.");
+			}
+
+			String version = server.getVersion();
+			if (!server.getVersion().contains("MCPC-Plus") && !version.contains("Cauldron")) {
 				throw new RemapperUnavaibleException(Reason.MCPC_NOT_PRESENT);
 			}
-			
-			// Obtain the Class remapper used by MCPC+
+
+			// Obtain the Class remapper used by MCPC+/Cauldron
 			this.classRemapper = FieldUtils.readField(getClass().getClassLoader(), "remapper", true);
 			
 			if (this.classRemapper == null) {
@@ -112,8 +119,8 @@ class RemappedClassSource extends ClassSource {
 		private static final long serialVersionUID = 1L;
 
 		public enum Reason {
-			MCPC_NOT_PRESENT("The server is not running MCPC+"),
-			REMAPPER_DISABLED("Running an MCPC+ server but the remapper is unavailable. Please turn it on!");
+			MCPC_NOT_PRESENT("The server is not running MCPC+/Cauldron"),
+			REMAPPER_DISABLED("Running an MCPC+/Cauldron server but the remapper is unavailable. Please turn it on!");
 			
 			private final String message;
 			

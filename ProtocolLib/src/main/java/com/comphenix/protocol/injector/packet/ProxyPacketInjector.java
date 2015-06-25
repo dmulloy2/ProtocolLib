@@ -334,7 +334,7 @@ class ProxyPacketInjector implements PacketInjector {
 				return packetRecieved(packet, client, buffered);
 			} else {
 				// The timeout elapsed!
-				reporter.reportWarning(this, Report.newBuilder(REPORT_UNKNOWN_ORIGIN_FOR_PACKET).messageParam(input, packet.getType()));
+				reporter.reportDetailed(this, Report.newBuilder(REPORT_UNKNOWN_ORIGIN_FOR_PACKET).messageParam(input, packet.getType()));
 				return null;
 			}
 			

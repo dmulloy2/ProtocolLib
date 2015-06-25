@@ -74,9 +74,9 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public class MinecraftReflection {
-	public static final ReportType REPORT_CANNOT_FIND_MCPC_REMAPPER = new ReportType("Cannot find MCPC remapper.");
-	public static final ReportType REPORT_CANNOT_LOAD_CPC_REMAPPER = new ReportType("Unable to load MCPC remapper.");
-	public static final ReportType REPORT_NON_CRAFTBUKKIT_LIBRARY_PACKAGE = new ReportType("Cannot find standard Minecraft library location. Assuming MCPC.");
+	public static final ReportType REPORT_CANNOT_FIND_MCPC_REMAPPER = new ReportType("Cannot find MCPC/Cauldron remapper.");
+	public static final ReportType REPORT_CANNOT_LOAD_CPC_REMAPPER = new ReportType("Unable to load MCPC/Cauldron remapper.");
+	public static final ReportType REPORT_NON_CRAFTBUKKIT_LIBRARY_PACKAGE = new ReportType("Cannot find standard Minecraft library location. Assuming MCPC/Cauldron.");
 
 	/**
 	 * Regular expression that matches a canonical Java class.

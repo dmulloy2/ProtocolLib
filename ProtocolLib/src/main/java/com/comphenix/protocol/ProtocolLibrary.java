@@ -169,6 +169,10 @@ public class ProtocolLibrary extends JavaPlugin {
 		DetailedErrorReporter detailedReporter = new DetailedErrorReporter(this);
 		reporter = getFilteredReporter(detailedReporter);
 
+		// Configuration
+		saveDefaultConfig();
+		reloadConfig();
+
 		try {
 			config = new ProtocolConfig(this);
 		} catch (Exception e) {
@@ -248,7 +252,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			try {
 				switch (command) {
 				case PROTOCOL:
-					commandProtocol = new CommandProtocol(reporter, this, config);
+					commandProtocol = new CommandProtocol(reporter, this);
 					break;
 				case FILTER:
 					commandFilter = new CommandFilter(reporter, this, config);

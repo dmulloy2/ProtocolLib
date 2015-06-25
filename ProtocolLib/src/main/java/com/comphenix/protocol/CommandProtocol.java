@@ -42,12 +42,10 @@ class CommandProtocol extends CommandBase {
 	public static final String NAME = "protocol";
 
 	private Plugin plugin;
-	private ProtocolConfig config;
 
-	public CommandProtocol(ErrorReporter reporter, Plugin plugin, ProtocolConfig config) {
+	public CommandProtocol(ErrorReporter reporter, Plugin plugin) {
 		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
 		this.plugin = plugin;
-		this.config = config;
 	}
 
 	@Override
@@ -138,16 +136,6 @@ class CommandProtocol extends CommandBase {
 		sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " v" + ChatColor.GREEN + desc.getVersion());
 		sender.sendMessage(ChatColor.WHITE + "Authors: " + ChatColor.GREEN + "dmulloy2" + ChatColor.WHITE + " and " + ChatColor.GREEN + "Comphenix");
 		sender.sendMessage(ChatColor.WHITE + "Issues: " + ChatColor.GREEN + "https://github.com/dmulloy2/ProtocolLib/issues");
-	}
-
-	/**
-	 * Prevent further automatic updates until the next delay.
-	 */
-	public void updateFinished() {
-		long currentTime = System.currentTimeMillis() / ProtocolLibrary.MILLI_PER_SECOND;
-
-		config.setAutoLastTime(currentTime);
-		config.saveAll();
 	}
 
 	public void reloadConfiguration(CommandSender sender) {

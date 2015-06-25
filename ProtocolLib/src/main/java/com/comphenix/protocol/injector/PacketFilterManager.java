@@ -1070,7 +1070,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			playerInjection.uninjectPlayer(event.getPlayer().getAddress());
 			playerInjection.injectPlayer(event.getPlayer(), ConflictStrategy.OVERRIDE);
 		} catch (ServerHandlerNull e) {
-			// Caused by logged out players, or fake login events in MCPC++. Ignore it.
+			// Caused by logged out players, or fake login events in MCPC+/Cauldron. Ignore it.
 		} catch (Exception e) {
 			reporter.reportDetailed(PacketFilterManager.this,
 					Report.newBuilder(REPORT_CANNOT_INJECT_PLAYER).callerParam(event).error(e)

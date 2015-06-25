@@ -743,7 +743,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	/**
 	 * Indicates that a player's NetServerHandler or PlayerConnection was NULL.
 	 * <p>
-	 * This is usually because the player has just logged out, or due to it being a "fake" player in MCPC++.
+	 * This is usually because the player has just logged out, or due to it being a "fake" player in MCPC+/Cauldron.
 	 * @author Kristian
 	 */
 	public static class ServerHandlerNull extends IllegalAccessError {

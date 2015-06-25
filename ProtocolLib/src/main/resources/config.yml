@@ -1,12 +1,4 @@
 global:
-  # Settings for the automatic version updater
-  auto updater:
-    notify: true
-    download: false
-    
-    # Number of seconds to wait until a new update is downloaded
-    delay: 43200 # 12 hours
- 
   metrics: true
   
   # Automatically compile structure modifiers 
