@@ -6,6 +6,7 @@ import net.minecraft.server.v1_8_R3.DispenserRegistry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
+import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -32,8 +33,6 @@ public class BukkitInitialization {
 			// Denote that we're done
 			initialized = true;
 
-			initializePackage();
-
 			DispenserRegistry.c(); // Basically registers everything
 
 			// Mock the server object
@@ -41,20 +40,14 @@ public class BukkitInitialization {
 			ItemMeta mockedMeta = mock(ItemMeta.class);
 			ItemFactory mockedFactory = new ItemFactoryDelegate(mockedMeta);
 
+			when(mockedServer.getVersion()).thenReturn(CraftServer.class.getPackage().getImplementationVersion());
 			when(mockedServer.getItemFactory()).thenReturn(mockedFactory);
 			when(mockedServer.isPrimaryThread()).thenReturn(true);
-			// when(mockedFactory.getItemMeta(any(Material.class))).thenReturn(mockedMeta);
 
 			// Inject this fake server
 			FieldUtils.writeStaticField(Bukkit.class, "server", mockedServer, true);
 
-			// TODO Figure this out
-			/* try {
-				FieldUtils.writeStaticFinalField(CraftItemFactory.class, "instance", mockedFactory, true);
-			} catch (Exception ex) {
-				System.err.println("Failed to inject fake item factory: ");
-				ex.printStackTrace();
-			} */
+			initializePackage();
 		}
 	}
 

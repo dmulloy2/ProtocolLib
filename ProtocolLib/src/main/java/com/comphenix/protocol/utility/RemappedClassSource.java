@@ -63,7 +63,7 @@ class RemappedClassSource extends ClassSource {
 			}
 
 			String version = server.getVersion();
-			if (!server.getVersion().contains("MCPC-Plus") && !version.contains("Cauldron")) {
+			if (!version.contains("MCPC") && !version.contains("Cauldron")) {
 				throw new RemapperUnavaibleException(Reason.MCPC_NOT_PRESENT);
 			}
 
