@@ -26,12 +26,16 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 
+import net.minecraft.server.v1_8_R3.ItemStack;
+import net.minecraft.server.v1_8_R3.Items;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -65,9 +69,7 @@ public class NbtFactoryTest {
 		assertEquals(compound.getList("nicknames"), cloned.getList("nicknames"));
 	}
 
-	// TODO See StreamSerializerTest
-	
-	/* @Test
+	@Test
 	public void testItemTag() {
 		ItemStack test = new ItemStack(Items.GOLDEN_AXE);
 		org.bukkit.inventory.ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
@@ -79,5 +81,5 @@ public class NbtFactoryTest {
 		NbtFactory.setItemTag(craftTest, compound);
 		
 		assertEquals(compound, NbtFactory.fromItemTag(craftTest));
-	} */
+	}
 }

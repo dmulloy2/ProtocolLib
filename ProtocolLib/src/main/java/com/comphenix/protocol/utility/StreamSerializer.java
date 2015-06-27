@@ -14,12 +14,14 @@ import org.bukkit.inventory.ItemStack;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import com.comphenix.protocol.compat.netty.Netty;
+import com.comphenix.protocol.compat.netty.WrappedByteBuf;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Preconditions;
 
 /**
@@ -308,7 +310,10 @@ public class StreamSerializer {
 				);
 			}
 
-			WRITE_NBT_METHOD.invoke(Netty.packetWriter(output).getHandle(), handle);
+			WrappedByteBuf buf = Netty.packetWriter(output);
+			buf.writeByte(NbtType.TAG_COMPOUND.getRawID());
+
+			WRITE_NBT_METHOD.invoke(buf.getHandle(), handle);
 		} else {
 			if (WRITE_NBT_METHOD == null) {
 				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
