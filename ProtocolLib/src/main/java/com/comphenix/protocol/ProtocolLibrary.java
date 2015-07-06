@@ -19,6 +19,8 @@ package com.comphenix.protocol;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -428,22 +430,21 @@ public class ProtocolLibrary extends JavaPlugin {
 		}
 	}
 
+	// Plugin authors: Notify me to remove these
+	public static List<String> INCOMPATIBLE = Arrays.asList("TagAPI");
+
 	private void checkForIncompatibility(PluginManager manager) {
-		// Plugin authors: Notify me to remove these
-		String[] incompatible = { };
-
-		for (String plugin : incompatible) {
+		for (String plugin : INCOMPATIBLE) {
 			if (manager.getPlugin(plugin) != null) {
-				// Check for versions, etc.
-				logger.severe("Detected incompatible plugin: " + plugin);
-			}
-		}
-
-		// Special case for TagAPI and iTag
-		if (manager.getPlugin("TagAPI") != null) {
-			Plugin iTag = manager.getPlugin("iTag");
-			if (iTag == null || iTag.getDescription().getVersion().startsWith("1.0")) {
-				logger.severe("Detected incompatible plugin: TagAPI");
+				// Special case for TagAPI and iTag
+				if (plugin.equals("TagAPI")) {
+					Plugin iTag = manager.getPlugin("iTag");
+					if (iTag == null || iTag.getDescription().getVersion().startsWith("1.0")) {
+						logger.severe("Detected incompatible plugin: TagAPI");
+					}
+				} else {
+					logger.severe("Detected incompatible plugin: " + plugin);
+				}
 			}
 		}
 	}

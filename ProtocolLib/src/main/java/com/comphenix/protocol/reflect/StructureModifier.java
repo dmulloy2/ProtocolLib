@@ -33,7 +33,6 @@ import com.comphenix.protocol.reflect.instances.BannedGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -183,21 +182,23 @@ public class StructureModifier<TField> {
 		this.useStructureCompiler = useStructureCompiler;
 	}
 
-	private static final List<String> BROKEN_PLUGINS = Util.asList("TagAPI");
-	
 	/**
 	 * Reads the value of a field given its index.
+	 * <p>
+	 * Note: This method is prone to exceptions (there are currently 5 total throw statements). It is recommended that you
+	 * use {@link #readSafely(int)}, which returns {@code null} if the field doesn't exist, instead of throwing an exception.
+	 * 
 	 * @param fieldIndex - index of the field.
 	 * @return Value of the field.
-	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
+	 * @throws FieldAccessException if the field doesn't exist, or it cannot be accessed under the current security contraints.
 	 */
 	public TField read(int fieldIndex) throws FieldAccessException {
 		try {
 			return readInternal(fieldIndex);
 		} catch (FieldAccessException ex) {
 			String plugin = PluginContext.getPluginCaller(ex);
-			if (BROKEN_PLUGINS.contains(plugin)) {
-				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by broken plugin {0}.", plugin);
+			if (ProtocolLibrary.INCOMPATIBLE.contains(plugin)) {
+				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
 				ProtocolLibrary.log(Level.WARNING, "It is advised that you remove it.");
 			}
 
@@ -235,10 +236,24 @@ public class StructureModifier<TField> {
 	}
 	
 	/**
-	 * Reads the value of a field if and ONLY IF it exists.
+	 * Reads the value of a field only if it exists. If the field does not exist, {@code null} is returned.
+	 * <p>
+	 * As its name implies, this method is a much safer alternative to {@link #read(int)}.
+	 * In addition to throwing less exceptions and thereby causing less console spam, this
+	 * method makes providing backwards compatiblity signficiantly easier, as shown below:
+	 * 
+	 * <pre><code>
+	 * BlockPosition position = packet.getBlockPositionModifier().readSafely(0);
+	 * if (position != null) {
+	 *     // Handle 1.8+
+	 * } else {
+	 *     // Handle 1.7-
+	 * }
+	 * </code></pre>
+	 * 
 	 * @param fieldIndex - index of the field.
 	 * @return Value of the field, or NULL if it doesn't exist.
-	 * @throws FieldAccessException The field cannot be accessed under the current security contraints.
+	 * @throws FieldAccessException if the field cannot be accessed under the current security constraints.
 	 */
 	public TField readSafely(int fieldIndex) throws FieldAccessException {
 		if (fieldIndex >= 0 && fieldIndex < data.size()) {
@@ -312,8 +327,8 @@ public class StructureModifier<TField> {
 			return writeInternal(fieldIndex, value);
 		} catch (FieldAccessException ex) {
 			String plugin = PluginContext.getPluginCaller(ex);
-			if (BROKEN_PLUGINS.contains(plugin)) {
-				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by broken plugin {0}.", plugin);
+			if (ProtocolLibrary.INCOMPATIBLE.contains(plugin)) {
+				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
 				ProtocolLibrary.log(Level.WARNING, "It is advised that you remove it.");
 			}
 
@@ -412,6 +427,12 @@ public class StructureModifier<TField> {
 		
 		// Write a default instance to every field
 		for (Field field : defaultFields.keySet()) {
+			if (field.getType().getCanonicalName().equals("net.md_5.bungee.api.chat.BaseComponent[]")) {
+				// Special case for Spigot's custom chat components
+				// Generating this will cause messages to be blank
+				continue;
+			}
+			
 			try {
 				FieldUtils.writeField(field, target,
 						generator.getDefault(field.getType()), true);
