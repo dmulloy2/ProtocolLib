@@ -422,15 +422,14 @@ public class StructureModifier<TField> {
 	 * @throws FieldAccessException If we're unable to write to the fields due to a security limitation.
 	 */
 	public StructureModifier<TField> writeDefaults() throws FieldAccessException {
-
 		DefaultInstances generator = DefaultInstances.DEFAULT;
 
 		// Write a default instance to every field
 		for (Field field : defaultFields.keySet()) {
 			try {
+				// Special case for Spigot's custom chat components
+				// They must be null or messages will be blank
 				if (field.getType().getCanonicalName().equals("net.md_5.bungee.api.chat.BaseComponent[]")) {
-					// Special case for Spigot's custom chat components
-					// They must be null or messages will be blank
 					FieldUtils.writeField(field, target, null, true);
 					continue;
 				}

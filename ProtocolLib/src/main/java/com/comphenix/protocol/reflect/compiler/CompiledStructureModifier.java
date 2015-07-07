@@ -65,17 +65,23 @@ public abstract class CompiledStructureModifier extends StructureModifier<Object
 	// Speed up the default writer
 	@Override
 	public StructureModifier<Object> writeDefaults() throws FieldAccessException {
-		
 		DefaultInstances generator = DefaultInstances.DEFAULT;
-		
+
 		// Write a default instance to every field
-		for (Map.Entry<Field, Integer> entry  : defaultFields.entrySet()) {
+		for (Map.Entry<Field, Integer> entry : defaultFields.entrySet()) {
 			Integer index = entry.getValue();
 			Field field = entry.getKey();
-			
+
+			// Special case for Spigot's custom chat components
+			// They must be null or messages will be blank
+			if (field.getType().getCanonicalName().equals("net.md_5.bungee.api.chat.BaseComponent[]")) {
+				write(index, null);
+				continue;
+			}
+
 			write(index, (Object) generator.getDefault(field.getType()));
 		}
-		
+
 		return this;
 	}
 	
