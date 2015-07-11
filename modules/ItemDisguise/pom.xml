@@ -61,18 +61,18 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.8.6-R0.1-SNAPSHOT</version>
+      <version>1.8.7-R0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.8.6-R0.1-SNAPSHOT</version>
+      <version>1.8.7-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.comphenix.protocol</groupId>
       <artifactId>ProtocolLib</artifactId>
-      <version>3.6.3-SNAPSHOT</version>
+      <version>3.6.4</version>
     </dependency>
   </dependencies>
 </project>
