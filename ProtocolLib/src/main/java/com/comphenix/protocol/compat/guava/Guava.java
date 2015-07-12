@@ -31,22 +31,21 @@ import com.google.common.collect.Range;
 public class Guava {
 	private static GuavaCompat compat;
 
-	private static GuavaCompat getCompat() {
-		if (compat == null) {
+	static {
+		try {
+			Range.closed(1, 2);
+			compat = new Guava17();
+		} catch (Throwable ex) {
 			try {
-				Range.closed(1, 2);
-				return compat = new Guava17();
-			} catch (Throwable ex) {
-				try {
-					ProtocolLibrary.log("Falling back to Guava 10 compat");
-					Class<?> clazz = Class.forName("com.comphenix.protocol.compat.guava.Guava10");
-					return compat = (GuavaCompat) clazz.newInstance();
-				} catch (Throwable ex1) {
-					ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create Guava 10 compat:", ex1);
-				}
+				Class<?> clazz = Class.forName("com.comphenix.protocol.compat.guava.Guava10");
+				compat = (GuavaCompat) clazz.newInstance();
+			} catch (Throwable ex1) {
+				ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create Guava 10 compat:", ex1);
 			}
 		}
+	}
 
+	private static GuavaCompat getCompat() {
 		return compat;
 	}
 

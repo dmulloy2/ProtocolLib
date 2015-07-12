@@ -45,15 +45,14 @@ public class ShadedNetty implements NettyCompat {
 
 	@Override
 	public WrappedByteBuf createPacketBuffer() {
-		return getPacketDataSerializer(allocateUnpooled());
+		return getPacketDataSerializer(UnpooledByteBufAllocator.DEFAULT.buffer());
 	}
 
-	private WrappedByteBuf getPacketDataSerializer(WrappedByteBuf buffer) {
+	private WrappedByteBuf getPacketDataSerializer(ByteBuf buffer) {
 		Class<?> packetSerializer = MinecraftReflection.getPacketDataSerializerClass();
 
 		try {
-			return new ShadedByteBuf((ByteBuf) packetSerializer.getConstructor(MinecraftReflection.getByteBufClass())
-					.newInstance(buffer.getHandle()));
+			return new ShadedByteBuf((ByteBuf) packetSerializer.getConstructor(MinecraftReflection.getByteBufClass()).newInstance(buffer));
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}

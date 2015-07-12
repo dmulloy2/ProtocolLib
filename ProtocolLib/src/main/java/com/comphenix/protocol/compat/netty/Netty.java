@@ -35,22 +35,21 @@ import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
 public class Netty {
 	private static NettyCompat compat;
 
-	private static NettyCompat getCompat() {
-		if (compat == null) {
+	static {
+		try {
+			Class.forName("io.netty.buffer.ByteBuf");
+			compat = new IndependentNetty();
+		} catch (ClassNotFoundException ex) {
 			try {
-				Class.forName("io.netty.buffer.ByteBuf");
-				return compat = new IndependentNetty();
-			} catch (Throwable ex) {
-				try {
-					ProtocolLibrary.log("Falling back to legacy Netty compat");
-					Class<?> clazz = Class.forName("com.comphenix.protocol.compat.netty.shaded.ShadedNetty");
-					return compat = (NettyCompat) clazz.newInstance();
-				} catch (Throwable ex1) {
-					ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create legacy netty compat:", ex1);
-				}
+				Class<?> clazz = Class.forName("com.comphenix.protocol.compat.netty.shaded.ShadedNetty");
+				compat = (NettyCompat) clazz.newInstance();
+			} catch (Exception ex1) {
+				ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create legacy netty compat:", ex1);
 			}
 		}
+	}
 
+	private static NettyCompat getCompat() {
 		return compat;
 	}
 
