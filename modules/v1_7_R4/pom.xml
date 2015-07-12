@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ProtocolLib-v1_7_R4</artifactId>
   <name>ProtocolLib-v1_7_R4</name>
-  <version>3.6.4</version>
+  <version>3.6.5-SNAPSHOT</version>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
