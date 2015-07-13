@@ -18,17 +18,25 @@
 package com.comphenix.protocol;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Set;
+import java.util.logging.Level;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 
+import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.timing.TimedListenerManager;
 import com.comphenix.protocol.timing.TimingReportGenerator;
+import com.google.common.io.Closer;
 
 /**
  * Handles the "protocol" administration command.
@@ -61,6 +69,8 @@ class CommandProtocol extends CommandBase {
 			printListeners(sender);
 		else if (subCommand.equalsIgnoreCase("version"))
 			printVersion(sender);
+		else if (subCommand.equalsIgnoreCase("dump"))
+			dump(sender);
 		else
 			return false;
 		return true;
@@ -141,5 +151,65 @@ class CommandProtocol extends CommandBase {
 	public void reloadConfiguration(CommandSender sender) {
 		plugin.reloadConfig();
 		sender.sendMessage(ChatColor.YELLOW + "Reloaded configuration!");
+	}
+
+	private static SimpleDateFormat FILE_FORMAT;
+	private static SimpleDateFormat TIMESTAMP_FORMAT;
+
+	private void dump(CommandSender sender) {
+		Closer closer = Closer.create();
+
+		if (FILE_FORMAT == null)
+			FILE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+		if (TIMESTAMP_FORMAT == null)
+			TIMESTAMP_FORMAT = new SimpleDateFormat("MM/dd/yy HH:mm:ss");
+
+		try {
+			Date date = new Date();
+			File file = new File(plugin.getDataFolder(), "dump-" + FILE_FORMAT.format(date) + ".txt");
+			if (file.exists()) {
+				file.delete();
+			}
+
+			file.createNewFile();
+			
+			FileWriter fw = closer.register(new FileWriter(file));
+			PrintWriter pw = closer.register(new PrintWriter(fw));
+
+			pw.println("ProtocolLib Dump");
+			pw.println("Timestamp: " + TIMESTAMP_FORMAT.format(date));
+			pw.println();
+
+			pw.println("ProtocolLib Version: " + plugin.toString());
+			pw.println("Bukkit Version: " + plugin.getServer().getBukkitVersion());
+			pw.println("Server Version: " + plugin.getServer().getVersion());
+			pw.println();
+
+			ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+			pw.println("ProtocolLib: " + DetailedErrorReporter.getStringDescription(plugin));
+			pw.println("Manager: " + DetailedErrorReporter.getStringDescription(manager));
+			pw.println();
+
+			Set<PacketListener> listeners = manager.getPacketListeners();
+			if (listeners.size() > 0) {
+				pw.println("Listeners:");
+
+				for (PacketListener listener : listeners) {
+					pw.println(DetailedErrorReporter.getStringDescription(listener));
+				}
+			} else {
+				pw.println("No listeners");
+			}
+
+			sender.sendMessage("Data dump written to " + file.getAbsolutePath());
+		} catch (IOException ex) {
+			ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create dump:", ex);
+			sender.sendMessage(ChatColor.RED + "Failed to create dump! Check console!");
+		} finally {
+			try {
+				closer.close();
+			} catch (IOException ex1) {
+			}
+		}
 	}
 }

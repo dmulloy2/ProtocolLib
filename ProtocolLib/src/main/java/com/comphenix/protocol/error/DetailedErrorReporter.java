@@ -79,7 +79,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	protected String pluginName;
 	
 	// Whether or not Apache Commons is not present
-	protected boolean apacheCommonsMissing;
+	protected static boolean apacheCommonsMissing;
 	
 	// Whether or not detailed errror reporting is enabled
 	protected boolean detailedReporting;
@@ -451,7 +451,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	 * @param value - object to convert.
 	 * @return String representation.
 	 */
-	protected String getStringDescription(Object value) {
+	public static String getStringDescription(Object value) {
 		// We can't only rely on toString.
 		if (value == null) {
 			return "[NULL]";
@@ -483,7 +483,7 @@ public class DetailedErrorReporter implements ErrorReporter {
 	 * @param test - the object to test.
 	 * @return TRUE if this object is simple enough to simply be printed, FALSE othewise.
 	 */
-	protected boolean isSimpleType(Object test) {
+	protected static boolean isSimpleType(Object test) {
 		return test instanceof String || Primitives.isWrapperType(test.getClass());
 	}
 	
