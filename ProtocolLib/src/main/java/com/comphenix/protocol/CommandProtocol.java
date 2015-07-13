@@ -183,6 +183,7 @@ class CommandProtocol extends CommandBase {
 			pw.println("ProtocolLib Version: " + plugin.toString());
 			pw.println("Bukkit Version: " + plugin.getServer().getBukkitVersion());
 			pw.println("Server Version: " + plugin.getServer().getVersion());
+			pw.println("Java Version: " + System.getProperty("java.version"));
 			pw.println();
 
 			ProtocolManager manager = ProtocolLibrary.getProtocolManager();

@@ -379,12 +379,16 @@ public class DetailedErrorReporter implements ErrorReporter {
 			writer.println("Version:");
 			writer.println(addPrefix(plugin.toString(), SECOND_LEVEL_PREFIX));
 		}
-		
+
+		// And java version
+		writer.println("Java Version:");
+		writer.println(addPrefix(System.getProperty("java.version"), SECOND_LEVEL_PREFIX));
+
 		// Add the server version too
 		if (Bukkit.getServer() != null) {
 			writer.println("Server:");
 			writer.println(addPrefix(Bukkit.getServer().getVersion(), SECOND_LEVEL_PREFIX));
-			
+
 			// Inform of this occurrence
 			if (ERROR_PERMISSION != null) {
 				Bukkit.getServer().broadcast(
