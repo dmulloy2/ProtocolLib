@@ -243,6 +243,12 @@
   </developers>
 
   <dependencies>
+    <!-- This is for the JavaDocs
+    <dependency>
+	  <groupId>io.netty</groupId>
+	  <artifactId>netty-all</artifactId>
+	  <version>4.0.28.Final</version>
+    </dependency> -->
     <dependency>
       <groupId>cglib</groupId>
       <artifactId>cglib-nodep</artifactId>

@@ -284,13 +284,11 @@ public class NettyChannelInjector extends ByteToMessageDecoder implements Channe
 
 			ChannelHandlerAdapter exceptionHandler = new ChannelHandlerAdapter() {
 				@Override
-				public void exceptionCaught(ChannelHandlerContext context, Throwable ex) throws Exception {
-					if (ex instanceof ClosedChannelException) {
+				public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+					if (cause instanceof ClosedChannelException) {
 						// Ignore
 					} else {
-						// TODO Actually handle exceptions?
-						System.err.println("[ProtocolLib] Encountered an uncaught exception in the channel pipeline:");
-						ex.printStackTrace();
+						super.exceptionCaught(ctx, cause);
 					}
 				}
 			};
@@ -821,7 +819,7 @@ public class NettyChannelInjector extends ByteToMessageDecoder implements Channe
 				// we end up with a deadlock. The main thread is waiting for the worker thread to process the task, and
 			    // the worker thread is waiting for the main thread to finish executing PlayerQuitEvent.
 				//
-				// TLDR: Concurrency is hard.
+				// TL;DR: Concurrency is hard.
 				executeInChannelThread(new Runnable() {
 					@Override
 					public void run() {
