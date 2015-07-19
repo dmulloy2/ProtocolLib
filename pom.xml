@@ -9,7 +9,6 @@
   <modules>
     <module>ProtocolLib</module>
     <module>modules/v1_7_R4</module>
-    <module>modules/TinyProtocol</module>
   </modules>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
