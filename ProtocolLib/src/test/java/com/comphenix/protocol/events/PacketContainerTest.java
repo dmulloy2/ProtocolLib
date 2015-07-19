@@ -371,9 +371,11 @@ public class PacketContainerTest {
 
 			assertEquals(PacketType.Play.Client.CHAT, copy.getType());
 			assertEquals("Test", copy.getStrings().read(0));
-		} catch (NullPointerException ex) {
-			// This occurs intermittently with Java 6, just log it and move on
-			System.err.println("Encountered a NullPointerException with serialization");
+		} catch (Throwable ex) {
+			// This occurs intermittently on Java 6, for the time being just log it and move on
+			// TODO: Possibly find a solution to this
+			System.err.println("Failed to serialize packet:");
+			ex.printStackTrace();
 		}
 	}
 

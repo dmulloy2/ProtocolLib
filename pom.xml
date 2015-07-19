@@ -75,7 +75,7 @@
     </plugins>
   </build>
 
-  <reporting>
+  <!--<reporting>
     <plugins>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -89,5 +89,5 @@
         <version>2.4</version>
       </plugin>
     </plugins>
-  </reporting>
+  </reporting>-->
 </project>

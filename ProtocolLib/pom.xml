@@ -90,7 +90,7 @@
         </configuration>
       </plugin>
 
-      <plugin>
+      <!--<plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.7</version>
         <executions>
@@ -104,12 +104,12 @@
           </execution>
 
         </executions>
-      </plugin>
+      </plugin>-->
 
     </plugins>
   </build>
 
-  <reporting>
+  <!--<reporting>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -133,7 +133,7 @@
       </plugin>
     </plugins>
 
-  </reporting>
+  </reporting>-->
 
   <profiles>
     <profile>

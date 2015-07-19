@@ -45,14 +45,11 @@ public class IndependentNetty implements NettyCompat {
 
 	@Override
 	public WrappedByteBuf createPacketBuffer() {
-		return getPacketDataSerializer(UnpooledByteBufAllocator.DEFAULT.buffer());
-	}
-
-	private WrappedByteBuf getPacketDataSerializer(ByteBuf buffer) {
+		ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
 		Class<?> packetSerializer = MinecraftReflection.getPacketDataSerializerClass();
 
 		try {
-			return new NettyByteBuf((ByteBuf) packetSerializer.getConstructor(MinecraftReflection.getByteBufClass()).newInstance(buffer));
+			return new NettyByteBuf((ByteBuf) packetSerializer.getConstructor(ByteBuf.class).newInstance(buffer));
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}

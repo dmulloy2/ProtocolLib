@@ -3,7 +3,7 @@ jdk:
   - oraclejdk8
   - oraclejdk7
   - openjdk6
-script: mvn clean install -U
+script: mvn clean test -U
 before_install: cd ProtocolLib
 install: true
 notifications:
