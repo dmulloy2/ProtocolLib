@@ -7,10 +7,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.utility.SafeCacheBuilder;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Function;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalListener;
@@ -166,7 +166,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return The player with the given key, or NULL if not found.
 	 */
 	protected Player findOnlinePlayer(Object key) {
-		for (Player player : Bukkit.getOnlinePlayers()) {
+		for (Player player : Util.getOnlinePlayers()) {
 			if (key.equals(keyMethod.apply(player))) {
 				return player;
 			}

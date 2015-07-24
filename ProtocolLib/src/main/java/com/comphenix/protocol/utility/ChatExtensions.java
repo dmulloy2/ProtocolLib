@@ -22,7 +22,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -159,7 +158,7 @@ public class ChatExtensions {
 			throw new IllegalArgumentException("message cannot be NULL.");
 		
 		// Send this message to every online player
-		for (Player player : Bukkit.getServer().getOnlinePlayers()) {
+		for (Player player : Util.getOnlinePlayers()) {
 			if (permission == null || player.hasPermission(permission)) {
 				sendMessageSilently(player, message);
 			}

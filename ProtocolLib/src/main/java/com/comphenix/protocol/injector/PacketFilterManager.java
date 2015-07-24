@@ -737,7 +737,7 @@ public final class PacketFilterManager implements ProtocolManager, ListenerInvok
 			Location recycle = origin.clone();
 
 			// Only broadcast the packet to nearby players
-			for (Player player : server.getOnlinePlayers()) {
+			for (Player player : Util.getOnlinePlayers()) {
 				if (world.equals(player.getWorld()) &&
 				    getDistanceSquared(origin, recycle, player) <= maxDistance) {
 

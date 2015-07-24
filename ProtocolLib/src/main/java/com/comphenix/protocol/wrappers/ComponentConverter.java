@@ -28,6 +28,9 @@ import net.md_5.bungee.chat.ComponentSerializer;
 
 public final class ComponentConverter {
 
+	private ComponentConverter() {
+	}
+
 	/**
 	 * Converts a {@link WrappedChatComponent} into an array of {@link BaseComponent}s
 	 * @param wrapper ProtocolLib wrapper
