@@ -80,7 +80,6 @@ public class Util {
 			list.add(element);
 		}
 
-		Arrays.asList(elements);
 		return list;
 	}
 
