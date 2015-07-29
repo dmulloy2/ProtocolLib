@@ -2,19 +2,20 @@ package com.comphenix.protocol;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.logging.Logger;
+
 import net.minecraft.server.v1_8_R3.DispenserRegistry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
-import org.bukkit.inventory.ItemFactory;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_8_R3.util.Versioning;
 
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.ItemFactoryDelegate;
 
 /**
  * Used to ensure that ProtocolLib and Bukkit is prepared to be tested.
@@ -37,15 +38,17 @@ public class BukkitInitialization {
 
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
-			ItemMeta mockedMeta = mock(ItemMeta.class);
-			ItemFactory mockedFactory = new ItemFactoryDelegate(mockedMeta);
 
+			when(mockedServer.getLogger()).thenReturn(Logger.getLogger("Minecraft"));
+			when(mockedServer.getName()).thenReturn("Mock Server");
 			when(mockedServer.getVersion()).thenReturn(CraftServer.class.getPackage().getImplementationVersion());
-			when(mockedServer.getItemFactory()).thenReturn(mockedFactory);
+			when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
+
+			when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
 			when(mockedServer.isPrimaryThread()).thenReturn(true);
 
 			// Inject this fake server
-			FieldUtils.writeStaticField(Bukkit.class, "server", mockedServer, true);
+			Bukkit.setServer(mockedServer);
 
 			initializePackage();
 		}

@@ -18,7 +18,6 @@ package com.comphenix.protocol.events;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -35,9 +34,11 @@ import net.minecraft.server.v1_8_R3.PacketPlayOutUpdateAttributes.AttributeSnaps
 
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
+import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.WorldType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.junit.BeforeClass;
@@ -196,15 +197,23 @@ public class PacketContainerTest {
 	public void testGetItemModifier() {
 		PacketContainer windowClick = new PacketContainer(PacketType.Play.Client.WINDOW_CLICK);
 
-		StructureModifier<ItemStack> items = windowClick.getItemModifier();
-		ItemStack goldAxe = new ItemStack(Material.GOLD_AXE);
+		ItemStack item = itemWithData();
 
-		assertNotNull(goldAxe.getType());
+		StructureModifier<ItemStack> items = windowClick.getItemModifier();
 		assertNull(items.read(0));
 
-		// Insert the goldaxe and check if it's there
-		items.write(0, goldAxe);
-		assertTrue("Item " + goldAxe + " != " + items.read(0), equivalentItem(goldAxe, items.read(0)));
+		// Insert the item and check if it's there
+		items.write(0, item);
+		assertTrue("Item " + item + " != " + items.read(0), equivalentItem(item, items.read(0)));
+	}
+
+	private ItemStack itemWithData() {
+		ItemStack item = new ItemStack(Material.WOOL, 1, DyeColor.GREEN.getWoolData());
+		ItemMeta meta = item.getItemMeta();
+		meta.setDisplayName(ChatColor.GREEN + "Green Wool");
+		meta.setLore(Util.asList(ChatColor.WHITE + "This is lore."));
+		item.setItemMeta(meta);
+		return item;
 	}
 
 	@Test
@@ -213,7 +222,7 @@ public class PacketContainerTest {
 		StructureModifier<ItemStack[]> itemAccess = windowItems.getItemArrayModifier();
 
 		ItemStack[] itemArray = new ItemStack[] {
-				new ItemStack(Material.GOLD_AXE),
+				itemWithData(),
 				new ItemStack(Material.DIAMOND_AXE)
 		};
 

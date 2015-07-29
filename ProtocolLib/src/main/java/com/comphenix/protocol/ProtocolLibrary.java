@@ -93,9 +93,9 @@ public class ProtocolLibrary extends JavaPlugin {
 	public static final String MAXIMUM_MINECRAFT_VERSION = "1.8.8";
 
 	/**
-	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.8.7) was released.
+	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.8.8) was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2015-06-05";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2015-07-27";
 
 	// Different commands
 	private enum ProtocolCommand {
