@@ -330,8 +330,10 @@ public abstract class EnumWrappers {
 	}
 
 	private static void associate(Class<?> nativeClass, Class<?> wrapperClass, EquivalentConverter<?> converter) {
-		FROM_NATIVE.put(nativeClass, converter);
-		FROM_WRAPPER.put(wrapperClass, converter);
+		if (nativeClass != null) {
+			FROM_NATIVE.put(nativeClass, converter);
+			FROM_WRAPPER.put(wrapperClass, converter);
+		}
 	}
 
 	/**
@@ -341,7 +343,11 @@ public abstract class EnumWrappers {
 	 * @return The type of the enum field.
 	 */
 	private static Class<?> getEnum(Class<?> clazz, int index) {
-		return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
+		try {
+			return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
+		} catch (Throwable ex) {
+			return null; // Unsupported in this version
+		}
 	}
 
 	public static Map<Class<?>, EquivalentConverter<?>> getFromNativeMap() {

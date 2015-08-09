@@ -84,7 +84,12 @@
         <version>2.5</version>
         <configuration>
           <archive>
-            <addMavenDescriptor>false</addMavenDescriptor>
+            <manifestEntries>
+              <Main-Class>com.comphenix.protocol.Application</Main-Class>
+              <Implementation-Title>ProtocolLib</Implementation-Title>
+              <Implementation-Version>${project.version}${project.build.number}</Implementation-Version>
+              <Implementation-Vendor>dmulloy2</Implementation-Vendor>
+            </manifestEntries>
           </archive>
           <finalName>ProtocolLib</finalName>
         </configuration>
