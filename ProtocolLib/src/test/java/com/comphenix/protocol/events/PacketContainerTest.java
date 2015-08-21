@@ -465,7 +465,8 @@ public class PacketContainerTest {
 	}
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(
-			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD, PacketType.Play.Server.MAP_CHUNK
+			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD, PacketType.Play.Server.MAP_CHUNK,
+			PacketType.Play.Server.UPDATE_ATTRIBUTES
 	);
 
 	@Test
