@@ -18,6 +18,8 @@ package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
 
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -78,6 +80,15 @@ public class BlockPosition {
 	 */
 	public Vector toVector() {
 		return new Vector(x, y, z);
+	}
+	
+	/**
+	 * Convert this instance to an equivalent Location.
+	 * @param world World for the location
+	 * @return Location
+	 */
+	public Location toLocation(World world) {
+		return new Location(world, x, y, z);
 	}
 	
 	/**
