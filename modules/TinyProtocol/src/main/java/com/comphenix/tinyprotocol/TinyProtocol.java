@@ -26,6 +26,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
 import com.comphenix.tinyprotocol.Reflection.MethodInvoker;
@@ -89,7 +90,7 @@ public abstract class TinyProtocol {
 	 * 
 	 * @param plugin - the plugin.
 	 */
-	public TinyProtocol(Plugin plugin) {
+	public TinyProtocol(final Plugin plugin) {
 		this.plugin = plugin;
 
 		// Compute handler name
@@ -97,8 +98,24 @@ public abstract class TinyProtocol {
 
 		// Prepare existing players
 		registerBukkitEvents();
-		registerChannelHandler();
-		registerPlayers(plugin);
+
+		try {
+			registerChannelHandler();
+			registerPlayers(plugin);
+		} catch (IllegalArgumentException ex) {
+			// Damn you, late bind
+			plugin.getLogger().info("[TinyProtocol] Delaying server channel injection due to late bind.");
+			
+			// Damn you, late bind
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					registerChannelHandler();
+					registerPlayers(plugin);
+					plugin.getLogger().info("[TinyProtocol] Late bind injection successful.");
+				}
+			}.runTask(plugin);
+		}
 	}
 
 	private void createServerChannelHandler() {
