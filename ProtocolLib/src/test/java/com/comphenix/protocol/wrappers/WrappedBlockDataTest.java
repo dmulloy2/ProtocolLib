@@ -18,6 +18,7 @@ package com.comphenix.protocol.wrappers;
 
 import static org.junit.Assert.assertEquals;
 
+import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,11 +39,18 @@ public class WrappedBlockDataTest {
 
 	@Test
 	public void test() {
-		Material type = Material.STONE;
-		WrappedBlockData data = WrappedBlockData.createData(type);
-		Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(MinecraftReflection.getIBlockDataClass(), data);
+		Material type = Material.WOOL;
+		int data = DyeColor.BLUE.getWoolData();
+
+		WrappedBlockData wrapper = WrappedBlockData.createData(type, data);
+
+		assertEquals(wrapper.getType(), type);
+		assertEquals(wrapper.getData(), data);
+
+		Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(MinecraftReflection.getIBlockDataClass(), wrapper);
 		WrappedBlockData back = BukkitConverters.getWrappedBlockDataConverter().getSpecific(generic);
 
-		assertEquals(data.getType(), back.getType());
+		assertEquals(wrapper.getType(), back.getType());
+		assertEquals(wrapper.getData(), back.getData());
 	}
 }

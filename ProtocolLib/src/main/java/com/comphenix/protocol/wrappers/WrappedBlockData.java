@@ -38,6 +38,7 @@ public class WrappedBlockData extends AbstractWrapper {
 	private static final Class<?> BLOCK = MinecraftReflection.getBlockClass();
 
 	private static MethodAccessor FROM_LEGACY_DATA = null;
+	private static MethodAccessor TO_LEGACY_DATA = null;
 	private static MethodAccessor GET_NMS_BLOCK = null;
 	private static MethodAccessor GET_BLOCK = null;
 
@@ -49,6 +50,13 @@ public class WrappedBlockData extends AbstractWrapper {
 				.returnTypeExact(IBLOCK_DATA)
 				.build();
 		FROM_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
+
+		contract = FuzzyMethodContract.newBuilder()
+				.banModifier(Modifier.STATIC)
+				.parameterExactArray(IBLOCK_DATA)
+				.returnTypeExact(int.class)
+				.build();
+		TO_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 
 		fuzzy = FuzzyReflection.fromClass(MAGIC_NUMBERS);
 		GET_NMS_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getBlock", BLOCK,
@@ -71,6 +79,15 @@ public class WrappedBlockData extends AbstractWrapper {
 	public Material getType() {
 		Object block = GET_BLOCK.invoke(handle);
 		return BukkitConverters.getBlockConverter().getSpecific(block);
+	}
+
+	/**
+	 * Retrieves the data of this BlockData.
+	 * @return The data of this BlockData.
+	 */
+	public int getData() {
+		Object block = GET_BLOCK.invoke(handle);
+		return (Integer) TO_LEGACY_DATA.invoke(block, handle);
 	}
 
 	/**
