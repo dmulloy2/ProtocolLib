@@ -27,6 +27,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.TypeParameterMatcher;
 
@@ -285,9 +286,24 @@ public class NettyChannelInjector extends ByteToMessageDecoder implements Channe
 			ChannelHandlerAdapter exceptionHandler = new ChannelHandlerAdapter() {
 				@Override
 				public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+					if (channelListener.isDebug()) {
+						// People were complaining about this on the forums, figure I might as well figure out the cause
+						System.out.println("------------ ProtocolLib Debug ------------");
+						System.out.println("Caught an exception in " + playerName + "\'s channel pipeline.");
+						System.out.println("Context: " + ctx);
+						System.out.println("The exception was: " + cause);
+						System.out.println("Stack trace:");
+						cause.printStackTrace(System.out);
+						System.out.println("Please create an issue on GitHub with the above message.");
+						System.out.println("https://github.com/dmulloy2/ProtocolLib/issues");
+						System.out.println("-------------------------------------------");
+					}
+
 					if (cause instanceof ClosedChannelException) {
-						// Ignore
+						// This is what the DefaultChannelPipeline does
+						ReferenceCountUtil.release(cause);
 					} else {
+						// We only care about closed channel exceptions, pass everything else along
 						super.exceptionCaught(ctx, cause);
 					}
 				}

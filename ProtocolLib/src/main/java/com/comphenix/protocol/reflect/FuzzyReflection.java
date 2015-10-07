@@ -602,6 +602,9 @@ public class FuzzyReflection {
 	}
 	
 	// Prevent duplicate fields
+
+	// @SafeVarargs
+	@SuppressWarnings("unchecked")
 	private static <T> Set<T> setUnion(T[]... array) {
 		Set<T> result = new LinkedHashSet<T>();
 		

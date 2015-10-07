@@ -40,6 +40,7 @@ import net.minecraft.util.io.netty.channel.ChannelPromise;
 import net.minecraft.util.io.netty.channel.socket.SocketChannel;
 import net.minecraft.util.io.netty.handler.codec.ByteToMessageDecoder;
 import net.minecraft.util.io.netty.handler.codec.MessageToByteEncoder;
+import net.minecraft.util.io.netty.util.ReferenceCountUtil;
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.util.io.netty.util.internal.TypeParameterMatcher;
 import net.sf.cglib.proxy.Factory;
@@ -283,13 +284,26 @@ public class ShadedChannelInjector extends ByteToMessageDecoder implements Chann
 
 			ChannelHandlerAdapter exceptionHandler = new ChannelHandlerAdapter() {
 				@Override
-				public void exceptionCaught(ChannelHandlerContext context, Throwable ex) throws Exception {
-					if (ex instanceof ClosedChannelException) {
-						// Ignore
+				public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+					if (channelListener.isDebug()) {
+						// People were complaining about this on the forums, figure I might as well figure out the cause
+						System.out.println("------------ ProtocolLib Debug ------------");
+						System.out.println("Caught an exception in " + playerName + "\'s channel pipeline.");
+						System.out.println("Context: " + ctx);
+						System.out.println("The exception was: " + cause);
+						System.out.println("Stack trace:");
+						cause.printStackTrace(System.out);
+						System.out.println("Please create an issue on GitHub with the above message.");
+						System.out.println("https://github.com/dmulloy2/ProtocolLib/issues");
+						System.out.println("-------------------------------------------");
+					}
+
+					if (cause instanceof ClosedChannelException) {
+						// This is what the DefaultChannelPipeline does
+						ReferenceCountUtil.release(cause);
 					} else {
-						// TODO Actually handle exceptions?
-						System.err.println("[ProtocolLib] Encountered an uncaught exception in the channel pipeline:");
-						ex.printStackTrace();
+						// We only care about closed channel exceptions, pass everything else along
+						super.exceptionCaught(ctx, cause);
 					}
 				}
 			};

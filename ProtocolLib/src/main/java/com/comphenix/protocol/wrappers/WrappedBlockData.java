@@ -82,6 +82,17 @@ public class WrappedBlockData extends AbstractWrapper {
 	}
 
 	/**
+	 * Retrieves the type id of this BlockData.
+	 * @return The type id of this BlockData.
+	 * @deprecated ID's are deprecated
+	 */
+	@Deprecated
+	public int getTypeId() {
+		Object block = GET_BLOCK.invoke(handle);
+		return BukkitConverters.getBlockIDConverter().getSpecific(block);
+	}
+
+	/**
 	 * Retrieves the data of this BlockData.
 	 * @return The data of this BlockData.
 	 */
@@ -96,6 +107,14 @@ public class WrappedBlockData extends AbstractWrapper {
 	 */
 	public void setType(Material type) {
 		setTypeAndData(type, 0);
+	}
+
+	/**
+	 * Sets the data of this BlockData.
+	 * @param data New data
+	 */
+	public void setData(int data) {
+		setTypeAndData(getType(), data);
 	}
 
 	/**

@@ -781,6 +781,29 @@ public class BukkitConverters {
 	 * @return A converter for block instances.
 	 */
 	public static EquivalentConverter<Material> getBlockConverter() {
+		return new IgnoreNullConverter<Material>() {
+			@Override
+			protected Object getGenericValue(Class<?> genericType, Material specific) {
+				return getBlockIDConverter().getGeneric(genericType, specific.getId());
+			}
+			
+			@Override
+			protected Material getSpecificValue(Object generic) {
+				return Material.getMaterial(getBlockIDConverter().getSpecific(generic));
+			}
+			
+			@Override
+			public Class<Material> getSpecificType() {
+				return Material.class;
+			}
+		};
+	}
+
+	/**
+	 * @deprecated ID's are deprecated
+	 */
+	@Deprecated
+	public static EquivalentConverter<Integer> getBlockIDConverter() {
 		// Initialize if we have't already
 		if (GET_BLOCK == null || GET_BLOCK_ID == null) {
 			Class<?> block = MinecraftReflection.getBlockClass();
@@ -798,20 +821,20 @@ public class BukkitConverters {
 			GET_BLOCK_ID = Accessors.getMethodAccessor(FuzzyReflection.fromClass(block).getMethod(getIdContract));
 		}
 		
-		return new IgnoreNullConverter<Material>() {
+		return new IgnoreNullConverter<Integer>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, Material specific) {
-				return GET_BLOCK.invoke(null, specific.getId());
+			protected Object getGenericValue(Class<?> genericType, Integer specific) {
+				return GET_BLOCK.invoke(null, specific);
 			}
 			
 			@Override
-			protected Material getSpecificValue(Object generic) {
-				return Material.getMaterial((Integer) GET_BLOCK_ID.invoke(null, generic));
+			protected Integer getSpecificValue(Object generic) {
+				return (Integer) GET_BLOCK_ID.invoke(null, generic);
 			}
 			
 			@Override
-			public Class<Material> getSpecificType() {
-				return Material.class;
+			public Class<Integer> getSpecificType() {
+				return Integer.class;
 			}
 		};
 	}
