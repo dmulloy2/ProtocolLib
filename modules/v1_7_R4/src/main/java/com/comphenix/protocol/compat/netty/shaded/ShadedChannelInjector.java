@@ -19,7 +19,6 @@ package com.comphenix.protocol.compat.netty.shaded;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
@@ -32,7 +31,6 @@ import java.util.concurrent.ConcurrentMap;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelHandler;
-import net.minecraft.util.io.netty.channel.ChannelHandlerAdapter;
 import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
 import net.minecraft.util.io.netty.channel.ChannelInboundHandlerAdapter;
 import net.minecraft.util.io.netty.channel.ChannelPipeline;
@@ -40,7 +38,6 @@ import net.minecraft.util.io.netty.channel.ChannelPromise;
 import net.minecraft.util.io.netty.channel.socket.SocketChannel;
 import net.minecraft.util.io.netty.handler.codec.ByteToMessageDecoder;
 import net.minecraft.util.io.netty.handler.codec.MessageToByteEncoder;
-import net.minecraft.util.io.netty.util.ReferenceCountUtil;
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.util.io.netty.util.internal.TypeParameterMatcher;
 import net.sf.cglib.proxy.Factory;
@@ -282,37 +279,10 @@ public class ShadedChannelInjector extends ByteToMessageDecoder implements Chann
 				}
 			};
 
-			ChannelHandlerAdapter exceptionHandler = new ChannelHandlerAdapter() {
-				@Override
-				public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-					if (channelListener.isDebug()) {
-						// People were complaining about this on the forums, figure I might as well figure out the cause
-						System.out.println("------------ ProtocolLib Debug ------------");
-						System.out.println("Caught an exception in " + playerName + "\'s channel pipeline.");
-						System.out.println("Context: " + ctx);
-						System.out.println("The exception was: " + cause);
-						System.out.println("Stack trace:");
-						cause.printStackTrace(System.out);
-						System.out.println("Please create an issue on GitHub with the above message.");
-						System.out.println("https://github.com/dmulloy2/ProtocolLib/issues");
-						System.out.println("-------------------------------------------");
-					}
-
-					if (cause instanceof ClosedChannelException) {
-						// This is what the DefaultChannelPipeline does
-						ReferenceCountUtil.release(cause);
-					} else {
-						// We only care about closed channel exceptions, pass everything else along
-						super.exceptionCaught(ctx, cause);
-					}
-				}
-			};
-
 			// Insert our handlers - note that we effectively replace the vanilla encoder/decoder
 			originalChannel.pipeline().addBefore("decoder", "protocol_lib_decoder", this);
 			originalChannel.pipeline().addBefore("protocol_lib_decoder", "protocol_lib_finish", finishHandler);
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
-			originalChannel.pipeline().addLast("protocol_lib_exception_handler", exceptionHandler);
 
 			// Intercept all write methods
 			channelField.setValue(new ShadedChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
@@ -839,7 +809,7 @@ public class ShadedChannelInjector extends ByteToMessageDecoder implements Chann
 					@Override
 					public void run() {
 						String[] handlers = new String[] {
-								"protocol_lib_decoder", "protocol_lib_finish", "protocol_lib_encoder", "protocol_lib_exception_handler"
+								"protocol_lib_decoder", "protocol_lib_finish", "protocol_lib_encoder"
 						};
 
 						for (String handler : handlers) {

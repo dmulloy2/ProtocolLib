@@ -269,7 +269,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		public static class Server extends ObjectEnum<PacketType> {
 			private final static Sender SENDER = Sender.SERVER;
 
-			public static final PacketType OUT_SERVER_INFO =          new PacketType(PROTOCOL, SENDER, 0x00, 255);
+			public static final PacketType OUT_SERVER_INFO =          new PacketType(PROTOCOL, SENDER, 0x00, 255).forceAsync(true);
 			public static final PacketType OUT_PING =                 new PacketType(PROTOCOL, SENDER, 0x01, 230);
 
 			private final static Server INSTANCE = new Server();
@@ -523,7 +523,8 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	private final int currentId;
 	private final int legacyId;
 	private final MinecraftVersion version;
-	private final boolean dynamic;
+	private boolean forceAsync;
+	private boolean dynamic;
 
 	/**
 	 * Retrieve the current packet/legacy lookup.
@@ -679,7 +680,8 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		PacketType type = getLookup().getFromCurrent(protocol, sender, packetId);
 
 		if (type == null) {
-			type = new PacketType(protocol, sender, packetId, legacyId, PROTOCOL_VERSION, true);
+			type = new PacketType(protocol, sender, packetId, legacyId, PROTOCOL_VERSION);
+			type.dynamic = true;
 
 			// Many may be scheduled, but only the first will be executed
 			scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
@@ -798,25 +800,11 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 * @param version - the version of the current ID.
 	 */
 	public PacketType(Protocol protocol, Sender sender, int currentId, int legacyId, MinecraftVersion version) {
-		this(protocol, sender, currentId, legacyId, version, false);
-	}
-
-	/**
-	 * Construct a new packet type.
-	 * @param protocol - the current protocol.
-	 * @param sender - client or server.
-	 * @param currentId - the current packet ID.
-	 * @param legacyId - the legacy packet ID.
-	 * @param version - the version of the current ID.
-	 * @param dynamic - if this type was created dynamically.
-	 */
-	public PacketType(Protocol protocol, Sender sender, int currentId, int legacyId, MinecraftVersion version, boolean dynamic) {
 		this.protocol = Preconditions.checkNotNull(protocol, "protocol cannot be NULL");
 		this.sender = Preconditions.checkNotNull(sender, "sender cannot be NULL");
 		this.currentId = currentId;
 		this.legacyId = legacyId;
 		this.version = version;
-		this.dynamic = dynamic;
 	}
 
 	/**
@@ -920,11 +908,24 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	}
 
 	/**
-	 * Whether or not this packet was dynamically created (ie we don't have it registered)
+	 * Whether or not this packet was dynamically created (i.e. we don't have it registered)
 	 * @return True if dnyamic, false if not.
 	 */
 	public boolean isDynamic() {
 		return dynamic;
+	}
+
+	private PacketType forceAsync(boolean forceAsync) {
+		this.forceAsync = forceAsync;
+		return this;
+	}
+
+	/**
+	 * Whether or not this packet must be processed asynchronously.
+	 * @return True if it must be, false if not.
+	 */
+	public boolean forceAsync() {
+		return forceAsync;
 	}
 
 	@Override

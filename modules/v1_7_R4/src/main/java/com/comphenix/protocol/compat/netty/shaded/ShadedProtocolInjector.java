@@ -356,7 +356,7 @@ public class ShadedProtocolInjector implements ProtocolInjector {
 			
 			@Override
 			public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
-				if (options != null && !options.contains(ListenerOptions.ASYNC))
+				if (options != null && !type.forceAsync() && !options.contains(ListenerOptions.ASYNC))
 					mainThreadFilters.addType(type);
 				super.addPacketHandler(type, options);
 			}
