@@ -9,10 +9,10 @@ import java.util.Set;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.compat.netty.Netty;
 import com.comphenix.protocol.injector.packet.MapContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Iterables;
@@ -109,13 +109,12 @@ public class NettyProtocolRegistry {
 	 * Load the packet lookup tables in each protocol.
 	 */
 	private synchronized void initialize() {
-		Object[] protocols = enumProtocol.getEnumConstants();
-
-		// TODO: Find a better less than 1.7 check
-		if (MinecraftVersion.getCurrentVersion().compareTo(MinecraftVersion.BOUNTIFUL_UPDATE) < 0) {
+		if (!Netty.isIndependent()) { // Check for 1.7
 			initialize17();
 			return;
 		}
+
+		Object[] protocols = enumProtocol.getEnumConstants();
 
 		// ID to Packet class maps
 		Map<Object, Map<Integer, Class<?>>> serverMaps = Maps.newLinkedHashMap();
@@ -218,12 +217,17 @@ public class NettyProtocolRegistry {
 	private void associatePackets(Register register, Map<Integer, Class<?>> lookup, Protocol protocol, Sender sender) {
 		for (Entry<Integer, Class<?>> entry : lookup.entrySet()) {
 			PacketType type = PacketType.fromCurrent(protocol, sender, entry.getKey(), PacketType.UNKNOWN_PACKET);
-			register.typeToClass.put(type, entry.getValue());
-			
-			if (sender == Sender.SERVER)
-				register.serverPackets.add(type);
-			if (sender == Sender.CLIENT)
-				register.clientPackets.add(type);
+
+			try {
+				register.typeToClass.put(type, entry.getValue());
+
+				if (sender == Sender.SERVER)
+					register.serverPackets.add(type);
+				if (sender == Sender.CLIENT)
+					register.clientPackets.add(type);
+			} catch (IllegalArgumentException ex) {
+				// Sometimes this happens with fake packets, just ignore it
+			}
 		}
 	}
 	

@@ -53,6 +53,10 @@ public class Netty {
 		return compat;
 	}
 
+	public static boolean isIndependent() {
+		return compat instanceof IndependentNetty;
+	}
+
 	public static WrappedByteBuf createPacketBuffer() {
 		return getCompat().createPacketBuffer();
 	}
