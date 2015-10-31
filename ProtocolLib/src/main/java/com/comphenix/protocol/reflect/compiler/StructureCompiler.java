@@ -146,7 +146,9 @@ public final class StructureCompiler {
 	private static String SUPER_CLASS = "com/comphenix/protocol/reflect/StructureModifier";
 	private static String COMPILED_CLASS = PACKAGE_NAME + "/CompiledStructureModifier";
 	private static String FIELD_EXCEPTION_CLASS = "com/comphenix/protocol/reflect/FieldAccessException";
-	
+
+	public static boolean attemptClassLoad = false;
+
 	/**
 	 * Construct a structure compiler.
 	 * @param loader - main class loader.
@@ -163,18 +165,24 @@ public final class StructureCompiler {
 	 */
 	public <TField> boolean lookupClassLoader(StructureModifier<TField> source) {
 		StructureKey key = new StructureKey(source);
-		
+
 		// See if there's a need to lookup the class name
 		if (compiledCache.containsKey(key)) {
 			return true;
 		}
-		
+
+		if (! attemptClassLoad) {
+			return false;
+		}
+
+		// This causes a ton of lag and doesn't seem to work
+
 		try {
 			String className = getCompiledName(source);
-			
+
 			// This class might have been generated before. Try to load it.
 			Class<?> before = loader.loadClass(PACKAGE_NAME.replace('/', '.') + "." + className);
-			
+
 			if (before != null) {
 				compiledCache.put(key, before);
 				return true;
@@ -182,7 +190,7 @@ public final class StructureCompiler {
 		} catch (ClassNotFoundException e) {
 			// That's ok.
 		}
-		
+
 		// We need to compile the class
 		return false;
 	}
