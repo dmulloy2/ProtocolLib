@@ -269,18 +269,42 @@ public class NettyProtocolInjector implements ProtocolInjector {
         }
     }
     
-    @Override
-    public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
+	@Override
+	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
-		
+
 		if (sendingFilters.contains(clazz) || marker != null) {
-			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
-			return packetQueued(container, injector.getPlayer(), marker);
+			try {
+				PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
+				return packetQueued(container, injector.getPlayer(), marker);
+			} catch (LinkageError er) {
+				// Issue #109
+				if (isDebug()) {
+					try {
+						System.out.println("Encountered a LinkageError in onPacketSending");
+						System.out.println("injector=" + injector);
+						System.out.println("packet=" + packet);
+						System.out.println("marker=" + marker);
+
+						Thread curr = Thread.currentThread();
+						System.out.println("current thread=" + curr.getName());
+						System.out.println("class loader=" + curr.getContextClassLoader());
+
+						Class<PacketContainer> container = PacketContainer.class;
+						System.out.println("packet container=" + container);
+						System.out.println("class loader=" + container.getClassLoader());
+					} catch (LinkageError e1) {
+						e1.printStackTrace();
+					}
+				}
+
+				er.printStackTrace();
+			}
 		}
 
 		// Don't change anything
 		return null;
-    }
+	}
 
 	@Override
 	public PacketEvent onPacketReceiving(Injector injector, Object packet, NetworkMarker marker) {
