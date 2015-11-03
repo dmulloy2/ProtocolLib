@@ -61,10 +61,6 @@ public class Netty {
 		return getCompat().createPacketBuffer();
 	}
 
-	public static WrappedByteBuf allocateUnpooled() {
-		return getCompat().allocateUnpooled();
-	}
-
 	public static Class<?> getGenericFutureListenerArray() {
 		return getCompat().getGenericFutureListenerArray();
 	}
@@ -91,5 +87,13 @@ public class Netty {
 
 	public static WrappedByteBuf packetWriter(DataOutputStream output) {
 		return getCompat().packetWriter(output);
+	}
+
+	public static WrappedByteBuf copiedBuffer(byte[] array) {
+		return getCompat().copiedBuffer(array);
+	}
+
+	public static WrappedByteBuf buffer() {
+		return getCompat().buffer();
 	}
 }

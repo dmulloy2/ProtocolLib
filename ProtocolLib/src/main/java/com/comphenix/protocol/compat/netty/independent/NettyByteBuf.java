@@ -75,4 +75,9 @@ public class NettyByteBuf implements WrappedByteBuf {
 	public void writeBytes(byte[] bytes) {
 		handle.get().writeBytes(bytes);
 	}
+
+	@Override
+	public byte[] array() {
+		return handle.get().array();
+	}
 }

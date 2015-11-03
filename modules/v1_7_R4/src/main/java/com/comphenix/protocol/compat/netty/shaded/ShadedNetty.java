@@ -56,11 +56,6 @@ public class ShadedNetty implements NettyCompat {
 	}
 
 	@Override
-	public WrappedByteBuf allocateUnpooled() {
-		return new ShadedByteBuf(UnpooledByteBufAllocator.DEFAULT.buffer());
-	}
-
-	@Override
 	public Class<?> getGenericFutureListenerArray() {
 		return GenericFutureListener[].class;
 	}
@@ -96,5 +91,15 @@ public class ShadedNetty implements NettyCompat {
 	@Override
 	public WrappedByteBuf packetWriter(DataOutputStream output) {
 		return new ShadedByteBuf(ShadedByteBufAdapter.packetWriter(output));
+	}
+
+	@Override
+	public WrappedByteBuf copiedBuffer(byte[] array) {
+		return new ShadedByteBuf(Unpooled.copiedBuffer(array));
+	}
+
+	@Override
+	public WrappedByteBuf buffer() {
+		return new ShadedByteBuf(Unpooled.buffer());
 	}
 }

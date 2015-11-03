@@ -41,4 +41,6 @@ public interface WrappedByteBuf {
 	void writeByte(int i);
 
 	void writeBytes(byte[] bytes);
+
+	byte[] array();
 }

@@ -56,11 +56,6 @@ public class IndependentNetty implements NettyCompat {
 	}
 
 	@Override
-	public WrappedByteBuf allocateUnpooled() {
-		return new NettyByteBuf(UnpooledByteBufAllocator.DEFAULT.buffer());
-	}
-
-	@Override
 	public Class<?> getGenericFutureListenerArray() {
 		return GenericFutureListener[].class;
 	}
@@ -96,5 +91,15 @@ public class IndependentNetty implements NettyCompat {
 	@Override
 	public WrappedByteBuf packetWriter(DataOutputStream output) {
 		return new NettyByteBuf(NettyByteBufAdapter.packetWriter(output));
+	}
+
+	@Override
+	public WrappedByteBuf copiedBuffer(byte[] array) {
+		return new NettyByteBuf(Unpooled.copiedBuffer(array));
+	}
+
+	@Override
+	public WrappedByteBuf buffer() {
+		return new NettyByteBuf(Unpooled.buffer());
 	}
 }

@@ -10,8 +10,11 @@ import java.io.IOException;
 
 import net.minecraft.server.v1_8_R3.IntHashMap;
 
+import org.bukkit.ChatColor;
+import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,37 +33,24 @@ public class StreamSerializerTest {
 	public static void initializeBukkit() throws IllegalAccessException {
 		BukkitInitialization.initializeItemMeta();
 	}
-	
+
 	@Test
 	public void testMinecraftReflection() {
 		assertEquals(IntHashMap.class, MinecraftReflection.getIntHashMapClass());
 	}
-	
-	@Test
-	public void testSerializer() throws IOException {
-		ItemStack before = new ItemStack(Material.GOLD_AXE);
-		
-		StreamSerializer serializer = new StreamSerializer();
-		String data = serializer.serializeItemStack(before);
-		ItemStack after = serializer.deserializeItemStack(data);
-	
-		assertEquals(before.getType(), after.getType());
-		assertEquals(before.getAmount(), after.getAmount());
-	}
-	
+
 	@Test
 	public void testStrings() throws IOException {
 		StreamSerializer serializer = new StreamSerializer();
 		String initial = "Hello - this is a ∆ÿ≈ test.";
-		
+
 		// Buffer
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		serializer.serializeString(new DataOutputStream(buffer), initial);
-		
-		DataInputStream input = new DataInputStream(
-				new ByteArrayInputStream(buffer.toByteArray()));
+
+		DataInputStream input = new DataInputStream(new ByteArrayInputStream(buffer.toByteArray()));
 		String deserialized = serializer.deserializeString(input, 50);
-		
+
 		assertEquals(initial, deserialized);
 	}
 
@@ -75,11 +65,10 @@ public class StreamSerializerTest {
 
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		serializer.serializeCompound(new DataOutputStream(buffer), initial);
-		
-		DataInputStream input = new DataInputStream(
-				new ByteArrayInputStream(buffer.toByteArray()));
+
+		DataInputStream input = new DataInputStream(new ByteArrayInputStream(buffer.toByteArray()));
 		NbtCompound deserialized = serializer.deserializeCompound(input);
-		
+
 		assertEquals(initial, deserialized);
 	}
 
@@ -88,13 +77,24 @@ public class StreamSerializerTest {
 		StreamSerializer serializer = new StreamSerializer();
 		ItemStack initial = new ItemStack(Material.STRING);
 
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		serializer.serializeItemStack(new DataOutputStream(buffer), initial);
-		
-		DataInputStream input = new DataInputStream(
-				new ByteArrayInputStream(buffer.toByteArray()));
-		ItemStack deserialized = serializer.deserializeItemStack(input);
-		
+		String serialized = serializer.serializeItemStack(initial);
+		ItemStack deserialized = serializer.deserializeItemStack(serialized);
+
+		assertEquals(initial, deserialized);
+	}
+
+	@Test
+	public void testItemMeta() throws IOException {
+		StreamSerializer serializer = new StreamSerializer();
+		ItemStack initial = new ItemStack(Material.WOOL, 2, DyeColor.BLUE.getWoolData());
+
+		ItemMeta meta = initial.getItemMeta();
+		meta.setDisplayName(ChatColor.BLUE + "Blue Wool");
+		initial.setItemMeta(meta);
+
+		String serialized = serializer.serializeItemStack(initial);
+		ItemStack deserialized = serializer.deserializeItemStack(serialized);
+
 		assertEquals(initial, deserialized);
 	}
 }

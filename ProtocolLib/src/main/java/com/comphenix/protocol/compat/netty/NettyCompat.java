@@ -30,11 +30,14 @@ import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
  * @author dmulloy2
  */
 
+// TODO: Sort out packet readers/writers
 public interface NettyCompat {
 
 	WrappedByteBuf createPacketBuffer();
 
-	WrappedByteBuf allocateUnpooled();
+	WrappedByteBuf copiedBuffer(byte[] array);
+
+	WrappedByteBuf buffer();
 
 	Class<?> getGenericFutureListenerArray();
 

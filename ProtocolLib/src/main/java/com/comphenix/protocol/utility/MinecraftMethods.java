@@ -174,7 +174,7 @@ public class MinecraftMethods {
 			// Create our proxy object
 			Object javaProxy = enhancer.create(
 					new Class<?>[] { MinecraftReflection.getByteBufClass() },
-					new Object[] { Netty.allocateUnpooled().getHandle() }
+					new Object[] { Netty.buffer().getHandle() }
 			);
 
 			Object lookPacket = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW).getHandle();
