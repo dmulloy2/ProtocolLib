@@ -699,7 +699,6 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			}
 		}
 
-		System.out.println("No match for " + className);
 		PacketType type = new PacketType(protocol, sender, packetId, -1, PROTOCOL_VERSION, className);
 		type.dynamic = true;
 
