@@ -2,21 +2,22 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the 
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  You should have received a copy of the GNU General Public License along with this program; 
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  *  02111-1307 USA
  */
 package com.comphenix.protocol;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +26,10 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 /**
  * Represents the configuration of ProtocolLib.
@@ -34,7 +37,10 @@ import com.google.common.collect.Lists;
  * @author Kristian
  */
 public class ProtocolConfig {
+	private static final String LAST_UPDATE_FILE = "lastupdate";
+
 	private static final String SECTION_GLOBAL = "global";
+	private static final String SECTION_AUTOUPDATER = "auto updater";
 
 	private static final String METRICS_ENABLED = "metrics";
 
@@ -48,16 +54,33 @@ public class ProtocolConfig {
 	private static final String SCRIPT_ENGINE_NAME = "script engine";
 	private static final String SUPPRESSED_REPORTS = "suppressed reports";
 
+	private static final String UPDATER_NOTIFY = "notify";
+	private static final String UPDATER_DOWNLAD = "download";
+	private static final String UPDATER_DELAY = "delay";
+
+	// Defaults
+	private static final long DEFAULT_UPDATER_DELAY = 43200;
+
 	private Plugin plugin;
 	private Configuration config;
-	private ConfigurationSection global;
+	private boolean loadingSections;
 
+	private ConfigurationSection global;
+	private ConfigurationSection updater;
+
+	// Last update time
+	private long lastUpdateTime;
 	private boolean configChanged;
+	private boolean valuesChanged;
 
 	// Modifications
 	private int modCount;
 
 	public ProtocolConfig(Plugin plugin) {
+		this(plugin, plugin.getConfig());
+	}
+
+	public ProtocolConfig(Plugin plugin, Configuration config) {
 		this.plugin = plugin;
 		reloadConfig();
 	}
@@ -68,24 +91,118 @@ public class ProtocolConfig {
 	public void reloadConfig() {
 		// Reset
 		configChanged = false;
+		valuesChanged = false;
 		modCount++;
 
 		this.config = plugin.getConfig();
-		if (config != null) {
-			config.options().copyDefaults(true);
-			global = config.getConfigurationSection(SECTION_GLOBAL);
+		this.lastUpdateTime = loadLastUpdate();
+		loadSections(!loadingSections);
+	}
+
+	/**
+	 * Load the last update time stamp from the file system.
+	 * 
+	 * @return Last update time stamp.
+	 */
+	private long loadLastUpdate() {
+		File dataFile = getLastUpdateFile();
+
+		if (dataFile.exists()) {
+			try {
+				return Long.parseLong(Files.toString(dataFile, Charsets.UTF_8));
+			} catch (NumberFormatException e) {
+				plugin.getLogger().warning("Cannot parse " + dataFile + " as a number.");
+			} catch (IOException e) {
+				plugin.getLogger().warning("Cannot read " + dataFile);
+			}
+		}
+		// Default last update
+		return 0;
+	}
+
+	/**
+	 * Store the given time stamp.
+	 * 
+	 * @param value - time stamp to store.
+	 */
+	private void saveLastUpdate(long value) {
+		File dataFile = getLastUpdateFile();
+
+		// The data folder must exist
+		dataFile.getParentFile().mkdirs();
+
+		if (dataFile.exists())
+			dataFile.delete();
+
+		try {
+			Files.write(Long.toString(value), dataFile, Charsets.UTF_8);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot write " + dataFile, e);
 		}
 	}
 
+	/**
+	 * Retrieve the file that is used to store the update time stamp.
+	 * 
+	 * @return File storing the update time stamp.
+	 */
+	private File getLastUpdateFile() {
+		return new File(plugin.getDataFolder(), LAST_UPDATE_FILE);
+	}
+
+	/**
+	 * Load data sections.
+	 * 
+	 * @param copyDefaults - whether or not to copy configuration defaults.
+	 */
+	private void loadSections(boolean copyDefaults) {
+		if (config != null) {
+			global = config.getConfigurationSection(SECTION_GLOBAL);
+		}
+		if (global != null) {
+			updater = global.getConfigurationSection(SECTION_AUTOUPDATER);
+		}
+
+		// Automatically copy defaults
+		if (copyDefaults && (!getFile().exists() || global == null || updater == null)) {
+			loadingSections = true;
+
+			if (config != null)
+				config.options().copyDefaults(true);
+			plugin.saveDefaultConfig();
+			plugin.reloadConfig();
+			loadingSections = false;
+
+			// Inform the user
+			ProtocolLibrary.log("Created default configuration.");
+		}
+	}
+
+	/**
+	 * Set a particular configuration key value pair.
+	 * 
+	 * @param section - the configuration root.
+	 * @param path - the path to the key.
+	 * @param value - the value to set.
+	 */
 	private void setConfig(ConfigurationSection section, String path, Object value) {
 		configChanged = true;
 		section.set(path, value);
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> T getGlobalValue(String name, T def) {
+	private <T> T getGlobalValue(String path, T def) {
 		try {
-			return (T) global.get(name, def);
+			return (T) global.get(path, def);
+		} catch (Throwable ex) {
+			return def;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> T getUpdaterValue(String path, T def) {
+		try {
+			return (T) updater.get(path, def);
 		} catch (Throwable ex) {
 			return def;
 		}
@@ -116,6 +233,44 @@ public class ProtocolConfig {
 	 */
 	public void setDetailedErrorReporting(boolean value) {
 		global.set(DETAILED_ERROR, value);
+	}
+
+	/**
+	 * Retrieve whether or not ProtocolLib should determine if a new version has been released.
+	 * 
+	 * @return TRUE if it should do this automatically, FALSE otherwise.
+	 */
+	public boolean isAutoNotify() {
+		return getUpdaterValue(UPDATER_NOTIFY, true);
+	}
+
+	/**
+	 * Set whether or not ProtocolLib should determine if a new version has been released.
+	 * 
+	 * @param value - TRUE to do this automatically, FALSE otherwise.
+	 */
+	public void setAutoNotify(boolean value) {
+		setConfig(updater, UPDATER_NOTIFY, value);
+		modCount++;
+	}
+
+	/**
+	 * Retrieve whether or not ProtocolLib should automatically download the new version.
+	 * 
+	 * @return TRUE if it should, FALSE otherwise.
+	 */
+	public boolean isAutoDownload() {
+		return updater != null && getUpdaterValue(UPDATER_DOWNLAD, true);
+	}
+
+	/**
+	 * Set whether or not ProtocolLib should automatically download the new version.
+	 * 
+	 * @param value - TRUE if it should. FALSE otherwise.
+	 */
+	public void setAutoDownload(boolean value) {
+		setConfig(updater, UPDATER_DOWNLAD, value);
+		modCount++;
 	}
 
 	/**
@@ -155,6 +310,31 @@ public class ProtocolConfig {
 	 */
 	public void setSuppressedReports(List<String> reports) {
 		global.set(SUPPRESSED_REPORTS, Lists.newArrayList(reports));
+		modCount++;
+	}
+
+	/**
+	 * Retrieve the amount of time to wait until checking for a new update.
+	 * 
+	 * @return The amount of time to wait.
+	 */
+	public long getAutoDelay() {
+		// Note that the delay must be greater than 59 seconds
+		return Math.max(getUpdaterValue(UPDATER_DELAY, 0), DEFAULT_UPDATER_DELAY);
+	}
+
+	/**
+	 * Set the amount of time to wait until checking for a new update.
+	 * <p>
+	 * This time must be greater than 59 seconds.
+	 * 
+	 * @param delaySeconds - the amount of time to wait.
+	 */
+	public void setAutoDelay(long delaySeconds) {
+		// Silently fix the delay
+		if (delaySeconds < DEFAULT_UPDATER_DELAY)
+			delaySeconds = DEFAULT_UPDATER_DELAY;
+		setConfig(updater, UPDATER_DELAY, delaySeconds);
 		modCount++;
 	}
 
@@ -222,12 +402,33 @@ public class ProtocolConfig {
 	}
 
 	/**
+	 * Retrieve the last time we updated, in seconds since 1970.01.01 00:00.
+	 * 
+	 * @return Last update time.
+	 */
+	public long getAutoLastTime() {
+		return lastUpdateTime;
+	}
+
+	/**
+	 * Set the last time we updated, in seconds since 1970.01.01 00:00.
+	 * <p>
+	 * Note that this is not considered to modify the configuration, so the modification count will not be incremented.
+	 * 
+	 * @param lastTimeSeconds - new last update time.
+	 */
+	public void setAutoLastTime(long lastTimeSeconds) {
+		this.valuesChanged = true;
+		this.lastUpdateTime = lastTimeSeconds;
+	}
+
+	/**
 	 * Retrieve the unique name of the script engine to use for filtering.
 	 * 
 	 * @return Script engine to use.
 	 */
 	public String getScriptEngineName() {
-		return global.getString(SCRIPT_ENGINE_NAME, "JavaScript");
+		return getGlobalValue(SCRIPT_ENGINE_NAME, "JavaScript");
 	}
 
 	/**
@@ -271,7 +472,7 @@ public class ProtocolConfig {
 	/**
 	 * Set the starting injection method to use.
 	 * 
-	 * @param hook Injection method
+	 * @return Injection method.
 	 */
 	public void setInjectionMethod(PlayerInjectHooks hook) {
 		setConfig(global, INJECTION_METHOD, hook.name());
@@ -291,10 +492,13 @@ public class ProtocolConfig {
 	 * Save the current configuration file.
 	 */
 	public void saveAll() {
+		if (valuesChanged)
+			saveLastUpdate(lastUpdateTime);
 		if (configChanged)
 			plugin.saveConfig();
 
 		// And we're done
+		valuesChanged = false;
 		configChanged = false;
 	}
 }

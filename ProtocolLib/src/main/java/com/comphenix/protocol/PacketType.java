@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -11,6 +12,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 
+import com.comphenix.protocol.PacketTypeLookup.ClassLookup;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ObjectEnum;
@@ -635,7 +637,9 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 * @param packetId - the packet ID.
 	 * @return The corresponding packet type.
 	 * @throws IllegalArgumentException If the current packet could not be found.
+	 * @deprecated IDs are no longer reliable
 	 */
+	@Deprecated
 	public static PacketType findCurrent(Protocol protocol, Sender sender, int packetId) {
 		PacketType type = getLookup().getFromCurrent(protocol, sender, packetId);
 
@@ -645,13 +649,34 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 				"(Protocol: " + protocol + ", Sender: " + sender + ")");
 	}
 
+	public static PacketType findCurrent(Protocol protocol, Sender sender, String name) {
+		name = format(protocol, sender, name);
+		PacketType type = getLookup().getFromCurrent(protocol, sender, name);
+
+		if (type != null) {
+			return type;
+		} else {
+			throw new IllegalArgumentException("Cannot find packet " + name +
+					"(Protocol: " + protocol + ", Sender: " + sender + ")");
+		}
+	}
+
+	private static String format(Protocol protocol, Sender sender, String name) {
+		if (name.contains("Packet"))
+			return name;
+
+		return String.format("Packet%s%s%s", protocol.getPacketName(), sender.getPacketName(), name);
+	}
+
 	/**
 	 * Determine if the given packet exists.
 	 * @param protocol - the protocol.
 	 * @param sender - the sender.
 	 * @param packetId - the packet ID.
 	 * @return TRUE if it exists, FALSE otherwise.
+	 * @deprecated IDs are no longer reliable
 	 */
+	@Deprecated
 	public static boolean hasCurrent(Protocol protocol, Sender sender, int packetId) {
 		return getLookup().getFromCurrent(protocol, sender, packetId) != null;
 	}
@@ -680,7 +705,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	}
 
 	/**
-	 * Retrieve a packet type from a protocol, sender and packet ID.
+	 * Retrieve a packet type from a protocol, sender and packet ID, for pre-1.8.
 	 * <p>
 	 * The packet will automatically be registered if its missing.
 	 * @param protocol - the current protocol.
@@ -689,21 +714,59 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	 * @param packetClass - the packet class
 	 * @return The corresponding packet type.
 	 */
-	public static PacketType fromCurrent(Protocol protocol, Sender sender, int packetId, Class<?> packetClass) {
-		String className = packetClass.getSimpleName();
-		for (PacketType type : PacketType.values()) {
-			for (String name : type.classNames) {
-				if (className.equals(name)) {
-					return type;
-				}
-			}
+	public static PacketType fromID(Protocol protocol, Sender sender, int packetId, Class<?> packetClass) {
+		PacketType type = getLookup().getFromCurrent(protocol, sender, packetId);
+
+		if (type == null) {
+			type = new PacketType(protocol, sender, packetId, -1, PROTOCOL_VERSION, packetClass.getName());
+			type.dynamic = true;
+
+			// Many may be scheduled, but only the first will be executed
+			scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
 		}
 
-		PacketType type = new PacketType(protocol, sender, packetId, -1, PROTOCOL_VERSION, className);
-		type.dynamic = true;
+		return type;
+	}
 
-		// Many may be scheduled, but only the first will be executed
-		scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
+	/**
+	 * Retrieve a packet type from a protocol, sender, ID, and class for 1.8+
+	 * <p>
+	 * The packet will automatically be registered if its missing.
+	 * @param protocol - the current protocol.
+	 * @param sender - the sender.
+	 * @param packetId - the packet ID. Can be UNKNOWN_PACKET.
+	 * @param packetClass - the packet class.
+	 * @return The corresponding packet type.
+	 */
+	public static PacketType fromCurrent(Protocol protocol, Sender sender, int packetId, Class<?> packetClass) {
+		ClassLookup lookup = getLookup().getClassLookup();
+		Map<String, PacketType> map = lookup.getMap(protocol, sender);
+
+		// Check the map first
+		String className = packetClass.getSimpleName();
+		PacketType type = map.get(className);
+		if (type == null) {
+			// Then check any aliases
+			for (PacketType check : map.values()) {
+				String[] aliases = check.getClassNames();
+				if (aliases.length > 1) {
+					for (String alias : aliases) {
+						if (alias.equals(className)) {
+							// We have a match!
+							type = check;
+						}
+					}
+				}
+			}
+
+			// Guess we don't support this packet :/
+			type = new PacketType(protocol, sender, packetId, -1, PROTOCOL_VERSION, className);
+			type.dynamic = true;
+
+			// Many may be scheduled, but only the first will be executed
+			scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
+		}
+
 		return type;
 	}
 
@@ -826,7 +889,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		
 		this.classNames = new String[names.length];
 		for (int i = 0; i < classNames.length; i++) {
-			classNames[i] = String.format("Packet%s%s%s", protocol.getPacketName(), sender.getPacketName(), names[i]);
+			classNames[i] = format(protocol, sender, names[i]);
 		}
 	}
 
@@ -892,6 +955,10 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 	@Deprecated
 	public int getCurrentId() {
 		return currentId;
+	}
+
+	public String[] getClassNames() {
+		return classNames;
 	}
 
 	/**

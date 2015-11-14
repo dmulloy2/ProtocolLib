@@ -25,12 +25,15 @@ import java.util.Set;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.compat.netty.LegacyProtocolRegistry;
+import com.comphenix.protocol.compat.netty.independent.NettyProtocolRegistry;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
+import com.comphenix.protocol.injector.netty.ProtocolRegistry;
 import com.comphenix.protocol.injector.packet.LegacyPacketRegistry.InsufficientPacketsException;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.TroveWrapper.CannotFindTroveNoEntryValue;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
@@ -49,7 +52,7 @@ public class PacketRegistry {
 
 	// Two different packet registry
 	private static volatile LegacyPacketRegistry LEGACY;
-	private static volatile NettyProtocolRegistry NETTY;
+	private static volatile ProtocolRegistry NETTY;
 	
 	// Cached for legacy
 	private static volatile Set<PacketType> NETTY_SERVER_PACKETS;
@@ -77,13 +80,17 @@ public class PacketRegistry {
 		// Check for netty
 		if (MinecraftReflection.isUsingNetty()) {
 			if (NETTY == null) {
-				NETTY = new NettyProtocolRegistry();
+				if (MinecraftVersion.getCurrentVersion().isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE)) {
+					NETTY = new NettyProtocolRegistry();
+				} else {
+					NETTY = new LegacyProtocolRegistry();
+				}
 			}
 		} else {
 			initializeLegacy();
 		}
 	}
-	
+
 	/**
 	 * Determine if the given packet type is supported on the current server.
 	 * @param type - the type to check.

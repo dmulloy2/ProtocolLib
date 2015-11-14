@@ -36,20 +36,12 @@ import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 public class Util {
 	private static MethodAccessor getOnlinePlayers;
 	private static boolean reflectionRequired;
-	private static boolean isUsingSpigot;
 
 	static {
 		try {
 			Method method = Bukkit.class.getMethod("getOnlinePlayers");
 			getOnlinePlayers = Accessors.getMethodAccessor(method);
 			reflectionRequired = !method.getReturnType().isAssignableFrom(Collection.class);
-
-			try {
-				Class.forName("org.bukkit.entity.Player.Spigot");
-				isUsingSpigot = true;
-			} catch (ClassNotFoundException ex) {
-				isUsingSpigot = false;
-			}
 		} catch (Throwable ex) {
 			throw new RuntimeException("Failed to obtain getOnlinePlayers method.", ex);
 		}
@@ -87,10 +79,10 @@ public class Util {
 
 	/**
 	 * Whether or not this server is running Spigot. This works by checking
-	 * for a Spigot-specific API class, in this case {@link Player.Spigot}.
+	 * the server version for the String "Spigot"
 	 * @return True if it is, false if not.
 	 */
 	public static boolean isUsingSpigot() {
-		return isUsingSpigot;
+		return Bukkit.getServer().getVersion().contains("Spigot");
 	}
 }

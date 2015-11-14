@@ -50,6 +50,8 @@ import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.injector.PacketFilterManager.PlayerInjectHooks;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
+import com.comphenix.protocol.updater.Updater;
+import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -97,6 +99,10 @@ public class ProtocolLibrary extends JavaPlugin {
 	 */
 	public static final String MINECRAFT_LAST_RELEASE_DATE = "2015-07-27";
 
+	// Update information
+	static final String BUKKIT_DEV_SLUG = "protocollib";
+	static final int BUKKIT_DEV_ID = 45564;
+
 	// Different commands
 	private enum ProtocolCommand {
 		FILTER,
@@ -141,6 +147,10 @@ public class ProtocolLibrary extends JavaPlugin {
 
 	// Settings/options
 	private int configExpectedMod = -1;
+
+	// Updater
+	private Updater updater;
+	private static boolean UPDATES_DISABLED;
 
 	// Logger
 	private static Logger logger;
@@ -205,6 +215,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			// Handle unexpected Minecraft versions
 			MinecraftVersion version = verifyMinecraftVersion();
 
+			// Set updater - this will not perform any update automatically
+			updater = Updater.create(this, BUKKIT_DEV_ID, getFile(), UpdateType.NO_DOWNLOAD, true);
+
 			unhookTask = new DelayedSingleTask(this);
 			protocolManager = PacketFilterManager.newBuilder()
 					.classLoader(getClassLoader())
@@ -254,7 +267,7 @@ public class ProtocolLibrary extends JavaPlugin {
 			try {
 				switch (command) {
 				case PROTOCOL:
-					commandProtocol = new CommandProtocol(reporter, this);
+					commandProtocol = new CommandProtocol(reporter, this, updater, config);
 					break;
 				case FILTER:
 					commandFilter = new CommandFilter(reporter, this, config);
@@ -559,6 +572,11 @@ public class ProtocolLibrary extends JavaPlugin {
 
 					// House keeping
 					updateConfiguration();
+
+					// Check for updates too
+					if (!UPDATES_DISABLED && (tickCounter % 20) == 0) {
+						checkUpdates();
+					}
 				}
 			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
 		} catch (OutOfMemoryError e) {
@@ -578,6 +596,29 @@ public class ProtocolLibrary extends JavaPlugin {
 
 			// Update the debug flag
 			protocolManager.setDebug(config.isDebug());
+		}
+	}
+
+	private void checkUpdates() {
+		// Ignore milliseconds - it's pointless
+		long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
+		
+		try {
+			long updateTime = config.getAutoLastTime() + config.getAutoDelay();
+
+			// Should we update?
+			if (currentTime > updateTime && !updater.isChecking()) {		
+				// Initiate the update as if it came from the console
+				if (config.isAutoDownload())
+					commandProtocol.updateVersion(getServer().getConsoleSender());
+				else if (config.isAutoNotify())
+					commandProtocol.checkVersion(getServer().getConsoleSender());
+				else 
+					commandProtocol.updateFinished();
+			}
+		} catch (Exception e) {
+			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e));
+			UPDATES_DISABLED = true;
 		}
 	}
 

@@ -10,7 +10,7 @@ database: false
 commands:
   protocol:
     description: Performs administrative tasks regarding ProtocolLib.
-    usage: /<command> config|timings|listeners|version|dump
+    usage: /<command> config|check|update|timings|listeners|version|dump
     permission: protocol.admin
     permission-message: You don't have <permission>
   packet:

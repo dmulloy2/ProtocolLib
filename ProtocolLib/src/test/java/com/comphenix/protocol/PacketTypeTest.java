@@ -11,7 +11,8 @@ import org.junit.Test;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
+import com.comphenix.protocol.compat.netty.independent.NettyProtocolRegistry;
+import com.comphenix.protocol.injector.netty.ProtocolRegistry;
 
 public class PacketTypeTest {
 
@@ -22,12 +23,12 @@ public class PacketTypeTest {
 
 	@Test
 	public void testFindCurrent() {
-		assertEquals(PacketType.Play.Client.STEER_VEHICLE, PacketType.findCurrent(Protocol.PLAY, Sender.CLIENT, 12));
+		assertEquals(PacketType.Play.Client.STEER_VEHICLE, PacketType.findCurrent(Protocol.PLAY, Sender.CLIENT, "SteerVehicle"));
 	}
 
 	@Test
 	public void ensureAllExist() {
-		NettyProtocolRegistry registry = new NettyProtocolRegistry();
+		ProtocolRegistry registry = new NettyProtocolRegistry();
 		Map<PacketType, Class<?>> lookup = registry.getPacketTypeLookup();
 		for (Entry<PacketType, Class<?>> entry : lookup.entrySet()) {
 			PacketType type = entry.getKey();
