@@ -65,210 +65,209 @@ import com.google.common.collect.Lists;
 
 public class NettyProtocolInjector implements ProtocolInjector {
 	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to inject incoming channel %s.");
-	
-    private volatile boolean injected;
-    private volatile boolean closed;
-    
-    // The temporary player factory
-    private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
-    private List<VolatileField> bootstrapFields = Lists.newArrayList();
-    
-    // The channel injector factory
-    private NettyInjectionFactory injectionFactory;
-    
-    // List of network managers
-    private volatile List<Object> networkManagers;
-    
+
+	private volatile boolean injected;
+	private volatile boolean closed;
+
+	// The temporary player factory
+	private TemporaryPlayerFactory playerFactory = new TemporaryPlayerFactory();
+	private List<VolatileField> bootstrapFields = Lists.newArrayList();
+
+	// The channel injector factory
+	private NettyInjectionFactory injectionFactory;
+
+	// List of network managers
+	private volatile List<Object> networkManagers;
+
 	// Different sending filters
 	private PacketTypeSet sendingFilters = new PacketTypeSet();
 	private PacketTypeSet reveivedFilters = new PacketTypeSet();
-	
+
 	// Packets that must be executed on the main thread
 	private PacketTypeSet mainThreadFilters = new PacketTypeSet();
-	
+
 	// Which packets are buffered
-    private PacketTypeSet bufferedPackets = new PacketTypeSet();
-    private ListenerInvoker invoker;
-    
-    // Handle errors
-    private ErrorReporter reporter;
-    private boolean debug;
-    
-    public NettyProtocolInjector(Plugin plugin, ListenerInvoker invoker, ErrorReporter reporter) {
-    	this.injectionFactory = new NettyInjectionFactory(plugin);
+	private PacketTypeSet bufferedPackets = new PacketTypeSet();
+	private ListenerInvoker invoker;
+
+	// Handle errors
+	private ErrorReporter reporter;
+	private boolean debug;
+
+	public NettyProtocolInjector(Plugin plugin, ListenerInvoker invoker, ErrorReporter reporter) {
+		this.injectionFactory = new NettyInjectionFactory(plugin);
 		this.invoker = invoker;
 		this.reporter = reporter;
 	}
 
-    @Override
-    public boolean isDebug() {
+	@Override
+	public boolean isDebug() {
 		return debug;
 	}
-    
-    /**
-     * Set whether or not the debug mode is enabled.
-     * @param debug - TRUE if it is, FALSE otherwise.
-     */
+
+	/**
+	 * Set whether or not the debug mode is enabled.
+	 * @param debug - TRUE if it is, FALSE otherwise.
+	 */
 	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
-    
+
 	/**
-     * Inject into the spigot connection class.
-     */
-    @Override
+	 * Inject into the spigot connection class.
+	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public synchronized void inject() {
-        if (injected)
-            throw new IllegalStateException("Cannot inject twice.");
-        try {
-        	FuzzyReflection fuzzyServer = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftServerClass());
-            List<Method> serverConnectionMethods = fuzzyServer.getMethodListByParameters(MinecraftReflection.getServerConnectionClass(), new Class[] {});
-            
-            // Get the server connection
-            Object server = fuzzyServer.getSingleton();
-            Object serverConnection = null;
-            
-            for (Method method : serverConnectionMethods) {
-            	try {
-            		serverConnection = method.invoke(server);
-            		
-            		// Continue until we get a server connection
-            		if (serverConnection != null) {
-            			break;
-            		}
-            	} catch (Exception e) {
-            		// Try the next though
-            		e.printStackTrace();
-            	}
-            }
-            
-            // Handle connected channels
-            final ChannelInboundHandler endInitProtocol = new ChannelInitializer<Channel>() {
-                @Override
-                protected void initChannel(Channel channel) throws Exception {
-                	try {
-	                    // This can take a while, so we need to stop the main thread from interfering
-	                    synchronized (networkManagers) {
-	                    	injectionFactory.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
+		if (injected)
+			throw new IllegalStateException("Cannot inject twice.");
+		try {
+			FuzzyReflection fuzzyServer = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftServerClass());
+			List<Method> serverConnectionMethods = fuzzyServer.getMethodListByParameters(MinecraftReflection.getServerConnectionClass(), new Class[] {});
+
+			// Get the server connection
+			Object server = fuzzyServer.getSingleton();
+			Object serverConnection = null;
+
+			for (Method method : serverConnectionMethods) {
+				try {
+					serverConnection = method.invoke(server);
+
+					// Continue until we get a server connection
+					if (serverConnection != null) {
+						break;
+					}
+				} catch (Exception e) {
+					// Try the next though
+					e.printStackTrace();
+				}
+			}
+
+			// Handle connected channels
+			final ChannelInboundHandler endInitProtocol = new ChannelInitializer<Channel>() {
+				@Override
+				protected void initChannel(Channel channel) throws Exception {
+					try {
+						// This can take a while, so we need to stop the main thread from interfering
+						synchronized (networkManagers) {
+							injectionFactory.fromChannel(channel, NettyProtocolInjector.this, playerFactory).inject();
 						}
-                	} catch (Exception e) {
-                		reporter.reportDetailed(NettyProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).
-                				messageParam(channel).error(e));
-                	}
-                }
-            };
-            
-            // This is executed before Minecraft's channel handler
-            final ChannelInboundHandler beginInitProtocol = new ChannelInitializer<Channel>() {
-            	@Override
-            	protected void initChannel(Channel channel) throws Exception {
-            		// Our only job is to add init protocol
-            		channel.pipeline().addLast(endInitProtocol);
-            	}
-            };
-            
-            // Add our handler to newly created channels
-            final ChannelHandler connectionHandler = new ChannelInboundHandlerAdapter() {
-            	@Override
-            	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                    Channel channel = (Channel) msg;
+					} catch (Exception e) {
+						reporter.reportDetailed(NettyProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).messageParam(channel).error(e));
+					}
+				}
+			};
 
-                    // Prepare to initialize ths channel
-                    channel.pipeline().addFirst(beginInitProtocol);
-                    ctx.fireChannelRead(msg);
-            	}
-            };
-            
-            // Get the current NetworkMananger list
-            networkManagers = (List<Object>) FuzzyReflection.fromObject(serverConnection, true).
-            	invokeMethod(null, "getNetworkManagers", List.class, serverConnection);
-            
-            // Insert ProtocolLib's connection interceptor
-            bootstrapFields = getBootstrapFields(serverConnection);
-            
-            for (VolatileField field : bootstrapFields) {
-            	final List<Object> list = (List<Object>) field.getValue();
-     
-            	// We don't have to override this list
-            	if (list == networkManagers) {
-            		continue;
-            	}
-            	
-            	// Synchronize with each list before we attempt to replace them.
+			// This is executed before Minecraft's channel handler
+			final ChannelInboundHandler beginInitProtocol = new ChannelInitializer<Channel>() {
+				@Override
+				protected void initChannel(Channel channel) throws Exception {
+					// Our only job is to add init protocol
+					channel.pipeline().addLast(endInitProtocol);
+				}
+			};
+
+			// Add our handler to newly created channels
+			final ChannelHandler connectionHandler = new ChannelInboundHandlerAdapter() {
+				@Override
+				public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+					Channel channel = (Channel) msg;
+
+					// Prepare to initialize ths channel
+					channel.pipeline().addFirst(beginInitProtocol);
+					ctx.fireChannelRead(msg);
+				}
+			};
+
+			// Get the current NetworkMananger list
+			networkManagers = (List<Object>) FuzzyReflection.fromObject(serverConnection, true).invokeMethod(null, "getNetworkManagers", List.class, serverConnection);
+
+			// Insert ProtocolLib's connection interceptor
+			bootstrapFields = getBootstrapFields(serverConnection);
+
+			for (VolatileField field : bootstrapFields) {
+				final List<Object> list = (List<Object>) field.getValue();
+
+				// We don't have to override this list
+				if (list == networkManagers) {
+					continue;
+				}
+
+				// Synchronize with each list before we attempt to replace them.
 				field.setValue(new NettyBootstrapList(list, connectionHandler));
-            }
+			}
 
-            injected = true;
-            
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to inject channel futures.", e);
-        }
-    }
-    
+			injected = true;
+
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to inject channel futures.", e);
+		}
+	}
+
 	@Override
 	public boolean hasListener(Class<?> packetClass) {
 		return reveivedFilters.contains(packetClass) || sendingFilters.contains(packetClass);
 	}
-    
+
 	@Override
 	public boolean hasMainThreadListener(Class<?> packetClass) {
 		return mainThreadFilters.contains(packetClass);
 	}
-	
+
 	@Override
 	public ErrorReporter getReporter() {
 		return reporter;
 	}
-    
-    /**
-     * Inject our packet handling into a specific player.
-     * @param player Player to inject into
-     */
-    public void injectPlayer(Player player) {
-    	injectionFactory.fromPlayer(player, this).inject();
-    }
-    
-    private List<VolatileField> getBootstrapFields(Object serverConnection) {
-    	List<VolatileField> result = Lists.newArrayList();
-    	
-    	// Find and (possibly) proxy every list
-    	for (Field field : FuzzyReflection.fromObject(serverConnection, true).getFieldListByType(List.class)) {
-    		VolatileField volatileField = new VolatileField(field, serverConnection, true).toSynchronized();
-    		
-    		@SuppressWarnings("unchecked")
+
+	/**
+	 * Inject our packet handling into a specific player.
+	 * @param player Player to inject into
+	 */
+	public void injectPlayer(Player player) {
+		injectionFactory.fromPlayer(player, this).inject();
+	}
+
+	private List<VolatileField> getBootstrapFields(Object serverConnection) {
+		List<VolatileField> result = Lists.newArrayList();
+
+		// Find and (possibly) proxy every list
+		for (Field field : FuzzyReflection.fromObject(serverConnection, true).getFieldListByType(List.class)) {
+			VolatileField volatileField = new VolatileField(field, serverConnection, true).toSynchronized();
+
+			@SuppressWarnings("unchecked")
 			List<Object> list = (List<Object>) volatileField.getValue();
-    		
-    		if (list.size() == 0 || list.get(0) instanceof ChannelFuture) {
-    			result.add(volatileField);
-    		}
-    	}
-    	return result;
-    }
-    
-    /**
-     * Clean up any remaning injections.
-     */
-    @Override
+
+			if (list.size() == 0 || list.get(0) instanceof ChannelFuture) {
+				result.add(volatileField);
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Clean up any remaning injections.
+	 */
+	@Override
 	public synchronized void close() {
-        if (!closed) {
-            closed = true;
+		if (!closed) {
+			closed = true;
 
-            for (VolatileField field : bootstrapFields) {
-            	Object value = field.getValue();
+			for (VolatileField field : bootstrapFields) {
+				Object value = field.getValue();
 
-            	// Undo the processed channels, if any
-            	if (value instanceof NettyBootstrapList) {
-            		((NettyBootstrapList) value).close();
-            	}
-            	field.revertValue();
-            }
-            // Uninject all the players
-            injectionFactory.close();
-        }
-    }
-    
+				// Undo the processed channels, if any
+				if (value instanceof NettyBootstrapList) {
+					((NettyBootstrapList) value).close();
+				}
+				field.revertValue();
+			}
+			// Uninject all the players
+			injectionFactory.close();
+		}
+	}
+
 	@Override
 	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
@@ -277,28 +276,11 @@ public class NettyProtocolInjector implements ProtocolInjector {
 			try {
 				PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
 				return packetQueued(container, injector.getPlayer(), marker);
-			} catch (LinkageError er) {
-				// Issue #109
-				if (isDebug()) {
-					try {
-						System.out.println("Encountered a LinkageError in onPacketSending");
-						System.out.println("injector=" + injector);
-						System.out.println("packet=" + packet);
-						System.out.println("marker=" + marker);
-
-						Thread curr = Thread.currentThread();
-						System.out.println("current thread=" + curr.getName());
-						System.out.println("class loader=" + curr.getContextClassLoader());
-
-						Class<PacketContainer> container = PacketContainer.class;
-						System.out.println("packet container=" + container);
-						System.out.println("class loader=" + container.getClassLoader());
-					} catch (LinkageError e1) {
-						e1.printStackTrace();
-					}
-				}
-
-				er.printStackTrace();
+			} catch (LinkageError e) {
+				// So far this has been seen when the jar is shared
+				System.err.println("[ProtocolLib] Encountered a LinkageError. Make sure you\'re not using this jar for multiple server instances!");
+				System.err.println("[ProtocolLib] If you\'re getting this error for other reasons, please report it!");
+				e.printStackTrace();
 			}
 		}
 
@@ -309,7 +291,7 @@ public class NettyProtocolInjector implements ProtocolInjector {
 	@Override
 	public PacketEvent onPacketReceiving(Injector injector, Object packet, NetworkMarker marker) {
 		Class<?> clazz = packet.getClass();
-		
+
 		if (reveivedFilters.contains(clazz) || marker != null) {
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
 			return packetReceived(container, injector.getPlayer(), marker);
@@ -323,7 +305,7 @@ public class NettyProtocolInjector implements ProtocolInjector {
 	public boolean includeBuffer(Class<?> packetClass) {
 		return bufferedPackets.contains(packetClass);
 	}
- 
+
 	/**
 	 * Called to inform the event listeners of a queued packet.
 	 * @param packet - the packet that is to be sent.
@@ -332,11 +314,11 @@ public class NettyProtocolInjector implements ProtocolInjector {
 	 */
 	private PacketEvent packetQueued(PacketContainer packet, Player receiver, NetworkMarker marker) {
 		PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver);
-		
+
 		invoker.invokePacketSending(event);
 		return event;
 	}
-	
+
 	/**
 	 * Called to inform the event listeners of a received packet.
 	 * @param packet - the packet that has been receieved.
@@ -346,22 +328,22 @@ public class NettyProtocolInjector implements ProtocolInjector {
 	 */
 	private PacketEvent packetReceived(PacketContainer packet, Player sender, NetworkMarker marker) {
 		PacketEvent event = PacketEvent.fromClient(this, packet, marker, sender);
-		
+
 		invoker.invokePacketRecieving(event);
 		return event;
 	}
-    
+
 	// Server side
 	@Override
 	public PlayerInjectionHandler getPlayerInjector() {
 		return new AbstractPlayerHandler(sendingFilters) {
 			private ChannelListener listener = NettyProtocolInjector.this;
-			
+
 			@Override
 			public int getProtocolVersion(Player player) {
 				return injectionFactory.fromPlayer(player, listener).getProtocolVersion();
 			}
-			
+
 			@Override
 			public void updatePlayer(Player player) {
 				injectionFactory.fromPlayer(player, listener).inject();
@@ -371,26 +353,26 @@ public class NettyProtocolInjector implements ProtocolInjector {
 			public void injectPlayer(Player player, ConflictStrategy strategy) {
 				injectionFactory.fromPlayer(player, listener).inject();
 			}
-			
+
 			@Override
 			public boolean uninjectPlayer(InetSocketAddress address) {
 				// Ignore this too
 				return true;
 			}
-			
+
 			@Override
 			public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
 				if (options != null && !type.forceAsync() && !options.contains(ListenerOptions.ASYNC))
 					mainThreadFilters.addType(type);
 				super.addPacketHandler(type, options);
 			}
-			
+
 			@Override
 			public void removePacketHandler(PacketType type) {
 				mainThreadFilters.removeType(type);
 				super.removePacketHandler(type);
 			}
-			
+
 			@Override
 			public boolean uninjectPlayer(Player player) {
 				// Just let Netty clean this up
@@ -399,27 +381,25 @@ public class NettyProtocolInjector implements ProtocolInjector {
 
 			@Override
 			public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) throws InvocationTargetException {
-				injectionFactory.fromPlayer(receiver, listener).
-					sendServerPacket(packet.getHandle(), marker, filters);
+				injectionFactory.fromPlayer(receiver, listener).sendServerPacket(packet.getHandle(), marker, filters);
 			}
-			
+
 			@Override
 			public boolean hasMainThreadListener(PacketType type) {
 				return mainThreadFilters.contains(type);
 			}
-			
+
 			@Override
 			public void recieveClientPacket(Player player, Object mcPacket) throws IllegalAccessException, InvocationTargetException {
-				injectionFactory.fromPlayer(player, listener).
-					recieveClientPacket(mcPacket);
+				injectionFactory.fromPlayer(player, listener).recieveClientPacket(mcPacket);
 			}
-			
+
 			@Override
 			public PacketEvent handlePacketRecieved(PacketContainer packet, InputStream input, byte[] buffered) {
 				// Ignore this
 				return null;
 			}
-			
+
 			@Override
 			public void handleDisconnect(Player player) {
 				injectionFactory.fromPlayer(player, listener).close();
@@ -436,7 +416,7 @@ public class NettyProtocolInjector implements ProtocolInjector {
 			}
 		};
 	}
-	
+
 	/**
 	 * Retrieve a view of this protocol injector as a packet injector.
 	 * @return The packet injector.
@@ -448,11 +428,10 @@ public class NettyProtocolInjector implements ProtocolInjector {
 			@Override
 			public PacketEvent packetRecieved(PacketContainer packet, Player client, byte[] buffered) {
 				NetworkMarker marker = buffered != null ? new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, buffered) : null;
-				injectionFactory.fromPlayer(client, NettyProtocolInjector.this).
-					saveMarker(packet.getHandle(), marker);
+				injectionFactory.fromPlayer(client, NettyProtocolInjector.this).saveMarker(packet.getHandle(), marker);
 				return packetReceived(packet, client, marker);
 			}
-			
+
 			@Override
 			public void inputBuffersChanged(Set<PacketType> set) {
 				bufferedPackets = new PacketTypeSet(set);

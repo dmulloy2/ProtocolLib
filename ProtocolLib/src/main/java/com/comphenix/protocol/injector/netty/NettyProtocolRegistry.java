@@ -216,7 +216,7 @@ public class NettyProtocolRegistry {
 	
 	private void associatePackets(Register register, Map<Integer, Class<?>> lookup, Protocol protocol, Sender sender) {
 		for (Entry<Integer, Class<?>> entry : lookup.entrySet()) {
-			PacketType type = PacketType.fromCurrent(protocol, sender, entry.getKey(), PacketType.UNKNOWN_PACKET);
+			PacketType type = PacketType.fromCurrent(protocol, sender, entry.getKey(), entry.getValue());
 
 			try {
 				register.typeToClass.put(type, entry.getValue());
