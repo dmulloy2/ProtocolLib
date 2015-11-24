@@ -165,8 +165,10 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * @throws IllegalArgumentException If we cannot parse the text.
 	 */
 	private static UUID parseUUID(String id) {
+		if (id == null) return null;
+
 		try {
-			return id != null ? UUID.fromString(id) : null;
+			return UUID.fromString(id);
 		} catch (IllegalArgumentException e) {
 			// Warn once every hour (per plugin)
 			ProtocolLibrary.getErrorReporter()

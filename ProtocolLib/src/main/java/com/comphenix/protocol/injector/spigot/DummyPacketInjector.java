@@ -8,7 +8,6 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.google.common.collect.Sets;
 
 /**
@@ -16,7 +15,7 @@ import com.google.common.collect.Sets;
  * 
  * @author Kristian
  */
-class DummyPacketInjector extends AbstractPacketInjector implements PacketInjector {
+class DummyPacketInjector extends AbstractPacketInjector {
 	private SpigotPacketInjector injector;	
 	private PacketTypeSet lastBufferedPackets = new PacketTypeSet();
 

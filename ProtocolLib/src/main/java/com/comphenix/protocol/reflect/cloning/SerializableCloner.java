@@ -31,21 +31,17 @@ public class SerializableCloner implements Cloner {
      * @return The cloned object.
      * @throws RuntimeException If we were unable to clone the object.
      */
-    @SuppressWarnings("unchecked")
-    public static <T extends Serializable> T clone(final T obj) {
-        try {
-            if (obj instanceof Serializable) {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                ObjectOutputStream oout = new ObjectOutputStream(out);
+	@SuppressWarnings("unchecked")
+	public static <T extends Serializable> T clone(final T obj) {
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ObjectOutputStream oout = new ObjectOutputStream(out);
 
-                oout.writeObject(obj);
-                ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
-                return (T) in.readObject();
-            } else {
-                throw new RuntimeException("Object " + obj + " is not serializable!");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to clone object " + obj + " (" + obj.getClass().getName() + ")", e);
-        }
-    }
+			oout.writeObject(obj);
+			ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
+			return (T) in.readObject();
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to clone object " + obj + " (" + obj.getClass().getName() + ")", e);
+		}
+	}
 }

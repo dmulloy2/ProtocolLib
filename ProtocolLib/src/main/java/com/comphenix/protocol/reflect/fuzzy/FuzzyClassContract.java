@@ -251,7 +251,7 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 			   (baseclassContracts.size() == 0 || 
 			   		processValue(value.getSuperclass(), parent, baseclassContracts)) &&
 			   (interfaceContracts.size() == 0 ||
-			    	processContracts(Arrays.asList(value.getInterfaces()), (Class<?>) parent, interfaceContracts));
+			    	processContracts(Arrays.asList(value.getInterfaces()), parent, interfaceContracts));
 	}
 
 	private <T> boolean processContracts(Collection<T> values, Object parent, List<AbstractFuzzyMatcher<T>> matchers) {

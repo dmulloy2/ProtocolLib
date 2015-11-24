@@ -6,7 +6,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -50,7 +49,6 @@ public class SimpleMinecraftClient {
         Socket socket = null;
         OutputStream output = null;
         InputStream input = null;
-        InputStreamReader reader = null;
         
         try {
             socket = new Socket();
@@ -76,10 +74,7 @@ public class SimpleMinecraftClient {
           
             socket.close();
             return ((ResponsePacket) packet).getPingJson();
-            
         } finally {
-            if (reader != null)
-                reader.close();
             if (input != null)
                 input.close();
             if (output != null)
@@ -214,6 +209,7 @@ public class SimpleMinecraftClient {
 			serializer.serializeVarInt(output, type.getCurrentId());
 		}
 		
+		@SuppressWarnings("unused")
 		public void read(PacketType type, DataInputStream input) throws IOException {
 			// Note - we don't read the packet id
 			if (this.type != type) {

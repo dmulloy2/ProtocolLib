@@ -18,7 +18,6 @@ import org.bukkit.plugin.PluginManager;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -43,7 +42,7 @@ import com.google.common.collect.Sets;
  * 
  * @author Kristian
  */
-public class DelayedPacketManager implements ProtocolManager, InternalManager {
+public class DelayedPacketManager implements InternalManager {
 	// Registering packet IDs that are not supported
 	public static final ReportType REPORT_CANNOT_SEND_QUEUED_PACKET = new ReportType("Cannot send queued packet %s.");
 	public static final ReportType REPORT_CANNOT_SEND_QUEUED_WIRE_PACKET = new ReportType("Cannot send queued wire packet %s.");

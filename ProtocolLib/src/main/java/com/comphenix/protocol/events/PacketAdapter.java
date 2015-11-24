@@ -346,13 +346,11 @@ public abstract class PacketAdapter implements PacketListener {
 	 * @return Name of the given plugin.
 	 */
 	public static String getPluginName(Plugin plugin) {
-		// Try to get the plugin name
+		if (plugin == null)
+			return "UNKNOWN";
+
 		try {
-			if (plugin == null)
-				return "UNKNOWN";
-			else
-				return plugin.getName();
-			
+			return plugin.getName();
 		} catch (NoSuchMethodError e) {
 			return plugin.toString();
 		}

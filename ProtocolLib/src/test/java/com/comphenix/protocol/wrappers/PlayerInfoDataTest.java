@@ -33,7 +33,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 public class PlayerInfoDataTest {
 
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 

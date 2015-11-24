@@ -75,7 +75,7 @@ class CommandProtocol extends CommandBase {
 		} else if (subCommand.equalsIgnoreCase("timings")) {
 			toggleTimings(sender, args);
 		} else if (subCommand.equalsIgnoreCase("listeners")) {
-			printListeners(sender, args);
+			printListeners(sender);
 		} else if (subCommand.equalsIgnoreCase("version")) {
 			printVersion(sender);
 		} else if (subCommand.equalsIgnoreCase("dump")) {
@@ -96,7 +96,7 @@ class CommandProtocol extends CommandBase {
 	}
 	
 	// Display every listener on the server
-	private void printListeners(final CommandSender sender, String[] args) {
+	private void printListeners(final CommandSender sender) {
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 		
 		sender.sendMessage(ChatColor.GOLD + "Packet listeners:");

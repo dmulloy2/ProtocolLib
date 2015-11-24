@@ -388,7 +388,7 @@ public class NettyChannelInjector extends ByteToMessageDecoder implements Channe
 	 * @return TRUE if it is, FALSE if not or unknown.
 	 */
 	private boolean guessCompression(ChannelHandler handler) {
-		String className = handler != null ? handler.getClass().getCanonicalName() : null;
+		String className = handler != null ? handler.getClass().getCanonicalName() : "";
 		return className.contains("Compressor") || className.contains("Decompressor");
 	}
 

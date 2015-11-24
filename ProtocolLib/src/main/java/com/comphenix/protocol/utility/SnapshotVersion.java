@@ -33,7 +33,7 @@ public class SnapshotVersion implements Comparable<SnapshotVersion>, Serializabl
 		if (matcher.matches()) {
 			try {
 				this.snapshotDate = getDateFormat().parse(matcher.group(1));
-				this.snapshotWeekVersion = (int)matcher.group(2).charAt(0) - (int)'a';
+				this.snapshotWeekVersion = matcher.group(2).charAt(0) - 'a';
 				this.rawString = version;
 			} catch (ParseException e) {
 				throw new IllegalArgumentException("Date implied by snapshot version is invalid.", e);
@@ -83,7 +83,7 @@ public class SnapshotVersion implements Comparable<SnapshotVersion>, Serializabl
 			rawString = String.format("%02dw%02d%s",
 				current.get(Calendar.YEAR) % 100, 
 				current.get(Calendar.WEEK_OF_YEAR),
-				(char) ((int)'a' + snapshotWeekVersion));
+				(char) ('a' + snapshotWeekVersion));
 		}
 		return rawString;
 	}

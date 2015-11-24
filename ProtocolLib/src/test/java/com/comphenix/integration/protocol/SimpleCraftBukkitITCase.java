@@ -103,7 +103,6 @@ public class SimpleCraftBukkitITCase {
 	 * Copy ProtocolLib into the plugins folder.
 	 * @throws IOException If anything went wrong.
 	 */
-	@SuppressWarnings("deprecation")
 	private static void setupPlugins() throws IOException {
 		File pluginDirectory = new File("plugins/");
 		File srcDirectory = new File("../");

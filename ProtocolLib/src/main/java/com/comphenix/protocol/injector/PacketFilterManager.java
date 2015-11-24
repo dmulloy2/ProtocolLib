@@ -51,7 +51,6 @@ import org.bukkit.plugin.PluginManager;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.compat.netty.Netty;
@@ -91,7 +90,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-public final class PacketFilterManager implements ProtocolManager, ListenerInvoker, InternalManager {
+public final class PacketFilterManager implements ListenerInvoker, InternalManager {
 
 	public static final ReportType REPORT_CANNOT_LOAD_PACKET_LIST = new ReportType("Cannot load server and client packet list.");
 	public static final ReportType REPORT_CANNOT_INITIALIZE_PACKET_INJECTOR = new ReportType("Unable to initialize packet injector");

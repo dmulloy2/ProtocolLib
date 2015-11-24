@@ -84,12 +84,7 @@ public abstract class AbstractFuzzyMatcher<T> implements Comparable<AbstractFuzz
 		
 	@Override
 	public int compareTo(AbstractFuzzyMatcher<T> obj) {
-		if (obj instanceof AbstractFuzzyMatcher) {
-			AbstractFuzzyMatcher<?> matcher = (AbstractFuzzyMatcher<?>) obj;
-			return Ints.compare(getRoundNumber(), matcher.getRoundNumber());
-		}
-		// No match
-		return -1;
+		return Ints.compare(getRoundNumber(), obj.getRoundNumber());
 	}
 
 	/**

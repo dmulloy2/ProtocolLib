@@ -257,6 +257,7 @@ public abstract class TinyProtocol {
 	 * Note that this is not executed on the main thread.
 	 * 
 	 * @param reciever - the receiving player, NULL for early login/status packets.
+	 * @param channel - the channel that received the packet. Never NULL.
 	 * @param remoteAddress - remote address of the sending client. Never NULL.
 	 * @param packet - the packet being sent.
 	 * @return The packet to send instead, or NULL to cancel the transmission.

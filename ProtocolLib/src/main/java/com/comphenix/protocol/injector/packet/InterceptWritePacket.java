@@ -54,7 +54,7 @@ public class InterceptWritePacket {
 	}
 	
 	// TODO: PacketId should probably do something...
-	private Class<?> createProxyClass(int packetId) {
+	private Class<?> createProxyClass() {
 		// Construct the proxy object
 		Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
 		
@@ -102,7 +102,7 @@ public class InterceptWritePacket {
 		
 		// Concurrent pattern
 		if (stored == null) {
-			final Class<?> created = createProxyClass(packetId);
+			final Class<?> created = createProxyClass();
 			stored = proxyClasses.putIfAbsent(packetId, created);
 			
 			// We won!
