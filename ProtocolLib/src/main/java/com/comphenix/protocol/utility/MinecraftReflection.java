@@ -1652,16 +1652,22 @@ public class MinecraftReflection {
 		return getMinecraftClass("TileEntity");
 	}
 
+	private static Class<?> gsonClass = null;
+
 	/**
 	 * Retrieve the Gson class used by Minecraft.
-	 * @return The GSON class.
+	 * @return The Gson class.
 	 */
 	public static Class<?> getMinecraftGsonClass() {
-		try {
-			return getClass("com.google.gson.Gson");
-		} catch (RuntimeException e) {
-			return getClass("org.bukkit.craftbukkit.libs.com.google.gson.Gson");
+		if (gsonClass == null) {
+			try {
+				return gsonClass = getClass("org.bukkit.craftbukkit.libs.com.google.gson.Gson");
+			} catch (RuntimeException e) {
+				return gsonClass = getClass("com.google.gson.Gson");
+			}
 		}
+
+		return gsonClass;
 	}
 
 	/**
