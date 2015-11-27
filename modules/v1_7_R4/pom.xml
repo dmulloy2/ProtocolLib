@@ -21,6 +21,13 @@
     <project.build.number></project.build.number>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>md_5-repo</id>
+      <url>http://repo.md-5.net/content/groups/public/</url>
+    </repository>
+  </repositories>
+
   <build>
     <defaultGoal>clean install</defaultGoal>
     <sourceDirectory>src/main/java</sourceDirectory>
