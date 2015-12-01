@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol.utility;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,30 +24,31 @@ import java.util.List;
  * @author dmulloy2
  */
 
-public class Closer implements AutoCloseable {
-	private final List<AutoCloseable> list;
+// TODO Switch to AutoCloseable w/ Java 7
+public class Closer implements Closeable {
+	private final List<Closeable> list;
 
 	private Closer() {
-		this.list = new ArrayList<AutoCloseable>();
+		this.list = new ArrayList<Closeable>();
 	}
 
 	public static Closer create() {
 		return new Closer();
 	}
 
-	public <C extends AutoCloseable> C register(C close) {
+	public <C extends Closeable> C register(C close) {
 		list.add(close);
 		return close;
 	}
 
 	@Override
 	public void close() {
-		for (AutoCloseable close : list) {
+		for (Closeable close : list) {
 			closeQuietly(close);
 		}
 	}
 
-	public static void closeQuietly(AutoCloseable close) {
+	public static void closeQuietly(Closeable close) {
 		try {
 			close.close();
 		} catch (Throwable ex) { }
