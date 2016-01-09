@@ -490,7 +490,7 @@ public class ProtocolLibrary extends JavaPlugin {
 
 	private void checkConflictingVersions() {
 		Pattern ourPlugin = Pattern.compile("ProtocolLib-(.*)\\.jar");
-		MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
+		MinecraftVersion currentVersion = new MinecraftVersion(getDescription().getVersion());
 		MinecraftVersion newestVersion = null;
 
 		// Skip the file that contains this current instance however
@@ -498,7 +498,8 @@ public class ProtocolLibrary extends JavaPlugin {
 
 		try {
 			// Scan the plugin folder for newer versions of ProtocolLib
-			File pluginFolder = new File("plugins/");
+			// The plugin folder isn't always plugins/
+			File pluginFolder = getDataFolder().getParentFile();
 
 			for (File candidate : pluginFolder.listFiles()) {
 				if (candidate.isFile() && !candidate.equals(loadedFile)) {
@@ -516,6 +517,7 @@ public class ProtocolLibrary extends JavaPlugin {
 				}
 			}
 		} catch (Exception e) {
+			// TODO This shows [ProtocolLib] and [ProtocolLibrary] in the message
 			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DETECT_CONFLICTING_PLUGINS).error(e));
 		}
 
