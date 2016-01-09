@@ -501,17 +501,20 @@ public class ProtocolLibrary extends JavaPlugin {
 			// The plugin folder isn't always plugins/
 			File pluginFolder = getDataFolder().getParentFile();
 
-			for (File candidate : pluginFolder.listFiles()) {
-				if (candidate.isFile() && !candidate.equals(loadedFile)) {
-					Matcher match = ourPlugin.matcher(candidate.getName());
-					if (match.matches()) {
-						MinecraftVersion version = new MinecraftVersion(match.group(1));
+			File[] candidates = pluginFolder.listFiles();
+			if (candidates != null) {
+				for (File candidate : pluginFolder.listFiles()) {
+					if (candidate.isFile() && !candidate.equals(loadedFile)) {
+						Matcher match = ourPlugin.matcher(candidate.getName());
+						if (match.matches()) {
+							MinecraftVersion version = new MinecraftVersion(match.group(1));
 
-						if (candidate.length() == 0) {
-							// Delete and inform the user
-							logger.info((candidate.delete() ? "Deleted " : "Could not delete ") + candidate);
-						} else if (newestVersion == null || newestVersion.compareTo(version) < 0) {
-							newestVersion = version;
+							if (candidate.length() == 0) {
+								// Delete and inform the user
+								logger.info((candidate.delete() ? "Deleted " : "Could not delete ") + candidate);
+							} else if (newestVersion == null || newestVersion.compareTo(version) < 0) {
+								newestVersion = version;
+							}
 						}
 					}
 				}
