@@ -250,6 +250,7 @@ public class WrappedGameProfile extends AbstractWrapper {
 	 * 
 	 * @return Property map.
 	 */
+	// In the protocol hack and 1.8 it is a ForwardingMultimap
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Multimap<String, WrappedSignedProperty> getProperties() {
 		Multimap<String, WrappedSignedProperty> result = propertyMap;

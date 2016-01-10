@@ -67,7 +67,6 @@ public class Util {
 	 * @return The list
 	 */
 	// @SafeVarargs
-	@SuppressWarnings("unchecked")
 	public static <E> List<E> asList(E... elements) {
 		List<E> list = new ArrayList<E>(elements.length);
 		for (E element : elements) {

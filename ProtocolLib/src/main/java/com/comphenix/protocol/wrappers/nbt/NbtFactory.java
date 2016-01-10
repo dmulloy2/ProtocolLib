@@ -450,7 +450,6 @@ public class NbtFactory {
 	 * @return The new filled NBT list.
 	 */
 	// @SafeVarargs
-	@SuppressWarnings("unchecked")
 	public static <T> NbtList<T> ofList(String name, T... elements) {
 		return WrappedList.fromArray(name, elements);
 	}
