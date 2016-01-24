@@ -53,7 +53,7 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>3.6.4-SNAPSHOT</version>
+    <version>3.6.4</version>
   </dependency>
 </dependencies>
 ````
