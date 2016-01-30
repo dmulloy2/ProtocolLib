@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ProtocolLib</artifactId>
   <name>ProtocolLib</name>
-  <version>3.6.5-SNAPSHOT</version>
+  <version>3.6.5</version>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
@@ -17,7 +17,7 @@
   </parent>
 
   <properties>
-    <project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.number></project.build.number>
   </properties>
 
