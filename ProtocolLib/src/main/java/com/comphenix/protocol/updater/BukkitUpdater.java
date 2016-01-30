@@ -22,7 +22,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -79,7 +78,7 @@ public class BukkitUpdater extends Updater {
      * @param type     Specify the type of update this will be. See {@link UpdateType}
      * @param announce True if the program should announce the progress of new updates in console
      */
-    public BukkitUpdater(Plugin plugin, int id, File file, UpdateType type, boolean announce) {
+    public BukkitUpdater(ProtocolLibrary plugin, int id, File file, UpdateType type, boolean announce) {
         super(plugin, type, announce);
 
         this.file = file;

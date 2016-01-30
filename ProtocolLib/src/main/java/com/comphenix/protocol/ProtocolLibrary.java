@@ -754,4 +754,8 @@ public class ProtocolLibrary extends JavaPlugin {
 	public static Logger getStaticLogger() {
 		return logger;
 	}
+
+	public static void disableUpdates() {
+		UPDATES_DISABLED = true;
+	}
 }
