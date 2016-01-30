@@ -44,7 +44,7 @@ public class Netty {
 				Class<?> clazz = Class.forName("com.comphenix.protocol.compat.netty.shaded.ShadedNetty");
 				compat = (NettyCompat) clazz.newInstance();
 			} catch (Exception ex1) {
-				ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create legacy netty compat:", ex1);
+				ProtocolLibrary.log(Level.SEVERE, "Failed to create legacy netty compat:", ex1);
 			}
 		}
 	}

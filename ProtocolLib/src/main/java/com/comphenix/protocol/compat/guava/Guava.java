@@ -40,7 +40,7 @@ public class Guava {
 				Class<?> clazz = Class.forName("com.comphenix.protocol.compat.guava.Guava10");
 				compat = (GuavaCompat) clazz.newInstance();
 			} catch (Throwable ex1) {
-				ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create Guava 10 compat:", ex1);
+				ProtocolLibrary.log(Level.SEVERE, "Failed to create Guava 10 compat:", ex1);
 			}
 		}
 	}

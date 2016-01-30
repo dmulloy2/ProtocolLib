@@ -256,7 +256,7 @@ class CommandProtocol extends CommandBase {
 
 			sender.sendMessage("Data dump written to " + file.getAbsolutePath());
 		} catch (IOException ex) {
-			ProtocolLibrary.getStaticLogger().log(Level.SEVERE, "Failed to create dump:", ex);
+			ProtocolLibrary.log(Level.SEVERE, "Failed to create dump:", ex);
 			sender.sendMessage(ChatColor.RED + "Failed to create dump! Check console!");
 		} finally {
 			closer.close();

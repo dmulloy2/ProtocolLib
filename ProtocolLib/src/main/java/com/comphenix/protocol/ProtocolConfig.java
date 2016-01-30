@@ -170,7 +170,7 @@ public class ProtocolConfig {
 			loadingSections = false;
 
 			// Inform the user
-			ProtocolLibrary.log("Created default configuration.");
+			plugin.getLogger().info("Created default configuration.");
 		}
 	}
 

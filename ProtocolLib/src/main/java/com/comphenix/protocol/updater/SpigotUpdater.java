@@ -76,7 +76,7 @@ public final class SpigotUpdater extends Updater {
 					plugin.getLogger().log(Level.WARNING, "Failed to check for updates: " + ex);
 				}
 
-				ProtocolLibrary.disableUpdates();
+				plugin.disableUpdates();
 			} finally {
 				// Invoke the listeners on the main thread
 				for (Runnable listener : listeners) {

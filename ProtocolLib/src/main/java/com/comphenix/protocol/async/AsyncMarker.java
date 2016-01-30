@@ -437,13 +437,12 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 						return false;
 					}
 				} else {
-					ProtocolLibrary.log(Level.INFO, "Could not determine asynchronous state of packets.");
-					ProtocolLibrary.log(Level.INFO, "This can probably be ignored.");
+					ProtocolLibrary.log(Level.INFO, "Could not determine asynchronous state of packets (this can probably be ignored)");
 					alwaysSync = true;
 				}
 			}
 		}
-		
+
 		if (alwaysSync) {
 			return false;
 		} else {

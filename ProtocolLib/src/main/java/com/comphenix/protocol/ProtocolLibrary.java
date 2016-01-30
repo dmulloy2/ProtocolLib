@@ -751,11 +751,11 @@ public class ProtocolLibrary extends JavaPlugin {
 		log(Level.INFO, message, args);
 	}
 
-	public static Logger getStaticLogger() {
-		return logger;
+	public static void log(Level level, String message, Throwable ex) {
+		logger.log(level, message, ex);
 	}
 
-	public static void disableUpdates() {
+	public void disableUpdates() {
 		UPDATES_DISABLED = true;
 	}
 }
