@@ -34,10 +34,12 @@ import com.google.common.base.Charsets;
  */
 
 public final class SpigotUpdater extends Updater {
+	private ProtocolLibrary plugin;
 	private String remoteVersion;
 
 	public SpigotUpdater(ProtocolLibrary plugin, UpdateType type, boolean announce) {
 		super(plugin, type, announce);
+		this.plugin = plugin;
 	}
 
 	@Override
@@ -109,5 +111,10 @@ public final class SpigotUpdater extends Updater {
 		} finally {
 			closer.close();
 		}
+	}
+
+	@Override
+	public String getRemoteVersion() {
+		return remoteVersion;
 	}
 }

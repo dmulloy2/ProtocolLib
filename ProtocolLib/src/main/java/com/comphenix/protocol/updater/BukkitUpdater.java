@@ -22,6 +22,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.Plugin;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -78,57 +79,60 @@ public class BukkitUpdater extends Updater {
      * @param type     Specify the type of update this will be. See {@link UpdateType}
      * @param announce True if the program should announce the progress of new updates in console
      */
-    public BukkitUpdater(ProtocolLibrary plugin, int id, File file, UpdateType type, boolean announce) {
+    public BukkitUpdater(Plugin plugin, int id, File file, UpdateType type, boolean announce) {
         super(plugin, type, announce);
 
         this.file = file;
         this.id = id;
         this.updateFolder = plugin.getServer().getUpdateFolder();
 
-        final File pluginFile = plugin.getDataFolder().getParentFile();
-        final File updaterFile = new File(pluginFile, "Updater");
-        final File updaterConfigFile = new File(updaterFile, "config.yml");
+        File dataFolder = plugin.getDataFolder();
+        if (dataFolder != null) {
+	        final File pluginFile = plugin.getDataFolder().getParentFile();
+	        final File updaterFile = new File(pluginFile, "Updater");
+	        final File updaterConfigFile = new File(updaterFile, "config.yml");
 
-        if (!updaterFile.exists()) {
-            updaterFile.mkdir();
+	        if (!updaterFile.exists()) {
+	            updaterFile.mkdir();
+	        }
+	        if (!updaterConfigFile.exists()) {
+	            try {
+	                updaterConfigFile.createNewFile();
+	            } catch (final IOException e) {
+	                plugin.getLogger().severe("The updater could not create a configuration in " + updaterFile.getAbsolutePath());
+	                e.printStackTrace();
+	            }
+	        }
+	        this.config = YamlConfiguration.loadConfiguration(updaterConfigFile);
+
+	        this.config.options().header("This configuration file affects all plugins using the Updater system (version 2+ - http://forums.bukkit.org/threads/96681/ )" + '\n'
+	                + "If you wish to use your API key, read http://wiki.bukkit.org/ServerMods_API and place it below." + '\n'
+	                + "Some updating systems will not adhere to the disabled value, but these may be turned off in their plugin's configuration.");
+	        this.config.addDefault("api-key", "PUT_API_KEY_HERE");
+	        this.config.addDefault("disable", false);
+
+	        if (this.config.get("api-key", null) == null) {
+	            this.config.options().copyDefaults(true);
+	            try {
+	                this.config.save(updaterConfigFile);
+	            } catch (final IOException e) {
+	                plugin.getLogger().severe("The updater could not save the configuration in " + updaterFile.getAbsolutePath());
+	                e.printStackTrace();
+	            }
+	        }
+
+	        if (this.config.getBoolean("disable")) {
+	            this.result = UpdateResult.DISABLED;
+	            return;
+	        }
+
+	        String key = this.config.getString("api-key");
+	        if (key.equalsIgnoreCase("PUT_API_KEY_HERE") || key.equals("")) {
+	            key = null;
+	        }
+
+	        this.apiKey = key;
         }
-        if (!updaterConfigFile.exists()) {
-            try {
-                updaterConfigFile.createNewFile();
-            } catch (final IOException e) {
-                plugin.getLogger().severe("The updater could not create a configuration in " + updaterFile.getAbsolutePath());
-                e.printStackTrace();
-            }
-        }
-        this.config = YamlConfiguration.loadConfiguration(updaterConfigFile);
-
-        this.config.options().header("This configuration file affects all plugins using the Updater system (version 2+ - http://forums.bukkit.org/threads/96681/ )" + '\n'
-                + "If you wish to use your API key, read http://wiki.bukkit.org/ServerMods_API and place it below." + '\n'
-                + "Some updating systems will not adhere to the disabled value, but these may be turned off in their plugin's configuration.");
-        this.config.addDefault("api-key", "PUT_API_KEY_HERE");
-        this.config.addDefault("disable", false);
-
-        if (this.config.get("api-key", null) == null) {
-            this.config.options().copyDefaults(true);
-            try {
-                this.config.save(updaterConfigFile);
-            } catch (final IOException e) {
-                plugin.getLogger().severe("The updater could not save the configuration in " + updaterFile.getAbsolutePath());
-                e.printStackTrace();
-            }
-        }
-
-        if (this.config.getBoolean("disable")) {
-            this.result = UpdateResult.DISABLED;
-            return;
-        }
-
-        String key = this.config.getString("api-key");
-        if (key.equalsIgnoreCase("PUT_API_KEY_HERE") || key.equals("")) {
-            key = null;
-        }
-
-        this.apiKey = key;
 
         try {
             this.url = new URL(BukkitUpdater.HOST + BukkitUpdater.QUERY + id);
@@ -314,7 +318,7 @@ public class BukkitUpdater extends Updater {
         return false;
     } */
 
-    private boolean read() {
+    public boolean read() {
         try {
             final URLConnection conn = this.url.openConnection();
             conn.setConnectTimeout(5000);
@@ -407,8 +411,7 @@ public class BukkitUpdater extends Updater {
     }
 
 	@Override
-	public boolean shouldNotify() {
-		// TODO Auto-generated method stub
-		return false;
+	public String getRemoteVersion() {
+		return getLatestName();
 	}
 }

@@ -20,6 +20,8 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.bukkit.plugin.Plugin;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -31,7 +33,7 @@ import com.google.common.base.Preconditions;
  */
 
 public abstract class Updater {
-	protected ProtocolLibrary plugin;
+	protected Plugin plugin;
 
 	protected String versionName;
 	protected String versionLink;
@@ -48,7 +50,7 @@ public abstract class Updater {
 
 	public static final ReportType REPORT_CANNOT_UPDATE_PLUGIN = new ReportType("Cannot update ProtocolLib.");
 
-	protected Updater(ProtocolLibrary plugin, UpdateType type, boolean announce) {
+	protected Updater(Plugin plugin, UpdateType type, boolean announce) {
 		this.plugin = plugin;
 		this.type = type;
 		this.announce = announce;
@@ -285,4 +287,6 @@ public abstract class Updater {
 				return false;
 		}
 	}
+
+	public abstract String getRemoteVersion();
 }

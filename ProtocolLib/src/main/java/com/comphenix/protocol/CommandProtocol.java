@@ -69,9 +69,9 @@ class CommandProtocol extends CommandBase {
 		if (subCommand.equalsIgnoreCase("config") || subCommand.equalsIgnoreCase("reload")) {
 			reloadConfiguration(sender);
 		} else if (subCommand.equalsIgnoreCase("check")) {
-			checkVersion(sender);
+			checkVersion(sender, true);
 		} else if (subCommand.equalsIgnoreCase("update")) {
-			updateVersion(sender);
+			updateVersion(sender, true);
 		} else if (subCommand.equalsIgnoreCase("timings")) {
 			toggleTimings(sender, args);
 		} else if (subCommand.equalsIgnoreCase("listeners")) {
@@ -87,12 +87,12 @@ class CommandProtocol extends CommandBase {
 		return true;
 	}
 	
-	public void checkVersion(final CommandSender sender) {
-		performUpdate(sender, UpdateType.NO_DOWNLOAD);
+	public void checkVersion(final CommandSender sender, boolean command) {
+		performUpdate(sender, UpdateType.NO_DOWNLOAD, command);
 	}
 	
-	public void updateVersion(final CommandSender sender) {
-		performUpdate(sender, UpdateType.DEFAULT);
+	public void updateVersion(final CommandSender sender, boolean command) {
+		performUpdate(sender, UpdateType.DEFAULT, command);
 	}
 	
 	// Display every listener on the server
@@ -111,7 +111,7 @@ class CommandProtocol extends CommandBase {
 		}
 	}
 	
-	private void performUpdate(final CommandSender sender, UpdateType type) {
+	private void performUpdate(final CommandSender sender, UpdateType type, final boolean command) {
 		if (updater.isChecking()) {
 			sender.sendMessage(ChatColor.RED + "Already checking for an update.");
 			return;
@@ -121,7 +121,14 @@ class CommandProtocol extends CommandBase {
 		Runnable notify = new Runnable() {
 			@Override
 			public void run() {
-				if (updater.shouldNotify() || config.isDebug()) {
+				if (command) {
+					sender.sendMessage(ChatColor.YELLOW + "[ProtocolLib] " + updater.getResult());
+					String remoteVersion = updater.getRemoteVersion();
+					if (remoteVersion != null) {
+						sender.sendMessage(ChatColor.YELLOW + "Remote version: " + remoteVersion);
+						sender.sendMessage(ChatColor.YELLOW + "Current version: " + plugin.getDescription().getVersion());
+					}
+				} else if (updater.shouldNotify() || config.isDebug()) {
 					sender.sendMessage(ChatColor.YELLOW + "[ProtocolLib] " + updater.getResult());
 				}
 

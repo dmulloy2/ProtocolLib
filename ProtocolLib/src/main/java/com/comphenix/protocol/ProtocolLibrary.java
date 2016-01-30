@@ -615,9 +615,9 @@ public class ProtocolLibrary extends JavaPlugin {
 			if (currentTime > updateTime && !updater.isChecking()) {		
 				// Initiate the update as if it came from the console
 				if (config.isAutoDownload())
-					commandProtocol.updateVersion(getServer().getConsoleSender());
+					commandProtocol.updateVersion(getServer().getConsoleSender(), false);
 				else if (config.isAutoNotify())
-					commandProtocol.checkVersion(getServer().getConsoleSender());
+					commandProtocol.checkVersion(getServer().getConsoleSender(), false);
 				else 
 					commandProtocol.updateFinished();
 			}
