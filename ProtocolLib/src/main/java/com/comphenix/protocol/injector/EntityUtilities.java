@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.World;
@@ -101,6 +102,7 @@ class EntityUtilities {
 			trackedPlayers.removeAll(nmsPlayers);
 			
 			// We have to rely on a NAME once again. Damn it.
+			// TODO: Make sure this stays up to date with version changes
 			if (scanPlayersMethod == null) {
 				scanPlayersMethod = trackerEntry.getClass().getMethod("scanPlayers", List.class);
 			}
@@ -133,15 +135,24 @@ class EntityUtilities {
 			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 
 			if (trackerEntry == null) {
-				throw new IllegalArgumentException("Cannot find entity trackers for " + entity +
-						(entity.isDead() ? " - entity is dead." : "."));
+				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + (entity.isDead() ? " - entity is dead." : "."));
 			}
+
 			if (trackedPlayersField == null) {
 				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
 			}
-				
-			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
-			
+
+			Collection<?> trackedPlayers = null;
+			Object value = FieldUtils.readField(trackedPlayersField, trackerEntry, false);
+
+			if (value instanceof Collection) {
+				trackedPlayers = (Collection<?>) value;
+			} else if (value instanceof Map) { // PaperSpigot
+				trackedPlayers = ((Map<?, ?>) value).keySet();
+			} else { // Please, no more changes
+				throw new IllegalStateException("trackedPlayers field was an unknown type: expected Set or Map, but got " + value.getClass());
+			}
+
 			// Wrap every player - we also ensure that the underlying tracker list is immutable
 			for (Object tracker : trackedPlayers) {
 				if (MinecraftReflection.isMinecraftPlayer(tracker)) {
@@ -149,7 +160,7 @@ class EntityUtilities {
 				}
 			}
 			return result;
-			
+
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Security limitation prevented access to the list of tracked players.", e);
 		}
