@@ -150,7 +150,7 @@ public class ProtocolLibrary extends JavaPlugin {
 
 	// Updater
 	private Updater updater;
-	private static boolean UPDATES_DISABLED;
+	public static boolean UPDATES_DISABLED;
 
 	// Logger
 	private static Logger logger;
@@ -753,9 +753,5 @@ public class ProtocolLibrary extends JavaPlugin {
 
 	public static void log(Level level, String message, Throwable ex) {
 		logger.log(level, message, ex);
-	}
-
-	public void disableUpdates() {
-		UPDATES_DISABLED = true;
 	}
 }

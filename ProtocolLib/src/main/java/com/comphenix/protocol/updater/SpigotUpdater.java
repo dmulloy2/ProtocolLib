@@ -23,6 +23,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.logging.Level;
 
+import org.bukkit.plugin.Plugin;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.utility.Closer;
@@ -34,12 +36,10 @@ import com.google.common.base.Charsets;
  */
 
 public final class SpigotUpdater extends Updater {
-	private ProtocolLibrary plugin;
 	private String remoteVersion;
 
-	public SpigotUpdater(ProtocolLibrary plugin, UpdateType type, boolean announce) {
+	public SpigotUpdater(Plugin plugin, UpdateType type, boolean announce) {
 		super(plugin, type, announce);
-		this.plugin = plugin;
 	}
 
 	@Override
@@ -78,7 +78,7 @@ public final class SpigotUpdater extends Updater {
 					plugin.getLogger().log(Level.WARNING, "Failed to check for updates: " + ex);
 				}
 
-				plugin.disableUpdates();
+				ProtocolLibrary.UPDATES_DISABLED = true;
 			} finally {
 				// Invoke the listeners on the main thread
 				for (Runnable listener : listeners) {

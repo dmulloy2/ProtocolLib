@@ -12,9 +12,9 @@ import java.util.logging.Logger;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.updater.Updater.UpdateType;
 
 /**
@@ -23,10 +23,23 @@ import com.comphenix.protocol.updater.Updater.UpdateType;
 
 public class UpdaterTest {
 	private static final int BUKKIT_DEV_ID = 45564;
+	private static Plugin plugin;
+
+	@BeforeClass
+	public static void preparePlugin() {
+		Server server = mock(Server.class);
+		when(server.getUpdateFolder()).thenReturn(null);
+
+		plugin = mock(Plugin.class);
+		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", System.getProperty("projectVersion"), null));
+		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
+		when(plugin.getDataFolder()).thenReturn(null);
+		when(plugin.getServer()).thenReturn(server);
+	}
 
 	@Test
 	public void testSpigotUpdater() {
-		SpigotUpdater updater = new SpigotUpdater(null, UpdateType.NO_DOWNLOAD, true);
+		SpigotUpdater updater = new SpigotUpdater(plugin, UpdateType.NO_DOWNLOAD, true);
 
 		String remote = null;
 
@@ -38,19 +51,12 @@ public class UpdaterTest {
 		}
 
 		System.out.println("Determined remote Spigot version: " + remote);
+
+		updater.versionCheck(remote);
 	}
 
 	@Test
 	public void testBukkitUpdater() {
-		Server server = mock(Server.class);
-		when(server.getUpdateFolder()).thenReturn(null);
-
-		Plugin plugin = mock(Plugin.class);
-		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", ProtocolLibrary.class.getPackage().getImplementationVersion(), null));
-		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
-		when(plugin.getDataFolder()).thenReturn(null);
-		when(plugin.getServer()).thenReturn(server);
-
 		BukkitUpdater updater = new BukkitUpdater(plugin, BUKKIT_DEV_ID, null, UpdateType.NO_DOWNLOAD, true);
 		if (! updater.read()) {
 			fail("Failed to check for updates");
@@ -58,5 +64,7 @@ public class UpdaterTest {
 
 		String remote = updater.getLatestName();
 		System.out.println("Determined remote Bukkit Dev version: " + remote);
+
+		updater.versionCheck(remote);		
 	}
 }

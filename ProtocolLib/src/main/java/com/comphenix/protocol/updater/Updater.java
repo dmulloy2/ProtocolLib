@@ -56,7 +56,7 @@ public abstract class Updater {
 		this.announce = announce;
 	}
 
-	protected boolean versionCheck(String title) {
+	public boolean versionCheck(String title) {
         if (this.type != UpdateType.NO_VERSION_CHECK) {
             String version = this.plugin.getDescription().getVersion();
 
@@ -84,6 +84,10 @@ public abstract class Updater {
 			}
 
 			// Parse the version
+            if (remoteVersion.startsWith("v")) {
+            	remoteVersion = remoteVersion.substring(1);
+            }
+
 			MinecraftVersion parsedRemote = new MinecraftVersion(remoteVersion);
 			MinecraftVersion parsedCurrent = new MinecraftVersion(plugin.getDescription().getVersion());
 
