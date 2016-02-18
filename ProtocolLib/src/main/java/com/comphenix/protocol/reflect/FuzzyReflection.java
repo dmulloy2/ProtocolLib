@@ -603,7 +603,7 @@ public class FuzzyReflection {
 	
 	// Prevent duplicate fields
 
-	// @SafeVarargs
+	@SafeVarargs
 	private static <T> Set<T> setUnion(T[]... array) {
 		Set<T> result = new LinkedHashSet<T>();
 		

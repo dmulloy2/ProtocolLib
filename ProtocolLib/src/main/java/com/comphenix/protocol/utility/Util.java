@@ -66,7 +66,7 @@ public class Util {
 	 * @param elements Array to convert
 	 * @return The list
 	 */
-	// @SafeVarargs
+	@SafeVarargs
 	public static <E> List<E> asList(E... elements) {
 		List<E> list = new ArrayList<E>(elements.length);
 		for (E element : elements) {
