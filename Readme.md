@@ -131,6 +131,7 @@ you don't have to create an ArrayList with this version:
 
 ````java
 
+PacketContainer fakeExplosion = new PacketContainer(PacketType.Play.Server.EXPLOSION);
 fakeExplosion.getDoubles().
     write(0, player.getLocation().getX()).
     write(1, player.getLocation().getY()).
