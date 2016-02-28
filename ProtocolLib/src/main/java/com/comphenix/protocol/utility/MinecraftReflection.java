@@ -1652,22 +1652,18 @@ public class MinecraftReflection {
 		return getMinecraftClass("TileEntity");
 	}
 
-	private static Class<?> gsonClass = null;
-
 	/**
 	 * Retrieve the Gson class used by Minecraft.
 	 * @return The Gson class.
 	 */
 	public static Class<?> getMinecraftGsonClass() {
-		if (gsonClass == null) {
-			try {
-				return gsonClass = getClass("org.bukkit.craftbukkit.libs.com.google.gson.Gson");
-			} catch (RuntimeException e) {
-				return gsonClass = getClass("com.google.gson.Gson");
-			}
+		try {
+			return getMinecraftLibraryClass("com.google.gson.Gson");
+		} catch (RuntimeException e) {
+			Class<?> match = FuzzyReflection.fromClass(PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass(), true)
+					.getFieldByType("(.*)(google.gson.Gson)").getType();
+			return setMinecraftLibraryClass("com.google.gson.Gson", match);
 		}
-
-		return gsonClass;
 	}
 
 	/**
@@ -1996,6 +1992,31 @@ public class MinecraftReflection {
 				throw new RuntimeException(String.format("Unable to find %s (%s)", className, Joiner.on(", ").join(aliases)));
 			}
 		}
+	}
+
+	/**
+	 * Retrieve the class object of a specific Minecraft library class.
+	 * @param className - the specific library Minecraft class.
+	 * @return Class object.
+	 * @throws RuntimeException If we are unable to find the given class.
+	 */
+	public static Class<?> getMinecraftLibraryClass(String className) {
+		if (libraryPackage == null)
+			libraryPackage = new CachedPackage("", getClassSource());
+		return libraryPackage.getPackageClass(className);
+	}
+
+	/**
+	 * Set the class object for the specific library class.
+	 * @param className - name of the Minecraft library class.
+	 * @param clazz - the new class object.
+	 * @return The provided clazz object.
+	 */
+	private static Class<?> setMinecraftLibraryClass(String className, Class<?> clazz) {
+		if (libraryPackage == null)
+			libraryPackage = new CachedPackage("", getClassSource());
+		libraryPackage.setPackageClass(className, clazz);
+		return clazz;
 	}
 
 	/**

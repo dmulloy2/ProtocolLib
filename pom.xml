@@ -6,6 +6,10 @@
   <version>v3-SNAPSHOT</version>
   <name>ProtocolLib-Parent</name>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <modules>
     <module>ProtocolLib</module>
     <module>modules/v1_7_R4</module>
