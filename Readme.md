@@ -15,8 +15,8 @@ Currently maintained by dmulloy2 on behalf of [Spigot](http://www.spigotmc.org/)
 ### Resources
 
 * [Resource Page](http://www.spigotmc.org/resources/protocollib.1997/)
-* [Downloads](http://ci.shadowvolt.com/job/ProtocolLib)
-* [JavaDoc](http://ci.shadowvolt.com/job/ProtocolLib/javadoc)
+* [Dev Builds](http://ci.dmulloy2.net/job/ProtocolLib)
+* [JavaDoc](http://ci.dmulloy2.net/job/ProtocolLib/javadoc)
 
 ### Compilation
 
