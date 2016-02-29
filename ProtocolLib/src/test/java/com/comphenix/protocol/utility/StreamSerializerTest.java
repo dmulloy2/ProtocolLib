@@ -8,7 +8,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import net.minecraft.server.v1_8_R3.IntHashMap;
+import net.minecraft.server.v1_9_R1.IntHashMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
@@ -42,7 +42,7 @@ public class StreamSerializerTest {
 	@Test
 	public void testStrings() throws IOException {
 		StreamSerializer serializer = new StreamSerializer();
-		String initial = "Hello - this is a ÆØÅ test.";
+		String initial = "Hello - this is a ï¿½ï¿½ï¿½ test.";
 
 		// Buffer
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();

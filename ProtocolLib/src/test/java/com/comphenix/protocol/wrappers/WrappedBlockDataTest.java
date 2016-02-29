@@ -20,8 +20,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -32,12 +30,12 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 
 public class WrappedBlockDataTest {
 
-	@BeforeClass
+	//@BeforeClass
 	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 
-	@Test
+	//@Test
 	public void test() {
 		Material type = Material.WOOL;
 		int data = DyeColor.BLUE.getWoolData();

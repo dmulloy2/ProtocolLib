@@ -5,13 +5,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.logging.Logger;
 
-import net.minecraft.server.v1_8_R3.DispenserRegistry;
+import net.minecraft.server.v1_9_R1.DispenserRegistry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_8_R3.util.Versioning;
+import org.bukkit.craftbukkit.v1_9_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_9_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_9_R1.util.Versioning;
 
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;

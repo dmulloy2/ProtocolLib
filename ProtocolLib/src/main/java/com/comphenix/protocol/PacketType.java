@@ -34,7 +34,7 @@ import com.google.common.util.concurrent.Futures;
 public class PacketType implements Serializable, Comparable<PacketType> {
 	// Increment whenever the type changes
 	private static final long serialVersionUID = 1L;
-
+	
 	/**
 	 * Represents an unknown legacy packet ID.
 	 */
@@ -149,7 +149,8 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType BLOCK_CHANGE =             new PacketType(PROTOCOL, SENDER, 0x23, 53, "BlockChange");
 			public static final PacketType BLOCK_ACTION =             new PacketType(PROTOCOL, SENDER, 0x24, 54, "BlockAction");
 			public static final PacketType BLOCK_BREAK_ANIMATION =    new PacketType(PROTOCOL, SENDER, 0x25, 55, "BlockBreakAnimation");
-			public static final PacketType MAP_CHUNK_BULK =           new PacketType(PROTOCOL, SENDER, 0x26, 56, "MapChunkBulk");
+			// No longer exists
+			//public static final PacketType MAP_CHUNK_BULK =           new PacketType(PROTOCOL, SENDER, 0x26, 56, "MapChunkBulk");
 			public static final PacketType EXPLOSION =                new PacketType(PROTOCOL, SENDER, 0x27, 60, "Explosion");
 			public static final PacketType WORLD_EVENT =              new PacketType(PROTOCOL, SENDER, 0x28, 61, "WorldEvent");
 			public static final PacketType NAMED_SOUND_EFFECT =       new PacketType(PROTOCOL, SENDER, 0x29, 62, "NamedSoundEffect");
@@ -188,11 +189,20 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType CAMERA =                   new PacketType(PROTOCOL, SENDER, 0x43, -1, "Camera");
 			public static final PacketType WORLD_BORDER =             new PacketType(PROTOCOL, SENDER, 0x44, -1, "WorldBorder");
 			public static final PacketType TITLE =                    new PacketType(PROTOCOL, SENDER, 0x45, -1, "Title");
-			public static final PacketType SET_COMPRESSION =          new PacketType(PROTOCOL, SENDER, 0x46, -1, "SetCompression");
+			// Removed
+			//public static final PacketType SET_COMPRESSION =          new PacketType(PROTOCOL, SENDER, 0x46, -1, "SetCompression");
 			public static final PacketType PLAYER_LIST_HEADER_FOOTER =
 				                                                   	  new PacketType(PROTOCOL, SENDER, 0x47, -1, "PlayerListHeaderFooter");
 			public static final PacketType RESOURCE_PACK_SEND =       new PacketType(PROTOCOL, SENDER, 0x48, -1, "ResourcePackSend");
-			public static final PacketType UPDATE_ENTITY_NBT =        new PacketType(PROTOCOL, SENDER, 0x49, -1, "UpdateEntityNBT");
+			// Removed
+			//public static final PacketType UPDATE_ENTITY_NBT =        new PacketType(PROTOCOL, SENDER, 0x49, -1, "UpdateEntityNBT");
+
+			public static final PacketType BOSS =                     new PacketType(PROTOCOL, SENDER, 255, -1, "Boss");
+			public static final PacketType VEHICLE_MOVE =             new PacketType(PROTOCOL, SENDER, 254, -1, "VehicleMove");
+			public static final PacketType CUSTOM_SOUND_EFFECT =      new PacketType(PROTOCOL, SENDER, 253, -1, "CustomSoundEffect");
+			public static final PacketType SET_COOLDOWN =             new PacketType(PROTOCOL, SENDER, 252, -1, "SetCooldown");
+			public static final PacketType MOUNT =                    new PacketType(PROTOCOL, SENDER, 251, -1, "Mount");
+			public static final PacketType UNLOAD_CHUNK =             new PacketType(PROTOCOL, SENDER, 250, -1, "UnloadChunk");
 
 			// The instance must
 			private final static Server INSTANCE = new Server();
@@ -241,6 +251,11 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType CUSTOM_PAYLOAD =           new PacketType(PROTOCOL, SENDER, 0x17, 250, "CustomPayload");
 			public static final PacketType SPECTATE =                 new PacketType(PROTOCOL, SENDER, 0x18, -1, "Spectate");
 			public static final PacketType RESOURCE_PACK_STATUS =     new PacketType(PROTOCOL, SENDER, 0x19, -1, "ResourcePackStatus");
+
+			public static final PacketType TELEPORT_ACCEPT =          new PacketType(PROTOCOL, SENDER, 249, -1, "TeleportAccept");
+			public static final PacketType VEHICLE_MOVE =             new PacketType(PROTOCOL, SENDER, 248, -1, "VehicleMove");
+			public static final PacketType BOAT_MOVE =                new PacketType(PROTOCOL, SENDER, 247, -1, "BoatMove");
+			public static final PacketType USE_ITEM =                 new PacketType(PROTOCOL, SENDER, 246, -1, "UseItem");
 
 			private final static Client INSTANCE = new Client();
 
@@ -891,6 +906,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		for (int i = 0; i < classNames.length; i++) {
 			classNames[i] = format(protocol, sender, names[i]);
 		}
+		//System.out.println(Arrays.toString(classNames));
 	}
 
 	/**

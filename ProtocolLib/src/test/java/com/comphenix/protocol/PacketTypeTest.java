@@ -28,13 +28,21 @@ public class PacketTypeTest {
 
 	@Test
 	public void ensureAllExist() {
+		boolean missing = false;
 		ProtocolRegistry registry = new NettyProtocolRegistry();
 		Map<PacketType, Class<?>> lookup = registry.getPacketTypeLookup();
 		for (Entry<PacketType, Class<?>> entry : lookup.entrySet()) {
 			PacketType type = entry.getKey();
 			Class<?> clazz = entry.getValue();
 
-			assertFalse("Packet " + clazz + " does not have a corresponding PacketType!", type.isDynamic());
+			if (type.isDynamic()) {
+				System.err.println("Packet " + clazz + " does not have a corresponding PacketType!");
+				missing = true;
+				
+			}
+			//assertFalse("Packet " + clazz + " does not have a corresponding PacketType!", type.isDynamic());
 		}
+
+		assertFalse("There are packets that aren\'t accounted for!", missing);
 	}
 }
