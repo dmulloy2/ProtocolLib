@@ -102,7 +102,7 @@ class EntityUtilities {
 			trackedPlayers.removeAll(nmsPlayers);
 			
 			// We have to rely on a NAME once again. Damn it.
-			// TODO: Make sure this stays up to date with version changes
+			// TODO: Make sure this stays up to date with version changes - 1.9
 			if (scanPlayersMethod == null) {
 				scanPlayersMethod = trackerEntry.getClass().getMethod("scanPlayers", List.class);
 			}
@@ -233,11 +233,11 @@ class EntityUtilities {
 			if (trackerEntry != null) {
 				if (trackerField == null) {
 					try {
-						trackerField = trackerEntry.getClass().getField("tracker");
+						trackerField = trackerEntry.getClass().getDeclaredField("tracker");
 					} catch (NoSuchFieldException e) {
-						// Assume it's the first public entity field then
-						trackerField = FuzzyReflection.fromObject(trackerEntry).getFieldByType(
-								"tracker", MinecraftReflection.getEntityClass());
+						// Assume it's the first entity field then
+						trackerField = FuzzyReflection.fromObject(trackerEntry, true)
+								.getFieldByType("tracker", MinecraftReflection.getEntityClass());
 					}
 				}
 				
