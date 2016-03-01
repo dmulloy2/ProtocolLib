@@ -819,7 +819,6 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 				CREATE_KEY_VALUE_METHOD = candidates.get(0);
 				UPDATE_KEY_VALUE_METHOD = candidates.get(1);
 			} else {
-				throw new IllegalStateException("I haven\'t done watchable objects yet, sorry!");
 				//throw new IllegalStateException("Unable to find create and update watchable object. Update ProtocolLib.");
 			}
 
