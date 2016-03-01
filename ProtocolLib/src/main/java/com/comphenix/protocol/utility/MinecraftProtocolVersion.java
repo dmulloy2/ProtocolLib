@@ -39,9 +39,10 @@ public class MinecraftProtocolVersion {
 		map.put(new MinecraftVersion(1, 7, 1), 4);
 		map.put(new MinecraftVersion(1, 7, 6), 5);
 		map.put(new MinecraftVersion(1, 8, 0), 47);
+		map.put(new MinecraftVersion(1, 9, 0), 107);
 		return map;
 	}
-	
+
 	/**
 	 * Retrieve the version of the Minecraft protocol for the current version of Minecraft.
 	 * @return The version number.

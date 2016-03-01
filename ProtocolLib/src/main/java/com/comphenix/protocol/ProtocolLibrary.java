@@ -92,12 +92,12 @@ public class ProtocolLibrary extends JavaPlugin {
 	/**
 	 * The maximum version ProtocolLib has been tested with,
 	 */
-	public static final String MAXIMUM_MINECRAFT_VERSION = "1.8.8";
+	public static final String MAXIMUM_MINECRAFT_VERSION = "1.9";
 
 	/**
-	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.8.8) was released.
+	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.9) was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2015-07-27";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2016-02-29";
 
 	// Update information
 	static final String BUKKIT_DEV_SLUG = "protocollib";
