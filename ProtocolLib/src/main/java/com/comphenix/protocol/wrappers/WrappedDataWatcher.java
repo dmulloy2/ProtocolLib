@@ -179,7 +179,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @throws FieldAccessException Cannot read underlying field.
      */
     public Object getObject(int index) throws FieldAccessException {
-    	return getWatchedObject(index);
+    	return WrappedWatchableObject.getWrapped(getWatchedObject(index));
     }
 
 	private Object getWatchedObject(int index) {
@@ -209,7 +209,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			setter = Accessors.getMethodAccessor(handleType, "set", object.getClass(), Object.class);
 		}
 
-		setter.invoke(handle, object, value);
+		setter.invoke(handle, object, WrappedWatchableObject.getUnwrapped(value));
 	}
 
 	public WrappedDataWatcher deepClone() {

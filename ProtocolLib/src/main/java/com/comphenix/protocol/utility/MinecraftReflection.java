@@ -1247,7 +1247,11 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getChunkCoordinatesClass() {
 		// TODO Figure out a fallback
-		return getMinecraftClass("ChunkCoordinates");
+		try {
+			return getMinecraftClass("ChunkCoordinates");
+		} catch (RuntimeException e) {
+			return null;
+		}
 	}
 
 	/**
