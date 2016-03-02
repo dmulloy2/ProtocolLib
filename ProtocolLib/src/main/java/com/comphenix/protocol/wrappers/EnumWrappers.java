@@ -204,12 +204,16 @@ public abstract class EnumWrappers {
 		SLIME("slime", 33, false),
 		HEART("heart", 34, false),
 		BARRIER("barrier", 35, false),
-		ITEM_CRACK("iconcrack_", 36, false, 2),
-		BLOCK_CRACK("blockcrack_", 37, false, 1),
-		BLOCK_DUST("blockdust_", 38, false, 1),
+		ITEM_CRACK("iconcrack", 36, false, 2),
+		BLOCK_CRACK("blockcrack", 37, false, 1),
+		BLOCK_DUST("blockdust", 38, false, 1),
 		WATER_DROP("droplet", 39, false),
 		ITEM_TAKE("take", 40, false),
-		MOB_APPEARANCE("mobappearance", 41, true);
+		MOB_APPEARANCE("mobappearance", 41, true),
+		DRAGON_BREATH("dragonbreath", 42, false),
+		END_ROD("endRod", 43, false),
+		DAMAGE_INDICATOR("damageIndicator", 44, true),
+		SWEEP_ATTACK("sweepAttack", 45, true);
 
 		private static final Map<String, Particle> BY_NAME;
 		private static final Map<Integer, Particle> BY_ID;
