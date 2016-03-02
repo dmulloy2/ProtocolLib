@@ -1,9 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
-
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
@@ -19,11 +15,11 @@ public class WrappedWatchableObjectTest {
 	}
 	
 	//@Test
-	public void testItemStack() {
+	/* public void testItemStack() {
 		final ItemStack stack = new ItemStack(Material.GOLD_AXE);
 		final WrappedWatchableObject test = new WrappedWatchableObject(0, stack);
 	
 		ItemStack value = (ItemStack) test.getValue();
 		assertEquals(value.getType(), stack.getType());
-	}
+	} */
 }

@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.server.v1_9_R1.AttributeModifier;
+import net.minecraft.server.v1_9_R1.DataWatcher;
+import net.minecraft.server.v1_9_R1.Entity;
+import net.minecraft.server.v1_9_R1.EntityLightning;
 import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes;
 import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
@@ -50,7 +53,9 @@ import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
@@ -61,8 +66,8 @@ import com.google.common.collect.Lists;
 //@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
 	// Helper converters
-	//private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
-	//private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
+	// private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
+	// private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
 
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {
@@ -167,6 +172,7 @@ public class PacketContainerTest {
 	}
 
 	// TODO Find a packet with integer arrays
+
 	/*@Test
 	public void testGetIntegerArrays() {
 		// Contains a byte array we will test
@@ -278,21 +284,26 @@ public class PacketContainerTest {
 		assertEquals(compound.getList("ages"), result.getList("ages"));
 	}
 
-	/*@Test
+	@Test
 	public void testGetDataWatcherModifier() {
 		PacketContainer mobSpawnPacket = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
 		StructureModifier<WrappedDataWatcher> watcherAccessor = mobSpawnPacket.getDataWatcherModifier();
 
-		WrappedDataWatcher dataWatcher = new WrappedDataWatcher();
-		dataWatcher.setObject(1, 100);
-		dataWatcher.setObject(2, 125);
+		Entity entity = new EntityLightning(null, 0, 0, 0, true);
+		DataWatcher watcher = entity.getDataWatcher();
+
+		WrappedDataWatcher dataWatcher = new WrappedDataWatcher(watcher);
+		dataWatcher.setObject(1, (byte) 1);
+		dataWatcher.setObject(2, 301);
+		dataWatcher.setObject(3, true);
+		dataWatcher.setObject(4, "Lorem");
 
 		assertNull(watcherAccessor.read(0));
 
 		// Insert and read back
 		watcherAccessor.write(0, dataWatcher);
 		assertEquals(dataWatcher, watcherAccessor.read(0));
-	}*/
+	}
 
 	// Unfortunately, it might be too difficult to mock this one
 	//
@@ -322,7 +333,7 @@ public class PacketContainerTest {
 		assertEquals(positions, cloned);
 	}
 
-	/*@Test
+	@Test
 	public void testGetWatchableCollectionModifier() {
 		PacketContainer entityMetadata = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
 		StructureModifier<List<WrappedWatchableObject>> watchableAccessor =
@@ -330,16 +341,16 @@ public class PacketContainerTest {
 
 		assertNull(watchableAccessor.read(0));
 
-		WrappedDataWatcher watcher = new WrappedDataWatcher();
-		watcher.setObject(1, 10);
-		watcher.setObject(8, 10);
+		Entity entity = new EntityLightning(null, 0, 0, 0, true);
+		DataWatcher watcher = entity.getDataWatcher();
 
-		List<WrappedWatchableObject> list = watcher.getWatchableObjects();
+		WrappedDataWatcher wrapper = new WrappedDataWatcher(watcher);
+		List<WrappedWatchableObject> list = wrapper.getWatchableObjects();
 
 		// Insert and read back
 		watchableAccessor.write(0, list);
 		assertEquals(list, watchableAccessor.read(0));
-	}*/
+	}
 
 	@Test
 	public void testGameProfiles() {
@@ -350,32 +361,25 @@ public class PacketContainerTest {
 		assertEquals(profile, spawnEntity.getGameProfiles().read(0));
 	}
 
-	/*@Test
+	@Test
 	public void testChatComponents() {
 		PacketContainer chatPacket = new PacketContainer(PacketType.Play.Server.CHAT);
 		chatPacket.getChatComponents().write(0,
 				WrappedChatComponent.fromChatMessage("You shall not " + ChatColor.ITALIC + "pass!")[0]);
 
-		assertEquals("{\"extra\":[\"You shall not \",{\"italic\":true,\"text\":\"pass!\"}],\"text\":\"\"}",
+		assertEquals("{\"extra\":[{\"text\":\"You shall not \"},{\"italic\":true,\"text\":\"pass!\"}],\"text\":\"\"}",
 				     chatPacket.getChatComponents().read(0).getJson());
-	}*/
+	}
 
 	@Test
 	public void testSerialization() {
-		try {
-			PacketContainer chat = new PacketContainer(PacketType.Play.Client.CHAT);
-			chat.getStrings().write(0, "Test");
+		PacketContainer chat = new PacketContainer(PacketType.Play.Client.CHAT);
+		chat.getStrings().write(0, "Test");
 
-			PacketContainer copy = (PacketContainer) SerializationUtils.clone(chat);
+		PacketContainer copy = (PacketContainer) SerializationUtils.clone(chat);
 
-			assertEquals(PacketType.Play.Client.CHAT, copy.getType());
-			assertEquals("Test", copy.getStrings().read(0));
-		} catch (Throwable ex) {
-			// This occurs intermittently on Java 6, for the time being just log it and move on
-			// TODO: Possibly find a solution to this
-			System.err.println("Failed to serialize packet:");
-			ex.printStackTrace();
-		}
+		assertEquals(PacketType.Play.Client.CHAT, copy.getType());
+		assertEquals("Test", copy.getStrings().read(0));
 	}
 
 	@Test

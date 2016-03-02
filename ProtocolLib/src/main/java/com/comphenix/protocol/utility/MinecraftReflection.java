@@ -63,7 +63,6 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavaibleException;
 import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavaibleException.Reason;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
@@ -1247,11 +1246,8 @@ public class MinecraftReflection {
 	 * @return The ChunkPosition class.
 	 */
 	public static Class<?> getChunkCoordinatesClass() {
-		try {
-			return getMinecraftClass("ChunkCoordinates");
-		} catch (RuntimeException e) {
-			return setMinecraftClass("ChunkCoordinates", WrappedDataWatcher.getTypeClass(6));
-		}
+		// TODO Figure out a fallback
+		return getMinecraftClass("ChunkCoordinates");
 	}
 
 	/**
@@ -1288,6 +1284,10 @@ public class MinecraftReflection {
 	 * @return The WatchableObject class.
 	 */
 	public static Class<?> getWatchableObjectClass() {
+		if (dataWatcherItemExists()) {
+			return getDataWatcherItemClass();
+		}
+
 		try {
 			return getMinecraftClass("WatchableObject", "DataWatcher$WatchableObject");
 		} catch (RuntimeException e) {
@@ -1300,6 +1300,30 @@ public class MinecraftReflection {
 
 			// Use the second parameter
 			return setMinecraftClass("WatchableObject", selected.getParameterTypes()[1]);
+		}
+	}
+
+	public static Class<?> getDataWatcherItemClass() {
+		// TODO Implement a fallback
+		return getMinecraftClass("DataWatcher$Item");
+	}
+
+	public static Class<?> getDataWatcherObjectClass() {
+		// TODO Implement a fallback
+		return getMinecraftClass("DataWatcherObject");
+	}
+
+	public static Class<?> getDataWatcherSerializerClass() {
+		// TODO Implement a fallback
+		return getMinecraftClass("DataWatcherSerializer");
+	}
+
+	public static boolean dataWatcherItemExists() {
+		try {
+			getDataWatcherItemClass();
+			return true;
+		} catch (RuntimeException e) {
+			return false;
 		}
 	}
 
