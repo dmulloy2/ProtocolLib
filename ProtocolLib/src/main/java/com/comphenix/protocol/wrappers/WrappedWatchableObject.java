@@ -17,9 +17,12 @@ public class WrappedWatchableObject extends AbstractWrapper {
 
 	private WrappedWatchableObject() {
 		super(MinecraftReflection.getDataWatcherItemClass());
-		
 	}
 
+	/**
+	 * Constructs a wrapped watchable object around an existing NMS data watcher item.
+	 * @param handle Data watcher item
+	 */
 	public WrappedWatchableObject(Object handle) {
 		this();
 		setHandle(handle);
@@ -29,10 +32,18 @@ public class WrappedWatchableObject extends AbstractWrapper {
 
 	// ---- Getter methods
 
+	/**
+	 * Gets the wrapped value of this data watcher item.
+	 * @return The wrapped value
+	 */
 	public Object getValue() {
 		return getWrapped(getRawValue());
 	}
 
+	/**
+	 * Gets the raw value of this data watcher item.
+	 * @return Raw value
+	 */
 	public Object getRawValue() {
 		return modifier.readSafely(1);
 	}

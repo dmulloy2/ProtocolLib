@@ -25,9 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
+import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
@@ -39,11 +42,23 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private static MethodAccessor getter = null;
 	private static MethodAccessor setter = null;
 
+	private static Field ENTITY_DATA_FIELD = null;
+	private static Field ENTITY_FIELD = null;
+
+	/**
+	 * Constructs a new Data Watcher. This is currently unsupported in 1.9 and up due to changes in data watcher structure.
+	 * Essentially, Mojang further tied data watchers to their entities.
+	 * @deprecated
+	 */
 	@Deprecated
 	public WrappedDataWatcher() {
 		super(MinecraftReflection.getDataWatcherClass());
 	}
 
+	/**
+	 * Constructs a wrapped data watcher around an existing NMS data watcher.
+	 * @param handle NMS data watcher
+	 */
 	public WrappedDataWatcher(Object handle) {
 		this();
 		setHandle(handle);
@@ -212,9 +227,76 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		setter.invoke(handle, object, WrappedWatchableObject.getUnwrapped(value));
 	}
 
+	/**
+	 * Clone the content of the current DataWatcher.
+	 * 
+	 * @return A cloned data watcher.
+	 */
 	public WrappedDataWatcher deepClone() {
 		// TODO This
 		return null;
+	}
+
+	/**
+	 * Retrieve the data watcher associated with an entity.
+	 * 
+	 * @param entity - the entity to read from.
+	 * @return Associated data watcher.
+	 * @throws FieldAccessException Reflection failed.
+	 */
+	public static WrappedDataWatcher getEntityWatcher(Entity entity) throws FieldAccessException {
+		if (ENTITY_DATA_FIELD == null)
+			ENTITY_DATA_FIELD = FuzzyReflection.fromClass(MinecraftReflection.getEntityClass(), true).getFieldByType("datawatcher", MinecraftReflection.getDataWatcherClass());
+
+		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
+
+		try {
+			Object nsmWatcher = FieldUtils.readField(ENTITY_DATA_FIELD, unwrapper.unwrapItem(entity), true);
+
+			if (nsmWatcher != null)
+				return new WrappedDataWatcher(nsmWatcher);
+			else
+				return null;
+
+		} catch (IllegalAccessException e) {
+			throw new FieldAccessException("Cannot access DataWatcher field.", e);
+		}
+	}
+
+	/**
+	 * Retrieve the entity associated with this data watcher.
+	 * <p>
+	 * <b>Warning:</b> This is only supported on 1.7.2 and above.
+	 * 
+	 * @return The entity, or NULL.
+	 */
+	public Entity getEntity() {
+		if (!MinecraftReflection.isUsingNetty())
+			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
+
+		try {
+			return (Entity) MinecraftReflection.getBukkitEntity(ENTITY_FIELD.get(handle));
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to retrieve entity.", e);
+		}
+	}
+
+	/**
+	 * Set the entity associated with this data watcher.
+	 * <p>
+	 * <b>Warning:</b> This is only supported on 1.7.2 and above.
+	 * 
+	 * @param entity - the new entity.
+	 */
+	public void setEntity(Entity entity) {
+		if (!MinecraftReflection.isUsingNetty())
+			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
+
+		try {
+			ENTITY_FIELD.set(handle, BukkitUnwrapper.getInstance().unwrapItem(entity));
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to set entity.", e);
+		}
 	}
 
 	@Deprecated
