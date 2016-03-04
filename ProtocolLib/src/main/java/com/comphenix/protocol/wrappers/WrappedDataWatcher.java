@@ -342,7 +342,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	}
 
 	public static class WrappedDataWatcherObject extends AbstractWrapper {
-		private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherSerializerClass();
+		private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherObjectClass();
 		private static Constructor<?> constructor = null;
 
 		private StructureModifier<Object> modifier = new StructureModifier<Object>(HANDLE_TYPE);
@@ -354,16 +354,18 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 
 		public WrappedDataWatcherObject(int index, Serializer serializer) {
-			this(newHandle(index, serializer.getHandle()));
+			this(newHandle(index, serializer));
 		}
 
-		private static Object newHandle(int index, Object serializer) {
+		private static Object newHandle(int index, Serializer serializer) {
 			if (constructor == null) {
 				constructor = HANDLE_TYPE.getConstructors()[0];
 			}
 
+			Object handle = serializer != null ? serializer.getHandle() : null;
+
 			try {
-				return constructor.newInstance(index, serializer);
+				return constructor.newInstance(index, handle);
 			} catch (ReflectiveOperationException e) {
 				throw new RuntimeException("Failed to create new DataWatcherObject", e);
 			}
