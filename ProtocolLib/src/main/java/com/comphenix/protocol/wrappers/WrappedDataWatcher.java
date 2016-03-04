@@ -16,8 +16,11 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,16 +35,16 @@ import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject> {
-	private static ConstructorAccessor dataWatcherObjectConstructor = null;
 	private static MethodAccessor getter = null;
 	private static MethodAccessor setter = null;
 
+	private static Field MAP_FIELD = null;
 	private static Field ENTITY_DATA_FIELD = null;
 	private static Field ENTITY_FIELD = null;
 
@@ -78,29 +81,26 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
 		List<Field> candidates = fuzzy.getFieldListByType(Map.class);
 
-		Field match = null;
 		for (Field candidate : candidates) {
 			if (Modifier.isStatic(candidate.getModifiers())) {
 				// This is the entity class to current index map, which we really don't have a use for
 			} else {
 				// This is the map we're looking for
-				match = candidate;
+				MAP_FIELD = candidate;
+				MAP_FIELD.setAccessible(true);
 			}
 		}
 
-		if (match == null) {
+		if (MAP_FIELD == null) {
 			throw new FieldAccessException("Could not find index -> object map.");
 		}
 
 		Map<Integer, ?> map = null;
 
 		try {
-			match.setAccessible(true);
-			map = (Map<Integer, ?>) match.get(handle);
-		} catch (IllegalArgumentException e) {
-			throw new FieldAccessException(e);
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException(e);
+			map = (Map<Integer, ?>) MAP_FIELD.get(handle);
+		} catch (ReflectiveOperationException e) {
+			throw new FieldAccessException("Failed to access index -> object map", e);
 		}
 
 		Map<Integer, WrappedWatchableObject> ret = new HashMap<>();
@@ -109,6 +109,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 
 		return ret;
+	}
+
+	public WrappedWatchableObject getWatchableObject(int index) {
+		return asMap().get(index);
 	}
 
 	public int size() {
@@ -198,33 +202,29 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
     }
 
 	private Object getWatchedObject(int index) {
-		if (dataWatcherObjectConstructor == null) {
-			dataWatcherObjectConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getDataWatcherObjectClass().getConstructors()[0]);
-		}
-
-		Object object = dataWatcherObjectConstructor.invoke(index, null);
-
-		if (getter == null) {
-			getter = Accessors.getMethodAccessor(handleType, "get", object.getClass());
-		}
-
-		return getter.invoke(handle, object);
+		return getWatcherObject(new WrappedDataWatcherObject(index, null));
 	}
+   
+    private Object getWatcherObject(WrappedDataWatcherObject watcherObject) {
+		if (getter == null) {
+			getter = Accessors.getMethodAccessor(handleType, "get", watcherObject.getHandleType());
+		}
+
+		return getter.invoke(handle, watcherObject.getHandle());
+    }
 
 	// ---- Object Setters
 
 	public void setObject(int index, Object value) {
-		if (dataWatcherObjectConstructor == null) {
-			dataWatcherObjectConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getDataWatcherObjectClass().getConstructors()[0]);
-		}
+		setObject(new WrappedDataWatcherObject(index, null), value);
+	}
 
-		Object object = dataWatcherObjectConstructor.invoke(index, null);
-
+	public void setObject(WrappedDataWatcherObject watcherObject, Object value) {
 		if (setter == null) {
-			setter = Accessors.getMethodAccessor(handleType, "set", object.getClass(), Object.class);
+			setter = Accessors.getMethodAccessor(handleType, "set", watcherObject.getHandleType(), Object.class);
 		}
 
-		setter.invoke(handle, object, WrappedWatchableObject.getUnwrapped(value));
+		setter.invoke(handle, watcherObject.getHandle(), WrappedWatchableObject.getUnwrapped(value));
 	}
 
 	/**
@@ -339,5 +339,115 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	@Override
 	public int hashCode() {
 		return getWatchableObjects().hashCode();
+	}
+
+	public static class WrappedDataWatcherObject extends AbstractWrapper {
+		private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherSerializerClass();
+		private static Constructor<?> constructor = null;
+
+		private StructureModifier<Object> modifier = new StructureModifier<Object>(HANDLE_TYPE);
+
+		public WrappedDataWatcherObject(Object handle) {
+			super(HANDLE_TYPE);
+			setHandle(handle);
+			modifier.withTarget(handle);
+		}
+
+		public WrappedDataWatcherObject(int index, Serializer serializer) {
+			this(newHandle(index, serializer.getHandle()));
+		}
+
+		private static Object newHandle(int index, Object serializer) {
+			if (constructor == null) {
+				constructor = HANDLE_TYPE.getConstructors()[0];
+			}
+
+			try {
+				return constructor.newInstance(index, serializer);
+			} catch (ReflectiveOperationException e) {
+				throw new RuntimeException("Failed to create new DataWatcherObject", e);
+			}
+		}
+
+		public int getIndex() {
+			return (int) modifier.read(0);
+		}
+
+		public Serializer getSerializer() {
+			// TODO this
+			return null;
+		}
+	}
+
+	public static class Serializer extends AbstractWrapper {
+		private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherSerializerClass();
+
+		private final Class<?> type;
+		private final boolean optional;
+		
+		public Serializer(Class<?> type, Object handle, boolean optional) {
+			super(HANDLE_TYPE);
+			this.type = type;
+			this.optional = optional;
+
+			setHandle(handle);
+		}
+
+		public Class<?> getType() {
+			return type;
+		}
+
+		public boolean isOptional() {
+			return optional;
+		}
+	}
+
+	public static class Registry {
+		private static boolean INITIALIZED = false;
+		private static Map<Class<?>, Serializer> REGISTRY = new HashMap<>();
+
+		public static Serializer get(Class<?> clazz) {
+			if (! INITIALIZED) {
+				initialize();
+				INITIALIZED = true;
+			}
+
+			return REGISTRY.get(clazz);
+		}
+
+		private static void initialize() {
+			List<Field> candidates = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftClass("DataWatcherRegistry"), true)
+				.getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
+			for (Field candidate : candidates) {
+				Type generic = candidate.getGenericType();
+				if (generic instanceof ParameterizedType) {
+					ParameterizedType type = (ParameterizedType) generic;
+					Type[] args = type.getActualTypeArguments();
+					Type arg = args[0];
+
+					Class<?> innerClass = null;
+					boolean optional = false;
+
+					if (arg instanceof Class<?>) {
+						innerClass = (Class<?>) arg;
+					} else if (arg instanceof ParameterizedType) {
+						innerClass = (Class<?>) ((ParameterizedType) arg).getActualTypeArguments()[0];
+						optional = true;
+					} else {
+						throw new IllegalStateException("Failed to find inner class of field " + candidate);
+					}
+
+					Object serializer;
+
+					try {
+						serializer = candidate.get(null);
+					} catch (ReflectiveOperationException e) {
+						throw new IllegalStateException("Failed to read field " + candidate);
+					}
+
+					REGISTRY.put(innerClass, new Serializer(innerClass, serializer, optional));
+				}
+			}
+		}
 	}
 }

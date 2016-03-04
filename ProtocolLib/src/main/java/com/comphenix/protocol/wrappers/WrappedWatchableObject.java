@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 
 /**
  * @author dmulloy2
@@ -31,6 +32,14 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	}
 
 	// ---- Getter methods
+
+	public WrappedDataWatcherObject getWatcherObject() {
+		return new WrappedDataWatcherObject(modifier.read(0));
+	}
+
+	public int getIndex() {
+		return getWatcherObject().getIndex();
+	}
 
 	/**
 	 * Gets the wrapped value of this data watcher item.

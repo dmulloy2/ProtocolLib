@@ -60,6 +60,6 @@ public class BukkitInitialization {
 	public static void initializePackage() {
 		// Initialize reflection
 		MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
-		MinecraftVersion.setCurrentVersion(MinecraftVersion.BOUNTIFUL_UPDATE);
+		MinecraftVersion.setCurrentVersion(MinecraftVersion.COMBAT_UPDATE);
 	}
 }
