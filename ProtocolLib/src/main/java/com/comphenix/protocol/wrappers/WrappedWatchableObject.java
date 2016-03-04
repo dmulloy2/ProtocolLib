@@ -1,5 +1,18 @@
 /**
- * (c) 2016 dmulloy2
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2016 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
  */
 package com.comphenix.protocol.wrappers;
 
@@ -10,33 +23,38 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 
 /**
+ * Represents a DataWatcher Item in 1.9.
  * @author dmulloy2
  */
 
 public class WrappedWatchableObject extends AbstractWrapper {
-	private StructureModifier<Object> modifier;
-
-	private WrappedWatchableObject() {
-		super(MinecraftReflection.getDataWatcherItemClass());
-	}
+	private final StructureModifier<Object> modifier;
 
 	/**
 	 * Constructs a wrapped watchable object around an existing NMS data watcher item.
 	 * @param handle Data watcher item
 	 */
 	public WrappedWatchableObject(Object handle) {
-		this();
-		setHandle(handle);
+		super(MinecraftReflection.getDataWatcherItemClass());
 
-		modifier = new StructureModifier<Object>(handleType).withTarget(handle);
+		setHandle(handle);
+		this.modifier = new StructureModifier<Object>(handleType).withTarget(handle);
 	}
 
 	// ---- Getter methods
 
+	/**
+	 * Gets this Item's watcher object, which contains the index and serializer.
+	 * @return The watcher object
+	 */
 	public WrappedDataWatcherObject getWatcherObject() {
 		return new WrappedDataWatcherObject(modifier.read(0));
 	}
 
+	/**
+	 * Gets this Item's index from the watcher object
+	 * @return The index
+	 */
 	public int getIndex() {
 		return getWatcherObject().getIndex();
 	}
@@ -94,6 +112,11 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return unwrapped;
 	}
 
+	/**
+	 * Sets the value of this item.
+	 * @param value New value
+	 * @param updateClient Whether or not to update the client
+	 */
 	public void setValue(Object value, boolean updateClient) {
 		modifier.write(1, getUnwrapped(value));
 
@@ -102,6 +125,10 @@ public class WrappedWatchableObject extends AbstractWrapper {
 		}
 	}
 
+	/**
+	 * Sets the value of this item.
+	 * @param value New value
+	 */
 	public void setValue(Object value) {
 		setValue(value, false);
 	}
@@ -145,10 +172,18 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return wrapped;
 	}
 
+	/**
+	 * Whether or not the value must be synchronized with the client.
+	 * @return True if it must, false if not
+	 */
 	public boolean getDirtyState() {
 		return (boolean) modifier.read(2);
 	}
 
+	/**
+	 * Sets this item's dirty state
+	 * @param dirty New state
+	 */
 	public void setDirtyState(boolean dirty) {
 		modifier.write(2, dirty);
 	}
