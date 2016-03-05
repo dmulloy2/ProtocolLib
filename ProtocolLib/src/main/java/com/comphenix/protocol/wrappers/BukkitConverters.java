@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
@@ -962,7 +963,44 @@ public class BukkitConverters {
 
 		};
 	}
-	
+
+	private static MethodAccessor soundGetter = null;
+	private static FieldAccessor soundKey = null;
+
+	public static EquivalentConverter<Sound> getSoundConverter() {
+		return new IgnoreNullConverter<Sound>() {
+
+			@Override
+			public Class<Sound> getSpecificType() {
+				return Sound.class;
+			}
+
+			@Override
+			protected Object getGenericValue(Class<?> genericType, Sound specific) {
+				if (soundGetter == null) {
+					Class<?> soundEffects = MinecraftReflection.getMinecraftClass("SoundEffects");
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(soundEffects, true);
+					soundGetter = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSound", MinecraftReflection.getMinecraftClass("SoundEffect"), String.class));
+				}
+
+				MinecraftKey key = MinecraftKey.fromEnum(specific);
+				return soundGetter.invoke(null, key.getFullKey());
+			}
+
+			@Override
+			protected Sound getSpecificValue(Object generic) {
+				if (soundKey == null) {
+					Class<?> soundEffect = generic.getClass();
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(soundEffect, true);
+					soundKey = Accessors.getFieldAccessor(fuzzy.getFieldByType("key", MinecraftReflection.getMinecraftClass("MinecraftKey")));
+				}
+
+				MinecraftKey key = MinecraftKey.fromHandle(soundKey.get(generic));
+				return Sound.valueOf(key.getEnumFormat());
+			}
+		};
+	}
+
  	/**
 	 * Wraps a given equivalent converter in NULL checks, ensuring that such values are ignored.
 	 * @param <TType> Type

@@ -20,9 +20,12 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import net.minecraft.server.v1_9_R1.AttributeModifier;
@@ -47,10 +50,12 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -66,8 +71,8 @@ import com.google.common.collect.Lists;
 //@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
 	// Helper converters
-	// private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
-	// private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
+	private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
+	private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
 
 	@BeforeClass
 	public static void initializeBukkit() throws IllegalAccessException {
@@ -458,14 +463,11 @@ public class PacketContainerTest {
 		assertEquals(effect.hasParticles(), packet.getBytes().read(2) == (effect.hasParticles() ? 1 : 0));
 	}*/
 
-	// This is usually the last one, since it requires all the API stuff to be worked out
-
-	/*private static final List<PacketType> BLACKLISTED = Util.asList(
-			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD, PacketType.Play.Server.MAP_CHUNK,
-			PacketType.Play.Server.UPDATE_ATTRIBUTES
+	private static final List<PacketType> BLACKLISTED = Util.asList(
+			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD,
+			PacketType.Play.Server.SET_COOLDOWN, PacketType.Play.Server.NAMED_SOUND_EFFECT
 	);
 
-	
 	@Test
 	public void testDeepClone() {
 		// Try constructing all the packets
@@ -505,7 +507,7 @@ public class PacketContainerTest {
 							testEquality(firstMod.read(i), secondMod.read(i));
 					}
 				}
-			} catch (IllegalArgumentException e) {
+			} catch (IllegalArgumentException e) {	
 				if (!registered) {
 					// Let the test pass
 					System.err.println("The packet ID " + type + " is not registered.");
@@ -518,7 +520,7 @@ public class PacketContainerTest {
 				throw new RuntimeException("Failed to serialize packet " + type, e);
 			}
 		}
-	}*/
+	}
 
 	@Test
 	public void testPacketType() {
@@ -526,7 +528,7 @@ public class PacketContainerTest {
 	}
 
 	// Convert to objects that support equals()
-	/*private void testEquality(Object a, Object b) {
+	private void testEquality(Object a, Object b) {
 		if (a != null && b != null) {
 			if (MinecraftReflection.isDataWatcher(a)) {
 				a = watchConvert.getSpecific(a);
@@ -542,20 +544,20 @@ public class PacketContainerTest {
 				return;
 			}
 		} else {
-			if (a.equals(b) || Objects.equal(a, b) || a.toString().equals(b.toString())) {
+			if (a.equals(b) || Objects.equals(a, b) || a.toString().equals(b.toString())) {
 				return;
 			}
 		}
 
 		assertEquals(a, b);
-	}*/
+	}
 
 	/**
 	 * Get the underlying array as an object array.
 	 * @param val - array wrapped as an Object.
 	 * @return An object array.
 	 */
-	/*private Object[] getArray(Object val) {
+	private Object[] getArray(Object val) {
 		if (val instanceof Object[])
 			return (Object[]) val;
 		if (val == null)
@@ -567,5 +569,5 @@ public class PacketContainerTest {
 		for (int i = 0; i < arrlength; ++i)
 			outputArray[i] = Array.get(val, i);
 		return outputArray;
-	}*/
+	}
 }

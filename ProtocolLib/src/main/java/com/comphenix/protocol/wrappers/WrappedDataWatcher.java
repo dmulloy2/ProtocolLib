@@ -52,9 +52,9 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private static MethodAccessor GETTER = null;
 	private static MethodAccessor SETTER = null;
 
+	private static FieldAccessor ENTITY_FIELD = null;
 	private static FieldAccessor MAP_FIELD = null;
 	private static Field ENTITY_DATA_FIELD = null;
-	private static Field ENTITY_FIELD = null;
 
 	private static ConstructorAccessor constructor = null;
 	private static ConstructorAccessor lightningConstructor = null;
@@ -77,7 +77,14 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 */
 	public WrappedDataWatcher() {
 		this(newHandle(fakeEntity()));
-		clear();
+	}
+
+	/**
+	 * Constructs a new DataWatcher using a real entity.
+	 * @param entity The entity
+	 */
+	public WrappedDataWatcher(Entity entity) {
+		this(newHandle(BukkitUnwrapper.getInstance().unwrapItem(entity)));
 	}
 
 	private static Object newHandle(Object entity) {
@@ -158,10 +165,6 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 */
 	public int size() {
 		return getMap().size();
-	}
-
-	private void clear() {
-		getMap().clear();
 	}
 
 	/**
@@ -313,8 +316,13 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @return A cloned data watcher.
 	 */
 	public WrappedDataWatcher deepClone() {
-		// TODO This
-		return null;
+		WrappedDataWatcher clone = new WrappedDataWatcher(getEntity());
+
+		for (Entry<Integer, WrappedWatchableObject> entry : asMap().entrySet()) {
+			clone.setObject(entry.getKey(), entry.getValue());
+		}
+
+		return clone;
 	}
 
 	/**
@@ -354,6 +362,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		if (!MinecraftReflection.isUsingNetty())
 			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
 
+		if (ENTITY_FIELD == null) {
+			ENTITY_FIELD = Accessors.getFieldAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass(), true);
+		}
+
 		try {
 			return (Entity) MinecraftReflection.getBukkitEntity(ENTITY_FIELD.get(handle));
 		} catch (Exception e) {
@@ -371,6 +383,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	public void setEntity(Entity entity) {
 		if (!MinecraftReflection.isUsingNetty())
 			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
+
+		if (ENTITY_FIELD == null) {
+			ENTITY_FIELD = Accessors.getFieldAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass(), true);
+		}
 
 		try {
 			ENTITY_FIELD.set(handle, BukkitUnwrapper.getInstance().unwrapItem(entity));

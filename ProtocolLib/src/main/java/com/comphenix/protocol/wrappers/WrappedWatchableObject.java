@@ -19,6 +19,8 @@ package com.comphenix.protocol.wrappers;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 
@@ -28,6 +30,9 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObje
  */
 
 public class WrappedWatchableObject extends AbstractWrapper {
+	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherItemClass();
+	private static ConstructorAccessor constructor;
+
 	private final StructureModifier<Object> modifier;
 
 	/**
@@ -35,10 +40,26 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	 * @param handle Data watcher item
 	 */
 	public WrappedWatchableObject(Object handle) {
-		super(MinecraftReflection.getDataWatcherItemClass());
-
+		super(HANDLE_TYPE);
 		setHandle(handle);
 		this.modifier = new StructureModifier<Object>(handleType).withTarget(handle);
+	}
+
+	/**
+	 * Constructs a wrapped watchable object with a given watcher object and initial value.
+	 * @param watcherObject Watcher object
+	 * @param value Initial value
+	 */
+	public WrappedWatchableObject(WrappedDataWatcherObject watcherObject, Object value) {
+		this(newHandle(watcherObject, value));
+	}
+
+	private static Object newHandle(WrappedDataWatcherObject watcherObject, Object value) {
+		if (constructor == null) {
+			constructor = Accessors.getConstructorAccessor(HANDLE_TYPE.getConstructors()[0]);
+		}
+
+		return constructor.invoke(watcherObject.getHandle(), value);
 	}
 
 	// ---- Getter methods

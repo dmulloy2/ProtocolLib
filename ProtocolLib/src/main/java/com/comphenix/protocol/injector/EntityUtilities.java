@@ -209,16 +209,18 @@ class EntityUtilities {
 		
 		// Read the entity hashmap
 		Object trackedEntities = null;
-		
+
 		try {
 			trackedEntities = FieldUtils.readField(trackedEntitiesField, tracker, true);
 		} catch (IllegalAccessException e) {
 			throw new FieldAccessException("Cannot access 'trackedEntities' field due to security limitations.", e);
 		}
-		
-		return WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
+
+		Object trackerEntry = WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
+		Class<?> entryClass = MinecraftReflection.getEntityTrackerClass();
+		return entryClass.cast(trackerEntry);
 	}
-	
+
 	/**
 	 * Retrieve entity from a ID, even it it's newly created.
 	 * @return The asssociated entity.
