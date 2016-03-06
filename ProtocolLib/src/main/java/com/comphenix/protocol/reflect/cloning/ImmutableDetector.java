@@ -72,6 +72,7 @@ public class ImmutableDetector implements Cloner {
 		// All primitive types
 		if (Primitives.isWrapperType(type) || String.class.equals(type))
 			return true;
+
 		// May not be true, but if so, that kind of code is broken anyways
 		if (isEnumWorkaround(type))
 			return true;
@@ -86,6 +87,15 @@ public class ImmutableDetector implements Cloner {
 				return true;
 			}
 		}
+
+		// Check for known immutable classes in 1.9
+		if (MinecraftReflection.dataWatcherItemExists()) {
+			if (type.equals(MinecraftReflection.getDataWatcherSerializerClass())
+					|| type.equals(MinecraftReflection.getMinecraftClass("SoundEffect"))) {
+				return true;
+			}
+		}
+
 		// Probably not
 		return false;
 	}

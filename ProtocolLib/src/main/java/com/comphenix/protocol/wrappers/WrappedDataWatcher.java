@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Entity;
@@ -34,7 +34,6 @@ import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -43,6 +42,7 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.google.common.base.Optional;
 
 /**
@@ -54,12 +54,12 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherClass();
 
 	private static MethodAccessor GETTER = null;
-	public static MethodAccessor SETTER = null;
-	public static MethodAccessor REGISTER = null;
+	private static MethodAccessor SETTER = null;
+	private static MethodAccessor REGISTER = null;
 
+	private static FieldAccessor ENTITY_DATA_FIELD = null;
 	private static FieldAccessor ENTITY_FIELD = null;
 	private static FieldAccessor MAP_FIELD = null;
-	private static Field ENTITY_DATA_FIELD = null;
 
 	private static ConstructorAccessor constructor = null;
 	private static ConstructorAccessor lightningConstructor = null;
@@ -117,24 +117,26 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	// ---- Collection Methods
 
 	@SuppressWarnings("unchecked")
-	private Map<Integer, ?> getMap() {
-		FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
-		List<Field> candidates = fuzzy.getFieldListByType(Map.class);
+	private Map<Integer, Object> getMap() {
+		if (MAP_FIELD == null) {
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
+			List<Field> candidates = fuzzy.getFieldListByType(Map.class);
 
-		for (Field candidate : candidates) {
-			if (Modifier.isStatic(candidate.getModifiers())) {
-				// This is the entity class to current index map, which we really don't have a use for
-			} else {
-				// This is the map we're looking for
-				MAP_FIELD = Accessors.getFieldAccessor(candidate);
+			for (Field candidate : candidates) {
+				if (Modifier.isStatic(candidate.getModifiers())) {
+					// This is the entity class to current index map, which we really don't have a use for
+				} else {
+					// This is the map we're looking for
+					MAP_FIELD = Accessors.getFieldAccessor(candidate);
+				}
 			}
 		}
 
 		if (MAP_FIELD == null) {
-			throw new FieldAccessException("Could not find index -> object map.");
+			throw new FieldAccessException("Could not find index <-> Item map.");
 		}
 
-		return (Map<Integer, ?>) MAP_FIELD.get(handle);
+		return (Map<Integer, Object>) MAP_FIELD.get(handle);
 	}
 
 	/**
@@ -142,13 +144,25 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @return The contents
 	 */
 	public Map<Integer, WrappedWatchableObject> asMap() {
-		Map<Integer, WrappedWatchableObject> ret = new HashMap<>();
+		return new ConvertedMap<Integer, Object, WrappedWatchableObject>(getMap()) {
+			@Override
+			protected WrappedWatchableObject toOuter(Object inner) {
+				return inner != null ? new WrappedWatchableObject(inner) : null;
+			}
 
-		for (Entry<Integer, ?> entry : getMap().entrySet()) {
-			ret.put(entry.getKey(), new WrappedWatchableObject(entry.getValue()));
-		}
+			@Override
+			protected Object toInner(WrappedWatchableObject outer) {
+				return outer != null ? outer.getHandle() : null;
+			}
+		};
+	}
 
-		return ret;
+	/**
+	 * Gets a set containing the registered indexes.
+	 * @return The set
+	 */
+	public Set<Integer> getIndexes() {
+		return getMap().keySet();
 	}
 
 	/**
@@ -173,9 +187,9 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	}
 
 	/**
-	 * Gets the watchable object at a given index.
+	 * Gets the item at a given index.
 	 * 
-	 * @param index Index
+	 * @param index Index to get
 	 * @return The watchable object, or null if none exists
 	 */
 	public WrappedWatchableObject getWatchableObject(int index) {
@@ -188,9 +202,20 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	}
 
 	/**
+	 * Removes the item at a given index.
+	 * 
+	 * @param index Index to remove
+	 * @return The previous value, or null if none existed
+	 */
+	public WrappedWatchableObject remove(int index) {
+		Object removed = getMap().remove(index);
+		return removed != null ? new WrappedWatchableObject(removed) : null;
+	}
+
+	/**
 	 * Whether or not this DataWatcher has an object at a given index.
 	 * 
-	 * @param index Index
+	 * @param index Index to check for
 	 * @return True if it does, false if not
 	 */
 	public boolean hasIndex(int index) {
@@ -311,8 +336,11 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * 
 	 * @param index Index
 	 * @param value New value
+	 * @deprecated Usage of this method is discouraged due to changes in 1.9.
 	 */
+	@Deprecated
 	public void setObject(int index, Object value) {
+		Validate.isTrue(hasIndex(index), "You cannot register objects without the watcher object!");
 		setObject(new WrappedDataWatcherObject(index, null), value);
 	}
 
@@ -350,7 +378,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 	}
 
-	// TODO Add support for setting the dirty state
+	// ---- Utility Methods
 
 	/**
 	 * Clone the content of the current DataWatcher.
@@ -372,69 +400,39 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * 
 	 * @param entity - the entity to read from.
 	 * @return Associated data watcher.
-	 * @throws FieldAccessException Reflection failed.
 	 */
-	public static WrappedDataWatcher getEntityWatcher(Entity entity) throws FieldAccessException {
-		if (ENTITY_DATA_FIELD == null)
-			ENTITY_DATA_FIELD = FuzzyReflection.fromClass(MinecraftReflection.getEntityClass(), true).getFieldByType("datawatcher", MinecraftReflection.getDataWatcherClass());
+	public static WrappedDataWatcher getEntityWatcher(Entity entity) {
+		if (ENTITY_DATA_FIELD == null) {
+			ENTITY_DATA_FIELD = Accessors.getFieldAccessor(MinecraftReflection.getEntityClass(), MinecraftReflection.getDataWatcherClass(), true);
+		}
 
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
-
-		try {
-			Object nsmWatcher = FieldUtils.readField(ENTITY_DATA_FIELD, unwrapper.unwrapItem(entity), true);
-
-			if (nsmWatcher != null)
-				return new WrappedDataWatcher(nsmWatcher);
-			else
-				return null;
-
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Cannot access DataWatcher field.", e);
-		}
+		Object handle = ENTITY_DATA_FIELD.get(unwrapper.unwrapItem(entity));
+		return handle != null ? new WrappedDataWatcher(handle) : null;
 	}
 
 	/**
 	 * Retrieve the entity associated with this data watcher.
-	 * <p>
-	 * <b>Warning:</b> This is only supported on 1.7.2 and above.
-	 * 
 	 * @return The entity, or NULL.
 	 */
 	public Entity getEntity() {
-		if (!MinecraftReflection.isUsingNetty())
-			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
-
 		if (ENTITY_FIELD == null) {
 			ENTITY_FIELD = Accessors.getFieldAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass(), true);
 		}
 
-		try {
-			return (Entity) MinecraftReflection.getBukkitEntity(ENTITY_FIELD.get(handle));
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to retrieve entity.", e);
-		}
+		return (Entity) MinecraftReflection.getBukkitEntity(ENTITY_FIELD.get(handle));
 	}
 
 	/**
 	 * Set the entity associated with this data watcher.
-	 * <p>
-	 * <b>Warning:</b> This is only supported on 1.7.2 and above.
-	 * 
 	 * @param entity - the new entity.
 	 */
 	public void setEntity(Entity entity) {
-		if (!MinecraftReflection.isUsingNetty())
-			throw new IllegalStateException("This method is only supported on 1.7.2 and above.");
-
 		if (ENTITY_FIELD == null) {
 			ENTITY_FIELD = Accessors.getFieldAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass(), true);
 		}
 
-		try {
-			ENTITY_FIELD.set(handle, BukkitUnwrapper.getInstance().unwrapItem(entity));
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to set entity.", e);
-		}
+		ENTITY_FIELD.set(handle, BukkitUnwrapper.getInstance().unwrapItem(entity));
 	}
 
 	/**
@@ -488,6 +486,13 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	public int hashCode() {
 		return getWatchableObjects().hashCode();
 	}
+
+	@Override
+	public String toString() {
+		return "WrappedDataWatcher[handle=" + handle + "]";
+	}
+
+	// ---- 1.9 classes
 
 	/**
 	 * Represents a DataWatcherObject in 1.9.
@@ -638,7 +643,9 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @return The serializer, or null if none exists
 		 */
 		public static Serializer get(Class<?> clazz) {
+			Validate.notNull("Class cannot be null!");
 			initialize();
+
 			return REGISTRY.get(clazz);
 		}
 
@@ -648,6 +655,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @return The serializer, or null if none exists
 		 */
 		public static Serializer fromHandle(Object handle) {
+			Validate.notNull("Handle cannot be null!");
 			initialize();
 
 			for (Serializer serializer : REGISTRY.values()) {

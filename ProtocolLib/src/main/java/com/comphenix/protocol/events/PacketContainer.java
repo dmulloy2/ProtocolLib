@@ -61,6 +61,7 @@ import com.comphenix.protocol.reflect.cloning.Cloner;
 import com.comphenix.protocol.reflect.cloning.CollectionCloner;
 import com.comphenix.protocol.reflect.cloning.FieldCloner;
 import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
+import com.comphenix.protocol.reflect.cloning.OptionalCloner;
 import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
@@ -125,6 +126,7 @@ public class PacketContainer implements Serializable {
 			instanceProvider(DefaultInstances.DEFAULT).
 			andThen(BukkitCloner.class).
 			andThen(ImmutableDetector.class).
+			andThen(OptionalCloner.class).
 			andThen(CollectionCloner.class).
 			andThen(getSpecializedDeepClonerFactory()).
 			build();
