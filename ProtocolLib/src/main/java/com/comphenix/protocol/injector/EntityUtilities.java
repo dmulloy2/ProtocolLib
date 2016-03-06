@@ -216,9 +216,7 @@ class EntityUtilities {
 			throw new FieldAccessException("Cannot access 'trackedEntities' field due to security limitations.", e);
 		}
 
-		Object trackerEntry = WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
-		Class<?> entryClass = MinecraftReflection.getMinecraftClass("EntityTrackerEntry");
-		return entryClass.cast(trackerEntry);
+		return WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
 	}
 
 	/**
@@ -235,28 +233,28 @@ class EntityUtilities {
 			if (trackerEntry != null) {
 				if (trackerField == null) {
 					try {
-						trackerField = trackerEntry.getClass().getDeclaredField("tracker");
+						Class<?> entryClass = MinecraftReflection.getMinecraftClass("EntityTrackerEntry");
+						trackerField = entryClass.getDeclaredField("tracker");
 					} catch (NoSuchFieldException e) {
 						// Assume it's the first entity field then
 						trackerField = FuzzyReflection.fromObject(trackerEntry, true)
 								.getFieldByType("tracker", MinecraftReflection.getEntityClass());
 					}
 				}
-				
+
 				tracker = FieldUtils.readField(trackerField, trackerEntry, true);
 			}
-			
+
 			// If the tracker is NULL, we'll just assume this entity doesn't exist
 			if (tracker != null)
 				return (Entity) MinecraftReflection.getBukkitEntity(tracker);
 			else
 				return null;
-			
 		} catch (Exception e) {
 			throw new FieldAccessException("Cannot find entity from ID " + entityID + ".", e);
 		}
 	}
-	
+
 	private static List<Object> unwrapBukkit(List<Player> players) {
 		
 		List<Object> output = Lists.newArrayList();
