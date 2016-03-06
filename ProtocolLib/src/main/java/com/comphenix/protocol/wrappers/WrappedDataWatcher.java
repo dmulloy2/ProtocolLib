@@ -542,9 +542,9 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 
 		/**
-		 * Gets this watcher object's serializer.
+		 * Gets this watcher object's serializer. Will return null if the serializer was never specified.
 		 * 
-		 * @return The serializer
+		 * @return The serializer, or null
 		 */
 		public Serializer getSerializer() {
 			if (getSerializer == null) {
@@ -553,12 +553,15 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			}
 
 			Object serializer = getSerializer.invoke(handle);
-
-			Serializer wrapper = Registry.fromHandle(serializer);
-			if (wrapper != null) {
-				return wrapper;
+			if (serializer != null) {
+				Serializer wrapper = Registry.fromHandle(serializer);
+				if (wrapper != null) {
+					return wrapper;
+				} else {
+					return new Serializer(null, serializer, false);
+				}
 			} else {
-				return new Serializer(null, serializer, false);
+				return null;
 			}
 		}
 
