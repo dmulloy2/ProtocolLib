@@ -217,7 +217,7 @@ class EntityUtilities {
 		}
 
 		Object trackerEntry = WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
-		Class<?> entryClass = MinecraftReflection.getEntityTrackerClass();
+		Class<?> entryClass = MinecraftReflection.getMinecraftClass("EntityTrackerEntry");
 		return entryClass.cast(trackerEntry);
 	}
 

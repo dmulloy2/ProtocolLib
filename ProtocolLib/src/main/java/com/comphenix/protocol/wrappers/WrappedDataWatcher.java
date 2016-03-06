@@ -17,6 +17,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
@@ -39,6 +41,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Optional;
 
@@ -50,7 +53,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherClass();
 
 	private static MethodAccessor GETTER = null;
-	private static MethodAccessor SETTER = null;
+	public static MethodAccessor SETTER = null;
+	public static MethodAccessor REGISTER = null;
 
 	private static FieldAccessor ENTITY_FIELD = null;
 	private static FieldAccessor MAP_FIELD = null;
@@ -297,15 +301,37 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Sets the DataWatcher Item associated with a given watcher object to a new value.
-	 * @param watcherObject Associated watcher object
+	 * @param object Associated watcher object
 	 * @param value New value
 	 */
-	public void setObject(WrappedDataWatcherObject watcherObject, Object value) {
-		if (SETTER == null) {
-			SETTER = Accessors.getMethodAccessor(handleType, "set", watcherObject.getHandleType(), Object.class);
+	public void setObject(WrappedDataWatcherObject object, Object value) {
+		Validate.notNull(object, "Watcher object cannot be null!");
+
+		if (SETTER == null || REGISTER == null) {
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
+			List<Method> methods = fuzzy.getMethodList(FuzzyMethodContract.newBuilder()
+					.banModifier(Modifier.STATIC)
+					.requireModifier(Modifier.PUBLIC)
+					.parameterExactArray(object.getHandleType(), Object.class)
+					.build());
+			for (Method method : methods) {
+				if (method.getName().equals("set")) {
+					SETTER = Accessors.getMethodAccessor(method);
+				} else if (method.getName().equals("register")) {
+					REGISTER = Accessors.getMethodAccessor(method);
+				} else {
+					System.out.println(method);
+				}
+			}
 		}
 
-		SETTER.invoke(handle, watcherObject.getHandle(), WrappedWatchableObject.getUnwrapped(value));
+		if (hasIndex(object.getIndex())) {
+			SETTER.invoke(handle, object.getHandle(), WrappedWatchableObject.getUnwrapped(value));
+		} else {
+			Serializer serializer = object.getSerializer();
+			Validate.notNull(serializer, "You must specify a serializer to register an object!");
+			REGISTER.invoke(handle, object.getHandle(), WrappedWatchableObject.getUnwrapped(value));
+		}
 	}
 
 	// TODO Add support for setting the dirty state
@@ -318,8 +344,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	public WrappedDataWatcher deepClone() {
 		WrappedDataWatcher clone = new WrappedDataWatcher(getEntity());
 
-		for (Entry<Integer, WrappedWatchableObject> entry : asMap().entrySet()) {
-			clone.setObject(entry.getKey(), entry.getValue());
+		for (WrappedWatchableObject wrapper : this) {
+			clone.setObject(wrapper.getWatcherObject(), wrapper);
 		}
 
 		return clone;
@@ -452,6 +478,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	public static class WrappedDataWatcherObject extends AbstractWrapper {
 		private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherObjectClass();
 		private static ConstructorAccessor constructor = null;
+		private static MethodAccessor getSerializer = null;
 
 		private final StructureModifier<Object> modifier;
 
@@ -492,10 +519,21 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			return (int) modifier.read(0);
 		}
 
-		// TODO this
-		/* public Serializer getSerializer() {
-			return null;
-		} */
+		public Serializer getSerializer() {
+			if (getSerializer == null) {
+				getSerializer = Accessors.getMethodAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true).getMethodByParameters(
+						"getSerializer", MinecraftReflection.getDataWatcherSerializerClass(), new Class[0]));
+			}
+
+			Object serializer = getSerializer.invoke(handle);
+
+			Serializer wrapper = Registry.fromHandle(serializer);
+			if (wrapper != null) {
+				return wrapper;
+			} else {
+				return new Serializer(null, serializer, false);
+			}
+		}
 	}
 
 	/**
@@ -538,6 +576,11 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		public boolean isOptional() {
 			return optional;
 		}
+
+		@Override
+		public String toString() {
+			return "Serializer[type=" + type + ", handle=" + handle + ", optional=" + optional + "]";
+		}
 	}
 
 	/**
@@ -556,15 +599,29 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @return The serializer, or null if none exists
 		 */
 		public static Serializer get(Class<?> clazz) {
-			if (! INITIALIZED) {
-				initialize();
-				INITIALIZED = true;
-			}
-
+			initialize();
 			return REGISTRY.get(clazz);
 		}
 
+		public static Serializer fromHandle(Object handle) {
+			initialize();
+
+			for (Serializer serializer : REGISTRY.values()) {
+				if (serializer.getHandle().equals(handle)) {
+					return serializer;
+				}
+			}
+
+			return null;
+		}
+
 		private static void initialize() {
+			if (!INITIALIZED) {
+				INITIALIZED = true;
+			} else {
+				return;
+			}
+
 			List<Field> candidates = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftClass("DataWatcherRegistry"), true)
 				.getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
 			for (Field candidate : candidates) {

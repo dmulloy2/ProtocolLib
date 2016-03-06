@@ -3,6 +3,7 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import net.minecraft.server.v1_9_R1.DataWatcher;
 import net.minecraft.server.v1_9_R1.Entity;
@@ -28,19 +29,46 @@ public class WrappedDataWatcherTest {
 	}
 
 	@Test
-	public void test() {
-		Entity entity = new EntityLightning(null, 0, 0, 0, true);
-		DataWatcher handle = entity.getDataWatcher();
+	public void testBytes() {
+		WrappedDataWatcher wrapper = create();
+		WrappedWatchableObject watchable = wrapper.getWatchableObject(0);
+		WrappedDataWatcherObject object = watchable.getWatcherObject();
 
-		WrappedDataWatcher wrapper = new WrappedDataWatcher(handle);
+		// Make sure the serializers work
+		assertEquals(object.getSerializer(), Registry.get(Byte.class));
 
+		// Make sure we can set existing objects
 		wrapper.setObject(0, (byte) 1);
 		assertTrue(wrapper.getByte(0) == 1);
+	}
 
+	@Test
+	public void testStrings() {
+		WrappedDataWatcher wrapper = create();
+
+		// Make sure we can create watcher objects
 		Serializer serializer = Registry.get(String.class);
-		WrappedDataWatcherObject watcherObject = new WrappedDataWatcherObject(3, serializer);
-		wrapper.setObject(watcherObject, "Hiya");
+		WrappedDataWatcherObject object = new WrappedDataWatcherObject(3, serializer);
+		wrapper.setObject(object, "Test");
 
-		assertTrue(wrapper.getString(3).equals("Hiya"));
+		assertEquals(wrapper.getString(3), "Test");
+	}
+
+	@Test
+	public void testFloats() {
+		WrappedDataWatcher wrapper = create();
+
+		// Make sure we can add new entries
+		Serializer serializer = Registry.get(Float.class);
+		WrappedDataWatcherObject object = new WrappedDataWatcherObject(10, serializer);
+		wrapper.setObject(object, 1.0F);
+
+		assertTrue(wrapper.hasIndex(10));
+	}
+
+	private WrappedDataWatcher create() {
+		Entity entity = new EntityLightning(null, 0, 0, 0, true);
+		DataWatcher handle = entity.getDataWatcher();
+		return new WrappedDataWatcher(handle);
 	}
 }
