@@ -16,7 +16,11 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
+
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * @author dmulloy2
@@ -58,5 +62,38 @@ public class MinecraftKey {
 
 	public String getEnumFormat() {
 		return key.toUpperCase().replace(".", "_");
+	}
+
+	private static Constructor<?> constructor = null;
+
+	public static EquivalentConverter<MinecraftKey> getConverter() {
+		return new EquivalentConverter<MinecraftKey>() {
+			@Override
+			public MinecraftKey getSpecific(Object generic) {
+				return MinecraftKey.fromHandle(generic);
+			}
+
+			@Override
+			public Object getGeneric(Class<?> genericType, MinecraftKey specific) {
+				if (constructor == null) {
+					try {
+						constructor = MinecraftReflection.getMinecraftKeyClass().getConstructor(String.class, String.class);
+					} catch (ReflectiveOperationException e) {
+						throw new RuntimeException("Failed to obtain MinecraftKey constructor", e);
+					}
+				}
+
+				try {
+					return constructor.newInstance(specific.getPrefix(), specific.getKey());
+				} catch (ReflectiveOperationException e) {
+					throw new RuntimeException("Failed to create new MinecraftKey", e);
+				}
+			}
+
+			@Override
+			public Class<MinecraftKey> getSpecificType() {
+				return MinecraftKey.class;
+			}
+		};
 	}
 }

@@ -47,6 +47,7 @@ import com.google.common.base.Optional;
 
 /**
  * Represents a DataWatcher in 1.9
+ * 
  * @author dmulloy2
  */
 public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject> {
@@ -173,6 +174,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Gets the watchable object at a given index.
+	 * 
 	 * @param index Index
 	 * @return The watchable object, or null if none exists
 	 */
@@ -187,6 +189,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Whether or not this DataWatcher has an object at a given index.
+	 * 
 	 * @param index Index
 	 * @return True if it does, false if not
 	 */
@@ -196,111 +199,126 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	// ---- Object Getters
 
-    /**
-     * Get a watched byte.
-     * @param index - index of the watched byte.
-     * @return The watched byte, or NULL if this value doesn't exist.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public Byte getByte(int index) throws FieldAccessException {
-    	return (Byte) getObject(index);
-    }
-
-    /**
-     * Get a watched short.
-     * @param index - index of the watched short.
-     * @return The watched short, or NULL if this value doesn't exist.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public Short getShort(int index) throws FieldAccessException {
-    	return (Short) getObject(index);
-    }
-
-    /**
-     * Get a watched integer.
-     * @param index - index of the watched integer.
-     * @return The watched integer, or NULL if this value doesn't exist.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public Integer getInteger(int index) throws FieldAccessException {
-    	return (Integer) getObject(index);
-    }
-
-    /**
-     * Get a watched float.
-     * @param index - index of the watched float.
-     * @return The watched float, or NULL if this value doesn't exist.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public Float getFloat(int index) throws FieldAccessException {
-    	return (Float) getObject(index);
-    }
-
-    /**
-     * Get a watched string.
-     * @param index - index of the watched string.
-     * @return The watched string, or NULL if this value doesn't exist.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public String getString(int index) throws FieldAccessException {
-    	return (String) getObject(index);
-    }
-
-    /**
-     * Get a watched string.
-     * @param index - index of the watched string.
-     * @return The watched string, or NULL if this value doesn't exist.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public ItemStack getItemStack(int index) throws FieldAccessException {
-    	return (ItemStack) getObject(index);
-    }
-
-    /**
-     * Get a watched string.
-     * @param index - index of the watched string.
-     * @return The watched string, or NULL if this value doesn't exist.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public WrappedChunkCoordinate getChunkCoordinate(int index) throws FieldAccessException {
-    	return (WrappedChunkCoordinate) getObject(index);
-    }
-
-    /**
-     * Retrieve a watchable object by index.
-     * @param index - index of the object to retrieve.
-     * @return The watched object.
-     * @throws FieldAccessException Cannot read underlying field.
-     */
-    public Object getObject(int index) throws FieldAccessException {
-    	return WrappedWatchableObject.getWrapped(getWatchedObject(index));
-    }
-
-	private Object getWatchedObject(int index) {
-		return getWatcherObject(new WrappedDataWatcherObject(index, null));
+	/**
+	 * Get a watched byte.
+	 * 
+	 * @param index - index of the watched byte.
+	 * @return The watched byte, or NULL if this value doesn't exist.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public Byte getByte(int index) throws FieldAccessException {
+		return (Byte) getObject(index);
 	}
-   
-    private Object getWatcherObject(WrappedDataWatcherObject watcherObject) {
+
+	/**
+	 * Get a watched short.
+	 * 
+	 * @param index - index of the watched short.
+	 * @return The watched short, or NULL if this value doesn't exist.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public Short getShort(int index) throws FieldAccessException {
+		return (Short) getObject(index);
+	}
+
+	/**
+	 * Get a watched integer.
+	 * 
+	 * @param index - index of the watched integer.
+	 * @return The watched integer, or NULL if this value doesn't exist.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public Integer getInteger(int index) throws FieldAccessException {
+		return (Integer) getObject(index);
+	}
+
+	/**
+	 * Get a watched float.
+	 * 
+	 * @param index - index of the watched float.
+	 * @return The watched float, or NULL if this value doesn't exist.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public Float getFloat(int index) throws FieldAccessException {
+		return (Float) getObject(index);
+	}
+
+	/**
+	 * Get a watched string.
+	 * 
+	 * @param index - index of the watched string.
+	 * @return The watched string, or NULL if this value doesn't exist.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public String getString(int index) throws FieldAccessException {
+		return (String) getObject(index);
+	}
+
+	/**
+	 * Get a watched string.
+	 * 
+	 * @param index - index of the watched string.
+	 * @return The watched string, or NULL if this value doesn't exist.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public ItemStack getItemStack(int index) throws FieldAccessException {
+		return (ItemStack) getObject(index);
+	}
+
+	/**
+	 * Get a watched string.
+	 * 
+	 * @param index - index of the watched string.
+	 * @return The watched string, or NULL if this value doesn't exist.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public WrappedChunkCoordinate getChunkCoordinate(int index) throws FieldAccessException {
+		return (WrappedChunkCoordinate) getObject(index);
+	}
+
+	/**
+	 * Retrieve a watchable object by index.
+	 * 
+	 * @param index - index of the object to retrieve.
+	 * @return The watched object.
+	 * @throws FieldAccessException Cannot read underlying field.
+	 */
+	public Object getObject(int index) throws FieldAccessException {
+		return getObject(new WrappedDataWatcherObject(index, null));
+	}
+
+	/**
+	 * Retrieve a watchable object by watcher object.
+	 * 
+	 * @param object The watcher object
+	 * @return The watched object
+	 */
+	public Object getObject(WrappedDataWatcherObject object) {
+		Validate.notNull(object, "Watcher object cannot be null!");
+
 		if (GETTER == null) {
-			GETTER = Accessors.getMethodAccessor(handleType, "get", watcherObject.getHandleType());
+			GETTER = Accessors.getMethodAccessor(handleType, "get", object.getHandleType());
 		}
 
-		return GETTER.invoke(handle, watcherObject.getHandle());
-    }
+		Object value = GETTER.invoke(handle, object.getHandle());
+		return WrappedWatchableObject.getWrapped(value);
+	}
 
 	// ---- Object Setters
 
-    /**
-     * Sets the DataWatcher Item at a given index to a new value.
-     * @param index Index
-     * @param value New value
-     */
+	/**
+	 * Sets the DataWatcher Item at a given index to a new value.
+	 * 
+	 * @param index Index
+	 * @param value New value
+	 */
 	public void setObject(int index, Object value) {
 		setObject(new WrappedDataWatcherObject(index, null), value);
 	}
 
 	/**
 	 * Sets the DataWatcher Item associated with a given watcher object to a new value.
+	 * 
 	 * @param object Associated watcher object
 	 * @param value New value
 	 */
@@ -319,8 +337,6 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 					SETTER = Accessors.getMethodAccessor(method);
 				} else if (method.getName().equals("register")) {
 					REGISTER = Accessors.getMethodAccessor(method);
-				} else {
-					System.out.println(method);
 				}
 			}
 		}
@@ -423,6 +439,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * No longer supported in 1.9 due to the removal of a consistent type <-> ID map.
+	 * 
 	 * @param clazz
 	 * @return Null
 	 */
@@ -433,6 +450,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * No longer supported in 1.9 due to the removal of a consistent type <-> ID map.
+	 * 
 	 * @param typeID
 	 * @return Null
 	 */
@@ -473,6 +491,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Represents a DataWatcherObject in 1.9.
+	 * 
 	 * @author dmulloy2
 	 */
 	public static class WrappedDataWatcherObject extends AbstractWrapper {
@@ -484,6 +503,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 		/**
 		 * Creates a new watcher object from a NMS handle
+		 * 
 		 * @param handle NMS handle
 		 */
 		public WrappedDataWatcherObject(Object handle) {
@@ -495,6 +515,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 		/**
 		 * Creates a new watcher object from an index and serializer
+		 * 
 		 * @param index Index
 		 * @param serializer Serializer, see {@link Registry}
 		 */
@@ -512,17 +533,23 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 
 		/**
-		 * Gets this watcher object's index
+		 * Gets this watcher object's index.
+		 * 
 		 * @return The index
 		 */
 		public int getIndex() {
 			return (int) modifier.read(0);
 		}
 
+		/**
+		 * Gets this watcher object's serializer.
+		 * 
+		 * @return The serializer
+		 */
 		public Serializer getSerializer() {
 			if (getSerializer == null) {
-				getSerializer = Accessors.getMethodAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true).getMethodByParameters(
-						"getSerializer", MinecraftReflection.getDataWatcherSerializerClass(), new Class[0]));
+				getSerializer = Accessors.getMethodAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+						.getMethodByParameters("getSerializer", MinecraftReflection.getDataWatcherSerializerClass(), new Class[0]));
 			}
 
 			Object serializer = getSerializer.invoke(handle);
@@ -534,10 +561,16 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 				return new Serializer(null, serializer, false);
 			}
 		}
+
+		@Override
+		public String toString() {
+			return "DataWatcherObject[index=" + getIndex() + ", serializer=" + getSerializer() + "]";
+		}
 	}
 
 	/**
 	 * Represents a DataWatcherSerializer in 1.9.
+	 * 
 	 * @author dmulloy2
 	 */
 	public static class Serializer extends AbstractWrapper {
@@ -548,6 +581,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 		/**
 		 * Constructs a new Serializer
+		 * 
 		 * @param type Type it serializes
 		 * @param handle NMS handle
 		 * @param optional Whether or not it's {@link Optional}
@@ -562,6 +596,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 		/**
 		 * Gets the type this serializer serializes.
+		 * 
 		 * @return The type
 		 */
 		public Class<?> getType() {
@@ -569,8 +604,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 
 		/**
-		 * Whether or not this serializer is optional, that is whether or not
-		 * the return type is wrapped in a {@link Optional}.
+		 * Whether or not this serializer is optional, that is whether or not the return type is wrapped in a {@link Optional}.
+		 * 
 		 * @return True if it is, false if not
 		 */
 		public boolean isOptional() {
@@ -585,6 +620,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Represents a DataWatcherRegistry containing the supported {@link Serializer}s in 1.9.
+	 * 
 	 * @author dmulloy2
 	 */
 	public static class Registry {
@@ -603,6 +639,11 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			return REGISTRY.get(clazz);
 		}
 
+		/**
+		 * Gets the serializer associated with a given NMS handle.
+		 * @param handle The NMS handle
+		 * @return The serializer, or null if none exists
+		 */
 		public static Serializer fromHandle(Object handle) {
 			initialize();
 
@@ -623,7 +664,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			}
 
 			List<Field> candidates = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftClass("DataWatcherRegistry"), true)
-				.getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
+					.getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
 			for (Field candidate : candidates) {
 				Type generic = candidate.getGenericType();
 				if (generic instanceof ParameterizedType) {

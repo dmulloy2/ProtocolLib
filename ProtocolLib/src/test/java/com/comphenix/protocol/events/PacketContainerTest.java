@@ -36,6 +36,7 @@ import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes;
 import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
@@ -59,6 +60,8 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -465,7 +468,7 @@ public class PacketContainerTest {
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(
 			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD,
-			PacketType.Play.Server.SET_COOLDOWN, PacketType.Play.Server.NAMED_SOUND_EFFECT
+			PacketType.Play.Server.SET_COOLDOWN
 	);
 
 	@Test
@@ -488,6 +491,15 @@ public class PacketContainerTest {
 
 				// Initialize default values
 				constructed.getModifier().writeDefaults();
+
+				// Make sure watchable collections can be cloned
+				if (type == PacketType.Play.Server.ENTITY_METADATA) {
+					constructed.getWatchableCollectionModifier().write(0, Util.asList(
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Byte.class)), (byte) 1),
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(String.class)), "String"),
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F)
+					));
+				}
 
 				// Clone the packet
 				PacketContainer cloned = constructed.deepClone();
@@ -547,6 +559,10 @@ public class PacketContainerTest {
 			if (a.equals(b) || Objects.equals(a, b) || a.toString().equals(b.toString())) {
 				return;
 			}
+		}
+
+		if (EqualsBuilder.reflectionEquals(a, b)) {
+			return;
 		}
 
 		assertEquals(a, b);

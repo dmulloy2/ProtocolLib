@@ -24,6 +24,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkPosition;
+import com.comphenix.protocol.wrappers.MinecraftKey;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.google.common.collect.Maps;
@@ -54,6 +55,11 @@ public class BukkitCloner implements Cloner {
 
 		if (MinecraftReflection.isUsingNetty()) {
 			addClass(4, MinecraftReflection.getServerPingClass());
+		}
+
+		if (MinecraftReflection.dataWatcherItemExists()) {
+			addClass(5, MinecraftReflection.getDataWatcherSerializerClass());
+			addClass(6, MinecraftReflection.getMinecraftKeyClass());
 		}
 	}
 
@@ -102,6 +108,11 @@ public class BukkitCloner implements Cloner {
 			case 4:
 				EquivalentConverter<WrappedServerPing> serverConverter = BukkitConverters.getWrappedServerPingConverter();
 				return serverConverter.getGeneric(clonableClasses.get(4), serverConverter.getSpecific(source).deepClone());
+			case 5:
+				return source;
+			case 6:
+				EquivalentConverter<MinecraftKey> keyConverter = MinecraftKey.getConverter();
+				return keyConverter.getGeneric(clonableClasses.get(5), keyConverter.getSpecific(source));
 			default:
 				throw new IllegalArgumentException("Cannot clone objects of type " + source.getClass());
 		}

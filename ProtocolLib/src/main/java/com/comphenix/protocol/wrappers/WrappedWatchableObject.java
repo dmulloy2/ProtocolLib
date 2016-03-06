@@ -223,4 +223,9 @@ public class WrappedWatchableObject extends AbstractWrapper {
 
 		return false;
 	}
+
+	@Override
+	public String toString() {
+		return "DataWatcherItem[object=" + getWatcherObject() + ", value=" + getValue() + ", dirty=" + getDirtyState() + "]";
+	}
 }

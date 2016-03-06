@@ -2077,4 +2077,8 @@ public class MinecraftReflection {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
 	}
+
+	public static Class<?> getMinecraftKeyClass() {
+		return getMinecraftClass("MinecraftKey");
+	}
 }
