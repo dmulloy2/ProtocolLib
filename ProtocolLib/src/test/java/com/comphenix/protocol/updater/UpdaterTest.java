@@ -12,8 +12,6 @@ import java.util.logging.Logger;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import com.comphenix.protocol.updater.Updater.UpdateType;
 
@@ -25,7 +23,7 @@ public class UpdaterTest {
 	private static final int BUKKIT_DEV_ID = 45564;
 	private static Plugin plugin;
 
-	@BeforeClass
+	//@BeforeClass
 	public static void preparePlugin() {
 		Server server = mock(Server.class);
 		when(server.getUpdateFolder()).thenReturn(null);
@@ -37,7 +35,7 @@ public class UpdaterTest {
 		when(plugin.getServer()).thenReturn(server);
 	}
 
-	@Test
+	//@Test
 	public void testSpigotUpdater() {
 		SpigotUpdater updater = new SpigotUpdater(plugin, UpdateType.NO_DOWNLOAD, true);
 
@@ -55,7 +53,7 @@ public class UpdaterTest {
 		updater.versionCheck(remote);
 	}
 
-	@Test
+	//@Test
 	public void testBukkitUpdater() {
 		BukkitUpdater updater = new BukkitUpdater(plugin, BUKKIT_DEV_ID, null, UpdateType.NO_DOWNLOAD, true);
 		if (! updater.read()) {
