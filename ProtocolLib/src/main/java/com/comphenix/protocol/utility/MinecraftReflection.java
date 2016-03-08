@@ -1286,14 +1286,20 @@ public class MinecraftReflection {
 	/**
 	 * Retrieve the WatchableObject class.
 	 * @return The WatchableObject class.
+	 * @deprecated Replaced by {@link #getDataWatcherItemClass()}
 	 */
+	@Deprecated
 	public static Class<?> getWatchableObjectClass() {
-		if (dataWatcherItemExists()) {
-			return getDataWatcherItemClass();
-		}
+		return getDataWatcherItemClass();
+	}
 
+	/**
+	 * Retrieve the DataWatcher Item class.
+	 * @return The class
+	 */
+	public static Class<?> getDataWatcherItemClass() {
 		try {
-			return getMinecraftClass("WatchableObject", "DataWatcher$WatchableObject");
+			return getMinecraftClass("DataWatcher$Item", "DataWatcher$WatchableObject", "WatchableObject");
 		} catch (RuntimeException e) {
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
@@ -1303,13 +1309,8 @@ public class MinecraftReflection {
 						    build());
 
 			// Use the second parameter
-			return setMinecraftClass("WatchableObject", selected.getParameterTypes()[1]);
+			return setMinecraftClass("DataWatcher$Item", selected.getParameterTypes()[1]);
 		}
-	}
-
-	public static Class<?> getDataWatcherItemClass() {
-		// TODO Implement a fallback
-		return getMinecraftClass("DataWatcher$Item");
 	}
 
 	public static Class<?> getDataWatcherObjectClass() {
@@ -1317,18 +1318,27 @@ public class MinecraftReflection {
 		return getMinecraftClass("DataWatcherObject");
 	}
 
+	public static boolean watcherObjectExists() {
+		try {
+			return getDataWatcherObjectClass() != null;
+		} catch (RuntimeException e) {
+			return false;
+		}
+	}
+
 	public static Class<?> getDataWatcherSerializerClass() {
 		// TODO Implement a fallback
 		return getMinecraftClass("DataWatcherSerializer");
 	}
 
-	public static boolean dataWatcherItemExists() {
-		try {
-			getDataWatcherItemClass();
-			return true;
-		} catch (RuntimeException e) {
-			return false;
-		}
+	public static Class<?> getDataWatcherRegistryClass() {
+		// TODO Implement a fallback
+		return getMinecraftClass("DataWatcherRegistry");
+	}
+
+	public static Class<?> getMinecraftKeyClass() {
+		// TODO Implement a fallback
+		return getMinecraftClass("MinecraftKey");
 	}
 
 	/**
@@ -2076,9 +2086,5 @@ public class MinecraftReflection {
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
-	}
-
-	public static Class<?> getMinecraftKeyClass() {
-		return getMinecraftClass("MinecraftKey");
 	}
 }

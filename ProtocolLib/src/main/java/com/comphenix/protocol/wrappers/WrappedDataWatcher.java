@@ -674,7 +674,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 				return;
 			}
 
-			List<Field> candidates = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftClass("DataWatcherRegistry"), true)
+			List<Field> candidates = FuzzyReflection.fromClass(MinecraftReflection.getDataWatcherRegistryClass(), true)
 					.getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
 			for (Field candidate : candidates) {
 				Type generic = candidate.getGenericType();

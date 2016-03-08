@@ -57,7 +57,7 @@ public class BukkitCloner implements Cloner {
 			addClass(4, MinecraftReflection.getServerPingClass());
 		}
 
-		if (MinecraftReflection.dataWatcherItemExists()) {
+		if (MinecraftReflection.watcherObjectExists()) {
 			addClass(5, MinecraftReflection.getDataWatcherSerializerClass());
 			addClass(6, MinecraftReflection.getMinecraftKeyClass());
 		}

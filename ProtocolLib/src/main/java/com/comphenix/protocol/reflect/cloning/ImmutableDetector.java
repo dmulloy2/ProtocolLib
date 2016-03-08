@@ -89,7 +89,7 @@ public class ImmutableDetector implements Cloner {
 		}
 
 		// Check for known immutable classes in 1.9
-		if (MinecraftReflection.dataWatcherItemExists()) {
+		if (MinecraftReflection.watcherObjectExists()) {
 			if (type.equals(MinecraftReflection.getDataWatcherSerializerClass())
 					|| type.equals(MinecraftReflection.getMinecraftClass("SoundEffect"))) {
 				return true;
