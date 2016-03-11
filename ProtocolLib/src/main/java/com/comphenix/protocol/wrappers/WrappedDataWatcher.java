@@ -349,7 +349,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @param value New value
 	 */
 	public void setObject(int index, Serializer serializer, Object value) {
-		setObject(new WrappedWatcherObject(index, serializer), value);
+		setObject(new WrappedDataWatcherObject(index, serializer), value);
 	}
 
 	/**
