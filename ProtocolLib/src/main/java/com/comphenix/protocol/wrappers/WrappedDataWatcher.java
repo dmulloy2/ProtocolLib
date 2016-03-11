@@ -304,9 +304,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	/**
 	 * Retrieve a watchable object by index.
 	 * 
-	 * @param index - index of the object to retrieve.
+	 * @param index Index of the object to retrieve.
 	 * @return The watched object.
-	 * @throws FieldAccessException Cannot read underlying field.
 	 */
 	public Object getObject(int index) throws FieldAccessException {
 		return getObject(new WrappedDataWatcherObject(index, null));
@@ -334,14 +333,33 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	/**
 	 * Sets the DataWatcher Item at a given index to a new value.
 	 * 
-	 * @param index Index
+	 * @param index Index of the object to set
 	 * @param value New value
-	 * @deprecated Usage of this method is discouraged due to changes in 1.9.
 	 */
-	@Deprecated
 	public void setObject(int index, Object value) {
 		Validate.isTrue(hasIndex(index), "You cannot register objects without the watcher object!");
-		setObject(new WrappedDataWatcherObject(index, null), value);
+		setObject(index, null, value);
+	}
+
+	/**
+	 * Sets the DataWatcher Item at a given index to a new value.
+	 * 
+	 * @param index Index of the object to set
+	 * @param Serializer Serializer from {@link Serializer#get(Class)}
+	 * @param value New value
+	 */
+	public void setObject(int index, Serializer serializer, Object value) {
+		setObject(new WrappedWatcherObject(index, serializer), value);
+	}
+
+	/**
+	 * Sets the DataWatcher Item associated with a given watcher object to a new value.
+	 * 
+	 * @param object Associated watcher object
+	 * @param value Wrapped value
+	 */
+	public void setObject(WrappedDataWatcherObject object, WrappedWatchableObject value) {
+		setObject(object, value.getRawValue());
 	}
 
 	/**
