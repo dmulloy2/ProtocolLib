@@ -22,7 +22,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -646,12 +645,28 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 	/**
 	 * Represents a DataWatcherRegistry containing the supported {@link Serializer}s in 1.9.
-	 * 
+	 *
+	 * <ul>
+	 *   <li>Byte</li>
+	 *   <li>Integer</li>
+	 *   <li>Float</li>
+	 *   <li>String</li>
+	 *   <li>IChatBaseComponent</li>
+	 *   <li>Optional&lt;ItemStack&gt;</li>
+	 *   <li>Optional&lt;IBlockData&gt;</li>
+	 *   <li>Boolean</li>
+	 *   <li>Vector3f</li>
+	 *   <li>BlockPosition</li>
+	 *   <li>Optional&lt;BlockPosition&gt;</li>
+	 *   <li>EnumDirection</li>
+	 *   <li>Optional&lt;UUID&gt;</li>
+	 * </ul>
+	 *
 	 * @author dmulloy2
 	 */
 	public static class Registry {
 		private static boolean INITIALIZED = false;
-		private static Map<Class<?>, Serializer> REGISTRY = new HashMap<>();
+		private static List<Serializer> REGISTRY = new ArrayList<>();
 
 		/**
 		 * Gets the serializer associated with a given class. </br>
@@ -660,11 +675,53 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @param clazz Class to find serializer for
 		 * @return The serializer, or null if none exists
 		 */
+		
+		/**
+		 * Gets the first serializer associated with a given class.
+		 *
+		 * <p><b>Note</b>: If {@link Serializer#isOptional() the serializer is optional},
+		 *   values <i>must</i> be wrapped in an {@link Optional}.</p>
+		 *
+		 * <p>If there are multiple serializers for a given class (i.e. BlockPosition),
+		 *   you should use {@link #get(Class, boolean)} for more precision.</p>
+		 *
+		 * @param clazz Class to find serializer for
+		 * @return The serializer, or null if none exists
+		 */
 		public static Serializer get(Class<?> clazz) {
 			Validate.notNull("Class cannot be null!");
 			initialize();
 
-			return REGISTRY.get(clazz);
+			for (Serializer serializer : REGISTRY) {
+				if (serializer.getType().equals(clazz)) {
+					return serializer;
+				}
+			}
+
+			return null;
+		}
+
+		/**
+		 * Gets the first serializer associated with a given class and optional state.
+		 * 
+		 * <p><b>Note</b>: If the serializer is optional, values <i>must<i> be wrapped in an {@link Optional}
+		 *
+		 * @param clazz Class to find serializer for
+		 * @param optional Optional state
+		 * @return The serializer, or null if none exists
+		 */
+		public static Serializer get(Class<?> clazz, boolean optional) {
+			Validate.notNull(clazz, "Class cannot be null!");
+			initialize();
+
+			for (Serializer serializer : REGISTRY) {
+				if (serializer.getType().equals(clazz)
+					&& serializer.isOptional() == optional) {
+					return serializer;
+				}
+			}
+
+			return null;
 		}
 
 		/**
@@ -676,7 +733,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			Validate.notNull("Handle cannot be null!");
 			initialize();
 
-			for (Serializer serializer : REGISTRY.values()) {
+			for (Serializer serializer : REGISTRY) {
 				if (serializer.getHandle().equals(handle)) {
 					return serializer;
 				}
@@ -721,7 +778,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 						throw new IllegalStateException("Failed to read field " + candidate);
 					}
 
-					REGISTRY.put(innerClass, new Serializer(innerClass, serializer, optional));
+					REGISTRY.add(new Serializer(innerClass, serializer, optional));
 				}
 			}
 		}

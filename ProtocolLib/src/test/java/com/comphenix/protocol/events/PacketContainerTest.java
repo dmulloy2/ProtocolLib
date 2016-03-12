@@ -32,6 +32,8 @@ import net.minecraft.server.v1_9_R1.AttributeModifier;
 import net.minecraft.server.v1_9_R1.DataWatcher;
 import net.minecraft.server.v1_9_R1.Entity;
 import net.minecraft.server.v1_9_R1.EntityLightning;
+import net.minecraft.server.v1_9_R1.MobEffect;
+import net.minecraft.server.v1_9_R1.MobEffectList;
 import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes;
 import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
@@ -43,6 +45,8 @@ import org.bukkit.Material;
 import org.bukkit.WorldType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +55,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -179,12 +184,10 @@ public class PacketContainerTest {
 				WrappedChatComponent.fromChatMessage("hello world"));
 	}
 
-	// TODO Find a packet with integer arrays
-
-	/*@Test
+	@Test
 	public void testGetIntegerArrays() {
 		// Contains a byte array we will test
-		PacketContainer mapChunkBulk = new PacketContainer(PacketType.Play.Server.MAP_CHUNK_BULK);
+		PacketContainer mapChunkBulk = new PacketContainer(PacketType.Play.Server.WORLD_PARTICLES);
 		StructureModifier<int[]> integers = mapChunkBulk.getIntegerArrays();
 		int[] testArray = new int[] { 1, 2, 3 };
 
@@ -195,7 +198,7 @@ public class PacketContainerTest {
 
 		integers.write(0, testArray);
 		assertArrayEquals(testArray, integers.read(0));
-	}*/
+	}
 
 	@Test
 	public void testGetItemModifier() {
@@ -447,24 +450,30 @@ public class PacketContainerTest {
 		assertEquals(material, read.getType());
 	}
 
-	/*@Test
+	@Test
 	@SuppressWarnings("deprecation")
 	public void testPotionEffect() {
 		PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
-		MobEffect mobEffect = new MobEffect(effect.getType().getId(), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(),
+		MobEffect mobEffect = new MobEffect(MobEffectList.fromId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(),
 				effect.hasParticles());
-
+		int entityId = 42;
+		
 		// The constructor we want to call
 		PacketConstructor creator = PacketConstructor.DEFAULT.withPacket(
 				PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[] { int.class, MobEffect.class });
-		PacketContainer packet = creator.createPacket(1, mobEffect);
+		PacketContainer packet = creator.createPacket(entityId, mobEffect);
 
-		assertEquals(1, (int) packet.getIntegers().read(0));
+		assertEquals(entityId, (int) packet.getIntegers().read(0));
 		assertEquals(effect.getType().getId(), (byte) packet.getBytes().read(0));
 		assertEquals(effect.getAmplifier(), (byte) packet.getBytes().read(1));
 		assertEquals(effect.getDuration(), (int) packet.getIntegers().read(1));
-		assertEquals(effect.hasParticles(), packet.getBytes().read(2) == (effect.hasParticles() ? 1 : 0));
-	}*/
+
+		int e = 0;
+		if (effect.isAmbient()) e |= 1;
+		if (effect.hasParticles()) e |= 2;
+
+		assertEquals(e, (byte) packet.getBytes().read(2));
+	}
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(
 			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD,

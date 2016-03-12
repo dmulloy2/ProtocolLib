@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.BeforeClass;
@@ -18,7 +19,9 @@ public class WrappedChatComponentTest {
 	public void testText() {
 		WrappedChatComponent test = WrappedChatComponent.fromText("Hello.");
 		String json = test.getJson();
-		
 		assertNotNull(json);
+
+		WrappedChatComponent clone = WrappedChatComponent.fromJson(json);
+		assertEquals(json, clone.getJson());
 	}
 }

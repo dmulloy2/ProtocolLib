@@ -4,10 +4,17 @@
 package com.comphenix.protocol.wrappers;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.UUID;
+
 import net.minecraft.server.v1_9_R1.DataWatcher;
 import net.minecraft.server.v1_9_R1.Entity;
 import net.minecraft.server.v1_9_R1.EntityLightning;
+import net.minecraft.server.v1_9_R1.ItemStack;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -70,5 +77,15 @@ public class WrappedDataWatcherTest {
 		Entity entity = new EntityLightning(null, 0, 0, 0, true);
 		DataWatcher handle = entity.getDataWatcher();
 		return new WrappedDataWatcher(handle);
+	}
+
+	@Test
+	public void testSerializers() {
+		Serializer blockPos = Registry.get(net.minecraft.server.v1_9_R1.BlockPosition.class, false);
+		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_9_R1.BlockPosition.class, true);
+		assertNotSame(blockPos, optionalBlockPos);
+
+		assertNull(Registry.get(ItemStack.class, false));
+		assertNotNull(Registry.get(UUID.class, true));
 	}
 }

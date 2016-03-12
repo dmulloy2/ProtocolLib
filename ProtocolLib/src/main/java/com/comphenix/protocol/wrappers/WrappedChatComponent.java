@@ -1,5 +1,8 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Method;
+import java.util.List;
+
 import org.bukkit.ChatColor;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -27,14 +30,30 @@ public class WrappedChatComponent extends AbstractWrapper {
 		// Retrieve the correct methods
 		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("serialize", /* a */
 				String.class, new Class<?>[] { COMPONENT }));
-		DESERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("deserialize", /* a */
-				COMPONENT, new Class<?>[] { String.class }));
+		DESERIALIZE_COMPONENT = findDeserialize(fuzzy);
 
 		// Get a component from a standard Minecraft message
 		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
 
 		// And the component text constructor
 		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
+	}
+
+	private static MethodAccessor findDeserialize(FuzzyReflection fuzzy) {
+		List<Method> methods = fuzzy.getMethodListByParameters(COMPONENT, new Class<?>[] { String.class });
+		if (methods.isEmpty()) {
+			throw new IllegalArgumentException("Unable to find deserialize method in " + fuzzy.getSource().getName());
+		}
+
+		// Try to find b, we want leniency
+		for (Method method : methods) {
+			if (method.getName().equals("b")) {
+				return Accessors.getMethodAccessor(method);
+			}
+		}
+
+		// Oh well
+		return Accessors.getMethodAccessor(methods.get(0));
 	}
 	
 	private transient String cache;
@@ -89,7 +108,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * Retrieve a copy of this component as a JSON string.
 	 * <p>
@@ -133,5 +152,10 @@ public class WrappedChatComponent extends AbstractWrapper {
 	@Override
 	public int hashCode() {
 		return handle.hashCode();
+	}
+
+	@Override
+	public String toString() {
+		return "WrappedChatComponent[json=" + getJson() + "]";
 	}
 }
