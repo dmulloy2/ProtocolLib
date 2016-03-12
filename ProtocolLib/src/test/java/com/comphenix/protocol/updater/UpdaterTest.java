@@ -29,7 +29,9 @@ public class UpdaterTest {
 		when(server.getUpdateFolder()).thenReturn(null);
 
 		plugin = mock(Plugin.class);
-		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", System.getProperty("projectVersion"), null));
+		String version = System.getProperty("projectVersion");
+		if (version == null) version = "3.7.0-BETA";
+		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", version, null));
 		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
 		when(plugin.getDataFolder()).thenReturn(null);
 		when(plugin.getServer()).thenReturn(server);
@@ -49,8 +51,7 @@ public class UpdaterTest {
 		}
 
 		System.out.println("Determined remote Spigot version: " + remote);
-
-		updater.versionCheck(remote);
+		System.out.println("Update available: " + updater.versionCheck(remote));
 	}
 
 	//@Test
@@ -62,7 +63,6 @@ public class UpdaterTest {
 
 		String remote = updater.getLatestName();
 		System.out.println("Determined remote Bukkit Dev version: " + remote);
-
-		updater.versionCheck(remote);		
+		System.out.println("Update available: " + updater.versionCheck(remote));		
 	}
 }

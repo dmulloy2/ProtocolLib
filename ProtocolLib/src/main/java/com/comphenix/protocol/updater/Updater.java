@@ -93,7 +93,7 @@ public abstract class Updater {
 
 			if (devBuild && parsedRemote.equals(parsedCurrent)) {
 				// They're using a dev build and this version has been released
-				return true;
+				return !remoteVersion.contains("-BETA") && !remoteVersion.contains("-SNAPSHOT");
 			}
 
 			// The remote version has to be greater
