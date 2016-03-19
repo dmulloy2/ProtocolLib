@@ -2,8 +2,8 @@ language: java
 jdk:
   - oraclejdk8
   - oraclejdk7
-script: mvn clean test -U
-before_install: cd ProtocolLib
+script: mvn clean test
+#before_install: cd ProtocolLib
 install: true
 notifications:
   email:

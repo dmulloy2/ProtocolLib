@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib-Parent</artifactId>
-  <version>v3-SNAPSHOT</version>
+  <version>v4-SNAPSHOT</version>
   <name>ProtocolLib-Parent</name>
 
   <properties>
@@ -11,8 +11,8 @@
   </properties>
 
   <modules>
-    <module>ProtocolLib</module>
-    <module>modules/v1_7_R4</module>
+    <module>modules/API</module>
+    <module>modules/ProtocolLib</module>
   </modules>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
