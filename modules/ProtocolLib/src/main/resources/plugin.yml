@@ -3,7 +3,7 @@ version: ${project.version}${project.build.number}
 description: Provides read/write access to the Minecraft protocol.
 authors: [dmulloy2, comphenix]
 
-main: com.comphenix.protocol.ProtocolLibrary
+main: com.comphenix.protocol.ProtocolLib
 load: startup
 database: false
 

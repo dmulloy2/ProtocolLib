@@ -46,6 +46,18 @@
     <defaultGoal>clean package install</defaultGoal>
     <finalName>${project.name}</finalName>
     <sourceDirectory>src/main/java</sourceDirectory>
+    <!--
+    <resources>
+      <resource>
+        <targetPath>.</targetPath>
+        <filtering>true</filtering>
+        <directory>src/main/resources/</directory>
+        <includes>
+          <include>*.yml</include>
+        </includes>
+      </resource>
+    </resources>
+    -->
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -65,7 +77,8 @@
           <encoding>ISO-8859-1</encoding>
           <doctitle>ProtocolLib JavaDocs</doctitle>
           <windowtitle>ProtocolLib JavaDocs</windowtitle>
-          <bottom>Copyright &#169; {inceptionYear}&#x2013;{currentYear} Comphenix and dmulloy2. Licensed under the GNU GPL v2.</bottom>
+          <bottom>Copyright &#169; {inceptionYear}&#x2013;{currentYear}
+            Comphenix and dmulloy2. Licensed under the GNU GPL v2.</bottom>
         </configuration>
         <executions>
           <execution>
