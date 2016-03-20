@@ -215,7 +215,9 @@ public final class Reflection {
 	 */
 	public static MethodInvoker getTypedMethod(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) {
 		for (final Method method : clazz.getDeclaredMethods()) {
-			if ((methodName == null || method.getName().equals(methodName)) && (returnType == null) || method.getReturnType().equals(returnType) && Arrays.equals(method.getParameterTypes(), params)) {
+			if ((methodName == null || method.getName().equals(methodName))
+					&& (returnType == null || method.getReturnType().equals(returnType))
+					&& Arrays.equals(method.getParameterTypes(), params)) {
 				method.setAccessible(true);
 
 				return new MethodInvoker() {
