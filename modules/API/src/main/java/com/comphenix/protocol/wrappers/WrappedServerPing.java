@@ -81,7 +81,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	private static MethodAccessor GSON_TO_JSON = Accessors.getMethodAccessor(GSON_CLASS, "toJson", Object.class);
 	private static MethodAccessor GSON_FROM_JSON = Accessors.getMethodAccessor(GSON_CLASS, "fromJson", String.class, Class.class);
 	private static FieldAccessor PING_GSON = Accessors.getCached(Accessors.getFieldAccessor(
-		PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass(), GSON_CLASS, true
+		PacketType.Status.Server.SERVER_INFO.getPacketClass(), GSON_CLASS, true
 	));
 
 	// Server data fields

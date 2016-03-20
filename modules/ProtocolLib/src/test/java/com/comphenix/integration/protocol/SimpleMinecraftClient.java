@@ -104,7 +104,7 @@ public class SimpleMinecraftClient {
 			DataInputStream data = getDataInput(buffer);
 			PacketType type = PacketType.findCurrent(protocol, Sender.SERVER, serializer.deserializeVarInt(data));
 			
-			if (type == PacketType.Status.Server.OUT_SERVER_INFO) {
+			if (type == PacketType.Status.Server.SERVER_INFO) {
 				ResponsePacket response = new ResponsePacket();
 				response.read(type, data);
 				return response;
@@ -151,7 +151,7 @@ public class SimpleMinecraftClient {
 
 	private static class RequestPacket extends SimplePacket {
 		public RequestPacket() {
-			super(PacketType.Status.Client.IN_START);
+			super(PacketType.Status.Client.START);
 		}
 	}
 	
@@ -159,7 +159,7 @@ public class SimpleMinecraftClient {
 		private String ping;
 		
 		public ResponsePacket() {
-			super(PacketType.Status.Server.OUT_SERVER_INFO);
+			super(PacketType.Status.Server.SERVER_INFO);
 		}
 		
 		@Override

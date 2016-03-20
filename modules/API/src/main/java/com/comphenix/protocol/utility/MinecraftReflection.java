@@ -807,7 +807,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("ServerPing");
 		} catch (RuntimeException e) {
-			Class<?> statusServerInfo = PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass();
+			Class<?> statusServerInfo = PacketType.Status.Server.SERVER_INFO.getPacketClass();
 
 			// Find a server ping object
 			AbstractFuzzyMatcher<Class<?>> serverPingContract = FuzzyClassContract.newBuilder().
@@ -1703,7 +1703,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftLibraryClass("com.google.gson.Gson");
 		} catch (RuntimeException e) {
-			Class<?> match = FuzzyReflection.fromClass(PacketType.Status.Server.OUT_SERVER_INFO.getPacketClass(), true)
+			Class<?> match = FuzzyReflection.fromClass(PacketType.Status.Server.SERVER_INFO.getPacketClass(), true)
 					.getFieldByType("(.*)(google.gson.Gson)").getType();
 			return setMinecraftLibraryClass("com.google.gson.Gson", match);
 		}

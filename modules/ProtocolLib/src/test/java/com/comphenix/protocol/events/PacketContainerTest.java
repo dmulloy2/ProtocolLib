@@ -534,7 +534,7 @@ public class PacketContainerTest {
 				StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
 				assertEquals(firstMod.size(), secondMod.size());
 
-				if (PacketType.Status.Server.OUT_SERVER_INFO.equals(type)) {
+				if (PacketType.Status.Server.SERVER_INFO.equals(type)) {
 					assertArrayEquals(SerializationUtils.serialize(constructed), SerializationUtils.serialize(cloned));
 				} else {
 					// Make sure all the fields are equivalent

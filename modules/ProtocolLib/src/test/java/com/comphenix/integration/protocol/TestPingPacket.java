@@ -56,7 +56,7 @@ public class TestPingPacket {
 
 	private Future<String> testInterception(Plugin test) {
 		ProtocolLibrary.getProtocolManager().addPacketListener(
-		  new PacketAdapter(test, PacketType.Status.Server.OUT_SERVER_INFO) {
+		  new PacketAdapter(test, PacketType.Status.Server.SERVER_INFO) {
 			@Override
 			public void onPacketSending(PacketEvent event) {
 				source = event.getPacket().getServerPings().read(0).toJson();

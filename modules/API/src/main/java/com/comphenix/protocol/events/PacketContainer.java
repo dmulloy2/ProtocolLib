@@ -152,8 +152,8 @@ public class PacketContainer implements Serializable {
 	
 	// Packets that cannot be cloned by our default deep cloner
 	private static final Set<PacketType> CLONING_UNSUPPORTED = Sets.newHashSet(
-		PacketType.Play.Server.UPDATE_ATTRIBUTES, PacketType.Status.Server.OUT_SERVER_INFO);
-	
+		PacketType.Play.Server.UPDATE_ATTRIBUTES, PacketType.Status.Server.SERVER_INFO);
+
 	/**
 	 * Creates a packet container for a new packet.
 	 * <p>
