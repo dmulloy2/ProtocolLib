@@ -6,6 +6,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import net.minecraft.server.v1_9_R1.ChatComponentText;
 import net.minecraft.server.v1_9_R1.ChunkCoordIntPair;
+import net.minecraft.server.v1_9_R1.DataWatcher;
 import net.minecraft.server.v1_9_R1.IBlockData;
 import net.minecraft.server.v1_9_R1.IChatBaseComponent;
 import net.minecraft.server.v1_9_R1.IChatBaseComponent.ChatSerializer;
@@ -124,11 +125,10 @@ public class MinecraftReflectionTest {
 		assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
 	}
 
-	// TODO Fix this
-	/*@Test
-	public void testWatchableObject() {
-		assertEquals(WatchableObject.class, MinecraftReflection.getWatchableObjectClass());
-	}*/
+	@Test
+	public void testDataWatcherItem() {
+		assertEquals(DataWatcher.Item.class, MinecraftReflection.getDataWatcherItemClass());
+	}
 
 	@Test
 	public void testItemStacks() {

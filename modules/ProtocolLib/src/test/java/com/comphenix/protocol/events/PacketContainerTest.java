@@ -62,6 +62,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -475,6 +476,22 @@ public class PacketContainerTest {
 		assertEquals(e, (byte) packet.getBytes().read(2));
 	}
 
+	@Test
+	public void testMobEffectList() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.REMOVE_ENTITY_EFFECT);
+		container.getEffectTypes().write(0, PotionEffectType.GLOWING);
+
+		assertEquals(container.getEffectTypes().read(0), PotionEffectType.GLOWING);
+	}
+
+	@Test
+	public void testSoundCategory() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.NAMED_SOUND_EFFECT);
+		container.getSoundCategories().write(0, SoundCategory.PLAYERS);
+
+		assertEquals(container.getSoundCategories().read(0), SoundCategory.PLAYERS);
+	}
+
 	private static final List<PacketType> BLACKLISTED = Util.asList(
 			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD,
 			PacketType.Play.Server.SET_COOLDOWN
@@ -528,7 +545,7 @@ public class PacketContainerTest {
 							testEquality(firstMod.read(i), secondMod.read(i));
 					}
 				}
-			} catch (IllegalArgumentException e) {	
+			} catch (IllegalArgumentException e) {
 				if (!registered) {
 					// Let the test pass
 					System.err.println("The packet ID " + type + " is not registered.");

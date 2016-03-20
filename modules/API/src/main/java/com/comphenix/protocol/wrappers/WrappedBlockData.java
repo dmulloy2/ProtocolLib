@@ -56,7 +56,7 @@ public class WrappedBlockData extends AbstractWrapper {
 				.parameterExactArray(IBLOCK_DATA)
 				.returnTypeExact(int.class)
 				.build();
-		TO_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
+		TO_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract, "toLegacyData"));
 
 		fuzzy = FuzzyReflection.fromClass(MAGIC_NUMBERS);
 		GET_NMS_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getBlock", BLOCK,

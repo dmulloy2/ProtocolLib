@@ -42,7 +42,7 @@ public class StreamSerializerTest {
 	@Test
 	public void testStrings() throws IOException {
 		StreamSerializer serializer = new StreamSerializer();
-		String initial = "Hello - this is a ��� test.";
+		String initial = "Hello - this is a test.";
 
 		// Buffer
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
