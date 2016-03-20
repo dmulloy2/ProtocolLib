@@ -33,7 +33,7 @@ public class SimpleMinecraftClient {
     /**
      * Query the local server for ping information.
      * @return The server information.
-     * @throws IOException 
+     * @throws IOException
      */
 	public String queryLocalPing() throws IOException {
 		return queryServerPing(new InetSocketAddress("localhost", 25565));
@@ -173,7 +173,7 @@ public class SimpleMinecraftClient {
 		}
 	}
 	
-	private static class HandshakePacket extends SimplePacket {	
+	private static class HandshakePacket extends SimplePacket {
 		private int protocol;
 		private String host;
 		private int port;
@@ -209,6 +209,7 @@ public class SimpleMinecraftClient {
 			serializer.serializeVarInt(output, type.getCurrentId());
 		}
 		
+		@SuppressWarnings("unused")
 		public void read(PacketType type, DataInputStream input) throws IOException {
 			// Note - we don't read the packet id
 			if (this.type != type) {

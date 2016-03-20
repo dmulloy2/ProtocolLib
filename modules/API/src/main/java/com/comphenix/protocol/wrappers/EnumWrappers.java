@@ -272,6 +272,40 @@ public abstract class EnumWrappers {
 		}
 	}
 
+	public enum SoundCategory {
+		MASTER("master"),
+		MUSIC("music"),
+		RECORDS("record"),
+		WEATHER("weather"),
+		BLOCKS("block"),
+		HOSTILE("hostile"),
+		NEUTRAL("neutral"),
+		PLAYERS("player"),
+		AMBIENT("ambient"),
+		VOICE("voice");
+
+		private static final Map<String, SoundCategory> LOOKUP;
+		static {
+			LOOKUP = new HashMap<>();
+			for (SoundCategory category : values()) {
+				LOOKUP.put(category.key, category);
+			}
+		}
+
+		private final String key;
+		private SoundCategory(String key) {
+			this.key = key;
+		}
+
+		public String getKey() {
+			return key;
+		}
+
+		public static SoundCategory getByKey(String key) {
+			return LOOKUP.get(key.toLowerCase());
+		}
+	}
+
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
 	private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -287,6 +321,7 @@ public abstract class EnumWrappers {
 	private static Class<?> PLAYER_ACTION_CLASS = null;
 	private static Class<?> SCOREBOARD_ACTION_CLASS = null;
 	private static Class<?> PARTICLE_CLASS = null;
+	private static Class<?> SOUND_CATEGORY_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -319,6 +354,7 @@ public abstract class EnumWrappers {
 		PLAYER_ACTION_CLASS = getEnum(PacketType.Play.Client.ENTITY_ACTION.getPacketClass(), 0);
 		SCOREBOARD_ACTION_CLASS = getEnum(PacketType.Play.Server.SCOREBOARD_SCORE.getPacketClass(), 0);
 		PARTICLE_CLASS = getEnum(PacketType.Play.Server.WORLD_PARTICLES.getPacketClass(), 0);
+		SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.CUSTOM_SOUND_EFFECT.getPacketClass(), 0);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -335,6 +371,7 @@ public abstract class EnumWrappers {
 		associate(PLAYER_ACTION_CLASS, PlayerAction.class, getEntityActionConverter());
 		associate(SCOREBOARD_ACTION_CLASS, ScoreboardAction.class, getUpdateScoreActionConverter());
 		associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
+		associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
 		INITIALIZED = true;
 	}
 
@@ -443,6 +480,11 @@ public abstract class EnumWrappers {
 		return PARTICLE_CLASS;
 	}
 
+	public static Class<?> getSoundCategoryClass() {
+		initialize();
+		return SOUND_CATEGORY_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<Protocol>(Protocol.class);
@@ -502,6 +544,10 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<Particle> getParticleConverter() {
 		return new EnumConverter<Particle>(Particle.class);
+	}
+
+	public static EquivalentConverter<SoundCategory> getSoundCategoryConverter() {
+		return new EnumConverter<SoundCategory>(SoundCategory.class);
 	}
 
 	/**

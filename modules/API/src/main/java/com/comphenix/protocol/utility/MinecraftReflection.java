@@ -1341,6 +1341,11 @@ public class MinecraftReflection {
 		return getMinecraftClass("MinecraftKey");
 	}
 
+	public static Class<?> getMobEffectListClass() {
+		// TODO Implement a fallback
+		return getMinecraftClass("MobEffectList");
+	}
+
 	/**
 	 * Retrieve the ServerConnection abstract class.
 	 * @return The ServerConnection class.

@@ -25,37 +25,61 @@ import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.google.common.base.Objects;
 
 /**
+ * Represents an immutable PlayerInfoData in the PLAYER_INFO packet.
  * @author dmulloy2
  */
-
 public class PlayerInfoData {
 	private static Constructor<?> constructor;
 
-	protected final WrappedGameProfile profile;
-	protected final int ping;
-	protected final NativeGameMode gameMode;
-	protected final WrappedChatComponent displayName;
+	private final int latency;
+	private final NativeGameMode gameMode;
+	private final WrappedGameProfile profile;
+	private final WrappedChatComponent displayName;
 
 	// This is the same order as the NMS class, minus the packet (which isn't a field)
-	public PlayerInfoData(WrappedGameProfile profile, int ping, NativeGameMode gameMode, WrappedChatComponent displayName) {
-		this.ping = ping;
-		this.gameMode = gameMode;
+	public PlayerInfoData(WrappedGameProfile profile, int latency, NativeGameMode gameMode, WrappedChatComponent displayName) {
 		this.profile = profile;
+		this.latency = latency;
+		this.gameMode = gameMode;
 		this.displayName = displayName;
 	}
 
+	/**
+	 * Gets the GameProfile of the player represented by this data.
+	 * @return The GameProfile
+	 */
 	public WrappedGameProfile getProfile() {
 		return profile;
 	}
 
+	/**
+	 * @deprecated Replaced by {@link #getLatency()}
+	 */
+	@Deprecated
 	public int getPing() {
-		return ping;
+		return latency;
 	}
 
+	/**
+	 * Gets the latency between the client and the server.
+	 * @return The latency
+	 */
+	public int getLatency() {
+		return latency;
+	}
+
+	/**
+	 * Gets the GameMode of the player represented by this data.
+	 * @return The GameMode
+	 */
 	public NativeGameMode getGameMode() {
 		return gameMode;
 	}
 
+	/**
+	 * Gets the display name of the player represented by this data.
+	 * @return The display name
+	 */
 	public WrappedChatComponent getDisplayName() {
 		return displayName;
 	}
@@ -91,7 +115,7 @@ public class PlayerInfoData {
 					Object result = constructor.newInstance(
 							null,
 							specific.profile.handle,
-							specific.ping,
+							specific.latency,
 							EnumWrappers.getGameModeConverter().getGeneric(EnumWrappers.getGameModeClass(), specific.gameMode),
 							specific.displayName != null ? specific.displayName.handle : null
 					);
@@ -112,7 +136,7 @@ public class PlayerInfoData {
 					WrappedGameProfile gameProfile = gameProfiles.read(0);
 
 					StructureModifier<Integer> ints = modifier.withType(int.class);
-					int ping = ints.read(0);
+					int latency = ints.read(0);
 
 					StructureModifier<NativeGameMode> gameModes = modifier.withType(
 							EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
@@ -122,7 +146,7 @@ public class PlayerInfoData {
 							MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 					WrappedChatComponent displayName = displayNames.read(0);
 					
-					return new PlayerInfoData(gameProfile, ping, gameMode, displayName);
+					return new PlayerInfoData(gameProfile, latency, gameMode, displayName);
 				}
 
 				// Otherwise, return null
@@ -146,7 +170,7 @@ public class PlayerInfoData {
 		// Only compare objects of similar type
 		if (obj instanceof PlayerInfoData) {
 			PlayerInfoData other = (PlayerInfoData) obj;
-			return profile.equals(other.profile) && ping == other.ping && gameMode == other.gameMode
+			return profile.equals(other.profile) && latency == other.latency && gameMode == other.gameMode
 					&& displayName.equals(other.displayName);
 		}
 		return false;
@@ -154,12 +178,12 @@ public class PlayerInfoData {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(profile, ping, gameMode, displayName);
+		return Objects.hashCode(latency, gameMode, profile, displayName);
 	}
 
 	@Override
 	public String toString() {
-		return String.format("PlayerInfoData { profile=%s, ping=%s, gameMode=%s, displayName=%s }",
-				profile, ping, gameMode, displayName);
+		return String.format("PlayerInfoData[latency=%s, gameMode=%s, profile=%s, displayName=%s",
+				latency, gameMode, profile, displayName);
 	}
 }

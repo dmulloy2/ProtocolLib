@@ -46,6 +46,7 @@ import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
@@ -86,6 +87,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType;
 import com.comphenix.protocol.wrappers.EnumWrappers.PlayerInfoAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
 import com.comphenix.protocol.wrappers.EnumWrappers.ScoreboardAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
 import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
@@ -578,12 +580,11 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 			Collection.class,
 			BukkitConverters.getListConverter(
-					MinecraftReflection.getWatchableObjectClass(),
+					MinecraftReflection.getDataWatcherItemClass(),
 					BukkitConverters.getWatchableObjectConverter())
 		);
 	}
-	
-	
+
 	/**
 	 * Retrieves a read/write structure for block fields.
 	 * <p>
@@ -843,6 +844,26 @@ public class PacketContainer implements Serializable {
     	// Convert to and from the wrapper
     	return structureModifier.<Particle>withType(
     			EnumWrappers.getParticleClass(), EnumWrappers.getParticleConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for the MobEffectList class in 1.9.
+     * @return A modifier for MobEffectList fields.
+     */
+    public StructureModifier<PotionEffectType> getEffectTypes() {
+    	// Convert to and from Bukkit
+    	return structureModifier.<PotionEffectType>withType(
+    			MinecraftReflection.getMobEffectListClass(), BukkitConverters.getEffectTypeConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for the SoundCategory enum in 1.9.
+     * @return A modifier for SoundCategory enum fields.
+     */
+    public StructureModifier<SoundCategory> getSoundCategories() {
+    	// Convert to and from the enums
+    	return structureModifier.<SoundCategory>withType(
+    			EnumWrappers.getSoundCategoryClass(), EnumWrappers.getSoundCategoryConverter());
     }
 
 	/**

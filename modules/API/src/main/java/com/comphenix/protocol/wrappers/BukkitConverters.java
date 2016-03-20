@@ -1105,7 +1105,7 @@ public class BukkitConverters {
 				put(MinecraftReflection.getItemStackClass(), (EquivalentConverter) getItemStackConverter()).
 				put(MinecraftReflection.getNBTBaseClass(), (EquivalentConverter) getNbtConverter()).
 				put(MinecraftReflection.getNBTCompoundClass(), (EquivalentConverter) getNbtConverter()).
-				put(MinecraftReflection.getWatchableObjectClass(), (EquivalentConverter) getWatchableObjectConverter()).
+				put(MinecraftReflection.getDataWatcherItemClass(), (EquivalentConverter) getWatchableObjectConverter()).
 				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter()).
 				put(MinecraftReflection.getNmsWorldClass(), (EquivalentConverter) getWorldConverter());
 				
@@ -1145,5 +1145,39 @@ public class BukkitConverters {
 			unwrappers = builder.build();
 		}
 		return unwrappers;
+	}
+
+	private static MethodAccessor getMobEffectId = null;
+	private static MethodAccessor getMobEffect = null;
+
+	public static EquivalentConverter<PotionEffectType> getEffectTypeConverter() {
+		return new IgnoreNullConverter<PotionEffectType>() {
+
+			@Override
+			public Class<PotionEffectType> getSpecificType() {
+				return PotionEffectType.class;
+			}
+
+			@Override
+			protected Object getGenericValue(Class<?> genericType, PotionEffectType specific) {
+				if (getMobEffect == null) {
+					getMobEffect = Accessors.getMethodAccessor(genericType, "fromId", int.class);
+				}
+
+				int id = specific.getId();
+				return getMobEffect.invoke(null, id);
+			}
+
+			@Override
+			protected PotionEffectType getSpecificValue(Object generic) {
+				Class<?> clazz = MinecraftReflection.getMobEffectListClass();
+				if (getMobEffectId == null) {
+					getMobEffectId = Accessors.getMethodAccessor(clazz, "getId", clazz);
+				}
+
+				int id = (int) getMobEffectId.invoke(null, generic);
+				return PotionEffectType.getById(id);
+			}
+		};
 	}
 }
