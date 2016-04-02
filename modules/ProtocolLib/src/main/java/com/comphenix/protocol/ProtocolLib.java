@@ -18,7 +18,6 @@ package com.comphenix.protocol;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -597,13 +596,13 @@ public class ProtocolLib extends JavaPlugin {
 			long updateTime = config.getAutoLastTime() + config.getAutoDelay();
 
 			// Should we update?
-			if (currentTime > updateTime && !updater.isChecking()) {		
+			if (currentTime > updateTime && !updater.isChecking()) {
 				// Initiate the update as if it came from the console
 				if (config.isAutoDownload())
 					commandProtocol.updateVersion(getServer().getConsoleSender(), false);
 				else if (config.isAutoNotify())
 					commandProtocol.checkVersion(getServer().getConsoleSender(), false);
-				else 
+				else
 					commandProtocol.updateFinished();
 			}
 		} catch (Exception e) {
@@ -670,32 +669,6 @@ public class ProtocolLib extends JavaPlugin {
 	}
 
 	/**
-	 * Retrieve the current error reporter.
-	 * <p>
-	 * This is guaranteed to not be NULL in 2.5.0 and later.
-	 * @return Current error reporter.
-	 */
-	public static ErrorReporter getErrorReporter() {
-		return reporter;
-	}
-
-	/**
-	 * Retrieve the current strongly typed configuration.
-	 * @return The configuration, or NULL if ProtocolLib hasn't loaded yet.
-	 */
-	public static ProtocolConfig getConfiguration() {
-		return config;
-	}
-
-	/**
-	 * Retrieves the packet protocol manager.
-	 * @return Packet protocol manager, or NULL if it has been disabled.
-	 */
-	public static ProtocolManager getProtocolManager() {
-		return protocolManager;
-	}
-
-	/**
 	 * Retrieve the metrics instance used to measure users of this library.
 	 * <p>
 	 * Note that this method may return NULL when the server is reloading or shutting down. It is also
@@ -704,39 +677,5 @@ public class ProtocolLib extends JavaPlugin {
 	 */
 	public Statistics getStatistics() {
 		return statistics;
-	}
-
-	/**
-	 * Retrieve an executor service for performing asynchronous tasks on the behalf of ProtocolLib.
-	 * <p>
-	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
-	 * @return The executor service, or NULL.
-	 */
-	public static ListeningScheduledExecutorService getExecutorAsync() {
-		return executorAsync;
-	}
-
-	/**
-	 * Retrieve an executor service for performing synchronous tasks (main thread) on the behalf of ProtocolLib.
-	 * <p>
-	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
-	 * @return The executor service, or NULL.
-	 */
-	public static ListeningScheduledExecutorService getExecutorSync() {
-		return executorSync;
-	}
-
-	// ---- Logging Methods
-
-	public static void log(Level level, String message, Object... args) {
-		logger.log(level, MessageFormat.format(message, args));
-	}
-
-	public static void log(String message, Object... args) {
-		log(Level.INFO, message, args);
-	}
-
-	public static void log(Level level, String message, Throwable ex) {
-		logger.log(level, message, ex);
 	}
 }

@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 
 import net.sf.cglib.proxy.Enhancer;
 
-import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolLogger;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
@@ -284,7 +284,7 @@ public class DefaultInstances implements InstanceProvider {
 					
 					// Did we break the non-null contract?
 					if (params[i] == null && nonNull) {
-						ProtocolLibrary.log(Level.WARNING, "Nonnull contract broken.");
+						ProtocolLogger.log(Level.WARNING, "Nonnull contract broken.");
 						return null;
 					}
 				}

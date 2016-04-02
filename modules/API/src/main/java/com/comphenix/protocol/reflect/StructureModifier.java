@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.error.PluginContext;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.instances.BannedGenerator;
@@ -198,8 +199,8 @@ public class StructureModifier<TField> {
 		} catch (FieldAccessException ex) {
 			String plugin = PluginContext.getPluginCaller(ex);
 			if (ProtocolLibrary.INCOMPATIBLE.contains(plugin)) {
-				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
-				ProtocolLibrary.log(Level.WARNING, "It is advised that you remove it.");
+				ProtocolLogger.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
+				ProtocolLogger.log(Level.WARNING, "It is advised that you remove it.");
 			}
 
 			throw ex;
@@ -328,8 +329,8 @@ public class StructureModifier<TField> {
 		} catch (FieldAccessException ex) {
 			String plugin = PluginContext.getPluginCaller(ex);
 			if (ProtocolLibrary.INCOMPATIBLE.contains(plugin)) {
-				ProtocolLibrary.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
-				ProtocolLibrary.log(Level.WARNING, "It is advised that you remove it.");
+				ProtocolLogger.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
+				ProtocolLogger.log(Level.WARNING, "It is advised that you remove it.");
 			}
 
 			throw ex;

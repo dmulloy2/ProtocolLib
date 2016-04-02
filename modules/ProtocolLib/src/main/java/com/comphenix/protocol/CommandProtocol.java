@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import org.bukkit.ChatColor;
@@ -193,7 +194,7 @@ class CommandProtocol extends CommandBase {
 	 * Prevent further automatic updates until the next delay.
 	 */
 	public void updateFinished() {
-		long currentTime = System.currentTimeMillis() / ProtocolLibrary.MILLI_PER_SECOND;
+		long currentTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
 
 		config.setAutoLastTime(currentTime);
 		config.saveAll();
@@ -263,7 +264,7 @@ class CommandProtocol extends CommandBase {
 
 			sender.sendMessage("Data dump written to " + file.getAbsolutePath());
 		} catch (IOException ex) {
-			ProtocolLibrary.log(Level.SEVERE, "Failed to create dump:", ex);
+			ProtocolLogger.log(Level.SEVERE, "Failed to create dump:", ex);
 			sender.sendMessage(ChatColor.RED + "Failed to create dump! Check console!");
 		} finally {
 			closer.close();

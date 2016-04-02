@@ -1,27 +1,43 @@
+/**
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2016 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
+ */
 package com.comphenix.protocol;
 
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 
+/**
+ * The main entry point for ProtocolLib.
+ * @author dmulloy2
+ */
 public class ProtocolLibrary {
-	public static final long MILLI_PER_SECOND = 1000;
-	public static final List<String> INCOMPATIBLE = Arrays.asList("TagAPI");
-
 	/**
 	 * The minimum version ProtocolLib has been tested with.
 	 */
 	public static final String MINIMUM_MINECRAFT_VERSION = "1.9";
 
 	/**
-	 * The maximum version ProtocolLib has been tested with,
+	 * The maximum version ProtocolLib has been tested with.
 	 */
 	public static final String MAXIMUM_MINECRAFT_VERSION = "1.9";
 
@@ -29,6 +45,11 @@ public class ProtocolLibrary {
 	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.9) was released.
 	 */
 	public static final String MINECRAFT_LAST_RELEASE_DATE = "2016-02-29";
+
+	/**
+	 * Plugins that are currently incompatible with ProtocolLib.
+	 */
+	public static final List<String> INCOMPATIBLE = Arrays.asList("TagAPI");
 
 	private static Plugin plugin;
 	private static ProtocolConfig config;
@@ -39,58 +60,85 @@ public class ProtocolLibrary {
 	private static ListeningScheduledExecutorService executorSync;
 
 	private static boolean updatesDisabled;
+	private static boolean initialized;
 
 	protected static void init(Plugin plugin, ProtocolConfig config, ProtocolManager manager, ErrorReporter reporter,
 			ListeningScheduledExecutorService executorAsync, ListeningScheduledExecutorService executorSync) {
+		Validate.isTrue(!initialized, "ProtocolLib has already been initialized.");
 		ProtocolLibrary.plugin = plugin;
 		ProtocolLibrary.config = config;
 		ProtocolLibrary.manager = manager;
 		ProtocolLibrary.reporter = reporter;
 		ProtocolLibrary.executorAsync = executorAsync;
 		ProtocolLibrary.executorSync = executorSync;
+		ProtocolLogger.init(plugin);
+		initialized = true;
 	}
 
+	/**
+	 * Gets the ProtocolLib plugin instance.
+	 * @return The plugin instance
+	 */
 	public static Plugin getPlugin() {
 		return plugin;
 	}
 
+	/**
+	 * Gets ProtocolLib's configuration
+	 * @return The config
+	 */
 	public static ProtocolConfig getConfig() {
 		return config;
 	}
 
+	/**
+	 * Retrieves the packet protocol manager.
+	 * @return Packet protocol manager
+	 */
 	public static ProtocolManager getProtocolManager() {
 		return manager;
 	}
 
+	/**
+	 * Retrieve the current error reporter.
+	 * @return Current error reporter.
+	 */
 	public static ErrorReporter getErrorReporter() {
 		return reporter;
 	}
 
-	public static void disableUpdates() {
-		updatesDisabled = true;
-	}
-
-	public static boolean updatesDisabled() {
-		return updatesDisabled;
-	}
-
+	/**
+	 * Retrieve an executor service for performing asynchronous tasks on the behalf of ProtocolLib.
+	 * <p>
+	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
+	 * @return The executor service, or NULL.
+	 */
 	public static ListeningScheduledExecutorService getExecutorAsync() {
 		return executorAsync;
 	}
 
+	/**
+	 * Retrieve an executor service for performing synchronous tasks (main thread) on the behalf of ProtocolLib.
+	 * <p>
+	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
+	 * @return The executor service, or NULL.
+	 */
 	public static ListeningScheduledExecutorService getExecutorSync() {
 		return executorSync;
 	}
 
-	public static void log(Level level, String message, Object... args) {
-		plugin.getLogger().log(level, MessageFormat.format(message, args));
+	/**
+	 * Disables the ProtocolLib update checker.
+	 */
+	public static void disableUpdates() {
+		updatesDisabled = true;
 	}
 
-	public static void log(String message, Object... args) {
-		log(Level.INFO, message, args);
-	}
-
-	public static void log(Level level, String message, Throwable ex) {
-		plugin.getLogger().log(level, message, ex);
+	/**
+	 * Whether or not updates are currently disabled.
+	 * @return True if it is, false if not
+	 */
+	public static boolean updatesDisabled() {
+		return updatesDisabled;
 	}
 }
