@@ -80,6 +80,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
 import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.ItemSlot;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.EnumWrappers.Particle;
 import com.comphenix.protocol.wrappers.EnumWrappers.PlayerAction;
@@ -864,6 +865,15 @@ public class PacketContainer implements Serializable {
     	// Convert to and from the enums
     	return structureModifier.<SoundCategory>withType(
     			EnumWrappers.getSoundCategoryClass(), EnumWrappers.getSoundCategoryConverter());
+    }
+
+    /**
+     * Retrive a read/write structure for the ItemSlot enum in 1.9.
+     * @return A modifier for ItemSlot enum fields.
+     */
+    public StructureModifier<ItemSlot> getItemSlots() {
+    	return structureModifier.<ItemSlot>withType(
+    			EnumWrappers.getItemSlotClass(), EnumWrappers.getItemSlotConverter());
     }
 
 	/**
