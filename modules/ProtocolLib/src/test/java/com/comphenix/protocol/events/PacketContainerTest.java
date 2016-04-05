@@ -42,6 +42,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.WorldType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -490,6 +491,14 @@ public class PacketContainerTest {
 		container.getSoundCategories().write(0, SoundCategory.PLAYERS);
 
 		assertEquals(container.getSoundCategories().read(0), SoundCategory.PLAYERS);
+	}
+
+	@Test
+	public void testSoundEffects() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.NAMED_SOUND_EFFECT);
+		container.getSoundEffects().write(0, Sound.ENTITY_CAT_HISS);
+
+		assertEquals(container.getSoundEffects().read(0), Sound.ENTITY_CAT_HISS);
 	}
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(

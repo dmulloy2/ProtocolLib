@@ -315,6 +315,11 @@ public abstract class EnumWrappers {
 		HEAD;
 	}
 
+	public enum Hand {
+		MAIN_HAND,
+		OFF_HAND;
+	}
+
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
 	private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -332,6 +337,7 @@ public abstract class EnumWrappers {
 	private static Class<?> PARTICLE_CLASS = null;
 	private static Class<?> SOUND_CATEGORY_CLASS = null;
 	private static Class<?> ITEM_SLOT_CLASS = null;
+	private static Class<?> HAND_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -366,6 +372,7 @@ public abstract class EnumWrappers {
 		PARTICLE_CLASS = getEnum(PacketType.Play.Server.WORLD_PARTICLES.getPacketClass(), 0);
 		SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.CUSTOM_SOUND_EFFECT.getPacketClass(), 0);
 		ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
+		HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -384,6 +391,7 @@ public abstract class EnumWrappers {
 		associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
 		associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
 		associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
+		associate(HAND_CLASS, Hand.class, getHandConverter());
 		INITIALIZED = true;
 	}
 
@@ -502,6 +510,11 @@ public abstract class EnumWrappers {
 		return ITEM_SLOT_CLASS;
 	}
 
+	public static Class<?> getHandClass() {
+		initialize();
+		return HAND_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<Protocol>(Protocol.class);
@@ -569,6 +582,10 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<ItemSlot> getItemSlotConverter() {
 		return new EnumConverter<ItemSlot>(ItemSlot.class);
+	}
+
+	public static EquivalentConverter<Hand> getHandConverter() {
+		return new EnumConverter<Hand>(Hand.class);
 	}
 
 	/**

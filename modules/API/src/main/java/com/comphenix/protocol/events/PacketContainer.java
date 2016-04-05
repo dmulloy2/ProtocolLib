@@ -42,6 +42,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
@@ -80,6 +81,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
 import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.comphenix.protocol.wrappers.EnumWrappers.ItemSlot;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.EnumWrappers.Particle;
@@ -868,12 +870,31 @@ public class PacketContainer implements Serializable {
     }
 
     /**
+     * Retrieve a read/write structure for the SoundEffect enum in 1.9.
+     * @return A modifier for SoundEffect enum fields.
+     */
+    public StructureModifier<Sound> getSoundEffects() {
+    	// Convert to and from Bukkit
+    	return structureModifier.<Sound>withType(
+    			MinecraftReflection.getSoundEffectClass(), BukkitConverters.getSoundConverter());
+    }
+
+    /**
      * Retrive a read/write structure for the ItemSlot enum in 1.9.
      * @return A modifier for ItemSlot enum fields.
      */
     public StructureModifier<ItemSlot> getItemSlots() {
     	return structureModifier.<ItemSlot>withType(
     			EnumWrappers.getItemSlotClass(), EnumWrappers.getItemSlotConverter());
+    }
+
+    /**
+     * Retrive a read/write structure for the Hand enum in 1.9.
+     * @return A modifier for Hand enum fields.
+     */
+    public StructureModifier<Hand> getHands() {
+    	return structureModifier.<Hand>withType(
+    			EnumWrappers.getHandClass(), EnumWrappers.getHandConverter());
     }
 
 	/**

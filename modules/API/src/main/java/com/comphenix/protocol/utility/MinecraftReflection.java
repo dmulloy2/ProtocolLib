@@ -1347,6 +1347,16 @@ public class MinecraftReflection {
 		return getMinecraftClass("MobEffectList");
 	}
 
+	public static Class<?> getSoundEffectClass() {
+		try {
+			return getMinecraftClass("SoundEffect");
+		} catch (RuntimeException ex) {
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(PacketType.Play.Server.NAMED_SOUND_EFFECT.getPacketClass(), true);
+			Field field = fuzzy.getFieldByType("(.*)(Sound)(.*)");
+			return setMinecraftClass("SoundEffect", field.getType());
+		}
+	}
+
 	/**
 	 * Retrieve the ServerConnection abstract class.
 	 * @return The ServerConnection class.

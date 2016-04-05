@@ -980,7 +980,7 @@ public class BukkitConverters {
 				if (soundGetter == null) {
 					Class<?> soundEffects = MinecraftReflection.getMinecraftClass("SoundEffects");
 					FuzzyReflection fuzzy = FuzzyReflection.fromClass(soundEffects, true);
-					soundGetter = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSound", MinecraftReflection.getMinecraftClass("SoundEffect"), String.class));
+					soundGetter = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSound", MinecraftReflection.getSoundEffectClass(), new Class<?>[] { String.class }));
 				}
 
 				MinecraftKey key = MinecraftKey.fromEnum(specific);
@@ -992,7 +992,7 @@ public class BukkitConverters {
 				if (soundKey == null) {
 					Class<?> soundEffect = generic.getClass();
 					FuzzyReflection fuzzy = FuzzyReflection.fromClass(soundEffect, true);
-					soundKey = Accessors.getFieldAccessor(fuzzy.getFieldByType("key", MinecraftReflection.getMinecraftClass("MinecraftKey")));
+					soundKey = Accessors.getFieldAccessor(fuzzy.getFieldByType("key", MinecraftReflection.getMinecraftKeyClass()));
 				}
 
 				MinecraftKey key = MinecraftKey.fromHandle(soundKey.get(generic));
