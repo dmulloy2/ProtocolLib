@@ -34,6 +34,7 @@ import net.minecraft.server.v1_9_R1.Entity;
 import net.minecraft.server.v1_9_R1.EntityLightning;
 import net.minecraft.server.v1_9_R1.MobEffect;
 import net.minecraft.server.v1_9_R1.MobEffectList;
+import net.minecraft.server.v1_9_R1.PacketPlayOutBoss;
 import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes;
 import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
@@ -499,6 +500,27 @@ public class PacketContainerTest {
 		container.getSoundEffects().write(0, Sound.ENTITY_CAT_HISS);
 
 		assertEquals(container.getSoundEffects().read(0), Sound.ENTITY_CAT_HISS);
+	}
+
+	@Test
+	public void testGenericEnums() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.BOSS);
+		container.getEnumModifier(Action.class, 1).write(0, Action.UPDATE_PCT);
+
+		assertEquals(container.getEnumModifier(Action.class, PacketPlayOutBoss.Action.class).read(0), Action.UPDATE_PCT);
+	}
+
+	/**
+	 * Actions from the outbound Boss packet. Used for testing generic enums.
+	 * @author dmulloy2
+	 */
+	public static enum Action {
+		ADD,
+		REMOVE,
+		UPDATE_PCT,
+		UPDATE_NAME,
+		UPDATE_STYLE,
+		UPDATE_PROPERTIES;
 	}
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(

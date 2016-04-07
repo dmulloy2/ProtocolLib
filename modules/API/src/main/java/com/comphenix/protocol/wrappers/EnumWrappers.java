@@ -599,7 +599,7 @@ public abstract class EnumWrappers {
 
 	// The common enum converter
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
+	public static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
 		private Class<T> specificType;
 
 		public EnumConverter(Class<T> specificType) {

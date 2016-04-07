@@ -81,6 +81,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
 import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.EnumConverter;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.comphenix.protocol.wrappers.EnumWrappers.ItemSlot;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
@@ -895,6 +896,33 @@ public class PacketContainer implements Serializable {
     public StructureModifier<Hand> getHands() {
     	return structureModifier.<Hand>withType(
     			EnumWrappers.getHandClass(), EnumWrappers.getHandConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for an enum. This allows for the use of
+     * user-created enums that may not exist in ProtocolLib. The specific (user
+     * created) enum constants must match up perfectly with their generic (NMS)
+     * counterparts.
+     * 
+     * @param enumClass The specific Enum class
+     * @param nmsClass The generic Enum class
+     * @return The modifier
+     */
+    public <T extends Enum<T>> StructureModifier<T> getEnumModifier(Class<T> enumClass, Class<?> nmsClass) {
+    	return structureModifier.<T>withType(nmsClass, new EnumConverter<T>(enumClass));
+    }
+
+    /**
+     * Retrieve a read/write structure for an enum. This method is for convenience,
+     * see {@link #getEnumModifier(Class, Class)} for more information.
+     * 
+     * @param enumClass The specific Enum class
+     * @param index Index of the generic Enum
+     * @return The modifier
+     * @see #getEnumModifier(Class, Class)
+     */
+    public <T extends Enum<T>> StructureModifier<T> getEnumModifier(Class<T> enumClass, int index) {
+    	return getEnumModifier(enumClass, structureModifier.getField(index).getType());
     }
 
 	/**
