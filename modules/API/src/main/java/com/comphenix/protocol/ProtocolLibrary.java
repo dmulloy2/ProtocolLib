@@ -39,7 +39,7 @@ public class ProtocolLibrary {
 	/**
 	 * The maximum version ProtocolLib has been tested with.
 	 */
-	public static final String MAXIMUM_MINECRAFT_VERSION = "1.9";
+	public static final String MAXIMUM_MINECRAFT_VERSION = "1.9.2";
 
 	/**
 	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.9) was released.
