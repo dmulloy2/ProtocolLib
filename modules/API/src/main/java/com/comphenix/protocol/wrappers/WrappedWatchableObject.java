@@ -211,14 +211,15 @@ public class WrappedWatchableObject extends AbstractWrapper {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (obj == null)
-			return false;
+		if (obj == this) return true;
+		if (obj == null) return false;
 
 		if (obj instanceof WrappedWatchableObject) {
+			// watcher object, value, dirty state
 			WrappedWatchableObject other = (WrappedWatchableObject) obj;
-			return other.handle.equals(handle);
+			return getWatcherObject().equals(other.getWatcherObject())
+					&& getRawValue().equals(other.getRawValue())
+					&& getDirtyState() == other.getDirtyState();
 		}
 
 		return false;

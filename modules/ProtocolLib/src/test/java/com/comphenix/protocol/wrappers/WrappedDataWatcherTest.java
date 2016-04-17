@@ -1,5 +1,18 @@
 /**
- * (c) 2016 dmulloy2
+ *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
+ *  Copyright (C) 2016 dmulloy2
+ *
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307 USA
  */
 package com.comphenix.protocol.wrappers;
 
@@ -11,11 +24,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 
-import net.minecraft.server.v1_9_R1.DataWatcher;
-import net.minecraft.server.v1_9_R1.Entity;
 import net.minecraft.server.v1_9_R1.EntityLightning;
 import net.minecraft.server.v1_9_R1.ItemStack;
 
+import org.bukkit.craftbukkit.v1_9_R1.entity.CraftLightningStrike;
+import org.bukkit.entity.Entity;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -37,7 +50,11 @@ public class WrappedDataWatcherTest {
 
 	@Test
 	public void testBytes() {
-		WrappedDataWatcher wrapper = create();
+		// Create a fake lightning strike and get its watcher
+		EntityLightning lightning = new EntityLightning(null, 0, 0, 0, true);
+		Entity entity = new CraftLightningStrike(null, lightning);
+		WrappedDataWatcher wrapper = WrappedDataWatcher.getEntityWatcher(entity);
+
 		WrappedWatchableObject watchable = wrapper.getWatchableObject(0);
 		WrappedDataWatcherObject object = watchable.getWatcherObject();
 
@@ -45,13 +62,13 @@ public class WrappedDataWatcherTest {
 		assertEquals(object.getSerializer(), Registry.get(Byte.class));
 
 		// Make sure we can set existing objects
-		wrapper.setObject(0, (byte) 1);
-		assertTrue(wrapper.getByte(0) == 1);
+		wrapper.setObject(0, (byte) 21);
+		assertTrue(wrapper.getByte(0) == 21);
 	}
 
 	@Test
 	public void testStrings() {
-		WrappedDataWatcher wrapper = create();
+		WrappedDataWatcher wrapper = new WrappedDataWatcher();
 
 		// Make sure we can create watcher objects
 		Serializer serializer = Registry.get(String.class);
@@ -63,20 +80,14 @@ public class WrappedDataWatcherTest {
 
 	@Test
 	public void testFloats() {
-		WrappedDataWatcher wrapper = create();
+		WrappedDataWatcher wrapper = new WrappedDataWatcher();
 
 		// Make sure we can add new entries
 		Serializer serializer = Registry.get(Float.class);
 		WrappedDataWatcherObject object = new WrappedDataWatcherObject(10, serializer);
-		wrapper.setObject(object, 1.0F);
+		wrapper.setObject(object, 21.0F);
 
 		assertTrue(wrapper.hasIndex(10));
-	}
-
-	private WrappedDataWatcher create() {
-		Entity entity = new EntityLightning(null, 0, 0, 0, true);
-		DataWatcher handle = entity.getDataWatcher();
-		return new WrappedDataWatcher(handle);
 	}
 
 	@Test

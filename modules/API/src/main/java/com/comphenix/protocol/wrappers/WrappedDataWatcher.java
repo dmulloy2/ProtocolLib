@@ -17,7 +17,6 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -39,6 +38,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.collection.ConvertedMap;
@@ -99,6 +99,20 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		this(newHandle(BukkitUnwrapper.getInstance().unwrapItem(entity)));
 	}
 
+	/**
+	 * Constructs a new DataWatcher using a fake lightning entity and a given
+	 * list of watchable objects.
+	 * 
+	 * @param objects The list of objects
+	 */
+	public WrappedDataWatcher(List<WrappedWatchableObject> objects) {
+		this();
+
+		for (WrappedWatchableObject object : objects) {
+			setObject(object.getWatcherObject(), object);
+		}
+	}
+
 	private static Object newHandle(Object entity) {
 		if (constructor == null) {
 			constructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass());
@@ -127,16 +141,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private Map<Integer, Object> getMap() {
 		if (MAP_FIELD == null) {
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
-			List<Field> candidates = fuzzy.getFieldListByType(Map.class);
-
-			for (Field candidate : candidates) {
-				if (Modifier.isStatic(candidate.getModifiers())) {
-					// This is the entity class to current index map, which we really don't have a use for
-				} else {
-					// This is the map we're looking for
-					MAP_FIELD = Accessors.getFieldAccessor(candidate);
-				}
-			}
+			MAP_FIELD = Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract.newBuilder()
+					.banModifier(Modifier.STATIC)
+					.typeDerivedOf(Map.class)
+					.build()));
 		}
 
 		if (MAP_FIELD == null) {
@@ -329,7 +337,11 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		Validate.notNull(object, "Watcher object cannot be null!");
 
 		if (GETTER == null) {
-			GETTER = Accessors.getMethodAccessor(handleType, "get", object.getHandleType());
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType);
+			GETTER = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+					.parameterExactType(object.getHandleType())
+					.returnTypeExact(Object.class)
+					.build(), "get"));
 		}
 
 		Object value = GETTER.invoke(handle, object.getHandle());
@@ -392,18 +404,13 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 		if (SETTER == null || REGISTER == null) {
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
-			List<Method> methods = fuzzy.getMethodList(FuzzyMethodContract.newBuilder()
+			FuzzyMethodContract contract = FuzzyMethodContract.newBuilder()
 					.banModifier(Modifier.STATIC)
 					.requireModifier(Modifier.PUBLIC)
 					.parameterExactArray(object.getHandleType(), Object.class)
-					.build());
-			for (Method method : methods) {
-				if (method.getName().equals("set")) {
-					SETTER = Accessors.getMethodAccessor(method);
-				} else if (method.getName().equals("register")) {
-					REGISTER = Accessors.getMethodAccessor(method);
-				}
-			}
+					.build();
+			SETTER = Accessors.getMethodAccessor(fuzzy.getMethod(contract, "set"));
+			REGISTER = Accessors.getMethodAccessor(fuzzy.getMethod(contract, "register"));
 		}
 
 		if (hasIndex(object.getIndex())) {
@@ -612,6 +619,19 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		@Override
 		public String toString() {
 			return "DataWatcherObject[index=" + getIndex() + ", serializer=" + getSerializer() + "]";
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj == this) return true;
+			if (obj == null) return false;
+
+			if (obj instanceof WrappedDataWatcherObject) {
+				WrappedDataWatcherObject other = (WrappedDataWatcherObject) obj;
+				return handle.equals(other.handle);
+			}
+
+			return false;
 		}
 	}
 

@@ -355,15 +355,19 @@ public class PacketContainerTest {
 
 		assertNull(watchableAccessor.read(0));
 
-		Entity entity = new EntityLightning(null, 0, 0, 0, true);
-		DataWatcher watcher = entity.getDataWatcher();
+		WrappedDataWatcher watcher = new WrappedDataWatcher();
+		watcher.setObject(0, Registry.get(String.class), "Test");
+		watcher.setObject(1, Registry.get(Byte.class), (byte) 21);
 
-		WrappedDataWatcher wrapper = new WrappedDataWatcher(watcher);
-		List<WrappedWatchableObject> list = wrapper.getWatchableObjects();
+		List<WrappedWatchableObject> list = watcher.getWatchableObjects();
 
 		// Insert and read back
 		watchableAccessor.write(0, list);
 		assertEquals(list, watchableAccessor.read(0));
+
+		// Put it into a new data watcher
+		WrappedDataWatcher newWatcher = new WrappedDataWatcher(watchableAccessor.read(0));
+		assertEquals(newWatcher.getWatchableObjects(), list);
 	}
 
 	@Test
