@@ -30,6 +30,7 @@ import org.bukkit.event.Cancellable;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.async.AsyncMarker;
+import com.comphenix.protocol.error.PluginContext;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.google.common.base.Objects;
@@ -231,7 +232,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 			if (CHANGE_WARNINGS.put(oldType, newType)) {
 				ProtocolLibrary.getErrorReporter().reportWarning(this,
 						Report.newBuilder(REPORT_CHANGING_PACKET_TYPE_IS_CONFUSING).
-						messageParam(oldType, newType).
+						messageParam(PluginContext.getPluginCaller(new Exception()), oldType, newType).
 						build());
 			}
 		}
