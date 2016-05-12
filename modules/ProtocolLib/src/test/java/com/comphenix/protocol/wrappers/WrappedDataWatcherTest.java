@@ -24,10 +24,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 
-import net.minecraft.server.v1_9_R1.EntityLightning;
-import net.minecraft.server.v1_9_R1.ItemStack;
+import net.minecraft.server.v1_9_R2.EntityLightning;
+import net.minecraft.server.v1_9_R2.ItemStack;
 
-import org.bukkit.craftbukkit.v1_9_R1.entity.CraftLightningStrike;
+import org.bukkit.craftbukkit.v1_9_R2.entity.CraftLightningStrike;
 import org.bukkit.entity.Entity;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -92,8 +92,8 @@ public class WrappedDataWatcherTest {
 
 	@Test
 	public void testSerializers() {
-		Serializer blockPos = Registry.get(net.minecraft.server.v1_9_R1.BlockPosition.class, false);
-		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_9_R1.BlockPosition.class, true);
+		Serializer blockPos = Registry.get(net.minecraft.server.v1_9_R2.BlockPosition.class, false);
+		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_9_R2.BlockPosition.class, true);
 		assertNotSame(blockPos, optionalBlockPos);
 
 		assertNull(Registry.get(ItemStack.class, false));

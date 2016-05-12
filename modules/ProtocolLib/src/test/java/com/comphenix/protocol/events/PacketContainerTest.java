@@ -28,15 +28,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import net.minecraft.server.v1_9_R1.AttributeModifier;
-import net.minecraft.server.v1_9_R1.DataWatcher;
-import net.minecraft.server.v1_9_R1.Entity;
-import net.minecraft.server.v1_9_R1.EntityLightning;
-import net.minecraft.server.v1_9_R1.MobEffect;
-import net.minecraft.server.v1_9_R1.MobEffectList;
-import net.minecraft.server.v1_9_R1.PacketPlayOutBoss;
-import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_9_R2.AttributeModifier;
+import net.minecraft.server.v1_9_R2.DataWatcher;
+import net.minecraft.server.v1_9_R2.Entity;
+import net.minecraft.server.v1_9_R2.EntityLightning;
+import net.minecraft.server.v1_9_R2.MobEffect;
+import net.minecraft.server.v1_9_R2.MobEffectList;
+import net.minecraft.server.v1_9_R2.PacketPlayOutBoss;
+import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -178,13 +178,6 @@ public class PacketContainerTest {
 	public void testGetStringArrays() {
 		PacketContainer tabComplete = new PacketContainer(PacketType.Play.Server.TAB_COMPLETE);
 		testObjectArray(tabComplete.getStringArrays(), 0, new String[0], new String[] { "hello", "world" });
-	}
-
-	@Test
-	public void testGetChatComponentArrays() {
-		PacketContainer signChange = new PacketContainer(PacketType.Play.Server.UPDATE_SIGN);
-		testObjectArray(signChange.getChatComponentArrays(), 0, new WrappedChatComponent[0],
-				WrappedChatComponent.fromChatMessage("hello world"));
 	}
 
 	@Test

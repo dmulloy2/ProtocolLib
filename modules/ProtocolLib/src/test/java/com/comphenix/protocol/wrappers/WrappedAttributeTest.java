@@ -6,9 +6,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import net.minecraft.server.v1_9_R1.AttributeModifier;
-import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_9_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_9_R2.AttributeModifier;
+import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.junit.Before;
 import org.junit.BeforeClass;

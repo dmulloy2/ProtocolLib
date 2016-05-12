@@ -8,7 +8,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import net.minecraft.server.v1_9_R1.IntHashMap;
+import net.minecraft.server.v1_9_R2.IntHashMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;

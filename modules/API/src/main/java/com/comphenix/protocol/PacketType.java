@@ -175,7 +175,6 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType SPAWN_POSITION =               new PacketType(PROTOCOL, SENDER, 0x43, 0x05, "SpawnPosition");
 			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x44, 0x03, "UpdateTime");
 			public static final PacketType TITLE =                        new PacketType(PROTOCOL, SENDER, 0x45, 0x45, "Title");
-			public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x46, 0x33, "UpdateSign");
 			public static final PacketType NAMED_SOUND_EFFECT =           new PacketType(PROTOCOL, SENDER, 0x47, 0x29, "NamedSoundEffect");
 			public static final PacketType PLAYER_LIST_HEADER_FOOTER =    new PacketType(PROTOCOL, SENDER, 0x48, 0x47, "PlayerListHeaderFooter");
 			public static final PacketType COLLECT =                      new PacketType(PROTOCOL, SENDER, 0x49, 0x0D, "Collect");
@@ -200,6 +199,12 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			 */
 			@Deprecated
 			public static final PacketType STATISTICS =                   STATISTIC;
+
+			/**
+			 * @deprecated Replaced by {@link TILE_ENTITY_DATA}
+			 */
+			@Deprecated
+			public static final PacketType UPDATE_SIGN =                  TILE_ENTITY_DATA;
 
 			// The instance must
 			private final static Server INSTANCE = new Server();
