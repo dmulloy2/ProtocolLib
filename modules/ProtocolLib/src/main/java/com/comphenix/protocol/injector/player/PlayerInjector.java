@@ -591,7 +591,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	 * @param packet - packet to sent.
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "null" })
 	public Object handlePacketSending(Object packet) {
 		try {
 			// Get the packet ID too
