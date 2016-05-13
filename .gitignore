@@ -7,6 +7,10 @@
 .classpath
 .settings/
 bin/
+.idea/
+.iml
+.ipr
+.iws
 
 *.pydevproject
 .metadata
