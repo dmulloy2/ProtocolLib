@@ -582,26 +582,35 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param packet - the packet.
 	 */
 	protected void handleLogin(Class<?> packetClass, Object packet) {
-		Class<?> loginClass = PACKET_LOGIN_CLIENT;
-		FieldAccessor loginClient = LOGIN_GAME_PROFILE;
+		try {
+			Class<?> loginClass = PACKET_LOGIN_CLIENT;
+			FieldAccessor loginClient = LOGIN_GAME_PROFILE;
 
-		// Initialize packet class and login
-		if (loginClass == null) {
-			loginClass = PacketType.Login.Client.START.getPacketClass();
-			PACKET_LOGIN_CLIENT = loginClass;
-		}
-		if (loginClient == null) {
-			loginClient = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, MinecraftReflection.getGameProfileClass(), true);
-			LOGIN_GAME_PROFILE = loginClient;
-		}
+			// Initialize packet class and login
+			if (loginClass == null) {
+				loginClass = PacketType.Login.Client.START.getPacketClass();
+				PACKET_LOGIN_CLIENT = loginClass;
+			}
+			if (loginClient == null) {
+				loginClient = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, MinecraftReflection.getGameProfileClass(), true);
+				LOGIN_GAME_PROFILE = loginClient;
+			}
 
-		// See if we are dealing with the login packet
-		if (loginClass.equals(packetClass)) {
-			// GameProfile profile = (GameProfile) loginClient.get(packet);
-			WrappedGameProfile profile = WrappedGameProfile.fromHandle(loginClient.get(packet));
+			// See if we are dealing with the login packet
+			if (loginClass.equals(packetClass)) {
+				// GameProfile profile = (GameProfile) loginClient.get(packet);
+				WrappedGameProfile profile = WrappedGameProfile.fromHandle(loginClient.get(packet));
 
-			// Save the channel injector
-			factory.cacheInjector(profile.getName(), this);
+				// Save the channel injector
+				factory.cacheInjector(profile.getName(), this);
+			}
+		} catch (NullPointerException ex) {
+			System.err.println(String.format("[ProtocolLib] Encountered NPE in handleLogin(%s, %s)", packetClass, packet));
+			System.err.println("PACKET_LOGIN_CLIENT = " + PACKET_LOGIN_CLIENT);
+			System.err.println("LOGIN_GAME_PROFILE = " + LOGIN_GAME_PROFILE);
+			System.err.println("GameProfile class = " + MinecraftReflection.getGameProfileClass());
+			System.err.println("Provide this information in a new or existing issue");
+			throw ex;
 		}
 	}
 

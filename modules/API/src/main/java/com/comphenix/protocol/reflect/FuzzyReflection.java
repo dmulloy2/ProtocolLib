@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.Validate;
+
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
@@ -577,6 +579,8 @@ public class FuzzyReflection {
 	 * @return Every field.
 	 */
 	public Set<Field> getFields() {
+		Validate.notNull(source, "source cannot be null!");
+
 		// We will only consider private fields in the declared class
 		if (forceAccess)
 			return setUnion(source.getDeclaredFields(), source.getFields());

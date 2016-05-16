@@ -14,6 +14,8 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
 import com.comphenix.protocol.injector.netty.ProtocolRegistry;
 
+import net.minecraft.server.v1_9_R2.PacketLoginInStart;
+
 public class PacketTypeTest {
 
 	@BeforeClass
@@ -24,6 +26,12 @@ public class PacketTypeTest {
 	@Test
 	public void testFindCurrent() {
 		assertEquals(PacketType.Play.Client.STEER_VEHICLE, PacketType.findCurrent(Protocol.PLAY, Sender.CLIENT, "SteerVehicle"));
+	}
+
+	@Test
+	public void testLoginStart() {
+		// This packet is critical for handleLoin
+		assertEquals(PacketLoginInStart.class, PacketType.Login.Client.START.getPacketClass());
 	}
 
 	@Test

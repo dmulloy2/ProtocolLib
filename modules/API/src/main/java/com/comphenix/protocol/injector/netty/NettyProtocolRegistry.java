@@ -32,7 +32,11 @@ import com.google.common.collect.Maps;
  */
 
 public class NettyProtocolRegistry extends ProtocolRegistry {
-	
+
+	public NettyProtocolRegistry() {
+		super();
+	}
+
 	@Override
 	protected synchronized void initialize() {
 		Object[] protocols = enumProtocol.getEnumConstants();
@@ -59,7 +63,7 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 			}
 		}
 
-		// Maps we have to occationally check have changed
+		// Maps we have to occasionally check have changed
 		for (Map<Integer, Class<?>> map : serverMaps.values()) {
 			result.containers.add(new MapContainer(map));
 		}

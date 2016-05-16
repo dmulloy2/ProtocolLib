@@ -4,18 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import net.minecraft.server.v1_9_R2.ChatComponentText;
-import net.minecraft.server.v1_9_R2.ChunkCoordIntPair;
-import net.minecraft.server.v1_9_R2.DataWatcher;
-import net.minecraft.server.v1_9_R2.IBlockData;
-import net.minecraft.server.v1_9_R2.IChatBaseComponent;
-import net.minecraft.server.v1_9_R2.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.v1_9_R2.NBTCompressedStreamTools;
-import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
-import net.minecraft.server.v1_9_R2.PlayerConnection;
-import net.minecraft.server.v1_9_R2.ServerPing;
-import net.minecraft.server.v1_9_R2.ServerPing.ServerData;
-import net.minecraft.server.v1_9_R2.ServerPing.ServerPingPlayerSample;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -28,6 +16,20 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.mojang.authlib.GameProfile;
+
+import net.minecraft.server.v1_9_R2.ChatComponentText;
+import net.minecraft.server.v1_9_R2.ChunkCoordIntPair;
+import net.minecraft.server.v1_9_R2.DataWatcher;
+import net.minecraft.server.v1_9_R2.IBlockData;
+import net.minecraft.server.v1_9_R2.IChatBaseComponent;
+import net.minecraft.server.v1_9_R2.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.v1_9_R2.NBTCompressedStreamTools;
+import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_9_R2.PlayerConnection;
+import net.minecraft.server.v1_9_R2.ServerPing;
+import net.minecraft.server.v1_9_R2.ServerPing.ServerData;
+import net.minecraft.server.v1_9_R2.ServerPing.ServerPingPlayerSample;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
@@ -135,5 +137,10 @@ public class MinecraftReflectionTest {
 		ItemStack stack = new ItemStack(Material.GOLD_SWORD);
 		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
 		assertEquals(stack, MinecraftReflection.getBukkitItemStack(nmsStack));
+	}
+
+	@Test
+	public void testGameProfile() {
+		assertEquals(GameProfile.class, MinecraftReflection.getGameProfileClass());
 	}
 }
