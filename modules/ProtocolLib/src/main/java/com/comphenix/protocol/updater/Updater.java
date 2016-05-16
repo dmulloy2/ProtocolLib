@@ -57,43 +57,52 @@ public abstract class Updater {
 	}
 
 	public boolean versionCheck(String title) {
-        if (this.type != UpdateType.NO_VERSION_CHECK) {
-            String version = this.plugin.getDescription().getVersion();
+		if (this.type != UpdateType.NO_VERSION_CHECK) {
+			String version = this.plugin.getDescription().getVersion();
 
-            boolean devBuild = false;
-            if (version.contains("-SNAPSHOT") || version.contains("-BETA")) {
-            	devBuild = true;
-            	version = version.substring(0, version.indexOf("-"));
-            }
+			// Extract the version from the response
+			String[] split = title.split(" ");
+			String remote = "Unknown";
 
-            final String[] splitTitle = title.split(" ");
-            String remoteVersion;
-
-            if (splitTitle.length == 2) {
-            	remoteVersion = splitTitle[1].split("-")[0];
-            } else if (this instanceof SpigotUpdater) {
-            	remoteVersion = splitTitle[0];
-			} else {
+			if (split.length == 2) { // BukkitDev
+				remote = split[1];
+			} else if (this instanceof SpigotUpdater) { // Spigot resource
+				remote = split[0];
+			} else { // Misconfigured
 				// The file's name did not contain the string 'vVersion'
-				final String authorInfo = this.plugin.getDescription().getAuthors().size() == 0 ? "" : " (" + this.plugin.getDescription().getAuthors().get(0) + ")";
-				this.plugin.getLogger().warning("The author of this plugin " + authorInfo + " has misconfigured their Auto Update system");
-				this.plugin.getLogger().warning("File versions should follow the format 'PluginName VERSION[-SNAPSHOT]'");
-				this.plugin.getLogger().warning("Please notify the author of this error.");
+				String authorInfo = this.plugin.getDescription().getAuthors().size() == 0 ? "" : " (" + this.plugin.getDescription().getAuthors().get(0) + ")";
+				plugin.getLogger().warning("The author of this plugin " + authorInfo + " has misconfigured their Auto Update system");
+				plugin.getLogger().warning("File versions should follow the format 'PluginName VERSION[-SNAPSHOT]'");
+				plugin.getLogger().warning("Please notify the author of this error.");
 				this.result = BukkitUpdater.UpdateResult.FAIL_NOVERSION;
 				return false;
 			}
 
-			// Parse the version
-            if (remoteVersion.startsWith("v")) {
-            	remoteVersion = remoteVersion.substring(1);
-            }
+			// Check if the local version is a dev build
 
-			MinecraftVersion parsedRemote = new MinecraftVersion(remoteVersion);
-			MinecraftVersion parsedCurrent = new MinecraftVersion(plugin.getDescription().getVersion());
+			boolean devBuild = false;
+			if (version.contains("-SNAPSHOT") || version.contains("-BETA")) {
+				devBuild = true;
+				version = version.substring(0, version.indexOf("-"));
+			}
+
+			// Remove the v
+			if (remote.startsWith("v")) {
+				remote = remote.substring(1);
+			}
+
+			// Remove the build number if it snuck in there
+			if (version.contains("-b")) {
+				version = version.substring(0, version.lastIndexOf("-"));
+			}
+
+			// Parse it and our local version
+			MinecraftVersion parsedRemote = new MinecraftVersion(remote);
+			MinecraftVersion parsedCurrent = new MinecraftVersion(version);
 
 			if (devBuild && parsedRemote.equals(parsedCurrent)) {
 				// They're using a dev build and this version has been released
-				return !remoteVersion.contains("-BETA") && !remoteVersion.contains("-SNAPSHOT");
+				return !remote.contains("-BETA") && !remote.contains("-SNAPSHOT");
 			}
 
 			// The remote version has to be greater
@@ -103,6 +112,7 @@ public abstract class Updater {
 				return false;
 			}
 		}
+
 		return true;
 	}
 

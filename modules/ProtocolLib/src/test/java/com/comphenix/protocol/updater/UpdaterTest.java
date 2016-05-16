@@ -30,7 +30,7 @@ public class UpdaterTest {
 
 		plugin = mock(Plugin.class);
 		String version = System.getProperty("projectVersion");
-		if (version == null) version = "3.7.0-BETA";
+		if (version == null) version = "4.0.1-SNAPSHOT-b281";
 		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", version, null));
 		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
 		when(plugin.getDataFolder()).thenReturn(null);
