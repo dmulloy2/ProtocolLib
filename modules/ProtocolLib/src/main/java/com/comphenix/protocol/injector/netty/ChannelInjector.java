@@ -604,7 +604,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				// Save the channel injector
 				factory.cacheInjector(profile.getName(), this);
 			}
-		} catch (NullPointerException ex) {
+		} catch (IllegalArgumentException ex) { // Thrown by FuzzyReflection#getFields()
 			System.err.println(String.format("[ProtocolLib] Encountered NPE in handleLogin(%s, %s)", packetClass, packet));
 			System.err.println("PACKET_LOGIN_CLIENT = " + PACKET_LOGIN_CLIENT);
 			System.err.println("LOGIN_GAME_PROFILE = " + LOGIN_GAME_PROFILE);
