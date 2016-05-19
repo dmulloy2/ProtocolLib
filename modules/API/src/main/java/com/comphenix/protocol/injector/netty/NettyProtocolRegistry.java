@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.netty.ProtocolRegistry;
@@ -39,6 +40,8 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 
 	@Override
 	protected synchronized void initialize() {
+		ProtocolLogger.debug("NettyProtocolRegistry#initialize()"); // Debug for issue #202
+
 		Object[] protocols = enumProtocol.getEnumConstants();
 
 		// ID to Packet class maps

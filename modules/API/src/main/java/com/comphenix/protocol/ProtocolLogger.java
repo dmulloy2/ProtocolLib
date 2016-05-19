@@ -32,6 +32,10 @@ public class ProtocolLogger {
 		ProtocolLogger.logger = plugin.getLogger();
 	}
 
+	private static boolean isDebugEnabled() {
+		return ProtocolLibrary.getConfig().isDebug();
+	}
+
 	/**
 	 * Logs a message to console with a given level.
 	 * @param level Logging level
@@ -59,5 +63,11 @@ public class ProtocolLogger {
 	 */
 	public static void log(Level level, String message, Throwable ex) {
 		logger.log(level, message, ex);
+	}
+
+	public static void debug(String message, Object... args) {
+		if (isDebugEnabled()) {
+			log("[Debug] " + message, args);
+		}
 	}
 }

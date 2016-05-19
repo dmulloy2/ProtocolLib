@@ -53,19 +53,18 @@ public class PacketRegistry {
 	
 	// Whether or not the registry has
 	private static boolean INITIALIZED;
-	
+
 	/**
-	 * Initialize the packet registry.
+	 * Initializes the packet registry.
 	 */
 	private static void initialize() {
 		if (INITIALIZED) {
-			// Make sure they were initialized
-			if (NETTY == null)
-				throw new IllegalStateException("No initialized registry.");
-			return;
+			if (NETTY == null) {
+				throw new IllegalStateException("Failed to initialize packet registry.");
+			}
 		}
 
-		// Check for netty
+		INITIALIZED = true;
 		NETTY = new NettyProtocolRegistry();
 	}
 
