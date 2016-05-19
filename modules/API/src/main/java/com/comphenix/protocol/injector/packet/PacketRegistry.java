@@ -62,6 +62,7 @@ public class PacketRegistry {
 			if (NETTY == null) {
 				throw new IllegalStateException("Failed to initialize packet registry.");
 			}
+			return;
 		}
 
 		INITIALIZED = true;
