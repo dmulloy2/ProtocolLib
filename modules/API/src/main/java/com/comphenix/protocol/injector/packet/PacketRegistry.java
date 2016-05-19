@@ -43,16 +43,16 @@ public class PacketRegistry {
 	public static final ReportType REPORT_INSUFFICIENT_SERVER_PACKETS = new ReportType("Too few server packets detected: %s");
 	public static final ReportType REPORT_INSUFFICIENT_CLIENT_PACKETS = new ReportType("Too few client packets detected: %s");
 
-	// Two different packet registry
+	// The Netty packet registry
 	private static volatile ProtocolRegistry NETTY;
 
 	// Cached for Netty
 	private static volatile Set<Integer> LEGACY_SERVER_PACKETS;
 	private static volatile Set<Integer> LEGACY_CLIENT_PACKETS;
 	private static volatile Map<Integer, Class> LEGACY_PREVIOUS_PACKETS;
-	
-	// Whether or not the registry has
-	private static boolean INITIALIZED;
+
+	// Whether or not the registry has been initialized
+	private static volatile boolean INITIALIZED = false;
 
 	/**
 	 * Initializes the packet registry.
@@ -65,8 +65,8 @@ public class PacketRegistry {
 			return;
 		}
 
-		INITIALIZED = true;
 		NETTY = new NettyProtocolRegistry();
+		INITIALIZED = true;
 	}
 
 	/**

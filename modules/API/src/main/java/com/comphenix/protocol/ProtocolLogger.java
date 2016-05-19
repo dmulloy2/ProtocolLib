@@ -33,7 +33,11 @@ public class ProtocolLogger {
 	}
 
 	private static boolean isDebugEnabled() {
-		return ProtocolLibrary.getConfig().isDebug();
+		try {
+			return ProtocolLibrary.getConfig().isDebug();
+		} catch (Throwable ex) {
+			return true; // For testing
+		}
 	}
 
 	/**
@@ -67,7 +71,11 @@ public class ProtocolLogger {
 
 	public static void debug(String message, Object... args) {
 		if (isDebugEnabled()) {
-			log("[Debug] " + message, args);
+			if (logger != null) {
+				log("[Debug] " + message, args);
+			} else {
+				System.out.println("[Debug] " + MessageFormat.format(message, args));
+			}
 		}
 	}
 }
