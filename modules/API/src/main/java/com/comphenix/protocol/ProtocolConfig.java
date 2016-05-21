@@ -256,7 +256,7 @@ public class ProtocolConfig {
 	 * @return TRUE if it should, FALSE otherwise.
 	 */
 	public boolean isAutoDownload() {
-		return updater != null && getUpdaterValue(UPDATER_DOWNLAD, true);
+		return updater != null && getUpdaterValue(UPDATER_DOWNLAD, false);
 	}
 
 	/**
