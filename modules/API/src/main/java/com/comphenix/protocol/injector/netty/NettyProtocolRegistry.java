@@ -40,7 +40,7 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 
 	@Override
 	protected synchronized void initialize() {
-		ProtocolLogger.debug("NettyProtocolRegistry#initialize()"); // Debug for issue #202
+		ProtocolLogger.debug("Initializing the Netty protocol registry"); // Debug for issue #202
 
 		Object[] protocols = enumProtocol.getEnumConstants();
 

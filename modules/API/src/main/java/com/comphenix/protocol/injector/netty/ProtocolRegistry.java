@@ -19,7 +19,7 @@ import com.google.common.collect.Sets;
  * Represents a way of accessing the new netty Protocol enum.
  * @author Kristian
  */
-// TODO: Handle modifications to the BiMap
+
 public abstract class ProtocolRegistry {
 	/**
 	 * Represents a register we are currently building.
@@ -97,7 +97,7 @@ public abstract class ProtocolRegistry {
 	 * This operation may block the calling thread.
 	 */
 	public synchronized void synchronize() {
-		// See if the register is outdated
+		// Check if the packet registry has changed
 		if (register.isOutdated()) {
 			initialize();
 		}
