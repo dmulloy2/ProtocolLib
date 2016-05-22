@@ -157,6 +157,9 @@ public class ProtocolConfig {
 		}
 		if (global != null) {
 			updater = global.getConfigurationSection(SECTION_AUTOUPDATER);
+			if (updater.getValues(true).isEmpty()) {
+				plugin.getLogger().warning("Updater section is missing, regenerate your config!");
+			}
 		}
 
 		// Automatically copy defaults

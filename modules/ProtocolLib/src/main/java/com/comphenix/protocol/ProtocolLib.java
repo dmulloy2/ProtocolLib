@@ -148,8 +148,10 @@ public class ProtocolLib extends JavaPlugin {
 
 	@Override
 	public void onLoad() {
-		// Load configuration
+		// Logging
 		logger = getLoggerSafely();
+		ProtocolLogger.init(this);
+
 		Application.registerPrimaryThread();
 
 		// Initialize enhancer factory

@@ -18,7 +18,6 @@ package com.comphenix.protocol;
 
 import java.text.MessageFormat;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.bukkit.plugin.Plugin;
 
@@ -26,17 +25,17 @@ import org.bukkit.plugin.Plugin;
  * @author dmulloy2
  */
 public class ProtocolLogger {
-	private static Logger logger;
+	private static Plugin plugin;
 
 	protected static void init(Plugin plugin) {
-		ProtocolLogger.logger = plugin.getLogger();
+		ProtocolLogger.plugin = plugin;
 	}
 
 	private static boolean isDebugEnabled() {
 		try {
-			return ProtocolLibrary.getConfig().isDebug();
-		} catch (Throwable ex) {
-			return true; // For testing
+			return plugin.getConfig().getBoolean("global.debug", false);
+		} catch (Throwable ex) { // Maybe we're testing or something
+			return false;
 		}
 	}
 
@@ -47,7 +46,7 @@ public class ProtocolLogger {
 	 * @param args Arguments to format in
 	 */
 	public static void log(Level level, String message, Object... args) {
-		logger.log(level, MessageFormat.format(message, args));
+		plugin.getLogger().log(level, MessageFormat.format(message, args));
 	}
 
 	/**
@@ -66,16 +65,12 @@ public class ProtocolLogger {
 	 * @param ex Exception to log
 	 */
 	public static void log(Level level, String message, Throwable ex) {
-		logger.log(level, message, ex);
+		plugin.getLogger().log(level, message, ex);
 	}
 
 	public static void debug(String message, Object... args) {
 		if (isDebugEnabled()) {
-			if (logger != null) {
-				log("[Debug] " + message, args);
-			} else {
-				System.out.println("[Debug] " + MessageFormat.format(message, args));
-			}
+			log("[Debug] " + message, args);
 		}
 	}
 }

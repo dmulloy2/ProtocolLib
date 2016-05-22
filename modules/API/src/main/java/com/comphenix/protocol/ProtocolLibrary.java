@@ -71,7 +71,6 @@ public class ProtocolLibrary {
 		ProtocolLibrary.reporter = reporter;
 		ProtocolLibrary.executorAsync = executorAsync;
 		ProtocolLibrary.executorSync = executorSync;
-		ProtocolLogger.init(plugin);
 		initialized = true;
 	}
 
