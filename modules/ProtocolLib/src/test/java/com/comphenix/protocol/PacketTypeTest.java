@@ -14,7 +14,7 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
 import com.comphenix.protocol.injector.netty.ProtocolRegistry;
 
-import net.minecraft.server.v1_9_R2.PacketLoginInStart;
+import net.minecraft.server.v1_10_R1.PacketLoginInStart;
 
 public class PacketTypeTest {
 

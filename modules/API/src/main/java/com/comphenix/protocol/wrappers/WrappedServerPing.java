@@ -1,9 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.base64.Base64;
-
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
@@ -19,14 +15,13 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.Util;
@@ -34,25 +29,18 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.base64.Base64;
 
 /**
  * Represents a server ping packet data.
  * @author Kristian
  */
 public class WrappedServerPing extends AbstractWrapper {
-	/**
-	 * Lookup of Minecraft versions and ping version numbers.
-	 */
-	private static ImmutableMap<MinecraftVersion, Integer> VERSION_NUMBERS = ImmutableMap.<MinecraftVersion, Integer>builder()
-			.put(MinecraftVersion.WORLD_UPDATE, 4)
-			.put(MinecraftVersion.SKIN_UPDATE, 5)
-			.put(MinecraftVersion.BOUNTIFUL_UPDATE, 47)
-			.build();
-	private static MinecraftVersion LAST_VERSION = MinecraftVersion.BOUNTIFUL_UPDATE;
-
 	private static Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
 	private static Class<?> GAME_PROFILE_ARRAY = MinecraftReflection.getArrayClass(GAME_PROFILE);
 
@@ -101,7 +89,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	/**
 	 * Construct a new server ping initialized with a zero player count, and zero maximum.
 	 * <p>
-	 * Note that the version string is set to 1.8.
+	 * Note that the version string is set to 1.9.4.
 	 */
 	public WrappedServerPing() {
 		super(MinecraftReflection.getServerPingClass());
@@ -129,14 +117,8 @@ public class WrappedServerPing extends AbstractWrapper {
 	 * Reset the version string to the default state.
 	 */
 	protected void resetVersion() {
-		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
-		MinecraftVersion minecraftVersion = LAST_VERSION;
-
-		// Fetch the latest known version
-		if (manager != null) {
-			minecraftVersion = manager.getMinecraftVersion();
-		}
-		version = VERSION_CONSTRUCTOR.invoke(minecraftVersion.toString(), VERSION_NUMBERS.get(minecraftVersion));
+		MinecraftVersion minecraftVersion = MinecraftVersion.getCurrentVersion();
+		version = VERSION_CONSTRUCTOR.invoke(minecraftVersion.toString(), MinecraftProtocolVersion.getCurrentVersion());
 		VERSION.set(handle, version);
 	}
 

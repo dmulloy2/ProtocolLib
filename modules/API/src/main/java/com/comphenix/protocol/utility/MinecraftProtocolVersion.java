@@ -4,7 +4,6 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.collect.Maps;
 
 /**
@@ -42,6 +41,7 @@ public class MinecraftProtocolVersion {
 		map.put(new MinecraftVersion(1, 9, 0), 107);
 		map.put(new MinecraftVersion(1, 9, 2), 109);
 		map.put(new MinecraftVersion(1, 9, 4), 110);
+		map.put(new MinecraftVersion(1, 10, 0), 210);
 		return map;
 	}
 
@@ -50,7 +50,7 @@ public class MinecraftProtocolVersion {
 	 * @return The version number.
 	 */
 	public static int getCurrentVersion() {
-		return getVersion(ProtocolLibrary.getProtocolManager().getMinecraftVersion());
+		return getVersion(MinecraftVersion.getCurrentVersion());
 	}
 	
 	/**

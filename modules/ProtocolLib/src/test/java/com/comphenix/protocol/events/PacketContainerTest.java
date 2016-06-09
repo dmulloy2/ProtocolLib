@@ -28,16 +28,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import net.minecraft.server.v1_9_R2.AttributeModifier;
-import net.minecraft.server.v1_9_R2.DataWatcher;
-import net.minecraft.server.v1_9_R2.Entity;
-import net.minecraft.server.v1_9_R2.EntityLightning;
-import net.minecraft.server.v1_9_R2.MobEffect;
-import net.minecraft.server.v1_9_R2.MobEffectList;
-import net.minecraft.server.v1_9_R2.PacketPlayOutBoss;
-import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_9_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
-
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
@@ -75,6 +65,16 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
+
+import net.minecraft.server.v1_10_R1.AttributeModifier;
+import net.minecraft.server.v1_10_R1.DataWatcher;
+import net.minecraft.server.v1_10_R1.Entity;
+import net.minecraft.server.v1_10_R1.EntityLightning;
+import net.minecraft.server.v1_10_R1.MobEffect;
+import net.minecraft.server.v1_10_R1.MobEffectList;
+import net.minecraft.server.v1_10_R1.PacketPlayOutBoss;
+import net.minecraft.server.v1_10_R1.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_10_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
