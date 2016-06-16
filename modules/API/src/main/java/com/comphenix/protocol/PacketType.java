@@ -255,8 +255,8 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x19, 0x12, "UpdateSign");
 			public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 0x1A, 0x0A, "ArmAnimation");
 			public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x1B, 0x18, "Spectate");
-			public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x1C, 0xF6, "UseItem");
-			public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x1D, 0x08, "BlockPlace");
+			public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x1C, 0x08, "BlockPlace");
+			public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x1D, 0xF6, "UseItem");
 
 			private final static Client INSTANCE = new Client();
 
