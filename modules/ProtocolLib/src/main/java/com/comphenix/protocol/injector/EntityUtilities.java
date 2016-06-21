@@ -95,14 +95,14 @@ class EntityUtilities {
 			}
 			
 			// Phew, finally there.
-			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
+			Collection<?> trackedPlayers = getTrackedPlayers(trackedPlayersField, trackerEntry);
 			List<Object> nmsPlayers = unwrapBukkit(observers);
 			
 			// trackEntity.trackedPlayers.clear();
 			trackedPlayers.removeAll(nmsPlayers);
 			
 			// We have to rely on a NAME once again. Damn it.
-			// TODO: Make sure this stays up to date with version changes - 1.9
+			// TODO: Make sure this stays up to date with version changes - 1.8 - 1.10
 			if (scanPlayersMethod == null) {
 				scanPlayersMethod = trackerEntry.getClass().getMethod("scanPlayers", List.class);
 			}
@@ -142,16 +142,7 @@ class EntityUtilities {
 				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
 			}
 
-			Collection<?> trackedPlayers = null;
-			Object value = FieldUtils.readField(trackedPlayersField, trackerEntry, false);
-
-			if (value instanceof Collection) {
-				trackedPlayers = (Collection<?>) value;
-			} else if (value instanceof Map) { // PaperSpigot
-				trackedPlayers = ((Map<?, ?>) value).keySet();
-			} else { // Please, no more changes
-				throw new IllegalStateException("trackedPlayers field was an unknown type: expected Set or Map, but got " + value.getClass());
-			}
+			Collection<?> trackedPlayers = getTrackedPlayers(trackedPlayersField, trackerEntry);
 
 			// Wrap every player - we also ensure that the underlying tracker list is immutable
 			for (Object tracker : trackedPlayers) {
@@ -165,7 +156,21 @@ class EntityUtilities {
 			throw new FieldAccessException("Security limitation prevented access to the list of tracked players.", e);
 		}
 	}
-	
+
+	// Damn you, Paper
+	private static Collection<?> getTrackedPlayers(Field field, Object entry) throws IllegalAccessException {
+		Object value = FieldUtils.readField(field, entry, false);
+
+		if (value instanceof Collection) {
+			return (Collection<?>) value;
+		} else if (value instanceof Map) {
+			return ((Map<?, ?>) value).keySet();
+		} else {
+			// Please. No more changes.
+			throw new IllegalStateException("trackedPlayers field was an unknown type: expected Collection or Map, but got " + value.getClass());
+		}
+	}
+
 	/**
 	 * Retrieve the entity tracker entry given a ID.
 	 * @param world - world server.
