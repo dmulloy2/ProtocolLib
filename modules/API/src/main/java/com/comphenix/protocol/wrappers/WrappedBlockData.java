@@ -149,6 +149,14 @@ public class WrappedBlockData extends AbstractWrapper {
 		return new WrappedBlockData(blockData);
 	}
 
+	/**
+	 * Retrieve a deep copy of the current wrapper object.
+	 * @return The cloned object.
+	 */
+	public WrappedBlockData deepClone() {
+		return WrappedBlockData.createData(getType(), getData());
+	}
+
 	@Override
 	public String toString() {
 		return "WrappedBlockData[handle=" + handle + "]";
