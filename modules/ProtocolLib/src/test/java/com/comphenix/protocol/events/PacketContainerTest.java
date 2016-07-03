@@ -520,6 +520,19 @@ public class PacketContainerTest {
 		UPDATE_PROPERTIES;
 	}
 
+	@Test
+	public void testComponentArrays() {
+		PacketContainer signChange = new PacketContainer(PacketType.Play.Server.TILE_ENTITY_DATA);
+		WrappedChatComponent[] components = new WrappedChatComponent[] {
+				WrappedChatComponent.fromText("hello world"), WrappedChatComponent.fromText(""),
+				WrappedChatComponent.fromText(""), WrappedChatComponent.fromText("")
+		};
+		signChange.getChatComponentArrays().write(0, components);
+
+		WrappedChatComponent[] back = signChange.getChatComponentArrays().read(0);
+		assertArrayEquals(components, back);
+	}
+
 	private static final List<PacketType> BLACKLISTED = Util.asList(
 			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD,
 			PacketType.Play.Server.SET_COOLDOWN

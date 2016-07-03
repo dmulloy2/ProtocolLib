@@ -17,9 +17,6 @@
 
 package com.comphenix.protocol.events;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
-
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
@@ -105,10 +102,15 @@ import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.comphenix.protocol.wrappers.WrappedStatistic;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -659,15 +661,19 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for arrays of chat components.
 	 * <p>
-	 * This modifier will automatically marshall between WrappedChatComponent and the
-	 * internal Minecraft IChatBaseComponent.
+	 * This modifier will automatically marshal between WrappedChatComponent and the
+	 * internal Minecraft IChatBaseComponent (1.9.2 and below) or the internal
+	 * NBTCompound (1.9.4 and up).
+	 * <p>
+	 * Note that in 1.9.4 and up this modifier only works properly with sign
+	 * tile entities.
 	 * @return A modifier for ChatComponent array fields.
 	 */
 	public StructureModifier<WrappedChatComponent[]> getChatComponentArrays() {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.<WrappedChatComponent[]>withType(
-				MinecraftReflection.getIChatBaseComponentArrayClass(),
-				BukkitConverters.getIgnoreNull(new WrappedChatComponentArrayConverter()));
+				ComponentArrayConverter.getGenericType(),
+				BukkitConverters.getIgnoreNull(new ComponentArrayConverter()));
 	}
 	
 	/**
@@ -923,7 +929,7 @@ public class PacketContainer implements Serializable {
      */
     public <T extends Enum<T>> StructureModifier<T> getEnumModifier(Class<T> enumClass, int index) {
     	return getEnumModifier(enumClass, structureModifier.getField(index).getType());
-    }
+	}
 
 	/**
 	 * Retrieves the ID of this packet.
@@ -1076,7 +1082,7 @@ public class PacketContainer implements Serializable {
 	 * Construct a new packet data serializer.
 	 * @return The packet data serializer.
 	 */
-	private ByteBuf createPacketBuffer() {
+	public static ByteBuf createPacketBuffer() {
 		ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
 		Class<?> packetSerializer = MinecraftReflection.getPacketDataSerializerClass();
 
@@ -1224,11 +1230,11 @@ public class PacketContainer implements Serializable {
 	 * Represents an equivalent converter for ChatComponent arrays.
 	 * @author dmulloy2
 	 */
-	private static class WrappedChatComponentArrayConverter implements EquivalentConverter<WrappedChatComponent[]> {
+	private static class LegacyComponentConverter implements EquivalentConverter<WrappedChatComponent[]> {
 		final EquivalentConverter<WrappedChatComponent> componentConverter = BukkitConverters.getWrappedChatComponentConverter();
 		
 		@Override
-		public Object getGeneric(Class<?>genericType, WrappedChatComponent[] specific) {
+		public Object getGeneric(Class<?> genericType, WrappedChatComponent[] specific) {
 			Class<?> nmsComponent = MinecraftReflection.getIChatBaseComponentClass();
 			Object[] result = (Object[]) Array.newInstance(nmsComponent, specific.length);
 			
@@ -1254,6 +1260,94 @@ public class PacketContainer implements Serializable {
 		@Override
 		public Class<WrappedChatComponent[]> getSpecificType() {
 			return WrappedChatComponent[].class;
+		}
+	}
+
+	/**
+	 * Converts from NBT to WrappedChatComponent arrays
+	 * @author dmulloy2
+	 */
+	private static class NBTComponentConverter implements EquivalentConverter<WrappedChatComponent[]> {
+		private EquivalentConverter<NbtBase<?>> nbtConverter = BukkitConverters.getNbtConverter();
+		private final int lines = 4;
+
+		@Override
+		public WrappedChatComponent[] getSpecific(Object generic) {
+			NbtBase<?> nbtBase = nbtConverter.getSpecific(generic);
+			NbtCompound compound = (NbtCompound) nbtBase;
+
+			WrappedChatComponent[] components = new WrappedChatComponent[lines];
+			for (int i = 0; i < lines; i++) {
+				if (compound.containsKey("Text" + (i + 1))) {
+					components[i] = WrappedChatComponent.fromJson(compound.getString("Text" + (i + 1)));
+				} else {
+					components[i] = WrappedChatComponent.fromText("");
+				}
+			}
+
+			return components;
+		}
+
+		@Override
+		public Object getGeneric(Class<?> genericType, WrappedChatComponent[] specific) {
+			NbtCompound compound = NbtFactory.ofCompound("");
+
+			for (int i = 0; i < lines; i++) {
+				WrappedChatComponent component;
+				if (i < specific.length && specific[i] != null) {
+					component = specific[i];
+				} else {
+					component = WrappedChatComponent.fromText("");
+				}
+
+				compound.put("Text" + (i + 1), component.getJson());
+			}
+
+			return nbtConverter.getGeneric(genericType, compound);
+		}
+
+		@Override
+		public Class<WrappedChatComponent[]> getSpecificType() {
+			return WrappedChatComponent[].class;
+		}
+	}
+
+	/**
+	 * A delegated converter that supports NBT to Component Array and regular Component Array
+	 * @author dmulloy2
+	 */
+	private static class ComponentArrayConverter implements EquivalentConverter<WrappedChatComponent[]> {
+		private static final EquivalentConverter<WrappedChatComponent[]> DELEGATE;
+		static {
+			Class<?> packetClass = PacketType.Play.Server.UPDATE_SIGN.getPacketClass();
+			if (packetClass.getName().contains("Sign")) {
+				DELEGATE = new LegacyComponentConverter();
+			} else {
+				DELEGATE = new NBTComponentConverter();
+			}
+		}
+
+		@Override
+		public WrappedChatComponent[] getSpecific(Object generic) {
+			return DELEGATE.getSpecific(generic);
+		}
+
+		@Override
+		public Object getGeneric(Class<?> genericType, WrappedChatComponent[] specific) {
+			return DELEGATE.getGeneric(genericType, specific);
+		}
+
+		@Override
+		public Class<WrappedChatComponent[]> getSpecificType() {
+			return DELEGATE.getSpecificType();
+		}
+
+		public static Class<?> getGenericType() {
+			if (DELEGATE instanceof NBTComponentConverter) {
+				return MinecraftReflection.getNBTCompoundClass();
+			} else {
+				return MinecraftReflection.getIChatBaseComponentArrayClass();
+			}
 		}
 	}
 
