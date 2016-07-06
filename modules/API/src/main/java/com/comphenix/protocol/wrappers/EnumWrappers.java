@@ -320,6 +320,15 @@ public abstract class EnumWrappers {
 		OFF_HAND;
 	}
 
+	public enum Direction {
+		DOWN(),
+		UP(),
+		NORTH(),
+		SOUTH(),
+		WEST(),
+		EAST();
+	}
+
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
 	private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -338,6 +347,7 @@ public abstract class EnumWrappers {
 	private static Class<?> SOUND_CATEGORY_CLASS = null;
 	private static Class<?> ITEM_SLOT_CLASS = null;
 	private static Class<?> HAND_CLASS = null;
+	private static Class<?> DIRECTION_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -373,6 +383,7 @@ public abstract class EnumWrappers {
 		SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.CUSTOM_SOUND_EFFECT.getPacketClass(), 0);
 		ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
 		HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
+		DIRECTION_CLASS = getEnum(PacketType.Play.Client.USE_ITEM.getPacketClass(), 0);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -392,6 +403,7 @@ public abstract class EnumWrappers {
 		associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
 		associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
 		associate(HAND_CLASS, Hand.class, getHandConverter());
+		associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
 		INITIALIZED = true;
 	}
 
@@ -515,6 +527,11 @@ public abstract class EnumWrappers {
 		return HAND_CLASS;
 	}
 
+	public static Class<?> getDirectionClass() {
+		initialize();
+		return DIRECTION_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<Protocol>(Protocol.class);
@@ -586,6 +603,10 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<Hand> getHandConverter() {
 		return new EnumConverter<Hand>(Hand.class);
+	}
+
+	public static EquivalentConverter<Direction> getDirectionConverter() {
+		return new EnumConverter<Direction>(Direction.class);
 	}
 
 	/**

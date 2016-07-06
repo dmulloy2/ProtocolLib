@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nonnull;
@@ -77,6 +78,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
 import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
 import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
 import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
+import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.EnumConverter;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
@@ -332,7 +334,15 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<String> getStrings() {
 		return structureModifier.withType(String.class);
 	}
-	
+
+	/**
+	 * Retrieves a read/write structure for every UUID field.
+	 * @return A modifier for every UUID field.
+	 */
+	public StructureModifier<UUID> getUUIDs() {
+		return structureModifier.withType(UUID.class);
+	}
+
 	/**
 	 * Retrieves a read/write structure for every String array field.
 	 * @return A modifier for every String array field.
@@ -368,7 +378,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for ItemStack.
 	 * <p>
-	 * This modifier will automatically marshall between the Bukkit ItemStack and the
+	 * This modifier will automatically marshal between the Bukkit ItemStack and the
 	 * internal Minecraft ItemStack.
 	 * @return A modifier for ItemStack fields.
 	 */
@@ -381,7 +391,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for arrays of ItemStacks.
 	 * <p>
-	 * This modifier will automatically marshall between the Bukkit ItemStack and the
+	 * This modifier will automatically marshal between the Bukkit ItemStack and the
 	 * internal Minecraft ItemStack.
 	 * @return A modifier for ItemStack array fields.
 	 */
@@ -410,7 +420,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for the world type enum.
 	 * <p>
-	 * This modifier will automatically marshall between the Bukkit world type and the
+	 * This modifier will automatically marshal between the Bukkit world type and the
 	 * internal Minecraft world type.
 	 * @return A modifier for world type fields.
 	 */
@@ -524,7 +534,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for collections of attribute snapshots.
 	 * <p>
-	 * This modifier will automatically marshall between the visible ProtocolLib WrappedAttribute and the
+	 * This modifier will automatically marshal between the visible ProtocolLib WrappedAttribute and the
 	 * internal Minecraft AttributeSnapshot.
 	 * @return A modifier for AttributeSnapshot collection fields.
 	 */
@@ -541,7 +551,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for collections of chunk positions.
 	 * <p>
-	 * This modifier will automatically marshall between the visible ProtocolLib ChunkPosition and the
+	 * This modifier will automatically marshal between the visible ProtocolLib ChunkPosition and the
 	 * internal Minecraft ChunkPosition.
 	 * 
 	 * @return A modifier for ChunkPosition list fields.
@@ -559,7 +569,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for collections of chunk positions.
 	 * <p>
-	 * This modifier will automatically marshall between the visible ProtocolLib BlockPosition and the
+	 * This modifier will automatically marshal between the visible ProtocolLib BlockPosition and the
 	 * internal Minecraft BlockPosition.
 	 *
 	 * @return A modifier for ChunkPosition list fields.
@@ -577,7 +587,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for collections of watchable objects.
 	 * <p>
-	 * This modifier will automatically marshall between the visible WrappedWatchableObject and the
+	 * This modifier will automatically marshal between the visible WrappedWatchableObject and the
 	 * internal Minecraft WatchableObject.
 	 * @return A modifier for watchable object list fields.
 	 */
@@ -594,7 +604,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for block fields.
 	 * <p>
-	 * This modifier will automatically marshall between Material and the
+	 * This modifier will automatically marshal between Material and the
 	 * internal Minecraft Block.
 	 * @return A modifier for GameProfile fields.
 	 */
@@ -607,7 +617,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for game profiles in Minecraft 1.7.2.
 	 * <p>
-	 * This modifier will automatically marshall between WrappedGameProfile and the
+	 * This modifier will automatically marshal between WrappedGameProfile and the
 	 * internal Minecraft GameProfile.
 	 * @return A modifier for GameProfile fields.
 	 */
@@ -620,7 +630,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for BlockData in Minecraft 1.8.
 	 * <p>
-	 * This modifier will automatically marshall between WrappedBlockData and the
+	 * This modifier will automatically marshal between WrappedBlockData and the
 	 * internal Minecraft IBlockData.
 	 * @return A modifier for BlockData fields.
 	 */
@@ -633,7 +643,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for MultiBlockChangeInfo arrays in Minecraft 1.8.
 	 * <p>
-	 * This modifier will automatically marshall between MultiBlockChangeInfo and the
+	 * This modifier will automatically marshal between MultiBlockChangeInfo and the
 	 * internal Minecraft MultiBlockChangeInfo.
 	 * @return A modifier for BlockData fields.
 	 */
@@ -648,7 +658,7 @@ public class PacketContainer implements Serializable {
 	/**
 	 * Retrieves a read/write structure for chat components in Minecraft 1.7.2.
 	 * <p>
-	 * This modifier will automatically marshall between WrappedChatComponent and the
+	 * This modifier will automatically marshal between WrappedChatComponent and the
 	 * internal Minecraft IChatBaseComponent.
 	 * @return A modifier for ChatComponent fields.
 	 */
@@ -887,7 +897,7 @@ public class PacketContainer implements Serializable {
     }
 
     /**
-     * Retrive a read/write structure for the ItemSlot enum in 1.9.
+     * Retrieve a read/write structure for the ItemSlot enum in 1.9.
      * @return A modifier for ItemSlot enum fields.
      */
     public StructureModifier<ItemSlot> getItemSlots() {
@@ -896,12 +906,21 @@ public class PacketContainer implements Serializable {
     }
 
     /**
-     * Retrive a read/write structure for the Hand enum in 1.9.
+     * Retrieve a read/write structure for the Hand enum in 1.9.
      * @return A modifier for Hand enum fields.
      */
     public StructureModifier<Hand> getHands() {
     	return structureModifier.<Hand>withType(
     			EnumWrappers.getHandClass(), EnumWrappers.getHandConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for the Direction enum in 1.10.
+     * @return A modifier for Direction enum fields.
+     */
+    public StructureModifier<Direction> getDirections() {
+    	return structureModifier.<Direction>withType(
+    			EnumWrappers.getDirectionClass(), EnumWrappers.getDirectionConverter());
     }
 
     /**
