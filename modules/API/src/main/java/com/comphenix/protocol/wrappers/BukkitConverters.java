@@ -124,7 +124,7 @@ public class BukkitConverters {
 	 * @author Kristian
 	 * @param <T> - type that can be converted.
 	 */
-	private static abstract class IgnoreNullConverter<TType> implements EquivalentConverter<TType> {
+	public static abstract class IgnoreNullConverter<TType> implements EquivalentConverter<TType> {
 		@Override
 		public final Object getGeneric(Class<?> genericType, TType specific) {
 			if (specific != null)

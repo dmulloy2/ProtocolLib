@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Entity;
@@ -234,7 +235,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @return True if it does, false if not
 	 */
 	public boolean hasIndex(int index) {
-		return getMap().containsKey(index);
+		return getObject(index) != null;
 	}
 
 	/**
@@ -321,7 +322,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * Retrieve a watchable object by index.
 	 * 
 	 * @param index Index of the object to retrieve.
-	 * @return The watched object.
+	 * @return The watched object or null if it doesn't exist.
 	 */
 	public Object getObject(int index) {
 		return getObject(new WrappedDataWatcherObject(index, null));
@@ -331,7 +332,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * Retrieve a watchable object by watcher object.
 	 * 
 	 * @param object The watcher object
-	 * @return The watched object
+	 * @return The watched object or null if it doesn't exist.
 	 */
 	public Object getObject(WrappedDataWatcherObject object) {
 		Validate.notNull(object, "Watcher object cannot be null!");
@@ -344,8 +345,13 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 					.build(), "get"));
 		}
 
-		Object value = GETTER.invoke(handle, object.getHandle());
-		return WrappedWatchableObject.getWrapped(value);
+		try {
+			Object value = GETTER.invoke(handle, object.getHandle());
+			return WrappedWatchableObject.getWrapped(value);
+		} catch (RuntimeException ex) {
+			// Nothing exists at this index
+			return null;
+		}
 	}
 
 	// ---- Object Setters
@@ -768,7 +774,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @return The serializer, or null if none exists
 		 */
 		public static Serializer fromHandle(Object handle) {
-			Validate.notNull("Handle cannot be null!");
+			Validate.notNull("handle cannot be null!");
 			initialize();
 
 			for (Serializer serializer : REGISTRY) {
@@ -819,6 +825,68 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 					REGISTRY.add(new Serializer(innerClass, serializer, optional));
 				}
 			}
+		}
+
+		// ---- Helper methods
+
+		/**
+		 * Gets the serializer for IChatBaseComponents
+		 * @return The serializer
+		 */
+		public static Serializer getChatComponentSerializer() {
+			return get(MinecraftReflection.getIChatBaseComponentClass());
+		}
+
+		/**
+		 * Gets the serializer for ItemStacks
+		 * @param optional If true, objects <b>must</b> be wrapped in an {@link Optional}
+		 * @return The serializer
+		 */
+		public static Serializer getItemStackSerializer(boolean optional) {
+			return get(MinecraftReflection.getItemStackClass(), optional);
+		}
+
+		/**
+		 * Gets the serializer for BlockData
+		 * @param optional If true, objects <b>must</b> be wrapped in an {@link Optional}
+		 * @return The serializer
+		 */
+		public static Serializer getBlockDataSerializer(boolean optional) {
+			return get(MinecraftReflection.getIBlockDataClass(), optional);
+		}
+
+		/**
+		 * Gets the serializer for Vector3Fs
+		 * @return The serializer
+		 */
+		public static Serializer getVectorSerializer() {
+			return get(Vector3F.getMinecraftClass());
+		}
+
+		/**
+		 * Gets the serializer for BlockPositions
+		 * @param optional If true, objects <b>must</b> be wrapped in an {@link Optional}
+		 * @return The serializer
+		 */
+		public static Serializer getBlockPositionSerializer(boolean optional) {
+			return get(MinecraftReflection.getBlockPositionClass(), optional);
+		}
+
+		/**
+		 * Gets the serializer for Directions
+		 * @return The serializer
+		 */
+		public static Serializer getDirectionSerializer() {
+			return get(EnumWrappers.getDirectionClass());
+		}
+
+		/**
+		 * Gets the serializer for UUIDs
+		 * @param optional If true, objects <b>must</b> be wrapped in an {@link Optional}
+		 * @return The serializer
+		 */
+		public static Serializer getUUIDSerializer(boolean optional) {
+			return get(UUID.class, optional);
 		}
 	}
 }

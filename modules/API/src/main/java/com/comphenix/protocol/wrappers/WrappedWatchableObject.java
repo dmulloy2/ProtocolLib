@@ -22,6 +22,8 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.google.common.base.Optional;
 
@@ -158,7 +160,8 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	// ---- Wrapping
 
 	/**
-	 * Retrieve the wrapped object value, if needed.
+	 * Retrieve the wrapped object value, if needed. All non-primitive objects
+	 * with {@link Serializer}s should be covered by this.
 	 * 
 	 * @param value - the raw NMS object to wrap.
 	 * @return The wrapped object.
@@ -175,17 +178,37 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			}
 		}
 
-		if (MinecraftReflection.isItemStack(value)) {
+		// Current supported classes
+		if (is(MinecraftReflection.getIChatBaseComponentClass(), value)) {
+			return WrappedChatComponent.fromHandle(value);
+		} else if (is(MinecraftReflection.getItemStackClass(), value)) {
 			return BukkitConverters.getItemStackConverter().getSpecific(value);
-		} else if (MinecraftReflection.isChunkCoordinates(value)) {
-			return new WrappedChunkCoordinate((Comparable) value);
-		} else if (MinecraftReflection.isBlockPosition(value)) {
+		} else if (is(MinecraftReflection.getIBlockDataClass(), value)) {
+			return BukkitConverters.getWrappedBlockDataConverter().getSpecific(value);
+		} else if (is (Vector3F.getMinecraftClass(), value)) {
+			return Vector3F.getConverter().getSpecific(value);
+		} else if (is(MinecraftReflection.getBlockPositionClass(), value)) {
 			return BlockPosition.getConverter().getSpecific(value);
-		} else if (MinecraftReflection.isChunkPosition(value)) {
-			return ChunkPosition.getConverter().getSpecific(value);
-		} else {
-			return value;
+		} else if (is(EnumWrappers.getDirectionClass(), value)) {
+			return EnumWrappers.getDirectionConverter().getSpecific(value);
 		}
+
+		// Legacy classes
+		if (is(MinecraftReflection.getChunkCoordinatesClass(), value)) {
+			return new WrappedChunkCoordinate((Comparable) value);
+		} else if (is(MinecraftReflection.getChunkPositionClass(), value)) {
+			return ChunkPosition.getConverter().getSpecific(value);
+		}
+
+		return value;
+	}
+
+	private static boolean is(Class<?> clazz, Object object) {
+		if (clazz == null || object == null) {
+			return false;
+		}
+
+		return clazz.isAssignableFrom(object.getClass());
 	}
 
 	/**
@@ -194,6 +217,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	 * @param wrapped - the wrapped position.
 	 * @return The raw NMS object.
 	 */
+	// Must be kept in sync with getWrapped!
 	static Object getUnwrapped(Object wrapped) {
 		if (wrapped instanceof Optional) {
 			Optional<?> optional = (Optional<?>) wrapped;
@@ -204,16 +228,28 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			}
 		}
 
-		if (wrapped instanceof ItemStack) {
+		// Current supported classes
+		if (wrapped instanceof WrappedChatComponent) {
+			return ((WrappedChatComponent) wrapped).getHandle();
+		} else if (wrapped instanceof ItemStack) {
 			return BukkitConverters.getItemStackConverter().getGeneric(MinecraftReflection.getItemStackClass(), (ItemStack) wrapped);
-		} else if (wrapped instanceof WrappedChunkCoordinate) {
-			return ((WrappedChunkCoordinate) wrapped).getHandle();
+		} else if (wrapped instanceof WrappedBlockData) {
+			return BukkitConverters.getWrappedBlockDataConverter().getGeneric(MinecraftReflection.getIBlockDataClass(), (WrappedBlockData) wrapped);
+		} else if (wrapped instanceof Vector3F) {
+			return Vector3F.getConverter().getGeneric(Vector3F.getMinecraftClass(), (Vector3F) wrapped);
 		} else if (wrapped instanceof BlockPosition) {
 			return BlockPosition.getConverter().getGeneric(MinecraftReflection.getBlockPositionClass(), (BlockPosition) wrapped);
-		} else if (wrapped instanceof ChunkPosition) {
-			return ChunkPosition.getConverter().getGeneric(MinecraftReflection.getChunkPositionClass(), (ChunkPosition) wrapped);
-		} else {
-			return wrapped;
+		} else if (wrapped instanceof Direction) {
+			return EnumWrappers.getDirectionConverter().getGeneric(EnumWrappers.getDirectionClass(), (Direction) wrapped);
 		}
+
+		// Legacy classes
+		if (wrapped instanceof ChunkPosition) {
+			return ChunkPosition.getConverter().getGeneric(MinecraftReflection.getChunkPositionClass(), (ChunkPosition) wrapped);
+		} else if (wrapped instanceof WrappedChunkCoordinate) {
+			return ((WrappedChunkCoordinate) wrapped).getHandle();
+		}
+
+		return wrapped;
 	}
 }
