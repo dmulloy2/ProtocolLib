@@ -582,35 +582,26 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param packet - the packet.
 	 */
 	protected void handleLogin(Class<?> packetClass, Object packet) {
-		try {
-			Class<?> loginClass = PACKET_LOGIN_CLIENT;
-			FieldAccessor loginClient = LOGIN_GAME_PROFILE;
+		// Try to find the login packet class
+		if (PACKET_LOGIN_CLIENT == null) {
+			PACKET_LOGIN_CLIENT = PacketType.Login.Client.START.getPacketClass();
+		}
 
-			// Initialize packet class and login
-			if (loginClass == null) {
-				loginClass = PacketType.Login.Client.START.getPacketClass();
-				PACKET_LOGIN_CLIENT = loginClass;
-			}
-			if (loginClient == null) {
-				loginClient = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, MinecraftReflection.getGameProfileClass(), true);
-				LOGIN_GAME_PROFILE = loginClient;
-			}
+		// If we can't, there's an issue
+		if (PACKET_LOGIN_CLIENT == null) {
+			throw new IllegalStateException("Failed to obtain login start packet. Did you build Spigot with BuildTools?");
+		}
 
-			// See if we are dealing with the login packet
-			if (loginClass.equals(packetClass)) {
-				// GameProfile profile = (GameProfile) loginClient.get(packet);
-				WrappedGameProfile profile = WrappedGameProfile.fromHandle(loginClient.get(packet));
+		if (LOGIN_GAME_PROFILE == null) {
+			LOGIN_GAME_PROFILE = Accessors.getFieldAccessor(PACKET_LOGIN_CLIENT, MinecraftReflection.getGameProfileClass(), true);
+		}
 
-				// Save the channel injector
-				factory.cacheInjector(profile.getName(), this);
-			}
-		} catch (IllegalArgumentException ex) { // Thrown by FuzzyReflection#getFields()
-			System.err.println(String.format("[ProtocolLib] Encountered NPE in handleLogin(%s, %s)", packetClass, packet));
-			System.err.println("PACKET_LOGIN_CLIENT = " + PACKET_LOGIN_CLIENT);
-			System.err.println("LOGIN_GAME_PROFILE = " + LOGIN_GAME_PROFILE);
-			System.err.println("GameProfile class = " + MinecraftReflection.getGameProfileClass());
-			System.err.println("Provide this information in a new or existing issue");
-			throw ex;
+		// See if we are dealing with the login packet
+		if (PACKET_LOGIN_CLIENT.equals(packetClass)) {
+			WrappedGameProfile profile = WrappedGameProfile.fromHandle(LOGIN_GAME_PROFILE.get(packet));
+
+			// Save the channel injector
+			factory.cacheInjector(profile.getName(), this);
 		}
 	}
 
