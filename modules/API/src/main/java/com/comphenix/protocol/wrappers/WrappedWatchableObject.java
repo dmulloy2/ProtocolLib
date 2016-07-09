@@ -16,6 +16,8 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import static com.comphenix.protocol.utility.MinecraftReflection.is;
+
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -201,14 +203,6 @@ public class WrappedWatchableObject extends AbstractWrapper {
 		}
 
 		return value;
-	}
-
-	private static boolean is(Class<?> clazz, Object object) {
-		if (clazz == null || object == null) {
-			return false;
-		}
-
-		return clazz.isAssignableFrom(object.getClass());
 	}
 
 	/**

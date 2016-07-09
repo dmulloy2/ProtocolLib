@@ -62,7 +62,7 @@ class CachedPackage {
 	public Class<?> getPackageClass(String className) {
 		try {
 			Class<?> result = cache.get(Preconditions.checkNotNull(className, "className cannot be NULL"));
-			
+
 			// Concurrency is not a problem - we don't care if we look up a class twice
 			if (result == null) {
 				// Look up the class dynamically
@@ -75,10 +75,11 @@ class CachedPackage {
 
 			return result;
 		} catch (ClassNotFoundException e) {
+			setPackageClass(className, null);
 			throw new RuntimeException("Cannot find class " + combine(packageName, className), e);
 		}
 	}
-	
+
 	/**
 	 * Correctly combine a package name and the child class we're looking for.
 	 * @param packageName - name of the package, or an empty string for the default package.

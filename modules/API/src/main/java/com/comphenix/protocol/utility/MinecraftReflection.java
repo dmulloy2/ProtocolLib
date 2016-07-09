@@ -409,13 +409,30 @@ public class MinecraftReflection {
  	}
 
 	/**
+	 * Determine if a given Object is compatible with a given Class. That is,
+	 * whether or not the Object is an instance of that Class or one of its
+	 * subclasses. If either is null, false is returned.
+	 * 
+	 * @param clazz Class to test for, may be null
+	 * @param object the Object to test, may be null
+	 * @return True if it is, false if not
+	 * @see Class#isAssignableFrom(Class)
+	 */
+	public static boolean is(Class<?> clazz, Object object) {
+		if (clazz == null || object == null) {
+			return false;
+		}
+
+		return clazz.isAssignableFrom(object.getClass());
+	}
+
+	/**
 	 * Determine if a given object is a ChunkPosition.
 	 * @param obj - the object to test.
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
 	public static boolean isChunkPosition(Object obj) {
-		Class<?> chunkPosition = getChunkPositionClass();
-		return obj != null && chunkPosition != null && chunkPosition.isAssignableFrom(obj.getClass());
+		return is(getChunkPositionClass(), obj);
 	}
 
 	/**
@@ -424,8 +441,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
 	public static boolean isBlockPosition(Object obj) {
-		Class<?> blockPosition = getBlockPositionClass();
-		return obj != null && blockPosition != null && blockPosition.isAssignableFrom(obj.getClass());
+		return is(getBlockPositionClass(), obj);
 	}
 
 	/**
@@ -434,7 +450,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
 	public static boolean isChunkCoordIntPair(Object obj) {
-		return obj != null && getChunkCoordIntPair().isAssignableFrom(obj.getClass());
+		return is(getChunkCoordIntPair(), obj);
 	}
 
 	/**
@@ -443,8 +459,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it can, FALSE otherwise.
 	 */
 	public static boolean isChunkCoordinates(Object obj) {
-		Class<?> chunkCoordinates = getChunkCoordinatesClass();
-		return obj != null && chunkCoordinates != null && chunkCoordinates.isAssignableFrom(obj.getClass());
+		return is(getChunkCoordinatesClass(), obj);
 	}
 
 	/**
@@ -453,7 +468,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isPacketClass(Object obj) {
-		return obj != null && getPacketClass().isAssignableFrom(obj.getClass());
+		return is(getPacketClass(), obj);
 	}
 
 	/**
@@ -462,7 +477,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isLoginHandler(Object obj) {
-		return obj != null && getNetLoginHandlerClass().isAssignableFrom(obj.getClass());
+		return is(getNetLoginHandlerClass(), obj);
 	}
 
 	/**
@@ -471,7 +486,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isServerHandler(Object obj) {
-		return obj != null && getPlayerConnectionClass().isAssignableFrom(obj.getClass());
+		return is(getPlayerConnectionClass(), obj);
 	}
 
 	/**
@@ -480,7 +495,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isMinecraftEntity(Object obj) {
-		return obj != null && getEntityClass().isAssignableFrom(obj.getClass());
+		return is(getEntityClass(), obj);
 	}
 
 	/**
@@ -489,7 +504,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isItemStack(Object value) {
-		return value != null && getItemStackClass().isAssignableFrom(value.getClass());
+		return is(getItemStackClass(), value);
 	}
 
 	/**
@@ -498,7 +513,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isCraftPlayer(Object value) {
-		return value != null && getCraftPlayerClass().isAssignableFrom(value.getClass());
+		return is(getCraftPlayerClass(), value);
 	}
 
 	/**
@@ -507,7 +522,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isMinecraftPlayer(Object obj) {
-		return obj != null && getEntityPlayerClass().isAssignableFrom(obj.getClass());
+		return is(getEntityPlayerClass(), obj);
 	}
 
 	/**
@@ -516,7 +531,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isWatchableObject(Object obj) {
-		return obj != null && getWatchableObjectClass().isAssignableFrom(obj.getClass());
+		return is(getWatchableObjectClass(), obj);
 	}
 
 	/**
@@ -525,7 +540,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isDataWatcher(Object obj) {
-		return obj != null && getDataWatcherClass().isAssignableFrom(obj.getClass());
+		return is(getDataWatcherClass(), obj);
 	}
 
 	/**
@@ -534,7 +549,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isIntHashMap(Object obj) {
-		return obj != null && getIntHashMapClass().isAssignableFrom(obj.getClass());
+		return is(getIntHashMapClass(), obj);
 	}
 
 	/**
@@ -543,7 +558,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isCraftItemStack(Object obj) {
-		return obj != null && getCraftItemStackClass().isAssignableFrom(obj.getClass());
+		return is(getCraftItemStackClass(), obj);
 	}
 
 	/**
@@ -1180,24 +1195,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("ChunkPosition");
 		} catch (RuntimeException e) {
-			try {
-				Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
-
-				// ChunkPosition a(net.minecraft.server.World world, String string, int i, int i1, int i2) {
-				FuzzyMethodContract selected = FuzzyMethodContract.newBuilder()
-						.banModifier(Modifier.STATIC)
-						.parameterMatches(getMinecraftObjectMatcher(), 0)
-						.parameterExactType(String.class, 1)
-						.parameterExactType(int.class, 2)
-						.parameterExactType(int.class, 3)
-						.parameterExactType(int.class, 4)
-						.build();
-
-				return setMinecraftClass("ChunkPosition",
-						FuzzyReflection.fromClass(normalChunkGenerator).getMethod(selected).getReturnType());
-			} catch (Throwable ex) {
-				return null;
-			}
+			return null;
 		}
 	}
 
@@ -1794,8 +1792,7 @@ public class MinecraftReflection {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public static boolean isPlayerInfoData(Object obj) {
-		Class<?> clazz = getPlayerInfoDataClass();
-		return clazz != null && obj.getClass().equals(clazz);
+		return is(getPlayerInfoDataClass(), obj);
 	}
 
 	/**
