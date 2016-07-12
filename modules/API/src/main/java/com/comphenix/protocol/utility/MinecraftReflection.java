@@ -152,6 +152,7 @@ public class MinecraftReflection {
 
 	// Whether or not we are using netty
 	private static Boolean cachedNetty;
+	private static Boolean cachedWatcherObject;
 
 	private MinecraftReflection() {
 		// No need to make this constructable.
@@ -1313,16 +1314,23 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getDataWatcherObjectClass() {
-		// TODO Implement a fallback
-		return getMinecraftClass("DataWatcherObject");
+		try {
+			return getMinecraftClass("DataWatcherObject");
+		} catch (RuntimeException ex) {
+			return null;
+		}
 	}
 
 	public static boolean watcherObjectExists() {
-		try {
-			return getDataWatcherObjectClass() != null;
-		} catch (RuntimeException e) {
-			return false;
+		if (cachedWatcherObject == null) {
+			try {
+				return cachedWatcherObject = getDataWatcherObjectClass() != null;
+			} catch (Throwable ex) {
+				return cachedWatcherObject = false;
+			}
 		}
+
+		return cachedWatcherObject;
 	}
 
 	public static Class<?> getDataWatcherSerializerClass() {

@@ -34,7 +34,7 @@ public class ProtocolLibrary {
 	/**
 	 * The minimum version ProtocolLib has been tested with.
 	 */
-	public static final String MINIMUM_MINECRAFT_VERSION = "1.9";
+	public static final String MINIMUM_MINECRAFT_VERSION = "1.8";
 
 	/**
 	 * The maximum version ProtocolLib has been tested with.

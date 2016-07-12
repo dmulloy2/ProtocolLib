@@ -542,7 +542,7 @@ public class PacketContainerTest {
 	public void testDeepClone() {
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (BLACKLISTED.contains(type)) {
+			if (BLACKLISTED.contains(type) || type.isDeprecated()) {
 				continue;
 			}
 
@@ -588,9 +588,7 @@ public class PacketContainerTest {
 				}
 			} catch (IllegalArgumentException e) {
 				if (!registered) {
-					// Let the test pass
-					System.err.println("The packet ID " + type + " is not registered.");
-					assertEquals(e.getMessage(), "The packet ID " + type + " is not registered.");
+					e.printStackTrace();
 				} else {
 					// Something is very wrong
 					throw e;

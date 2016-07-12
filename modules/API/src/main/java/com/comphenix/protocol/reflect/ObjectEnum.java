@@ -52,7 +52,7 @@ public class ObjectEnum<T> implements Iterable<T> {
 	@SuppressWarnings("unchecked")
 	protected void registerAll(Class<T> fieldType) {
 		try {
-			// Register every int field
+			// Register every non-deprecated field
 			for (Field entry : this.getClass().getFields()) {
 				if (Modifier.isStatic(entry.getModifiers()) && fieldType.isAssignableFrom(entry.getType())) {
 					T value = (T) entry.get(null);
@@ -63,7 +63,6 @@ public class ObjectEnum<T> implements Iterable<T> {
 					registerMember(value, entry.getName());
 				}
 			}
-		
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {

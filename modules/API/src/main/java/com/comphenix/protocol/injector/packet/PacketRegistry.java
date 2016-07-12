@@ -18,6 +18,7 @@
 package com.comphenix.protocol.injector.packet;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -28,6 +29,7 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
 import com.comphenix.protocol.injector.netty.ProtocolRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -154,11 +156,10 @@ public class PacketRegistry {
 	 */
 	@Deprecated
 	public static Set<Integer> getServerPackets() throws FieldAccessException {
-		initialize();
-
 		if (LEGACY_SERVER_PACKETS == null) {
-			LEGACY_SERVER_PACKETS = toLegacy(NETTY.getServerPackets());
+			LEGACY_SERVER_PACKETS = toLegacy(getServerPacketTypes());
 		}
+
 		return LEGACY_SERVER_PACKETS;
 	}
 	
@@ -168,9 +169,18 @@ public class PacketRegistry {
 	 */
 	public static Set<PacketType> getServerPacketTypes() {
 		initialize();
-
 		NETTY.synchronize();
-		return NETTY.getServerPackets();
+
+		Set<PacketType> types = new HashSet<>();
+
+		// Filter out unsupported packets
+		for (PacketType type : NETTY.getServerPackets()) {
+			if (!type.isDeprecated()) {
+				types.add(type);
+			}
+		}
+
+		return types;
 	}
 	
 	/**
@@ -182,11 +192,10 @@ public class PacketRegistry {
 	 */
 	@Deprecated
 	public static Set<Integer> getClientPackets() throws FieldAccessException {
-		initialize();
-
 		if (LEGACY_CLIENT_PACKETS == null) {
-			LEGACY_CLIENT_PACKETS = toLegacy(NETTY.getClientPackets());
+			LEGACY_CLIENT_PACKETS = toLegacy(getClientPacketTypes());
 		}
+
 		return LEGACY_CLIENT_PACKETS;
 	}
 	
@@ -196,9 +205,18 @@ public class PacketRegistry {
 	 */
 	public static Set<PacketType> getClientPacketTypes() {
 		initialize();
-
 		NETTY.synchronize();
-		return NETTY.getClientPackets();
+
+		Set<PacketType> types = new HashSet<>();
+
+		// Filter out unsupported packets
+		for (PacketType type : NETTY.getClientPackets()) {
+			if (!type.isDeprecated()) {
+				types.add(type);
+			}
+		}
+
+		return types;
 	}
 	
 	/**
@@ -269,7 +287,24 @@ public class PacketRegistry {
 	 */
 	public static Class getPacketClassFromType(PacketType type, boolean forceVanilla) {
 		initialize();
-		return NETTY.getPacketTypeLookup().get(type);
+
+		// Try the lookup first
+		Class<?> clazz = NETTY.getPacketTypeLookup().get(type);
+		if (clazz != null) {
+			return clazz;
+		}
+
+		// Then try looking up the class names
+		for (String name : type.getClassNames()) {
+			try {
+				clazz = MinecraftReflection.getMinecraftClass(name);
+				break;
+			} catch (Exception ex) {
+			}
+		}
+
+		// TODO Cache the result?
+		return clazz;
 	}
 
 	/**

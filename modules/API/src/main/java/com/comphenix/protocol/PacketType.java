@@ -31,7 +31,7 @@ import com.google.common.util.concurrent.Futures;
  * Note that vanilla Minecraft reuses packet IDs per protocol (ping, game, login) and IDs are subject to change, so they are not reliable.
  * @author Kristian
  */
-public class PacketType implements Serializable, Comparable<PacketType> {
+public class PacketType implements Serializable, Cloneable, Comparable<PacketType> {
 	// Increment whenever the type changes
 	private static final long serialVersionUID = 1L;
 	
@@ -182,29 +182,53 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			public static final PacketType UPDATE_ATTRIBUTES =            new PacketType(PROTOCOL, SENDER, 0x4B, 0x20, "UpdateAttributes");
 			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x4C, 0x1D, "EntityEffect");
 
-			/**
-			 * @deprecated Replaced by {@link WINDOW_DATA}
-			 */
-			@Deprecated
-			public static final PacketType CRAFT_PROGRESS_BAR =           WINDOW_DATA;
+			// ---- Removed in 1.9
 
 			/**
-			 * @deprecated Replaced by {@link REL_ENTITY_MOVE_LOOK}
+			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType ENTITY_MOVE_LOOK =             REL_ENTITY_MOVE_LOOK;
+			public static final PacketType MAP_CHUNK_BULK =              new PacketType(PROTOCOL, SENDER, -1, -1, "MapChunkBulk").deprecated();
 
 			/**
-			 * @deprecated Replaced by {@link STATISTIC}
+			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType STATISTICS =                   STATISTIC;
+			public static final PacketType SET_COMPRESSION =             new PacketType(PROTOCOL, SENDER, -1, -1, "SetCompression").deprecated();
+
+			/**
+			 * @deprecated Removed in 1.9
+			 */
+			@Deprecated
+			public static final PacketType UPDATE_ENTITY_NBT =           new PacketType(PROTOCOL, SENDER, -1, -1, "UpdateEntityNBT").deprecated();
+
+			// ----- Renamed packets
+
+			/**
+			 * @deprecated Renamed to {@link WINDOW_DATA}
+			 */
+			@Deprecated
+			public static final PacketType CRAFT_PROGRESS_BAR =           WINDOW_DATA.deprecated();
+
+			/**
+			 * @deprecated Renamed to {@link REL_ENTITY_MOVE_LOOK}
+			 */
+			@Deprecated
+			public static final PacketType ENTITY_MOVE_LOOK =             REL_ENTITY_MOVE_LOOK.deprecated();
+
+			/**
+			 * @deprecated Renamed to {@link STATISTIC}
+			 */
+			@Deprecated
+			public static final PacketType STATISTICS =                   STATISTIC.deprecated();
+
+			// ----- Replaced in 1.9.4
 
 			/**
 			 * @deprecated Replaced by {@link TILE_ENTITY_DATA}
 			 */
 			@Deprecated
-			public static final PacketType UPDATE_SIGN =                  TILE_ENTITY_DATA;
+			public static final PacketType UPDATE_SIGN =                  TILE_ENTITY_DATA.deprecated();
 
 			// The instance must
 			private final static Server INSTANCE = new Server();
@@ -297,7 +321,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 			 * @deprecated Replaced by {@link SERVER_INFO}
 			 */
 			@Deprecated
-			public static final PacketType OUT_SERVER_INFO =              SERVER_INFO;
+			public static final PacketType OUT_SERVER_INFO =              SERVER_INFO.deprecated();
 
 			private final static Server INSTANCE = new Server();
 
@@ -562,6 +586,7 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 
 	private boolean forceAsync;
 	private boolean dynamic;
+	private boolean deprecated;
 
 	/**
 	 * Retrieve the current packet/legacy lookup.
@@ -1043,6 +1068,16 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		return forceAsync;
 	}
 
+	private PacketType deprecated() {
+		PacketType ret = clone();
+		ret.deprecated = true;
+		return ret;
+	}
+
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hashCode(protocol, sender, currentId, legacyId);
@@ -1078,8 +1113,17 @@ public class PacketType implements Serializable, Comparable<PacketType> {
 		Class<?> clazz = getPacketClass();
 
 		if (clazz == null)
-			return "UNREGISTERED[" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + ", classNames: " + Arrays.toString(classNames) + "]";
+			return name() + "[" + protocol + ", " + sender + ", " + currentId + ", legacy: " + legacyId + ", classNames: " + Arrays.toString(classNames) + " (unregistered)]";
 		else
 			return clazz.getSimpleName() + "[" + currentId + ", legacy: " + legacyId + "]";
+	}
+
+	@Override
+	public PacketType clone() {
+		try {
+			return (PacketType) super.clone();
+		} catch (CloneNotSupportedException ex) {
+			throw new Error("This shouldn't happen", ex);
+		}
 	}
 }
