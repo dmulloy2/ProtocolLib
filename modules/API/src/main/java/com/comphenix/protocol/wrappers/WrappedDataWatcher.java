@@ -56,8 +56,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherClass();
 
 	private static MethodAccessor GETTER = null;
-	public static MethodAccessor SETTER = null;
-	public static MethodAccessor REGISTER = null;
+	private static MethodAccessor SETTER = null;
+	private static MethodAccessor REGISTER = null;
 
 	private static FieldAccessor ENTITY_DATA_FIELD = null;
 	private static FieldAccessor ENTITY_FIELD = null;
@@ -389,17 +389,20 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	// ---- Object Setters
 
 	/**
-	 * Sets the DataWatcher Item at a given index to a new value.
+	 * Sets the DataWatcher Item at a given index to a new value. In 1.9 and up,
+	 * you cannot register objects without a watcher object.
 	 * 
 	 * @param index Index of the object to set
 	 * @param value New value
 	 * @param update Whether or not to inform the client
 	 * 
 	 * @see {@link #setObject(WrappedDataWatcherObject, Object, boolean)}
+	 * @throws IllegalArgumentException in 1.9 and up if there isn't already an
+	 * 		object at this index
 	 */
 	public void setObject(int index, Object value, boolean update) {
 		if (MinecraftReflection.watcherObjectExists() && !hasIndex(index)) {
-			throw new IllegalArgumentException("You cannot register objects without the watcher object!");
+			throw new IllegalArgumentException("You cannot register objects without a watcher object!");
 		}
 
 		setObject(WrappedDataWatcherObject.fromIndex(index), value, update);
@@ -427,10 +430,30 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	}
 
 	/**
-	 * Shortcut for {@link #setObject(int, Serializer, Object, boolean)}
+	 * Alias for {@link #setObject(int, Serializer, Object, boolean)}
 	 */
 	public void setObject(int index, Serializer serializer, Object value) {
-		setObject(index, serializer, value, false);
+		setObject(new WrappedDataWatcherObject(index, serializer), value, false);
+	}
+
+	/**
+	 * Sets the DataWatcher Item at a given index to a new value.
+	 * 
+	 * @param index Index of the object to set
+	 * @param value New value
+	 * @param update Whether or not to inform the client
+	 * 
+	 * @see {@link #setObject(int, Object, boolean)}
+	 */
+	public void setObject(int index, WrappedWatchableObject value, boolean update) {
+		setObject(index, value.getRawValue(), update);
+	}
+
+	/**
+	 * Alias for {@link #setObject(int, WrappedWatchableObject, boolean)}
+	 */
+	public void setObject(int index, WrappedWatchableObject value) {
+		setObject(index, value.getRawValue(), false);
 	}
 
 	/**
@@ -450,7 +473,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * Shortcut for {@link #setObject(WrappedDataWatcherObject, WrappedWatchableObject, boolean)}
 	 */
 	public void setObject(WrappedDataWatcherObject object, WrappedWatchableObject value) {
-		setObject(object, value, false);
+		setObject(object, value.getRawValue(), false);
 	}
 
 	/**
