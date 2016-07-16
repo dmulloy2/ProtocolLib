@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
@@ -78,16 +79,7 @@ public class WirePacket {
 	 * @param output Output to write to
 	 */
 	public void writeId(ByteBuf output) {
-		checkNotNull(output, "output cannot be null!");
-		// From PacketDataSerializer#d(int)
-
-		int i = id;
-		while ((i & -128) != 0) {
-			output.writeByte(i & 127 | 128);
-			i >>>= 7;
-		}
-
-		output.writeByte(i);
+		writeVarInt(output, id);
 	}
 
 	/**
@@ -118,6 +110,39 @@ public class WirePacket {
 		return buffer;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+
+		if (obj instanceof WirePacket) {
+			WirePacket that = (WirePacket) obj;
+			return this.id == that.id &&
+					Arrays.equals(this.bytes, that.bytes);
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(bytes);
+		result = prime * result + id;
+		return result;
+	}
+
+	@Override
+	public String toString() {
+		return "WirePacket[id=" + id + ", bytes=" + Arrays.toString(bytes) + "]";
+	}
+
+	private static byte[] getBytes(ByteBuf buffer) {
+		byte[] array = new byte[buffer.readableBytes()];
+		buffer.readBytes(array);
+		return array;
+	}
+
 	/**
 	 * Creates a WirePacket from an existing PacketContainer
 	 * @param packet Existing packet
@@ -137,7 +162,7 @@ public class WirePacket {
 			throw new RuntimeException("Failed to serialize packet contents.", ex);
 		}
 
-		return new WirePacket(id, buffer.array());
+		return new WirePacket(id, getBytes(buffer));
 	}
 
 	/**
@@ -162,6 +187,36 @@ public class WirePacket {
 			throw new RuntimeException("Failed to serialize packet contents.", ex);
 		}
 
-		return new WirePacket(id, buffer.array());
+		return new WirePacket(id, getBytes(buffer));
+	}
+
+	public static void writeVarInt(ByteBuf output, int i) {
+		checkNotNull(output, "output cannot be null!");
+
+		while ((i & -128) != 0) {
+			output.writeByte(i & 127 | 128);
+			i >>>= 7;
+		}
+
+		output.writeByte(i);
+	}
+
+	public static int readVarInt(ByteBuf input) {
+		checkNotNull(input, "input cannot be null!");
+
+        int i = 0;
+        int j = 0;
+
+        byte b0;
+
+        do {
+            b0 = input.readByte();
+            i |= (b0 & 127) << j++ * 7;
+            if (j > 5) {
+                throw new RuntimeException("VarInt too big");
+            }
+        } while ((b0 & 128) == 128);
+
+        return i;
 	}
 }
