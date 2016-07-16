@@ -47,6 +47,7 @@ public class MinecraftFields {
 	 * @return The player connection.
 	 */
 	public static Object getPlayerConnection(Player player) {
+		Preconditions.checkNotNull(player, "player cannot be null!");
 		return getPlayerConnection(BukkitUnwrapper.getInstance().unwrapItem(player));
 	}
 	

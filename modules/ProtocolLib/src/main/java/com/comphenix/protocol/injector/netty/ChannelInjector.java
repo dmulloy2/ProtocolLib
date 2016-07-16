@@ -671,7 +671,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				MinecraftMethods.getSendPacketMethod().invoke(getPlayerConnection(), packet);
 			}
 		} catch (Throwable ex) {
-			ProtocolLibrary.getErrorReporter().reportWarning(factory.getPlugin(),
+			ProtocolLibrary.getErrorReporter().reportWarning(this,
 					Report.newBuilder(REPORT_CANNOT_SEND_PACKET).messageParam(packet, playerName).error(ex).build());
 		}
 	}
@@ -716,7 +716,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private Object getPlayerConnection() {
 		if (playerConnection == null) {
-			playerConnection = MinecraftFields.getPlayerConnection(player);
+			playerConnection = MinecraftFields.getPlayerConnection(getPlayer());
 		}
 		return playerConnection;
 	}
