@@ -222,6 +222,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			@Deprecated
 			public static final PacketType STATISTICS =                   STATISTIC.deprecated();
 
+			/**
+			 * @deprecated Renamed to {@link OPEN_SIGN_EDITOR}
+			 */
+			@Deprecated
+			public static final PacketType OPEN_SIGN_ENTITY =             OPEN_SIGN_EDITOR.deprecated();
+
 			// ----- Replaced in 1.9.4
 
 			/**
