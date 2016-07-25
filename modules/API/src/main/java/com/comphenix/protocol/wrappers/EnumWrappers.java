@@ -1,6 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.bukkit.GameMode;
@@ -226,7 +227,7 @@ public abstract class EnumWrappers {
 			BY_NAME = new HashMap<String, Particle>();
 
 			for (Particle particle : values()) {
-				BY_NAME.put(particle.getName().toLowerCase(), particle);
+				BY_NAME.put(particle.getName().toLowerCase(Locale.ENGLISH), particle);
 				BY_ID.put(particle.getId(), particle);
 			}
 		}
@@ -264,7 +265,7 @@ public abstract class EnumWrappers {
 		}
 
 		public static Particle getByName(String name) {
-			return BY_NAME.get(name.toLowerCase());
+			return BY_NAME.get(name.toLowerCase(Locale.ENGLISH));
 		}
 
 		public static Particle getById(int id) {
@@ -302,7 +303,7 @@ public abstract class EnumWrappers {
 		}
 
 		public static SoundCategory getByKey(String key) {
-			return LOOKUP.get(key.toLowerCase());
+			return LOOKUP.get(key.toLowerCase(Locale.ENGLISH));
 		}
 	}
 

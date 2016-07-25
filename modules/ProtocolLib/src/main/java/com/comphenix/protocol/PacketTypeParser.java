@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import com.comphenix.protocol.PacketType.Protocol;
@@ -53,7 +54,7 @@ class PacketTypeParser {
 		// And finally, parse packet names if we have a protocol
 		if (protocol != null) {
 			for (Iterator<String> it = arguments.iterator(); it.hasNext(); ) {
-				String name = it.next().toUpperCase();
+				String name = it.next().toUpperCase(Locale.ENGLISH);
 				Collection<PacketType> names = PacketType.fromName(name);
 				
 				for (PacketType type : names) {

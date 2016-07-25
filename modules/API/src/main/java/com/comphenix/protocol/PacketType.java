@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -542,7 +543,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		}
 
 		public String getPacketName() {
-			return WordUtils.capitalize(name().toLowerCase());
+			return WordUtils.capitalize(name().toLowerCase(Locale.ENGLISH));
 		}
 	}
 

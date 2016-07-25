@@ -17,6 +17,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
+import java.util.Locale;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -70,7 +71,7 @@ public class MinecraftKey {
 	 * @return The resulting key
 	 */
 	public static MinecraftKey fromEnum(Enum<?> value) {
-		return new MinecraftKey(value.name().toLowerCase().replace("_", "."));
+		return new MinecraftKey(value.name().toLowerCase(Locale.ENGLISH).replace("_", "."));
 	}
 
 	/**
@@ -104,7 +105,7 @@ public class MinecraftKey {
 	 * @return The enum format
 	 */
 	public String getEnumFormat() {
-		return key.toUpperCase().replace(".", "_");
+		return key.toUpperCase(Locale.ENGLISH).replace(".", "_");
 	}
 
 	private static Constructor<?> constructor = null;

@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
@@ -464,7 +465,7 @@ public class ProtocolConfig {
 		PlayerInjectHooks hook = getDefaultMethod();
 
 		if (text != null)
-			hook = PlayerInjectHooks.valueOf(text.toUpperCase().replace(" ", "_"));
+			hook = PlayerInjectHooks.valueOf(text.toUpperCase(Locale.ENGLISH).replace(" ", "_"));
 		return hook;
 	}
 
