@@ -33,14 +33,14 @@ class LoginPackets {
 		clientSide.add(Packets.Client.GET_INFO);
 		
 		// In 1.6.2, Minecraft started sending CUSTOM_PAYLOAD in the server list protocol
-		if (version.compareTo(MinecraftVersion.HORSE_UPDATE) >= 0) {
+		if (version.compareTo(MinecraftVersion.HORSE_UPDATE) >= 0 || triesForgeIntegration()) {
 			clientSide.add(Packets.Client.CUSTOM_PAYLOAD);
 		}
 		serverSide.add(Packets.Server.KICK_DISCONNECT);
 		
-		// MCPC++ contains Forge, which uses packet 250 during login
-		if (isMCPC()) {
-			clientSide.add(Packets.Client.CUSTOM_PAYLOAD);
+		// Forge uses packet 250 during login
+		if (triesForgeIntegration()) {
+			serverSide.add(Packets.Client.CUSTOM_PAYLOAD);
 		}
 	}
 	
@@ -48,8 +48,9 @@ class LoginPackets {
 	 * Determine if we are runnign MCPC.
 	 * @return TRUE if we are, FALSE otherwise.
 	 */
-	private static boolean isMCPC() {
-		return Bukkit.getServer().getVersion().contains("MCPC-Plus");
+	private static boolean triesForgeIntegration() {
+		String version = Bukkit.getVersion();
+		return version.contains("MCPC-Plus") || version.contains("Cauldron") || version.contains("Thermos");
 	}
 	
 	/**

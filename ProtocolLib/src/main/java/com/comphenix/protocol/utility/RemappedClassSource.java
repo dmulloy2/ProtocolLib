@@ -27,7 +27,7 @@ import org.bukkit.Bukkit;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.MethodUtils;
-import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavaibleException.Reason;
+import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
 
 class RemappedClassSource extends ClassSource {
 	private Object classRemapper;
@@ -52,19 +52,23 @@ class RemappedClassSource extends ClassSource {
 	/**
 	 * Attempt to load the MCPC remapper.
 	 * @return TRUE if we succeeded, FALSE otherwise.
-	 * @throws RemapperUnavaibleException If the remapper is not present.
+	 * @throws RemapperUnavailableException If the remapper is not present.
 	 */
 	public RemappedClassSource initialize() {
 		try {
-			if (Bukkit.getServer() == null || !Bukkit.getServer().getVersion().contains("MCPC-Plus")) {
-				throw new RemapperUnavaibleException(Reason.MCPC_NOT_PRESENT);
+			if (Bukkit.getServer() == null) {
+				throw new RemapperUnavailableException(Reason.BUKKIT_NOT_INIT);
 			}
 			
-			// Obtain the Class remapper used by MCPC+
+			if (!triesForgeIntegration(Bukkit.getVersion())) {
+				throw new RemapperUnavailableException(Reason.MCPC_NOT_PRESENT);
+			}
+			
+			// Obtain the Class remapper used by MCPC+/Cauldron/What have you
 			this.classRemapper = FieldUtils.readField(getClass().getClassLoader(), "remapper", true);
 			
 			if (this.classRemapper == null) {
-				throw new RemapperUnavaibleException(Reason.REMAPPER_DISABLED);
+				throw new RemapperUnavailableException(Reason.REMAPPER_DISABLED);
 			}
 			
 			// Initialize some fields and methods used by the Jar Remapper
@@ -75,12 +79,16 @@ class RemappedClassSource extends ClassSource {
 			
 			return this;
 			
-		} catch (RemapperUnavaibleException e) {
+		} catch (RemapperUnavailableException e) {
 			throw e;
 		} catch (Exception e) {
 			// Damn it
 			throw new RuntimeException("Cannot access MCPC remapper.", e);
 		}
+	}
+
+	private boolean triesForgeIntegration(String version) {
+		return version.contains("MCPC") || version.contains("Cauldron") || version.contains("Thermos");
 	}
 
 	@Override
@@ -108,12 +116,13 @@ class RemappedClassSource extends ClassSource {
 		}
 	}
 
-	public static class RemapperUnavaibleException extends RuntimeException {
+	public static class RemapperUnavailableException extends RuntimeException {
 		private static final long serialVersionUID = 1L;
 
 		public enum Reason {
-			MCPC_NOT_PRESENT("The server is not running MCPC+"),
-			REMAPPER_DISABLED("Running an MCPC+ server but the remapper is unavailable. Please turn it on!");
+			BUKKIT_NOT_INIT("Bukkit is not initialized"),
+			MCPC_NOT_PRESENT("The server is not running Forge+Bukkit"),
+			REMAPPER_DISABLED("Running a Forge+Bukkit server but the remapper is unavailable. Please turn it on!");
 			
 			private final String message;
 			
@@ -132,13 +141,13 @@ class RemappedClassSource extends ClassSource {
 		
 		private final Reason reason;
 		
-		public RemapperUnavaibleException(Reason reason) {
+		public RemapperUnavailableException(Reason reason) {
 			super(reason.getMessage());
 			this.reason = reason;
 		}
 		
 		/**
-		 * Retrieve the reasont he remapper is unavailable.
+		 * Retrieve the reason the remapper is unavailable.
 		 * @return The reason.
 		 */
 		public Reason getReason() {
