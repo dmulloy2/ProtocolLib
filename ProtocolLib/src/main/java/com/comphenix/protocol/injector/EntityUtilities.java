@@ -97,9 +97,12 @@ class EntityUtilities {
 	 */
 	public static void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
 		try {
-			//EntityTrackerEntry trackEntity = (EntityTrackerEntry) tracker.trackedEntities.get(entity.getEntityId());
+			// Fix: Throw a more informative error
 			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-
+			if (trackerEntry == null) {
+				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + (entity.isDead() ? " - entity is dead." : "."));
+			}
+			
 			if (trackedPlayersField == null) {
 				// This one is fairly easy
 				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
@@ -109,7 +112,6 @@ class EntityUtilities {
 			Collection<?> trackedPlayers = getCollection(FieldUtils.readField(trackedPlayersField, trackerEntry, false));
 			List<Object> nmsPlayers = unwrapBukkit(observers);
 			
-			// trackEntity.trackedPlayers.clear();
 			trackedPlayers.removeAll(nmsPlayers);
 			
 			// We have to rely on a NAME once again. Damn it.
@@ -117,7 +119,6 @@ class EntityUtilities {
 				scanPlayersMethod = trackerEntry.getClass().getMethod("scanPlayers", List.class);
 			}
 			
-			//trackEntity.scanPlayers(server.players);
 			scanPlayersMethod.invoke(trackerEntry, nmsPlayers);
 			
 		} catch (IllegalArgumentException e) {
@@ -142,16 +143,16 @@ class EntityUtilities {
 	public static List<Player> getEntityTrackers(Entity entity) {
 		try {
 			List<Player> result = new ArrayList<Player>();
+			
 			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-
 			if (trackerEntry == null) {
-				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + 
-						(entity.isDead() ? " - entity is dead." : "."));
+				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + (entity.isDead() ? " - entity is dead." : "."));
 			}
+			
 			if (trackedPlayersField == null) {
 				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
 			}
-				
+			
 			Collection<?> trackedPlayers = getCollection(FieldUtils.readField(trackedPlayersField, trackerEntry, false));
 			
 			// Wrap every player - we also ensure that the underlying tracker list is immutable
