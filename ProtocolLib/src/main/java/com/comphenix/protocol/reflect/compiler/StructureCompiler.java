@@ -146,6 +146,8 @@ public final class StructureCompiler {
 	private static String SUPER_CLASS = "com/comphenix/protocol/reflect/StructureModifier";
 	private static String COMPILED_CLASS = PACKAGE_NAME + "/CompiledStructureModifier";
 	private static String FIELD_EXCEPTION_CLASS = "com/comphenix/protocol/reflect/FieldAccessException";
+
+	private static boolean attemptClassLoad = false;
 	
 	/**
 	 * Construct a structure compiler.
@@ -166,6 +168,11 @@ public final class StructureCompiler {
 		// See if there's a need to lookup the class name
 		if (compiledCache.containsKey(key)) {
 			return true;
+		}
+		
+		// Fix: Loading classes causes a ton of lag and isn't necessary
+		if (!attemptClassLoad) {
+			return false;
 		}
 		
 		try {
