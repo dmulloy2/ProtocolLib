@@ -75,6 +75,7 @@ class CachedPackage {
 			return result;
 		
 		} catch (ClassNotFoundException e) {
+			setPackageClass(className, null);
 			throw new RuntimeException("Cannot find class " + className, e);
 		}
 	}
