@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.World;
@@ -51,6 +52,17 @@ class EntityUtilities {
 	private static Field trackerField;
 	
 	private static Method scanPlayersMethod;
+
+	// Fix: PaperSpigot changed the trackedPlayers field
+	private static Collection<?> getCollection(Object value) {
+		if (value instanceof Collection<?>) {
+			return (Collection<?>) value;
+		} else if (value instanceof Map<?, ?>) {
+			return ((Map<?, ?>) value).keySet();
+		} else {
+			throw new IllegalArgumentException("Expected Collection or Map but got " + value.getClass());
+		}
+	}
 
 	/*
 	 * While this function may look pretty bad, it's essentially just a reflection-warped 
@@ -94,7 +106,7 @@ class EntityUtilities {
 			}
 			
 			// Phew, finally there.
-			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
+			Collection<?> trackedPlayers = getCollection(FieldUtils.readField(trackedPlayersField, trackerEntry, false));
 			List<Object> nmsPlayers = unwrapBukkit(observers);
 			
 			// trackEntity.trackedPlayers.clear();
@@ -140,7 +152,7 @@ class EntityUtilities {
 				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
 			}
 				
-			Collection<?> trackedPlayers = (Collection<?>) FieldUtils.readField(trackedPlayersField, trackerEntry, false);
+			Collection<?> trackedPlayers = getCollection(FieldUtils.readField(trackedPlayersField, trackerEntry, false));
 			
 			// Wrap every player - we also ensure that the underlying tracker list is immutable
 			for (Object tracker : trackedPlayers) {
