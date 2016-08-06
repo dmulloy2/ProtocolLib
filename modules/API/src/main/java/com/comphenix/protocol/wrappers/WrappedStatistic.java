@@ -82,21 +82,4 @@ public class WrappedStatistic extends AbstractWrapper {
 	public String toString() {
 		return String.valueOf(handle);
 	}
-	
-	@Override
-	public int hashCode() {
-		return handle.hashCode();
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		
-		if (obj instanceof WrappedGameProfile) {
-			WrappedStatistic other = (WrappedStatistic) obj;
-			return handle.equals(other.handle);
-		}
-		return false;
-	}
 }

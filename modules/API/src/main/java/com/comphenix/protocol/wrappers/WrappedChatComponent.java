@@ -138,21 +138,6 @@ public class WrappedChatComponent extends AbstractWrapper {
 	public WrappedChatComponent deepClone() {
 		return fromJson(getJson());
 	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (obj instanceof WrappedChatComponent) {
-			return ((WrappedChatComponent) obj).handle.equals(handle);
-		}
-		return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return handle.hashCode();
-	}
 
 	@Override
 	public String toString() {

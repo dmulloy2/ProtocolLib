@@ -19,7 +19,6 @@ package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.base.Objects;
 
 /**
  * Allows access to a chunk coordinate.
@@ -159,24 +158,6 @@ public class WrappedChunkCoordinate extends AbstractWrapper implements Comparabl
 			return LARGER_THAN_NULL ? -1 : 1;
 		else
 			return ((Comparable<Object>) handle).compareTo(other.handle);
-	}
-
-	@Override
-	public boolean equals(Object other) {
-		if (other instanceof WrappedChunkCoordinate) {
-			WrappedChunkCoordinate wrapper = (WrappedChunkCoordinate) other;
-			return Objects.equal(handle, wrapper.handle);
-		}
-		
-		// It's tempting to handle the ChunkCoordinate case too, but then
-		// the equals() method won't be commutative, causing a.equals(b) to
-		// be different to b.equals(a).
-		return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return handle.hashCode();
 	}
 
 	@Override

@@ -170,7 +170,6 @@ public class WrappedWatchableObject extends AbstractWrapper {
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) return true;
-		if (obj == null) return false;
 
 		if (obj instanceof WrappedWatchableObject) {
 			WrappedWatchableObject that = (WrappedWatchableObject) obj;
@@ -180,6 +179,16 @@ public class WrappedWatchableObject extends AbstractWrapper {
 		}
 
 		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + getIndex();
+		result = prime * result + getRawValue().hashCode();
+		result = prime * result + (getDirtyState() ? 1231 : 1237);
+		return result;
 	}
 
 	@Override

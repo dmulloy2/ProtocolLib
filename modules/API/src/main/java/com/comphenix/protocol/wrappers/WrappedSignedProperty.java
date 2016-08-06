@@ -132,15 +132,16 @@ public class WrappedSignedProperty extends AbstractWrapper {
 	}
 	
 	@Override
-	public boolean equals(Object object){
+	public boolean equals(Object object) {
+		if (object == this) return true;
+		
 		if (object instanceof WrappedSignedProperty) {
-			if (!super.equals(object))
-				return false;
 			WrappedSignedProperty that = (WrappedSignedProperty) object;
 			return Objects.equal(this.getName(), that.getName())
 				&& Objects.equal(this.getValue(), that.getValue())
 				&& Objects.equal(this.getSignature(), that.getSignature());
 		}
+
 		return false;
 	}
 

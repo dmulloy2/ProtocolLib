@@ -47,4 +47,26 @@ public abstract class AbstractWrapper {
 	public Class<?> getHandleType() {
 		return handleType;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this) return true;
+
+		if (obj instanceof AbstractWrapper) {
+			AbstractWrapper that = (AbstractWrapper) obj;
+			return this.handle.equals(that.handle);
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return handle.hashCode();
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getName() + "[handle=" + handle + "]";
+	}
 }

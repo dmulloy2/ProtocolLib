@@ -770,7 +770,6 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		@Override
 		public boolean equals(Object obj) {
 			if (obj == this) return true;
-			if (obj == null) return false;
 
 			if (obj instanceof WrappedDataWatcherObject) {
 				WrappedDataWatcherObject other = (WrappedDataWatcherObject) obj;
@@ -778,6 +777,11 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			}
 
 			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return handle.hashCode();
 		}
 	}
 
