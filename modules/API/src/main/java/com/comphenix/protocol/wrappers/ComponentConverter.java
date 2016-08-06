@@ -25,7 +25,6 @@ import net.md_5.bungee.chat.ComponentSerializer;
  * Note: The BungeeCord Chat API is not included in CraftBukkit.
  * @author dmulloy2
  */
-
 public final class ComponentConverter {
 
 	private ComponentConverter() {

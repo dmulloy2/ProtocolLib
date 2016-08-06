@@ -1,10 +1,10 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Method;
-import java.util.List;
+import java.io.StringReader;
 
 import org.bukkit.ChatColor;
 
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
@@ -19,18 +19,35 @@ import com.google.common.base.Preconditions;
 public class WrappedChatComponent extends AbstractWrapper {
 	private static final Class<?> SERIALIZER = MinecraftReflection.getChatSerializerClass();
 	private static final Class<?> COMPONENT = MinecraftReflection.getIChatBaseComponentClass();
+	private static final Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
+
+	private static Object GSON = null;
+	private static MethodAccessor DESERIALIZE = null;
+
 	private static MethodAccessor SERIALIZE_COMPONENT = null;
-	private static MethodAccessor DESERIALIZE_COMPONENT = null;
 	private static MethodAccessor CONSTRUCT_COMPONENT = null;
 	private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
-	
+
 	static {
-		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER);
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER, true);
 
 		// Retrieve the correct methods
 		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("serialize", /* a */
 				String.class, new Class<?>[] { COMPONENT }));
-		DESERIALIZE_COMPONENT = findDeserialize(fuzzy);
+
+		try {
+			GSON = FieldUtils.readStaticField(fuzzy.getFieldByType("gson", GSON_CLASS), true);
+		} catch (IllegalAccessException ex) {
+			throw new RuntimeException("Failed to obtain GSON field", ex);
+		}
+
+		try {
+			DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getMinecraftClass("ChatDeserializer"), true)
+				.getMethodByParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
+		} catch (IllegalArgumentException ex) {
+			// We'll handle it in the ComponentParser
+			DESERIALIZE = null;
+		}
 
 		// Get a component from a standard Minecraft message
 		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
@@ -39,23 +56,17 @@ public class WrappedChatComponent extends AbstractWrapper {
 		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
 	}
 
-	private static MethodAccessor findDeserialize(FuzzyReflection fuzzy) {
-		List<Method> methods = fuzzy.getMethodListByParameters(COMPONENT, new Class<?>[] { String.class });
-		if (methods.isEmpty()) {
-			throw new IllegalArgumentException("Unable to find deserialize method in " + fuzzy.getSource().getName());
+	private static Object deserialize(String json) {
+		// Should be non-null on 1.9 and up
+		if (DESERIALIZE != null) {
+			return DESERIALIZE.invoke(null, GSON, json, COMPONENT, true);
 		}
 
-		// Try to find b, we want leniency
-		for (Method method : methods) {
-			if (method.getName().equals("b")) {
-				return Accessors.getMethodAccessor(method);
-			}
-		}
-
-		// Oh well
-		return Accessors.getMethodAccessor(methods.get(0));
+		// Mock leniency behavior in 1.8
+		StringReader str = new StringReader(json);
+		return ComponentParser.deserialize(GSON, COMPONENT, str);
 	}
-	
+
 	private transient String cache;
 	
 	private WrappedChatComponent(Object handle, String cache) {
@@ -79,7 +90,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 	 * @return The chat component wrapper.
 	 */
 	public static WrappedChatComponent fromJson(String json) {
-		return new WrappedChatComponent(DESERIALIZE_COMPONENT.invoke(null, json), json);
+		return new WrappedChatComponent(deserialize(json), json);
 	}
 	
 	/**
@@ -127,7 +138,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 	 * @param obj - the JSON that represents the new component.
 	 */
 	public void setJson(String obj) {
-		this.handle = DESERIALIZE_COMPONENT.invoke(null, obj);
+		this.handle = deserialize(obj);
 		this.cache = obj;
 	}
 
