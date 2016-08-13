@@ -24,6 +24,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -31,6 +34,7 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.primitives.Primitives;
 
 /**
@@ -182,20 +186,55 @@ public class BukkitUnwrapper implements Unwrapper {
 					Report.newBuilder(REPORT_SECURITY_LIMITATION).error(e).callerParam(type)
 			);
 		} catch (NoSuchMethodException e) {
+			// Maybe it's a proxy?
+			Unwrapper proxyUnwrapper = getProxyUnwrapper(type);
+			if (proxyUnwrapper != null)
+				return proxyUnwrapper;
+
 			// Try getting the field unwrapper too
 			Unwrapper fieldUnwrapper = getFieldUnwrapper(type);
-			
 			if (fieldUnwrapper != null)
 				return fieldUnwrapper;
 			else
 				reporter.reportDetailed(this,
 						Report.newBuilder(REPORT_CANNOT_FIND_UNWRAP_METHOD).error(e).callerParam(type));
 		}
-		
+
 		// Default method
 		return null;
 	}
-	
+
+	// Players should /always/ be able to be unwrapped
+	// We should only get here if the 'Player' is a proxy
+	private Unwrapper getProxyUnwrapper(final Class<?> type) {
+		try {
+			if (Player.class.isAssignableFrom(type)) {
+				final Method getHandle = MinecraftReflection.getCraftPlayerClass().getMethod("getHandle");
+
+				Unwrapper unwrapper = new Unwrapper() {
+					@Override
+					public Object unwrapItem(Object wrapped) {
+						try {
+							return getHandle.invoke(((Player) wrapped).getPlayer());
+						} catch (Throwable ex) {
+							try {
+								return getHandle.invoke(Bukkit.getPlayer(((Player) wrapped).getUniqueId()));
+							} catch (ReflectiveOperationException ex1) {
+								throw new RuntimeException("Failed to unwrap proxy " + wrapped, ex);
+							}
+						}
+					}
+				};
+
+				unwrapperCache.put(type, unwrapper);
+				return unwrapper;
+			}
+		} catch (Throwable ignored) {
+		}
+
+		return null;
+	}
+
 	/**
 	 * Retrieve a cached unwrapper using the handle field.
 	 * @param type - a cached field unwrapper.
