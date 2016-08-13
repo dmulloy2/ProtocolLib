@@ -36,7 +36,7 @@ import com.google.common.collect.Iterables;
  *
  * @param <TType> - the type of the value in each NBT sub element.
  */
-class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, Iterable<TType>, NbtList<TType> {	
+class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TType> {	
 	// A list container
 	private WrappedElement<List<Object>> container;
 	

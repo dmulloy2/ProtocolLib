@@ -165,7 +165,7 @@ class MethodDescriptor {
         }
 
         String t = type.substring(0, type.length() - sb.length() * 2);
-        String desc = (String) DESCRIPTORS.get(t);
+        String desc = DESCRIPTORS.get(t);
         if (desc != null) {
             sb.append(desc);
         } else {

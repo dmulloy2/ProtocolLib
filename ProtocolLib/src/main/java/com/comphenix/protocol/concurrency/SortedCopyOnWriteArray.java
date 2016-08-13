@@ -30,7 +30,7 @@ import com.google.common.collect.Iterables;
  * An implicitly sorted array list that preserves insertion order and maintains duplicates.
  * @param <T> - type of the elements in the list.
  */
-public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Iterable<T>, Collection<T> {
+public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collection<T> {
 	// Prevent reordering
 	private volatile List<T> list;
 	

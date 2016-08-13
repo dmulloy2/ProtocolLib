@@ -176,7 +176,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	 * @param player - the player to hook.
 	 */
 	public void initializePlayer(Player player) {
-		Object notchEntity = getEntityPlayer((Player) player);
+		Object notchEntity = getEntityPlayer(player);
 		
 		// Save the player too
 		this.player = player;
@@ -587,7 +587,7 @@ public abstract class PlayerInjector implements SocketInjector {
 	 * @param packet - packet to sent.
 	 * @return The given packet, or the packet replaced by the listeners.
 	 */
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "null" })
 	public Object handlePacketSending(Object packet) {
 		try {
 			// Get the packet ID too

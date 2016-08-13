@@ -73,7 +73,7 @@ public abstract class CompiledStructureModifier extends StructureModifier<Object
 			Integer index = entry.getValue();
 			Field field = entry.getKey();
 			
-			write(index, (Object) generator.getDefault(field.getType()));
+			write(index, generator.getDefault(field.getType()));
 		}
 		
 		return this;

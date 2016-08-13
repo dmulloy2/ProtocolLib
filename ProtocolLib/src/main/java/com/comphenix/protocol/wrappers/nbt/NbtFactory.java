@@ -519,7 +519,7 @@ public class NbtFactory {
 		if (type == NbtType.TAG_COMPOUND)
 			return (NbtWrapper<T>) new WrappedCompound(handle);
 		else if (type == NbtType.TAG_LIST)
-			return (NbtWrapper<T>) new WrappedList(handle);
+			return new WrappedList(handle);
 		else
 			return new WrappedElement<T>(handle);
 	}
@@ -532,7 +532,7 @@ public class NbtFactory {
 		if (type == NbtType.TAG_COMPOUND)
 			return (NbtWrapper<T>) new WrappedCompound(handle, name);
 		else if (type == NbtType.TAG_LIST)
-			return (NbtWrapper<T>) new WrappedList(handle, name);
+			return new WrappedList(handle, name);
 		else
 			return new WrappedElement<T>(handle, name);
 	}

@@ -6,7 +6,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -50,8 +49,7 @@ public class SimpleMinecraftClient {
         Socket socket = null;
         OutputStream output = null;
         InputStream input = null;
-        InputStreamReader reader = null;
-        
+
         try {
             socket = new Socket();
             socket.connect(address, CONNECT_TIMEOUT);
@@ -76,10 +74,7 @@ public class SimpleMinecraftClient {
           
             socket.close();
             return ((ResponsePacket) packet).getPingJson();
-            
         } finally {
-            if (reader != null)
-                reader.close();
             if (input != null)
                 input.close();
             if (output != null)

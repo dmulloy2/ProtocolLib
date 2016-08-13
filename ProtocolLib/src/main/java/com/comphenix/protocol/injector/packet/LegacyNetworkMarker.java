@@ -39,8 +39,8 @@ public class LegacyNetworkMarker extends NetworkMarker {
 		return ByteBuffer.wrap(Bytes.concat(new byte[] { (byte) type.getLegacyId() }, buffer.array()));
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
+	@SuppressWarnings("unchecked")
 	protected DataInputStream addHeader(final DataInputStream input, final PacketType type) {
 		InputSupplier<InputStream> header = new InputSupplier<InputStream>() {
 			@Override
@@ -59,7 +59,7 @@ public class LegacyNetworkMarker extends NetworkMarker {
 		
 		// Combine them into a single stream
 		try {
-			return new DataInputStream(ByteStreams.join((InputSupplier) header, (InputSupplier) data).getInput());
+			return new DataInputStream(ByteStreams.join(header, data).getInput());
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot add header.", e);
 		}

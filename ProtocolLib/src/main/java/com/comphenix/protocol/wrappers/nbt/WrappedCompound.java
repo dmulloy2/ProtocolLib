@@ -31,7 +31,7 @@ import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
  * 
  * @author Kristian
  */
-class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<NbtBase<?>>, NbtCompound {
+class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompound {
 	// A list container
 	private WrappedElement<Map<String, Object>> container;
 	
@@ -636,7 +636,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, Iterable<N
 	}
 	
 	@Override
-	public <T> NbtBase<?> remove(String key) {
+	public NbtBase<?> remove(String key) {
 		return getValue().remove(key);
 	}
 	

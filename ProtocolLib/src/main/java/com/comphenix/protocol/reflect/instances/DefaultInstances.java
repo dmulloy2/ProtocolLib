@@ -326,7 +326,7 @@ public class DefaultInstances implements InstanceProvider {
 	 */
 	protected <T> T createInstance(Class<T> type, Constructor<T> constructor, Class<?>[] types, Object[] params) {
 		try {
-			return (T) constructor.newInstance(params);
+			return constructor.newInstance(params);
 		} catch (Exception e) {
 			//e.printStackTrace();
 			// Cannot create it

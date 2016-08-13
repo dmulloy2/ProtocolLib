@@ -120,7 +120,8 @@ public class BukkitConverters {
 	 * @author Kristian
 	 * @param <T> - type that can be converted.
 	 */
-	private static abstract class IgnoreNullConverter<TType> implements EquivalentConverter<TType> {
+	public static abstract class IgnoreNullConverter<TType> implements EquivalentConverter<TType> {
+		@Override
 		public final Object getGeneric(Class<?> genericType, TType specific) {
 			if (specific != null)
 				return getGenericValue(genericType, specific);
@@ -153,19 +154,19 @@ public class BukkitConverters {
 		
 		@Override
 		public boolean equals(Object obj) {
-			// Very short
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			
-			// See if they're equivalent
+			if (this == obj) return true;
+
 			if (obj instanceof EquivalentConverter) {
-				@SuppressWarnings("rawtypes")
-				EquivalentConverter other = (EquivalentConverter) obj;
-				return Objects.equal(this.getSpecificType(), other.getSpecificType());
+				EquivalentConverter<?> that = (EquivalentConverter<?>) obj;
+				return Objects.equal(this.getSpecificType(), that.getSpecificType());
 			}
+
 			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(this.getSpecificType());
 		}
 	}
 	
@@ -189,20 +190,20 @@ public class BukkitConverters {
 
 		@Override
 		public boolean equals(Object obj) {
-			// More shortcuts
-			if (obj == this)
-				return true;
-			if (obj == null)
-				return false;
-			
+			if (obj == this) return true;
+
 			// Add another constraint
 			if (obj instanceof WorldSpecificConverter && super.equals(obj)) {
-				@SuppressWarnings("rawtypes")
-				WorldSpecificConverter other = (WorldSpecificConverter) obj;
-				
-				return Objects.equal(world, other.world);
+				WorldSpecificConverter<?> that = (WorldSpecificConverter<?>) obj;
+				return Objects.equal(this.world, that.world);
 			}
+
 			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(this.getSpecificType(), this.world);
 		}
 	}
 	
@@ -832,7 +833,6 @@ public class BukkitConverters {
 	 */
 	public static Unwrapper asUnwrapper(final Class<?> nativeType, final EquivalentConverter<Object> converter) {
 		return new Unwrapper() {
-			@SuppressWarnings("rawtypes")
 			@Override
 			public Object unwrapItem(Object wrappedObject) {
 				Class<?> type = PacketConstructor.getClass(wrappedObject);
@@ -842,7 +842,7 @@ public class BukkitConverters {
 					if (wrappedObject instanceof Class)
 						return nativeType;
 					else
-						return converter.getGeneric((Class) nativeType, wrappedObject);
+						return converter.getGeneric(nativeType, wrappedObject);
 				}
 				return null;
 			}
