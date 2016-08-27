@@ -46,7 +46,7 @@ class TileEntityAccessor<T extends BlockState> {
 	private boolean writeDetected;
 	private boolean readDetected;
 
-	private TileEntityAccessor() {
+	TileEntityAccessor() {
 		// Do nothing
 	}
 
@@ -59,25 +59,28 @@ class TileEntityAccessor<T extends BlockState> {
 		if (tileEntityField != null) {
 			this.tileEntityField = tileEntityField;
 			Class<?> type = tileEntityField.getField().getType();
-
-			// Possible read/write methods
-			try {
-				findMethodsUsingASM();
-			} catch (IOException ex1) {
-				try {
-					// Much slower though
-					findMethodUsingCGLib(state);
-				} catch (Exception ex2) {
-					throw new RuntimeException("Cannot find read/write methods in " + type, ex2);
-				}
-			}
-
-			// Ensure we found them
-			if (readCompound == null)
-				throw new RuntimeException("Unable to find read method in " + type);
-			if (writeCompound == null)
-				throw new RuntimeException("Unable to find write method in " + type);
+			findMethods(type, state);
 		}
+	}
+
+	void findMethods(Class<?> type, T state) {
+		// Possible read/write methods
+		try {
+			findMethodsUsingASM();
+		} catch (IOException ex1) {
+			try {
+				// Much slower though
+				findMethodUsingCGLib(state);
+			} catch (Exception ex2) {
+				throw new RuntimeException("Cannot find read/write methods in " + type, ex2);
+			}
+		}
+
+		// Ensure we found them
+		if (readCompound == null)
+			throw new RuntimeException("Unable to find read method in " + type);
+		if (writeCompound == null)
+			throw new RuntimeException("Unable to find write method in " + type);
 	}
 
 	/**
@@ -90,7 +93,7 @@ class TileEntityAccessor<T extends BlockState> {
 		final ClassReader reader = new ClassReader(tileEntityClass.getCanonicalName());
 
 		final String tagCompoundName = getJarName(MinecraftReflection.getNBTCompoundClass());
-		final String expectedDesc = "(L" + tagCompoundName + ";)V";
+		final String expectedDesc = "(L" + tagCompoundName + ";)";
 
 		reader.accept(new EmptyClassVisitor() {
 			@Override
@@ -98,7 +101,7 @@ class TileEntityAccessor<T extends BlockState> {
 				final String methodName = name;
 
 				// Detect read/write calls to NBTTagCompound
-				if (expectedDesc.equals(desc)) {
+				if (desc.startsWith(expectedDesc)) {
 					return new EmptyMethodVisitor() {
 						private int readMethods;
 						private int writeMethods;
@@ -106,9 +109,9 @@ class TileEntityAccessor<T extends BlockState> {
 						@Override
 						public void visitMethodInsn(int opcode, String owner, String name, String desc) {
 							// This must be a virtual call on NBTTagCompound that accepts a String
-							if (opcode == Opcodes.INVOKEVIRTUAL &&
-								tagCompoundName.equals(owner) &&
-								desc.startsWith("(Ljava/lang/String")) {
+							if (opcode == Opcodes.INVOKEVIRTUAL
+									&& tagCompoundName.equals(owner)
+									&& desc.startsWith("(Ljava/lang/String")) {
 
 								// Is this a write call?
 								if (desc.endsWith(")V")) {
@@ -126,10 +129,12 @@ class TileEntityAccessor<T extends BlockState> {
 							} else if (writeMethods > readMethods) {
 								writeCompound = Accessors.getMethodAccessor(tileEntityClass, methodName, nbtCompoundClass);
 							}
+
 							super.visitEnd();
 						}
 					};
 				}
+
 				return null;
 			}
 		}, 0);

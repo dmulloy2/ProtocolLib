@@ -24,6 +24,7 @@ import net.minecraft.server.v1_10_R1.DispenserRegistry;
  */
 public class BukkitInitialization {
 	private static boolean initialized;
+	private static boolean packaged;
 
 	/**
 	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing.
@@ -33,6 +34,8 @@ public class BukkitInitialization {
 		if (!initialized) {
 			// Denote that we're done
 			initialized = true;
+
+			initializePackage();
 
 			DispenserRegistry.c(); // Basically registers everything
 
@@ -50,7 +53,7 @@ public class BukkitInitialization {
 			// Inject this fake server
 			Bukkit.setServer(mockedServer);
 
-			initializePackage();
+			
 		}
 	}
 
@@ -58,8 +61,11 @@ public class BukkitInitialization {
 	 * Ensure that package names are correctly set up.
 	 */
 	public static void initializePackage() {
-		// Initialize reflection
-		MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
-		MinecraftVersion.setCurrentVersion(MinecraftVersion.COMBAT_UPDATE);
+		if (!packaged) {
+			packaged = true;
+
+			MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
+			MinecraftVersion.setCurrentVersion(MinecraftVersion.FROSTBURN_UPDATE);
+		}
 	}
 }
