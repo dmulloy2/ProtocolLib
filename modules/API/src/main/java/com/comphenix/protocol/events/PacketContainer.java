@@ -1338,8 +1338,7 @@ public class PacketContainer implements Serializable {
 	private static class ComponentArrayConverter implements EquivalentConverter<WrappedChatComponent[]> {
 		private static final EquivalentConverter<WrappedChatComponent[]> DELEGATE;
 		static {
-			Class<?> packetClass = PacketType.Play.Server.UPDATE_SIGN.getPacketClass();
-			if (packetClass.getName().contains("Sign")) {
+			if (!PacketType.Play.Server.UPDATE_SIGN.isDeprecated()) {
 				DELEGATE = new LegacyComponentConverter();
 			} else {
 				DELEGATE = new NBTComponentConverter();
