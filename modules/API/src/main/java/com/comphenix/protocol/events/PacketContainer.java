@@ -521,6 +521,21 @@ public class PacketContainer implements Serializable {
 	}
 
 	/**
+	 * Retrieves a read/write structure for lists of NBT classes.
+	 * @return A modifier for lists of NBT classes.
+	 */
+	public StructureModifier<List<NbtBase<?>>> getListNbtModifier() {
+		// Convert to and from the ProtocolLib wrapper
+		return structureModifier.withType(
+				Collection.class,
+				BukkitConverters.getListConverter(
+						MinecraftReflection.getNBTBaseClass(),
+						BukkitConverters.getNbtConverter()
+				)
+		);
+	}
+
+	/**
 	 * Retrieves a read/write structure for Vectors.
 	 * @return A modifier for Vectors.
 	 */
