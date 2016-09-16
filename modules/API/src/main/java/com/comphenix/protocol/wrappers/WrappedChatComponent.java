@@ -26,6 +26,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 
 	private static MethodAccessor SERIALIZE_COMPONENT = null;
 	private static MethodAccessor CONSTRUCT_COMPONENT = null;
+	private static MethodAccessor TO_PLAIN_TEXT = null;
 	private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
 
 	static {
@@ -52,6 +53,9 @@ public class WrappedChatComponent extends AbstractWrapper {
 		// Get a component from a standard Minecraft message
 		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
 
+		// Method to create plain text w/ formatting codes
+		TO_PLAIN_TEXT = Accessors.getMethodAccessor( MinecraftReflection.getIChatBaseComponentClass(), "getText" );
+
 		// And the component text constructor
 		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
 	}
@@ -67,7 +71,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 		return ComponentParser.deserialize(GSON, COMPONENT, str);
 	}
 
-	private transient String cache;
+	private transient String cache, cache_plain;
 	
 	private WrappedChatComponent(Object handle, String cache) {
 		super(MinecraftReflection.getIChatBaseComponentClass());
@@ -140,6 +144,14 @@ public class WrappedChatComponent extends AbstractWrapper {
 	public void setJson(String obj) {
 		this.handle = deserialize(obj);
 		this.cache = obj;
+		this.toPlainText();
+	}
+
+	public String toPlainText() {
+		if( cache_plain == null ) {
+			cache_plain = (String) TO_PLAIN_TEXT.invoke( handle );
+		}
+		return cache_plain;
 	}
 
 	/**
