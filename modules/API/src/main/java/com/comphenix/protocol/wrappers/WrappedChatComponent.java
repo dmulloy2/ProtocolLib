@@ -54,7 +54,7 @@ public class WrappedChatComponent extends AbstractWrapper {
 		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
 
 		// Method to create plain text w/ formatting codes
-		TO_PLAIN_TEXT = Accessors.getMethodAccessor( MinecraftReflection.getIChatBaseComponentClass(), "getText" );
+		TO_PLAIN_TEXT = Accessors.getMethodAccessor( MinecraftReflection.getIChatBaseComponentClass(), "toPlainText" );
 
 		// And the component text constructor
 		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
