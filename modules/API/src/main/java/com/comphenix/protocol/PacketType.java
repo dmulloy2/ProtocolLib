@@ -189,19 +189,19 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType MAP_CHUNK_BULK =              new PacketType(PROTOCOL, SENDER, -1, -1, "MapChunkBulk").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
+			public static final PacketType MAP_CHUNK_BULK =              new PacketType(PROTOCOL, SENDER, 255, 255, "MapChunkBulk").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
 
 			/**
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType SET_COMPRESSION =             new PacketType(PROTOCOL, SENDER, -1, -1, "SetCompression").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
+			public static final PacketType SET_COMPRESSION =             new PacketType(PROTOCOL, SENDER, 254, 254, "SetCompression").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
 
 			/**
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType UPDATE_ENTITY_NBT =           new PacketType(PROTOCOL, SENDER, -1, -1, "UpdateEntityNBT").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
+			public static final PacketType UPDATE_ENTITY_NBT =           new PacketType(PROTOCOL, SENDER, 253, 253, "UpdateEntityNBT").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
 
 			// ----- Renamed packets
 
@@ -235,7 +235,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Replaced by {@link TILE_ENTITY_DATA}
 			 */
 			@Deprecated
-			public static final PacketType UPDATE_SIGN =                   getUpdateSign();
+			public static final PacketType UPDATE_SIGN =                  MinecraftReflection.signUpdateExists() ? new PacketType(PROTOCOL, SENDER, 252, 252, "UpdateSign") :
+																			  TILE_ENTITY_DATA.deprecated();
 
 			private final static Server INSTANCE = new Server();
 
@@ -247,11 +248,6 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			}
 			public static Server getInstance() {
 				return INSTANCE;
-			}
-
-			private static PacketType getUpdateSign() {
-				PacketType type = new PacketType(PROTOCOL, SENDER, -1, -1, "UpdateSign");
-				return type.getPacketClass() != null ? type : UPDATE_ENTITY_NBT.deprecated();
 			}
 		}
 
