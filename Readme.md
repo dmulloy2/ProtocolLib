@@ -47,7 +47,7 @@ You can also add ProtocolLib as a Maven dependency:
     <url>http://repo.dmulloy2.net/content/groups/public/</url>
   </repository>
   ...
-</repository>
+</repositories>
 
 <dependencies>
   <dependency>

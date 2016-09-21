@@ -189,19 +189,19 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType MAP_CHUNK_BULK =              new PacketType(PROTOCOL, SENDER, -1, -1, "MapChunkBulk").deprecated();
+			public static final PacketType MAP_CHUNK_BULK =              new PacketType(PROTOCOL, SENDER, 255, 255, "MapChunkBulk").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
 
 			/**
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType SET_COMPRESSION =             new PacketType(PROTOCOL, SENDER, -1, -1, "SetCompression").deprecated();
+			public static final PacketType SET_COMPRESSION =             new PacketType(PROTOCOL, SENDER, 254, 254, "SetCompression").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
 
 			/**
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType UPDATE_ENTITY_NBT =           new PacketType(PROTOCOL, SENDER, -1, -1, "UpdateEntityNBT").deprecated();
+			public static final PacketType UPDATE_ENTITY_NBT =           new PacketType(PROTOCOL, SENDER, 253, 253, "UpdateEntityNBT").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
 
 			// ----- Renamed packets
 
@@ -235,9 +235,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Replaced by {@link TILE_ENTITY_DATA}
 			 */
 			@Deprecated
-			public static final PacketType UPDATE_SIGN =                  TILE_ENTITY_DATA.deprecated();
+			public static final PacketType UPDATE_SIGN =                  MinecraftReflection.signUpdateExists() ? new PacketType(PROTOCOL, SENDER, 252, 252, "UpdateSign") :
+																			  TILE_ENTITY_DATA.deprecated();
 
-			// The instance must
 			private final static Server INSTANCE = new Server();
 
 			// Prevent accidental construction
@@ -582,7 +582,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	/**
 	 * Protocol version of all the current IDs.
 	 */
-	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.BOUNTIFUL_UPDATE;
+	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.FROSTBURN_UPDATE;
 
 	private final Protocol protocol;
 	private final Sender sender;
@@ -1073,6 +1073,14 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 */
 	public boolean forceAsync() {
 		return forceAsync;
+	}
+
+	private PacketType deprecatedIn(MinecraftVersion version) {
+		try {
+			return MinecraftVersion.getCurrentVersion().isAtLeast(version) ? deprecated() : this;
+		} catch (Throwable ex) {
+			return deprecated();
+		}
 	}
 
 	private PacketType deprecated() {

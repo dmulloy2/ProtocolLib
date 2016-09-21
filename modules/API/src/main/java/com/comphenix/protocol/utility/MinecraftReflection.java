@@ -1827,6 +1827,14 @@ public class MinecraftReflection {
 		return getArrayClass(getMultiBlockChangeInfoClass());
 	}
 
+	public static boolean signUpdateExists() {
+		try {
+			return getMinecraftClass("PacketPlayOutUpdateSign") != null;
+		} catch (RuntimeException ex) {
+			return false;
+		}
+	}
+
 	/**
 	 * Retrieve a CraftItemStack from a given ItemStack.
 	 * @param bukkitItemStack - the Bukkit ItemStack to convert.
