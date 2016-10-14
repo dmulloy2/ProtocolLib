@@ -60,4 +60,13 @@ public class Util {
 	public static boolean isUsingSpigot() {
 		return Bukkit.getServer().getVersion().contains("Spigot");
 	}
+
+	/**
+	 * Gets the currently running major Java version.
+	 * @return The version
+	 */
+	public static int getJavaVersion() {
+		String version = Runtime.class.getPackage().getSpecificationVersion();
+		return (int) (Double.valueOf(version) * 10 % 10);
+	}
 }

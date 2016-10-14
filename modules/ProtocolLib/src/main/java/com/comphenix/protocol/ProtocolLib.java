@@ -52,6 +52,7 @@ import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -149,10 +150,16 @@ public class ProtocolLib extends JavaPlugin {
 	@Override
 	public void onLoad() {
 		// Logging
-		logger = getLoggerSafely();
+		logger = getLogger();
 		ProtocolLogger.init(this);
 
-		Application.registerPrimaryThread();
+		int java = Util.getJavaVersion();
+		if (java < 8 && !getConfig().getBoolean("ignoreJava", false)) {
+			logger.warning("Detected outdated Java version: Java " + java);
+			logger.warning("It is recommended that you update to Java 8 as soon as possible.");
+			logger.warning("Future versions of ProtocolLib many not support Java " + java + ".");
+			logger.warning("Java 8 will allow for much faster reflection performance.");
+		}
 
 		// Initialize enhancer factory
 		EnhancerFactory.getInstance().setClassLoader(getClassLoader());
@@ -648,26 +655,6 @@ public class ProtocolLib extends JavaPlugin {
 
 		// To clean up global parameters
 		reporter = new BasicErrorReporter();
-	}
-
-	// Get the Bukkit logger first, before we try to create our own
-	private Logger getLoggerSafely() {
-		Logger log = null;
-
-		try {
-			log = getLogger();
-		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
-			throw e;
-		} catch (Throwable e) {
-			// Ignore
-		}
-
-		// Use the default logger instead
-		if (log == null)
-			log = Logger.getLogger("Minecraft");
-		return log;
 	}
 
 	/**
