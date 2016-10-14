@@ -63,10 +63,14 @@ class EntityUtilities {
 	*/
 
 	public static void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
+		if (entity == null || !entity.isValid()) {
+			return;
+		}
+
 		try {
 			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 			if (trackerEntry == null) {
-				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + (entity.isDead() ? " - entity is dead." : "."));
+				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + ".");
 			}
 
 			if (trackedPlayersField == null) {
@@ -106,12 +110,16 @@ class EntityUtilities {
 	 * @throws FieldAccessException If reflection failed.
 	 */
 	public static List<Player> getEntityTrackers(Entity entity) {
+		if (entity == null || !entity.isValid()) {
+			return new ArrayList<>();
+		}
+
 		try {
 			List<Player> result = new ArrayList<Player>();
 
 			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 			if (trackerEntry == null) {
-				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + (entity.isDead() ? " - entity is dead." : "."));
+				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + ".");
 			}
 
 			if (trackedPlayersField == null) {
@@ -230,7 +238,6 @@ class EntityUtilities {
 	}
 
 	private static List<Object> unwrapBukkit(List<Player> players) {
-		
 		List<Object> output = Lists.newArrayList();
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		
