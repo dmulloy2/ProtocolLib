@@ -8,6 +8,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import net.minecraft.server.v1_11_R1.IntHashMap;
+
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
@@ -21,8 +23,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-
-import net.minecraft.server.v1_10_R1.IntHashMap;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })

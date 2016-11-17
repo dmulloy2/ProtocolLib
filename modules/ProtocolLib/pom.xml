@@ -19,6 +19,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.number></project.build.number>
+    <!-- Remove build number for release -->
+    <project.fullVersion>${project.version}${project.build.number}</project.fullVersion>
   </properties>
 
   <build>
@@ -87,11 +89,11 @@
             <manifestEntries>
               <Main-Class>com.comphenix.protocol.Application</Main-Class>
               <Implementation-Title>ProtocolLib</Implementation-Title>
-              <Implementation-Version>${project.version}${project.build.number}</Implementation-Version>
+              <Implementation-Version>${project.fullVersion}</Implementation-Version>
               <Implementation-Vendor>dmulloy2</Implementation-Vendor>
             </manifestEntries>
           </archive>
-          <finalName>ProtocolLib</finalName>
+          <finalName>${project.name}</finalName>
         </configuration>
       </plugin>
 
@@ -234,13 +236,13 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.10.2-R0.1-SNAPSHOT</version>
+      <version>1.11-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.10.2-R0.1-SNAPSHOT</version>
+      <version>1.11-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

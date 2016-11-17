@@ -582,7 +582,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	/**
 	 * Protocol version of all the current IDs.
 	 */
-	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.FROSTBURN_UPDATE;
+	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.EXPLORATION_UPDATE;
 
 	private final Protocol protocol;
 	private final Sender sender;

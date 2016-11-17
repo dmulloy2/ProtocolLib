@@ -2,6 +2,13 @@ package com.comphenix.protocol.wrappers;
 
 import static org.junit.Assert.assertEquals;
 
+import net.minecraft.server.v1_11_R1.EntityHuman.EnumChatVisibility;
+import net.minecraft.server.v1_11_R1.EnumDifficulty;
+import net.minecraft.server.v1_11_R1.EnumGamemode;
+import net.minecraft.server.v1_11_R1.EnumProtocol;
+import net.minecraft.server.v1_11_R1.PacketPlayInClientCommand.EnumClientCommand;
+import net.minecraft.server.v1_11_R1.PacketPlayInUseEntity.EnumEntityUseAction;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -9,13 +16,6 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-
-import net.minecraft.server.v1_10_R1.EntityHuman.EnumChatVisibility;
-import net.minecraft.server.v1_10_R1.EnumDifficulty;
-import net.minecraft.server.v1_10_R1.EnumGamemode;
-import net.minecraft.server.v1_10_R1.EnumProtocol;
-import net.minecraft.server.v1_10_R1.PacketPlayInClientCommand.EnumClientCommand;
-import net.minecraft.server.v1_10_R1.PacketPlayInUseEntity.EnumEntityUseAction;
 
 public class EnumWrappersTest {
 	private static class EnumClass {

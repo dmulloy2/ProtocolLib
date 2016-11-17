@@ -19,12 +19,13 @@ package com.comphenix.protocol.wrappers;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 
-import org.bukkit.craftbukkit.v1_10_R1.entity.CraftLightningStrike;
+import net.minecraft.server.v1_11_R1.EntityLightning;
+
+import org.bukkit.craftbukkit.v1_11_R1.entity.CraftLightningStrike;
 import org.bukkit.entity.Entity;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,9 +34,6 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
-
-import net.minecraft.server.v1_10_R1.EntityLightning;
-import net.minecraft.server.v1_10_R1.ItemStack;
 
 /**
  * @author dmulloy2
@@ -92,11 +90,11 @@ public class WrappedDataWatcherTest {
 
 	@Test
 	public void testSerializers() {
-		Serializer blockPos = Registry.get(net.minecraft.server.v1_10_R1.BlockPosition.class, false);
-		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_10_R1.BlockPosition.class, true);
+		Serializer blockPos = Registry.get(net.minecraft.server.v1_11_R1.BlockPosition.class, false);
+		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_11_R1.BlockPosition.class, true);
 		assertNotSame(blockPos, optionalBlockPos);
 
-		assertNull(Registry.get(ItemStack.class, false));
+		// assertNull(Registry.get(ItemStack.class, false));
 		assertNotNull(Registry.get(UUID.class, true));
 	}
 }
