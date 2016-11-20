@@ -401,7 +401,25 @@ public class PacketContainer implements Serializable {
 				MinecraftReflection.getItemStackArrayClass(),
 				BukkitConverters.getIgnoreNull(new ItemStackArrayConverter()));
 	}
-	
+
+	/**
+	 * Retrieves a read/write structure for lists of ItemStacks.
+	 * <p>
+	 * This modifier will automatically marshal between the Bukkit ItemStack and the
+	 * internal Minecraft ItemStack.
+	 * @return A modifier for ItemStack list fields.
+	 */
+	public StructureModifier<List<ItemStack>> getItemListModifier() {
+		// Convert to and from the Bukkit wrapper
+		return structureModifier.withType(
+				List.class,
+				BukkitConverters.getListConverter(
+						MinecraftReflection.getItemStackClass(),
+						BukkitConverters.getItemStackConverter()
+				)
+		);
+	}
+
 	/**
 	 * Retrieve a read/write structure for maps of statistics.
 	 * <p>

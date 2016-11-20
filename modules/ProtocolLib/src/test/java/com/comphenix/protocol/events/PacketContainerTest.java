@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -219,34 +220,24 @@ public class PacketContainerTest {
 		return item;
 	}
 
-	// TODO: It's a list now
-	/* @Test
-	public void testGetItemArrayModifier() {
+	@Test
+	public void testGetItemListModifier() {
 		PacketContainer windowItems = new PacketContainer(PacketType.Play.Server.WINDOW_ITEMS);
-		StructureModifier<ItemStack[]> itemAccess = windowItems.getItemArrayModifier();
+		StructureModifier<List<ItemStack>> itemAccess = windowItems.getItemListModifier();
 
-		ItemStack[] itemArray = new ItemStack[] {
-				itemWithData(),
-				new ItemStack(Material.DIAMOND_AXE)
-		};
+		List<ItemStack> items = new ArrayList<>();
+		items.add(itemWithData());
+		items.add(new ItemStack(Material.DIAMOND_AXE));
 
 		assertNull(itemAccess.read(0));
 
 		// Insert and check that it was succesful
-		itemAccess.write(0, itemArray);
+		itemAccess.write(0, items);
 
 		// Read back array
-		ItemStack[] comparison = itemAccess.read(0);
-		assertEquals(itemArray.length, comparison.length);
-
-		// Check that it is equivalent
-		for (int i = 0; i < itemArray.length; i++) {
-			ItemStack original = itemArray[i];
-			ItemStack written = comparison[i];
-
-			assertTrue(String.format("Array element %s is not the same: %s != %s", i, original, written), equivalentItem(original, written));
-		}
-	} */
+		List<ItemStack> comparison = itemAccess.read(0);
+		assertEquals(items, comparison);
+	}
 
 	private boolean equivalentItem(ItemStack first, ItemStack second) {
 		if (first == null) {
