@@ -713,24 +713,24 @@ public class BukkitConverters {
 	 * @return Item stack converter.
 	 */
 	public static EquivalentConverter<ItemStack> getItemStackConverter() {
-		return new IgnoreNullConverter<ItemStack>() {
+		return new EquivalentConverter<ItemStack>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, ItemStack specific) {
-				return MinecraftReflection.getMinecraftItemStack(specific);
-			}
-			
-			@Override
-			protected ItemStack getSpecificValue(Object generic) {
+			public ItemStack getSpecific(Object generic) {
 				return MinecraftReflection.getBukkitItemStack(generic);
 			}
-			
+
+			@Override
+			public Object getGeneric(Class<?> genericType, ItemStack specific) {
+				return MinecraftReflection.getMinecraftItemStack(specific);
+			}
+
 			@Override
 			public Class<ItemStack> getSpecificType() {
 				return ItemStack.class;
 			}
 		};
 	}
-	
+
 	/**
 	 * Retrieve the converter for the ServerPing packet in {@link PacketType.Status.Server#OUT_SERVER_INFO}.
 	 * @return Server ping converter.
