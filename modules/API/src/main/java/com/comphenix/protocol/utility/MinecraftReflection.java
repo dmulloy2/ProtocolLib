@@ -1836,6 +1836,10 @@ public class MinecraftReflection {
 		}
 	}
 
+	public static Class<?> getNonNullListClass() {
+		return getMinecraftClass("NonNullList");
+	}
+
 	/**
 	 * Retrieve a CraftItemStack from a given ItemStack.
 	 * @param bukkitItemStack - the Bukkit ItemStack to convert.

@@ -16,10 +16,14 @@
  */
 package com.comphenix.protocol.reflect.cloning;
 
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -65,6 +69,11 @@ public class BukkitCloner implements Cloner {
 
 		try {
 			addClass(7, MinecraftReflection.getIBlockDataClass());
+		} catch (Throwable ex) {
+		}
+
+		try {
+			addClass(8, MinecraftReflection.getNonNullListClass());
 		} catch (Throwable ex) {
 		}
 	}
@@ -122,8 +131,43 @@ public class BukkitCloner implements Cloner {
 			case 7:
 				EquivalentConverter<WrappedBlockData> blockDataConverter = BukkitConverters.getWrappedBlockDataConverter();
 				return blockDataConverter.getGeneric(clonableClasses.get(7), blockDataConverter.getSpecific(source).deepClone());
+			case 8:
+				return nonNullListCloner().clone(source);
 			default:
 				throw new IllegalArgumentException("Cannot clone objects of type " + source.getClass());
 		}
+	}
+
+	private static Constructor<?> nonNullList = null;
+
+	private static final Cloner nonNullListCloner() {
+		return new Cloner() {
+			@Override
+			public boolean canClone(Object source) {
+				return MinecraftReflection.is(MinecraftReflection.getNonNullListClass(), source);
+			}
+
+			@Override
+			public Object clone(Object source) {
+				StructureModifier<Object> modifier = new StructureModifier<>(source.getClass(), true).withTarget(source);
+				List<?> list = (List<?>) modifier.read(0);
+				Object empty = modifier.read(1);
+
+				if (nonNullList == null) {
+					try {
+						nonNullList = source.getClass().getDeclaredConstructor(List.class, Object.class);
+						nonNullList.setAccessible(true);
+					} catch (ReflectiveOperationException ex) {
+						throw new RuntimeException("Could not find NonNullList constructor", ex);
+					}
+				}
+
+				try {
+					return nonNullList.newInstance(new ArrayList<>(list), empty);
+				} catch (ReflectiveOperationException ex) {
+					throw new RuntimeException("Could not create new NonNullList", ex);
+				}
+			}
+		};
 	}
 }
