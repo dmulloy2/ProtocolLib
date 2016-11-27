@@ -19,6 +19,7 @@ package com.comphenix.protocol.utility;
 
 import java.util.Map;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -29,7 +30,7 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class CachedPackage {
-	private final Map<String, Class<?>> cache;
+	private final Map<String, Optional<Class<?>>> cache;
 	private final String packageName;
 	private final ClassSource source;
 	
@@ -50,7 +51,7 @@ class CachedPackage {
 	 * @param clazz - type of class.
 	 */
 	public void setPackageClass(String className, Class<?> clazz) {
-		cache.put(className, clazz);
+		cache.put(className, Optional.<Class<?>>fromNullable(clazz));
 	}
 	
 	/**
@@ -61,19 +62,24 @@ class CachedPackage {
 	 */
 	public Class<?> getPackageClass(String className) {
 		try {
-			Class<?> result = cache.get(Preconditions.checkNotNull(className, "className cannot be NULL"));
+			Optional<Class<?>> result = cache.get(Preconditions.checkNotNull(className, "className cannot be NULL"));
 
 			// Concurrency is not a problem - we don't care if we look up a class twice
 			if (result == null) {
 				// Look up the class dynamically
-				result = source.loadClass(combine(packageName, className));
-				if (result == null)
+				result = Optional.<Class<?>>fromNullable(source.loadClass(combine(packageName, className)));
+				if (!result.isPresent())
 					throw new IllegalArgumentException("Source " + source + " returned NULL for " + className);
 
 				cache.put(className, result);
 			}
 
-			return result;
+			// Class has been looked for and hasn't been found in the past
+			if (!result.isPresent()) {
+				throw new ClassNotFoundException();
+			}
+
+			return result.get();
 		} catch (ClassNotFoundException e) {
 			setPackageClass(className, null);
 			throw new RuntimeException("Cannot find class " + combine(packageName, className), e);
