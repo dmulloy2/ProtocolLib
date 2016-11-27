@@ -1,5 +1,6 @@
 package com.comphenix.protocol.reflect;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Member;
@@ -71,6 +72,16 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 			@Override
 			public boolean isConstructor() {
 				return false;
+			}
+
+			public <T extends Annotation> T getAnnotation(Class<T> clazz) {
+				return method.getAnnotation(clazz);
+			}
+			public Annotation[] getAnnotations() {
+				return method.getAnnotations();
+			}
+			public Annotation[] getDeclaredAnnotations() {
+				return method.getDeclaredAnnotations();
 			}
 		};
 	}
@@ -151,6 +162,16 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 			@Override
 			public boolean isConstructor() {
 				return true;
+			}
+
+			public <T extends Annotation> T getAnnotation(Class<T> clazz) {
+				return constructor.getAnnotation(clazz);
+			}
+			public Annotation[] getAnnotations() {
+				return constructor.getAnnotations();
+			}
+			public Annotation[] getDeclaredAnnotations() {
+				return constructor.getAnnotations();
 			}
 		};
 	}

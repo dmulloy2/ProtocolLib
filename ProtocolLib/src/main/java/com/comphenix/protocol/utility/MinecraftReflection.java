@@ -942,6 +942,9 @@ public class MinecraftReflection {
 			return getMinecraftClass("MinecraftServer");
 		} catch (RuntimeException e) {
 			useFallbackServer();
+
+			// Reset the cache and try again
+			setMinecraftClass("MinecraftServer", null);
 			return getMinecraftClass("MinecraftServer");
 		}
 	}
@@ -990,8 +993,10 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("ServerConfigurationManager", "PlayerList");
 		} catch (RuntimeException e) {
-			// Try again
 			useFallbackServer();
+
+			// Reset cache and try again
+			setMinecraftClass("ServerConfigurationManager", null);
 			return getMinecraftClass("ServerConfigurationManager");
 		}
 	}
@@ -1578,6 +1583,9 @@ public class MinecraftReflection {
 		} catch (RuntimeException e) {
 			// Initialize first
 			getAttributeSnapshotClass();
+
+			// Reset cache and try again
+			setMinecraftClass("AttributeModifier", null);
 			return getMinecraftClass("AttributeModifier");
 		}
 	}
@@ -1893,9 +1901,11 @@ public class MinecraftReflection {
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
 	public static Class<?> getCraftBukkitClass(String className) {
-	    return getClass(getCraftBukkitPackage() + "." + className);
+		if (craftbukkitPackage == null)
+			craftbukkitPackage = new CachedPackage(getCraftBukkitPackage(), getClassSource());
+		return craftbukkitPackage.getPackageClass(className);
 	}
-
+	
 	/**
 	 * Retrieve the class object of a specific Minecraft class.
 	 * @param className - the specific Minecraft class.
@@ -1903,30 +1913,9 @@ public class MinecraftReflection {
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
 	public static Class<?> getMinecraftClass(String className) {
-	    return getClass(getMinecraftPackage() + "." + className);
-	}
-
-	/**
-	 * Retrieve the class object of a specific Minecraft library class.
-	 * @param className - the specific library Minecraft class.
-	 * @return Class object.
-	 * @throws RuntimeException If we are unable to find the given class.
-	 */
-	public static Class<?> getMinecraftLibraryClass(String className) {
-	    return getClass(getMinecraftLibraryPackage() + "." + className);
-	}
-
-	/**
-	 * Set the class object for the specific library class.
-	 * @param className - name of the Minecraft library class.
-	 * @param clazz - the new class object.
-	 * @return The provided clazz object.
-	 */
-	private static Class<?> setMinecraftLibraryClass(String className, Class<?> clazz) {
-		if (libraryPackage == null)
-			libraryPackage = new CachedPackage(getMinecraftLibraryPackage(), getClassSource());
-		libraryPackage.setPackageClass(className, clazz);
-		return clazz;
+		if (minecraftPackage == null)
+			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
+		return minecraftPackage.getPackageClass(className);
 	}
 
 	/**
@@ -1964,6 +1953,7 @@ public class MinecraftReflection {
 			// Just use the default class loader
 			classSource = ClassSource.fromClassLoader();
 		}
+
 		return classSource;
 	}
 
@@ -1978,7 +1968,7 @@ public class MinecraftReflection {
 		try {
 			// Try the main class first
 			return getMinecraftClass(className);
-		} catch (RuntimeException e1) {
+		} catch (RuntimeException e) {
 			Class<?> success = null;
 
 			// Try every alias too
@@ -1986,8 +1976,8 @@ public class MinecraftReflection {
 				try {
 					success = getMinecraftClass(alias);
 					break;
-				} catch (RuntimeException e2) {
-					// Swallov
+				} catch (RuntimeException e1) {
+					// e1.printStackTrace();
 				}
 			}
 
@@ -1997,14 +1987,36 @@ public class MinecraftReflection {
 				return success;
 			} else {
 				// Hack failed
-				throw new RuntimeException(
-					String.format("Unable to find %s (%s)",
-								  className,
-								  Joiner.on(", ").join(aliases))
-					);
+				throw new RuntimeException(String.format("Unable to find %s (%s)", className, Joiner.on(", ").join(aliases)));
 			}
 		}
 	}
+
+	/**
+	 * Retrieve the class object of a specific Minecraft library class.
+	 * @param className - the specific library Minecraft class.
+	 * @return Class object.
+	 * @throws RuntimeException If we are unable to find the given class.
+	 */
+	public static Class<?> getMinecraftLibraryClass(String className) {
+		if (libraryPackage == null)
+			libraryPackage = new CachedPackage(getMinecraftLibraryPackage(), getClassSource());
+		return libraryPackage.getPackageClass(className);
+	}
+
+	/**
+	 * Set the class object for the specific library class.
+	 * @param className - name of the Minecraft library class.
+	 * @param clazz - the new class object.
+	 * @return The provided clazz object.
+	 */
+	private static Class<?> setMinecraftLibraryClass(String className, Class<?> clazz) {
+		if (libraryPackage == null)
+			libraryPackage = new CachedPackage(getMinecraftLibraryPackage(), getClassSource());
+		libraryPackage.setPackageClass(className, clazz);
+		return clazz;
+	}
+
 
 	/**
 	 * Dynamically retrieve the NetworkManager name.

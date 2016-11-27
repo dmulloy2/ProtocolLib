@@ -1,4 +1,4 @@
-/*
+/**
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
@@ -14,11 +14,11 @@
  *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  *  02111-1307 USA
  */
-
 package com.comphenix.protocol.utility;
 
 import java.util.Map;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -29,10 +29,10 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 class CachedPackage {
-	private final Map<String, Class<?>> cache;
+	private final Map<String, Optional<Class<?>>> cache;
 	private final String packageName;
 	private final ClassSource source;
-	
+
 	/**
 	 * Construct a new cached package.
 	 * @param packageName - the name of the current package.
@@ -43,16 +43,20 @@ class CachedPackage {
 		this.cache = Maps.newConcurrentMap();
 		this.source = source;
 	}
-	
+
 	/**
 	 * Associate a given class with a class name.
 	 * @param className - class name.
 	 * @param clazz - type of class.
 	 */
 	public void setPackageClass(String className, Class<?> clazz) {
-		cache.put(className, clazz);
+		if (clazz != null) {
+			cache.put(className, Optional.<Class<?>> of(clazz));
+		} else {
+			cache.remove(className);
+		}
 	}
-	
+
 	/**
 	 * Retrieve the class object of a specific class in the current package.
 	 * @param className - the specific class.
@@ -60,26 +64,33 @@ class CachedPackage {
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
 	public Class<?> getPackageClass(String className) {
+		Preconditions.checkNotNull(className, "className cannot be null!");
+
+		// See if we've already looked it up
+		if (cache.containsKey(className)) {
+			Optional<Class<?>> result = cache.get(className);
+			if (!result.isPresent()) {
+				throw new RuntimeException("Cannot find class " + className);
+			}
+
+			return result.get();
+		}
+
 		try {
-			Class<?> result = cache.get(Preconditions.checkNotNull(className, "className cannot be NULL"));
-			
-			// Concurrency is not a problem - we don't care if we look up a class twice
-			if (result == null) {
-				// Look up the class dynamically
-				result = source.loadClass(combine(packageName, className));
-				
-				if (result == null)
-					throw new IllegalArgumentException("Source " + source + " returned NULL for " + className);
-				cache.put(className, result);
-			}	
-			return result;
-		
-		} catch (ClassNotFoundException e) {
-			setPackageClass(className, null);
-			throw new RuntimeException("Cannot find class " + className, e);
+			// Try looking it up
+			Class<?> clazz = source.loadClass(combine(packageName, className));
+			if (clazz == null) {
+				throw new IllegalArgumentException("Source " + source + " returned null for " + className);
+			}
+
+			cache.put(className, Optional.<Class<?>> of(clazz));
+			return clazz;
+		} catch (ClassNotFoundException ex) {
+			cache.put(className, Optional.<Class<?>> absent());
+			throw new RuntimeException("Cannot find class " + className, ex);
 		}
 	}
-	
+
 	/**
 	 * Correctly combine a package name and the child class we're looking for.
 	 * @param packageName - name of the package, or an empty string for the default package.
