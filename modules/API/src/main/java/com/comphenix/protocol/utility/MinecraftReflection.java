@@ -63,8 +63,8 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavaibleException;
-import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavaibleException.Reason;
+import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException;
+import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
@@ -934,6 +934,9 @@ public class MinecraftReflection {
 			return getMinecraftClass("MinecraftServer");
 		} catch (RuntimeException e) {
 			useFallbackServer();
+
+			// Reset cache and try again
+			setMinecraftClass("MinecraftServer", null);
 			return getMinecraftClass("MinecraftServer");
 		}
 	}
@@ -982,8 +985,10 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("ServerConfigurationManager", "PlayerList");
 		} catch (RuntimeException e) {
-			// Try again
 			useFallbackServer();
+
+			// Reset cache and try again
+			setMinecraftClass("ServerConfigurationManager", null);
 			return getMinecraftClass("ServerConfigurationManager");
 		}
 	}
@@ -1628,8 +1633,10 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("AttributeModifier");
 		} catch (RuntimeException e) {
-			// Initialize first
 			getAttributeSnapshotClass();
+
+			// Reset cache and try again
+			setMinecraftClass("AttributeModifier", null);
 			return getMinecraftClass("AttributeModifier");
 		}
 	}
@@ -2108,7 +2115,7 @@ public class MinecraftReflection {
 			// Attempt to use MCPC
 			try {
 				return classSource = new RemappedClassSource().initialize();
-			} catch (RemapperUnavaibleException e) {
+			} catch (RemapperUnavailableException e) {
 				if (e.getReason() != Reason.MCPC_NOT_PRESENT)
 					reporter.reportWarning(MinecraftReflection.class, Report.newBuilder(REPORT_CANNOT_FIND_MCPC_REMAPPER));
 			} catch (Exception e) {

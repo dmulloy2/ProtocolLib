@@ -1,20 +1,19 @@
-/*
+/**
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the 
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  You should have received a copy of the GNU General Public License along with this program; 
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  *  02111-1307 USA
  */
-
 package com.comphenix.protocol.utility;
 
 import java.util.Map;
@@ -33,7 +32,7 @@ class CachedPackage {
 	private final Map<String, Optional<Class<?>>> cache;
 	private final String packageName;
 	private final ClassSource source;
-	
+
 	/**
 	 * Construct a new cached package.
 	 * @param packageName - the name of the current package.
@@ -44,16 +43,20 @@ class CachedPackage {
 		this.cache = Maps.newConcurrentMap();
 		this.source = source;
 	}
-	
+
 	/**
 	 * Associate a given class with a class name.
 	 * @param className - class name.
 	 * @param clazz - type of class.
 	 */
 	public void setPackageClass(String className, Class<?> clazz) {
-		cache.put(className, Optional.<Class<?>>fromNullable(clazz));
+		if (clazz != null) {
+			cache.put(className, Optional.<Class<?>> of(clazz));
+		} else {
+			cache.remove(className);
+		}
 	}
-	
+
 	/**
 	 * Retrieve the class object of a specific class in the current package.
 	 * @param className - the specific class.
@@ -61,28 +64,30 @@ class CachedPackage {
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
 	public Class<?> getPackageClass(String className) {
-		try {
-			Optional<Class<?>> result = cache.get(Preconditions.checkNotNull(className, "className cannot be NULL"));
+		Preconditions.checkNotNull(className, "className cannot be null!");
 
-			// Concurrency is not a problem - we don't care if we look up a class twice
-			if (result == null) {
-				// Look up the class dynamically
-				result = Optional.<Class<?>>fromNullable(source.loadClass(combine(packageName, className)));
-				if (!result.isPresent())
-					throw new IllegalArgumentException("Source " + source + " returned NULL for " + className);
-
-				cache.put(className, result);
-			}
-
-			// Class has been looked for and hasn't been found in the past
+		// See if we've already looked it up
+		if (cache.containsKey(className)) {
+			Optional<Class<?>> result = cache.get(className);
 			if (!result.isPresent()) {
-				throw new ClassNotFoundException();
+				throw new RuntimeException("Cannot find class " + className);
 			}
 
 			return result.get();
-		} catch (ClassNotFoundException e) {
-			setPackageClass(className, null);
-			throw new RuntimeException("Cannot find class " + combine(packageName, className), e);
+		}
+
+		try {
+			// Try looking it up
+			Class<?> clazz = source.loadClass(combine(packageName, className));
+			if (clazz == null) {
+				throw new IllegalArgumentException("Source " + source + " returned null for " + className);
+			}
+
+			cache.put(className, Optional.<Class<?>> of(clazz));
+			return clazz;
+		} catch (ClassNotFoundException ex) {
+			cache.put(className, Optional.<Class<?>> absent());
+			throw new RuntimeException("Cannot find class " + className, ex);
 		}
 	}
 
