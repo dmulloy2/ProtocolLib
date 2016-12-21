@@ -134,6 +134,7 @@
             </executions>
           </plugin>
 
+          <!-- TODO: Look into signing releases
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
@@ -148,6 +149,7 @@
               </execution>
             </executions>
           </plugin>
+          -->
 
         </plugins>
       </build>
