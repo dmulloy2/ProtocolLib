@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ProtocolLib</artifactId>
   <name>ProtocolLib</name>
-  <version>4.2.0-SNAPSHOT</version>
+  <version>4.2.0</version>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
@@ -19,8 +19,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.number></project.build.number>
-    <!-- Remove build number for release -->
-    <project.fullVersion>${project.version}${project.build.number}</project.fullVersion>
+    <project.fullVersion>${project.version}</project.fullVersion>
   </properties>
 
   <build>
@@ -123,6 +122,7 @@
       </activation>
       <properties>
         <project.build.number>-b${env.BUILD_NUMBER}</project.build.number>
+        <project.fullVersion>${project.version}${project.build.number}</project.fullVersion>
       </properties>
     </profile>
 
@@ -134,6 +134,9 @@
           <value>true</value>
         </property>
       </activation>
+      <properties>
+        <project.fullVersion>${project.version}</project.fullVersion>
+      </properties>
       <build>
         <plugins>
           <plugin>
