@@ -176,12 +176,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType SPAWN_POSITION =               new PacketType(PROTOCOL, SENDER, 0x43, 0x05, "SpawnPosition");
 			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x44, 0x03, "UpdateTime");
 			public static final PacketType TITLE =                        new PacketType(PROTOCOL, SENDER, 0x45, 0x45, "Title");
-			public static final PacketType NAMED_SOUND_EFFECT =           new PacketType(PROTOCOL, SENDER, 0x47, 0x29, "NamedSoundEffect");
-			public static final PacketType PLAYER_LIST_HEADER_FOOTER =    new PacketType(PROTOCOL, SENDER, 0x48, 0x47, "PlayerListHeaderFooter");
-			public static final PacketType COLLECT =                      new PacketType(PROTOCOL, SENDER, 0x49, 0x0D, "Collect");
-			public static final PacketType ENTITY_TELEPORT =              new PacketType(PROTOCOL, SENDER, 0x4A, 0x18, "EntityTeleport");
-			public static final PacketType UPDATE_ATTRIBUTES =            new PacketType(PROTOCOL, SENDER, 0x4B, 0x20, "UpdateAttributes");
-			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x4C, 0x1D, "EntityEffect");
+			public static final PacketType NAMED_SOUND_EFFECT =           new PacketType(PROTOCOL, SENDER, 0x46, 0x47, "NamedSoundEffect");
+			public static final PacketType PLAYER_LIST_HEADER_FOOTER =    new PacketType(PROTOCOL, SENDER, 0x47, 0x48, "PlayerListHeaderFooter");
+			public static final PacketType COLLECT =                      new PacketType(PROTOCOL, SENDER, 0x48, 0x49, "Collect");
+			public static final PacketType ENTITY_TELEPORT =              new PacketType(PROTOCOL, SENDER, 0x49, 0x4A, "EntityTeleport");
+			public static final PacketType UPDATE_ATTRIBUTES =            new PacketType(PROTOCOL, SENDER, 0x4A, 0x4B, "UpdateAttributes");
+			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x4B, 0x4C, "EntityEffect");
 
 			// ---- Removed in 1.9
 
@@ -797,24 +797,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		Map<String, PacketType> map = lookup.getMap(protocol, sender);
 
 		// Check the map first
-		String className = packetClass.getSimpleName();
-		PacketType type = map.get(className);
+		String clazz = packetClass.getSimpleName();
+		PacketType type = find(map, clazz);
 		if (type == null) {
-			// Then check any aliases
-			for (PacketType check : map.values()) {
-				String[] aliases = check.getClassNames();
-				if (aliases.length > 1) {
-					for (String alias : aliases) {
-						if (alias.equals(className)) {
-							// We have a match!
-							type = check;
-						}
-					}
-				}
-			}
-
 			// Guess we don't support this packet :/
-			type = new PacketType(protocol, sender, packetId, -1, PROTOCOL_VERSION, className);
+			type = new PacketType(protocol, sender, packetId, -1, PROTOCOL_VERSION, clazz);
 			type.dynamic = true;
 
 			// Many may be scheduled, but only the first will be executed
@@ -822,6 +809,28 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		}
 
 		return type;
+	}
+
+	private static PacketType find(Map<String, PacketType> map, String clazz) {
+		PacketType ret = map.get(clazz);
+		if (ret != null) {
+			return ret;
+		}
+
+		// Check any aliases
+		for (PacketType check : map.values()) {
+			String[] aliases = check.getClassNames();
+			if (aliases.length > 1) {
+				for (String alias : aliases) {
+					if (alias.equals(clazz)) {
+						// We have a match!
+						return check;
+					}
+				}
+			}
+		}
+
+		return null;
 	}
 
 	/**
