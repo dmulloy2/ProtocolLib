@@ -1847,6 +1847,10 @@ public class MinecraftReflection {
 		return getMinecraftClass("NonNullList");
 	}
 
+	public static Class<?> getCraftSoundClass() {
+		return getCraftBukkitClass("CraftSound");
+	}
+
 	// ---- ItemStack conversions
 
 	private static Method asNMSCopy = null;

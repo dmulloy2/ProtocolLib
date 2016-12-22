@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -964,10 +965,21 @@ public class BukkitConverters {
 		};
 	}
 
-	private static MethodAccessor soundGetter = null;
+	private static MethodAccessor getSound = null;
+	private static MethodAccessor getSoundEffect = null;
 	private static FieldAccessor soundKey = null;
 
+	private static Map<String, Sound> soundIndex = null;
+
 	public static EquivalentConverter<Sound> getSoundConverter() {
+		if (getSound == null || getSoundEffect == null) {
+			Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
+			getSound = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSound", String.class, new Class<?>[] { Sound.class }));
+			getSoundEffect = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSoundEffect",
+					MinecraftReflection.getSoundEffectClass(), new Class<?>[] { String.class }));
+		}
+
 		return new IgnoreNullConverter<Sound>() {
 
 			@Override
@@ -977,26 +989,42 @@ public class BukkitConverters {
 
 			@Override
 			protected Object getGenericValue(Class<?> genericType, Sound specific) {
-				if (soundGetter == null) {
-					Class<?> soundEffects = MinecraftReflection.getMinecraftClass("SoundEffects");
-					FuzzyReflection fuzzy = FuzzyReflection.fromClass(soundEffects, true);
-					soundGetter = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSound", MinecraftReflection.getSoundEffectClass(), new Class<?>[] { String.class }));
-				}
-
-				MinecraftKey key = MinecraftKey.fromEnum(specific);
-				return soundGetter.invoke(null, key.getFullKey());
+				// Getting the SoundEffect is easy, Bukkit provides us the methods
+				String key = (String) getSound.invoke(null, specific);
+				return getSoundEffect.invoke(null, key);
 			}
 
 			@Override
 			protected Sound getSpecificValue(Object generic) {
+				// Getting the Sound is a bit more complicated...
 				if (soundKey == null) {
 					Class<?> soundEffect = generic.getClass();
 					FuzzyReflection fuzzy = FuzzyReflection.fromClass(soundEffect, true);
 					soundKey = Accessors.getFieldAccessor(fuzzy.getFieldByType("key", MinecraftReflection.getMinecraftKeyClass()));
 				}
 
-				MinecraftKey key = MinecraftKey.fromHandle(soundKey.get(generic));
-				return Sound.valueOf(key.getEnumFormat());
+				MinecraftKey minecraftKey = MinecraftKey.fromHandle(soundKey.get(generic));
+				String key = minecraftKey.getKey();
+
+				// Use our index if it already exists
+				if (soundIndex != null) {
+					return soundIndex.get(key);
+				}
+
+				// If it doesn't, try to guess the enum name
+				try {
+					return Sound.valueOf(minecraftKey.getEnumFormat());
+				} catch (IllegalArgumentException ignored) {
+				}
+
+				// Worst case we index all the sounds and use it later
+				soundIndex = new ConcurrentHashMap<>();
+				for (Sound sound : Sound.values()) {
+					String index = (String) getSound.invoke(null, sound);
+					soundIndex.put(index, sound);
+				}
+
+				return soundIndex.get(key);
 			}
 		};
 	}
