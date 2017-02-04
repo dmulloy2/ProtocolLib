@@ -17,6 +17,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 
@@ -45,7 +46,7 @@ public class ComponentParser {
 	private static Object deserializeLegacy(Object gson, Class<?> component, StringReader str) {
 		try {
 			Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
-			Object reader = readerClass.getConstructor(StringReader.class).newInstance(str);
+			Object reader = readerClass.getConstructor(Reader.class).newInstance(str);
 			Method setLenient = readerClass.getMethod("setLenienent", boolean.class);
 			setLenient.invoke(reader, true);
 			Method getAdapter = gson.getClass().getMethod("getAdapter", Class.class);
