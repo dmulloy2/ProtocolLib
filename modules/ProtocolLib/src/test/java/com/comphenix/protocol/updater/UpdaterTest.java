@@ -23,21 +23,21 @@ public class UpdaterTest {
 	private static final int BUKKIT_DEV_ID = 45564;
 	private static Plugin plugin;
 
-	//@BeforeClass
+	// @BeforeClass
 	public static void preparePlugin() {
 		Server server = mock(Server.class);
 		when(server.getUpdateFolder()).thenReturn(null);
 
 		plugin = mock(Plugin.class);
 		String version = System.getProperty("projectVersion");
-		if (version == null) version = "4.0.1-SNAPSHOT-b281";
+		if (version == null) version = "4.2.1";
 		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", version, null));
 		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
 		when(plugin.getDataFolder()).thenReturn(null);
 		when(plugin.getServer()).thenReturn(server);
 	}
 
-	//@Test
+	// @Test
 	public void testSpigotUpdater() {
 		SpigotUpdater updater = new SpigotUpdater(plugin, UpdateType.NO_DOWNLOAD, true);
 
@@ -54,7 +54,7 @@ public class UpdaterTest {
 		System.out.println("Update available: " + updater.versionCheck(remote));
 	}
 
-	//@Test
+	// @Test
 	public void testBukkitUpdater() {
 		BukkitUpdater updater = new BukkitUpdater(plugin, BUKKIT_DEV_ID, null, UpdateType.NO_DOWNLOAD, true);
 		if (! updater.read()) {

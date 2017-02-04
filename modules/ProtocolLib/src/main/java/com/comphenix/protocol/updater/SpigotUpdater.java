@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.logging.Level;
 
 import org.bukkit.plugin.Plugin;
 
@@ -75,7 +74,8 @@ public final class SpigotUpdater extends Updater {
 					ProtocolLibrary.getErrorReporter().reportDetailed(
 							SpigotUpdater.this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(ex).callerParam(this));
 				} else {
-					plugin.getLogger().log(Level.WARNING, "Failed to check for updates: " + ex);
+					// People don't care
+					// plugin.getLogger().log(Level.WARNING, "Failed to check for updates: " + ex);
 				}
 
 				ProtocolLibrary.disableUpdates();
