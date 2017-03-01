@@ -90,7 +90,8 @@ public class ProtocolLib extends JavaPlugin {
 	private enum ProtocolCommand {
 		FILTER,
 		PACKET,
-		PROTOCOL
+		PROTOCOL,
+		LOGGING;
 	}
 
 	/**
@@ -143,6 +144,7 @@ public class ProtocolLib extends JavaPlugin {
 	private CommandProtocol commandProtocol;
 	private CommandPacket commandPacket;
 	private CommandFilter commandFilter;
+	private PacketLogging packetLogging;
 
 	// Whether or not disable is not needed
 	private boolean skipDisable;
@@ -268,6 +270,9 @@ public class ProtocolLib extends JavaPlugin {
 					break;
 				case PACKET:
 					commandPacket = new CommandPacket(reporter, this, logger, commandFilter, protocolManager);
+					break;
+				case LOGGING:
+					packetLogging = new PacketLogging(this, protocolManager);
 					break;
 				}
 			} catch (OutOfMemoryError e) {
@@ -404,6 +409,7 @@ public class ProtocolLib extends JavaPlugin {
 			registerCommand(CommandProtocol.NAME, commandProtocol);
 			registerCommand(CommandPacket.NAME, commandPacket);
 			registerCommand(CommandFilter.NAME, commandFilter);
+			registerCommand(PacketLogging.NAME, packetLogging);
 
 			// Player login and logout events
 			protocolManager.registerEvents(manager, this);

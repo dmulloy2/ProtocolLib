@@ -715,11 +715,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		}
 	}
 
-	private static String format(Protocol protocol, Sender sender, String name) {
+	public static String format(Protocol protocol, Sender sender, String name) {
 		if (name.contains("Packet"))
 			return name;
 
-		return String.format("Packet%s%s%s", protocol.getPacketName(), sender.getPacketName(), name);
+		return String.format("Packet%s%s%s", protocol.getPacketName(), sender.getPacketName(), WordUtils.capitalize(name));
 	}
 
 	/**

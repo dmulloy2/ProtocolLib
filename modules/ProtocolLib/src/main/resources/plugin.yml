@@ -24,6 +24,11 @@ commands:
     aliases: [packet_filter]
     permission: protocol.admin
     permission-message: You don't have <permission>
+  packetlog:
+    description: Logs hex representations of packets to a file or console
+    usage: /<command> <protocol> <sender> <packet> [location]
+    permission: protocol.admin
+    permission-message: You don't have <permission>
 
 permissions:
   protocol.*:

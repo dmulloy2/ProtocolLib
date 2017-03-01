@@ -149,9 +149,19 @@ public class WirePacket {
 	 * @return The resulting WirePacket
 	 */
 	public static WirePacket fromPacket(PacketContainer packet) {
-		checkNotNull(packet, "packet cannot be null!");
-
 		int id = packet.getType().getCurrentId();
+		return new WirePacket(id, getBytes(bufferFromPacket(packet)));
+	}
+
+	/**
+	 * Creates a ByteBuf from an existing PacketContainer containing all the
+	 * bytes from that packet
+	 * 
+	 * @param packet Existing packet
+	 * @return The ByteBuf
+	 */
+	public static ByteBuf bufferFromPacket(PacketContainer packet) {
+		checkNotNull(packet, "packet cannot be null!");
 
 		ByteBuf buffer = PacketContainer.createPacketBuffer();
 		Method write = MinecraftMethods.getPacketWriteByteBufMethod();
@@ -162,7 +172,7 @@ public class WirePacket {
 			throw new RuntimeException("Failed to serialize packet contents.", ex);
 		}
 
-		return new WirePacket(id, getBytes(buffer));
+		return buffer;
 	}
 
 	/**
