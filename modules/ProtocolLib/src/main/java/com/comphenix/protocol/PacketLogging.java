@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -29,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.HexDump;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -41,9 +43,7 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.netty.WirePacket;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
+import com.google.common.base.Charsets;
 
 /**
  * Logs packets to a given stream
@@ -97,7 +97,22 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 					int id = Integer.parseInt(args[2]);
 					type = PacketType.findCurrent(protocol, pSender, id);
 				} catch (NumberFormatException ex) {
-					type = PacketType.findCurrent(protocol, pSender, args[2]);
+					String name = args[2];
+					outer: for (PacketType packet : PacketType.values()) {
+						if (packet.getProtocol() == protocol &&
+								packet.getSender() == pSender) {
+							if (packet.name().equalsIgnoreCase(name)) {
+								type = packet;
+								break outer;
+							}
+							for (String className : packet.getClassNames()) {
+								if (className.equalsIgnoreCase(name)) {
+									type = packet;
+									break outer;
+								}
+							}
+						}
+					}
 				}
 			} catch (IllegalArgumentException ex) {
 				sender.sendMessage(ChatColor.RED + "Unknown packet: " + PacketType.format(protocol, pSender, args[2]));
@@ -176,9 +191,23 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 		log(event);
 	}
 
+	private static String hexDump(byte[] bytes) throws IOException {
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			HexDump.dump(bytes, 0, output, 0);
+			return new String(output.toByteArray(), Charsets.UTF_8);
+		}
+	}
+
 	private void log(PacketEvent event) {
-		ByteBuf buffer = WirePacket.bufferFromPacket(event.getPacket());
-		String hexDump = ByteBufUtil.hexDump(buffer);
+		String hexDump;
+
+		try {
+			WirePacket packet = WirePacket.fromPacket(event.getPacket());
+			hexDump = hexDump(packet.getBytes());
+		} catch (Throwable ex) {
+			fileLogger.log(Level.WARNING, "Failed to dump packet: " + ex.toString());
+			return;
+		}
 
 		if (location == LogLocation.FILE) {
 			fileLogger.log(Level.INFO, event.getPacketType() + ":");
