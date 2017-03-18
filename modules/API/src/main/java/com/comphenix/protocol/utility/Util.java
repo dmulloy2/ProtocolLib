@@ -63,10 +63,14 @@ public class Util {
 
 	/**
 	 * Gets the currently running major Java version.
-	 * @return The version
+	 * @return The version or -1 if it could not be found
 	 */
 	public static int getJavaVersion() {
-		String version = Runtime.class.getPackage().getSpecificationVersion();
-		return (int) (Double.valueOf(version) * 10 % 10);
+		try {
+			String version = Runtime.class.getPackage().getSpecificationVersion();
+			return (int) (Double.parseDouble(version) * 10 % 10);
+		} catch (Throwable ex) {
+			return -1;
+		}
 	}
 }

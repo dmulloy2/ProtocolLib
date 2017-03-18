@@ -156,7 +156,7 @@ public class ProtocolLib extends JavaPlugin {
 		ProtocolLogger.init(this);
 
 		int java = Util.getJavaVersion();
-		if (java < 8 && !getConfig().getBoolean("ignoreJava", false)) {
+		if (java != -1 && java < 8 && !getConfig().getBoolean("ignoreJava", false)) {
 			logger.warning("Detected outdated Java version: Java " + java);
 			logger.warning("It is recommended that you update to Java 8 as soon as possible.");
 			logger.warning("Future versions of ProtocolLib many not support Java " + java + ".");

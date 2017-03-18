@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -29,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.HexDump;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -41,9 +43,7 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.netty.WirePacket;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
+import com.google.common.base.Charsets;
 
 /**
  * Logs packets to a given stream
@@ -73,66 +73,89 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		PacketType type = null;
 
-		if (args.length > 2) {
-			Protocol protocol;
+		try {
+			if (args.length > 2) {
+				Protocol protocol;
 
-			try {
-				protocol = Protocol.valueOf(args[0].toUpperCase());
-			} catch (IllegalArgumentException ex) {
-				sender.sendMessage(ChatColor.RED + "Unknown protocol " + args[0]);
-				return true;
-			}
-
-			Sender pSender;
-
-			try {
-				pSender = Sender.valueOf(args[1].toUpperCase());
-			} catch (IllegalArgumentException ex) {
-				sender.sendMessage(ChatColor.RED + "Unknown sender: " + args[1]);
-				return true;
-			}
-
-			try {
 				try {
-					int id = Integer.parseInt(args[2]);
-					type = PacketType.findCurrent(protocol, pSender, id);
-				} catch (NumberFormatException ex) {
-					type = PacketType.findCurrent(protocol, pSender, args[2]);
+					protocol = Protocol.valueOf(args[0].toUpperCase());
+				} catch (IllegalArgumentException ex) {
+					sender.sendMessage(ChatColor.RED + "Unknown protocol " + args[0]);
+					return true;
 				}
-			} catch (IllegalArgumentException ex) {
-				sender.sendMessage(ChatColor.RED + "Unknown packet: " + PacketType.format(protocol, pSender, args[2]));
+
+				Sender pSender;
+
+				try {
+					pSender = Sender.valueOf(args[1].toUpperCase());
+				} catch (IllegalArgumentException ex) {
+					sender.sendMessage(ChatColor.RED + "Unknown sender: " + args[1]);
+					return true;
+				}
+
+				try {
+					try {
+						int id = Integer.parseInt(args[2]);
+						type = PacketType.findCurrent(protocol, pSender, id);
+					} catch (NumberFormatException ex) {
+						String name = args[2];
+						outer: for (PacketType packet : PacketType.values()) {
+							if (packet.getProtocol() == protocol && packet.getSender() == pSender) {
+								if (packet.name().equalsIgnoreCase(name)) {
+									type = packet;
+									break outer;
+								}
+								for (String className : packet.getClassNames()) {
+									if (className.equalsIgnoreCase(name)) {
+										type = packet;
+										break outer;
+									}
+								}
+							}
+						}
+					}
+				} catch (IllegalArgumentException ex) {
+					type = null;
+				}
+
+				if (type == null) {
+					sender.sendMessage(ChatColor.RED + "Unknown packet: " + args[2]);
+					return true;
+				}
+
+				if (args.length > 3) {
+					if (args[3].equalsIgnoreCase("console")) {
+						this.location = LogLocation.CONSOLE;
+					} else {
+						this.location = LogLocation.FILE;
+					}
+				}
+
+				if (pSender == Sender.CLIENT) {
+					if (receivingTypes.contains(type)) {
+						receivingTypes.remove(type);
+					} else {
+						receivingTypes.add(type);
+					}
+				} else {
+					if (sendingTypes.contains(type)) {
+						sendingTypes.remove(type);
+					} else {
+						sendingTypes.add(type);
+					}
+				}
+
+				startLogging();
+				sender.sendMessage(ChatColor.GREEN + "Now logging " + type.getPacketClass().getSimpleName());
 				return true;
 			}
 
-			if (args.length > 3) {
-				if (args[3].equalsIgnoreCase("console")) {
-					this.location = LogLocation.CONSOLE;
-				} else {
-					this.location = LogLocation.FILE;
-				}
-			}
-
-			if (pSender == Sender.CLIENT) {
-				if (receivingTypes.contains(type)) {
-					receivingTypes.remove(type);
-				} else {
-					receivingTypes.add(type);
-				}
-			} else {
-				if (sendingTypes.contains(type)) {
-					sendingTypes.remove(type);
-				} else {
-					sendingTypes.add(type);
-				}
-			}
-
-			startLogging();
-			sender.sendMessage(ChatColor.GREEN + "Now logging " + type.getPacketClass().getSimpleName());
+			sender.sendMessage(ChatColor.RED + "Invalid syntax: /packetlog <protocol> <sender> <packet> [location]");
+			return true;
+		} catch (Throwable ex) {
+			sender.sendMessage(ChatColor.RED + "Failed to parse command: " + ex.toString());
 			return true;
 		}
-
-		sender.sendMessage(ChatColor.RED + "Invalid syntax: /packetlog <protocol> <sender> <packet> [location]");
-		return true;
 	}
 
 	private void startLogging() {
@@ -176,18 +199,34 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 		log(event);
 	}
 
-	private void log(PacketEvent event) {
-		ByteBuf buffer = WirePacket.bufferFromPacket(event.getPacket());
-		String hexDump = ByteBufUtil.hexDump(buffer);
+	private static String hexDump(byte[] bytes) throws IOException {
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			HexDump.dump(bytes, 0, output, 0);
+			return new String(output.toByteArray(), Charsets.UTF_8);
+		}
+	}
 
-		if (location == LogLocation.FILE) {
-			fileLogger.log(Level.INFO, event.getPacketType() + ":");
-			fileLogger.log(Level.INFO, hexDump);
-			fileLogger.log(Level.INFO, "");
-		} else {
-			System.out.println(event.getPacketType() + ":");
-			System.out.println(hexDump);
-			System.out.println();
+	private void log(PacketEvent event) {
+		try {
+			WirePacket packet = WirePacket.fromPacket(event.getPacket());
+			String hexDump = hexDump(packet.getBytes());
+
+			if (location == LogLocation.FILE) {
+				fileLogger.log(Level.INFO, event.getPacketType() + ":");
+				fileLogger.log(Level.INFO, hexDump);
+				fileLogger.log(Level.INFO, "");
+			} else {
+				System.out.println(event.getPacketType() + ":");
+				System.out.println(hexDump);
+				System.out.println();
+			}
+		} catch (Throwable ex) {
+			plugin.getLogger().log(Level.WARNING, "Failed to log packet " + event.getPacketType() + ":", ex);
+			plugin.getLogger().log(Level.WARNING, "Clearing packet logger...");
+
+			sendingTypes.clear();
+			receivingTypes.clear();
+			startLogging();
 		}
 	}
 
