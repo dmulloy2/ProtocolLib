@@ -150,29 +150,52 @@ public class WirePacket {
 	 */
 	public static WirePacket fromPacket(PacketContainer packet) {
 		int id = packet.getType().getCurrentId();
-		return new WirePacket(id, getBytes(bufferFromPacket(packet)));
+		return new WirePacket(id, bytesFromPacket(packet));
 	}
 
 	/**
-	 * Creates a ByteBuf from an existing PacketContainer containing all the
+	 * Creates a byte array from an existing PacketContainer containing all the
 	 * bytes from that packet
 	 * 
 	 * @param packet Existing packet
 	 * @return The ByteBuf
 	 */
-	public static ByteBuf bufferFromPacket(PacketContainer packet) {
+	public static byte[] bytesFromPacket(PacketContainer packet) {
 		checkNotNull(packet, "packet cannot be null!");
-
+		
 		ByteBuf buffer = PacketContainer.createPacketBuffer();
+		ByteBuf store = PacketContainer.createPacketBuffer();
+		
+		// Read the bytes once
 		Method write = MinecraftMethods.getPacketWriteByteBufMethod();
 
 		try {
 			write.invoke(packet.getHandle(), buffer);
 		} catch (ReflectiveOperationException ex) {
-			throw new RuntimeException("Failed to serialize packet contents.", ex);
+			throw new RuntimeException("Failed to read packet contents.", ex);
 		}
 
-		return buffer;
+		byte[] bytes = getBytes(buffer);
+
+		// Rewrite them to the packet to avoid issues with certain packets
+		if (packet.getType() == PacketType.Play.Server.CUSTOM_PAYLOAD
+				|| packet.getType() == PacketType.Play.Client.CUSTOM_PAYLOAD) {
+			// Make a copy of the array before writing
+			byte[] ret = Arrays.copyOf(bytes, bytes.length);
+			store.writeBytes(bytes);
+
+			Method read = MinecraftMethods.getPacketReadByteBufMethod();
+
+			try {
+				read.invoke(packet.getHandle(), store);
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException("Failed to rewrite packet contents.", ex);
+			}
+
+			return ret;
+		}
+
+		return bytes;
 	}
 
 	/**

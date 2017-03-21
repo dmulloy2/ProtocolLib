@@ -94,10 +94,10 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 				}
 
 				try {
-					try {
+					try { // Try IDs first
 						int id = Integer.parseInt(args[2]);
 						type = PacketType.findCurrent(protocol, pSender, id);
-					} catch (NumberFormatException ex) {
+					} catch (NumberFormatException ex) { // Check packet names
 						String name = args[2];
 						outer: for (PacketType packet : PacketType.values()) {
 							if (packet.getProtocol() == protocol && packet.getSender() == pSender) {
@@ -114,7 +114,7 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 							}
 						}
 					}
-				} catch (IllegalArgumentException ex) {
+				} catch (IllegalArgumentException ex) { // RIP
 					type = null;
 				}
 
@@ -168,6 +168,7 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 		this.sendingWhitelist = ListeningWhitelist.newBuilder().types(sendingTypes).build();
 		this.receivingWhitelist = ListeningWhitelist.newBuilder().types(receivingTypes).build();
 
+		// Setup the file logger if it hasn't been already
 		if (location == LogLocation.FILE && fileLogger == null) {
 			fileLogger = Logger.getLogger("ProtocolLib-FileLogging");
 
@@ -199,6 +200,8 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 		log(event);
 	}
 
+	// Here's where the magic happens
+
 	private static String hexDump(byte[] bytes) throws IOException {
 		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 			HexDump.dump(bytes, 0, output, 0);
@@ -208,8 +211,8 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 
 	private void log(PacketEvent event) {
 		try {
-			WirePacket packet = WirePacket.fromPacket(event.getPacket());
-			String hexDump = hexDump(packet.getBytes());
+			byte[] bytes = WirePacket.bytesFromPacket(event.getPacket());
+			String hexDump = hexDump(bytes);
 
 			if (location == LogLocation.FILE) {
 				fileLogger.log(Level.INFO, event.getPacketType() + ":");
