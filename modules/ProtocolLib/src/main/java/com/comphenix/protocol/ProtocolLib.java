@@ -158,9 +158,8 @@ public class ProtocolLib extends JavaPlugin {
 		int java = Util.getJavaVersion();
 		if (java != -1 && java < 8 && !getConfig().getBoolean("ignoreJava", false)) {
 			logger.warning("Detected outdated Java version: Java " + java);
-			logger.warning("It is recommended that you update to Java 8 as soon as possible.");
-			logger.warning("Future versions of ProtocolLib many not support Java " + java + ".");
-			logger.warning("Java 8 will allow for much faster reflection performance.");
+			logger.warning("Future versions of ProtocolLib and Minecraft will require Java 8 or higher");
+			logger.warning("Update as soon as possible.");
 		}
 
 		// Initialize enhancer factory
