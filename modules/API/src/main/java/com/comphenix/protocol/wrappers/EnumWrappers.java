@@ -217,7 +217,8 @@ public abstract class EnumWrappers {
 		DRAGON_BREATH("dragonbreath", 42, false),
 		END_ROD("endRod", 43, false),
 		DAMAGE_INDICATOR("damageIndicator", 44, true),
-		SWEEP_ATTACK("sweepAttack", 45, true);
+		SWEEP_ATTACK("sweepAttack", 45, true),
+		FALLING_DUST("fallingdust", 46, true);
 
 		private static final Map<String, Particle> BY_NAME;
 		private static final Map<Integer, Particle> BY_ID;

@@ -22,6 +22,8 @@ import static org.junit.Assert.assertFalse;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.minecraft.server.v1_11_R1.PacketLoginInStart;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,8 +31,6 @@ import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
 import com.comphenix.protocol.injector.netty.ProtocolRegistry;
-
-import net.minecraft.server.v1_10_R1.PacketLoginInStart;
 
 /**
  * @author dmulloy2

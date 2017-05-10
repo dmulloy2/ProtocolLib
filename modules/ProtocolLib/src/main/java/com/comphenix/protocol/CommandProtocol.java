@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -252,14 +253,32 @@ class CommandProtocol extends CommandBase {
 			pw.println();
 
 			Set<PacketListener> listeners = manager.getPacketListeners();
-			if (listeners.size() > 0) {
+			Set<Plugin> plugins = new HashSet<>();
+
+			if (!listeners.isEmpty()) {
 				pw.println("Listeners:");
 
 				for (PacketListener listener : listeners) {
 					pw.println(DetailedErrorReporter.getStringDescription(listener));
+
+					Plugin plugin = listener.getPlugin();
+					if (plugin != null) {
+						plugins.add(plugin);
+					} else {
+						pw.println("(Missing plugin!)");
+					}
 				}
+
+				pw.println();
 			} else {
 				pw.println("No listeners");
+			}
+
+			if (!plugins.isEmpty()) {
+				pw.println("Plugins Using ProtocolLib:");
+				for (Plugin plugin : plugins) {
+					pw.println(plugin.getName() + " by " + plugin.getDescription().getAuthors());
+				}
 			}
 
 			sender.sendMessage("Data dump written to " + file.getAbsolutePath());

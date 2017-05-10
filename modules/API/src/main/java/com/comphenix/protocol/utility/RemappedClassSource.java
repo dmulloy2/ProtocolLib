@@ -28,7 +28,7 @@ import org.bukkit.Server;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.MethodUtils;
-import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavaibleException.Reason;
+import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
 
 class RemappedClassSource extends ClassSource {
 	private Object classRemapper;
@@ -53,7 +53,7 @@ class RemappedClassSource extends ClassSource {
 	/**
 	 * Attempt to load the MCPC remapper.
 	 * @return TRUE if we succeeded, FALSE otherwise.
-	 * @throws RemapperUnavaibleException If the remapper is not present.
+	 * @throws RemapperUnavailableException If the remapper is not present.
 	 */
 	public RemappedClassSource initialize() {
 		try {
@@ -64,14 +64,14 @@ class RemappedClassSource extends ClassSource {
 
 			String version = server.getVersion();
 			if (!version.contains("MCPC") && !version.contains("Cauldron")) {
-				throw new RemapperUnavaibleException(Reason.MCPC_NOT_PRESENT);
+				throw new RemapperUnavailableException(Reason.MCPC_NOT_PRESENT);
 			}
 
 			// Obtain the Class remapper used by MCPC+/Cauldron
 			this.classRemapper = FieldUtils.readField(getClass().getClassLoader(), "remapper", true);
 			
 			if (this.classRemapper == null) {
-				throw new RemapperUnavaibleException(Reason.REMAPPER_DISABLED);
+				throw new RemapperUnavailableException(Reason.REMAPPER_DISABLED);
 			}
 			
 			// Initialize some fields and methods used by the Jar Remapper
@@ -82,7 +82,7 @@ class RemappedClassSource extends ClassSource {
 			
 			return this;
 			
-		} catch (RemapperUnavaibleException e) {
+		} catch (RemapperUnavailableException e) {
 			throw e;
 		} catch (Exception e) {
 			// Damn it
@@ -115,7 +115,7 @@ class RemappedClassSource extends ClassSource {
 		}
 	}
 
-	public static class RemapperUnavaibleException extends RuntimeException {
+	public static class RemapperUnavailableException extends RuntimeException {
 		private static final long serialVersionUID = 1L;
 
 		public enum Reason {
@@ -139,7 +139,7 @@ class RemappedClassSource extends ClassSource {
 		
 		private final Reason reason;
 		
-		public RemapperUnavaibleException(Reason reason) {
+		public RemapperUnavailableException(Reason reason) {
 			super(reason.getMessage());
 			this.reason = reason;
 		}

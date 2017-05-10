@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ProtocolLib-API</artifactId>
   <name>ProtocolLib-API</name>
-  <version>4.1.0</version>
+  <version>4.2.2-SNAPSHOT</version>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
@@ -19,6 +19,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.number></project.build.number>
+    <project.fullVersion>${project.version}</project.fullVersion>
   </properties>
 
   <build>
@@ -54,7 +55,7 @@
             <manifestEntries>
               <Main-Class>com.comphenix.protocol.Application</Main-Class>
               <Implementation-Title>ProtocolLib</Implementation-Title>
-              <Implementation-Version>${project.version}${project.build.number}</Implementation-Version>
+              <Implementation-Version>${project.fullVersion}</Implementation-Version>
               <Implementation-Vendor>dmulloy2</Implementation-Vendor>
             </manifestEntries>
           </archive>
@@ -88,6 +89,7 @@
       </activation>
       <properties>
         <project.build.number>-b${env.BUILD_NUMBER}</project.build.number>
+        <project.fullVersion>${project.version}${project.build.number}</project.fullVersion>
       </properties>
     </profile>
 
@@ -99,6 +101,9 @@
           <value>true</value>
         </property>
       </activation>
+      <properties>
+        <project.fullVersion>${project.version}</project.fullVersion>
+      </properties>
       <build>
         <plugins>
           <plugin>
@@ -129,6 +134,7 @@
             </executions>
           </plugin>
 
+          <!-- TODO: Look into signing releases
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
@@ -143,6 +149,7 @@
               </execution>
             </executions>
           </plugin>
+          -->
 
         </plugins>
       </build>
@@ -196,13 +203,13 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.10.2-R0.1-SNAPSHOT</version>
+      <version>1.11.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.10.2-R0.1-SNAPSHOT</version>
+      <version>1.11.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

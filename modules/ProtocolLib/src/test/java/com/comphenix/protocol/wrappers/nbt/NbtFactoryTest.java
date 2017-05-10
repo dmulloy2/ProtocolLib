@@ -26,6 +26,9 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 
+import net.minecraft.server.v1_11_R1.ItemStack;
+import net.minecraft.server.v1_11_R1.Items;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,9 +37,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
-
-import net.minecraft.server.v1_10_R1.ItemStack;
-import net.minecraft.server.v1_10_R1.Items;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })

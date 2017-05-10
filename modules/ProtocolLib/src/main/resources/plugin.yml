@@ -1,6 +1,5 @@
 name: ProtocolLib
-#version: ${project.version}${project.build.number}
-version: ${project.version}
+version: ${project.fullVersion}
 description: Provides read/write access to the Minecraft protocol.
 authors: [dmulloy2, comphenix]
 
@@ -23,6 +22,11 @@ commands:
     description: Add or remove programmable filters to the packet listeners.
     usage: /<command> add|remove name [ID start]-[ID stop]
     aliases: [packet_filter]
+    permission: protocol.admin
+    permission-message: You don't have <permission>
+  packetlog:
+    description: Logs hex representations of packets to a file or console
+    usage: /<command> <protocol> <sender> <packet> [location]
     permission: protocol.admin
     permission-message: You don't have <permission>
 

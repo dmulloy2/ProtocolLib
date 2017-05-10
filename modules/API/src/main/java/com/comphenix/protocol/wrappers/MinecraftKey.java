@@ -69,7 +69,9 @@ public class MinecraftKey {
 	 * is lower case, with underscores replaced by periods.
 	 * @param value The value
 	 * @return The resulting key
+	 * @deprecated This isn't accurate in all cases
 	 */
+	@Deprecated
 	public static MinecraftKey fromEnum(Enum<?> value) {
 		return new MinecraftKey(value.name().toLowerCase(Locale.ENGLISH).replace("_", "."));
 	}
@@ -103,7 +105,9 @@ public class MinecraftKey {
 	 * Returns this key back into Enum format, upper case with periods replaced
 	 * by underscores.
 	 * @return The enum format
+	 * @deprecated This isn't accurate in all cases
 	 */
+	@Deprecated
 	public String getEnumFormat() {
 		return key.toUpperCase(Locale.ENGLISH).replace(".", "_");
 	}

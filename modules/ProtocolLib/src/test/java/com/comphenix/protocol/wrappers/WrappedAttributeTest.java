@@ -6,6 +6,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import net.minecraft.server.v1_11_R1.AttributeModifier;
+import net.minecraft.server.v1_11_R1.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_11_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -15,10 +19,6 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
 import com.google.common.collect.Lists;
-
-import net.minecraft.server.v1_10_R1.AttributeModifier;
-import net.minecraft.server.v1_10_R1.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_10_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 public class WrappedAttributeTest {
 	private WrappedAttributeModifier doubleModifier;
