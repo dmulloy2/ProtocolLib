@@ -5,13 +5,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.logging.Logger;
 
-import net.minecraft.server.v1_11_R1.DispenserRegistry;
+import net.minecraft.server.v1_12_R1.DispenserRegistry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_11_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_11_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_11_R1.util.Versioning;
+import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_12_R1.util.Versioning;
 
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -52,8 +52,6 @@ public class BukkitInitialization {
 
 			// Inject this fake server
 			Bukkit.setServer(mockedServer);
-
-			
 		}
 	}
 

@@ -195,16 +195,16 @@ public class WrappedAttribute extends AbstractWrapper {
 		if (obj instanceof WrappedAttribute) {
 			WrappedAttribute other = (WrappedAttribute) obj;
 			
-			return getBaseValue() == other.getBaseValue() &&
-				   Objects.equal(getAttributeKey(), other.getAttributeKey()) &&
-				   Sets.symmetricDifference(
-						  getModifiers(),
-						  other.getModifiers()
-				   ).isEmpty();
+			if (getBaseValue() == other.getBaseValue() &&
+				   Objects.equal(getAttributeKey(), other.getAttributeKey())) {
+				return getModifiers().stream()
+						.filter((elem) -> !other.getModifiers().contains(elem))
+						.count() == 0;
+			}
 		}
 		return false;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		if (attributeModifiers == null)
@@ -251,12 +251,7 @@ public class WrappedAttribute extends AbstractWrapper {
 	
 	@Override
 	public String toString() {
-		return Objects.toStringHelper("WrappedAttribute").
-			add("key", getAttributeKey()).
-			add("baseValue", getBaseValue()).
-			add("finalValue", getFinalValue()).
-			add("modifiers", getModifiers()).
-			toString();
+		return "WrappedAttribute[key=" + getAttributeKey() + ", base=" + getBaseValue() + ", final=" + getFinalValue() + ", modifiers=" + getModifiers() + "]";
 	}
 	
 	/**

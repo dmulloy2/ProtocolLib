@@ -74,6 +74,7 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.ChunkPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
 import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
 import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
 import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
@@ -954,6 +955,15 @@ public class PacketContainer implements Serializable {
     public StructureModifier<Direction> getDirections() {
     	return structureModifier.<Direction>withType(
     			EnumWrappers.getDirectionClass(), EnumWrappers.getDirectionConverter());
+    }
+    
+    /**
+     * Retrieve a read/write structure for the ChatType enum in 1.12.
+     * @return A modifier for ChatType enum fields.
+     */
+    public StructureModifier<ChatType> getChatTypes() {
+    	return structureModifier.<ChatType>withType(
+    			EnumWrappers.getChatTypeClass(), EnumWrappers.getChatTypeConverter());
     }
 
     /**

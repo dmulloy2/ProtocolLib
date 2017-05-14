@@ -22,7 +22,7 @@ import static org.junit.Assert.assertFalse;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.minecraft.server.v1_11_R1.PacketLoginInStart;
+import net.minecraft.server.v1_12_R1.PacketLoginInStart;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

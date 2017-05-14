@@ -13,6 +13,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
 
 import io.netty.buffer.ByteBuf;
 
@@ -29,6 +30,8 @@ public class WirePacketTest {
 	@Test
 	public void testPackets() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
+		packet.getChatTypes().write(0, ChatType.CHAT);
+
 		WirePacket wire = WirePacket.fromPacket(packet);
 		WirePacket handle = WirePacket.fromPacket(packet.getHandle());
 		assertEquals(wire, handle);

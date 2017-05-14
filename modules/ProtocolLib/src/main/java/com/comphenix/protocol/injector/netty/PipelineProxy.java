@@ -21,6 +21,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.concurrent.EventExecutorGroup;
 
@@ -367,5 +368,25 @@ public class PipelineProxy implements ChannelPipeline {
 	@Override
 	public ChannelFuture writeAndFlush(Object arg0) {
 		return pipeline.writeAndFlush(arg0);
+	}
+
+	public ChannelFuture newFailedFuture(Throwable ex) {
+		return pipeline.newFailedFuture(ex);
+	}
+
+	public ChannelProgressivePromise newProgressivePromise() {
+		return pipeline.newProgressivePromise();
+	}
+
+	public ChannelPromise newPromise() {
+		return pipeline.newPromise();
+	}
+
+	public ChannelFuture newSucceededFuture() {
+		return pipeline.newSucceededFuture();
+	}
+
+	public ChannelPromise voidPromise() {
+		return pipeline.voidPromise();
 	}
 }

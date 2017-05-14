@@ -44,6 +44,7 @@ public class MinecraftProtocolVersion {
 		map.put(new MinecraftVersion(1, 10, 0), 210);
 		map.put(new MinecraftVersion(1, 11, 0), 315);
 		map.put(new MinecraftVersion(1, 11, 1), 316);
+		// 1.12 will be >= 330
 		return map;
 	}
 

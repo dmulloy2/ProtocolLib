@@ -218,7 +218,9 @@ public abstract class EnumWrappers {
 		END_ROD("endRod", 43, false),
 		DAMAGE_INDICATOR("damageIndicator", 44, true),
 		SWEEP_ATTACK("sweepAttack", 45, true),
-		FALLING_DUST("fallingdust", 46, true);
+		FALLING_DUST("fallingdust", 46, false, 1),
+		TOTEM("totem", 47, false),
+		SPIT("spit", 48, true);
 
 		private static final Map<String, Particle> BY_NAME;
 		private static final Map<Integer, Particle> BY_ID;
@@ -323,12 +325,28 @@ public abstract class EnumWrappers {
 	}
 
 	public enum Direction {
-		DOWN(),
-		UP(),
-		NORTH(),
-		SOUTH(),
-		WEST(),
-		EAST();
+		DOWN,
+		UP,
+		NORTH,
+		SOUTH,
+		WEST,
+		EAST;
+	}
+	
+	public enum ChatType {
+		CHAT(0),
+		SYSTEM(1),
+		GAME_INFO(2);
+		
+		private byte id;
+		
+		ChatType(int id) {
+			this.id = (byte) id;
+		}
+		
+		public byte getId() {
+			return id;
+		}
 	}
 
 	private static Class<?> PROTOCOL_CLASS = null;
@@ -350,6 +368,7 @@ public abstract class EnumWrappers {
 	private static Class<?> ITEM_SLOT_CLASS = null;
 	private static Class<?> HAND_CLASS = null;
 	private static Class<?> DIRECTION_CLASS = null;
+	private static Class<?> CHAT_TYPE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -386,6 +405,7 @@ public abstract class EnumWrappers {
 		ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
 		HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
 		DIRECTION_CLASS = getEnum(PacketType.Play.Client.USE_ITEM.getPacketClass(), 0);
+		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -406,6 +426,7 @@ public abstract class EnumWrappers {
 		associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
 		associate(HAND_CLASS, Hand.class, getHandConverter());
 		associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
+		associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
 		INITIALIZED = true;
 	}
 
@@ -533,6 +554,11 @@ public abstract class EnumWrappers {
 		initialize();
 		return DIRECTION_CLASS;
 	}
+	
+	public static Class<?> getChatTypeClass() {
+		initialize();
+		return CHAT_TYPE_CLASS;
+	}
 
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
@@ -609,6 +635,10 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<Direction> getDirectionConverter() {
 		return new EnumConverter<Direction>(Direction.class);
+	}
+	
+	public static EquivalentConverter<ChatType> getChatTypeConverter() {
+		return new EnumConverter<ChatType>(ChatType.class);
 	}
 
 	/**

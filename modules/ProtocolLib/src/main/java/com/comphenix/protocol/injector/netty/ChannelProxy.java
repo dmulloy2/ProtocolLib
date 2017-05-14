@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelId;
 import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelProgressivePromise;
@@ -330,5 +331,21 @@ public abstract class ChannelProxy implements Channel {
 	@Override
     public int compareTo(Channel o) {
 		return delegate.compareTo(o);
+	}
+	
+	public long bytesBeforeUnwritable() {
+		return delegate.bytesBeforeUnwritable();
+	}
+
+	public long bytesBeforeWritable() {
+		return delegate.bytesBeforeWritable();
+	}
+
+	public ChannelId id() {
+		return delegate.id();
+	}
+
+	public <T> boolean hasAttr(AttributeKey<T> key) {
+		return delegate.hasAttr(key);
 	}
 }
