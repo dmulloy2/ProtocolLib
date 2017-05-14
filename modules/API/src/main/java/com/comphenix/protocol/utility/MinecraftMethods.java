@@ -16,6 +16,7 @@ import net.sf.cglib.proxy.MethodProxy;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 
 /**
  * Static methods for accessing Minecraft methods.
@@ -43,7 +44,13 @@ public class MinecraftMethods {
 			Class<?> serverHandlerClass = MinecraftReflection.getPlayerConnectionClass();
 
 			try {
-				sendPacketMethod = FuzzyReflection.fromClass(serverHandlerClass).getMethodByName("sendPacket.*");
+				sendPacketMethod = FuzzyReflection
+						.fromClass(serverHandlerClass)
+						.getMethod(FuzzyMethodContract.newBuilder()
+								.nameRegex("sendPacket.*")
+								.returnTypeVoid()
+								.parameterCount(1)
+								.build());
 			} catch (IllegalArgumentException e) {
 				// We can't use the method below on Netty
 				if (MinecraftReflection.isUsingNetty()) {
