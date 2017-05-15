@@ -52,7 +52,6 @@ import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -154,13 +153,6 @@ public class ProtocolLib extends JavaPlugin {
 		// Logging
 		logger = getLogger();
 		ProtocolLogger.init(this);
-
-		int java = Util.getJavaVersion();
-		if (java != -1 && java < 8 && !getConfig().getBoolean("ignoreJava", false)) {
-			logger.warning("Detected outdated Java version: Java " + java);
-			logger.warning("Future versions of ProtocolLib and Minecraft will require Java 8 or higher");
-			logger.warning("Update as soon as possible.");
-		}
 
 		// Initialize enhancer factory
 		EnhancerFactory.getInstance().setClassLoader(getClassLoader());
