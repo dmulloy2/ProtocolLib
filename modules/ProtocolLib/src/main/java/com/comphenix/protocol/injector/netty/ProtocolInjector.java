@@ -16,18 +16,11 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +49,14 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Lists;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 
 public class ProtocolInjector implements ChannelListener {
 	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to inject incoming channel %s.");
@@ -139,11 +140,12 @@ public class ProtocolInjector implements ChannelListener {
 			// Handle connected channels
 			final ChannelInboundHandler endInitProtocol = new ChannelInitializer<Channel>() {
 				@Override
-				protected void initChannel(Channel channel) throws Exception {
+				protected void initChannel(final Channel channel) throws Exception {
 					try {
-						// This can take a while, so we need to stop the main thread from interfering
+						// TODO I don't like this
 						synchronized (networkManagers) {
-							injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject();
+							channel.eventLoop().submit(() ->
+								injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject());
 						}
 					} catch (Exception e) {
 						reporter.reportDetailed(ProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).messageParam(channel).error(e));
@@ -171,9 +173,26 @@ public class ProtocolInjector implements ChannelListener {
 					ctx.fireChannelRead(msg);
 				}
 			};
+			
+			FuzzyReflection fuzzy = FuzzyReflection.fromObject(serverConnection, true);
 
-			// Get the current NetworkMananger list
-			networkManagers = (List<Object>) FuzzyReflection.fromObject(serverConnection, true).invokeMethod(null, "getNetworkManagers", List.class, serverConnection);
+			try {
+				List<Field> fields = fuzzy.getFieldListByType(List.class);
+				for (Field field : fields) {
+					ParameterizedType param = (ParameterizedType) field.getGenericType();
+					if (param.getActualTypeArguments()[0].equals(MinecraftReflection.getNetworkManagerClass())) {
+						field.setAccessible(true);
+						networkManagers = (List<Object>) field.get(serverConnection);
+					}
+				}
+			} catch (Exception ex) {
+				networkManagers = (List<Object>) fuzzy.getMethodByParameters("getNetworkManagers", List.class, serverConnection.getClass())
+						.invoke(null, serverConnection);
+			}
+
+			if (networkManagers == null) {
+				throw new RuntimeException("Failed to obtain list of network managers.");
+			}
 
 			// Insert ProtocolLib's connection interceptor
 			bootstrapFields = getBootstrapFields(serverConnection);
@@ -191,7 +210,6 @@ public class ProtocolInjector implements ChannelListener {
 			}
 
 			injected = true;
-
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to inject channel futures.", e);
 		}
