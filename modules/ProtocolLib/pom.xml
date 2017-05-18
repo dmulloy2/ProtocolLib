@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ProtocolLib</artifactId>
   <name>ProtocolLib</name>
-  <version>4.3.0-SNAPSHOT</version>
+  <version>${minorVersion}</version>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
@@ -63,6 +63,7 @@
                   <exclude>org.spigotmc:spigot</exclude>
                   <exclude>org.spigotmc:spigot-api</exclude>
                   <exclude>junit:junit</exclude>
+                  <exclude>io.netty:*</exclude>
                 </excludes>
               </artifactSet>
             </configuration>
@@ -230,38 +231,10 @@
       <groupId>com.comphenix.protocol</groupId>
       <artifactId>ProtocolLib-API</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <!-- Included with Minecraft
-    <dependency>
-	  <groupId>io.netty</groupId>
-	  <artifactId>netty-all</artifactId>
-	  <version>4.0.23.Final</version>
-    </dependency>
-    -->
-    <dependency>
-      <groupId>org.spigotmc</groupId>
-      <artifactId>spigot-api</artifactId>
-      <version>${spigotVersion}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.spigotmc</groupId>
-      <artifactId>spigot</artifactId>
-      <version>${spigotVersion}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>cglib</groupId>
-      <artifactId>cglib-nodep</artifactId>
-      <version>2.2.2</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>com.comphenix.executors</groupId>
-      <artifactId>BukkitExecutors</artifactId>
-      <version>1.1-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
+
+    <!-- Testing dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

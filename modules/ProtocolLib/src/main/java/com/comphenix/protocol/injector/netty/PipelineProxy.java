@@ -16,20 +16,19 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelProgressivePromise;
-import io.netty.channel.ChannelPromise;
-import io.netty.util.concurrent.EventExecutorGroup;
-
 import java.net.SocketAddress;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 /**
  * A pipeline proxy.
@@ -370,6 +369,7 @@ public class PipelineProxy implements ChannelPipeline {
 		return pipeline.writeAndFlush(arg0);
 	}
 
+	/* Added in Netty 4.1, seem to be unused
 	public ChannelFuture newFailedFuture(Throwable ex) {
 		return pipeline.newFailedFuture(ex);
 	}
@@ -389,4 +389,5 @@ public class PipelineProxy implements ChannelPipeline {
 	public ChannelPromise voidPromise() {
 		return pipeline.voidPromise();
 	}
+	*/
 }

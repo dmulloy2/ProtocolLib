@@ -66,6 +66,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.TypeParameterMatcher;
 
@@ -89,6 +90,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private static Class<?> PACKET_LOGIN_CLIENT = null;
 	private static FieldAccessor LOGIN_GAME_PROFILE = null;
 
+	// Versioning
+	private static Class<?> PACKET_SET_PROTOCOL = null;
+	private static AttributeKey<Integer> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL");
+
 	// Saved accessors
 	private static MethodAccessor DECODE_BUFFER;
 	private static MethodAccessor ENCODE_BUFFER;
@@ -96,9 +101,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	// For retrieving the protocol
 	private static FieldAccessor PROTOCOL_ACCESSOR;
-
-	// For retrieving the protocol version
-	private static MethodAccessor PROTOCOL_VERSION;
 
 	// The factory that created this injector
 	private InjectionFactory factory;
@@ -184,19 +186,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	@Override
 	public int getProtocolVersion() {
-		MethodAccessor accessor = PROTOCOL_VERSION;
-		if (accessor == null) {
-			try {
-				accessor = Accessors.getMethodAccessor(networkManager.getClass(), "getVersion");
-			} catch (Throwable ex) {
-			}
-		}
-
-		if (accessor != null) {
-			return (Integer) accessor.invoke(networkManager);
-		} else {
-			return MinecraftProtocolVersion.getCurrentVersion();
-		}
+		Integer value = originalChannel.attr(PROTOCOL_KEY).get();
+		return value != null ? value : MinecraftProtocolVersion.getCurrentVersion();
 	}
 
 	@Override
@@ -279,6 +270,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			originalChannel.pipeline().addBefore("protocol_lib_decoder", "protocol_lib_finish", finishHandler);
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
 
+			try {
 			// Intercept all write methods
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
 				// Compatibility with Spigot 1.8
@@ -370,6 +362,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					return event != null ? event : BYPASSED_PACKET;
 				}
 			});
+			} catch (Throwable ex) {
+				throw new RuntimeException("Failed to overwrite channel field", ex);
+			}
 
 			injected = true;
 			return true;
@@ -601,6 +596,26 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 			// Save the channel injector
 			factory.cacheInjector(profile.getName(), this);
+		}
+		
+		if (PACKET_SET_PROTOCOL == null) {
+			try {
+				PACKET_SET_PROTOCOL = PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass();
+			} catch (Throwable ex) {
+				ex.printStackTrace(); // TODO debug
+				PACKET_SET_PROTOCOL = getClass(); // If we can't find it don't worry about it
+			}
+		}
+
+		if (PACKET_SET_PROTOCOL.equals(packetClass)) {
+			FuzzyReflection fuzzy = FuzzyReflection.fromObject(packet);
+			try {
+				int protocol = (int) fuzzy.invokeMethod(packet, "getProtocol", int.class);
+				System.out.println("Determined protocol " + protocol);
+				originalChannel.attr(PROTOCOL_KEY).set(protocol);
+			} catch (Throwable ex) {
+				ex.printStackTrace(); // TODO debug
+			}
 		}
 	}
 

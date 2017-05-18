@@ -8,6 +8,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <minorVersion>4.3.0-SNAPSHOT</minorVersion>
     <spigotVersion>1.12-pre2-SNAPSHOT</spigotVersion>
   </properties>
 
@@ -42,6 +43,40 @@
       <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
   </repositories>
+  
+  <dependencies>
+      <!-- Compile with the old version of Netty -->
+    <dependency>
+	  <groupId>io.netty</groupId>
+	  <artifactId>netty-all</artifactId>
+	  <version>4.0.23.Final</version>
+	  <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>${spigotVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot</artifactId>
+      <version>${spigotVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib-nodep</artifactId>
+      <version>2.2.2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.comphenix.executors</groupId>
+      <artifactId>BukkitExecutors</artifactId>
+      <version>1.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
 
   <build>
     <defaultGoal>clean package install</defaultGoal>

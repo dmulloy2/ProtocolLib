@@ -45,6 +45,7 @@ import com.google.common.io.ByteStreams;
  * all indexing in the byte buffer.
  * @author Kristian
  */
+@SuppressWarnings("unused")
 public class NettyByteBufAdapter extends AbstractByteBuf {
 	private DataInputStream input;
 	private DataOutputStream output;

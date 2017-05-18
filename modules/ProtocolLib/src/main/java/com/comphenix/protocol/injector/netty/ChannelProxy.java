@@ -16,19 +16,6 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelConfig;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelId;
-import io.netty.channel.ChannelMetadata;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelProgressivePromise;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.util.Attribute;
-import io.netty.util.AttributeKey;
-
 import java.lang.reflect.Field;
 import java.net.SocketAddress;
 import java.util.Map;
@@ -37,6 +24,18 @@ import java.util.concurrent.Callable;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.collect.Maps;
+
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelConfig;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelMetadata;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelProgressivePromise;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 
 public abstract class ChannelProxy implements Channel {
 	// Mark that a certain object does not contain a message field
@@ -333,6 +332,7 @@ public abstract class ChannelProxy implements Channel {
 		return delegate.compareTo(o);
 	}
 	
+	/* Added in Netty 4.1, seem to be unused
 	public long bytesBeforeUnwritable() {
 		return delegate.bytesBeforeUnwritable();
 	}
@@ -348,4 +348,5 @@ public abstract class ChannelProxy implements Channel {
 	public <T> boolean hasAttr(AttributeKey<T> key) {
 		return delegate.hasAttr(key);
 	}
+	*/
 }

@@ -63,7 +63,7 @@ public class BukkitInitialization {
 			packaged = true;
 
 			MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
-			MinecraftVersion.setCurrentVersion(MinecraftVersion.FROSTBURN_UPDATE);
+			MinecraftVersion.setCurrentVersion(MinecraftVersion.COLOR_UPDATE);
 		}
 	}
 }

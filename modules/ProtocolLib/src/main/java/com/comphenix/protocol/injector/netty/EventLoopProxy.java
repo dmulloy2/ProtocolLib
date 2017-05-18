@@ -257,7 +257,9 @@ abstract class EventLoopProxy implements EventLoop {
 		return getDelegate().shutdownNow();
 	}
 
+	/*
 	public ChannelFuture register(ChannelPromise promise) {
 		return getDelegate().register(promise);
 	}
+	*/
 }

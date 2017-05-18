@@ -48,6 +48,7 @@ import com.comphenix.protocol.injector.spigot.AbstractPlayerHandler;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Lists;
 
 import io.netty.channel.Channel;
@@ -142,10 +143,15 @@ public class ProtocolInjector implements ChannelListener {
 				@Override
 				protected void initChannel(final Channel channel) throws Exception {
 					try {
-						// TODO I don't like this
 						synchronized (networkManagers) {
-							channel.eventLoop().submit(() ->
-								injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject());
+							// For some reason it needs to be delayed on 1.12, but the delay breaks 1.11 and below
+							// TODO I see this more as a temporary hotfix than a permanent solution
+							if (MinecraftVersion.getCurrentVersion().getMinor() >= 12) {
+								channel.eventLoop().submit(() ->
+									injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject());
+							} else {
+								injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject();
+							}
 						}
 					} catch (Exception e) {
 						reporter.reportDetailed(ProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).messageParam(channel).error(e));
