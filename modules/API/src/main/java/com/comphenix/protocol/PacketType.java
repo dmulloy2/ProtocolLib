@@ -161,29 +161,30 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType RESOURCE_PACK_SEND =           new PacketType(PROTOCOL, SENDER, 0x34, 0x32, "ResourcePackSend");
 			public static final PacketType RESPAWN =                      new PacketType(PROTOCOL, SENDER, 0x35, 0x33, "Respawn");
 			public static final PacketType ENTITY_HEAD_ROTATION =         new PacketType(PROTOCOL, SENDER, 0x36, 0x34, "EntityHeadRotation");
-			public static final PacketType WORLD_BORDER =                 new PacketType(PROTOCOL, SENDER, 0x37, 0x35, "WorldBorder");
-			public static final PacketType CAMERA =                       new PacketType(PROTOCOL, SENDER, 0x38, 0x36, "Camera");
-			public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x39, 0x37, "HeldItemSlot");
-			public static final PacketType SCOREBOARD_DISPLAY_OBJECTIVE = new PacketType(PROTOCOL, SENDER, 0x3A, 0x38, "ScoreboardDisplayObjective");
-			public static final PacketType ENTITY_METADATA =              new PacketType(PROTOCOL, SENDER, 0x3B, 0x39, "EntityMetadata");
-			public static final PacketType ATTACH_ENTITY =                new PacketType(PROTOCOL, SENDER, 0x3C, 0x3A, "AttachEntity");
-			public static final PacketType ENTITY_VELOCITY =              new PacketType(PROTOCOL, SENDER, 0x3D, 0x3B, "EntityVelocity");
-			public static final PacketType ENTITY_EQUIPMENT =             new PacketType(PROTOCOL, SENDER, 0x3E, 0x3C, "EntityEquipment");
-			public static final PacketType EXPERIENCE =                   new PacketType(PROTOCOL, SENDER, 0x3F, 0x3D, "Experience");
-			public static final PacketType UPDATE_HEALTH =                new PacketType(PROTOCOL, SENDER, 0x40, 0x3E, "UpdateHealth");
-			public static final PacketType SCOREBOARD_OBJECTIVE =         new PacketType(PROTOCOL, SENDER, 0x41, 0x3F, "ScoreboardObjective");
-			public static final PacketType MOUNT =                        new PacketType(PROTOCOL, SENDER, 0x42, 0x40, "Mount");
-			public static final PacketType SCOREBOARD_TEAM =              new PacketType(PROTOCOL, SENDER, 0x43, 0x41, "ScoreboardTeam");
-			public static final PacketType SCOREBOARD_SCORE =             new PacketType(PROTOCOL, SENDER, 0x44, 0x42, "ScoreboardScore");
-			public static final PacketType SPAWN_POSITION =               new PacketType(PROTOCOL, SENDER, 0x45, 0x43, "SpawnPosition");
-			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x46, 0x44, "UpdateTime");
-			public static final PacketType TITLE =                        new PacketType(PROTOCOL, SENDER, 0x47, 0x45, "Title");
-			public static final PacketType NAMED_SOUND_EFFECT =           new PacketType(PROTOCOL, SENDER, 0x48, 0x46, "NamedSoundEffect");
-			public static final PacketType PLAYER_LIST_HEADER_FOOTER =    new PacketType(PROTOCOL, SENDER, 0x49, 0x47, "PlayerListHeaderFooter");
-			public static final PacketType COLLECT =                      new PacketType(PROTOCOL, SENDER, 0x4A, 0x48, "Collect");
-			public static final PacketType ENTITY_TELEPORT =              new PacketType(PROTOCOL, SENDER, 0x4B, 0x49, "EntityTeleport");
-			public static final PacketType UPDATE_ATTRIBUTES =            new PacketType(PROTOCOL, SENDER, 0x4C, 0x4A, "UpdateAttributes");
-			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x4D, 0x4B, "EntityEffect");
+			public static final PacketType SELECT_ADVANCEMENT_TAB =       new PacketType(PROTOCOL, SENDER, 0x37, -1,   "SelectAdvancementTab");
+			public static final PacketType WORLD_BORDER =                 new PacketType(PROTOCOL, SENDER, 0x38, 0x35, "WorldBorder");
+			public static final PacketType CAMERA =                       new PacketType(PROTOCOL, SENDER, 0x39, 0x36, "Camera");
+			public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x3A, 0x37, "HeldItemSlot");
+			public static final PacketType SCOREBOARD_DISPLAY_OBJECTIVE = new PacketType(PROTOCOL, SENDER, 0x3B, 0x38, "ScoreboardDisplayObjective");
+			public static final PacketType ENTITY_METADATA =              new PacketType(PROTOCOL, SENDER, 0x3C, 0x39, "EntityMetadata");
+			public static final PacketType ATTACH_ENTITY =                new PacketType(PROTOCOL, SENDER, 0x3D, 0x3A, "AttachEntity");
+			public static final PacketType ENTITY_VELOCITY =              new PacketType(PROTOCOL, SENDER, 0x3E, 0x3B, "EntityVelocity");
+			public static final PacketType ENTITY_EQUIPMENT =             new PacketType(PROTOCOL, SENDER, 0x3F, 0x3C, "EntityEquipment");
+			public static final PacketType EXPERIENCE =                   new PacketType(PROTOCOL, SENDER, 0x40, 0x3D, "Experience");
+			public static final PacketType UPDATE_HEALTH =                new PacketType(PROTOCOL, SENDER, 0x41, 0x3E, "UpdateHealth");
+			public static final PacketType SCOREBOARD_OBJECTIVE =         new PacketType(PROTOCOL, SENDER, 0x42, 0x3F, "ScoreboardObjective");
+			public static final PacketType MOUNT =                        new PacketType(PROTOCOL, SENDER, 0x43, 0x40, "Mount");
+			public static final PacketType SCOREBOARD_TEAM =              new PacketType(PROTOCOL, SENDER, 0x44, 0x41, "ScoreboardTeam");
+			public static final PacketType SCOREBOARD_SCORE =             new PacketType(PROTOCOL, SENDER, 0x45, 0x42, "ScoreboardScore");
+			public static final PacketType SPAWN_POSITION =               new PacketType(PROTOCOL, SENDER, 0x46, 0x43, "SpawnPosition");
+			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x47, 0x44, "UpdateTime");
+			public static final PacketType TITLE =                        new PacketType(PROTOCOL, SENDER, 0x48, 0x45, "Title");
+			public static final PacketType NAMED_SOUND_EFFECT =           new PacketType(PROTOCOL, SENDER, 0x49, 0x46, "NamedSoundEffect");
+			public static final PacketType PLAYER_LIST_HEADER_FOOTER =    new PacketType(PROTOCOL, SENDER, 0x4A, 0x47, "PlayerListHeaderFooter");
+			public static final PacketType COLLECT =                      new PacketType(PROTOCOL, SENDER, 0x4B, 0x48, "Collect");
+			public static final PacketType ENTITY_TELEPORT =              new PacketType(PROTOCOL, SENDER, 0x4C, 0x49, "EntityTeleport");
+			public static final PacketType UPDATE_ATTRIBUTES =            new PacketType(PROTOCOL, SENDER, 0x4D, 0x4A, "UpdateAttributes");
+			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x4E, 0x4B, "EntityEffect");
 
 			// ---- Removed in 1.9
 
@@ -208,25 +209,25 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			// ----- Renamed packets
 
 			/**
-			 * @deprecated Renamed to {@link WINDOW_DATA}
+			 * @deprecated Renamed to {@link #WINDOW_DATA}
 			 */
 			@Deprecated
 			public static final PacketType CRAFT_PROGRESS_BAR =           WINDOW_DATA.deprecated();
 
 			/**
-			 * @deprecated Renamed to {@link REL_ENTITY_MOVE_LOOK}
+			 * @deprecated Renamed to {@link #REL_ENTITY_MOVE_LOOK}
 			 */
 			@Deprecated
 			public static final PacketType ENTITY_MOVE_LOOK =             REL_ENTITY_MOVE_LOOK.deprecated();
 
 			/**
-			 * @deprecated Renamed to {@link STATISTIC}
+			 * @deprecated Renamed to {@link #STATISTIC}
 			 */
 			@Deprecated
 			public static final PacketType STATISTICS =                   STATISTIC.deprecated();
 
 			/**
-			 * @deprecated Renamed to {@link OPEN_SIGN_EDITOR}
+			 * @deprecated Renamed to {@link #OPEN_SIGN_EDITOR}
 			 */
 			@Deprecated
 			public static final PacketType OPEN_SIGN_ENTITY =             OPEN_SIGN_EDITOR.deprecated();
@@ -234,7 +235,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			// ----- Replaced in 1.9.4
 
 			/**
-			 * @deprecated Replaced by {@link TILE_ENTITY_DATA}
+			 * @deprecated Replaced by {@link #TILE_ENTITY_DATA}
 			 */
 			@Deprecated
 			public static final PacketType UPDATE_SIGN =                  MinecraftReflection.signUpdateExists() ? new PacketType(PROTOCOL, SENDER, 252, 252, "UpdateSign") :
@@ -285,13 +286,14 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType STEER_VEHICLE =                new PacketType(PROTOCOL, SENDER, 0x16, 0x15, "SteerVehicle");
 			public static final PacketType RECIPE_DISPLAYED =             new PacketType(PROTOCOL, SENDER, 0x17, 0x17, "RecipeDisplayed");
 			public static final PacketType RESOURCE_PACK_STATUS =         new PacketType(PROTOCOL, SENDER, 0x18, 0x16, "ResourcePackStatus");
-			public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x19, 0x17, "HeldItemSlot");
-			public static final PacketType SET_CREATIVE_SLOT =            new PacketType(PROTOCOL, SENDER, 0x1A, 0x18, "SetCreativeSlot");
-			public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x1B, 0x19, "UpdateSign");
-			public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 0x1C, 0x1A, "ArmAnimation");
-			public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x1D, 0x1B, "Spectate");
-			public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x1E, 0x1C, "UseItem");
-			public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x1F, 0x1D, "BlockPlace");
+			public static final PacketType ADVANCEMENTS =                 new PacketType(PROTOCOL, SENDER, 0x19, -1,   "Advancements");
+			public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x1A, 0x17, "HeldItemSlot");
+			public static final PacketType SET_CREATIVE_SLOT =            new PacketType(PROTOCOL, SENDER, 0x1B, 0x18, "SetCreativeSlot");
+			public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x1C, 0x19, "UpdateSign");
+			public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 0x1D, 0x1A, "ArmAnimation");
+			public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x1E, 0x1B, "Spectate");
+			public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x1F, 0x1C, "UseItem");
+			public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x20, 0x1D, "BlockPlace");
 
 			private final static Client INSTANCE = new Client();
 
@@ -329,7 +331,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x01, 0x01, "Pong");
 
 			/**
-			 * @deprecated Replaced by {@link SERVER_INFO}
+			 * @deprecated Replaced by {@link #SERVER_INFO}
 			 */
 			@Deprecated
 			public static final PacketType OUT_SERVER_INFO =              SERVER_INFO.deprecated();

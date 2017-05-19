@@ -270,7 +270,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			originalChannel.pipeline().addBefore("protocol_lib_decoder", "protocol_lib_finish", finishHandler);
 			originalChannel.pipeline().addAfter("encoder", "protocol_lib_encoder", protocolEncoder);
 
-			try {
 			// Intercept all write methods
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
 				// Compatibility with Spigot 1.8
@@ -362,9 +361,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					return event != null ? event : BYPASSED_PACKET;
 				}
 			});
-			} catch (Throwable ex) {
-				throw new RuntimeException("Failed to overwrite channel field", ex);
-			}
 
 			injected = true;
 			return true;
@@ -602,7 +598,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			try {
 				PACKET_SET_PROTOCOL = PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass();
 			} catch (Throwable ex) {
-				ex.printStackTrace(); // TODO debug
 				PACKET_SET_PROTOCOL = getClass(); // If we can't find it don't worry about it
 			}
 		}
@@ -611,10 +606,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			FuzzyReflection fuzzy = FuzzyReflection.fromObject(packet);
 			try {
 				int protocol = (int) fuzzy.invokeMethod(packet, "getProtocol", int.class);
-				System.out.println("Determined protocol " + protocol);
 				originalChannel.attr(PROTOCOL_KEY).set(protocol);
 			} catch (Throwable ex) {
-				ex.printStackTrace(); // TODO debug
+				// Oh well
 			}
 		}
 	}
