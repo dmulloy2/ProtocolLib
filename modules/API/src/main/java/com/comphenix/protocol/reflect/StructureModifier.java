@@ -453,6 +453,17 @@ public class StructureModifier<TField> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter) {
+		if (fieldType == null) {
+			// It's not supported in this version, so return an empty modifier
+			return new StructureModifier<T>() {
+				@Override
+				public T read(int index) { return null; }
+
+				@Override
+				public StructureModifier<T> write(int index, T value) { return this; }
+			};
+		}
+
 		StructureModifier<T> result = subtypeCache.get(fieldType);
 		
 		// Do we need to update the cache?
@@ -462,7 +473,7 @@ public class StructureModifier<TField> {
 			int index = 0;
 			
 			for (Field field : data) {
-				if (fieldType != null && fieldType.isAssignableFrom(field.getType())) {
+				if (fieldType.isAssignableFrom(field.getType())) {
 					filtered.add(field);
 					
 					// Don't use the original index
@@ -476,14 +487,12 @@ public class StructureModifier<TField> {
 			
 			// Cache structure modifiers
 			result = withFieldType(fieldType, filtered, defaults);
-			
-			if (fieldType != null) {
-				subtypeCache.put(fieldType, result);
+
+			subtypeCache.put(fieldType, result);
 				
-				// Automatically compile the structure modifier
-				if (useStructureCompiler && BackgroundCompiler.getInstance() != null)
-					BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
-			}
+			// Automatically compile the structure modifier
+			if (useStructureCompiler && BackgroundCompiler.getInstance() != null)
+				BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
 		}
 		
 		// Add the target too
