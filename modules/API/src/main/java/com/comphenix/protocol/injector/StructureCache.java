@@ -67,9 +67,11 @@ public class StructureCache {
 			// TODO: Optimize DefaultInstances
 			Object result = DefaultInstances.DEFAULT.create(clazz);
 
-			if (result != null) {
-				return result;
+			if (result == null) {
+				throw new IllegalArgumentException("Failed to create packet for type: " + type);
 			}
+
+			return result;
 		}
 		throw new IllegalArgumentException("Cannot find associated packet class: " + type);
 	}
