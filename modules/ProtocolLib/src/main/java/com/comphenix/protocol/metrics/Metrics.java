@@ -27,34 +27,24 @@
  */
 package com.comphenix.protocol.metrics;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
+
+import com.comphenix.protocol.utility.Util;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
-
-import com.comphenix.protocol.utility.Util;
-import com.comphenix.protocol.utility.WrappedScheduler;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 public class Metrics {
 
@@ -116,7 +106,7 @@ public class Metrics {
     /**
      * The scheduled task
      */
-    private volatile WrappedScheduler.TaskWrapper task = null;
+    private volatile BukkitTask task;
 
     public Metrics(final Plugin plugin) throws IOException {
         if (plugin == null) {
@@ -200,8 +190,7 @@ public class Metrics {
             }
 
             // Begin hitting the server with glorious data
-            task = WrappedScheduler.runAsynchronouslyRepeat(plugin, new Runnable() {
-
+            task = new BukkitRunnable() {
                 private boolean firstPost = true;
 
                 @Override
@@ -234,8 +223,7 @@ public class Metrics {
                         }
                     }
                 }
-            }, 0, PING_INTERVAL * 1200);
-
+            }.runTaskTimerAsynchronously(plugin, 0, PING_INTERVAL * 1200);
             return true;
         }
     }

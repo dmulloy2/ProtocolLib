@@ -23,19 +23,7 @@ import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.FileHandler;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-
-import org.apache.commons.io.HexDump;
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
+import java.util.logging.*;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
@@ -44,6 +32,13 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.google.common.base.Charsets;
+
+import org.apache.commons.io.HexDump;
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
 
 /**
  * Logs packets to a given stream
@@ -99,16 +94,16 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 						type = PacketType.findCurrent(protocol, pSender, id);
 					} catch (NumberFormatException ex) { // Check packet names
 						String name = args[2];
-						outer: for (PacketType packet : PacketType.values()) {
+						for (PacketType packet : PacketType.values()) {
 							if (packet.getProtocol() == protocol && packet.getSender() == pSender) {
 								if (packet.name().equalsIgnoreCase(name)) {
 									type = packet;
-									break outer;
+									break;
 								}
 								for (String className : packet.getClassNames()) {
 									if (className.equalsIgnoreCase(name)) {
 										type = packet;
-										break outer;
+										break;
 									}
 								}
 							}
@@ -248,9 +243,8 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 		return plugin;
 	}
 
-	private static enum LogLocation {
-		CONSOLE,
-		FILE;
+	private enum LogLocation {
+		CONSOLE, FILE
 	}
 
 	private static class LogFormatter extends Formatter {

@@ -133,7 +133,7 @@ public class NbtFactory {
 	 * Set the NBT compound tag of a given item stack.
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use
-	 * {@link MinecraftReflection#getCraftItemStack(ItemStack)} if not.
+	 * {@link MinecraftReflection#getBukkitItemStack(Object)} if not.
 	 * @param stack - the item stack, cannot be air.
 	 * @param compound - the new NBT compound, or NULL to remove it.
 	 * @throws IllegalArgumentException If the stack is not a CraftItemStack, or it represents air.
@@ -151,7 +151,7 @@ public class NbtFactory {
 	 * material, damage value or count.
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use
-	 * {@link MinecraftReflection#getCraftItemStack(ItemStack)} if not.
+	 * {@link MinecraftReflection#getBukkitItemStack(Object)} if not.
 	 * @param stack - the item stack.
 	 * @return A wrapper for its NBT tag.
 	 */

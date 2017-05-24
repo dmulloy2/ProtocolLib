@@ -27,6 +27,9 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
+import com.comphenix.protocol.wrappers.nbt.NbtBase;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Optional;
 
 /**
@@ -235,6 +238,8 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return BlockPosition.getConverter().getSpecific(value);
 		} else if (is(EnumWrappers.getDirectionClass(), value)) {
 			return EnumWrappers.getDirectionConverter().getSpecific(value);
+		} else if (is(MinecraftReflection.getNBTCompoundClass(), value)) {
+			return NbtFactory.fromNMSCompound(value);
 		}
 
 		// Legacy classes
@@ -277,6 +282,8 @@ public class WrappedWatchableObject extends AbstractWrapper {
 			return BlockPosition.getConverter().getGeneric(MinecraftReflection.getBlockPositionClass(), (BlockPosition) wrapped);
 		} else if (wrapped instanceof Direction) {
 			return EnumWrappers.getDirectionConverter().getGeneric(EnumWrappers.getDirectionClass(), (Direction) wrapped);
+		} else if (wrapped instanceof NbtCompound) {
+			return NbtFactory.fromBase((NbtCompound) wrapped).getHandle();
 		}
 
 		// Legacy classes

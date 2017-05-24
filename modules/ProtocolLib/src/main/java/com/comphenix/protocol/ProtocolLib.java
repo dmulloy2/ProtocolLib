@@ -237,8 +237,6 @@ public class ProtocolLib extends JavaPlugin {
 
 		} catch (OutOfMemoryError e) {
 			throw e;
-		} catch (ThreadDeath e) {
-			throw e;
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
 			disablePlugin();
@@ -267,8 +265,6 @@ public class ProtocolLib extends JavaPlugin {
 					break;
 				}
 			} catch (OutOfMemoryError e) {
-				throw e;
-			} catch (ThreadDeath e) {
 				throw e;
 			} catch (LinkageError e) {
 				logger.warning("Failed to register command " + command.name() + ": " + e);
@@ -410,8 +406,6 @@ public class ProtocolLib extends JavaPlugin {
 			createPacketTask(server);
 		} catch (OutOfMemoryError e) {
 			throw e;
-		} catch (ThreadDeath e) {
-			throw e;
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_ENABLE_ERROR).error(e));
 			disablePlugin();
@@ -424,8 +418,6 @@ public class ProtocolLib extends JavaPlugin {
 				statistics = new Statistics(this);
 			}
 		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
 			throw e;
 		} catch (IOException e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_METRICS_IO_ERROR).error(e).callerParam(statistics));
@@ -493,7 +485,7 @@ public class ProtocolLib extends JavaPlugin {
 
 			File[] candidates = pluginFolder.listFiles();
 			if (candidates != null) {
-				for (File candidate : pluginFolder.listFiles()) {
+				for (File candidate : candidates) {
 					if (candidate.isFile() && !candidate.equals(loadedFile)) {
 						Matcher match = ourPlugin.matcher(candidate.getName());
 						if (match.matches()) {
@@ -575,8 +567,6 @@ public class ProtocolLib extends JavaPlugin {
 				}
 			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
 		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
 			if (packetTask == -1) {
