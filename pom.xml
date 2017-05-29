@@ -15,6 +15,7 @@
   <modules>
     <module>modules/API</module>
     <module>modules/ProtocolLib</module>
+    <module>modules/TinyProtocol</module>
   </modules>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
