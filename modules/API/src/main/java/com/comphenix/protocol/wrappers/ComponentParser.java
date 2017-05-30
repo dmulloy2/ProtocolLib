@@ -47,7 +47,7 @@ public class ComponentParser {
 		try {
 			Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
 			Object reader = readerClass.getConstructor(Reader.class).newInstance(str);
-			Method setLenient = readerClass.getMethod("setLenienent", boolean.class);
+			Method setLenient = readerClass.getMethod("setLenient", boolean.class);
 			setLenient.invoke(reader, true);
 			Method getAdapter = gson.getClass().getMethod("getAdapter", Class.class);
 			Object adapter = getAdapter.invoke(gson, component);
