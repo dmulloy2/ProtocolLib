@@ -23,6 +23,7 @@ import java.util.TreeMap;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 
 import net.minecraft.server.v1_12_R1.EnumProtocol;
 import net.minecraft.server.v1_12_R1.EnumProtocolDirection;
@@ -52,6 +53,16 @@ public class PacketTypeTest {
 	public void testLoginStart() {
 		// This packet is critical for handleLoin
 		assertEquals(PacketLoginInStart.class, PacketType.Login.Client.START.getPacketClass());
+	}
+
+	@Test
+	public void testDeprecation() {
+		assertTrue("Packet isn't properly deprecated", PacketType.Status.Server.OUT_SERVER_INFO.isDeprecated());
+		assertTrue("Deprecated packet isn't properly included",
+				PacketRegistry.getServerPacketTypes().contains(PacketType.Status.Server.OUT_SERVER_INFO));
+		assertFalse("Packet isn't properly deprecated", PacketType.Play.Server.CHAT.isDeprecated());
+		assertEquals("Deprecated packets aren't equal", PacketType.Status.Server.OUT_SERVER_INFO,
+				PacketType.Status.Server.SERVER_INFO);
 	}
 
 	@Test

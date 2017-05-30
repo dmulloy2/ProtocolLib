@@ -171,16 +171,7 @@ public class PacketRegistry {
 		initialize();
 		NETTY.synchronize();
 
-		Set<PacketType> types = new HashSet<>();
-
-		// Filter out unsupported packets
-		for (PacketType type : NETTY.getServerPackets()) {
-			if (!type.isDeprecated()) {
-				types.add(type);
-			}
-		}
-
-		return types;
+		return NETTY.getServerPackets();
 	}
 	
 	/**
@@ -207,16 +198,7 @@ public class PacketRegistry {
 		initialize();
 		NETTY.synchronize();
 
-		Set<PacketType> types = new HashSet<>();
-
-		// Filter out unsupported packets
-		for (PacketType type : NETTY.getClientPackets()) {
-			if (!type.isDeprecated()) {
-				types.add(type);
-			}
-		}
-
-		return types;
+		return NETTY.getClientPackets();
 	}
 	
 	/**

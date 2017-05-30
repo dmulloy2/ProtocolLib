@@ -29,6 +29,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -132,10 +133,13 @@ public class ProtocolInjector implements ChannelListener {
 					if (serverConnection != null) {
 						break;
 					}
-				} catch (Exception e) {
-					// Try the next though
-					e.printStackTrace();
+				} catch (Exception ex) {
+					ProtocolLogger.debug("Encountered an exception invoking " + method, ex);
 				}
+			}
+
+			if (serverConnection == null) {
+				throw new ReflectiveOperationException("Failed to obtain server connection");
 			}
 
 			// Handle connected channels
@@ -153,8 +157,8 @@ public class ProtocolInjector implements ChannelListener {
 								injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject();
 							}
 						}
-					} catch (Exception e) {
-						reporter.reportDetailed(ProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).messageParam(channel).error(e));
+					} catch (Exception ex) {
+						reporter.reportDetailed(ProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).messageParam(channel).error(ex));
 					}
 				}
 			};
@@ -183,21 +187,22 @@ public class ProtocolInjector implements ChannelListener {
 			FuzzyReflection fuzzy = FuzzyReflection.fromObject(serverConnection, true);
 
 			try {
-				List<Field> fields = fuzzy.getFieldListByType(List.class);
-				for (Field field : fields) {
-					ParameterizedType param = (ParameterizedType) field.getGenericType();
-					if (param.getActualTypeArguments()[0].equals(MinecraftReflection.getNetworkManagerClass())) {
-						field.setAccessible(true);
-						networkManagers = (List<Object>) field.get(serverConnection);
-					}
-				}
+				Field field = fuzzy.getParameterizedField(List.class, MinecraftReflection.getNetworkManagerClass());
+				field.setAccessible(true);
+
+				networkManagers = (List<Object>) field.get(serverConnection);
 			} catch (Exception ex) {
-				networkManagers = (List<Object>) fuzzy.getMethodByParameters("getNetworkManagers", List.class, serverConnection.getClass())
-						.invoke(null, serverConnection);
+				ProtocolLogger.debug("Encountered an exception checking list fields", ex);
+
+				Method method =  fuzzy.getMethodByParameters("getNetworkManagers", List.class,
+						new Class<?>[] { serverConnection.getClass() });
+				method.setAccessible(true);
+
+				networkManagers = (List<Object>) method.invoke(null, serverConnection);
 			}
 
 			if (networkManagers == null) {
-				throw new RuntimeException("Failed to obtain list of network managers.");
+				throw new ReflectiveOperationException("Failed to obtain list of network managers");
 			}
 
 			// Insert ProtocolLib's connection interceptor
@@ -376,7 +381,7 @@ public class ProtocolInjector implements ChannelListener {
 
 			@Override
 			public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
-				if (options != null && !type.forceAsync() && !options.contains(ListenerOptions.ASYNC))
+				if (!type.isAsyncForced() && (options == null || !options.contains(ListenerOptions.ASYNC)))
 					mainThreadFilters.addType(type);
 				super.addPacketHandler(type, options);
 			}

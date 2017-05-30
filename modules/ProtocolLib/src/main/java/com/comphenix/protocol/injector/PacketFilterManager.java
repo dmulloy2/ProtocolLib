@@ -83,8 +83,8 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 			new ReportType("%s doesn't depend on ProtocolLib. Check that its plugin.yml has a 'depend' directive.");
 
 	// Registering packet IDs that are not supported
-	public static final ReportType REPORT_UNSUPPORTED_SERVER_PACKET_ID = new ReportType("[%s] Unsupported server packet ID in current Minecraft version: %s");
-	public static final ReportType REPORT_UNSUPPORTED_CLIENT_PACKET_ID = new ReportType("[%s] Unsupported client packet ID in current Minecraft version: %s");
+	public static final ReportType REPORT_UNSUPPORTED_SERVER_PACKET = new ReportType("[%s] Unsupported server packet in current Minecraft version: %s");
+	public static final ReportType REPORT_UNSUPPORTED_CLIENT_PACKET = new ReportType("[%s] Unsupported client packet in current Minecraft version: %s");
 
 	// Problems injecting and uninjecting players
 	public static final ReportType REPORT_CANNOT_UNINJECT_PLAYER = new ReportType("Unable to uninject net handler for player.");
@@ -624,7 +624,7 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 					playerInjection.addPacketHandler(type, listener.getSendingWhitelist().getOptions());
 				else
 					reporter.reportWarning(this,
-							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)
+							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET).messageParam(PacketAdapter.getPluginName(listener), type)
 					);
 			}
 
@@ -634,7 +634,7 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 					packetInjector.addPacketHandler(type, listener.getReceivingWhitelist().getOptions());
 				else
 					reporter.reportWarning(this,
-							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)
+							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET).messageParam(PacketAdapter.getPluginName(listener), type)
 					);
 			}
 		}

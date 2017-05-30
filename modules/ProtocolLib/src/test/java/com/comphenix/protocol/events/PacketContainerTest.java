@@ -527,7 +527,7 @@ public class PacketContainerTest {
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(
 			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD,
-			PacketType.Play.Server.SET_COOLDOWN, PacketType.Play.Server.REL_ENTITY_MOVE_LOOK
+			PacketType.Play.Server.SET_COOLDOWN
 	);
 
 	@Test
@@ -544,9 +544,9 @@ public class PacketContainerTest {
 			try {
 				PacketContainer constructed = new PacketContainer(type);
 
-//				if (!registered) {
-//					fail("Expected IllegalArgumentException(Packet " + type + " not registered)");
-//				}
+				if (!registered) {
+					fail("Expected IllegalArgumentException(Packet " + type + " not registered)");
+				}
 
 				// Initialize default values
 				constructed.getModifier().writeDefaults();

@@ -1,6 +1,10 @@
 package com.comphenix.protocol;
 
 import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -16,7 +20,6 @@ import org.bukkit.Bukkit;
 import com.comphenix.protocol.PacketTypeLookup.ClassLookup;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.reflect.ObjectEnum;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
@@ -52,7 +55,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * Incoming packets.
 		 * @author Kristian
 		 */
-		public static class Client extends ObjectEnum<PacketType> {
+		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType SET_PROTOCOL =                 new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "SetProtocol");
@@ -60,7 +63,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Client INSTANCE = new Client();
 
 			// Prevent accidental construction
-			private Client() { super(PacketType.class); }
+			private Client() { super(); }
 
 			public static Client getInstance() {
 				return INSTANCE;
@@ -74,10 +77,10 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * An empty enum, as the server will not send any packets in this protocol.
 		 * @author Kristian
 		 */
-		public static class Server extends ObjectEnum<PacketType> {
+		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 			private final static Server INSTANCE = new Server();
-			private Server() { super(PacketType.class); }
+			private Server() { super(); }
 
 			public static Server getInstance() {
 				return INSTANCE;
@@ -103,7 +106,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * Outgoing packets.
 		 * @author Kristian
 		 */
-		public static class Server extends ObjectEnum<PacketType> {
+		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
 			public static final PacketType SPAWN_ENTITY =                 new PacketType(PROTOCOL, SENDER, 0x00, 0x0E, "SpawnEntity");
@@ -192,19 +195,19 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType MAP_CHUNK_BULK =              new PacketType(PROTOCOL, SENDER, 255, 255, "MapChunkBulk").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
+			public static final PacketType MAP_CHUNK_BULK =              new PacketType(PROTOCOL, SENDER, 255, 255, "MapChunkBulk");
 
 			/**
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType SET_COMPRESSION =             new PacketType(PROTOCOL, SENDER, 254, 254, "SetCompression").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
+			public static final PacketType SET_COMPRESSION =             new PacketType(PROTOCOL, SENDER, 254, 254, "SetCompression");
 
 			/**
 			 * @deprecated Removed in 1.9
 			 */
 			@Deprecated
-			public static final PacketType UPDATE_ENTITY_NBT =           new PacketType(PROTOCOL, SENDER, 253, 253, "UpdateEntityNBT").deprecatedIn(MinecraftVersion.COMBAT_UPDATE);
+			public static final PacketType UPDATE_ENTITY_NBT =           new PacketType(PROTOCOL, SENDER, 253, 253, "UpdateEntityNBT");
 
 			// ----- Renamed packets
 
@@ -212,25 +215,25 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Renamed to {@link #WINDOW_DATA}
 			 */
 			@Deprecated
-			public static final PacketType CRAFT_PROGRESS_BAR =           WINDOW_DATA.deprecated();
+			public static final PacketType CRAFT_PROGRESS_BAR =           WINDOW_DATA.clone();
 
 			/**
 			 * @deprecated Renamed to {@link #REL_ENTITY_MOVE_LOOK}
 			 */
 			@Deprecated
-			public static final PacketType ENTITY_MOVE_LOOK =             REL_ENTITY_MOVE_LOOK.deprecated();
+			public static final PacketType ENTITY_MOVE_LOOK =             REL_ENTITY_MOVE_LOOK.clone();
 
 			/**
 			 * @deprecated Renamed to {@link #STATISTIC}
 			 */
 			@Deprecated
-			public static final PacketType STATISTICS =                   STATISTIC.deprecated();
+			public static final PacketType STATISTICS =                   STATISTIC.clone();
 
 			/**
 			 * @deprecated Renamed to {@link #OPEN_SIGN_EDITOR}
 			 */
 			@Deprecated
-			public static final PacketType OPEN_SIGN_ENTITY =             OPEN_SIGN_EDITOR.deprecated();
+			public static final PacketType OPEN_SIGN_ENTITY =             OPEN_SIGN_EDITOR.clone();
 
 			// ----- Replaced in 1.9.4
 
@@ -239,12 +242,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 */
 			@Deprecated
 			public static final PacketType UPDATE_SIGN =                  MinecraftReflection.signUpdateExists() ? new PacketType(PROTOCOL, SENDER, 252, 252, "UpdateSign") :
-																			  TILE_ENTITY_DATA.deprecated();
+																			  TILE_ENTITY_DATA.clone();
 
 			private final static Server INSTANCE = new Server();
 
 			// Prevent accidental construction
-			private Server() { super(PacketType.class); }
+			private Server() { super(); }
 
 			public static Sender getSender() {
 				return SENDER;
@@ -258,7 +261,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * Incoming packets.
 		 * @author Kristian
 		 */
-		public static class Client extends ObjectEnum<PacketType> {
+		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType TELEPORT_ACCEPT =              new PacketType(PROTOCOL, SENDER, 0x00, 0xF9, "TeleportAccept");
@@ -298,7 +301,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Client INSTANCE = new Client();
 
 			// Prevent accidental construction
-			private Client() { super(PacketType.class); }
+			private Client() { super(); }
 
 			public static Sender getSender() {
 				return SENDER;
@@ -324,22 +327,24 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * Outgoing packets.
 		 * @author Kristian
 		 */
-		public static class Server extends ObjectEnum<PacketType> {
+		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
-			public static final PacketType SERVER_INFO =                  new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "ServerInfo").forceAsync(true);
+			@ForceAsync
+			public static final PacketType SERVER_INFO =                  new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "ServerInfo");
 			public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x01, 0x01, "Pong");
 
 			/**
-			 * @deprecated Replaced by {@link #SERVER_INFO}
+			 * @deprecated Renamed to {@link #SERVER_INFO}
 			 */
 			@Deprecated
-			public static final PacketType OUT_SERVER_INFO =              SERVER_INFO.deprecated();
+			@ForceAsync
+			public static final PacketType OUT_SERVER_INFO =              SERVER_INFO.clone();
 
 			private final static Server INSTANCE = new Server();
 
 			// Prevent accidental construction
-			private Server() { super(PacketType.class); }
+			private Server() { super(); }
 
 			public static Sender getSender() {
 				return SENDER;
@@ -353,7 +358,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * Incoming packets.
 		 * @author Kristian
 		 */
-		public static class Client extends ObjectEnum<PacketType> {
+		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "Start");
@@ -362,7 +367,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Client INSTANCE = new Client();
 
 			// Prevent accidental construction
-			private Client() { super(PacketType.class); }
+			private Client() { super(); }
 
 			public static Sender getSender() {
 				return SENDER;
@@ -388,7 +393,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * Outgoing packets.
 		 * @author Kristian
 		 */
-		public static class Server extends ObjectEnum<PacketType> {
+		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
 			public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "Disconnect");
@@ -399,7 +404,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Server INSTANCE = new Server();
 
 			// Prevent accidental construction
-			private Server() { super(PacketType.class); }
+			private Server() { super(); }
 
 			public static Sender getSender() {
 				return SENDER;
@@ -413,7 +418,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * Incoming packets.
 		 * @author Kristian
 		 */
-		public static class Client extends ObjectEnum<PacketType> {
+		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "Start");
@@ -422,7 +427,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Client INSTANCE = new Client();
 
 			// Prevent accidental construction
-			private Client() { super(PacketType.class); }
+			private Client() { super(); }
 
 			public static Sender getSender() {
 				return SENDER;
@@ -449,7 +454,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		// Missing server packets: [10, 11, 12, 21, 107, 252]
-		public static class Server extends ObjectEnum<PacketType> {
+		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
 			public static final PacketType PLAYER_FLYING =            PacketType.newLegacy(SENDER, 10);
@@ -473,7 +478,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
 			// Prevent accidental construction
 			private Server() {
-				super(PacketType.class);
+				super();
 			}
 
 			public static Sender getSender() {
@@ -489,7 +494,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		// Missing client packets: [1, 9, 255]
-		public static class Client extends ObjectEnum<PacketType> {
+		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType LOGIN =                    PacketType.newLegacy(SENDER, 1);
@@ -499,7 +504,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Client INSTANCE = new Client();
 
 			// Prevent accidental construction
-			private Client() { super(PacketType.class); }
+			private Client() { super(); }
 
 			public static Sender getSender() {
 				return SENDER;
@@ -582,6 +587,13 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		}
 	}
 
+	/**
+	 * Whether or not packets of this type must be handled asynchronously.
+	 */
+	@Target(ElementType.FIELD)
+	@Retention(RetentionPolicy.RUNTIME)
+	public @interface ForceAsync { }
+
 	// Lookup of packet types
 	private static PacketTypeLookup LOOKUP;
 
@@ -597,9 +609,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	private final MinecraftVersion version;
 	private final String[] classNames;
 
-	private boolean forceAsync;
-	private boolean dynamic;
+	private String name;
 	private boolean deprecated;
+	private boolean forceAsync;
+
+	private boolean dynamic;
 
 	/**
 	 * Retrieve the current packet/legacy lookup.
@@ -891,7 +905,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		Callable<Boolean> callable = new Callable<Boolean>() {
 			@Override
 			public Boolean call() throws Exception {
-				ObjectEnum<PacketType> objEnum;
+				PacketTypeEnum objEnum;
 
 				// A bit ugly, but performance is critical
 				objEnum = getObjectEnum(type);
@@ -920,7 +934,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 * @param type - the packet type.
 	 * @return The corresponding object enum.
 	 */
-	public static ObjectEnum<PacketType> getObjectEnum(final PacketType type) {
+	public static PacketTypeEnum getObjectEnum(final PacketType type) {
 		switch (type.getProtocol()) {
 			case HANDSHAKING:
 				return type.isClient() ? Handshake.Client.getInstance() : Handshake.Server.getInstance();
@@ -967,7 +981,6 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		for (int i = 0; i < classNames.length; i++) {
 			classNames[i] = format(protocol, sender, names[i]);
 		}
-		//System.out.println(Arrays.toString(classNames));
 	}
 
 	/**
@@ -1048,12 +1061,47 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		}
 	}
 
+	// Only used by Enum processor
+	void setName(String name) {
+		this.name = name;
+	}
+
 	/**
 	 * Retrieve the declared enum name of this packet type.
 	 * @return The enum name.
 	 */
 	public String name() {
-		return getObjectEnum(this).getDeclaredName(this);
+		return name;
+	}
+
+	// Only used by enum processor
+	void setDeprecated() {
+		this.deprecated = true;
+	}
+
+	/**
+	 * Whether or not this packet is deprecated. Deprecated packet types have either been renamed, replaced, or removed.
+	 * Kind of like the thing they use to tell children to recycle except with packets you probably shouldn't be using.
+	 *
+	 * @return True if the type is deprecated, false if not
+	 */
+	public boolean isDeprecated() {
+		return deprecated;
+	}
+
+	// Only used by enum processor
+	void forceAsync() {
+		this.forceAsync = true;
+	}
+
+	/**
+	 * Whether or not the processing of this packet must take place on a thread different than the main thread. You don't
+	 * get a choice. If this is false it's up to you.
+	 *
+	 * @return True if async processing is forced, false if not.
+	 */
+	public boolean isAsyncForced() {
+		return forceAsync;
 	}
 
 	/**
@@ -1084,40 +1132,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		return dynamic;
 	}
 
-	private PacketType forceAsync(boolean forceAsync) {
-		this.forceAsync = forceAsync;
-		return this;
-	}
-
-	/**
-	 * Whether or not this packet must be processed asynchronously.
-	 * @return True if it must be, false if not.
-	 */
-	public boolean forceAsync() {
-		return forceAsync;
-	}
-
-	private PacketType deprecatedIn(MinecraftVersion version) {
-		try {
-			return MinecraftVersion.getCurrentVersion().isAtLeast(version) ? deprecated() : this;
-		} catch (Throwable ex) {
-			return deprecated();
-		}
-	}
-
-	private PacketType deprecated() {
-		PacketType ret = clone();
-		ret.deprecated = true;
-		return ret;
-	}
-
-	public boolean isDeprecated() {
-		return deprecated;
-	}
-
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(protocol, sender, currentId, deprecated);
+		return Objects.hashCode(protocol, sender, currentId);
 	}
 
 	@Override
@@ -1127,8 +1144,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
 		if (obj instanceof PacketType) {
 			PacketType other = (PacketType) obj;
-			return deprecated == other.deprecated &&
-			       protocol == other.protocol &&
+			return protocol == other.protocol &&
 				   sender == other.sender &&
 				   currentId == other.currentId;
 		}
@@ -1141,7 +1157,6 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 				compare(protocol, other.getProtocol()).
 				compare(sender, other.getSender()).
 				compare(currentId, other.getCurrentId()).
-				compareTrueFirst(deprecated, other.isDeprecated()).
 				result();
 	}
 

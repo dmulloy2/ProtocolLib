@@ -40,8 +40,6 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 
 	@Override
 	protected synchronized void initialize() {
-		ProtocolLogger.debug("Initializing the Netty protocol registry"); // Debug for issue #202
-
 		Object[] protocols = enumProtocol.getEnumConstants();
 
 		// ID to Packet class maps
@@ -75,8 +73,7 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 			result.containers.add(new MapContainer(map));
 		}
 
-		for (int i = 0; i < protocols.length; i++) {
-			Object protocol = protocols[i];
+		for (Object protocol : protocols) {
 			Enum<?> enumProtocol = (Enum<?>) protocol;
 			Protocol equivalent = Protocol.fromVanilla(enumProtocol);
 			
@@ -103,8 +100,8 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 					register.serverPackets.add(type);
 				if (sender == Sender.CLIENT)
 					register.clientPackets.add(type);
-			} catch (IllegalArgumentException ex) {
-				// Sometimes this happens with fake packets, just ignore it
+			} catch (Exception ex) {
+				ProtocolLogger.debug("Encountered an exception associating packet " + type, ex);
 			}
 		}
 	}
