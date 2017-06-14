@@ -17,25 +17,25 @@
 
 package com.comphenix.protocol.reflect.compiler;
 
-import net.sf.cglib.asm.MethodVisitor;
-import net.sf.cglib.asm.Opcodes;
-import net.sf.cglib.asm.Type;
+import net.sf.cglib.asm.$MethodVisitor;
+import net.sf.cglib.asm.$Opcodes;
+import net.sf.cglib.asm.$Type;
 
 /**
  * Used by the compiler to automatically box and unbox values.
  */
 class BoxingHelper {
 
-	private final static Type BYTE_TYPE = Type.getObjectType("java/lang/Byte");
-	private final static Type BOOLEAN_TYPE = Type.getObjectType("java/lang/Boolean");
-	private final static Type SHORT_TYPE = Type.getObjectType("java/lang/Short");
-	private final static Type CHARACTER_TYPE = Type.getObjectType("java/lang/Character");
-	private final static Type INTEGER_TYPE = Type.getObjectType("java/lang/Integer");
-	private final static Type FLOAT_TYPE = Type.getObjectType("java/lang/Float");
-	private final static Type LONG_TYPE = Type.getObjectType("java/lang/Long");
-	private final static Type DOUBLE_TYPE = Type.getObjectType("java/lang/Double");
-	private final static Type NUMBER_TYPE = Type.getObjectType("java/lang/Number");
-	private final static Type OBJECT_TYPE = Type.getObjectType("java/lang/Object");
+	private final static $Type BYTE_$Type = $Type.getObjectType("java/lang/Byte");
+	private final static $Type BOOLEAN_$Type = $Type.getObjectType("java/lang/Boolean");
+	private final static $Type SHORT_$Type = $Type.getObjectType("java/lang/Short");
+	private final static $Type CHARACTER_$Type = $Type.getObjectType("java/lang/Character");
+	private final static $Type INTEGER_$Type = $Type.getObjectType("java/lang/Integer");
+	private final static $Type FLOAT_$Type = $Type.getObjectType("java/lang/Float");
+	private final static $Type LONG_$Type = $Type.getObjectType("java/lang/Long");
+	private final static $Type DOUBLE_$Type = $Type.getObjectType("java/lang/Double");
+	private final static $Type NUMBER_$Type = $Type.getObjectType("java/lang/Number");
+	private final static $Type OBJECT_$Type = $Type.getObjectType("java/lang/Object");
 
 	private final static MethodDescriptor BOOLEAN_VALUE = MethodDescriptor.getMethod("boolean booleanValue()");
 	private final static MethodDescriptor CHAR_VALUE = MethodDescriptor.getMethod("char charValue()");
@@ -44,9 +44,9 @@ class BoxingHelper {
 	private final static MethodDescriptor LONG_VALUE = MethodDescriptor.getMethod("long longValue()");
 	private final static MethodDescriptor DOUBLE_VALUE = MethodDescriptor.getMethod("double doubleValue()");
 
-	private MethodVisitor mv;
+	private $MethodVisitor mv;
 	
-	public BoxingHelper(MethodVisitor mv) {
+	public BoxingHelper($MethodVisitor mv) {
 		this.mv = mv;
 	}
 	
@@ -54,42 +54,42 @@ class BoxingHelper {
 	 * Generates the instructions to box the top stack value. This value is
 	 * replaced by its boxed equivalent on top of the stack.
 	 *
-	 * @param type the type of the top stack value.
+	 * @param type the $Type of the top stack value.
 	 */
-	public void box(final Type type){
-		if(type.getSort() == Type.OBJECT || type.getSort() == Type.ARRAY) {
+	public void box(final $Type type){
+		if(type.getSort() == $Type.OBJECT || type.getSort() == $Type.ARRAY) {
 			return;
 		}
 		
-		if(type == Type.VOID_TYPE) {
+		if(type == $Type.VOID_TYPE) {
 			push((String) null);
 		} else {
-			Type boxed = type;
+			$Type boxed = type;
 			
 			switch(type.getSort()) {
-				case Type.BYTE:
-					boxed = BYTE_TYPE;
+				case $Type.BYTE:
+					boxed = BYTE_$Type;
 					break;
-				case Type.BOOLEAN:
-					boxed = BOOLEAN_TYPE;
+				case $Type.BOOLEAN:
+					boxed = BOOLEAN_$Type;
 					break;
-				case Type.SHORT:
-					boxed = SHORT_TYPE;
+				case $Type.SHORT:
+					boxed = SHORT_$Type;
 					break;
-				case Type.CHAR:
-					boxed = CHARACTER_TYPE;
+				case $Type.CHAR:
+					boxed = CHARACTER_$Type;
 					break;
-				case Type.INT:
-					boxed = INTEGER_TYPE;
+				case $Type.INT:
+					boxed = INTEGER_$Type;
 					break;
-				case Type.FLOAT:
-					boxed = FLOAT_TYPE;
+				case $Type.FLOAT:
+					boxed = FLOAT_$Type;
 					break;
-				case Type.LONG:
-					boxed = LONG_TYPE;
+				case $Type.LONG:
+					boxed = LONG_$Type;
 					break;
-				case Type.DOUBLE:
-					boxed = DOUBLE_TYPE;
+				case $Type.DOUBLE:
+					boxed = DOUBLE_$Type;
 					break;
 			}
 			
@@ -105,46 +105,46 @@ class BoxingHelper {
 				swap();
 			}
 			
-			invokeConstructor(boxed, new MethodDescriptor("<init>", Type.VOID_TYPE, new Type[] {type}));
+			invokeConstructor(boxed, new MethodDescriptor("<init>", $Type.VOID_TYPE, new $Type[] {type}));
 		}
 	}
 	
 	/**
 	 * Generates the instruction to invoke a constructor.
 	 *
-	 * @param type   the class in which the constructor is defined.
+	 * @param $Type   the class in which the constructor is defined.
 	 * @param method the constructor to be invoked.
 	 */
-	public void invokeConstructor(final Type type, final MethodDescriptor method){
-		invokeInsn(Opcodes.INVOKESPECIAL, type, method);
+	public void invokeConstructor(final $Type $Type, final MethodDescriptor method){
+		invokeInsn($Opcodes.INVOKESPECIAL, $Type, method);
 	}
 	
 	/**
 	 * Generates a DUP_X1 instruction.
 	 */
 	public void dupX1(){
-		mv.visitInsn(Opcodes.DUP_X1);
+		mv.visitInsn($Opcodes.DUP_X1);
 	}
 
 	/**
 	 * Generates a DUP_X2 instruction.
 	 */
 	public void dupX2(){
-		mv.visitInsn(Opcodes.DUP_X2);
+		mv.visitInsn($Opcodes.DUP_X2);
 	}
 	
 	/**
 	 * Generates a POP instruction.
 	 */
 	public void pop(){
-		mv.visitInsn(Opcodes.POP);
+		mv.visitInsn($Opcodes.POP);
 	}
 
 	/**
 	 * Generates a SWAP instruction.
 	 */
 	public void swap(){
-		mv.visitInsn(Opcodes.SWAP);
+		mv.visitInsn($Opcodes.SWAP);
 	}
 	
 	/**
@@ -163,11 +163,11 @@ class BoxingHelper {
 	 */
 	public void push(final int value) {
 		if (value >= -1 && value <= 5) {
-			mv.visitInsn(Opcodes.ICONST_0 + value);
+			mv.visitInsn($Opcodes.ICONST_0 + value);
 		} else if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-			mv.visitIntInsn(Opcodes.BIPUSH, value);
+			mv.visitIntInsn($Opcodes.BIPUSH, value);
 		} else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-			mv.visitIntInsn(Opcodes.SIPUSH, value);
+			mv.visitIntInsn($Opcodes.SIPUSH, value);
 		} else {
 			mv.visitLdcInsn(new Integer(value));
 		}
@@ -176,10 +176,10 @@ class BoxingHelper {
 	/**
 	 * Generates the instruction to create a new object.
 	 *
-	 * @param type the class of the object to be created.
+	 * @param $Type the class of the object to be created.
 	 */
-	public void newInstance(final Type type){
-		typeInsn(Opcodes.NEW, type);
+	public void newInstance(final $Type $Type){
+		$TypeInsn($Opcodes.NEW, $Type);
 	}
 	
 	/**
@@ -189,7 +189,7 @@ class BoxingHelper {
 	 */
 	public void push(final String value) {
 		if (value == null) {
-			mv.visitInsn(Opcodes.ACONST_NULL);
+			mv.visitInsn($Opcodes.ACONST_NULL);
 		} else {
 			mv.visitLdcInsn(value);
 		}
@@ -200,35 +200,35 @@ class BoxingHelper {
 	 * replaced by its unboxed equivalent on top of the stack.
 	 * 
 	 * @param type
-	 *            the type of the top stack value.
+	 *            the $Type of the top stack value.
 	 */
-	public void unbox(final Type type){
-		Type t = NUMBER_TYPE;
+	public void unbox(final $Type type){
+		$Type t = NUMBER_$Type;
 		MethodDescriptor sig = null;
 		
 		switch(type.getSort()) {
-			case Type.VOID:
+			case $Type.VOID:
 				return;
-			case Type.CHAR:
-				t = CHARACTER_TYPE;
+			case $Type.CHAR:
+				t = CHARACTER_$Type;
 				sig = CHAR_VALUE;
 				break;
-			case Type.BOOLEAN:
-				t = BOOLEAN_TYPE;
+			case $Type.BOOLEAN:
+				t = BOOLEAN_$Type;
 				sig = BOOLEAN_VALUE;
 				break;
-			case Type.DOUBLE:
+			case $Type.DOUBLE:
 				sig = DOUBLE_VALUE;
 				break;
-			case Type.FLOAT:
+			case $Type.FLOAT:
 				sig = FLOAT_VALUE;
 				break;
-			case Type.LONG:
+			case $Type.LONG:
 				sig = LONG_VALUE;
 				break;
-			case Type.INT:
-			case Type.SHORT:
-			case Type.BYTE:
+			case $Type.INT:
+			case $Type.SHORT:
+			case $Type.BYTE:
 				sig = INT_VALUE;
 			}
 		
@@ -242,13 +242,13 @@ class BoxingHelper {
 
 	/**
 	 * Generates the instruction to check that the top stack value is of the
-	 * given type.
+	 * given $Type.
 	 *
-	 * @param type a class or interface type.
+	 * @param $Type a class or interface $Type.
 	 */
-	public void checkCast(final Type type){
-		if(!type.equals(OBJECT_TYPE)) {
-			typeInsn(Opcodes.CHECKCAST, type);
+	public void checkCast(final $Type $Type){
+		if(!$Type.equals(OBJECT_$Type)) {
+			$TypeInsn($Opcodes.CHECKCAST, $Type);
 		}
 	}
 	
@@ -258,35 +258,35 @@ class BoxingHelper {
 	 * @param owner  the class in which the method is defined.
 	 * @param method the method to be invoked.
 	 */
-	public void invokeVirtual(final Type owner, final MethodDescriptor method){
-		invokeInsn(Opcodes.INVOKEVIRTUAL, owner, method);
+	public void invokeVirtual(final $Type owner, final MethodDescriptor method){
+		invokeInsn($Opcodes.INVOKEVIRTUAL, owner, method);
 	}
 	
 	/**
 	 * Generates an invoke method instruction.
 	 *
 	 * @param opcode the instruction's opcode.
-	 * @param type   the class in which the method is defined.
+	 * @param $Type   the class in which the method is defined.
 	 * @param method the method to be invoked.
 	 */
-	private void invokeInsn(final int opcode, final Type type, final MethodDescriptor method){
-		String owner = type.getSort() == Type.ARRAY ? type.getDescriptor() : type.getInternalName();
+	private void invokeInsn(final int opcode, final $Type $Type, final MethodDescriptor method){
+		String owner = $Type.getSort() == $Type.ARRAY ? $Type.getDescriptor() : $Type.getInternalName();
 		mv.visitMethodInsn(opcode, owner, method.getName(), method.getDescriptor());
 	}
 	
 	/**
-	 * Generates a type dependent instruction.
+	 * Generates a $Type dependent instruction.
 	 *
 	 * @param opcode the instruction's opcode.
-	 * @param type   the instruction's operand.
+	 * @param $Type   the instruction's operand.
 	 */
-	private void typeInsn(final int opcode, final Type type){
+	private void $TypeInsn(final int opcode, final $Type $Type){
 		String desc;
 		
-		if(type.getSort() == Type.ARRAY) {
-			desc = type.getDescriptor();
+		if($Type.getSort() == $Type.ARRAY) {
+			desc = $Type.getDescriptor();
 		} else { 
-			desc = type.getInternalName();
+			desc = $Type.getInternalName();
 		}
 		
 		mv.visitTypeInsn(opcode, desc);

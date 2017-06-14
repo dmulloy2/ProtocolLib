@@ -8,7 +8,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <minorVersion>4.3.0</minorVersion>
+    <minorVersion>4.3.1-SNAPSHOT</minorVersion>
     <spigotVersion>1.12-R0.1-SNAPSHOT</spigotVersion>
   </properties>
 
@@ -67,7 +67,7 @@
     <dependency>
       <groupId>cglib</groupId>
       <artifactId>cglib-nodep</artifactId>
-      <version>2.2.2</version>
+      <version>3.2.5</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
