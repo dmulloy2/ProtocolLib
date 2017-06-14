@@ -178,7 +178,7 @@ public final class Reflection {
 	}
 
 	/**
-	 * Search for the first publically and privately defined method of the given name and parameter count.
+	 * Search for the first publicly and privately defined method of the given name and parameter count.
 	 * 
 	 * @param className - lookup name of the class, see {@link #getClass(String)}.
 	 * @param methodName - the method name, or NULL to skip.
@@ -191,7 +191,7 @@ public final class Reflection {
 	}
 
 	/**
-	 * Search for the first publically and privately defined method of the given name and parameter count.
+	 * Search for the first publicly and privately defined method of the given name and parameter count.
 	 * 
 	 * @param clazz - a class to start with.
 	 * @param methodName - the method name, or NULL to skip.
@@ -204,7 +204,7 @@ public final class Reflection {
 	}
 
 	/**
-	 * Search for the first publically and privately defined method of the given name and parameter count.
+	 * Search for the first publicly and privately defined method of the given name and parameter count.
 	 * 
 	 * @param clazz - a class to start with.
 	 * @param methodName - the method name, or NULL to skip.

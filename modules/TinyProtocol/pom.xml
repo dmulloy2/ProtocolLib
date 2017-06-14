@@ -14,8 +14,8 @@
   <parent>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib-Parent</artifactId>
-    <version>v3-SNAPSHOT</version>
-    <relativePath>../</relativePath>
+    <version>v4-SNAPSHOT</version>
+    <relativePath>../../</relativePath>
   </parent>
 
   <repositories>
@@ -42,8 +42,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.0</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
 
@@ -76,20 +76,6 @@
 
     </plugins>
   </build>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.spigotmc</groupId>
-      <artifactId>spigot-api</artifactId>
-      <version>1.8.8-R0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.spigotmc</groupId>
-      <artifactId>spigot</artifactId>
-      <version>1.8.8-R0.1-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
 
   <profiles>
     <profile>
