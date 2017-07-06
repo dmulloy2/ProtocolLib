@@ -1,21 +1,19 @@
 package com.comphenix.protocol;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.logging.Logger;
+import com.comphenix.protocol.utility.Constants;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
 import net.minecraft.server.v1_12_R1.DispenserRegistry;
 
+import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.v1_12_R1.util.Versioning;
 
-import com.comphenix.protocol.utility.Constants;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
+import static org.mockito.Mockito.*;
 
 /**
  * Used to ensure that ProtocolLib and Bukkit is prepared to be tested.
@@ -37,12 +35,18 @@ public class BukkitInitialization {
 
 			initializePackage();
 
+			try {
+				LogManager.getLogger();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+
 			DispenserRegistry.c(); // Basically registers everything
 
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
 
-			when(mockedServer.getLogger()).thenReturn(Logger.getLogger("Minecraft"));
+			when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
 			when(mockedServer.getName()).thenReturn("Mock Server");
 			when(mockedServer.getVersion()).thenReturn(CraftServer.class.getPackage().getImplementationVersion());
 			when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
@@ -61,6 +65,12 @@ public class BukkitInitialization {
 	public static void initializePackage() {
 		if (!packaged) {
 			packaged = true;
+
+			try {
+				LogManager.getLogger();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 
 			MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
 			MinecraftVersion.setCurrentVersion(MinecraftVersion.COLOR_UPDATE);
