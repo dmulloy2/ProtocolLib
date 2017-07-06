@@ -1381,7 +1381,7 @@ public class PacketContainer implements Serializable {
 	private static class ComponentArrayConverter implements EquivalentConverter<WrappedChatComponent[]> {
 		private static final EquivalentConverter<WrappedChatComponent[]> DELEGATE;
 		static {
-			if (!PacketType.Play.Server.UPDATE_SIGN.isDeprecated()) {
+			if (MinecraftReflection.signUpdateExists()) {
 				DELEGATE = new LegacyComponentConverter();
 			} else {
 				DELEGATE = new NBTComponentConverter();
