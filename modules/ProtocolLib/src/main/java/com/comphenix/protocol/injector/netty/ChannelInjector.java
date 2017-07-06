@@ -910,7 +910,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		@Override
 		public Player getUpdatedPlayer() {
-			return injector.updated;
+			return injector.updated != null ? injector.updated : getPlayer();
 		}
 
 		@Override

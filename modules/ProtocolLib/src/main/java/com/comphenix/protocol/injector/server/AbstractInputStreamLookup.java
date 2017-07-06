@@ -71,7 +71,7 @@ public abstract class AbstractInputStreamLookup {
 		Player player = previous.getPlayer();
 		
 		// Default implementation
-		if (player instanceof InjectorContainer) {
+		if (player instanceof TemporaryPlayer) {
 			TemporaryPlayerFactory.setInjectorInPlayer(player, current);
 		}
 	}
