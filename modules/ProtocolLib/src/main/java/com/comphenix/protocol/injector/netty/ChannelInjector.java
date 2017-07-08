@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.sf.cglib.proxy.Factory;
 
@@ -92,7 +93,18 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	// Versioning
 	private static Class<?> PACKET_SET_PROTOCOL = null;
-	private static AttributeKey<Integer> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL");
+
+	private static AtomicInteger keyId = new AtomicInteger();
+	private static AttributeKey<Integer> PROTOCOL_KEY;
+
+	static {
+		// Shout-outs to reloading
+		try {
+			PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL");
+		} catch (IllegalArgumentException ex) {
+			PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
+		}
+	}
 
 	// Saved accessors
 	private static MethodAccessor DECODE_BUFFER;
@@ -593,7 +605,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Save the channel injector
 			factory.cacheInjector(profile.getName(), this);
 		}
-		
+
 		if (PACKET_SET_PROTOCOL == null) {
 			try {
 				PACKET_SET_PROTOCOL = PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass();
