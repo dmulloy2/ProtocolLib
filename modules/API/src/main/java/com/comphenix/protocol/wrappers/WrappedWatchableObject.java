@@ -273,22 +273,22 @@ public class WrappedWatchableObject extends AbstractWrapper {
 		if (wrapped instanceof WrappedChatComponent) {
 			return ((WrappedChatComponent) wrapped).getHandle();
 		} else if (wrapped instanceof ItemStack) {
-			return BukkitConverters.getItemStackConverter().getGeneric(MinecraftReflection.getItemStackClass(), (ItemStack) wrapped);
+			return BukkitConverters.getItemStackConverter().getGeneric((ItemStack) wrapped);
 		} else if (wrapped instanceof WrappedBlockData) {
-			return BukkitConverters.getWrappedBlockDataConverter().getGeneric(MinecraftReflection.getIBlockDataClass(), (WrappedBlockData) wrapped);
+			return BukkitConverters.getWrappedBlockDataConverter().getGeneric((WrappedBlockData) wrapped);
 		} else if (wrapped instanceof Vector3F) {
-			return Vector3F.getConverter().getGeneric(Vector3F.getMinecraftClass(), (Vector3F) wrapped);
+			return Vector3F.getConverter().getGeneric((Vector3F) wrapped);
 		} else if (wrapped instanceof BlockPosition) {
-			return BlockPosition.getConverter().getGeneric(MinecraftReflection.getBlockPositionClass(), (BlockPosition) wrapped);
+			return BlockPosition.getConverter().getGeneric((BlockPosition) wrapped);
 		} else if (wrapped instanceof Direction) {
-			return EnumWrappers.getDirectionConverter().getGeneric(EnumWrappers.getDirectionClass(), (Direction) wrapped);
+			return EnumWrappers.getDirectionConverter().getGeneric((Direction) wrapped);
 		} else if (wrapped instanceof NbtCompound) {
 			return NbtFactory.fromBase((NbtCompound) wrapped).getHandle();
 		}
 
 		// Legacy classes
 		if (wrapped instanceof ChunkPosition) {
-			return ChunkPosition.getConverter().getGeneric(MinecraftReflection.getChunkPositionClass(), (ChunkPosition) wrapped);
+			return ChunkPosition.getConverter().getGeneric((ChunkPosition) wrapped);
 		} else if (wrapped instanceof WrappedChunkCoordinate) {
 			return ((WrappedChunkCoordinate) wrapped).getHandle();
 		}

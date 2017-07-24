@@ -67,7 +67,7 @@ public class ChunkCoordIntPair {
 	public static EquivalentConverter<ChunkCoordIntPair> getConverter() {
 		return new EquivalentConverter<ChunkCoordIntPair>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, ChunkCoordIntPair specific) {
+			public Object getGeneric(ChunkCoordIntPair specific) {
 				if (COORD_CONSTRUCTOR == null) {
 					COORD_CONSTRUCTOR = Accessors.getConstructorAccessor(COORD_PAIR_CLASS, int.class, int.class);
 				}

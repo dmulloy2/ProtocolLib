@@ -91,7 +91,7 @@ public class PlayerInfoData {
 	public static EquivalentConverter<PlayerInfoData> getConverter() {
 		return new EquivalentConverter<PlayerInfoData>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, PlayerInfoData specific) {
+			public Object getGeneric(PlayerInfoData specific) {
 				if (constructor == null) {
 					try {
 						// public PlayerInfoData(Packet, GameProfile, int, GameMode, ChatComponent)
@@ -116,7 +116,7 @@ public class PlayerInfoData {
 							null,
 							specific.profile.handle,
 							specific.latency,
-							EnumWrappers.getGameModeConverter().getGeneric(EnumWrappers.getGameModeClass(), specific.gameMode),
+							EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode),
 							specific.displayName != null ? specific.displayName.handle : null
 					);
 					return result;
@@ -128,7 +128,7 @@ public class PlayerInfoData {
 			@Override
 			public PlayerInfoData getSpecific(Object generic) {
 				if (MinecraftReflection.isPlayerInfoData(generic)) {
-					StructureModifier<Object> modifier = new StructureModifier<Object>(generic.getClass(), null, false)
+					StructureModifier<Object> modifier = new StructureModifier<>(generic.getClass(), null, false)
 							.withTarget(generic);
 
 					StructureModifier<WrappedGameProfile> gameProfiles = modifier.withType(

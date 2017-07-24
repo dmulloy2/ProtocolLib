@@ -280,7 +280,7 @@ public class WrappedServerPing extends AbstractWrapper {
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
 		if (players == null)
 			resetPlayers();
-		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(GAME_PROFILE_ARRAY, profile) : null);
+		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(profile) : null);
 	}
 
 	/**

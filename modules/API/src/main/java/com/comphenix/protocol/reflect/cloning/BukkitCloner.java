@@ -113,24 +113,24 @@ public class BukkitCloner implements Cloner {
 				return MinecraftReflection.getMinecraftItemStack(MinecraftReflection.getBukkitItemStack(source).clone());
 			case 1:
 				EquivalentConverter<WrappedDataWatcher> dataConverter = BukkitConverters.getDataWatcherConverter();
-				return dataConverter.getGeneric(clonableClasses.get(1), dataConverter.getSpecific(source).deepClone());
+				return dataConverter.getGeneric(dataConverter.getSpecific(source).deepClone());
 			case 2:
 				EquivalentConverter<BlockPosition> blockConverter = BlockPosition.getConverter();
-				return blockConverter.getGeneric(clonableClasses.get(2), blockConverter.getSpecific(source));
+				return blockConverter.getGeneric(blockConverter.getSpecific(source));
 			case 3:
 				EquivalentConverter<ChunkPosition> chunkConverter = ChunkPosition.getConverter();
-				return chunkConverter.getGeneric(clonableClasses.get(3), chunkConverter.getSpecific(source));
+				return chunkConverter.getGeneric(chunkConverter.getSpecific(source));
 			case 4:
 				EquivalentConverter<WrappedServerPing> serverConverter = BukkitConverters.getWrappedServerPingConverter();
-				return serverConverter.getGeneric(clonableClasses.get(4), serverConverter.getSpecific(source).deepClone());
+				return serverConverter.getGeneric(serverConverter.getSpecific(source).deepClone());
 			case 5:
 				return source;
 			case 6:
 				EquivalentConverter<MinecraftKey> keyConverter = MinecraftKey.getConverter();
-				return keyConverter.getGeneric(clonableClasses.get(6), keyConverter.getSpecific(source));
+				return keyConverter.getGeneric(keyConverter.getSpecific(source));
 			case 7:
 				EquivalentConverter<WrappedBlockData> blockDataConverter = BukkitConverters.getWrappedBlockDataConverter();
-				return blockDataConverter.getGeneric(clonableClasses.get(7), blockDataConverter.getSpecific(source).deepClone());
+				return blockDataConverter.getGeneric(blockDataConverter.getSpecific(source).deepClone());
 			case 8:
 				return nonNullListCloner().clone(source);
 			default:

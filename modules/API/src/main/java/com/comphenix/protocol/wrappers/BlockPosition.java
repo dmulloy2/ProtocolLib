@@ -164,7 +164,7 @@ public class BlockPosition {
 	public static EquivalentConverter<BlockPosition> getConverter() {
 		return new EquivalentConverter<BlockPosition>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, BlockPosition specific) {
+			public Object getGeneric(BlockPosition specific) {
 				if (blockPositionConstructor == null) {
 					try {
 						blockPositionConstructor = MinecraftReflection.getBlockPositionClass().
@@ -187,7 +187,7 @@ public class BlockPosition {
 			public BlockPosition getSpecific(Object generic) {
 				if (MinecraftReflection.isBlockPosition(generic)) {
 					// Use a structure modifier
-					intModifier = new StructureModifier<Object>(generic.getClass(), null, false).withType(int.class);
+					intModifier = new StructureModifier<>(generic.getClass(), null, false).withType(int.class);
 					
 					// Damn it all
 					if (intModifier.size() < 3) {

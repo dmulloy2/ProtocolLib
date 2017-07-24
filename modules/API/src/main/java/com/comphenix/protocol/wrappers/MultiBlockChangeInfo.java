@@ -190,7 +190,7 @@ public class MultiBlockChangeInfo {
 
 			@Override
 			public MultiBlockChangeInfo getSpecific(Object generic) {
-				StructureModifier<Object> modifier = new StructureModifier<Object>(generic.getClass(), null, false).withTarget(generic);
+				StructureModifier<Object> modifier = new StructureModifier<>(generic.getClass(), null, false).withTarget(generic);
 
 				StructureModifier<Short> shorts = modifier.withType(short.class);
 				short location = shorts.read(0);
@@ -203,7 +203,7 @@ public class MultiBlockChangeInfo {
 			}
 
 			@Override
-			public Object getGeneric(Class<?> genericType, MultiBlockChangeInfo specific) {
+			public Object getGeneric(MultiBlockChangeInfo specific) {
 				try {
 					if (constructor == null) {
 						constructor = nmsClass.getConstructor(
@@ -216,7 +216,7 @@ public class MultiBlockChangeInfo {
 					return constructor.newInstance(
 							null,
 							specific.location,
-							BukkitConverters.getWrappedBlockDataConverter().getGeneric(MinecraftReflection.getIBlockDataClass(), specific.data)
+							BukkitConverters.getWrappedBlockDataConverter().getGeneric(specific.data)
 					);
 				} catch (Throwable ex) {
 					throw new RuntimeException("Failed to construct MultiBlockChangeInfo instance.", ex);
@@ -248,12 +248,12 @@ public class MultiBlockChangeInfo {
 			}
 
 			@Override
-			public Object getGeneric(Class<?> genericType, MultiBlockChangeInfo[] specific) {
+			public Object getGeneric(MultiBlockChangeInfo[] specific) {
 				Object[] result = (Object[]) Array.newInstance(nmsClass, specific.length);
 
 				// Wrap every item
 				for (int i = 0; i < result.length; i++) {
-					result[i] = converter.getGeneric(nmsClass, specific[i]);
+					result[i] = converter.getGeneric(specific[i]);
 				}
 
 				return result;

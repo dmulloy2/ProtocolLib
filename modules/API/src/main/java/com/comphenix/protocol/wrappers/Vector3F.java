@@ -91,15 +91,14 @@ public class Vector3F {
 	}
 
 	public static EquivalentConverter<Vector3F> getConverter() {
-		return new IgnoreNullConverter<Vector3F>() {
-
+		return Converters.ignoreNull(new EquivalentConverter<Vector3F>() {
 			@Override
 			public Class<Vector3F> getSpecificType() {
 				return Vector3F.class;
 			}
 
 			@Override
-			protected Object getGenericValue(Class<?> genericType, Vector3F specific) {
+			public Object getGeneric(Vector3F specific) {
 				if (constructor == null) {
 					try {
 						constructor = clazz.getConstructor(float.class, float.class, float.class);
@@ -107,7 +106,7 @@ public class Vector3F {
 						throw new RuntimeException("Failed to find constructor for Vector3f", ex);
 					}
 				}
-	
+
 				try {
 					return constructor.newInstance(specific.x, specific.y, specific.z);
 				} catch (ReflectiveOperationException ex) {
@@ -116,7 +115,7 @@ public class Vector3F {
 			}
 
 			@Override
-			protected Vector3F getSpecificValue(Object generic) {
+			public Vector3F getSpecific(Object generic) {
 				StructureModifier<Float> modifier = new StructureModifier<Float>(generic.getClass())
 						.withTarget(generic).withType(float.class);
 				float x = modifier.read(0);
@@ -124,6 +123,6 @@ public class Vector3F {
 				float z = modifier.read(2);
 				return new Vector3F(x, y, z);
 			}
-		};
+		});
 	}
 }

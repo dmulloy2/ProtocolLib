@@ -352,7 +352,7 @@ public class StructureModifier<TField> {
 			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
 
 		// Use the converter, if it exists
-		Object obj = needConversion() ? converter.getGeneric(getFieldType(fieldIndex), value) : value;
+		Object obj = needConversion() ? converter.getGeneric(value) : value;
 
 		try {
 			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);

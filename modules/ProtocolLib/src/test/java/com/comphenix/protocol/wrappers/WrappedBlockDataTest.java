@@ -47,7 +47,7 @@ public class WrappedBlockDataTest {
 		assertEquals(wrapper.getType(), type);
 		assertEquals(wrapper.getData(), data);
 
-		Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(MinecraftReflection.getIBlockDataClass(), wrapper);
+		Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(wrapper);
 		WrappedBlockData back = BukkitConverters.getWrappedBlockDataConverter().getSpecific(generic);
 
 		assertEquals(wrapper.getType(), back.getType());

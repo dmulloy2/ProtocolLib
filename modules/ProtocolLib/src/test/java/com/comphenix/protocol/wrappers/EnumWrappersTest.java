@@ -55,7 +55,6 @@ public class EnumWrappersTest {
 		FieldAccessor accessor = Accessors.getFieldAccessor(target.getClass(), fieldName, true);
 		
 		return (T) converter.getGeneric(
-			accessor.getField().getType(), 
 			converter.getSpecific(accessor.get(target))
 		);
 	}

@@ -8,7 +8,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <minorVersion>4.3.1-SNAPSHOT</minorVersion>
+    <minorVersion>4.4.0-SNAPSHOT</minorVersion>
     <spigotVersion>1.12-R0.1-SNAPSHOT</spigotVersion>
   </properties>
 
@@ -45,7 +45,7 @@
   </repositories>
   
   <dependencies>
-      <!-- Compile with the old version of Netty -->
+    <!-- Compile with the old version of Netty for backwards compat -->
     <dependency>
 	  <groupId>io.netty</groupId>
 	  <artifactId>netty-all</artifactId>

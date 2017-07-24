@@ -38,6 +38,7 @@ public class BukkitInitialization {
 			try {
 				LogManager.getLogger();
 			} catch (Throwable ex) {
+				// Happens only on my Jenkins, but if it errors here it works when it matters
 				ex.printStackTrace();
 			}
 
@@ -69,6 +70,7 @@ public class BukkitInitialization {
 			try {
 				LogManager.getLogger();
 			} catch (Throwable ex) {
+				// Happens only on my Jenkins, but if it errors here it works when it matters
 				ex.printStackTrace();
 			}
 

@@ -122,7 +122,7 @@ public class MinecraftKey {
 			}
 
 			@Override
-			public Object getGeneric(Class<?> genericType, MinecraftKey specific) {
+			public Object getGeneric(MinecraftKey specific) {
 				if (constructor == null) {
 					try {
 						constructor = MinecraftReflection.getMinecraftKeyClass().getConstructor(String.class, String.class);

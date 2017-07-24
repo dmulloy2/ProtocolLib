@@ -24,7 +24,7 @@ public class ChunkCoordIntPairTest {
 
 		net.minecraft.server.v1_12_R1.ChunkCoordIntPair roundtrip =
 			(net.minecraft.server.v1_12_R1.ChunkCoordIntPair) ChunkCoordIntPair.getConverter().
-			getGeneric(net.minecraft.server.v1_12_R1.ChunkCoordIntPair.class, specific);
+			getGeneric(specific);
 
 		assertEquals(1, roundtrip.x);
 		assertEquals(2, roundtrip.z);

@@ -3,6 +3,7 @@ package com.comphenix.protocol.wrappers;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.bukkit.GameMode;
 
@@ -562,117 +563,119 @@ public abstract class EnumWrappers {
 
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
-		return new EnumConverter<Protocol>(Protocol.class);
+		return new EnumConverter<>(getProtocolClass(), Protocol.class);
 	}
 
 	public static EquivalentConverter<ClientCommand> getClientCommandConverter() {
-		return new EnumConverter<ClientCommand>(ClientCommand.class);
+		return new EnumConverter<>(getClientCommandClass(), ClientCommand.class);
 	}
 
 	public static EquivalentConverter<ChatVisibility> getChatVisibilityConverter() {
-		return new EnumConverter<ChatVisibility>(ChatVisibility.class);
+		return new EnumConverter<>(getChatVisibilityClass(), ChatVisibility.class);
 	}
 
 	public static EquivalentConverter<Difficulty> getDifficultyConverter() {
-		return new EnumConverter<Difficulty>(Difficulty.class);
+		return new EnumConverter<>(getDifficultyClass(), Difficulty.class);
 	}
 
 	public static EquivalentConverter<EntityUseAction> getEntityUseActionConverter() {
-		return new EnumConverter<EntityUseAction>(EntityUseAction.class);
+		return new EnumConverter<>(getEntityUseActionClass(), EntityUseAction.class);
 	}
 
 	public static EquivalentConverter<NativeGameMode> getGameModeConverter() {
-		return new EnumConverter<NativeGameMode>(NativeGameMode.class);
+		return new EnumConverter<>(getGameModeClass(), NativeGameMode.class);
 	}
 
 	public static EquivalentConverter<ResourcePackStatus> getResourcePackStatusConverter() {
-		return new EnumConverter<ResourcePackStatus>(ResourcePackStatus.class);
+		return new EnumConverter<>(getResourcePackStatusClass(), ResourcePackStatus.class);
 	}
 
 	public static EquivalentConverter<PlayerInfoAction> getPlayerInfoActionConverter() {
-		return new EnumConverter<PlayerInfoAction>(PlayerInfoAction.class);
+		return new EnumConverter<>(getPlayerInfoActionClass(), PlayerInfoAction.class);
 	}
 
 	public static EquivalentConverter<TitleAction> getTitleActionConverter() {
-		return new EnumConverter<TitleAction>(TitleAction.class);
+		return new EnumConverter<>(getTitleActionClass(), TitleAction.class);
 	}
 
 	public static EquivalentConverter<WorldBorderAction> getWorldBorderActionConverter() {
-		return new EnumConverter<WorldBorderAction>(WorldBorderAction.class);
+		return new EnumConverter<>(getWorldBorderActionClass(), WorldBorderAction.class);
 	}
 
 	public static EquivalentConverter<CombatEventType> getCombatEventTypeConverter() {
-		return new EnumConverter<CombatEventType>(CombatEventType.class);
+		return new EnumConverter<>(getCombatEventTypeClass(), CombatEventType.class);
 	}
 
 	public static EquivalentConverter<PlayerDigType> getPlayerDiggingActionConverter() {
-		return new EnumConverter<PlayerDigType>(PlayerDigType.class);
+		return new EnumConverter<>(getPlayerDigTypeClass(), PlayerDigType.class);
 	}
 
 	public static EquivalentConverter<PlayerAction> getEntityActionConverter() {
-		return new EnumConverter<PlayerAction>(PlayerAction.class);
+		return new EnumConverter<>(getPlayerActionClass(), PlayerAction.class);
 	}
 
 	public static EquivalentConverter<ScoreboardAction> getUpdateScoreActionConverter() {
-		return new EnumConverter<ScoreboardAction>(ScoreboardAction.class);
+		return new EnumConverter<>(getScoreboardActionClass(), ScoreboardAction.class);
 	}
 
 	public static EquivalentConverter<Particle> getParticleConverter() {
-		return new EnumConverter<Particle>(Particle.class);
+		return new EnumConverter<>(getParticleClass(), Particle.class);
 	}
 
 	public static EquivalentConverter<SoundCategory> getSoundCategoryConverter() {
-		return new EnumConverter<SoundCategory>(SoundCategory.class);
+		return new EnumConverter<>(getSoundCategoryClass(), SoundCategory.class);
 	}
 
 	public static EquivalentConverter<ItemSlot> getItemSlotConverter() {
-		return new EnumConverter<ItemSlot>(ItemSlot.class);
+		return new EnumConverter<>(getItemSlotClass(), ItemSlot.class);
 	}
 
 	public static EquivalentConverter<Hand> getHandConverter() {
-		return new EnumConverter<Hand>(Hand.class);
+		return new EnumConverter<>(getHandClass(), Hand.class);
 	}
 
 	public static EquivalentConverter<Direction> getDirectionConverter() {
-		return new EnumConverter<Direction>(Direction.class);
+		return new EnumConverter<>(getDirectionClass(), Direction.class);
 	}
 	
 	public static EquivalentConverter<ChatType> getChatTypeConverter() {
-		return new EnumConverter<ChatType>(ChatType.class);
+		return new EnumConverter<>(getChatTypeClass(), ChatType.class);
 	}
 
 	/**
 	 * Retrieve a generic enum converter for use with StructureModifiers.
-	 * @param enumClass - Enum class
+	 * @param genericClass - Generic nms enum class
+	 * @param specificType - Specific enum class
 	 * @return A generic enum converter
 	 */
-	public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<T> enumClass) {
-		return new EnumConverter<T>(enumClass);
+	public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<?> genericClass, Class<T> specificType) {
+		return new EnumConverter<>(genericClass, specificType);
 	}
 
 	// The common enum converter
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
+		private Class<?> genericType;
 		private Class<T> specificType;
 
-		public EnumConverter(Class<T> specificType) {
+		public EnumConverter(Class<?> genericType, Class<T> specificType) {
+			this.genericType = genericType;
 			this.specificType = specificType;
 		}
 
 		@Override
 		public T getSpecific(Object generic) {
-			// We know its an enum already!
 			return Enum.valueOf(specificType, ((Enum) generic).name());
 		}
 
 		@Override
-		public Object getGeneric(Class<?> genericType, T specific) {
+		public Object getGeneric(T specific) {
 			return Enum.valueOf((Class) genericType, specific.name());
 		}
 
 		@Override
 		public Class<T> getSpecificType() {
-			return specificType;
+			return null;
 		}
 	}
 }

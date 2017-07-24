@@ -110,7 +110,7 @@ public abstract class CompiledStructureModifier extends StructureModifier<Object
 	@Override
 	public StructureModifier<Object> write(int index, Object value) throws FieldAccessException {
 		if (converter != null)
-			value = converter.getGeneric(getFieldType(index), value);
+			value = converter.getGeneric(value);
 		return writeGenerated(index, value);
 	}
 	
