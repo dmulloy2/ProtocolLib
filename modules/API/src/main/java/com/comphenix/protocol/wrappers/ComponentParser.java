@@ -46,12 +46,18 @@ public class ComponentParser {
 	private static Object deserializeLegacy(Object gson, Class<?> component, StringReader str) {
 		try {
 			Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
-			Object reader = readerClass.getConstructor(Reader.class).newInstance(str);
-			Method setLenient = readerClass.getMethod("setLenient", boolean.class);
+			Constructor readerConstructor = readerClass.getDeclaredConstructor(Reader.class);
+			readerConstructor.setAccessible(true);
+			Object reader = readerConstructor.newInstance(str);
+
+			Method setLenient = readerClass.getDeclaredMethod("setLenient", boolean.class);
+			setLenient.setAccessible(true);
 			setLenient.invoke(reader, true);
-			Method getAdapter = gson.getClass().getMethod("getAdapter", Class.class);
+			Method getAdapter = gson.getClass().getDeclaredMethod("getAdapter", Class.class);
+			getAdapter.setAccessible(true);
 			Object adapter = getAdapter.invoke(gson, component);
-			Method read = adapter.getClass().getMethod("read", readerClass);
+			Method read = adapter.getClass().getDeclaredMethod("read", readerClass);
+			read.setAccessible(true);
 			return read.invoke(adapter, reader);
 		} catch (ReflectiveOperationException ex) {
 			throw new RuntimeException("Failed to read JSON", ex);
