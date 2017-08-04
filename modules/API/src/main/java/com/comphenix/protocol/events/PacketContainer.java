@@ -995,6 +995,18 @@ public class PacketContainer implements Serializable {
 			    BukkitConverters.getSetConverter(converter));
     }
 
+	/**
+	 * Retrieve a read/write structure for the List class.
+	 * @param converter Converter for elements
+	 * @param <E> Element param
+	 * @return A modifier for List fields
+	 */
+	public <E> StructureModifier<List<E>> getLists(EquivalentConverter<E> converter) {
+		return structureModifier.withType(
+				List.class,
+				BukkitConverters.getListConverter(converter));
+    }
+
     /**
      * Retrieve a read/write structure for an enum. This allows for the use of
      * user-created enums that may not exist in ProtocolLib. The specific (user

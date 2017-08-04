@@ -18,11 +18,13 @@ package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Automatically wraps an internal NMS class to a non-versioned, deofbuscated class.
@@ -54,6 +56,10 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		return new AutoWrapper<>(wrapperClass, nmsClass);
 	}
 
+	public static <T> AutoWrapper<T> wrap(Class<T> wrapperClass, String nmsClassName) {
+		return wrap(wrapperClass, MinecraftReflection.getMinecraftClass(nmsClassName));
+	}
+
 	public AutoWrapper<T> field(int index, Function<Object, Object> wrapper, Function<Object, Object> unwrapper) {
 		wrappers.put(index, wrapper);
 		unwrappers.put(index, unwrapper);
@@ -74,7 +80,10 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		}
 
 		Field[] wrapperFields = wrapperClass.getDeclaredFields();
-		Field[] nmsFields = nmsClass.getDeclaredFields();
+		Field[] nmsFields = Arrays
+				.stream(nmsClass.getDeclaredFields())
+				.filter(field -> !Modifier.isStatic(field.getModifiers()))
+				.toArray(Field[]::new);
 
 		for (int i = 0; i < wrapperFields.length; i++) {
 			try {
@@ -107,7 +116,10 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		}
 
 		Field[] wrapperFields = wrapperClass.getDeclaredFields();
-		Field[] nmsFields = nmsClass.getDeclaredFields();
+		Field[] nmsFields = Arrays
+				.stream(nmsClass.getDeclaredFields())
+				.filter(field -> !Modifier.isStatic(field.getModifiers()))
+				.toArray(Field[]::new);
 
 		for (int i = 0; i < wrapperFields.length; i++) {
 			try {

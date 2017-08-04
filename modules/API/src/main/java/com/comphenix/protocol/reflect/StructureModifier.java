@@ -19,10 +19,7 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
@@ -261,6 +258,24 @@ public class StructureModifier<TField> {
 			return read(fieldIndex);
 		} else {
 			return null;
+		}
+	}
+
+	/**
+	 * Reads the value of a field only if it exists. If the field does not exist, an empty {@link Optional} is returned.
+	 * <p>
+	 * This method has the same functionality as {@link #readSafely(int)}, but enforces null checks by way of an Optional.
+	 * It will eventually become the preferred method of reading fields.
+	 *
+	 * @param fieldIndex index of the field
+	 * @return An optional that may contain the value of the field
+	 * @see #readSafely(int)
+	 */
+	public Optional<TField> optionRead(int fieldIndex) {
+		try {
+			return Optional.ofNullable(read(fieldIndex));
+		} catch (FieldAccessException ex) {
+			return Optional.empty();
 		}
 	}
 	
