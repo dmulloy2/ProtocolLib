@@ -17,36 +17,14 @@
 
 package com.comphenix.protocol.events;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
-import org.bukkit.entity.Entity;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
@@ -55,41 +33,15 @@ import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.reflect.cloning.AggregateCloner;
+import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
-import com.comphenix.protocol.reflect.cloning.BukkitCloner;
-import com.comphenix.protocol.reflect.cloning.Cloner;
-import com.comphenix.protocol.reflect.cloning.CollectionCloner;
-import com.comphenix.protocol.reflect.cloning.FieldCloner;
-import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
-import com.comphenix.protocol.reflect.cloning.OptionalCloner;
-import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.*;
-import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
-import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
-import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
-import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
-import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
-import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
-import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.EnumConverter;
-import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
-import com.comphenix.protocol.wrappers.EnumWrappers.ItemSlot;
-import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
-import com.comphenix.protocol.wrappers.EnumWrappers.Particle;
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType;
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerInfoAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
-import com.comphenix.protocol.wrappers.EnumWrappers.ScoreboardAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
-import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.*;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -100,6 +52,15 @@ import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
+
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.WorldType;
+import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -1201,21 +1162,52 @@ public class PacketContainer implements Serializable {
 	}
 
 	// ---- Metadata
-	// This map will only be initialized if it is actually used
-	private Map<String, Object> metadata;
+
+	/**
+	 * Gets the metadata value for a given key if it exists. Packet metadata expires after a minute, which is far longer
+	 * than a packet will ever be held in processing.
+	 *
+	 * @param key Metadata key
+	 * @param <T> Metadata type
+	 * @return The metadata value, or an empty optional
+	 */
+	public <T> Optional<T> getMeta(String key) {
+		return PacketMetadata.get(handle, key);
+	}
+
+	/**
+	 * Sets the metadata value at a given key. Packet metadata expires after a minute, which is far longer than a packet
+	 * will ever be held in processing.
+	 *
+	 * @param key Metadata key
+	 * @param value Metadata value
+	 * @param <T> Metadata type
+	 */
+	public <T> void setMeta(String key, T value) {
+		PacketMetadata.set(handle, key, value);
+	}
+
+	/**
+	 * Removes the metadata for a given key if it exists.
+	 * @param key Key to remove meta for
+	 */
+	public void removeMeta(String key) {
+		PacketMetadata.remove(handle, key);
+	}
+
+	// ---- Old Metadata API
+	// Scheduled for removal in 4.5
 
 	/**
 	 * Gets the metadata value for a given key.
 	 * 
 	 * @param key Metadata key
 	 * @return Metadata value, or null if nonexistent.
+	 * @deprecated Replaced with {@link #getMeta(String)}
 	 */
+	@Deprecated
 	public Object getMetadata(String key) {
-		if (metadata != null) {
-			return metadata.get(key);
-		}
-
-		return null;
+		return getMeta(key).orElse(null);
 	}
 
 	/**
@@ -1225,13 +1217,11 @@ public class PacketContainer implements Serializable {
 	 * 
 	 * @param key Metadata key
 	 * @param value Metadata value
+	 * @deprecated Replaced by {@link #setMeta(String, Object)}
 	 */
+	@Deprecated
 	public void addMetadata(String key, Object value) {
-		if (metadata == null) {
-			metadata = new HashMap<>();
-		}
-
-		metadata.put(key, value);
+		setMeta(key, value);
 	}
 
 	/**
@@ -1241,18 +1231,11 @@ public class PacketContainer implements Serializable {
 	 * 
 	 * @param key Metadata key
 	 * @return The previous value, or null if nonexistant.
+	 * @deprecated Replaced by {@link #removeMeta(String)}. This one was pretty much just for naming consistency.
 	 */
+	@Deprecated
 	public Object removeMetadata(String key) {
-		if (metadata != null) {
-			Object value = metadata.remove(key);
-			if (metadata.isEmpty()) {
-				metadata = null;
-			}
-
-			return value;
-		}
-
-		return null;
+		return PacketMetadata.remove(handle, key).orElseGet(null);
 	}
 
 	/**
@@ -1260,9 +1243,11 @@ public class PacketContainer implements Serializable {
 	 * 
 	 * @param key Metadata key
 	 * @return True if this packet has metadata for the key, false if not.
+	 * @deprecated Replaced with {@code getMeta(key).isPresent()}
 	 */
+	@Deprecated
 	public boolean hasMetadata(String key) {
-		return metadata != null && metadata.containsKey(key);
+		return getMeta(key).isPresent();
 	}
 
 	/**
