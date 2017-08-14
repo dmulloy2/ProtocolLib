@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -167,6 +168,31 @@ public class NbtFactory {
 			modifier.write(0, result);
 		}
 		return fromBase(result);
+	}
+
+	/**
+	 * Constructs a wrapper for a NBT tag in an ItemStack. This is where auxillary
+	 * data such as enchantments, name, and lore is stored. It doesn't include the material,
+	 * damage value, or stack size.
+	 * <p>
+	 * This differs from {@link #fromItemTag(ItemStack)} in that the tag is not created if it
+	 * doesn't already exist.
+	 *
+	 * @param stack the ItemStack. Must be a CraftItemStack. Use {@link MinecraftReflection#getBukkitItemStack(Object)}
+	 * @return A wrapper for the NBT tag if it exists, an empty Optional if not
+	 */
+	public static Optional<NbtWrapper<?>> fromItemOptional(ItemStack stack) {
+		checkItemStack(stack);
+
+		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
+		NbtBase<?> result = modifier.read(0);
+
+		// Create the tag if it doesn't exist
+		if (result == null) {
+			return Optional.empty();
+		}
+
+		return Optional.of(fromBase(result));
 	}
 	
 	/**
