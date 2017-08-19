@@ -20,6 +20,7 @@ package com.comphenix.protocol.metrics;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import org.bukkit.plugin.Plugin;
 
@@ -27,7 +28,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.metrics.Metrics.Graph;
 
 public class Statistics {
 
@@ -39,25 +39,16 @@ public class Statistics {
 		
 		// Determine who is using this library
 		addPluginUserGraph(metrics);
-		
-		metrics.start();
 	}
 	
 	private void addPluginUserGraph(Metrics metrics) {
 	
-		Graph pluginUsers = metrics.createGraph("Plugin Users");
-		
-		for (Map.Entry<String, Integer> entry : getPluginUsers(ProtocolLibrary.getProtocolManager()).entrySet()) {
-			final int count = entry.getValue();
-			
-			// Plot plugins of this type
-			pluginUsers.addPlotter(new Metrics.Plotter(entry.getKey()) {
-				@Override
-				public int getValue() {
-					return count;
-				}
-			});
-		}
+		metrics.addCustomChart(new Metrics.AdvancedPie("Plugin Users", new Callable<Map<String, Integer>>() {
+			@Override
+			public Map<String, Integer> call() throws Exception {
+				return getPluginUsers(ProtocolLibrary.getProtocolManager());
+			}
+		}));
 	}
 	
 	// Retrieve loaded plugins
