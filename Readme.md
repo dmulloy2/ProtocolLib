@@ -53,10 +53,22 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>3.6.5</version>
+    <version>4.3.0</version>
   </dependency>
 </dependencies>
 ````
+
+Or use the maven dependency with gradle:
+
+```gradle
+repositories {
+    maven { url "http://repo.dmulloy2.net/content/groups/public/" }
+}
+
+dependencies {
+    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.3.0";
+}
+```
 
 Then get a reference to ProtocolManager in onLoad() or onEnable() and you're good to go.
 
