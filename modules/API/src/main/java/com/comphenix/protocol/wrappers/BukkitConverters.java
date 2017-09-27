@@ -318,6 +318,20 @@ public class BukkitConverters {
 	}
 
 	/**
+	 * @deprecated While this solution is not as abhorrent as I had imagined, I still highly recommend switching to the
+	 * new conversion API.
+	 */
+	@Deprecated
+	public static <T> EquivalentConverter<Set<T>> getSetConverter(final Class<?> genericType,
+	                                                              final EquivalentConverter<T> itemConverter) {
+		if (itemConverter instanceof EnumWrappers.EnumConverter) {
+			((EnumWrappers.EnumConverter) itemConverter).setGenericType(genericType);
+		}
+
+		return getSetConverter(itemConverter);
+	}
+
+	/**
 	 * Retrieve an equivalent converter for a set of generic items.
 	 * @param <T> Element type
 	 * @param itemConverter - an equivalent converter for the generic type.

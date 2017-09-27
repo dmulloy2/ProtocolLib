@@ -652,6 +652,14 @@ public abstract class EnumWrappers {
 		return new EnumConverter<>(genericClass, specificType);
 	}
 
+	/**
+	 * @deprecated Replaced with {@link #getGenericConverter(Class, Class)}
+	 */
+	@Deprecated
+	public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<T> specificType) {
+		return new EnumConverter<>(null, specificType);
+	}
+
 	// The common enum converter
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
@@ -675,7 +683,11 @@ public abstract class EnumWrappers {
 
 		@Override
 		public Class<T> getSpecificType() {
-			return null;
+			return specificType;
+		}
+
+		void setGenericType(Class<?> genericType) {
+			this.genericType = genericType;
 		}
 	}
 }
