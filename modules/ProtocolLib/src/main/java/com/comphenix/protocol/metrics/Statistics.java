@@ -20,46 +20,50 @@ package com.comphenix.protocol.metrics;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
-import org.bukkit.plugin.Plugin;
-
+import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketListener;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.bukkit.plugin.Plugin;
 
 public class Statistics {
 
 	// Metrics
 	private Metrics metrics;
-	
-	public Statistics(Plugin plugin) throws IOException {
+
+	public Statistics(ProtocolLib plugin) throws IOException {
 		metrics = new Metrics(plugin);
-		
+		metrics.logFailedRequests(plugin.getProtocolConfig().isDebug());
+
 		// Determine who is using this library
 		addPluginUserGraph(metrics);
 	}
-	
+
 	private void addPluginUserGraph(Metrics metrics) {
-	
-		metrics.addCustomChart(new Metrics.AdvancedPie("Plugin Users", new Callable<Map<String, Integer>>() {
-			@Override
-			public Map<String, Integer> call() throws Exception {
-				return getPluginUsers(ProtocolLibrary.getProtocolManager());
-			}
-		}));
+		metrics.addCustomChart(new Metrics.AdvancedPie("Plugin Users", this::getPluginUsers));
+		metrics.addCustomChart(new Metrics.SimplePie("buildVersion", () -> splitVersion().getRight()));
 	}
-	
+
+	public static Pair<String, String> splitVersion() {
+		String version = ProtocolLibrary.getPlugin().getDescription().getVersion();
+		if (version.contains("-b")) {
+			String[] split = version.split("-b");
+			return Pair.of(split[0], split[1]);
+		} else {
+			return Pair.of(version, "Unknown");
+		}
+	}
+
 	// Retrieve loaded plugins
-	private Map<String, Integer> getPluginUsers(ProtocolManager manager) {
-		
-		Map<String, Integer> users = new HashMap<String, Integer>();
-			
-		for (PacketListener listener : manager.getPacketListeners()) {
-			
+	private Map<String, Integer> getPluginUsers() {
+		Map<String, Integer> users = new HashMap<>();
+
+		for (PacketListener listener : ProtocolLibrary.getProtocolManager().getPacketListeners()) {
 			String name = PacketAdapter.getPluginName(listener);
-			
+
 			// Increment occurence
 			if (!users.containsKey(name)) {
 				users.put(name, 1);
@@ -67,7 +71,7 @@ public class Statistics {
 				users.put(name, users.get(name) + 1);
 			}
 		}
-		
+
 		return users;
 	}
 }

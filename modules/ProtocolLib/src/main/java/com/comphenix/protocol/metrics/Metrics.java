@@ -1,5 +1,6 @@
 package com.comphenix.protocol.metrics;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -128,6 +129,10 @@ public class Metrics {
         }
     }
 
+    void logFailedRequests(boolean value) {
+        logFailedRequests = value;
+    }
+
     /**
      * Adds a custom chart.
      *
@@ -177,10 +182,10 @@ public class Metrics {
         JSONObject data = new JSONObject();
 
         String pluginName = plugin.getDescription().getName();
-        String pluginVersion = plugin.getDescription().getVersion();
+        Pair<String, String> pluginVersion = Statistics.splitVersion(); // ProtocolLib - remove build number
 
         data.put("pluginName", pluginName); // Append the name of the plugin
-        data.put("pluginVersion", pluginVersion); // Append the version of the plugin
+        data.put("pluginVersion", pluginVersion.getLeft()); // Append the version of the plugin
         JSONArray customCharts = new JSONArray();
         for (CustomChart customChart : charts) {
             // Add the data of the custom charts

@@ -654,4 +654,8 @@ public class ProtocolLib extends JavaPlugin {
 	public Statistics getStatistics() {
 		return statistics;
 	}
+
+	public ProtocolConfig getProtocolConfig() {
+		return config;
+	}
 }
