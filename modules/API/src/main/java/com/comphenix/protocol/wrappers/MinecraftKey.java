@@ -118,7 +118,7 @@ public class MinecraftKey {
 		return new EquivalentConverter<MinecraftKey>() {
 			@Override
 			public MinecraftKey getSpecific(Object generic) {
-				return MinecraftKey.fromHandle(generic);
+				return generic == null ? null : MinecraftKey.fromHandle(generic);
 			}
 
 			@Override
@@ -132,7 +132,7 @@ public class MinecraftKey {
 				}
 
 				try {
-					return constructor.newInstance(specific.getPrefix(), specific.getKey());
+					return specific == null ? null : constructor.newInstance(specific.getPrefix(), specific.getKey());
 				} catch (ReflectiveOperationException e) {
 					throw new RuntimeException("Failed to create new MinecraftKey", e);
 				}
