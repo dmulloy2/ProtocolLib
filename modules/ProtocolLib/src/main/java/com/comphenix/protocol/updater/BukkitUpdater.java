@@ -71,7 +71,7 @@ public class BukkitUpdater extends Updater {
     /**
      * Initialize the updater.
      * <p>
-     * Call {@link #start()} to actually start looking (and downloading) updates.
+     * Call {@link #start(UpdateType)} to actually start looking (and downloading) updates.
      *
      * @param plugin   The plugin that is checking for an update.
      * @param id       The dev.bukkit.org id of the project
@@ -331,10 +331,9 @@ public class BukkitUpdater extends Updater {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             final String response = reader.readLine();
+            final JSONArray array = response != null ? (JSONArray) JSONValue.parse(response) : null;
 
-            final JSONArray array = (JSONArray) JSONValue.parse(response);
-
-            if (array.size() == 0) {
+            if (array == null || array.size() == 0) {
                 this.plugin.getLogger().warning("The updater could not find any files for the project id " + this.id);
                 this.result = UpdateResult.FAIL_BADID;
                 return false;
