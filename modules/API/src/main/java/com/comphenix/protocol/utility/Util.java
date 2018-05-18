@@ -53,11 +53,11 @@ public class Util {
 	}
 
 	/**
-	 * Whether or not this server is running Spigot. This works by checking
-	 * the server version for the String "Spigot"
+	 * Whether or not this server is running Spigot or a Spigot fork. This works by checking
+	 * the server version for the Strings "Spigot" or "Paper".
 	 * @return True if it is, false if not.
 	 */
 	public static boolean isUsingSpigot() {
-		return Bukkit.getServer().getVersion().contains("Spigot");
+		return Bukkit.getServer().getVersion().contains("Spigot") || Bukkit.getServer().getVersion().contains("Paper");
 	}
 }
