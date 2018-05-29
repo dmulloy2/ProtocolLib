@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ProtocolLib-API</artifactId>
   <name>ProtocolLib-API</name>
-  <version>${minorVersion}</version>
+  <version>4.4.0-SNAPSHOT</version>
 
   <description>Provides read/write access to the Minecraft protocol.</description>
   <url>http://www.spigotmc.org/resources/protocollib.1997/</url>
@@ -26,7 +26,6 @@
   <build>
     <defaultGoal>clean install</defaultGoal>
     <sourceDirectory>src/main/java</sourceDirectory>
-    <testSourceDirectory>src/test/java</testSourceDirectory>
     <resources>
       <resource>
         <directory>src/main/resources</directory>
