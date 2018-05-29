@@ -32,6 +32,8 @@ import com.comphenix.protocol.wrappers.MinecraftKey;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
 import com.google.common.collect.Maps;
 
 /**
@@ -76,6 +78,10 @@ public class BukkitCloner implements Cloner {
 			addClass(8, MinecraftReflection.getNonNullListClass());
 		} catch (Throwable ex) {
 		}
+
+		try {
+			addClass(9, MinecraftReflection.getNBTBaseClass());
+		} catch (Throwable ex) { }
 	}
 
 	private void addClass(int id, Class<?> clazz) {
@@ -133,6 +139,9 @@ public class BukkitCloner implements Cloner {
 				return blockDataConverter.getGeneric(blockDataConverter.getSpecific(source).deepClone());
 			case 8:
 				return nonNullListCloner().clone(source);
+			case 9:
+				NbtWrapper<?> clone = (NbtWrapper<?>) NbtFactory.fromNMS(source).deepClone();
+				return clone.getHandle();
 			default:
 				throw new IllegalArgumentException("Cannot clone objects of type " + source.getClass());
 		}
