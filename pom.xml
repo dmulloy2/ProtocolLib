@@ -75,11 +75,6 @@
       <version>1.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>com.hervian</groupId>
-      <artifactId>lambda-factory</artifactId>
-      <version>2.0.2-SNAPSHOT</version>
-    </dependency>
   </dependencies>
 
   <build>
