@@ -16,23 +16,13 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import net.sf.cglib.proxy.Factory;
-
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
@@ -58,12 +48,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.MapMaker;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -71,16 +56,20 @@ import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.TypeParameterMatcher;
 
+import net.sf.cglib.proxy.Factory;
+
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 /**
  * Represents a channel injector.
  * @author Kristian
  */
 public class ChannelInjector extends ByteToMessageDecoder implements Injector {
-	public static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
-	public static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
-	public static final ReportType REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD = new ReportType("Cannot execute code in channel thread.");
-	public static final ReportType REPORT_CANNOT_FIND_GET_VERSION = new ReportType("Cannot find getVersion() in NetworkMananger");
-	public static final ReportType REPORT_CANNOT_SEND_PACKET = new ReportType("Unable to send packet %s to %s");
+	private static final ReportType REPORT_CANNOT_INTERCEPT_SERVER_PACKET = new ReportType("Unable to intercept a written server packet.");
+	private static final ReportType REPORT_CANNOT_INTERCEPT_CLIENT_PACKET = new ReportType("Unable to intercept a read client packet.");
+	private static final ReportType REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD = new ReportType("Cannot execute code in channel thread.");
+	private static final ReportType REPORT_CANNOT_SEND_PACKET = new ReportType("Unable to send packet %s to %s");
 
 	/**
 	 * Indicates that a packet has bypassed packet listeners.
@@ -98,12 +87,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private static AttributeKey<Integer> PROTOCOL_KEY;
 
 	static {
-		// Shout-outs to reloading
-		try {
-			PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL");
-		} catch (IllegalArgumentException ex) {
-			PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
-		}
+		PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
 	}
 
 	// Saved accessors
@@ -148,18 +132,13 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	/**
 	 * A flag set by the main thread to indiciate that a packet should not be processed.
 	 */
-	private final ThreadLocal<Boolean> scheduleProcessPackets = new ThreadLocal<Boolean>() {
-		@Override
-        protected Boolean initialValue() {
-			return true;
-		};
-	};
+	private final ThreadLocal<Boolean> scheduleProcessPackets = ThreadLocal.withInitial(() -> true);
 
 	// Other handlers
 	private ByteToMessageDecoder vanillaDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
 
-	private Deque<PacketEvent> finishQueue = new ArrayDeque<PacketEvent>();
+	private Deque<PacketEvent> finishQueue = new ArrayDeque<>();
 
 	// The channel listener
 	private ChannelListener channelListener;
@@ -179,7 +158,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param channelListener - a listener.
 	 * @param factory - the factory that created this injector
 	 */
-	public ChannelInjector(Player player, Object networkManager, Channel channel, ChannelListener channelListener, InjectionFactory factory) {
+	ChannelInjector(Player player, Object networkManager, Channel channel, ChannelListener channelListener, InjectionFactory factory) {
 		this.player =  Preconditions.checkNotNull(player, "player cannot be NULL");
 		this.networkManager =  Preconditions.checkNotNull(networkManager, "networkMananger cannot be NULL");
 		this.originalChannel = Preconditions.checkNotNull(channel, "channel cannot be NULL");
@@ -188,8 +167,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		this.processor = new NetworkProcessor(ProtocolLibrary.getErrorReporter());
 
 		// Get the channel field
-		this.channelField = new VolatileField(FuzzyReflection.fromObject(networkManager, true).getFieldByType("channel", Channel.class),
-				networkManager, true);
+		this.channelField = new VolatileField(FuzzyReflection
+				.fromObject(networkManager, true)
+				.getFieldByType("channel", Channel.class), networkManager, true);
 	}
 
 	/**
@@ -217,12 +197,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// pipeline with only some of the handlers removed
 			if (Bukkit.isPrimaryThread()) {
 				// Just like in the close() method, we'll avoid blocking the main thread
-				executeInChannelThread(new Runnable() {
-					@Override
-					public void run() {
-						inject();
-					}
-				});
+				executeInChannelThread(this::inject);
 				return false; // We don't know
 			}
 
@@ -236,9 +211,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 
 			if (vanillaDecoder == null)
-				throw new IllegalArgumentException("Unable to find vanilla decoder in " + originalChannel.pipeline() );
+				throw new IllegalArgumentException("Unable to find vanilla decoder in " + originalChannel.pipeline());
 			if (vanillaEncoder == null)
-				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline() );
+				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
 			patchEncoder(vanillaEncoder);
 
 			if (DECODE_BUFFER == null)
@@ -251,7 +226,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Intercept sent packets
 			MessageToByteEncoder<Object> protocolEncoder = new MessageToByteEncoder<Object>() {
 				@Override
-				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
+				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) {
 					if (packet instanceof WirePacket) {
 						// Special case for wire format
 						ChannelInjector.this.encodeWirePacket((WirePacket) packet, output);
@@ -263,17 +238,17 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				@Override
 				public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
 					super.write(ctx, packet, promise);
-					ChannelInjector.this.finalWrite(ctx, packet, promise);
+					ChannelInjector.this.finalWrite();
 				}
 			};
 
 			// Intercept recieved packets
 			ChannelInboundHandlerAdapter finishHandler = new ChannelInboundHandlerAdapter() {
 				@Override
-				public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+				public void channelRead(ChannelHandlerContext ctx, Object msg) {
 					// Execute context first
 					ctx.fireChannelRead(msg);
-					ChannelInjector.this.finishRead(ctx, msg);
+					ChannelInjector.this.finishRead();
 				}
 			};
 
@@ -313,17 +288,14 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					if (event != null && event.isCancelled())
 						return null;
 
-					return new Callable<T>() {
-						@Override
-						public T call() throws Exception {
-							T result = null;
+					return () -> {
+						T result;
 
-							// This field must only be updated in the pipeline thread
-							currentEvent = event;
-							result = callable.call();
-							currentEvent = null;
-							return result;
-						}
+						// This field must only be updated in the pipeline thread
+						currentEvent = event;
+						result = callable.call();
+						currentEvent = null;
+						return result;
 					};
 				}
 
@@ -335,17 +307,14 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					if (event != null && event.isCancelled())
 						return null;
 
-					return new Runnable() {
-						@Override
-						public void run() {
-							currentEvent = event;
-							runnable.run();
-							currentEvent = null;
-						}
+					return () -> {
+						currentEvent = event;
+						runnable.run();
+						currentEvent = null;
 					};
 				}
 
-				protected PacketEvent handleScheduled(Object instance, FieldAccessor accessor) {
+				PacketEvent handleScheduled(Object instance, FieldAccessor accessor) {
 					// Let the filters handle this packet
 					Object original = accessor.get(instance);
 
@@ -361,15 +330,17 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 							return BYPASSED_PACKET;
 						}
 					}
-					PacketEvent event = processSending(original);
 
+					PacketEvent event = processSending(original);
 					if (event != null && !event.isCancelled()) {
 						Object changed = event.getPacket().getHandle();
 
 						// Change packet to be scheduled
-						if (original != changed)
+						if (original != changed) {
 							accessor.set(instance, changed);
-					};
+						}
+					}
+
 					return event != null ? event : BYPASSED_PACKET;
 				}
 			});
@@ -406,17 +377,20 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		if (ENCODER_TYPE_MATCHER == null) {
 			ENCODER_TYPE_MATCHER = Accessors.getFieldAccessor(encoder.getClass(), "matcher", true);
 		}
+
 		ENCODER_TYPE_MATCHER.set(encoder, TypeParameterMatcher.get(MinecraftReflection.getPacketClass()));
 	}
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		if (channelListener.isDebug())
+		if (channelListener.isDebug()) {
 			cause.printStackTrace();
+		}
+
 		super.exceptionCaught(ctx, cause);
 	}
 
-	protected void encodeWirePacket(WirePacket packet, ByteBuf output) throws Exception {
+	private void encodeWirePacket(WirePacket packet, ByteBuf output) {
 		packet.writeId(output);
 		packet.writeBytes(output);
 	}
@@ -426,9 +400,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param ctx - the current context.
 	 * @param packet - the packet to encode to a byte array.
 	 * @param output - the output byte array.
-	 * @throws Exception If anything went wrong.
 	 */
-	protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
+	private void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) {
 		NetworkMarker marker = null;
 		PacketEvent event = currentEvent;
 
@@ -457,6 +430,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					}
 				}
 			}
+
 			if (event != null) {
 				// Retrieve marker without accidentally constructing it
 				marker = NetworkMarker.getNetworkMarker(event);
@@ -476,7 +450,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 				// Sent listeners?
 				finalEvent = event;
-				return;
 			}
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this,
@@ -491,12 +464,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 
 	/**
-	 * Invoked when a packet has been written to the channel.
-	 * @param ctx - current context.
-	 * @param packet - the packet that has been written.
-	 * @param promise - a promise.
+	 * Invoked when a packet has been written to the channel
 	 */
-	protected void finalWrite(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) {
+	private void finalWrite() {
 		PacketEvent event = finalEvent;
 
 		if (event != null) {
@@ -510,17 +480,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	private void scheduleMainThread(final Object packetCopy) {
 		// Don't use BukkitExecutors for this - it has a bit of overhead
-		Bukkit.getScheduler().scheduleSyncDelayedTask(factory.getPlugin(), new Runnable() {
-			@Override
-			public void run() {
-				invokeSendPacket(packetCopy);
-			}
-		});
+		Bukkit.getScheduler().scheduleSyncDelayedTask(factory.getPlugin(), () -> invokeSendPacket(packetCopy));
 	}
 
 	@Override
-	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
-		byteBuffer.markReaderIndex();
+	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) {
 		DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
 
 		try {
@@ -546,12 +510,13 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				if (output != null) {
 					if (output.isCancelled()) {
 						it.remove();
-						continue;
-					} else if (output.getPacket().getHandle() != input) {
-						it.set(output.getPacket().getHandle());
-					}
+					} else {
+						if (output.getPacket().getHandle() != input) {
+							it.set(output.getPacket().getHandle());
+						}
 
-					finishQueue.addLast(output);
+						finishQueue.addLast(output);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -561,11 +526,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 
 	/**
-	 * Invoked after our decoder.
-	 * @param ctx - current context.
-	 * @param msg - the current packet.
+	 * Invoked after our decoder
 	 */
-	protected void finishRead(ChannelHandlerContext ctx, Object msg) {
+	private void finishRead() {
 		// Assume same order
 		PacketEvent event = finishQueue.pollFirst();
 
@@ -583,7 +546,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param packetClass - the packet class.
 	 * @param packet - the packet.
 	 */
-	protected void handleLogin(Class<?> packetClass, Object packet) {
+	private void handleLogin(Class<?> packetClass, Object packet) {
 		// Try to find the login packet class
 		if (PACKET_LOGIN_CLIENT == null) {
 			PACKET_LOGIN_CLIENT = PacketType.Login.Client.START.getPacketClass();
@@ -701,15 +664,12 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		// TODO: Ensure the packet listeners are executed in the channel thread.
 
 		// Execute this in the channel thread
-		Runnable action = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(networkManager, null, packet);
-				} catch (Exception e) {
-					// Inform the user
-					ProtocolLibrary.getErrorReporter().reportMinimal(factory.getPlugin(), "recieveClientPacket", e);
-				}
+		Runnable action = () -> {
+			try {
+				MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(networkManager, null, packet);
+			} catch (Exception e) {
+				// Inform the user
+				ProtocolLibrary.getErrorReporter().reportMinimal(factory.getPlugin(), "recieveClientPacket", e);
 			}
 		};
 
@@ -821,19 +781,16 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			    // the worker thread is waiting for the main thread to finish executing PlayerQuitEvent.
 				//
 				// TL;DR: Concurrency is hard.
-				executeInChannelThread(new Runnable() {
-					@Override
-					public void run() {
-						String[] handlers = new String[] {
-								"protocol_lib_decoder", "protocol_lib_finish", "protocol_lib_encoder"
-						};
+				executeInChannelThread(() -> {
+					String[] handlers = new String[] {
+							"protocol_lib_decoder", "protocol_lib_finish", "protocol_lib_encoder"
+					};
 
-						for (String handler : handlers) {
-							try {
-								originalChannel.pipeline().remove(handler);
-							} catch (NoSuchElementException e) {
-								// Ignore
-							}
+					for (String handler : handlers) {
+						try {
+							originalChannel.pipeline().remove(handler);
+						} catch (NoSuchElementException e) {
+							// Ignore
 						}
 					}
 				});
@@ -856,15 +813,12 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param command - the command to execute.
 	 */
 	private void executeInChannelThread(final Runnable command) {
-		originalChannel.eventLoop().execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					command.run();
-				} catch (Exception e) {
-					ProtocolLibrary.getErrorReporter().reportDetailed(ChannelInjector.this,
+		originalChannel.eventLoop().execute(() -> {
+			try {
+				command.run();
+			} catch (Exception e) {
+				ProtocolLibrary.getErrorReporter().reportDetailed(ChannelInjector.this,
 						Report.newBuilder(REPORT_CANNOT_EXECUTE_IN_CHANNEL_THREAD).error(e).build());
-				}
 			}
 		});
 	}
@@ -875,7 +829,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param clazz - the type.
 	 * @return The first handler, or NULL.
 	 */
-	public static ChannelHandler findChannelHandler(Channel channel, Class<?> clazz) {
+	static ChannelHandler findChannelHandler(Channel channel, Class<?> clazz) {
 		for (Entry<String, ChannelHandler> entry : channel.pipeline()) {
 			if (clazz.isAssignableFrom(entry.getValue().getClass())) {
 				return entry.getValue();
@@ -891,27 +845,27 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public static class ChannelSocketInjector implements SocketInjector {
 		private final ChannelInjector injector;
 
-		public ChannelSocketInjector(ChannelInjector injector) {
+		ChannelSocketInjector(ChannelInjector injector) {
 			this.injector = Preconditions.checkNotNull(injector, "injector cannot be NULL");
 		}
 
 		@Override
-		public Socket getSocket() throws IllegalAccessException {
+		public Socket getSocket() {
 			return SocketAdapter.adapt((SocketChannel) injector.originalChannel);
 		}
 
 		@Override
-		public SocketAddress getAddress() throws IllegalAccessException {
+		public SocketAddress getAddress() {
 			return injector.originalChannel.remoteAddress();
 		}
 
 		@Override
-		public void disconnect(String message) throws InvocationTargetException {
+		public void disconnect(String message) {
 			injector.disconnect(message);
 		}
 
 		@Override
-		public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) throws InvocationTargetException {
+		public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
 			injector.sendServerPacket(packet, marker, filtered);
 		}
 
@@ -935,7 +889,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			injector.setPlayer(updatedPlayer);
 		}
 
-		public ChannelInjector getChannelInjector() {
+		ChannelInjector getChannelInjector() {
 			return injector;
 		}
 	}
