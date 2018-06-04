@@ -44,7 +44,7 @@ You can also add ProtocolLib as a Maven dependency:
 <repositories>
   <repository>
     <id>dmulloy2-repo</id>
-    <url>http://repo.dmulloy2.net/content/groups/public/</url>
+    <url>http://repo.dmulloy2.net/nexus/repository/public/</url>
   </repository>
   ...
 </repositories>
@@ -62,7 +62,7 @@ Or use the maven dependency with gradle:
 
 ```gradle
 repositories {
-    maven { url "http://repo.dmulloy2.net/content/groups/public/" }
+    maven { url "http://repo.dmulloy2.net/nexus/repository/public/" }
 }
 
 dependencies {
