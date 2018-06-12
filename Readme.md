@@ -52,8 +52,8 @@ You can also add ProtocolLib as a Maven dependency:
 <dependencies>
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
-    <artifactId>ProtocolLib</artifactId>
-    <version>4.3.0</version>
+    <artifactId>ProtocolLib-API</artifactId>
+    <version>4.4.0</version>
   </dependency>
 </dependencies>
 ````
@@ -66,7 +66,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.3.0";
+    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.4.0";
 }
 ```
 
@@ -167,9 +167,3 @@ It's likely that I won't have to update ProtocolLib for anything but bug fixes a
 How is this possible? It all comes down to reflection in the end. Essentially, no name is hard coded - 
 every field, method and class is deduced by looking at field types, package names or parameter
 types. It's remarkably consistent across different versions.
-
-
-### Incompatibility
-
-The following plugins (to be expanded) are not compatible with ProtocolLib:
-* TagAPI
