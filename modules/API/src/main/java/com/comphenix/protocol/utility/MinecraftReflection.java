@@ -1852,7 +1852,7 @@ public class MinecraftReflection {
 	}
 
 	// ---- ItemStack conversions
-
+	private static Object itemStackAir = null;
 	private static Method asNMSCopy = null;
 	private static Method asCraftMirror = null;
 
@@ -1943,7 +1943,16 @@ public class MinecraftReflection {
 
 		if (is(getCraftItemStackClass(), specific)) {
 			// If it's already a CraftItemStack, use its handle
-			return new BukkitUnwrapper().unwrapItem(specific);
+			Object unwrapped = new BukkitUnwrapper().unwrapItem(specific);
+			if (unwrapped != null) {
+				return unwrapped;
+			} else {
+				if (itemStackAir == null) {
+					// Easiest way to get the Material.AIR ItemStack?
+					itemStackAir = getMinecraftItemStack(new ItemStack(Material.AIR));
+				}
+				return itemStackAir;
+			}
 		}
 
 		try {
