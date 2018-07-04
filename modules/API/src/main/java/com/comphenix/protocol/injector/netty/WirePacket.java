@@ -140,7 +140,6 @@ public class WirePacket {
 	private static byte[] getBytes(ByteBuf buffer) {
 		byte[] array = new byte[buffer.readableBytes()];
 		buffer.readBytes(array);
-		buffer.release();
 		return array;
 	}
 
@@ -197,6 +196,8 @@ public class WirePacket {
 
 			return ret;
 		}
+		
+		store.release();
 
 		return bytes;
 	}
@@ -222,8 +223,12 @@ public class WirePacket {
 		} catch (ReflectiveOperationException ex) {
 			throw new RuntimeException("Failed to serialize packet contents.", ex);
 		}
+		
+		byte[] bytes = getBytes(buffer);
+		
+		buffer.release();
 
-		return new WirePacket(id, getBytes(buffer));
+		return new WirePacket(id, bytes);
 	}
 
 	public static void writeVarInt(ByteBuf output, int i) {
