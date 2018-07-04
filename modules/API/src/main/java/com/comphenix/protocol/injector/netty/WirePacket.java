@@ -140,6 +140,7 @@ public class WirePacket {
 	private static byte[] getBytes(ByteBuf buffer) {
 		byte[] array = new byte[buffer.readableBytes()];
 		buffer.readBytes(array);
+		buffer.release();
 		return array;
 	}
 
@@ -158,7 +159,7 @@ public class WirePacket {
 	 * bytes from that packet
 	 * 
 	 * @param packet Existing packet
-	 * @return The ByteBuf
+	 * @return the byte array
 	 */
 	public static byte[] bytesFromPacket(PacketContainer packet) {
 		checkNotNull(packet, "packet cannot be null!");
@@ -176,6 +177,8 @@ public class WirePacket {
 		}
 
 		byte[] bytes = getBytes(buffer);
+		
+		buffer.release();
 
 		// Rewrite them to the packet to avoid issues with certain packets
 		if (packet.getType() == PacketType.Play.Server.CUSTOM_PAYLOAD
