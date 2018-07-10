@@ -158,7 +158,7 @@ public class WirePacket {
 	 * bytes from that packet
 	 * 
 	 * @param packet Existing packet
-	 * @return The ByteBuf
+	 * @return the byte array
 	 */
 	public static byte[] bytesFromPacket(PacketContainer packet) {
 		checkNotNull(packet, "packet cannot be null!");
@@ -176,6 +176,8 @@ public class WirePacket {
 		}
 
 		byte[] bytes = getBytes(buffer);
+		
+		buffer.release();
 
 		// Rewrite them to the packet to avoid issues with certain packets
 		if (packet.getType() == PacketType.Play.Server.CUSTOM_PAYLOAD
@@ -194,6 +196,8 @@ public class WirePacket {
 
 			return ret;
 		}
+		
+		store.release();
 
 		return bytes;
 	}
@@ -219,8 +223,12 @@ public class WirePacket {
 		} catch (ReflectiveOperationException ex) {
 			throw new RuntimeException("Failed to serialize packet contents.", ex);
 		}
+		
+		byte[] bytes = getBytes(buffer);
+		
+		buffer.release();
 
-		return new WirePacket(id, getBytes(buffer));
+		return new WirePacket(id, bytes);
 	}
 
 	public static void writeVarInt(ByteBuf output, int i) {
