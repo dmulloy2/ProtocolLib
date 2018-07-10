@@ -21,7 +21,6 @@ import java.net.SocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.comphenix.protocol.PacketType;
@@ -45,7 +44,6 @@ import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.MapMaker;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -115,7 +113,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private VolatileField channelField;
 
 	// Known network markers
-	private ConcurrentMap<Object, NetworkMarker> packetMarker = new MapMaker().weakKeys().makeMap();
+	private Map<Object, NetworkMarker> packetMarker = new WeakHashMap<>();
 
 	/**
 	 * Indicate that this packet has been processed by event listeners.
