@@ -41,21 +41,17 @@ import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-import net.minecraft.server.v1_13_R1.Block;
-
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.advancement.Advancement;
-import org.bukkit.craftbukkit.v1_13_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -77,18 +73,13 @@ public class BukkitConverters {
 	private static boolean hasAttributeSnapshot = false;
 	
 	// The static maps
-	private static Map<Class<?>, EquivalentConverter<Object>> specificConverters;
 	private static Map<Class<?>, EquivalentConverter<Object>> genericConverters;
 	private static List<Unwrapper> unwrappers;
 	
 	// Used to access the world type
 	private static Method worldTypeName;
 	private static Method worldTypeGetType;
-	
-	// Used to get block instances
-	private static MethodAccessor GET_BLOCK;
-	private static MethodAccessor GET_BLOCK_ID;
-	
+
 	// Used for potion effect conversion
 	private static volatile Constructor<?> mobEffectConstructor;
 	private static volatile StructureModifier<Object> mobEffectModifier;
@@ -702,20 +693,43 @@ public class BukkitConverters {
 		return ignoreNull(handle(WrappedStatistic::getHandle, WrappedStatistic::fromHandle));
 	}
 
+	private static MethodAccessor BLOCK_FROM_MATERIAL;
+	private static MethodAccessor MATERIAL_FROM_BLOCK;
+
 	/**
 	 * Retrieve a converter for block instances.
 	 * @return A converter for block instances.
 	 */
 	public static EquivalentConverter<Material> getBlockConverter() {
+		if (BLOCK_FROM_MATERIAL == null || MATERIAL_FROM_BLOCK == null) {
+			Class<?> magicNumbers = MinecraftReflection.getCraftBukkitClass("util.CraftMagicNumbers");
+			Class<?> block = MinecraftReflection.getBlockClass();
+
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(magicNumbers);
+			FuzzyMethodContract.Builder builder = FuzzyMethodContract
+					.newBuilder()
+					.requireModifier(Modifier.STATIC)
+					.returnTypeExact(Material.class)
+					.parameterExactArray(block);
+			MATERIAL_FROM_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethod(builder.build()));
+
+			builder = FuzzyMethodContract
+					.newBuilder()
+					.requireModifier(Modifier.STATIC)
+					.returnTypeExact(block)
+					.parameterExactArray(Material.class);
+			BLOCK_FROM_MATERIAL = Accessors.getMethodAccessor(fuzzy.getMethod(builder.build()));
+		}
+
 		return ignoreNull(new EquivalentConverter<Material>() {
 			@Override
 			public Object getGeneric(Material specific) {
-				return CraftMagicNumbers.getBlock(specific);
+				return BLOCK_FROM_MATERIAL.invoke(null, specific);
 			}
 
 			@Override
 			public Material getSpecific(Object generic) {
-				return CraftMagicNumbers.getMaterial((Block) generic);
+				return (Material) MATERIAL_FROM_BLOCK.invoke(null, generic);
 			}
 
 			@Override
