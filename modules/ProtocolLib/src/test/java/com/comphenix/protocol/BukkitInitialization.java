@@ -4,14 +4,14 @@ import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
-import net.minecraft.server.v1_12_R1.DispenserRegistry;
+import net.minecraft.server.v1_13_R1.DispenserRegistry;
 
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_12_R1.util.Versioning;
+import org.bukkit.craftbukkit.v1_13_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_13_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_13_R1.util.Versioning;
 
 import static org.mockito.Mockito.*;
 
@@ -25,10 +25,9 @@ public class BukkitInitialization {
 	private static boolean packaged;
 
 	/**
-	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing.
-	 * @throws IllegalAccessException If we are unable to initialize Bukkit.
+	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing
 	 */
-	public static void initializeItemMeta() throws IllegalAccessException {
+	public static void initializeItemMeta() {
 		if (!initialized) {
 			// Denote that we're done
 			initialized = true;
@@ -75,7 +74,7 @@ public class BukkitInitialization {
 			}
 
 			MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
-			MinecraftVersion.setCurrentVersion(MinecraftVersion.COLOR_UPDATE);
+			MinecraftVersion.setCurrentVersion(MinecraftVersion.AQUATIC_UPDATE);
 		}
 	}
 }

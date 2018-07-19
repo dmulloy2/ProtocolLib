@@ -45,6 +45,11 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	private static final Pattern VERSION_PATTERN = Pattern.compile(".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)");
 
 	/**
+	 * Version 1.13 - update aquatic.
+	 */
+	public static final MinecraftVersion AQUATIC_UPDATE = new MinecraftVersion("1.13");
+
+	/**
 	 * Version 1.12 - the world of color update.
 	 */
 	public static final MinecraftVersion COLOR_UPDATE = new MinecraftVersion("1.12");
@@ -350,5 +355,9 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 		}
 
 		return currentVersion;
+	}
+
+	public static boolean atOrAbove(MinecraftVersion version) {
+		return getCurrentVersion().isAtLeast(version);
 	}
 }

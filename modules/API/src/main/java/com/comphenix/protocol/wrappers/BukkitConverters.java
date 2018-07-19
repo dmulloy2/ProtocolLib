@@ -48,11 +48,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import net.minecraft.server.v1_13_R1.Block;
+
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.advancement.Advancement;
+import org.bukkit.craftbukkit.v1_13_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -469,7 +472,7 @@ public class BukkitConverters {
 	 * @return Wrapped block data.
 	 */
 	public static EquivalentConverter<WrappedBlockData> getWrappedBlockDataConverter() {
-		return ignoreNull(handle(WrappedBlockData::getHandle, WrappedBlockData::new));
+		return ignoreNull(handle(WrappedBlockData::getHandle, WrappedBlockData::fromHandle));
 	}
 	
 	/**
@@ -698,7 +701,7 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedStatistic> getWrappedStatisticConverter() {
 		return ignoreNull(handle(WrappedStatistic::getHandle, WrappedStatistic::fromHandle));
 	}
-	
+
 	/**
 	 * Retrieve a converter for block instances.
 	 * @return A converter for block instances.
@@ -707,12 +710,12 @@ public class BukkitConverters {
 		return ignoreNull(new EquivalentConverter<Material>() {
 			@Override
 			public Object getGeneric(Material specific) {
-				return getBlockIDConverter().getGeneric(specific.getId());
+				return CraftMagicNumbers.getBlock(specific);
 			}
 
 			@Override
 			public Material getSpecific(Object generic) {
-				return Material.getMaterial(getBlockIDConverter().getSpecific(generic));
+				return CraftMagicNumbers.getMaterial((Block) generic);
 			}
 
 			@Override
@@ -722,47 +725,6 @@ public class BukkitConverters {
 		});
 	}
 
-	/**
-	 * @deprecated ID's are deprecated
-	 */
-	@Deprecated
-	public static EquivalentConverter<Integer> getBlockIDConverter() {
-		// Initialize if we have't already
-		if (GET_BLOCK == null || GET_BLOCK_ID == null) {
-			Class<?> block = MinecraftReflection.getBlockClass();
-
-			FuzzyMethodContract getIdContract = FuzzyMethodContract
-					.newBuilder()
-					.parameterExactArray(block)
-					.requireModifier(Modifier.STATIC)
-					.build();
-			FuzzyMethodContract getBlockContract = FuzzyMethodContract
-					.newBuilder().returnTypeExact(block)
-					.parameterExactArray(int.class)
-					.requireModifier(Modifier.STATIC)
-					.build();
-			GET_BLOCK = Accessors.getMethodAccessor(FuzzyReflection.fromClass(block).getMethod(getBlockContract));
-			GET_BLOCK_ID = Accessors.getMethodAccessor(FuzzyReflection.fromClass(block).getMethod(getIdContract));
-		}
-
-		return ignoreNull(new EquivalentConverter<Integer>() {
-			@Override
-			public Object getGeneric(Integer specific) {
-				return GET_BLOCK.invoke(null, specific);
-			}
-
-			@Override
-			public Integer getSpecific(Object generic) {
-				return (Integer) GET_BLOCK_ID.invoke(null, generic);
-			}
-
-			@Override
-			public Class<Integer> getSpecificType() {
-				return Integer.class;
-			}
-		});
-	}
-	
 	/**
 	 * Retrieve the converter used to convert between a NMS World and a Bukkit world.
 	 * @return The world converter.

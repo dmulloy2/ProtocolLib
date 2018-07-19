@@ -16,12 +16,6 @@
  */
 package com.comphenix.protocol.events;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -29,20 +23,28 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import net.minecraft.server.v1_12_R1.AttributeModifier;
-import net.minecraft.server.v1_12_R1.DataWatcher;
-import net.minecraft.server.v1_12_R1.Entity;
-import net.minecraft.server.v1_12_R1.EntityLightning;
-import net.minecraft.server.v1_12_R1.MobEffect;
-import net.minecraft.server.v1_12_R1.MobEffectList;
-import net.minecraft.server.v1_12_R1.PacketPlayOutBoss;
-import net.minecraft.server.v1_12_R1.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_12_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.injector.PacketConstructor;
+import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.Util;
+import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.*;
+import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.google.common.collect.Lists;
+
+import net.minecraft.server.v1_13_R1.*;
+import net.minecraft.server.v1_13_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.WorldType;
@@ -55,27 +57,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.injector.PacketConstructor;
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.Util;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedWatchableObject;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.google.common.collect.Lists;
+import static org.junit.Assert.*;
 
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -87,7 +69,7 @@ public class PacketContainerTest {
 	private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
 
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializeItemMeta();
 		BukkitInitialization.initializePackage();
 	}
@@ -177,20 +159,20 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetStringArrays() {
-		PacketContainer tabComplete = new PacketContainer(PacketType.Play.Server.TAB_COMPLETE);
-		testObjectArray(tabComplete.getStringArrays(), 0, new String[0], new String[] { "hello", "world" });
+		PacketContainer packet = new PacketContainer(PacketType.Play.Client.UPDATE_SIGN);
+		testObjectArray(packet.getStringArrays(), 0, new String[0], new String[] { "hello", "world" });
 	}
 
 	@Test
 	public void testGetIntegerArrays() {
 		// Contains a byte array we will test
-		PacketContainer mapChunkBulk = new PacketContainer(PacketType.Play.Server.WORLD_PARTICLES);
-		StructureModifier<int[]> integers = mapChunkBulk.getIntegerArrays();
+		PacketContainer packet = new PacketContainer(PacketType.Play.Server.ENTITY_DESTROY);
+		StructureModifier<int[]> integers = packet.getIntegerArrays();
 		int[] testArray = new int[] { 1, 2, 3 };
 
 		// Pre and post conditions
 		assertArrayEquals(null, integers.read(0));
-		mapChunkBulk.getModifier().writeDefaults();
+		packet.getModifier().writeDefaults();
 		assertArrayEquals(new int[0], integers.read(0));
 
 		integers.write(0, testArray);
@@ -212,7 +194,7 @@ public class PacketContainerTest {
 	}
 
 	private ItemStack itemWithData() {
-		ItemStack item = new ItemStack(Material.WOOL, 1, DyeColor.GREEN.getWoolData());
+		ItemStack item = new ItemStack(Material.GREEN_WOOL, 1);
 		ItemMeta meta = item.getItemMeta();
 		meta.setDisplayName(ChatColor.GREEN + "Green Wool");
 		meta.setLore(Util.asList(ChatColor.WHITE + "This is lore."));
@@ -288,7 +270,7 @@ public class PacketContainerTest {
 		PacketContainer mobSpawnPacket = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
 		StructureModifier<WrappedDataWatcher> watcherAccessor = mobSpawnPacket.getDataWatcherModifier();
 
-		Entity entity = new EntityLightning(null, 0, 0, 0, true);
+		Entity entity = new EntityEgg(null, 0, 0, 0);
 		DataWatcher watcher = entity.getDataWatcher();
 
 		WrappedDataWatcher dataWatcher = new WrappedDataWatcher(watcher);
@@ -463,6 +445,7 @@ public class PacketContainerTest {
 		int e = 0;
 		if (effect.isAmbient()) e |= 1;
 		if (effect.hasParticles()) e |= 2;
+		if (mobEffect.f()) e |= 4;
 
 		assertEquals(e, (byte) packet.getBytes().read(2));
 	}
@@ -503,13 +486,13 @@ public class PacketContainerTest {
 	 * Actions from the outbound Boss packet. Used for testing generic enums.
 	 * @author dmulloy2
 	 */
-	public static enum Action {
+	public enum Action {
 		ADD,
 		REMOVE,
 		UPDATE_PCT,
 		UPDATE_NAME,
 		UPDATE_STYLE,
-		UPDATE_PROPERTIES;
+		UPDATE_PROPERTIES
 	}
 
 	@Test
@@ -526,15 +509,14 @@ public class PacketContainerTest {
 	}
 
 	private static final List<PacketType> BLACKLISTED = Util.asList(
-			PacketType.Play.Client.CUSTOM_PAYLOAD, PacketType.Play.Server.CUSTOM_PAYLOAD,
-			PacketType.Play.Server.SET_COOLDOWN
+			PacketType.Play.Server.TAGS
 	);
 
 	@Test
 	public void testDeepClone() {
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (BLACKLISTED.contains(type) || type.isDeprecated()) {
+			if (BLACKLISTED.contains(type) || type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD")) {
 				continue;
 			}
 
@@ -554,8 +536,10 @@ public class PacketContainerTest {
 				// Make sure watchable collections can be cloned
 				if (type == PacketType.Play.Server.ENTITY_METADATA) {
 					constructed.getWatchableCollectionModifier().write(0, Util.asList(
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Byte.class)), (byte) 1),
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(String.class)), "String"),
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Byte.class)),
+									(byte) 1),
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(String.class)),
+									"String"),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F)
 					));
 				}
@@ -578,14 +562,7 @@ public class PacketContainerTest {
 							testEquality(firstMod.read(i), secondMod.read(i));
 					}
 				}
-			} catch (IllegalArgumentException e) {
-				if (!registered) {
-					e.printStackTrace();
-				} else {
-					// Something is very wrong
-					throw e;
-				}
-			} catch (Throwable ex) {
+			} catch (Exception ex) {
 				throw new RuntimeException("Failed to serialize packet " + type, ex);
 			}
 		}

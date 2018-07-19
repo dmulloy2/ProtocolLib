@@ -42,12 +42,12 @@ import com.google.common.primitives.Primitives;
  */
 public class ImmutableDetector implements Cloner {
 	// Notable immutable classes we might encounter
-	private static final Class<?>[] immutableClasses = { 
-		StackTraceElement.class, BigDecimal.class, 
-		BigInteger.class, Locale.class, UUID.class, 
-		URL.class, URI.class, Inet4Address.class, 
-		Inet6Address.class, InetSocketAddress.class,
-		SecretKey.class, PublicKey.class
+	private static final Class<?>[] immutableClasses = {
+			StackTraceElement.class, BigDecimal.class,
+			BigInteger.class, Locale.class, UUID.class,
+			URL.class, URI.class, Inet4Address.class,
+			Inet6Address.class, InetSocketAddress.class,
+			SecretKey.class, PublicKey.class
 	};
 	
 	@Override
@@ -94,6 +94,16 @@ public class ImmutableDetector implements Cloner {
 					|| type.equals(MinecraftReflection.getMinecraftClass("SoundEffect"))) {
 				return true;
 			}
+		}
+
+		if (MinecraftReflection.getBlockClass().isAssignableFrom(type)
+				|| MinecraftReflection.getMinecraftClass("Item").isAssignableFrom(type)
+				|| MinecraftReflection.getMinecraftClass("FluidType").isAssignableFrom(type)) {
+			return true;
+		}
+
+		if (type.getName().contains("$$Lambda$")) {
+			return true;
 		}
 
 		// Probably not

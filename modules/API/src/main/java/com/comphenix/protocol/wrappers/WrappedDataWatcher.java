@@ -55,7 +55,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private static FieldAccessor MAP_FIELD = null;
 
 	private static ConstructorAccessor constructor = null;
-	private static ConstructorAccessor lightningConstructor = null;
+	private static ConstructorAccessor eggConstructor = null;
 
 	private static Object fakeEntity = null;
 
@@ -127,12 +127,12 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 
 		// We can create a fake lightning strike without it affecting anything
-		if (lightningConstructor == null) {
-			lightningConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getMinecraftClass("EntityLightning"),
-					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class, boolean.class);
+		if (eggConstructor == null) {
+			eggConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getMinecraftClass("EntityEgg"),
+					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class);
 		}
 
-		return fakeEntity = lightningConstructor.invoke(null, 0, 0, 0, true);
+		return fakeEntity = eggConstructor.invoke(null, 0, 0, 0);
 	}
 
 	// ---- Collection Methods

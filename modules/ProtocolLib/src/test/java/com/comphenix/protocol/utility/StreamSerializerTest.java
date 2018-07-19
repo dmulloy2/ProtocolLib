@@ -1,17 +1,14 @@
 package com.comphenix.protocol.utility;
 
-import static org.junit.Assert.assertEquals;
+import java.io.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
-import net.minecraft.server.v1_12_R1.IntHashMap;
+import net.minecraft.server.v1_13_R1.IntHashMap;
 
 import org.bukkit.ChatColor;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -20,9 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
@@ -30,7 +25,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 public class StreamSerializerTest {
 
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializeItemMeta();
 	}
 
@@ -86,7 +81,7 @@ public class StreamSerializerTest {
 	@Test
 	public void testItemMeta() throws IOException {
 		StreamSerializer serializer = new StreamSerializer();
-		ItemStack initial = new ItemStack(Material.WOOL, 2, DyeColor.BLUE.getWoolData());
+		ItemStack initial = new ItemStack(Material.BLUE_WOOL, 2);
 
 		ItemMeta meta = initial.getItemMeta();
 		meta.setDisplayName(ChatColor.BLUE + "Blue Wool");
