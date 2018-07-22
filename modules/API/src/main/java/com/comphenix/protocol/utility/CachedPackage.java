@@ -17,8 +17,8 @@
 package com.comphenix.protocol.utility;
 
 import java.util.Map;
+import java.util.Optional;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -51,7 +51,7 @@ class CachedPackage {
 	 */
 	public void setPackageClass(String className, Class<?> clazz) {
 		if (clazz != null) {
-			cache.put(className, Optional.<Class<?>> of(clazz));
+			cache.put(className, Optional.of(clazz));
 		} else {
 			cache.remove(className);
 		}
@@ -63,32 +63,21 @@ class CachedPackage {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	public Class<?> getPackageClass(String className) {
+	public Optional<Class<?>> getPackageClass(String className) {
 		Preconditions.checkNotNull(className, "className cannot be null!");
 
-		// See if we've already looked it up
-		if (cache.containsKey(className)) {
-			Optional<Class<?>> result = cache.get(className);
-			if (!result.isPresent()) {
-				throw new RuntimeException("Cannot find class " + className);
+		Optional<Class<?>> result = cache.get(className);
+		if (result == null) {
+			try {
+				Class<?> clazz = source.loadClass(combine(packageName, className));
+				result = Optional.ofNullable(clazz);
+				cache.put(className, result);
+			} catch (ClassNotFoundException ex) {
+				cache.put(className, Optional.empty());
 			}
-
-			return result.get();
 		}
 
-		try {
-			// Try looking it up
-			Class<?> clazz = source.loadClass(combine(packageName, className));
-			if (clazz == null) {
-				throw new IllegalArgumentException("Source " + source + " returned null for " + className);
-			}
-
-			cache.put(className, Optional.<Class<?>> of(clazz));
-			return clazz;
-		} catch (ClassNotFoundException ex) {
-			cache.put(className, Optional.<Class<?>> absent());
-			throw new RuntimeException("Cannot find class " + className, ex);
-		}
+		return result;
 	}
 
 	/**

@@ -96,9 +96,9 @@ public class ImmutableDetector implements Cloner {
 			}
 		}
 
-		if (MinecraftReflection.getBlockClass().isAssignableFrom(type)
-				|| MinecraftReflection.getMinecraftClass("Item").isAssignableFrom(type)
-				|| MinecraftReflection.getMinecraftClass("FluidType").isAssignableFrom(type)) {
+		if (MinecraftReflection.is(MinecraftReflection.getBlockClass(), type)
+				|| MinecraftReflection.is(MinecraftReflection.getItemClass(), type)
+				|| MinecraftReflection.is(MinecraftReflection.getFluidTypeClass(), type)) {
 			return true;
 		}
 
