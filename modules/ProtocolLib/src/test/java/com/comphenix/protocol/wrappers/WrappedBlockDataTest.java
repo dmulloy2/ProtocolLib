@@ -39,15 +39,14 @@ public class WrappedBlockDataTest {
 
 	@Test
 	public void test() {
-		Material type = Material.WOOL;
-		int data = DyeColor.BLUE.getWoolData();
+		Material type = Material.BLUE_WOOL;
 
-		WrappedBlockData wrapper = WrappedBlockData.createData(type, data);
+		WrappedBlockData wrapper = WrappedBlockData.createData(type);
 
 		assertEquals(wrapper.getType(), type);
-		assertEquals(wrapper.getData(), data);
+		//assertEquals(wrapper.getData(), data);
 
-		Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(MinecraftReflection.getIBlockDataClass(), wrapper);
+		Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(wrapper);
 		WrappedBlockData back = BukkitConverters.getWrappedBlockDataConverter().getSpecific(generic);
 
 		assertEquals(wrapper.getType(), back.getType());

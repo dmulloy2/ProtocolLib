@@ -16,18 +16,11 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +29,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -55,7 +49,16 @@ import com.comphenix.protocol.injector.spigot.AbstractPlayerHandler;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Lists;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 
 public class ProtocolInjector implements ChannelListener {
 	public static final ReportType REPORT_CANNOT_INJECT_INCOMING_CHANNEL = new ReportType("Unable to inject incoming channel %s.");
@@ -130,23 +133,32 @@ public class ProtocolInjector implements ChannelListener {
 					if (serverConnection != null) {
 						break;
 					}
-				} catch (Exception e) {
-					// Try the next though
-					e.printStackTrace();
+				} catch (Exception ex) {
+					ProtocolLogger.debug("Encountered an exception invoking " + method, ex);
 				}
+			}
+
+			if (serverConnection == null) {
+				throw new ReflectiveOperationException("Failed to obtain server connection");
 			}
 
 			// Handle connected channels
 			final ChannelInboundHandler endInitProtocol = new ChannelInitializer<Channel>() {
 				@Override
-				protected void initChannel(Channel channel) throws Exception {
+				protected void initChannel(final Channel channel) throws Exception {
 					try {
-						// This can take a while, so we need to stop the main thread from interfering
 						synchronized (networkManagers) {
-							injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject();
+							// For some reason it needs to be delayed on 1.12, but the delay breaks 1.11 and below
+							// TODO I see this more as a temporary hotfix than a permanent solution
+							if (MinecraftVersion.getCurrentVersion().getMinor() >= 12) {
+								channel.eventLoop().submit(() ->
+									injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject());
+							} else {
+								injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject();
+							}
 						}
-					} catch (Exception e) {
-						reporter.reportDetailed(ProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).messageParam(channel).error(e));
+					} catch (Exception ex) {
+						reporter.reportDetailed(ProtocolInjector.this, Report.newBuilder(REPORT_CANNOT_INJECT_INCOMING_CHANNEL).messageParam(channel).error(ex));
 					}
 				}
 			};
@@ -171,9 +183,27 @@ public class ProtocolInjector implements ChannelListener {
 					ctx.fireChannelRead(msg);
 				}
 			};
+			
+			FuzzyReflection fuzzy = FuzzyReflection.fromObject(serverConnection, true);
 
-			// Get the current NetworkMananger list
-			networkManagers = (List<Object>) FuzzyReflection.fromObject(serverConnection, true).invokeMethod(null, "getNetworkManagers", List.class, serverConnection);
+			try {
+				Field field = fuzzy.getParameterizedField(List.class, MinecraftReflection.getNetworkManagerClass());
+				field.setAccessible(true);
+
+				networkManagers = (List<Object>) field.get(serverConnection);
+			} catch (Exception ex) {
+				ProtocolLogger.debug("Encountered an exception checking list fields", ex);
+
+				Method method =  fuzzy.getMethodByParameters("getNetworkManagers", List.class,
+						new Class<?>[] { serverConnection.getClass() });
+				method.setAccessible(true);
+
+				networkManagers = (List<Object>) method.invoke(null, serverConnection);
+			}
+
+			if (networkManagers == null) {
+				throw new ReflectiveOperationException("Failed to obtain list of network managers");
+			}
 
 			// Insert ProtocolLib's connection interceptor
 			bootstrapFields = getBootstrapFields(serverConnection);
@@ -191,7 +221,6 @@ public class ProtocolInjector implements ChannelListener {
 			}
 
 			injected = true;
-
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to inject channel futures.", e);
 		}
@@ -352,7 +381,7 @@ public class ProtocolInjector implements ChannelListener {
 
 			@Override
 			public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
-				if (options != null && !type.forceAsync() && !options.contains(ListenerOptions.ASYNC))
+				if (!type.isAsyncForced() && (options == null || !options.contains(ListenerOptions.ASYNC)))
 					mainThreadFilters.addType(type);
 				super.addPacketHandler(type, options);
 			}

@@ -7,28 +7,19 @@
 // Somewhat modified by aadnk.
 package com.comphenix.protocol.updater;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.Report;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.error.Report;
 
 /**
  * Check dev.bukkit.org to find updates for a given plugin, and download the updates if needed.
@@ -60,7 +51,7 @@ public class BukkitUpdater extends Updater {
     private static final String VERSION_VALUE = "gameVersion";  // Gets remote file's build version
 	private static final Object FILE_NAME = "fileName";			// Gets remote file's name
     private static final String QUERY = "/servermods/files?projectIds="; // Path to GET
-    private static final String HOST = "https://api.curseforge.com"; // Slugs will be appended to this to get to the project's RSS feed
+    private static final String HOST = "https://servermods.forgesvc.net"; // Formerly api.curseforge.net
 
     // private static final String[] NO_UPDATE_TAG = { "-DEV", "-PRE", "-SNAPSHOT" }; // If the version number contains one of these, don't update.
     private static final int BYTE_SIZE = 1024; // Used for downloading files
@@ -71,7 +62,7 @@ public class BukkitUpdater extends Updater {
     /**
      * Initialize the updater.
      * <p>
-     * Call {@link #start()} to actually start looking (and downloading) updates.
+     * Call {@link #start(UpdateType)} to actually start looking (and downloading) updates.
      *
      * @param plugin   The plugin that is checking for an update.
      * @param id       The dev.bukkit.org id of the project
@@ -186,18 +177,6 @@ public class BukkitUpdater extends Updater {
                     this.plugin.getLogger().info("Downloading update: " + percent + "% of " + fileLength + " bytes.");
                 }
             }
-            //Just a quick check to make sure we didn't leave any files from last time...
-            for (final File xFile : new File(this.plugin.getDataFolder().getParent(), this.updateFolder).listFiles()) {
-                if (xFile.getName().endsWith(".zip")) {
-                    xFile.delete();
-                }
-            }
-            // Check to see if it's a zip file, if it is, unzip it.
-            final File dFile = new File(folder.getAbsolutePath() + "/" + file);
-            if (dFile.getName().endsWith(".zip")) {
-                // Unzip
-                this.unzip(dFile.getCanonicalPath());
-            }
             if (this.announce) {
                 this.plugin.getLogger().info("Finished updating.");
             }
@@ -217,107 +196,6 @@ public class BukkitUpdater extends Updater {
         }
     }
 
-    /**
-     * Part of Zip-File-Extractor, modified by Gravity for use with Bukkit
-     */
-    private void unzip(String file) {
-        try {
-            final File fSourceZip = new File(file);
-            final String zipPath = file.substring(0, file.length() - 4);
-            ZipFile zipFile = new ZipFile(fSourceZip);
-            Enumeration<? extends ZipEntry> e = zipFile.entries();
-            while (e.hasMoreElements()) {
-                ZipEntry entry = e.nextElement();
-                File destinationFilePath = new File(zipPath, entry.getName());
-                destinationFilePath.getParentFile().mkdirs();
-                if (entry.isDirectory()) {
-                    continue;
-                } else {
-                    final BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
-                    int b;
-                    final byte buffer[] = new byte[BukkitUpdater.BYTE_SIZE];
-                    final FileOutputStream fos = new FileOutputStream(destinationFilePath);
-                    final BufferedOutputStream bos = new BufferedOutputStream(fos, BukkitUpdater.BYTE_SIZE);
-                    while ((b = bis.read(buffer, 0, BukkitUpdater.BYTE_SIZE)) != -1) {
-                        bos.write(buffer, 0, b);
-                    }
-                    bos.flush();
-                    bos.close();
-                    bis.close();
-                    final String name = destinationFilePath.getName();
-                    if (name.endsWith(".jar") && this.pluginFile(name)) {
-                        destinationFilePath.renameTo(new File(this.plugin.getDataFolder().getParent(), this.updateFolder + "/" + name));
-                    }
-                }
-                entry = null;
-                destinationFilePath = null;
-            }
-            e = null;
-            zipFile.close();
-            zipFile = null;
-
-            // Move any plugin data folders that were included to the right place, Bukkit won't do this for us.
-            for (final File dFile : new File(zipPath).listFiles()) {
-                if (dFile.isDirectory()) {
-                    if (this.pluginFile(dFile.getName())) {
-                        final File oFile = new File(this.plugin.getDataFolder().getParent(), dFile.getName()); // Get current dir
-                        final File[] contents = oFile.listFiles(); // List of existing files in the current dir
-                        for (final File cFile : dFile.listFiles()) // Loop through all the files in the new dir
-                        {
-                            boolean found = false;
-                            for (final File xFile : contents) // Loop through contents to see if it exists
-                            {
-                                if (xFile.getName().equals(cFile.getName())) {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found) {
-                                // Move the new file into the current dir
-                                cFile.renameTo(new File(oFile.getCanonicalFile() + "/" + cFile.getName()));
-                            } else {
-                                // This file already exists, so we don't need it anymore.
-                                cFile.delete();
-                            }
-                        }
-                    }
-                }
-                dFile.delete();
-            }
-            new File(zipPath).delete();
-            fSourceZip.delete();
-        } catch (final IOException ex) {
-            this.plugin.getLogger().warning("The auto-updater tried to unzip a new update file, but was unsuccessful.");
-            this.result = BukkitUpdater.UpdateResult.FAIL_DOWNLOAD;
-            ex.printStackTrace();
-        }
-        new File(file).delete();
-    }
-
-    /**
-     * Check if the name of a jar is one of the plugins currently installed, used for extracting the correct files out of a zip.
-     */
-    private boolean pluginFile(String name) {
-        for (final File file : new File("plugins").listFiles()) {
-            if (file.getName().equals(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Evaluate whether the version number is marked showing that it should not be updated by this program
-     */
-    /* private boolean hasTag(String version) {
-        for (final String string : BukkitUpdater.NO_UPDATE_TAG) {
-            if (version.contains(string)) {
-                return true;
-            }
-        }
-        return false;
-    } */
-
     public boolean read() {
         try {
             final URLConnection conn = this.url.openConnection();
@@ -331,10 +209,9 @@ public class BukkitUpdater extends Updater {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             final String response = reader.readLine();
+            final JSONArray array = response != null ? (JSONArray) JSONValue.parse(response) : null;
 
-            final JSONArray array = (JSONArray) JSONValue.parse(response);
-
-            if (array.size() == 0) {
+            if (array == null || array.size() == 0) {
                 this.plugin.getLogger().warning("The updater could not find any files for the project id " + this.id);
                 this.result = UpdateResult.FAIL_BADID;
                 return false;

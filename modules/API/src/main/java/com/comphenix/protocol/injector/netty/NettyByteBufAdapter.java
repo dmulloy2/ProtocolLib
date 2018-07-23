@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -44,6 +45,7 @@ import com.google.common.io.ByteStreams;
  * all indexing in the byte buffer.
  * @author Kristian
  */
+@SuppressWarnings("unused")
 public class NettyByteBufAdapter extends AbstractByteBuf {
 	private DataInputStream input;
 	private DataOutputStream output;
@@ -214,7 +216,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 
 	@Override
 	public ByteBufAllocator alloc() {
-		return null;
+		return ByteBufAllocator.DEFAULT;
 	}
 
 	@Override
@@ -388,5 +390,49 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	public ByteBuf retain() {
 		return this;
+	}
+
+	protected int _getIntLE(int arg0) {
+		return 0;
+	}
+
+	protected long _getLongLE(int arg0) {
+		return 0;
+	}
+
+	protected short _getShortLE(int arg0) {
+		return 0;
+	}
+
+	protected int _getUnsignedMediumLE(int arg0) {
+		return 0;
+	}
+
+	protected void _setIntLE(int arg0, int arg1) {
+	}
+
+	protected void _setLongLE(int arg0, long arg1) {
+	}
+
+	protected void _setMediumLE(int arg0, int arg1) {
+	}
+
+	protected void _setShortLE(int arg0, int arg1) {
+	}
+
+	public int getBytes(int arg0, FileChannel arg1, long arg2, int arg3) throws IOException {
+		return 0;
+	}
+
+	public int setBytes(int arg0, FileChannel arg1, long arg2, int arg3) throws IOException {
+		return 0;
+	}
+
+	public ByteBuf touch() {
+		return null;
+	}
+
+	public ByteBuf touch(Object arg0) {
+		return null;
 	}
 }

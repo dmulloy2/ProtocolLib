@@ -73,4 +73,10 @@ public class ProtocolLogger {
 			log("[Debug] " + message, args);
 		}
 	}
+
+	public static void debug(String message, Throwable ex) {
+		if (isDebugEnabled()) {
+			plugin.getLogger().log(Level.WARNING, "[Debug] " + message, ex);
+		}
+	}
 }

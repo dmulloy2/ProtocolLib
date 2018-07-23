@@ -17,10 +17,7 @@
 
 package com.comphenix.protocol.reflect;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -420,6 +417,30 @@ public class FuzzyReflection {
 		}
 		
 		return fields;
+	}
+
+	/**
+	 * Retrieves a field with a given type and parameters. This is most useful
+	 * when dealing with Collections.
+	 *
+	 * @param fieldType Type of the field
+	 * @param params Variable length array of type parameters
+	 * @return The field
+	 *
+	 * @throws IllegalArgumentException If the field cannot be found
+	 */
+	public Field getParameterizedField(Class<?> fieldType, Class<?>... params) {
+		for (Field field : getFields()) {
+			if (field.getType().equals(fieldType)) {
+				Type type = field.getGenericType();
+				if (type instanceof ParameterizedType) {
+					if (Arrays.equals(((ParameterizedType) type).getActualTypeArguments(), params))
+						return field;
+				}
+			}
+		}
+
+		throw new IllegalArgumentException("Unable to find a field with type " + fieldType + " and params " + Arrays.toString(params));
 	}
 	
 	/**

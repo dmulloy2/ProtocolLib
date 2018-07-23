@@ -21,32 +21,30 @@ package com.comphenix.protocol.reflect;
  * Interface that converts generic objects into types and back.
  * 
  * @author Kristian
- * @param <TType> The specific type.
+ * @param <T> The specific type.
  */
-public interface EquivalentConverter<TType> {
-	/**
-	 * Retrieve a copy of the specific type using an instance of the generic type.
-	 * <p>
-	 * This is usually a wrapper type in the Bukkit API.
-	 * @param generic - the generic type.
-	 * @return The new specific type.
-	 */
-	public TType getSpecific(Object generic);
-	
+public interface EquivalentConverter<T> {
 	/**
 	 * Retrieve a copy of the generic type from a specific type.
 	 * <p>
 	 * This is usually a native net.minecraft.server type in Minecraft.
-	 * @param genericType - class or super class of the generic type.
 	 * @param specific - the specific type we need to copy.
 	 * @return A copy of the specific type.
 	 */
-	public Object getGeneric(Class<?> genericType, TType specific);
-	
+	Object getGeneric(T specific);
+
 	/**
-	 * Due to type erasion, we need to explicitly keep a reference to the specific type.
+	 * Retrieve a copy of the specific type using an instance of the generic type.
+	 * <p>
+	 * This is usually a wrapper type in the Bukkit API or ProtocolLib API.
+	 * @param generic - the generic type.
+	 * @return The new specific type.
+	 */
+	T getSpecific(Object generic);
+
+	/**
+	 * Due to type erasure, we need to explicitly keep a reference to the specific type.
 	 * @return The specific type.
 	 */
-	public Class<TType> getSpecificType();
+	Class<T> getSpecificType();
 }
-

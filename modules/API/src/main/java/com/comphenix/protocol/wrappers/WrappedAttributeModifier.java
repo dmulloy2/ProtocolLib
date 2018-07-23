@@ -2,7 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
 import java.util.UUID;
-
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -91,7 +91,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 	
 	// Cached values
 	private final UUID uuid;
-	private final String name;
+	private final Supplier<String> name;
 	private final Operation operation;
 	private final double amount;
 	
@@ -109,7 +109,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 		
 		// Use the supplied values instead of reading from the NMS instance
 		this.uuid = uuid;
-		this.name = name;
+		this.name = () -> name;
 		this.amount = amount;
 		this.operation = operation;
 	}
@@ -118,6 +118,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 	 * Construct an attribute modifier wrapper around a given NMS instance.
 	 * @param handle - the NMS instance.
 	 */
+	@SuppressWarnings("unchecked")
 	protected WrappedAttributeModifier(@Nonnull Object handle) {
 		// Update handle and modifier
 		super(MinecraftReflection.getAttributeModifierClass());
@@ -126,7 +127,15 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 		
 		// Load final values, caching them
 		this.uuid = (UUID) modifier.withType(UUID.class).read(0);
-	    this.name = (String) modifier.withType(String.class).read(0);
+
+		StructureModifier<String> stringMod = modifier.withType(String.class);
+		if (stringMod.size() == 0) {
+			Supplier<String> supplier = (Supplier<String>) modifier.withType(Supplier.class).read(0);
+			this.name = supplier;
+		} else {
+			this.name = () -> stringMod.read(0);
+		}
+
 	    this.amount = (Double) modifier.withType(double.class).read(0);
 	    this.operation = Operation.fromId((Integer) modifier.withType(int.class).read(0));
 	}
@@ -213,7 +222,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 	 * @return The attribute key.
 	 */
 	public String getName() {
-		return name;
+		return name.get();
 	}
 
 	/**

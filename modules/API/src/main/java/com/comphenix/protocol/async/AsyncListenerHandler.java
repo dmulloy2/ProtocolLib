@@ -24,8 +24,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -36,9 +34,10 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.timing.TimedListenerManager;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.timing.TimedTracker;
-import com.comphenix.protocol.utility.WrappedScheduler;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+
+import org.bukkit.plugin.Plugin;
 
 /**
  * Represents a handler for an asynchronous event.
@@ -345,8 +344,7 @@ public class AsyncListenerHandler {
 	}
 	
 	private void scheduleAsync(Runnable runnable) {
-		// Handle deprecation
-		WrappedScheduler.runAsynchronouslyRepeat(listener.getPlugin(), filterManager.getScheduler(), runnable, 0L, -1L);
+		listener.getPlugin().getServer().getScheduler().runTaskAsynchronously(listener.getPlugin(), runnable);
 	}
 	
 	/**

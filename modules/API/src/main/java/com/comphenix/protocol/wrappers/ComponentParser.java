@@ -20,13 +20,19 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 
 /**
  * Handles component parsing in 1.8
  * @author dmulloy2
  */
 public class ComponentParser {
-
+	
+	private static Constructor readerConstructor;
+	private static Method setLenient;
+	private static Method getAdapter;
+	private static Method read;
+	
 	private ComponentParser() {
 	}
 
@@ -45,13 +51,21 @@ public class ComponentParser {
 	// Should only be needed on 1.8.
 	private static Object deserializeLegacy(Object gson, Class<?> component, StringReader str) {
 		try {
-			Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
-			Object reader = readerClass.getConstructor(Reader.class).newInstance(str);
-			Method setLenient = readerClass.getMethod("setLenienent", boolean.class);
+			if(readerConstructor == null){
+				Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
+				readerConstructor = readerClass.getDeclaredConstructor(Reader.class);
+				readerConstructor.setAccessible(true);
+				setLenient = readerClass.getDeclaredMethod("setLenient", boolean.class);
+				setLenient.setAccessible(true);
+				getAdapter = gson.getClass().getDeclaredMethod("getAdapter", Class.class);
+				getAdapter.setAccessible(true);
+				Object adapter = getAdapter.invoke(gson, component);
+				read = adapter.getClass().getDeclaredMethod("read", readerClass);
+				read.setAccessible(true);
+			}
+			Object reader = readerConstructor.newInstance(str);
 			setLenient.invoke(reader, true);
-			Method getAdapter = gson.getClass().getMethod("getAdapter", Class.class);
 			Object adapter = getAdapter.invoke(gson, component);
-			Method read = adapter.getClass().getMethod("read", readerClass);
 			return read.invoke(adapter, reader);
 		} catch (ReflectiveOperationException ex) {
 			throw new RuntimeException("Failed to read JSON", ex);

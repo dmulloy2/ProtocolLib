@@ -1,19 +1,19 @@
 package com.comphenix.protocol.injector.server;
 
 /**
- * Able to store a socket injector.
+ * A temporary player created by ProtocolLib when a true player instance does not exist.
  * <p>
- * A necessary hack.
- * @author Kristian
+ * Also able to store a socket injector
+ * </p>
  */
-class InjectorContainer {
+public class TemporaryPlayer {
 	private volatile SocketInjector injector;
 
-	public SocketInjector getInjector() {
+	SocketInjector getInjector() {
 		return injector;
 	}
 
-	public void setInjector(SocketInjector injector) {
+	void setInjector(SocketInjector injector) {
 		if (injector == null)
 			throw new IllegalArgumentException("Injector cannot be NULL.");
 		this.injector = injector;

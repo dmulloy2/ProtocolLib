@@ -17,36 +17,14 @@
 
 package com.comphenix.protocol.events;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
-import org.bukkit.entity.Entity;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
@@ -55,54 +33,15 @@ import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.reflect.cloning.AggregateCloner;
+import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
-import com.comphenix.protocol.reflect.cloning.BukkitCloner;
-import com.comphenix.protocol.reflect.cloning.Cloner;
-import com.comphenix.protocol.reflect.cloning.CollectionCloner;
-import com.comphenix.protocol.reflect.cloning.FieldCloner;
-import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
-import com.comphenix.protocol.reflect.cloning.OptionalCloner;
-import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
-import com.comphenix.protocol.wrappers.ChunkPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.EnumWrappers.ChatVisibility;
-import com.comphenix.protocol.wrappers.EnumWrappers.ClientCommand;
-import com.comphenix.protocol.wrappers.EnumWrappers.CombatEventType;
-import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
-import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
-import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.EnumConverter;
-import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
-import com.comphenix.protocol.wrappers.EnumWrappers.ItemSlot;
-import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
-import com.comphenix.protocol.wrappers.EnumWrappers.Particle;
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType;
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerInfoAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.ResourcePackStatus;
-import com.comphenix.protocol.wrappers.EnumWrappers.ScoreboardAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
-import com.comphenix.protocol.wrappers.EnumWrappers.TitleAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.WorldBorderAction;
-import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedAttribute;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedServerPing;
-import com.comphenix.protocol.wrappers.WrappedStatistic;
-import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.*;
+import com.comphenix.protocol.wrappers.EnumWrappers.*;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -113,6 +52,15 @@ import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
+
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.WorldType;
+import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -133,30 +81,29 @@ public class PacketContainer implements Serializable {
 	private static ConcurrentMap<Class<?>, Method> readMethods = Maps.newConcurrentMap();
 	
 	// Used to clone packets
-	private static final AggregateCloner DEEP_CLONER = AggregateCloner.newBuilder().
-			instanceProvider(DefaultInstances.DEFAULT).
-			andThen(BukkitCloner.class).
-			andThen(ImmutableDetector.class).
-			andThen(OptionalCloner.class).
-			andThen(CollectionCloner.class).
-			andThen(getSpecializedDeepClonerFactory()).
-			build();
+	private static final AggregateCloner DEEP_CLONER = AggregateCloner
+			.newBuilder()
+			.instanceProvider(DefaultInstances.DEFAULT)
+			.andThen(BukkitCloner.class)
+			.andThen(ImmutableDetector.class)
+			.andThen(OptionalCloner.class)
+			.andThen(CollectionCloner.class)
+			.andThen(getSpecializedDeepClonerFactory())
+			.build();
 	
-	private static final AggregateCloner SHALLOW_CLONER = AggregateCloner.newBuilder().
-			instanceProvider(DefaultInstances.DEFAULT).
-			andThen(new Function<BuilderParameters, Cloner>() {
-						@Override
-						public Cloner apply(@Nullable BuilderParameters param) {
-							if (param == null)
-								throw new IllegalArgumentException("Cannot be NULL.");
-							
-							return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
-								// Use a default writer with no concept of cloning
-								writer = new ObjectWriter();
-							}};
-						}
-					}).
-			build();
+	private static final AggregateCloner SHALLOW_CLONER = AggregateCloner
+			.newBuilder()
+			.instanceProvider(DefaultInstances.DEFAULT)
+			.andThen(param -> {
+				if (param == null)
+					throw new IllegalArgumentException("Cannot be NULL.");
+
+				return new FieldCloner(param.getAggregateCloner(), param.getInstanceProvider()) {{
+					// Use a default writer with no concept of cloning
+					writer = new ObjectWriter();
+				}};
+			})
+			.build();
 	
 	// Packets that cannot be cloned by our default deep cloner
 	private static final Set<PacketType> CLONING_UNSUPPORTED = Sets.newHashSet(
@@ -384,8 +331,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<ItemStack> getItemModifier() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<ItemStack>withType(
-				MinecraftReflection.getItemStackClass(), BukkitConverters.getItemStackConverter());
+		return structureModifier.withType(
+				MinecraftReflection.getItemStackClass(),
+				BukkitConverters.getItemStackConverter());
 	}
 	
 	/**
@@ -397,9 +345,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<ItemStack[]> getItemArrayModifier() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<ItemStack[]>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getItemStackArrayClass(),
-				BukkitConverters.getIgnoreNull(new ItemStackArrayConverter()));
+				Converters.ignoreNull(new ItemStackArrayConverter()));
 	}
 
 	/**
@@ -413,10 +361,7 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the Bukkit wrapper
 		return structureModifier.withType(
 				List.class,
-				BukkitConverters.getListConverter(
-						MinecraftReflection.getItemStackClass(),
-						BukkitConverters.getItemStackConverter()
-				)
+				BukkitConverters.getListConverter(BukkitConverters.getItemStackConverter())
 		);
 	}
 
@@ -427,12 +372,9 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier for maps of statistics.
 	 */
 	public StructureModifier<Map<WrappedStatistic, Integer>> getStatisticMaps() {
-		return structureModifier.withType(Map.class,
-			BukkitConverters.<WrappedStatistic, Integer>getMapConverter(
-				MinecraftReflection.getStatisticClass(),
-				BukkitConverters.getWrappedStatisticConverter()
-			)
-		);
+		return getMaps(
+				BukkitConverters.getWrappedStatisticConverter(),
+				Converters.passthrough(Integer.class));
 	}
 	
 	/**
@@ -444,7 +386,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<WorldType> getWorldTypeModifier() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<WorldType>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getWorldTypeClass(),
 				BukkitConverters.getWorldTypeConverter());
 	}
@@ -455,7 +397,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<WrappedDataWatcher> getDataWatcherModifier() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<WrappedDataWatcher>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getDataWatcherClass(),
 				BukkitConverters.getDataWatcherConverter());
 	}
@@ -474,7 +416,7 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<Entity> getEntityModifier(@Nonnull World world) {
 		Preconditions.checkNotNull(world, "world cannot be NULL.");
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<Entity>withType(
+		return structureModifier.withType(
 				int.class, BukkitConverters.getEntityConverter(world));
 	}
 	
@@ -546,10 +488,7 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
 				Collection.class,
-				BukkitConverters.getListConverter(
-						MinecraftReflection.getNBTBaseClass(),
-						BukkitConverters.getNbtConverter()
-				)
+				BukkitConverters.getListConverter(BukkitConverters.getNbtConverter())
 		);
 	}
 
@@ -575,9 +514,7 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
 			Collection.class,
-			BukkitConverters.getListConverter(
-					MinecraftReflection.getAttributeSnapshotClass(),
-					BukkitConverters.getWrappedAttributeConverter())
+			BukkitConverters.getListConverter(BukkitConverters.getWrappedAttributeConverter())
 		);
 	}
 	
@@ -593,10 +530,7 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
 			Collection.class,
-			BukkitConverters.getListConverter(
-					MinecraftReflection.getChunkPositionClass(),
-					ChunkPosition.getConverter())
-		);
+			BukkitConverters.getListConverter(ChunkPosition.getConverter()));
 	}
 
 	/**
@@ -611,10 +545,7 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
 			Collection.class,
-			BukkitConverters.getListConverter(
-					MinecraftReflection.getBlockPositionClass(),
-					BlockPosition.getConverter())
-		);
+			BukkitConverters.getListConverter(BlockPosition.getConverter()));
 	}
 
 	/**
@@ -628,10 +559,7 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
 			Collection.class,
-			BukkitConverters.getListConverter(
-					MinecraftReflection.getDataWatcherItemClass(),
-					BukkitConverters.getWatchableObjectConverter())
-		);
+			BukkitConverters.getListConverter(BukkitConverters.getWatchableObjectConverter()));
 	}
 
 	/**
@@ -643,7 +571,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<Material> getBlocks() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<Material>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getBlockClass(), BukkitConverters.getBlockConverter());
 	}
 	
@@ -656,7 +584,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<WrappedGameProfile> getGameProfiles() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<WrappedGameProfile>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getGameProfileClass(), BukkitConverters.getWrappedGameProfileConverter());
 	}
 	
@@ -669,7 +597,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<WrappedBlockData> getBlockData() {
 		// Convert to and from our wrapper
-		return structureModifier.<WrappedBlockData>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getIBlockDataClass(), BukkitConverters.getWrappedBlockDataConverter());
 	}
 
@@ -684,7 +612,7 @@ public class PacketContainer implements Serializable {
 		ChunkCoordIntPair chunk = getChunkCoordIntPairs().read(0);
 
 		// Convert to and from our wrapper
-		return structureModifier.<MultiBlockChangeInfo[]>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getMultiBlockChangeInfoArrayClass(), MultiBlockChangeInfo.getArrayConverter(chunk));
 	}
 	
@@ -697,7 +625,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<WrappedChatComponent> getChatComponents() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<WrappedChatComponent>withType(
+		return structureModifier.withType(
 				MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 	}
 
@@ -714,22 +642,23 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<WrappedChatComponent[]> getChatComponentArrays() {
 		// Convert to and from the Bukkit wrapper
-		return structureModifier.<WrappedChatComponent[]>withType(
+		return structureModifier.withType(
 				ComponentArrayConverter.getGenericType(),
-				BukkitConverters.getIgnoreNull(new ComponentArrayConverter()));
+				Converters.ignoreNull(new ComponentArrayConverter()));
 	}
 	
 	/**
 	 * Retrieve a read/write structure for the ServerPing fields in the following packet: <br>
 	 * <ul>
-	 *   <li>{@link PacketType.Status.Server#OUT_SERVER_INFO}
+	 *   <li>{@link PacketType.Status.Server#SERVER_INFO}
 	 * </ul>
 	 * @return A modifier for ServerPing fields.
 	 */
 	public StructureModifier<WrappedServerPing> getServerPings() {
 		// Convert to and from the wrapper
-		return structureModifier.<WrappedServerPing>withType(
-				MinecraftReflection.getServerPingClass(), BukkitConverters.getWrappedServerPingConverter());
+		return structureModifier.withType(
+				MinecraftReflection.getServerPingClass(),
+				BukkitConverters.getWrappedServerPingConverter());
 	}
 	
 	/**
@@ -743,10 +672,7 @@ public class PacketContainer implements Serializable {
 		// Convert to and from the ProtocolLib wrapper
 		return structureModifier.withType(
 			Collection.class,
-			BukkitConverters.getListConverter(
-					MinecraftReflection.getPlayerInfoDataClass(),
-					PlayerInfoData.getConverter())
-		);
+			BukkitConverters.getListConverter(PlayerInfoData.getConverter()));
 	}
 	
 	/**
@@ -755,8 +681,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<Protocol> getProtocols() {
 		// Convert to and from the wrapper
-		return structureModifier.<Protocol>withType(
-				EnumWrappers.getProtocolClass(), EnumWrappers.getProtocolConverter());
+		return structureModifier.withType(
+				EnumWrappers.getProtocolClass(),
+				EnumWrappers.getProtocolConverter());
 	}
 	
 	/**
@@ -765,8 +692,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<ClientCommand> getClientCommands() {
 		// Convert to and from the wrapper
-		return structureModifier.<ClientCommand>withType(
-				EnumWrappers.getClientCommandClass(), EnumWrappers.getClientCommandConverter());
+		return structureModifier.withType(
+				EnumWrappers.getClientCommandClass(),
+				EnumWrappers.getClientCommandConverter());
 	}
 
 	/**
@@ -775,8 +703,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<ChatVisibility> getChatVisibilities() {
 		// Convert to and from the wrapper
-		return structureModifier.<ChatVisibility>withType(
-				EnumWrappers.getChatVisibilityClass(), EnumWrappers.getChatVisibilityConverter());
+		return structureModifier.withType(
+				EnumWrappers.getChatVisibilityClass(),
+				EnumWrappers.getChatVisibilityConverter());
 	}
 	
 	/**
@@ -785,8 +714,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<Difficulty> getDifficulties() {
 		// Convert to and from the wrapper
-		return structureModifier.<Difficulty>withType(
-				EnumWrappers.getDifficultyClass(), EnumWrappers.getDifficultyConverter());
+		return structureModifier.withType(
+				EnumWrappers.getDifficultyClass(),
+				EnumWrappers.getDifficultyConverter());
 	}
 	
 	/**
@@ -795,8 +725,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<EntityUseAction> getEntityUseActions() {
 		// Convert to and from the wrapper
-		return structureModifier.<EntityUseAction>withType(
-				EnumWrappers.getEntityUseActionClass(), EnumWrappers.getEntityUseActionConverter());
+		return structureModifier.withType(
+				EnumWrappers.getEntityUseActionClass(),
+				EnumWrappers.getEntityUseActionConverter());
 	}
 
 	/**
@@ -805,8 +736,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<NativeGameMode> getGameModes() {
 		// Convert to and from the wrapper
-		return structureModifier.<NativeGameMode>withType(
-				EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
+		return structureModifier.withType(
+				EnumWrappers.getGameModeClass(),
+				EnumWrappers.getGameModeConverter());
 	}
 
 	/**
@@ -815,8 +747,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<ResourcePackStatus> getResourcePackStatus() {
 		// Convert to and from the wrapper
-		return structureModifier.<ResourcePackStatus>withType(
-				EnumWrappers.getResourcePackStatusClass(), EnumWrappers.getResourcePackStatusConverter());
+		return structureModifier.withType(
+				EnumWrappers.getResourcePackStatusClass(),
+				EnumWrappers.getResourcePackStatusConverter());
 	}
 
 	/**
@@ -825,8 +758,9 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<PlayerInfoAction> getPlayerInfoAction() {
 		// Convert to and from the wrapper
-		return structureModifier.<PlayerInfoAction>withType(
-				EnumWrappers.getPlayerInfoActionClass(), EnumWrappers.getPlayerInfoActionConverter());
+		return structureModifier.withType(
+				EnumWrappers.getPlayerInfoActionClass(),
+				EnumWrappers.getPlayerInfoActionConverter());
 	}
 
     /**
@@ -835,8 +769,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<TitleAction> getTitleActions() {
         // Convert to and from the wrapper
-        return structureModifier.<TitleAction>withType(
-                EnumWrappers.getTitleActionClass(), EnumWrappers.getTitleActionConverter());
+        return structureModifier.withType(
+                EnumWrappers.getTitleActionClass(),
+		        EnumWrappers.getTitleActionConverter());
     }
     
     /**
@@ -845,8 +780,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<WorldBorderAction> getWorldBorderActions() {
         // Convert to and from the wrapper
-        return structureModifier.<WorldBorderAction>withType(
-                EnumWrappers.getWorldBorderActionClass(), EnumWrappers.getWorldBorderActionConverter());
+        return structureModifier.withType(
+                EnumWrappers.getWorldBorderActionClass(),
+		        EnumWrappers.getWorldBorderActionConverter());
     }
     
     /**
@@ -855,8 +791,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<CombatEventType> getCombatEvents() {
         // Convert to and from the wrapper
-        return structureModifier.<CombatEventType>withType(
-                EnumWrappers.getCombatEventTypeClass(), EnumWrappers.getCombatEventTypeConverter());
+        return structureModifier.withType(
+                EnumWrappers.getCombatEventTypeClass(),
+		        EnumWrappers.getCombatEventTypeConverter());
     }
     
     /**
@@ -865,8 +802,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<PlayerDigType> getPlayerDigTypes() {
         // Convert to and from the wrapper
-        return structureModifier.<PlayerDigType>withType(
-                EnumWrappers.getPlayerDigTypeClass(), EnumWrappers.getPlayerDiggingActionConverter());
+        return structureModifier.withType(
+                EnumWrappers.getPlayerDigTypeClass(),
+		        EnumWrappers.getPlayerDiggingActionConverter());
     }
     
     /**
@@ -875,8 +813,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<PlayerAction> getPlayerActions() {
         // Convert to and from the wrapper
-        return structureModifier.<PlayerAction>withType(
-                EnumWrappers.getPlayerActionClass(), EnumWrappers.getEntityActionConverter());
+        return structureModifier.withType(
+                EnumWrappers.getPlayerActionClass(),
+		        EnumWrappers.getEntityActionConverter());
     }
     
     /**
@@ -885,8 +824,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<ScoreboardAction> getScoreboardActions() {
         // Convert to and from the wrapper
-        return structureModifier.<ScoreboardAction>withType(
-                EnumWrappers.getScoreboardActionClass(), EnumWrappers.getUpdateScoreActionConverter());
+        return structureModifier.withType(
+                EnumWrappers.getScoreboardActionClass(),
+		        EnumWrappers.getUpdateScoreActionConverter());
     }
 
     /**
@@ -895,8 +835,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<Particle> getParticles() {
     	// Convert to and from the wrapper
-    	return structureModifier.<Particle>withType(
-    			EnumWrappers.getParticleClass(), EnumWrappers.getParticleConverter());
+    	return structureModifier.withType(
+    			EnumWrappers.getParticleClass(),
+			    EnumWrappers.getParticleConverter());
     }
 
     /**
@@ -905,8 +846,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<PotionEffectType> getEffectTypes() {
     	// Convert to and from Bukkit
-    	return structureModifier.<PotionEffectType>withType(
-    			MinecraftReflection.getMobEffectListClass(), BukkitConverters.getEffectTypeConverter());
+    	return structureModifier.withType(
+    			MinecraftReflection.getMobEffectListClass(),
+			    BukkitConverters.getEffectTypeConverter());
     }
 
     /**
@@ -915,8 +857,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<SoundCategory> getSoundCategories() {
     	// Convert to and from the enums
-    	return structureModifier.<SoundCategory>withType(
-    			EnumWrappers.getSoundCategoryClass(), EnumWrappers.getSoundCategoryConverter());
+    	return structureModifier.withType(
+    			EnumWrappers.getSoundCategoryClass(),
+			    EnumWrappers.getSoundCategoryConverter());
     }
 
     /**
@@ -925,8 +868,9 @@ public class PacketContainer implements Serializable {
      */
     public StructureModifier<Sound> getSoundEffects() {
     	// Convert to and from Bukkit
-    	return structureModifier.<Sound>withType(
-    			MinecraftReflection.getSoundEffectClass(), BukkitConverters.getSoundConverter());
+    	return structureModifier.withType(
+    			MinecraftReflection.getSoundEffectClass(),
+			    BukkitConverters.getSoundConverter());
     }
 
     /**
@@ -934,8 +878,9 @@ public class PacketContainer implements Serializable {
      * @return A modifier for ItemSlot enum fields.
      */
     public StructureModifier<ItemSlot> getItemSlots() {
-    	return structureModifier.<ItemSlot>withType(
-    			EnumWrappers.getItemSlotClass(), EnumWrappers.getItemSlotConverter());
+    	return structureModifier.withType(
+    			EnumWrappers.getItemSlotClass(),
+			    EnumWrappers.getItemSlotConverter());
     }
 
     /**
@@ -943,8 +888,9 @@ public class PacketContainer implements Serializable {
      * @return A modifier for Hand enum fields.
      */
     public StructureModifier<Hand> getHands() {
-    	return structureModifier.<Hand>withType(
-    			EnumWrappers.getHandClass(), EnumWrappers.getHandConverter());
+    	return structureModifier.withType(
+    			EnumWrappers.getHandClass(),
+			    EnumWrappers.getHandConverter());
     }
 
     /**
@@ -952,8 +898,74 @@ public class PacketContainer implements Serializable {
      * @return A modifier for Direction enum fields.
      */
     public StructureModifier<Direction> getDirections() {
-    	return structureModifier.<Direction>withType(
-    			EnumWrappers.getDirectionClass(), EnumWrappers.getDirectionConverter());
+    	return structureModifier.withType(
+    			EnumWrappers.getDirectionClass(),
+			    EnumWrappers.getDirectionConverter());
+    }
+    
+    /**
+     * Retrieve a read/write structure for the ChatType enum in 1.12.
+     * @return A modifier for ChatType enum fields.
+     */
+    public StructureModifier<ChatType> getChatTypes() {
+    	return structureModifier.withType(
+    			EnumWrappers.getChatTypeClass(),
+			    EnumWrappers.getChatTypeConverter());
+    }
+
+	/**
+	 * Retrieve a read/write structure for the MinecraftKey class.
+	 * @return A modifier for MinecraftKey fields.
+	 */
+	public StructureModifier<MinecraftKey> getMinecraftKeys() {
+    	return structureModifier.withType(
+    			MinecraftReflection.getMinecraftKeyClass(),
+			    MinecraftKey.getConverter());
+    }
+
+	/**
+	 * Retrieve a read/write structure for the Map class.
+	 * @param keyConverter Converter for map keys
+	 * @param valConverter Converter for map values
+	 * @param <K> Key param
+	 * @param <V> Value param
+	 * @return A modifier for Map fields.
+	 *
+	 * @see BukkitConverters
+	 * @see EquivalentConverter
+	 */
+    public <K, V> StructureModifier<Map<K, V>> getMaps(EquivalentConverter<K> keyConverter,
+                                                       EquivalentConverter<V> valConverter) {
+    	return structureModifier.withType(
+    			Map.class,
+			    BukkitConverters.getMapConverter(keyConverter, valConverter));
+    }
+
+	/**
+	 * Retrieve a read/write structure for the Set class.
+	 * @param converter Converter for elements
+	 * @param <E> Element param
+	 * @return A modifier for Set fields
+	 *
+	 * @see BukkitConverters
+	 * @see EquivalentConverter
+	 */
+	public <E> StructureModifier<Set<E>> getSets(EquivalentConverter<E> converter) {
+    	return structureModifier.withType(
+    			Set.class,
+			    BukkitConverters.getSetConverter(converter));
+    }
+
+	/**
+	 * Retrieve a read/write structure for the List class.
+	 * @param converter Converter for elements
+	 * @param <E> Element param
+	 * @return A modifier for List fields
+	 */
+	public <E> StructureModifier<List<E>> getLists(EquivalentConverter<E> converter) {
+		return structureModifier.withType(
+				List.class,
+				BukkitConverters.getListConverter(converter));
     }
 
     /**
@@ -967,7 +979,9 @@ public class PacketContainer implements Serializable {
      * @return The modifier
      */
     public <T extends Enum<T>> StructureModifier<T> getEnumModifier(Class<T> enumClass, Class<?> nmsClass) {
-    	return structureModifier.<T>withType(nmsClass, new EnumConverter<T>(enumClass));
+    	return structureModifier.withType(
+    			nmsClass,
+			    new EnumConverter<>(nmsClass, enumClass));
     }
 
     /**
@@ -980,7 +994,9 @@ public class PacketContainer implements Serializable {
      * @see #getEnumModifier(Class, Class)
      */
     public <T extends Enum<T>> StructureModifier<T> getEnumModifier(Class<T> enumClass, int index) {
-    	return getEnumModifier(enumClass, structureModifier.getField(index).getType());
+    	return getEnumModifier(
+    			enumClass,
+			    structureModifier.getField(index).getType());
 	}
 
 	/**
@@ -1026,7 +1042,7 @@ public class PacketContainer implements Serializable {
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
-		Object clonedPacket = null;
+		Object clonedPacket;
 		
 		// Fall back on the alternative (but slower) method of reading and writing back the packet
 		if (CLONING_UNSUPPORTED.contains(type)) {
@@ -1146,21 +1162,52 @@ public class PacketContainer implements Serializable {
 	}
 
 	// ---- Metadata
-	// This map will only be initialized if it is actually used
-	private Map<String, Object> metadata;
+
+	/**
+	 * Gets the metadata value for a given key if it exists. Packet metadata expires after a minute, which is far longer
+	 * than a packet will ever be held in processing.
+	 *
+	 * @param key Metadata key
+	 * @param <T> Metadata type
+	 * @return The metadata value, or an empty optional
+	 */
+	public <T> Optional<T> getMeta(String key) {
+		return PacketMetadata.get(handle, key);
+	}
+
+	/**
+	 * Sets the metadata value at a given key. Packet metadata expires after a minute, which is far longer than a packet
+	 * will ever be held in processing.
+	 *
+	 * @param key Metadata key
+	 * @param value Metadata value
+	 * @param <T> Metadata type
+	 */
+	public <T> void setMeta(String key, T value) {
+		PacketMetadata.set(handle, key, value);
+	}
+
+	/**
+	 * Removes the metadata for a given key if it exists.
+	 * @param key Key to remove meta for
+	 */
+	public void removeMeta(String key) {
+		PacketMetadata.remove(handle, key);
+	}
+
+	// ---- Old Metadata API
+	// Scheduled for removal in 4.5
 
 	/**
 	 * Gets the metadata value for a given key.
 	 * 
 	 * @param key Metadata key
 	 * @return Metadata value, or null if nonexistent.
+	 * @deprecated Replaced with {@link #getMeta(String)}
 	 */
+	@Deprecated
 	public Object getMetadata(String key) {
-		if (metadata != null) {
-			return metadata.get(key);
-		}
-
-		return null;
+		return getMeta(key).orElse(null);
 	}
 
 	/**
@@ -1170,13 +1217,11 @@ public class PacketContainer implements Serializable {
 	 * 
 	 * @param key Metadata key
 	 * @param value Metadata value
+	 * @deprecated Replaced by {@link #setMeta(String, Object)}
 	 */
+	@Deprecated
 	public void addMetadata(String key, Object value) {
-		if (metadata == null) {
-			metadata = new HashMap<String, Object>();
-		}
-
-		metadata.put(key, value);
+		setMeta(key, value);
 	}
 
 	/**
@@ -1186,18 +1231,11 @@ public class PacketContainer implements Serializable {
 	 * 
 	 * @param key Metadata key
 	 * @return The previous value, or null if nonexistant.
+	 * @deprecated Replaced by {@link #removeMeta(String)}. This one was pretty much just for naming consistency.
 	 */
+	@Deprecated
 	public Object removeMetadata(String key) {
-		if (metadata != null) {
-			Object value = metadata.remove(key);
-			if (metadata.isEmpty()) {
-				metadata = null;
-			}
-
-			return value;
-		}
-
-		return null;
+		return PacketMetadata.remove(handle, key).orElseGet(null);
 	}
 
 	/**
@@ -1205,9 +1243,11 @@ public class PacketContainer implements Serializable {
 	 * 
 	 * @param key Metadata key
 	 * @return True if this packet has metadata for the key, false if not.
+	 * @deprecated Replaced with {@code getMeta(key).isPresent()}
 	 */
+	@Deprecated
 	public boolean hasMetadata(String key) {
-		return metadata != null && metadata.containsKey(key);
+		return getMeta(key).isPresent();
 	}
 
 	/**
@@ -1249,13 +1289,13 @@ public class PacketContainer implements Serializable {
 		final EquivalentConverter<ItemStack> stackConverter = BukkitConverters.getItemStackConverter();
 		
 		@Override
-		public Object getGeneric(Class<?>genericType, ItemStack[] specific) {
+		public Object getGeneric(ItemStack[] specific) {
 			Class<?> nmsStack = MinecraftReflection.getItemStackClass();
 			Object[] result = (Object[]) Array.newInstance(nmsStack, specific.length);
 			
 			// Unwrap every item
 			for (int i = 0; i < result.length; i++) {
-				result[i] = stackConverter.getGeneric(nmsStack, specific[i]);
+				result[i] = stackConverter.getGeneric(specific[i]);
 			}
 			return result;
 		}
@@ -1286,13 +1326,13 @@ public class PacketContainer implements Serializable {
 		final EquivalentConverter<WrappedChatComponent> componentConverter = BukkitConverters.getWrappedChatComponentConverter();
 		
 		@Override
-		public Object getGeneric(Class<?> genericType, WrappedChatComponent[] specific) {
+		public Object getGeneric(WrappedChatComponent[] specific) {
 			Class<?> nmsComponent = MinecraftReflection.getIChatBaseComponentClass();
 			Object[] result = (Object[]) Array.newInstance(nmsComponent, specific.length);
 			
 			// Unwrap every item
 			for (int i = 0; i < result.length; i++) {
-				result[i] = componentConverter.getGeneric(nmsComponent, specific[i]);
+				result[i] = componentConverter.getGeneric(specific[i]);
 			}
 			return result;
 		}
@@ -1341,7 +1381,7 @@ public class PacketContainer implements Serializable {
 		}
 
 		@Override
-		public Object getGeneric(Class<?> genericType, WrappedChatComponent[] specific) {
+		public Object getGeneric(WrappedChatComponent[] specific) {
 			NbtCompound compound = NbtFactory.ofCompound("");
 
 			for (int i = 0; i < lines; i++) {
@@ -1355,7 +1395,7 @@ public class PacketContainer implements Serializable {
 				compound.put("Text" + (i + 1), component.getJson());
 			}
 
-			return nbtConverter.getGeneric(genericType, compound);
+			return nbtConverter.getGeneric(compound);
 		}
 
 		@Override
@@ -1371,7 +1411,7 @@ public class PacketContainer implements Serializable {
 	private static class ComponentArrayConverter implements EquivalentConverter<WrappedChatComponent[]> {
 		private static final EquivalentConverter<WrappedChatComponent[]> DELEGATE;
 		static {
-			if (!PacketType.Play.Server.UPDATE_SIGN.isDeprecated()) {
+			if (MinecraftReflection.signUpdateExists()) {
 				DELEGATE = new LegacyComponentConverter();
 			} else {
 				DELEGATE = new NBTComponentConverter();
@@ -1384,8 +1424,8 @@ public class PacketContainer implements Serializable {
 		}
 
 		@Override
-		public Object getGeneric(Class<?> genericType, WrappedChatComponent[] specific) {
-			return DELEGATE.getGeneric(genericType, specific);
+		public Object getGeneric(WrappedChatComponent[] specific) {
+			return DELEGATE.getGeneric(specific);
 		}
 
 		@Override

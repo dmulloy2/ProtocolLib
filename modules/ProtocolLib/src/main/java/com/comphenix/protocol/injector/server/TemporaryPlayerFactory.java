@@ -47,8 +47,8 @@ public class TemporaryPlayerFactory {
 	 * @return The referenced player injector, or NULL if none can be found.
 	 */
 	public static SocketInjector getInjectorFromPlayer(Player player) {
-		if (player instanceof InjectorContainer) {
-			return ((InjectorContainer) player).getInjector();
+		if (player instanceof TemporaryPlayer) {
+			return ((TemporaryPlayer) player).getInjector();
 		} 
 		return null;
 	}
@@ -59,7 +59,7 @@ public class TemporaryPlayerFactory {
 	 * @param injector - the injector to store.
 	 */
 	public static void setInjectorInPlayer(Player player, SocketInjector injector) {
-		((InjectorContainer) player).setInjector(injector);
+		((TemporaryPlayer) player).setInjector(injector);
 	}
 	
 	/**
@@ -88,7 +88,7 @@ public class TemporaryPlayerFactory {
 			@Override
 			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
 				String methodName = method.getName();
-				SocketInjector injector = ((InjectorContainer) obj).getInjector();
+				SocketInjector injector = ((TemporaryPlayer) obj).getInjector();
 				
 				if (injector == null)
 					throw new IllegalStateException("Unable to find injector.");
@@ -152,7 +152,7 @@ public class TemporaryPlayerFactory {
 				public int accept(Method method) {
 					// Do not override the object method or the superclass methods
 					if (method.getDeclaringClass().equals(Object.class) ||
-						method.getDeclaringClass().equals(InjectorContainer.class))
+						method.getDeclaringClass().equals(TemporaryPlayer.class))
 						return 0;
 					else 
 						return 1;
@@ -162,7 +162,7 @@ public class TemporaryPlayerFactory {
     	
 		// CGLib is amazing
     	Enhancer ex = new Enhancer();
-    	ex.setSuperclass(InjectorContainer.class);
+    	ex.setSuperclass(TemporaryPlayer.class);
     	ex.setInterfaces(new Class[] { Player.class });
 		ex.setCallbacks(new Callback[] { NoOp.INSTANCE, implementation });
 		ex.setCallbackFilter(callbackFilter);
@@ -179,7 +179,7 @@ public class TemporaryPlayerFactory {
 	public Player createTemporaryPlayer(Server server, SocketInjector injector) {
 		Player temporary = createTemporaryPlayer(server);
 		
-		((InjectorContainer) temporary).setInjector(injector);
+		((TemporaryPlayer) temporary).setInjector(injector);
 		return temporary;
 	}
 	

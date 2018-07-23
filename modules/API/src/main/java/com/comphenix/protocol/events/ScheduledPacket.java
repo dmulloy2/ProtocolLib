@@ -7,7 +7,6 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLibrary;
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 /**
@@ -138,10 +137,6 @@ public class ScheduledPacket {
 
 	@Override
 	public String toString() {
-		return Objects.toStringHelper(this)
-			.add("packet", packet)
-			.add("target", target)
-			.add("filtered", filtered)
-			.toString();
+		return "ScheduledPacket[packet=" + packet + ", target=" + target + ", filtered=" + filtered + "]";
 	}
 }

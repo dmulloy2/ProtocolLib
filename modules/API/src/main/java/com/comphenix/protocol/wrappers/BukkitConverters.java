@@ -14,7 +14,6 @@
  *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
-
 package com.comphenix.protocol.wrappers;
 
 import java.lang.ref.WeakReference;
@@ -22,24 +21,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
-import org.bukkit.entity.Entity;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -55,40 +39,47 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.WorldType;
+import org.bukkit.advancement.Advancement;
+import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
+
+import static com.comphenix.protocol.utility.MinecraftReflection.*;
+import static com.comphenix.protocol.wrappers.Converters.*;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
  * 
  * @author Kristian
  */
+@SuppressWarnings("unchecked")
 public class BukkitConverters {
 	// Check whether or not certain classes exists
 	private static boolean hasWorldType = false;
 	private static boolean hasAttributeSnapshot = false;
 	
 	// The static maps
-	private static Map<Class<?>, EquivalentConverter<Object>> specificConverters;
 	private static Map<Class<?>, EquivalentConverter<Object>> genericConverters;
 	private static List<Unwrapper> unwrappers;
 	
 	// Used to access the world type
 	private static Method worldTypeName;
 	private static Method worldTypeGetType;
-	
-	// Used to get block instances
-	private static MethodAccessor GET_BLOCK;
-	private static MethodAccessor GET_BLOCK_ID;
-	
+
 	// Used for potion effect conversion
 	private static volatile Constructor<?> mobEffectConstructor;
 	private static volatile StructureModifier<Object> mobEffectModifier;
@@ -123,24 +114,25 @@ public class BukkitConverters {
 	 * Represents a typical equivalence converter.
 	 * 
 	 * @author Kristian
-	 * @param <T> - type that can be converted.
+	 * @param <TType> - type that can be converted.
+	 * @deprecated Replaced by {@link Converters#ignoreNull(EquivalentConverter)}
 	 */
+	@Deprecated
 	public static abstract class IgnoreNullConverter<TType> implements EquivalentConverter<TType> {
 		@Override
-		public final Object getGeneric(Class<?> genericType, TType specific) {
+		public final Object getGeneric(TType specific) {
 			if (specific != null)
-				return getGenericValue(genericType, specific);
+				return getGenericValue(specific);
 			else
 				return null;
 		}
 		
 		/**
 		 * Retrieve a copy of the actual generic value.
-		 * @param genericType - generic type.
 		 * @param specific - the specific type-
 		 * @return A copy of the specific type.
 		 */
-		protected abstract Object getGenericValue(Class<?> genericType, TType specific);
+		public abstract Object getGenericValue(TType specific);
 		
 		@Override
 		public final TType getSpecific(Object generic) {
@@ -155,7 +147,7 @@ public class BukkitConverters {
 		 * @param generic - generic type.
 		 * @return A copy of the specific type.
 		 */
-		protected abstract TType getSpecificValue(Object generic);
+		public abstract TType getSpecificValue(Object generic);
 		
 		@Override
 		public boolean equals(Object obj) {
@@ -181,14 +173,14 @@ public class BukkitConverters {
 	 * @author Kristian
 	 * @param <TType> - instance types it converts.
 	 */
-	private static abstract class WorldSpecificConverter<TType> extends IgnoreNullConverter<TType> {
+	private static abstract class WorldSpecificConverter<TType> implements EquivalentConverter<TType> {
 		protected World world;
 
 		/**
 		 * Initialize a new world-specificn converter.
 		 * @param world - the given world.
 		 */
-		public WorldSpecificConverter(World world) {
+		WorldSpecificConverter(World world) {
 			super();
 			this.world = world;
 		}
@@ -212,135 +204,142 @@ public class BukkitConverters {
 		}
 	}
 
-	/**
-	 * Retrieve an equivalent converter for a map of generic keys and primitive values.
-	 * @param <T> Key type
-	 * @param <U> Value type
-	 * @param genericKeyType - the generic key type.
-	 * @param keyConverter - an equivalent converter for the generic type.
-	 * @return An equivalent converter.
-	 */
-	public static <T, U> EquivalentConverter<Map<T, U>> getMapConverter(
-	  final Class<?> genericKeyType, final EquivalentConverter<T> keyConverter) {
-		// Convert to and from the wrapper
-		return new IgnoreNullConverter<Map<T, U>>() {
-				@SuppressWarnings("unchecked")
-				@Override
-				protected Map<T, U> getSpecificValue(Object generic) {
-					if (generic instanceof Map) {
-						Map<T, U> result = Maps.newHashMap();
-					
-						// Copy everything to a new list
-						for (Entry<Object, Object> entry : ((Map<Object, Object>) generic).entrySet()) {
-							result.put(
-								keyConverter.getSpecific(entry.getKey()),
-								(U) entry.getValue()
-							);
-						}
-						return result;
-					}
-					
-					// Not valid
-					return null;
+	public static <K, V> EquivalentConverter<Map<K, V>> getMapConverter(EquivalentConverter<K> keyConverter,
+	                                                                        EquivalentConverter<V> valConverter) {
+		return new EquivalentConverter<Map<K, V>>() {
+			@Override
+			public Map<K, V> getSpecific(Object generic) {
+				Map<Object, Object> genericMap = (Map<Object, Object>) generic;
+				Map<K, V> newMap;
+
+				try {
+					newMap = (Map<K, V>) genericMap.getClass().newInstance();
+				} catch (ReflectiveOperationException ex) {
+					newMap = new HashMap<>();
 				}
 
-				@SuppressWarnings("unchecked")
-				@Override
-				protected Object getGenericValue(Class<?> genericType, Map<T, U> specific) {
-					Map<Object, Object> newContainer = (Map<Object, Object>) DefaultInstances.DEFAULT.getDefault(genericType);
-					
-					// Convert each object
-					for (Entry<T, U> entry : specific.entrySet()) {
-						newContainer.put(
-							keyConverter.getGeneric(genericKeyType, entry.getKey()),
-							entry.getValue()
-						);
-					}
-					return newContainer;
+				for (Map.Entry<Object, Object> entry : genericMap.entrySet()) {
+					newMap.put(keyConverter.getSpecific(entry.getKey()), valConverter.getSpecific(entry.getValue()));
 				}
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public Class<Map<T, U>> getSpecificType() {
-					Class<?> dummy = Map.class;
-					return (Class<Map<T, U>>) dummy;
+				return newMap;
+			}
+
+			@Override
+			public Object getGeneric(Map<K, V> specific) {
+				Map<Object, Object> newMap;
+
+				try {
+					newMap = specific.getClass().newInstance();
+				} catch (ReflectiveOperationException ex) {
+					newMap = new HashMap<>();
 				}
-			};
+
+				for (Map.Entry<K, V> entry : specific.entrySet()) {
+					newMap.put(keyConverter.getGeneric(entry.getKey()), valConverter.getGeneric(entry.getValue()));
+				}
+
+				return newMap;
+			}
+
+			@Override
+			public Class<Map<K, V>> getSpecificType() {
+				return null;
+			}
+		};
 	}
-	
+
 	/**
 	 * Retrieve an equivalent converter for a list of generic items.
 	 * @param <T> Type
-	 * @param genericItemType - the generic item type.
 	 * @param itemConverter - an equivalent converter for the generic type.
 	 * @return An equivalent converter.
 	 */
-	public static <T> EquivalentConverter<List<T>> getListConverter(final Class<?> genericItemType, final EquivalentConverter<T> itemConverter) {
+	public static <T> EquivalentConverter<List<T>> getListConverter(final EquivalentConverter<T> itemConverter) {
 		// Convert to and from the wrapper
-		return new IgnoreNullConverter<List<T>>() {
-				@SuppressWarnings("unchecked")
-				@Override
-				protected List<T> getSpecificValue(Object generic) {
-					if (generic instanceof Collection) {
-						List<T> items = new ArrayList<T>();
-					
-						// Copy everything to a new list
-						for (Object item : (Collection<Object>) generic) {
-							T result = itemConverter.getSpecific(item);
-							
-							if (item != null)
-								items.add(result);
+		return ignoreNull(new EquivalentConverter<List<T>>() {
+			@Override
+			public List<T> getSpecific(Object generic) {
+				if (generic instanceof Collection) {
+					List<T> items = new ArrayList<>();
+
+					// Copy everything to a new list
+					for (Object item : (Collection<Object>) generic) {
+						T result = itemConverter.getSpecific(item);
+
+						if (item != null)
+							items.add(result);
+					}
+					return items;
+				}
+
+				// Not valid
+				return null;
+			}
+
+			@Override
+			public Object getGeneric(List<T> specific) {
+				List<Object> newList;
+
+				try {
+					newList = (List<Object>) specific.getClass().newInstance();
+				} catch (ReflectiveOperationException ex) {
+					newList = new ArrayList<>();
+				}
+
+				// Convert each object
+				for (T position : specific) {
+					if (position != null) {
+						Object converted = itemConverter.getGeneric(position);
+						if (converted != null) {
+							newList.add(converted);
 						}
-						return items;
+					} else {
+						newList.add(null);
 					}
-					
-					// Not valid
-					return null;
 				}
 
-				@SuppressWarnings("unchecked")
-				@Override
-				protected Object getGenericValue(Class<?> genericType, List<T> specific) {
-					Collection<Object> newContainer = (Collection<Object>) DefaultInstances.DEFAULT.getDefault(genericType);
-					
-					// Convert each object
-					for (T position : specific) {
-						Object converted = itemConverter.getGeneric(genericItemType, position);
-						
-						if (position == null)
-							newContainer.add(null);
-						else if (converted != null)
-							newContainer.add(converted);
-					}
-					return newContainer;
-				}
+				return newList;
+			}
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public Class<List<T>> getSpecificType() {
-					// Damn you Java
-					Class<?> dummy = List.class;
-					return (Class<List<T>>) dummy;
-				}
-			};
+			@Override
+			public Class<List<T>> getSpecificType() {
+				// Damn you Java
+				Class<?> dummy = List.class;
+				return (Class<List<T>>) dummy;
+			}
+		});
+	}
+
+	/**
+	 * @deprecated While this solution is not as abhorrent as I had imagined, I still highly recommend switching to the
+	 * new conversion API.
+	 */
+	@Deprecated
+	public static <T> EquivalentConverter<Set<T>> getSetConverter(final Class<?> genericType,
+	                                                              final EquivalentConverter<T> itemConverter) {
+		if (itemConverter instanceof EnumWrappers.EnumConverter) {
+			((EnumWrappers.EnumConverter) itemConverter).setGenericType(genericType);
+		}
+
+		return getSetConverter(itemConverter);
 	}
 
 	/**
 	 * Retrieve an equivalent converter for a set of generic items.
-	 * @param <T> Type
-	 * @param genericItemType - the generic item type.
+	 * @param <T> Element type
 	 * @param itemConverter - an equivalent converter for the generic type.
 	 * @return An equivalent converter.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> EquivalentConverter<Set<T>> getSetConverter(final Class<?> genericItemType, final EquivalentConverter<T> itemConverter) {
+	public static <T> EquivalentConverter<Set<T>> getSetConverter(final EquivalentConverter<T> itemConverter) {
 		// Convert to and from the wrapper
-		return new IgnoreNullConverter<Set<T>>() {
+		return ignoreNull(new EquivalentConverter<Set<T>>() {
 
 			@Override
-			protected Set<T> getSpecificValue(Object generic) {
+			public Set<T> getSpecific(Object generic) {
 				if (generic instanceof Collection) {
-					Set<T> items = new HashSet<T>();
+					Set<T> items = new HashSet<>();
 
 					// Copy everything to a new list
 					for (Object item : (Collection<Object>) generic) {
@@ -358,20 +357,28 @@ public class BukkitConverters {
 			}
 
 			@Override
-			protected Object getGenericValue(Class<?> genericType, Set<T> specific) {
-				Collection<Object> newContainer = (Collection<Object>) DefaultInstances.DEFAULT.getDefault(genericType);
+			public Object getGeneric(Set<T> specific) {
+				Set<Object> newList;
+
+				try {
+					newList = (Set<Object>) specific.getClass().newInstance();
+				} catch (ReflectiveOperationException ex) {
+					newList = new HashSet<>();
+				}
 
 				// Convert each object
 				for (T position : specific) {
-					Object converted = itemConverter.getGeneric(genericItemType, position);
-
-					if (position == null)
-						newContainer.add(null);
-					else if (converted != null)
-						newContainer.add(converted);
+					if (position != null) {
+						Object converted = itemConverter.getGeneric(position);
+						if (converted != null) {
+							newList.add(converted);
+						}
+					} else {
+						newList.add(null);
+					}
 				}
 
-				return newContainer;
+				return newList;
 			}
 
 			@Override
@@ -380,7 +387,7 @@ public class BukkitConverters {
 				Class<?> dummy = Set.class;
 				return (Class<Set<T>>) dummy;
 			}
-		};
+		});
 	}
 
 	/**
@@ -392,71 +399,55 @@ public class BukkitConverters {
 	 * @param itemConverter - an equivalent converter for the generic type.
 	 * @return An equivalent converter.
 	 */
-	public static <T> EquivalentConverter<Iterable<? extends T>> getArrayConverter(
-	  final Class<?> genericItemType, final EquivalentConverter<T> itemConverter) {
+	public static <T> EquivalentConverter<Iterable<? extends T>> getArrayConverter(final Class<?> genericItemType,
+	                                                                               final EquivalentConverter<T> itemConverter) {
 		// Convert to and from the wrapper
-		return new IgnoreNullConverter<Iterable<? extends T>>() {
-				@Override
-				protected List<T> getSpecificValue(Object generic) {
-					if (generic instanceof Object[]) {
-						ImmutableList.Builder<T> builder = ImmutableList.builder();
+		return ignoreNull(new EquivalentConverter<Iterable<? extends T>>() {
+			@Override
+			public List<T> getSpecific(Object generic) {
+				if (generic instanceof Object[]) {
+					ImmutableList.Builder<T> builder = ImmutableList.builder();
 
-						// Copy everything to a new list
-						for (Object item : (Object[]) generic) {
-							T result = itemConverter.getSpecific(item);
-							builder.add(result);
-						}
-						return builder.build();
+					// Copy everything to a new list
+					for (Object item : (Object[]) generic) {
+						T result = itemConverter.getSpecific(item);
+						builder.add(result);
 					}
-					
-					// Not valid
-					return null;
+					return builder.build();
 				}
 
-				@Override
-				protected Object getGenericValue(Class<?> genericType, Iterable<? extends T> specific) {
-					List<T> list = Lists.newArrayList(specific);
-					Object[] output = (Object[]) Array.newInstance(genericItemType, list.size());
-					
-					// Convert each object
-					for (int i = 0; i < output.length; i++) {
-						Object converted = itemConverter.getGeneric(genericItemType, list.get(i));
-						output[i] = converted;
-					}
-					return output;
-				}
+				// Not valid
+				return null;
+			}
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public Class<Iterable<? extends T>> getSpecificType() {
-					// Damn you Java
-					Class<?> dummy = Iterable.class;
-					return (Class<Iterable<? extends T>>) dummy;
+			@Override
+			public Object getGeneric(Iterable<? extends T> specific) {
+				List<T> list = Lists.newArrayList(specific);
+				Object[] output = (Object[]) Array.newInstance(genericItemType, list.size());
+
+				// Convert each object
+				for (int i = 0; i < output.length; i++) {
+					Object converted = itemConverter.getGeneric(list.get(i));
+					output[i] = converted;
 				}
-			};
+				return output;
+			}
+
+			@Override
+			public Class<Iterable<? extends T>> getSpecificType() {
+				// Damn you Java
+				Class<?> dummy = Iterable.class;
+				return (Class<Iterable<? extends T>>) dummy;
+			}
+		});
 	}
 	
 	/**
-	 * Retrieve a converter for wrapped attribute snapshots.
-	 * @return Wrapped attribute snapshot converter.
+	 * Retrieve a converter for wrapped game profiles.
+	 * @return Wrapped game profile converter.
 	 */
 	public static EquivalentConverter<WrappedGameProfile> getWrappedGameProfileConverter() {
-		return new IgnoreNullConverter<WrappedGameProfile>() {
-			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedGameProfile specific) {
-				return specific.getHandle();
-			}
-			
-			@Override
-			protected WrappedGameProfile getSpecificValue(Object generic) {
-				return WrappedGameProfile.fromHandle(generic);
-			}
-			
-			@Override
-			public Class<WrappedGameProfile> getSpecificType() {
-				return WrappedGameProfile.class;
-			}
-		};
+		return ignoreNull(handle(WrappedGameProfile::getHandle, WrappedGameProfile::fromHandle));
 	}
 	
 	/**
@@ -464,22 +455,7 @@ public class BukkitConverters {
 	 * @return Wrapped chat component.
 	 */
 	public static EquivalentConverter<WrappedChatComponent> getWrappedChatComponentConverter() {
-		return new IgnoreNullConverter<WrappedChatComponent>() {
-			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedChatComponent specific) {
-				return specific.getHandle();
-			}
-			
-			@Override
-			protected WrappedChatComponent getSpecificValue(Object generic) {
-				return WrappedChatComponent.fromHandle(generic);
-			}
-			
-			@Override
-			public Class<WrappedChatComponent> getSpecificType() {
-				return WrappedChatComponent.class;
-			}
-		};
+		return ignoreNull(handle(WrappedChatComponent::getHandle, WrappedChatComponent::fromHandle));
 	}
 	
 	/**
@@ -487,22 +463,7 @@ public class BukkitConverters {
 	 * @return Wrapped block data.
 	 */
 	public static EquivalentConverter<WrappedBlockData> getWrappedBlockDataConverter() {
-		return new IgnoreNullConverter<WrappedBlockData>() {
-			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedBlockData specific) {
-				return specific.getHandle();
-			}
-			
-			@Override
-			protected WrappedBlockData getSpecificValue(Object generic) {
-				return new WrappedBlockData(generic);
-			}
-			
-			@Override
-			public Class<WrappedBlockData> getSpecificType() {
-				return WrappedBlockData.class;
-			}
-		};
+		return ignoreNull(handle(WrappedBlockData::getHandle, WrappedBlockData::fromHandle));
 	}
 	
 	/**
@@ -510,22 +471,7 @@ public class BukkitConverters {
 	 * @return Wrapped attribute snapshot converter.
 	 */
 	public static EquivalentConverter<WrappedAttribute> getWrappedAttributeConverter() {
-		return new IgnoreNullConverter<WrappedAttribute>() {
-			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedAttribute specific) {
-				return specific.getHandle();
-			}
-			
-			@Override
-			protected WrappedAttribute getSpecificValue(Object generic) {
-				return WrappedAttribute.fromHandle(generic);
-			}
-			
-			@Override
-			public Class<WrappedAttribute> getSpecificType() {
-				return WrappedAttribute.class;
-			}
-		};
+		return ignoreNull(handle(WrappedAttribute::getHandle, WrappedAttribute::fromHandle));
 	}
 	
 	/**
@@ -533,27 +479,27 @@ public class BukkitConverters {
 	 * @return A watchable object converter.
 	 */
 	public static EquivalentConverter<WrappedWatchableObject> getWatchableObjectConverter() {
-		return new IgnoreNullConverter<WrappedWatchableObject>() {
+		return ignoreNull(new EquivalentConverter<WrappedWatchableObject>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedWatchableObject specific) {
+			public Object getGeneric(WrappedWatchableObject specific) {
 				return specific.getHandle();
 			}
-			
+
 			@Override
-			protected WrappedWatchableObject getSpecificValue(Object generic) {
+			public WrappedWatchableObject getSpecific(Object generic) {
 				if (MinecraftReflection.isWatchableObject(generic))
 					return new WrappedWatchableObject(generic);
 				else if (generic instanceof WrappedWatchableObject)
 					return (WrappedWatchableObject) generic;
 				else
 					throw new IllegalArgumentException("Unrecognized type " + generic.getClass());
-			};
-			
+			}
+
 			@Override
 			public Class<WrappedWatchableObject> getSpecificType() {
 				return WrappedWatchableObject.class;
 			}
-		};
+		});
 	}
 	
 	/**
@@ -561,14 +507,14 @@ public class BukkitConverters {
 	 * @return A DataWatcher converter.
 	 */
 	public static EquivalentConverter<WrappedDataWatcher> getDataWatcherConverter() {
-		return new IgnoreNullConverter<WrappedDataWatcher>() {
+		return ignoreNull(new EquivalentConverter<WrappedDataWatcher>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedDataWatcher specific) {
+			public Object getGeneric(WrappedDataWatcher specific) {
 				return specific.getHandle();
 			}
-			
+
 			@Override
-			protected WrappedDataWatcher getSpecificValue(Object generic) {
+			public WrappedDataWatcher getSpecific(Object generic) {
 				if (MinecraftReflection.isDataWatcher(generic))
 					return new WrappedDataWatcher(generic);
 				else if (generic instanceof WrappedDataWatcher)
@@ -576,12 +522,12 @@ public class BukkitConverters {
 				else
 					throw new IllegalArgumentException("Unrecognized type " + generic.getClass());
 			}
-			
+
 			@Override
 			public Class<WrappedDataWatcher> getSpecificType() {
 				return WrappedDataWatcher.class;
 			}
-		};
+		});
 	}
 	
 	/**
@@ -592,29 +538,29 @@ public class BukkitConverters {
 		// Check that we can actually use this converter
 		if (!hasWorldType)
 			return null;
-		
+
 		final Class<?> worldType = MinecraftReflection.getWorldTypeClass();
-		
-		return new IgnoreNullConverter<WorldType>() {
+
+		return ignoreNull(new EquivalentConverter<WorldType>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, WorldType specific) {
+			public Object getGeneric(WorldType specific) {
 				try {
 					// Deduce getType method by parameters alone
 					if (worldTypeGetType == null) {
 						worldTypeGetType = FuzzyReflection.fromClass(worldType).
-								getMethodByParameters("getType", worldType, new Class<?>[] { String.class });
+								getMethodByParameters("getType", worldType, new Class<?>[]{String.class});
 					}
-					
+
 					// Convert to the Bukkit world type
 					return worldTypeGetType.invoke(this, specific.getName());
-					
+
 				} catch (Exception e) {
 					throw new FieldAccessException("Cannot find the WorldType.getType() method.", e);
 				}
 			}
 
 			@Override
-			protected WorldType getSpecificValue(Object generic) {
+			public WorldType getSpecific(Object generic) {
 				try {
 					if (worldTypeName == null) {
 						try {
@@ -622,24 +568,24 @@ public class BukkitConverters {
 						} catch (Exception e) {
 							// Assume the first method is the one
 							worldTypeName = FuzzyReflection.fromClass(worldType).
-								getMethodByParameters("name", String.class, new Class<?>[] {});
+									getMethodByParameters("name", String.class, new Class<?>[]{});
 						}
 					}
-					
+
 					// Dynamically call the namne method
 					String name = (String) worldTypeName.invoke(generic);
 					return WorldType.getByName(name);
-					
+
 				} catch (Exception e) {
 					throw new FieldAccessException("Cannot call the name method in WorldType.", e);
 				}
 			}
-			
+
 			@Override
 			public Class<WorldType> getSpecificType() {
 				return WorldType.class;
 			}
-		};
+		});
 	}
 	
 	/**
@@ -647,17 +593,17 @@ public class BukkitConverters {
 	 * @return An equivalent converter for NBT.
 	 */
 	public static EquivalentConverter<NbtBase<?>> getNbtConverter() {
-		return new IgnoreNullConverter<NbtBase<?>>() {
+		return ignoreNull(new EquivalentConverter<NbtBase<?>>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, NbtBase<?> specific) {
+			public Object getGeneric(NbtBase<?> specific) {
 				return NbtFactory.fromBase(specific).getHandle();
 			}
-			
+
 			@Override
-			protected NbtBase<?> getSpecificValue(Object generic) {
+			public NbtBase<?> getSpecific(Object generic) {
 				return NbtFactory.fromNMS(generic, null);
 			}
-			
+
 			@Override
 			@SuppressWarnings("unchecked")
 			public Class<NbtBase<?>> getSpecificType() {
@@ -665,7 +611,7 @@ public class BukkitConverters {
 				Class<?> dummy = NbtBase.class;
 				return (Class<NbtBase<?>>) dummy;
 			}
-		};
+		});
 	}
 	
 	/**
@@ -674,18 +620,17 @@ public class BukkitConverters {
 	 * @return A converter between the underlying NMS entity and Bukkit's wrapper.
 	 */
 	public static EquivalentConverter<Entity> getEntityConverter(World world) {
-		final WeakReference<ProtocolManager> managerRef =
-				new WeakReference<ProtocolManager>(ProtocolLibrary.getProtocolManager());
+		final WeakReference<ProtocolManager> managerRef = new WeakReference<>(ProtocolLibrary.getProtocolManager());
 
 		return new WorldSpecificConverter<Entity>(world) {
 			@Override
-			public Object getGenericValue(Class<?> genericType, Entity specific) {
+			public Object getGeneric(Entity specific) {
 				// Simple enough
 				return specific.getEntityId();
 			}
 			
 			@Override
-			public Entity getSpecificValue(Object generic) {
+			public Entity getSpecific(Object generic) {
 				try {
 					Integer id = (Integer) generic;
 					ProtocolManager manager = managerRef.get();
@@ -721,7 +666,7 @@ public class BukkitConverters {
 			}
 
 			@Override
-			public Object getGeneric(Class<?> genericType, ItemStack specific) {
+			public Object getGeneric(ItemStack specific) {
 				return MinecraftReflection.getMinecraftItemStack(specific);
 			}
 
@@ -733,26 +678,11 @@ public class BukkitConverters {
 	}
 
 	/**
-	 * Retrieve the converter for the ServerPing packet in {@link PacketType.Status.Server#OUT_SERVER_INFO}.
+	 * Retrieve the converter for the ServerPing packet in {@link PacketType.Status.Server#SERVER_INFO}.
 	 * @return Server ping converter.
 	 */
 	public static EquivalentConverter<WrappedServerPing> getWrappedServerPingConverter() {
-		return new IgnoreNullConverter<WrappedServerPing>() {
-			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedServerPing specific) {
-				return specific.getHandle();
-			}
-			
-			@Override
-			protected WrappedServerPing getSpecificValue(Object generic) {
-				return WrappedServerPing.fromHandle(generic);
-			}
-			
-			@Override
-			public Class<WrappedServerPing> getSpecificType() {
-				return WrappedServerPing.class;
-			}
-		};
+		return ignoreNull(handle(WrappedServerPing::getHandle, WrappedServerPing::fromHandle));
 	}
 	
 	/**
@@ -760,108 +690,76 @@ public class BukkitConverters {
 	 * @return Statistic converter.
 	 */
 	public static EquivalentConverter<WrappedStatistic> getWrappedStatisticConverter() {
-		return new IgnoreNullConverter<WrappedStatistic>() {
-			@Override
-			protected Object getGenericValue(Class<?> genericType, WrappedStatistic specific) {
-				return specific.getHandle();
-			}
-			
-			@Override
-			protected WrappedStatistic getSpecificValue(Object generic) {
-				return WrappedStatistic.fromHandle(generic);
-			}
-			
-			@Override
-			public Class<WrappedStatistic> getSpecificType() {
-				return WrappedStatistic.class;
-			}
-		};
+		return ignoreNull(handle(WrappedStatistic::getHandle, WrappedStatistic::fromHandle));
 	}
-	
+
+	private static MethodAccessor BLOCK_FROM_MATERIAL;
+	private static MethodAccessor MATERIAL_FROM_BLOCK;
+
 	/**
 	 * Retrieve a converter for block instances.
 	 * @return A converter for block instances.
 	 */
 	public static EquivalentConverter<Material> getBlockConverter() {
-		return new IgnoreNullConverter<Material>() {
+		if (BLOCK_FROM_MATERIAL == null || MATERIAL_FROM_BLOCK == null) {
+			Class<?> magicNumbers = MinecraftReflection.getCraftBukkitClass("util.CraftMagicNumbers");
+			Class<?> block = MinecraftReflection.getBlockClass();
+
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(magicNumbers);
+			FuzzyMethodContract.Builder builder = FuzzyMethodContract
+					.newBuilder()
+					.requireModifier(Modifier.STATIC)
+					.returnTypeExact(Material.class)
+					.parameterExactArray(block);
+			MATERIAL_FROM_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethod(builder.build()));
+
+			builder = FuzzyMethodContract
+					.newBuilder()
+					.requireModifier(Modifier.STATIC)
+					.returnTypeExact(block)
+					.parameterExactArray(Material.class);
+			BLOCK_FROM_MATERIAL = Accessors.getMethodAccessor(fuzzy.getMethod(builder.build()));
+		}
+
+		return ignoreNull(new EquivalentConverter<Material>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, Material specific) {
-				return getBlockIDConverter().getGeneric(genericType, specific.getId());
+			public Object getGeneric(Material specific) {
+				return BLOCK_FROM_MATERIAL.invoke(null, specific);
 			}
-			
+
 			@Override
-			protected Material getSpecificValue(Object generic) {
-				return Material.getMaterial(getBlockIDConverter().getSpecific(generic));
+			public Material getSpecific(Object generic) {
+				return (Material) MATERIAL_FROM_BLOCK.invoke(null, generic);
 			}
-			
+
 			@Override
 			public Class<Material> getSpecificType() {
 				return Material.class;
 			}
-		};
+		});
 	}
 
-	/**
-	 * @deprecated ID's are deprecated
-	 */
-	@Deprecated
-	public static EquivalentConverter<Integer> getBlockIDConverter() {
-		// Initialize if we have't already
-		if (GET_BLOCK == null || GET_BLOCK_ID == null) {
-			Class<?> block = MinecraftReflection.getBlockClass();
-
-			FuzzyMethodContract getIdContract = FuzzyMethodContract.newBuilder().
-					parameterExactArray(block).
-					requireModifier(Modifier.STATIC).
-					build();
-			FuzzyMethodContract getBlockContract = FuzzyMethodContract.newBuilder().
-					returnTypeExact(block).
-					parameterExactArray(int.class).
-					requireModifier(Modifier.STATIC).
-					build();
-			GET_BLOCK = Accessors.getMethodAccessor(FuzzyReflection.fromClass(block).getMethod(getBlockContract));
-			GET_BLOCK_ID = Accessors.getMethodAccessor(FuzzyReflection.fromClass(block).getMethod(getIdContract));
-		}
-		
-		return new IgnoreNullConverter<Integer>() {
-			@Override
-			protected Object getGenericValue(Class<?> genericType, Integer specific) {
-				return GET_BLOCK.invoke(null, specific);
-			}
-			
-			@Override
-			protected Integer getSpecificValue(Object generic) {
-				return (Integer) GET_BLOCK_ID.invoke(null, generic);
-			}
-			
-			@Override
-			public Class<Integer> getSpecificType() {
-				return Integer.class;
-			}
-		};
-	}
-	
 	/**
 	 * Retrieve the converter used to convert between a NMS World and a Bukkit world.
 	 * @return The world converter.
 	 */
 	public static EquivalentConverter<World> getWorldConverter() {
-		return new IgnoreNullConverter<World>() {
+		return ignoreNull(new EquivalentConverter<World>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, World specific) {
+			public Object getGeneric(World specific) {
 				return BukkitUnwrapper.getInstance().unwrapItem(specific);
 			}
-			
+
 			@Override
-			protected World getSpecificValue(Object generic) {
+			public World getSpecific(Object generic) {
 				return (World) craftWorldField.get(generic);
 			}
-			
+
 			@Override
 			public Class<World> getSpecificType() {
 				return World.class;
 			}
-		};
+		});
 	}
 	
 	/**
@@ -869,9 +767,9 @@ public class BukkitConverters {
 	 * @return The potion effect converter.
 	 */
 	public static EquivalentConverter<PotionEffect> getPotionEffectConverter() {
-		return new IgnoreNullConverter<PotionEffect>() {
+		return ignoreNull(new EquivalentConverter<PotionEffect>() {
 			@Override
-			protected Object getGenericValue(Class<?> genericType, PotionEffect specific) {
+			public Object getGeneric(PotionEffect specific) {
 				// Locate the constructor
 				if (mobEffectConstructor == null) {
 					try {
@@ -881,38 +779,38 @@ public class BukkitConverters {
 						throw new RuntimeException("Cannot find mob effect constructor (int, int, int, boolean).", e);
 					}
 				}
-				
+
 				// Create the generic value
 				try {
 					return mobEffectConstructor.newInstance(
-						specific.getType().getId(), specific.getDuration(),
-						specific.getAmplifier(), specific.isAmbient());
+							specific.getType().getId(), specific.getDuration(),
+							specific.getAmplifier(), specific.isAmbient());
 				} catch (Exception e) {
 					throw new RuntimeException("Cannot construct MobEffect.", e);
 				}
 			}
-			
+
 			@Override
-			protected PotionEffect getSpecificValue(Object generic) {
+			public PotionEffect getSpecific(Object generic) {
 				if (mobEffectModifier == null) {
-					mobEffectModifier = new StructureModifier<Object>(MinecraftReflection.getMobEffectClass(), false);
+					mobEffectModifier = new StructureModifier<>(MinecraftReflection.getMobEffectClass(), false);
 				}
 				StructureModifier<Integer> ints = mobEffectModifier.withTarget(generic).withType(int.class);
 				StructureModifier<Boolean> bools = mobEffectModifier.withTarget(generic).withType(boolean.class);
-				
+
 				return new PotionEffect(
-					PotionEffectType.getById(ints.read(0)), 	/* effectId */
-					ints.read(1),  								/* duration */
-					ints.read(2), 								/* amplification */
-					bools.read(1)								/* ambient */
+						PotionEffectType.getById(ints.read(0)), 	/* effectId */
+						ints.read(1),  							/* duration */
+						ints.read(2), 								/* amplification */
+						bools.read(1)								/* ambient */
 				);
 			}
-			
+
 			@Override
 			public Class<PotionEffect> getSpecificType() {
 				return PotionEffect.class;
 			}
-		};
+		});
 	}
 
 	private static Constructor<?> vec3dConstructor;
@@ -923,7 +821,7 @@ public class BukkitConverters {
 	 * @return The Vector converter.
 	 */
 	public static EquivalentConverter<Vector> getVectorConverter() {
-		return new IgnoreNullConverter<Vector>() {
+		return ignoreNull(new EquivalentConverter<Vector>() {
 
 			@Override
 			public Class<Vector> getSpecificType() {
@@ -931,7 +829,7 @@ public class BukkitConverters {
 			}
 
 			@Override
-			protected Object getGenericValue(Class<?> genericType, Vector specific) {
+			public Object getGeneric(Vector specific) {
 				if (vec3dConstructor == null) {
 					try {
 						vec3dConstructor = MinecraftReflection.getVec3DClass().getConstructor(
@@ -949,9 +847,9 @@ public class BukkitConverters {
 			}
 
 			@Override
-			protected Vector getSpecificValue(Object generic) {
+			public Vector getSpecific(Object generic) {
 				if (vec3dModifier == null) {
-					vec3dModifier = new StructureModifier<Object>(MinecraftReflection.getVec3DClass(), false);
+					vec3dModifier = new StructureModifier<>(MinecraftReflection.getVec3DClass(), false);
 				}
 
 				StructureModifier<Double> doubles = vec3dModifier.withTarget(generic).withType(double.class);
@@ -962,7 +860,7 @@ public class BukkitConverters {
 				);
 			}
 
-		};
+		});
 	}
 
 	private static MethodAccessor getSound = null;
@@ -975,12 +873,13 @@ public class BukkitConverters {
 		if (getSound == null || getSoundEffect == null) {
 			Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
-			getSound = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSound", String.class, new Class<?>[] { Sound.class }));
+			getSound = Accessors.getMethodAccessor(
+					fuzzy.getMethodByParameters("getSound", String.class, new Class<?>[]{Sound.class}));
 			getSoundEffect = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSoundEffect",
-					MinecraftReflection.getSoundEffectClass(), new Class<?>[] { String.class }));
+					MinecraftReflection.getSoundEffectClass(), new Class<?>[]{String.class}));
 		}
 
-		return new IgnoreNullConverter<Sound>() {
+		return ignoreNull(new EquivalentConverter<Sound>() {
 
 			@Override
 			public Class<Sound> getSpecificType() {
@@ -988,19 +887,20 @@ public class BukkitConverters {
 			}
 
 			@Override
-			protected Object getGenericValue(Class<?> genericType, Sound specific) {
+			public Object getGeneric(Sound specific) {
 				// Getting the SoundEffect is easy, Bukkit provides us the methods
 				String key = (String) getSound.invoke(null, specific);
 				return getSoundEffect.invoke(null, key);
 			}
 
 			@Override
-			protected Sound getSpecificValue(Object generic) {
+			public Sound getSpecific(Object generic) {
 				// Getting the Sound is a bit more complicated...
 				if (soundKey == null) {
 					Class<?> soundEffect = generic.getClass();
 					FuzzyReflection fuzzy = FuzzyReflection.fromClass(soundEffect, true);
-					soundKey = Accessors.getFieldAccessor(fuzzy.getFieldByType("key", MinecraftReflection.getMinecraftKeyClass()));
+					soundKey = Accessors.getFieldAccessor(
+							fuzzy.getFieldByType("key", MinecraftReflection.getMinecraftKeyClass()));
 				}
 
 				MinecraftKey minecraftKey = MinecraftKey.fromHandle(soundKey.get(generic));
@@ -1026,35 +926,34 @@ public class BukkitConverters {
 
 				return soundIndex.get(key);
 			}
-		};
+		});
 	}
 
- 	/**
-	 * Wraps a given equivalent converter in NULL checks, ensuring that such values are ignored.
-	 * @param <TType> Type
-	 * @param delegate - the underlying equivalent converter.
-	 * @return A equivalent converter that ignores NULL values.
-	 */
-	public static <TType> EquivalentConverter<TType> getIgnoreNull(final EquivalentConverter<TType> delegate) {
-		// Automatically wrap all parameters to the delegate with a NULL check
-		return new IgnoreNullConverter<TType>() {
+	public static EquivalentConverter<Advancement> getAdvancementConverter() {
+		return ignoreNull(new EquivalentConverter<Advancement>() {
 			@Override
-			public Object getGenericValue(Class<?> genericType, TType specific) {
-				return delegate.getGeneric(genericType, specific);
+			public Advancement getSpecific(Object generic) {
+				try {
+					return (Advancement) getCraftBukkitClass("advancement.CraftAdvancement")
+							.getConstructor(getMinecraftClass("Advancement"))
+							.newInstance(generic);
+				} catch (ReflectiveOperationException ex) {
+					throw new RuntimeException(ex);
+				}
 			}
-			
+
 			@Override
-			public TType getSpecificValue(Object generic) {
-				return delegate.getSpecific(generic);
+			public Object getGeneric(Advancement specific) {
+				return BukkitUnwrapper.getInstance().unwrapItem(specific);
 			}
-			
+
 			@Override
-			public Class<TType> getSpecificType() {
-				return delegate.getSpecificType();
+			public Class<Advancement> getSpecificType() {
+				return Advancement.class;
 			}
-		};
+		});
 	}
-	
+
 	/**
 	 * Retrieve an equivalent unwrapper for the converter.
 	 * @param nativeType - the native NMS type the converter produces.
@@ -1062,68 +961,26 @@ public class BukkitConverters {
 	 * @return The equivalent unwrapper.
 	 */
 	public static Unwrapper asUnwrapper(final Class<?> nativeType, final EquivalentConverter<Object> converter) {
-		return new Unwrapper() {
-			@Override
-			public Object unwrapItem(Object wrappedObject) {
-				Class<?> type = PacketConstructor.getClass(wrappedObject);
-				
-				// Ensure the type is correct before we test
-				if (converter.getSpecificType().isAssignableFrom(type)) {
-					if (wrappedObject instanceof Class)
-						return nativeType;
-					else
-						return converter.getGeneric(nativeType, wrappedObject);
-				}
-				return null;
+		return wrappedObject -> {
+			Class<?> type = PacketConstructor.getClass(wrappedObject);
+
+			// Ensure the type is correct before we test
+			if (converter.getSpecificType().isAssignableFrom(type)) {
+				if (wrappedObject instanceof Class)
+					return nativeType;
+				else
+					return converter.getGeneric(wrappedObject);
 			}
+			return null;
 		};
 	}
-	
-	/**
-	 * Retrieve every converter that is associated with a specific class.
-	 * @return Every converter with a unique specific class.
-	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	public static Map<Class<?>, EquivalentConverter<Object>> getConvertersForSpecific() {
-		if (specificConverters == null) {
-			// Generics doesn't work, as usual
-			ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder =
-				   ImmutableMap.<Class<?>, EquivalentConverter<Object>>builder().
-				put(WrappedDataWatcher.class, (EquivalentConverter) getDataWatcherConverter()).
-				put(ItemStack.class, (EquivalentConverter) getItemStackConverter()).
-				put(NbtBase.class, (EquivalentConverter) getNbtConverter()).
-				put(NbtCompound.class, (EquivalentConverter) getNbtConverter()).
-				put(WrappedWatchableObject.class, (EquivalentConverter) getWatchableObjectConverter()).
-				put(PotionEffect.class, (EquivalentConverter) getPotionEffectConverter()).
-				put(World.class, (EquivalentConverter) getWorldConverter());
-			
-			// Types added in 1.7.2
-			if (MinecraftReflection.isUsingNetty()) {
-				builder.put(Material.class, (EquivalentConverter) getBlockConverter());
-				builder.put(WrappedGameProfile.class, (EquivalentConverter) getWrappedGameProfileConverter());
-				builder.put(WrappedChatComponent.class, (EquivalentConverter) getWrappedChatComponentConverter());
-				builder.put(WrappedServerPing.class, (EquivalentConverter) getWrappedServerPingConverter());
-				builder.put(WrappedStatistic.class, (EquivalentConverter) getWrappedStatisticConverter());
-				
-				for (Entry<Class<?>, EquivalentConverter<?>> entry : EnumWrappers.getFromWrapperMap().entrySet()) {
-					builder.put((Class) entry.getKey(), (EquivalentConverter) entry.getValue());
-				}
-			}
-			
-			if (hasWorldType)
-				builder.put(WorldType.class, (EquivalentConverter) getWorldTypeConverter());
-			if (hasAttributeSnapshot)
-				builder.put(WrappedAttribute.class, (EquivalentConverter) getWrappedAttributeConverter());
-			specificConverters = builder.build();
-		}
-		return specificConverters;
-	}
-	
+
 	/**
 	 * Retrieve every converter that is associated with a generic class.
 	 * @return Every converter with a unique generic class.
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings("rawtypes")
+	// TODO this list needs to be updated
 	public static Map<Class<?>, EquivalentConverter<Object>> getConvertersForGeneric() {
 		if (genericConverters == null) {
 			// Generics doesn't work, as usual
@@ -1179,7 +1036,7 @@ public class BukkitConverters {
 	private static MethodAccessor getMobEffect = null;
 
 	public static EquivalentConverter<PotionEffectType> getEffectTypeConverter() {
-		return new IgnoreNullConverter<PotionEffectType>() {
+		return ignoreNull(new EquivalentConverter<PotionEffectType>() {
 
 			@Override
 			public Class<PotionEffectType> getSpecificType() {
@@ -1187,9 +1044,10 @@ public class BukkitConverters {
 			}
 
 			@Override
-			protected Object getGenericValue(Class<?> genericType, PotionEffectType specific) {
+			public Object getGeneric(PotionEffectType specific) {
+				Class<?> clazz = MinecraftReflection.getMobEffectListClass();
 				if (getMobEffect == null) {
-					getMobEffect = Accessors.getMethodAccessor(genericType, "fromId", int.class);
+					getMobEffect = Accessors.getMethodAccessor(clazz, "fromId", int.class);
 				}
 
 				int id = specific.getId();
@@ -1197,7 +1055,7 @@ public class BukkitConverters {
 			}
 
 			@Override
-			protected PotionEffectType getSpecificValue(Object generic) {
+			public PotionEffectType getSpecific(Object generic) {
 				Class<?> clazz = MinecraftReflection.getMobEffectListClass();
 				if (getMobEffectId == null) {
 					getMobEffectId = Accessors.getMethodAccessor(clazz, "getId", clazz);
@@ -1206,6 +1064,6 @@ public class BukkitConverters {
 				int id = (int) getMobEffectId.invoke(null, generic);
 				return PotionEffectType.getById(id);
 			}
-		};
+		});
 	}
 }

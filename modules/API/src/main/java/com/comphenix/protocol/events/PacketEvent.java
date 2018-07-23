@@ -33,6 +33,7 @@ import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.PluginContext;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.injector.server.TemporaryPlayer;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
@@ -321,7 +322,41 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @return The player associated with this event.
 	 */
 	public Player getPlayer() {
-		return playerReference.get();
+		Player player = playerReference.get();
+
+		// Check if the player has been updated so we can do more stuff
+		if (player instanceof TemporaryPlayer) {
+			Player updated = player.getPlayer();
+			if (updated != null && !(updated instanceof TemporaryPlayer)) {
+				playerReference.clear();
+				playerReference = new WeakReference<>(updated);
+				return updated;
+			}
+		}
+
+		return player;
+	}
+
+	/**
+	 * Whether or not the player in this PacketEvent is temporary (i.e. they don't have a true player instance yet).
+	 * Temporary players have a limited subset of methods that may be used:
+	 * <ul>
+	 *     <li>getPlayer</li>
+	 *     <li>getAddress</li>
+	 *     <li>getServer</li>
+	 *     <li>chat</li>
+	 *     <li>sendMessage</li>
+	 *     <li>kickPlayer</li>
+	 *     <li>isOnline</li>
+	 * </ul>
+	 *
+	 * Anything else will throw an UnsupportedOperationException. Use this check before calling other methods when
+	 * dealing with packets early in the login sequence or if you get the aforementioned exception.
+	 *
+	 * @return True if the player is temporary, false if not.
+	 */
+	public boolean isPlayerTemporary() {
+		return getPlayer() instanceof TemporaryPlayer;
 	}
 	
 	/**

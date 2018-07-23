@@ -147,10 +147,6 @@ public class WrappedSignedProperty extends AbstractWrapper {
 
 	@Override
 	public String toString() {
-		return Objects.toStringHelper(this)
-			.add("name", getName())
-			.add("value", getValue())
-			.add("signature", getSignature())
-			.toString();
+		return "WrappedSignedProperty[name=" + getName() + ", value=" + getValue() + ", signature=" + getSignature() + "]";
 	}
 }

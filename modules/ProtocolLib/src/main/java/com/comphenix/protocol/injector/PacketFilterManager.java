@@ -17,22 +17,46 @@
 
 package com.comphenix.protocol.injector;
 
-import io.netty.channel.Channel;
-
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.annotation.Nullable;
 
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+import com.comphenix.protocol.AsynchronousManager;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.async.AsyncMarker;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.injector.netty.ProtocolInjector;
+import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.packet.InterceptWritePacket;
+import com.comphenix.protocol.injector.packet.PacketInjector;
+import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
+import com.comphenix.protocol.injector.player.PlayerInjector.ServerHandlerNull;
+import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
+import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
+import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+
+import io.netty.channel.Channel;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -50,46 +74,6 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
-import com.comphenix.protocol.AsynchronousManager;
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.async.AsyncMarker;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.ListenerOptions;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.netty.ProtocolInjector;
-import com.comphenix.protocol.injector.netty.WirePacket;
-import com.comphenix.protocol.injector.packet.InterceptWritePacket;
-import com.comphenix.protocol.injector.packet.PacketInjector;
-import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
-import com.comphenix.protocol.injector.player.PlayerInjector.ServerHandlerNull;
-import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
-import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
-import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.utility.EnhancerFactory;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-
 public final class PacketFilterManager implements ListenerInvoker, InternalManager {
 
 	public static final ReportType REPORT_CANNOT_LOAD_PACKET_LIST = new ReportType("Cannot load server and client packet list.");
@@ -99,8 +83,8 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 			new ReportType("%s doesn't depend on ProtocolLib. Check that its plugin.yml has a 'depend' directive.");
 
 	// Registering packet IDs that are not supported
-	public static final ReportType REPORT_UNSUPPORTED_SERVER_PACKET_ID = new ReportType("[%s] Unsupported server packet ID in current Minecraft version: %s");
-	public static final ReportType REPORT_UNSUPPORTED_CLIENT_PACKET_ID = new ReportType("[%s] Unsupported client packet ID in current Minecraft version: %s");
+	public static final ReportType REPORT_UNSUPPORTED_SERVER_PACKET = new ReportType("[%s] Unsupported server packet in current Minecraft version: %s");
+	public static final ReportType REPORT_UNSUPPORTED_CLIENT_PACKET = new ReportType("[%s] Unsupported client packet in current Minecraft version: %s");
 
 	// Problems injecting and uninjecting players
 	public static final ReportType REPORT_CANNOT_UNINJECT_PLAYER = new ReportType("Unable to uninject net handler for player.");
@@ -225,8 +209,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 		try {
 			this.pluginVerifier = new PluginVerifier(builder.getLibrary());
 		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
 			reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_VERIFIER_ERROR).
@@ -453,9 +435,7 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 
 			// We only check the recieving whitelist
 			if (whitelist.getOptions().contains(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
-				for (PacketType type : whitelist.getTypes()) {
-					updated.add(type);
-				}
+				updated.addAll(whitelist.getTypes());
 			}
 		}
 		// Update it
@@ -630,7 +610,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	 * Note that all packets are disabled by default.
 	 *
 	 * @param listener - the listener that requested to enable these filters.
-	 * @param side - which side the event will arrive from.
 	 * @param packets - the packet id(s).
 	 */
 	private void enablePacketFilters(PacketListener listener, Iterable<PacketType> packets) {
@@ -645,7 +624,7 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 					playerInjection.addPacketHandler(type, listener.getSendingWhitelist().getOptions());
 				else
 					reporter.reportWarning(this,
-							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)
+							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET).messageParam(PacketAdapter.getPluginName(listener), type)
 					);
 			}
 
@@ -655,7 +634,7 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 					packetInjector.addPacketHandler(type, listener.getReceivingWhitelist().getOptions());
 				else
 					reporter.reportWarning(this,
-							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET_ID).messageParam(PacketAdapter.getPluginName(listener), type)
+							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET).messageParam(PacketAdapter.getPluginName(listener), type)
 					);
 			}
 		}
@@ -781,7 +760,7 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 
 		if (!filters) {
 			// We may have to delay the packet due to non-asynchronous monitor listeners
-			if (!filters && !Bukkit.isPrimaryThread() && playerInjection.hasMainThreadListener(packet.getType())) {
+			if (!Bukkit.isPrimaryThread() && playerInjection.hasMainThreadListener(packet.getType())) {
 				final NetworkMarker copy = marker;
 
 				server.getScheduler().scheduleSyncDelayedTask(library, new Runnable() {
@@ -990,40 +969,34 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 		if (nettyInjector != null)
 			nettyInjector.inject();
 
-		try {
-			manager.registerEvents(new Listener() {
+		manager.registerEvents(new Listener() {
 
-				@EventHandler(priority = EventPriority.LOWEST)
-				public void onPlayerLogin(PlayerLoginEvent event) {
+			@EventHandler(priority = EventPriority.LOWEST)
+			public void onPlayerLogin(PlayerLoginEvent event) {
 					PacketFilterManager.this.onPlayerLogin(event);
 				}
 
-				@EventHandler(priority = EventPriority.LOWEST)
-				public void onPrePlayerJoin(PlayerJoinEvent event) {
+			@EventHandler(priority = EventPriority.LOWEST)
+			public void onPrePlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPrePlayerJoin(event);
 				}
 
-				@EventHandler(priority = EventPriority.MONITOR)
-				public void onPlayerJoin(PlayerJoinEvent event) {
+			@EventHandler(priority = EventPriority.MONITOR)
+			public void onPlayerJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.onPlayerJoin(event);
 				}
 
-				@EventHandler(priority = EventPriority.MONITOR)
-				public void onPlayerQuit(PlayerQuitEvent event) {
+			@EventHandler(priority = EventPriority.MONITOR)
+			public void onPlayerQuit(PlayerQuitEvent event) {
 					PacketFilterManager.this.onPlayerQuit(event);
 				}
 
-				@EventHandler(priority = EventPriority.MONITOR)
-				public void onPluginDisabled(PluginDisableEvent event) {
+			@EventHandler(priority = EventPriority.MONITOR)
+			public void onPluginDisabled(PluginDisableEvent event) {
 					PacketFilterManager.this.onPluginDisabled(event, plugin);
 				}
 
-			}, plugin);
-
-		} catch (NoSuchMethodError e) {
-			// Oh wow! We're running on 1.0.0 or older.
-			registerOld(manager, plugin);
-		}
+		}, plugin);
 	}
 
     private void onPlayerLogin(PlayerLoginEvent event) {
@@ -1130,113 +1103,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	@Deprecated
 	public Class<?> getPacketClassFromID(int packetID, boolean forceVanilla) {
 		return PacketRegistry.getPacketClassFromID(packetID, forceVanilla);
-	}
-
-	// Yes, this is crazy.
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void registerOld(PluginManager manager, final Plugin plugin) {
-		try {
-			ClassLoader loader = manager.getClass().getClassLoader();
-
-			// The different enums we are going to need
-			Class eventTypes = loader.loadClass("org.bukkit.event.Event$Type");
-			Class eventPriority = loader.loadClass("org.bukkit.event.Event$Priority");
-
-			// Get the priority
-			Object priorityLowest  = Enum.valueOf(eventPriority, "Lowest");
-			Object priorityMonitor = Enum.valueOf(eventPriority, "Monitor");
-
-			// Get event types
-			Object playerJoinType = Enum.valueOf(eventTypes, "PLAYER_JOIN");
-			Object playerQuitType = Enum.valueOf(eventTypes, "PLAYER_QUIT");
-			Object pluginDisabledType = Enum.valueOf(eventTypes, "PLUGIN_DISABLE");
-
-			// The player listener! Good times.
-			Class<?> playerListener = loader.loadClass("org.bukkit.event.player.PlayerListener");
-			Class<?> serverListener = loader.loadClass("org.bukkit.event.server.ServerListener");
-
-			// Find the register event method
-			Method registerEvent = FuzzyReflection.fromObject(manager).getMethodByParameters("registerEvent",
-					eventTypes, Listener.class, eventPriority, Plugin.class);
-
-			Enhancer playerLow = EnhancerFactory.getInstance().createEnhancer();
-			Enhancer playerEx = EnhancerFactory.getInstance().createEnhancer();
-			Enhancer serverEx = EnhancerFactory.getInstance().createEnhancer();
-
-			playerLow.setSuperclass(playerListener);
-			playerLow.setClassLoader(classLoader);
-			playerLow.setCallback(new MethodInterceptor() {
-				@Override
-				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy)
-						throws Throwable {
-					// Must have a parameter
-					if (args.length == 1) {
-						Object event = args[0];
-
-						if (event instanceof PlayerJoinEvent) {
-							onPrePlayerJoin((PlayerJoinEvent) event);
-						}
-					}
-					return null;
-				}
-			});
-
-			playerEx.setSuperclass(playerListener);
-			playerEx.setClassLoader(classLoader);
-			playerEx.setCallback(new MethodInterceptor() {
-				@Override
-				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-					if (args.length == 1) {
-						Object event = args[0];
-
-						// Check for the correct event
-						if (event instanceof PlayerJoinEvent) {
-							onPlayerJoin((PlayerJoinEvent) event);
-						} else if (event instanceof PlayerQuitEvent) {
-							onPlayerQuit((PlayerQuitEvent) event);
-						}
-					}
-					return null;
-				}
-			});
-
-			serverEx.setSuperclass(serverListener);
-			serverEx.setClassLoader(classLoader);
-			serverEx.setCallback(new MethodInterceptor() {
-				@Override
-				public Object intercept(Object obj, Method method, Object[] args,
-						MethodProxy proxy) throws Throwable {
-					// Must have a parameter
-					if (args.length == 1) {
-						Object event = args[0];
-
-						if (event instanceof PluginDisableEvent)
-							onPluginDisabled((PluginDisableEvent) event, plugin);
-					}
-					return null;
-				}
-			});
-
-			// Create our listener
-			Object playerProxyLow = playerLow.create();
-			Object playerProxy = playerEx.create();
-			Object serverProxy = serverEx.create();
-
-			registerEvent.invoke(manager, playerJoinType, playerProxyLow, priorityLowest, plugin);
-			registerEvent.invoke(manager, playerJoinType, playerProxy, priorityMonitor, plugin);
-			registerEvent.invoke(manager, playerQuitType, playerProxy, priorityMonitor, plugin);
-			registerEvent.invoke(manager, pluginDisabledType, serverProxy, priorityMonitor, plugin);
-
-			// A lot can go wrong
-		} catch (ClassNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**

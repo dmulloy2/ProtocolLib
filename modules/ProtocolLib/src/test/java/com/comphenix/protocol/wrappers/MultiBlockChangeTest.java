@@ -58,7 +58,7 @@ public class MultiBlockChangeTest {
 		MultiBlockChangeInfo[] array = { info, info };
 
 		EquivalentConverter<MultiBlockChangeInfo[]> converter = MultiBlockChangeInfo.getArrayConverter(chunk);
-		Object generic = converter.getGeneric(MinecraftReflection.getMultiBlockChangeInfoArrayClass(), array);
+		Object generic = converter.getGeneric(array);
 		MultiBlockChangeInfo[] back = converter.getSpecific(generic);
 
 		// Make sure our conversions are correct

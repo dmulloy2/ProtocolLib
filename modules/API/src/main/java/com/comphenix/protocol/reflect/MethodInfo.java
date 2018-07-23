@@ -17,7 +17,6 @@ import com.google.common.collect.Lists;
  * 
  * @author Kristian
  */
-@SuppressWarnings("unused") // Java 8 compat
 public abstract class MethodInfo implements GenericDeclaration, Member {
 	/**
 	 * Wraps a method as a MethodInfo object.

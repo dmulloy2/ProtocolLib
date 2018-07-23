@@ -1,7 +1,6 @@
 language: java
 jdk:
   - oraclejdk8
-  - oraclejdk7
 script: mvn clean test
 #before_install: cd ProtocolLib
 install: true

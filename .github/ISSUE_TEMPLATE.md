@@ -4,6 +4,7 @@ Make sure you've done the following:
 - [ ] You're using the latest build for your server version
 - [ ] This isn't an issue caused by another plugin
 - [ ] You've checked for duplicate issues
+- [ ] You didn't use `/reload`
 
 Debug paste link:
 

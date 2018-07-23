@@ -20,9 +20,12 @@ package com.comphenix.protocol.reflect.cloning;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.google.common.collect.BiMap;
 
 /**
  * Attempts to clone collection and array classes.
@@ -48,72 +51,89 @@ public class CollectionCloner implements Cloner {
 		Class<?> clazz = source.getClass();
 		return Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz) || clazz.isArray();
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	@Override
+	@SuppressWarnings("unchecked")
 	public Object clone(Object source) {
 		if (source == null)
 			throw new IllegalArgumentException("source cannot be NULL.");
 		
 		Class<?> clazz = source.getClass();
 
-		if (source instanceof Collection) {
-			Collection<Object> copy = cloneConstructor(Collection.class, clazz, source);
+		try {
+			if (source instanceof Collection) {
+				Collection<Object> copy = cloneConstructor(Collection.class, clazz, source);
 
-			// Next, clone each element in the collection
-			try {
-				copy.clear();
-				
-				for (Object element : (Collection<Object>) source) {
-					copy.add(getClone(element, source));
+				// Next, clone each element in the collection
+				try {
+					copy.clear();
+
+					for (Object element : (Collection<Object>) source) {
+						copy.add(getClone(element, source));
+					}
+				} catch (UnsupportedOperationException e) {
+					// Immutable - we can't do much about that
 				}
-			} catch (UnsupportedOperationException e) {
-				// Immutable - we can't do much about that
-			}
-			return copy;
-			
-		} else if (source instanceof Map) {
-			Map<Object, Object> copy = cloneConstructor(Map.class, clazz, source);
-			
-			// Next, clone each element in the collection
-			try {
-				copy.clear();
-				
-				for (Entry<Object, Object> element : ((Map<Object, Object>) source).entrySet()) {
-					Object key = getClone(element.getKey(), source);
-					Object value = getClone(element.getValue(), source);
-					copy.put(key, value);
+				return copy;
+
+			} else if (source instanceof Map) {
+				Map<Object, Object> copy;
+
+				if (source instanceof BiMap) {
+					BiMap original = (BiMap) source;
+					if (clazz.getDeclaringClass() != null) {
+						Method create = clazz.getDeclaringClass().getMethod("create", int.class);
+						copy = ((BiMap) create.invoke(null, original.size())).inverse();
+					} else {
+						Method create = clazz.getMethod("create", int.class);
+						copy = (Map) create.invoke(null, original.size());
+					}
+				} else {
+					copy = cloneConstructor(Map.class, clazz, source);
 				}
-			} catch (UnsupportedOperationException e) {
-				// Immutable - we can't do much about that
+
+				// Next, clone each element in the collection
+				try {
+					copy.clear();
+
+					for (Entry<Object, Object> element : ((Map<Object, Object>) source).entrySet()) {
+						Object key = getClone(element.getKey(), source);
+						Object value = getClone(element.getValue(), source);
+						copy.put(key, value);
+					}
+				} catch (UnsupportedOperationException e) {
+					// Immutable - we can't do much about that
+				}
+				return copy;
+
+			} else if (clazz.isArray()) {
+				// Get the length
+				int length = Array.getLength(source);
+				Class<?> component = clazz.getComponentType();
+
+				// Can we speed things up by making a shallow copy instead?
+				if (ImmutableDetector.isImmutable(component)) {
+					return clonePrimitive(component, source);
+				}
+
+				// Create a new copy
+				Object copy = Array.newInstance(clazz.getComponentType(), length);
+
+				// Set each element
+				for (int i = 0; i < length; i++) {
+					Object element = Array.get(source, i);
+
+					if (defaultCloner.canClone(element))
+						Array.set(copy, i, defaultCloner.clone(element));
+					else
+						throw new IllegalArgumentException("Cannot clone " + element + " in array " + source);
+				}
+
+				// And we're done
+				return copy;
 			}
-			return copy;
-			
-		} else if (clazz.isArray()) {
-			// Get the length
-			int lenght = Array.getLength(source);
-			Class<?> component = clazz.getComponentType();
-			
-			// Can we speed things up by making a shallow copy instead?
-			if (ImmutableDetector.isImmutable(component)) {
-				return clonePrimitive(component, source);
-			}
-			
-			// Create a new copy
-			Object copy = Array.newInstance(clazz.getComponentType(), lenght);
-			
-			// Set each element
-			for (int i = 0; i < lenght; i++) {
-				Object element = Array.get(source, i);
-				
-				if (defaultCloner.canClone(element))
-					Array.set(copy, i, defaultCloner.clone(element));
-				else
-					throw new IllegalArgumentException("Cannot clone " + element + " in array " + source);
-			}
-			
-			// And we're done
-			return copy;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to clone " + source + " (" + source.getClass() + ")", ex);
 		}
 		
 		throw new IllegalArgumentException(source + " is not an array nor a Collection.");
@@ -171,7 +191,7 @@ public class CollectionCloner implements Cloner {
 	private <T> T cloneConstructor(Class<?> superclass, Class<?> clazz, Object source) {
 		// Not all collections or maps implement "clone", but most *do* implement the "copy constructor" pattern
 		try {
-			Constructor<?> constructCopy = clazz.getConstructor(Collection.class);
+			Constructor<?> constructCopy = clazz.getConstructor(superclass);
 			return (T) constructCopy.newInstance(source);
 		} catch (NoSuchMethodException e) {
 			if (source instanceof Serializable)
@@ -186,7 +206,7 @@ public class CollectionCloner implements Cloner {
 	/**
 	 * Clone an object by calling "clone" using reflection.
 	 * @param clazz - the class type.
-	 * @param obj - the object to clone.
+	 * @param source - the object to clone.
 	 * @return The cloned object.
 	 */
 	private Object cloneObject(Class<?> clazz, Object source) {

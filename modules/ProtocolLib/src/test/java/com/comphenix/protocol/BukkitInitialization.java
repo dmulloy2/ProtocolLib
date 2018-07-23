@@ -1,21 +1,19 @@
 package com.comphenix.protocol;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.logging.Logger;
-
-import net.minecraft.server.v1_11_R1.DispenserRegistry;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_11_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_11_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_11_R1.util.Versioning;
-
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
+import net.minecraft.server.v1_13_R1.DispenserRegistry;
+
+import org.apache.logging.log4j.LogManager;
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.craftbukkit.v1_13_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_13_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_13_R1.util.Versioning;
+
+import static org.mockito.Mockito.*;
 
 /**
  * Used to ensure that ProtocolLib and Bukkit is prepared to be tested.
@@ -27,22 +25,28 @@ public class BukkitInitialization {
 	private static boolean packaged;
 
 	/**
-	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing.
-	 * @throws IllegalAccessException If we are unable to initialize Bukkit.
+	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing
 	 */
-	public static void initializeItemMeta() throws IllegalAccessException {
+	public static void initializeItemMeta() {
 		if (!initialized) {
 			// Denote that we're done
 			initialized = true;
 
 			initializePackage();
 
+			try {
+				LogManager.getLogger();
+			} catch (Throwable ex) {
+				// Happens only on my Jenkins, but if it errors here it works when it matters
+				ex.printStackTrace();
+			}
+
 			DispenserRegistry.c(); // Basically registers everything
 
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
 
-			when(mockedServer.getLogger()).thenReturn(Logger.getLogger("Minecraft"));
+			when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
 			when(mockedServer.getName()).thenReturn("Mock Server");
 			when(mockedServer.getVersion()).thenReturn(CraftServer.class.getPackage().getImplementationVersion());
 			when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
@@ -52,8 +56,6 @@ public class BukkitInitialization {
 
 			// Inject this fake server
 			Bukkit.setServer(mockedServer);
-
-			
 		}
 	}
 
@@ -64,8 +66,15 @@ public class BukkitInitialization {
 		if (!packaged) {
 			packaged = true;
 
+			try {
+				LogManager.getLogger();
+			} catch (Throwable ex) {
+				// Happens only on my Jenkins, but if it errors here it works when it matters
+				ex.printStackTrace();
+			}
+
 			MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
-			MinecraftVersion.setCurrentVersion(MinecraftVersion.FROSTBURN_UPDATE);
+			MinecraftVersion.setCurrentVersion(MinecraftVersion.AQUATIC_UPDATE);
 		}
 	}
 }

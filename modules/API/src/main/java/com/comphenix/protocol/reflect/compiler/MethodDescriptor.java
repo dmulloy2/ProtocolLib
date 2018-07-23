@@ -20,7 +20,7 @@ package com.comphenix.protocol.reflect.compiler;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.sf.cglib.asm.Type;
+import net.sf.cglib.asm.$Type;
 
 /**
  * Represents a method.
@@ -56,7 +56,7 @@ class MethodDescriptor {
     }
 
     /**
-     * Creates a new {@link Method}.
+     * Creates a new {@link MethodDescriptor}.
      * 
      * @param name the method's name.
      * @param desc the method's descriptor.
@@ -67,7 +67,7 @@ class MethodDescriptor {
     }
 
     /**
-     * Creates a new {@link Method}.
+     * Creates a new {@link MethodDescriptor}.
      * 
      * @param name the method's name.
      * @param returnType the method's return type.
@@ -75,14 +75,14 @@ class MethodDescriptor {
      */
     public MethodDescriptor(
         final String name,
-        final Type returnType,
-        final Type[] argumentTypes)
+        final $Type returnType,
+        final $Type[] argumentTypes)
     {
-        this(name, Type.getMethodDescriptor(returnType, argumentTypes));
+        this(name, $Type.getMethodDescriptor(returnType, argumentTypes));
     }
 
     /**
-     * Returns a {@link Method} corresponding to the given Java method
+     * Returns a {@link MethodDescriptor} corresponding to the given Java method
      * declaration.
      * 
      * @param method a Java method declaration, without argument names, of the
@@ -91,7 +91,7 @@ class MethodDescriptor {
      *        "java.util.List", ...). Classes of the java.lang package can be
      *        specified by their unqualified name; all other classes names must
      *        be fully qualified.
-     * @return a {@link Method} corresponding to the given Java method
+     * @return a {@link MethodDescriptor} corresponding to the given Java method
      *         declaration.
      * @throws IllegalArgumentException if <code>method</code> could not get
      *         parsed.
@@ -103,7 +103,7 @@ class MethodDescriptor {
     }
 
     /**
-     * Returns a {@link Method} corresponding to the given Java method
+     * Returns a {@link MethodDescriptor} corresponding to the given Java method
      * declaration.
      * 
      * @param method a Java method declaration, without argument names, of the
@@ -117,7 +117,7 @@ class MethodDescriptor {
      *        default package, or false if they correspond to java.lang classes.
      *        For instance "Object" means "Object" if this option is true, or
      *        "java.lang.Object" otherwise.
-     * @return a {@link Method} corresponding to the given Java method
+     * @return a {@link MethodDescriptor} corresponding to the given Java method
      *         declaration.
      * @throws IllegalArgumentException if <code>method</code> could not get
      *         parsed.
@@ -134,7 +134,7 @@ class MethodDescriptor {
         }
         String returnType = method.substring(0, space);
         String methodName = method.substring(space + 1, start - 1).trim();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append('(');
         int p;
         do {
@@ -158,7 +158,7 @@ class MethodDescriptor {
             return type;
         }
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int index = 0;
         while ((index = type.indexOf("[]", index) + 1) > 0) {
             sb.append('[');
@@ -206,8 +206,8 @@ class MethodDescriptor {
      * 
      * @return the return type of the method described by this object.
      */
-    public Type getReturnType() {
-        return Type.getReturnType(desc);
+    public $Type getReturnType() {
+        return $Type.getReturnType(desc);
     }
 
     /**
@@ -215,8 +215,8 @@ class MethodDescriptor {
      * 
      * @return the argument types of the method described by this object.
      */
-    public Type[] getArgumentTypes() {
-        return Type.getArgumentTypes(desc);
+    public $Type[] getArgumentTypes() {
+        return $Type.getArgumentTypes(desc);
     }
 
     public String toString() {

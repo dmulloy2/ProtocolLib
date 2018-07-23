@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -133,7 +134,7 @@ public class NbtFactory {
 	 * Set the NBT compound tag of a given item stack.
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use
-	 * {@link MinecraftReflection#getCraftItemStack(ItemStack)} if not.
+	 * {@link MinecraftReflection#getBukkitItemStack(Object)} if not.
 	 * @param stack - the item stack, cannot be air.
 	 * @param compound - the new NBT compound, or NULL to remove it.
 	 * @throws IllegalArgumentException If the stack is not a CraftItemStack, or it represents air.
@@ -151,7 +152,7 @@ public class NbtFactory {
 	 * material, damage value or count.
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use
-	 * {@link MinecraftReflection#getCraftItemStack(ItemStack)} if not.
+	 * {@link MinecraftReflection#getBukkitItemStack(Object)} if not.
 	 * @param stack - the item stack.
 	 * @return A wrapper for its NBT tag.
 	 */
@@ -167,6 +168,31 @@ public class NbtFactory {
 			modifier.write(0, result);
 		}
 		return fromBase(result);
+	}
+
+	/**
+	 * Constructs a wrapper for a NBT tag in an ItemStack. This is where auxillary
+	 * data such as enchantments, name, and lore is stored. It doesn't include the material,
+	 * damage value, or stack size.
+	 * <p>
+	 * This differs from {@link #fromItemTag(ItemStack)} in that the tag is not created if it
+	 * doesn't already exist.
+	 *
+	 * @param stack the ItemStack. Must be a CraftItemStack. Use {@link MinecraftReflection#getBukkitItemStack(Object)}
+	 * @return A wrapper for the NBT tag if it exists, an empty Optional if not
+	 */
+	public static Optional<NbtWrapper<?>> fromItemOptional(ItemStack stack) {
+		checkItemStack(stack);
+
+		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
+		NbtBase<?> result = modifier.read(0);
+
+		// Create the tag if it doesn't exist
+		if (result == null) {
+			return Optional.empty();
+		}
+
+		return Optional.of(fromBase(result));
 	}
 	
 	/**

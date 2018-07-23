@@ -429,6 +429,17 @@ public class MinecraftReflection {
 	}
 
 	/**
+	 * Equivalent to {@link #is(Class, Object)} but we don't call getClass again
+	 */
+	public static boolean is(Class<?> clazz, Class<?> test) {
+		if (clazz == null || test == null) {
+			return false;
+		}
+
+		return clazz.isAssignableFrom(test);
+	}
+
+	/**
 	 * Determine if a given object is a ChunkPosition.
 	 * @param obj - the object to test.
 	 * @return TRUE if it can, FALSE otherwise.
@@ -1135,6 +1146,14 @@ public class MinecraftReflection {
 						build());
 			return setMinecraftClass("Block", selected.getParameterTypes()[0]);
 		}
+	}
+
+	public static Class<?> getItemClass() {
+		return getNullableNMS("Item");
+	}
+
+	public static Class<?> getFluidTypeClass() {
+		return getNullableNMS("FluidType");
 	}
 
 	/**
@@ -1852,7 +1871,7 @@ public class MinecraftReflection {
 	}
 
 	// ---- ItemStack conversions
-
+	private static Object itemStackAir = null;
 	private static Method asNMSCopy = null;
 	private static Method asCraftMirror = null;
 
@@ -1943,7 +1962,16 @@ public class MinecraftReflection {
 
 		if (is(getCraftItemStackClass(), specific)) {
 			// If it's already a CraftItemStack, use its handle
-			return new BukkitUnwrapper().unwrapItem(specific);
+			Object unwrapped = new BukkitUnwrapper().unwrapItem(specific);
+			if (unwrapped != null) {
+				return unwrapped;
+			} else {
+				if (itemStackAir == null) {
+					// Easiest way to get the Material.AIR ItemStack?
+					itemStackAir = getMinecraftItemStack(new ItemStack(Material.AIR));
+				}
+				return itemStackAir;
+			}
 		}
 
 		try {
@@ -1976,7 +2004,8 @@ public class MinecraftReflection {
 	public static Class<?> getCraftBukkitClass(String className) {
 		if (craftbukkitPackage == null)
 			craftbukkitPackage = new CachedPackage(getCraftBukkitPackage(), getClassSource());
-		return craftbukkitPackage.getPackageClass(className);
+		return craftbukkitPackage.getPackageClass(className)
+				.orElseThrow(() -> new RuntimeException("Failed to find CraftBukkit class: " + className));
 	}
 	
 	/**
@@ -1988,7 +2017,14 @@ public class MinecraftReflection {
 	public static Class<?> getMinecraftClass(String className) {
 		if (minecraftPackage == null)
 			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
-		return minecraftPackage.getPackageClass(className);
+		return minecraftPackage.getPackageClass(className)
+				.orElseThrow(() -> new RuntimeException("Failed to find NMS class: " + className));
+	}
+
+	private static Class<?> getNullableNMS(String className) {
+		if (minecraftPackage == null)
+			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
+		return minecraftPackage.getPackageClass(className).orElse(null);
 	}
 
 	/**
@@ -2074,7 +2110,8 @@ public class MinecraftReflection {
 	public static Class<?> getMinecraftLibraryClass(String className) {
 		if (libraryPackage == null)
 			libraryPackage = new CachedPackage("", getClassSource());
-		return libraryPackage.getPackageClass(className);
+		return libraryPackage.getPackageClass(className)
+				.orElseThrow(() -> new RuntimeException("Failed to find class: " + className));
 	}
 
 	/**

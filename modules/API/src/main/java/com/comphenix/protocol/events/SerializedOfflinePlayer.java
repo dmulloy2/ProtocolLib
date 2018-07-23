@@ -139,7 +139,6 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 		return banned;
 	}
 
-	@Override
 	public void setBanned(boolean banned) {
 		this.banned = banned;
 	}

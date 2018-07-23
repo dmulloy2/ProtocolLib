@@ -25,12 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.sf.cglib.asm.ClassWriter;
-import net.sf.cglib.asm.FieldVisitor;
-import net.sf.cglib.asm.Label;
-import net.sf.cglib.asm.MethodVisitor;
-import net.sf.cglib.asm.Opcodes;
-import net.sf.cglib.asm.Type;
+import net.sf.cglib.asm.$ClassWriter;
+import net.sf.cglib.asm.$FieldVisitor;
+import net.sf.cglib.asm.$Label;
+import net.sf.cglib.asm.$MethodVisitor;
+import net.sf.cglib.asm.$Opcodes;
+import net.sf.cglib.asm.$Type;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
@@ -95,22 +95,22 @@ import com.google.common.primitives.Primitives;
 
 /**
  * Represents a StructureModifier compiler.
- * 
+ *
  * @author Kristian
  */
 public final class StructureCompiler {
 	public static final ReportType REPORT_TOO_MANY_GENERATED_CLASSES = new ReportType("Generated too many classes (count: %s)");
-	
+
 	// Used to store generated classes of different types
 	@SuppressWarnings("rawtypes")
 	static class StructureKey {
 		private Class targetType;
 		private Class fieldType;
-		
+
 		public StructureKey(StructureModifier<?> source) {
 			this(source.getTargetType(), source.getFieldType());
 		}
-		
+
 		public StructureKey(Class targetType, Class fieldType) {
 			this.targetType = targetType;
 			this.fieldType = fieldType;
@@ -120,7 +120,7 @@ public final class StructureCompiler {
 		public int hashCode() {
 			return Objects.hashCode(targetType, fieldType);
 		}
-		
+
 		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof StructureKey) {
@@ -131,16 +131,16 @@ public final class StructureCompiler {
 			return false;
 		}
 	}
-	
+
 	// Used to load classes
 	private volatile static Method defineMethod;
-	
+
 	@SuppressWarnings("rawtypes")
 	private Map<StructureKey, Class> compiledCache = new ConcurrentHashMap<StructureKey, Class>();
-	
+
 	// The class loader we'll store our classes
 	private ClassLoader loader;
-	
+
 	// References to other classes
 	private static String PACKAGE_NAME = "com/comphenix/protocol/reflect/compiler";
 	private static String SUPER_CLASS = "com/comphenix/protocol/reflect/StructureModifier";
@@ -156,7 +156,7 @@ public final class StructureCompiler {
 	StructureCompiler(ClassLoader loader) {
 		this.loader = loader;
 	}
-	
+
 	/**
 	 * Lookup the current class loader for any previously generated classes before we attempt to generate something.
 	 * @param <TField> Type
@@ -194,7 +194,7 @@ public final class StructureCompiler {
 		// We need to compile the class
 		return false;
 	}
-	
+
 	/**
 	 * Compiles the given structure modifier.
 	 * <p>
@@ -211,15 +211,15 @@ public final class StructureCompiler {
 		if (!isAnyPublic(source.getFields())) {
 			return source;
 		}
-		
+
 		StructureKey key = new StructureKey(source);
 		Class<?> compiledClass = compiledCache.get(key);
-		
+
 		if (!compiledCache.containsKey(key)) {
 			compiledClass = generateClass(source);
 			compiledCache.put(key, compiledClass);
 		}
-		
+
 		// Next, create an instance of this class
 		try {
 			return (StructureModifier<TField>) compiledClass.getConstructor(
@@ -245,7 +245,7 @@ public final class StructureCompiler {
 			throw new IllegalStateException("Cannot happen.", e);
 		}
 	}
-	
+
 	/**
 	 * Retrieve a variable identifier that can uniquely represent the given type.
 	 * @param type - a type.
@@ -254,7 +254,7 @@ public final class StructureCompiler {
 	private String getSafeTypeName(Class<?> type) {
 		return type.getCanonicalName().replace("[]", "Array").replace(".", "_");
 	}
-	
+
 	/**
 	 * Retrieve the compiled name of a given structure modifier.
 	 * @param source - the structure modifier.
@@ -262,29 +262,29 @@ public final class StructureCompiler {
 	 */
 	private String getCompiledName(StructureModifier<?> source) {
 		Class<?> targetType = source.getTargetType();
-	
+
 		// Concat class and field type
 		return "CompiledStructure$" +
 				getSafeTypeName(targetType) + "$" +
 				getSafeTypeName(source.getFieldType());
 	}
-	
+
 	/**
 	 * Compile a structure modifier.
 	 * @param source - structure modifier.
 	 * @return The compiled structure modifier.
 	 */
 	private <TField> Class<?> generateClass(StructureModifier<TField> source) {
-		
-		ClassWriter cw = new ClassWriter(0);
+
+		$ClassWriter cw = new $ClassWriter(0);
 		Class<?> targetType = source.getTargetType();
-		
+
 		String className = getCompiledName(source);
-		String targetSignature = Type.getDescriptor(targetType);
+		String targetSignature = $Type.getDescriptor(targetType);
 		String targetName = targetType.getName().replace('.', '/');
-		
+
 		// Define class
-		cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, PACKAGE_NAME + "/" + className,
+		cw.visit($Opcodes.V1_6, $Opcodes.ACC_PUBLIC + $Opcodes.ACC_SUPER, PACKAGE_NAME + "/" + className,
 				 null, COMPILED_CLASS, null);
 
 		createFields(cw, targetSignature);
@@ -292,29 +292,29 @@ public final class StructureCompiler {
 		createReadMethod(cw, className, source.getFields(), targetSignature, targetName);
 		createWriteMethod(cw, className, source.getFields(), targetSignature, targetName);
 		cw.visitEnd();
-		
+
 		byte[] data = cw.toByteArray();
-		
+
 		// Call the define method
 		try {
 			if (defineMethod == null) {
 				Method defined = ClassLoader.class.getDeclaredMethod("defineClass",
 					new Class<?>[] { String.class, byte[].class, int.class, int.class });
-			
+
 				// Awesome. Now, create and return it.
 				defined.setAccessible(true);
 				defineMethod = defined;
 			}
-			
+
 			@SuppressWarnings("rawtypes")
 			Class clazz = (Class) defineMethod.invoke(loader, null, data, 0, data.length);
-			
+
 			// DEBUG CODE: Print the content of the generated class.
 			//org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader(data);
 	        //cr.accept(new ASMifierClassVisitor(new PrintWriter(System.out)), 0);
-			
+
 			return clazz;
-			
+
 		} catch (SecurityException e) {
 			throw new RuntimeException("Cannot use reflection to dynamically load a class.", e);
 		} catch (NoSuchMethodException e) {
@@ -327,7 +327,7 @@ public final class StructureCompiler {
 			throw new RuntimeException("Error occured in code generator.", e);
 		}
 	}
-	
+
 	/**
 	 * Determine if at least one of the given fields is public.
 	 * @param fields - field to test.
@@ -340,208 +340,208 @@ public final class StructureCompiler {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	private boolean isPublic(Field field) {
 		return Modifier.isPublic(field.getModifiers());
 	}
-	
+
 	private boolean isNonFinal(Field field) {
 		return !Modifier.isFinal(field.getModifiers());
 	}
-	
-	private void createFields(ClassWriter cw, String targetSignature) {
-		FieldVisitor typedField = cw.visitField(Opcodes.ACC_PRIVATE, "typedTarget", targetSignature, null, null);
+
+	private void createFields($ClassWriter cw, String targetSignature) {
+		$FieldVisitor typedField = cw.visitField($Opcodes.ACC_PRIVATE, "typedTarget", targetSignature, null, null);
 		typedField.visitEnd();
 	}
-	
-	private void createWriteMethod(ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
-		
+
+	private void createWriteMethod($ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
+
 		String methodDescriptor = "(ILjava/lang/Object;)L" + SUPER_CLASS + ";";
 		String methodSignature = "(ILjava/lang/Object;)L" + SUPER_CLASS + "<Ljava/lang/Object;>;";
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "writeGenerated", methodDescriptor, methodSignature,
+		$MethodVisitor mv = cw.visitMethod($Opcodes.ACC_PROTECTED, "writeGenerated", methodDescriptor, methodSignature,
 									new String[] { FIELD_EXCEPTION_CLASS });
 		BoxingHelper boxingHelper = new BoxingHelper(mv);
-		
-		String generatedClassName = PACKAGE_NAME + "/" + className;
-		
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitFieldInsn(Opcodes.GETFIELD, generatedClassName, "typedTarget", targetSignature);
-		mv.visitVarInsn(Opcodes.ASTORE, 3);
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
 
-		// The last label is for the default switch
-		Label[] labels = new Label[fields.size()];
-		Label errorLabel = new Label();
-		Label returnLabel = new Label();
-		
-		// Generate labels
+		String generatedClassName = PACKAGE_NAME + "/" + className;
+
+		mv.visitCode();
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitFieldInsn($Opcodes.GETFIELD, generatedClassName, "typedTarget", targetSignature);
+		mv.visitVarInsn($Opcodes.ASTORE, 3);
+		mv.visitVarInsn($Opcodes.ILOAD, 1);
+
+		// The last $Label is for the default switch
+		$Label[] $Labels = new $Label[fields.size()];
+		$Label error$Label = new $Label();
+		$Label return$Label = new $Label();
+
+		// Generate $Labels
 		for (int i = 0; i < fields.size(); i++) {
-			labels[i] = new Label();
+			$Labels[i] = new $Label();
 		}
-		
-		mv.visitTableSwitchInsn(0, labels.length - 1, errorLabel, labels);
-		
+
+		mv.visitTableSwitchInsn(0, $Labels.length - 1, error$Label, $Labels);
+
 		for (int i = 0; i < fields.size(); i++) {
-			
+
 			Field field = fields.get(i);
 			Class<?> outputType = field.getType();
 			Class<?> inputType = Primitives.wrap(outputType);
-			String typeDescriptor = Type.getDescriptor(outputType);
+			String typeDescriptor = $Type.getDescriptor(outputType);
 			String inputPath = inputType.getName().replace('.', '/');
-			
-			mv.visitLabel(labels[i]);
-			
+
+			mv.visitLabel($Labels[i]);
+
 			// Push the compare object
 			if (i == 0)
-				mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { targetName }, 0, null);
+				mv.visitFrame($Opcodes.F_APPEND, 1, new Object[] { targetName }, 0, null);
 			else
-				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-			
+				mv.visitFrame($Opcodes.F_SAME, 0, null, 0, null);
+
 			// Only write to public non-final fields
 			if (isPublic(field) && isNonFinal(field)) {
-				mv.visitVarInsn(Opcodes.ALOAD, 3);
-				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				
+				mv.visitVarInsn($Opcodes.ALOAD, 3);
+				mv.visitVarInsn($Opcodes.ALOAD, 2);
+
 				if (!outputType.isPrimitive())
-					mv.visitTypeInsn(Opcodes.CHECKCAST, inputPath);
+					mv.visitTypeInsn($Opcodes.CHECKCAST, inputPath);
 				else
-					boxingHelper.unbox(Type.getType(outputType));
-				
-				mv.visitFieldInsn(Opcodes.PUTFIELD, targetName, field.getName(), typeDescriptor);
-			
+					boxingHelper.unbox($Type.getType(outputType));
+
+				mv.visitFieldInsn($Opcodes.PUTFIELD, targetName, field.getName(), typeDescriptor);
+
 			} else {
 				// Use reflection. We don't have a choice, unfortunately.
-				mv.visitVarInsn(Opcodes.ALOAD, 0);
-				mv.visitVarInsn(Opcodes.ILOAD, 1);
-				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, generatedClassName, "writeReflected", "(ILjava/lang/Object;)V");
+				mv.visitVarInsn($Opcodes.ALOAD, 0);
+				mv.visitVarInsn($Opcodes.ILOAD, 1);
+				mv.visitVarInsn($Opcodes.ALOAD, 2);
+				mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, generatedClassName, "writeReflected", "(ILjava/lang/Object;)V");
 			}
-		
-			mv.visitJumpInsn(Opcodes.GOTO, returnLabel);
+
+			mv.visitJumpInsn($Opcodes.GOTO, return$Label);
 		}
-		
-		mv.visitLabel(errorLabel);
-		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		mv.visitTypeInsn(Opcodes.NEW, FIELD_EXCEPTION_CLASS);
-		mv.visitInsn(Opcodes.DUP);
-		mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
-		mv.visitInsn(Opcodes.DUP);
+
+		mv.visitLabel(error$Label);
+		mv.visitFrame($Opcodes.F_SAME, 0, null, 0, null);
+		mv.visitTypeInsn($Opcodes.NEW, FIELD_EXCEPTION_CLASS);
+		mv.visitInsn($Opcodes.DUP);
+		mv.visitTypeInsn($Opcodes.NEW, "java/lang/StringBuilder");
+		mv.visitInsn($Opcodes.DUP);
 		mv.visitLdcInsn("Invalid index ");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
-		mv.visitInsn(Opcodes.ATHROW);
-		
-		mv.visitLabel(returnLabel);
-		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitInsn(Opcodes.ARETURN);
+		mv.visitMethodInsn($Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
+		mv.visitVarInsn($Opcodes.ILOAD, 1);
+		mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
+		mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
+		mv.visitMethodInsn($Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
+		mv.visitInsn($Opcodes.ATHROW);
+
+		mv.visitLabel(return$Label);
+		mv.visitFrame($Opcodes.F_SAME, 0, null, 0, null);
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitInsn($Opcodes.ARETURN);
 		mv.visitMaxs(5, 4);
 		mv.visitEnd();
 	}
 
-	private void createReadMethod(ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "readGenerated", "(I)Ljava/lang/Object;", null,
+	private void createReadMethod($ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
+		$MethodVisitor mv = cw.visitMethod($Opcodes.ACC_PROTECTED, "readGenerated", "(I)Ljava/lang/Object;", null,
 									new String[] { "com/comphenix/protocol/reflect/FieldAccessException" });
 		BoxingHelper boxingHelper = new BoxingHelper(mv);
-		
-		String generatedClassName = PACKAGE_NAME + "/" + className;
-		
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitFieldInsn(Opcodes.GETFIELD, generatedClassName, "typedTarget", targetSignature);
-		mv.visitVarInsn(Opcodes.ASTORE, 2);
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
 
-		// The last label is for the default switch
-		Label[] labels = new Label[fields.size()];
-		Label errorLabel = new Label();
-		
-		// Generate labels
+		String generatedClassName = PACKAGE_NAME + "/" + className;
+
+		mv.visitCode();
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitFieldInsn($Opcodes.GETFIELD, generatedClassName, "typedTarget", targetSignature);
+		mv.visitVarInsn($Opcodes.ASTORE, 2);
+		mv.visitVarInsn($Opcodes.ILOAD, 1);
+
+		// The last $Label is for the default switch
+		$Label[] $Labels = new $Label[fields.size()];
+		$Label error$Label = new $Label();
+
+		// Generate $Labels
 		for (int i = 0; i < fields.size(); i++) {
-			labels[i] = new Label();
+			$Labels[i] = new $Label();
 		}
-		
-		mv.visitTableSwitchInsn(0, fields.size() - 1, errorLabel, labels);
-		
+
+		mv.visitTableSwitchInsn(0, fields.size() - 1, error$Label, $Labels);
+
 		for (int i = 0; i < fields.size(); i++) {
-			
+
 			Field field = fields.get(i);
 			Class<?> outputType = field.getType();
-			String typeDescriptor = Type.getDescriptor(outputType);
-			
-			mv.visitLabel(labels[i]);
-			
+			String typeDescriptor = $Type.getDescriptor(outputType);
+
+			mv.visitLabel($Labels[i]);
+
 			// Push the compare object
 			if (i == 0)
-				mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { targetName }, 0, null);
+				mv.visitFrame($Opcodes.F_APPEND, 1, new Object[] { targetName }, 0, null);
 			else
-				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-			
+				mv.visitFrame($Opcodes.F_SAME, 0, null, 0, null);
+
 			// Note that byte code cannot access non-public fields
 			if (isPublic(field)) {
-				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				mv.visitFieldInsn(Opcodes.GETFIELD, targetName, field.getName(), typeDescriptor);
-				
-				boxingHelper.box(Type.getType(outputType));
+				mv.visitVarInsn($Opcodes.ALOAD, 2);
+				mv.visitFieldInsn($Opcodes.GETFIELD, targetName, field.getName(), typeDescriptor);
+
+				boxingHelper.box($Type.getType(outputType));
 			} else {
 				// We have to use reflection for private and protected fields.
-				mv.visitVarInsn(Opcodes.ALOAD, 0);
-				mv.visitVarInsn(Opcodes.ILOAD, 1);
-				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, generatedClassName, "readReflected", "(I)Ljava/lang/Object;");
+				mv.visitVarInsn($Opcodes.ALOAD, 0);
+				mv.visitVarInsn($Opcodes.ILOAD, 1);
+				mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, generatedClassName, "readReflected", "(I)Ljava/lang/Object;");
 			}
-			
-			mv.visitInsn(Opcodes.ARETURN);
+
+			mv.visitInsn($Opcodes.ARETURN);
 		}
 
-		mv.visitLabel(errorLabel);
-		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		mv.visitTypeInsn(Opcodes.NEW, FIELD_EXCEPTION_CLASS);
-		mv.visitInsn(Opcodes.DUP);
-		mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
-		mv.visitInsn(Opcodes.DUP);
+		mv.visitLabel(error$Label);
+		mv.visitFrame($Opcodes.F_SAME, 0, null, 0, null);
+		mv.visitTypeInsn($Opcodes.NEW, FIELD_EXCEPTION_CLASS);
+		mv.visitInsn($Opcodes.DUP);
+		mv.visitTypeInsn($Opcodes.NEW, "java/lang/StringBuilder");
+		mv.visitInsn($Opcodes.DUP);
 		mv.visitLdcInsn("Invalid index ");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
-		mv.visitInsn(Opcodes.ATHROW);
+		mv.visitMethodInsn($Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
+		mv.visitVarInsn($Opcodes.ILOAD, 1);
+		mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
+		mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
+		mv.visitMethodInsn($Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
+		mv.visitInsn($Opcodes.ATHROW);
 		mv.visitMaxs(5, 3);
 		mv.visitEnd();
 	}
 
-	private void createConstructor(ClassWriter cw, String className, String targetSignature, String targetName) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>",
+	private void createConstructor($ClassWriter cw, String className, String targetSignature, String targetName) {
+		$MethodVisitor mv = cw.visitMethod($Opcodes.ACC_PUBLIC, "<init>",
 				"(L" + SUPER_CLASS + ";L" + PACKAGE_NAME + "/StructureCompiler;)V",
 				"(L" + SUPER_CLASS + "<Ljava/lang/Object;>;L" + PACKAGE_NAME + "/StructureCompiler;)V", null);
 		String fullClassName = PACKAGE_NAME + "/" + className;
-	
+
 		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, COMPILED_CLASS, "<init>", "()V");
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fullClassName, "initialize", "(L" + SUPER_CLASS + ";)V");
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, SUPER_CLASS, "getTarget", "()Ljava/lang/Object;");
-		mv.visitFieldInsn(Opcodes.PUTFIELD, fullClassName, "target", "Ljava/lang/Object;");
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitFieldInsn(Opcodes.GETFIELD, fullClassName, "target", "Ljava/lang/Object;");
-		mv.visitTypeInsn(Opcodes.CHECKCAST, targetName);
-		mv.visitFieldInsn(Opcodes.PUTFIELD, fullClassName, "typedTarget", targetSignature);
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 2);
-		mv.visitFieldInsn(Opcodes.PUTFIELD, fullClassName, "compiler", "L" + PACKAGE_NAME + "/StructureCompiler;");
-		mv.visitInsn(Opcodes.RETURN);
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitMethodInsn($Opcodes.INVOKESPECIAL, COMPILED_CLASS, "<init>", "()V");
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitVarInsn($Opcodes.ALOAD, 1);
+		mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, fullClassName, "initialize", "(L" + SUPER_CLASS + ";)V");
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitVarInsn($Opcodes.ALOAD, 1);
+		mv.visitMethodInsn($Opcodes.INVOKEVIRTUAL, SUPER_CLASS, "getTarget", "()Ljava/lang/Object;");
+		mv.visitFieldInsn($Opcodes.PUTFIELD, fullClassName, "target", "Ljava/lang/Object;");
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitFieldInsn($Opcodes.GETFIELD, fullClassName, "target", "Ljava/lang/Object;");
+		mv.visitTypeInsn($Opcodes.CHECKCAST, targetName);
+		mv.visitFieldInsn($Opcodes.PUTFIELD, fullClassName, "typedTarget", targetSignature);
+		mv.visitVarInsn($Opcodes.ALOAD, 0);
+		mv.visitVarInsn($Opcodes.ALOAD, 2);
+		mv.visitFieldInsn($Opcodes.PUTFIELD, fullClassName, "compiler", "L" + PACKAGE_NAME + "/StructureCompiler;");
+		mv.visitInsn($Opcodes.RETURN);
 		mv.visitMaxs(2, 3);
 		mv.visitEnd();
 	}

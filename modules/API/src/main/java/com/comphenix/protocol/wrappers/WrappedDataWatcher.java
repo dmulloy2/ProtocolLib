@@ -16,21 +16,8 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.apache.commons.lang.Validate;
-import org.bukkit.entity.Entity;
-import org.bukkit.inventory.ItemStack;
+import java.lang.reflect.*;
+import java.util.*;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -46,6 +33,10 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableBiMap;
+
+import org.apache.commons.lang.Validate;
+import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Represents a DataWatcher in 1.8 thru 1.10
@@ -64,7 +55,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	private static FieldAccessor MAP_FIELD = null;
 
 	private static ConstructorAccessor constructor = null;
-	private static ConstructorAccessor lightningConstructor = null;
+	private static ConstructorAccessor eggConstructor = null;
 
 	private static Object fakeEntity = null;
 
@@ -136,12 +127,12 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		}
 
 		// We can create a fake lightning strike without it affecting anything
-		if (lightningConstructor == null) {
-			lightningConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getMinecraftClass("EntityLightning"),
-					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class, boolean.class);
+		if (eggConstructor == null) {
+			eggConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getMinecraftClass("EntityEgg"),
+					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class);
 		}
 
-		return fakeEntity = lightningConstructor.invoke(null, 0, 0, 0, true);
+		return fakeEntity = eggConstructor.invoke(null, 0, 0, 0);
 	}
 
 	// ---- Collection Methods
@@ -419,7 +410,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * Sets the DataWatcher Item at a given index to a new value.
 	 * 
 	 * @param index Index of the object to set
-	 * @param Serializer Serializer from {@link Serializer#get(Class)}
+	 * @param serializer Serializer from {@link Registry#get(Class)}
 	 * @param value New value
 	 * @param update Whether or not to inform the client
 	 * 
@@ -463,7 +454,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @param value Wrapped value
 	 * @param update Whether or not to inform the client
 	 * 
-	 * @see {@link #setObject(WrappedDataWatcherObject, Object)}
+	 * @see #setObject(WrappedDataWatcherObject, Object)
 	 */
 	public void setObject(WrappedDataWatcherObject object, WrappedWatchableObject value, boolean update) {
 		setObject(object, value.getRawValue(), update);
@@ -893,7 +884,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 *   <li>Float</li>
 	 *   <li>String</li>
 	 *   <li>IChatBaseComponent</li>
-	 *   <li>Optional&lt;ItemStack&gt;</li>
+	 *   <li>ItemStack</li>
 	 *   <li>Optional&lt;IBlockData&gt;</li>
 	 *   <li>Boolean</li>
 	 *   <li>Vector3f</li>
@@ -901,6 +892,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 *   <li>Optional&lt;BlockPosition&gt;</li>
 	 *   <li>EnumDirection</li>
 	 *   <li>Optional&lt;UUID&gt;</li>
+	 *   <li>NBTTagCompound</li>
 	 * </ul>
 	 *
 	 * @author dmulloy2
@@ -1077,6 +1069,14 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 */
 		public static Serializer getUUIDSerializer(boolean optional) {
 			return get(UUID.class, optional);
+		}
+
+		/**
+		 * Gets the serializer for NBT Compound tags
+		 * @return The serializer
+		 */
+		public static Serializer getNBTCompoundSerializer() {
+			return get(MinecraftReflection.getNBTCompoundClass(), false);
 		}
 	}
 }

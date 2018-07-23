@@ -4,15 +4,10 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import net.sf.cglib.asm.ClassReader;
-import net.sf.cglib.asm.MethodVisitor;
-import net.sf.cglib.asm.Opcodes;
-import net.sf.cglib.asm.Type;
-
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod.AsmOpcodes;
-import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
-import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
 import com.google.common.collect.Lists;
+
+import net.sf.cglib.asm.*;
 
 public class ClassAnalyser {
 	/**
@@ -31,11 +26,11 @@ public class ClassAnalyser {
 			
 			public static AsmOpcodes fromIntOpcode(int opcode) {
 				switch (opcode) {
-					case Opcodes.INVOKEVIRTUAL: return AsmOpcodes.INVOKE_VIRTUAL;
-					case Opcodes.INVOKESPECIAL: return AsmOpcodes.INVOKE_SPECIAL;
-					case Opcodes.INVOKESTATIC: return AsmOpcodes.INVOKE_STATIC;
-					case Opcodes.INVOKEINTERFACE: return AsmOpcodes.INVOKE_INTERFACE;
-					case Opcodes.INVOKEDYNAMIC: return AsmOpcodes.INVOKE_DYNAMIC;
+					case $Opcodes.INVOKEVIRTUAL: return AsmOpcodes.INVOKE_VIRTUAL;
+					case $Opcodes.INVOKESPECIAL: return AsmOpcodes.INVOKE_SPECIAL;
+					case $Opcodes.INVOKESTATIC: return AsmOpcodes.INVOKE_STATIC;
+					case $Opcodes.INVOKEINTERFACE: return AsmOpcodes.INVOKE_INTERFACE;
+					case $Opcodes.INVOKEDYNAMIC: return AsmOpcodes.INVOKE_DYNAMIC;
 					default: throw new IllegalArgumentException("Unknown opcode: " + opcode);
 				}
 			}
@@ -109,30 +104,29 @@ public class ClassAnalyser {
 	 * @return The method calls.
 	 * @throws IOException Cannot access the parent class.
 	 */
-	public List<AsmMethod> getMethodCalls(Class<?> clazz, Method method) throws IOException {
-		final ClassReader reader = new ClassReader(clazz.getCanonicalName());
+	private List<AsmMethod> getMethodCalls(Class<?> clazz, Method method) throws IOException {
+		final $ClassReader reader = new $ClassReader(clazz.getCanonicalName());
 		final List<AsmMethod> output = Lists.newArrayList();
 		
 		// The method we are looking for
 		final String methodName = method.getName();
-		final String methodDescription = Type.getMethodDescriptor(method);
-		
-		reader.accept(new EmptyClassVisitor() {
+		final String methodDescription = $Type.getMethodDescriptor(method);
+
+		reader.accept(new $ClassVisitor($Opcodes.ASM5) {
 			@Override
-			public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-				// Check method
+			public $MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
 				if (methodName.equals(name) && methodDescription.equals(desc)) {
-					return new EmptyMethodVisitor() {
+					return new $MethodVisitor($Opcodes.ASM5) {
 						@Override
-						public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+						public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean flag) {
 							output.add(new AsmMethod(AsmOpcodes.fromIntOpcode(opcode), owner, methodName, desc));
 						}
 					};
 				}
+
 				return null;
 			}
-			
-		}, ClassReader.EXPAND_FRAMES);
+		}, $ClassReader.EXPAND_FRAMES);
 		return output;
 	}
 }

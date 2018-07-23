@@ -43,7 +43,7 @@ public class PlayerInfoDataTest {
 		WrappedChatComponent displayName = WrappedChatComponent.fromText("Name's Name");
 
 		PlayerInfoData data = new PlayerInfoData(profile, 42, NativeGameMode.CREATIVE, displayName);
-		Object generic = PlayerInfoData.getConverter().getGeneric(MinecraftReflection.getPlayerInfoDataClass(), data);
+		Object generic = PlayerInfoData.getConverter().getGeneric(data);
 		PlayerInfoData back = PlayerInfoData.getConverter().getSpecific(generic);
 
 		assertEquals(data, back);

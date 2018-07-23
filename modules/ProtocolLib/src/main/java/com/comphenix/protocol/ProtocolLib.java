@@ -52,7 +52,6 @@ import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -155,13 +154,6 @@ public class ProtocolLib extends JavaPlugin {
 		logger = getLogger();
 		ProtocolLogger.init(this);
 
-		int java = Util.getJavaVersion();
-		if (java != -1 && java < 8 && !getConfig().getBoolean("ignoreJava", false)) {
-			logger.warning("Detected outdated Java version: Java " + java);
-			logger.warning("Future versions of ProtocolLib and Minecraft will require Java 8 or higher");
-			logger.warning("Update as soon as possible.");
-		}
-
 		// Initialize enhancer factory
 		EnhancerFactory.getInstance().setClassLoader(getClassLoader());
 
@@ -245,8 +237,6 @@ public class ProtocolLib extends JavaPlugin {
 
 		} catch (OutOfMemoryError e) {
 			throw e;
-		} catch (ThreadDeath e) {
-			throw e;
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
 			disablePlugin();
@@ -275,8 +265,6 @@ public class ProtocolLib extends JavaPlugin {
 					break;
 				}
 			} catch (OutOfMemoryError e) {
-				throw e;
-			} catch (ThreadDeath e) {
 				throw e;
 			} catch (LinkageError e) {
 				logger.warning("Failed to register command " + command.name() + ": " + e);
@@ -418,8 +406,6 @@ public class ProtocolLib extends JavaPlugin {
 			createPacketTask(server);
 		} catch (OutOfMemoryError e) {
 			throw e;
-		} catch (ThreadDeath e) {
-			throw e;
 		} catch (Throwable e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_ENABLE_ERROR).error(e));
 			disablePlugin();
@@ -432,8 +418,6 @@ public class ProtocolLib extends JavaPlugin {
 				statistics = new Statistics(this);
 			}
 		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
 			throw e;
 		} catch (IOException e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_METRICS_IO_ERROR).error(e).callerParam(statistics));
@@ -501,7 +485,7 @@ public class ProtocolLib extends JavaPlugin {
 
 			File[] candidates = pluginFolder.listFiles();
 			if (candidates != null) {
-				for (File candidate : pluginFolder.listFiles()) {
+				for (File candidate : candidates) {
 					if (candidate.isFile() && !candidate.equals(loadedFile)) {
 						Matcher match = ourPlugin.matcher(candidate.getName());
 						if (match.matches()) {
@@ -583,8 +567,6 @@ public class ProtocolLib extends JavaPlugin {
 				}
 			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
 		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
 			if (packetTask == -1) {
@@ -671,5 +653,9 @@ public class ProtocolLib extends JavaPlugin {
 	 */
 	public Statistics getStatistics() {
 		return statistics;
+	}
+
+	public ProtocolConfig getProtocolConfig() {
+		return config;
 	}
 }

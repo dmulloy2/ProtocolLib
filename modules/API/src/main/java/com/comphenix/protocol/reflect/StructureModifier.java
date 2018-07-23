@@ -19,10 +19,7 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
@@ -263,6 +260,24 @@ public class StructureModifier<TField> {
 			return null;
 		}
 	}
+
+	/**
+	 * Reads the value of a field only if it exists. If the field does not exist, an empty {@link Optional} is returned.
+	 * <p>
+	 * This method has the same functionality as {@link #readSafely(int)}, but enforces null checks by way of an Optional.
+	 * It will eventually become the preferred method of reading fields.
+	 *
+	 * @param fieldIndex index of the field
+	 * @return An optional that may contain the value of the field
+	 * @see #readSafely(int)
+	 */
+	public Optional<TField> optionRead(int fieldIndex) {
+		try {
+			return Optional.ofNullable(read(fieldIndex));
+		} catch (FieldAccessException ex) {
+			return Optional.empty();
+		}
+	}
 	
 	/**
 	 * Determine whether or not a field is read-only (final).
@@ -352,7 +367,7 @@ public class StructureModifier<TField> {
 			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
 
 		// Use the converter, if it exists
-		Object obj = needConversion() ? converter.getGeneric(getFieldType(fieldIndex), value) : value;
+		Object obj = needConversion() ? converter.getGeneric(value) : value;
 
 		try {
 			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
@@ -453,6 +468,17 @@ public class StructureModifier<TField> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter) {
+		if (fieldType == null) {
+			// It's not supported in this version, so return an empty modifier
+			return new StructureModifier<T>() {
+				@Override
+				public T read(int index) { return null; }
+
+				@Override
+				public StructureModifier<T> write(int index, T value) { return this; }
+			};
+		}
+
 		StructureModifier<T> result = subtypeCache.get(fieldType);
 		
 		// Do we need to update the cache?
@@ -462,7 +488,7 @@ public class StructureModifier<TField> {
 			int index = 0;
 			
 			for (Field field : data) {
-				if (fieldType != null && fieldType.isAssignableFrom(field.getType())) {
+				if (fieldType.isAssignableFrom(field.getType())) {
 					filtered.add(field);
 					
 					// Don't use the original index
@@ -476,14 +502,12 @@ public class StructureModifier<TField> {
 			
 			// Cache structure modifiers
 			result = withFieldType(fieldType, filtered, defaults);
-			
-			if (fieldType != null) {
-				subtypeCache.put(fieldType, result);
+
+			subtypeCache.put(fieldType, result);
 				
-				// Automatically compile the structure modifier
-				if (useStructureCompiler && BackgroundCompiler.getInstance() != null)
-					BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
-			}
+			// Automatically compile the structure modifier
+			if (useStructureCompiler && BackgroundCompiler.getInstance() != null)
+				BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
 		}
 		
 		// Add the target too

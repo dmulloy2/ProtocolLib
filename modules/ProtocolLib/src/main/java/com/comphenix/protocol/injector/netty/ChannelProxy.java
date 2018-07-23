@@ -16,6 +16,15 @@
  */
 package com.comphenix.protocol.injector.netty;
 
+import java.lang.reflect.Field;
+import java.net.SocketAddress;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.google.common.collect.Maps;
+
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
@@ -27,15 +36,6 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
-
-import java.lang.reflect.Field;
-import java.net.SocketAddress;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.google.common.collect.Maps;
 
 public abstract class ChannelProxy implements Channel {
 	// Mark that a certain object does not contain a message field
@@ -331,4 +331,22 @@ public abstract class ChannelProxy implements Channel {
     public int compareTo(Channel o) {
 		return delegate.compareTo(o);
 	}
+	
+	/* Added in Netty 4.1, seem to be unused
+	public long bytesBeforeUnwritable() {
+		return delegate.bytesBeforeUnwritable();
+	}
+
+	public long bytesBeforeWritable() {
+		return delegate.bytesBeforeWritable();
+	}
+
+	public ChannelId id() {
+		return delegate.id();
+	}
+
+	public <T> boolean hasAttr(AttributeKey<T> key) {
+		return delegate.hasAttr(key);
+	}
+	*/
 }

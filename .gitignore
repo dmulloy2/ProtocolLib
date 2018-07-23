@@ -8,7 +8,7 @@
 .settings/
 bin/
 .idea/
-.iml
+*.iml
 .ipr
 .iws
 

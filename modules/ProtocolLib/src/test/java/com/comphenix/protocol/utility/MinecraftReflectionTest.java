@@ -1,25 +1,27 @@
 package com.comphenix.protocol.utility;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import net.minecraft.server.v1_11_R1.ChatComponentText;
-import net.minecraft.server.v1_11_R1.ChunkCoordIntPair;
-import net.minecraft.server.v1_11_R1.DataWatcher;
-import net.minecraft.server.v1_11_R1.IBlockData;
-import net.minecraft.server.v1_11_R1.IChatBaseComponent;
-import net.minecraft.server.v1_11_R1.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.v1_11_R1.NBTCompressedStreamTools;
-import net.minecraft.server.v1_11_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
-import net.minecraft.server.v1_11_R1.PlayerConnection;
-import net.minecraft.server.v1_11_R1.ServerPing;
-import net.minecraft.server.v1_11_R1.ServerPing.ServerData;
-import net.minecraft.server.v1_11_R1.ServerPing.ServerPingPlayerSample;
+import net.minecraft.server.v1_13_R1.ChatComponentText;
+import net.minecraft.server.v1_13_R1.ChunkCoordIntPair;
+import net.minecraft.server.v1_13_R1.DataWatcher;
+import net.minecraft.server.v1_13_R1.IBlockData;
+import net.minecraft.server.v1_13_R1.IChatBaseComponent;
+import net.minecraft.server.v1_13_R1.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.v1_13_R1.NBTCompressedStreamTools;
+import net.minecraft.server.v1_13_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_13_R1.PlayerConnection;
+import net.minecraft.server.v1_13_R1.ServerPing;
+import net.minecraft.server.v1_13_R1.ServerPing.ServerData;
+import net.minecraft.server.v1_13_R1.ServerPing.ServerPingPlayerSample;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.v1_13_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.AfterClass;
@@ -36,17 +38,17 @@ import com.mojang.authlib.GameProfile;
 public class MinecraftReflectionTest {
 
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializeItemMeta();
 	}
 
 	// Mocking objects
 	private interface FakeEntity {
-		public Entity getBukkitEntity();
+		Entity getBukkitEntity();
 	}
 
 	private interface FakeBlock {
-		public Block getBukkitEntity();
+		Block getBukkitEntity();
 	}
 
 	@AfterClass
@@ -134,9 +136,12 @@ public class MinecraftReflectionTest {
 
 	@Test
 	public void testItemStacks() {
-		ItemStack stack = new ItemStack(Material.GOLD_SWORD);
+		ItemStack stack = new ItemStack(Material.GOLDEN_SWORD);
 		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
 		assertEquals(stack, MinecraftReflection.getBukkitItemStack(nmsStack));
+
+		// The NMS handle for CraftItemStack is null with Material.AIR, make sure it is handled correctly
+		assertNotNull(MinecraftReflection.getMinecraftItemStack(CraftItemStack.asCraftCopy(new ItemStack(Material.AIR))));
 	}
 
 	@Test

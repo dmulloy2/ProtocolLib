@@ -3,11 +3,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.comphenix.protocol</groupId>
   <artifactId>ProtocolLib-Parent</artifactId>
-  <version>v4-SNAPSHOT</version>
+  <version>4.4.0-SNAPSHOT</version>
   <name>ProtocolLib-Parent</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spigotVersion>1.13-pre7-R0.1-SNAPSHOT</spigotVersion>
   </properties>
 
   <modules>
@@ -23,24 +24,58 @@
   <distributionManagement>
     <repository>
       <id>dmulloy2-releases</id>
-      <url>http://repo.dmulloy2.net/content/repositories/releases/</url>
+      <url>http://repo.dmulloy2.net/nexus/repository/releases/</url>
     </repository>
     <snapshotRepository>
       <id>dmulloy2-snapshots</id>
-      <url>http://repo.dmulloy2.net/content/repositories/snapshots/</url>
+      <url>http://repo.dmulloy2.net/nexus/repository/snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
 
   <repositories>
     <repository>
       <id>dmulloy2-repo</id>
-      <url>http://repo.dmulloy2.net/content/groups/public/</url>
+      <url>http://repo.dmulloy2.net/nexus/repository/public/</url>
     </repository>
     <repository>
       <id>spigot-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
   </repositories>
+  
+  <dependencies>
+    <!-- Compile with the old version of Netty for backwards compat -->
+    <dependency>
+	  <groupId>io.netty</groupId>
+	  <artifactId>netty-all</artifactId>
+	  <version>4.0.23.Final</version>
+	  <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>${spigotVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot</artifactId>
+      <version>${spigotVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib-nodep</artifactId>
+      <version>3.2.5</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.comphenix.executors</groupId>
+      <artifactId>BukkitExecutors</artifactId>
+      <version>1.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
 
   <build>
     <defaultGoal>clean package install</defaultGoal>

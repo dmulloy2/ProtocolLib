@@ -238,12 +238,7 @@ public class ListeningWhitelist {
 		if (this == EMPTY_WHITELIST)
 			return "EMPTY_WHITELIST";
 		else
-			return Objects.toStringHelper(this).
-				add("priority", priority).
-				add("packets", types).
-				add("gamephase", gamePhase).
-				add("options", options).
-				toString();
+			return "ListeningWhitelist[priority=" + priority + ", packets=" + types + ", gamephase=" + gamePhase + ", options=" + options + "]";
 	}
 	
 	/**

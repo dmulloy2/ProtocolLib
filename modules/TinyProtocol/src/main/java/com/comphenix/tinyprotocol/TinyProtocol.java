@@ -105,8 +105,7 @@ public abstract class TinyProtocol {
 		} catch (IllegalArgumentException ex) {
 			// Damn you, late bind
 			plugin.getLogger().info("[TinyProtocol] Delaying server channel injection due to late bind.");
-			
-			// Damn you, late bind
+
 			new BukkitRunnable() {
 				@Override
 				public void run() {
@@ -129,7 +128,7 @@ public abstract class TinyProtocol {
 					synchronized (networkManagers) {
 						// Stop injecting channels
 						if (!closed) {
-							injectChannelInternal(channel);
+							channel.eventLoop().submit(() -> injectChannelInternal(channel));
 						}
 					}
 				} catch (Exception e) {
@@ -256,13 +255,12 @@ public abstract class TinyProtocol {
 	 * <p>
 	 * Note that this is not executed on the main thread.
 	 * 
-	 * @param reciever - the receiving player, NULL for early login/status packets.
+	 * @param receiver - the receiving player, NULL for early login/status packets.
 	 * @param channel - the channel that received the packet. Never NULL.
-	 * @param remoteAddress - remote address of the sending client. Never NULL.
 	 * @param packet - the packet being sent.
 	 * @return The packet to send instead, or NULL to cancel the transmission.
 	 */
-	public Object onPacketOutAsync(Player reciever, Channel channel, Object packet) {
+	public Object onPacketOutAsync(Player receiver, Channel channel, Object packet) {
 		return packet;
 	}
 
@@ -283,7 +281,7 @@ public abstract class TinyProtocol {
 	/**
 	 * Send a packet to a particular player.
 	 * <p>
-	 * Note that {@link #onPacketOutAsync(Player, Object)} will be invoked with this packet.
+	 * Note that {@link #onPacketOutAsync(Player, Channel, Object)} will be invoked with this packet.
 	 * 
 	 * @param player - the destination player.
 	 * @param packet - the packet to send.
@@ -295,7 +293,7 @@ public abstract class TinyProtocol {
 	/**
 	 * Send a packet to a particular client.
 	 * <p>
-	 * Note that {@link #onPacketOutAsync(Player, Object)} will be invoked with this packet.
+	 * Note that {@link #onPacketOutAsync(Player, Channel, Object)} will be invoked with this packet.
 	 * 
 	 * @param channel - client identified by a channel.
 	 * @param packet - the packet to send.
@@ -307,7 +305,7 @@ public abstract class TinyProtocol {
 	/**
 	 * Pretend that a given packet has been received from a player.
 	 * <p>
-	 * Note that {@link #onPacketInAsync(Player, Object)} will be invoked with this packet.
+	 * Note that {@link #onPacketInAsync(Player, Channel, Object)} will be invoked with this packet.
 	 * 
 	 * @param player - the player that sent the packet.
 	 * @param packet - the packet that will be received by the server.
@@ -319,7 +317,7 @@ public abstract class TinyProtocol {
 	/**
 	 * Pretend that a given packet has been received from a given client.
 	 * <p>
-	 * Note that {@link #onPacketInAsync(Player, Object)} will be invoked with this packet.
+	 * Note that {@link #onPacketInAsync(Player, Channel, Object)} will be invoked with this packet.
 	 * 
 	 * @param channel - client identified by a channel.
 	 * @param packet - the packet that will be received by the server.
@@ -353,7 +351,7 @@ public abstract class TinyProtocol {
 	/**
 	 * Add a custom channel handler to the given channel.
 	 * 
-	 * @param player - the channel to inject.
+	 * @param channel - the channel to inject.
 	 * @return The intercepted channel, or NULL if it has already been injected.
 	 */
 	public void injectChannel(Channel channel) {
@@ -363,7 +361,7 @@ public abstract class TinyProtocol {
 	/**
 	 * Add a custom channel handler to the given channel.
 	 * 
-	 * @param player - the channel to inject.
+	 * @param channel - the channel to inject.
 	 * @return The packet interceptor.
 	 */
 	private PacketInterceptor injectChannelInternal(Channel channel) {

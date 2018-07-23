@@ -16,24 +16,21 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-
 import java.util.UUID;
-
-import net.minecraft.server.v1_11_R1.EntityLightning;
-
-import org.bukkit.craftbukkit.v1_11_R1.entity.CraftLightningStrike;
-import org.bukkit.entity.Entity;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
+
+import net.minecraft.server.v1_13_R1.EntityEgg;
+
+import org.bukkit.craftbukkit.v1_13_R1.entity.CraftEgg;
+import org.bukkit.craftbukkit.v1_13_R1.entity.CraftEntity;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author dmulloy2
@@ -49,9 +46,9 @@ public class WrappedDataWatcherTest {
 	@Test
 	public void testBytes() {
 		// Create a fake lightning strike and get its watcher
-		EntityLightning lightning = new EntityLightning(null, 0, 0, 0, true);
-		Entity entity = new CraftLightningStrike(null, lightning);
-		WrappedDataWatcher wrapper = WrappedDataWatcher.getEntityWatcher(entity);
+		EntityEgg nmsEgg = new EntityEgg(null, 0, 0, 0);
+		CraftEntity craftEgg = new CraftEgg(null, nmsEgg);
+		WrappedDataWatcher wrapper = WrappedDataWatcher.getEntityWatcher(craftEgg);
 
 		WrappedWatchableObject watchable = wrapper.getWatchableObject(0);
 		WrappedDataWatcherObject object = watchable.getWatcherObject();
@@ -90,8 +87,8 @@ public class WrappedDataWatcherTest {
 
 	@Test
 	public void testSerializers() {
-		Serializer blockPos = Registry.get(net.minecraft.server.v1_11_R1.BlockPosition.class, false);
-		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_11_R1.BlockPosition.class, true);
+		Serializer blockPos = Registry.get(net.minecraft.server.v1_13_R1.BlockPosition.class, false);
+		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_13_R1.BlockPosition.class, true);
 		assertNotSame(blockPos, optionalBlockPos);
 
 		// assertNull(Registry.get(ItemStack.class, false));

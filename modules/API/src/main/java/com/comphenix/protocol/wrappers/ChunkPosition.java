@@ -154,7 +154,7 @@ public class ChunkPosition {
 	public static EquivalentConverter<ChunkPosition> getConverter() {
 		return new EquivalentConverter<ChunkPosition>() {
 			@Override
-			public Object getGeneric(Class<?> genericType, ChunkPosition specific) {
+			public Object getGeneric(ChunkPosition specific) {
 				if (chunkPositionConstructor == null) {
 					try {
 						chunkPositionConstructor = MinecraftReflection.getChunkPositionClass().
@@ -177,7 +177,7 @@ public class ChunkPosition {
 			public ChunkPosition getSpecific(Object generic) {
 				if (MinecraftReflection.isChunkPosition(generic)) {
 					// Use a structure modifier
-					intModifier = new StructureModifier<Object>(generic.getClass(), null, false).withType(int.class);
+					intModifier = new StructureModifier<>(generic.getClass(), null, false).withType(int.class);
 					
 					// Damn it all
 					if (intModifier.size() < 3) {

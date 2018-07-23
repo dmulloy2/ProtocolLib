@@ -4,24 +4,23 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentMap;
 
-import net.sf.cglib.asm.ClassReader;
-import net.sf.cglib.asm.MethodVisitor;
-import net.sf.cglib.asm.Opcodes;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.EnhancerFactory;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.collect.Maps;
+
+import net.sf.cglib.asm.$ClassReader;
+import net.sf.cglib.asm.$ClassVisitor;
+import net.sf.cglib.asm.$MethodVisitor;
+import net.sf.cglib.asm.$Opcodes;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.block.BlockState;
-
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.compiler.EmptyClassVisitor;
-import com.comphenix.protocol.reflect.compiler.EmptyMethodVisitor;
-import com.comphenix.protocol.utility.EnhancerFactory;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.collect.Maps;
 
 /**
  * Manipulate tile entities.
@@ -90,26 +89,26 @@ class TileEntityAccessor<T extends BlockState> {
 	private void findMethodsUsingASM() throws IOException {
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 		final Class<?> tileEntityClass = MinecraftReflection.getTileEntityClass();
-		final ClassReader reader = new ClassReader(tileEntityClass.getCanonicalName());
+		final $ClassReader reader = new $ClassReader(tileEntityClass.getCanonicalName());
 
 		final String tagCompoundName = getJarName(MinecraftReflection.getNBTCompoundClass());
 		final String expectedDesc = "(L" + tagCompoundName + ";)";
 
-		reader.accept(new EmptyClassVisitor() {
+		reader.accept(new $ClassVisitor($Opcodes.ASM5) {
 			@Override
-			public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+			public $MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
 				final String methodName = name;
 
 				// Detect read/write calls to NBTTagCompound
 				if (desc.startsWith(expectedDesc)) {
-					return new EmptyMethodVisitor() {
+					return new $MethodVisitor($Opcodes.ASM5) {
 						private int readMethods;
 						private int writeMethods;
 
 						@Override
-						public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+						public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean intf) {
 							// This must be a virtual call on NBTTagCompound that accepts a String
-							if (opcode == Opcodes.INVOKEVIRTUAL
+							if (opcode == $Opcodes.INVOKEVIRTUAL
 									&& tagCompoundName.equals(owner)
 									&& desc.startsWith("(Ljava/lang/String")) {
 
