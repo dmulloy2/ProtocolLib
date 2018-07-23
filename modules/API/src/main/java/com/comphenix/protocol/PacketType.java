@@ -413,12 +413,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
-			// TODO custom payload moved to the bottom after pre7
-			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x00, -0x01, "CustomPayload");
-			public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x01, 0x00, "Disconnect");
-			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x02, 0x01, "EncryptionBegin");
-			public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x03, 0x02, "Success");
-			public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x04, 0x03, "SetCompression");
+			public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "Disconnect");
+			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0x01, "EncryptionBegin");
+			public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, 0x02, "Success");
+			public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x03, 0x03, "SetCompression");
+			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x04, -0x01, "CustomPayload");
 
 			private final static Server INSTANCE = new Server();
 
@@ -440,10 +439,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
-			// TODO custom payload moved to the bottom after pre7
-			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x00, -0x01, "CustomPayload");
-			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x01, 0x00, "Start");
-			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x02, 0x01, "EncryptionBegin");
+			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "Start");
+			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0x01, "EncryptionBegin");
+			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, -0x01, "CustomPayload");
 
 			private final static Client INSTANCE = new Client();
 
