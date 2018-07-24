@@ -3,16 +3,16 @@ package com.comphenix.protocol.wrappers;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Function;
-
-import org.bukkit.GameMode;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
+
+import org.bukkit.GameMode;
 
 /**
  * Represents a generic enum converter.
@@ -22,26 +22,26 @@ public abstract class EnumWrappers {
 	public enum ClientCommand {
 		PERFORM_RESPAWN,
 		REQUEST_STATS,
-		OPEN_INVENTORY_ACHIEVEMENT;
+		OPEN_INVENTORY_ACHIEVEMENT
 	}
 
 	public enum ChatVisibility {
 		FULL,
 		SYSTEM,
-		HIDDEN;
+		HIDDEN
 	}
 
 	public enum Difficulty {
 		PEACEFUL,
 		EASY,
 		NORMAL,
-		HARD;
+		HARD
 	}
 
 	public enum EntityUseAction {
 		INTERACT,
 		ATTACK,
-		INTERACT_AT;
+		INTERACT_AT
 	}
 
 	/**
@@ -111,7 +111,7 @@ public abstract class EnumWrappers {
 		SUCCESSFULLY_LOADED,
 		DECLINED,
 		FAILED_DOWNLOAD,
-		ACCEPTED;
+		ACCEPTED
 	}
 
 	public enum PlayerInfoAction {
@@ -119,15 +119,16 @@ public abstract class EnumWrappers {
 		UPDATE_GAME_MODE,
 		UPDATE_LATENCY,
 		UPDATE_DISPLAY_NAME,
-		REMOVE_PLAYER;
+		REMOVE_PLAYER
 	}
 
 	public enum TitleAction {
 		TITLE,
 		SUBTITLE,
+		ACTIONBAR,
 		TIMES,
 		CLEAR,
-		RESET;
+		RESET
 	}
 
 	public enum WorldBorderAction {
@@ -136,13 +137,13 @@ public abstract class EnumWrappers {
 		SET_CENTER,
 		INITIALIZE,
 		SET_WARNING_TIME,
-		SET_WARNING_BLOCKS;
+		SET_WARNING_BLOCKS
 	}
 
 	public enum CombatEventType {
 		ENTER_COMBAT,
 		END_COMBAT,
-		ENTITY_DIED;
+		ENTITY_DIED
 	}
 
 	public enum PlayerDigType {
@@ -152,7 +153,7 @@ public abstract class EnumWrappers {
 		DROP_ALL_ITEMS,
 		DROP_ITEM,
 		RELEASE_USE_ITEM,
-		SWAP_HELD_ITEMS;
+		SWAP_HELD_ITEMS
 	}
 
 	public enum PlayerAction {
@@ -164,12 +165,12 @@ public abstract class EnumWrappers {
 		START_RIDING_JUMP,
 		STOP_RIDING_JUMP,
 		OPEN_INVENTORY,
-		START_FALL_FLYING;
+		START_FALL_FLYING
 	}
 
 	public enum ScoreboardAction {
 		CHANGE,
-		REMOVE;
+		REMOVE
 	}
 
 	public enum Particle {
@@ -227,8 +228,8 @@ public abstract class EnumWrappers {
 		private static final Map<Integer, Particle> BY_ID;
 
 		static {
-			BY_ID = new HashMap<Integer, Particle>();
-			BY_NAME = new HashMap<String, Particle>();
+			BY_ID = new HashMap<>();
+			BY_NAME = new HashMap<>();
 
 			for (Particle particle : values()) {
 				BY_NAME.put(particle.getName().toLowerCase(Locale.ENGLISH), particle);
@@ -241,11 +242,11 @@ public abstract class EnumWrappers {
 		private final boolean longDistance;
 		private final int dataLength;
 
-		private Particle(String name, int id, boolean longDistance) {
+		Particle(String name, int id, boolean longDistance) {
 			this(name, id, longDistance, 0);
 		}
 
-		private Particle(String name, int id, boolean longDistance, int dataLength) {
+		Particle(String name, int id, boolean longDistance, int dataLength) {
 			this.name = name;
 			this.id = id;
 			this.longDistance = longDistance;
@@ -298,7 +299,8 @@ public abstract class EnumWrappers {
 		}
 
 		private final String key;
-		private SoundCategory(String key) {
+
+		SoundCategory(String key) {
 			this.key = key;
 		}
 
@@ -317,12 +319,12 @@ public abstract class EnumWrappers {
 		FEET,
 		LEGS,
 		CHEST,
-		HEAD;
+		HEAD
 	}
 
 	public enum Hand {
 		MAIN_HAND,
-		OFF_HAND;
+		OFF_HAND
 	}
 
 	public enum Direction {
@@ -331,22 +333,16 @@ public abstract class EnumWrappers {
 		NORTH,
 		SOUTH,
 		WEST,
-		EAST;
+		EAST
 	}
 	
 	public enum ChatType {
-		CHAT(0),
-		SYSTEM(1),
-		GAME_INFO(2);
-		
-		private byte id;
-		
-		ChatType(int id) {
-			this.id = (byte) id;
-		}
-		
+		CHAT,
+		SYSTEM,
+		GAME_INFO;
+
 		public byte getId() {
-			return id;
+			return (byte) ordinal();
 		}
 	}
 
@@ -435,6 +431,8 @@ public abstract class EnumWrappers {
 		if (nativeClass != null) {
 			FROM_NATIVE.put(nativeClass, converter);
 			FROM_WRAPPER.put(wrapperClass, converter);
+		} else if (ProtocolLogger.isDebugEnabled()) {
+			new ClassNotFoundException(wrapperClass.getSimpleName()).printStackTrace();
 		}
 	}
 
@@ -448,7 +446,11 @@ public abstract class EnumWrappers {
 		try {
 			return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
 		} catch (Throwable ex) {
-			return null; // Unsupported in this version
+			if (ProtocolLogger.isDebugEnabled()) {
+				ex.printStackTrace();
+			}
+
+			return null;
 		}
 	}
 

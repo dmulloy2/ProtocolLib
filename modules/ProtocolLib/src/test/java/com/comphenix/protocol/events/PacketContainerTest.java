@@ -18,10 +18,7 @@ package com.comphenix.protocol.events;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
@@ -57,6 +54,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
+import static com.comphenix.protocol.utility.TestUtils.*;
 import static org.junit.Assert.*;
 
 // Ensure that the CraftItemFactory is mockable
@@ -218,17 +216,7 @@ public class PacketContainerTest {
 
 		// Read back array
 		List<ItemStack> comparison = itemAccess.read(0);
-		assertEquals(items, comparison);
-	}
-
-	private boolean equivalentItem(ItemStack first, ItemStack second) {
-		if (first == null) {
-			return second == null;
-		} else if (second == null) {
-			return false;
-		} else {
-			return first.getType().equals(second.getType());
-		}
+		assertItemCollectionsEqual(items, comparison);
 	}
 
 	@Test
@@ -270,14 +258,11 @@ public class PacketContainerTest {
 		PacketContainer mobSpawnPacket = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
 		StructureModifier<WrappedDataWatcher> watcherAccessor = mobSpawnPacket.getDataWatcherModifier();
 
-		Entity entity = new EntityEgg(null, 0, 0, 0);
-		DataWatcher watcher = entity.getDataWatcher();
-
-		WrappedDataWatcher dataWatcher = new WrappedDataWatcher(watcher);
-		dataWatcher.setObject(1, (byte) 1);
-		dataWatcher.setObject(2, 301);
-		dataWatcher.setObject(3, true);
-		dataWatcher.setObject(4, "Lorem");
+		WrappedDataWatcher dataWatcher = new WrappedDataWatcher();
+		dataWatcher.setObject(new WrappedDataWatcherObject(1, Registry.get(Byte.class)), (byte) 1);
+		dataWatcher.setObject(new WrappedDataWatcherObject(2, Registry.get(String.class)), "Lorem");
+		dataWatcher.setObject(new WrappedDataWatcherObject(3, Registry.get(Boolean.class)), true);
+		dataWatcher.setObject(new WrappedDataWatcherObject(4, Registry.getUUIDSerializer(true)), Optional.of(UUID.randomUUID()));
 
 		assertNull(watcherAccessor.read(0));
 
@@ -463,7 +448,7 @@ public class PacketContainerTest {
 		PacketContainer container = new PacketContainer(PacketType.Play.Server.NAMED_SOUND_EFFECT);
 		container.getSoundCategories().write(0, SoundCategory.PLAYERS);
 
-		assertEquals(container.getSoundCategories().read(0), SoundCategory.PLAYERS);
+		assertEquals(SoundCategory.PLAYERS, container.getSoundCategories().read(0));
 	}
 
 	@Test
@@ -578,6 +563,11 @@ public class PacketContainerTest {
 				a = itemConvert.getSpecific(a);
 				b = itemConvert.getSpecific(b);
 			}
+		}
+
+		if (a instanceof ItemStack || b instanceof ItemStack) {
+			assertItemsEqual((ItemStack) a, (ItemStack) b);
+			return;
 		}
 
 		if (a == null || b == null) {

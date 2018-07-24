@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -75,7 +76,7 @@ public class StreamSerializerTest {
 		String serialized = serializer.serializeItemStack(initial);
 		ItemStack deserialized = serializer.deserializeItemStack(serialized);
 
-		assertEquals(initial, deserialized);
+		assertItemsEqual(initial, deserialized);
 	}
 
 	@Test
@@ -90,6 +91,6 @@ public class StreamSerializerTest {
 		String serialized = serializer.serializeItemStack(initial);
 		ItemStack deserialized = serializer.deserializeItemStack(serialized);
 
-		assertEquals(initial, deserialized);
+		assertItemsEqual(initial, deserialized);
 	}
 }

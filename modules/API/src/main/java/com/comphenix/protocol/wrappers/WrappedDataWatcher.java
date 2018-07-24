@@ -1,6 +1,6 @@
 /**
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2016 dmulloy2
+ *  Copyright (C) 2018 dmulloy2
  *
  *  This program is free software; you can redistribute it and/or modify it under the terms of the
  *  GNU General Public License as published by the Free Software Foundation; either version 2 of
@@ -39,8 +39,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Represents a DataWatcher in 1.8 thru 1.10
- * 
+ * Represents a DataWatcher
  * @author dmulloy2
  */
 public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject> {
@@ -74,7 +73,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	}
 
 	/**
-	 * Constructs a new DataWatcher using a fake lightning entity. The
+	 * Constructs a new DataWatcher using a fake egg entity. The
 	 * resulting DataWatcher will not have any keys or values and new ones will
 	 * have to be added using watcher objects.
 	 */
@@ -94,7 +93,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	}
 
 	/**
-	 * Constructs a new DataWatcher using a fake lightning entity and a given
+	 * Constructs a new DataWatcher using a fake egg entity and a given
 	 * list of watchable objects.
 	 * 
 	 * @param objects The list of objects
@@ -126,7 +125,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			return fakeEntity;
 		}
 
-		// We can create a fake lightning strike without it affecting anything
+		// We can create a fake egg without it affecting anything
+		// Mojang added difficulty to lightning strikes, so this'll have to do
 		if (eggConstructor == null) {
 			eggConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getMinecraftClass("EntityEgg"),
 					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class);
@@ -140,15 +140,16 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	@SuppressWarnings("unchecked")
 	private Map<Integer, Object> getMap() {
 		if (MAP_FIELD == null) {
-			FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
-			MAP_FIELD = Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract.newBuilder()
-					.banModifier(Modifier.STATIC)
-					.typeDerivedOf(Map.class)
-					.build()));
-		}
-
-		if (MAP_FIELD == null) {
-			throw new FieldAccessException("Could not find index <-> Item map.");
+			try {
+				FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
+				MAP_FIELD = Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract
+						.newBuilder()
+						.banModifier(Modifier.STATIC)
+						.typeDerivedOf(Map.class)
+						.build()));
+			} catch (IllegalArgumentException ex) {
+				throw new FieldAccessException("Failed to find watchable object map");
+			}
 		}
 
 		return (Map<Integer, Object>) MAP_FIELD.get(handle);
@@ -371,7 +372,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		try {
 			Object value = GETTER.invoke(handle, object.getHandle());
 			return WrappedWatchableObject.getWrapped(value);
-		} catch (RuntimeException ex) {
+		} catch (Exception ex) {
 			// Nothing exists at this index
 			return null;
 		}
@@ -677,7 +678,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 */
 		public WrappedDataWatcherObject(Object handle) {
 			this.handle = handle;
-			this.modifier = new StructureModifier<Object>(HANDLE_TYPE).withTarget(handle);
+			this.modifier = new StructureModifier<>(HANDLE_TYPE).withTarget(handle);
 		}
 
 		/**
@@ -692,18 +693,31 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 		static WrappedDataWatcherObject fromIndex(int index) {
 			if (MinecraftReflection.watcherObjectExists()) {
-				return new WrappedDataWatcherObject(index, null);
+				return new WrappedDataWatcherObject(newHandle(index));
 			} else {
 				return new DummyWatcherObject(index);
 			}
 		}
 
-		private static Object newHandle(int index, Serializer serializer) {
+		private static Object newHandle(int index) {
+			Validate.isTrue(index >= 0, "index cannot be negative!");
+
 			if (constructor == null) {
 				constructor = Accessors.getConstructorAccessor(HANDLE_TYPE.getConstructors()[0]);
 			}
 
-			Object handle = serializer != null ? serializer.getHandle() : null;
+			return constructor.invoke(index, null);
+		}
+
+		private static Object newHandle(int index, Serializer serializer) {
+			Validate.isTrue(index >= 0, "index cannot be negative!");
+			Validate.notNull(serializer, "serializer cannot be null!");
+
+			if (constructor == null) {
+				constructor = Accessors.getConstructorAccessor(HANDLE_TYPE.getConstructors()[0]);
+			}
+
+			Object handle = serializer.getHandle();
 			return constructor.invoke(index, handle);
 		}
 
@@ -914,7 +928,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @return The serializer, or null if none exists
 		 */
 		public static Serializer get(Class<?> clazz) {
-			Validate.notNull("Class cannot be null!");
+			Validate.notNull(clazz,"Class cannot be null!");
 			initialize();
 
 			for (Serializer serializer : REGISTRY) {
@@ -923,7 +937,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("No serializer found for " + clazz);
 		}
 
 		/**
@@ -940,6 +954,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			Validate.notNull(clazz, "Class cannot be null!");
 			initialize();
 
+			Validate.notEmpty(REGISTRY, "Registry has no elements!");
+
 			for (Serializer serializer : REGISTRY) {
 				if (serializer.getType().equals(clazz)
 					&& serializer.isOptional() == optional) {
@@ -947,7 +963,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 				}
 			}
 
-			return null;
+			throw new IllegalArgumentException("No serializer found for " + (optional ? "Optional<" + clazz + ">" : clazz));
 		}
 
 		/**
@@ -956,7 +972,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @return The serializer, or null if none exists
 		 */
 		public static Serializer fromHandle(Object handle) {
-			Validate.notNull("handle cannot be null!");
+			Validate.notNull(handle, "handle cannot be null!");
 			initialize();
 
 			for (Serializer serializer : REGISTRY) {
@@ -984,7 +1000,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 					Type[] args = type.getActualTypeArguments();
 					Type arg = args[0];
 
-					Class<?> innerClass = null;
+					Class<?> innerClass;
 					boolean optional = false;
 
 					if (arg instanceof Class<?>) {
@@ -1004,6 +1020,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 						throw new IllegalStateException("Failed to read field " + candidate);
 					}
 
+					if (serializer == null) {
+						throw new RuntimeException("Failed to read serializer: " + candidate.getName());
+					}
+
 					REGISTRY.add(new Serializer(innerClass, serializer, optional));
 				}
 			}
@@ -1016,7 +1036,16 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		 * @return The serializer
 		 */
 		public static Serializer getChatComponentSerializer() {
-			return get(MinecraftReflection.getIChatBaseComponentClass());
+			return getChatComponentSerializer(false);
+		}
+
+		/**
+		 * Gets the serializer for IChatBaseComponents
+		 * @param optional If true, objects <b>must</b> be wrapped in an {@link Optional}
+		 * @return The serializer
+		 */
+		public static Serializer getChatComponentSerializer(boolean optional) {
+			return get(MinecraftReflection.getIChatBaseComponentClass(), optional);
 		}
 
 		/**

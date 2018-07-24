@@ -31,11 +31,11 @@ public class ProtocolLogger {
 		ProtocolLogger.plugin = plugin;
 	}
 
-	private static boolean isDebugEnabled() {
+	public static boolean isDebugEnabled() {
 		try {
 			return plugin.getConfig().getBoolean("global.debug", false);
-		} catch (Throwable ex) { // Maybe we're testing or something
-			return false;
+		} catch (Throwable ex) { // Enable in testing environments
+			return true;
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.comphenix.protocol.utility;
 
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -138,7 +139,7 @@ public class MinecraftReflectionTest {
 	public void testItemStacks() {
 		ItemStack stack = new ItemStack(Material.GOLDEN_SWORD);
 		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
-		assertEquals(stack, MinecraftReflection.getBukkitItemStack(nmsStack));
+		assertItemsEqual(stack, MinecraftReflection.getBukkitItemStack(nmsStack));
 
 		// The NMS handle for CraftItemStack is null with Material.AIR, make sure it is handled correctly
 		assertNotNull(MinecraftReflection.getMinecraftItemStack(CraftItemStack.asCraftCopy(new ItemStack(Material.AIR))));
