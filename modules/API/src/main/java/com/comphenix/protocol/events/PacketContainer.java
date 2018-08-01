@@ -86,7 +86,8 @@ public class PacketContainer implements Serializable {
 			.instanceProvider(DefaultInstances.DEFAULT)
 			.andThen(BukkitCloner.class)
 			.andThen(ImmutableDetector.class)
-			.andThen(OptionalCloner.class)
+			.andThen(JavaOptionalCloner.class)
+			.andThen(GuavaOptionalCloner.class)
 			.andThen(CollectionCloner.class)
 			.andThen(getSpecializedDeepClonerFactory())
 			.build();

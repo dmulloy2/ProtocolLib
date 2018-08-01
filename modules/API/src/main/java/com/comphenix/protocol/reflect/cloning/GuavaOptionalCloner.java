@@ -6,14 +6,14 @@ package com.comphenix.protocol.reflect.cloning;
 import com.google.common.base.Optional;
 
 /**
- * A cloner that can clone Optional objects
+ * A cloner that can clone Guava Optional objects
  * @author dmulloy2
  */
 
-public class OptionalCloner implements Cloner {
+public class GuavaOptionalCloner implements Cloner {
 	protected Cloner wrapped;
 
-	public OptionalCloner(Cloner wrapped) {
+	public GuavaOptionalCloner(Cloner wrapped) {
 		this.wrapped = wrapped;
 	}
 
