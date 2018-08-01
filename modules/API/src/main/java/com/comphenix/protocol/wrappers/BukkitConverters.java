@@ -47,11 +47,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
+import net.minecraft.server.v1_13_R1.ParticleParam;
+import net.minecraft.server.v1_13_R1.ParticleParamBlock;
+
+import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
+import org.bukkit.craftbukkit.v1_13_R1.CraftParticle;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -927,6 +928,10 @@ public class BukkitConverters {
 				return soundIndex.get(key);
 			}
 		});
+	}
+
+	public static EquivalentConverter<WrappedParticle> getParticleConverter() {
+		return ignoreNull(handle(WrappedParticle::getHandle, WrappedParticle::fromHandle));
 	}
 
 	public static EquivalentConverter<Advancement> getAdvancementConverter() {

@@ -12,6 +12,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
+import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 
 /**

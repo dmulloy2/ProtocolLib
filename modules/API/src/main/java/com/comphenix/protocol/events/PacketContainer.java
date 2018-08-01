@@ -42,6 +42,8 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.EnumWrappers.*;
+import com.comphenix.protocol.wrappers.EnumWrappers.Difficulty;
+import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -53,10 +55,8 @@ import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
+import org.bukkit.*;
+import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
@@ -831,14 +831,26 @@ public class PacketContainer implements Serializable {
     }
 
     /**
-     * Retrieve a read/write structure for the Particle enum in 1.8.
+     * Retrieve a read/write structure for the Particle enum in 1.8-1.12.
+     * <b>NOTE:</b> This will produce undesirable results in 1.13
      * @return A modifier for Particle enum fields.
      */
-    public StructureModifier<Particle> getParticles() {
+    public StructureModifier<EnumWrappers.Particle> getParticles() {
     	// Convert to and from the wrapper
     	return structureModifier.withType(
     			EnumWrappers.getParticleClass(),
 			    EnumWrappers.getParticleConverter());
+    }
+
+	/**
+	 * Retrieve a read/write structure for ParticleParams in 1.13
+	 * @return A modifier for ParticleParam fields.
+	 */
+	public StructureModifier<WrappedParticle> getNewParticles() {
+		return structureModifier.withType(
+				MinecraftReflection.getMinecraftClass("ParticleParam"),
+				BukkitConverters.getParticleConverter()
+		);
     }
 
     /**
