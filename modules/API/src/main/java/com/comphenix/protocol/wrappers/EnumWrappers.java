@@ -433,7 +433,7 @@ public abstract class EnumWrappers {
 			FROM_NATIVE.put(nativeClass, converter);
 			FROM_WRAPPER.put(wrapperClass, converter);
 		} else if (ProtocolLogger.isDebugEnabled()) {
-			new ClassNotFoundException(wrapperClass.getSimpleName()).printStackTrace();
+			// new ClassNotFoundException(wrapperClass.getSimpleName()).printStackTrace();
 		}
 	}
 
@@ -447,9 +447,9 @@ public abstract class EnumWrappers {
 		try {
 			return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
 		} catch (Throwable ex) {
-			if (ProtocolLogger.isDebugEnabled()) {
+			/* if (ProtocolLogger.isDebugEnabled()) {
 				ex.printStackTrace();
-			}
+			} */
 
 			return null;
 		}
