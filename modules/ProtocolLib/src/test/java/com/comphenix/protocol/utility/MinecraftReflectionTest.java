@@ -1,8 +1,7 @@
 package com.comphenix.protocol.utility;
 
 import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -73,6 +72,11 @@ public class MinecraftReflectionTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testIllegalClass() {
 		MinecraftReflection.getBukkitEntity("Hello");
+	}
+
+	@Test
+	public void testNullable() {
+		assertNull(MinecraftReflection.getNullableNMS("ProtocolLib"));
 	}
 
 	@Test
