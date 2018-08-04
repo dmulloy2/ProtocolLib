@@ -647,7 +647,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		// Attempt to send the packet with NetworkMarker.handle(), or the PlayerConnection if its active
 		try {
 			if (player instanceof Factory) {
-				MinecraftMethods.getNetworkManagerHandleMethod().invoke(networkManager, packet, new GenericFutureListener[0]);
+				MinecraftMethods.getNetworkManagerHandleMethod().invoke(networkManager, packet);
 			} else {
 				MinecraftMethods.getSendPacketMethod().invoke(getPlayerConnection(), packet);
 			}
