@@ -143,7 +143,7 @@ public abstract class WrappedBlockData extends AbstractWrapper {
 		}
 
 		private static WrappedBlockData createNewData(Material material, int data) {
-			return new NewBlockData(FROM_LEGACY_DATA.invoke(material, (byte) data));
+			return new NewBlockData(FROM_LEGACY_DATA.invoke(null, material, (byte) data));
 		}
 	}
 
