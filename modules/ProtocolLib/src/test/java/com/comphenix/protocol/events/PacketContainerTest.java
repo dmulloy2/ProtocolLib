@@ -575,7 +575,7 @@ public class PacketContainerTest {
 				return;
 			}
 		} else {
-			if (a.equals(b) || Objects.equals(a, b) || a.toString().equals(b.toString())) {
+			if (a.equals(b) || Objects.equals(a, b) || stringEquality(a, b)) {
 				return;
 			}
 		}
@@ -585,6 +585,15 @@ public class PacketContainerTest {
 		}
 
 		assertEquals(a, b);
+	}
+
+	private boolean stringEquality(Object a, Object b) {
+		try {
+			return a.toString().equals(b.toString());
+		} catch (Exception ex) {
+			// internal null pointers, usually
+			return false;
+		}
 	}
 
 	/**
