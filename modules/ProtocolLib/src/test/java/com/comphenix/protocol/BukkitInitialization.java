@@ -4,14 +4,14 @@ import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
-import net.minecraft.server.v1_13_R1.DispenserRegistry;
+import net.minecraft.server.v1_13_R2.DispenserRegistry;
 
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_13_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_13_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_13_R1.util.Versioning;
+import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_13_R2.util.Versioning;
 
 import static org.mockito.Mockito.*;
 
@@ -21,13 +21,27 @@ import static org.mockito.Mockito.*;
  * @author Kristian
  */
 public class BukkitInitialization {
-	private static boolean initialized;
-	private static boolean packaged;
+	private static final BukkitInitialization instance = new BukkitInitialization();
+
+	private BukkitInitialization() {
+		System.out.println("Created new BukkitInitialization on " + Thread.currentThread().getName());
+	}
+
+	private boolean initialized;
+	private boolean packaged;
+
+	public static synchronized void initializePackage() {
+		instance.setPackage();
+	}
+
+	public static synchronized void initializeItemMeta() {
+		instance.initialize();
+	}
 
 	/**
 	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing
 	 */
-	public static void initializeItemMeta() {
+	private void initialize() {
 		if (!initialized) {
 			// Denote that we're done
 			initialized = true;
@@ -62,7 +76,7 @@ public class BukkitInitialization {
 	/**
 	 * Ensure that package names are correctly set up.
 	 */
-	public static void initializePackage() {
+	private void setPackage() {
 		if (!packaged) {
 			packaged = true;
 

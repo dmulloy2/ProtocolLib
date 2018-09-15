@@ -18,6 +18,8 @@
 package com.comphenix.protocol.wrappers.nbt;
 
 
+import com.comphenix.protocol.wrappers.ClonableWrapper;
+
 /**
  * Represents a generic container for an NBT element.
  * <p>
@@ -26,7 +28,7 @@ package com.comphenix.protocol.wrappers.nbt;
  * @author Kristian
  * @param <TType> - type of the value that is stored.
  */
-public interface NbtBase<TType> {
+public interface NbtBase<TType> extends ClonableWrapper {
 	/**
 	 * Accepts a NBT visitor.
 	 * @param visitor - the hierarchical NBT visitor.
@@ -78,10 +80,14 @@ public interface NbtBase<TType> {
 	 * @param newValue - the new value of this tag.
 	 */
 	public abstract void setValue(TType newValue);
-		
+
 	/**
 	 * Clone the current NBT tag.
 	 * @return The cloned tag.
 	 */
 	public abstract NbtBase<TType> deepClone();
+
+	default Object getHandle() {
+		return null;
+	}
 }

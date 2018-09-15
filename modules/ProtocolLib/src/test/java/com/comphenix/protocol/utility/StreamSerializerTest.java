@@ -6,7 +6,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
-import net.minecraft.server.v1_13_R1.IntHashMap;
+import net.minecraft.server.v1_13_R2.IntHashMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;

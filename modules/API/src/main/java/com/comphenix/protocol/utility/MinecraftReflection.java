@@ -1156,6 +1156,10 @@ public class MinecraftReflection {
 		return getNullableNMS("FluidType");
 	}
 
+	public static Class<?> getParticleTypeClass() {
+		return getNullableNMS("ParticleType");
+	}
+
 	/**
 	 * Retrieve the WorldType class.
 	 * @return The WorldType class.
@@ -1360,7 +1364,7 @@ public class MinecraftReflection {
 
 	public static Class<?> getDataWatcherSerializerClass() {
 		// TODO Implement a fallback
-		return getMinecraftClass("DataWatcherSerializer");
+		return getNullableNMS("DataWatcherSerializer");
 	}
 
 	public static Class<?> getDataWatcherRegistryClass() {

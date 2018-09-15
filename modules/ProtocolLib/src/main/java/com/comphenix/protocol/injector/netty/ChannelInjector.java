@@ -51,11 +51,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.TypeParameterMatcher;
 
 import net.sf.cglib.proxy.Factory;
 
+import org.apache.commons.lang3.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -478,7 +478,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	private void scheduleMainThread(final Object packetCopy) {
 		// Don't use BukkitExecutors for this - it has a bit of overhead
-		Bukkit.getScheduler().scheduleSyncDelayedTask(factory.getPlugin(), () -> invokeSendPacket(packetCopy));
+		Bukkit.getScheduler().scheduleSyncDelayedTask(factory.getPlugin(), () -> {
+			if (!closed) {
+				invokeSendPacket(packetCopy);
+			}
+		});
 	}
 
 	@Override
@@ -644,6 +648,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param packet - the packet to send.
  	 */
 	private void invokeSendPacket(Object packet) {
+		Validate.isTrue(!closed, "cannot send packets to a closed channel");
+
 		// Attempt to send the packet with NetworkMarker.handle(), or the PlayerConnection if its active
 		try {
 			if (player instanceof Factory) {
@@ -694,8 +700,14 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private Object getPlayerConnection() {
 		if (playerConnection == null) {
-			playerConnection = MinecraftFields.getPlayerConnection(getPlayer());
+			Player player = getPlayer();
+			if (player == null) {
+				throw new IllegalStateException("cannot send packet to offline player" + (playerName != null ?  " " + playerName : ""));
+			}
+
+			playerConnection = MinecraftFields.getPlayerConnection(player);
 		}
+
 		return playerConnection;
 	}
 
@@ -714,7 +726,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	@Override
 	public Player getPlayer() {
 		if (player == null && playerName != null) {
-			return Bukkit.getPlayer(playerName);
+			return Bukkit.getPlayerExact(playerName);
 		}
 
 		return player;

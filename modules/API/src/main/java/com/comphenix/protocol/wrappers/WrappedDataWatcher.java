@@ -42,7 +42,7 @@ import org.bukkit.inventory.ItemStack;
  * Represents a DataWatcher
  * @author dmulloy2
  */
-public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject> {
+public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject>, ClonableWrapper {
 	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherClass();
 
 	private static MethodAccessor GETTER = null;

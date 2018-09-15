@@ -91,6 +91,8 @@ public class WrappedParticle<T> {
 	}
 
 	public static WrappedParticle fromHandle(Object handle) {
+		ensureMethods();
+
 		Particle bukkit = (Particle) toBukkit.invoke(null, handle);
 		Object data = null;
 

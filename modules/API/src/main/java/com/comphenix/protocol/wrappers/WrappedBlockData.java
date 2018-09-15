@@ -33,7 +33,7 @@ import org.bukkit.Material;
  * @author dmulloy2
  */
 
-public abstract class WrappedBlockData extends AbstractWrapper {
+public abstract class WrappedBlockData extends AbstractWrapper implements ClonableWrapper {
 	private static final Class<?> MAGIC_NUMBERS = MinecraftReflection.getCraftBukkitClass("util.CraftMagicNumbers");
 	private static final Class<?> IBLOCK_DATA = MinecraftReflection.getIBlockDataClass();
 	private static final Class<?> BLOCK = MinecraftReflection.getBlockClass();

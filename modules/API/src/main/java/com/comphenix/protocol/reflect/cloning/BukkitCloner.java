@@ -21,20 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.ChunkPosition;
-import com.comphenix.protocol.wrappers.MinecraftKey;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import com.comphenix.protocol.wrappers.WrappedServerPing;
+import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
 import com.google.common.collect.Maps;
 
 /**
@@ -43,62 +37,56 @@ import com.google.common.collect.Maps;
  * @author Kristian
  */
 public class BukkitCloner implements Cloner {
-	// List of classes we support
-	private final Map<Integer, Class<?>> clonableClasses = Maps.newConcurrentMap();
+	private static final Map<Class<?>, Function<Object, Object>> CLONERS = Maps.newConcurrentMap();
 
-	public BukkitCloner() {
-		addClass(0, MinecraftReflection.getItemStackClass());
-		addClass(1, MinecraftReflection.getDataWatcherClass());
-
-		// Try to add position classes
+	private static void fromWrapper(Supplier<Class<?>> getClass, Function<Object, ClonableWrapper> fromHandle) {
 		try {
-			addClass(2, MinecraftReflection.getBlockPositionClass());
-		} catch (Throwable ex) {
-		}
-
-		try {
-			addClass(3, MinecraftReflection.getChunkPositionClass());
-		} catch (Throwable ex) {
-		}
-
-		if (MinecraftReflection.isUsingNetty()) {
-			addClass(4, MinecraftReflection.getServerPingClass());
-		}
-
-		if (MinecraftReflection.watcherObjectExists()) {
-			addClass(5, MinecraftReflection.getDataWatcherSerializerClass());
-			addClass(6, MinecraftReflection.getMinecraftKeyClass());
-		}
-
-		try {
-			addClass(7, MinecraftReflection.getIBlockDataClass());
-		} catch (Throwable ex) {
-		}
-
-		try {
-			addClass(8, MinecraftReflection.getNonNullListClass());
-		} catch (Throwable ex) {
-		}
-
-		try {
-			addClass(9, MinecraftReflection.getNBTBaseClass());
-		} catch (Throwable ex) { }
+			Class<?> nmsClass = getClass.get();
+			if (nmsClass != null) {
+				CLONERS.put(nmsClass, nmsObject -> fromHandle.apply(nmsObject).deepClone().getHandle());
+			}
+		} catch (RuntimeException ignored) { }
 	}
 
-	private void addClass(int id, Class<?> clazz) {
-		if (clazz != null)
-			clonableClasses.put(id, clazz);
+	private static void fromConverter(Supplier<Class<?>> getClass, EquivalentConverter converter) {
+		try {
+			Class<?> nmsClass = getClass.get();
+			if (nmsClass != null) {
+				CLONERS.put(nmsClass, nmsObject -> converter.getGeneric(converter.getSpecific(nmsObject)));
+			}
+		} catch (RuntimeException ignored) { }
 	}
 
-	private int findMatchingClass(Class<?> type) {
-		// See if is a subclass of any of our supported superclasses
-		for (Entry<Integer, Class<?>> entry : clonableClasses.entrySet()) {
-			if (entry.getValue().isAssignableFrom(type)) {
-				return entry.getKey();
+	private static void fromManual(Supplier<Class<?>> getClass, Function<Object, Object> cloner) {
+		try {
+			Class<?> nmsClass = getClass.get();
+			if (nmsClass != null) {
+				CLONERS.put(nmsClass, cloner);
+			}
+		} catch (RuntimeException ignored) { }
+	}
+
+	static {
+		fromManual(MinecraftReflection::getItemStackClass, source ->
+				MinecraftReflection.getMinecraftItemStack(MinecraftReflection.getBukkitItemStack(source).clone()));
+		fromWrapper(MinecraftReflection::getDataWatcherClass, WrappedDataWatcher::new);
+		fromConverter(MinecraftReflection::getBlockPositionClass, BlockPosition.getConverter());
+		fromConverter(MinecraftReflection::getChunkPositionClass, ChunkPosition.getConverter());
+		fromWrapper(MinecraftReflection::getServerPingClass, WrappedServerPing::fromHandle);
+		fromConverter(MinecraftReflection::getMinecraftKeyClass, MinecraftKey.getConverter());
+		fromWrapper(MinecraftReflection::getIBlockDataClass, WrappedBlockData::fromHandle);
+		fromManual(MinecraftReflection::getNonNullListClass, source -> nonNullListCloner().clone(source));
+		fromWrapper(MinecraftReflection::getNBTBaseClass, NbtFactory::fromNMS);
+	}
+
+	private Function<Object, Object> findCloner(Class<?> type) {
+		for (Entry<Class<?>, Function<Object, Object>> entry : CLONERS.entrySet()) {
+			if (entry.getKey().isAssignableFrom(type)) {
+				return entry.getValue();
 			}
 		}
 
-		return -1;
+		return null;
 	}
 
 	@Override
@@ -106,7 +94,7 @@ public class BukkitCloner implements Cloner {
 		if (source == null)
 			return false;
 
-		return findMatchingClass(source.getClass()) >= 0;
+		return findCloner(source.getClass()) != null;
 	}
 
 	@Override
@@ -114,43 +102,12 @@ public class BukkitCloner implements Cloner {
 		if (source == null)
 			throw new IllegalArgumentException("source cannot be NULL.");
 
-		// Convert to a wrapper
-		switch (findMatchingClass(source.getClass())) {
-			case 0:
-				return MinecraftReflection.getMinecraftItemStack(MinecraftReflection.getBukkitItemStack(source).clone());
-			case 1:
-				EquivalentConverter<WrappedDataWatcher> dataConverter = BukkitConverters.getDataWatcherConverter();
-				return dataConverter.getGeneric(dataConverter.getSpecific(source).deepClone());
-			case 2:
-				EquivalentConverter<BlockPosition> blockConverter = BlockPosition.getConverter();
-				return blockConverter.getGeneric(blockConverter.getSpecific(source));
-			case 3:
-				EquivalentConverter<ChunkPosition> chunkConverter = ChunkPosition.getConverter();
-				return chunkConverter.getGeneric(chunkConverter.getSpecific(source));
-			case 4:
-				EquivalentConverter<WrappedServerPing> serverConverter = BukkitConverters.getWrappedServerPingConverter();
-				return serverConverter.getGeneric(serverConverter.getSpecific(source).deepClone());
-			case 5:
-				return source;
-			case 6:
-				EquivalentConverter<MinecraftKey> keyConverter = MinecraftKey.getConverter();
-				return keyConverter.getGeneric(keyConverter.getSpecific(source));
-			case 7:
-				EquivalentConverter<WrappedBlockData> blockDataConverter = BukkitConverters.getWrappedBlockDataConverter();
-				return blockDataConverter.getGeneric(blockDataConverter.getSpecific(source).deepClone());
-			case 8:
-				return nonNullListCloner().clone(source);
-			case 9:
-				NbtWrapper<?> clone = (NbtWrapper<?>) NbtFactory.fromNMS(source).deepClone();
-				return clone.getHandle();
-			default:
-				throw new IllegalArgumentException("Cannot clone objects of type " + source.getClass());
-		}
+		return findCloner(source.getClass()).apply(source);
 	}
 
 	private static Constructor<?> nonNullList = null;
 
-	private static final Cloner nonNullListCloner() {
+	private static Cloner nonNullListCloner() {
 		return new Cloner() {
 			@Override
 			public boolean canClone(Object source) {

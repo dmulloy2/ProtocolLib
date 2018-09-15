@@ -40,7 +40,7 @@ import io.netty.handler.codec.base64.Base64;
  * Represents a server ping packet data.
  * @author Kristian
  */
-public class WrappedServerPing extends AbstractWrapper {
+public class WrappedServerPing extends AbstractWrapper implements ClonableWrapper {
 	private static Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
 	private static Class<?> GAME_PROFILE_ARRAY = MinecraftReflection.getArrayClass(GAME_PROFILE);
 

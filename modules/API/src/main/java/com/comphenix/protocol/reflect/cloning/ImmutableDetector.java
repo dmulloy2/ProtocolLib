@@ -26,11 +26,15 @@ import java.net.URI;
 import java.net.URL;
 import java.security.PublicKey;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import javax.crypto.SecretKey;
 
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Primitives;
 
 /**
@@ -42,19 +46,41 @@ import com.google.common.primitives.Primitives;
  */
 public class ImmutableDetector implements Cloner {
 	// Notable immutable classes we might encounter
-	private static final Class<?>[] immutableClasses = {
+	private static final Set<Class<?>> immutableClasses = ImmutableSet.of(
 			StackTraceElement.class, BigDecimal.class,
 			BigInteger.class, Locale.class, UUID.class,
 			URL.class, URI.class, Inet4Address.class,
 			Inet6Address.class, InetSocketAddress.class,
 			SecretKey.class, PublicKey.class
-	};
+	);
+
+	private static final Set<Class<?>> immutableNMS = Sets.newConcurrentHashSet();
+
+	static {
+		add(MinecraftReflection::getGameProfileClass);
+		add(MinecraftReflection::getDataWatcherSerializerClass);
+		add(() -> MinecraftReflection.getMinecraftClass("SoundEffect"));
+		add(MinecraftReflection::getBlockClass);
+		add(MinecraftReflection::getItemClass);
+		add(MinecraftReflection::getFluidTypeClass);
+		add(MinecraftReflection::getParticleTypeClass);
+	}
+
+	private static void add(Supplier<Class<?>> getClass) {
+		try {
+			Class<?> clazz = getClass.get();
+			if (clazz != null) {
+				immutableNMS.add(clazz);
+			}
+		} catch (RuntimeException ignored) { }
+	}
 	
 	@Override
 	public boolean canClone(Object source) {
 		// Don't accept NULL
-		if (source == null)
+		if (source == null) {
 			return false;
+		}
 		
 		return isImmutable(source.getClass());
 	}
@@ -66,44 +92,33 @@ public class ImmutableDetector implements Cloner {
 	 */
 	public static boolean isImmutable(Class<?> type) {
 		// Cases that are definitely not true
-		if (type.isArray())
+		if (type.isArray()) {
 			return false;
+		}
 		
 		// All primitive types
-		if (Primitives.isWrapperType(type) || String.class.equals(type))
+		if (Primitives.isWrapperType(type) || String.class.equals(type)) {
 			return true;
+		}
 
 		// May not be true, but if so, that kind of code is broken anyways
-		if (isEnumWorkaround(type))
-			return true;
-			
-		for (Class<?> clazz : immutableClasses)
-			if (clazz.equals(type))
-				return true;
-		
-		// Check for known immutable classes in 1.7.2
-		if (MinecraftReflection.isUsingNetty()) {
-			if (type.equals(MinecraftReflection.getGameProfileClass())) {
-				return true;
-			}
-		}
-
-		// Check for known immutable classes in 1.9
-		if (MinecraftReflection.watcherObjectExists()) {
-			if (type.equals(MinecraftReflection.getDataWatcherSerializerClass())
-					|| type.equals(MinecraftReflection.getMinecraftClass("SoundEffect"))) {
-				return true;
-			}
-		}
-
-		if (MinecraftReflection.is(MinecraftReflection.getBlockClass(), type)
-				|| MinecraftReflection.is(MinecraftReflection.getItemClass(), type)
-				|| MinecraftReflection.is(MinecraftReflection.getFluidTypeClass(), type)) {
+		if (isEnumWorkaround(type)) {
 			return true;
 		}
 
+		// No good way to clone lambdas
 		if (type.getName().contains("$$Lambda$")) {
 			return true;
+		}
+
+		if (immutableClasses.contains(type)) {
+			return true;
+		}
+
+		for (Class<?> clazz : immutableNMS) {
+			if (MinecraftReflection.is(clazz, type)) {
+				return true;
+			}
 		}
 
 		// Probably not
@@ -113,10 +128,13 @@ public class ImmutableDetector implements Cloner {
 	// This is just great. Just great.
 	private static boolean isEnumWorkaround(Class<?> enumClass) {
 		while (enumClass != null) {
-			if (enumClass.isEnum())
+			if (enumClass.isEnum()) {
 				return true;
+			}
+
 			enumClass = enumClass.getSuperclass();
 		}
+
 		return false;
 	}
 	
