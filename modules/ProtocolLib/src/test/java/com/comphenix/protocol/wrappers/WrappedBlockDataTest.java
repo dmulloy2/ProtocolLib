@@ -16,15 +16,20 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
+import com.comphenix.protocol.BukkitInitialization;
 
-import org.bukkit.DyeColor;
+import net.minecraft.server.v1_13_R2.IBlockData;
+
 import org.bukkit.Material;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.type.GlassPane;
+import org.bukkit.craftbukkit.v1_13_R2.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_13_R2.block.impl.CraftGlassPane;
+import org.bukkit.craftbukkit.v1_13_R2.util.CraftMagicNumbers;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.utility.MinecraftReflection;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author dmulloy2
@@ -33,12 +38,12 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 public class WrappedBlockDataTest {
 
 	@BeforeClass
-	public static void initializeBukkit() throws IllegalAccessException {
+	public static void initializeBukkit() {
 		BukkitInitialization.initializeItemMeta();
 	}
 
 	@Test
-	public void test() {
+	public void testMaterialCreation() {
 		Material type = Material.BLUE_WOOL;
 
 		WrappedBlockData wrapper = WrappedBlockData.createData(type);
@@ -51,5 +56,19 @@ public class WrappedBlockDataTest {
 
 		assertEquals(wrapper.getType(), back.getType());
 		assertEquals(wrapper.getData(), back.getData());
+	}
+
+	@Test
+	public void testDataCreation() {
+		IBlockData nmsData = CraftMagicNumbers.getBlock(Material.CYAN_STAINED_GLASS_PANE).getBlockData();
+		GlassPane data = (GlassPane) CraftBlockData.fromData(nmsData);
+		data.setFace(BlockFace.EAST, true);
+
+		WrappedBlockData wrapper = WrappedBlockData.createData(data);
+		assertEquals(wrapper.getType(), Material.CYAN_STAINED_GLASS_PANE);
+
+		GlassPane back = new CraftGlassPane((IBlockData) wrapper.getHandle());
+		assertEquals(back.hasFace(BlockFace.EAST), data.hasFace(BlockFace.EAST));
+		assertEquals(back.hasFace(BlockFace.SOUTH), data.hasFace(BlockFace.SOUTH));
 	}
 }

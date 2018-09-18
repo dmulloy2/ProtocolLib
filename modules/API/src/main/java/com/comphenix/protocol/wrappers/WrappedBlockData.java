@@ -26,6 +26,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 
 /**
  * Represents a wrapper around IBlockData.
@@ -45,6 +46,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 		private static MethodAccessor BLOCK_FROM_MATERIAL;
 		private static MethodAccessor GET_BLOCK_DATA;
 		private static MethodAccessor FROM_LEGACY_DATA;
+		private static MethodAccessor GET_HANDLE;
 
 		static {
 			if (MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE)) {
@@ -98,6 +100,15 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 						.returnTypeExact(IBLOCK_DATA)
 						.build();
 				GET_BLOCK_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
+
+				fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getCraftBukkitClass("block.data.CraftBlockData"));
+				contract = FuzzyMethodContract
+						.newBuilder()
+						.banModifier(Modifier.STATIC)
+						.parameterCount(0)
+						.returnTypeExact(IBLOCK_DATA)
+						.build();
+				GET_HANDLE = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 			}
 		}
 
@@ -144,6 +155,10 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 
 		private static WrappedBlockData createNewData(Material material, int data) {
 			return new NewBlockData(FROM_LEGACY_DATA.invoke(null, material, (byte) data));
+		}
+
+		private static WrappedBlockData createNewData(BlockData data) {
+			return new NewBlockData(GET_HANDLE.invoke(data));
 		}
 	}
 
@@ -304,6 +319,15 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 		                                                                   : new OldBlockData(handle);
 	}
 
+	/**
+	 * Creates a new Wrapped Block Data instance from a given Spigot Block Data
+	 * @param data Spigot block data
+	 * @return The new Wrapped Block Data
+	 */
+	public static WrappedBlockData createData(BlockData data) {
+		return NewBlockData.createNewData(data);
+	}
+
 	@Override
 	public String toString() {
 		return "WrappedBlockData[handle=" + handle + "]";
@@ -320,9 +344,12 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 
 	@Override
 	public boolean equals(Object o) {
+		if (o == this) return true;
+
 		if (o instanceof WrappedBlockData) {
 			WrappedBlockData that = (WrappedBlockData) o;
-			return this.getType() == that.getType() && getData() == that.getData();
+			return this.handle.equals(that.handle)
+			       || (this.getType() == that.getType() && this.getData() == that.getData());
 		}
 
 		return false;
