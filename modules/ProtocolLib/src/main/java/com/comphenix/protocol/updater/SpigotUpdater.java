@@ -97,9 +97,7 @@ public final class SpigotUpdater extends Updater {
 	private static final byte[] API_KEY = ("key=98BE0FE67F88AB82B4C197FAF1DC3B69206EFDCC4D3B80FC83A00037510B99B4&resource=" + ID).getBytes(Charsets.UTF_8);
 
 	public String getSpigotVersion() throws IOException {
-		Closer closer = Closer.create();
-
-		try {
+		try (Closer closer = Closer.create()) {
 			HttpURLConnection con = (HttpURLConnection) new URL(API_URL).openConnection();
 			con.setDoOutput(true);
 			con.setRequestMethod(ACTION);
@@ -108,8 +106,6 @@ public final class SpigotUpdater extends Updater {
 			InputStreamReader isr = closer.register(new InputStreamReader(con.getInputStream()));
 			BufferedReader br = closer.register(new BufferedReader(isr));
 			return br.readLine();
-		} finally {
-			closer.close();
 		}
 	}
 
