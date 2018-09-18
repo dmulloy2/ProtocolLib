@@ -1070,4 +1070,51 @@ public class BukkitConverters {
 			}
 		});
 	}
+
+	private static MethodAccessor dimensionFromId = null;
+	private static MethodAccessor idFromDimension = null;
+
+	public static EquivalentConverter<Integer> getDimensionIDConverter() {
+		return new EquivalentConverter<Integer>() {
+
+			@Override
+			public Object getGeneric(Integer specific) {
+				if (dimensionFromId == null) {
+					Class<?> clazz = MinecraftReflection.getMinecraftClass("DimensionManager");
+					FuzzyReflection reflection = FuzzyReflection.fromClass(clazz, false);
+					FuzzyMethodContract contract = FuzzyMethodContract
+							.newBuilder()
+							.requireModifier(Modifier.STATIC)
+							.parameterExactType(int.class)
+							.returnTypeExact(clazz)
+							.build();
+					dimensionFromId = Accessors.getMethodAccessor(reflection.getMethod(contract));
+				}
+
+				return dimensionFromId.invoke(null, (int) specific);
+			}
+
+			@Override
+			public Integer getSpecific(Object generic) {
+				if (idFromDimension == null) {
+					Class<?> clazz = MinecraftReflection.getMinecraftClass("DimensionManager");
+					FuzzyReflection reflection = FuzzyReflection.fromClass(clazz, false);
+					FuzzyMethodContract contract = FuzzyMethodContract
+							.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.returnTypeExact(int.class)
+							.parameterCount(0)
+							.build();
+					idFromDimension = Accessors.getMethodAccessor(reflection.getMethod(contract));
+				}
+
+				return (Integer) idFromDimension.invoke(generic);
+			}
+
+			@Override
+			public Class<Integer> getSpecificType() {
+				return Integer.class;
+			}
+		};
+	}
 }

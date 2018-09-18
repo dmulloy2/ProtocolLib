@@ -467,6 +467,13 @@ public class PacketContainerTest {
 		assertEquals(container.getEnumModifier(Action.class, PacketPlayOutBoss.Action.class).read(0), Action.UPDATE_PCT);
 	}
 
+	@Test
+	public void testDimensionManager() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.RESPAWN);
+		container.getDimensions().write(0, 1);
+		assertEquals((Object) 1, container.getDimensions().read(0));
+	}
+
 	/**
 	 * Actions from the outbound Boss packet. Used for testing generic enums.
 	 * @author dmulloy2
