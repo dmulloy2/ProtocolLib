@@ -66,7 +66,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.comphenix.protocol:ProtocolLib:4.4.0';
+    compileOnly 'com.comphenix.protocol:ProtocolLib-API:4.4.0-SNAPSHOT';
 }
 ```
 
