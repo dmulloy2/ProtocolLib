@@ -30,6 +30,7 @@ import com.comphenix.protocol.reflect.FieldUtils;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+// TODO Migrate this to Gradle if necessary
 // Damn final classes ...
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
@@ -51,7 +52,7 @@ public class SimpleCraftBukkitITCase {
 	 * @throws IOException Unable to setup server.
 	 * @throws InterruptedException Thread interrupted.
 	 */
-	@BeforeClass
+	//@BeforeClass
 	public static void setupCraftBukkit() throws Exception {
 		setupPlugins();
 
@@ -89,12 +90,12 @@ public class SimpleCraftBukkitITCase {
 	/**
 	 * Close the CraftBukkit server when they're done.
 	 */
-	@AfterClass
+	//@AfterClass
 	public static void shutdownCraftBukkit() {
 		Bukkit.shutdown();
 	}
 	
-	@Test
+	//@Test
 	public void testPingPacket() throws Throwable {
 		TestPingPacket.newTest().startTest(FAKE_PLUGIN);
 	}
