@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Primitives;
@@ -62,8 +63,12 @@ public class ImmutableDetector implements Cloner {
 		add(() -> MinecraftReflection.getMinecraftClass("SoundEffect"));
 		add(MinecraftReflection::getBlockClass);
 		add(MinecraftReflection::getItemClass);
-		add(MinecraftReflection::getFluidTypeClass);
-		add(MinecraftReflection::getParticleTypeClass);
+
+		if (MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE)) {
+			add(() -> MinecraftReflection.getMinecraftClass("Particle"));
+			add(MinecraftReflection::getFluidTypeClass);
+			add(MinecraftReflection::getParticleTypeClass);
+		}
 	}
 
 	private static void add(Supplier<Class<?>> getClass) {
