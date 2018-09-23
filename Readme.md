@@ -62,11 +62,11 @@ Or use the maven dependency with gradle:
 
 ```gradle
 repositories {
-    maven { url "http://repo.dmulloy2.net/nexus/repository/public/" }
+    maven { url = "http://repo.dmulloy2.net/nexus/repository/public/" }
 }
 
 dependencies {
-    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.4.0";
+    compileOnly 'com.comphenix.protocol:ProtocolLib-API:4.4.0-SNAPSHOT';
 }
 ```
 
