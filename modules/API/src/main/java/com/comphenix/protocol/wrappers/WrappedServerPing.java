@@ -419,7 +419,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 		 */
 		public static CompressedImage fromBase64Png(String base64) {
 			try {
-                                return new EncodedCompressedImage("data:image/png;base64," + base64.replace("\n", "").replace("\r", ""));
+                               return new EncodedCompressedImage("data:image/png;base64," + base64.replace("\n", "").replace("\r", ""));
 			} catch (IllegalArgumentException e) {
 				// Remind the caller
 				throw new IllegalArgumentException("Must be a pure base64 encoded string. Cannot be an encoded text.", e);
@@ -490,7 +490,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 			if (encoded == null) {
 				final ByteBuf buffer = Unpooled.wrappedBuffer(getDataCopy());
 				encoded = "data:" + getMime() + ";base64," +
-                                                Base64.encode(buffer).toString(Charsets.UTF_8).replace("\n", "").replace("\r", "");
+                                               Base64.encode(buffer).toString(Charsets.UTF_8).replace("\n", "").replace("\r", "");
 			}
 
 			return encoded;
