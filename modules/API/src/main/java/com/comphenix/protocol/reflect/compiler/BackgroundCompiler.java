@@ -37,6 +37,7 @@ import com.comphenix.protocol.reflect.compiler.StructureCompiler.StructureKey;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.bukkit.Bukkit;
 
 /**
  * Compiles structure modifiers on a background thread.
@@ -195,6 +196,7 @@ public class BackgroundCompiler {
 				@Override
 				public Object call() throws Exception {
 					StructureModifier<TKey> modifier = uncompiled;
+					if (Bukkit.getServer().getName().equals("CatServer")) return modifier;
 					List list = null;
 					
 					// Do our compilation
