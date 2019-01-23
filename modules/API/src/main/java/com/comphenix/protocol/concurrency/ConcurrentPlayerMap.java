@@ -6,18 +6,17 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import org.bukkit.entity.Player;
+import java.util.function.Function;
 
 import com.comphenix.protocol.utility.SafeCacheBuilder;
 import com.comphenix.protocol.utility.Util;
-import com.google.common.base.Function;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+
+import org.bukkit.entity.Player;
 
 /**
  * Represents a concurrent player map.
@@ -25,6 +24,8 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
  * This map may use player addresses as keys.
  * @author Kristian
  */
+
+// TODO figure out why null keys are getting added in the first place
 public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> implements ConcurrentMap<Player, TValue> {
 	/**
 	 * Represents the different standard player keys,
@@ -37,7 +38,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 		ADDRESS {
 			@Override
 			public Object apply(Player player) {
-				return player.getAddress();
+				return player == null ? null : player.getAddress();
 			}
 		},
 		
@@ -47,7 +48,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 		NAME {
 			@Override
 			public Object apply(Player player) {
-				return player.getName();
+				return player == null ? null : player.getName();
 			}
 		},
 	}
@@ -55,17 +56,17 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	/**
 	 * An internal map of player keys to values.
 	 */
-	protected ConcurrentMap<Object, TValue> valueLookup = createValueMap();
+	private ConcurrentMap<Object, TValue> valueLookup = createValueMap();
 	
 	/**
 	 * A cache of the associated keys for each player.
 	 */
-	
-	protected ConcurrentMap<Object, Player> keyLookup = createKeyCache();
+
+	private ConcurrentMap<Object, Player> keyLookup = createKeyCache();
 	/**
 	 * The method used to retrieve a unique key for a player.
 	 */
-	protected final Function<Player, Object> keyMethod;
+	private final Function<Player, Object> keyMethod;
 	
 	/**
 	 * Construct a new concurrent player map that uses each player's address as key.
@@ -73,7 +74,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return Concurrent player map.
 	 */
 	public static <T> ConcurrentPlayerMap<T> usingAddress() {
-		return new ConcurrentPlayerMap<T>(PlayerKey.ADDRESS);
+		return new ConcurrentPlayerMap<>(PlayerKey.ADDRESS);
 	}
 	
 	/**
@@ -82,14 +83,14 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return Concurrent player map.
 	 */
 	public static <T> ConcurrentPlayerMap<T> usingName() {
-		return new ConcurrentPlayerMap<T>(PlayerKey.NAME);
+		return new ConcurrentPlayerMap<>(PlayerKey.NAME);
 	}
 	
 	/**
 	 * Construct a new concurrent player map using the given standard key method.
 	 * @param standardMethod - the standard key method.
 	 */
-	public ConcurrentPlayerMap(PlayerKey standardMethod) {
+	private ConcurrentPlayerMap(PlayerKey standardMethod) {
 		this.keyMethod = standardMethod;
 	}
 	
@@ -107,7 +108,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * The default implementation uses a {@link ConcurrentHashMap}.
 	 * @return The value map.
 	 */
-	protected ConcurrentMap<Object, TValue> createValueMap() {
+	private ConcurrentMap<Object, TValue> createValueMap() {
 		return Maps.newConcurrentMap();
 	}
 	
@@ -115,23 +116,20 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * Construct a cache of keys and the associated player.
 	 * @return The key map.
 	 */
-	protected ConcurrentMap<Object, Player> createKeyCache() {
+	private ConcurrentMap<Object, Player> createKeyCache() {
 		return SafeCacheBuilder.newBuilder().
 			weakValues().
 			removalListener(
-			  new RemovalListener<Object, Player>() {
-				@Override
-				public void onRemoval(RemovalNotification<Object, Player> removed) {
-					// We ignore explicit removal
-					if (removed.wasEvicted()) {
-						onCacheEvicted(removed.getKey());
-					}
-				}
-			}).
+					(RemovalListener<Object, Player>) removed -> {
+						// We ignore explicit removal
+						if (removed.wasEvicted()) {
+							onCacheEvicted(removed.getKey());
+						}
+					}).
 			build(
 			  new CacheLoader<Object, Player>() {
 				@Override
-				public Player load(Object key) throws Exception {
+				public Player load(Object key) {
 					Player player = findOnlinePlayer(key);
 					
 					if (player != null)
@@ -147,7 +145,6 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	/**
 	 * Invoked when an entry in the cache has been evicted, typically by the garbage collector.
 	 * @param key - the key.
-	 * @param player - the value that was evicted or collected.
 	 */
 	private void onCacheEvicted(Object key) {
 		Player newPlayer = findOnlinePlayer(key);
@@ -165,7 +162,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @param key - a non-null key.
 	 * @return The player with the given key, or NULL if not found.
 	 */
-	protected Player findOnlinePlayer(Object key) {
+	private Player findOnlinePlayer(Object key) {
 		for (Player player : Util.getOnlinePlayers()) {
 			if (key.equals(keyMethod.apply(player))) {
 				return player;
@@ -179,7 +176,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @param key - the key of the player we are locating.
 	 * @return The player, or NULL if not found.
 	 */
-	protected Player lookupPlayer(Object key) {
+	private Player lookupPlayer(Object key) {
 		try {
 			return keyLookup.get(key);
 		} catch (UncheckedExecutionException e) {
@@ -192,7 +189,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @param player - the player whose key we want to retrieve.
 	 * @return The key.
 	 */
-	protected Object cachePlayerKey(Player player) {
+	private Object cachePlayerKey(Player player) {
 		Object key = keyMethod.apply(player);
 		
 		keyLookup.put(key, player);
@@ -306,7 +303,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 						source.remove();
 						keyLookup.remove(entry.getKey());
 					} else {
-						return new SimpleEntry<Player, TValue>(player, entry.getValue());
+						return new SimpleEntry<>(player, entry.getValue());
 					}
 				}
 				return endOfData();
