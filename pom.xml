@@ -8,7 +8,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spigotVersion>1.13.1-R0.1-SNAPSHOT</spigotVersion>
+    <spigotVersion>1.14-R0.1-SNAPSHOT</spigotVersion>
   </properties>
 
   <modules>

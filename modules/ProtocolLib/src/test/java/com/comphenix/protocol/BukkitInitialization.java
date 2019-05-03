@@ -4,14 +4,14 @@ import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
-import net.minecraft.server.v1_13_R2.DispenserRegistry;
+import net.minecraft.server.v1_14_R1.DispenserRegistry;
 
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_13_R2.util.Versioning;
+import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_14_R1.util.Versioning;
 
 import static org.mockito.Mockito.*;
 
@@ -88,7 +88,7 @@ public class BukkitInitialization {
 			}
 
 			MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
-			MinecraftVersion.setCurrentVersion(MinecraftVersion.AQUATIC_UPDATE);
+			MinecraftVersion.setCurrentVersion(MinecraftVersion.PILLAGE_UPDATE);
 		}
 	}
 }

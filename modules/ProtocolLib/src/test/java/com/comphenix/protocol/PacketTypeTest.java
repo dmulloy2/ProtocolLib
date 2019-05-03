@@ -25,9 +25,9 @@ import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 
-import net.minecraft.server.v1_13_R2.EnumProtocol;
-import net.minecraft.server.v1_13_R2.EnumProtocolDirection;
-import net.minecraft.server.v1_13_R2.PacketLoginInStart;
+import net.minecraft.server.v1_14_R1.EnumProtocol;
+import net.minecraft.server.v1_14_R1.EnumProtocolDirection;
+import net.minecraft.server.v1_14_R1.PacketLoginInStart;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

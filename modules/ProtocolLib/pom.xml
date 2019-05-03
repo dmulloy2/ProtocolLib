@@ -261,5 +261,17 @@
       <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
+
+<!-- 	those dependencies are missing in the 1.14 spigot.jar now, we need to fetch it -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.9</version>
+		</dependency>
   </dependencies>
 </project>

@@ -47,6 +47,11 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	/**
 	 * Version 1.13 - update aquatic.
 	 */
+	public static final MinecraftVersion PILLAGE_UPDATE = new MinecraftVersion("1.14");
+	
+	/**
+	 * Version 1.13 - update aquatic.
+	 */
 	public static final MinecraftVersion AQUATIC_UPDATE = new MinecraftVersion("1.13");
 
 	/**
