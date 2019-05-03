@@ -6,9 +6,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import net.minecraft.server.v1_13_R2.AttributeModifier;
-import net.minecraft.server.v1_13_R2.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_13_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_14_R1.AttributeModifier;
+import net.minecraft.server.v1_14_R1.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_14_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -90,6 +90,6 @@ public class WrappedAttributeTest {
 	}
 
 	private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
-		return new AttributeModifier(modifier.getUUID(), modifier.getName(), modifier.getAmount(), modifier.getOperation().getId());
+		return new AttributeModifier(modifier.getUUID(), modifier.getName(), modifier.getAmount(), AttributeModifier.Operation.a(modifier.getOperation().getId()));
 	}
 }

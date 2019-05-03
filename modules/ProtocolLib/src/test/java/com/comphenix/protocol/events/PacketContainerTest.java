@@ -36,8 +36,8 @@ import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 
-import net.minecraft.server.v1_13_R2.*;
-import net.minecraft.server.v1_13_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_14_R1.*;
+import net.minecraft.server.v1_14_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -359,7 +359,7 @@ public class PacketContainerTest {
 
 		// Initialize some test data
 		List<AttributeModifier> modifiers = Lists.newArrayList(
-			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, 0));
+			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, AttributeModifier.Operation.a(0)));
 
 		// Obtain an AttributeSnapshot instance. This is complicated by the fact that AttributeSnapshots
 		// are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
