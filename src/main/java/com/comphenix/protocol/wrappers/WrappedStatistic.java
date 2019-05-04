@@ -1,6 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -18,13 +19,22 @@ public class WrappedStatistic extends AbstractWrapper {
 	private static final Class<?> STATISTIC = MinecraftReflection.getStatisticClass();
 	private static final Class<?> STATISTIC_LIST = MinecraftReflection.getStatisticListClass();
 
-	private static final MethodAccessor FIND_STATISTICS = Accessors.getMethodAccessor(
-		FuzzyReflection.fromClass(STATISTIC_LIST).getMethodByParameters(
-			"findStatistic", STATISTIC, new Class<?>[] { String.class }
-		)
-	);
-	private static final FieldAccessor MAP_ACCESSOR = Accessors.getFieldAccessor(STATISTIC_LIST, Map.class, true);
-	private static final FieldAccessor GET_NAME = Accessors.getFieldAccessor(STATISTIC, String.class, true);
+
+	static {
+		try {
+			FIND_STATISTICS = Accessors.getMethodAccessor(
+					FuzzyReflection.fromClass(STATISTIC_LIST).getMethodByParameters(
+							"findStatistic", STATISTIC, new Class<?>[]{String.class}));
+			MAP_ACCESSOR = Accessors.getFieldAccessor(STATISTIC_LIST, Map.class, true);
+			GET_NAME = Accessors.getFieldAccessor(STATISTIC, String.class, true);
+		} catch (Exception ex) {
+			// TODO - find an alternative
+		}
+	}
+
+	private static MethodAccessor FIND_STATISTICS;
+	private static FieldAccessor MAP_ACCESSOR;
+	private static FieldAccessor GET_NAME;
 	
 	private final String name;
 	
@@ -62,12 +72,7 @@ public class WrappedStatistic extends AbstractWrapper {
 		@SuppressWarnings("unchecked")
 		Map<Object, Object> map = (Map<Object, Object>) MAP_ACCESSOR.get(null);
 		
-		return Iterables.transform(map.values(), new Function<Object, WrappedStatistic>() {
-			@Override
-			public WrappedStatistic apply(Object handle) {
-				return fromHandle(handle);
-			};
-		});
+		return map.values().stream().map(WrappedStatistic::fromHandle).collect(Collectors.toList());
 	}
 	
 	/**

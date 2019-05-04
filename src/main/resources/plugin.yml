@@ -1,11 +1,10 @@
 name: ProtocolLib
-#version: ${project.fullVersion}
-version: 4.4.0
+version: 4.5.0-SNAPSHOT
 description: Provides read/write access to the Minecraft protocol.
 authors: [dmulloy2, comphenix]
 
 main: com.comphenix.protocol.ProtocolLib
-load: startup
+load: STARTUP
 database: false
 
 commands:

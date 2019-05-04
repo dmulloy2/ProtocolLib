@@ -52,7 +52,7 @@ processResources {
 
     with copySpec {
         from 'src/main/resources'
-        filter(ReplaceTokens, tokens: ['fullVersion': fullVersion])
+        filter(ReplaceTokens, tokens: ['$fullVersion': fullVersion])
     }
 }
 

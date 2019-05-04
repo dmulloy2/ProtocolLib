@@ -26,7 +26,6 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
 import org.bukkit.Material;
-import org.bukkit.block.data.BlockData;
 
 /**
  * Represents a wrapper around IBlockData.
@@ -157,7 +156,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 			return new NewBlockData(FROM_LEGACY_DATA.invoke(null, material, (byte) data));
 		}
 
-		private static WrappedBlockData createNewData(BlockData data) {
+		private static WrappedBlockData createNewData(Object data) {
 			return new NewBlockData(GET_HANDLE.invoke(data));
 		}
 	}
@@ -324,7 +323,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 	 * @param data Spigot block data
 	 * @return The new Wrapped Block Data
 	 */
-	public static WrappedBlockData createData(BlockData data) {
+	public static WrappedBlockData createData(Object data) {
 		return NewBlockData.createNewData(data);
 	}
 
