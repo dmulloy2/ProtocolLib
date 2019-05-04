@@ -1,9 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
@@ -12,8 +8,11 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
-import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Represents a generic enum converter.
@@ -387,7 +386,13 @@ public abstract class EnumWrappers {
 		PROTOCOL_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
 		CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
 		CHAT_VISIBILITY_CLASS = getEnum(PacketType.Play.Client.SETTINGS.getPacketClass(), 0);
-		DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
+
+		try {
+			DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.SERVER_DIFFICULTY.getPacketClass(), 0);
+		} catch (Exception ex) {
+			DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
+		}
+
 		ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
 		RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
@@ -447,9 +452,9 @@ public abstract class EnumWrappers {
 		try {
 			return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
 		} catch (Throwable ex) {
-			/* if (ProtocolLogger.isDebugEnabled()) {
-				ex.printStackTrace();
-			} */
+			if (ProtocolLogger.isDebugEnabled()) {
+				// ex.printStackTrace();
+			}
 
 			return null;
 		}

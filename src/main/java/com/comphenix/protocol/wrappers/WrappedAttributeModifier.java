@@ -5,10 +5,12 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
@@ -20,6 +22,49 @@ import com.google.common.base.Preconditions;
  * @author Kristian
  */
 public class WrappedAttributeModifier extends AbstractWrapper {
+	private static final Class<?> OPERATION_CLASS = MinecraftReflection.getMinecraftClass("AttributeModifier$Operation");
+	private static final boolean OPERATION_ENUM = MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE);
+	private static final EquivalentConverter<Operation> OPERATION_CONVERTER = new IndexedEnumConverter<>(Operation.class, OPERATION_CLASS);
+
+	private static class IndexedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
+		private Class<T> specificClass;
+		private Class<?> genericClass;
+
+		private IndexedEnumConverter(Class<T> specificClass, Class<?> genericClass) {
+			this.specificClass = specificClass;
+			this.genericClass = genericClass;
+		}
+
+		@Override
+		public Object getGeneric(T specific) {
+			int ordinal = specific.ordinal();
+			for (Object elem : genericClass.getEnumConstants()) {
+				if (((Enum<?>) elem).ordinal() == ordinal) {
+					return elem;
+				}
+			}
+
+			return null;
+		}
+
+		@Override
+		public T getSpecific(Object generic) {
+			int ordinal = ((Enum<?>) generic).ordinal();
+			for (T elem : specificClass.getEnumConstants()) {
+				if (elem.ordinal() == ordinal) {
+					return elem;
+				}
+			}
+
+			return null;
+		}
+
+		@Override
+		public Class<T> getSpecificType() {
+			return specificClass;
+		}
+	}
+
 	 /**
 	  * Represents the different modifier operations.
 	  * <p>
@@ -137,7 +182,12 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 		}
 
 	    this.amount = (Double) modifier.withType(double.class).read(0);
-	    this.operation = Operation.fromId((Integer) modifier.withType(int.class).read(0));
+
+		if (OPERATION_ENUM) {
+			this.operation = modifier.withType(OPERATION_CLASS, OPERATION_CONVERTER).readSafely(0);
+		} else {
+			this.operation = Operation.fromId((Integer) modifier.withType(int.class).readSafely(0));
+		}
 	}
 	
 	/**
@@ -374,16 +424,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 
 			// Retrieve the correct constructor
 			if (ATTRIBUTE_MODIFIER_CONSTRUCTOR == null) {
-				ATTRIBUTE_MODIFIER_CONSTRUCTOR = FuzzyReflection.fromClass(
-						MinecraftReflection.getAttributeModifierClass(), true).getConstructor(
-						FuzzyMethodContract.newBuilder().parameterCount(4).
-							parameterDerivedOf(UUID.class, 0).
-							parameterExactType(String.class, 1).
-							parameterExactType(double.class, 2).
-							parameterExactType(int.class, 3).build());
-
-				// Just in case
-				ATTRIBUTE_MODIFIER_CONSTRUCTOR.setAccessible(true);
+				ATTRIBUTE_MODIFIER_CONSTRUCTOR = getConstructor();
 			}
 
 			// Construct it
@@ -391,12 +432,35 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 				// No need to read these values with a modifier
 				return new WrappedAttributeModifier(
 					ATTRIBUTE_MODIFIER_CONSTRUCTOR.newInstance(
-						uuid, name, amount, operation.getId()),
+						uuid, name, amount, getOperationParam(operation)),
 					uuid, name, amount, operation
 				);
 			} catch (Exception e) {
 				throw new RuntimeException("Cannot construct AttributeModifier.", e);
 			}
 		}
+	}
+
+	private static Object getOperationParam(Operation operation) {
+		return OPERATION_ENUM ? OPERATION_CONVERTER.getGeneric(operation) : operation.getId();
+	}
+
+	private static Constructor<?> getConstructor() {
+		FuzzyMethodContract.Builder builder = FuzzyMethodContract
+				.newBuilder()
+				.parameterCount(4)
+				.parameterDerivedOf(UUID.class, 0)
+				.parameterExactType(String.class, 1)
+				.parameterExactType(double.class, 2);
+		if (OPERATION_ENUM) {
+			builder = builder.parameterExactType(OPERATION_CLASS, 3);
+		} else {
+			builder = builder.parameterExactType(int.class, 3);
+		}
+
+		Constructor<?> ret = FuzzyReflection.fromClass(MinecraftReflection.getAttributeModifierClass(), true)
+		                                    .getConstructor(builder.build());
+		ret.setAccessible(true);
+		return ret;
 	}
 }

@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol.injector.netty;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -51,8 +52,10 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 
 		// Iterate through the protocols
 		for (Object protocol : protocols) {
-			if (modifier == null)
+			if (modifier == null) {
 				modifier = new StructureModifier<Object>(protocol.getClass().getSuperclass(), false);
+			}
+
 			StructureModifier<Map<Object, Map<Integer, Class<?>>>> maps = modifier.withTarget(protocol).withType(Map.class);
 			for (Entry<Object, Map<Integer, Class<?>>> entry : maps.read(0).entrySet()) {
 				String direction = entry.getKey().toString();
@@ -92,6 +95,7 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 	protected void associatePackets(Register register, Map<Integer, Class<?>> lookup, Protocol protocol, Sender sender) {
 		for (Entry<Integer, Class<?>> entry : lookup.entrySet()) {
 			PacketType type = PacketType.fromCurrent(protocol, sender, entry.getKey(), entry.getValue());
+			// System.out.println(Arrays.toString(type.getClassNames()) + " -> " + entry.getValue());
 
 			try {
 				register.typeToClass.put(type, entry.getValue());

@@ -16,13 +16,6 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -44,7 +37,6 @@ import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.base.Preconditions;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
@@ -52,12 +44,17 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.AttributeKey;
 import io.netty.util.internal.TypeParameterMatcher;
-
 import net.sf.cglib.proxy.Factory;
-
-import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents a channel injector.

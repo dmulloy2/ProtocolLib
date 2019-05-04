@@ -1,13 +1,12 @@
 package com.comphenix.protocol.metrics;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -16,16 +15,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;

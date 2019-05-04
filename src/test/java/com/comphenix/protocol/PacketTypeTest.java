@@ -17,6 +17,8 @@
 package com.comphenix.protocol;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -24,11 +26,14 @@ import java.util.TreeMap;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.utility.Constants;
+import com.comphenix.protocol.utility.MinecraftReflection;
 
-import net.minecraft.server.v1_13_R2.EnumProtocol;
-import net.minecraft.server.v1_13_R2.EnumProtocolDirection;
-import net.minecraft.server.v1_13_R2.PacketLoginInStart;
+import net.minecraft.server.v1_14_R1.EnumProtocol;
+import net.minecraft.server.v1_14_R1.EnumProtocolDirection;
+import net.minecraft.server.v1_14_R1.PacketLoginInStart;
 
+import org.apache.commons.lang.WordUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -38,6 +43,117 @@ import static org.junit.Assert.*;
  * @author dmulloy2
  */
 public class PacketTypeTest {
+
+	@SuppressWarnings("unchecked")
+	public static void main(String[] args) throws Exception {
+		MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
+		EnumProtocol[] protocols = EnumProtocol.values();
+		for (EnumProtocol protocol : protocols) {
+			System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
+
+			Field field = EnumProtocol.class.getDeclaredField("h");
+			field.setAccessible(true);
+
+			Map<EnumProtocolDirection, Map<Integer, Class<?>>> map = (Map<EnumProtocolDirection, Map<Integer, Class<?>>>) field.get(protocol);
+			for (Entry<EnumProtocolDirection, Map<Integer, Class<?>>> entry : map.entrySet()) {
+				Map<Integer, Class<?>> treeMap = new TreeMap<Integer, Class<?>>(entry.getValue());
+				System.out.println("  " + entry.getKey());
+				for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
+					System.out.println(generateNewType(entry1.getKey(), entry1.getValue()));
+				}
+			}
+		}
+	}
+
+	private static String formatHex(int dec) {
+		if (dec < 0) {
+			return "-1";
+		}
+
+		String hex = Integer.toHexString(dec).toUpperCase();
+		return "0x" + (hex.length() < 2 ? "0" : "") + hex;
+	}
+
+	private static List<String> splitOnCaps(String string) {
+		List<String> list = new ArrayList<>();
+		StringBuilder builder = new StringBuilder();
+		char[] chars = string.toCharArray();
+		for (int i = 0; i < chars.length; i++) {
+			char c = chars[i];
+			if (i != 0 && Character.isUpperCase(c)) {
+				list.add(builder.toString());
+				builder = new StringBuilder();
+			}
+
+			builder.append(c);
+		}
+
+		list.add(builder.toString());
+		return list;
+	}
+
+	private static String generateNewType(int packetId, Class<?> clazz) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("\t\t\t");
+		builder.append("public static final PacketType ");
+
+		StringBuilder nameBuilder = new StringBuilder();
+		List<String> split = splitOnCaps(clazz.getSimpleName());
+
+		// We're not interested in the first 3
+		for (int i = 3; i < split.size(); i++) {
+			nameBuilder.append(split.get(i));
+		}
+
+		String className = nameBuilder.toString();
+
+		// Format it like SET_PROTOCOL
+		StringBuilder fieldName = new StringBuilder();
+		char[] chars = className.toCharArray();
+		for (int i = 0; i < chars.length; i++) {
+			char c = chars[i];
+			if (i != 0 && Character.isUpperCase(c)) {
+				fieldName.append("_");
+			}
+			fieldName.append(Character.toUpperCase(c));
+		}
+
+		builder.append(fieldName.toString().replace("N_B_T", "NBT"));
+		builder.append(" = ");
+
+		// Add spacing
+		if (builder.length() > 65) {
+			builder.append("\n");
+		} else {
+			while (builder.length() < 65) {
+				builder.append(" ");
+			}
+		}
+		builder.append("new ");
+		builder.append("PacketType(PROTOCOL, SENDER, ");
+
+		int legacy = -1;
+
+		try {
+			PacketType type = PacketType.fromClass(clazz);
+			if (type != null) {
+				legacy = type.getCurrentId();
+			}
+		} catch (Throwable ex) {
+			// ex.printStackTrace();
+		}
+
+		builder.append(formatHex(packetId));
+		builder.append(", ");
+		builder.append(formatHex(legacy));
+		builder.append(", ");
+		if (legacy == -1) {
+			builder.append("  ");
+		}
+		builder.append("\"").append(className).append("\"");
+		builder.append(");");
+		return builder.toString();
+	}
 
 	@BeforeClass
 	public static void initializeReflection() {

@@ -17,17 +17,15 @@
 
 package com.comphenix.protocol.metrics;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketListener;
+import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.tuple.Pair;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.bukkit.plugin.Plugin;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Statistics {
 

@@ -16,10 +16,6 @@
  */
 package com.comphenix.protocol.events;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.*;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -36,11 +32,11 @@ import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 
-import net.minecraft.server.v1_13_R2.*;
-import net.minecraft.server.v1_13_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_14_R1.*;
+import net.minecraft.server.v1_14_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -53,6 +49,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.*;
 
 import static com.comphenix.protocol.utility.TestUtils.*;
 import static org.junit.Assert.*;
@@ -359,7 +359,7 @@ public class PacketContainerTest {
 
 		// Initialize some test data
 		List<AttributeModifier> modifiers = Lists.newArrayList(
-			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, 0));
+			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, AttributeModifier.Operation.ADDITION));
 
 		// Obtain an AttributeSnapshot instance. This is complicated by the fact that AttributeSnapshots
 		// are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
@@ -508,19 +508,12 @@ public class PacketContainerTest {
 	public void testDeepClone() {
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (BLACKLISTED.contains(type) || type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD")) {
+			if (BLACKLISTED.contains(type) || type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || !type.isSupported()) {
 				continue;
 			}
 
-			// Whether or not this packet has been registered
-			boolean registered = type.isSupported();
-
 			try {
 				PacketContainer constructed = new PacketContainer(type);
-
-				if (!registered) {
-					fail("Expected IllegalArgumentException(Packet " + type + " not registered)");
-				}
 
 				// Initialize default values
 				constructed.getModifier().writeDefaults();

@@ -3,12 +3,11 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.BukkitConverters.IgnoreNullConverter;
+
+import java.lang.reflect.Constructor;
 
 /**
  * @author dmulloy2

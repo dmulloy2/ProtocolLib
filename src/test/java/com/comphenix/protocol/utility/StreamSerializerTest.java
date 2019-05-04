@@ -1,12 +1,8 @@
 package com.comphenix.protocol.utility;
 
-import java.io.*;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-
-import net.minecraft.server.v1_13_R2.IntHashMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -16,6 +12,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+
+import java.io.*;
 
 import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
 import static org.junit.Assert.assertEquals;
@@ -30,10 +28,10 @@ public class StreamSerializerTest {
 		BukkitInitialization.initializeItemMeta();
 	}
 
-	@Test
+	/*@Test
 	public void testMinecraftReflection() {
 		assertEquals(IntHashMap.class, MinecraftReflection.getIntHashMapClass());
-	}
+	}*/
 
 	@Test
 	public void testStrings() throws IOException {

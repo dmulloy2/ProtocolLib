@@ -69,6 +69,10 @@ public class ImmutableDetector implements Cloner {
 			add(MinecraftReflection::getFluidTypeClass);
 			add(MinecraftReflection::getParticleTypeClass);
 		}
+
+		if (MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE)) {
+			add(() -> MinecraftReflection.getMinecraftClass("EntityTypes"));
+		}
 	}
 
 	private static void add(Supplier<Class<?>> getClass) {

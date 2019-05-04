@@ -14,7 +14,9 @@ import com.google.common.base.Preconditions;
 /**
  * Represents a wrapper for the internal IntHashMap in Minecraft.
  * @author Kristian
+ * @deprecated IntHashMap no longer exists
  */
+@Deprecated
 public class WrappedIntHashMap extends AbstractWrapper {
 	private static Method PUT_METHOD;
 	private static Method GET_METHOD;

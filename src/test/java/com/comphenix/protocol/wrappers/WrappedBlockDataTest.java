@@ -18,14 +18,14 @@ package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
 
-import net.minecraft.server.v1_13_R2.IBlockData;
+import net.minecraft.server.v1_14_R1.IBlockData;
 
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.GlassPane;
-import org.bukkit.craftbukkit.v1_13_R2.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_13_R2.block.impl.CraftGlassPane;
-import org.bukkit.craftbukkit.v1_13_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_14_R1.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_14_R1.block.impl.CraftStainedGlassPane;
+import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -67,7 +67,7 @@ public class WrappedBlockDataTest {
 		WrappedBlockData wrapper = WrappedBlockData.createData(data);
 		assertEquals(wrapper.getType(), Material.CYAN_STAINED_GLASS_PANE);
 
-		GlassPane back = new CraftGlassPane((IBlockData) wrapper.getHandle());
+		GlassPane back = new CraftStainedGlassPane((IBlockData) wrapper.getHandle());
 		assertEquals(back.hasFace(BlockFace.EAST), data.hasFace(BlockFace.EAST));
 		assertEquals(back.hasFace(BlockFace.SOUTH), data.hasFace(BlockFace.SOUTH));
 	}

@@ -10,12 +10,12 @@ import com.comphenix.protocol.BukkitInitialization;
 
 public class WrappedIntHashMapTest {
 
-	@BeforeClass
+	//@BeforeClass
 	public static void initializeBukkit() {
 		BukkitInitialization.initializePackage();
 	}
 	
-	@Test
+	//@Test
 	public void testIntMap() {
 		WrappedIntHashMap test = WrappedIntHashMap.newMap();
 		test.put(1, "hello");
