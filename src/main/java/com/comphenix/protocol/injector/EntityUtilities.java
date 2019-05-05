@@ -17,25 +17,27 @@
 
 package com.comphenix.protocol.injector;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.WrappedIntHashMap;
+import com.google.common.collect.Lists;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FieldUtils;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.WrappedIntHashMap;
-import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Used to perform certain operations on entities.
@@ -43,64 +45,41 @@ import com.google.common.collect.Lists;
  * @author Kristian
  */
 class EntityUtilities {
-
-	private static Field entityTrackerField;
-	private static Field trackedEntitiesField;
-	private static Field trackedPlayersField;
-	private static Field trackerField;
+	private static final boolean NEW_TRACKER = MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE);
+	private static final EntityUtilities INSTANCE = new EntityUtilities();
 	
-	private static Method scanPlayersMethod;
-
-	/*
-	public static void updateEntity2(Entity entity, List<Player> observers) {
-		EntityTrackerEntry entry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-
-		List<EntityPlayer> nmsPlayers = getNmsPlayers(observers);
-
-		entry.trackedPlayers.removeAll(nmsPlayers);
-		entry.scanPlayers(nmsPlayers);
+	public static EntityUtilities getInstance() {
+		return INSTANCE;
 	}
-	*/
 
-	public static void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
+	private EntityUtilities() { }
+
+	private FieldAccessor entityTrackerField;
+	private FieldAccessor trackedEntitiesField;
+	private FieldAccessor trackedPlayersField;
+	private FieldAccessor trackerField;
+	
+	private MethodAccessor scanPlayersMethod;
+
+	public void updateEntity(Entity entity, List<Player> observers) {
 		if (entity == null || !entity.isValid()) {
 			return;
 		}
 
-		try {
-			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-			if (trackerEntry == null) {
-				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + ".");
-			}
+		Collection<?> trackedPlayers = getTrackedPlayers(entity);
+		List<Object> nmsPlayers = unwrapBukkit(observers);
 
-			if (trackedPlayersField == null) {
-				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
-			}
-			
-			// Phew, finally there.
-			Collection<?> trackedPlayers = getTrackedPlayers(trackedPlayersField, trackerEntry);
-			List<Object> nmsPlayers = unwrapBukkit(observers);
+		trackedPlayers.removeAll(nmsPlayers);
 
-			trackedPlayers.removeAll(nmsPlayers);
-			
-			// We have to rely on a NAME once again. Damn it.
-			// TODO: Make sure this stays up to date with version changes - 1.8 - 1.10
-			if (scanPlayersMethod == null) {
-				scanPlayersMethod = trackerEntry.getClass().getMethod("scanPlayers", List.class);
-			}
+		// TODO Find equivalent method for newer versions
 
-			scanPlayersMethod.invoke(trackerEntry, nmsPlayers);			
-		} catch (IllegalArgumentException e) {
-			throw e;
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Security limitation prevents access to 'get' method in IntHashMap", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Exception occurred in Minecraft.", e);
-		} catch (SecurityException e) {
-			throw new FieldAccessException("Security limitation prevents access to 'scanPlayers' method in trackerEntry.", e);
-		} catch (NoSuchMethodException e) {
-			throw new FieldAccessException("Cannot find 'scanPlayers' method. Is ProtocolLib up to date?", e);
+		if (scanPlayersMethod == null) {
+			Class<?> trackerEntry = MinecraftReflection.getMinecraftClass("EntityTrackerEntry");
+			scanPlayersMethod = Accessors.getMethodAccessor(trackerEntry, "scanPlayers");
 		}
+
+		Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
+		scanPlayersMethod.invoke(trackerEntry, nmsPlayers);
 	}
 
 	/**
@@ -109,45 +88,37 @@ class EntityUtilities {
 	 * @return Every client/player that is tracking the given entity.
 	 * @throws FieldAccessException If reflection failed.
 	 */
-	public static List<Player> getEntityTrackers(Entity entity) {
+	public List<Player> getEntityTrackers(Entity entity) {
 		if (entity == null || !entity.isValid()) {
 			return new ArrayList<>();
 		}
 
-		try {
-			List<Player> result = new ArrayList<Player>();
+		List<Player> result = new ArrayList<>();
+		Collection<?> trackedPlayers = getTrackedPlayers(entity);
 
-			Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-			if (trackerEntry == null) {
-				throw new IllegalArgumentException("Cannot find entity trackers for " + entity + ".");
+		// Wrap every player - we also ensure that the underlying tracker list is immutable
+		for (Object tracker : trackedPlayers) {
+			if (MinecraftReflection.isMinecraftPlayer(tracker)) {
+				result.add((Player) MinecraftReflection.getBukkitEntity(tracker));
 			}
-
-			if (trackedPlayersField == null) {
-				trackedPlayersField = FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*");
-			}
-
-			Collection<?> trackedPlayers = getTrackedPlayers(trackedPlayersField, trackerEntry);
-
-			// Wrap every player - we also ensure that the underlying tracker list is immutable
-			for (Object tracker : trackedPlayers) {
-				if (MinecraftReflection.isMinecraftPlayer(tracker)) {
-					result.add((Player) MinecraftReflection.getBukkitEntity(tracker));
-				}
-			}
-
-			return result;
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Security limitation prevented access to the list of tracked players.", e);
 		}
+
+		return result;
 	}
 
-	// Damn you, Paper
-	private static Collection<?> getTrackedPlayers(Field field, Object entry) throws IllegalAccessException {
-		Validate.notNull(field, "Cannot find 'trackedPlayers' field.");
-		Validate.notNull(entry, "entry cannot be null!");
+	private Collection<?> getTrackedPlayers(Entity entity) {
+		Validate.notNull(entity, "entity cannot be null");
 
-		Object value = FieldUtils.readField(field, entry, false);
+		Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
+		Validate.notNull(trackerEntry, "Could not find entity trackers for " + entity);
 
+		if (trackedPlayersField == null) {
+			trackedPlayersField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*"));
+		}
+
+		Validate.notNull(trackedPlayersField, "Could not find trackedPlayers field");
+
+		Object value = trackedPlayersField.get(trackerEntry);
 		if (value instanceof Collection) {
 			return (Collection<?>) value;
 		} else if (value instanceof Map) {
@@ -157,47 +128,63 @@ class EntityUtilities {
 			throw new IllegalStateException("trackedPlayers field was an unknown type: expected Collection or Map, but got " + value.getClass());
 		}
 	}
+	
+	private MethodAccessor getChunkProvider;
+	private FieldAccessor chunkMapField;
 
-	/*
-	private static EntityTrackerEntry getEntityTrackerEntry2(World world, int entityID) {
-		WorldServer worldServer = ((CraftWorld) world).getHandle();
-		EntityTracker tracker = worldServer.tracker;
-		return tracker.trackedEntities.get(entityID);
+	@SuppressWarnings("unchecked")
+	private Object getNewEntityTracker(Object worldServer, int entityId) {
+		if (getChunkProvider == null) {
+			Class<?> chunkProviderClass = MinecraftReflection.getMinecraftClass("ChunkProviderServer");
+			getChunkProvider = Accessors.getMethodAccessor(
+					FuzzyReflection.fromClass(worldServer.getClass(), false).getMethod(
+							FuzzyMethodContract.newBuilder().parameterCount(0).returnTypeExact(chunkProviderClass).build()));
+		}
+		
+		Object chunkProvider = getChunkProvider.invoke(worldServer);
+
+		if (chunkMapField == null) {
+			Class<?> chunkMapClass = MinecraftReflection.getMinecraftClass("PlayerChunkMap");
+			chunkMapField = Accessors.getFieldAccessor(
+					FuzzyReflection.fromClass(chunkProvider.getClass(), false).getField(
+							FuzzyFieldContract.newBuilder().typeExact(chunkMapClass).build()));
+		}
+		
+		Object playerChunkMap = chunkMapField.get(chunkProvider);
+
+		if (trackedEntitiesField == null) {
+			trackedEntitiesField = Accessors.getFieldAccessor(
+					FuzzyReflection.fromClass(playerChunkMap.getClass(), false).getField(
+							FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).nameExact("trackedEntities").build()));
+		}
+
+		Map<Integer, Object> trackedEntities = (Map<Integer, Object>) trackedEntitiesField.get(playerChunkMap);
+		return trackedEntities.get(entityId);
 	}
-	*/
 
-	private static Object getEntityTrackerEntry(World world, int entityID) throws FieldAccessException, IllegalArgumentException {
+	private Object getEntityTrackerEntry(World world, int entityID) {
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		Object worldServer = unwrapper.unwrapItem(world);
 
+		if (NEW_TRACKER) {
+			return getNewEntityTracker(worldServer, entityID);
+		}
+
 		if (entityTrackerField == null)
-			entityTrackerField = FuzzyReflection.fromObject(worldServer).
-									getFieldByType("tracker", MinecraftReflection.getEntityTrackerClass());
+			entityTrackerField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(worldServer).
+									getFieldByType("tracker", MinecraftReflection.getEntityTrackerClass()));
 		
 		// Get the tracker
-		Object tracker = null;
-		
-		try {
-			tracker = FieldUtils.readField(entityTrackerField, worldServer, false);
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Cannot access 'tracker' field due to security limitations.", e);
-		}
+		Object tracker = entityTrackerField.get(worldServer);
 
 		// Looking for an IntHashMap in the tracker entry
 		if (trackedEntitiesField == null) {
-			trackedEntitiesField = FuzzyReflection.fromObject(tracker, false)
-					.getFieldByType("trackedEntities", MinecraftReflection.getIntHashMapClass());
+			trackedEntitiesField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(tracker, false)
+					.getFieldByType("trackedEntities", MinecraftReflection.getIntHashMapClass()));
 		}
 
 		// Read the map
-		Object trackedEntities = null;
-
-		try {
-			trackedEntities = FieldUtils.readField(trackedEntitiesField, tracker, false);
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Cannot access 'trackedEntities' field due to security limitations.", e);
-		}
-
+		Object trackedEntities = trackedEntitiesField.get(tracker);
 		return WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
 	}
 
@@ -206,7 +193,10 @@ class EntityUtilities {
 	 * @return The associated entity.
 	 * @throws FieldAccessException Reflection error.
 	 */
-	public static Entity getEntityFromID(World world, int entityID) throws FieldAccessException {
+	public Entity getEntityFromID(World world, int entityID) {
+		Validate.notNull(world, "world cannot be null");
+		Validate.isTrue(entityID >= 0, "entityID cannot be negative");
+
 		try {
 			Object trackerEntry = getEntityTrackerEntry(world, entityID);
 			Object tracker = null;
@@ -215,29 +205,25 @@ class EntityUtilities {
 			if (trackerEntry != null) {
 				if (trackerField == null) {
 					try {
-						Class<?> entryClass = MinecraftReflection.getMinecraftClass("EntityTrackerEntry");
-						trackerField = entryClass.getDeclaredField("tracker");
-					} catch (NoSuchFieldException e) {
+						trackerField = Accessors.getFieldAccessor(trackerEntry.getClass(), "tracker", true);
+					} catch (Exception e) {
 						// Assume it's the first entity field then
-						trackerField = FuzzyReflection.fromObject(trackerEntry, true)
-								.getFieldByType("tracker", MinecraftReflection.getEntityClass());
+						trackerField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(trackerEntry, true)
+								.getFieldByType("tracker", MinecraftReflection.getEntityClass()));
 					}
 				}
 
-				tracker = FieldUtils.readField(trackerField, trackerEntry, true);
+				tracker = trackerField.get(trackerEntry);
 			}
 
 			// If the tracker is NULL, we'll just assume this entity doesn't exist
-			if (tracker != null)
-				return (Entity) MinecraftReflection.getBukkitEntity(tracker);
-			else
-				return null;
+			return tracker != null ? (Entity) MinecraftReflection.getBukkitEntity(tracker) : null;
 		} catch (Exception e) {
 			throw new FieldAccessException("Cannot find entity from ID " + entityID + ".", e);
 		}
 	}
 
-	private static List<Object> unwrapBukkit(List<Player> players) {
+	private List<Object> unwrapBukkit(List<Player> players) {
 		List<Object> output = Lists.newArrayList();
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 		

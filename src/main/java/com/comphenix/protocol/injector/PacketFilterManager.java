@@ -56,8 +56,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-import io.netty.channel.Channel;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -73,6 +71,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+
+import io.netty.channel.Channel;
 
 public final class PacketFilterManager implements ListenerInvoker, InternalManager {
 
@@ -924,17 +924,17 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 
 	@Override
 	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
-		EntityUtilities.updateEntity(entity, observers);
+		EntityUtilities.getInstance().updateEntity(entity, observers);
 	}
 
 	@Override
 	public Entity getEntityFromID(World container, int id) throws FieldAccessException {
-		return EntityUtilities.getEntityFromID(container, id);
+		return EntityUtilities.getInstance().getEntityFromID(container, id);
 	}
 
 	@Override
 	public List<Player> getEntityTrackers(Entity entity) throws FieldAccessException {
-		return EntityUtilities.getEntityTrackers(entity);
+		return EntityUtilities.getInstance().getEntityTrackers(entity);
 	}
 
 	/**

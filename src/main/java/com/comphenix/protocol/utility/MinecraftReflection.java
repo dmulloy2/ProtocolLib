@@ -1527,7 +1527,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getEntityTrackerClass() {
 		try {
-			return getMinecraftClass("EntityTracker");
+			return getMinecraftClass("EntityTracker", "PlayerChunkMap$EntityTracker");
 		} catch (RuntimeException e) {
 			FuzzyClassContract entityTrackerContract = FuzzyClassContract.newBuilder().
 					field(FuzzyFieldContract.newBuilder().

@@ -5,15 +5,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import javax.annotation.Nonnull;
-
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
@@ -21,12 +13,7 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FieldAccessException;
@@ -36,6 +23,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 
 /**
  * A protocol manager that delays all packet listener registrations and unregistrations until
@@ -440,7 +434,7 @@ public class DelayedPacketManager implements InternalManager {
 		if (delegate != null)
 			delegate.updateEntity(entity, observers);
 		else
-			EntityUtilities.updateEntity(entity, observers);
+			EntityUtilities.getInstance().updateEntity(entity, observers);
 	}
 	
 	@Override
@@ -448,7 +442,7 @@ public class DelayedPacketManager implements InternalManager {
 		if (delegate != null)
 			return delegate.getEntityFromID(container, id);
 		else
-			return EntityUtilities.getEntityFromID(container, id);
+			return EntityUtilities.getInstance().getEntityFromID(container, id);
 	}
 	
 	@Override
@@ -456,7 +450,7 @@ public class DelayedPacketManager implements InternalManager {
 		if (delegate != null)
 			return delegate.getEntityTrackers(entity);
 		else
-			return EntityUtilities.getEntityTrackers(entity);
+			return EntityUtilities.getInstance().getEntityTrackers(entity);
 	}
 
 	@Override
