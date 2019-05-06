@@ -16,7 +16,7 @@ import com.google.common.base.Preconditions;
  * Represents a chat component added in Minecraft 1.7.2
  * @author Kristian
  */
-public class WrappedChatComponent extends AbstractWrapper {
+public class WrappedChatComponent extends AbstractWrapper implements ClonableWrapper {
 	private static final Class<?> SERIALIZER = MinecraftReflection.getChatSerializerClass();
 	private static final Class<?> COMPONENT = MinecraftReflection.getIChatBaseComponentClass();
 	private static final Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();

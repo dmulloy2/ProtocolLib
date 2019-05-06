@@ -32,6 +32,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 
+import net.md_5.bungee.api.chat.*;
 import net.minecraft.server.v1_14_R1.*;
 import net.minecraft.server.v1_14_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
@@ -70,6 +71,12 @@ public class PacketContainerTest {
 	public static void initializeBukkit() {
 		BukkitInitialization.initializeItemMeta();
 		BukkitInitialization.initializePackage();
+
+		TEST_COMPONENT = ComponentConverter.fromBaseComponent(
+				new ComponentBuilder("Hit or miss?")
+						.event(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://reddit.com"))
+						.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new BaseComponent[] { new TextComponent("The \"front page\" of the internet") }))
+						.append("I guess they never miss, huh?").create());
 	}
 
 	private <T> void testPrimitive(StructureModifier<T> modifier, int index, T initialValue, T testValue) {
@@ -504,6 +511,8 @@ public class PacketContainerTest {
 			PacketType.Play.Server.TAGS
 	);
 
+	private static WrappedChatComponent TEST_COMPONENT;
+
 	@Test
 	public void testDeepClone() {
 		// Try constructing all the packets
@@ -525,8 +534,12 @@ public class PacketContainerTest {
 									(byte) 1),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(String.class)),
 									"String"),
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F)
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F),
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.getChatComponentSerializer(true)),
+							                           com.google.common.base.Optional.of(TEST_COMPONENT.getHandle()))
 					));
+				} else if (type == PacketType.Play.Server.CHAT) {
+					constructed.getChatComponents().write(0, TEST_COMPONENT);
 				}
 
 				// Clone the packet

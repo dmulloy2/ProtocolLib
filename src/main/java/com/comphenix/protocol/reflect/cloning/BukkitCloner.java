@@ -77,6 +77,7 @@ public class BukkitCloner implements Cloner {
 		fromWrapper(MinecraftReflection::getIBlockDataClass, WrappedBlockData::fromHandle);
 		fromManual(MinecraftReflection::getNonNullListClass, source -> nonNullListCloner().clone(source));
 		fromWrapper(MinecraftReflection::getNBTBaseClass, NbtFactory::fromNMS);
+		fromWrapper(MinecraftReflection::getIChatBaseComponentClass, WrappedChatComponent::fromHandle);
 	}
 
 	private Function<Object, Object> findCloner(Class<?> type) {
