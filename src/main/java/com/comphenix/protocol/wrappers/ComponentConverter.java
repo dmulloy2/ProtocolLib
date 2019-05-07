@@ -47,4 +47,12 @@ public final class ComponentConverter {
 	public static WrappedChatComponent fromBaseComponent(BaseComponent... components) {
 		return WrappedChatComponent.fromJson(ComponentSerializer.toString(components));
 	}
+
+	public static Class<?> getBaseComponentArrayClass() {
+		return BaseComponent[].class;
+	}
+
+	public static BaseComponent[] clone(BaseComponent... components) {
+		return ComponentSerializer.parse(ComponentSerializer.toString(components));
+	}
 }

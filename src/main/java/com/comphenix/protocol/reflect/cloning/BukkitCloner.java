@@ -31,6 +31,8 @@ import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Maps;
 
+import net.md_5.bungee.api.chat.BaseComponent;
+
 /**
  * Represents an object that can clone a specific list of Bukkit- and Minecraft-related objects.
  * 
@@ -78,6 +80,8 @@ public class BukkitCloner implements Cloner {
 		fromManual(MinecraftReflection::getNonNullListClass, source -> nonNullListCloner().clone(source));
 		fromWrapper(MinecraftReflection::getNBTBaseClass, NbtFactory::fromNMS);
 		fromWrapper(MinecraftReflection::getIChatBaseComponentClass, WrappedChatComponent::fromHandle);
+		fromManual(ComponentConverter::getBaseComponentArrayClass, source ->
+				ComponentConverter.clone((BaseComponent[]) source));
 	}
 
 	private Function<Object, Object> findCloner(Class<?> type) {
