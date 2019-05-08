@@ -437,8 +437,6 @@ public abstract class EnumWrappers {
 		if (nativeClass != null) {
 			FROM_NATIVE.put(nativeClass, converter);
 			FROM_WRAPPER.put(wrapperClass, converter);
-		} else if (ProtocolLogger.isDebugEnabled()) {
-			// new ClassNotFoundException(wrapperClass.getSimpleName()).printStackTrace();
 		}
 	}
 
@@ -452,10 +450,7 @@ public abstract class EnumWrappers {
 		try {
 			return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
 		} catch (Throwable ex) {
-			if (ProtocolLogger.isDebugEnabled()) {
-				// ex.printStackTrace();
-			}
-
+			ProtocolLogger.debug("Exception getting enum from " + clazz + " at index " + index, ex);
 			return null;
 		}
 	}

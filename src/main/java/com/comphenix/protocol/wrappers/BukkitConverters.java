@@ -24,9 +24,11 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.PacketConstructor;
@@ -984,40 +986,47 @@ public class BukkitConverters {
 	 * @return Every converter with a unique generic class.
 	 */
 	@SuppressWarnings("rawtypes")
-	// TODO this list needs to be updated
 	public static Map<Class<?>, EquivalentConverter<Object>> getConvertersForGeneric() {
 		if (genericConverters == null) {
-			// Generics doesn't work, as usual
-			ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder =
-				   ImmutableMap.<Class<?>, EquivalentConverter<Object>>builder().
-				put(MinecraftReflection.getDataWatcherClass(), (EquivalentConverter) getDataWatcherConverter()).
-				put(MinecraftReflection.getItemStackClass(), (EquivalentConverter) getItemStackConverter()).
-				put(MinecraftReflection.getNBTBaseClass(), (EquivalentConverter) getNbtConverter()).
-				put(MinecraftReflection.getNBTCompoundClass(), (EquivalentConverter) getNbtConverter()).
-				put(MinecraftReflection.getDataWatcherItemClass(), (EquivalentConverter) getWatchableObjectConverter()).
-				put(MinecraftReflection.getMobEffectClass(), (EquivalentConverter) getPotionEffectConverter()).
-				put(MinecraftReflection.getNmsWorldClass(), (EquivalentConverter) getWorldConverter());
-				
-			if (hasWorldType)
-				builder.put(MinecraftReflection.getWorldTypeClass(), (EquivalentConverter) getWorldTypeConverter());
-			if (hasAttributeSnapshot)
-				builder.put(MinecraftReflection.getAttributeSnapshotClass(), (EquivalentConverter) getWrappedAttributeConverter());
-			
-			// Types added in 1.7.2
-			if (MinecraftReflection.isUsingNetty()) {
-				builder.put(MinecraftReflection.getBlockClass(), (EquivalentConverter) getBlockConverter());
-				builder.put(MinecraftReflection.getGameProfileClass(), (EquivalentConverter) getWrappedGameProfileConverter());
-				builder.put(MinecraftReflection.getIChatBaseComponentClass(), (EquivalentConverter) getWrappedChatComponentConverter());
-				builder.put(MinecraftReflection.getServerPingClass(), (EquivalentConverter) getWrappedServerPingConverter());
-				builder.put(MinecraftReflection.getStatisticClass(), (EquivalentConverter) getWrappedStatisticConverter());
-				
-				for (Entry<Class<?>, EquivalentConverter<?>> entry : EnumWrappers.getFromNativeMap().entrySet()) {
-					builder.put((Class) entry.getKey(), (EquivalentConverter) entry.getValue());
-				}
+			ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder = ImmutableMap.builder();
+			addConverter(builder, MinecraftReflection::getDataWatcherClass, BukkitConverters::getDataWatcherConverter);
+			addConverter(builder, MinecraftReflection::getItemStackClass, BukkitConverters::getItemStackConverter);
+			addConverter(builder, MinecraftReflection::getNBTBaseClass, BukkitConverters::getNbtConverter);
+			addConverter(builder, MinecraftReflection::getNBTCompoundClass, BukkitConverters::getNbtConverter);
+			addConverter(builder, MinecraftReflection::getDataWatcherItemClass, BukkitConverters::getWatchableObjectConverter);
+			addConverter(builder, MinecraftReflection::getMobEffectClass, BukkitConverters::getPotionEffectConverter);
+			addConverter(builder, MinecraftReflection::getNmsWorldClass, BukkitConverters::getWorldConverter);
+			addConverter(builder, MinecraftReflection::getWorldTypeClass, BukkitConverters::getWorldTypeConverter);
+			addConverter(builder, MinecraftReflection::getAttributeSnapshotClass, BukkitConverters::getWrappedAttributeConverter);
+			addConverter(builder, MinecraftReflection::getBlockClass, BukkitConverters::getBlockConverter);
+			addConverter(builder, MinecraftReflection::getGameProfileClass, BukkitConverters::getWrappedGameProfileConverter);
+			addConverter(builder, MinecraftReflection::getServerPingClass, BukkitConverters::getWrappedServerPingConverter);
+			addConverter(builder, MinecraftReflection::getStatisticClass, BukkitConverters::getWrappedStatisticConverter);
+			addConverter(builder, MinecraftReflection::getIBlockDataClass, BukkitConverters::getWrappedBlockDataConverter);
+
+			for (Entry<Class<?>, EquivalentConverter<?>> entry : EnumWrappers.getFromNativeMap().entrySet()) {
+				addConverter(builder, entry::getKey, entry::getValue);
 			}
+
 			genericConverters = builder.build();
 		}
+
 		return genericConverters;
+	}
+
+	private static void addConverter(ImmutableMap.Builder<Class<?>, EquivalentConverter<Object>> builder,
+	                                 Supplier<Class<?>> getClass, Supplier<EquivalentConverter> getConverter) {
+		try {
+			Class<?> clazz = getClass.get();
+			if (clazz != null) {
+				EquivalentConverter converter = getConverter.get();
+				if (converter != null) {
+					builder.put(clazz, converter);
+				}
+			}
+		} catch (Exception ex) {
+			ProtocolLogger.debug("Exception registering converter", ex);
+		}
 	}
 	
 	/**
