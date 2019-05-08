@@ -18,6 +18,7 @@ package com.comphenix.protocol;
 
 import java.text.MessageFormat;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bukkit.plugin.Plugin;
 
@@ -25,18 +26,15 @@ import org.bukkit.plugin.Plugin;
  * @author dmulloy2
  */
 public class ProtocolLogger {
-	private static Plugin plugin;
+	private static boolean debugEnabled = true;
+	private static Logger logger = Logger.getLogger("Minecraft");
 
 	protected static void init(Plugin plugin) {
-		ProtocolLogger.plugin = plugin;
-	}
+		logger = plugin.getLogger();
 
-	public static boolean isDebugEnabled() {
 		try {
-			return plugin.getConfig().getBoolean("global.debug", false);
-		} catch (Throwable ex) { // Enable in testing environments
-			return true;
-		}
+			debugEnabled = plugin.getConfig().getBoolean("global.debug", false);
+		} catch (Throwable ignored) { }
 	}
 
 	/**
@@ -46,7 +44,7 @@ public class ProtocolLogger {
 	 * @param args Arguments to format in
 	 */
 	public static void log(Level level, String message, Object... args) {
-		plugin.getLogger().log(level, MessageFormat.format(message, args));
+		logger.log(level, MessageFormat.format(message, args));
 	}
 
 	/**
@@ -65,18 +63,18 @@ public class ProtocolLogger {
 	 * @param ex Exception to log
 	 */
 	public static void log(Level level, String message, Throwable ex) {
-		plugin.getLogger().log(level, message, ex);
+		logger.log(level, message, ex);
 	}
 
 	public static void debug(String message, Object... args) {
-		if (isDebugEnabled()) {
+		if (debugEnabled) {
 			log("[Debug] " + message, args);
 		}
 	}
 
 	public static void debug(String message, Throwable ex) {
-		if (isDebugEnabled()) {
-			plugin.getLogger().log(Level.WARNING, "[Debug] " + message, ex);
+		if (debugEnabled) {
+			logger.log(Level.WARNING, "[Debug] " + message, ex);
 		}
 	}
 }
