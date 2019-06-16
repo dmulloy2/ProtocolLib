@@ -1,0 +1,44 @@
+name: ProtocolLib
+version: 4.5.0-SNAPSHOT
+description: Provides read/write access to the Minecraft protocol.
+authors: [dmulloy2, comphenix]
+
+main: com.comphenix.protocol.ProtocolLib
+load: STARTUP
+database: false
+
+commands:
+  protocol:
+    description: Performs administrative tasks regarding ProtocolLib.
+    usage: /<command> config|check|update|timings|listeners|version|dump
+    permission: protocol.admin
+    permission-message: You don't have <permission>
+  packet:
+    description: Add or remove a simple packet listener.
+    usage: /<command> add|remove|names client|server [ID start]-[ID stop] [detailed]
+    permission: protocol.admin
+    permission-message: You don't have <permission>
+  filter:
+    description: Add or remove programmable filters to the packet listeners.
+    usage: /<command> add|remove name [ID start]-[ID stop]
+    aliases: [packet_filter]
+    permission: protocol.admin
+    permission-message: You don't have <permission>
+  packetlog:
+    description: Logs hex representations of packets to a file or console
+    usage: /<command> <protocol> <sender> <packet> [location]
+    permission: protocol.admin
+    permission-message: You don't have <permission>
+
+permissions:
+  protocol.*:
+    description: Gives access to everything.
+    children:
+      protocol.admin: true
+      protocol.info: true
+  protocol.admin:
+    description: Able to initiate the update process, and can configure debug mode.
+    default: op
+  protocol.info:
+    description: Can read update notifications and error reports.
+    default: op

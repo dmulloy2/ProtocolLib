@@ -176,3 +176,7 @@ pip-log.txt
 
 # Log4J files
 logs/
+
+.gradle/
+build/
+logs/

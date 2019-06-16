@@ -1,0 +1,169 @@
+package com.comphenix.protocol.wrappers;
+
+import java.io.StringReader;
+
+import org.bukkit.ChatColor;
+
+import com.comphenix.protocol.reflect.FieldUtils;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.base.Preconditions;
+
+/**
+ * Represents a chat component added in Minecraft 1.7.2
+ * @author Kristian
+ */
+public class WrappedChatComponent extends AbstractWrapper implements ClonableWrapper {
+	private static final Class<?> SERIALIZER = MinecraftReflection.getChatSerializerClass();
+	private static final Class<?> COMPONENT = MinecraftReflection.getIChatBaseComponentClass();
+	private static final Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
+
+	private static Object GSON = null;
+	private static MethodAccessor DESERIALIZE = null;
+
+	private static MethodAccessor SERIALIZE_COMPONENT = null;
+	private static MethodAccessor CONSTRUCT_COMPONENT = null;
+	private static MethodAccessor TO_PLAIN_TEXT = null;
+	private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
+
+	static {
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER, true);
+
+		// Retrieve the correct methods
+		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("serialize", /* a */
+				String.class, new Class<?>[] { COMPONENT }));
+
+		try {
+			GSON = FieldUtils.readStaticField(fuzzy.getFieldByType("gson", GSON_CLASS), true);
+		} catch (IllegalAccessException ex) {
+			throw new RuntimeException("Failed to obtain GSON field", ex);
+		}
+
+		try {
+			DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getMinecraftClass("ChatDeserializer"), true)
+				.getMethodByParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
+		} catch (IllegalArgumentException ex) {
+			// We'll handle it in the ComponentParser
+			DESERIALIZE = null;
+		}
+
+		// Get a component from a standard Minecraft message
+		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
+
+		// Method to create plain text w/ formatting codes
+		TO_PLAIN_TEXT = Accessors.getMethodAccessor( MinecraftReflection.getIChatBaseComponentClass(), "toPlainText" );
+
+		// And the component text constructor
+		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
+	}
+
+	private static Object deserialize(String json) {
+		// Should be non-null on 1.9 and up
+		if (DESERIALIZE != null) {
+			return DESERIALIZE.invoke(null, GSON, json, COMPONENT, true);
+		}
+
+		// Mock leniency behavior in 1.8
+		StringReader str = new StringReader(json);
+		return ComponentParser.deserialize(GSON, COMPONENT, str);
+	}
+
+	private transient String cache, cache_plain;
+	
+	private WrappedChatComponent(Object handle, String cache) {
+		super(MinecraftReflection.getIChatBaseComponentClass());
+		setHandle(handle);
+		this.cache = cache;
+	}
+	
+	/**
+	 * Construct a new chat component wrapper around the given NMS object.
+	 * @param handle - the NMS object.
+	 * @return The wrapper.
+	 */
+	public static WrappedChatComponent fromHandle(Object handle) {
+		return new WrappedChatComponent(handle, null);
+	}
+	
+	/**
+	 * Construct a new chat component wrapper from the given JSON string.
+	 * @param json - the json.
+	 * @return The chat component wrapper.
+	 */
+	public static WrappedChatComponent fromJson(String json) {
+		return new WrappedChatComponent(deserialize(json), json);
+	}
+	
+	/**
+	 * Construct a wrapper around a new text chat component with the given text.
+	 * @param text - the text of the text chat component.
+	 * @return The wrapper around the new chat component.
+	 */
+	public static WrappedChatComponent fromText(String text) {
+		Preconditions.checkNotNull(text, "text cannot be NULL.");
+		return fromHandle(CONSTRUCT_TEXT_COMPONENT.invoke(text));
+	}
+	
+	/**
+	 * Construct an array of chat components from a standard Minecraft message.
+	 * <p>
+	 * This uses {@link ChatColor} for formating.
+	 * @param message - the message.
+	 * @return The equivalent chat components.
+	 */
+	public static WrappedChatComponent[] fromChatMessage(String message) {
+		Object[] components = (Object[]) CONSTRUCT_COMPONENT.invoke(null, message);
+		WrappedChatComponent[] result = new WrappedChatComponent[components.length];
+		
+		for (int i = 0; i < components.length; i++) {
+			result[i] = fromHandle(components[i]);
+		}
+		return result;
+	}
+
+	/**
+	 * Retrieve a copy of this component as a JSON string.
+	 * <p>
+	 * Note that any modifications to this JSON string will not update the current component.
+	 * @return The JSON representation of this object.
+	 */
+	public String getJson() {
+		if (cache == null) {
+			cache = (String) SERIALIZE_COMPONENT.invoke(null, handle);
+		}
+		return cache;
+ 	}
+	
+	/**
+	 * Set the content of this component using a JSON object.
+	 * @param obj - the JSON that represents the new component.
+	 */
+	public void setJson(String obj) {
+		this.handle = deserialize(obj);
+		this.cache = obj;
+		this.toPlainText();
+	}
+
+	public String toPlainText() {
+		if( cache_plain == null ) {
+			cache_plain = (String) TO_PLAIN_TEXT.invoke( handle );
+		}
+		return cache_plain;
+	}
+
+	/**
+	 * Retrieve a deep copy of the current chat component.
+	 * @return A copy of the current component.
+	 */
+	public WrappedChatComponent deepClone() {
+		return fromJson(getJson());
+	}
+
+	@Override
+	public String toString() {
+		return "WrappedChatComponent[json=" + getJson() + "]";
+	}
+}
