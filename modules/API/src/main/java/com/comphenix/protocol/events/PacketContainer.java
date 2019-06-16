@@ -86,7 +86,8 @@ public class PacketContainer implements Serializable {
 			.instanceProvider(DefaultInstances.DEFAULT)
 			.andThen(BukkitCloner.class)
 			.andThen(ImmutableDetector.class)
-			.andThen(OptionalCloner.class)
+			.andThen(JavaOptionalCloner.class)
+			.andThen(GuavaOptionalCloner.class)
 			.andThen(CollectionCloner.class)
 			.andThen(getSpecializedDeepClonerFactory())
 			.build();
@@ -830,14 +831,26 @@ public class PacketContainer implements Serializable {
     }
 
     /**
-     * Retrieve a read/write structure for the Particle enum in 1.8.
+     * Retrieve a read/write structure for the Particle enum in 1.8-1.12.
+     * <b>NOTE:</b> This will produce undesirable results in 1.13
      * @return A modifier for Particle enum fields.
      */
-    public StructureModifier<Particle> getParticles() {
+    public StructureModifier<EnumWrappers.Particle> getParticles() {
     	// Convert to and from the wrapper
     	return structureModifier.withType(
     			EnumWrappers.getParticleClass(),
 			    EnumWrappers.getParticleConverter());
+    }
+
+	/**
+	 * Retrieve a read/write structure for ParticleParams in 1.13
+	 * @return A modifier for ParticleParam fields.
+	 */
+	public StructureModifier<WrappedParticle> getNewParticles() {
+		return structureModifier.withType(
+				MinecraftReflection.getMinecraftClass("ParticleParam"),
+				BukkitConverters.getParticleConverter()
+		);
     }
 
     /**
@@ -921,6 +934,17 @@ public class PacketContainer implements Serializable {
     	return structureModifier.withType(
     			MinecraftReflection.getMinecraftKeyClass(),
 			    MinecraftKey.getConverter());
+    }
+
+	/**
+	 * Retrive a read/write structure for dimension IDs in 1.13.1+
+	 * @return A modifier for dimension IDs
+	 */
+	public StructureModifier<Integer> getDimensions() {
+		return structureModifier.withType(
+				MinecraftReflection.getMinecraftClass("DimensionManager"),
+				BukkitConverters.getDimensionIDConverter()
+		);
     }
 
 	/**

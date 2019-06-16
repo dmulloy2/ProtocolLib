@@ -33,7 +33,7 @@ import org.bukkit.Material;
  * @author dmulloy2
  */
 
-public abstract class WrappedBlockData extends AbstractWrapper {
+public abstract class WrappedBlockData extends AbstractWrapper implements ClonableWrapper {
 	private static final Class<?> MAGIC_NUMBERS = MinecraftReflection.getCraftBukkitClass("util.CraftMagicNumbers");
 	private static final Class<?> IBLOCK_DATA = MinecraftReflection.getIBlockDataClass();
 	private static final Class<?> BLOCK = MinecraftReflection.getBlockClass();
@@ -45,6 +45,7 @@ public abstract class WrappedBlockData extends AbstractWrapper {
 		private static MethodAccessor BLOCK_FROM_MATERIAL;
 		private static MethodAccessor GET_BLOCK_DATA;
 		private static MethodAccessor FROM_LEGACY_DATA;
+		private static MethodAccessor GET_HANDLE;
 
 		static {
 			if (MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE)) {
@@ -98,6 +99,15 @@ public abstract class WrappedBlockData extends AbstractWrapper {
 						.returnTypeExact(IBLOCK_DATA)
 						.build();
 				GET_BLOCK_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
+
+				fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getCraftBukkitClass("block.data.CraftBlockData"));
+				contract = FuzzyMethodContract
+						.newBuilder()
+						.banModifier(Modifier.STATIC)
+						.parameterCount(0)
+						.returnTypeExact(IBLOCK_DATA)
+						.build();
+				GET_HANDLE = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 			}
 		}
 
@@ -143,7 +153,11 @@ public abstract class WrappedBlockData extends AbstractWrapper {
 		}
 
 		private static WrappedBlockData createNewData(Material material, int data) {
-			return new NewBlockData(FROM_LEGACY_DATA.invoke(material, (byte) data));
+			return new NewBlockData(FROM_LEGACY_DATA.invoke(null, material, (byte) data));
+		}
+
+		private static WrappedBlockData createNewData(Object data) {
+			return new NewBlockData(GET_HANDLE.invoke(data));
 		}
 	}
 
@@ -221,8 +235,7 @@ public abstract class WrappedBlockData extends AbstractWrapper {
 		}
 
 		private static WrappedBlockData createOldData(Material type) {
-			Object blockData = GET_BLOCK.invoke(null, type);
-			return new OldBlockData(blockData);
+			return createOldData(type, 0);
 		}
 
 		private static WrappedBlockData createOldData(Material type, int data) {
@@ -304,6 +317,15 @@ public abstract class WrappedBlockData extends AbstractWrapper {
 		                                                                   : new OldBlockData(handle);
 	}
 
+	/**
+	 * Creates a new Wrapped Block Data instance from a given Spigot Block Data
+	 * @param data Spigot block data
+	 * @return The new Wrapped Block Data
+	 */
+	public static WrappedBlockData createData(Object data) {
+		return NewBlockData.createNewData(data);
+	}
+
 	@Override
 	public String toString() {
 		return "WrappedBlockData[handle=" + handle + "]";
@@ -320,9 +342,12 @@ public abstract class WrappedBlockData extends AbstractWrapper {
 
 	@Override
 	public boolean equals(Object o) {
+		if (o == this) return true;
+
 		if (o instanceof WrappedBlockData) {
 			WrappedBlockData that = (WrappedBlockData) o;
-			return this.getType() == that.getType() && getData() == that.getData();
+			return this.handle.equals(that.handle)
+			       || (this.getType() == that.getType() && this.getData() == that.getData());
 		}
 
 		return false;

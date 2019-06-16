@@ -15,7 +15,8 @@ public class MinecraftMethodsTest {
 	}
 
 	@Test
-	public void testSendPacketMethod() {
+	public void testSendPacketMethods() {
 		assertNotNull(MinecraftMethods.getSendPacketMethod());
+		assertNotNull(MinecraftMethods.getNetworkManagerHandleMethod());
 	}
 }

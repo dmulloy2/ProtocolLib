@@ -19,6 +19,8 @@ package com.comphenix.protocol.wrappers.nbt;
 
 import java.io.DataOutput;
 
+import com.comphenix.protocol.wrappers.ClonableWrapper;
+
 /**
  * Indicates that this NBT wraps an underlying net.minecraft.server instance.
  * <p>
@@ -28,7 +30,7 @@ import java.io.DataOutput;
  * 
  * @param <TType> - type of the value that is stored.
  */
-public interface NbtWrapper<TType> extends NbtBase<TType> {
+public interface NbtWrapper<TType> extends NbtBase<TType>, ClonableWrapper {
 	/**
 	 * Retrieve the underlying net.minecraft.server instance.
 	 * @return The NMS instance.

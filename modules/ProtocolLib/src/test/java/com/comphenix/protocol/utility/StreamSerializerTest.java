@@ -6,7 +6,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
-import net.minecraft.server.v1_13_R1.IntHashMap;
+import net.minecraft.server.v1_13_R2.IntHashMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -75,7 +76,7 @@ public class StreamSerializerTest {
 		String serialized = serializer.serializeItemStack(initial);
 		ItemStack deserialized = serializer.deserializeItemStack(serialized);
 
-		assertEquals(initial, deserialized);
+		assertItemsEqual(initial, deserialized);
 	}
 
 	@Test
@@ -90,6 +91,6 @@ public class StreamSerializerTest {
 		String serialized = serializer.serializeItemStack(initial);
 		ItemStack deserialized = serializer.deserializeItemStack(serialized);
 
-		assertEquals(initial, deserialized);
+		assertItemsEqual(initial, deserialized);
 	}
 }

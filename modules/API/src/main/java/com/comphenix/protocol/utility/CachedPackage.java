@@ -63,21 +63,16 @@ class CachedPackage {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	public Optional<Class<?>> getPackageClass(String className) {
+	public Optional<Class<?>> getPackageClass(final String className) {
 		Preconditions.checkNotNull(className, "className cannot be null!");
 
-		Optional<Class<?>> result = cache.get(className);
-		if (result == null) {
+		return cache.computeIfAbsent(className, x -> {
 			try {
-				Class<?> clazz = source.loadClass(combine(packageName, className));
-				result = Optional.ofNullable(clazz);
-				cache.put(className, result);
+				return Optional.ofNullable(source.loadClass(combine(packageName, className)));
 			} catch (ClassNotFoundException ex) {
-				cache.put(className, Optional.empty());
+				return Optional.empty();
 			}
-		}
-
-		return result;
+		});
 	}
 
 	/**

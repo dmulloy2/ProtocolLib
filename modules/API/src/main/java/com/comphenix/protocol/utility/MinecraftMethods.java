@@ -1,22 +1,21 @@
 package com.comphenix.protocol.utility;
 
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.concurrent.GenericFutureListener;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.concurrent.GenericFutureListener;
+
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
 
 /**
  * Static methods for accessing Minecraft methods.
@@ -103,10 +102,12 @@ public class MinecraftMethods {
 	 */
 	public static Method getNetworkManagerHandleMethod() {
 		if (networkManagerHandle == null) {
-			networkManagerHandle = FuzzyReflection.fromClass(MinecraftReflection.getNetworkManagerClass(), true).
-					getMethodByParameters("handle", MinecraftReflection.getPacketClass(), GenericFutureListener[].class);
+			networkManagerHandle = FuzzyReflection
+					.fromClass(MinecraftReflection.getNetworkManagerClass(), true)
+					.getMethodByParameters("handle", MinecraftReflection.getPacketClass());
 			networkManagerHandle.setAccessible(true);
 		}
+
 		return networkManagerHandle;
 	}
 	
@@ -170,15 +171,16 @@ public class MinecraftMethods {
 			// This object will allow us to detect which methods were called
 			Enhancer enhancer = EnhancerFactory.getInstance().createEnhancer();
 			enhancer.setSuperclass(MinecraftReflection.getPacketDataSerializerClass());
-			enhancer.setCallback(new MethodInterceptor() {
-				@Override
-				public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-					if (method.getName().contains("read"))
-						throw new ReadMethodException();
-					if (method.getName().contains("write"))
-						throw new WriteMethodException();
-					return proxy.invokeSuper(obj, args);
+			enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
+				if (method.getName().contains("read")) {
+					throw new ReadMethodException();
 				}
+
+				if (method.getName().contains("write")) {
+					throw new WriteMethodException();
+				}
+
+				return proxy.invokeSuper(obj, args);
 			});
 
 			// Create our proxy object
