@@ -774,7 +774,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("IChatBaseComponent");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("IChatBaseComponent",
-				Accessors.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
+				Accessors.getMethodAccessor(getCraftChatMessage(), "e", String.class).
 					getMethod().getReturnType().getComponentType()
 			);
 		}
@@ -1390,6 +1390,14 @@ public class MinecraftReflection {
 			Field field = fuzzy.getFieldByType("(.*)(Sound)(.*)");
 			return setMinecraftClass("SoundEffect", field.getType());
 		}
+	}
+
+	/**
+	 * Retrieve the EntityTypes class.
+	 * @return The EntityTypes class
+	 */
+	public static Class<?> getEntityTypesClass() {
+		return getMinecraftClass("EntityTypes");
 	}
 
 	/**

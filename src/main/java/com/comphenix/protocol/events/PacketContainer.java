@@ -58,6 +58,7 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -435,6 +436,13 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<Entity> getEntityModifier(@Nonnull PacketEvent event) {
 		Preconditions.checkNotNull(event, "event cannot be NULL.");
 		return getEntityModifier(event.getPlayer().getWorld());
+	}
+
+	public StructureModifier<EntityType> getEntityTypeModifier() {
+		return structureModifier.withType(
+				MinecraftReflection.getEntityTypesClass(),
+				BukkitConverters.getEntityTypeConverter()
+		);
 	}
 	
 	/**

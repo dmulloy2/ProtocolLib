@@ -55,6 +55,7 @@ import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -813,6 +814,51 @@ public class BukkitConverters {
 				return PotionEffect.class;
 			}
 		});
+	}
+
+	private static Class<?> entityTypes;
+	private static MethodAccessor GET_ENTITY_FROM_NAME;
+	private static MethodAccessor GET_ENTITY_TYPE_NAME;
+	private static MethodAccessor GET_KEY_STRING;
+
+	public static EquivalentConverter<EntityType> getEntityTypeConverter() {
+		if(entityTypes == null) {
+			entityTypes = MinecraftReflection.getEntityTypesClass();
+		}
+
+		return ignoreNull( new EquivalentConverter<EntityType>() {
+			@Override
+			public Object getGeneric( EntityType specific ) {
+				// we assume it's a vanilla entity type
+				String name = specific.getKey().getKey();
+				if( GET_ENTITY_FROM_NAME == null) {
+					GET_ENTITY_FROM_NAME = Accessors.getMethodAccessor(entityTypes, "a", String.class);
+				}
+				Optional<Object> optionalType = (Optional<Object>) GET_ENTITY_FROM_NAME.invoke(null, name);
+				if(!optionalType.isPresent()) {
+					throw new RuntimeException("Couldn't find EntityType \"" + name + "\"!");
+				}
+				return optionalType.get();
+			}
+
+			@Override
+			public EntityType getSpecific( Object generic ) {
+				if(GET_ENTITY_TYPE_NAME == null) {
+					GET_ENTITY_TYPE_NAME = Accessors.getMethodAccessor(entityTypes, "getName");
+				}
+				if(GET_KEY_STRING == null ) {
+					GET_KEY_STRING = Accessors.getMethodAccessor(MinecraftReflection.getMinecraftKeyClass(), "getKey");
+				}
+				Object minecraftKey = GET_ENTITY_TYPE_NAME.invoke(null, generic);
+				String key = (String) GET_KEY_STRING.invoke(minecraftKey);
+				return EntityType.fromName(key);
+			}
+
+			@Override
+			public Class<EntityType> getSpecificType() {
+				return EntityType.class;
+			}
+		} );
 	}
 
 	private static Constructor<?> vec3dConstructor;
