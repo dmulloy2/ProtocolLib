@@ -6,6 +6,7 @@ authors: [dmulloy2, comphenix]
 main: com.comphenix.protocol.ProtocolLib
 load: STARTUP
 database: false
+api-version: "1.13"
 
 commands:
   protocol:
