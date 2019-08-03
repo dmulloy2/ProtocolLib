@@ -87,7 +87,12 @@ public enum NbtType {
 	/**
 	 * A list of fully formed tags, including their IDs, names, and payloads. No two tags may have the same name.
 	 */
-	TAG_COMPOUND(10, Map.class);
+	TAG_COMPOUND(10, Map.class),
+
+	/**
+	 * An array of longs
+	 */
+	TAG_LONG_ARRAY(12, long[].class);
 	
 	private int rawID;
 	private Class<?> valueType;
