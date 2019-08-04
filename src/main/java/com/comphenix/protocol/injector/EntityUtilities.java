@@ -17,6 +17,11 @@
 
 package com.comphenix.protocol.injector;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -33,11 +38,6 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Used to perform certain operations on entities.
@@ -71,15 +71,25 @@ class EntityUtilities {
 
 		trackedPlayers.removeAll(nmsPlayers);
 
-		// TODO Find equivalent method for newer versions
+		Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 
 		if (scanPlayersMethod == null) {
-			Class<?> trackerEntry = MinecraftReflection.getMinecraftClass("EntityTrackerEntry");
-			scanPlayersMethod = Accessors.getMethodAccessor(trackerEntry, "scanPlayers");
+			scanPlayersMethod = findScanPlayers(trackerEntry.getClass());
 		}
 
-		Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 		scanPlayersMethod.invoke(trackerEntry, nmsPlayers);
+	}
+
+	private MethodAccessor findScanPlayers(Class<?> trackerClass) {
+		MethodAccessor candidate = Accessors.getMethodAcccessorOrNull(trackerClass, "scanPlayers");
+		if (candidate != null) {
+			return candidate;
+		}
+
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(trackerClass, true);
+		return Accessors.getMethodAccessor(
+				fuzzy.getMethod(
+						FuzzyMethodContract.newBuilder().returnTypeVoid().parameterExactArray(List.class).build()));
 	}
 
 	/**

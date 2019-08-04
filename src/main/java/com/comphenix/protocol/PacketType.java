@@ -201,6 +201,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x59, 0x53, "EntityEffect");
 			public static final PacketType RECIPE_UPDATE =                new PacketType(PROTOCOL, SENDER, 0x5A, 0x54, "RecipeUpdate");
 			public static final PacketType TAGS =                         new PacketType(PROTOCOL, SENDER, 0x5B, 0x55, "Tags");
+			public static final PacketType BLOCK_BREAK =                  new PacketType(PROTOCOL, SENDER, 0x5C, 0x5C, "BlockBreak");
 
 			// ---- Removed in 1.9
 

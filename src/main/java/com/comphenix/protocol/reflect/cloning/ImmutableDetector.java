@@ -60,24 +60,38 @@ public class ImmutableDetector implements Cloner {
 	static {
 		add(MinecraftReflection::getGameProfileClass);
 		add(MinecraftReflection::getDataWatcherSerializerClass);
-		add(() -> MinecraftReflection.getMinecraftClass("SoundEffect"));
 		add(MinecraftReflection::getBlockClass);
 		add(MinecraftReflection::getItemClass);
+		add("SoundEffect");
 
 		if (MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE)) {
-			add(() -> MinecraftReflection.getMinecraftClass("Particle"));
 			add(MinecraftReflection::getFluidTypeClass);
 			add(MinecraftReflection::getParticleTypeClass);
+			add("Particle");
 		}
 
 		if (MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE)) {
-			add(() -> MinecraftReflection.getMinecraftClass("EntityTypes"));
+			add("EntityTypes");
+			add("VillagerType");
+			add("VillagerProfession");
 		}
+
+		// TODO automatically detect the technically-not-an-enum enums that Mojang is so fond of
+		// Would also probably go in tandem with having the FieldCloner use this
 	}
 
 	private static void add(Supplier<Class<?>> getClass) {
 		try {
 			Class<?> clazz = getClass.get();
+			if (clazz != null) {
+				immutableNMS.add(clazz);
+			}
+		} catch (RuntimeException ignored) { }
+	}
+
+	private static void add(String className) {
+		try {
+			Class<?> clazz = MinecraftReflection.getMinecraftClass(className);
 			if (clazz != null) {
 				immutableNMS.add(clazz);
 			}

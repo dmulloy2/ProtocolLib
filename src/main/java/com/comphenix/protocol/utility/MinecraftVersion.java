@@ -42,7 +42,7 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	/**
 	 * Regular expression used to parse version strings.
 	 */
-	private static final Pattern VERSION_PATTERN = Pattern.compile(".*\\(.*MC.\\s*([a-zA-z0-9\\-\\.]+)\\s*\\)");
+	private static final Pattern VERSION_PATTERN = Pattern.compile(".*\\(.*MC.\\s*([a-zA-z0-9\\-.]+).*");
 
 	/**
 	 * Version 1.14 - village and pillage update.

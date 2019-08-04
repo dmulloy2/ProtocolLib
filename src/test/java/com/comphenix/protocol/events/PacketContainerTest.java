@@ -535,7 +535,9 @@ public class PacketContainerTest {
 									"String"),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.getChatComponentSerializer(true)),
-							                           com.google.common.base.Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle()))
+							                           com.google.common.base.Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle())),
+							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(VillagerData.class)),
+							                           new VillagerData(VillagerType.SNOW, VillagerProfession.ARMORER, 69))
 					));
 				} else if (type == PacketType.Play.Server.CHAT) {
 					constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));

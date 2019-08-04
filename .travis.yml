@@ -1,6 +1,6 @@
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk8
 script: gradle clean compileJava compileTestJava test
 install: true
 notifications:

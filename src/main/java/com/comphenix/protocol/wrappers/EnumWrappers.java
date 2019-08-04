@@ -1,18 +1,21 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.GameMode;
-
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Represents a generic enum converter.
@@ -691,6 +694,100 @@ public abstract class EnumWrappers {
 
 		void setGenericType(Class<?> genericType) {
 			this.genericType = genericType;
+		}
+	}
+
+	/**
+	 * Used for classes where it's an enum in everything but name
+	 * @param <T> Generic type
+	 */
+	public static class FauxEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
+		private final Class<T> specificClass;
+		private final Class<?> genericClass;
+		private final Map<Object, T> lookup;
+
+		public FauxEnumConverter(Class<T> specific, Class<?> generic) {
+			Validate.notNull(specific,"specific class cannot be null");
+			Validate.notNull(generic,"generic class cannot be null");
+
+			this.specificClass = specific;
+			this.genericClass = generic;
+			this.lookup = new HashMap<>();
+		}
+
+		@Override
+		public Object getGeneric(T specific) {
+			Validate.notNull(specific, "specific object cannot be null");
+
+			return Accessors
+					.getFieldAccessor(genericClass, specific
+							.name(), false)
+					.get(null);
+		}
+
+		@Override
+		public T getSpecific(Object generic) {
+			Validate.notNull(generic, "generic object cannot be null");
+
+			return lookup.computeIfAbsent(generic, x -> {
+				for (Field field : genericClass.getFields()) {
+					try {
+						if (!field.isAccessible()) {
+							field.setAccessible(true);
+						}
+
+						if (field.get(null) == generic) {
+							return Enum.valueOf(specificClass, field.getName().toUpperCase());
+						}
+					} catch (ReflectiveOperationException ignored) { }
+				}
+
+				throw new IllegalArgumentException("Could not find ProtocolLib wrapper for " + generic);
+			});
+		}
+
+		@Override
+		public Class<T> getSpecificType() {
+			return specificClass;
+		}
+	}
+
+	public static class IndexedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
+		private Class<T> specificClass;
+		private Class<?> genericClass;
+
+		public IndexedEnumConverter(Class<T> specificClass, Class<?> genericClass) {
+			this.specificClass = specificClass;
+			this.genericClass = genericClass;
+		}
+
+		@Override
+		public Object getGeneric(T specific) {
+			int ordinal = specific.ordinal();
+			for (Object elem : genericClass.getEnumConstants()) {
+				if (((Enum<?>) elem).ordinal() == ordinal) {
+					return elem;
+				}
+			}
+
+			return null;
+		}
+
+		@Override
+		public T getSpecific(Object generic) {
+			int ordinal = ((Enum<?>) generic).ordinal();
+			for (T elem : specificClass.getEnumConstants()) {
+				if (elem.ordinal() == ordinal) {
+					return elem;
+				}
+			}
+
+			return null;
+		}
+
+		@Override
+		public Class<T> getSpecificType() {
+			return specificClass;
 		}
 	}
 }
