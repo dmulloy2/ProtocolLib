@@ -318,12 +318,12 @@ public class AsyncFilterManager implements AsynchronousManager {
 
 		// The player is only be null when they're logged out,
 		// so this should be a pretty safe check
-		Player player = newEvent.getPlayer();
+		Player player = syncPacket.getPlayer();
 		if (player != null) {
 			// Start the process
 			getSendingQueue(syncPacket).enqueue(newEvent);
 
-			// We know this is occuring on the main thread, so pass TRUE
+			// We know this is occurring on the main thread, so pass TRUE
 			getProcessingQueue(syncPacket).enqueue(newEvent, true);
 		}
 	}

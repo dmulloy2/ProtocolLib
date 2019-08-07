@@ -3,6 +3,7 @@ package com.comphenix.protocol.concurrency;
 import com.comphenix.protocol.utility.SafeCacheBuilder;
 import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalListener;
 import com.google.common.collect.AbstractIterator;
@@ -188,6 +189,8 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return The key.
 	 */
 	private Object cachePlayerKey(Player player) {
+		Preconditions.checkNotNull(player, "player cannot be null");
+
 		Object key = keyMethod.apply(player);
 		
 		keyLookup.put(key, player);
