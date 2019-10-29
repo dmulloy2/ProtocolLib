@@ -49,12 +49,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import net.minecraft.server.v1_14_R1.EntityTypes;
+
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -654,6 +657,54 @@ public class BukkitConverters {
 				return Entity.class;
 			}
 		};
+	}
+
+	private static MethodAccessor getEntityTypeName;
+	private static MethodAccessor entityTypeFromName;
+
+	public static EquivalentConverter<EntityType> getEntityTypeConverter() {
+		return ignoreNull(new EquivalentConverter<EntityType>() {
+			@Override
+			public Object getGeneric(EntityType specific) {
+				if (entityTypeFromName == null) {
+					Class<?> entityTypesClass = MinecraftReflection.getMinecraftClass("EntityTypes");
+					entityTypeFromName = Accessors.getMethodAccessor(
+							FuzzyReflection
+									.fromClass(entityTypesClass, false)
+									.getMethod(FuzzyMethodContract
+											           .newBuilder()
+											           .returnDerivedOf(Optional.class)
+											           .parameterExactArray(new Class<?>[]{ String.class })
+											           .build()));
+				}
+
+				Optional<?> opt = (Optional<?>) entityTypeFromName.invoke(null, specific.getName());
+				return opt.orElse(null);
+			}
+
+			@Override
+			public EntityType getSpecific(Object generic) {
+				if (getEntityTypeName == null) {
+					Class<?> entityTypesClass = MinecraftReflection.getMinecraftClass("EntityTypes");
+					getEntityTypeName = Accessors.getMethodAccessor(
+							FuzzyReflection
+									.fromClass(entityTypesClass, false)
+									.getMethod(FuzzyMethodContract
+											           .newBuilder()
+											           .returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
+											           .parameterExactArray(new Class<?>[]{ entityTypesClass })
+											           .build()));
+				}
+
+				MinecraftKey key = MinecraftKey.fromHandle(getEntityTypeName.invoke(null, generic));
+				return EntityType.fromName(key.getKey());
+			}
+
+			@Override
+			public Class<EntityType> getSpecificType() {
+				return EntityType.class;
+			}
+		});
 	}
 	
 	/**

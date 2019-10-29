@@ -46,6 +46,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.WorldType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
@@ -288,6 +289,14 @@ public class PacketContainerTest {
 	//
 	//  @Test
 	//  public void testGetPositionModifier() { }
+
+	@Test
+	public void testEntityTypeModifier() {
+		PacketContainer packet = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY);
+
+		packet.getEntityTypeModifier().write(0, EntityType.ARROW);
+		assertEquals(packet.getEntityTypeModifier().read(0), EntityType.ARROW);
+	}
 
 	@Test
 	public void testGetPositionCollectionModifier() {
