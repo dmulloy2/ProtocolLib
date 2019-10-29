@@ -144,7 +144,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 
 		@Override
 		public WrappedBlockData deepClone() {
-			return NewBlockData.createNewData(getType(), getData());
+			return new NewBlockData(handle);
 		}
 
 		private static WrappedBlockData createNewData(Material material) {
