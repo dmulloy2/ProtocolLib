@@ -2025,7 +2025,7 @@ public class MinecraftReflection {
 				.orElseThrow(() -> new RuntimeException("Failed to find NMS class: " + className));
 	}
 
-	static Class<?> getNullableNMS(String className) {
+	public static Class<?> getNullableNMS(String className) {
 		if (minecraftPackage == null)
 			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
 		return minecraftPackage.getPackageClass(className).orElse(null);
