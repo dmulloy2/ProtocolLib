@@ -119,6 +119,9 @@
 					<windowtitle>ProtocolLib JavaDocs</windowtitle>
 					<bottom>Copyright &#169; {inceptionYear}&#x2013;{currentYear}
 						Comphenix and dmulloy2. Licensed under the GNU GPL v2.</bottom>
+					<additionalOptions>
+						<additionalOption>-Xdoclint:none</additionalOption>
+					</additionalOptions>
 				</configuration>
 				<executions>
 					<execution>
