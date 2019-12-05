@@ -55,7 +55,7 @@ public class ReportType {
 	 */
 	public static Class<?> getSenderClass(Object sender) {
 		if (sender == null)
-			throw new IllegalArgumentException("sender cannot be NUll.");
+			throw new IllegalArgumentException("sender cannot be null.");
 		else if (sender instanceof Class<?>)
 			return (Class<?>) sender;
 		else
@@ -75,7 +75,7 @@ public class ReportType {
 	 */
 	public static String getReportName(Object sender, ReportType type) {
 		if (sender == null)
-			throw new IllegalArgumentException("sender cannot be NUll.");
+			throw new IllegalArgumentException("sender cannot be null.");
 		return getReportName(getSenderClass(sender), type);
 	}
 	
@@ -83,13 +83,13 @@ public class ReportType {
 	 * Retrieve the full canonical name of a given report type.
 	 * <p>
 	 * This is in the format <i>canonical_name_of_class#report_type</i>
-	 * @param clazz - the sender class.
+	 * @param sender - the sender class.
 	 * @param type - the report instance.
 	 * @return The full canonical name.
 	 */
 	private static String getReportName(Class<?> sender, ReportType type) {
 		if (sender == null)
-			throw new IllegalArgumentException("sender cannot be NUll.");
+			throw new IllegalArgumentException("sender cannot be null.");
 		
 		// Whether or not we need to retrieve the report name again
 		if (type.reportName == null) {
@@ -138,11 +138,10 @@ public class ReportType {
 	 * @return All associated report fields.
 	 */
 	private static List<Field> getReportFields(Class<?> clazz) {
-		return FuzzyReflection.fromClass(clazz).getFieldList(
-				FuzzyFieldContract.newBuilder().
-					requireModifier(Modifier.STATIC).
-					typeDerivedOf(ReportType.class).
-					build()
-		);
+		return FuzzyReflection.fromClass(clazz, true)
+				.getFieldList(FuzzyFieldContract.newBuilder()
+						.requireModifier(Modifier.STATIC)
+						.typeDerivedOf(ReportType.class)
+						.build());
 	}
 }
