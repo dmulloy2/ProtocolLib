@@ -16,15 +16,13 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.injector.netty.ProtocolRegistry;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.injector.packet.MapContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.collect.Maps;
@@ -49,20 +47,41 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 
 		Register result = new Register();
 		StructureModifier<Object> modifier = null;
+		StructureModifier<Object> enumProtocolA = null;
 
 		// Iterate through the protocols
 		for (Object protocol : protocols) {
 			if (modifier == null) {
-				modifier = new StructureModifier<Object>(protocol.getClass().getSuperclass(), false);
+				modifier = new StructureModifier<Object>(protocol.getClass(), false);
 			}
 
-			StructureModifier<Map<Object, Map<Integer, Class<?>>>> maps = modifier.withTarget(protocol).withType(Map.class);
-			for (Entry<Object, Map<Integer, Class<?>>> entry : maps.read(0).entrySet()) {
+			StructureModifier<Map<Object, Object>> maps = modifier.withTarget(protocol).withType(Map.class);
+
+			for (Entry<Object, Object> entry : maps.read(0).entrySet()) {
 				String direction = entry.getKey().toString();
+
+				if (enumProtocolA == null) {
+					enumProtocolA = new StructureModifier<>(entry.getValue().getClass());
+				}
+				// Entry.getValue() is EnumProtocol.a
+				StructureModifier<Map<Class<?>, Integer>> map
+				= enumProtocolA.withTarget(entry.getValue()).withType(Map.class);
+				Map<Class<?>, Integer> packetMap = map.read(0);
+
+				// Minecraft changed usage of HashMap to Object2IntegerMap
+				// in there no modCount field is present
+
+				// TODO: in the future MapContainer should be detecting changes
+				// in new Object2IntegerMap
+				Map<Integer, Class<?>> inversed = Maps.newHashMap();
+				for (Entry<Class<?>, Integer> packetEntry : packetMap.entrySet()) {
+					inversed.put(packetEntry.getValue(), packetEntry.getKey());
+				}
+
 				if (direction.contains("CLIENTBOUND")) { // Sent by Server
-					serverMaps.put(protocol, entry.getValue());
+					serverMaps.put(protocol, inversed);
 				} else if (direction.contains("SERVERBOUND")) { // Sent by Client
-					clientMaps.put(protocol, entry.getValue());
+					clientMaps.put(protocol, inversed);
 				}
 			}
 		}
@@ -79,7 +98,7 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 		for (Object protocol : protocols) {
 			Enum<?> enumProtocol = (Enum<?>) protocol;
 			Protocol equivalent = Protocol.fromVanilla(enumProtocol);
-			
+
 			// Associate known types
 			if (serverMaps.containsKey(protocol))
 				associatePackets(result, serverMaps.get(protocol), equivalent, Sender.SERVER);
