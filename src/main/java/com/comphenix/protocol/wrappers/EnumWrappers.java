@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang.Validate;
+import org.bukkit.GameMode;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
@@ -13,9 +16,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
-
-import org.apache.commons.lang.Validate;
-import org.bukkit.GameMode;
 
 /**
  * Represents a generic enum converter.
@@ -51,7 +51,7 @@ public abstract class EnumWrappers {
 	 * Represents a native game mode in Minecraft.
 	 * <p>
 	 * Not to be confused with {@link GameMode} in Bukkit.
-	 * 
+	 *
 	 * @author Kristian
 	 */
 	public enum NativeGameMode {
@@ -70,42 +70,42 @@ public abstract class EnumWrappers {
 		 * Gets this NativeGameMode's Bukkit equivalent.
 		 * <p>
 		 * Note: There is not a Bukkit equivalent for NOT_SET or NONE
-		 * 
+		 *
 		 * @return The Bukkit equivalent, or null if one does not exist.
 		 */
 		public GameMode toBukkit() {
 			switch (this) {
-				case ADVENTURE:
-					return GameMode.ADVENTURE;
-				case CREATIVE:
-					return GameMode.CREATIVE;
-				case SPECTATOR:
-					return GameMode.SPECTATOR;
-				case SURVIVAL:
-					return GameMode.SURVIVAL;
-				default:
-					return null;
+			case ADVENTURE:
+				return GameMode.ADVENTURE;
+			case CREATIVE:
+				return GameMode.CREATIVE;
+			case SPECTATOR:
+				return GameMode.SPECTATOR;
+			case SURVIVAL:
+				return GameMode.SURVIVAL;
+			default:
+				return null;
 			}
 		}
 
 		/**
 		 * Obtains the given GameMode's NativeGameMode equivalent.
-		 * 
+		 *
 		 * @param mode Bukkit GameMode
 		 * @return The NativeGameMode equivalent, or null if one does not exist.
 		 */
 		public static NativeGameMode fromBukkit(GameMode mode) {
 			switch (mode) {
-				case ADVENTURE:
-					return ADVENTURE;
-				case CREATIVE:
-					return CREATIVE;
-				case SPECTATOR:
-					return SPECTATOR;
-				case SURVIVAL:
-					return SURVIVAL;
-				default:
-					return null;
+			case ADVENTURE:
+				return ADVENTURE;
+			case CREATIVE:
+				return CREATIVE;
+			case SPECTATOR:
+				return SPECTATOR;
+			case SURVIVAL:
+				return SURVIVAL;
+			default:
+				return null;
 			}
 		}
 	}
@@ -160,8 +160,8 @@ public abstract class EnumWrappers {
 	}
 
 	public enum PlayerAction {
-		START_SNEAKING,
-		STOP_SNEAKING,
+		PRESS_SHIFT_KEY,
+		RELEASE_SHIFT_KEY,
 		STOP_SLEEPING,
 		START_SPRINTING,
 		STOP_SPRINTING,
@@ -169,6 +169,7 @@ public abstract class EnumWrappers {
 		STOP_RIDING_JUMP,
 		OPEN_INVENTORY,
 		START_FALL_FLYING
+
 	}
 
 	public enum ScoreboardAction {
@@ -338,7 +339,7 @@ public abstract class EnumWrappers {
 		WEST,
 		EAST
 	}
-	
+
 	public enum ChatType {
 		CHAT,
 		SYSTEM,
@@ -561,7 +562,7 @@ public abstract class EnumWrappers {
 		initialize();
 		return DIRECTION_CLASS;
 	}
-	
+
 	public static Class<?> getChatTypeClass() {
 		initialize();
 		return CHAT_TYPE_CLASS;
@@ -643,7 +644,7 @@ public abstract class EnumWrappers {
 	public static EquivalentConverter<Direction> getDirectionConverter() {
 		return new EnumConverter<>(getDirectionClass(), Direction.class);
 	}
-	
+
 	public static EquivalentConverter<ChatType> getChatTypeConverter() {
 		return new EnumConverter<>(getChatTypeClass(), ChatType.class);
 	}
