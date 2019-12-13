@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
@@ -159,16 +160,26 @@ public abstract class EnumWrappers {
 		SWAP_HELD_ITEMS
 	}
 
-	public enum PlayerAction {
-		START_SNEAKING,
-		STOP_SNEAKING,
+	public enum PlayerAction implements AliasedEnum {
+		PRESS_SHIFT_KEY("START_SNEAKING"),
+		RELEASE_SHIFT_KEY("STOP_SNEAKING"),
 		STOP_SLEEPING,
 		START_SPRINTING,
 		STOP_SPRINTING,
 		START_RIDING_JUMP,
 		STOP_RIDING_JUMP,
 		OPEN_INVENTORY,
-		START_FALL_FLYING
+		START_FALL_FLYING;
+
+		String[] aliases;
+		PlayerAction(String... aliases) {
+			this.aliases = aliases;
+		}
+
+		@Override
+		public String[] getAliases() {
+			return aliases;
+		}
 	}
 
 	public enum ScoreboardAction {
@@ -617,7 +628,7 @@ public abstract class EnumWrappers {
 	}
 
 	public static EquivalentConverter<PlayerAction> getEntityActionConverter() {
-		return new EnumConverter<>(getPlayerActionClass(), PlayerAction.class);
+		return new AliasedEnumConverter<>(getPlayerActionClass(), PlayerAction.class);
 	}
 
 	public static EquivalentConverter<ScoreboardAction> getUpdateScoreActionConverter() {
@@ -685,6 +696,68 @@ public abstract class EnumWrappers {
 		@Override
 		public Object getGeneric(T specific) {
 			return Enum.valueOf((Class) genericType, specific.name());
+		}
+
+		@Override
+		public Class<T> getSpecificType() {
+			return specificType;
+		}
+
+		void setGenericType(Class<?> genericType) {
+			this.genericType = genericType;
+		}
+	}
+
+	public interface AliasedEnum {
+		String[] getAliases();
+	}
+
+	public static class AliasedEnumConverter<T extends Enum<T> & AliasedEnum> implements EquivalentConverter<T> {
+		private Class<?> genericType;
+		private Class<T> specificType;
+
+		public AliasedEnumConverter(Class<?> genericType, Class<T> specificType) {
+			this.genericType = genericType;
+			this.specificType = specificType;
+		}
+
+		@Override
+		public T getSpecific(Object generic) {
+			String name = ((Enum) generic).name();
+
+			try {
+				return Enum.valueOf(specificType, name);
+			} catch (Exception ex) {
+				// TODO would caching help much, if at all?
+				for (T elem : specificType.getEnumConstants()) {
+					for (String alias : elem.getAliases()) {
+						if (alias.equals(name)) {
+							return elem;
+						}
+					}
+				}
+			}
+
+			throw new IllegalArgumentException("Unknown enum constant " + name);
+		}
+
+		@Override
+		public Object getGeneric(T specific) {
+			String name = specific.name();
+
+			try {
+				return Enum.valueOf((Class) genericType, specific.name());
+			} catch (Exception ex) {
+				for (Object elem : genericType.getEnumConstants()) {
+					for (String alias : specific.getAliases()) {
+						if (alias.equals(name)) {
+							return elem;
+						}
+					}
+				}
+			}
+
+			throw new IllegalArgumentException("Unknown enum constant " + name);
 		}
 
 		@Override

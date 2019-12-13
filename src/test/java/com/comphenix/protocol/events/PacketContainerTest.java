@@ -454,6 +454,14 @@ public class PacketContainerTest {
 	}
 
 	@Test
+	public void testPlayerAction() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Client.ENTITY_ACTION);
+		container.getPlayerActions().write(0, EnumWrappers.PlayerAction.PRESS_SHIFT_KEY);
+
+		assertEquals(container.getPlayerActions().read(0), EnumWrappers.PlayerAction.PRESS_SHIFT_KEY);
+	}
+
+	@Test
 	public void testMobEffectList() {
 		PacketContainer container = new PacketContainer(PacketType.Play.Server.REMOVE_ENTITY_EFFECT);
 		container.getEffectTypes().write(0, PotionEffectType.GLOWING);
