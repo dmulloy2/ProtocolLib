@@ -37,8 +37,8 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 
 import net.md_5.bungee.api.chat.*;
-import net.minecraft.server.v1_14_R1.*;
-import net.minecraft.server.v1_14_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_15_R1.*;
+import net.minecraft.server.v1_15_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -262,9 +262,10 @@ public class PacketContainerTest {
 		assertEquals(compound.getList("ages"), result.getList("ages"));
 	}
 
-	@Test
+	// TODO They removed DataWatchers from packets, it's all entity metadata packets now
+	/* @Test
 	public void testGetDataWatcherModifier() {
-		PacketContainer mobSpawnPacket = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
+		PacketContainer mobSpawnPacket = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
 		StructureModifier<WrappedDataWatcher> watcherAccessor = mobSpawnPacket.getDataWatcherModifier();
 
 		WrappedDataWatcher dataWatcher = new WrappedDataWatcher();
@@ -278,7 +279,7 @@ public class PacketContainerTest {
 		// Insert and read back
 		watcherAccessor.write(0, dataWatcher);
 		assertEquals(dataWatcher, watcherAccessor.read(0));
-	}
+	} */
 
 	// Unfortunately, it might be too difficult to mock this one
 	//
@@ -517,15 +518,11 @@ public class PacketContainerTest {
 		assertArrayEquals(components, back);
 	}
 
-	private static final List<PacketType> BLACKLISTED = Util.asList(
-			PacketType.Play.Server.TAGS
-	);
-
 	@Test
 	public void testDeepClone() {
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (BLACKLISTED.contains(type) || type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || !type.isSupported()) {
+			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS") || !type.isSupported()) {
 				continue;
 			}
 

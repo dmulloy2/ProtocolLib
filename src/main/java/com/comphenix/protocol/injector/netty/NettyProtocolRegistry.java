@@ -16,17 +16,21 @@
  */
 package com.comphenix.protocol.injector.netty;
 
-import java.util.Arrays;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.injector.netty.ProtocolRegistry;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.injector.packet.MapContainer;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Maps;
 
 /**
@@ -41,6 +45,11 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 
 	@Override
 	protected synchronized void initialize() {
+		if (MinecraftVersion.getCurrentVersion().isAtLeast(MinecraftVersion.BEE_UPDATE)) {
+			initializeNew();
+			return;
+		}
+
 		Object[] protocols = enumProtocol.getEnumConstants();
 
 		// ID to Packet class maps
@@ -68,11 +77,11 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 		}
 
 		// Maps we have to occasionally check have changed
-		for (Map<Integer, Class<?>> map : serverMaps.values()) {
+		for (Object map : serverMaps.values()) {
 			result.containers.add(new MapContainer(map));
 		}
 
-		for (Map<Integer, Class<?>> map : clientMaps.values()) {
+		for (Object map : clientMaps.values()) {
 			result.containers.add(new MapContainer(map));
 		}
 
@@ -89,6 +98,107 @@ public class NettyProtocolRegistry extends ProtocolRegistry {
 
 		// Exchange (thread safe, as we have only one writer)
 		this.register = result;
+	}
+
+	@SuppressWarnings("unchecked")
+	private synchronized void initializeNew() {
+		Object[] protocols = enumProtocol.getEnumConstants();
+
+		// ID to Packet class maps
+		Map<Object, Map<Class<?>, Integer>> serverMaps = Maps.newLinkedHashMap();
+		Map<Object, Map<Class<?>, Integer>> clientMaps = Maps.newLinkedHashMap();
+
+		Register result = new Register();
+		Field mainMapField = null;
+		Field packetMapField = null;
+
+		// Iterate through the protocols
+		for (Object protocol : protocols) {
+			if (mainMapField == null) {
+				FuzzyReflection fuzzy = FuzzyReflection.fromClass(protocol.getClass(), true);
+				mainMapField = fuzzy.getField(FuzzyFieldContract.newBuilder()
+						.banModifier(Modifier.STATIC)
+						.requireModifier(Modifier.FINAL)
+						.typeDerivedOf(Map.class)
+						.build());
+				mainMapField.setAccessible(true);
+			}
+
+			Map<Object, Object> directionMap;
+
+			try {
+				directionMap = (Map<Object, Object>) mainMapField.get(protocol);
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException("Failed to access packet map", ex);
+			}
+
+			for (Entry<Object, Object> entry : directionMap.entrySet()) {
+				Object holder = entry.getValue();
+				if (packetMapField == null) {
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(holder.getClass(), true);
+					packetMapField = fuzzy.getField(FuzzyFieldContract.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.requireModifier(Modifier.FINAL)
+							.typeDerivedOf(Map.class)
+							.build());
+					packetMapField.setAccessible(true);
+				}
+
+				Map<Class<?>, Integer> packetMap;
+
+				try {
+					packetMap = (Map<Class<?>, Integer>) packetMapField.get(holder);
+				} catch (ReflectiveOperationException ex) {
+					throw new RuntimeException("Failed to access packet map", ex);
+				}
+
+				String direction = entry.getKey().toString();
+				if (direction.contains("CLIENTBOUND")) { // Sent by Server
+					serverMaps.put(protocol, packetMap);
+				} else if (direction.contains("SERVERBOUND")) { // Sent by Client
+					clientMaps.put(protocol, packetMap);
+				}
+			}
+		}
+
+		// Maps we have to occasionally check have changed
+		// TODO: Find equivalent in Object2IntMap
+
+		/* for (Object map : serverMaps.values()) {
+			result.containers.add(new MapContainer(map));
+		}
+
+		for (Object map : clientMaps.values()) {
+			result.containers.add(new MapContainer(map));
+		} */
+
+		for (Object protocol : protocols) {
+			Enum<?> enumProtocol = (Enum<?>) protocol;
+			Protocol equivalent = Protocol.fromVanilla(enumProtocol);
+
+			// Associate known types
+			if (serverMaps.containsKey(protocol)) {
+				associatePackets(result, reverse(serverMaps.get(protocol)), equivalent, Sender.SERVER);
+			}
+			if (clientMaps.containsKey(protocol)) {
+				associatePackets(result, reverse(clientMaps.get(protocol)), equivalent, Sender.CLIENT);
+			}
+		}
+
+		// Exchange (thread safe, as we have only one writer)
+		this.register = result;
+	}
+
+	/**
+	 * Reverses a key->value map to value->key
+	 * Non-deterministic behavior when multiple keys are mapped to the same value
+	 */
+	private <K, V> Map<V, K> reverse(Map<K, V> map) {
+		Map<V, K> newMap = new HashMap<>(map.size());
+		for (Entry<K, V> entry : map.entrySet()) {
+			newMap.put(entry.getValue(), entry.getKey());
+		}
+		return newMap;
 	}
 
 	@Override

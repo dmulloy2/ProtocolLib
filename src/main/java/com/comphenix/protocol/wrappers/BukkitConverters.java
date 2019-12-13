@@ -49,8 +49,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-import net.minecraft.server.v1_14_R1.EntityTypes;
-
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;

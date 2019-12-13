@@ -30,7 +30,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
@@ -49,6 +48,8 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.*;
@@ -86,8 +87,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 
 	// Saved accessors
-	private static MethodAccessor DECODE_BUFFER;
-	private static MethodAccessor ENCODE_BUFFER;
+	private static Method DECODE_BUFFER;
+	private static Method ENCODE_BUFFER;
 	private static FieldAccessor ENCODER_TYPE_MATCHER;
 
 	// For retrieving the protocol
@@ -211,17 +212,30 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
 			patchEncoder(vanillaEncoder);
 
-			if (DECODE_BUFFER == null)
-				DECODE_BUFFER = Accessors.getMethodAccessor(vanillaDecoder.getClass(),
-					"decode", ChannelHandlerContext.class, ByteBuf.class, List.class);
-			if (ENCODE_BUFFER == null)
-				ENCODE_BUFFER = Accessors.getMethodAccessor(vanillaEncoder.getClass(),
-					"encode", ChannelHandlerContext.class, Object.class, ByteBuf.class);
+			if (DECODE_BUFFER == null) {
+				try {
+					DECODE_BUFFER = vanillaDecoder.getClass().getDeclaredMethod("decode",
+							ChannelHandlerContext.class, ByteBuf.class, List.class);
+					DECODE_BUFFER.setAccessible(true);
+				} catch (NoSuchMethodException ex) {
+					throw new IllegalArgumentException("Unable to find decode method in " + vanillaDecoder.getClass());
+				}
+			}
+
+			if (ENCODE_BUFFER == null) {
+				try {
+					ENCODE_BUFFER = vanillaEncoder.getClass().getDeclaredMethod("encode",
+							ChannelHandlerContext.class, Object.class, ByteBuf.class);
+					ENCODE_BUFFER.setAccessible(true);
+				} catch (NoSuchMethodException ex) {
+					throw new IllegalArgumentException("Unable to find encode method in " + vanillaEncoder.getClass());
+				}
+			}
 
 			// Intercept sent packets
 			MessageToByteEncoder<Object> protocolEncoder = new MessageToByteEncoder<Object>() {
 				@Override
-				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) {
+				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 					if (packet instanceof WirePacket) {
 						// Special case for wire format
 						ChannelInjector.this.encodeWirePacket((WirePacket) packet, output);
@@ -396,7 +410,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param packet - the packet to encode to a byte array.
 	 * @param output - the output byte array.
 	 */
-	private void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) {
+	private void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 		NetworkMarker marker = null;
 		PacketEvent event = currentEvent;
 
@@ -415,7 +429,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					// Delay the packet
 					scheduleMainThread(packet);
 					packet = null;
-
 				} else {
 					event = processSending(packet);
 
@@ -446,9 +459,13 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				// Sent listeners?
 				finalEvent = event;
 			}
+		} catch (InvocationTargetException ex) {
+			if (ex.getCause() instanceof Exception) {
+				throw (Exception) ex.getCause();
+			}
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this,
-				Report.newBuilder(REPORT_CANNOT_INTERCEPT_SERVER_PACKET).callerParam(packet).error(e).build());
+					Report.newBuilder(REPORT_CANNOT_INTERCEPT_SERVER_PACKET).callerParam(packet).error(e).build());
 		} finally {
 			// Attempt to handle the packet nevertheless
 			if (packet != null) {
@@ -483,10 +500,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 
 	@Override
-	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) {
-		DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
-
+	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
 		try {
+			DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+
 			// Reset queue
 			finishQueue.clear();
 
@@ -499,8 +516,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				handleLogin(packetClass, input);
 
 				if (channelListener.includeBuffer(packetClass)) {
-					byteBuffer.resetReaderIndex();
-					marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
+					if (byteBuffer.readableBytes() != 0) {
+						byteBuffer.resetReaderIndex();
+						marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
+					}
 				}
 
 				PacketEvent output = channelListener.onPacketReceiving(this, input, marker);
@@ -517,6 +536,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						finishQueue.addLast(output);
 					}
 				}
+			}
+		} catch (InvocationTargetException ex) {
+			if (ex.getCause() instanceof Exception) {
+				throw (Exception) ex.getCause();
 			}
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this,

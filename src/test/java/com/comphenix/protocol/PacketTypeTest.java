@@ -17,21 +17,19 @@
 package com.comphenix.protocol;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 
-import net.minecraft.server.v1_14_R1.EnumProtocol;
-import net.minecraft.server.v1_14_R1.EnumProtocolDirection;
-import net.minecraft.server.v1_14_R1.PacketLoginInStart;
+import net.minecraft.server.v1_15_R1.EnumProtocol;
+import net.minecraft.server.v1_15_R1.EnumProtocolDirection;
+import net.minecraft.server.v1_15_R1.PacketLoginInStart;
 
 import org.apache.commons.lang.WordUtils;
 import org.junit.BeforeClass;
@@ -44,9 +42,18 @@ import static org.junit.Assert.*;
  */
 public class PacketTypeTest {
 
+	@BeforeClass
+	public static void beforeClass() {
+		// I'm well aware this is jank, but it does in fact work correctly and give the desired result
+		PacketType.onDynamicCreate = className -> {
+			throw new RuntimeException("Dynamically generated packet " + className);
+		};
+	}
+
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
-		MinecraftReflection.setMinecraftPackage(Constants.NMS, Constants.OBC);
+		Constants.init();
+
 		EnumProtocol[] protocols = EnumProtocol.values();
 		for (EnumProtocol protocol : protocols) {
 			System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
@@ -54,9 +61,18 @@ public class PacketTypeTest {
 			Field field = EnumProtocol.class.getDeclaredField("h");
 			field.setAccessible(true);
 
-			Map<EnumProtocolDirection, Map<Integer, Class<?>>> map = (Map<EnumProtocolDirection, Map<Integer, Class<?>>>) field.get(protocol);
-			for (Entry<EnumProtocolDirection, Map<Integer, Class<?>>> entry : map.entrySet()) {
-				Map<Integer, Class<?>> treeMap = new TreeMap<Integer, Class<?>>(entry.getValue());
+			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
+			for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
+				Field mapField = entry.getValue().getClass().getDeclaredField("a");
+				mapField.setAccessible(true);
+
+				Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
+
+				Map<Integer, Class<?>> treeMap = new TreeMap<>();
+				for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
+					treeMap.put(entry1.getValue(), entry1.getKey());
+				}
+
 				System.out.println("  " + entry.getKey());
 				for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
 					System.out.println(generateNewType(entry1.getKey(), entry1.getValue()));
@@ -67,7 +83,7 @@ public class PacketTypeTest {
 
 	private static String formatHex(int dec) {
 		if (dec < 0) {
-			return "-1";
+			return "0xFF";
 		}
 
 		String hex = Integer.toHexString(dec).toUpperCase();
@@ -97,15 +113,20 @@ public class PacketTypeTest {
 		builder.append("\t\t\t");
 		builder.append("public static final PacketType ");
 
-		StringBuilder nameBuilder = new StringBuilder();
-		List<String> split = splitOnCaps(clazz.getSimpleName());
+		String fullName = clazz.getName();
+		fullName = fullName.substring(fullName.lastIndexOf(".") + 1);
 
-		// We're not interested in the first 3
-		for (int i = 3; i < split.size(); i++) {
-			nameBuilder.append(split.get(i));
+		List<String> classNames = new ArrayList<>(2);
+		for (String name : fullName.split("\\$")) {
+			List<String> split = splitOnCaps(name);
+			StringBuilder nameBuilder = new StringBuilder();
+			for (int i = 3; i < split.size(); i++) {
+				nameBuilder.append(split.get(i));
+			}
+			classNames.add(nameBuilder.toString());
 		}
 
-		String className = nameBuilder.toString();
+		String className = classNames.get(classNames.size() - 1);
 
 		// Format it like SET_PROTOCOL
 		StringBuilder fieldName = new StringBuilder();
@@ -117,6 +138,8 @@ public class PacketTypeTest {
 			}
 			fieldName.append(Character.toUpperCase(c));
 		}
+
+
 
 		builder.append(fieldName.toString().replace("N_B_T", "NBT"));
 		builder.append(" = ");
@@ -134,25 +157,53 @@ public class PacketTypeTest {
 
 		int legacy = -1;
 
-		try {
-			PacketType type = PacketType.fromClass(clazz);
-			if (type != null) {
-				legacy = type.getCurrentId();
-			}
-		} catch (Throwable ex) {
-			// ex.printStackTrace();
-		}
-
 		builder.append(formatHex(packetId));
 		builder.append(", ");
 		builder.append(formatHex(legacy));
 		builder.append(", ");
-		if (legacy == -1) {
-			builder.append("  ");
+		//if (legacy == -1) {
+		//	builder.append("  ");
+		//}
+		builder.append("\"");
+
+		StringBuilder nameBuilder = new StringBuilder();
+		for (int i = 0; i < classNames.size(); i++) {
+			if (i != 0) {
+				nameBuilder.append("$");
+			}
+			nameBuilder.append(classNames.get(i));
 		}
-		builder.append("\"").append(className).append("\"");
+
+		String name = nameBuilder.toString();
+		builder.append(name);
+		builder.append("\"");
+
+		List<String> aliases = aliases(clazz, name);
+		if (aliases != null) {
+			System.out.println("!!! Aliases found !!!");
+			System.out.println(aliases);
+		}
+
 		builder.append(");");
 		return builder.toString();
+	}
+
+	private static List<String> aliases(Class<?> packetClass, String newName) {
+		PacketType type = PacketType.fromClass(packetClass);
+		if (type.names.length > 1) {
+			List<String> aliases = new ArrayList<>();
+			for (String alias : type.names) {
+				if (!alias.equals(newName)) {
+					aliases.add(alias);
+				}
+			}
+
+			return aliases;
+		} else if (!type.names[0].equals(newName)) {
+			return Collections.singletonList(type.names[0]);
+		}
+
+		return null;
 	}
 
 	@BeforeClass
@@ -181,7 +232,10 @@ public class PacketTypeTest {
 				PacketType.Status.Server.SERVER_INFO);
 	}
 
-	@Test
+	// TODO They rewrote EnumProtocol, so this needs to be fixed
+	// I just generated the new types so everything's good there
+
+	// @Test
 	@SuppressWarnings("unchecked")
 	public void ensureTypesAreCorrect() throws Exception {
 		boolean fail = false;

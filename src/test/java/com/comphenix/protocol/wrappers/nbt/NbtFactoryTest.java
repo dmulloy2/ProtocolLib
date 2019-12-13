@@ -25,9 +25,14 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import net.minecraft.server.v1_14_R1.ItemStack;
-import net.minecraft.server.v1_14_R1.Items;
+import net.minecraft.server.v1_15_R1.ItemStack;
+import net.minecraft.server.v1_15_R1.Items;
+import net.minecraft.server.v1_15_R1.NBTTagTypes;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +40,12 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
@@ -81,5 +91,14 @@ public class NbtFactoryTest {
 		NbtFactory.setItemTag(craftTest, compound);
 		
 		assertEquals(compound, NbtFactory.fromItemTag(craftTest));
+	}
+
+	@Test
+	public void testCreateTags() {
+		for (NbtType type : NbtType.values()) {
+			if (type != NbtType.TAG_END) {
+				NbtFactory.ofWrapper(type, "");
+			}
+		}
 	}
 }

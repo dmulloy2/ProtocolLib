@@ -17,40 +17,40 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
 import javax.annotation.Nonnull;
+
+import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+import com.google.common.base.Preconditions;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.ItemStack;
 
-import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
-import com.google.common.base.Preconditions;
-import com.google.common.io.Closeables;
-
 /**
  * Factory methods for creating NBT elements, lists and compounds.
  * 
  * @author Kristian
  */
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class NbtFactory {
 	// Used to create the underlying tag
 	private static Method methodCreateTag;
@@ -203,21 +203,11 @@ public class NbtFactory {
 	 */
 	public static NbtCompound fromFile(String file) throws IOException {
 		Preconditions.checkNotNull(file, "file cannot be NULL");
-	    FileInputStream stream = null;
-	    DataInputStream input = null;
-	    boolean swallow = true;
-	    
-	    try {
-	        stream = new FileInputStream(file);
-	        NbtCompound result = NbtBinarySerializer.DEFAULT.
-	            deserializeCompound(input = new DataInputStream(new GZIPInputStream(stream)));
-	        swallow = false;
-	        return result;
-	    } finally {
-	        // Would be nice to avoid this, but alas - we have to use Java 6
-	        if      (input != null) Closeables.close(input, swallow);
-	        else if (stream != null) Closeables.close(stream, swallow);
-	    }
+
+		try (FileInputStream stream = new FileInputStream(file);
+				DataInputStream input = new DataInputStream(new GZIPInputStream(stream))) {
+			return NbtBinarySerializer.DEFAULT.deserializeCompound(input);
+		}
 	}
 	
 	/**
@@ -229,20 +219,11 @@ public class NbtFactory {
 	public static void toFile(NbtCompound compound, String file) throws IOException {
 		Preconditions.checkNotNull(compound, "compound cannot be NULL");
 		Preconditions.checkNotNull(file, "file cannot be NULL");
-	    FileOutputStream stream = null;
-	    DataOutputStream output = null;
-	    boolean swallow = true;
-	    
-	    try {
-	        stream = new FileOutputStream(file);
-	        NbtBinarySerializer.DEFAULT.
-	            serialize(compound, output = new DataOutputStream(new GZIPOutputStream(stream)));
-	        swallow = false;
-	    } finally {
-	        // Note the order
-	        if      (output != null) Closeables.close(output, swallow);
-	        else if (stream != null) Closeables.close(stream, swallow);
-	    }
+
+		try (FileOutputStream stream = new FileOutputStream(file);
+				DataOutputStream output = new DataOutputStream(new GZIPOutputStream(stream))) {
+			NbtBinarySerializer.DEFAULT.serialize(compound, output);
+		}
 	}
 	
 	/**
@@ -296,7 +277,7 @@ public class NbtFactory {
 		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
 		
 		if (itemStackModifier == null) {
-			itemStackModifier = new StructureModifier<Object>(nmsStack.getClass(), Object.class, false);
+			itemStackModifier = new StructureModifier<>(nmsStack.getClass(), Object.class, false);
 		}
 		
 		// Use the first and best NBT tag
@@ -314,10 +295,9 @@ public class NbtFactory {
 	 * @param handle - the underlying net.minecraft.server object to wrap.
 	 * @return A NBT wrapper.
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Deprecated
 	public static <T> NbtWrapper<T> fromNMS(Object handle) {
-		WrappedElement<T> partial = new WrappedElement<T>(handle);
+		WrappedElement<T> partial = new WrappedElement<>(handle);
 		
 		// See if this is actually a compound tag
 		if (partial.getType() == NbtType.TAG_COMPOUND)
@@ -335,9 +315,8 @@ public class NbtFactory {
 	 * @param handle - the underlying net.minecraft.server object to wrap.
 	 * @return A NBT wrapper.
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <T> NbtWrapper<T> fromNMS(Object handle, String name) {
-		WrappedElement<T> partial = new WrappedElement<T>(handle, name);
+		WrappedElement<T> partial = new WrappedElement<>(handle, name);
 		
 		// See if this is actually a compound tag
 		if (partial.getType() == NbtType.TAG_COMPOUND)
@@ -504,6 +483,10 @@ public class NbtFactory {
 			throw new IllegalArgumentException("type cannot be NULL.");
 		if (type == NbtType.TAG_END)
 			throw new IllegalArgumentException("Cannot create a TAG_END.");
+
+		if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
+			return createTagNew(type, name);
+		}
 		
 		if (methodCreateTag == null) {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
@@ -555,10 +538,10 @@ public class NbtFactory {
 		else if (type == NbtType.TAG_LIST)
 			return new WrappedList(handle);
 		else
-			return new WrappedElement<T>(handle);
+			return new WrappedElement<>(handle);
 	}
 	
-	// For Minecraft 1.7.2 and above
+	// For Minecraft 1.7.2 to 1.14.4
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static <T> NbtWrapper<T> createTagSetName(NbtType type, String name) throws Exception {
 		Object handle = methodCreateTag.invoke(null, (byte) type.getRawID());
@@ -568,9 +551,80 @@ public class NbtFactory {
 		else if (type == NbtType.TAG_LIST)
 			return new WrappedList(handle, name);
 		else
-			return new WrappedElement<T>(handle, name);
+			return new WrappedElement<>(handle, name);
 	}
-	
+
+	private static Method getTagType;
+	private static final Map<NbtType, Constructor<?>> CONSTRUCTORS = new ConcurrentHashMap<>();
+
+	@SafeVarargs
+	private static <T> NbtWrapper<T> createTagNew(NbtType type, String name, T... values) {
+		if (type == NbtType.TAG_END) {
+			throw new IllegalArgumentException("Can't create END tags");
+		}
+
+		int nbtId = type.getRawID();
+		Class<?> valueType = type.getValueType();
+
+		Constructor<?> constructor = CONSTRUCTORS.get(type);
+		if (constructor == null) {
+			if (getTagType == null) {
+				Class<?> tagTypes = MinecraftReflection.getMinecraftClass("NBTTagTypes");
+				FuzzyReflection fuzzy = FuzzyReflection.fromClass(tagTypes, false);
+				getTagType = fuzzy.getMethod(FuzzyMethodContract.newBuilder().parameterCount(1).parameterExactType(int.class).build());
+			}
+
+			Class<?> nbtClass;
+
+			try {
+				nbtClass = getTagType.invoke(null, nbtId).getClass().getEnclosingClass();
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException("Failed to determine NBT class from " + type, ex);
+			}
+
+			try {
+				FuzzyReflection fuzzy = FuzzyReflection.fromClass(nbtClass, true);
+				if (type == NbtType.TAG_LIST) {
+					constructor = fuzzy.getConstructor(FuzzyMethodContract.newBuilder()
+							.parameterCount(0)
+							.build());
+				} else {
+					constructor = fuzzy.getConstructor(FuzzyMethodContract.newBuilder()
+							.parameterCount(1)
+							.parameterSuperOf(valueType)
+							.build());
+				}
+
+				constructor.setAccessible(true);
+			} catch (Exception ex) {
+				throw new RuntimeException("Failed to find NBT constructor in " + nbtClass, ex);
+			}
+
+			CONSTRUCTORS.put(type, constructor);
+		}
+
+		Object handle;
+		T value = values.length > 0 ? values[0] : (T) DefaultInstances.DEFAULT.getDefault(valueType);
+
+		try {
+			if (type == NbtType.TAG_LIST) {
+				handle = constructor.newInstance();
+			} else {
+				handle = constructor.newInstance(value);
+			}
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to create NBT wrapper for " + type, ex);
+		}
+
+		if (type == NbtType.TAG_COMPOUND) {
+			return (NbtWrapper<T>) new WrappedCompound(handle, name);
+		} else if (type == NbtType.TAG_LIST) {
+			return new WrappedList(handle, name);
+		} else {
+			return new WrappedElement<>(handle, name);
+		}
+	}
+
 	/**
 	 * Create a new NBT wrapper from a given type.
 	 * @param <T> Type
@@ -581,6 +635,10 @@ public class NbtFactory {
 	 * @throws FieldAccessException If we're unable to create the underlying tag.
 	 */
 	public static <T> NbtWrapper<T> ofWrapper(NbtType type, String name, T value) {
+		if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
+			return createTagNew(type, name, value);
+		}
+
 		NbtWrapper<T> created = ofWrapper(type, name);
 		
 		// Update the value
