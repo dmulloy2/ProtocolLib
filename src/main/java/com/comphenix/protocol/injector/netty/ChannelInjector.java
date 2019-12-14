@@ -469,7 +469,15 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		} finally {
 			// Attempt to handle the packet nevertheless
 			if (packet != null) {
-				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
+				try {
+					ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
+				} catch (InvocationTargetException ex) {
+					if (ex.getCause() instanceof Exception) {
+						//noinspection ThrowFromFinallyBlock
+						throw (Exception) ex.getCause();
+					}
+				}
+				
 				finalEvent = event;
 			}
 		}
