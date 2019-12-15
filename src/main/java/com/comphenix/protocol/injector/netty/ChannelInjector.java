@@ -477,7 +477,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						throw (Exception) ex.getCause();
 					}
 				}
-				
+
 				finalEvent = event;
 			}
 		}

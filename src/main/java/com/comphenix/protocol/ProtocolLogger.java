@@ -26,7 +26,7 @@ import org.bukkit.plugin.Plugin;
  * @author dmulloy2
  */
 public class ProtocolLogger {
-	private static boolean debugEnabled = true;
+	private static boolean debugEnabled = false;
 	private static Logger logger = Logger.getLogger("Minecraft");
 
 	protected static void init(Plugin plugin) {
