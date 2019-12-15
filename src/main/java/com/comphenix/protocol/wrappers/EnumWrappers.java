@@ -22,6 +22,7 @@ import org.bukkit.GameMode;
  * Represents a generic enum converter.
  * @author Kristian
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class EnumWrappers {
 	public enum ClientCommand {
 		PERFORM_RESPAWN,
@@ -161,8 +162,8 @@ public abstract class EnumWrappers {
 	}
 
 	public enum PlayerAction implements AliasedEnum {
-		PRESS_SHIFT_KEY("START_SNEAKING"),
-		RELEASE_SHIFT_KEY("STOP_SNEAKING"),
+		START_SNEAKING("PRESS_SHIFT_KEY"),
+		STOP_SNEAKING("RELEASE_SHIFT_KEY"),
 		STOP_SLEEPING,
 		START_SPRINTING,
 		STOP_SPRINTING,
@@ -677,8 +678,9 @@ public abstract class EnumWrappers {
 		return new EnumConverter<>(null, specificType);
 	}
 
-	// The common enum converter
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	/**
+	 * The common Enum converter
+	 */
 	public static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
 		private Class<?> genericType;
 		private Class<T> specificType;
@@ -712,9 +714,15 @@ public abstract class EnumWrappers {
 		String[] getAliases();
 	}
 
+	/**
+	 * Enums whose name has changed across NMS versions. Enums using this must also implement {@link AliasedEnum}
+	 */
 	public static class AliasedEnumConverter<T extends Enum<T> & AliasedEnum> implements EquivalentConverter<T> {
 		private Class<?> genericType;
 		private Class<T> specificType;
+
+		private Map<T, Object> genericMap = new ConcurrentHashMap<>();
+		private Map<Object, T> specificMap = new ConcurrentHashMap<>();
 
 		public AliasedEnumConverter(Class<?> genericType, Class<T> specificType) {
 			this.genericType = genericType;
@@ -723,50 +731,50 @@ public abstract class EnumWrappers {
 
 		@Override
 		public T getSpecific(Object generic) {
-			String name = ((Enum) generic).name();
+			return specificMap.computeIfAbsent(generic, x -> {
+				String name = ((Enum) generic).name();
 
-			try {
-				return Enum.valueOf(specificType, name);
-			} catch (Exception ex) {
-				// TODO would caching help much, if at all?
-				for (T elem : specificType.getEnumConstants()) {
-					for (String alias : elem.getAliases()) {
-						if (alias.equals(name)) {
-							return elem;
+				try {
+					return Enum.valueOf(specificType, name);
+				} catch (Exception ex) {
+					for (T elem : specificType.getEnumConstants()) {
+						for (String alias : elem.getAliases()) {
+							if (alias.equals(name)) {
+								return elem;
+							}
 						}
 					}
 				}
-			}
 
-			throw new IllegalArgumentException("Unknown enum constant " + name);
+				throw new IllegalArgumentException("Unknown enum constant " + name);
+			});
 		}
 
 		@Override
 		public Object getGeneric(T specific) {
-			String name = specific.name();
+			return genericMap.computeIfAbsent(specific, x -> {
+				String name = specific.name();
 
-			try {
-				return Enum.valueOf((Class) genericType, specific.name());
-			} catch (Exception ex) {
-				for (Object elem : genericType.getEnumConstants()) {
-					for (String alias : specific.getAliases()) {
-						if (alias.equals(name)) {
-							return elem;
+				try {
+					return Enum.valueOf((Class) genericType, specific.name());
+				} catch (Exception ex) {
+					for (Object rawElem : genericType.getEnumConstants()) {
+						Enum elem = (Enum) rawElem;
+						for (String alias : specific.getAliases()) {
+							if (alias.equals(elem.name())) {
+								return elem;
+							}
 						}
 					}
 				}
-			}
 
-			throw new IllegalArgumentException("Unknown enum constant " + name);
+				throw new IllegalArgumentException("Unknown enum constant " + name);
+			});
 		}
 
 		@Override
 		public Class<T> getSpecificType() {
 			return specificType;
-		}
-
-		void setGenericType(Class<?> genericType) {
-			this.genericType = genericType;
 		}
 	}
 
