@@ -19,6 +19,7 @@ package com.comphenix.protocol.injector;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,13 +42,13 @@ import org.bukkit.entity.Player;
 
 /**
  * Used to perform certain operations on entities.
- * 
+ *
  * @author Kristian
  */
 class EntityUtilities {
 	private static final boolean NEW_TRACKER = MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE);
 	private static final EntityUtilities INSTANCE = new EntityUtilities();
-	
+
 	public static EntityUtilities getInstance() {
 		return INSTANCE;
 	}
@@ -58,8 +59,8 @@ class EntityUtilities {
 	private FieldAccessor trackedEntitiesField;
 	private FieldAccessor trackedPlayersField;
 	private FieldAccessor trackerField;
-	
-	private MethodAccessor scanPlayersMethod;
+
+	private Map<Class<?>, MethodAccessor> scanPlayersMethods = new HashMap<>();
 
 	public void updateEntity(Entity entity, List<Player> observers) {
 		if (entity == null || !entity.isValid()) {
@@ -73,11 +74,8 @@ class EntityUtilities {
 
 		Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 
-		if (scanPlayersMethod == null) {
-			scanPlayersMethod = findScanPlayers(trackerEntry.getClass());
-		}
-
-		scanPlayersMethod.invoke(trackerEntry, nmsPlayers);
+		// there can be multiple different entity tracker entry impls, see GH-732....
+		scanPlayersMethods.computeIfAbsent(trackerEntry.getClass(), this::findScanPlayers).invoke(trackerEntry, nmsPlayers);
 	}
 
 	private MethodAccessor findScanPlayers(Class<?> trackerClass) {
@@ -138,7 +136,7 @@ class EntityUtilities {
 			throw new IllegalStateException("trackedPlayers field was an unknown type: expected Collection or Map, but got " + value.getClass());
 		}
 	}
-	
+
 	private MethodAccessor getChunkProvider;
 	private FieldAccessor chunkMapField;
 
@@ -150,7 +148,7 @@ class EntityUtilities {
 					FuzzyReflection.fromClass(worldServer.getClass(), false).getMethod(
 							FuzzyMethodContract.newBuilder().parameterCount(0).returnTypeExact(chunkProviderClass).build()));
 		}
-		
+
 		Object chunkProvider = getChunkProvider.invoke(worldServer);
 
 		if (chunkMapField == null) {
@@ -159,7 +157,7 @@ class EntityUtilities {
 					FuzzyReflection.fromClass(chunkProvider.getClass(), false).getField(
 							FuzzyFieldContract.newBuilder().typeExact(chunkMapClass).build()));
 		}
-		
+
 		Object playerChunkMap = chunkMapField.get(chunkProvider);
 
 		if (trackedEntitiesField == null) {
@@ -183,7 +181,7 @@ class EntityUtilities {
 		if (entityTrackerField == null)
 			entityTrackerField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(worldServer).
 									getFieldByType("tracker", MinecraftReflection.getEntityTrackerClass()));
-		
+
 		// Get the tracker
 		Object tracker = entityTrackerField.get(worldServer);
 
@@ -236,17 +234,17 @@ class EntityUtilities {
 	private List<Object> unwrapBukkit(List<Player> players) {
 		List<Object> output = Lists.newArrayList();
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
-		
+
 		// Get the NMS equivalent
 		for (Player player : players) {
 			Object result = unwrapper.unwrapItem(player);
-			
+
 			if (result != null)
 				output.add(result);
 			else
 				throw new IllegalArgumentException("Cannot unwrap item " + player);
 		}
-		
+
 		return output;
 	}
 }
