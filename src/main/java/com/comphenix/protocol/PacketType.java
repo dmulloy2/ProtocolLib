@@ -260,7 +260,13 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Removed in 1.14
 			 */
 			@Deprecated
-			public static final PacketType USE_BED =                      new PacketType(PROTOCOL, SENDER, 0x33, 0x33, "UseBed");
+			public static final PacketType BED =                          new PacketType(PROTOCOL, SENDER, 0x33, 0x33, "Bed");
+
+			/**
+			 * @deprecated Renamed to {@link #BED}
+			 */
+			@Deprecated
+			public static final PacketType USE_BED =                      BED.clone();
 
 			private final static Server INSTANCE = new Server();
 
