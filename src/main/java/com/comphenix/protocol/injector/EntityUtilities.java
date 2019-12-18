@@ -17,11 +17,8 @@
 
 package com.comphenix.protocol.injector;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -46,7 +43,7 @@ import org.bukkit.entity.Player;
  * @author Kristian
  */
 class EntityUtilities {
-	private static final boolean NEW_TRACKER = MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE);
+	private static final boolean NEW_TRACKER = MinecraftVersion.VILLAGE_UPDATE.atOrAbove();
 	private static final EntityUtilities INSTANCE = new EntityUtilities();
 
 	public static EntityUtilities getInstance() {
@@ -58,7 +55,6 @@ class EntityUtilities {
 	private FieldAccessor entityTrackerField;
 	private FieldAccessor trackedEntitiesField;
 	private FieldAccessor trackedPlayersField;
-	private FieldAccessor trackerField;
 
 	private Map<Class<?>, MethodAccessor> scanPlayersMethods = new HashMap<>();
 
@@ -196,6 +192,9 @@ class EntityUtilities {
 		return WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
 	}
 
+	private Map<Class<?>, FieldAccessor> trackerFields = new ConcurrentHashMap<>();
+	private MethodAccessor getEntityFromId;
+
 	/**
 	 * Retrieve entity from a ID, even it it's newly created.
 	 * @return The associated entity.
@@ -206,20 +205,40 @@ class EntityUtilities {
 		Validate.isTrue(entityID >= 0, "entityID cannot be negative");
 
 		try {
+			// first, try to read from the world
+			// this should be good enough for most cases, but only exists in 1.14+
+			if (NEW_TRACKER) {
+				Object worldServer = BukkitUnwrapper.getInstance().unwrapItem(world);
+
+				if (getEntityFromId == null) {
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(worldServer.getClass(), false);
+					getEntityFromId = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+							.parameterExactArray(int.class)
+							.returnTypeExact(MinecraftReflection.getEntityClass())
+							.build()));
+				}
+
+				Object entity = getEntityFromId.invoke(worldServer, entityID);
+				if (entity != null) {
+					return (Entity) MinecraftReflection.getBukkitEntity(entity);
+				}
+			}
+
+			// then go into the trackers
 			Object trackerEntry = getEntityTrackerEntry(world, entityID);
 			Object tracker = null;
 
-			// Handle NULL cases
 			if (trackerEntry != null) {
-				if (trackerField == null) {
+				// plugins like citizens will use their own tracker
+				FieldAccessor trackerField = trackerFields.computeIfAbsent(trackerEntry.getClass(), x -> {
 					try {
-						trackerField = Accessors.getFieldAccessor(trackerEntry.getClass(), "tracker", true);
+						return Accessors.getFieldAccessor(trackerEntry.getClass(), "tracker", true);
 					} catch (Exception e) {
 						// Assume it's the first entity field then
-						trackerField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(trackerEntry, true)
+						return Accessors.getFieldAccessor(FuzzyReflection.fromObject(trackerEntry, true)
 								.getFieldByType("tracker", MinecraftReflection.getEntityClass()));
 					}
-				}
+				});
 
 				tracker = trackerField.get(trackerEntry);
 			}
