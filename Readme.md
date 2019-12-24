@@ -2,7 +2,7 @@
 
 Certain tasks are impossible to perform with the standard Bukkit API, and may require
 working with and even modify Minecraft directly. A common technique is to modify incoming
-and outgoing [packets](http://www.wiki.vg/Protocol), or inject custom packets into the
+and outgoing [packets](https://www.wiki.vg/Protocol), or inject custom packets into the
 stream. This is quite cumbersome to do, however, and most implementations will break
 as soon as a new version of Minecraft has been released, mostly due to obfuscation.
 
@@ -10,17 +10,17 @@ Critically, different plugins that use this approach may _hook_ into the same cl
 with unpredictable outcomes. More than often this causes plugins to crash, but it may also
 lead to more subtle bugs.
 
-Currently maintained by dmulloy2 on behalf of [Spigot](http://www.spigotmc.org/).
+Currently maintained by dmulloy2 on behalf of [Spigot](https://www.spigotmc.org/).
 
 ### Resources
 
-* [Resource Page](http://www.spigotmc.org/resources/protocollib.1997/)
-* [Dev Builds](http://ci.dmulloy2.net/job/ProtocolLib)
-* [JavaDoc](http://ci.dmulloy2.net/job/ProtocolLib/javadoc)
+* [Resource Page](https://www.spigotmc.org/resources/protocollib.1997/)
+* [Dev Builds](https://ci.dmulloy2.net/job/ProtocolLib)
+* [JavaDoc](https://ci.dmulloy2.net/job/ProtocolLib/javadoc)
 
 ### Compilation
 
-ProtocolLib is built with Maven and requires Spigot and SpigotAPI, which can be found [here](http://www.spigotmc.org/wiki/buildtools/).
+ProtocolLib is built with Maven and requires Spigot and SpigotAPI, which can be found [here](https://www.spigotmc.org/wiki/buildtools/).
 
 ### A new API
 
@@ -44,7 +44,7 @@ You can also add ProtocolLib as a Maven dependency:
 <repositories>
   <repository>
     <id>dmulloy2-repo</id>
-    <url>http://repo.dmulloy2.net/nexus/repository/public/</url>
+    <url>https://repo.dmulloy2.net/nexus/repository/public/</url>
   </repository>
   ...
 </repositories>
@@ -53,7 +53,7 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>4.4.0</version>
+    <version>4.5.0</version>
   </dependency>
 </dependencies>
 ````
@@ -62,11 +62,11 @@ Or use the maven dependency with gradle:
 
 ```gradle
 repositories {
-    maven { url "http://repo.dmulloy2.net/nexus/repository/public/" }
+    maven { url "https://repo.dmulloy2.net/nexus/repository/public/" }
 }
 
 dependencies {
-    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.4.0";
+    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.5.0";
 }
 ```
 
