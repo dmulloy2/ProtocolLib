@@ -29,7 +29,12 @@ public class ProtocolLogger {
 	private static boolean debugEnabled = false;
 	private static Logger logger = Logger.getLogger("Minecraft");
 
-	protected static void init(Plugin plugin) {
+	/**
+	 * Don't call this method from any plugin. Currently only public to test if it fixes a weird error.
+	 * See GH-740
+	 * @param plugin ProtocolLib
+	 */
+	public static void init(ProtocolLib plugin) {
 		logger = plugin.getLogger();
 
 		try {
