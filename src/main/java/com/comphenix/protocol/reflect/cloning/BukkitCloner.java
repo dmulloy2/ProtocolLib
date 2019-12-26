@@ -50,6 +50,7 @@ public class BukkitCloner implements Cloner {
 		} catch (RuntimeException ignored) { }
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static void fromConverter(Supplier<Class<?>> getClass, EquivalentConverter converter) {
 		try {
 			Class<?> nmsClass = getClass.get();
@@ -80,9 +81,12 @@ public class BukkitCloner implements Cloner {
 		fromManual(MinecraftReflection::getNonNullListClass, source -> nonNullListCloner().clone(source));
 		fromWrapper(MinecraftReflection::getNBTBaseClass, NbtFactory::fromNMS);
 		fromWrapper(MinecraftReflection::getIChatBaseComponentClass, WrappedChatComponent::fromHandle);
-		fromManual(ComponentConverter::getBaseComponentArrayClass, source ->
-				ComponentConverter.clone((BaseComponent[]) source));
 		fromWrapper(WrappedVillagerData::getNmsClass, WrappedVillagerData::fromHandle);
+
+		try {
+			fromManual(ComponentConverter::getBaseComponentArrayClass, source ->
+					ComponentConverter.clone((BaseComponent[]) source));
+		} catch (Throwable ignored) { }
 	}
 
 	private Function<Object, Object> findCloner(Class<?> type) {
