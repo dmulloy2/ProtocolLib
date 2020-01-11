@@ -88,20 +88,15 @@ public final class SpigotUpdater extends Updater {
 		}
 	}
 
-	private static final String PROTOCOL = "https://";
-	private static final String RESOURCE_URL = PROTOCOL + "www.spigotmc.org/resources/protocollib.1997/";
-	private static final String API_URL = PROTOCOL + "www.spigotmc.org/api/general.php";
-	private static final String ACTION = "POST";
-
-	private static final int ID = 1997;
-	private static final byte[] API_KEY = ("key=98BE0FE67F88AB82B4C197FAF1DC3B69206EFDCC4D3B80FC83A00037510B99B4&resource=" + ID).getBytes(Charsets.UTF_8);
+	private static final String RESOURCE_URL = "https://www.spigotmc.org/resources/protocollib.1997/";
+	private static final String UPDATE_URL = "https://api.spigotmc.org/legacy/update.php?resource=1997";
+	private static final String ACTION = "GET";
 
 	public String getSpigotVersion() throws IOException {
 		try (Closer closer = Closer.create()) {
-			HttpURLConnection con = (HttpURLConnection) new URL(API_URL).openConnection();
+			HttpURLConnection con = (HttpURLConnection) new URL(UPDATE_URL).openConnection();
 			con.setDoOutput(true);
 			con.setRequestMethod(ACTION);
-			con.getOutputStream().write(API_KEY);
 
 			InputStreamReader isr = closer.register(new InputStreamReader(con.getInputStream()));
 			BufferedReader br = closer.register(new BufferedReader(isr));

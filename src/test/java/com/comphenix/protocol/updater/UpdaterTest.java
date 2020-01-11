@@ -12,6 +12,8 @@ import java.util.logging.Logger;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.comphenix.protocol.updater.Updater.UpdateType;
 
@@ -23,14 +25,14 @@ public class UpdaterTest {
 	private static final int BUKKIT_DEV_ID = 45564;
 	private static Plugin plugin;
 
-	// @BeforeClass
+	@BeforeClass
 	public static void preparePlugin() {
 		Server server = mock(Server.class);
 		when(server.getUpdateFolder()).thenReturn(null);
 
 		plugin = mock(Plugin.class);
 		String version = System.getProperty("projectVersion");
-		if (version == null) version = "4.2.1";
+		if (version == null) version = "4.4.0";
 		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", version, null));
 		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
 		when(plugin.getDataFolder()).thenReturn(null);
