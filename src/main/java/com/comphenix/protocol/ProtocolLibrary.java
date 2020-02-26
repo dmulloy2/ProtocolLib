@@ -39,12 +39,12 @@ public class ProtocolLibrary {
 	/**
 	 * The maximum version ProtocolLib has been tested with.
 	 */
-	public static final String MAXIMUM_MINECRAFT_VERSION = "1.15.1";
+	public static final String MAXIMUM_MINECRAFT_VERSION = "1.15.2";
 
 	/**
 	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.14.4) was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2019-12-17";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2020-01-21";
 
 	/**
 	 * Plugins that are currently incompatible with ProtocolLib.
