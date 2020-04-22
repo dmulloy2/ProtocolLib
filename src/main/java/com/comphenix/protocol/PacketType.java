@@ -654,6 +654,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	private boolean forceAsync;
 
 	private boolean dynamic;
+	private int hashCode;
 
 	/**
 	 * Retrieve the current packet/legacy lookup.
@@ -1191,7 +1192,14 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(protocol, sender, currentId);
+		int hash = hashCode;
+		if (hash == 0) {
+			hash = protocol.hashCode();
+			hash = 31 * hash + sender.hashCode();
+			hash = 31 * hash + Integer.hashCode(currentId);
+			hashCode = hash;
+		}
+		return hash;
 	}
 
 	@Override
