@@ -22,9 +22,9 @@ import com.google.common.base.Preconditions;
  * @author Kristian
  */
 public class WrappedAttributeModifier extends AbstractWrapper {
-	private static final Class<?> OPERATION_CLASS = MinecraftReflection.getMinecraftClass("AttributeModifier$Operation");
 	private static final boolean OPERATION_ENUM = MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE);
-	private static final EquivalentConverter<Operation> OPERATION_CONVERTER = new IndexedEnumConverter<>(Operation.class, OPERATION_CLASS);
+	private static final Class<?> OPERATION_CLASS;
+	private static final EquivalentConverter<Operation> OPERATION_CONVERTER;
 
 	private static class IndexedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
 		private Class<T> specificClass;
@@ -63,6 +63,11 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 		public Class<T> getSpecificType() {
 			return specificClass;
 		}
+	}
+
+	static {
+		OPERATION_CLASS = OPERATION_ENUM ? MinecraftReflection.getMinecraftClass("AttributeModifier$Operation") : null;
+		OPERATION_CONVERTER = OPERATION_ENUM ? new IndexedEnumConverter<>(Operation.class, OPERATION_CLASS) : null;
 	}
 
 	 /**

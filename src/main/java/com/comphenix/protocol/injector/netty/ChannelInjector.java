@@ -126,9 +126,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private PacketEvent finalEvent;
 
 	/**
-	 * A flag set by the main thread to indiciate that a packet should not be processed.
+	 * A queue of packets that were sent with filtered=false
 	 */
-	private final ThreadLocal<Boolean> scheduleProcessPackets = ThreadLocal.withInitial(() -> true);
+	private final PacketFilterQueue unfilteredProcessedPackets = new PacketFilterQueue();
 
 	// Other handlers
 	private ByteToMessageDecoder vanillaDecoder;
@@ -328,7 +328,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					Object original = accessor.get(instance);
 
 					// See if we've been instructed not to process packets
-					if (!scheduleProcessPackets.get()) {
+					if (unfilteredProcessedPackets.contains(original)) {
 						NetworkMarker marker = getMarker(original);
 
 						if (marker != null)	{
@@ -416,7 +416,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		try {
 			// Skip every kind of non-filtered packet
-			if (!scheduleProcessPackets.get()) {
+			if (unfilteredProcessedPackets.remove(packet)) {
 				return;
 			}
 
@@ -663,12 +663,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
 		saveMarker(packet, marker);
 
-		try {
-			scheduleProcessPackets.set(filtered);
-			invokeSendPacket(packet);
-		} finally {
-			scheduleProcessPackets.set(true);
+		if (!filtered) {
+			unfilteredProcessedPackets.add(packet);
 		}
+
+		invokeSendPacket(packet);
 	}
 
 	/**
