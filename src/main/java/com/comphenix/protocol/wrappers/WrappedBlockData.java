@@ -235,8 +235,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 		}
 
 		private static WrappedBlockData createOldData(Material type) {
-			Object blockData = GET_BLOCK.invoke(null, type);
-			return new OldBlockData(blockData);
+			return createOldData(type, 0);
 		}
 
 		private static WrappedBlockData createOldData(Material type, int data) {
