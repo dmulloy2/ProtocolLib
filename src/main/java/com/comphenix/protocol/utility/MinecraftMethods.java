@@ -2,6 +2,7 @@ package com.comphenix.protocol.utility;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,6 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.concurrent.GenericFutureListener;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -85,7 +85,7 @@ public class MinecraftMethods {
 	 * @param playerConnection - the player connection.
 	 * @return The
 	 */
-	public static Method getDisconnectMethod(Class<? extends Object> playerConnection) {
+	public static Method getDisconnectMethod(Class<?> playerConnection) {
 		try {
 			return FuzzyReflection.fromClass(playerConnection).getMethodByName("disconnect.*");
 		} catch (IllegalArgumentException e) {
@@ -95,7 +95,7 @@ public class MinecraftMethods {
 	}
 	
 	/**
-	 * Retrieve the handle(Packet, GenericFutureListener[]) method of network manager.
+	 * Retrieve the handle/send packet method of network manager.
 	 * <p>
 	 * This only exists in version 1.7.2 and above.
 	 * @return The handle method.
@@ -104,7 +104,12 @@ public class MinecraftMethods {
 		if (networkManagerHandle == null) {
 			networkManagerHandle = FuzzyReflection
 					.fromClass(MinecraftReflection.getNetworkManagerClass(), true)
-					.getMethodByParameters("handle", MinecraftReflection.getPacketClass());
+					.getMethod(FuzzyMethodContract.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.returnTypeVoid()
+							.parameterCount(1)
+							.parameterExactType(MinecraftReflection.getPacketClass())
+							.build());
 			networkManagerHandle.setAccessible(true);
 		}
 
@@ -112,7 +117,7 @@ public class MinecraftMethods {
 	}
 	
 	/**
-	 * Retrieve the packetRead(ChannelHandlerContext, Packet) method of NetworkMananger.
+	 * Retrieve the packetRead(ChannelHandlerContext, Packet) method of NetworkManager.
 	 * <p>
 	 * This only exists in version 1.7.2 and above.
 	 * @return The packetRead method.
