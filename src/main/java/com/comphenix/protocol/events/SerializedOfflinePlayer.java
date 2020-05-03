@@ -30,10 +30,8 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
+import org.bukkit.*;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.utility.EnhancerFactory;
@@ -108,6 +106,50 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	public Location getBedSpawnLocation() {
 		return bedSpawnLocation;
 	}
+
+	// TODO do we need to implement this?
+	
+	public void incrementStatistic(Statistic statistic) throws IllegalArgumentException { }
+
+	public void decrementStatistic(Statistic statistic) throws IllegalArgumentException { }
+
+	public void incrementStatistic(Statistic statistic, int i) throws IllegalArgumentException { }
+
+	public void decrementStatistic(Statistic statistic, int i) throws IllegalArgumentException { }
+
+	public void setStatistic(Statistic statistic, int i) throws IllegalArgumentException { }
+
+	public int getStatistic(Statistic statistic) throws IllegalArgumentException {
+		return 0;
+	}
+
+	public void incrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException { }
+
+	public void decrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException { }
+
+	public int getStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
+		return 0;
+	}
+
+	public void incrementStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException { }
+
+	public void decrementStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException { }
+
+	public void setStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException { }
+
+	public void incrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException { }
+
+	public void decrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException { }
+
+	public int getStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
+		return 0;
+	}
+
+	public void incrementStatistic(Statistic statistic, EntityType entityType, int i) throws IllegalArgumentException { }
+
+	public void decrementStatistic(Statistic statistic, EntityType entityType, int i) { }
+
+	public void setStatistic(Statistic statistic, EntityType entityType, int i) { }
 
 	@Override
 	public long getFirstPlayed() {

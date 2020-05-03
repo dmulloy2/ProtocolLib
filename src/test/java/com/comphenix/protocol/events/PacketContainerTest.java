@@ -448,7 +448,7 @@ public class PacketContainerTest {
 		int e = 0;
 		if (effect.isAmbient()) e |= 1;
 		if (effect.hasParticles()) e |= 2;
-		if (mobEffect.f()) e |= 4;
+		if (effect.hasIcon()) e |= 4;
 
 		assertEquals(e, (byte) packet.getBytes().read(2));
 	}
