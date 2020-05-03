@@ -1133,8 +1133,7 @@ public class BukkitConverters {
 	private static MethodAccessor idFromDimension = null;
 
 	public static EquivalentConverter<Integer> getDimensionIDConverter() {
-		return new EquivalentConverter<Integer>() {
-
+		return ignoreNull(new EquivalentConverter<Integer>() {
 			@Override
 			public Object getGeneric(Integer specific) {
 				if (dimensionFromId == null) {
@@ -1149,7 +1148,7 @@ public class BukkitConverters {
 					dimensionFromId = Accessors.getMethodAccessor(reflection.getMethod(contract));
 				}
 
-				return dimensionFromId.invoke(null, (int) specific);
+				return dimensionFromId.invoke(null, specific);
 			}
 
 			@Override
@@ -1173,6 +1172,6 @@ public class BukkitConverters {
 			public Class<Integer> getSpecificType() {
 				return Integer.class;
 			}
-		};
+		});
 	}
 }
