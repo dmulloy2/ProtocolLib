@@ -79,23 +79,23 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// Versioning
 	private static Class<?> PACKET_SET_PROTOCOL = null;
 
-	private static AtomicInteger keyId = new AtomicInteger();
-	private static AttributeKey<Integer> PROTOCOL_KEY;
+	private static final AtomicInteger keyId = new AtomicInteger();
+	private static final AttributeKey<Integer> PROTOCOL_KEY;
 
 	static {
 		PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
 	}
 
 	// Saved accessors
-	private static Method DECODE_BUFFER;
-	private static Method ENCODE_BUFFER;
+	private Method decodeBuffer;
+	private Method encodeBuffer;
 	private static FieldAccessor ENCODER_TYPE_MATCHER;
 
 	// For retrieving the protocol
 	private static FieldAccessor PROTOCOL_ACCESSOR;
 
 	// The factory that created this injector
-	private InjectionFactory factory;
+	private final InjectionFactory factory;
 
 	// The player, or temporary player
 	private Player player;
@@ -108,10 +108,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// The current network manager and channel
 	private final Object networkManager;
 	private final Channel originalChannel;
-	private VolatileField channelField;
+	private final VolatileField channelField;
 
 	// Known network markers
-	private Map<Object, NetworkMarker> packetMarker = new WeakHashMap<>();
+	private final Map<Object, NetworkMarker> packetMarker = new WeakHashMap<>();
 
 	/**
 	 * Indicate that this packet has been processed by event listeners.
@@ -134,13 +134,13 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private ByteToMessageDecoder vanillaDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
 
-	private Deque<PacketEvent> finishQueue = new ArrayDeque<>();
+	private final Deque<PacketEvent> finishQueue = new ArrayDeque<>();
 
 	// The channel listener
-	private ChannelListener channelListener;
+	private final ChannelListener channelListener;
 
 	// Processing network markers
-	private NetworkProcessor processor;
+	private final NetworkProcessor processor;
 
 	// Closed
 	private boolean injected;
@@ -178,6 +178,24 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		return value != null ? value : MinecraftProtocolVersion.getCurrentVersion();
 	}
 
+	private void updateBufferMethods() {
+		try {
+			decodeBuffer = vanillaDecoder.getClass().getDeclaredMethod("decode",
+					ChannelHandlerContext.class, ByteBuf.class, List.class);
+			decodeBuffer.setAccessible(true);
+		} catch (NoSuchMethodException ex) {
+			throw new IllegalArgumentException("Unable to find decode method in " + vanillaDecoder.getClass());
+		}
+
+		try {
+			encodeBuffer = vanillaEncoder.getClass().getDeclaredMethod("encode",
+					ChannelHandlerContext.class, Object.class, ByteBuf.class);
+			encodeBuffer.setAccessible(true);
+		} catch (NoSuchMethodException ex) {
+			throw new IllegalArgumentException("Unable to find encode method in " + vanillaEncoder.getClass());
+		}
+	}
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean inject() {
@@ -212,25 +230,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
 			patchEncoder(vanillaEncoder);
 
-			if (DECODE_BUFFER == null) {
-				try {
-					DECODE_BUFFER = vanillaDecoder.getClass().getDeclaredMethod("decode",
-							ChannelHandlerContext.class, ByteBuf.class, List.class);
-					DECODE_BUFFER.setAccessible(true);
-				} catch (NoSuchMethodException ex) {
-					throw new IllegalArgumentException("Unable to find decode method in " + vanillaDecoder.getClass());
-				}
-			}
-
-			if (ENCODE_BUFFER == null) {
-				try {
-					ENCODE_BUFFER = vanillaEncoder.getClass().getDeclaredMethod("encode",
-							ChannelHandlerContext.class, Object.class, ByteBuf.class);
-					ENCODE_BUFFER.setAccessible(true);
-				} catch (NoSuchMethodException ex) {
-					throw new IllegalArgumentException("Unable to find encode method in " + vanillaEncoder.getClass());
-				}
-			}
+			updateBufferMethods();
 
 			// Intercept sent packets
 			MessageToByteEncoder<Object> protocolEncoder = new MessageToByteEncoder<Object>() {
@@ -447,7 +447,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Process output handler
 			if (packet != null && event != null && NetworkMarker.hasOutputHandlers(marker)) {
 				ByteBuf packetBuffer = ctx.alloc().buffer();
-				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, packetBuffer);
+				encodeBuffer.invoke(vanillaEncoder, ctx, packet, packetBuffer);
 
 				// Let each handler prepare the actual output
 				byte[] data = processor.processOutput(event, marker, getBytes(packetBuffer));
@@ -470,7 +470,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Attempt to handle the packet nevertheless
 			if (packet != null) {
 				try {
-					ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
+					encodeBuffer.invoke(vanillaEncoder, ctx, packet, output);
 				} catch (InvocationTargetException ex) {
 					if (ex.getCause() instanceof Exception) {
 						//noinspection ThrowFromFinallyBlock
@@ -510,7 +510,12 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
 		try {
-			DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+			try {
+				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+			} catch (IllegalArgumentException ex) {
+				updateBufferMethods();
+				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+			}
 
 			// Reset queue
 			finishQueue.clear();
