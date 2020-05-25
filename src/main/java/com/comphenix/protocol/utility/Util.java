@@ -17,6 +17,7 @@
 package com.comphenix.protocol.utility;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.bukkit.Bukkit;
@@ -44,20 +45,28 @@ public class Util {
 	 */
 	@SafeVarargs
 	public static <E> List<E> asList(E... elements) {
-		List<E> list = new ArrayList<E>(elements.length);
-		for (E element : elements) {
-			list.add(element);
-		}
-
+		List<E> list = new ArrayList<>(elements.length);
+		list.addAll(Arrays.asList(elements));
 		return list;
 	}
 
+	public static boolean classExists(String className) {
+		try {
+			Class.forName(className);
+			return true;
+		} catch (ClassNotFoundException ex) {
+			return false;
+		}
+	}
+
+	private static final boolean spigot = classExists("org.spigotmc.SpigotConfig");
+
 	/**
 	 * Whether or not this server is running Spigot or a Spigot fork. This works by checking
-	 * the server version for the Strings "Spigot" or "Paper".
+	 * if the SpigotConfig exists, which should be true of all forks.
 	 * @return True if it is, false if not.
 	 */
 	public static boolean isUsingSpigot() {
-		return Bukkit.getServer().getVersion().contains("Spigot") || Bukkit.getServer().getVersion().contains("Paper");
+		return spigot;
 	}
 }

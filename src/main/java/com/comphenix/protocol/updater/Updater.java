@@ -271,21 +271,21 @@ public abstract class Updater {
 
         private final String description;
         
-        private UpdateResult(String description) {
+        UpdateResult(String description) {
             this.description = description;
         }
-        
+
         @Override
         public String toString() {
         	return description;
         }
     }
 
-	public static Updater create(ProtocolLib protocolLib, int id, File file, UpdateType type, boolean announce) {
+	public static Updater create(Plugin plugin, int id, File file, UpdateType type, boolean announce) {
 		if (Util.isUsingSpigot()) {
-			return new SpigotUpdater(protocolLib, type, announce);
+			return new SpigotUpdater(plugin, type, announce);
 		} else {
-			return new BukkitUpdater(protocolLib, id, file, type, announce);
+			return new BukkitUpdater(plugin, id, file, type, announce);
 		}
 	}
 
