@@ -40,7 +40,7 @@ public class WrappedDataWatcherTest {
 	
 	@BeforeClass
 	public static void prepare() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeItemMeta();
 	}
 
 	@Test
@@ -93,5 +93,15 @@ public class WrappedDataWatcherTest {
 
 		// assertNull(Registry.get(ItemStack.class, false));
 		assertNotNull(Registry.get(UUID.class, true));
+	}
+
+	@Test
+	public void testHasIndex() {
+		WrappedDataWatcher watcher = new WrappedDataWatcher();
+		Serializer serializer = Registry.get(Integer.class);
+
+		assertFalse(watcher.hasIndex(0));
+		watcher.setObject(0, serializer, 1);
+		assertTrue(watcher.hasIndex(0));
 	}
 }
