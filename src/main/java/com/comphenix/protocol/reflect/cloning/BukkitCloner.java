@@ -47,7 +47,7 @@ public class BukkitCloner implements Cloner {
 			if (nmsClass != null) {
 				CLONERS.put(nmsClass, nmsObject -> fromHandle.apply(nmsObject).deepClone().getHandle());
 			}
-		} catch (RuntimeException ignored) { }
+		} catch (Throwable ignored) { }
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -57,7 +57,7 @@ public class BukkitCloner implements Cloner {
 			if (nmsClass != null) {
 				CLONERS.put(nmsClass, nmsObject -> converter.getGeneric(converter.getSpecific(nmsObject)));
 			}
-		} catch (RuntimeException ignored) { }
+		} catch (Throwable ignored) { }
 	}
 
 	private static void fromManual(Supplier<Class<?>> getClass, Function<Object, Object> cloner) {
@@ -66,7 +66,7 @@ public class BukkitCloner implements Cloner {
 			if (nmsClass != null) {
 				CLONERS.put(nmsClass, cloner);
 			}
-		} catch (RuntimeException ignored) { }
+		} catch (Throwable ignored) { }
 	}
 
 	static {

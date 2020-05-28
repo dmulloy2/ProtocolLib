@@ -297,9 +297,7 @@ public class ProtocolInjector implements ChannelListener {
 				PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(clazz), packet);
 				return packetQueued(container, injector.getPlayer(), marker);
 			} catch (LinkageError e) {
-				// So far this has been seen when the jar is shared
-				System.err.println("[ProtocolLib] Encountered a LinkageError. Make sure you\'re not using this jar for multiple server instances!");
-				System.err.println("[ProtocolLib] If you\'re getting this error for other reasons, please report it!");
+				System.err.println("[ProtocolLib] Encountered a LinkageError (likely a misbehaving wrapper), please report this!");
 				e.printStackTrace();
 			}
 		}
