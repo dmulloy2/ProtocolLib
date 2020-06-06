@@ -298,14 +298,6 @@
 			<scope>compile</scope>
 		</dependency>
 
-		<!-- TODO fold BukkitExecutors into ProtocolLib -->
-		<dependency>
-			<groupId>com.comphenix.executors</groupId>
-			<artifactId>BukkitExecutors</artifactId>
-			<version>1.1-SNAPSHOT</version>
-			<scope>compile</scope>
-		</dependency>
-
 		<!-- Testing dependencies -->
 		<dependency>
 			<groupId>junit</groupId>

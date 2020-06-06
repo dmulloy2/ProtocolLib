@@ -6,7 +6,7 @@ import org.bukkit.Server;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.executors.BukkitFutures;
+import com.comphenix.protocol.executors.BukkitFutures;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;

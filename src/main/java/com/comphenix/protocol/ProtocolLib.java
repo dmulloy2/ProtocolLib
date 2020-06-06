@@ -33,7 +33,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.comphenix.executors.BukkitExecutors;
+import com.comphenix.protocol.executors.BukkitExecutors;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.DelegatedErrorReporter;
