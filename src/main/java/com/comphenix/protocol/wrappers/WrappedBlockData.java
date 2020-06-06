@@ -257,11 +257,9 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 	public abstract Material getType();
 
 	/**
-	 * Gets this BlockData's legacy data
+	 * Gets this BlockData's legacy data. Not recommended on 1.13+
 	 * @return The legacy data
-	 * @deprecated By the flattening in 1.13. Fine on lower versions.
 	 */
-	@Deprecated
 	public abstract int getData();
 
 	/**
@@ -271,20 +269,16 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 	public abstract void setType(Material material);
 
 	/**
-	 * Sets this BlockData's legacy data
+	 * Sets this BlockData's legacy data. Not recommended on 1.13+
 	 * @param data The new legacy data
-	 * @deprecated By the flattening in 1.13. Fine on lower versions.
 	 */
-	@Deprecated
 	public abstract void setData(int data);
 
 	/**
-	 * Sets this BlockData's type and legacy data
+	 * Sets this BlockData's type and legacy data. Not recommended on 1.13+
 	 * @param material The new Bukkit material
 	 * @param data The new legacy data
-	 * @deprecated By the flattening in 1.13. Fine on lower versions.
 	 */
-	@Deprecated
 	public abstract void setTypeAndData(Material material, int data);
 
 	public abstract WrappedBlockData deepClone();

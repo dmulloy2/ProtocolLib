@@ -16,7 +16,7 @@
 		<project.build.number></project.build.number>
 		<project.fullVersion>${project.version}</project.fullVersion>
 
-		<powermock.version>2.0.4</powermock.version>
+		<powermock.version>2.0.7</powermock.version>
 		<spigot.version>1.15.2-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
@@ -302,13 +302,13 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.12</version>
+			<version>4.13</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>3.2.0</version>
+			<version>3.3.3</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

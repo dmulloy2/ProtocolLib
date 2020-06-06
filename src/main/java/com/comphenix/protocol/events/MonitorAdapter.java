@@ -17,15 +17,11 @@
 
 package com.comphenix.protocol.events;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bukkit.plugin.Plugin;
-
-import com.comphenix.protocol.Packets;
-import com.comphenix.protocol.injector.GamePhase;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.reflect.FieldAccessException;
+
+import org.bukkit.plugin.Plugin;
 
 /**
  * Represents a listener that is notified of every sent and received packet.
@@ -45,26 +41,17 @@ public abstract class MonitorAdapter implements PacketListener {
 	public MonitorAdapter(Plugin plugin, ConnectionSide side, Logger logger) {
 		initialize(plugin, side, logger);
 	}
-	
-	@SuppressWarnings("deprecation")
+
 	private void initialize(Plugin plugin, ConnectionSide side, Logger logger) {
 		this.plugin = plugin;
 
 		// Recover in case something goes wrong
-		try {
-			if (side.isForServer())
-				this.sending = ListeningWhitelist.newBuilder().monitor().types(PacketRegistry.getServerPacketTypes()).gamePhaseBoth().build();
-			if (side.isForClient())
-				this.receiving = ListeningWhitelist.newBuilder().monitor().types(PacketRegistry.getClientPacketTypes()).gamePhaseBoth().build();
-		} catch (FieldAccessException e) {
-			if (side.isForServer())
-				this.sending = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Server.getRegistry().values(), GamePhase.BOTH);
-			if (side.isForClient())
-				this.receiving = new ListeningWhitelist(ListenerPriority.MONITOR, Packets.Client.getRegistry().values(), GamePhase.BOTH);
-			logger.log(Level.WARNING, "Defaulting to 1.3 packets.", e);
-		}
+		if (side.isForServer())
+			this.sending = ListeningWhitelist.newBuilder().monitor().types(PacketRegistry.getServerPacketTypes()).gamePhaseBoth().build();
+		if (side.isForClient())
+			this.receiving = ListeningWhitelist.newBuilder().monitor().types(PacketRegistry.getClientPacketTypes()).gamePhaseBoth().build();
 	}
-	
+
 	/**
 	 * Retrieve a logger, even if we're running in a CraftBukkit version that doesn't support it.
 	 * @param plugin - the plugin to retrieve.

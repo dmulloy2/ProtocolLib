@@ -6,8 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import com.comphenix.protocol.PacketTypeLookup.ClassLookup;
@@ -15,15 +13,14 @@ import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
 
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Represents the type of a packet in a specific protocol.
@@ -953,34 +950,29 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 * Note that the registration will be performed on the main thread.
 	 * @param type - the type to register.
 	 * @param name - the name of the packet.
-	 * @return A future telling us if our instance was registered.
 	 */
-	public static Future<Boolean> scheduleRegister(final PacketType type, final String name) {
-		Callable<Boolean> callable = new Callable<Boolean>() {
+	public static void scheduleRegister(final PacketType type, final String name) {
+		BukkitRunnable runnable = new BukkitRunnable() {
 			@Override
-			public Boolean call() throws Exception {
+			public void run() {
 				PacketTypeEnum objEnum;
 
 				// A bit ugly, but performance is critical
 				objEnum = getObjectEnum(type);
 
 				if (objEnum.registerMember(type, name)) {
-					getLookup().addPacketTypes(Arrays.asList(type));
-					return true;
+					getLookup().addPacketTypes(Collections.singletonList(type));
 				}
-				return false;
 			}
 		};
 
-		// Execute in the main thread if possible
 		if (Bukkit.getServer() == null || Bukkit.isPrimaryThread()) {
 			try {
-				return Futures.immediateFuture(callable.call());
-			} catch (Exception e) {
-				return Futures.immediateFailedFuture(e);
-			}
+				runnable.run();
+			} catch (Exception ignored) { }
+		} else {
+			runnable.runTaskLater(ProtocolLibrary.getPlugin(), 0);
 		}
-		return ProtocolLibrary.getExecutorSync().submit(callable);
 	}
 
 	/**

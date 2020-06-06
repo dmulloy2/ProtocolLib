@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.spigot;
+package com.comphenix.protocol.injector.netty;
 
 import java.io.DataInputStream;
 import java.util.Set;

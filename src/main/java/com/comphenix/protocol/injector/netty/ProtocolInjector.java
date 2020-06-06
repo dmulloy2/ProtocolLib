@@ -44,8 +44,6 @@ import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
-import com.comphenix.protocol.injector.spigot.AbstractPacketInjector;
-import com.comphenix.protocol.injector.spigot.AbstractPlayerHandler;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.utility.MinecraftReflection;

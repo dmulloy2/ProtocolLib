@@ -23,10 +23,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitScheduler;
-
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.PacketType;
@@ -37,11 +33,14 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.comphenix.protocol.injector.SortedPacketListenerList;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitScheduler;
 
 /**
  * Represents a filter manager for asynchronous packets.
@@ -88,7 +87,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		// Initialize timeout listeners
 		this.serverTimeoutListeners = new SortedPacketListenerList();
 		this.clientTimeoutListeners = new SortedPacketListenerList();
-		this.timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
+		this.timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<>());
 
 		this.playerSendingHandler = new PlayerSendingHandler(reporter, serverTimeoutListeners, clientTimeoutListeners);
 		this.serverProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
@@ -327,22 +326,12 @@ public class AsyncFilterManager implements AsynchronousManager {
 			getProcessingQueue(syncPacket).enqueue(newEvent, true);
 		}
 	}
-	
-	@Override
-	public Set<Integer> getSendingFilters() {
-		return PacketRegistry.toLegacy(serverProcessingQueue.keySet());
-	}
-	
+
 	@Override
 	public Set<PacketType> getReceivingTypes() {
 		return serverProcessingQueue.keySet();
 	}
-	
-	@Override
-	public Set<Integer> getReceivingFilters() {
-		return PacketRegistry.toLegacy(clientProcessingQueue.keySet());
-	}
-	
+
 	@Override
 	public Set<PacketType> getSendingTypes() {
 		return clientProcessingQueue.keySet();

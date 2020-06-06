@@ -19,12 +19,11 @@ package com.comphenix.protocol;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.Validate;
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+
+import org.apache.commons.lang.Validate;
+import org.bukkit.plugin.Plugin;
 
 /**
  * The main entry point for ProtocolLib.
@@ -56,21 +55,15 @@ public class ProtocolLibrary {
 	private static ProtocolManager manager;
 	private static ErrorReporter reporter = new BasicErrorReporter();
 
-	private static ListeningScheduledExecutorService executorAsync;
-	private static ListeningScheduledExecutorService executorSync;
-
 	private static boolean updatesDisabled;
 	private static boolean initialized;
 
-	protected static void init(Plugin plugin, ProtocolConfig config, ProtocolManager manager, ErrorReporter reporter,
-			ListeningScheduledExecutorService executorAsync, ListeningScheduledExecutorService executorSync) {
+	protected static void init(Plugin plugin, ProtocolConfig config, ProtocolManager manager, ErrorReporter reporter) {
 		Validate.isTrue(!initialized, "ProtocolLib has already been initialized.");
 		ProtocolLibrary.plugin = plugin;
 		ProtocolLibrary.config = config;
 		ProtocolLibrary.manager = manager;
 		ProtocolLibrary.reporter = reporter;
-		ProtocolLibrary.executorAsync = executorAsync;
-		ProtocolLibrary.executorSync = executorSync;
 		initialized = true;
 	}
 
@@ -104,26 +97,6 @@ public class ProtocolLibrary {
 	 */
 	public static ErrorReporter getErrorReporter() {
 		return reporter;
-	}
-
-	/**
-	 * Retrieve an executor service for performing asynchronous tasks on the behalf of ProtocolLib.
-	 * <p>
-	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
-	 * @return The executor service, or NULL.
-	 */
-	public static ListeningScheduledExecutorService getExecutorAsync() {
-		return executorAsync;
-	}
-
-	/**
-	 * Retrieve an executor service for performing synchronous tasks (main thread) on the behalf of ProtocolLib.
-	 * <p>
-	 * Note that this service is NULL if ProtocolLib has not been initialized yet.
-	 * @return The executor service, or NULL.
-	 */
-	public static ListeningScheduledExecutorService getExecutorSync() {
-		return executorSync;
 	}
 
 	/**

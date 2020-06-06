@@ -247,7 +247,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	@Deprecated
 	public int getPacketID() {
-		return packet.getID();
+		return packet.getId();
 	}
 	
 	/**

@@ -17,22 +17,16 @@
 
 package com.comphenix.protocol.injector.packet;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
 import com.comphenix.protocol.injector.netty.ProtocolRegistry;
-import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 /**
  * Static packet registry in Minecraft.
@@ -40,18 +34,8 @@ import com.google.common.collect.Sets;
  */
 @SuppressWarnings("rawtypes")
 public class PacketRegistry {
-	public static final ReportType REPORT_CANNOT_CORRECT_TROVE_MAP = new ReportType("Unable to correct no entry value.");
-	
-	public static final ReportType REPORT_INSUFFICIENT_SERVER_PACKETS = new ReportType("Too few server packets detected: %s");
-	public static final ReportType REPORT_INSUFFICIENT_CLIENT_PACKETS = new ReportType("Too few client packets detected: %s");
-
 	// The Netty packet registry
 	private static volatile ProtocolRegistry NETTY;
-
-	// Cached for Netty
-	private static volatile Set<Integer> LEGACY_SERVER_PACKETS;
-	private static volatile Set<Integer> LEGACY_CLIENT_PACKETS;
-	private static volatile Map<Integer, Class> LEGACY_PREVIOUS_PACKETS;
 
 	// Whether or not the registry has been initialized
 	private static volatile boolean INITIALIZED = false;
@@ -93,13 +77,7 @@ public class PacketRegistry {
 
 		@SuppressWarnings("unchecked")
 		Map<Class, Integer> result = (Map) Maps.transformValues(
-				NETTY.getPacketClassLookup(),
-				new Function<PacketType, Integer>() {
-					@Override
-					public Integer apply(PacketType type) {
-						return type.getLegacyId();
-					};
-				});
+				NETTY.getPacketClassLookup(), type -> type.getLegacyId());
 		return result;
 	}
 
@@ -114,55 +92,7 @@ public class PacketRegistry {
 		Map<Class, PacketType> result = (Map) NETTY.getPacketClassLookup();
 		return result;
 	}
-	
-	/**
-	 * Retrieve the injected proxy classes handlig each packet ID.
-	 * <p>
-	 * This is not supported in 1.7.2 and later.
-	 * @return Injected classes.
-	 */
-	@Deprecated
-	public static Map<Integer, Class> getOverwrittenPackets() {
-		initialize();
-		throw new IllegalStateException("Not supported on Netty.");
-	}
 
-	/**
-	 * Retrieve the vanilla classes handling each packet ID.
-	 * @return Vanilla classes.
-	 */
-	@Deprecated
-	public static Map<Integer, Class> getPreviousPackets() {
-		initialize();
-
-		// Construct it first
-		if (LEGACY_PREVIOUS_PACKETS == null) {
-			Map<Integer, Class> map = Maps.newHashMap();
-
-			for (Entry<PacketType, Class<?>> entry : NETTY.getPacketTypeLookup().entrySet()) {
-				map.put(entry.getKey().getLegacyId(), entry.getValue());
-			}
-			LEGACY_PREVIOUS_PACKETS = Collections.unmodifiableMap(map);
-		}
-		return LEGACY_PREVIOUS_PACKETS;
-	}
-
-	/**
-	 * Retrieve every known and supported server packet.
-	 * <p>
-	 * Deprecated: Use {@link #getServerPacketTypes()} instead.
-	 * @return An immutable set of every known server packet.
-	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
-	 */
-	@Deprecated
-	public static Set<Integer> getServerPackets() throws FieldAccessException {
-		if (LEGACY_SERVER_PACKETS == null) {
-			LEGACY_SERVER_PACKETS = toLegacy(getServerPacketTypes());
-		}
-
-		return LEGACY_SERVER_PACKETS;
-	}
-	
 	/**
 	 * Retrieve every known and supported server packet type.
 	 * @return Every server packet type.
@@ -175,22 +105,6 @@ public class PacketRegistry {
 	}
 	
 	/**
-	 * Retrieve every known and supported client packet.
-	 * <p>
-	 * Deprecated: Use {@link #getClientPacketTypes()} instead.
-	 * @return An immutable set of every known client packet.
-	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
-	 */
-	@Deprecated
-	public static Set<Integer> getClientPackets() throws FieldAccessException {
-		if (LEGACY_CLIENT_PACKETS == null) {
-			LEGACY_CLIENT_PACKETS = toLegacy(getClientPacketTypes());
-		}
-
-		return LEGACY_CLIENT_PACKETS;
-	}
-	
-	/**
 	 * Retrieve every known and supported server packet type.
 	 * @return Every server packet type.
 	 */
@@ -200,43 +114,7 @@ public class PacketRegistry {
 
 		return NETTY.getClientPackets();
 	}
-	
-	/**
-	 * Convert a set of packet types to a set of integers based on the legacy packet ID.
-	 * @param types - packet type.
-	 * @return Set of integers.
-	 */
-	public static Set<Integer> toLegacy(Set<PacketType> types) {
-		Set<Integer> result = Sets.newHashSet();
-		
-		for (PacketType type : types)
-			result.add(type.getLegacyId());
-		return Collections.unmodifiableSet(result);
-	}
-	
-	/**
-	 * Convert a set of legacy packet IDs to packet types.
-	 * @param ids - legacy packet IDs.
-	 * @return Set of packet types.
-	 */
-	public static Set<PacketType> toPacketTypes(Set<Integer> ids) {
-		return toPacketTypes(ids, null);
-	}
-	
-	/**
-	 * Convert a set of legacy packet IDs to packet types.
-	 * @param ids - legacy packet IDs.
-	 * @param preference - the sender preference, if any.
-	 * @return Set of packet types.
-	 */
-	public static Set<PacketType> toPacketTypes(Set<Integer> ids, Sender preference) {
-		Set<PacketType> result = Sets.newHashSet();
-		
-		for (int id : ids)
-			result.add(PacketType.fromLegacy(id, preference));
-		return Collections.unmodifiableSet(result);
-	}
-	
+
 	/**
 	 * Retrieves the correct packet class from a given packet ID.
 	 * <p>
