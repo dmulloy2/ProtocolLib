@@ -51,7 +51,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
-			public static final PacketType SET_PROTOCOL =                 new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "SetProtocol");
+			public static final PacketType SET_PROTOCOL =                 new PacketType(PROTOCOL, SENDER, 0x00, 0x00, "SetProtocol", "C00Handshake");
 
 			private final static Client INSTANCE = new Client();
 
@@ -365,8 +365,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Sender SENDER = Sender.SERVER;
 
 			@ForceAsync
-			public static final PacketType SERVER_INFO =                  new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "ServerInfo");
-			public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "Pong");
+			public static final PacketType SERVER_INFO =                  new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "ServerInfo", "SPacketServerInfo");
+			public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "Pong", "SPacketPong");
 
 			/**
 			 * @deprecated Renamed to {@link #SERVER_INFO}
@@ -395,8 +395,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
-			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "Start");
-			public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "Ping");
+			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "Start", "CPacketServerQuery");
+			public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "Ping", "CPacketPing");
 
 			private final static Client INSTANCE = new Client();
 
@@ -430,10 +430,10 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
-			public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "Disconnect");
-			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "EncryptionBegin");
-			public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, 0xFF, "Success");
-			public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x03, 0xFF, "SetCompression");
+			public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "Disconnect", "SPacketDisconnect");
+			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "EncryptionBegin", "SPacketEncryptionRequest");
+			public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, 0xFF, "Success", "SPacketLoginSuccess");
+			public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x03, 0xFF, "SetCompression", "SPacketEnableCompression");
 			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x04, 0xFF, "CustomPayload");
 
 			private final static Server INSTANCE = new Server();
@@ -456,8 +456,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
-			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "Start");
-			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "EncryptionBegin");
+			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "Start", "CPacketLoginStart");
+			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "EncryptionBegin", "CPacketEncryptionResponse");
 			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, 0xFF, "CustomPayload");
 
 			private final static Client INSTANCE = new Client();
@@ -797,6 +797,14 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		return base + protocol.getPacketName() + sender.getPacketName() + WordUtils.capitalize(name);
 	}
 
+	private static boolean isForgePacketName(String packetName) {
+		return packetName.startsWith("C00") || packetName.startsWith("CPacket") || packetName.startsWith("SPacket");
+	}
+
+	private static String formatClassNameForge(Protocol protocol, Sender sender, String name) {
+		return "net.minecraft.network." + protocol.name().toLowerCase() + "." + sender.name().toLowerCase() + "." + name;
+	}
+
 	/**
 	 * Determine if the given packet exists.
 	 * @param protocol - the protocol.
@@ -1025,7 +1033,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		
 		this.classNames = new String[names.length];
 		for (int i = 0; i < classNames.length; i++) {
-			classNames[i] = formatClassName(protocol, sender, names[i]);
+			if (isForgePacketName(names[i])) { // Forge packets
+				classNames[i] = formatClassNameForge(protocol, sender, names[i]);
+			} else {
+				classNames[i] = formatClassName(protocol, sender, names[i]);
+			}
 		}
 
 		this.names = names;
