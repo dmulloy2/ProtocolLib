@@ -592,6 +592,10 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public String getPacketName() {
 			return WordUtils.capitalize(name().toLowerCase(Locale.ENGLISH));
 		}
+
+		public String getForgePacketName() {
+			return name().toLowerCase(Locale.ENGLISH);
+		}
 	}
 
 	/**
@@ -620,6 +624,10 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
 		public String getPacketName() {
 			return this == CLIENT ? "In" : "Out";
+		}
+
+		public String getForgePacketName() {
+			return name().toLowerCase(Locale.ENGLISH);
 		}
 	}
 
@@ -802,7 +810,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	}
 
 	private static String formatClassNameForge(Protocol protocol, Sender sender, String name) {
-		return "net.minecraft.network." + protocol.name().toLowerCase() + "." + sender.name().toLowerCase() + "." + name;
+		return "net.minecraft.network." + protocol.getForgePacketName() + "." + sender.getForgePacketName() + "." + name;
 	}
 
 	/**
