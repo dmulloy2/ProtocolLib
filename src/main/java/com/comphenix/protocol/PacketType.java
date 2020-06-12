@@ -593,7 +593,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			return WordUtils.capitalize(name().toLowerCase(Locale.ENGLISH));
 		}
 
-		public String getForgePacketName() {
+		public String getMcpPacketName() {
 			return name().toLowerCase(Locale.ENGLISH);
 		}
 	}
@@ -626,7 +626,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			return this == CLIENT ? "In" : "Out";
 		}
 
-		public String getForgePacketName() {
+		public String getMcpPacketName() {
 			return name().toLowerCase(Locale.ENGLISH);
 		}
 	}
@@ -805,12 +805,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		return base + protocol.getPacketName() + sender.getPacketName() + WordUtils.capitalize(name);
 	}
 
-	private static boolean isForgePacketName(String packetName) {
+	private static boolean isMcpPacketName(String packetName) {
 		return packetName.startsWith("C00") || packetName.startsWith("CPacket") || packetName.startsWith("SPacket");
 	}
 
-	private static String formatForgeClassName(Protocol protocol, Sender sender, String name) {
-		return "net.minecraft.network." + protocol.getForgePacketName() + "." + sender.getForgePacketName() + "." + name;
+	private static String formatMcpClassName(Protocol protocol, Sender sender, String name) {
+		return "net.minecraft.network." + protocol.getMcpPacketName() + "." + sender.getMcpPacketName() + "." + name;
 	}
 
 	/**
@@ -1041,8 +1041,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		
 		this.classNames = new String[names.length];
 		for (int i = 0; i < classNames.length; i++) {
-			if (isForgePacketName(names[i])) { // Forge packets
-				classNames[i] = formatForgeClassName(protocol, sender, names[i]);
+			if (isMcpPacketName(names[i])) { // Minecraft MCP packets
+				classNames[i] = formatMcpClassName(protocol, sender, names[i]);
 			} else {
 				classNames[i] = formatClassName(protocol, sender, names[i]);
 			}
