@@ -809,7 +809,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		return packetName.startsWith("C00") || packetName.startsWith("CPacket") || packetName.startsWith("SPacket");
 	}
 
-	private static String formatClassNameForge(Protocol protocol, Sender sender, String name) {
+	private static String formatForgeClassName(Protocol protocol, Sender sender, String name) {
 		return "net.minecraft.network." + protocol.getForgePacketName() + "." + sender.getForgePacketName() + "." + name;
 	}
 
@@ -1042,7 +1042,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		this.classNames = new String[names.length];
 		for (int i = 0; i < classNames.length; i++) {
 			if (isForgePacketName(names[i])) { // Forge packets
-				classNames[i] = formatClassNameForge(protocol, sender, names[i]);
+				classNames[i] = formatForgeClassName(protocol, sender, names[i]);
 			} else {
 				classNames[i] = formatClassName(protocol, sender, names[i]);
 			}
