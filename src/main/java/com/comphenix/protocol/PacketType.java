@@ -434,7 +434,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "EncryptionBegin", "SPacketEncryptionRequest");
 			public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, 0xFF, "Success", "SPacketLoginSuccess");
 			public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x03, 0xFF, "SetCompression", "SPacketEnableCompression");
-			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x04, 0xFF, "CustomPayload");
+			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x04, 0xFF, "CustomPayload", "SPacketCustomPayload");
 
 			private final static Server INSTANCE = new Server();
 
@@ -458,7 +458,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
 			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, 0xFF, "Start", "CPacketLoginStart");
 			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, 0xFF, "EncryptionBegin", "CPacketEncryptionResponse");
-			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, 0xFF, "CustomPayload");
+			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, 0xFF, "CustomPayload", "CPacketCustomPayload");
 
 			private final static Client INSTANCE = new Client();
 
