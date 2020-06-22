@@ -76,6 +76,8 @@ public class BackgroundCompiler {
 	private ExecutorService executor;
 	private ErrorReporter reporter;
 
+	private final Object unknownPermGenBean = new Object();
+	private Object permGenBean = unknownPermGenBean;
 	private double disablePermGenFraction = DEFAULT_DISABLE_AT_PERM_GEN;
 	
 	/**
@@ -295,11 +297,20 @@ public class BackgroundCompiler {
 	 * @return Usage of the perm gen space.
 	 */
 	private double getPermGenUsage() {
-		for (MemoryPoolMXBean item : ManagementFactory.getMemoryPoolMXBeans()) {
-			if (item.getName().contains("Perm Gen")) {
-				MemoryUsage usage = item.getUsage();
-				return usage.getUsed() / (double) usage.getCommitted();
+		Object permGenBean = this.permGenBean;
+		if (permGenBean == unknownPermGenBean) {
+			for (MemoryPoolMXBean item : ManagementFactory.getMemoryPoolMXBeans()) {
+				if (item.getName().contains("Perm Gen")) {
+					permGenBean = this.permGenBean = item;
+				}
 			}
+			if (permGenBean == unknownPermGenBean) {
+				permGenBean = this.permGenBean = null;
+			}
+		}
+		if (permGenBean != null) {
+			MemoryUsage usage = ((MemoryPoolMXBean) permGenBean).getUsage();
+			return usage.getUsed() / (double) usage.getCommitted();
 		}
 		
 		// Unknown
