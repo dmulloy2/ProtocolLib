@@ -302,6 +302,7 @@ public class BackgroundCompiler {
 			for (MemoryPoolMXBean item : ManagementFactory.getMemoryPoolMXBeans()) {
 				if (item.getName().contains("Perm Gen")) {
 					permGenBean = this.permGenBean = item;
+					break;
 				}
 			}
 			if (permGenBean == unknownPermGenBean) {
