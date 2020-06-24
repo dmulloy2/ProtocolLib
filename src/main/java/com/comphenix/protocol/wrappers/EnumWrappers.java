@@ -362,7 +362,10 @@ public abstract class EnumWrappers {
 	}
 	
 	/**
-	 * @since 1.13+
+	 * Wrapped EntityPose enum for use in Entity Metadata Packet.<br>
+	 * 
+	 * @since 1.13
+	 * @author Lewys Davies (Lew_)
 	 */
 	public enum EntityPose {
 		STANDING, 
@@ -373,12 +376,25 @@ public abstract class EnumWrappers {
 		CROUCHING,
 		DYING;
 		
+		private final static EquivalentConverter<EntityPose> POSE_CONVERTER = EnumWrappers.getEntityPoseConverter();
+		
+		/**
+		 * @param nms net.minecraft.server EntityPose Object
+		 * @return Wrapped {@link EntityPose}
+		 */
 		public static EntityPose fromNms(Object nms) {
-			return getEntityPoseConverter().getSpecific(nms);
+			if(POSE_CONVERTER == null) {
+				throw new IllegalStateException("Entity Pose is only available in Minecraft version 1.13 +");
+			}
+			return POSE_CONVERTER.getSpecific(nms);
 		}
 		
+		/** @return net.minecraft.server EntityPose Enum equivalent to this wrapper enum */
 		public Object toNms() {
-			return getEntityPoseConverter().getGeneric(this);
+			if(POSE_CONVERTER == null) {
+				throw new IllegalStateException("Entity Pose is only available in Minecraft version 1.13 +");
+			}
+			return POSE_CONVERTER.getGeneric(this);
 		}
 	}
 
@@ -693,7 +709,12 @@ public abstract class EnumWrappers {
 		return new EnumConverter<>(getChatTypeClass(), ChatType.class);
 	}
 	
+	/**
+	 * @since 1.13+
+	 * @return {@link FauxEnumConverter} or null (if bellow 1.13 / nms EnumPose class cannot be found)
+	 */
 	public static EquivalentConverter<EntityPose> getEntityPoseConverter() {
+		if(getEntityPoseClass() == null) return null;
 		return new EnumWrappers.FauxEnumConverter<>(EntityPose.class, getEntityPoseClass());
 	}
 
