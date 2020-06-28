@@ -47,20 +47,22 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * Factory methods for creating NBT elements, lists and compounds.
- * 
+ *
  * @author Kristian
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class NbtFactory {
+	private static final Map<NbtType, Constructor<?>> CONSTRUCTORS = new ConcurrentHashMap<>();
 	// Used to create the underlying tag
 	private static Method methodCreateTag;
 	private static boolean methodCreateWithName;
-		
 	// Item stack trickery
 	private static StructureModifier<Object> itemStackModifier;
-	
+	private static Method getTagType;
+
 	/**
 	 * Attempt to cast this NBT tag as a compund.
+	 *
 	 * @param tag - the NBT tag to cast.
 	 * @return This instance as a compound.
 	 * @throws UnsupportedOperationException If this is not a compound.
@@ -74,9 +76,10 @@ public class NbtFactory {
 		else
 			throw new IllegalArgumentException("Tag cannot be NULL.");
 	}
-	
+
 	/**
 	 * Attempt to cast this NBT tag as a list.
+	 *
 	 * @param tag - the NBT tag to cast.
 	 * @return This instance as a list.
 	 * @throws UnsupportedOperationException If this is not a list.
@@ -90,12 +93,12 @@ public class NbtFactory {
 		else
 			throw new IllegalArgumentException("Tag cannot be NULL.");
 	}
-	
+
 	/**
 	 * Get a NBT wrapper from a NBT base.
 	 * <p>
 	 * This may clone the content if the NbtBase is not a NbtWrapper.
-	 * 
+	 *
 	 * @param <T> Type
 	 * @param base - the base class.
 	 * @return A NBT wrapper.
@@ -109,43 +112,44 @@ public class NbtFactory {
 				// Load into a NBT-backed wrapper
 				WrappedCompound copy = WrappedCompound.fromName(base.getName());
 				T value = base.getValue();
-				
+
 				copy.setValue((Map<String, NbtBase<?>>) value);
 				return (NbtWrapper<T>) copy;
-			
+
 			} else if (base.getType() == NbtType.TAG_LIST) {
 				// As above
 				NbtList<T> copy = WrappedList.fromName(base.getName());
-				
+
 				copy.setValue((List<NbtBase<T>>) base.getValue());
 				return (NbtWrapper<T>) copy;
-				
+
 			} else {
 				// Copy directly
 				NbtWrapper<T> copy = ofWrapper(base.getType(), base.getName());
-				
+
 				copy.setValue(base.getValue());
 				return copy;
 			}
 		}
 	}
-	
+
 	/**
 	 * Set the NBT compound tag of a given item stack.
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use
 	 * {@link MinecraftReflection#getBukkitItemStack(Object)} if not.
+	 *
 	 * @param stack - the item stack, cannot be air.
 	 * @param compound - the new NBT compound, or NULL to remove it.
 	 * @throws IllegalArgumentException If the stack is not a CraftItemStack, or it represents air.
 	 */
 	public static void setItemTag(ItemStack stack, NbtCompound compound) {
 		checkItemStack(stack);
-		
+
 		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
 		modifier.write(0, compound);
 	}
-	
+
 	/**
 	 * Construct a wrapper for an NBT tag stored (in memory) in an item stack. This is where
 	 * auxillary data such as enchanting, name and lore is stored. It doesn't include the items
@@ -153,15 +157,16 @@ public class NbtFactory {
 	 * <p>
 	 * The item stack must be a wrapper for a CraftItemStack. Use
 	 * {@link MinecraftReflection#getBukkitItemStack(Object)} if not.
+	 *
 	 * @param stack - the item stack.
 	 * @return A wrapper for its NBT tag.
 	 */
 	public static NbtWrapper<?> fromItemTag(ItemStack stack) {
 		checkItemStack(stack);
-		
+
 		StructureModifier<NbtBase<?>> modifier = getStackModifier(stack);
 		NbtBase<?> result = modifier.read(0);
-		
+
 		// Create the tag if it doesn't exist
 		if (result == null) {
 			result = NbtFactory.ofCompound("tag");
@@ -194,9 +199,10 @@ public class NbtFactory {
 
 		return Optional.of(fromBase(result));
 	}
-	
+
 	/**
 	 * Load a NBT compound from a GZIP compressed file.
+	 *
 	 * @param file - the source file.
 	 * @return The compound.
 	 * @throws IOException Unable to load file.
@@ -209,9 +215,10 @@ public class NbtFactory {
 			return NbtBinarySerializer.DEFAULT.deserializeCompound(input);
 		}
 	}
-	
+
 	/**
 	 * Save a NBT compound to a new compressed file, overwriting any existing files in the process.
+	 *
 	 * @param compound - the compound to save.
 	 * @param file - the destination file.
 	 * @throws IOException Unable to save compound.
@@ -225,38 +232,41 @@ public class NbtFactory {
 			NbtBinarySerializer.DEFAULT.serialize(compound, output);
 		}
 	}
-	
+
 	/**
 	 * Retrieve the NBT tile entity that represents the given block.
+	 *
 	 * @param block - the block.
 	 * @return The NBT compound, or NULL if the state doesn't have a tile entity.
 	 */
 	public static NbtCompound readBlockState(Block block) {
-		 BlockState state = block.getState();
-		 TileEntityAccessor<BlockState> accessor = TileEntityAccessor.getAccessor(state);
-		 
-		 return accessor != null ? accessor.readBlockState(state) : null;
+		BlockState state = block.getState();
+		TileEntityAccessor<BlockState> accessor = TileEntityAccessor.getAccessor(state);
+
+		return accessor != null ? accessor.readBlockState(state) : null;
 	}
-	
+
 	/**
 	 * Write to the NBT tile entity in the given block.
+	 *
 	 * @param target - the target block.
 	 * @param blockState - the new tile entity.
 	 * @throws IllegalArgumentException If the block doesn't contain a tile entity.
 	 */
 	public static void writeBlockState(Block target, NbtCompound blockState) {
-		 BlockState state = target.getState();
-		 TileEntityAccessor<BlockState> accessor = TileEntityAccessor.getAccessor(state);
-		 
-		 if (accessor != null) {
-			 accessor.writeBlockState(state, blockState);
-		 } else {
-			 throw new IllegalArgumentException("Unable to find tile entity in " + target);
-		 }
+		BlockState state = target.getState();
+		TileEntityAccessor<BlockState> accessor = TileEntityAccessor.getAccessor(state);
+
+		if (accessor != null) {
+			accessor.writeBlockState(state, blockState);
+		} else {
+			throw new IllegalArgumentException("Unable to find tile entity in " + target);
+		}
 	}
-	
+
 	/**
 	 * Ensure that the given stack can store arbitrary NBT information.
+	 *
 	 * @param stack - the stack to check.
 	 */
 	private static void checkItemStack(ItemStack stack) {
@@ -267,30 +277,31 @@ public class NbtFactory {
 		if (stack.getType() == Material.AIR)
 			throw new IllegalArgumentException("ItemStacks representing air cannot store NMS information.");
 	}
-	
+
 	/**
 	 * Retrieve a structure modifier that automatically marshalls between NBT wrappers and their NMS counterpart.
+	 *
 	 * @param stack - the stack that will store the NBT compound.
 	 * @return The structure modifier.
 	 */
 	private static StructureModifier<NbtBase<?>> getStackModifier(ItemStack stack) {
 		Object nmsStack = MinecraftReflection.getMinecraftItemStack(stack);
-		
+
 		if (itemStackModifier == null) {
 			itemStackModifier = new StructureModifier<>(nmsStack.getClass(), Object.class, false);
 		}
-		
+
 		// Use the first and best NBT tag
 		return itemStackModifier.
 				withTarget(nmsStack).
-				withType(MinecraftReflection.getNBTBaseClass(),
-						 BukkitConverters.getNbtConverter());
+				withType(MinecraftReflection.getNBTBaseClass(), BukkitConverters.getNbtConverter());
 	}
-	
+
 	/**
 	 * Initialize a NBT wrapper.
 	 * <p>
 	 * Use {@link #fromNMS(Object, String)} instead.
+	 *
 	 * @param <T> Type
 	 * @param handle - the underlying net.minecraft.server object to wrap.
 	 * @return A NBT wrapper.
@@ -298,7 +309,7 @@ public class NbtFactory {
 	@Deprecated
 	public static <T> NbtWrapper<T> fromNMS(Object handle) {
 		WrappedElement<T> partial = new WrappedElement<>(handle);
-		
+
 		// See if this is actually a compound tag
 		if (partial.getType() == NbtType.TAG_COMPOUND)
 			return (NbtWrapper<T>) new WrappedCompound(handle);
@@ -307,9 +318,10 @@ public class NbtFactory {
 		else
 			return partial;
 	}
-	
+
 	/**
 	 * Initialize a NBT wrapper with a name.
+	 *
 	 * @param <T> Type
 	 * @param name - the name of the tag, or NULL if not valid.
 	 * @param handle - the underlying net.minecraft.server object to wrap.
@@ -317,7 +329,7 @@ public class NbtFactory {
 	 */
 	public static <T> NbtWrapper<T> fromNMS(Object handle, String name) {
 		WrappedElement<T> partial = new WrappedElement<>(handle, name);
-		
+
 		// See if this is actually a compound tag
 		if (partial.getType() == NbtType.TAG_COMPOUND)
 			return (NbtWrapper<T>) new WrappedCompound(handle, name);
@@ -326,9 +338,10 @@ public class NbtFactory {
 		else
 			return partial;
 	}
-		
+
 	/**
 	 * Retrieve the NBT compound from a given NMS handle.
+	 *
 	 * @param handle - the underlying net.minecraft.server object to wrap.
 	 * @return A NBT compound wrapper
 	 */
@@ -337,9 +350,10 @@ public class NbtFactory {
 			throw new IllegalArgumentException("handle cannot be NULL.");
 		return (NbtCompound) NbtFactory.<Map<String, NbtBase<?>>>fromNMS(handle);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type string.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -347,9 +361,10 @@ public class NbtFactory {
 	public static NbtBase<String> of(String name, String value) {
 		return ofWrapper(NbtType.TAG_STRING, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type byte.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -357,9 +372,10 @@ public class NbtFactory {
 	public static NbtBase<Byte> of(String name, byte value) {
 		return ofWrapper(NbtType.TAG_BYTE, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type short.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -367,9 +383,10 @@ public class NbtFactory {
 	public static NbtBase<Short> of(String name, short value) {
 		return ofWrapper(NbtType.TAG_SHORT, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type int.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -377,9 +394,10 @@ public class NbtFactory {
 	public static NbtBase<Integer> of(String name, int value) {
 		return ofWrapper(NbtType.TAG_INT, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type long.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -387,9 +405,10 @@ public class NbtFactory {
 	public static NbtBase<Long> of(String name, long value) {
 		return ofWrapper(NbtType.TAG_LONG, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type float.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -397,9 +416,10 @@ public class NbtFactory {
 	public static NbtBase<Float> of(String name, float value) {
 		return ofWrapper(NbtType.TAG_FLOAT, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type double.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -407,9 +427,10 @@ public class NbtFactory {
 	public static NbtBase<Double> of(String name, double value) {
 		return ofWrapper(NbtType.TAG_DOUBLE, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type byte array.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -417,9 +438,10 @@ public class NbtFactory {
 	public static NbtBase<byte[]> of(String name, byte[] value) {
 		return ofWrapper(NbtType.TAG_BYTE_ARRAY, name, value);
 	}
-	
+
 	/**
 	 * Constructs a NBT tag of type int array.
+	 *
 	 * @param name - name of the tag.
 	 * @param value - value of the tag.
 	 * @return The constructed NBT tag.
@@ -427,9 +449,10 @@ public class NbtFactory {
 	public static NbtBase<int[]> of(String name, int[] value) {
 		return ofWrapper(NbtType.TAG_INT_ARRAY, name, value);
 	}
-	
+
 	/**
 	 * Construct a new NBT compound initialized with a given list of NBT values.
+	 *
 	 * @param name - the name of the compound wrapper.
 	 * @param list - the list of elements to add.
 	 * @return The new wrapped NBT compound.
@@ -437,18 +460,20 @@ public class NbtFactory {
 	public static NbtCompound ofCompound(String name, Collection<? extends NbtBase<?>> list) {
 		return WrappedCompound.fromList(name, list);
 	}
-	
+
 	/**
 	 * Construct a new NBT compound wrapper.
+	 *
 	 * @param name - the name of the compound wrapper.
 	 * @return The new wrapped NBT compound.
 	 */
 	public static NbtCompound ofCompound(String name) {
 		return WrappedCompound.fromName(name);
 	}
-	
+
 	/**
 	 * Construct a NBT list of out an array of values.
+	 *
 	 * @param <T> Type
 	 * @param name - name of this list.
 	 * @param elements - elements to add.
@@ -458,9 +483,10 @@ public class NbtFactory {
 	public static <T> NbtList<T> ofList(String name, T... elements) {
 		return WrappedList.fromArray(name, elements);
 	}
-	
+
 	/**
 	 * Construct a NBT list of out a list of values.
+	 *
 	 * @param <T> Type
 	 * @param name - name of this list.
 	 * @param elements - elements to add.
@@ -469,9 +495,10 @@ public class NbtFactory {
 	public static <T> NbtList<T> ofList(String name, Collection<? extends T> elements) {
 		return WrappedList.fromList(name, elements);
 	}
-	
+
 	/**
 	 * Create a new NBT wrapper from a given type.
+	 *
 	 * @param <T> Type
 	 * @param type - the NBT type.
 	 * @param name - the name of the NBT tag.
@@ -487,38 +514,37 @@ public class NbtFactory {
 		if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
 			return createTagNew(type, name);
 		}
-		
+
 		if (methodCreateTag == null) {
 			Class<?> base = MinecraftReflection.getNBTBaseClass();
-			
+
 			// Use the base class
 			try {
 				methodCreateTag = findCreateMethod(base, byte.class, String.class);
 				methodCreateWithName = true;
-				
+
 			} catch (Exception e) {
 				methodCreateTag = findCreateMethod(base, byte.class);
 				methodCreateWithName = false;
 			}
 		}
-		
+
 		try {
 			// Delegate to the correct version
 			if (methodCreateWithName)
 				return createTagWithName(type, name);
 			else
 				return createTagSetName(type, name);
-			
+
 		} catch (Exception e) {
 			// Inform the caller
-			throw new FieldAccessException(
-					String.format("Cannot create NBT element %s (type: %s)", name, type),
-					e);
+			throw new FieldAccessException(String.format("Cannot create NBT element %s (type: %s)", name, type), e);
 		}
 	}
 
 	/**
 	 * Find the create method of NBTBase.
+	 *
 	 * @param base - the base NBT.
 	 * @param params - the parameters.
 	 */
@@ -532,7 +558,7 @@ public class NbtFactory {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static <T> NbtWrapper<T> createTagWithName(NbtType type, String name) throws Exception {
 		Object handle = methodCreateTag.invoke(null, (byte) type.getRawID(), name);
-		
+
 		if (type == NbtType.TAG_COMPOUND)
 			return (NbtWrapper<T>) new WrappedCompound(handle);
 		else if (type == NbtType.TAG_LIST)
@@ -540,12 +566,12 @@ public class NbtFactory {
 		else
 			return new WrappedElement<>(handle);
 	}
-	
+
 	// For Minecraft 1.7.2 to 1.14.4
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static <T> NbtWrapper<T> createTagSetName(NbtType type, String name) throws Exception {
 		Object handle = methodCreateTag.invoke(null, (byte) type.getRawID());
-		
+
 		if (type == NbtType.TAG_COMPOUND)
 			return (NbtWrapper<T>) new WrappedCompound(handle, name);
 		else if (type == NbtType.TAG_LIST)
@@ -553,9 +579,6 @@ public class NbtFactory {
 		else
 			return new WrappedElement<>(handle, name);
 	}
-
-	private static Method getTagType;
-	private static final Map<NbtType, Constructor<?>> CONSTRUCTORS = new ConcurrentHashMap<>();
 
 	@SafeVarargs
 	private static <T> NbtWrapper<T> createTagNew(NbtType type, String name, T... values) {
@@ -571,7 +594,8 @@ public class NbtFactory {
 			if (getTagType == null) {
 				Class<?> tagTypes = MinecraftReflection.getMinecraftClass("NBTTagTypes");
 				FuzzyReflection fuzzy = FuzzyReflection.fromClass(tagTypes, false);
-				getTagType = fuzzy.getMethod(FuzzyMethodContract.newBuilder().parameterCount(1).parameterExactType(int.class).build());
+				getTagType = fuzzy.getMethod(
+						FuzzyMethodContract.newBuilder().parameterCount(1).parameterExactType(int.class).build());
 			}
 
 			Class<?> nbtClass;
@@ -585,14 +609,10 @@ public class NbtFactory {
 			try {
 				FuzzyReflection fuzzy = FuzzyReflection.fromClass(nbtClass, true);
 				if (type == NbtType.TAG_LIST) {
-					constructor = fuzzy.getConstructor(FuzzyMethodContract.newBuilder()
-							.parameterCount(0)
-							.build());
+					constructor = fuzzy.getConstructor(FuzzyMethodContract.newBuilder().parameterCount(0).build());
 				} else {
-					constructor = fuzzy.getConstructor(FuzzyMethodContract.newBuilder()
-							.parameterCount(1)
-							.parameterSuperOf(valueType)
-							.build());
+					constructor = fuzzy.getConstructor(
+							FuzzyMethodContract.newBuilder().parameterCount(1).parameterSuperOf(valueType).build());
 				}
 
 				constructor.setAccessible(true);
@@ -627,6 +647,7 @@ public class NbtFactory {
 
 	/**
 	 * Create a new NBT wrapper from a given type.
+	 *
 	 * @param <T> Type
 	 * @param type - the NBT type.
 	 * @param name - the name of the NBT tag.
@@ -640,20 +661,21 @@ public class NbtFactory {
 		}
 
 		NbtWrapper<T> created = ofWrapper(type, name);
-		
+
 		// Update the value
 		created.setValue(value);
 		return created;
 	}
-	
+
 	/**
 	 * Create a new NBT wrapper from a given type.
+	 *
 	 * @param <T> Type
 	 * @param type - type of the NBT value.
 	 * @param name - the name of the NBT tag.
 	 * @param value - the value of the new tag.
 	 * @return The new wrapped NBT tag.
-	 * @throws FieldAccessException If we're unable to create the underlying tag.
+	 * @throws FieldAccessException     If we're unable to create the underlying tag.
 	 * @throws IllegalArgumentException If the given class type is not valid NBT.
 	 */
 	public static <T> NbtWrapper<T> ofWrapper(Class<?> type, String name, T value) {

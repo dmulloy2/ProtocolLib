@@ -34,6 +34,8 @@ import org.bukkit.Material;
  */
 
 public abstract class WrappedBlockData extends AbstractWrapper implements ClonableWrapper {
+	private static final boolean FLATTENED = MinecraftVersion.AQUATIC_UPDATE.atOrAbove();
+
 	private static final Class<?> MAGIC_NUMBERS = MinecraftReflection.getCraftBukkitClass("util.CraftMagicNumbers");
 	private static final Class<?> IBLOCK_DATA = MinecraftReflection.getIBlockDataClass();
 	private static final Class<?> BLOCK = MinecraftReflection.getBlockClass();
@@ -48,7 +50,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 		private static MethodAccessor GET_HANDLE;
 
 		static {
-			if (MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE)) {
+			if (FLATTENED) {
 				FuzzyReflection fuzzy = FuzzyReflection.fromClass(MAGIC_NUMBERS);
 				FuzzyMethodContract contract = FuzzyMethodContract
 						.newBuilder()
@@ -168,7 +170,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 		private static MethodAccessor GET_BLOCK;
 
 		static {
-			if (!MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE)) {
+			if (!FLATTENED) {
 				FuzzyReflection fuzzy = FuzzyReflection.fromClass(BLOCK);
 				FuzzyMethodContract contract = FuzzyMethodContract
 						.newBuilder()
@@ -289,8 +291,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 	 * @return New BlockData
 	 */
 	public static WrappedBlockData createData(Material type) {
-		return MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE) ? NewBlockData.createNewData(type)
-		                                                                   : OldBlockData.createOldData(type);
+		return FLATTENED ? NewBlockData.createNewData(type) : OldBlockData.createOldData(type);
 	}
 
 	/**
@@ -298,17 +299,13 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 	 * @param type Block type
 	 * @param data Block data
 	 * @return New BlockData
-	 * @deprecated The flattening
 	 */
-	@Deprecated
 	public static WrappedBlockData createData(Material type, int data) {
-		return MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE) ? NewBlockData.createNewData(type, data)
-		                                                                   : OldBlockData.createOldData(type, data);
+		return FLATTENED ? NewBlockData.createNewData(type, data) : OldBlockData.createOldData(type, data);
 	}
 
 	public static WrappedBlockData fromHandle(Object handle) {
-		return MinecraftVersion.atOrAbove(MinecraftVersion.AQUATIC_UPDATE) ? new NewBlockData(handle)
-		                                                                   : new OldBlockData(handle);
+		return FLATTENED ? new NewBlockData(handle) : new OldBlockData(handle);
 	}
 
 	/**
