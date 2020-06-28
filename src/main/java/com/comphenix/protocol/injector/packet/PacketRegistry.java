@@ -77,7 +77,7 @@ public class PacketRegistry {
 
 		@SuppressWarnings("unchecked")
 		Map<Class, Integer> result = (Map) Maps.transformValues(
-				NETTY.getPacketClassLookup(), type -> type.getLegacyId());
+				NETTY.getPacketClassLookup(), PacketType::getCurrentId);
 		return result;
 	}
 
@@ -159,8 +159,7 @@ public class PacketRegistry {
 			try {
 				clazz = MinecraftReflection.getMinecraftClass(name);
 				break;
-			} catch (Exception ex) {
-			}
+			} catch (Exception ignored) { }
 		}
 
 		// TODO Cache the result?
@@ -192,7 +191,7 @@ public class PacketRegistry {
 	@Deprecated
 	public static int getPacketID(Class<?> packet) {
 		initialize();
-		return NETTY.getPacketClassLookup().get(packet).getLegacyId();
+		return NETTY.getPacketClassLookup().get(packet).getCurrentId();
 	}
 
 	/**

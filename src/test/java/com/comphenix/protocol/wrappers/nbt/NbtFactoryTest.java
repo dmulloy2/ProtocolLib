@@ -30,9 +30,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.minecraft.server.v1_15_R1.ItemStack;
-import net.minecraft.server.v1_15_R1.Items;
-import net.minecraft.server.v1_15_R1.NBTTagTypes;
+import net.minecraft.server.v1_16_R1.ItemStack;
+import net.minecraft.server.v1_16_R1.Items;
+import net.minecraft.server.v1_16_R1.NBTTagTypes;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

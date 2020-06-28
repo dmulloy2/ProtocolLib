@@ -3,6 +3,8 @@
  */
 package com.comphenix.protocol.injector;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -31,6 +33,7 @@ public class WirePacketTest {
 	public void testPackets() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
 		packet.getChatTypes().write(0, ChatType.CHAT);
+		packet.getUUIDs().write(0, new UUID(0L, 0L));
 		
 		WirePacket wire = WirePacket.fromPacket(packet);
 		WirePacket handle = WirePacket.fromPacket(packet.getHandle());

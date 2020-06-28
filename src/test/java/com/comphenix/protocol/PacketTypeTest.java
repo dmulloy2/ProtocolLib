@@ -27,9 +27,9 @@ import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
-import net.minecraft.server.v1_15_R1.EnumProtocol;
-import net.minecraft.server.v1_15_R1.EnumProtocolDirection;
-import net.minecraft.server.v1_15_R1.PacketLoginInStart;
+import net.minecraft.server.v1_16_R1.EnumProtocol;
+import net.minecraft.server.v1_16_R1.EnumProtocolDirection;
+import net.minecraft.server.v1_16_R1.PacketLoginInStart;
 
 import org.apache.commons.lang.WordUtils;
 import org.junit.BeforeClass;
@@ -54,6 +54,9 @@ public class PacketTypeTest {
 	public static void main(String[] args) throws Exception {
 		Constants.init();
 
+		Set<Class<?>> allTypes = new HashSet<>();
+		List<Class<?>> newTypes = new ArrayList<>();
+
 		EnumProtocol[] protocols = EnumProtocol.values();
 		for (EnumProtocol protocol : protocols) {
 			System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
@@ -76,7 +79,26 @@ public class PacketTypeTest {
 				System.out.println("  " + entry.getKey());
 				for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
 					System.out.println(generateNewType(entry1.getKey(), entry1.getValue()));
+					allTypes.add(entry1.getValue());
+
+					try {
+						PacketType.fromClass(entry1.getValue());
+					} catch (Exception ex) {
+						newTypes.add(entry1.getValue());
+					}
 				}
+			}
+		}
+
+		System.out.println("New types: " + newTypes);
+
+		for (PacketType type : PacketType.values()) {
+			if (type.isDeprecated()) {
+				continue;
+			}
+
+			if (!allTypes.contains(type.getPacketClass())) {
+				System.out.println(type + " was removed");
 			}
 		}
 	}
@@ -139,8 +161,6 @@ public class PacketTypeTest {
 			fieldName.append(Character.toUpperCase(c));
 		}
 
-
-
 		builder.append(fieldName.toString().replace("N_B_T", "NBT"));
 		builder.append(" = ");
 
@@ -155,16 +175,8 @@ public class PacketTypeTest {
 		builder.append("new ");
 		builder.append("PacketType(PROTOCOL, SENDER, ");
 
-		int legacy = -1;
-
 		builder.append(formatHex(packetId));
 		builder.append(", ");
-		builder.append(formatHex(legacy));
-		builder.append(", ");
-		//if (legacy == -1) {
-		//	builder.append("  ");
-		//}
-		builder.append("\"");
 
 		StringBuilder nameBuilder = new StringBuilder();
 		for (int i = 0; i < classNames.size(); i++) {
@@ -175,35 +187,40 @@ public class PacketTypeTest {
 		}
 
 		String name = nameBuilder.toString();
-		builder.append(name);
-		builder.append("\"");
+		String namesArg = listToString(getAllNames(clazz, name));
 
-		List<String> aliases = aliases(clazz, name);
-		if (aliases != null) {
-			System.out.println("!!! Aliases found !!!");
-			System.out.println(aliases);
-		}
-
+		builder.append(namesArg);
 		builder.append(");");
+
 		return builder.toString();
 	}
 
-	private static List<String> aliases(Class<?> packetClass, String newName) {
-		PacketType type = PacketType.fromClass(packetClass);
-		if (type.names.length > 1) {
-			List<String> aliases = new ArrayList<>();
+	private static List<String> getAllNames(Class<?> packetClass, String newName) {
+		List<String> names = new ArrayList<>();
+		names.add(newName);
+
+		try {
+			PacketType type = PacketType.fromClass(packetClass);
 			for (String alias : type.names) {
-				if (!alias.equals(newName)) {
-					aliases.add(alias);
+				if (!names.contains(alias)) {
+					names.add(alias);
 				}
 			}
+		} catch (Exception ignored) { }
 
-			return aliases;
-		} else if (!type.names[0].equals(newName)) {
-			return Collections.singletonList(type.names[0]);
+		return names;
+	}
+
+	private static String listToString(List<String> list) {
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < list.size(); i++) {
+			if (i != 0) {
+				builder.append(", ");
+			}
+			builder.append("\"").append(list.get(i)).append("\"");
 		}
 
-		return null;
+		return builder.toString();
 	}
 
 	@BeforeClass

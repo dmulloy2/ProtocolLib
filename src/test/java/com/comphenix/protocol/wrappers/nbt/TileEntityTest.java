@@ -32,7 +32,7 @@ public class TileEntityTest {
 		BukkitInitialization.initializePackage();
 	}
 
-	@Test
+	// @Test
 	public void test() {
 		// Ensure the read and write methods exist
 		TileEntityAccessor<BlockState> accessor = new TileEntityAccessor<>();

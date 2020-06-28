@@ -319,7 +319,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 	 * @return TRUE if it is, FALSE otherwise.
 	 */
 	public boolean isPendingSynchronization() {
-		return (Boolean) modifier.withType(boolean.class).read(0);
+		return (Boolean) modifier.withType(boolean.class).optionRead(0).orElse(false);
 	}
 
 	/**

@@ -81,7 +81,7 @@ public class StructureModifier<TField> {
 		providers.addAll(DefaultInstances.DEFAULT.getRegistered());
 		return DefaultInstances.fromCollection(providers);
 	}
-			
+
 	/**
 	 * Creates a structure modifier.
 	 * @param targetType - the structure to modify.

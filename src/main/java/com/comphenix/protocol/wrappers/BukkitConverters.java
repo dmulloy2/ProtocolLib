@@ -61,8 +61,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import static com.comphenix.protocol.utility.MinecraftReflection.*;
-import static com.comphenix.protocol.wrappers.Converters.*;
+import static com.comphenix.protocol.utility.MinecraftReflection.getCraftBukkitClass;
+import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
+import static com.comphenix.protocol.wrappers.Converters.handle;
+import static com.comphenix.protocol.wrappers.Converters.ignoreNull;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.

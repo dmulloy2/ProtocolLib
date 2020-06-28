@@ -21,10 +21,10 @@ package com.comphenix.protocol.utility;
  */
 
 public final class Constants {
-	public static final String PACKAGE_VERSION = "v1_15_R1";
+	public static final String PACKAGE_VERSION = "v1_16_R1";
 	public static final String NMS = "net.minecraft.server." + PACKAGE_VERSION;
 	public static final String OBC = "org.bukkit.craftbukkit." + PACKAGE_VERSION;
-	public static final MinecraftVersion CURRENT_VERSION = MinecraftVersion.BEE_UPDATE;
+	public static final MinecraftVersion CURRENT_VERSION = MinecraftVersion.NETHER_UPDATE;
 
 	public static void init() {
 		MinecraftReflection.setMinecraftPackage(NMS, OBC);

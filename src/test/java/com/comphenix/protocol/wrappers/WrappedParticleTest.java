@@ -4,7 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 
-import net.minecraft.server.v1_15_R1.PacketPlayOutWorldParticles;
+import net.minecraft.server.v1_16_R1.PacketPlayOutWorldParticles;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
