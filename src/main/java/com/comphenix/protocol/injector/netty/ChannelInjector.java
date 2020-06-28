@@ -79,11 +79,15 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// Versioning
 	private static Class<?> PACKET_SET_PROTOCOL = null;
 
-	private static final AtomicInteger keyId = new AtomicInteger();
-	private static final AttributeKey<Integer> PROTOCOL_KEY;
+	private static AtomicInteger keyId = new AtomicInteger();
+	private static AttributeKey<Integer> PROTOCOL_KEY;
 
 	static {
-		PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
+		try {
+			PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
+		} catch (Exception ex) {
+			throw new RuntimeException("Encountered an error caused by a reload! Please properly restart your server!", ex);
+		}
 	}
 
 	// Saved accessors
