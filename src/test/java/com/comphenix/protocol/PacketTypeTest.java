@@ -249,10 +249,7 @@ public class PacketTypeTest {
 				PacketType.Status.Server.SERVER_INFO);
 	}
 
-	// TODO They rewrote EnumProtocol, so this needs to be fixed
-	// I just generated the new types so everything's good there
-
-	// @Test
+	@Test
 	@SuppressWarnings("unchecked")
 	public void ensureTypesAreCorrect() throws Exception {
 		boolean fail = false;
@@ -262,14 +259,24 @@ public class PacketTypeTest {
 			Field field = EnumProtocol.class.getDeclaredField("h");
 			field.setAccessible(true);
 
-			Map<EnumProtocolDirection, Map<Integer, Class<?>>> map = (Map<EnumProtocolDirection, Map<Integer, Class<?>>>) field.get(protocol);
-			for (Entry<EnumProtocolDirection, Map<Integer, Class<?>>> entry : map.entrySet()) {
-				Map<Integer, Class<?>> treeMap = new TreeMap<>(entry.getValue());
+			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
+			for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
+				Field mapField = entry.getValue().getClass().getDeclaredField("a");
+				mapField.setAccessible(true);
+
+				Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
+
+				Map<Integer, Class<?>> treeMap = new TreeMap<>();
+				for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
+					treeMap.put(entry1.getValue(), entry1.getKey());
+				}
+
 				for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
 					try {
 						PacketType type = PacketType.fromClass(entry1.getValue());
 						if (type.getCurrentId() != entry1.getKey())
-							throw new IllegalStateException("Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got " + type.getCurrentId());
+							throw new IllegalStateException(
+									"Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got " + type.getCurrentId());
 					} catch (Throwable ex) {
 						ex.printStackTrace();
 						fail = true;

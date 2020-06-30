@@ -144,6 +144,11 @@ public class PacketContainer implements Serializable {
 		this.type = type;
 		this.handle = handle;
 		this.structureModifier = structure;
+
+		// TODO this is kinda hacky, come up with a better solution
+		if (type == PacketType.Play.Server.CHAT) {
+			getUUIDs().writeSafely(0, new UUID(0L, 0L));
+		}
 	}
 	
 	/**
