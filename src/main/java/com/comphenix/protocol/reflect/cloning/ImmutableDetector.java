@@ -78,6 +78,10 @@ public class ImmutableDetector implements Cloner {
 
 		// TODO automatically detect the technically-not-an-enum enums that Mojang is so fond of
 		// Would also probably go in tandem with having the FieldCloner use this
+
+		if (MinecraftVersion.atOrAbove(MinecraftVersion.NETHER_UPDATE)) {
+			add("IRegistry");
+		}
 	}
 
 	private static void add(Supplier<Class<?>> getClass) {

@@ -2,26 +2,14 @@ package com.comphenix.protocol.injector;
 
 import javax.annotation.Nonnull;
 
-import org.bukkit.Server;
-import org.bukkit.event.world.WorldInitEvent;
-import org.bukkit.plugin.Plugin;
-
-import com.comphenix.executors.BukkitFutures;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.injector.player.InjectedServerConnection;
-import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
-import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
+
+import org.bukkit.Server;
+import org.bukkit.plugin.Plugin;
 
 public class PacketFilterBuilder {
-	public static final ReportType REPORT_TEMPORARY_EVENT_ERROR = new ReportType("Unable to register or handle temporary event.");
-	public static final ReportType REPORT_SPIGOT_IS_DELAYING_INJECTOR = new ReportType("Delaying due to Spigot.");
-	
 	private ClassLoader classLoader;
 	private Server server;
 	private Plugin library;
@@ -185,63 +173,10 @@ public class PacketFilterBuilder {
 		
 		asyncManager = new AsyncFilterManager(reporter, server.getScheduler());
 		nettyEnabled = false;
-		
-		// Spigot
-		if (SpigotPacketInjector.canUseSpigotListener()) {
-			// If the server hasn't loaded yet - wait
-			if (InjectedServerConnection.getServerConnection(reporter, server) == null) {
-				// We need to delay this until we know if Netty is enabled
-				final DelayedPacketManager delayed = new DelayedPacketManager(reporter, mcVersion);
 
-				// They must reference each other
-				delayed.setAsynchronousManager(asyncManager);
-				asyncManager.setManager(delayed);
-				
-				Futures.addCallback(BukkitFutures.nextEvent(library, WorldInitEvent.class),
-						new FutureCallback<WorldInitEvent>() {
-							@Override
-							public void onSuccess(WorldInitEvent event) {
-								// Nevermind
-								if (delayed.isClosed())
-									return;
-
-								try {
-									registerSpigot(delayed);
-								} catch (Exception e) {
-									onFailure(e);
-								}
-							}
-
-							@Override
-							public void onFailure(Throwable error) {
-								reporter.reportWarning(PacketFilterBuilder.this, Report
-										.newBuilder(REPORT_TEMPORARY_EVENT_ERROR).error(error));
-							}
-						});
-				
-				reporter.reportWarning(this, Report.newBuilder(REPORT_SPIGOT_IS_DELAYING_INJECTOR));
-
-				// Let plugins use this version instead
-				return delayed;
-			} else {
-				nettyEnabled = !MinecraftReflection.isMinecraftObject(
-						InjectedServerConnection.getServerConnection(reporter, server));
-			}
-		}
-		
-		// Otherwise - construct the packet filter manager right away
 		return buildInternal();
 	}
-	
-	private void registerSpigot(DelayedPacketManager delayed) {
-		// Use netty if we have a non-standard ServerConnection class
-		nettyEnabled = !MinecraftReflection.isMinecraftObject(
-				InjectedServerConnection.getServerConnection(reporter, server));
 
-		// Switch to the standard manager
-		delayed.setDelegate(buildInternal());
-	}
-	
 	/**
 	 * Construct a new packet filter manager without checking for Netty.
 	 * @return A new packet filter manager.

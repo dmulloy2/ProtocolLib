@@ -49,8 +49,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-import net.minecraft.server.v1_14_R1.EntityTypes;
-
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -63,8 +61,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import static com.comphenix.protocol.utility.MinecraftReflection.*;
-import static com.comphenix.protocol.wrappers.Converters.*;
+import static com.comphenix.protocol.utility.MinecraftReflection.getCraftBukkitClass;
+import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
+import static com.comphenix.protocol.wrappers.Converters.handle;
+import static com.comphenix.protocol.wrappers.Converters.ignoreNull;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
@@ -1135,8 +1135,7 @@ public class BukkitConverters {
 	private static MethodAccessor idFromDimension = null;
 
 	public static EquivalentConverter<Integer> getDimensionIDConverter() {
-		return new EquivalentConverter<Integer>() {
-
+		return ignoreNull(new EquivalentConverter<Integer>() {
 			@Override
 			public Object getGeneric(Integer specific) {
 				if (dimensionFromId == null) {
@@ -1151,7 +1150,7 @@ public class BukkitConverters {
 					dimensionFromId = Accessors.getMethodAccessor(reflection.getMethod(contract));
 				}
 
-				return dimensionFromId.invoke(null, (int) specific);
+				return dimensionFromId.invoke(null, specific);
 			}
 
 			@Override
@@ -1175,6 +1174,6 @@ public class BukkitConverters {
 			public Class<Integer> getSpecificType() {
 				return Integer.class;
 			}
-		};
+		});
 	}
 }

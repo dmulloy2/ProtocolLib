@@ -47,16 +47,17 @@ public class BukkitCloner implements Cloner {
 			if (nmsClass != null) {
 				CLONERS.put(nmsClass, nmsObject -> fromHandle.apply(nmsObject).deepClone().getHandle());
 			}
-		} catch (RuntimeException ignored) { }
+		} catch (Throwable ignored) { }
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static void fromConverter(Supplier<Class<?>> getClass, EquivalentConverter converter) {
 		try {
 			Class<?> nmsClass = getClass.get();
 			if (nmsClass != null) {
 				CLONERS.put(nmsClass, nmsObject -> converter.getGeneric(converter.getSpecific(nmsObject)));
 			}
-		} catch (RuntimeException ignored) { }
+		} catch (Throwable ignored) { }
 	}
 
 	private static void fromManual(Supplier<Class<?>> getClass, Function<Object, Object> cloner) {
@@ -65,7 +66,7 @@ public class BukkitCloner implements Cloner {
 			if (nmsClass != null) {
 				CLONERS.put(nmsClass, cloner);
 			}
-		} catch (RuntimeException ignored) { }
+		} catch (Throwable ignored) { }
 	}
 
 	static {
@@ -80,9 +81,12 @@ public class BukkitCloner implements Cloner {
 		fromManual(MinecraftReflection::getNonNullListClass, source -> nonNullListCloner().clone(source));
 		fromWrapper(MinecraftReflection::getNBTBaseClass, NbtFactory::fromNMS);
 		fromWrapper(MinecraftReflection::getIChatBaseComponentClass, WrappedChatComponent::fromHandle);
-		fromManual(ComponentConverter::getBaseComponentArrayClass, source ->
-				ComponentConverter.clone((BaseComponent[]) source));
 		fromWrapper(WrappedVillagerData::getNmsClass, WrappedVillagerData::fromHandle);
+
+		try {
+			fromManual(ComponentConverter::getBaseComponentArrayClass, source ->
+					ComponentConverter.clone((BaseComponent[]) source));
+		} catch (Throwable ignored) { }
 	}
 
 	private Function<Object, Object> findCloner(Class<?> type) {

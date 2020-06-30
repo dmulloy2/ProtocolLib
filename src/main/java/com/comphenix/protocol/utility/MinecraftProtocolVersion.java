@@ -37,20 +37,38 @@ public class MinecraftProtocolVersion {
 		// After Netty
 		map.put(new MinecraftVersion(1, 7, 1), 4);
 		map.put(new MinecraftVersion(1, 7, 6), 5);
+
 		map.put(new MinecraftVersion(1, 8, 0), 47);
+
 		map.put(new MinecraftVersion(1, 9, 0), 107);
 		map.put(new MinecraftVersion(1, 9, 2), 109);
 		map.put(new MinecraftVersion(1, 9, 4), 110);
+
 		map.put(new MinecraftVersion(1, 10, 0), 210);
+
 		map.put(new MinecraftVersion(1, 11, 0), 315);
 		map.put(new MinecraftVersion(1, 11, 1), 316);
+
 		map.put(new MinecraftVersion(1, 12, 0), 335);
 		map.put(new MinecraftVersion(1, 12, 1), 338);
 		map.put(new MinecraftVersion(1, 12, 2), 340);
+
 		map.put(new MinecraftVersion(1, 13, 0), 393);
 		map.put(new MinecraftVersion(1, 13, 1), 401);
 		map.put(new MinecraftVersion(1, 13, 2), 404);
+
 		map.put(new MinecraftVersion(1, 14, 0), 477);
+		map.put(new MinecraftVersion(1, 14, 1), 480);
+		map.put(new MinecraftVersion(1, 14, 2), 485);
+		map.put(new MinecraftVersion(1, 14, 3), 490);
+		map.put(new MinecraftVersion(1, 14, 4), 498);
+
+		map.put(new MinecraftVersion(1, 15, 0), 573);
+		map.put(new MinecraftVersion(1, 15, 1), 575);
+		map.put(new MinecraftVersion(1, 15, 2), 578);
+
+		map.put(new MinecraftVersion(1, 16, 0), 735);
+		map.put(new MinecraftVersion(1, 16, 1), 736);
 		return map;
 	}
 

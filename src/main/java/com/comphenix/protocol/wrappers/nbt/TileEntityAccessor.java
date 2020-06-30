@@ -2,14 +2,18 @@ package com.comphenix.protocol.wrappers.nbt;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentMap;
 
+import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.EnhancerFactory;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Maps;
 
 import net.sf.cglib.asm.$ClassReader;
@@ -27,8 +31,10 @@ import org.bukkit.block.BlockState;
  * @author Kristian
  */
 class TileEntityAccessor<T extends BlockState> {
+	private static final boolean BLOCK_DATA_INCL = MinecraftVersion.NETHER_UPDATE.atOrAbove();
+
 	/**
-	 * Token indicating that the given block state doesn't contany any tile entities.
+	 * Token indicating that the given block state doesn't contain any tile entities.
 	 */
 	private static final TileEntityAccessor<BlockState> EMPTY_ACCESSOR = new TileEntityAccessor<BlockState>();
 
@@ -63,6 +69,28 @@ class TileEntityAccessor<T extends BlockState> {
 	}
 
 	void findMethods(Class<?> type, T state) {
+		if (BLOCK_DATA_INCL) {
+			Class<?> tileEntityClass = MinecraftReflection.getTileEntityClass();
+			Class<?> iBlockData = MinecraftReflection.getIBlockDataClass();
+			Class<?> nbtCompound = MinecraftReflection.getNBTCompoundClass();
+
+			FuzzyReflection fuzzy = FuzzyReflection.fromClass(tileEntityClass, false);
+			writeCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
+					FuzzyMethodContract.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.returnTypeVoid()
+							.parameterExactArray(iBlockData, nbtCompound)
+							.build()));
+
+			// this'll point to 2 methods, one of which points to the other
+			readCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
+					FuzzyMethodContract.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.returnTypeExact(nbtCompound)
+							.parameterExactArray(nbtCompound)
+							.build()));
+		}
+
 		// Possible read/write methods
 		try {
 			findMethodsUsingASM();
@@ -185,7 +213,7 @@ class TileEntityAccessor<T extends BlockState> {
 	}
 
 	/**
-	 * Retrieve the JAR name (slash instead of dots) of the given clas.
+	 * Retrieve the JAR name (slash instead of dots) of the given class.
 	 * @param clazz - the class.
 	 * @return The JAR name.
 	 */
@@ -216,7 +244,12 @@ class TileEntityAccessor<T extends BlockState> {
 		Object tileEntity = tileEntityField.get(state);
 
 		// Ensure the block state is set to the compound
-		readCompound.invoke(tileEntity, NbtFactory.fromBase(compound).getHandle());
+		if (BLOCK_DATA_INCL) {
+			Object blockData = BukkitUnwrapper.getInstance().unwrapItem(state);
+			readCompound.invoke(tileEntity, blockData, NbtFactory.fromBase(compound).getHandle());
+		} else {
+			readCompound.invoke(tileEntity, NbtFactory.fromBase(compound).getHandle());
+		}
 	}
 
 	/**

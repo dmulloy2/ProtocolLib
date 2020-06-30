@@ -243,7 +243,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @return True if it does, false if not
 	 */
 	public boolean hasIndex(int index) {
-		return getObject(index) != null;
+		return getMap().containsKey(index);
 	}
 
 	/**
@@ -388,7 +388,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @param value New value
 	 * @param update Whether or not to inform the client
 	 * 
-	 * @see {@link #setObject(WrappedDataWatcherObject, Object, boolean)}
+	 * @see WrappedDataWatcher#setObject(WrappedDataWatcherObject, Object, boolean)
 	 * @throws IllegalArgumentException in 1.9 and up if there isn't already an
 	 * 		object at this index
 	 */
@@ -415,7 +415,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @param value New value
 	 * @param update Whether or not to inform the client
 	 * 
-	 * @see {@link #setObject(WrappedDataWatcherObject, Object)}
+	 * @see WrappedDataWatcher#setObject(WrappedDataWatcherObject, Object)
 	 */
 	public void setObject(int index, Serializer serializer, Object value, boolean update) {
 		setObject(new WrappedDataWatcherObject(index, serializer), value, update);
@@ -435,7 +435,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	 * @param value New value
 	 * @param update Whether or not to inform the client
 	 * 
-	 * @see {@link #setObject(int, Object, boolean)}
+	 * @see WrappedDataWatcher#setObject(int, Object, boolean)
 	 */
 	public void setObject(int index, WrappedWatchableObject value, boolean update) {
 		setObject(index, value.getRawValue(), update);

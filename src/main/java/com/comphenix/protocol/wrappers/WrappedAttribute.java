@@ -1,35 +1,58 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.UUID;
-
+import java.util.*;
 import javax.annotation.Nonnull;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.collection.CachedSet;
 import com.comphenix.protocol.wrappers.collection.ConvertedSet;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+
 
 /**
  * Represents a single attribute sent in packet 44.
  * @author Kristian
  */
 public class WrappedAttribute extends AbstractWrapper {
+	public static boolean KEY_WRAPPED = MinecraftVersion.NETHER_UPDATE.atOrAbove();
+
 	// Shared structure modifier
 	private static StructureModifier<Object> ATTRIBUTE_MODIFIER;
 	
 	// The one constructor
 	private static Constructor<?> ATTRIBUTE_CONSTRUCTOR;
+
+	private static Object REGISTRY = null;
+	private static MethodAccessor REGISTRY_GET = null;
+
+	private static final Map<String, String> REMAP;
+
+	static {
+		Map<String, String> remap = new HashMap<>();
+		remap.put("generic.maxHealth", "generic.max_health");
+		remap.put("generic.followRange", "generic.follow_range");
+		remap.put("generic.knockbackResistance", "generic.knockback_resistance");
+		remap.put("generic.movementSpeed", "generic.movement_speed");
+		remap.put("generic.attackDamage", "generic.attack_damage");
+		remap.put("generic.attackSpeed", "generic.attack_speed");
+		remap.put("generic.armorToughness", "generic.armor_toughness");
+		remap.put("generic.attackKnockback", "generic.attack_knockback");
+		remap.put("horse.jumpStrength", "horse.jump_strength");
+		remap.put("zombie.spawnReinforcements", "zombie.spawn_reinforcements");
+		REMAP = ImmutableMap.copyOf(remap);
+	}
 	
 	/**
 	 * Reference to the underlying attribute snapshot.
@@ -85,7 +108,19 @@ public class WrappedAttribute extends AbstractWrapper {
 	public static Builder newBuilder(@Nonnull WrappedAttribute template) {
 		return new Builder(Preconditions.checkNotNull(template, "template cannot be NULL."));
 	}
-	
+
+	public static class WrappedAttributeBase {
+		public double defaultValue;
+		public boolean unknown;
+		public String key;
+	}
+
+	private static final Class<?> ATTRIBUTE_BASE_CLASS = MinecraftReflection.getNullableNMS("AttributeBase");
+
+	private static final AutoWrapper<WrappedAttributeBase> ATTRIBUTE_BASE = AutoWrapper.wrap(
+			WrappedAttributeBase.class, ATTRIBUTE_BASE_CLASS
+	);
+
 	/**
 	 * Retrieve the unique attribute key that identifies its function.
 	 * <p>
@@ -93,7 +128,21 @@ public class WrappedAttribute extends AbstractWrapper {
 	 * @return The attribute key.
 	 */
 	public String getAttributeKey() {
-		return (String) modifier.withType(String.class).read(0);
+		if (KEY_WRAPPED) {
+			WrappedAttributeBase base = modifier.withType(ATTRIBUTE_BASE_CLASS, ATTRIBUTE_BASE).read(0);
+			return base.key.replace("attribute.name.", ""); // TODO not entirely sure why this happens
+		} else {
+			return (String) modifier.withType(String.class).read(0);
+		}
+	}
+
+	/**
+	 * Retrieve the attribute base instance. New in 1.16.
+	 *
+	 * @return The attribute base
+	 */
+	public WrappedAttributeBase getBase() {
+		return modifier.withType(WrappedAttributeBase.class, ATTRIBUTE_BASE).readSafely(0);
 	}
 	
 	/**
@@ -372,16 +421,41 @@ public class WrappedAttribute extends AbstractWrapper {
 			
 			// Retrieve the correct constructor
 			if (ATTRIBUTE_CONSTRUCTOR == null) {
-				ATTRIBUTE_CONSTRUCTOR = FuzzyReflection.fromClass(MinecraftReflection.getAttributeSnapshotClass(), true).getConstructor(
-					FuzzyMethodContract.newBuilder().parameterCount(4).
-					parameterDerivedOf(MinecraftReflection.getPacketClass(), 0).
-					parameterExactType(String.class, 1).
-					parameterExactType(double.class, 2).
-					parameterDerivedOf(Collection.class, 3).
-					build()
-				);
+				ATTRIBUTE_CONSTRUCTOR = FuzzyReflection.fromClass(MinecraftReflection.getAttributeSnapshotClass(), true)
+						.getConstructor(FuzzyMethodContract.newBuilder().parameterCount(4)
+								.parameterDerivedOf(MinecraftReflection.getPacketClass(), 0)
+								.parameterExactType(double.class, 2).parameterDerivedOf(Collection.class, 3)
+								.build()
+						);
 				// Just in case
 				ATTRIBUTE_CONSTRUCTOR.setAccessible(true);
+			}
+
+			Object attributeKey;
+			if (KEY_WRAPPED) {
+				if (REGISTRY == null) {
+					Class<?> iRegistry = MinecraftReflection.getMinecraftClass("IRegistry");
+					try {
+						REGISTRY = iRegistry.getDeclaredField("ATTRIBUTE").get(null);
+					} catch (ReflectiveOperationException ex) {
+						throw new RuntimeException("Failed to obtain ATTRIBUTE registry", ex);
+					}
+				}
+
+				if (REGISTRY_GET == null) {
+					Class<?> keyClass = MinecraftReflection.getMinecraftKeyClass();
+					REGISTRY_GET = Accessors.getMethodAccessor(REGISTRY.getClass(), "get", keyClass);
+				}
+
+				String strKey = REMAP.getOrDefault(this.attributeKey, this.attributeKey);
+				Object key = MinecraftKey.getConverter().getGeneric(new MinecraftKey(strKey));
+				attributeKey = REGISTRY_GET.invoke(REGISTRY, key);
+
+				if (attributeKey == null) {
+					throw new IllegalArgumentException("Invalid attribute name: " + this.attributeKey);
+				}
+			} else {
+				attributeKey = this.attributeKey;
 			}
 
 			try {

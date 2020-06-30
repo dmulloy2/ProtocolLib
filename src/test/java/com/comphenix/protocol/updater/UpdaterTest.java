@@ -3,6 +3,7 @@
  */
 package com.comphenix.protocol.updater;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,8 @@ import java.util.logging.Logger;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.comphenix.protocol.updater.Updater.UpdateType;
 
@@ -30,11 +33,16 @@ public class UpdaterTest {
 
 		plugin = mock(Plugin.class);
 		String version = System.getProperty("projectVersion");
-		if (version == null) version = "4.2.1";
+		if (version == null) version = "4.4.0";
 		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", version, null));
 		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
 		when(plugin.getDataFolder()).thenReturn(null);
 		when(plugin.getServer()).thenReturn(server);
+	}
+	
+	// @Test
+	public void testUpdaterType() {
+		assertEquals(Updater.create(plugin, BUKKIT_DEV_ID, null, UpdateType.NO_DOWNLOAD, true).getClass(), SpigotUpdater.class);
 	}
 
 	// @Test

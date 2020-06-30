@@ -174,10 +174,10 @@ public class Metrics {
         JSONObject data = new JSONObject();
 
         String pluginName = plugin.getDescription().getName();
-        Pair<String, String> pluginVersion = Statistics.splitVersion(); // ProtocolLib - remove build number
+        String pluginVersion = Statistics.getVersion(); // ProtocolLib - remove build number
 
         data.put("pluginName", pluginName); // Append the name of the plugin
-        data.put("pluginVersion", pluginVersion.getLeft()); // Append the version of the plugin
+        data.put("pluginVersion", pluginVersion); // Append the version of the plugin
         JSONArray customCharts = new JSONArray();
         for (CustomChart customChart : charts) {
             // Add the data of the custom charts

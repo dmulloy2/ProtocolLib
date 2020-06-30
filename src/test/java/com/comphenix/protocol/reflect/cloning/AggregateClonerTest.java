@@ -6,8 +6,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 
-import net.minecraft.server.v1_14_R1.ItemStack;
-import net.minecraft.server.v1_14_R1.NonNullList;
+import net.minecraft.server.v1_16_R1.ItemStack;
+import net.minecraft.server.v1_16_R1.NonNullList;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,7 +33,7 @@ public class AggregateClonerTest {
 	public void testNonNullList() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.WINDOW_ITEMS);
 
-		NonNullList<ItemStack> list = NonNullList.a(16, ItemStack.a);
+		NonNullList<ItemStack> list = NonNullList.a(16, ItemStack.b);
 		packet.getModifier().write(1, list);
 
 		PacketContainer cloned = packet.deepClone();

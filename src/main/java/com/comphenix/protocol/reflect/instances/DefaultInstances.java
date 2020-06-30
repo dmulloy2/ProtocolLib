@@ -20,6 +20,7 @@ package com.comphenix.protocol.reflect.instances;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import javax.annotation.Nullable;
@@ -37,14 +38,16 @@ import com.google.common.collect.ImmutableList;
  */
 public class DefaultInstances implements InstanceProvider {
 
+	public static final InstanceProvider UUID_GENERATOR = type -> type == UUID.class ? new UUID(0L, 0L) : null;
+
 	/**
 	 * Standard default instance provider.
 	 */
 	public static final DefaultInstances DEFAULT = DefaultInstances.fromArray(
-			PrimitiveGenerator.INSTANCE, CollectionGenerator.INSTANCE);
-		
+			PrimitiveGenerator.INSTANCE, CollectionGenerator.INSTANCE, UUID_GENERATOR);
+
 	/**
-	 * The maximum height of the hierachy of creates types. Used to prevent cycles.
+	 * The maximum height of the heirarchy of creates types. Used to prevent cycles.
 	 */
 	private int maximumRecursion = 20;
 	
@@ -272,6 +275,8 @@ public class DefaultInstances implements InstanceProvider {
 		Constructor<T> minimum = getMinimumConstructor(type, providers, recursionLevel + 1);
 
 		// Create the type with this constructor using default values. This might fail, though.
+		// TODO every packet has a zero-args constructor
+
 		try {
 			if (minimum != null) {
 				int parameterCount = minimum.getParameterTypes().length;

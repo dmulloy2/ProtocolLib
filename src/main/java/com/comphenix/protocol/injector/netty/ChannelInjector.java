@@ -30,7 +30,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
@@ -49,6 +48,8 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.*;
@@ -82,19 +83,23 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private static AttributeKey<Integer> PROTOCOL_KEY;
 
 	static {
-		PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
+		try {
+			PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL-" + keyId.getAndIncrement());
+		} catch (Exception ex) {
+			throw new RuntimeException("Encountered an error caused by a reload! Please properly restart your server!", ex);
+		}
 	}
 
 	// Saved accessors
-	private static MethodAccessor DECODE_BUFFER;
-	private static MethodAccessor ENCODE_BUFFER;
+	private Method decodeBuffer;
+	private Method encodeBuffer;
 	private static FieldAccessor ENCODER_TYPE_MATCHER;
 
 	// For retrieving the protocol
 	private static FieldAccessor PROTOCOL_ACCESSOR;
 
 	// The factory that created this injector
-	private InjectionFactory factory;
+	private final InjectionFactory factory;
 
 	// The player, or temporary player
 	private Player player;
@@ -107,10 +112,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// The current network manager and channel
 	private final Object networkManager;
 	private final Channel originalChannel;
-	private VolatileField channelField;
+	private final VolatileField channelField;
 
 	// Known network markers
-	private Map<Object, NetworkMarker> packetMarker = new WeakHashMap<>();
+	private final Map<Object, NetworkMarker> packetMarker = new WeakHashMap<>();
 
 	/**
 	 * Indicate that this packet has been processed by event listeners.
@@ -125,21 +130,21 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private PacketEvent finalEvent;
 
 	/**
-	 * A flag set by the main thread to indiciate that a packet should not be processed.
+	 * A queue of packets that were sent with filtered=false
 	 */
-	private final ThreadLocal<Boolean> scheduleProcessPackets = ThreadLocal.withInitial(() -> true);
+	private final PacketFilterQueue unfilteredProcessedPackets = new PacketFilterQueue();
 
 	// Other handlers
 	private ByteToMessageDecoder vanillaDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
 
-	private Deque<PacketEvent> finishQueue = new ArrayDeque<>();
+	private final Deque<PacketEvent> finishQueue = new ArrayDeque<>();
 
 	// The channel listener
-	private ChannelListener channelListener;
+	private final ChannelListener channelListener;
 
 	// Processing network markers
-	private NetworkProcessor processor;
+	private final NetworkProcessor processor;
 
 	// Closed
 	private boolean injected;
@@ -177,6 +182,24 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		return value != null ? value : MinecraftProtocolVersion.getCurrentVersion();
 	}
 
+	private void updateBufferMethods() {
+		try {
+			decodeBuffer = vanillaDecoder.getClass().getDeclaredMethod("decode",
+					ChannelHandlerContext.class, ByteBuf.class, List.class);
+			decodeBuffer.setAccessible(true);
+		} catch (NoSuchMethodException ex) {
+			throw new IllegalArgumentException("Unable to find decode method in " + vanillaDecoder.getClass());
+		}
+
+		try {
+			encodeBuffer = vanillaEncoder.getClass().getDeclaredMethod("encode",
+					ChannelHandlerContext.class, Object.class, ByteBuf.class);
+			encodeBuffer.setAccessible(true);
+		} catch (NoSuchMethodException ex) {
+			throw new IllegalArgumentException("Unable to find encode method in " + vanillaEncoder.getClass());
+		}
+	}
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean inject() {
@@ -211,17 +234,12 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
 			patchEncoder(vanillaEncoder);
 
-			if (DECODE_BUFFER == null)
-				DECODE_BUFFER = Accessors.getMethodAccessor(vanillaDecoder.getClass(),
-					"decode", ChannelHandlerContext.class, ByteBuf.class, List.class);
-			if (ENCODE_BUFFER == null)
-				ENCODE_BUFFER = Accessors.getMethodAccessor(vanillaEncoder.getClass(),
-					"encode", ChannelHandlerContext.class, Object.class, ByteBuf.class);
+			updateBufferMethods();
 
 			// Intercept sent packets
 			MessageToByteEncoder<Object> protocolEncoder = new MessageToByteEncoder<Object>() {
 				@Override
-				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) {
+				protected void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 					if (packet instanceof WirePacket) {
 						// Special case for wire format
 						ChannelInjector.this.encodeWirePacket((WirePacket) packet, output);
@@ -314,7 +332,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					Object original = accessor.get(instance);
 
 					// See if we've been instructed not to process packets
-					if (!scheduleProcessPackets.get()) {
+					if (unfilteredProcessedPackets.contains(original)) {
 						NetworkMarker marker = getMarker(original);
 
 						if (marker != null)	{
@@ -396,13 +414,13 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @param packet - the packet to encode to a byte array.
 	 * @param output - the output byte array.
 	 */
-	private void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) {
+	private void encode(ChannelHandlerContext ctx, Object packet, ByteBuf output) throws Exception {
 		NetworkMarker marker = null;
 		PacketEvent event = currentEvent;
 
 		try {
 			// Skip every kind of non-filtered packet
-			if (!scheduleProcessPackets.get()) {
+			if (unfilteredProcessedPackets.remove(packet)) {
 				return;
 			}
 
@@ -415,7 +433,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					// Delay the packet
 					scheduleMainThread(packet);
 					packet = null;
-
 				} else {
 					event = processSending(packet);
 
@@ -434,7 +451,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			// Process output handler
 			if (packet != null && event != null && NetworkMarker.hasOutputHandlers(marker)) {
 				ByteBuf packetBuffer = ctx.alloc().buffer();
-				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, packetBuffer);
+				encodeBuffer.invoke(vanillaEncoder, ctx, packet, packetBuffer);
 
 				// Let each handler prepare the actual output
 				byte[] data = processor.processOutput(event, marker, getBytes(packetBuffer));
@@ -446,13 +463,25 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				// Sent listeners?
 				finalEvent = event;
 			}
+		} catch (InvocationTargetException ex) {
+			if (ex.getCause() instanceof Exception) {
+				throw (Exception) ex.getCause();
+			}
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this,
-				Report.newBuilder(REPORT_CANNOT_INTERCEPT_SERVER_PACKET).callerParam(packet).error(e).build());
+					Report.newBuilder(REPORT_CANNOT_INTERCEPT_SERVER_PACKET).callerParam(packet).error(e).build());
 		} finally {
 			// Attempt to handle the packet nevertheless
 			if (packet != null) {
-				ENCODE_BUFFER.invoke(vanillaEncoder, ctx, packet, output);
+				try {
+					encodeBuffer.invoke(vanillaEncoder, ctx, packet, output);
+				} catch (InvocationTargetException ex) {
+					if (ex.getCause() instanceof Exception) {
+						//noinspection ThrowFromFinallyBlock
+						throw (Exception) ex.getCause();
+					}
+				}
+
 				finalEvent = event;
 			}
 		}
@@ -483,10 +512,15 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	}
 
 	@Override
-	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) {
-		DECODE_BUFFER.invoke(vanillaDecoder, ctx, byteBuffer, packets);
-
+	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
 		try {
+			try {
+				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+			} catch (IllegalArgumentException ex) {
+				updateBufferMethods();
+				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+			}
+
 			// Reset queue
 			finishQueue.clear();
 
@@ -499,8 +533,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				handleLogin(packetClass, input);
 
 				if (channelListener.includeBuffer(packetClass)) {
-					byteBuffer.resetReaderIndex();
-					marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
+					if (byteBuffer.readableBytes() != 0) {
+						byteBuffer.resetReaderIndex();
+						marker = new NettyNetworkMarker(ConnectionSide.CLIENT_SIDE, getBytes(byteBuffer));
+					}
 				}
 
 				PacketEvent output = channelListener.onPacketReceiving(this, input, marker);
@@ -517,6 +553,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						finishQueue.addLast(output);
 					}
 				}
+			}
+		} catch (InvocationTargetException ex) {
+			if (ex.getCause() instanceof Exception) {
+				throw (Exception) ex.getCause();
 			}
 		} catch (Exception e) {
 			channelListener.getReporter().reportDetailed(this,
@@ -632,12 +672,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
 		saveMarker(packet, marker);
 
-		try {
-			scheduleProcessPackets.set(filtered);
-			invokeSendPacket(packet);
-		} finally {
-			scheduleProcessPackets.set(true);
+		if (!filtered) {
+			unfilteredProcessedPackets.add(packet);
 		}
+
+		invokeSendPacket(packet);
 	}
 
 	/**

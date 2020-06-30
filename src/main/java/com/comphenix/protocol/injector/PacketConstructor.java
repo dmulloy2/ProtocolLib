@@ -81,7 +81,7 @@ public class PacketConstructor {
 	 */
 	@Deprecated
 	public int getPacketID() {
-		return type.getLegacyId();
+		return type.getCurrentId();
 	}
 	
 	/**
@@ -101,22 +101,6 @@ public class PacketConstructor {
 		return new PacketConstructor(type, constructorMethod, unwrappers, paramUnwrapper);
 	}
 
-	/**
-	 * Create a packet constructor that creates packets using the given ID.
-	 * <p>
-	 * Note that if you pass a Class as a value, it will use its type directly.
-	 * <p>
-	 * Deprecated: Use {@link #withPacket(PacketType, Object[])} instead.
-	 * @param id - legacy (1.6.4) packet ID.
-	 * @param values - the values that will match each parameter in the desired constructor.
-	 * @return A packet constructor with these types.
-	 * @throws IllegalArgumentException If no packet constructor could be created with these types.
-	 */
-	@Deprecated
-	public PacketConstructor withPacket(int id, Object[] values) {
-		return withPacket(PacketType.findLegacy(id), values);
-	}
-	
 	/**
 	 * Create a packet constructor that creates packets using the given types.
 	 * <p>

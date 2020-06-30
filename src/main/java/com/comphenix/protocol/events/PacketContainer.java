@@ -68,6 +68,7 @@ import org.bukkit.util.Vector;
  * 
  * @author Kristian
  */
+@SuppressWarnings("unused")
 public class PacketContainer implements Serializable {
 	private static final long serialVersionUID = 3;
 	
@@ -113,40 +114,6 @@ public class PacketContainer implements Serializable {
 
 	/**
 	 * Creates a packet container for a new packet.
-	 * <p>
-	 * Deprecated: Use {@link #PacketContainer(PacketType)} instead.
-	 * @param id - ID of the packet to create.
-	 */
-	@Deprecated
-	public PacketContainer(int id) {
-		this(PacketType.findLegacy(id), StructureCache.newPacket(PacketType.findLegacy(id)));
-	}
-	
-	/**
-	 * Creates a packet container for an existing packet.
-	 * @param id - ID of the given packet.
-	 * @param handle - contained packet.
-	 * @deprecated Use {@link #PacketContainer(PacketType, Object)} instead
-	 */
-	@Deprecated
-	public PacketContainer(int id, Object handle) {
-		this(PacketType.findLegacy(id), handle);
-	}
-	
-	/**
-	 * Creates a packet container for an existing packet.
-	 * @param id - ID of the given packet.
-	 * @param handle - contained packet.
-	 * @param structure - structure modifier.
-	 * @deprecated Use {@link #PacketContainer(PacketType, Object, StructureModifier)} instead
-	 */
-	@Deprecated
-	public PacketContainer(int id, Object handle, StructureModifier<Object> structure) {
-		this(PacketType.findLegacy(id), handle, structure);
-	}
-	
-	/**
-	 * Creates a packet container for a new packet.
 	 * @param type - the type of the packet to create.
 	 */
 	public PacketContainer(PacketType type) {
@@ -177,6 +144,11 @@ public class PacketContainer implements Serializable {
 		this.type = type;
 		this.handle = handle;
 		this.structureModifier = structure;
+
+		// TODO this is kinda hacky, come up with a better solution
+		if (type == PacketType.Play.Server.CHAT) {
+			getUUIDs().writeSafely(0, new UUID(0L, 0L));
+		}
 	}
 	
 	/**
@@ -1035,16 +1007,13 @@ public class PacketContainer implements Serializable {
 	}
 
 	/**
-	 * Retrieves the ID of this packet.
-	 * <p>
-	 * Deprecated: Use {@link #getType()} instead.
-	 * @return Packet ID.
+	 * @deprecated Packet IDs are unreliable
 	 */
 	@Deprecated
-	public int getID() {
-		return type.getLegacyId();
+	public int getId() {
+    	return type.getCurrentId();
 	}
-	
+
 	/**
 	 * Retrieve the packet type of this packet.
 	 * @return The packet type.
@@ -1228,61 +1197,6 @@ public class PacketContainer implements Serializable {
 	 */
 	public void removeMeta(String key) {
 		PacketMetadata.remove(handle, key);
-	}
-
-	// ---- Old Metadata API
-	// Scheduled for removal in 4.5
-
-	/**
-	 * Gets the metadata value for a given key.
-	 * 
-	 * @param key Metadata key
-	 * @return Metadata value, or null if nonexistent.
-	 * @deprecated Replaced with {@link #getMeta(String)}
-	 */
-	@Deprecated
-	public Object getMetadata(String key) {
-		return getMeta(key).orElse(null);
-	}
-
-	/**
-	 * Adds metadata to this packet.
-	 * <p>
-	 * Note: Since metadata is lazily initialized, this may result in the creation of the metadata map.
-	 * 
-	 * @param key Metadata key
-	 * @param value Metadata value
-	 * @deprecated Replaced by {@link #setMeta(String, Object)}
-	 */
-	@Deprecated
-	public void addMetadata(String key, Object value) {
-		setMeta(key, value);
-	}
-
-	/**
-	 * Removes metadata from this packet.
-	 * <p>
-	 * Note: If this operation leaves the metadata map empty, the map will be set to null.
-	 * 
-	 * @param key Metadata key
-	 * @return The previous value, or null if nonexistant.
-	 * @deprecated Replaced by {@link #removeMeta(String)}. This one was pretty much just for naming consistency.
-	 */
-	@Deprecated
-	public Object removeMetadata(String key) {
-		return PacketMetadata.remove(handle, key).orElseGet(null);
-	}
-
-	/**
-	 * Whether or not this packet has metadata for a given key.
-	 * 
-	 * @param key Metadata key
-	 * @return True if this packet has metadata for the key, false if not.
-	 * @deprecated Replaced with {@code getMeta(key).isPresent()}
-	 */
-	@Deprecated
-	public boolean hasMetadata(String key) {
-		return getMeta(key).isPresent();
 	}
 
 	/**

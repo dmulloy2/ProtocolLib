@@ -21,6 +21,9 @@ import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.utility.Util;
+
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
@@ -36,22 +39,45 @@ public class Statistics {
 		metrics = new Metrics(plugin);
 		metrics.logFailedRequests(plugin.getProtocolConfig().isDebug());
 
-		// Determine who is using this library
-		addPluginUserGraph(metrics);
+		addCustomGraphs(metrics);
 	}
 
-	private void addPluginUserGraph(Metrics metrics) {
-		metrics.addCustomChart(new Metrics.AdvancedPie("Plugin Users", this::getPluginUsers));
-		metrics.addCustomChart(new Metrics.SimplePie("buildVersion", () -> splitVersion().getRight()));
+	private void addCustomGraphs(Metrics metrics) {
+		metrics.addCustomChart(new Metrics.AdvancedPie("pluginUsers", this::getPluginUsers));
+		metrics.addCustomChart(new Metrics.SimplePie("buildVersion", this::getBuildNumber));
+		metrics.addCustomChart(new Metrics.SimplePie("serverBrand", this::getServerBrand));
 	}
 
-	public static Pair<String, String> splitVersion() {
+	private String getServerBrand() {
+		// spigot doesn't overwrite the serverName, but paper does
+		if (!Bukkit.getServer().getName().equals("CraftBukkit")) {
+			return Bukkit.getServer().getName();
+		} else if (Util.isUsingSpigot()) {
+			return "Spigot";
+		} else {
+			return "CraftBukkit";
+		}
+	}
+
+	private String getBuildNumber() {
 		String version = ProtocolLibrary.getPlugin().getDescription().getVersion();
 		if (version.contains("-b")) {
 			String[] split = version.split("-b");
-			return Pair.of(split[0], split[1]);
+			return split[1];
+		} else if (!version.contains("SNAPSHOT")) {
+			return "Release";
 		} else {
-			return Pair.of(version, "Unknown");
+			return "Unknown";
+		}
+	}
+
+	public static String getVersion() {
+		String version = ProtocolLibrary.getPlugin().getDescription().getVersion();
+		if (version.contains("-b")) {
+			String[] split = version.split("-b");
+			return split[0];
+		} else {
+			return version;
 		}
 	}
 

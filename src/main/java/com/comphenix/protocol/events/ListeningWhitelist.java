@@ -17,11 +17,7 @@
 
 package com.comphenix.protocol.events;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.*;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.GamePhase;
@@ -44,91 +40,19 @@ public class ListeningWhitelist {
 	private final GamePhase gamePhase;
 	private final Set<ListenerOptions> options;
 	private final Set<PacketType> types;
-	
-	// Cache whitelist
-	private transient Set<Integer> intWhitelist;
-	
+
 	private ListeningWhitelist(Builder builder) {
 		this.priority = builder.priority;
 		this.types = builder.types;
 		this.gamePhase = builder.gamePhase;
 		this.options = builder.options;
 	}
-	
-	/**
-	 * Creates a packet whitelist for a given priority with a set of packet IDs.
-	 * <p>
-	 * Deprecated: Use {@link #newBuilder()} instead.
-	 * @param priority - the listener priority.
-	 * @param whitelist - set of IDs to observe/enable.
-	 */
-	@Deprecated
-	public ListeningWhitelist(ListenerPriority priority, Set<Integer> whitelist) {
-		this(priority, whitelist, GamePhase.PLAYING);
-	}
 
-	/**
-	 * Creates a packet whitelist for a given priority with a set of packet IDs.
-	 * <p>
-	 * Deprecated: Use {@link #newBuilder()} instead.
-	 * @param priority - the listener priority.
-	 * @param whitelist - set of IDs to observe/enable.
-	 * @param gamePhase - which game phase to receieve notifications on.
-	 */
-	@Deprecated
-	public ListeningWhitelist(ListenerPriority priority, Set<Integer> whitelist, GamePhase gamePhase) {
+	private ListeningWhitelist(ListenerPriority priority) {
 		this.priority = priority;
-		this.types = PacketRegistry.toPacketTypes(safeSet(whitelist));
-		this.gamePhase = gamePhase;
-		this.options = EnumSet.noneOf(ListenerOptions.class);
-	}
-
-	/**
-	 * Creates a packet whitelist of a given priority for a list of packets.
-	 * <p>
-	 * Deprecated: Use {@link #newBuilder()} instead.
-	 * @param priority - the listener priority.
-	 * @param whitelist - list of packet IDs to observe/enable.
-	 */
-	@Deprecated
-	public ListeningWhitelist(ListenerPriority priority, Integer... whitelist) {
-		this.priority = priority;
-		this.types = PacketRegistry.toPacketTypes(Sets.newHashSet(whitelist));
+		this.types = new HashSet<>();
 		this.gamePhase = GamePhase.PLAYING;
 		this.options = EnumSet.noneOf(ListenerOptions.class);
-	}
-
-	/**
-	 * Creates a packet whitelist for a given priority with a set of packet IDs.
-	 * <p>
-	 * Deprecated: Use {@link #newBuilder()} instead.
-	 * @param priority - the listener priority.
-	 * @param whitelist - list of packet IDs to observe/enable.
-	 * @param gamePhase - which game phase to receieve notifications on.
-	 */
-	@Deprecated
-	public ListeningWhitelist(ListenerPriority priority, Integer[] whitelist, GamePhase gamePhase) {
-		this.priority = priority;
-		this.types = PacketRegistry.toPacketTypes(Sets.newHashSet(whitelist));
-		this.gamePhase = gamePhase;
-		this.options = EnumSet.noneOf(ListenerOptions.class);
-	}
-
-	/**
-	 * Creates a packet whitelist for a given priority with a set of packet IDs and options.
-	 * <p>
-	 * Deprecated: Use {@link #newBuilder()} instead.
-	 * @param priority - the listener priority.
-	 * @param whitelist - list of packet IDs to observe/enable.
-	 * @param gamePhase - which game phase to receieve notifications on.
-	 * @param options - every special option associated with this whitelist.
-	 */
-	@Deprecated
-	public ListeningWhitelist(ListenerPriority priority, Integer[] whitelist, GamePhase gamePhase, ListenerOptions... options) {
-		this.priority = priority;
-		this.types = PacketRegistry.toPacketTypes(Sets.newHashSet(whitelist));
-		this.gamePhase = gamePhase;
-		this.options = safeEnumSet(Arrays.asList(options), ListenerOptions.class);
 	}
 
 	/**
@@ -145,19 +69,6 @@ public class ListeningWhitelist {
 	 */
 	public ListenerPriority getPriority() {
 		return priority;
-	}
-
-	/**
-	 * Retrieves the list of packets that will be observed by the listeners.
-	 * <p>
-	 * Deprecated: Use {@link #getTypes()} instead.
-	 * @return Packet whitelist.
-	 */
-	@Deprecated
-	public Set<Integer> getWhitelist() {
-		if (intWhitelist == null)
-			intWhitelist = PacketRegistry.toLegacy(types);
-		return intWhitelist;
 	}
 
 	/**
@@ -187,23 +98,6 @@ public class ListeningWhitelist {
 	@Override
 	public int hashCode() {
 		return Objects.hashCode(priority, types, gamePhase, options);
-	}
-
-	/**
-	 * Determine if any of the given IDs can be found in the whitelist.
-	 * @param whitelist - whitelist to test.
-	 * @param idList - list of packet IDs to find.
-	 * @return TRUE if any of the packets in the list can be found in the whitelist, FALSE otherwise.
-	 */
-	public static boolean containsAny(ListeningWhitelist whitelist, int... idList) {
-		if (whitelist != null) {
-			for (int i = 0; i < idList.length; i++) {
-				if (whitelist.getWhitelist().contains(idList[i]))
-					return true;
-			}
-		}
-
-		return false;
 	}
 
 	/**
@@ -273,7 +167,7 @@ public class ListeningWhitelist {
 	
 	/**
 	 * Construct a copy of a given set.
-	 * @param list - the set to copy.
+	 * @param set - the set to copy.
 	 * @return The copied set.
 	 */
 	private static <T> Set<T> safeSet(Collection<T> set) {
@@ -364,20 +258,7 @@ public class ListeningWhitelist {
 		public Builder high() {
 			return priority(ListenerPriority.HIGH);
 		}
-		
-		/**
-		 * Set the whitelist of packet IDs to copy when constructing new whitelists.
-		 * <p>
-		 * Deprecated: Use {@link #types(Collection)} instead.
-		 * @param whitelist - the whitelist of packets.
-		 * @return This builder, for chaining.
-		 */
-		@Deprecated
-		public Builder whitelist(Collection<Integer> whitelist) {
-			this.types = PacketRegistry.toPacketTypes(safeSet(whitelist));
-			return this;
-		}
-		
+
 		/**
 		 * Set the whitelist of packet types to copy when constructing new whitelists.
 		 * @param types - the whitelist of packets.

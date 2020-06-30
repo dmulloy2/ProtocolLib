@@ -42,83 +42,63 @@ public interface AsynchronousManager {
 	 * @param listener - the packet listener that will receive these asynchronous events.
 	 * @return An asynchronous handler.
 	 */
-	public abstract AsyncListenerHandler registerAsyncHandler(PacketListener listener);
+	AsyncListenerHandler registerAsyncHandler(PacketListener listener);
 
 	/**
 	 * Unregisters and closes the given asynchronous handler.
 	 * @param handler - asynchronous handler.
 	 */
-	public abstract void unregisterAsyncHandler(AsyncListenerHandler handler);
+	void unregisterAsyncHandler(AsyncListenerHandler handler);
 
 	/**
 	 * Unregisters and closes the first asynchronous handler associated with the given listener.
 	 * @param listener - asynchronous listener
 	 */
-	public abstract void unregisterAsyncHandler(PacketListener listener);
+	void unregisterAsyncHandler(PacketListener listener);
 	
 	/**
 	 * Unregisters every asynchronous handler associated with this plugin.
 	 * @param plugin - the original plugin.
 	 */
-	public void unregisterAsyncHandlers(Plugin plugin);
-	
-	/**
-	 * Retrieves a immutable set containing the ID of the sent server packets that will be
-	 * observed by the asynchronous listeners.
-	 * <p>
-	 * Deprecated: Use {@link #getSendingTypes()} instead.
-	 * @return Every filtered server packet.
-	 */
-	@Deprecated
-	public abstract Set<Integer> getSendingFilters();
+	void unregisterAsyncHandlers(Plugin plugin);
 
 	/**
 	 * Retrieves a immutable set containing the types of the sent server packets that will be
 	 * observed by the asynchronous listeners.
 	 * @return Every filtered server packet.
 	 */
-	public abstract Set<PacketType> getSendingTypes();
-	
-	/**
-	 * Retrieves a immutable set containing the ID of the recieved client packets that will be
-	 * <p>
-	 * Deprecated: Use {@link #getReceivingTypes()} instead.
-	 * observed by the asynchronous listeners.
-	 * @return Every filtered client packet.
-	 */
-	@Deprecated
-	public abstract Set<Integer> getReceivingFilters();
-	
+	Set<PacketType> getSendingTypes();
+
 	/**
 	 * Retrieves a immutable set containing the types of the received client packets that will be
 	 * observed by the asynchronous listeners.
 	 * @return Every filtered client packet.
 	 */
-	public abstract Set<PacketType> getReceivingTypes();
+	Set<PacketType> getReceivingTypes();
 
 	/**
 	 * Determine if a given synchronous packet has asynchronous listeners.
 	 * @param packet - packet to test.
 	 * @return TRUE if it does, FALSE otherwise.
 	 */
-	public abstract boolean hasAsynchronousListeners(PacketEvent packet);
+	boolean hasAsynchronousListeners(PacketEvent packet);
 
 	/**
 	 * Retrieve the default packet stream.
 	 * @return Default packet stream.
 	 */
-	public abstract PacketStream getPacketStream();
+	PacketStream getPacketStream();
 
 	/**
 	 * Retrieve the default error reporter.
 	 * @return Default reporter.
 	 */
-	public abstract ErrorReporter getErrorReporter();
+	ErrorReporter getErrorReporter();
 
 	/**
 	 * Remove listeners, close threads and transmit every delayed packet.
 	 */
-	public abstract void cleanupAll();
+	void cleanupAll();
 
 	/**
 	 * Signal that a packet is ready to be transmitted.
@@ -127,29 +107,29 @@ public interface AsynchronousManager {
 	 * has been called previously.
 	 * @param packet - packet to signal.
 	 */
-	public abstract void signalPacketTransmission(PacketEvent packet);
+	void signalPacketTransmission(PacketEvent packet);
 
 	/**
 	 * Register a synchronous listener that handles packets when they time out.
 	 * @param listener - synchronous listener that will handle timed out packets.
 	 */
-	public abstract void registerTimeoutHandler(PacketListener listener);
+	void registerTimeoutHandler(PacketListener listener);
 	
 	/**
 	 * Unregisters a given timeout listener.
 	 * @param listener - the timeout listener to unregister.
 	 */
-	public abstract void unregisterTimeoutHandler(PacketListener listener);
+	void unregisterTimeoutHandler(PacketListener listener);
 
 	/**
 	 * Get a immutable set of every registered timeout handler.
 	 * @return Set of every registered timeout handler.
 	 */
-	public abstract Set<PacketListener> getTimeoutHandlers();
+	Set<PacketListener> getTimeoutHandlers();
 
 	/**
 	 * Get an immutable set of every registered asynchronous packet listener.
 	 * @return Set of every asynchronous packet listener.
 	 */
-	public abstract Set<PacketListener> getAsyncHandlers();
+	Set<PacketListener> getAsyncHandlers();
 }

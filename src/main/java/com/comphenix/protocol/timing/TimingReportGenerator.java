@@ -113,7 +113,7 @@ public class TimingReportGenerator {
 	}
 
 	private String getPacketId(PacketType type) {
-		return Strings.padStart(Integer.toString(type.getCurrentId()), 2, '0') + " (Legacy: " + type.getLegacyId() + ")";
+		return Strings.padStart(Integer.toString(type.getCurrentId()), 2, '0');
 	}
 	
 	/**

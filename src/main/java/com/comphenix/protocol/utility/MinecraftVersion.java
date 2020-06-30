@@ -45,6 +45,16 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	private static final Pattern VERSION_PATTERN = Pattern.compile(".*\\(.*MC.\\s*([a-zA-z0-9\\-.]+).*");
 
 	/**
+	 * Version 1.16 - the nether update
+	 */
+	public static final MinecraftVersion NETHER_UPDATE = new MinecraftVersion("1.16");
+
+	/**
+	 * Version 1.15 - the bee update
+	 */
+	public static final MinecraftVersion BEE_UPDATE = new MinecraftVersion("1.15");
+
+	/**
 	 * Version 1.14 - village and pillage update.
 	 */
 	public static final MinecraftVersion VILLAGE_UPDATE = new MinecraftVersion("1.14");
@@ -257,6 +267,10 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	 */
 	public boolean isSnapshot() {
 		return snapshot != null;
+	}
+
+	public boolean atOrAbove() {
+		return MinecraftVersion.getCurrentVersion().isAtLeast(this);
 	}
 	
 	/**

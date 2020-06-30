@@ -1313,11 +1313,9 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieve the WatchableObject class.
+	 * Retrieve the WatchableObject class. Replaced by {@link #getDataWatcherItemClass()}
 	 * @return The WatchableObject class.
-	 * @deprecated Replaced by {@link #getDataWatcherItemClass()}
 	 */
-	@Deprecated
 	public static Class<?> getWatchableObjectClass() {
 		return getDataWatcherItemClass();
 	}

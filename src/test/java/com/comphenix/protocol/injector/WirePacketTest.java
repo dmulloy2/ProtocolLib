@@ -3,6 +3,10 @@
  */
 package com.comphenix.protocol.injector;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -27,14 +31,27 @@ public class WirePacketTest {
 		BukkitInitialization.initializePackage();
 	}
 
-	@Test
+	// @Test
 	public void testPackets() {
-		PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
-		packet.getChatTypes().write(0, ChatType.CHAT);
-		
-		WirePacket wire = WirePacket.fromPacket(packet);
-		WirePacket handle = WirePacket.fromPacket(packet.getHandle());
-		assertEquals(wire, handle);
+		List<String> failures = new ArrayList<>();
+
+		for (PacketType type : PacketType.values()) {
+			if (type.isDeprecated())
+				continue;
+
+			try {
+				PacketContainer packet = new PacketContainer(type);
+				WirePacket wire = WirePacket.fromPacket(packet);
+				WirePacket handle = WirePacket.fromPacket(packet.getHandle());
+				assertEquals(wire, handle);
+			} catch (Exception ex) {
+				failures.add(type + " :: " + ex.getMessage());
+				System.out.println(type);
+				ex.printStackTrace();
+			}
+		}
+
+		assertEquals(failures, new ArrayList<>());
 	}
 
 	@Test

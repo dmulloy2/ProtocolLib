@@ -4,10 +4,10 @@
     <groupId>com.comphenix.protocol</groupId>
 	<artifactId>ProtocolLib</artifactId>
 	<name>ProtocolLib</name>
-	<version>4.5.0-SNAPSHOT</version>
+	<version>4.6.0-SNAPSHOT</version>
 
 	<description>Provides read/write access to the Minecraft protocol.</description>
-	<url>http://www.spigotmc.org/resources/protocollib.1997/</url>
+	<url>https://github.com/dmulloy2/ProtocolLib</url>
 	<packaging>jar</packaging>
 	<inceptionYear>2012</inceptionYear>
 
@@ -16,8 +16,8 @@
 		<project.build.number></project.build.number>
 		<project.fullVersion>${project.version}</project.fullVersion>
 
-		<powermock.version>2.0.4</powermock.version>
-		<spigot.version>1.14.4-R0.1-SNAPSHOT</spigot.version>
+		<powermock.version>2.0.7</powermock.version>
+		<spigot.version>1.16.1-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
 	<build>
@@ -38,7 +38,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.1.1</version>
+				<version>3.2.1</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -71,7 +71,7 @@
 
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.7.0</version>
+				<version>3.8.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -81,7 +81,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.1.0</version>
+				<version>3.2.0</version>
 				<configuration>
 					<archive>
 						<manifestEntries>
@@ -98,7 +98,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.0</version>
+				<version>3.0.0-M4</version>
 				<configuration>
 					<systemProperties>
 						<property>
@@ -111,7 +111,7 @@
 
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>3.1.1</version>
 				<configuration>
 					<failOnError>false</failOnError>
 					<encoding>ISO-8859-1</encoding>
@@ -146,6 +146,7 @@
 			<properties>
 				<project.build.number>-b${env.BUILD_NUMBER}</project.build.number>
 				<project.fullVersion>${project.version}${project.build.number}</project.fullVersion>
+				<!--<project.fullVersion>${project.version}</project.fullVersion>-->
 			</properties>
 		</profile>
 
@@ -165,7 +166,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
-						<version>3.0.0</version>
+						<version>3.2.0</version>
 						<executions>
 							<execution>
 								<id>attach-sources</id>
@@ -179,7 +180,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.10.3</version>
+						<version>3.1.1</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -251,18 +252,18 @@
 	<distributionManagement>
 		<repository>
 			<id>dmulloy2-releases</id>
-			<url>http://repo.dmulloy2.net/nexus/repository/releases/</url>
+			<url>https://repo.dmulloy2.net/nexus/repository/releases/</url>
 		</repository>
 		<snapshotRepository>
 			<id>dmulloy2-snapshots</id>
-			<url>http://repo.dmulloy2.net/nexus/repository/snapshots/</url>
+			<url>https://repo.dmulloy2.net/nexus/repository/snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
 
 	<repositories>
 		<repository>
 			<id>dmulloy2-repo</id>
-			<url>http://repo.dmulloy2.net/nexus/repository/public/</url>
+			<url>https://repo.dmulloy2.net/nexus/repository/public/</url>
 		</repository>
 		<repository>
 			<id>spigot-repo</id>
@@ -297,25 +298,17 @@
 			<scope>compile</scope>
 		</dependency>
 
-		<!-- TODO fold BukkitExecutors into ProtocolLib -->
-		<dependency>
-			<groupId>com.comphenix.executors</groupId>
-			<artifactId>BukkitExecutors</artifactId>
-			<version>1.1-SNAPSHOT</version>
-			<scope>compile</scope>
-		</dependency>
-
 		<!-- Testing dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.12</version>
+			<version>4.13</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>2.21.0</version>
+			<version>3.3.3</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

@@ -201,10 +201,12 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
 		NbtBase<?> nbt = getValue(key);
 
 		// Create or get a compound
-		if (nbt == null) 
-			put(nbt = NbtFactory.ofWrapper(type, key));
-		else if (nbt.getType() != type) 
+		if (nbt == null) {
+			nbt = NbtFactory.ofWrapper(type, key);
+			put(nbt);
+		} else if (nbt.getType() != type) {
 			throw new IllegalArgumentException("Cannot get tag " + nbt + ": Not a " + type);
+		}
 		
 		return nbt;
 	}

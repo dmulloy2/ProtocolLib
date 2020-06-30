@@ -37,22 +37,9 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  */
 public class StructureCache {
 	// Structure modifiers
-	private static ConcurrentMap<PacketType, StructureModifier<Object>> structureModifiers =
-			new ConcurrentHashMap<PacketType, StructureModifier<Object>>();
+	private static ConcurrentMap<PacketType, StructureModifier<Object>> structureModifiers = new ConcurrentHashMap<>();
 
-	private static Set<PacketType> compiling = new HashSet<PacketType>();
-
-	/**
-	 * Creates an empty Minecraft packet of the given id.
-	 * <p>
-	 * Decreated: Use {@link #newPacket(PacketType)} instead.
-	 * @param legacyId - legacy (1.6.4) packet id.
-	 * @return Created packet.
-	 */
-	@Deprecated
-	public static Object newPacket(int legacyId) {
-		return newPacket(PacketType.findLegacy(legacyId));
-	}
+	private static Set<PacketType> compiling = new HashSet<>();
 
 	/**
 	 * Creates an empty Minecraft packet of the given type.
@@ -74,18 +61,6 @@ public class StructureCache {
 			return result;
 		}
 		throw new IllegalArgumentException("Cannot find associated packet class: " + type);
-	}
-
-	/**
-	 * Retrieve a cached structure modifier for the given packet id.
-	 * <p>
-	 * Deprecated: Use {@link #getStructure(PacketType)} instead.
-	 * @param legacyId - the legacy (1.6.4) packet ID.
-	 * @return A structure modifier.
-	 */
-	@Deprecated
-	public static StructureModifier<Object> getStructure(int legacyId) {
-		return getStructure(PacketType.findLegacy(legacyId));
 	}
 
 	/**
@@ -117,19 +92,6 @@ public class StructureCache {
 	public static StructureModifier<Object> getStructure(Class<?> packetType, boolean compile) {
 		// Get the ID from the class
 		return getStructure(PacketRegistry.getPacketType(packetType), compile);
-	}
-
-	/**
-	 * Retrieve a cached structure modifier for the given packet ID.
-	 * <p>
-	 * Deprecated: Use {@link #getStructure(PacketType, boolean)} instead.
-	 * @param legacyId - the legacy (1.6.4) packet ID.
-	 * @param compile - whether or not to asynchronously compile the structure modifier.
-	 * @return A structure modifier.
-	 */
-	@Deprecated
-	public static StructureModifier<Object> getStructure(final int legacyId, boolean compile) {
-		return getStructure(PacketType.findLegacy(legacyId), compile);
 	}
 
 	/**

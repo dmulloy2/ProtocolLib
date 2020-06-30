@@ -19,7 +19,6 @@ package com.comphenix.protocol.injector;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 
 /**
  * Represents an object that initiate the packet listeners.
@@ -32,13 +31,13 @@ public interface ListenerInvoker {
 	 * Invokes the given packet event for every registered listener.
 	 * @param event - the packet event to invoke.
 	 */
-	public abstract void invokePacketRecieving(PacketEvent event);
+	void invokePacketRecieving(PacketEvent event);
 
 	/**
 	 * Invokes the given packet event for every registered listener.
 	 * @param event - the packet event to invoke.
 	 */
-	public abstract void invokePacketSending(PacketEvent event);
+	void invokePacketSending(PacketEvent event);
 
 	/**
 	 * Retrieve the associated ID of a packet.
@@ -46,49 +45,12 @@ public interface ListenerInvoker {
 	 * @return The packet ID.
 	 */
 	@Deprecated
-	public abstract int getPacketID(Object packet);
+	int getPacketID(Object packet);
 
 	/**
 	 * Retrieve the associated type of a packet.
 	 * @param packet - the packet.
 	 * @return The packet type.
 	 */
-	public abstract PacketType getPacketType(Object packet);
-	
-	/**
-	 * Retrieve the object responsible for intercepting write packets.
-	 * @return Object that intercepts write packets.
-	 */
-	public InterceptWritePacket getInterceptWritePacket();
-	
-	/**
-	 * Determine if a given packet requires input buffering.
-	 * @param packetId - the packet to check.
-	 * @return TRUE if it does, FALSE otherwise.
-	 */
-	@Deprecated
-	public boolean requireInputBuffer(int packetId);
-	
-	/**
-	 * Associate a given class with the given packet ID. Internal method.
-	 * @param clazz - class to associate.
-	 */
-	public abstract void unregisterPacketClass(Class<?> clazz);
-
-	/**
-	 * Register a given class in the packet registry. Internal method.
-	 * @param clazz - class to register.
-	 * @param packetID - the the new associated packet ID.
-	 */
-	@Deprecated
-	public abstract void registerPacketClass(Class<?> clazz, int packetID);
-
-	/**
-	 * Retrieves the correct packet class from a given packet ID.
-	 * @param packetID - the packet ID.
- 	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
-	 * @return The associated class.
-	 */
-	@Deprecated
-	public abstract Class<?> getPacketClassFromID(int packetID, boolean forceVanilla);
+	PacketType getPacketType(Object packet);
 }

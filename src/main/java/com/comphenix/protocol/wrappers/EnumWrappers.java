@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
@@ -21,6 +22,7 @@ import org.bukkit.GameMode;
  * Represents a generic enum converter.
  * @author Kristian
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class EnumWrappers {
 	public enum ClientCommand {
 		PERFORM_RESPAWN,
@@ -159,16 +161,26 @@ public abstract class EnumWrappers {
 		SWAP_HELD_ITEMS
 	}
 
-	public enum PlayerAction {
-		START_SNEAKING,
-		STOP_SNEAKING,
+	public enum PlayerAction implements AliasedEnum {
+		START_SNEAKING("PRESS_SHIFT_KEY"),
+		STOP_SNEAKING("RELEASE_SHIFT_KEY"),
 		STOP_SLEEPING,
 		START_SPRINTING,
 		STOP_SPRINTING,
 		START_RIDING_JUMP,
 		STOP_RIDING_JUMP,
 		OPEN_INVENTORY,
-		START_FALL_FLYING
+		START_FALL_FLYING;
+
+		String[] aliases;
+		PlayerAction(String... aliases) {
+			this.aliases = aliases;
+		}
+
+		@Override
+		public String[] getAliases() {
+			return aliases;
+		}
 	}
 
 	public enum ScoreboardAction {
@@ -410,7 +422,7 @@ public abstract class EnumWrappers {
 		SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.CUSTOM_SOUND_EFFECT.getPacketClass(), 0);
 		ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
 		HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
-		DIRECTION_CLASS = getEnum(PacketType.Play.Client.USE_ITEM.getPacketClass(), 0);
+		DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
@@ -617,7 +629,7 @@ public abstract class EnumWrappers {
 	}
 
 	public static EquivalentConverter<PlayerAction> getEntityActionConverter() {
-		return new EnumConverter<>(getPlayerActionClass(), PlayerAction.class);
+		return new AliasedEnumConverter<>(getPlayerActionClass(), PlayerAction.class);
 	}
 
 	public static EquivalentConverter<ScoreboardAction> getUpdateScoreActionConverter() {
@@ -666,8 +678,9 @@ public abstract class EnumWrappers {
 		return new EnumConverter<>(null, specificType);
 	}
 
-	// The common enum converter
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	/**
+	 * The common Enum converter
+	 */
 	public static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
 		private Class<?> genericType;
 		private Class<T> specificType;
@@ -694,6 +707,74 @@ public abstract class EnumWrappers {
 
 		void setGenericType(Class<?> genericType) {
 			this.genericType = genericType;
+		}
+	}
+
+	public interface AliasedEnum {
+		String[] getAliases();
+	}
+
+	/**
+	 * Enums whose name has changed across NMS versions. Enums using this must also implement {@link AliasedEnum}
+	 */
+	public static class AliasedEnumConverter<T extends Enum<T> & AliasedEnum> implements EquivalentConverter<T> {
+		private Class<?> genericType;
+		private Class<T> specificType;
+
+		private Map<T, Object> genericMap = new ConcurrentHashMap<>();
+		private Map<Object, T> specificMap = new ConcurrentHashMap<>();
+
+		public AliasedEnumConverter(Class<?> genericType, Class<T> specificType) {
+			this.genericType = genericType;
+			this.specificType = specificType;
+		}
+
+		@Override
+		public T getSpecific(Object generic) {
+			return specificMap.computeIfAbsent(generic, x -> {
+				String name = ((Enum) generic).name();
+
+				try {
+					return Enum.valueOf(specificType, name);
+				} catch (Exception ex) {
+					for (T elem : specificType.getEnumConstants()) {
+						for (String alias : elem.getAliases()) {
+							if (alias.equals(name)) {
+								return elem;
+							}
+						}
+					}
+				}
+
+				throw new IllegalArgumentException("Unknown enum constant " + name);
+			});
+		}
+
+		@Override
+		public Object getGeneric(T specific) {
+			return genericMap.computeIfAbsent(specific, x -> {
+				String name = specific.name();
+
+				try {
+					return Enum.valueOf((Class) genericType, specific.name());
+				} catch (Exception ex) {
+					for (Object rawElem : genericType.getEnumConstants()) {
+						Enum elem = (Enum) rawElem;
+						for (String alias : specific.getAliases()) {
+							if (alias.equals(elem.name())) {
+								return elem;
+							}
+						}
+					}
+				}
+
+				throw new IllegalArgumentException("Unknown enum constant " + name);
+			});
+		}
+
+		@Override
+		public Class<T> getSpecificType() {
+			return specificType;
 		}
 	}
 

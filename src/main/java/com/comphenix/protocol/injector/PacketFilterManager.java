@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nullable;
+import java.util.function.Predicate;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
@@ -37,24 +37,20 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.netty.ProtocolInjector;
 import com.comphenix.protocol.injector.netty.WirePacket;
-import com.comphenix.protocol.injector.packet.InterceptWritePacket;
 import com.comphenix.protocol.injector.packet.PacketInjector;
-import com.comphenix.protocol.injector.packet.PacketInjectorBuilder;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
-import com.comphenix.protocol.injector.player.PlayerInjector.ServerHandlerNull;
-import com.comphenix.protocol.injector.player.PlayerInjectorBuilder;
-import com.comphenix.protocol.injector.spigot.SpigotPacketInjector;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+
+import io.netty.channel.Channel;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -71,8 +67,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
-
-import io.netty.channel.Channel;
 
 public final class PacketFilterManager implements ListenerInvoker, InternalManager {
 
@@ -106,17 +100,13 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	private DelayedSingleTask unhookTask;
 
 	// Create a concurrent set
-	private Set<PacketListener> packetListeners =
-			Collections.newSetFromMap(new ConcurrentHashMap<PacketListener, Boolean>());
+	private Set<PacketListener> packetListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	// Packet injection
 	private PacketInjector packetInjector;
 
 	// Different injection types per game phase
 	private PlayerInjectionHandler playerInjection;
-
-	// Intercepting write packet methods
-	private InterceptWritePacket interceptWritePacket;
 
 	// Whether or not a packet must be input buffered
 	private volatile Set<PacketType> inputBufferedPackets = Sets.newHashSet();
@@ -154,9 +144,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	// Whether or not plugins are using the send/receive methods
 	private AtomicBoolean packetCreation = new AtomicBoolean();
 
-	// Spigot listener, if in use
-	private SpigotPacketInjector spigotInjector;
-
 	// Netty injector (for 1.7.2)
 	private ProtocolInjector nettyInjector;
 
@@ -169,9 +156,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	// The current Minecraft version
 	private MinecraftVersion minecraftVersion;
 
-	// Login packets
-	private LoginPackets loginPackets;
-
 	// Debug mode
 	private boolean debug;
 
@@ -181,18 +165,15 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	 */
 	public PacketFilterManager(PacketFilterBuilder builder) {
 		// Used to determine if injection is needed
-		Predicate<GamePhase> isInjectionNecessary = new Predicate<GamePhase>() {
-			@Override
-			public boolean apply(@Nullable GamePhase phase) {
-				boolean result = true;
+		Predicate<GamePhase> isInjectionNecessary = phase -> {
+			boolean result = true;
 
-				if (phase.hasLogin())
-					result &= getPhaseLoginCount() > 0;
-				// Note that we will still hook players if the unhooking has been delayed
-				if (phase.hasPlaying())
-					result &= getPhasePlayingCount() > 0 || unhookTask.isRunning();
-				return result;
-			}
+			if (phase.hasLogin())
+				result &= getPhaseLoginCount() > 0;
+			// Note that we will still hook players if the unhooking has been delayed
+			if (phase.hasPlaying())
+				result &= getPhasePlayingCount() > 0 || unhookTask.isRunning();
+			return result;
 		};
 
 		// Listener containers
@@ -217,47 +198,11 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 
 		// Prepare version
 		this.minecraftVersion = builder.getMinecraftVersion();
-		this.loginPackets = new LoginPackets(minecraftVersion);
 
-		// The write packet interceptor
-		this.interceptWritePacket = new InterceptWritePacket(reporter);
+		this.nettyInjector = new ProtocolInjector(builder.getLibrary(), this, reporter);
+		this.playerInjection = nettyInjector.getPlayerInjector();
+		this.packetInjector = nettyInjector.getPacketInjector();
 
-		// Use the correct injection type
-		if (MinecraftReflection.isUsingNetty()) {
-			this.nettyInjector = new ProtocolInjector(builder.getLibrary(), this, reporter);
-			this.playerInjection = nettyInjector.getPlayerInjector();
-			this.packetInjector = nettyInjector.getPacketInjector();
-
-		} else if (builder.isNettyEnabled()) {
-			this.spigotInjector = new SpigotPacketInjector(reporter, this, server);
-			this.playerInjection = spigotInjector.getPlayerHandler();
-			this.packetInjector = spigotInjector.getPacketInjector();
-
-			// Set real injector, in case we need it
-			spigotInjector.setProxyPacketInjector(PacketInjectorBuilder.newBuilder().
-					invoker(this).
-					reporter(reporter).
-					playerInjection(playerInjection).
-					buildInjector()
-			);
-
-		} else {
-			// Initialize standard injection mangers
-			this.playerInjection = PlayerInjectorBuilder.newBuilder().
-					invoker(this).
-					server(server).
-					reporter(reporter).
-					packetListeners(packetListeners).
-					injectionFilter(isInjectionNecessary).
-					version(builder.getMinecraftVersion()).
-					buildHandler();
-
-			this.packetInjector = PacketInjectorBuilder.newBuilder().
-					invoker(this).
-					reporter(reporter).
-					playerInjection(playerInjection).
-					buildInjector();
-		}
 		this.asyncFilterManager = builder.getAsyncManager();
 		this.library = builder.getLibrary();
 
@@ -329,11 +274,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	@Override
 	public ImmutableSet<PacketListener> getPacketListeners() {
 		return ImmutableSet.copyOf(packetListeners);
-	}
-
-	@Override
-	public InterceptWritePacket getInterceptWritePacket() {
-		return interceptWritePacket;
 	}
 
 	/**
@@ -410,13 +350,25 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 		}
 	}
 
+	/**
+	 * Determine if a given packet may be sent during login.
+	 * @param type - the packet type.
+	 * @return TRUE if it may, FALSE otherwise.
+	 */
+	public boolean isLoginPacket(PacketType type) {
+		return PacketType.Login.Client.getInstance().hasMember(type) ||
+				PacketType.Login.Server.getInstance().hasMember(type) ||
+				PacketType.Status.Client.getInstance().hasMember(type) ||
+				PacketType.Status.Server.getInstance().hasMember(type);
+	}
+
 	private GamePhase processPhase(ListeningWhitelist whitelist) {
 		// Determine if this is a login packet, ensuring that gamephase detection is enabled
 		if (!whitelist.getGamePhase().hasLogin() &&
 			!whitelist.getOptions().contains(ListenerOptions.DISABLE_GAMEPHASE_DETECTION)) {
 
 			for (PacketType type : whitelist.getTypes()) {
-				if (loginPackets.isLoginPacket(type)) {
+				if (isLoginPacket(type)) {
 					return GamePhase.BOTH;
 				}
 			}
@@ -563,11 +515,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 		if (!hasClosed) {
 			handlePacket(sendingListeners, event, true);
 		}
-	}
-
-	@Override
-	public boolean requireInputBuffer(int packetId) {
-		return inputBufferedPackets.contains(PacketType.findLegacy(packetId, Sender.CLIENT));
 	}
 
 	/**
@@ -859,20 +806,8 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	}
 
 	@Override
-	@Deprecated
-	public PacketContainer createPacket(int id) {
-		return createPacket(PacketType.findLegacy(id), true);
-	}
-
-	@Override
 	public PacketContainer createPacket(PacketType type) {
 		return createPacket(type, true);
-	}
-
-	@Override
-	@Deprecated
-	public PacketContainer createPacket(int id, boolean forceDefaults) {
-		return createPacket(PacketType.findLegacy(id), forceDefaults);
 	}
 
 	@Override
@@ -892,26 +827,10 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	}
 
 	@Override
-	@Deprecated
-	public PacketConstructor createPacketConstructor(int id, Object... arguments) {
-		return PacketConstructor.DEFAULT.withPacket(id, arguments);
-	}
-
-	@Override
 	public PacketConstructor createPacketConstructor(PacketType type, Object... arguments) {
 		return PacketConstructor.DEFAULT.withPacket(type, arguments);
 	}
 
-	@Override
-	@Deprecated
-	public Set<Integer> getSendingFilters() {
-		return PacketRegistry.toLegacy(playerInjection.getSendingFilters());
-	}
-
-	@Override
-	public Set<Integer> getReceivingFilters() {
-		return PacketRegistry.toLegacy(packetInjector.getPacketHandlers());
-	}
 	@Override
 	public Set<PacketType> getSendingFilterTypes() {
 		return Collections.unmodifiableSet(playerInjection.getSendingFilters());
@@ -964,8 +883,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	 */
 	@Override
 	public void registerEvents(PluginManager manager, final Plugin plugin) {
-		if (spigotInjector != null && !spigotInjector.register(plugin))
-			throw new IllegalArgumentException("Spigot has already been registered.");
 		if (nettyInjector != null)
 			nettyInjector.inject();
 
@@ -1012,8 +929,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 			// Let's clean up the other injection first.
 			playerInjection.uninjectPlayer(event.getPlayer().getAddress());
 			playerInjection.injectPlayer(event.getPlayer(), ConflictStrategy.OVERRIDE);
-		} catch (ServerHandlerNull e) {
-			// Caused by logged out players, or fake login events in MCPC+/Cauldron. Ignore it.
 		} catch (Exception e) {
 			reporter.reportDetailed(PacketFilterManager.this,
 					Report.newBuilder(REPORT_CANNOT_INJECT_PLAYER).callerParam(event).error(e)
@@ -1087,44 +1002,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 		}
 	}
 
-	@Override
-	@Deprecated
-	public void registerPacketClass(Class<?> clazz, int packetID) {
-		PacketRegistry.getPacketToID().put(clazz, packetID);
-	}
-
-	@Override
-	@Deprecated
-	public void unregisterPacketClass(Class<?> clazz) {
-		PacketRegistry.getPacketToID().remove(clazz);
-	}
-
-	@Override
-	@Deprecated
-	public Class<?> getPacketClassFromID(int packetID, boolean forceVanilla) {
-		return PacketRegistry.getPacketClassFromID(packetID, forceVanilla);
-	}
-
-	/**
-	 * Retrieve every known and supported server packet.
-	 * @return An immutable set of every known server packet.
-	 * @throws FieldAccessException If we're unable to retrieve the server packet data from Minecraft.
-	 */
-	@Deprecated
-	public static Set<Integer> getServerPackets() throws FieldAccessException {
-		return PacketRegistry.getServerPackets();
-	}
-
-	/**
-	 * Retrieve every known and supported client packet.
-	 * @return An immutable set of every known client packet.
-	 * @throws FieldAccessException If we're unable to retrieve the client packet data from Minecraft.
-	 */
-	@Deprecated
-	public static Set<Integer> getClientPackets() throws FieldAccessException {
-		return PacketRegistry.getClientPackets();
-	}
-
 	/**
 	 * Retrieves the current plugin class loader.
 	 * @return Class loader.
@@ -1147,8 +1024,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 		// Remove packet handlers
 		if (packetInjector != null)
 			packetInjector.cleanupAll();
-		if (spigotInjector != null)
-			spigotInjector.cleanupAll();
 		if (nettyInjector != null)
 			nettyInjector.close();
 
@@ -1160,9 +1035,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 		packetListeners.clear();
 		recievedListeners = null;
 		sendingListeners = null;
-
-		// Also cleanup the interceptor for the write packet method
-		interceptWritePacket.cleanup();
 
 		// Clean up async handlers. We have to do this last.
 		asyncFilterManager.cleanupAll();

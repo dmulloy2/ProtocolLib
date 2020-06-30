@@ -283,44 +283,7 @@ public class StreamSerializer {
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public String serializeItemStack(ItemStack stack) throws IOException {
-		Object nmsItem = MinecraftReflection.getMinecraftItemStack(stack);
-		byte[] bytes = null;
-
-		if (MinecraftReflection.isUsingNetty()) {
-			ByteBuf buf = Unpooled.buffer();
-			Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
-
-			if (WRITE_ITEM_METHOD == null) {
-				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
-						FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("writeStack", // a()
-								MinecraftReflection.getItemStackClass()));
-			}
-
-			WRITE_ITEM_METHOD.invoke(serializer, nmsItem);
-
-			bytes = buf.array();
-		} else {
-			if (WRITE_ITEM_METHOD == null) {
-				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
-						FuzzyMethodContract.newBuilder().
-						parameterCount(2).
-						parameterDerivedOf(MinecraftReflection.getItemStackClass(), 0).
-						parameterDerivedOf(DataOutput.class, 1).
-						build())
-					);
-			}
-
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			DataOutputStream dataOutput = new DataOutputStream(outputStream);
-
-			WRITE_ITEM_METHOD.invoke(null, nmsItem, dataOutput);
-
-			bytes = outputStream.toByteArray();
-		}
-
-		return Base64Coder.encodeLines(bytes);
+		return Base64Coder.encodeLines(serializeItemStackToByteArray(stack));
 	}
 
 	/**
@@ -332,11 +295,41 @@ public class StreamSerializer {
 	public ItemStack deserializeItemStack(String input) throws IOException {
 		Validate.notNull(input, "input cannot be null!");
 
-		Object nmsItem = null;
-		byte[] bytes = Base64Coder.decodeLines(input);
+		return deserializeItemStackFromByteArray(Base64Coder.decodeLines(input));
+	}
+
+	/**
+	 * Serialize an item stack as byte array.
+	 * <p>
+	 * Note: An ItemStack can be written to the serialized text even if it's NULL.
+	 *
+	 * @param stack - the item stack to serialize, or NULL to represent air/nothing.
+	 * @return A binary representation of the given item stack.
+	 * @throws IOException If the operation fails due to reflection problems.
+	 */
+	public byte[] serializeItemStackToByteArray(ItemStack stack) throws IOException {
+
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		DataOutputStream output = new DataOutputStream(outputStream);
+
+		serializeItemStack(output, stack);
+
+		return outputStream.toByteArray();
+	}
+
+	/**
+	 * Deserialize an item stack from a byte array.
+	 * @param input - serialized item.
+	 * @return A deserialized item stack, or NULL if the serialized ItemStack was also NULL.
+	 * @throws IOException If the operation failed due to reflection or corrupt data.
+	 */
+	public ItemStack deserializeItemStackFromByteArray(byte[] input) throws IOException {
+		Validate.notNull(input, "input cannot be null!");
+
+		Object nmsItem;
 
 		if (MinecraftReflection.isUsingNetty()) {
-			ByteBuf buf = Unpooled.copiedBuffer(bytes);
+			ByteBuf buf = Unpooled.copiedBuffer(input);
 			Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
 
 			if (READ_ITEM_METHOD == null) {
@@ -358,7 +351,7 @@ public class StreamSerializer {
 					);
 			}
 
-			ByteArrayInputStream byteStream = new ByteArrayInputStream(bytes);
+			ByteArrayInputStream byteStream = new ByteArrayInputStream(input);
 			DataInputStream inputStream = new DataInputStream(byteStream);
 
 			nmsItem = READ_ITEM_METHOD.invoke(null, inputStream);
@@ -380,7 +373,7 @@ public class StreamSerializer {
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public void serializeItemStack(DataOutputStream output, ItemStack stack) throws IOException {
-		Validate.notNull("output cannot be null!");
+		Validate.notNull(output, "output cannot be null!");
 		
 		// Get the NMS version of the ItemStack
 		Object nmsItem = MinecraftReflection.getMinecraftItemStack(stack);
@@ -429,7 +422,7 @@ public class StreamSerializer {
 	@Deprecated
 	public ItemStack deserializeItemStack(DataInputStream input) throws IOException {
 		Validate.notNull(input, "input cannot be null!");
-		Object nmsItem = null;
+		Object nmsItem;
 		
 		if (MinecraftReflection.isUsingNetty()) {
 			if (READ_ITEM_METHOD == null) {

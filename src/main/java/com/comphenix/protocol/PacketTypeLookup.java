@@ -105,16 +105,6 @@ class PacketTypeLookup {
 		Preconditions.checkNotNull(types, "types cannot be NULL");
 		
 		for (PacketType type : types) {
-			int legacy = type.getLegacyId();
-			
-			// Skip unknown legacy packets
-			if (legacy != PacketType.UNKNOWN_PACKET) {
-				if (type.isServer())
-					serverLookup.put(type.getLegacyId(), type);
-				if (type.isClient())
-					clientLookup.put(type.getLegacyId(), type);
-				legacyLookup.put(type.getLegacyId(), type);
-			}
 			// Skip unknown current packets
 			if (type.getCurrentId() != PacketType.UNKNOWN_PACKET) {
 				idLookup.getMap(type.getProtocol(), type.getSender()).put(type.getCurrentId(), type);

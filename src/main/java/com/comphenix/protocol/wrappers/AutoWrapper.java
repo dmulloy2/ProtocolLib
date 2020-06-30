@@ -98,8 +98,8 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 					value = wrappers.get(i).apply(value);
 
 				wrapperField.set(instance, value);
-			} catch (ReflectiveOperationException ex) {
-				throw new InvalidWrapperException("Failed to wrap field", ex);
+			} catch (Exception ex) {
+				throw new InvalidWrapperException("Failed to wrap field at index " + i, ex);
 			}
 		}
 
