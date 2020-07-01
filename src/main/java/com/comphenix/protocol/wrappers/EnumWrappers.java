@@ -369,6 +369,45 @@ public abstract class EnumWrappers {
 			return (byte) ordinal();
 		}
 	}
+	
+	/**
+	 * Wrapped EntityPose enum for use in Entity Metadata Packet.<br>
+	 * 
+	 * @apiNote Remember to use {@link #toNms()} when adding to a {@link WrappedDataWatcher}. <br>
+	 *          Serializer is obtained using Registry.get(EnumWrappers.getEntityPoseClass())
+	 * @since 1.13
+	 * @author Lewys Davies (Lew_)
+	 */
+	public enum EntityPose {
+		STANDING, 
+		FALL_FLYING, 
+		SLEEPING, 
+		SWIMMING, 
+		SPIN_ATTACK, 
+		CROUCHING,
+		DYING;
+		
+		private final static EquivalentConverter<EntityPose> POSE_CONVERTER = EnumWrappers.getEntityPoseConverter();
+		
+		/**
+		 * @param nms net.minecraft.server.EntityPose Object
+		 * @return Wrapped {@link EntityPose}
+		 */
+		public static EntityPose fromNms(Object nms) {
+			if(POSE_CONVERTER == null) {
+				throw new IllegalStateException("EntityPose is only available in Minecraft version 1.13 +");
+			}
+			return POSE_CONVERTER.getSpecific(nms);
+		}
+		
+		/** @return net.minecraft.server.EntityPose enum equivalent to this wrapper enum */
+		public Object toNms() {
+			if(POSE_CONVERTER == null) {
+				throw new IllegalStateException("EntityPose is only available in Minecraft version 1.13 +");
+			}
+			return POSE_CONVERTER.getGeneric(this);
+		}
+	}
 
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
@@ -390,6 +429,7 @@ public abstract class EnumWrappers {
 	private static Class<?> HAND_CLASS = null;
 	private static Class<?> DIRECTION_CLASS = null;
 	private static Class<?> CHAT_TYPE_CLASS = null;
+	private static Class<?> ENTITY_POSE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
@@ -433,6 +473,7 @@ public abstract class EnumWrappers {
 		HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
 		DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
+		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("EntityPose");
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -454,6 +495,11 @@ public abstract class EnumWrappers {
 		associate(HAND_CLASS, Hand.class, getHandConverter());
 		associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
 		associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
+		
+		if(ENTITY_POSE_CLASS != null) {
+			associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
+		}
+		
 		INITIALIZED = true;
 	}
 
@@ -587,6 +633,11 @@ public abstract class EnumWrappers {
 		initialize();
 		return CHAT_TYPE_CLASS;
 	}
+	
+	public static Class<?> getEntityPoseClass() {
+		initialize();
+		return ENTITY_POSE_CLASS;
+	}
 
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
@@ -667,6 +718,15 @@ public abstract class EnumWrappers {
 	
 	public static EquivalentConverter<ChatType> getChatTypeConverter() {
 		return new EnumConverter<>(getChatTypeClass(), ChatType.class);
+	}
+	
+	/**
+	 * @since 1.13+
+	 * @return {@link EnumConverter} or null (if bellow 1.13 / nms EnumPose class cannot be found)
+	 */
+	public static EquivalentConverter<EntityPose> getEntityPoseConverter() {
+		if(getEntityPoseClass() == null) return null;
+		return new EnumConverter<>(getEntityPoseClass(), EntityPose.class);
 	}
 
 	/**
