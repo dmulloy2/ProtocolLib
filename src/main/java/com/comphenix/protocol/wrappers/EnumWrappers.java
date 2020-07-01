@@ -151,14 +151,23 @@ public abstract class EnumWrappers {
 		ENTITY_DIED
 	}
 
-	public enum PlayerDigType {
+	public enum PlayerDigType implements AliasedEnum{
 		START_DESTROY_BLOCK,
 		ABORT_DESTROY_BLOCK,
 		STOP_DESTROY_BLOCK,
 		DROP_ALL_ITEMS,
 		DROP_ITEM,
 		RELEASE_USE_ITEM,
-		SWAP_HELD_ITEMS
+		SWAP_HELD_ITEMS("SWAP_ITEM_WITH_OFFHAND");
+
+		String[] aliases;
+		PlayerDigType(String... aliases) {
+			this.aliases = aliases;
+		}
+		@Override
+		public String[] getAliases() {
+			return aliases;
+		}
 	}
 
 	public enum PlayerAction implements AliasedEnum {
@@ -625,7 +634,7 @@ public abstract class EnumWrappers {
 	}
 
 	public static EquivalentConverter<PlayerDigType> getPlayerDiggingActionConverter() {
-		return new EnumConverter<>(getPlayerDigTypeClass(), PlayerDigType.class);
+		return new AliasedEnumConverter<>(getPlayerDigTypeClass(), PlayerDigType.class);
 	}
 
 	public static EquivalentConverter<PlayerAction> getEntityActionConverter() {
