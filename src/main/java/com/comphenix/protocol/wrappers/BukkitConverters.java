@@ -16,16 +16,6 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolLogger;
@@ -38,6 +28,7 @@ import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
@@ -48,7 +39,6 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -57,9 +47,21 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.comphenix.protocol.utility.MinecraftReflection.getCraftBukkitClass;
 import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
@@ -1176,4 +1178,54 @@ public class BukkitConverters {
 			}
 		});
 	}
+	
+	private static ConstructorAccessor merchantRecipeListConstructor = null;
+	private static MethodAccessor bukkitMerchantRecipeToCraft = null;
+	private static MethodAccessor craftMerchantRecipeToNMS = null;
+	private static MethodAccessor nmsMerchantRecipeToBukkit = null;
+	
+	/**
+	 * Creates a converter from a MerchantRecipeList (which is just an ArrayList of MerchantRecipe wrapper)
+	 * to a {@link List} of {@link MerchantRecipe}. Primarily for the packet OPEN_WINDOW_MERCHANT which is present
+	 * in 1.13+.
+	 *
+	 * @return The MerchantRecipeList converter.
+	 */
+	public static EquivalentConverter<List<MerchantRecipe>> getMerchantRecipeListConverter() {
+		return ignoreNull(new EquivalentConverter<List<MerchantRecipe>>() {
+			
+			@Override
+			public Object getGeneric(List<MerchantRecipe> specific) {
+				if (merchantRecipeListConstructor == null) {
+					Class<?> merchantRecipeListClass = MinecraftReflection.getMinecraftClass("MerchantRecipeList");
+					merchantRecipeListConstructor = Accessors.getConstructorAccessor(merchantRecipeListClass);
+					Class<?> craftMerchantRecipeClass = MinecraftReflection.getCraftBukkitClass("inventory.CraftMerchantRecipe");
+					FuzzyReflection reflection = FuzzyReflection.fromClass(craftMerchantRecipeClass, false);
+					bukkitMerchantRecipeToCraft = Accessors.getMethodAccessor(reflection.getMethodByName("fromBukkit"));
+					craftMerchantRecipeToNMS = Accessors.getMethodAccessor(reflection.getMethodByName("toMinecraft"));
+				}
+				return specific.stream().map(recipe -> craftMerchantRecipeToNMS.invoke(bukkitMerchantRecipeToCraft.invoke(null, recipe)))
+						.collect(() -> (List<Object>)merchantRecipeListConstructor.invoke(), List::add, List::addAll);
+			}
+			
+			@Override
+			public List<MerchantRecipe> getSpecific(Object generic) {
+				if (nmsMerchantRecipeToBukkit == null) {
+					Class<?> merchantRecipeClass = MinecraftReflection.getMinecraftClass("MerchantRecipe");
+					FuzzyReflection reflection = FuzzyReflection.fromClass(merchantRecipeClass, false);
+					nmsMerchantRecipeToBukkit = Accessors.getMethodAccessor(reflection.getMethodByName("asBukkit"));
+				}
+				return ((List<Object>)generic).stream().map(o -> (MerchantRecipe)nmsMerchantRecipeToBukkit.invoke(o)).collect(Collectors.toList());
+			}
+			
+			@Override
+			public Class<List<MerchantRecipe>> getSpecificType() {
+				// Damn you Java
+				Class<?> dummy = List.class;
+				return (Class<List<MerchantRecipe>>) dummy;
+			}
+			
+		});
+	}
+	
 }
