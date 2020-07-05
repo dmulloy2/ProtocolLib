@@ -920,7 +920,7 @@ public class PacketContainer implements Serializable {
     }
 
 	/**
-	 * Retrive a read/write structure for dimension IDs in 1.13.1+
+	 * Retrieve a read/write structure for dimension IDs in 1.13.1+
 	 * @return A modifier for dimension IDs
 	 */
 	public StructureModifier<Integer> getDimensions() {
@@ -929,6 +929,17 @@ public class PacketContainer implements Serializable {
 				BukkitConverters.getDimensionIDConverter()
 		);
     }
+
+	/**
+	 * Retrieve a read/write structure for ItemSlot/ItemStack pair lists in 1.16+
+	 * @return The Structure Modifier
+	 */
+	public StructureModifier<List<Pair<ItemSlot, ItemStack>>> getSlotStackPairLists() {
+		return getLists(BukkitConverters.getPairConverter(
+				EnumWrappers.getItemSlotConverter(),
+				BukkitConverters.getItemStackConverter()
+		));
+	}
 
 	/**
 	 * Retrieve a read/write structure for the Map class.

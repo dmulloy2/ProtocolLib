@@ -507,6 +507,20 @@ public class PacketContainerTest {
 		assertEquals((Object) 1, container.getDimensions().read(0));
 	}
 
+	@Test
+	public void testEntityEquipment() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.ENTITY_EQUIPMENT);
+
+		List<Pair<EnumWrappers.ItemSlot, ItemStack>> data = new ArrayList<>();
+		data.add(new Pair<>(EnumWrappers.ItemSlot.CHEST, new ItemStack(Material.NETHERITE_CHESTPLATE)));
+		data.add(new Pair<>(EnumWrappers.ItemSlot.LEGS, new ItemStack(Material.GOLDEN_LEGGINGS)));
+
+		container.getSlotStackPairLists().write(0, data);
+
+		List<Pair<EnumWrappers.ItemSlot, ItemStack>> written = container.getSlotStackPairLists().read(0);
+		assertEquals(data, written);
+	}
+
 	/**
 	 * Actions from the outbound Boss packet. Used for testing generic enums.
 	 * @author dmulloy2
