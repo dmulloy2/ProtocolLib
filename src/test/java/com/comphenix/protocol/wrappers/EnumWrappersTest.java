@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.Sets;
 import net.minecraft.server.v1_16_R1.EnumChatVisibility;
 import net.minecraft.server.v1_16_R1.EnumDifficulty;
 import net.minecraft.server.v1_16_R1.EnumGamemode;
@@ -16,6 +17,10 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class EnumWrappersTest {
 	private static class EnumClass {
@@ -57,5 +62,12 @@ public class EnumWrappersTest {
 		return (T) converter.getGeneric(
 			converter.getSpecific(accessor.get(target))
 		);
+	}
+
+	private static final Set<String> KNOWN_INVALID = Sets.newHashSet("Particle");
+
+	@Test
+	public void testValidity() {
+		assertEquals(EnumWrappers.INVALID, KNOWN_INVALID);
 	}
 }

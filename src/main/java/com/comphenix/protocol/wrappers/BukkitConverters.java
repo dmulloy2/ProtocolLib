@@ -319,6 +319,36 @@ public class BukkitConverters {
 		});
 	}
 
+	@SuppressWarnings("rawtypes")
+	public static <A, B> EquivalentConverter<Pair<A, B>> getPairConverter(final EquivalentConverter<A> firstConverter,
+																		  final EquivalentConverter<B> secondConverter) {
+		return ignoreNull(new EquivalentConverter<Pair<A, B>>() {
+			@Override
+			public Object getGeneric(Pair<A, B> specific) {
+				Object first = firstConverter.getGeneric(specific.getFirst());
+				Object second = secondConverter.getGeneric(specific.getSecond());
+
+				return new com.mojang.datafixers.util.Pair(first, second);
+			}
+
+			@Override
+			public Pair<A, B> getSpecific(Object generic) {
+				com.mojang.datafixers.util.Pair mjPair = (com.mojang.datafixers.util.Pair) generic;
+
+				A first = firstConverter.getSpecific(mjPair.getFirst());
+				B second = secondConverter.getSpecific(mjPair.getSecond());
+
+				return new Pair(first, second);
+			}
+
+			@Override
+			public Class<Pair<A, B>> getSpecificType() {
+				Class<?> dummy = Pair.class;
+				return (Class<Pair<A, B>>) dummy;
+			}
+		});
+	}
+
 	/**
 	 * @deprecated While this solution is not as abhorrent as I had imagined, I still highly recommend switching to the
 	 * new conversion API.
