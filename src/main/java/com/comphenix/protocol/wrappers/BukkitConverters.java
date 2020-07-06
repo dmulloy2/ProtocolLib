@@ -42,6 +42,9 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.EnumWrappers.Dimension;
+import com.comphenix.protocol.wrappers.EnumWrappers.FauxEnumConverter;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Objects;
@@ -1131,6 +1134,10 @@ public class BukkitConverters {
 		});
 	}
 
+	private static final boolean NEW_DIMENSION = MinecraftVersion.NETHER_UPDATE.atOrAbove();
+	private static Class<?> dimensionManager;
+	private static FauxEnumConverter<Dimension> dimensionConverter;
+
 	private static MethodAccessor dimensionFromId = null;
 	private static MethodAccessor idFromDimension = null;
 
@@ -1138,14 +1145,26 @@ public class BukkitConverters {
 		return ignoreNull(new EquivalentConverter<Integer>() {
 			@Override
 			public Object getGeneric(Integer specific) {
+				if (dimensionManager == null) {
+					dimensionManager = MinecraftReflection.getNullableNMS("DimensionManager");
+				}
+
+				if (NEW_DIMENSION) {
+					if (dimensionConverter == null) {
+						dimensionConverter = new FauxEnumConverter<>(Dimension.class, dimensionManager);
+					}
+
+					Dimension dimension = Dimension.fromId(specific);
+					return dimensionConverter.getGeneric(dimension);
+				}
+
 				if (dimensionFromId == null) {
-					Class<?> clazz = MinecraftReflection.getMinecraftClass("DimensionManager");
-					FuzzyReflection reflection = FuzzyReflection.fromClass(clazz, false);
+					FuzzyReflection reflection = FuzzyReflection.fromClass(dimensionManager, false);
 					FuzzyMethodContract contract = FuzzyMethodContract
 							.newBuilder()
 							.requireModifier(Modifier.STATIC)
 							.parameterExactType(int.class)
-							.returnTypeExact(clazz)
+							.returnTypeExact(dimensionManager)
 							.build();
 					dimensionFromId = Accessors.getMethodAccessor(reflection.getMethod(contract));
 				}
@@ -1155,9 +1174,21 @@ public class BukkitConverters {
 
 			@Override
 			public Integer getSpecific(Object generic) {
+				if (dimensionManager == null) {
+					dimensionManager = MinecraftReflection.getNullableNMS("DimensionManager");
+				}
+
+				if (NEW_DIMENSION) {
+					if (dimensionConverter == null) {
+						dimensionConverter = new FauxEnumConverter<>(Dimension.class, dimensionManager);
+					}
+
+					Dimension dimension = dimensionConverter.getSpecific(generic);
+					return dimension.getId();
+				}
+
 				if (idFromDimension == null) {
-					Class<?> clazz = MinecraftReflection.getMinecraftClass("DimensionManager");
-					FuzzyReflection reflection = FuzzyReflection.fromClass(clazz, false);
+					FuzzyReflection reflection = FuzzyReflection.fromClass(dimensionManager, false);
 					FuzzyMethodContract contract = FuzzyMethodContract
 							.newBuilder()
 							.banModifier(Modifier.STATIC)

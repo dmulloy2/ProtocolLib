@@ -361,6 +361,31 @@ public abstract class EnumWrappers {
 		}
 	}
 
+	public enum Dimension {
+		OVERWORLD(0),
+		THE_NETHER(-1),
+		THE_END(1);
+
+		private final int id;
+
+		Dimension(int id) {
+			this.id = id;
+		}
+
+		public int getId() {
+			return this.id;
+		}
+
+		public static Dimension fromId(int id) {
+			switch (id) {
+				case 0: return Dimension.OVERWORLD;
+				case -1: return Dimension.THE_NETHER;
+				case 1: return Dimension.THE_END;
+				default: throw new IllegalArgumentException("Invalid dimension ID: " + id);
+			}
+		}
+	}
+
 	private static Class<?> PROTOCOL_CLASS = null;
 	private static Class<?> CLIENT_COMMAND_CLASS = null;
 	private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -811,11 +836,11 @@ public abstract class EnumWrappers {
 			Validate.notNull(generic, "generic object cannot be null");
 
 			return lookup.computeIfAbsent(generic, x -> {
-				for (Field field : genericClass.getFields()) {
+				for (Field field : genericClass.getDeclaredFields()) {
 					try {
-						if (!field.isAccessible()) {
-							field.setAccessible(true);
-						}
+						// if (!field.isAccessible()) {
+						//	field.setAccessible(true);
+						//}
 
 						if (field.get(null) == generic) {
 							return Enum.valueOf(specificClass, field.getName().toUpperCase());

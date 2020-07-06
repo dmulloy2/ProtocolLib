@@ -500,7 +500,7 @@ public class PacketContainerTest {
 		assertEquals(container.getEnumModifier(Action.class, PacketPlayOutBoss.Action.class).read(0), Action.UPDATE_PCT);
 	}
 
-	// @Test
+	@Test
 	public void testDimensionManager() {
 		PacketContainer container = new PacketContainer(PacketType.Play.Server.RESPAWN);
 		container.getDimensions().write(0, 1);

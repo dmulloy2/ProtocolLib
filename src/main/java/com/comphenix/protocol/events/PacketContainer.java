@@ -39,6 +39,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.EnumWrappers.*;
@@ -919,13 +920,20 @@ public class PacketContainer implements Serializable {
 			    MinecraftKey.getConverter());
     }
 
+    private static final boolean NEW_DIMENSIONS = MinecraftVersion.NETHER_UPDATE.atOrAbove();
+
 	/**
 	 * Retrive a read/write structure for dimension IDs in 1.13.1+
 	 * @return A modifier for dimension IDs
 	 */
 	public StructureModifier<Integer> getDimensions() {
+		// this isn't technically correct (and is, therefore, an inferior type of correct)
+		// but the resource keys are parameterized and we might have to modify structure modifier to support it
+		// or at least come up with a way to reflectively obtain ResourceKey<DimensionManager>
+		// TODO a more complete solution
+
 		return structureModifier.withType(
-				MinecraftReflection.getMinecraftClass("DimensionManager"),
+				NEW_DIMENSIONS ? MinecraftReflection.getMinecraftClass("ResourceKey") : MinecraftReflection.getMinecraftClass("DimensionManager"),
 				BukkitConverters.getDimensionIDConverter()
 		);
     }
