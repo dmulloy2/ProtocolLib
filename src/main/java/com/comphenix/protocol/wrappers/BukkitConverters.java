@@ -16,6 +16,17 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolLogger;
@@ -39,6 +50,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -51,17 +63,6 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.comphenix.protocol.utility.MinecraftReflection.getCraftBukkitClass;
 import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
