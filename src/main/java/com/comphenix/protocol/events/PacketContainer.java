@@ -61,6 +61,7 @@ import org.bukkit.WorldType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
@@ -935,6 +936,17 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 				NEW_DIMENSIONS ? MinecraftReflection.getMinecraftClass("ResourceKey") : MinecraftReflection.getMinecraftClass("DimensionManager"),
 				BukkitConverters.getDimensionIDConverter()
+		);
+    }
+	
+	/**
+	 * Retrieve a read/write structure for the MerchantRecipeList class.
+	 * @return A modifier for MerchantRecipeList fields.
+	 */
+	public StructureModifier<List<MerchantRecipe>> getMerchantRecipeLists() {
+		return structureModifier.withType(
+				MinecraftReflection.getMinecraftClass("MerchantRecipeList"),
+				BukkitConverters.getMerchantRecipeListConverter()
 		);
     }
 
