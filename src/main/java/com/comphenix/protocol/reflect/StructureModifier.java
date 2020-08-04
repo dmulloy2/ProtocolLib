@@ -19,6 +19,8 @@ package com.comphenix.protocol.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -458,7 +460,16 @@ public class StructureModifier<TField> {
 
 		return this;
 	}
-	
+
+	private static Type[] getParamTypes(Field field) {
+		Type genericType = field.getGenericType();
+		if (genericType instanceof ParameterizedType) {
+			return  ((ParameterizedType) genericType).getActualTypeArguments();
+		}
+
+		return new Class<?>[0];
+	}
+
 	/**
 	 * Retrieves a structure modifier that only reads and writes fields of a given type.
 	 * @param <T> Type
@@ -467,7 +478,7 @@ public class StructureModifier<TField> {
 	 * @return A structure modifier for fields of this type.
 	 */
 	@SuppressWarnings("unchecked")
-	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter) {
+	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter, Class... paramTypes) {
 		if (fieldType == null) {
 			// It's not supported in this version, so return an empty modifier
 			return new StructureModifier<T>() {
@@ -489,11 +500,13 @@ public class StructureModifier<TField> {
 			
 			for (Field field : data) {
 				if (fieldType.isAssignableFrom(field.getType())) {
-					filtered.add(field);
-					
-					// Don't use the original index
-					if (defaultFields.containsKey(field))
-						defaults.put(field, index);
+					if (paramTypes.length == 0 || Arrays.equals(getParamTypes(field), paramTypes)) {
+						filtered.add(field);
+
+						// Don't use the original index
+						if (defaultFields.containsKey(field))
+							defaults.put(field, index);
+					}
 				}
 				
 				// Keep track of the field index

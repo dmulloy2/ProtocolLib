@@ -30,6 +30,7 @@ import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
+import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -52,6 +53,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -501,7 +503,7 @@ public class PacketContainerTest {
 	}
 
 	@Test
-	public void testDimensionManager() {
+	public void testDimensions() {
 		PacketContainer container = new PacketContainer(PacketType.Play.Server.RESPAWN);
 		container.getDimensions().write(0, 1);
 		assertEquals((Object) 1, container.getDimensions().read(0));
@@ -520,6 +522,26 @@ public class PacketContainerTest {
 		List<Pair<EnumWrappers.ItemSlot, ItemStack>> written = container.getSlotStackPairLists().read(0);
 		assertEquals(data, written);
 	}
+
+	@Test
+	public void testMovingBlockPos() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Client.USE_ITEM);
+
+		Vector vector = new Vector(0, 1, 2);
+		BlockPosition position = new BlockPosition(3, 4, 5);
+		EnumWrappers.Direction direction = EnumWrappers.Direction.DOWN;
+
+		MovingObjectPositionBlock movingPos = new MovingObjectPositionBlock(position, vector, direction, true);
+		container.getMovingBlockPositions().write(0, movingPos);
+
+		MovingObjectPositionBlock back = container.getMovingBlockPositions().read(0);
+
+		assertEquals(back.getPosVector(), vector);
+		assertEquals(back.getBlockPosition(), position);
+		assertEquals(back.getDirection(), direction);
+		assertTrue(back.isInsideBlock());
+	}
+
 
 	/**
 	 * Actions from the outbound Boss packet. Used for testing generic enums.

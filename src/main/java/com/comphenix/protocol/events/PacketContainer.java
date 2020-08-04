@@ -29,10 +29,7 @@ import javax.annotation.Nullable;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.injector.StructureCache;
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.ObjectWriter;
-import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.*;
 import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
@@ -148,6 +145,7 @@ public class PacketContainer implements Serializable {
 
 		// TODO this is kinda hacky, come up with a better solution
 		if (type == PacketType.Play.Server.CHAT) {
+			System.out.println("writing UUID to chat packet");
 			getUUIDs().writeSafely(0, new UUID(0L, 0L));
 		}
 	}
@@ -927,15 +925,18 @@ public class PacketContainer implements Serializable {
 	 * @return A modifier for dimension IDs
 	 */
 	public StructureModifier<Integer> getDimensions() {
-		// this isn't technically correct (and is, therefore, an inferior type of correct)
-		// but the resource keys are parameterized and we might have to modify structure modifier to support it
-		// or at least come up with a way to reflectively obtain ResourceKey<DimensionManager>
-		// TODO a more complete solution
-
-		return structureModifier.withType(
-				NEW_DIMENSIONS ? MinecraftReflection.getMinecraftClass("ResourceKey") : MinecraftReflection.getMinecraftClass("DimensionManager"),
-				BukkitConverters.getDimensionIDConverter()
-		);
+		if (NEW_DIMENSIONS) {
+			return structureModifier.withType(
+					MinecraftReflection.getMinecraftClass("ResourceKey"),
+					BukkitConverters.getDimensionIDConverter(),
+					MinecraftReflection.getMinecraftClass("DimensionManager")
+			);
+		} else {
+			return structureModifier.withType(
+					MinecraftReflection.getMinecraftClass("DimensionManager"),
+					BukkitConverters.getDimensionIDConverter()
+			);
+		}
     }
 
 	/**
@@ -947,6 +948,29 @@ public class PacketContainer implements Serializable {
 				EnumWrappers.getItemSlotConverter(),
 				BukkitConverters.getItemStackConverter()
 		));
+	}
+
+	/**
+	 * Retrieve a read/write structure for MovingObjectPositionBlock in 1.16+
+	 * @return The Structure Modifier
+	 */
+	public StructureModifier<MovingObjectPositionBlock> getMovingBlockPositions() {
+		return structureModifier.withType(
+				MovingObjectPositionBlock.getNmsClass(),
+				MovingObjectPositionBlock.getConverter()
+		);
+	}
+
+	/**
+	 * Retrieve a read/write structure for World ResourceKeys in 1.16+
+	 * @return The Structure Modifier
+	 */
+	public StructureModifier<World> getWorldKeys() {
+		return structureModifier.withType(
+				MinecraftReflection.getMinecraftClass("ResourceKey"),
+				BukkitConverters.getWorldKeyConverter(),
+				MinecraftReflection.getNmsWorldClass()
+		);
 	}
 
 	/**

@@ -52,10 +52,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
+import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -1170,6 +1167,59 @@ public class BukkitConverters {
 
 	private static MethodAccessor dimensionFromId = null;
 	private static MethodAccessor idFromDimension = null;
+
+	private static FieldAccessor worldKeyField = null;
+	private static MethodAccessor getServer = null;
+	private static MethodAccessor getWorldServer = null;
+	private static MethodAccessor getWorld = null;
+
+	public static EquivalentConverter<World> getWorldKeyConverter() {
+		return ignoreNull(new EquivalentConverter<World>() {
+			@Override
+			public Object getGeneric(World specific) {
+				Object nmsWorld = getWorldConverter().getGeneric(specific);
+
+				if (worldKeyField == null) {
+					Class<?> worldClass = MinecraftReflection.getNmsWorldClass();
+					Class<?> resourceKeyClass = MinecraftReflection.getMinecraftClass("ResourceKey");
+
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(nmsWorld.getClass(), true);
+					worldKeyField = Accessors.getFieldAccessor(fuzzy.getParameterizedField(resourceKeyClass, worldClass));
+				}
+
+				return worldKeyField.get(nmsWorld);
+			}
+
+			@Override
+			public World getSpecific(Object generic) {
+				if (getServer == null) {
+					getServer = Accessors.getMethodAccessor(Bukkit.getServer().getClass(), "getServer");
+				}
+
+				Object server = getServer.invoke(Bukkit.getServer());
+				if (getWorldServer == null) {
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(server.getClass(), false);
+					getWorldServer = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+							.newBuilder()
+							.parameterExactArray(generic.getClass())
+							.returnTypeExact(MinecraftReflection.getWorldServerClass())
+							.build()));
+				}
+
+				Object worldServer = getWorldServer.invoke(server, generic);
+				if (getWorld == null) {
+					getWorld = Accessors.getMethodAccessor(worldServer.getClass(), "getWorld");
+				}
+
+				return (World) getWorld.invoke(worldServer);
+			}
+
+			@Override
+			public Class<World> getSpecificType() {
+				return World.class;
+			}
+		});
+	}
 
 	public static EquivalentConverter<Integer> getDimensionIDConverter() {
 		return ignoreNull(new EquivalentConverter<Integer>() {
