@@ -146,7 +146,6 @@ public class PacketContainer implements Serializable {
 
 		// TODO this is kinda hacky, come up with a better solution
 		if (type == PacketType.Play.Server.CHAT) {
-			System.out.println("writing UUID to chat packet");
 			getUUIDs().writeSafely(0, new UUID(0L, 0L));
 		}
 	}
