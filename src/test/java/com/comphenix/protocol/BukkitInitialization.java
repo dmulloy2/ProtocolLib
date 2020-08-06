@@ -1,17 +1,23 @@
 package com.comphenix.protocol;
 
+import java.util.Collections;
+import java.util.List;
+
+import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
 
 import net.minecraft.server.v1_16_R1.DispenserRegistry;
+import net.minecraft.server.v1_16_R1.WorldServer;
 
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_16_R1.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.v1_16_R1.util.Versioning;
+import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -68,6 +74,22 @@ public class BukkitInitialization {
 
 			when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
 			when(mockedServer.isPrimaryThread()).thenReturn(true);
+
+			WorldServer nmsWorld = mock(WorldServer.class);
+
+			SpigotWorldConfig mockWorldConfig = mock(SpigotWorldConfig.class);
+
+			try {
+				FieldUtils.writeField(nmsWorld.getClass().getField("spigotConfig"), nmsWorld, mockWorldConfig, true);
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException(ex);
+			}
+
+			CraftWorld world = mock(CraftWorld.class);
+			when(world.getHandle()).thenReturn(nmsWorld);
+
+			List<World> worlds = Collections.singletonList(world);
+			when(mockedServer.getWorlds()).thenReturn(worlds);
 
 			// Inject this fake server
 			Bukkit.setServer(mockedServer);

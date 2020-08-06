@@ -104,4 +104,14 @@ public class WrappedDataWatcherTest {
 		watcher.setObject(0, serializer, 1);
 		assertTrue(watcher.hasIndex(0));
 	}
+
+	@Test
+	public void testDeepClone() {
+		WrappedDataWatcher watcher = new WrappedDataWatcher();
+		watcher.setObject(0, Registry.get(Integer.class), 1);
+
+		WrappedDataWatcher cloned = watcher.deepClone();
+		assertEquals(1, cloned.asMap().size());
+		assertEquals(1, (Object) cloned.getInteger(0));
+	}
 }

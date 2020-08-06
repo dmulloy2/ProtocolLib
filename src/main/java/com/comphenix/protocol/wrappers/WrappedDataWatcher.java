@@ -35,6 +35,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableBiMap;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 
@@ -132,7 +133,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class);
 		}
 
-		return fakeEntity = eggConstructor.invoke(null, 0, 0, 0);
+		Object world = BukkitUnwrapper.getInstance().unwrapItem(Bukkit.getWorlds().get(0));
+		return fakeEntity = eggConstructor.invoke(world, 0, 0, 0);
 	}
 
 	// ---- Collection Methods
@@ -569,7 +571,12 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			ENTITY_FIELD = Accessors.getFieldAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass(), true);
 		}
 
-		return (Entity) MinecraftReflection.getBukkitEntity(ENTITY_FIELD.get(handle));
+		Object entity = ENTITY_FIELD.get(handle);
+		if (entity == null) {
+			throw new NullPointerException(handle + "." + ENTITY_FIELD);
+		}
+
+		return (Entity) MinecraftReflection.getBukkitEntity(entity);
 	}
 
 	/**
