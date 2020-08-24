@@ -477,8 +477,20 @@ public class StructureModifier<TField> {
 	 * @param converter - converts objects into the given type.
 	 * @return A structure modifier for fields of this type.
 	 */
+	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter) {
+		return withParamType(fieldType, converter);
+	}
+
+	/**
+	 * Retrieves a structure modifier that only reads and writes fields of a given type.
+	 * @param <T> Type
+	 * @param fieldType - the type, or supertype, of every field to modify.
+	 * @param converter - converts objects into the given type.
+	 * @param paramTypes - field type parameters
+	 * @return A structure modifier for fields of this type.
+	 */
 	@SuppressWarnings("unchecked")
-	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter, Class... paramTypes) {
+	public <T> StructureModifier<T> withParamType(Class fieldType, EquivalentConverter<T> converter, Class... paramTypes) {
 		if (fieldType == null) {
 			// It's not supported in this version, so return an empty modifier
 			return new StructureModifier<T>() {

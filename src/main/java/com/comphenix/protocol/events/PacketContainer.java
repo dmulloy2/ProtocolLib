@@ -926,7 +926,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<Integer> getDimensions() {
 		if (NEW_DIMENSIONS) {
-			return structureModifier.withType(
+			return structureModifier.withParamType(
 					MinecraftReflection.getMinecraftClass("ResourceKey"),
 					BukkitConverters.getDimensionIDConverter(),
 					MinecraftReflection.getMinecraftClass("DimensionManager")
@@ -977,7 +977,7 @@ public class PacketContainer implements Serializable {
 	 * @return The Structure Modifier
 	 */
 	public StructureModifier<World> getWorldKeys() {
-		return structureModifier.withType(
+		return structureModifier.withParamType(
 				MinecraftReflection.getMinecraftClass("ResourceKey"),
 				BukkitConverters.getWorldKeyConverter(),
 				MinecraftReflection.getNmsWorldClass()
