@@ -1164,9 +1164,9 @@ public class BukkitConverters {
 		});
 	}
 
-	private static final boolean NEW_DIMENSION = MinecraftVersion.NETHER_UPDATE.atOrAbove();
 	private static Class<?> dimensionManager;
 	private static FauxEnumConverter<Dimension> dimensionConverter;
+	private static FauxEnumConverter<DimensionImpl> dimensionImplConverter;
 
 	private static MethodAccessor dimensionFromId = null;
 	private static MethodAccessor idFromDimension = null;
@@ -1224,6 +1224,26 @@ public class BukkitConverters {
 		});
 	}
 
+	enum DimensionImpl {
+		OVERWORLD_IMPL(0),
+		THE_NETHER_IMPL(-1),
+		THE_END_IMPL(1);
+
+		int id;
+		DimensionImpl(int id) {
+			this.id = id;
+		}
+
+		static DimensionImpl fromId(int id) {
+			switch (id) {
+				case 0: return OVERWORLD_IMPL;
+				case -1: return THE_NETHER_IMPL;
+				case 1: return THE_END_IMPL;
+				default: throw new IllegalArgumentException("Invalid dimension " + id);
+			}
+		}
+	}
+
 	public static EquivalentConverter<Integer> getDimensionIDConverter() {
 		return ignoreNull(new EquivalentConverter<Integer>() {
 			@Override
@@ -1232,27 +1252,34 @@ public class BukkitConverters {
 					dimensionManager = MinecraftReflection.getNullableNMS("DimensionManager");
 				}
 
-				if (NEW_DIMENSION) {
+				if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
+					if (dimensionImplConverter == null) {
+						dimensionImplConverter = new FauxEnumConverter<>(DimensionImpl.class, dimensionManager);
+					}
+
+					DimensionImpl dimension = DimensionImpl.fromId(specific);
+					return dimensionImplConverter.getGeneric(dimension);
+				} else if (MinecraftVersion.NETHER_UPDATE.atOrAbove()) {
 					if (dimensionConverter == null) {
 						dimensionConverter = new FauxEnumConverter<>(Dimension.class, dimensionManager);
 					}
 
 					Dimension dimension = Dimension.fromId(specific);
 					return dimensionConverter.getGeneric(dimension);
-				}
+				} else {
+					if (dimensionFromId == null) {
+						FuzzyReflection reflection = FuzzyReflection.fromClass(dimensionManager, false);
+						FuzzyMethodContract contract = FuzzyMethodContract
+								.newBuilder()
+								.requireModifier(Modifier.STATIC)
+								.parameterExactType(int.class)
+								.returnTypeExact(dimensionManager)
+								.build();
+						dimensionFromId = Accessors.getMethodAccessor(reflection.getMethod(contract));
+					}
 
-				if (dimensionFromId == null) {
-					FuzzyReflection reflection = FuzzyReflection.fromClass(dimensionManager, false);
-					FuzzyMethodContract contract = FuzzyMethodContract
-							.newBuilder()
-							.requireModifier(Modifier.STATIC)
-							.parameterExactType(int.class)
-							.returnTypeExact(dimensionManager)
-							.build();
-					dimensionFromId = Accessors.getMethodAccessor(reflection.getMethod(contract));
+					return dimensionFromId.invoke(null, specific);
 				}
-
-				return dimensionFromId.invoke(null, specific);
 			}
 
 			@Override
@@ -1261,27 +1288,34 @@ public class BukkitConverters {
 					dimensionManager = MinecraftReflection.getNullableNMS("DimensionManager");
 				}
 
-				if (NEW_DIMENSION) {
+				if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
+					if (dimensionImplConverter == null) {
+						dimensionImplConverter = new FauxEnumConverter<>(DimensionImpl.class, dimensionManager);
+					}
+
+					DimensionImpl dimension = dimensionImplConverter.getSpecific(generic);
+					return dimension.id;
+				} else if (MinecraftVersion.NETHER_UPDATE.atOrAbove()) {
 					if (dimensionConverter == null) {
 						dimensionConverter = new FauxEnumConverter<>(Dimension.class, dimensionManager);
 					}
 
 					Dimension dimension = dimensionConverter.getSpecific(generic);
 					return dimension.getId();
-				}
+				} else {
+					if (idFromDimension == null) {
+						FuzzyReflection reflection = FuzzyReflection.fromClass(dimensionManager, false);
+						FuzzyMethodContract contract = FuzzyMethodContract
+								.newBuilder()
+								.banModifier(Modifier.STATIC)
+								.returnTypeExact(int.class)
+								.parameterCount(0)
+								.build();
+						idFromDimension = Accessors.getMethodAccessor(reflection.getMethod(contract));
+					}
 
-				if (idFromDimension == null) {
-					FuzzyReflection reflection = FuzzyReflection.fromClass(dimensionManager, false);
-					FuzzyMethodContract contract = FuzzyMethodContract
-							.newBuilder()
-							.banModifier(Modifier.STATIC)
-							.returnTypeExact(int.class)
-							.parameterCount(0)
-							.build();
-					idFromDimension = Accessors.getMethodAccessor(reflection.getMethod(contract));
+					return (Integer) idFromDimension.invoke(generic);
 				}
-
-				return (Integer) idFromDimension.invoke(generic);
 			}
 
 			@Override
@@ -1339,5 +1373,42 @@ public class BukkitConverters {
 			
 		});
 	}
-	
+
+	private static MethodAccessor sectionPositionCreate;
+	private static Class<?> sectionPositionClass;
+
+	public static EquivalentConverter<BlockPosition> getSectionPositionConverter() {
+		return ignoreNull(new EquivalentConverter<BlockPosition>() {
+			@Override
+			public Object getGeneric(BlockPosition specific) {
+				if (sectionPositionClass == null) {
+					sectionPositionClass = MinecraftReflection.getMinecraftClass("SectionPosition");
+				}
+
+				if (sectionPositionCreate == null) {
+					sectionPositionCreate = Accessors.getMethodAccessor(
+							FuzzyReflection.fromClass(sectionPositionClass).getMethod(FuzzyMethodContract
+									.newBuilder()
+									.requireModifier(Modifier.STATIC)
+									.returnTypeExact(sectionPositionClass)
+									.parameterExactArray(int.class, int.class, int.class)
+									.build())
+					);
+				}
+
+				return sectionPositionCreate.invoke(null, specific.x, specific.y, specific.z);
+			}
+
+			@Override
+			public BlockPosition getSpecific(Object generic) {
+				StructureModifier<Integer> modifier = new StructureModifier<>(generic.getClass()).withTarget(generic).withType(int.class);
+				return new BlockPosition(modifier.readSafely(0), modifier.readSafely(1), modifier.readSafely(2));
+			}
+
+			@Override
+			public Class<BlockPosition> getSpecificType() {
+				return BlockPosition.class;
+			}
+		});
+	}
 }

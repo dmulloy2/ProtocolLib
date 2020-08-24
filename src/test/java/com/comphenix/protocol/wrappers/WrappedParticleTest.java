@@ -4,8 +4,6 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 
-import net.minecraft.server.v1_16_R1.PacketPlayOutWorldParticles;
-
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -26,8 +24,7 @@ public class WrappedParticleTest {
 	@Test
 	public void testBlockData() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.WORLD_PARTICLES);
-		System.out.println(packet.getType().getPacketClass());
-		System.out.println(PacketType.fromClass(PacketPlayOutWorldParticles.class));
+
 		WrappedParticle before = WrappedParticle.create(Particle.BLOCK_CRACK,
 				WrappedBlockData.createData(Material.LAPIS_BLOCK));
 		packet.getNewParticles().write(0, before);

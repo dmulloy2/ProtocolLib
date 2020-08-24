@@ -6,17 +6,17 @@ import java.util.List;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
 
-import net.minecraft.server.v1_16_R1.DispenserRegistry;
-import net.minecraft.server.v1_16_R1.WorldServer;
+import net.minecraft.server.v1_16_R2.DispenserRegistry;
+import net.minecraft.server.v1_16_R2.WorldServer;
 
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_16_R1.util.Versioning;
+import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_16_R2.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.Mockito.mock;

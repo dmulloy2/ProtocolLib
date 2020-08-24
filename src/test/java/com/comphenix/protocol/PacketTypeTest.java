@@ -27,11 +27,12 @@ import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
-import net.minecraft.server.v1_16_R1.EnumProtocol;
-import net.minecraft.server.v1_16_R1.EnumProtocolDirection;
-import net.minecraft.server.v1_16_R1.PacketLoginInStart;
+import net.minecraft.server.v1_16_R2.EnumProtocol;
+import net.minecraft.server.v1_16_R2.EnumProtocolDirection;
+import net.minecraft.server.v1_16_R2.PacketLoginInStart;
 
 import org.apache.commons.lang.WordUtils;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -48,6 +49,11 @@ public class PacketTypeTest {
 		PacketType.onDynamicCreate = className -> {
 			throw new RuntimeException("Dynamically generated packet " + className);
 		};
+	}
+
+	@AfterClass
+	public static void afterClass() {
+		PacketType.onDynamicCreate = __ -> {};
 	}
 
 	@SuppressWarnings("unchecked")

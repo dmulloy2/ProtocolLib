@@ -294,7 +294,15 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<int[]> getIntegerArrays() {
 		return structureModifier.withType(int[].class);
 	}
-	
+
+	/**
+	 * Retrieves a read/write structure for every short array field.
+	 * @return A modifier for every short array field.
+	 */
+	public StructureModifier<short[]> getShortArrays() {
+		return structureModifier.withType(short[].class);
+	}
+
 	/**
 	 * Retrieves a read/write structure for ItemStack.
 	 * <p>
@@ -581,7 +589,21 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<WrappedBlockData> getBlockData() {
 		// Convert to and from our wrapper
 		return structureModifier.withType(
-				MinecraftReflection.getIBlockDataClass(), BukkitConverters.getWrappedBlockDataConverter());
+				MinecraftReflection.getIBlockDataClass(),
+				BukkitConverters.getWrappedBlockDataConverter()
+		);
+	}
+
+	/**
+	 * Retrieves a read/write structure for IBlockData arrays in Minecraft 1.16.2+
+	 * @return A modifier for IBlockData array fields
+	 */
+	public StructureModifier<WrappedBlockData[]> getBlockDataArrays() {
+		// TODO we might want to make this a lazy converter and only convert indexes as needed
+		return structureModifier.withType(
+				MinecraftReflection.getArrayClass(MinecraftReflection.getIBlockDataClass()),
+				Converters.array(MinecraftReflection.getIBlockDataClass(), BukkitConverters.getWrappedBlockDataConverter())
+		);
 	}
 
 	/**
@@ -596,7 +618,9 @@ public class PacketContainer implements Serializable {
 
 		// Convert to and from our wrapper
 		return structureModifier.withType(
-				MinecraftReflection.getMultiBlockChangeInfoArrayClass(), MultiBlockChangeInfo.getArrayConverter(chunk));
+				MinecraftReflection.getMultiBlockChangeInfoArrayClass(),
+				Converters.array(MinecraftReflection.getMultiBlockChangeInfoClass(), MultiBlockChangeInfo.getConverter(chunk))
+		);
 	}
 	
 	/**
@@ -918,14 +942,12 @@ public class PacketContainer implements Serializable {
 			    MinecraftKey.getConverter());
     }
 
-    private static final boolean NEW_DIMENSIONS = MinecraftVersion.NETHER_UPDATE.atOrAbove();
-
 	/**
 	 * Retrieve a read/write structure for dimension IDs in 1.13.1+
 	 * @return A modifier for dimension IDs
 	 */
 	public StructureModifier<Integer> getDimensions() {
-		if (NEW_DIMENSIONS) {
+		if (MinecraftVersion.NETHER_UPDATE.atOrAbove() && !MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
 			return structureModifier.withParamType(
 					MinecraftReflection.getMinecraftClass("ResourceKey"),
 					BukkitConverters.getDimensionIDConverter(),
@@ -981,6 +1003,17 @@ public class PacketContainer implements Serializable {
 				MinecraftReflection.getMinecraftClass("ResourceKey"),
 				BukkitConverters.getWorldKeyConverter(),
 				MinecraftReflection.getNmsWorldClass()
+		);
+	}
+
+	/**
+	 * Retrieve a read/write structure for SectionPositions in 1.16.2+
+	 * @return The Structure Modifier
+	 */
+	public StructureModifier<BlockPosition> getSectionPositions() {
+		return structureModifier.withType(
+				MinecraftReflection.getMinecraftClass("SectionPosition"),
+				BukkitConverters.getSectionPositionConverter()
 		);
 	}
 

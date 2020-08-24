@@ -915,9 +915,9 @@ public abstract class EnumWrappers {
 			return lookup.computeIfAbsent(generic, x -> {
 				for (Field field : genericClass.getDeclaredFields()) {
 					try {
-						// if (!field.isAccessible()) {
-						//	field.setAccessible(true);
-						//}
+						 if (!field.isAccessible()) {
+							field.setAccessible(true);
+						}
 
 						if (field.get(null) == generic) {
 							return Enum.valueOf(specificClass, field.getName().toUpperCase());

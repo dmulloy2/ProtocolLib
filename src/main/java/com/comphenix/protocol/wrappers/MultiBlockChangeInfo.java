@@ -229,40 +229,4 @@ public class MultiBlockChangeInfo {
 			}
 		};
 	}
-
-	public static EquivalentConverter<MultiBlockChangeInfo[]> getArrayConverter(final ChunkCoordIntPair chunk) {
-		return new EquivalentConverter<MultiBlockChangeInfo[]>() {
-			private final EquivalentConverter<MultiBlockChangeInfo> converter = MultiBlockChangeInfo.getConverter(chunk);
-
-			@Override
-			public MultiBlockChangeInfo[] getSpecific(Object generic) {
-				Object[] array = (Object[]) generic;
-				MultiBlockChangeInfo[] result = new MultiBlockChangeInfo[array.length];
-
-				// Unwrap every item
-				for (int i = 0; i < result.length; i++) {
-					result[i] = converter.getSpecific(array[i]);
-				}
-
-				return result;
-			}
-
-			@Override
-			public Object getGeneric(MultiBlockChangeInfo[] specific) {
-				Object[] result = (Object[]) Array.newInstance(nmsClass, specific.length);
-
-				// Wrap every item
-				for (int i = 0; i < result.length; i++) {
-					result[i] = converter.getGeneric(specific[i]);
-				}
-
-				return result;
-			}
-
-			@Override
-			public Class<MultiBlockChangeInfo[]> getSpecificType() {
-				return MultiBlockChangeInfo[].class;
-			}
-		};
-	}
 }

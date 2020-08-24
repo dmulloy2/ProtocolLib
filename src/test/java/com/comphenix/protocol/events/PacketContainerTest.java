@@ -38,9 +38,9 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 
 import net.md_5.bungee.api.chat.*;
-import net.minecraft.server.v1_16_R1.*;
-import net.minecraft.server.v1_16_R1.MinecraftKey;
-import net.minecraft.server.v1_16_R1.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_16_R2.*;
+import net.minecraft.server.v1_16_R2.MinecraftKey;
+import net.minecraft.server.v1_16_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -64,7 +64,7 @@ import static org.junit.Assert.*;
 
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
+@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*", "javax.management.*", "javax.xml.parsers.*", "com.sun.org.apache.xerces.internal.jaxp.*" })
 //@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
 	// Helper converters
@@ -542,6 +542,25 @@ public class PacketContainerTest {
 		assertTrue(back.isInsideBlock());
 	}
 
+	@Test
+	public void testMultiBlockChange() {
+		PacketContainer packet = new PacketContainer(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
+
+		packet.getShortArrays().writeSafely(0, new short[] { 420, 69 });
+		assertArrayEquals(new short[] { 420, 69}, packet.getShortArrays().readSafely(0));
+
+		packet.getBlockDataArrays().writeSafely(0, new WrappedBlockData[] {
+				WrappedBlockData.createData(Material.IRON_BARS),
+				WrappedBlockData.createData(Material.IRON_BLOCK)
+		});
+		assertArrayEquals(new WrappedBlockData[] {
+				WrappedBlockData.createData(Material.IRON_BARS),
+				WrappedBlockData.createData(Material.IRON_BLOCK)
+		}, packet.getBlockDataArrays().readSafely(0));
+
+		packet.getSectionPositions().writeSafely(0, new BlockPosition(42, 43, 44));
+		assertEquals(new BlockPosition(42, 43, 44), packet.getSectionPositions().readSafely(0));
+	}
 
 	/**
 	 * Actions from the outbound Boss packet. Used for testing generic enums.
@@ -573,7 +592,8 @@ public class PacketContainerTest {
 	public void testDeepClone() {
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS") || !type.isSupported()) {
+			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS") || !type.isSupported()
+				|| type == PacketType.Play.Server.RECIPES) {
 				continue;
 			}
 

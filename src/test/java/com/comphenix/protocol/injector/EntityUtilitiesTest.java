@@ -3,16 +3,16 @@ package com.comphenix.protocol.injector;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 
-import net.minecraft.server.v1_16_R1.ChunkProviderServer;
-import net.minecraft.server.v1_16_R1.Entity;
-import net.minecraft.server.v1_16_R1.PlayerChunkMap;
-import net.minecraft.server.v1_16_R1.PlayerChunkMap.EntityTracker;
-import net.minecraft.server.v1_16_R1.WorldServer;
+import net.minecraft.server.v1_16_R2.ChunkProviderServer;
+import net.minecraft.server.v1_16_R2.Entity;
+import net.minecraft.server.v1_16_R2.PlayerChunkMap;
+import net.minecraft.server.v1_16_R2.PlayerChunkMap.EntityTracker;
+import net.minecraft.server.v1_16_R2.WorldServer;
 
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.bukkit.craftbukkit.v1_16_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_16_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_16_R2.entity.CraftEntity;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
