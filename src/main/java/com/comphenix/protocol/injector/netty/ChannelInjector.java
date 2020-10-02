@@ -30,12 +30,16 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.ByteBuddyGenerated;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+
 import com.google.common.base.Preconditions;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
@@ -43,7 +47,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.AttributeKey;
 import io.netty.util.internal.TypeParameterMatcher;
-import net.sf.cglib.proxy.Factory;
+
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -206,7 +210,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		synchronized (networkManager) {
 			if (closed)
 				return false;
-			if (originalChannel instanceof Factory)
+			if (originalChannel instanceof ByteBuddyFactory)
 				return false;
 			if (!originalChannel.isActive())
 				return false;
@@ -655,7 +659,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private void disconnect(String message) {
 		// If we're logging in, we can only close the channel
-		if (playerConnection == null || player instanceof Factory) {
+		if (playerConnection == null || player instanceof ByteBuddyGenerated) {
 			originalChannel.disconnect();
 		} else {
 			// Call the disconnect method
@@ -688,7 +692,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		// Attempt to send the packet with NetworkMarker.handle(), or the PlayerConnection if its active
 		try {
-			if (player instanceof Factory) {
+			if (player instanceof ByteBuddyGenerated) {
 				MinecraftMethods.getNetworkManagerHandleMethod().invoke(networkManager, packet);
 			} else {
 				MinecraftMethods.getSendPacketMethod().invoke(getPlayerConnection(), packet);
