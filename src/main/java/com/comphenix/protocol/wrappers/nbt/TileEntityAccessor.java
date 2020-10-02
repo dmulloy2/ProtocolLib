@@ -1,6 +1,7 @@
 package com.comphenix.protocol.wrappers.nbt;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentMap;
@@ -12,17 +13,19 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.EnhancerFactory;
+import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Maps;
 
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.matcher.ElementMatchers;
 import net.sf.cglib.asm.$ClassReader;
 import net.sf.cglib.asm.$ClassVisitor;
 import net.sf.cglib.asm.$MethodVisitor;
 import net.sf.cglib.asm.$Opcodes;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
 
 import org.bukkit.block.BlockState;
 
@@ -97,7 +100,7 @@ class TileEntityAccessor<T extends BlockState> {
 		} catch (IOException ex1) {
 			try {
 				// Much slower though
-				findMethodUsingCGLib(state);
+				findMethodUsingByteBuddy(state);
 			} catch (Exception ex2) {
 				throw new RuntimeException("Cannot find read/write methods in " + type, ex2);
 			}
@@ -172,26 +175,30 @@ class TileEntityAccessor<T extends BlockState> {
 	 * @param blockState - the block state.
 	 * @throws IOException If we cannot find these methods.
 	 */
-	private void findMethodUsingCGLib(T blockState) throws IOException {
+	private void findMethodUsingByteBuddy(T blockState) throws IOException, NoSuchMethodException, IllegalAccessException,
+			InvocationTargetException, InstantiationException {
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 
-		// This is a much slower method, but it is necessary in MCPC
-		Enhancer enhancer = EnhancerFactory.getInstance().createEnhancer();
-		enhancer.setSuperclass(nbtCompoundClass);
-		enhancer.setCallback(new MethodInterceptor() {
-			@Override
-			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-				if (method.getReturnType().equals(Void.TYPE)) {
-					// Write method
-					writeDetected = true;
-				} else {
-					// Read method
-					readDetected = true;
-				}
-				throw new RuntimeException("Stop execution.");
-			}
-		});
-		Object compound = enhancer.create();
+		Object compound = new ByteBuddy()
+				.subclass(nbtCompoundClass)
+				.name(MinecraftMethods.class.getPackage().getName() + ".NBTInvocationHandler")
+				.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
+				.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
+					if (method.getReturnType().equals(Void.TYPE)) {
+						// Write method
+						writeDetected = true;
+					} else {
+						// Read method
+						readDetected = true;
+					}
+					throw new RuntimeException("Stop execution.");
+				}))
+				.make()
+				// TODO: Once the EnhancerFactory is removed, we'll need to get the ClassLoader from somewhere else.
+				.load(EnhancerFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+				.getLoaded()
+				.getDeclaredConstructor()
+				.newInstance();
 		Object tileEntity = tileEntityField.get(blockState);
 
 		// Look in every read/write like method
