@@ -20,7 +20,7 @@ package com.comphenix.protocol.reflect.compiler;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.sf.cglib.asm.$Type;
+import net.bytebuddy.jar.asm.Type;
 
 /**
  * Represents a method.
@@ -75,10 +75,10 @@ class MethodDescriptor {
      */
     public MethodDescriptor(
         final String name,
-        final $Type returnType,
-        final $Type[] argumentTypes)
+        final Type returnType,
+        final Type[] argumentTypes)
     {
-        this(name, $Type.getMethodDescriptor(returnType, argumentTypes));
+        this(name, Type.getMethodDescriptor(returnType, argumentTypes));
     }
 
     /**
@@ -206,8 +206,8 @@ class MethodDescriptor {
      * 
      * @return the return type of the method described by this object.
      */
-    public $Type getReturnType() {
-        return $Type.getReturnType(desc);
+    public Type getReturnType() {
+        return Type.getReturnType(desc);
     }
 
     /**
@@ -215,8 +215,8 @@ class MethodDescriptor {
      * 
      * @return the argument types of the method described by this object.
      */
-    public $Type[] getArgumentTypes() {
-        return $Type.getArgumentTypes(desc);
+    public Type[] getArgumentTypes() {
+        return Type.getArgumentTypes(desc);
     }
 
     public String toString() {
