@@ -37,7 +37,7 @@ import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ChatExtensions;
-import com.comphenix.protocol.utility.EnhancerFactory;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -144,7 +144,7 @@ public class ProtocolLib extends JavaPlugin {
 		ProtocolLogger.init(this);
 
 		// Initialize enhancer factory
-		EnhancerFactory.getInstance().setClassLoader(getClassLoader());
+		ByteBuddyFactory.getInstance().setClassLoader(getClassLoader());
 
 		// Add global parameters
 		DetailedErrorReporter detailedReporter = new DetailedErrorReporter(this);

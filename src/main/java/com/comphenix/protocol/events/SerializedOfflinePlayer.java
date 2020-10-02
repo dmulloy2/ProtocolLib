@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -36,7 +35,7 @@ import org.bukkit.*;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.utility.EnhancerFactory;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
 
 /**
  * Represents a player object that can be serialized by Java.
@@ -261,8 +260,8 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 		}
 
 		try {
-			return new ByteBuddy()
-					.subclass(Player.class)
+			return (Player) ByteBuddyFactory.getInstance()
+					.createSubclass(Player.class)
 					.name(this.getClass().getPackage().getName() + ".PlayerInvocationHandler")
 					.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
 					.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
@@ -279,8 +278,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 						return offlineMethod.invoke(SerializedOfflinePlayer.this, args);
 					}))
 					.make()
-					// TODO:P Once the EnhancerFactory is removed, we'll need to get the ClassLoader from somewhere else.
-					.load(EnhancerFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
 					.getLoaded()
 					.getDeclaredConstructor()
 					.newInstance();

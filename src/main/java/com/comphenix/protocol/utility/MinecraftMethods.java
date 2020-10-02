@@ -15,7 +15,6 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
-import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodDelegation;
@@ -181,8 +180,8 @@ public class MinecraftMethods {
 
 		// Initialize the methods
 		if (packetReadByteBuf == null || packetWriteByteBuf == null) {
-			DynamicType.Loaded<?> loadedProxy = new ByteBuddy()
-					.subclass(MinecraftReflection.getPacketDataSerializerClass())
+			DynamicType.Loaded<?> loadedProxy = ByteBuddyFactory.getInstance()
+					.createSubclass(MinecraftReflection.getPacketDataSerializerClass())
 					.name(MinecraftMethods.class.getPackage().getName() + ".PacketDecorator")
 					.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
 					.intercept(MethodDelegation.to(new Object() {
@@ -199,8 +198,7 @@ public class MinecraftMethods {
 						}
 					}))
 					.make()
-					// TODO:P Once the EnhancerFactory is removed, we'll need to get the ClassLoader from somewhere else.
-					.load(EnhancerFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION);
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION);
 
 			Object javaProxy = null;
 			try {

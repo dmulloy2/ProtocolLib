@@ -12,13 +12,13 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.utility.EnhancerFactory;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
 import com.google.common.collect.Maps;
 
-import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.jar.asm.ClassReader;
@@ -179,8 +179,8 @@ class TileEntityAccessor<T extends BlockState> {
 			InvocationTargetException, InstantiationException {
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 
-		Object compound = new ByteBuddy()
-				.subclass(nbtCompoundClass)
+		Object compound = ByteBuddyFactory.getInstance()
+				.createSubclass(nbtCompoundClass)
 				.name(MinecraftMethods.class.getPackage().getName() + ".NBTInvocationHandler")
 				.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
 				.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
@@ -194,8 +194,7 @@ class TileEntityAccessor<T extends BlockState> {
 					throw new RuntimeException("Stop execution.");
 				}))
 				.make()
-				// TODO: Once the EnhancerFactory is removed, we'll need to get the ClassLoader from somewhere else.
-				.load(EnhancerFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+				.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
 				.getLoaded()
 				.getDeclaredConstructor()
 				.newInstance();
