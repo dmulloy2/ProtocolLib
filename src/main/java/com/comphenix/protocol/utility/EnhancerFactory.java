@@ -1,11 +1,13 @@
 package com.comphenix.protocol.utility;
 
-import net.sf.cglib.proxy.Enhancer;
-
 /**
  * Represents a shared enchancer factory.
  * @author Kristian
+ * @deprecated This class should be removed.
  */
+// TODO:P Remove this class. Currently, it's only used to access the shared class loader,
+//        but a better alternative for that can be found.
+@Deprecated
 public class EnhancerFactory {
 	private static EnhancerFactory INSTANCE = new EnhancerFactory();
 	
@@ -14,16 +16,6 @@ public class EnhancerFactory {
 	
 	public static EnhancerFactory getInstance() {
 		return INSTANCE;
-	}
-	
-	/**
-	 * Create a new CGLib enhancer.
-	 * @return The new enhancer.
-	 */
-	public Enhancer createEnhancer() {
-		Enhancer enhancer = new Enhancer();
-		enhancer.setClassLoader(loader);
-		return enhancer;
 	}
 	
 	/**
