@@ -21,14 +21,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.matcher.ElementMatchers;
 
 import org.bukkit.*;
 import org.bukkit.entity.EntityType;
@@ -243,7 +245,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	}
 	
 	/**
-	 * Retrieve a player object that implements OfflinePlayer by refering to this object. 
+	 * Retrieve a player object that implements OfflinePlayer by referring to this object.
 	 * <p>
 	 * All other methods cause an exception.
 	 * @return Proxy object.
@@ -257,28 +259,36 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 				lookup.put(method.getName(), method);
 			}
 		}
-		
-    	// MORE CGLIB magic!
-    	Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
-    	ex.setSuperclass(Player.class);
-    	ex.setCallback(new MethodInterceptor() {
-			@Override
-			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-				
-				// There's no overloaded methods, so we don't care
-				Method offlineMethod = lookup.get(method.getName());
-				
-				// Ignore all other methods
-				if (offlineMethod == null) {
-					throw new UnsupportedOperationException(
-							"The method " + method.getName() + " is not supported for offline players.");
-				}
 
-				// Invoke our on method
-				return offlineMethod.invoke(SerializedOfflinePlayer.this, args);
-			}
-    	});
-    	
-    	return (Player) ex.create();
+		try {
+			return new ByteBuddy()
+					.subclass(Player.class)
+					.name(this.getClass().getPackage().getName() + ".PlayerInvocationHandler")
+					.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
+					.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
+						// There's no overloaded methods, so we don't care
+						Method offlineMethod = lookup.get(method.getName());
+
+						// Ignore all other methods
+						if (offlineMethod == null) {
+							throw new UnsupportedOperationException(
+									"The method " + method.getName() + " is not supported for offline players.");
+						}
+
+						// Invoke our on method
+						return offlineMethod.invoke(SerializedOfflinePlayer.this, args);
+					}))
+					.make()
+					// TODO:P Once the EnhancerFactory is removed, we'll need to get the ClassLoader from somewhere else.
+					.load(EnhancerFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+					.getLoaded()
+					.getDeclaredConstructor()
+					.newInstance();
+
+			// TODO:P What's the desired way to deal with these?
+		} catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+			e.printStackTrace();
+		}
+		throw new NullPointerException("");
 	}
 }

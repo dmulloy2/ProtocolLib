@@ -199,7 +199,7 @@ public class MinecraftMethods {
 						}
 					}))
 					.make()
-					// TODO: Once the EnhancerFactory is removed, we'll need to get the ClassLoader from somewhere else.
+					// TODO:P Once the EnhancerFactory is removed, we'll need to get the ClassLoader from somewhere else.
 					.load(EnhancerFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION);
 
 			Object javaProxy = null;
