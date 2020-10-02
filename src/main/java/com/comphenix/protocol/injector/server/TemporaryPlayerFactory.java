@@ -98,7 +98,7 @@ public class TemporaryPlayerFactory {
 				if (injector == null)
 					throw new IllegalStateException("Unable to find injector.");
 
-					// Use the socket to get the address
+				// Use the socket to get the address
 				else if (methodName.equals("getPlayer"))
 					return injector.getUpdatedPlayer();
 				else if (methodName.equals("getAddress"))

@@ -51,10 +51,6 @@
 
 							<relocations>
 								<relocation>
-									<pattern>net.sf</pattern>
-									<shadedPattern>com.comphenix.net.sf</shadedPattern>
-								</relocation>
-								<relocation>
 									<pattern>net.bytebuddy</pattern>
 									<shadedPattern>com.comphenix.net.bytebuddy</shadedPattern>
 								</relocation>
@@ -296,12 +292,6 @@
 			<artifactId>spigot</artifactId>
 			<version>${spigot.version}</version>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>cglib</groupId>
-			<artifactId>cglib-nodep</artifactId>
-			<version>3.2.5</version>
-			<scope>compile</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
 		<dependency>
