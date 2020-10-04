@@ -160,7 +160,7 @@ public class TemporaryPlayerFactory {
 		try {
 			return (Player) ByteBuddyFactory.getInstance()
 					.createSubclass(TemporaryPlayer.class)
-					.implement(TemporaryPlayer.class)
+					.implement(Player.class)
 					.method(callbackFilter)
 					.intercept(implementation)
 					.make()
