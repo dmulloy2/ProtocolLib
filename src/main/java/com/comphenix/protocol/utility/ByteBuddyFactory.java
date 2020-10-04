@@ -4,7 +4,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
 
 /**
- * Represents a shared enchancer factory.
+ * Represents a shared ByteBuddy factory.
  * @author Kristian
  */
 public class ByteBuddyFactory {
