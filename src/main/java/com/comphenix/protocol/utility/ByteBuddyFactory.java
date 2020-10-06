@@ -39,7 +39,7 @@ public class ByteBuddyFactory {
 	 * @return A type builder for creating a new class extending the provided clz and implementing
 	 * {@link ByteBuddyGenerated}.
 	 */
-	public DynamicType.Builder.MethodDefinition.ImplementationDefinition.Optional<?> createSubclass(Class<?> clz)
+	public <T> DynamicType.Builder.MethodDefinition.ImplementationDefinition.Optional<T> createSubclass(Class<T> clz)
 	{
 		return new ByteBuddy()
 				.subclass(clz)
