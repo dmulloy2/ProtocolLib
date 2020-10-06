@@ -1,6 +1,5 @@
 package com.comphenix.protocol.injector.server;
 
-import net.bytebuddy.implementation.bind.annotation.This;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.junit.Before;

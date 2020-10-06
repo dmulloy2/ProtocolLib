@@ -1,10 +1,7 @@
 package com.comphenix.protocol.utility;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
-import com.comphenix.protocol.injector.server.TemporaryPlayer;
-import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
