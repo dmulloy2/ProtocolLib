@@ -1,6 +1,7 @@
 package com.comphenix.protocol.wrappers.nbt;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -45,6 +46,8 @@ class TileEntityAccessor<T extends BlockState> {
 	 * Cached field accessors - {@link #EMPTY_ACCESSOR} represents no valid tile entity.
 	 */
 	private static final ConcurrentMap<Class<?>, TileEntityAccessor<?>> cachedAccessors = Maps.newConcurrentMap();
+
+	private static Constructor<?> nbtCompoundParserConstructor;
 
 	private FieldAccessor tileEntityField;
 	private MethodAccessor readCompound;
@@ -170,34 +173,56 @@ class TileEntityAccessor<T extends BlockState> {
 		}, 0);
 	}
 
+	private static Constructor<?> setupNBTCompoundParserConstructor()
+	{
+		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
+		try {
+			return ByteBuddyFactory.getInstance()
+				.createSubclass(nbtCompoundClass)
+				.name(MinecraftMethods.class.getPackage().getName() + ".NBTInvocationHandler")
+				.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
+				.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
+					// If true, we've found a write method. Otherwise, a read method.
+					throw new FindMethodTypeResult(method.getReturnType().equals(Void.TYPE));
+				}))
+				.make()
+				.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+				.getLoaded()
+				.getDeclaredConstructor();
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find NBTCompound constructor.");
+		}
+	}
+
+	private static final class FindMethodTypeResult extends RuntimeException
+	{
+		private final boolean writeMethod;
+
+		public FindMethodTypeResult(boolean isWriteMethod)
+		{
+			super();
+			writeMethod = isWriteMethod;
+		}
+
+		public boolean isWriteMethod()
+		{
+			return writeMethod;
+		}
+	}
+
 	/**
 	 * Find the read/write methods in TileEntity.
 	 * @param blockState - the block state.
 	 * @throws IOException If we cannot find these methods.
 	 */
-	private void findMethodUsingByteBuddy(T blockState) throws IOException, NoSuchMethodException, IllegalAccessException,
-			InvocationTargetException, InstantiationException {
+	private void findMethodUsingByteBuddy(T blockState) throws IllegalAccessException, InvocationTargetException,
+			InstantiationException {
+		if (nbtCompoundParserConstructor == null)
+			nbtCompoundParserConstructor = setupNBTCompoundParserConstructor();
+
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 
-		Object compound = ByteBuddyFactory.getInstance()
-				.createSubclass(nbtCompoundClass)
-				.name(MinecraftMethods.class.getPackage().getName() + ".NBTInvocationHandler")
-				.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
-				.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
-					if (method.getReturnType().equals(Void.TYPE)) {
-						// Write method
-						writeDetected = true;
-					} else {
-						// Read method
-						readDetected = true;
-					}
-					throw new RuntimeException("Stop execution.");
-				}))
-				.make()
-				.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
-				.getLoaded()
-				.getDeclaredConstructor()
-				.newInstance();
+		Object compound = nbtCompoundParserConstructor.newInstance();
 		Object tileEntity = tileEntityField.get(blockState);
 
 		// Look in every read/write like method
@@ -205,14 +230,12 @@ class TileEntityAccessor<T extends BlockState> {
 				getMethodListByParameters(Void.TYPE, new Class<?>[] { nbtCompoundClass })) {
 
 			try {
-				readDetected = false;
-				writeDetected = false;
 				method.invoke(tileEntity, compound);
-			} catch (Exception e) {
+			} catch (FindMethodTypeResult e) {
 				// Okay - see if we detected a write or read
-				if (readDetected)
+				if (!e.isWriteMethod())
 					readCompound = Accessors.getMethodAccessor(method, true);
-				if (writeDetected)
+				if (e.isWriteMethod())
 					writeCompound = Accessors.getMethodAccessor(method, true);
 			}
 		}
