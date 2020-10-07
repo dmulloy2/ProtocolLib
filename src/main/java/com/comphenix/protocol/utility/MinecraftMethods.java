@@ -1,5 +1,6 @@
 package com.comphenix.protocol.utility;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -39,6 +40,8 @@ public class MinecraftMethods {
 	// For packet
 	private volatile static Method packetReadByteBuf;
 	private volatile static Method packetWriteByteBuf;
+
+	private static Constructor<?> proxyConstructor;
 	
 	/**
 	 * Retrieve the send packet method in PlayerConnection/NetServerHandler.
@@ -173,14 +176,10 @@ public class MinecraftMethods {
 		return packetWriteByteBuf;
 	}
 
-	/**
-	 * Initialize the two read() and write() methods.
-	 */
-	private static void initializePacket() {
-
-		// Initialize the methods
-		if (packetReadByteBuf == null || packetWriteByteBuf == null) {
-			DynamicType.Loaded<?> loadedProxy = ByteBuddyFactory.getInstance()
+	private static Constructor<?> setupProxyConstructor()
+	{
+		try {
+			return ByteBuddyFactory.getInstance()
 					.createSubclass(MinecraftReflection.getPacketDataSerializerClass())
 					.name(MinecraftMethods.class.getPackage().getName() + ".PacketDecorator")
 					.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
@@ -198,26 +197,37 @@ public class MinecraftMethods {
 						}
 					}))
 					.make()
-					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION);
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+					.getLoaded()
+					.getDeclaredConstructor(MinecraftReflection.getByteBufClass());
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find constructor!", e);
+		}
+	}
 
-			Object javaProxy = null;
+	/**
+	 * Initialize the two read() and write() methods.
+	 */
+	private static void initializePacket() {
+
+		// Initialize the methods
+		if (packetReadByteBuf == null || packetWriteByteBuf == null) {
+			if (proxyConstructor == null)
+				proxyConstructor = setupProxyConstructor();
+
+			final Object javaProxy;
 			try {
-				javaProxy = loadedProxy.getLoaded().getDeclaredConstructor(MinecraftReflection.getByteBufClass())
-						.newInstance(Unpooled.buffer());
-
-				// TODO:P What is the desired way to deal with these?
-			} catch (NoSuchMethodException e) {
-				throw new IllegalStateException("Unable to find PacketDataSerializer(ByteBuf)");
+				javaProxy = proxyConstructor.newInstance(Unpooled.buffer());
 			} catch (IllegalAccessException e) {
-				e.printStackTrace();
+				throw new RuntimeException("Cannot access reflection.", e);
 			} catch (InstantiationException e) {
-				e.printStackTrace();
+				throw new RuntimeException("Cannot instantiate object.", e);
 			} catch (InvocationTargetException e) {
-				e.printStackTrace();
+				throw new RuntimeException("Error in invocation.", e);
 			}
 
-			Object lookPacket = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW).getHandle();
-			List<Method> candidates = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass())
+			final Object lookPacket = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW).getHandle();
+			final List<Method> candidates = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass())
 					.getMethodListByParameters(Void.TYPE, new Class<?>[] { MinecraftReflection.getPacketDataSerializerClass() });
 
 			// Look through all the methods
