@@ -17,14 +17,20 @@
 
 package com.comphenix.protocol.injector.server;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
+import net.bytebuddy.implementation.FieldAccessor;
+import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.FieldValue;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -42,8 +48,7 @@ import com.comphenix.protocol.utility.ChatExtensions;
  * Create fake player instances that represents pre-authenticated clients.
  */
 public class TemporaryPlayerFactory {
-	// Prevent too many class creations
-	private static ElementMatcher.Junction<ByteCodeElement> callbackFilter;
+	private static final Constructor<? extends Player> temporaryPlayerConstructor = setupProxyPlayerConstructor();
 	
 	/**
 	 * Retrieve the injector from a given player if it contains one.
@@ -86,10 +91,22 @@ public class TemporaryPlayerFactory {
 	 * @return A temporary player instance.
 	 */
 	public Player createTemporaryPlayer(final Server server) {
+		try {
+			return temporaryPlayerConstructor.newInstance(server);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Cannot access reflection.", e);
+		} catch (InstantiationException e) {
+			throw new RuntimeException("Cannot instantiate object.", e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Error in invocation.", e);
+		}
+	}
 
-		MethodDelegation implementation = MethodDelegation.to(new Object() {
+	private static Constructor<? extends Player> setupProxyPlayerConstructor()
+	{
+		final MethodDelegation implementation = MethodDelegation.to(new Object() {
 			@RuntimeType
-			public Object delegate(@This Object obj, @Origin Method method,
+			public Object delegate(@This Object obj, @Origin Method method, @FieldValue("server") Server server,
 								   @AllArguments Object... args) throws Throwable {
 
 				String methodName = method.getName();
@@ -150,30 +167,30 @@ public class TemporaryPlayerFactory {
 			}
 		});
 
-		// Shared callback filter
-		if (callbackFilter == null) {
-			callbackFilter =  ElementMatchers.not(
-					ElementMatchers.isDeclaredBy(Object.class).or(ElementMatchers.isDeclaredBy(TemporaryPlayer.class)));
-		}
+		final ElementMatcher.Junction<ByteCodeElement> callbackFilter =  ElementMatchers.not(
+				ElementMatchers.isDeclaredBy(Object.class).or(ElementMatchers.isDeclaredBy(TemporaryPlayer.class)));
 
-		// ByteBuddy > CGLib :)
 		try {
-			return (Player) ByteBuddyFactory.getInstance()
-					.createSubclass(TemporaryPlayer.class)
+			final Constructor<?> constructor = ByteBuddyFactory.getInstance()
+					.createSubclass(TemporaryPlayer.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
+					.name(TemporaryPlayerFactory.class.getPackage().getName() + ".TemporaryPlayerInvocationHandler")
 					.implement(Player.class)
+
+					.defineField("server", Server.class, Visibility.PRIVATE)
+					.defineConstructor(Visibility.PUBLIC)
+					.withParameters(Server.class)
+					.intercept(MethodCall.invoke(TemporaryPlayer.class.getDeclaredConstructor())
+							.andThen(FieldAccessor.ofField("server").setsArgumentAt(0)))
 					.method(callbackFilter)
 					.intercept(implementation)
 					.make()
 					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
 					.getLoaded()
-					.getDeclaredConstructor()
-					.newInstance();
-
-			// TODO:P As with all other instances of this stuff, how do you want to deal with this?
-		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-			e.printStackTrace();
+					.getDeclaredConstructor(Server.class);
+			return (Constructor<? extends Player>) constructor;
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find Temporary Player constructor!", e);
 		}
-		return null;
 	}
 	
 	/**
@@ -197,7 +214,7 @@ public class TemporaryPlayerFactory {
 	 * @throws InvocationTargetException If the message couldn't be sent.
 	 * @throws FieldAccessException If we were unable to construct the message packet.
 	 */
-	private Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
+	private static Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
 		for (PacketContainer packet : ChatExtensions.createChatPackets(message)) {
 			injector.sendServerPacket(packet.getHandle(), null, false);
 		}
