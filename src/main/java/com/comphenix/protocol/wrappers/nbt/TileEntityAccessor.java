@@ -53,10 +53,6 @@ class TileEntityAccessor<T extends BlockState> {
 	private MethodAccessor readCompound;
 	private MethodAccessor writeCompound;
 
-	// For CGLib detection
-	private boolean writeDetected;
-	private boolean readDetected;
-
 	TileEntityAccessor() {
 		// Do nothing
 	}
@@ -183,7 +179,9 @@ class TileEntityAccessor<T extends BlockState> {
 				.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
 				.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
 					// If true, we've found a write method. Otherwise, a read method.
-					throw new FindMethodTypeResult(method.getReturnType().equals(Void.TYPE));
+					if (method.getReturnType().equals(Void.TYPE))
+						throw new WriteMethodException();
+					throw new ReadMethodException();
 				}))
 				.make()
 				.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
@@ -191,22 +189,6 @@ class TileEntityAccessor<T extends BlockState> {
 				.getDeclaredConstructor();
 		} catch (NoSuchMethodException e) {
 			throw new RuntimeException("Failed to find NBTCompound constructor.");
-		}
-	}
-
-	private static final class FindMethodTypeResult extends RuntimeException
-	{
-		private final boolean writeMethod;
-
-		public FindMethodTypeResult(boolean isWriteMethod)
-		{
-			super();
-			writeMethod = isWriteMethod;
-		}
-
-		public boolean isWriteMethod()
-		{
-			return writeMethod;
 		}
 	}
 
@@ -222,8 +204,8 @@ class TileEntityAccessor<T extends BlockState> {
 
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 
-		Object compound = nbtCompoundParserConstructor.newInstance();
-		Object tileEntity = tileEntityField.get(blockState);
+		final Object compound = nbtCompoundParserConstructor.newInstance();
+		final Object tileEntity = tileEntityField.get(blockState);
 
 		// Look in every read/write like method
 		for (Method method : FuzzyReflection.fromObject(tileEntity, true).
@@ -231,12 +213,16 @@ class TileEntityAccessor<T extends BlockState> {
 
 			try {
 				method.invoke(tileEntity, compound);
-			} catch (FindMethodTypeResult e) {
-				// Okay - see if we detected a write or read
-				if (!e.isWriteMethod())
+			} catch (InvocationTargetException e) {
+				if (e.getCause() instanceof ReadMethodException) {
 					readCompound = Accessors.getMethodAccessor(method, true);
-				if (e.isWriteMethod())
+				} else if (e.getCause() instanceof WriteMethodException) {
 					writeCompound = Accessors.getMethodAccessor(method, true);
+				} else {
+					// throw new RuntimeException("Inner exception.", e);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("Generic reflection error.", e);
 			}
 		}
 	}
@@ -312,5 +298,29 @@ class TileEntityAccessor<T extends BlockState> {
 			}
 		}
 		return (TileEntityAccessor<T>) (accessor != EMPTY_ACCESSOR ? accessor : null);
+	}
+
+	/**
+	 * An internal exception used to detect read methods.
+	 * @author Kristian
+	 */
+	private static class ReadMethodException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public ReadMethodException() {
+			super("A read method was executed.");
+		}
+	}
+
+	/**
+	 * An internal exception used to detect write methods.
+	 * @author Kristian
+	 */
+	private static class WriteMethodException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public WriteMethodException() {
+			super("A write method was executed.");
+		}
 	}
 }
