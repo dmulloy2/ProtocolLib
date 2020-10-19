@@ -560,6 +560,9 @@ public class PacketContainerTest {
 
 		packet.getSectionPositions().writeSafely(0, new BlockPosition(42, 43, 44));
 		assertEquals(new BlockPosition(42, 43, 44), packet.getSectionPositions().readSafely(0));
+
+		PacketContainer clone = packet.deepClone();
+		assertNotSame(clone, packet);
 	}
 
 	/**
