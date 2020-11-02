@@ -1374,6 +1374,11 @@ public class MinecraftReflection {
 		// TODO Implement a fallback
 		return getMinecraftClass("MinecraftKey");
 	}
+	
+	public static Class<?> getResourceKeyClass() {
+		// TODO Implement a fallback
+		return getMinecraftClass("ResourceKey");
+	}
 
 	public static Class<?> getMobEffectListClass() {
 		// TODO Implement a fallback
