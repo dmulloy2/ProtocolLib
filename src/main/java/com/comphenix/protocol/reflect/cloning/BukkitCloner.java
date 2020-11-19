@@ -82,6 +82,7 @@ public class BukkitCloner implements Cloner {
 		fromWrapper(MinecraftReflection::getNBTBaseClass, NbtFactory::fromNMS);
 		fromWrapper(MinecraftReflection::getIChatBaseComponentClass, WrappedChatComponent::fromHandle);
 		fromWrapper(WrappedVillagerData::getNmsClass, WrappedVillagerData::fromHandle);
+		fromConverter(MinecraftReflection::getSectionPositionClass, BukkitConverters.getSectionPositionConverter());
 
 		try {
 			fromManual(ComponentConverter::getBaseComponentArrayClass, source ->

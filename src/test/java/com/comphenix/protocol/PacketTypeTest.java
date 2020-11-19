@@ -27,9 +27,9 @@ import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
-import net.minecraft.server.v1_16_R2.EnumProtocol;
-import net.minecraft.server.v1_16_R2.EnumProtocolDirection;
-import net.minecraft.server.v1_16_R2.PacketLoginInStart;
+import net.minecraft.server.v1_16_R3.EnumProtocol;
+import net.minecraft.server.v1_16_R3.EnumProtocolDirection;
+import net.minecraft.server.v1_16_R3.PacketLoginInStart;
 
 import org.apache.commons.lang.WordUtils;
 import org.junit.AfterClass;

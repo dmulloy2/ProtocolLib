@@ -485,7 +485,7 @@ public class BukkitConverters {
 	 * @return Wrapped game profile converter.
 	 */
 	public static EquivalentConverter<WrappedGameProfile> getWrappedGameProfileConverter() {
-		return ignoreNull(handle(WrappedGameProfile::getHandle, WrappedGameProfile::fromHandle));
+		return ignoreNull(handle(WrappedGameProfile::getHandle, WrappedGameProfile::fromHandle, WrappedGameProfile.class));
 	}
 	
 	/**
@@ -493,7 +493,7 @@ public class BukkitConverters {
 	 * @return Wrapped chat component.
 	 */
 	public static EquivalentConverter<WrappedChatComponent> getWrappedChatComponentConverter() {
-		return ignoreNull(handle(WrappedChatComponent::getHandle, WrappedChatComponent::fromHandle));
+		return ignoreNull(handle(WrappedChatComponent::getHandle, WrappedChatComponent::fromHandle, WrappedChatComponent.class));
 	}
 	
 	/**
@@ -501,7 +501,7 @@ public class BukkitConverters {
 	 * @return Wrapped block data.
 	 */
 	public static EquivalentConverter<WrappedBlockData> getWrappedBlockDataConverter() {
-		return ignoreNull(handle(WrappedBlockData::getHandle, WrappedBlockData::fromHandle));
+		return ignoreNull(handle(WrappedBlockData::getHandle, WrappedBlockData::fromHandle, WrappedBlockData.class));
 	}
 	
 	/**
@@ -509,7 +509,7 @@ public class BukkitConverters {
 	 * @return Wrapped attribute snapshot converter.
 	 */
 	public static EquivalentConverter<WrappedAttribute> getWrappedAttributeConverter() {
-		return ignoreNull(handle(WrappedAttribute::getHandle, WrappedAttribute::fromHandle));
+		return ignoreNull(handle(WrappedAttribute::getHandle, WrappedAttribute::fromHandle, WrappedAttribute.class));
 	}
 	
 	/**
@@ -768,7 +768,7 @@ public class BukkitConverters {
 	 * @return Server ping converter.
 	 */
 	public static EquivalentConverter<WrappedServerPing> getWrappedServerPingConverter() {
-		return ignoreNull(handle(WrappedServerPing::getHandle, WrappedServerPing::fromHandle));
+		return ignoreNull(handle(WrappedServerPing::getHandle, WrappedServerPing::fromHandle, WrappedServerPing.class));
 	}
 	
 	/**
@@ -776,7 +776,7 @@ public class BukkitConverters {
 	 * @return Statistic converter.
 	 */
 	public static EquivalentConverter<WrappedStatistic> getWrappedStatisticConverter() {
-		return ignoreNull(handle(WrappedStatistic::getHandle, WrappedStatistic::fromHandle));
+		return ignoreNull(handle(WrappedStatistic::getHandle, WrappedStatistic::fromHandle, WrappedStatistic.class));
 	}
 
 	private static MethodAccessor BLOCK_FROM_MATERIAL;
@@ -1016,7 +1016,7 @@ public class BukkitConverters {
 	}
 
 	public static EquivalentConverter<WrappedParticle> getParticleConverter() {
-		return ignoreNull(handle(WrappedParticle::getHandle, WrappedParticle::fromHandle));
+		return ignoreNull(handle(WrappedParticle::getHandle, WrappedParticle::fromHandle, WrappedParticle.class));
 	}
 
 	public static EquivalentConverter<Advancement> getAdvancementConverter() {

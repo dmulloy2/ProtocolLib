@@ -23,10 +23,10 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 
-import net.minecraft.server.v1_16_R2.EntityEgg;
+import net.minecraft.server.v1_16_R3.EntityEgg;
 
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftEgg;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftEgg;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftEntity;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -87,8 +87,8 @@ public class WrappedDataWatcherTest {
 
 	@Test
 	public void testSerializers() {
-		Serializer blockPos = Registry.get(net.minecraft.server.v1_16_R2.BlockPosition.class, false);
-		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_16_R2.BlockPosition.class, true);
+		Serializer blockPos = Registry.get(net.minecraft.server.v1_16_R3.BlockPosition.class, false);
+		Serializer optionalBlockPos = Registry.get(net.minecraft.server.v1_16_R3.BlockPosition.class, true);
 		assertNotSame(blockPos, optionalBlockPos);
 
 		// assertNull(Registry.get(ItemStack.class, false));

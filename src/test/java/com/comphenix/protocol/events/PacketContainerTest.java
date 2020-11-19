@@ -38,9 +38,9 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 
 import net.md_5.bungee.api.chat.*;
-import net.minecraft.server.v1_16_R2.*;
-import net.minecraft.server.v1_16_R2.MinecraftKey;
-import net.minecraft.server.v1_16_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_16_R3.*;
+import net.minecraft.server.v1_16_R3.MinecraftKey;
+import net.minecraft.server.v1_16_R3.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -560,6 +560,9 @@ public class PacketContainerTest {
 
 		packet.getSectionPositions().writeSafely(0, new BlockPosition(42, 43, 44));
 		assertEquals(new BlockPosition(42, 43, 44), packet.getSectionPositions().readSafely(0));
+
+		PacketContainer clone = packet.deepClone();
+		assertNotSame(clone, packet);
 	}
 
 	/**

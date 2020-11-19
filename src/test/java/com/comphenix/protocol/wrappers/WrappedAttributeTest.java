@@ -6,12 +6,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import net.minecraft.server.v1_16_R2.AttributeBase;
-import net.minecraft.server.v1_16_R2.AttributeModifier;
-import net.minecraft.server.v1_16_R2.IRegistry;
-import net.minecraft.server.v1_16_R2.MinecraftKey;
-import net.minecraft.server.v1_16_R2.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_16_R2.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.server.v1_16_R3.AttributeBase;
+import net.minecraft.server.v1_16_R3.AttributeModifier;
+import net.minecraft.server.v1_16_R3.IRegistry;
+import net.minecraft.server.v1_16_R3.MinecraftKey;
+import net.minecraft.server.v1_16_R3.PacketPlayOutUpdateAttributes;
+import net.minecraft.server.v1_16_R3.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 
 import org.junit.Before;
 import org.junit.BeforeClass;

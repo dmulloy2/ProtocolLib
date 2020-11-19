@@ -3,12 +3,12 @@ package com.comphenix.protocol.wrappers;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Sets;
-import net.minecraft.server.v1_16_R2.EnumChatVisibility;
-import net.minecraft.server.v1_16_R2.EnumDifficulty;
-import net.minecraft.server.v1_16_R2.EnumGamemode;
-import net.minecraft.server.v1_16_R2.EnumProtocol;
-import net.minecraft.server.v1_16_R2.PacketPlayInClientCommand.EnumClientCommand;
-import net.minecraft.server.v1_16_R2.PacketPlayInUseEntity.EnumEntityUseAction;
+import net.minecraft.server.v1_16_R3.EnumChatVisibility;
+import net.minecraft.server.v1_16_R3.EnumDifficulty;
+import net.minecraft.server.v1_16_R3.EnumGamemode;
+import net.minecraft.server.v1_16_R3.EnumProtocol;
+import net.minecraft.server.v1_16_R3.PacketPlayInClientCommand.EnumClientCommand;
+import net.minecraft.server.v1_16_R3.PacketPlayInUseEntity.EnumEntityUseAction;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

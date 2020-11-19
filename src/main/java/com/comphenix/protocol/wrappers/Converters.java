@@ -88,7 +88,7 @@ public class Converters {
 	 * @return A handle converter
 	 */
 	public static <T> EquivalentConverter<T> handle(final Function<T, Object> toHandle,
-	                                                final Function<Object, T> fromHandle) {
+			final Function<Object, T> fromHandle, final Class<T> specificType) {
 		return new EquivalentConverter<T>() {
 			@Override
 			public T getSpecific(Object generic) {
@@ -102,7 +102,7 @@ public class Converters {
 
 			@Override
 			public Class<T> getSpecificType() {
-				return null;
+				return specificType;
 			}
 		};
 	}
@@ -121,7 +121,8 @@ public class Converters {
 			@Override
 			public T[] getSpecific(Object generic) {
 				Object[] array = (Object[]) generic;
-				T[] result = (T[]) new Object[array.length];
+				Class<T[]> clazz = getSpecificType();
+				T[] result = clazz.cast(Array.newInstance(clazz.getComponentType(), array.length));
 
 				// Unwrap every item
 				for (int i = 0; i < result.length; i++) {

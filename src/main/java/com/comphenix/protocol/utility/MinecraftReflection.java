@@ -1872,6 +1872,10 @@ public class MinecraftReflection {
 		return getCraftBukkitClass("CraftSound");
 	}
 
+	public static Class<?> getSectionPositionClass() {
+		return getMinecraftClass("SectionPosition");
+	}
+
 	// ---- ItemStack conversions
 	private static Object itemStackAir = null;
 	private static Method asNMSCopy = null;
