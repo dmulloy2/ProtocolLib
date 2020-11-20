@@ -34,6 +34,7 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.Pair;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
@@ -48,6 +49,8 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
@@ -295,18 +298,18 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 				@Override
 				protected <T> Callable<T> onMessageScheduled(final Callable<T> callable, FieldAccessor packetAccessor) {
-					final PacketEvent event = handleScheduled(callable, packetAccessor);
+					Pair<Callable<T>, PacketEvent> handled = handleScheduled(callable, packetAccessor);
 
 					// Handle cancelled events
-					if (event != null && event.isCancelled())
+					if (handled.getSecond() != null && handled.getSecond().isCancelled())
 						return null;
 
 					return () -> {
 						T result;
 
 						// This field must only be updated in the pipeline thread
-						currentEvent = event;
-						result = callable.call();
+						currentEvent = handled.getSecond();
+						result = handled.getFirst().call();
 						currentEvent = null;
 						return result;
 					};
@@ -314,20 +317,20 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 				@Override
 				protected Runnable onMessageScheduled(final Runnable runnable, FieldAccessor packetAccessor) {
-					final PacketEvent event = handleScheduled(runnable, packetAccessor);
+					Pair<Runnable, PacketEvent> handled = handleScheduled(runnable, packetAccessor);
 
 					// Handle cancelled events
-					if (event != null && event.isCancelled())
+					if (handled.getSecond() != null && handled.getSecond().isCancelled())
 						return null;
 
 					return () -> {
-						currentEvent = event;
-						runnable.run();
+						currentEvent = handled.getSecond();
+						handled.getFirst().run();
 						currentEvent = null;
 					};
 				}
 
-				PacketEvent handleScheduled(Object instance, FieldAccessor accessor) {
+				<T> Pair<T, PacketEvent> handleScheduled(T instance, FieldAccessor accessor) {
 					// Let the filters handle this packet
 					Object original = accessor.get(instance);
 
@@ -338,9 +341,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						if (marker != null)	{
 							PacketEvent result = new PacketEvent(ChannelInjector.class);
 							result.setNetworkMarker(marker);
-							return result;
+							return new Pair<>(instance, result);
 						} else {
-							return BYPASSED_PACKET;
+							return new Pair<>(instance, BYPASSED_PACKET);
 						}
 					}
 
@@ -350,11 +353,28 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 						// Change packet to be scheduled
 						if (original != changed) {
-							accessor.set(instance, changed);
+
+							try {
+								Field[] fields = instance.getClass().getDeclaredFields();
+								for (Field f : fields)
+									f.setAccessible(true);
+
+								Object networkManager = fields[0].get(instance);
+								Object enumProtocol1 = fields[1].get(instance);
+								Object enumProtocol2 = fields[2].get(instance);
+								// The packet is the third one, but we already have that in 'original'.
+								Object futureListener = fields[4].get(instance);
+								Constructor<?> ctor = instance.getClass().getDeclaredConstructors()[0];
+								ctor.setAccessible(true);
+								instance = (T) ctor.newInstance(networkManager, enumProtocol1,
+										enumProtocol2, changed, futureListener);
+							}
+							catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+								throw new RuntimeException("Failed to instantiate new packet message!", e);
+							}
 						}
 					}
-
-					return event != null ? event : BYPASSED_PACKET;
+					return new Pair<>(instance, event != null ? event : BYPASSED_PACKET);
 				}
 			});
 
