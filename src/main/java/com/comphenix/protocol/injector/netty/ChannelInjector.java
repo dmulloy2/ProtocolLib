@@ -355,19 +355,22 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						if (original != changed) {
 
 							try {
-								Field[] fields = instance.getClass().getDeclaredFields();
-								for (Field f : fields)
-									f.setAccessible(true);
+								// Get all the member variables from the instance in an array.
+								// If we encounter a packet member type, use the changed value instead.
+								final Field[] fields = instance.getClass().getDeclaredFields();
+								final Class<?> packetClass = changed.getClass();
+								final Object[] values = new Object[fields.length];
+								for (int idx = 0; idx < fields.length; ++idx) {
+									Field field = fields[idx];
+									field.setAccessible(true);
 
-								Object networkManager = fields[0].get(instance);
-								Object enumProtocol1 = fields[1].get(instance);
-								Object enumProtocol2 = fields[2].get(instance);
-								// The packet is the third one, but we already have that in 'original'.
-								Object futureListener = fields[4].get(instance);
-								Constructor<?> ctor = instance.getClass().getDeclaredConstructors()[0];
+									values[idx] = field.getType().isAssignableFrom(packetClass) ?
+											changed : field.get(instance);
+								}
+
+								final Constructor<?> ctor = instance.getClass().getDeclaredConstructors()[0];
 								ctor.setAccessible(true);
-								instance = (T) ctor.newInstance(networkManager, enumProtocol1,
-										enumProtocol2, changed, futureListener);
+								instance = (T) ctor.newInstance(values);
 							}
 							catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
 								throw new RuntimeException("Failed to instantiate new packet message!", e);
