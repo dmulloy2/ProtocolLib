@@ -34,6 +34,7 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.ObjectReconstructor;
 import com.comphenix.protocol.wrappers.Pair;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.base.Preconditions;
@@ -74,6 +75,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * Indicates that a packet has bypassed packet listeners.
 	 */
 	private static final PacketEvent BYPASSED_PACKET = new PacketEvent(ChannelInjector.class);
+
+	private static ObjectReconstructor<?> RUNNABLE_RECONSTRUCTOR = null;
+
+	private static ObjectReconstructor<?> CALLABLE_RECONSTRUCTOR = null;
 
 	// The login packet
 	private static Class<?> PACKET_LOGIN_CLIENT = null;
@@ -354,30 +359,30 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						// Change packet to be scheduled
 						if (original != changed) {
 
-							try {
-								// Get all the member variables from the instance in an array.
-								// If we encounter a packet member type, use the changed value instead.
-								final Field[] fields = instance.getClass().getDeclaredFields();
-								final Class<?> packetClass = changed.getClass();
-								final Object[] values = new Object[fields.length];
-								for (int idx = 0; idx < fields.length; ++idx) {
-									Field field = fields[idx];
-									field.setAccessible(true);
+							final ObjectReconstructor<?> objectReconstructor = instance instanceof Runnable ?
+									getRunnableReconstructor(instance.getClass()) :
+									getCallableReconstructor(instance.getClass());
 
-									values[idx] = field.getType().isAssignableFrom(packetClass) ?
-											changed : field.get(instance);
-								}
+							final Object[] values = objectReconstructor.getValues(instance);
+							final Field[] fields = objectReconstructor.getFields();
+							for (int idx = 0; idx < fields.length; ++idx)
+								if (fields[idx].equals(accessor.getField()))
+									values[idx] = changed;
 
-								final Constructor<?> ctor = instance.getClass().getDeclaredConstructors()[0];
-								ctor.setAccessible(true);
-								instance = (T) ctor.newInstance(values);
-							}
-							catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-								throw new RuntimeException("Failed to instantiate new packet message!", e);
-							}
+							instance = (T) objectReconstructor.reconstruct(values);
 						}
 					}
 					return new Pair<>(instance, event != null ? event : BYPASSED_PACKET);
+				}
+
+				private ObjectReconstructor<?> getRunnableReconstructor(final Class<?> clz) {
+					return RUNNABLE_RECONSTRUCTOR == null ?
+							RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : RUNNABLE_RECONSTRUCTOR;
+				}
+
+				private ObjectReconstructor<?> getCallableReconstructor(final Class<?> clz) {
+					return CALLABLE_RECONSTRUCTOR == null ?
+							CALLABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : CALLABLE_RECONSTRUCTOR;
 				}
 			});
 
