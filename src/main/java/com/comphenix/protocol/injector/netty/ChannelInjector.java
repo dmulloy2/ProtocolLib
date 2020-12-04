@@ -89,6 +89,14 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		}
 	}
 
+	// Determine the method of updating packets.
+	// Starting in Java 15 (59), the Runnables/Callables are hidden classes and we cannot use reflection to update
+	// the values anymore. Instead, the object will have to be reconstructed.
+	private static final PacketMessageUpdater PACKET_MESSAGE_UPDATER =
+			Float.parseFloat(System.getProperty("java.class.version")) >= 59 ?
+					ChannelInjector::updatePacketMessageReconstruct :
+					ChannelInjector::updatePacketMessageSetReflection;
+
 	// The login packet
 	private static Class<?> PACKET_LOGIN_CLIENT = null;
 	private static FieldAccessor LOGIN_GAME_PROFILE = null;
@@ -366,58 +374,75 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						Object changed = event.getPacket().getHandle();
 
 						// Change packet to be scheduled
-						if (original != changed) {
-
-							final ObjectReconstructor<?> objectReconstructor = getReconstructor(instance);
-
-							final Object[] values = objectReconstructor.getValues(instance);
-							final Field[] fields = objectReconstructor.getFields();
-							for (int idx = 0; idx < fields.length; ++idx)
-								if (fields[idx].equals(accessor.getField()))
-									values[idx] = changed;
-
-							instance = (T) objectReconstructor.reconstruct(values);
-						}
+						if (original != changed)
+							instance = (T) PACKET_MESSAGE_UPDATER.update(instance, changed, accessor);
 					}
 					return new Pair<>(instance, event != null ? event : BYPASSED_PACKET);
-				}
-
-				/**
-				 * Gets the appropriate type of ObjectReconstructor for the provided instance.
-				 * @param instance The instance for which to get the ObjectReconstructor.
-				 * @return The appropriate ObjectReconstructor for the provided instance.
-				 */
-				private ObjectReconstructor<?> getReconstructor(final Object instance) {
-					final Class<?> clz = instance.getClass();
-					if (ChannelInjector.LAZY_RUNNABLE != null && ChannelInjector.LAZY_RUNNABLE.isAssignableFrom(clz))
-						return getLazyRunnableReconstructor(clz);
-					else if (instance instanceof Runnable)
-						return getRunnableReconstructor(clz);
-					else if (instance instanceof Callable)
-						return getCallableReconstructor(clz);
-					throw new RuntimeException("Failed to find appropriate ObjectReconstructor for type: " +
-							clz.getName());
-				}
-
-				private ObjectReconstructor<?> getLazyRunnableReconstructor(final Class<?> clz) {
-					return LAZY_RUNNABLE_RECONSTRUCTOR == null ?
-							LAZY_RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : LAZY_RUNNABLE_RECONSTRUCTOR;
-				}
-
-				private ObjectReconstructor<?> getRunnableReconstructor(final Class<?> clz) {
-					return RUNNABLE_RECONSTRUCTOR == null ?
-							RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : RUNNABLE_RECONSTRUCTOR;
-				}
-
-				private ObjectReconstructor<?> getCallableReconstructor(final Class<?> clz) {
-					return CALLABLE_RECONSTRUCTOR == null ?
-							CALLABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : CALLABLE_RECONSTRUCTOR;
 				}
 			});
 
 			injected = true;
 			return true;
 		}
+	}
+
+	/**
+	 * Changes the packet in a packet message using a {@link FieldAccessor}.
+	 * @see PacketMessageUpdater
+	 */
+	private static Object updatePacketMessageSetReflection(Object instance, Object newPacket, FieldAccessor accessor)
+	{
+		accessor.set(instance, newPacket);
+		return instance;
+	}
+
+	/**
+	 * Changes the packet in a packet message using a {@link ObjectReconstructor}.
+	 * @see PacketMessageUpdater
+	 */
+	private static Object updatePacketMessageReconstruct(Object instance, Object newPacket, FieldAccessor accessor)
+	{
+		final ObjectReconstructor<?> objectReconstructor = getReconstructor(instance);
+
+		final Object[] values = objectReconstructor.getValues(instance);
+		final Field[] fields = objectReconstructor.getFields();
+		for (int idx = 0; idx < fields.length; ++idx)
+			if (fields[idx].equals(accessor.getField()))
+				values[idx] = newPacket;
+
+		return objectReconstructor.reconstruct(values);
+	}
+
+	/**
+	 * Gets the appropriate type of ObjectReconstructor for the provided instance.
+	 * @param instance The instance for which to get the ObjectReconstructor.
+	 * @return The appropriate ObjectReconstructor for the provided instance.
+	 */
+	private static ObjectReconstructor<?> getReconstructor(final Object instance) {
+		final Class<?> clz = instance.getClass();
+		if (ChannelInjector.LAZY_RUNNABLE != null && ChannelInjector.LAZY_RUNNABLE.isAssignableFrom(clz))
+			return getLazyRunnableReconstructor(clz);
+		else if (instance instanceof Runnable)
+			return getRunnableReconstructor(clz);
+		else if (instance instanceof Callable)
+			return getCallableReconstructor(clz);
+		throw new RuntimeException("Failed to find appropriate ObjectReconstructor for type: " +
+				clz.getName());
+	}
+
+	private static ObjectReconstructor<?> getLazyRunnableReconstructor(final Class<?> clz) {
+		return LAZY_RUNNABLE_RECONSTRUCTOR == null ?
+				LAZY_RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : LAZY_RUNNABLE_RECONSTRUCTOR;
+	}
+
+	private static ObjectReconstructor<?> getRunnableReconstructor(final Class<?> clz) {
+		return RUNNABLE_RECONSTRUCTOR == null ?
+				RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : RUNNABLE_RECONSTRUCTOR;
+	}
+
+	private static ObjectReconstructor<?> getCallableReconstructor(final Class<?> clz) {
+		return CALLABLE_RECONSTRUCTOR == null ?
+				CALLABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : CALLABLE_RECONSTRUCTOR;
 	}
 
 	/**
@@ -999,5 +1024,21 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	public Channel getChannel() {
 		return originalChannel;
+	}
+
+	/**
+	 * Represents a method of updating a packet in a scheduled packet message.
+	 */
+	@FunctionalInterface
+	private interface PacketMessageUpdater
+	{
+		/**
+		 * Updates a packet in a scheduled packet message.
+		 * @param instance  The current packet message to update.
+		 * @param newPacket The new packet to put in the packet message.
+		 * @param accessor  The FieldAccessor for the packet field in the packet message.
+		 * @return The updated packet message.
+		 */
+		Object update(Object instance, Object newPacket, FieldAccessor accessor);
 	}
 }
