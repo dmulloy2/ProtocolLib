@@ -80,8 +80,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private static ObjectReconstructor<?> CALLABLE_RECONSTRUCTOR = null;
 
 	private static Class<?> LAZY_RUNNABLE = null;
-	static
-	{
+
+	static {
 		try {
 			LAZY_RUNNABLE = Class.forName("io.netty.util.concurrent.AbstractEventExecutor$LazyRunnable");
 		} catch (ClassNotFoundException e) {
@@ -390,8 +390,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * Changes the packet in a packet message using a {@link FieldAccessor}.
 	 * @see PacketMessageUpdater
 	 */
-	private static Object updatePacketMessageSetReflection(Object instance, Object newPacket, FieldAccessor accessor)
-	{
+	private static Object updatePacketMessageSetReflection(Object instance, Object newPacket, FieldAccessor accessor) {
 		accessor.set(instance, newPacket);
 		return instance;
 	}
@@ -400,8 +399,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * Changes the packet in a packet message using a {@link ObjectReconstructor}.
 	 * @see PacketMessageUpdater
 	 */
-	private static Object updatePacketMessageReconstruct(Object instance, Object newPacket, FieldAccessor accessor)
-	{
+	private static Object updatePacketMessageReconstruct(Object instance, Object newPacket, FieldAccessor accessor) {
 		final ObjectReconstructor<?> objectReconstructor = getReconstructor(instance);
 
 		final Object[] values = objectReconstructor.getValues(instance);
@@ -420,6 +418,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private static ObjectReconstructor<?> getReconstructor(final Object instance) {
 		final Class<?> clz = instance.getClass();
+
 		if (ChannelInjector.LAZY_RUNNABLE != null && ChannelInjector.LAZY_RUNNABLE.isAssignableFrom(clz))
 			return getLazyRunnableReconstructor(clz);
 		else if (instance instanceof Runnable)
@@ -1030,8 +1029,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * Represents a method of updating a packet in a scheduled packet message.
 	 */
 	@FunctionalInterface
-	private interface PacketMessageUpdater
-	{
+	private interface PacketMessageUpdater {
 		/**
 		 * Updates a packet in a scheduled packet message.
 		 * @param instance  The current packet message to update.
