@@ -76,8 +76,18 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private static final PacketEvent BYPASSED_PACKET = new PacketEvent(ChannelInjector.class);
 
 	private static ObjectReconstructor<?> RUNNABLE_RECONSTRUCTOR = null;
-
+	private static ObjectReconstructor<?> LAZY_RUNNABLE_RECONSTRUCTOR = null;
 	private static ObjectReconstructor<?> CALLABLE_RECONSTRUCTOR = null;
+
+	private static Class<?> LAZY_RUNNABLE = null;
+	static
+	{
+		try {
+			LAZY_RUNNABLE = Class.forName("io.netty.util.concurrent.AbstractEventExecutor$LazyRunnable");
+		} catch (ClassNotFoundException e) {
+			// Ignored; not every platform has this class (E.g. Spigot).
+		}
+	}
 
 	// The login packet
 	private static Class<?> PACKET_LOGIN_CLIENT = null;
@@ -358,9 +368,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						// Change packet to be scheduled
 						if (original != changed) {
 
-							final ObjectReconstructor<?> objectReconstructor = instance instanceof Runnable ?
-									getRunnableReconstructor(instance.getClass()) :
-									getCallableReconstructor(instance.getClass());
+							final ObjectReconstructor<?> objectReconstructor = getReconstructor(instance);
 
 							final Object[] values = objectReconstructor.getValues(instance);
 							final Field[] fields = objectReconstructor.getFields();
@@ -372,6 +380,28 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						}
 					}
 					return new Pair<>(instance, event != null ? event : BYPASSED_PACKET);
+				}
+
+				/**
+				 * Gets the appropriate type of ObjectReconstructor for the provided instance.
+				 * @param instance The instance for which to get the ObjectReconstructor.
+				 * @return The appropriate ObjectReconstructor for the provided instance.
+				 */
+				private ObjectReconstructor<?> getReconstructor(final Object instance) {
+					final Class<?> clz = instance.getClass();
+					if (ChannelInjector.LAZY_RUNNABLE != null && ChannelInjector.LAZY_RUNNABLE.isAssignableFrom(clz))
+						return getLazyRunnableReconstructor(clz);
+					else if (instance instanceof Runnable)
+						return getRunnableReconstructor(clz);
+					else if (instance instanceof Callable)
+						return getCallableReconstructor(clz);
+					throw new RuntimeException("Failed to find appropriate ObjectReconstructor for type: " +
+							clz.getName());
+				}
+
+				private ObjectReconstructor<?> getLazyRunnableReconstructor(final Class<?> clz) {
+					return LAZY_RUNNABLE_RECONSTRUCTOR == null ?
+							LAZY_RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : LAZY_RUNNABLE_RECONSTRUCTOR;
 				}
 
 				private ObjectReconstructor<?> getRunnableReconstructor(final Class<?> clz) {
