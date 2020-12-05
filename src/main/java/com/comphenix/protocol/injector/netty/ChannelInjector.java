@@ -58,6 +58,7 @@ import java.net.SocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -75,19 +76,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 */
 	private static final PacketEvent BYPASSED_PACKET = new PacketEvent(ChannelInjector.class);
 
-	private static ObjectReconstructor<?> RUNNABLE_RECONSTRUCTOR = null;
-	private static ObjectReconstructor<?> LAZY_RUNNABLE_RECONSTRUCTOR = null;
-	private static ObjectReconstructor<?> CALLABLE_RECONSTRUCTOR = null;
 
-	private static Class<?> LAZY_RUNNABLE = null;
-
-	static {
-		try {
-			LAZY_RUNNABLE = Class.forName("io.netty.util.concurrent.AbstractEventExecutor$LazyRunnable");
-		} catch (ClassNotFoundException e) {
-			// Ignored; not every platform has this class (E.g. Spigot).
-		}
-	}
+	private static final Map<Class<?>, ObjectReconstructor<?>> RECONSTRUCTORS = new ConcurrentHashMap<>();
 
 	// Determine the method of updating packets.
 	// Starting in Java 15 (59), the Runnables/Callables are hidden classes and we cannot use reflection to update
@@ -400,7 +390,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * @see PacketMessageUpdater
 	 */
 	private static Object updatePacketMessageReconstruct(Object instance, Object newPacket, FieldAccessor accessor) {
-		final ObjectReconstructor<?> objectReconstructor = getReconstructor(instance);
+		final ObjectReconstructor<?> objectReconstructor =
+				RECONSTRUCTORS.computeIfAbsent(instance.getClass(), ObjectReconstructor::new);
 
 		final Object[] values = objectReconstructor.getValues(instance);
 		final Field[] fields = objectReconstructor.getFields();
@@ -409,39 +400,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				values[idx] = newPacket;
 
 		return objectReconstructor.reconstruct(values);
-	}
-
-	/**
-	 * Gets the appropriate type of ObjectReconstructor for the provided instance.
-	 * @param instance The instance for which to get the ObjectReconstructor.
-	 * @return The appropriate ObjectReconstructor for the provided instance.
-	 */
-	private static ObjectReconstructor<?> getReconstructor(final Object instance) {
-		final Class<?> clz = instance.getClass();
-
-		if (ChannelInjector.LAZY_RUNNABLE != null && ChannelInjector.LAZY_RUNNABLE.isAssignableFrom(clz))
-			return getLazyRunnableReconstructor(clz);
-		else if (instance instanceof Runnable)
-			return getRunnableReconstructor(clz);
-		else if (instance instanceof Callable)
-			return getCallableReconstructor(clz);
-		throw new RuntimeException("Failed to find appropriate ObjectReconstructor for type: " +
-				clz.getName());
-	}
-
-	private static ObjectReconstructor<?> getLazyRunnableReconstructor(final Class<?> clz) {
-		return LAZY_RUNNABLE_RECONSTRUCTOR == null ?
-				LAZY_RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : LAZY_RUNNABLE_RECONSTRUCTOR;
-	}
-
-	private static ObjectReconstructor<?> getRunnableReconstructor(final Class<?> clz) {
-		return RUNNABLE_RECONSTRUCTOR == null ?
-				RUNNABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : RUNNABLE_RECONSTRUCTOR;
-	}
-
-	private static ObjectReconstructor<?> getCallableReconstructor(final Class<?> clz) {
-		return CALLABLE_RECONSTRUCTOR == null ?
-				CALLABLE_RECONSTRUCTOR = new ObjectReconstructor<>(clz) : CALLABLE_RECONSTRUCTOR;
 	}
 
 	/**
