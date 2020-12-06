@@ -60,7 +60,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * Represents a channel injector.
  * @author Kristian
@@ -75,17 +74,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	 * Indicates that a packet has bypassed packet listeners.
 	 */
 	private static final PacketEvent BYPASSED_PACKET = new PacketEvent(ChannelInjector.class);
-
-
-	private static final Map<Class<?>, ObjectReconstructor<?>> RECONSTRUCTORS = new ConcurrentHashMap<>();
-
-	// Determine the method of updating packets.
-	// Starting in Java 15 (59), the Runnables/Callables are hidden classes and we cannot use reflection to update
-	// the values anymore. Instead, the object will have to be reconstructed.
-	private static final PacketMessageUpdater PACKET_MESSAGE_UPDATER =
-			Float.parseFloat(System.getProperty("java.class.version")) >= 59 ?
-					ChannelInjector::updatePacketMessageReconstruct :
-					ChannelInjector::updatePacketMessageSetReflection;
 
 	// The login packet
 	private static Class<?> PACKET_LOGIN_CLIENT = null;
@@ -103,7 +91,22 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		} catch (Exception ex) {
 			throw new RuntimeException("Encountered an error caused by a reload! Please properly restart your server!", ex);
 		}
+
+		Method hiddenClassMethod = null;
+		try {
+			if (Float.parseFloat(System.getProperty("java.class.version")) >= 59) {
+				hiddenClassMethod = Class.class.getMethod("isHidden");
+			}
+		} catch (NoSuchMethodException ignored) {
+
+		}
+		IS_HIDDEN_CLASS = hiddenClassMethod;
 	}
+
+	// Starting in Java 15 (59), the lambdas are hidden classes and we cannot use reflection to update
+	// the values anymore. Instead, the object will have to be reconstructed.
+	private static final Map<Class<?>, ObjectReconstructor<?>> RECONSTRUCTORS = new ConcurrentHashMap<>();
+	private static final Method IS_HIDDEN_CLASS;
 
 	// Saved accessors
 	private Method decodeBuffer;
@@ -364,8 +367,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						Object changed = event.getPacket().getHandle();
 
 						// Change packet to be scheduled
-						if (original != changed)
-							instance = (T) PACKET_MESSAGE_UPDATER.update(instance, changed, accessor);
+						if (original != changed) {
+							instance = (T) (isHiddenClass(instance.getClass()) ?
+									updatePacketMessageReconstruct(instance, changed, accessor) :
+									updatePacketMessageSetReflection(instance, changed, accessor));
+						}
 					}
 					return new Pair<>(instance, event != null ? event : BYPASSED_PACKET);
 				}
@@ -378,7 +384,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	/**
 	 * Changes the packet in a packet message using a {@link FieldAccessor}.
-	 * @see PacketMessageUpdater
 	 */
 	private static Object updatePacketMessageSetReflection(Object instance, Object newPacket, FieldAccessor accessor) {
 		accessor.set(instance, newPacket);
@@ -387,7 +392,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	/**
 	 * Changes the packet in a packet message using a {@link ObjectReconstructor}.
-	 * @see PacketMessageUpdater
 	 */
 	private static Object updatePacketMessageReconstruct(Object instance, Object newPacket, FieldAccessor accessor) {
 		final ObjectReconstructor<?> objectReconstructor =
@@ -983,18 +987,14 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		return originalChannel;
 	}
 
-	/**
-	 * Represents a method of updating a packet in a scheduled packet message.
-	 */
-	@FunctionalInterface
-	private interface PacketMessageUpdater {
-		/**
-		 * Updates a packet in a scheduled packet message.
-		 * @param instance  The current packet message to update.
-		 * @param newPacket The new packet to put in the packet message.
-		 * @param accessor  The FieldAccessor for the packet field in the packet message.
-		 * @return The updated packet message.
-		 */
-		Object update(Object instance, Object newPacket, FieldAccessor accessor);
+	private static boolean isHiddenClass(Class<?> clz) {
+		if (IS_HIDDEN_CLASS == null) {
+			return false;
+		}
+		try {
+			return (Boolean) IS_HIDDEN_CLASS.invoke(clz);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to determine whether class '" + clz.getName() + "' is hidden or not", e);
+		}
 	}
 }
