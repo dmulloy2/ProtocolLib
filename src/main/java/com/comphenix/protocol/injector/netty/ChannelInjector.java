@@ -271,6 +271,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					super.write(ctx, packet, promise);
 					ChannelInjector.this.finalWrite();
 				}
+
+				@Override
+				public boolean acceptOutboundMessage(Object msg) {
+					return msg instanceof WirePacket || MinecraftReflection.getPacketClass().isAssignableFrom(msg.getClass());
+				}
 			};
 
 			// Intercept recieved packets
@@ -894,6 +899,8 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			}
 		}
 	}
+
+
 
 	/**
 	 * Execute a specific command in the channel thread.
