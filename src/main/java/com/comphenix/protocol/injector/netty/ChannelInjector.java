@@ -34,6 +34,8 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.ObjectReconstructor;
+import com.comphenix.protocol.wrappers.Pair;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
@@ -48,6 +50,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
@@ -55,8 +58,8 @@ import java.net.SocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * Represents a channel injector.
  * @author Kristian
@@ -88,7 +91,22 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		} catch (Exception ex) {
 			throw new RuntimeException("Encountered an error caused by a reload! Please properly restart your server!", ex);
 		}
+
+		Method hiddenClassMethod = null;
+		try {
+			if (Float.parseFloat(System.getProperty("java.class.version")) >= 59) {
+				hiddenClassMethod = Class.class.getMethod("isHidden");
+			}
+		} catch (NoSuchMethodException ignored) {
+
+		}
+		IS_HIDDEN_CLASS = hiddenClassMethod;
 	}
+
+	// Starting in Java 15 (59), the lambdas are hidden classes and we cannot use reflection to update
+	// the values anymore. Instead, the object will have to be reconstructed.
+	private static final Map<Class<?>, ObjectReconstructor<?>> RECONSTRUCTORS = new ConcurrentHashMap<>();
+	private static final Method IS_HIDDEN_CLASS;
 
 	// Saved accessors
 	private Method decodeBuffer;
@@ -295,18 +313,18 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 				@Override
 				protected <T> Callable<T> onMessageScheduled(final Callable<T> callable, FieldAccessor packetAccessor) {
-					final PacketEvent event = handleScheduled(callable, packetAccessor);
+					Pair<Callable<T>, PacketEvent> handled = handleScheduled(callable, packetAccessor);
 
 					// Handle cancelled events
-					if (event != null && event.isCancelled())
+					if (handled.getSecond() != null && handled.getSecond().isCancelled())
 						return null;
 
 					return () -> {
 						T result;
 
 						// This field must only be updated in the pipeline thread
-						currentEvent = event;
-						result = callable.call();
+						currentEvent = handled.getSecond();
+						result = handled.getFirst().call();
 						currentEvent = null;
 						return result;
 					};
@@ -314,20 +332,20 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 				@Override
 				protected Runnable onMessageScheduled(final Runnable runnable, FieldAccessor packetAccessor) {
-					final PacketEvent event = handleScheduled(runnable, packetAccessor);
+					Pair<Runnable, PacketEvent> handled = handleScheduled(runnable, packetAccessor);
 
 					// Handle cancelled events
-					if (event != null && event.isCancelled())
+					if (handled.getSecond() != null && handled.getSecond().isCancelled())
 						return null;
 
 					return () -> {
-						currentEvent = event;
-						runnable.run();
+						currentEvent = handled.getSecond();
+						handled.getFirst().run();
 						currentEvent = null;
 					};
 				}
 
-				PacketEvent handleScheduled(Object instance, FieldAccessor accessor) {
+				<T> Pair<T, PacketEvent> handleScheduled(T instance, FieldAccessor accessor) {
 					// Let the filters handle this packet
 					Object original = accessor.get(instance);
 
@@ -338,9 +356,9 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 						if (marker != null)	{
 							PacketEvent result = new PacketEvent(ChannelInjector.class);
 							result.setNetworkMarker(marker);
-							return result;
+							return new Pair<>(instance, result);
 						} else {
-							return BYPASSED_PACKET;
+							return new Pair<>(instance, BYPASSED_PACKET);
 						}
 					}
 
@@ -350,17 +368,42 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 						// Change packet to be scheduled
 						if (original != changed) {
-							accessor.set(instance, changed);
+							instance = (T) (isHiddenClass(instance.getClass()) ?
+									updatePacketMessageReconstruct(instance, changed, accessor) :
+									updatePacketMessageSetReflection(instance, changed, accessor));
 						}
 					}
-
-					return event != null ? event : BYPASSED_PACKET;
+					return new Pair<>(instance, event != null ? event : BYPASSED_PACKET);
 				}
 			});
 
 			injected = true;
 			return true;
 		}
+	}
+
+	/**
+	 * Changes the packet in a packet message using a {@link FieldAccessor}.
+	 */
+	private static Object updatePacketMessageSetReflection(Object instance, Object newPacket, FieldAccessor accessor) {
+		accessor.set(instance, newPacket);
+		return instance;
+	}
+
+	/**
+	 * Changes the packet in a packet message using a {@link ObjectReconstructor}.
+	 */
+	private static Object updatePacketMessageReconstruct(Object instance, Object newPacket, FieldAccessor accessor) {
+		final ObjectReconstructor<?> objectReconstructor =
+				RECONSTRUCTORS.computeIfAbsent(instance.getClass(), ObjectReconstructor::new);
+
+		final Object[] values = objectReconstructor.getValues(instance);
+		final Field[] fields = objectReconstructor.getFields();
+		for (int idx = 0; idx < fields.length; ++idx)
+			if (fields[idx].equals(accessor.getField()))
+				values[idx] = newPacket;
+
+		return objectReconstructor.reconstruct(values);
 	}
 
 	/**
@@ -942,5 +985,16 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	public Channel getChannel() {
 		return originalChannel;
+	}
+
+	private static boolean isHiddenClass(Class<?> clz) {
+		if (IS_HIDDEN_CLASS == null) {
+			return false;
+		}
+		try {
+			return (Boolean) IS_HIDDEN_CLASS.invoke(clz);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to determine whether class '" + clz.getName() + "' is hidden or not", e);
+		}
 	}
 }
