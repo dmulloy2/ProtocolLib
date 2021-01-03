@@ -95,10 +95,14 @@ public class ChatExtensions {
 		for (WrappedChatComponent component : components) {
 			PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
 			packet.getChatComponents().write(0, component);
-			packet.getChatTypes().write(0, EnumWrappers.ChatType.SYSTEM);
-			if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
-				packet.getUUIDs().write(0, SERVER_UUID);
-			}
+
+			// 1.12+
+			packet.getChatTypes().writeSafely(0, EnumWrappers.ChatType.SYSTEM);
+			// 1.8-1.12
+			packet.getBytes().writeSafely(0, (byte) 1);
+			// 1.16+
+			packet.getUUIDs().writeSafely(0, SERVER_UUID);
+
 			packets.add(packet);
 		}
 
