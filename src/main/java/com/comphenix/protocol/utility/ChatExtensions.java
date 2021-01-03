@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -94,6 +95,7 @@ public class ChatExtensions {
 		for (WrappedChatComponent component : components) {
 			PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
 			packet.getChatComponents().write(0, component);
+			packet.getChatTypes().write(0, EnumWrappers.ChatType.SYSTEM);
 			if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
 				packet.getUUIDs().write(0, SERVER_UUID);
 			}
