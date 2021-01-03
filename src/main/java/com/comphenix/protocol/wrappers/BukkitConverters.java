@@ -953,9 +953,59 @@ public class BukkitConverters {
 	private static MethodAccessor getSoundEffect = null;
 	private static FieldAccessor soundKey = null;
 
+	private static MethodAccessor getSoundEffectByKey = null;
+	private static MethodAccessor getSoundEffectBySound = null;
+	private static MethodAccessor getSoundByEffect = null;
+
 	private static Map<String, Sound> soundIndex = null;
 
 	public static EquivalentConverter<Sound> getSoundConverter() {
+		// Try to create sound converter for new versions greater 1.16.4
+		try {
+			if (getSoundEffectByKey == null || getSoundEffectBySound == null || getSoundByEffect == null) {
+				Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
+				FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
+
+				getSoundEffectByKey = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+						"getSoundEffect",
+						MinecraftReflection.getSoundEffectClass(),
+						new Class<?>[]{String.class}
+				));
+
+				getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+						"getSoundEffect",
+						MinecraftReflection.getSoundEffectClass(),
+						new Class<?>[]{Sound.class}
+				));
+
+				getSoundByEffect = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+						"getBukkit",
+						Sound.class,
+						new Class<?>[]{MinecraftReflection.getSoundEffectClass()}
+				));
+			}
+
+			return ignoreNull(new EquivalentConverter<Sound>() {
+
+				@Override
+				public Class<Sound> getSpecificType() {
+					return Sound.class;
+				}
+
+				@Override
+				public Object getGeneric(Sound specific) {
+					return getSoundEffectBySound.invoke(null, specific);
+				}
+
+				@Override
+				public Sound getSpecific(Object generic) {
+					return (Sound) getSoundByEffect.invoke(null, generic);
+				}
+			});
+		} catch (Exception e) {
+		}
+
+		// Fall back to sound converter from legacy versions before 1.16.4
 		if (getSound == null || getSoundEffect == null) {
 			Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
