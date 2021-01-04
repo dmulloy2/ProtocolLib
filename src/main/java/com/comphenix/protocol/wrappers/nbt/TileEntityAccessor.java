@@ -1,6 +1,8 @@
 package com.comphenix.protocol.wrappers.nbt;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentMap;
@@ -11,18 +13,20 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.utility.EnhancerFactory;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
 import com.google.common.collect.Maps;
 
-import net.sf.cglib.asm.$ClassReader;
-import net.sf.cglib.asm.$ClassVisitor;
-import net.sf.cglib.asm.$MethodVisitor;
-import net.sf.cglib.asm.$Opcodes;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.jar.asm.ClassReader;
+import net.bytebuddy.jar.asm.ClassVisitor;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.jar.asm.Opcodes;
+import net.bytebuddy.matcher.ElementMatchers;
 
 import org.bukkit.block.BlockState;
 
@@ -43,13 +47,11 @@ class TileEntityAccessor<T extends BlockState> {
 	 */
 	private static final ConcurrentMap<Class<?>, TileEntityAccessor<?>> cachedAccessors = Maps.newConcurrentMap();
 
+	private static Constructor<?> nbtCompoundParserConstructor;
+
 	private FieldAccessor tileEntityField;
 	private MethodAccessor readCompound;
 	private MethodAccessor writeCompound;
-
-	// For CGLib detection
-	private boolean writeDetected;
-	private boolean readDetected;
 
 	TileEntityAccessor() {
 		// Do nothing
@@ -97,7 +99,7 @@ class TileEntityAccessor<T extends BlockState> {
 		} catch (IOException ex1) {
 			try {
 				// Much slower though
-				findMethodUsingCGLib(state);
+				findMethodUsingByteBuddy(state);
 			} catch (Exception ex2) {
 				throw new RuntimeException("Cannot find read/write methods in " + type, ex2);
 			}
@@ -117,26 +119,26 @@ class TileEntityAccessor<T extends BlockState> {
 	private void findMethodsUsingASM() throws IOException {
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 		final Class<?> tileEntityClass = MinecraftReflection.getTileEntityClass();
-		final $ClassReader reader = new $ClassReader(tileEntityClass.getCanonicalName());
+		final ClassReader reader = new ClassReader(tileEntityClass.getCanonicalName());
 
 		final String tagCompoundName = getJarName(MinecraftReflection.getNBTCompoundClass());
 		final String expectedDesc = "(L" + tagCompoundName + ";)";
 
-		reader.accept(new $ClassVisitor($Opcodes.ASM5) {
+		reader.accept(new ClassVisitor(Opcodes.ASM5) {
 			@Override
-			public $MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+			public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
 				final String methodName = name;
 
 				// Detect read/write calls to NBTTagCompound
 				if (desc.startsWith(expectedDesc)) {
-					return new $MethodVisitor($Opcodes.ASM5) {
+					return new MethodVisitor(Opcodes.ASM5) {
 						private int readMethods;
 						private int writeMethods;
 
 						@Override
 						public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean intf) {
 							// This must be a virtual call on NBTTagCompound that accepts a String
-							if (opcode == $Opcodes.INVOKEVIRTUAL
+							if (opcode == Opcodes.INVOKEVIRTUAL
 									&& tagCompoundName.equals(owner)
 									&& desc.startsWith("(Ljava/lang/String")) {
 
@@ -167,47 +169,60 @@ class TileEntityAccessor<T extends BlockState> {
 		}, 0);
 	}
 
+	private static Constructor<?> setupNBTCompoundParserConstructor()
+	{
+		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
+		try {
+			return ByteBuddyFactory.getInstance()
+				.createSubclass(nbtCompoundClass)
+				.name(MinecraftMethods.class.getPackage().getName() + ".NBTInvocationHandler")
+				.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
+				.intercept(InvocationHandlerAdapter.of((obj, method, args) -> {
+					// If true, we've found a write method. Otherwise, a read method.
+					if (method.getReturnType().equals(Void.TYPE))
+						throw new WriteMethodException();
+					throw new ReadMethodException();
+				}))
+				.make()
+				.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+				.getLoaded()
+				.getDeclaredConstructor();
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find NBTCompound constructor.");
+		}
+	}
+
 	/**
 	 * Find the read/write methods in TileEntity.
 	 * @param blockState - the block state.
 	 * @throws IOException If we cannot find these methods.
 	 */
-	private void findMethodUsingCGLib(T blockState) throws IOException {
+	private void findMethodUsingByteBuddy(T blockState) throws IllegalAccessException, InvocationTargetException,
+			InstantiationException {
+		if (nbtCompoundParserConstructor == null)
+			nbtCompoundParserConstructor = setupNBTCompoundParserConstructor();
+
 		final Class<?> nbtCompoundClass = MinecraftReflection.getNBTCompoundClass();
 
-		// This is a much slower method, but it is necessary in MCPC
-		Enhancer enhancer = EnhancerFactory.getInstance().createEnhancer();
-		enhancer.setSuperclass(nbtCompoundClass);
-		enhancer.setCallback(new MethodInterceptor() {
-			@Override
-			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-				if (method.getReturnType().equals(Void.TYPE)) {
-					// Write method
-					writeDetected = true;
-				} else {
-					// Read method
-					readDetected = true;
-				}
-				throw new RuntimeException("Stop execution.");
-			}
-		});
-		Object compound = enhancer.create();
-		Object tileEntity = tileEntityField.get(blockState);
+		final Object compound = nbtCompoundParserConstructor.newInstance();
+		final Object tileEntity = tileEntityField.get(blockState);
 
 		// Look in every read/write like method
 		for (Method method : FuzzyReflection.fromObject(tileEntity, true).
 				getMethodListByParameters(Void.TYPE, new Class<?>[] { nbtCompoundClass })) {
 
 			try {
-				readDetected = false;
-				writeDetected = false;
 				method.invoke(tileEntity, compound);
-			} catch (Exception e) {
-				// Okay - see if we detected a write or read
-				if (readDetected)
+			} catch (InvocationTargetException e) {
+				if (e.getCause() instanceof ReadMethodException) {
 					readCompound = Accessors.getMethodAccessor(method, true);
-				if (writeDetected)
+				} else if (e.getCause() instanceof WriteMethodException) {
 					writeCompound = Accessors.getMethodAccessor(method, true);
+				} else {
+					// throw new RuntimeException("Inner exception.", e);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("Generic reflection error.", e);
 			}
 		}
 	}
@@ -283,5 +298,29 @@ class TileEntityAccessor<T extends BlockState> {
 			}
 		}
 		return (TileEntityAccessor<T>) (accessor != EMPTY_ACCESSOR ? accessor : null);
+	}
+
+	/**
+	 * An internal exception used to detect read methods.
+	 * @author Kristian
+	 */
+	private static class ReadMethodException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public ReadMethodException() {
+			super("A read method was executed.");
+		}
+	}
+
+	/**
+	 * An internal exception used to detect write methods.
+	 * @author Kristian
+	 */
+	private static class WriteMethodException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public WriteMethodException() {
+			super("A write method was executed.");
+		}
 	}
 }

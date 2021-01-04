@@ -51,8 +51,8 @@
 
 							<relocations>
 								<relocation>
-									<pattern>net.sf</pattern>
-									<shadedPattern>com.comphenix.net.sf</shadedPattern>
+									<pattern>net.bytebuddy</pattern>
+									<shadedPattern>com.comphenix.net.bytebuddy</shadedPattern>
 								</relocation>
 							</relocations>
 
@@ -100,6 +100,8 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M5</version>
 				<configuration>
+					<trimStackTrace>false</trimStackTrace>
+					<useFile>false</useFile>
 					<systemProperties>
 						<property>
 							<name>projectVersion</name>
@@ -291,11 +293,11 @@
 			<version>${spigot.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
 		<dependency>
-			<groupId>cglib</groupId>
-			<artifactId>cglib-nodep</artifactId>
-			<version>3.2.5</version>
-			<scope>compile</scope>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>1.10.16</version>
 		</dependency>
 
 		<!-- Testing dependencies -->

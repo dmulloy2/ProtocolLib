@@ -17,15 +17,25 @@
 
 package com.comphenix.protocol.injector.server;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.CallbackFilter;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
-import net.sf.cglib.proxy.NoOp;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
+import net.bytebuddy.implementation.FieldAccessor;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.FieldValue;
+import net.bytebuddy.implementation.bind.annotation.Origin;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.implementation.bind.annotation.This;
+import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.matcher.ElementMatchers;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
@@ -38,8 +48,7 @@ import com.comphenix.protocol.utility.ChatExtensions;
  * Create fake player instances that represents pre-authenticated clients.
  */
 public class TemporaryPlayerFactory {
-	// Prevent too many class creations
-	private static CallbackFilter callbackFilter;
+	private static final Constructor<? extends Player> temporaryPlayerConstructor = setupProxyPlayerConstructor();
 	
 	/**
 	 * Retrieve the injector from a given player if it contains one.
@@ -82,21 +91,34 @@ public class TemporaryPlayerFactory {
 	 * @return A temporary player instance.
 	 */
 	public Player createTemporaryPlayer(final Server server) {
-	
-		// Default implementation
-		Callback implementation = new MethodInterceptor() {
-			@Override
-			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+		try {
+			return temporaryPlayerConstructor.newInstance(server);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Cannot access reflection.", e);
+		} catch (InstantiationException e) {
+			throw new RuntimeException("Cannot instantiate object.", e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Error in invocation.", e);
+		}
+	}
+
+	private static Constructor<? extends Player> setupProxyPlayerConstructor()
+	{
+		final MethodDelegation implementation = MethodDelegation.to(new Object() {
+			@RuntimeType
+			public Object delegate(@This Object obj, @Origin Method method, @FieldValue("server") Server server,
+								   @AllArguments Object... args) throws Throwable {
+
 				String methodName = method.getName();
 				SocketInjector injector = ((TemporaryPlayer) obj).getInjector();
-				
+
 				if (injector == null)
 					throw new IllegalStateException("Unable to find injector.");
 
 				// Use the socket to get the address
 				else if (methodName.equals("getPlayer"))
 					return injector.getUpdatedPlayer();
-				else if (methodName.equals("getAddress")) 
+				else if (methodName.equals("getAddress"))
 					return injector.getAddress();
 				else if (methodName.equals("getServer"))
 					return server;
@@ -104,70 +126,71 @@ public class TemporaryPlayerFactory {
 				// Handle send message methods
 				if (methodName.equals("chat") || methodName.equals("sendMessage")) {
 					try {
-					Object argument = args[0];
-					
-					// Dynamic overloading
-					if (argument instanceof String) {
-						return sendMessage(injector, (String) argument);
-					} else if (argument instanceof String[]) {
-						for (String message : (String[]) argument) {
-							sendMessage(injector, message);
+						Object argument = args[0];
+
+						// Dynamic overloading
+						if (argument instanceof String) {
+							return sendMessage(injector, (String) argument);
+						} else if (argument instanceof String[]) {
+							for (String message : (String[]) argument) {
+								sendMessage(injector, message);
+							}
+							return null;
 						}
-						return null;
-					}
 					} catch (InvocationTargetException e) {
 						throw e.getCause();
 					}
 				}
-				
+
 				// Also, handle kicking
 				if (methodName.equals("kickPlayer")) {
 					injector.disconnect((String) args[0]);
 					return null;
 				}
-				
+
 				// The fallback instance
 				Player updated = injector.getUpdatedPlayer();
-				
+
 				if (updated != obj && updated != null) {
-					return proxy.invoke(updated, args);
+					return method.invoke(updated, args);
 				}
-				
+
 				// Methods that are supported in the fallback instance
 				if (methodName.equals("isOnline"))
 					return injector.getSocket() != null && injector.getSocket().isConnected();
 				else if (methodName.equals("getName"))
 					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
-				
+
 				// Ignore all other methods
 				throw new UnsupportedOperationException(
 						"The method " + method.getName() + " is not supported for temporary players.");
 			}
-    	};
-		
-		// Shared callback filter
-		if (callbackFilter == null) {
-			callbackFilter = new CallbackFilter() {
-				@Override
-				public int accept(Method method) {
-					// Do not override the object method or the superclass methods
-					if (method.getDeclaringClass().equals(Object.class) ||
-						method.getDeclaringClass().equals(TemporaryPlayer.class))
-						return 0;
-					else 
-						return 1;
-				}
-			};
+		});
+
+		final ElementMatcher.Junction<ByteCodeElement> callbackFilter =  ElementMatchers.not(
+				ElementMatchers.isDeclaredBy(Object.class).or(ElementMatchers.isDeclaredBy(TemporaryPlayer.class)));
+
+		try {
+			final Constructor<?> constructor = ByteBuddyFactory.getInstance()
+					.createSubclass(TemporaryPlayer.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
+					.name(TemporaryPlayerFactory.class.getPackage().getName() + ".TemporaryPlayerInvocationHandler")
+					.implement(Player.class)
+
+					.defineField("server", Server.class, Visibility.PRIVATE)
+					.defineConstructor(Visibility.PUBLIC)
+					.withParameters(Server.class)
+					.intercept(MethodCall.invoke(TemporaryPlayer.class.getDeclaredConstructor())
+							.andThen(FieldAccessor.ofField("server").setsArgumentAt(0)))
+					.method(callbackFilter)
+					.intercept(implementation)
+					.make()
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+					.getLoaded()
+					.getDeclaredConstructor(Server.class);
+			return (Constructor<? extends Player>) constructor;
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find Temporary Player constructor!", e);
 		}
-    	
-		// CGLib is amazing
-    	Enhancer ex = new Enhancer();
-    	ex.setSuperclass(TemporaryPlayer.class);
-    	ex.setInterfaces(new Class[] { Player.class });
-		ex.setCallbacks(new Callback[] { NoOp.INSTANCE, implementation });
-		ex.setCallbackFilter(callbackFilter);
-    	
-    	return (Player) ex.create();
 	}
 	
 	/**
@@ -191,7 +214,7 @@ public class TemporaryPlayerFactory {
 	 * @throws InvocationTargetException If the message couldn't be sent.
 	 * @throws FieldAccessException If we were unable to construct the message packet.
 	 */
-	private Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
+	private static Object sendMessage(SocketInjector injector, String message) throws InvocationTargetException, FieldAccessException {
 		for (PacketContainer packet : ChatExtensions.createChatPackets(message)) {
 			injector.sendServerPacket(packet.getHandle(), null, false);
 		}

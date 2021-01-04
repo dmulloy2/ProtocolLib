@@ -1,10 +1,12 @@
 package com.comphenix.protocol.utility;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
@@ -14,8 +16,13 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.Origin;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.implementation.bind.annotation.SuperCall;
+import net.bytebuddy.matcher.ElementMatchers;
 
 /**
  * Static methods for accessing Minecraft methods.
@@ -33,6 +40,8 @@ public class MinecraftMethods {
 	// For packet
 	private volatile static Method packetReadByteBuf;
 	private volatile static Method packetWriteByteBuf;
+
+	private static Constructor<?> proxyConstructor;
 	
 	/**
 	 * Retrieve the send packet method in PlayerConnection/NetServerHandler.
@@ -166,36 +175,59 @@ public class MinecraftMethods {
 		initializePacket();
 		return packetWriteByteBuf;
 	}
-	
+
+	private static Constructor<?> setupProxyConstructor()
+	{
+		try {
+			return ByteBuddyFactory.getInstance()
+					.createSubclass(MinecraftReflection.getPacketDataSerializerClass())
+					.name(MinecraftMethods.class.getPackage().getName() + ".PacketDecorator")
+					.method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
+					.intercept(MethodDelegation.to(new Object() {
+						@RuntimeType
+						public Object delegate(@SuperCall Callable<?> zuper, @Origin Method method) throws Exception {
+							if (method.getName().contains("read")) {
+								throw new ReadMethodException();
+							}
+
+							if (method.getName().contains("write")) {
+								throw new WriteMethodException();
+							}
+							return zuper.call();
+						}
+					}))
+					.make()
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+					.getLoaded()
+					.getDeclaredConstructor(MinecraftReflection.getByteBufClass());
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find constructor!", e);
+		}
+	}
+
 	/**
 	 * Initialize the two read() and write() methods.
 	 */
 	private static void initializePacket() {
+
 		// Initialize the methods
 		if (packetReadByteBuf == null || packetWriteByteBuf == null) {
-			// This object will allow us to detect which methods were called
-			Enhancer enhancer = EnhancerFactory.getInstance().createEnhancer();
-			enhancer.setSuperclass(MinecraftReflection.getPacketDataSerializerClass());
-			enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> {
-				if (method.getName().contains("read")) {
-					throw new ReadMethodException();
-				}
+			if (proxyConstructor == null)
+				proxyConstructor = setupProxyConstructor();
 
-				if (method.getName().contains("write")) {
-					throw new WriteMethodException();
-				}
+			final Object javaProxy;
+			try {
+				javaProxy = proxyConstructor.newInstance(Unpooled.buffer());
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException("Cannot access reflection.", e);
+			} catch (InstantiationException e) {
+				throw new RuntimeException("Cannot instantiate object.", e);
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException("Error in invocation.", e);
+			}
 
-				return proxy.invokeSuper(obj, args);
-			});
-
-			// Create our proxy object
-			Object javaProxy = enhancer.create(
-					new Class<?>[] { MinecraftReflection.getByteBufClass() },
-					new Object[] { Unpooled.buffer() }
-			);
-
-			Object lookPacket = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW).getHandle();
-			List<Method> candidates = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass())
+			final Object lookPacket = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW).getHandle();
+			final List<Method> candidates = FuzzyReflection.fromClass(MinecraftReflection.getPacketClass())
 					.getMethodListByParameters(Void.TYPE, new Class<?>[] { MinecraftReflection.getPacketDataSerializerClass() });
 
 			// Look through all the methods

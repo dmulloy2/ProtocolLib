@@ -29,13 +29,12 @@ import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.sf.cglib.proxy.Factory;
-
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+import com.comphenix.protocol.utility.ByteBuddyGenerated;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -464,7 +463,7 @@ class CommandPacket extends CommandBase {
 		// Get the first Minecraft super class
 		while (clazz != null && clazz != Object.class &&
 				(!MinecraftReflection.isMinecraftClass(clazz) || 
-				 Factory.class.isAssignableFrom(clazz))) {
+				 ByteBuddyGenerated.class.isAssignableFrom(clazz))) {
 			clazz = clazz.getSuperclass();
 		}
 		

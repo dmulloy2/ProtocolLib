@@ -21,20 +21,32 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
+import net.bytebuddy.implementation.FieldAccessor;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.FieldValue;
+import net.bytebuddy.implementation.bind.annotation.Pipe;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.matcher.ElementMatchers;
 
 import org.bukkit.*;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.utility.EnhancerFactory;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
 
 /**
  * Represents a player object that can be serialized by Java.
@@ -60,9 +72,8 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	private boolean playedBefore;
 	private boolean online;
 	private boolean whitelisted;
-	
-	// Proxy helper
-	private static Map<String, Method> lookup = new ConcurrentHashMap<String, Method>();
+
+	private static final Constructor<?> proxyPlayerConstructor = setupProxyPlayerConstructor();
 
 	/**
 	 * Constructor used by serialization.
@@ -243,42 +254,78 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	}
 	
 	/**
-	 * Retrieve a player object that implements OfflinePlayer by refering to this object. 
+	 * Retrieve a player object that implements OfflinePlayer by referring to this object.
 	 * <p>
 	 * All other methods cause an exception.
 	 * @return Proxy object.
 	 */
 	public Player getProxyPlayer() {
-		
-		// Remember to initialize the method filter
-		if (lookup.size() == 0) {
-			// Add all public methods
-			for (Method method : OfflinePlayer.class.getMethods()) {
-				lookup.put(method.getName(), method);
-			}
+		try {
+			return (Player) proxyPlayerConstructor.newInstance(this);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Cannot access reflection.", e);
+		} catch (InstantiationException e) {
+			throw new RuntimeException("Cannot instantiate object.", e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Error in invocation.", e);
 		}
-		
-    	// MORE CGLIB magic!
-    	Enhancer ex = EnhancerFactory.getInstance().createEnhancer();
-    	ex.setSuperclass(Player.class);
-    	ex.setCallback(new MethodInterceptor() {
-			@Override
-			public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-				
-				// There's no overloaded methods, so we don't care
-				Method offlineMethod = lookup.get(method.getName());
-				
-				// Ignore all other methods
-				if (offlineMethod == null) {
-					throw new UnsupportedOperationException(
-							"The method " + method.getName() + " is not supported for offline players.");
-				}
+	}
 
-				// Invoke our on method
-				return offlineMethod.invoke(SerializedOfflinePlayer.this, args);
-			}
-    	});
-    	
-    	return (Player) ex.create();
+	private static Constructor<? extends Player> setupProxyPlayerConstructor()
+	{
+		final Method[] offlinePlayerMethods = OfflinePlayer.class.getMethods();
+		final String[] methodNames = new String[offlinePlayerMethods.length];
+		for (int idx = 0; idx < offlinePlayerMethods.length; ++idx)
+			methodNames[idx] = offlinePlayerMethods[idx].getName();
+
+		final ElementMatcher.Junction<ByteCodeElement> forwardedMethods = ElementMatchers.namedOneOf(methodNames);
+
+		try {
+			final MethodDelegation forwarding = MethodDelegation.withDefaultConfiguration()
+					.withBinders(Pipe.Binder.install(Function.class))
+					.to(new Object() {
+						@RuntimeType
+						public Object intercept(@Pipe Function<OfflinePlayer, Object> pipe,
+												@FieldValue("offlinePlayer") OfflinePlayer proxy) {
+							return pipe.apply(proxy);
+						}
+					});
+
+			final InvocationHandlerAdapter throwException = InvocationHandlerAdapter.of((obj, method, args) -> {
+					throw new UnsupportedOperationException(
+						"The method " + method.getName() + " is not supported for offline players.");
+				});
+
+			return ByteBuddyFactory.getInstance()
+					.createSubclass(PlayerUnion.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
+					.name(SerializedOfflinePlayer.class.getPackage().getName() + ".PlayerInvocationHandler")
+
+					.defineField("offlinePlayer", OfflinePlayer.class, Visibility.PRIVATE)
+					.defineConstructor(Visibility.PUBLIC)
+					.withParameters(OfflinePlayer.class)
+					.intercept(MethodCall.invoke(Object.class.getDeclaredConstructor())
+							.andThen(FieldAccessor.ofField("offlinePlayer").setsArgumentAt(0)))
+
+					.method(forwardedMethods)
+					.intercept(forwarding)
+
+					.method(ElementMatchers.not(forwardedMethods))
+					.intercept(throwException)
+
+					.make()
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+					.getLoaded()
+					.getDeclaredConstructor(OfflinePlayer.class);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find Player constructor!", e);
+		}
+	}
+
+	/**
+	 * This interface extends both OfflinePlayer and Player (in that order) so that the class generated by ByteBuddy
+	 * looks at OfflinePlayer's methods first while still being a Player.
+	 */
+	private interface PlayerUnion extends OfflinePlayer, Player
+	{
 	}
 }

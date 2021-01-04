@@ -6,8 +6,11 @@ import java.util.List;
 
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod.AsmOpcodes;
 import com.google.common.collect.Lists;
-
-import net.sf.cglib.asm.*;
+import net.bytebuddy.jar.asm.ClassReader;
+import net.bytebuddy.jar.asm.ClassVisitor;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.jar.asm.Opcodes;
+import net.bytebuddy.jar.asm.Type;
 
 public class ClassAnalyser {
 	/**
@@ -26,11 +29,11 @@ public class ClassAnalyser {
 			
 			public static AsmOpcodes fromIntOpcode(int opcode) {
 				switch (opcode) {
-					case $Opcodes.INVOKEVIRTUAL: return AsmOpcodes.INVOKE_VIRTUAL;
-					case $Opcodes.INVOKESPECIAL: return AsmOpcodes.INVOKE_SPECIAL;
-					case $Opcodes.INVOKESTATIC: return AsmOpcodes.INVOKE_STATIC;
-					case $Opcodes.INVOKEINTERFACE: return AsmOpcodes.INVOKE_INTERFACE;
-					case $Opcodes.INVOKEDYNAMIC: return AsmOpcodes.INVOKE_DYNAMIC;
+					case Opcodes.INVOKEVIRTUAL: return AsmOpcodes.INVOKE_VIRTUAL;
+					case Opcodes.INVOKESPECIAL: return AsmOpcodes.INVOKE_SPECIAL;
+					case Opcodes.INVOKESTATIC: return AsmOpcodes.INVOKE_STATIC;
+					case Opcodes.INVOKEINTERFACE: return AsmOpcodes.INVOKE_INTERFACE;
+					case Opcodes.INVOKEDYNAMIC: return AsmOpcodes.INVOKE_DYNAMIC;
 					default: throw new IllegalArgumentException("Unknown opcode: " + opcode);
 				}
 			}
@@ -105,18 +108,18 @@ public class ClassAnalyser {
 	 * @throws IOException Cannot access the parent class.
 	 */
 	private List<AsmMethod> getMethodCalls(Class<?> clazz, Method method) throws IOException {
-		final $ClassReader reader = new $ClassReader(clazz.getCanonicalName());
+		final ClassReader reader = new ClassReader(clazz.getCanonicalName());
 		final List<AsmMethod> output = Lists.newArrayList();
 		
 		// The method we are looking for
 		final String methodName = method.getName();
-		final String methodDescription = $Type.getMethodDescriptor(method);
+		final String methodDescription = Type.getMethodDescriptor(method);
 
-		reader.accept(new $ClassVisitor($Opcodes.ASM5) {
+		reader.accept(new ClassVisitor(Opcodes.ASM5) {
 			@Override
-			public $MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+			public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
 				if (methodName.equals(name) && methodDescription.equals(desc)) {
-					return new $MethodVisitor($Opcodes.ASM5) {
+					return new MethodVisitor(Opcodes.ASM5) {
 						@Override
 						public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean flag) {
 							output.add(new AsmMethod(AsmOpcodes.fromIntOpcode(opcode), owner, methodName, desc));
@@ -126,7 +129,7 @@ public class ClassAnalyser {
 
 				return null;
 			}
-		}, $ClassReader.EXPAND_FRAMES);
+		}, ClassReader.EXPAND_FRAMES);
 		return output;
 	}
 }
