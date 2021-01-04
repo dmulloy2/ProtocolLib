@@ -1,7 +1,12 @@
 package com.comphenix.protocol.utility;
 
 import java.io.IOException;
+import java.util.Map;
 
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.PrettyPrinter;
+import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.base.Preconditions;
 
 /**
@@ -11,6 +16,11 @@ import com.google.common.base.Preconditions;
  */
 public class HexDumper {
 	private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
+
+	/**
+	 * Number of bytes before we do a hex dump.
+	 */
+	private static final int HEX_DUMP_THRESHOLD = 256;
 
 	// Default values
 	private int positionLength = 6;
@@ -227,5 +237,65 @@ public class HexDumper {
 
 		// Total expected length of each line
 		return constant + delimiter.length * (groups - 1) + groupLength * groups;
+	}
+
+	/**
+	 * Retrieve the closest equivalent converter to a specific class.
+	 * @param clazz - the class.
+	 * @return The closest converter, or NULL if not found,
+	 */
+	public static EquivalentConverter<Object> findConverter(Class<?> clazz) {
+		Map<Class<?>, EquivalentConverter<Object>> converters = BukkitConverters.getConvertersForGeneric();
+
+		while (clazz != null) {
+			EquivalentConverter<Object> result = converters.get(clazz);
+
+			if (result != null)
+				return result;
+			else
+				clazz = clazz.getSuperclass();
+		}
+		return null;
+	}
+
+	/**
+	 * Retrieve a detailed string representation of the given packet.
+	 * @param packetContainer - the packet to describe.
+	 * @return The detailed description.
+	 * @throws IllegalAccessException An error occured.
+	 */
+	public static String getPacketDescription(PacketContainer packetContainer) throws IllegalAccessException {
+		Object packet = packetContainer.getHandle();
+		Class<?> clazz = packet.getClass();
+
+		// Get the first Minecraft super class
+		while (clazz != null && clazz != Object.class &&
+				(!MinecraftReflection.isMinecraftClass(clazz) ||
+						ByteBuddyGenerated.class.isAssignableFrom(clazz))) {
+			clazz = clazz.getSuperclass();
+		}
+
+		return PrettyPrinter.printObject(packet, clazz, MinecraftReflection.getPacketClass(),
+			PrettyPrinter.RECURSE_DEPTH, (output, value) -> {
+				// Special case
+				if (value instanceof byte[]) {
+					byte[] data = (byte[]) value;
+
+					if (data.length > HEX_DUMP_THRESHOLD) {
+						output.append("[");
+						HexDumper.defaultDumper().appendTo(output, data);
+						output.append("]");
+						return true;
+					}
+				} else if (value != null) {
+					EquivalentConverter<Object> converter = findConverter(value.getClass());
+
+					if (converter != null) {
+						output.append(converter.getSpecific(value));
+						return true;
+					}
+				}
+				return false;
+			});
 	}
 }

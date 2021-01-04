@@ -76,11 +76,6 @@ class CommandPacket extends CommandBase {
 	 */
 	public static final int PAGE_LINE_COUNT = 9;
 	
-	/**
-	 * Number of bytes before we do a hex dump.
-	 */
-	private static final int HEX_DUMP_THRESHOLD = 256;
-	
 	private Plugin plugin;
 	private Logger logger;
 	private ProtocolManager manager;
@@ -370,7 +365,7 @@ class CommandPacket extends CommandBase {
 							logger.info("Initial packet:\n" + original + " -> ");
 						}
 						
-						logger.info(shortDescription + ":\n" + getPacketDescription(
+						logger.info(shortDescription + ":\n" + HexDumper.getPacketDescription(
 							event.getPacket())
 						);
 					} catch (IllegalAccessException e) {
@@ -427,7 +422,7 @@ class CommandPacket extends CommandBase {
 			 */
 			private void savePacketState(PacketEvent event) {
 				try {
-					originalPackets.put(event, getPacketDescription(event.getPacket()));
+					originalPackets.put(event, HexDumper.getPacketDescription(event.getPacket()));
 				} catch (IllegalAccessException e) {
 					throw new RuntimeException("Cannot read packet.", e);
 				}
@@ -448,68 +443,6 @@ class CommandPacket extends CommandBase {
 				return plugin;
 			}
 		};
-	}
-	
-	/**
-	 * Retrieve a detailed string representation of the given packet.
-	 * @param packetContainer - the packet to describe. 
-	 * @return The detailed description.
-	 * @throws IllegalAccessException An error occured.
-	 */
-	public String getPacketDescription(PacketContainer packetContainer) throws IllegalAccessException {
-		Object packet = packetContainer.getHandle();
-		Class<?> clazz = packet.getClass();
-		
-		// Get the first Minecraft super class
-		while (clazz != null && clazz != Object.class &&
-				(!MinecraftReflection.isMinecraftClass(clazz) || 
-				 ByteBuddyGenerated.class.isAssignableFrom(clazz))) {
-			clazz = clazz.getSuperclass();
-		}
-		
-		return PrettyPrinter.printObject(packet, clazz, MinecraftReflection.getPacketClass(), PrettyPrinter.RECURSE_DEPTH, new ObjectPrinter() {
-			@Override
-			public boolean print(StringBuilder output, Object value) {
-				// Special case
-				if (value instanceof byte[]) {
-					byte[] data = (byte[]) value;
-					
-					if (data.length > HEX_DUMP_THRESHOLD) {
-						output.append("[");
-						HexDumper.defaultDumper().appendTo(output, data);
-						output.append("]");
-						return true;
-					}
-				} else if (value != null) {
-					EquivalentConverter<Object> converter = findConverter(value.getClass());
-
-					if (converter != null) {
-						output.append(converter.getSpecific(value));
-						return true;
-					}
-				}
-				return false;
-			}
-		});
-	}
-	
-	/**
-	 * Retrieve the closest equivalent converter to a specific class.
-	 * @param clazz - the class.
-	 * @return The closest converter, or NULL if not found,
-	 */
-	private EquivalentConverter<Object> findConverter(Class<?> clazz) {
-		Map<Class<?>, EquivalentConverter<Object>> converters = BukkitConverters.getConvertersForGeneric();
-		
-		while (clazz != null) {
-			EquivalentConverter<Object> result = converters.get(clazz);
-			
-			if (result != null)
-				return result;
-			else
-				clazz = clazz.getSuperclass();
-		}
-		return null;
 	}
 		
 	public PacketListener updatePacketListener() {
