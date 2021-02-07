@@ -1,3 +1,5 @@
+package com.comphenix.protocol.utility;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import io.netty.util.Version;
 
