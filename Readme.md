@@ -44,7 +44,7 @@ You can also add ProtocolLib as a Maven dependency:
 <repositories>
   <repository>
     <id>dmulloy2-repo</id>
-    <url>https://repo.dmulloy2.net/nexus/repository/public/</url>
+    <url>https://repo.dmulloy2.net/repository/public/</url>
   </repository>
   ...
 </repositories>
@@ -53,7 +53,7 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>4.5.0</version>
+    <version>4.6.0</version>
   </dependency>
 </dependencies>
 ````
@@ -62,11 +62,11 @@ Or use the maven dependency with gradle:
 
 ```gradle
 repositories {
-    maven { url "https://repo.dmulloy2.net/nexus/repository/public/" }
+    maven { url "https://repo.dmulloy2.net/repository/public/" }
 }
 
 dependencies {
-    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.5.0";
+    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.6.0";
 }
 ```
 

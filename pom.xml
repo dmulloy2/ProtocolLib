@@ -4,7 +4,7 @@
     <groupId>com.comphenix.protocol</groupId>
 	<artifactId>ProtocolLib</artifactId>
 	<name>ProtocolLib</name>
-	<version>4.6.0-SNAPSHOT</version>
+	<version>4.6.0</version>
 
 	<description>Provides read/write access to the Minecraft protocol.</description>
 	<url>https://github.com/dmulloy2/ProtocolLib</url>
@@ -147,8 +147,8 @@
 			</activation>
 			<properties>
 				<project.build.number>-b${env.BUILD_NUMBER}</project.build.number>
-				<project.fullVersion>${project.version}${project.build.number}</project.fullVersion>
-				<!--<project.fullVersion>${project.version}</project.fullVersion>-->
+				<!--<project.fullVersion>${project.version}${project.build.number}</project.fullVersion>-->
+				<project.fullVersion>${project.version}</project.fullVersion>
 			</properties>
 		</profile>
 
