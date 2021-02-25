@@ -36,7 +36,7 @@ public class AdventureComponentConverter {
 	 * @return Component
 	 */
   	public static Component fromWrapper(WrappedChatComponent wrapper) {
-    	return GsonComponentSerializer.gson().deserialize(wrapper.getJson());
+    		return GsonComponentSerializer.gson().deserialize(wrapper.getJson());
  	}
 
  	/**
@@ -45,15 +45,15 @@ public class AdventureComponentConverter {
 	 * @return ProtocolLib wrapper
 	 */
   	public static WrappedChatComponent fromComponent(Component component) {
-    	return WrappedChatComponent.fromJson(GsonComponentSerializer.gson().serialize(component));
+    		return WrappedChatComponent.fromJson(GsonComponentSerializer.gson().serialize(component));
   	}
 
   	public static Class<?> getComponentClass() {
-    	return Component.class;
+    		return Component.class;
   	}
 
   	public static Component clone(Component component) {
-    	GsonComponentSerializer gson = GsonComponentSerializer.gson();
+    		GsonComponentSerializer gson = GsonComponentSerializer.gson();
 		return gson.deserialize(gson.serialize(component));
   	}
 }
