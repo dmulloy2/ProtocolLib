@@ -31,7 +31,6 @@ import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Maps;
 
-import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 
 /**
@@ -92,7 +91,7 @@ public class BukkitCloner implements Cloner {
 
 		try {
 			fromManual(AdventureComponentConverter::getComponentClass, source ->
-					AdventureComponentConverter.clone((Component) source));
+					AdventureComponentConverter.clone(source));
 		} catch (Throwable ignored) { }
 	}
 
