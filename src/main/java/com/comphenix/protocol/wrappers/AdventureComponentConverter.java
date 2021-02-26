@@ -23,7 +23,6 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
  * Utility class for converting between the Adventure API Component and ProtocolLib's wrapper
  * <p>
  * Note: The Adventure API Component is not included in CraftBukkit, Bukkit or Spigot and is only present in PaperMC.
- * @author LOOHP
  */
 public class AdventureComponentConverter {
 	
@@ -52,8 +51,8 @@ public class AdventureComponentConverter {
     		return Component.class;
   	}
 
-  	public static Component clone(Component component) {
-    		GsonComponentSerializer gson = GsonComponentSerializer.gson();
-		return gson.deserialize(gson.serialize(component));
+  	public static Component clone(Object component) {
+    	GsonComponentSerializer gson = GsonComponentSerializer.gson();
+		return gson.deserialize(gson.serialize((Component) component));
   	}
 }
