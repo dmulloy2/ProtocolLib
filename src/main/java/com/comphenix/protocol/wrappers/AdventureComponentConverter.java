@@ -52,7 +52,7 @@ public class AdventureComponentConverter {
   	}
 
   	public static Component clone(Object component) {
-    	GsonComponentSerializer gson = GsonComponentSerializer.gson();
+    		GsonComponentSerializer gson = GsonComponentSerializer.gson();
 		return gson.deserialize(gson.serialize((Component) component));
   	}
 }
