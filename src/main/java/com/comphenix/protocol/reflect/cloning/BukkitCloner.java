@@ -88,6 +88,11 @@ public class BukkitCloner implements Cloner {
 			fromManual(ComponentConverter::getBaseComponentArrayClass, source ->
 					ComponentConverter.clone((BaseComponent[]) source));
 		} catch (Throwable ignored) { }
+
+		try {
+			fromManual(AdventureComponentConverter::getComponentClass, source ->
+					AdventureComponentConverter.clone(source));
+		} catch (Throwable ignored) { }
 	}
 
 	private Function<Object, Object> findCloner(Class<?> type) {
