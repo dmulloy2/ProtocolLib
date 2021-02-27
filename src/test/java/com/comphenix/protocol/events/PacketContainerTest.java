@@ -565,6 +565,14 @@ public class PacketContainerTest {
 		assertNotSame(clone, packet);
 	}
 
+	@Test
+	public void testGameStateChange() {
+		PacketContainer packet = new PacketContainer(PacketType.Play.Server.GAME_STATE_CHANGE);
+		assertTrue(packet.getGameStateIDs().read(0) == 0);
+		packet.getGameStateIDs().write(0, 2);
+		assertTrue(packet.getGameStateIDs().read(0) == 2);
+	}
+
 	/**
 	 * Actions from the outbound Boss packet. Used for testing generic enums.
 	 * @author dmulloy2

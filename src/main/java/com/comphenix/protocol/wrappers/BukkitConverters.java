@@ -17,10 +17,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +39,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -1460,5 +1458,74 @@ public class BukkitConverters {
 				return BlockPosition.class;
 			}
 		});
+	}
+
+	private static Field gameStateMapField;
+	private static Field gameStateIdField;
+
+	public static EquivalentConverter<Integer> getGameStateConverter() {
+		return new EquivalentConverter<Integer>() {
+			@Override
+			public Object getGeneric(Integer specific) {
+				if (specific == null) {
+					specific = 0;
+				}
+
+				if (MinecraftVersion.NETHER_UPDATE.atOrAbove()) {
+					if (gameStateMapField == null) {
+						Class<?> stateClass = MinecraftReflection.getGameStateClass();
+						gameStateMapField = FuzzyReflection
+								.fromClass(stateClass, true)
+								.getField(FuzzyFieldContract
+										.newBuilder()
+										.typeDerivedOf(Map.class)
+										.build());
+						gameStateMapField.setAccessible(true);
+					}
+
+					try {
+						Map<Integer, Object> map = (Map<Integer, Object>) gameStateMapField.get(null);
+						return map.get(specific);
+					} catch (ReflectiveOperationException ex) {
+						throw new RuntimeException(ex);
+					}
+				} else {
+					return specific;
+				}
+			}
+
+			@Override
+			public Integer getSpecific(Object generic) {
+				if (generic == null) {
+					return 0;
+				}
+
+				if (MinecraftVersion.NETHER_UPDATE.atOrAbove()) {
+					if (gameStateIdField == null) {
+						Class<?> stateClass = MinecraftReflection.getGameStateClass();
+						gameStateIdField = FuzzyReflection
+								.fromClass(stateClass, true)
+								.getField(FuzzyFieldContract
+										.newBuilder()
+										.typeExact(int.class)
+										.build());
+						gameStateIdField.setAccessible(true);
+					}
+
+					try {
+						return (Integer) gameStateIdField.get(generic);
+					} catch (ReflectiveOperationException ex) {
+						throw new RuntimeException(ex);
+					}
+				} else {
+					return (Integer) generic;
+				}
+			}
+
+			@Override
+			public Class<Integer> getSpecificType() {
+				return Integer.class;
+			}
+		};
 	}
 }

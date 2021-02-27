@@ -1856,6 +1856,16 @@ public class MinecraftReflection {
 		return getArrayClass(getMultiBlockChangeInfoClass());
 	}
 
+	/**
+	 * Retrieve the PacketPlayOutGameStateChange.a class, aka GameState in 1.16
+	 * @return The GameState class
+	 */
+	public static Class<?> getGameStateClass() {
+		// it's called "a" so there's not a whole lot we can do to identify it
+		Class<?> packetClass = PacketType.Play.Server.GAME_STATE_CHANGE.getPacketClass();
+		return packetClass.getClasses()[0];
+	}
+
 	public static boolean signUpdateExists() {
 		try {
 			return getMinecraftClass("PacketPlayOutUpdateSign") != null;

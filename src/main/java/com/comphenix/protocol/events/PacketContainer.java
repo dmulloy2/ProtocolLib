@@ -1018,6 +1018,17 @@ public class PacketContainer implements Serializable {
 	}
 
 	/**
+	 * Retrieve a read/write structure for Game State IDs in 1.16+
+	 * @return The Structure Modifier
+	 */
+	public StructureModifier<Integer> getGameStateIDs() {
+		return structureModifier.withType(
+				MinecraftReflection.getGameStateClass(),
+				BukkitConverters.getGameStateConverter()
+		);
+	}
+
+	/**
 	 * Retrieve a read/write structure for the Map class.
 	 * @param keyConverter Converter for map keys
 	 * @param valConverter Converter for map values
