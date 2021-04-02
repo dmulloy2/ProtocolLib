@@ -149,6 +149,9 @@ public final class StructureCompiler {
 	 */
 	private Object lookup = null;
 
+	// Used to get the MethodHandles.Lookup object on newer versions of Java.
+	private volatile static Method lookupMethod;
+
 	public static boolean attemptClassLoad = false;
 
 	/**
@@ -319,15 +322,15 @@ public final class StructureCompiler {
 
 	private Class<?> defineClassModern(byte[] data) throws InvocationTargetException, IllegalAccessException,
 			ClassNotFoundException, NoSuchMethodException {
-		if (defineMethod == null || lookup == null)
-		{
-			Class<?> lookupClass = Class.forName("java.lang.invoke.MethodHandles$Lookup");
-			defineMethod = lookupClass.getDeclaredMethod("defineClass", byte[].class);
-
-			Class<?> methodHandlesClass = Class.forName("java.lang.invoke.MethodHandles");
-			Method lookupMethod = methodHandlesClass.getDeclaredMethod("lookup");
-			lookup = lookupMethod.invoke(null);
+		if (defineMethod == null) {
+			defineMethod = Class.forName("java.lang.invoke.MethodHandles$Lookup")
+					.getDeclaredMethod("defineClass", byte[].class);
 		}
+		if (lookupMethod == null) {
+			lookupMethod = Class.forName("java.lang.invoke.MethodHandles").getDeclaredMethod("lookup");
+		}
+		if (lookup == null)
+			lookup = lookupMethod.invoke(null);
 
 		return (Class<?>) defineMethod.invoke(lookup, data);
 	}
