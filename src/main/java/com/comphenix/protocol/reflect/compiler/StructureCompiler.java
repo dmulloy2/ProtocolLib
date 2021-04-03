@@ -141,11 +141,12 @@ public final class StructureCompiler {
 	private static String COMPILED_CLASS = PACKAGE_NAME + "/CompiledStructureModifier";
 	private static String FIELD_EXCEPTION_CLASS = "com/comphenix/protocol/reflect/FieldAccessException";
 
-	// Java 60+ (16) do not allow the usage of CLassLoader#defineClass(String, byte[], int, int) anymore.
+	// On java 9+ (53.0+) CLassLoader#defineClass(String, byte[], int, int) should not be used anymore.
+	// It will throw warnings and on Java 16+ (60.0+), it does not work at all anymore.
 	private static final boolean LEGACY_CLASS_DEFINITION =
-			Float.parseFloat(System.getProperty("java.class.version")) < 60.0;
+			Float.parseFloat(System.getProperty("java.class.version")) < 53;
 	/**
-	 * The MethodHandles.Lookup object for this compiler. Only used on Java 16+.
+	 * The MethodHandles.Lookup object for this compiler. Only used when using the modern defineClass strategy.
 	 */
 	private Object lookup = null;
 
