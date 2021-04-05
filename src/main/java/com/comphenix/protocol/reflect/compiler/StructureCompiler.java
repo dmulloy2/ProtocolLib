@@ -141,6 +141,18 @@ public final class StructureCompiler {
 	private static String COMPILED_CLASS = PACKAGE_NAME + "/CompiledStructureModifier";
 	private static String FIELD_EXCEPTION_CLASS = "com/comphenix/protocol/reflect/FieldAccessException";
 
+	// On java 9+ (53.0+) CLassLoader#defineClass(String, byte[], int, int) should not be used anymore.
+	// It will throw warnings and on Java 16+ (60.0+), it does not work at all anymore.
+	private static final boolean LEGACY_CLASS_DEFINITION =
+			Float.parseFloat(System.getProperty("java.class.version")) < 53;
+	/**
+	 * The MethodHandles.Lookup object for this compiler. Only used when using the modern defineClass strategy.
+	 */
+	private Object lookup = null;
+
+	// Used to get the MethodHandles.Lookup object on newer versions of Java.
+	private volatile static Method lookupMethod;
+
 	public static boolean attemptClassLoad = false;
 
 	/**
@@ -289,36 +301,54 @@ public final class StructureCompiler {
 
 		byte[] data = cw.toByteArray();
 
-		// Call the define method
+		Class<?> clazz = defineClass(data);
+		// DEBUG CODE: Print the content of the generated class.
+		//org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader(data);
+		//cr.accept(new ASMifierClassVisitor(new PrintWriter(System.out)), 0);
+		return clazz;
+	}
+
+	private Class<?> defineClassLegacy(byte[] data) throws InvocationTargetException, IllegalAccessException,
+			NoSuchMethodException {
+		if (defineMethod == null) {
+			Method defined = ClassLoader.class.getDeclaredMethod("defineClass",
+					new Class<?>[]{String.class, byte[].class, int.class, int.class});
+
+			// Awesome. Now, create and return it.
+			defined.setAccessible(true);
+			defineMethod = defined;
+		}
+		return (Class<?>) defineMethod.invoke(loader, null, data, 0, data.length);
+	}
+
+	private Class<?> defineClassModern(byte[] data) throws InvocationTargetException, IllegalAccessException,
+			ClassNotFoundException, NoSuchMethodException {
+		if (defineMethod == null) {
+			defineMethod = Class.forName("java.lang.invoke.MethodHandles$Lookup")
+					.getDeclaredMethod("defineClass", byte[].class);
+		}
+		if (lookupMethod == null) {
+			lookupMethod = Class.forName("java.lang.invoke.MethodHandles").getDeclaredMethod("lookup");
+		}
+		if (lookup == null)
+			lookup = lookupMethod.invoke(null);
+
+		return (Class<?>) defineMethod.invoke(lookup, data);
+	}
+
+	private Class<?> defineClass(byte[] data) {
 		try {
-			if (defineMethod == null) {
-				Method defined = ClassLoader.class.getDeclaredMethod("defineClass",
-					new Class<?>[] { String.class, byte[].class, int.class, int.class });
-
-				// Awesome. Now, create and return it.
-				defined.setAccessible(true);
-				defineMethod = defined;
-			}
-
-			@SuppressWarnings("rawtypes")
-			Class clazz = (Class) defineMethod.invoke(loader, null, data, 0, data.length);
-
-			// DEBUG CODE: Print the content of the generated class.
-			//org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader(data);
-	        //cr.accept(new ASMifierClassVisitor(new PrintWriter(System.out)), 0);
-
-			return clazz;
-
+			return LEGACY_CLASS_DEFINITION ? defineClassLegacy(data) : defineClassModern(data);
 		} catch (SecurityException e) {
 			throw new RuntimeException("Cannot use reflection to dynamically load a class.", e);
-		} catch (NoSuchMethodException e) {
+		} catch (NoSuchMethodException | ClassNotFoundException e) {
 			throw new IllegalStateException("Incompatible JVM.", e);
 		} catch (IllegalArgumentException e) {
 			throw new IllegalStateException("Cannot call defineMethod - wrong JVM?", e);
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException("Security limitation! Cannot dynamically load class.", e);
 		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Error occured in code generator.", e);
+			throw new RuntimeException("Error occurred in code generator.", e);
 		}
 	}
 
