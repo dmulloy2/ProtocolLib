@@ -161,13 +161,13 @@ public abstract class PacketAdapter implements PacketListener {
 	@Override
 	public void onPacketReceiving(PacketEvent event) {
 		// Lets prevent some bugs
-		throw new IllegalStateException("Override onPacketReceiving to get notifcations of received packets!");
+		throw new IllegalStateException("Override onPacketReceiving to get notifications of received packets!");
 	}
 	
 	@Override
 	public void onPacketSending(PacketEvent event) {
 		// Lets prevent some bugs
-		throw new IllegalStateException("Override onPacketSending to get notifcations of sent packets!");
+		throw new IllegalStateException("Override onPacketSending to get notifications of sent packets!");
 	}
 	
 	@Override
