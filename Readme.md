@@ -66,7 +66,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.6.0";
+    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.6.0"
 }
 ```
 
