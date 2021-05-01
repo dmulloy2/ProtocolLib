@@ -46,6 +46,7 @@ import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
+import com.comphenix.protocol.utility.NettyVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Lists;
@@ -146,10 +147,15 @@ public class ProtocolInjector implements ChannelListener {
 				protected void initChannel(final Channel channel) throws Exception {
 					try {
 						synchronized (networkManagers) {
-							// For some reason it needs to be delayed on 1.12, but the delay breaks 1.11 and below
+							// For some reason it needs to be delayed when using netty 4.1.24 (minecraft  1.12) or newer,
+							// but the delay breaks older minecraft versions
 							// TODO I see this more as a temporary hotfix than a permanent solution
-							if (MinecraftVersion.getCurrentVersion().getMinor() >= 12) {
-								channel.eventLoop().submit(() ->
+
+							// Check if the netty version is greater than 4.1.24, that's the version bundled with spigot 1.12
+							NettyVersion ver = NettyVersion.getVersion();
+							if ((ver.isValid() && ver.isGreaterThan(4,1,24)) ||
+									MinecraftVersion.getCurrentVersion().getMinor() >= 12) { // fallback if netty version couldn't be detected
+							channel.eventLoop().submit(() ->
 									injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject());
 							} else {
 								injectionFactory.fromChannel(channel, ProtocolInjector.this, playerFactory).inject();
