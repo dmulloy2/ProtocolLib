@@ -50,7 +50,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 		}
 
 		// Get a component from a standard Minecraft message
-		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class);
+		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class, boolean.class);
 
 		// And the component text constructor
 		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
@@ -95,6 +95,9 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 	
 	/**
 	 * Construct a wrapper around a new text chat component with the given text.
+	 * <p>
+	 * Note: {@link #fromLegacyText(String)} is preferred for text that contains
+	 * legacy formatting codes since it will translate them to the JSON equivalent.
 	 * @param text - the text of the text chat component.
 	 * @return The wrapper around the new chat component.
 	 */
@@ -111,13 +114,25 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 	 * @return The equivalent chat components.
 	 */
 	public static WrappedChatComponent[] fromChatMessage(String message) {
-		Object[] components = (Object[]) CONSTRUCT_COMPONENT.invoke(null, message);
+		Object[] components = (Object[]) CONSTRUCT_COMPONENT.invoke(null, message, false);
 		WrappedChatComponent[] result = new WrappedChatComponent[components.length];
 		
 		for (int i = 0; i < components.length; i++) {
 			result[i] = fromHandle(components[i]);
 		}
 		return result;
+	}
+
+	/**
+	 * Construct a single chat component from a standard Minecraft message
+	 * (with legacy formatting codes), preserving multiple lines.
+	 * @param message - the message.
+	 * @return The equivalent chat component.
+	 */
+	public static WrappedChatComponent fromLegacyText(String message) {
+		// With keepNewlines = true (second parameter), only one component is returned
+		Object[] components = (Object[]) CONSTRUCT_COMPONENT.invoke(null, message, true);
+		return fromHandle(components[0]);
 	}
 
 	/**
