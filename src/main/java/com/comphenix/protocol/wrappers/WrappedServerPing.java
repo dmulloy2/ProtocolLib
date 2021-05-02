@@ -161,7 +161,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param message - the message.
 	 */
 	public void setMotD(String message) {
-		setMotD(WrappedChatComponent.fromText(message));
+		setMotD(WrappedChatComponent.fromLegacyText(message));
 	}
 
 	/**
