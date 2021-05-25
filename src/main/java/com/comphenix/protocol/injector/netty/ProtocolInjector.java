@@ -186,6 +186,12 @@ public class ProtocolInjector implements ChannelListener {
 					channel.pipeline().addFirst(beginInitProtocol);
 					ctx.fireChannelRead(msg);
 				}
+
+				@Override
+				public boolean isSharable() {
+					// Needed if multiple objects are stored in the bootstrap list
+					return true;
+				}
 			};
 			
 			FuzzyReflection fuzzy = FuzzyReflection.fromObject(serverConnection, true);
