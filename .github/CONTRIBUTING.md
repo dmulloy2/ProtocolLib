@@ -19,7 +19,7 @@ This page will detail specific things that must be done if you intend to contrib
 
 #### Ready? Let's get started!
 1. Read the [Protocol Changes](http://wiki.vg/Protocol_History). Always make sure the list is both
-complete and correct. If you're unsure, don't hesitate to ask in #mcdevs (the people who maintain wiki.vg) on [freenode.net](http://freenode.net)
+complete and correct. If you're unsure, don't hesitate to ask in #mcdevs (the people who maintain wiki.vg) on [libera.chat](http://libera.chat)
 or #spigot on [irc.spi.gt](http://irc.spi.gt) ([webchat](https://irc.spi.gt/iris/?channels=spigot)).
 2. Search for usages of the now-defunct NMS package guard and change them.
 3. The class `com.comphenix.protocol.PacketType` contains a list of all the packets. If any packets were added or removed
