@@ -43,8 +43,11 @@ public class SocketAdapter extends Socket {
         this.ch = ch;
     }
 
-    public static SocketAdapter adapt(SocketChannel ch) {
-        return new SocketAdapter(ch);
+    public static SocketAdapter adapt(Channel ch) {
+        if (!(ch instanceof SocketChannel)) {
+            return null;
+        }
+        return new SocketAdapter((SocketChannel) ch);
     }
 
     @Override

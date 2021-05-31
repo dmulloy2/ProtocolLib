@@ -157,9 +157,9 @@ public class TemporaryPlayerFactory {
 
 				// Methods that are supported in the fallback instance
 				if (methodName.equals("isOnline"))
-					return injector.getSocket() != null && injector.getSocket().isConnected();
+					return injector.isConnected();
 				else if (methodName.equals("getName"))
-					return "UNKNOWN[" + injector.getSocket().getRemoteSocketAddress() + "]";
+					return "UNKNOWN[" + injector.getAddress() + "]";
 
 				// Ignore all other methods
 				throw new UnsupportedOperationException(
