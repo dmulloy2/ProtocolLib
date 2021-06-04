@@ -68,4 +68,10 @@ public interface SocketInjector {
 	 * @param updatedPlayer - the real Bukkit player.
 	 */
 	public abstract void setUpdatedPlayer(Player updatedPlayer);
+
+	/**
+	 * Determines if the player is currently connected.
+	 * @return true if the player is connected.
+	 */
+	public abstract boolean isConnected();
 }

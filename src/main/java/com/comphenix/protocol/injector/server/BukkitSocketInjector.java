@@ -80,4 +80,9 @@ public class BukkitSocketInjector implements SocketInjector {
 	public void setUpdatedPlayer(Player updatedPlayer) {
 		this.player = updatedPlayer;
 	}
+
+	@Override
+	public boolean isConnected() {
+		return player.isOnline();
+	}
 }

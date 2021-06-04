@@ -44,7 +44,6 @@ import com.google.common.base.Preconditions;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.AttributeKey;
@@ -951,7 +950,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 		@Override
 		public Socket getSocket() {
-			return SocketAdapter.adapt((SocketChannel) injector.originalChannel);
+			return SocketAdapter.adapt(injector.originalChannel);
 		}
 
 		@Override
@@ -987,6 +986,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		@Override
 		public void setUpdatedPlayer(Player updatedPlayer) {
 			injector.setPlayer(updatedPlayer);
+		}
+
+		@Override
+		public boolean isConnected() {
+			return injector.originalChannel.isActive();
 		}
 
 		ChannelInjector getChannelInjector() {
