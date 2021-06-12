@@ -3,16 +3,15 @@ package com.comphenix.protocol.injector;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 
-import net.minecraft.server.v1_16_R3.ChunkProviderServer;
-import net.minecraft.server.v1_16_R3.Entity;
-import net.minecraft.server.v1_16_R3.PlayerChunkMap;
-import net.minecraft.server.v1_16_R3.PlayerChunkMap.EntityTracker;
-import net.minecraft.server.v1_16_R3.WorldServer;
+import net.minecraft.server.level.ChunkProviderServer;
+import net.minecraft.server.level.PlayerChunkMap;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.entity.Entity;
 
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R3.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftEntity;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -43,10 +42,10 @@ public class EntityUtilitiesTest {
 		Entity fakeEntity = mock(Entity.class);
 		when(fakeEntity.getBukkitEntity()).thenReturn(bukkitEntity);
 
-		EntityTracker tracker = mock(EntityTracker.class);
-		Accessors.getFieldAccessor(EntityTracker.class, "tracker", true).set(tracker, fakeEntity);
+		PlayerChunkMap.EntityTracker tracker = mock(PlayerChunkMap.EntityTracker.class);
+		Accessors.getFieldAccessor(PlayerChunkMap.EntityTracker.class, "tracker", true).set(tracker, fakeEntity);
 
-		Int2ObjectMap<EntityTracker> trackerMap = new Int2ObjectOpenHashMap<>();
+		Int2ObjectMap<PlayerChunkMap.EntityTracker> trackerMap = new Int2ObjectOpenHashMap<>();
 		trackerMap.put(1, tracker);
 		Accessors.getFieldAccessor(PlayerChunkMap.class, "trackedEntities", true).set(chunkMap, trackerMap);
 

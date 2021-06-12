@@ -5,18 +5,20 @@ import java.util.List;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
+import com.mojang.bridge.game.GameVersion;
 
-import net.minecraft.server.v1_16_R3.DispenserRegistry;
-import net.minecraft.server.v1_16_R3.WorldServer;
+import net.minecraft.SharedConstants;
+import net.minecraft.server.DispenserRegistry;
+import net.minecraft.server.level.WorldServer;
 
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_16_R3.util.Versioning;
+import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_17_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_17_R1.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.Mockito.mock;
@@ -62,6 +64,7 @@ public class BukkitInitialization {
 				ex.printStackTrace();
 			}
 
+			SharedConstants.a();
 			DispenserRegistry.init();
 
 			// Mock the server object

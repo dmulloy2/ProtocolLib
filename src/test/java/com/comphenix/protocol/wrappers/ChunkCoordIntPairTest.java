@@ -16,17 +16,17 @@ public class ChunkCoordIntPairTest {
 
 	@Test
 	public void test() {
-		net.minecraft.server.v1_16_R3.ChunkCoordIntPair pair = new net.minecraft.server.v1_16_R3.ChunkCoordIntPair(1, 2);
+		net.minecraft.world.level.ChunkCoordIntPair pair = new net.minecraft.world.level.ChunkCoordIntPair(1, 2);
 		ChunkCoordIntPair specific = ChunkCoordIntPair.getConverter().getSpecific(pair);
 
 		assertEquals(1, specific.getChunkX());
 		assertEquals(2, specific.getChunkZ());
 
-		net.minecraft.server.v1_16_R3.ChunkCoordIntPair roundtrip =
-			(net.minecraft.server.v1_16_R3.ChunkCoordIntPair) ChunkCoordIntPair.getConverter().
+		net.minecraft.world.level.ChunkCoordIntPair roundtrip =
+			(net.minecraft.world.level.ChunkCoordIntPair) ChunkCoordIntPair.getConverter().
 			getGeneric(specific);
 
-		assertEquals(1, roundtrip.x);
-		assertEquals(2, roundtrip.z);
+		assertEquals(1, roundtrip.b);
+		assertEquals(2, roundtrip.c);
 	}
 }

@@ -3,12 +3,6 @@ package com.comphenix.protocol.wrappers;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Sets;
-import net.minecraft.server.v1_16_R3.EnumChatVisibility;
-import net.minecraft.server.v1_16_R3.EnumDifficulty;
-import net.minecraft.server.v1_16_R3.EnumGamemode;
-import net.minecraft.server.v1_16_R3.EnumProtocol;
-import net.minecraft.server.v1_16_R3.PacketPlayInClientCommand.EnumClientCommand;
-import net.minecraft.server.v1_16_R3.PacketPlayInUseEntity.EnumEntityUseAction;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -22,13 +16,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import net.minecraft.network.EnumProtocol;
+import net.minecraft.network.protocol.game.PacketPlayInClientCommand.EnumClientCommand;
+import net.minecraft.world.EnumDifficulty;
+import net.minecraft.world.entity.player.EnumChatVisibility;
+import net.minecraft.world.level.EnumGamemode;
+
 public class EnumWrappersTest {
 	private static class EnumClass {
 		public EnumProtocol protocol;
 		public EnumClientCommand command;
 		public EnumChatVisibility visibility;
 		public EnumDifficulty difficulty;
-		public EnumEntityUseAction action;
+		// public EnumEntityUseAction action;
 		public EnumGamemode mode;
 	}
 	
@@ -40,18 +40,18 @@ public class EnumWrappersTest {
 	@Test
 	public void testEnum() {
 		EnumClass obj = new EnumClass();
-		obj.protocol = EnumProtocol.LOGIN;
-		obj.command = EnumClientCommand.PERFORM_RESPAWN;
-		obj.visibility = EnumChatVisibility.FULL;
-		obj.difficulty = EnumDifficulty.PEACEFUL;
-		obj.action = EnumEntityUseAction.INTERACT;
-		obj.mode = EnumGamemode.CREATIVE;
+		obj.protocol = EnumProtocol.a;
+		obj.command = EnumClientCommand.b;
+		obj.visibility = EnumChatVisibility.c;
+		obj.difficulty = EnumDifficulty.d;
+		// obj.action = EnumEntityUseAction.INTERACT;
+		obj.mode = EnumGamemode.e;
 		
 		assertEquals(obj.protocol, roundtrip(obj, "protocol", EnumWrappers.getProtocolConverter()) );
 		assertEquals(obj.command, roundtrip(obj, "command", EnumWrappers.getClientCommandConverter()) );
 		assertEquals(obj.visibility, roundtrip(obj, "visibility", EnumWrappers.getChatVisibilityConverter()) );
 		assertEquals(obj.difficulty, roundtrip(obj, "difficulty", EnumWrappers.getDifficultyConverter()) );
-		assertEquals(obj.action, roundtrip(obj, "action", EnumWrappers.getEntityUseActionConverter()) );
+		// assertEquals(obj.action, roundtrip(obj, "action", EnumWrappers.getEntityUseActionConverter()) );
 		assertEquals(obj.mode, roundtrip(obj, "mode", EnumWrappers.getGameModeConverter()) );
 	}
 

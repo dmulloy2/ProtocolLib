@@ -17,7 +17,7 @@
 		<project.fullVersion>${project.version}</project.fullVersion>
 
 		<powermock.version>2.0.7</powermock.version>
-		<spigot.version>1.16.4-R0.1-SNAPSHOT</spigot.version>
+		<spigot.version>1.17-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
 	<build>
@@ -108,6 +108,9 @@
 							<value>${project.version}</value>
 						</property>
 					</systemProperties>
+					<!-- TODO figure out a better way to do this before Java 17 -->
+					<!-- We're currently waiting on powermock, but we may need to switch -->
+					<argLine>--illegal-access=permit</argLine>
 				</configuration>
 			</plugin>
 

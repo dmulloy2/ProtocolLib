@@ -6,22 +6,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import net.minecraft.server.v1_16_R3.ChatComponentText;
-import net.minecraft.server.v1_16_R3.ChunkCoordIntPair;
-import net.minecraft.server.v1_16_R3.DataWatcher;
-import net.minecraft.server.v1_16_R3.IBlockData;
-import net.minecraft.server.v1_16_R3.IChatBaseComponent;
-import net.minecraft.server.v1_16_R3.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.v1_16_R3.NBTCompressedStreamTools;
-import net.minecraft.server.v1_16_R3.PacketPlayOutUpdateAttributes.AttributeSnapshot;
-import net.minecraft.server.v1_16_R3.PlayerConnection;
-import net.minecraft.server.v1_16_R3.ServerPing;
-import net.minecraft.server.v1_16_R3.ServerPing.ServerData;
-import net.minecraft.server.v1_16_R3.ServerPing.ServerPingPlayerSample;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_17_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.AfterClass;
@@ -32,6 +19,16 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.mojang.authlib.GameProfile;
+
+import net.minecraft.nbt.NBTCompressedStreamTools;
+import net.minecraft.network.chat.ChatComponentText;
+import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
+import net.minecraft.network.protocol.status.ServerPing;
+import net.minecraft.network.syncher.DataWatcher;
+import net.minecraft.server.network.PlayerConnection;
+import net.minecraft.world.level.ChunkCoordIntPair;
+import net.minecraft.world.level.block.state.IBlockData;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
@@ -81,7 +78,7 @@ public class MinecraftReflectionTest {
 
 	@Test
 	public void testAttributeSnapshot() {
-		assertEquals(AttributeSnapshot.class, MinecraftReflection.getAttributeSnapshotClass());
+		assertEquals(PacketPlayOutUpdateAttributes.AttributeSnapshot.class, MinecraftReflection.getAttributeSnapshotClass());
 	}
 
 	@Test
@@ -96,7 +93,7 @@ public class MinecraftReflectionTest {
 
 	@Test
 	public void testChatSerializer() {
-		assertEquals(ChatSerializer.class, MinecraftReflection.getChatSerializerClass());
+		assertEquals(IChatBaseComponent.ChatSerializer.class, MinecraftReflection.getChatSerializerClass());
 	}
 
 	@Test
@@ -121,12 +118,12 @@ public class MinecraftReflectionTest {
 
 	@Test
 	public void testServerPingPlayerSample() {
-		assertEquals(ServerPingPlayerSample.class, MinecraftReflection.getServerPingPlayerSampleClass());
+		assertEquals(ServerPing.ServerPingPlayerSample.class, MinecraftReflection.getServerPingPlayerSampleClass());
 	}
 
 	@Test
 	public void testServerPingServerData() {
-		assertEquals(ServerData.class, MinecraftReflection.getServerPingServerDataClass());
+		assertEquals(ServerPing.ServerData.class, MinecraftReflection.getServerPingServerDataClass());
 	}
 
 	@Test

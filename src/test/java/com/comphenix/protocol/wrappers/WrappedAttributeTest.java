@@ -6,13 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import net.minecraft.server.v1_16_R3.AttributeBase;
-import net.minecraft.server.v1_16_R3.AttributeModifier;
-import net.minecraft.server.v1_16_R3.IRegistry;
-import net.minecraft.server.v1_16_R3.MinecraftKey;
-import net.minecraft.server.v1_16_R3.PacketPlayOutUpdateAttributes;
-import net.minecraft.server.v1_16_R3.PacketPlayOutUpdateAttributes.AttributeSnapshot;
-
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -22,6 +15,12 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
 import com.google.common.collect.Lists;
+
+import net.minecraft.core.IRegistry;
+import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.world.entity.ai.attributes.AttributeBase;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.resources.MinecraftKey;
 
 public class WrappedAttributeTest {
 	private WrappedAttributeModifier doubleModifier;
@@ -88,9 +87,8 @@ public class WrappedAttributeTest {
 			modifiers.add((AttributeModifier) wrapper.getHandle());
 		}
 
-		PacketPlayOutUpdateAttributes accessor = new PacketPlayOutUpdateAttributes();
-		AttributeBase base = IRegistry.ATTRIBUTE.get(MinecraftKey.a(attribute.getAttributeKey()));
-		return accessor.new AttributeSnapshot(base, attribute.getBaseValue(), modifiers);
+		AttributeBase base = IRegistry.al.get(MinecraftKey.a(attribute.getAttributeKey()));
+		return new AttributeSnapshot(base, attribute.getBaseValue(), modifiers);
 	}
 
 	private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {

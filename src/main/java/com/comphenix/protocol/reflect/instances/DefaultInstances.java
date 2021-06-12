@@ -29,6 +29,8 @@ import com.comphenix.protocol.ProtocolLogger;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
+import net.minecraft.network.PacketDataSerializer;
+
 /**
  * Used to construct default instances of any type.
  * @author Kristian
@@ -38,11 +40,22 @@ public class DefaultInstances implements InstanceProvider {
 
 	public static final InstanceProvider UUID_GENERATOR = type -> type == UUID.class ? new UUID(0L, 0L) : null;
 
+	public static final InstanceProvider ENUM_GENERATOR = type -> {
+		if (type != null && type.isEnum()) {
+			return type.getEnumConstants()[0];
+		}
+
+		return null;
+	};
+
 	/**
 	 * Standard default instance provider.
 	 */
 	public static final DefaultInstances DEFAULT = DefaultInstances.fromArray(
-			PrimitiveGenerator.INSTANCE, CollectionGenerator.INSTANCE, UUID_GENERATOR);
+			PrimitiveGenerator.INSTANCE,
+			CollectionGenerator.INSTANCE,
+			UUID_GENERATOR, ENUM_GENERATOR
+	);
 
 	/**
 	 * The maximum height of the heirarchy of creates types. Used to prevent cycles.
@@ -188,7 +201,7 @@ public class DefaultInstances implements InstanceProvider {
 			// Note that we don't allow recursive types - that is, types that
 			// require itself in the constructor.
 			if (types.length < lastCount) {
-				if (!contains(types, type)) {
+				if (!contains(types, type) && !contains(types, PacketDataSerializer.class)) {
 					if (nonNull) {
 						// Make sure all of these types are non-null
 						if (isAnyNull(types, providers, recursionLevel)) {
@@ -273,7 +286,6 @@ public class DefaultInstances implements InstanceProvider {
 		Constructor<T> minimum = getMinimumConstructor(type, providers, recursionLevel + 1);
 
 		// Create the type with this constructor using default values. This might fail, though.
-		// TODO every packet has a zero-args constructor
 
 		try {
 			if (minimum != null) {

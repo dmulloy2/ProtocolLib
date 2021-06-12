@@ -6,15 +6,15 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 
-import net.minecraft.server.v1_16_R3.ItemStack;
-import net.minecraft.server.v1_16_R3.NonNullList;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.item.ItemStack;
 
 public class AggregateClonerTest {
 

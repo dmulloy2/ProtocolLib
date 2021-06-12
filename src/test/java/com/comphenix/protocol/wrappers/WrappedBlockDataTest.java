@@ -18,14 +18,14 @@ package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
 
-import net.minecraft.server.v1_16_R3.IBlockData;
+import net.minecraft.world.level.block.state.IBlockData;
 
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.GlassPane;
-import org.bukkit.craftbukkit.v1_16_R3.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_16_R3.block.impl.CraftStainedGlassPane;
-import org.bukkit.craftbukkit.v1_16_R3.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_17_R1.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_17_R1.block.impl.CraftStainedGlassPane;
+import org.bukkit.craftbukkit.v1_17_R1.util.CraftMagicNumbers;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

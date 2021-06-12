@@ -490,15 +490,23 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 * @author Kristian
 	 */
 	public enum Protocol {
-		HANDSHAKING,
-		PLAY,
-		STATUS,
-		LOGIN,
+		HANDSHAKING("Handshaking", "handshake"),
+		PLAY("Play", "game"),
+		STATUS("Status", "status"),
+		LOGIN("Login", "login"),
 
 		/**
 		 * Only for packets removed in Minecraft 1.7.2
 		 */
-		LEGACY;
+		LEGACY("", "");
+
+		private String packetName;
+		private String mojangName;
+
+		Protocol(String packetName, String mojangName) {
+			this.packetName = packetName;
+			this.mojangName = mojangName;
+		}
 
 		/**
 		 * Retrieve the correct protocol enum from a given vanilla enum instance.
@@ -520,7 +528,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		}
 
 		public String getPacketName() {
-			return WordUtils.capitalize(name().toLowerCase(Locale.ENGLISH));
+			return packetName;
+		}
+
+		public String getMojangName() {
+			return mojangName;
 		}
 
 		public String getMcpPacketName() {
@@ -711,6 +723,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	}
 
 	private static String formatClassName(Protocol protocol, Sender sender, String name) {
+		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+			return "net.minecraft.network.protocol." + protocol.getMojangName() + ".Packet"
+					+ protocol.getPacketName() + sender.getPacketName() + name;
+		}
+
 		String base = MinecraftReflection.getMinecraftPackage() + ".Packet";
 		if (name.startsWith(base)) {
 			return name;

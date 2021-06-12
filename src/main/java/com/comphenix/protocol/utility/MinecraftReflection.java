@@ -696,7 +696,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getPacketClass() {
 		try {
-			return getMinecraftClass("Packet");
+			return getMinecraftClass("network.protocol.Packet", "Packet");
 		} catch (RuntimeException e) {
 			FuzzyClassContract paketContract = null;
 
@@ -753,7 +753,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getEnumProtocolClass() {
 		try {
-			return getMinecraftClass("EnumProtocol");
+			return getMinecraftClass("network.EnumProtocol", "EnumProtocol");
 		} catch (RuntimeException e) {
 			Method protocolMethod = FuzzyReflection.fromClass(getNetworkManagerClass()).getMethod(
 					FuzzyMethodContract.newBuilder().
@@ -942,7 +942,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getMinecraftServerClass() {
 		try {
-			return getMinecraftClass("MinecraftServer");
+			return getMinecraftClass("server.MinecraftServer","MinecraftServer");
 		} catch (RuntimeException e) {
 			useFallbackServer();
 
@@ -1110,7 +1110,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getItemStackClass() {
 		try {
-			return getMinecraftClass("ItemStack");
+			return getMinecraftClass("world.item.ItemStack", "ItemStack");
 		} catch (RuntimeException e) {
 			// Use the handle reference
 			return setMinecraftClass("ItemStack",
@@ -1124,7 +1124,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getBlockClass() {
 		try {
-			return getMinecraftClass("Block");
+			return getMinecraftClass("world.level.block.Block", "Block");
 		} catch (RuntimeException e) {
 			FuzzyReflection reflect = FuzzyReflection.fromClass(getItemStackClass());
 			Set<Class<?>> candidates = new HashSet<Class<?>>();

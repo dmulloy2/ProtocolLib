@@ -30,10 +30,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.minecraft.server.v1_16_R3.ItemStack;
-import net.minecraft.server.v1_16_R3.Items;
-import net.minecraft.server.v1_16_R3.NBTTagTypes;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +43,9 @@ import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
 @PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
@@ -81,7 +80,7 @@ public class NbtFactoryTest {
 
 	@Test
 	public void testItemTag() {
-		ItemStack test = new ItemStack(Items.GOLDEN_AXE);
+		ItemStack test = new ItemStack(Items.L);
 		org.bukkit.inventory.ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
 		
 		NbtCompound compound = NbtFactory.ofCompound("tag");
