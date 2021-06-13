@@ -1,11 +1,17 @@
 package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.List;
 
 /**
  * Represents a ChunkCoordIntPair.
@@ -79,9 +85,14 @@ public class ChunkCoordIntPair {
 			public ChunkCoordIntPair getSpecific(Object generic) {
 				if (MinecraftReflection.isChunkCoordIntPair(generic)) {
 					if (COORD_X == null || COORD_Z == null) {
-						FieldAccessor[] ints = Accessors.getFieldAccessorArray(COORD_PAIR_CLASS, int.class, true);
-						COORD_X = ints[0];
-						COORD_Z = ints[1];
+						FuzzyReflection fuzzy = FuzzyReflection.fromClass(COORD_PAIR_CLASS, true);
+						List<Field> fields = fuzzy.getFieldList(FuzzyFieldContract
+								.newBuilder()
+								.banModifier(Modifier.STATIC)
+								.typeExact(int.class)
+								.build());
+						COORD_X = Accessors.getFieldAccessor(fields.get(0));
+						COORD_Z = Accessors.getFieldAccessor(fields.get(1));
 					}
 					return new ChunkCoordIntPair((Integer) COORD_X.get(generic), (Integer) COORD_Z.get(generic));
 				}

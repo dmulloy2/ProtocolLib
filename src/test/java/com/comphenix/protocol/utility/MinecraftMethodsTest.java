@@ -34,6 +34,7 @@ public class MinecraftMethodsTest {
 		setNull("packetWriteByteBuf");
 
 		assertNotNull(MinecraftMethods.getPacketWriteByteBufMethod());
-		assertNotNull(MinecraftMethods.getPacketReadByteBufMethod());
+		// TODO it's now a constructor
+		// assertNotNull(MinecraftMethods.getPacketReadByteBufMethod());
 	}
 }

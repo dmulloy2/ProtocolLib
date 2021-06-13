@@ -9,6 +9,8 @@ import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.mojang.math.Vector3fa;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.inventory.ItemStack;
@@ -130,12 +132,26 @@ public class WrappedParticle<T> {
 	}
 
 	private static Object getRedstone(Object handle) {
-		StructureModifier<Float> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle).withType(float.class);
-		return new Particle.DustOptions(Color.fromRGB(
-				(int) (modifier.read(0) * 255),
-				(int) (modifier.read(1) * 255),
-				(int) (modifier.read(2) * 255)),
-				modifier.read(3));
+		int r, g, b;
+		float alpha;
+
+		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+			StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+			Vector3fa rgb = (Vector3fa) modifier.withType(Vector3fa.class).read(0);
+
+			r = (int) (rgb.a() * 255);
+			g = (int) (rgb.b() * 255);
+			b = (int) (rgb.c() * 255);
+			alpha = (float) modifier.withType(float.class).read(0);
+		} else {
+			StructureModifier<Float> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle).withType(float.class);
+			r = (int) (modifier.read(0) * 255);
+			g = (int) (modifier.read(1) * 255);
+			b = (int) (modifier.read(2) * 255);
+			alpha = modifier.read(3);
+		}
+
+		return new Particle.DustOptions(Color.fromRGB(r, g, b), alpha);
 	}
 
 	public static <T> WrappedParticle<T> create(Particle particle, T data) {

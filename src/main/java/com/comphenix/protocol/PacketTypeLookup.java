@@ -108,7 +108,7 @@ class PacketTypeLookup {
 			// Skip unknown current packets
 			if (type.getCurrentId() != PacketType.UNKNOWN_PACKET) {
 				idLookup.getMap(type.getProtocol(), type.getSender()).put(type.getCurrentId(), type);
-				classLookup.getMap(type.getProtocol(), type.getSender()).put(type.getClassNames()[0], type);
+				classLookup.getMap(type.getProtocol(), type.getSender()).put(type.getClassNames().get(0), type);
 			}
 			nameLookup.put(type.name(), type);
 		}

@@ -50,7 +50,7 @@ public class PacketTypeTest {
 
 		// I'm well aware this is jank, but it does in fact work correctly and give the desired result
 		PacketType.onDynamicCreate = className -> {
-			// throw new RuntimeException("Dynamically generated packet " + className);
+			 throw new RuntimeException("Dynamically generated packet " + className);
 		};
 	}
 
@@ -70,7 +70,7 @@ public class PacketTypeTest {
 		for (EnumProtocol protocol : protocols) {
 			System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
 
-			Field field = EnumProtocol.class.getDeclaredField("h");
+			Field field = EnumProtocol.class.getDeclaredField("j");
 			field.setAccessible(true);
 
 			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
@@ -147,17 +147,30 @@ public class PacketTypeTest {
 		String fullName = clazz.getName();
 		fullName = fullName.substring(fullName.lastIndexOf(".") + 1);
 
-		List<String> classNames = new ArrayList<>(2);
-		for (String name : fullName.split("\\$")) {
-			List<String> split = splitOnCaps(name);
-			StringBuilder nameBuilder = new StringBuilder();
-			for (int i = 3; i < split.size(); i++) {
-				nameBuilder.append(split.get(i));
+		String className;
+		List<String> classNames = new ArrayList<>();
+
+		if (fullName.endsWith("Packet")) {
+			for (String name : fullName.split("\\$")) {
+				List<String> split = splitOnCaps(name);
+				StringBuilder nameBuilder = new StringBuilder();
+				for (int i = 1; i < split.size() - 1; i++) {
+					nameBuilder.append(split.get(i));
+				}
+				classNames.add(nameBuilder.toString());
 			}
-			classNames.add(nameBuilder.toString());
+		} else {
+			for (String name : fullName.split("\\$")) {
+				List<String> split = splitOnCaps(name);
+				StringBuilder nameBuilder = new StringBuilder();
+				for (int i = 3; i < split.size(); i++) {
+					nameBuilder.append(split.get(i));
+				}
+				classNames.add(nameBuilder.toString());
+			}
 		}
 
-		String className = classNames.get(classNames.size() - 1);
+		className = classNames.get(classNames.size() - 1);
 
 		// Format it like SET_PROTOCOL
 		StringBuilder fieldName = new StringBuilder();
@@ -211,6 +224,7 @@ public class PacketTypeTest {
 		try {
 			PacketType type = PacketType.fromClass(packetClass);
 			for (String alias : type.names) {
+				alias = alias.substring(alias.lastIndexOf('.') + 1);
 				if (!names.contains(alias)) {
 					names.add(alias);
 				}
@@ -284,10 +298,8 @@ public class PacketTypeTest {
 					try {
 						PacketType type = PacketType.fromClass(entry1.getValue());
 						if (type.getCurrentId() != entry1.getKey())
-//							throw new IllegalStateException(
-//									"Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got " + type.getCurrentId());
-
-						new PacketContainer(type);
+							throw new IllegalStateException(
+									"Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got " + type.getCurrentId());
 					} catch (Throwable ex) {
 						ex.printStackTrace();
 						fail = true;
@@ -297,5 +309,21 @@ public class PacketTypeTest {
 		}
 
 		assertTrue("Packet type(s) were incorrect!", !fail);
+	}
+
+	@Test
+	public void testPacketCreation() {
+		boolean fail = false;
+		for (PacketType type : PacketType.values()) {
+			if (type.isSupported()) {
+				try {
+					new PacketContainer(type);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					fail = true;
+				}
+			}
+		}
+		assertFalse("Packet type(s) failed to instantiate", fail);
 	}
 }

@@ -2177,7 +2177,7 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getIRegistry() {
-		return getMinecraftClass("core.IRegistry", "IRegistry");
+		return getNullableNMS("core.IRegistry", "IRegistry");
 	}
 
 	public static Class<?> getAttributeBase() {

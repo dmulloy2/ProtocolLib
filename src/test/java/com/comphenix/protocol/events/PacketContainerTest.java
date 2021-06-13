@@ -51,6 +51,7 @@ import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 
+import net.minecraft.world.level.dimension.DimensionManager;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
@@ -104,7 +105,7 @@ public class PacketContainerTest {
 
 	private <T> void testObjectArray(StructureModifier<T[]> modifier, int index, T[] initialValue, T[] testValue) {
 		// Check initial value
-		assertEquals(modifier.read(index).length, 0);
+		assertEquals(modifier.read(index).length, initialValue.length);
 		modifier.writeDefaults();
 
 		// Test initial
@@ -142,7 +143,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetShorts() {
-		PacketContainer itemData = new PacketContainer(PacketType.Play.Server.TRANSACTION);
+		PacketContainer itemData = new PacketContainer(PacketType.Play.Server.REL_ENTITY_MOVE);
 		testPrimitive(itemData.getShorts(), 0, (short)0, (short)1);
 	}
 
@@ -179,7 +180,10 @@ public class PacketContainerTest {
 	@Test
 	public void testGetStringArrays() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Client.UPDATE_SIGN);
-		testObjectArray(packet.getStringArrays(), 0, new String[0], new String[] { "hello", "world" });
+		testObjectArray(packet.getStringArrays(), 0,
+				new String[] { "", "", "", "" },
+				new String[] { "hello", "world" }
+		);
 	}
 
 	@Test
@@ -189,9 +193,6 @@ public class PacketContainerTest {
 		StructureModifier<int[]> integers = packet.getIntegerArrays();
 		int[] testArray = new int[] { 1, 2, 3 };
 
-		// Pre and post conditions
-		assertArrayEquals(null, integers.read(0));
-		packet.getModifier().writeDefaults();
 		assertArrayEquals(new int[0], integers.read(0));
 
 		integers.write(0, testArray);
@@ -633,7 +634,7 @@ public class PacketContainerTest {
 									"String"),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.getChatComponentSerializer(true)),
-							                           com.google.common.base.Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle())),
+							                           Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle())),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(VillagerData.class)),
 							                           new VillagerData(VillagerType.b, VillagerProfession.c, 69))
 					));
@@ -661,36 +662,47 @@ public class PacketContainerTest {
 					}
 				}
 			} catch (Exception ex) {
-				throw new RuntimeException("Failed to serialize packet " + type, ex);
+				ex.printStackTrace();
 			}
 		}
 	}
 
 	// Convert to objects that support equals()
 	private void testEquality(Object a, Object b) {
-		if (a != null && b != null) {
-			if (MinecraftReflection.isDataWatcher(a)) {
-				a = watchConvert.getSpecific(a);
-				b = watchConvert.getSpecific(b);
-			} else if (MinecraftReflection.isItemStack(a)) {
-				a = itemConvert.getSpecific(a);
-				b = itemConvert.getSpecific(b);
+		if (a == null) {
+			if (b == null) {
+				return;
+			} else {
+				throw new AssertionError("a was null, but b was not");
 			}
+		} else if (b == null) {
+			throw new AssertionError("a was not null, but b was null");
+		}
+
+		if (a instanceof Optional) {
+			if (b instanceof Optional) {
+				testEquality(((Optional<?>) a).orElse(null), ((Optional<?>) b).orElse(null));
+				return;
+			} else {
+				throw new AssertionError("a was optional, but b was not");
+			}
+		}
+
+		if (a.equals(b) || Objects.equals(a, b) || stringEquality(a, b)) {
+			return;
+		}
+
+		if (MinecraftReflection.isDataWatcher(a)) {
+			a = watchConvert.getSpecific(a);
+			b = watchConvert.getSpecific(b);
+		} else if (MinecraftReflection.isItemStack(a)) {
+			a = itemConvert.getSpecific(a);
+			b = itemConvert.getSpecific(b);
 		}
 
 		if (a instanceof ItemStack || b instanceof ItemStack) {
 			assertItemsEqual((ItemStack) a, (ItemStack) b);
 			return;
-		}
-
-		if (a == null || b == null) {
-			if (a == null && b == null) {
-				return;
-			}
-		} else {
-			if (a.equals(b) || Objects.equals(a, b) || stringEquality(a, b)) {
-				return;
-			}
 		}
 
 		if (EqualsBuilder.reflectionEquals(a, b)) {

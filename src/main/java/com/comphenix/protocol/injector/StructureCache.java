@@ -30,6 +30,10 @@ import com.comphenix.protocol.reflect.compiler.CompileListener;
 import com.comphenix.protocol.reflect.compiler.CompiledStructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.ZeroBuffer;
+import com.comphenix.protocol.utility.ZeroPacketDataSerializer;
+import com.google.common.base.Preconditions;
+import net.minecraft.network.PacketDataSerializer;
 
 /**
  * Caches structure modifiers.
@@ -55,7 +59,15 @@ public class StructureCache {
 			Object result = DefaultInstances.DEFAULT.create(clazz);
 
 			if (result == null) {
-				throw new IllegalArgumentException("Failed to create packet for type: " + type);
+				try {
+					return clazz.getConstructor(PacketDataSerializer.class).newInstance(new PacketDataSerializer(new ZeroBuffer()));
+				} catch (ReflectiveOperationException ex) {
+					try {
+						return clazz.getConstructor(PacketDataSerializer.class).newInstance(new ZeroPacketDataSerializer());
+					} catch (ReflectiveOperationException ex1) {
+						throw new IllegalArgumentException("Failed to create packet for type: " + type, ex);
+					}
+				}
 			}
 
 			return result;
@@ -91,7 +103,9 @@ public class StructureCache {
 	 */
 	public static StructureModifier<Object> getStructure(Class<?> packetType, boolean compile) {
 		// Get the ID from the class
-		return getStructure(PacketRegistry.getPacketType(packetType), compile);
+		PacketType type = PacketRegistry.getPacketType(packetType);
+		Preconditions.checkNotNull(type, "No packet type associated with " + packetType);
+		return getStructure(type, compile);
 	}
 
 	/**
@@ -101,6 +115,7 @@ public class StructureCache {
 	 * @return A structure modifier.
 	 */
 	public static StructureModifier<Object> getStructure(final PacketType type, boolean compile) {
+		Preconditions.checkNotNull(type);
 		StructureModifier<Object> result = structureModifiers.get(type);
 
 		// We don't want to create this for every lookup

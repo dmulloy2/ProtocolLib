@@ -1,41 +1,86 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableMap;
-import net.minecraft.core.IRegistry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class WrappedRegistry {
-    private static final Map<Class<?>, Object> REGISTRY;
+    // map of NMS class to registry instance
+    private static final Map<Class<?>, WrappedRegistry> REGISTRY;
+
+    private static final MethodAccessor GET;
+    private static final MethodAccessor GET_KEY;
 
     static {
-        Map<Class<?>, Object> regMap = new HashMap<>();
-        for (Field field : IRegistry.class.getFields()) {
-            try {
-                if (field.getType().isAssignableFrom(IRegistry.class)) {
-                    Type genType = field.getGenericType();
-                    if (genType instanceof ParameterizedType) {
-                        ParameterizedType par = (ParameterizedType) genType;
-                        Type paramType = par.getActualTypeArguments()[0];
-                        if (paramType instanceof Class) {
-                            regMap.put((Class<?>) paramType, field.get(null));
+        Map<Class<?>, WrappedRegistry> regMap = new HashMap<>();
+
+        Class<?> regClass = MinecraftReflection.getIRegistry();
+        if (regClass != null) {
+            for (Field field : regClass.getFields()) {
+                try {
+                    // make sure it's actually a registry
+                    if (field.getType().isAssignableFrom(regClass)) {
+                        Type genType = field.getGenericType();
+                        if (genType instanceof ParameterizedType) {
+                            ParameterizedType par = (ParameterizedType) genType;
+                            Type paramType = par.getActualTypeArguments()[0];
+                            if (paramType instanceof Class) {
+                                regMap.put((Class<?>) paramType, new WrappedRegistry(field.get(null)));
+                            }
                         }
                     }
+                } catch (ReflectiveOperationException ignored) {
                 }
-            } catch (ReflectiveOperationException ignored) {}
+            }
         }
 
         REGISTRY = ImmutableMap.copyOf(regMap);
+
+        GET = Accessors.getMethodAccessor(regClass, "get", MinecraftReflection.getMinecraftKeyClass());
+
+        FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
+        GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+                .newBuilder()
+                .parameterCount(1)
+                .returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
+                .build()));
     }
 
-    public static Object getAttributeRegistry() {
+    private final Object handle;
+
+    private WrappedRegistry(Object handle) {
+        this.handle = handle;
+    }
+
+    public Object get(MinecraftKey key) {
+        return GET.invoke(handle, MinecraftKey.getConverter().getGeneric(key));
+    }
+
+    public Object get(String key) {
+        return get(new MinecraftKey(key));
+    }
+
+    public MinecraftKey getKey(Object generic) {
+        return MinecraftKey.getConverter().getSpecific(GET_KEY.invoke(handle, generic));
+    }
+
+    // TODO add more methods
+
+    public static WrappedRegistry getAttributeRegistry() {
         return REGISTRY.get(MinecraftReflection.getAttributeBase());
+    }
+
+    public static WrappedRegistry getDimensionRegistry() {
+        return REGISTRY.get(MinecraftReflection.getDimensionManager());
     }
 }

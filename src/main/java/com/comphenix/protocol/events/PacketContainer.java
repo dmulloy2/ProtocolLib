@@ -21,6 +21,7 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nonnull;
@@ -1145,14 +1146,19 @@ public class PacketContainer implements Serializable {
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
-		Object clonedPacket;
+		Object clonedPacket = null;
 		
 		// Fall back on the alternative (but slower) method of reading and writing back the packet
-		if (CLONING_UNSUPPORTED.contains(type)) {
-			clonedPacket = SerializableCloner.clone(this).getHandle();
-		} else {
-			clonedPacket = DEEP_CLONER.clone(getHandle());
+		if (!CLONING_UNSUPPORTED.contains(type)) {
+			try {
+				clonedPacket = DEEP_CLONER.clone(getHandle());
+			} catch (Exception ignored) {}
 		}
+
+		if (clonedPacket == null) {
+			clonedPacket = SerializableCloner.clone(this).getHandle();
+		}
+
 		return new PacketContainer(getType(), clonedPacket);
 	}
 		
@@ -1187,19 +1193,11 @@ public class PacketContainer implements Serializable {
 		output.writeBoolean(handle != null);
 
 		try {
-			if (MinecraftReflection.isUsingNetty()) {
-				ByteBuf buffer = createPacketBuffer();
-				MinecraftMethods.getPacketWriteByteBufMethod().invoke(handle, buffer);
+			ByteBuf buffer = createPacketBuffer();
+			MinecraftMethods.getPacketWriteByteBufMethod().invoke(handle, buffer);
 
-				output.writeInt(buffer.readableBytes());
-				buffer.readBytes(output, buffer.readableBytes());
-			} else {
-				// Call the write-method
-				output.writeInt(-1);
-				getMethodLazily(writeMethods, handle.getClass(), "write", DataOutput.class).
-					invoke(handle, new DataOutputStream(output));
-			}
-		
+			output.writeInt(buffer.readableBytes());
+			buffer.readBytes(output, buffer.readableBytes());
 		} catch (IllegalArgumentException e) {
 			throw new IOException("Minecraft packet doesn't support DataOutputStream", e);
 		} catch (IllegalAccessException e) {
@@ -1223,11 +1221,24 @@ public class PacketContainer implements Serializable {
 	    	
 	    	// Create a default instance of the packet
 			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+				PacketDataSerializer serializer = new PacketDataSerializer(buffer);
+
 				try {
-					PacketDataSerializer serializer = new PacketDataSerializer(buffer);
 					handle = type.getPacketClass().getConstructor(PacketDataSerializer.class).newInstance(serializer);
 				} catch (ReflectiveOperationException ex) {
-					throw new RuntimeException("", ex);
+					// they might have a static method to create them instead
+					Method method = FuzzyReflection.fromClass(type.getPacketClass(), true)
+							.getMethod(FuzzyMethodContract
+									.newBuilder()
+									.requireModifier(Modifier.STATIC)
+									.returnTypeExact(type.getPacketClass())
+									.parameterExactArray(PacketDataSerializer.class)
+									.build());
+					try {
+						handle = method.invoke(null, serializer);
+					} catch (ReflectiveOperationException ignored) {
+						throw new RuntimeException("Failed to construct packet for " + type, ex);
+					}
 				}
 			} else {
 				handle = StructureCache.newPacket(type);

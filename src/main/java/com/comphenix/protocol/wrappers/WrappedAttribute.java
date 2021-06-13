@@ -439,18 +439,9 @@ public class WrappedAttribute extends AbstractWrapper {
 
 			Object attributeKey;
 			if (KEY_WRAPPED) {
-				if (REGISTRY == null) {
-					REGISTRY = WrappedRegistry.getAttributeRegistry();
-				}
-
-				if (REGISTRY_GET == null) {
-					Class<?> keyClass = MinecraftReflection.getMinecraftKeyClass();
-					REGISTRY_GET = Accessors.getMethodAccessor(REGISTRY.getClass(), "get", keyClass);
-				}
-
+				WrappedRegistry registry = WrappedRegistry.getAttributeRegistry();
 				String strKey = REMAP.getOrDefault(this.attributeKey, this.attributeKey);
-				Object key = MinecraftKey.getConverter().getGeneric(new MinecraftKey(strKey));
-				attributeKey = REGISTRY_GET.invoke(REGISTRY, key);
+				attributeKey = registry.get(strKey);
 
 				if (attributeKey == null) {
 					throw new IllegalArgumentException("Invalid attribute name: " + this.attributeKey);
