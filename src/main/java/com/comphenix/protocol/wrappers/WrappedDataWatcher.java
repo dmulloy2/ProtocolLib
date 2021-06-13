@@ -129,8 +129,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		// We can create a fake egg without it affecting anything
 		// Mojang added difficulty to lightning strikes, so this'll have to do
 		if (eggConstructor == null) {
-			eggConstructor = Accessors.getConstructorAccessor(MinecraftReflection.getMinecraftClass("EntityEgg"),
-					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class);
+			eggConstructor = Accessors.getConstructorAccessor(
+					MinecraftReflection.getMinecraftClass("world.entity.projectile.EntityEgg", "EntityEgg"),
+					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class
+			);
 		}
 
 		Object world = BukkitUnwrapper.getInstance().unwrapItem(Bukkit.getWorlds().get(0));

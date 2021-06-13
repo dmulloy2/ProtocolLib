@@ -10,6 +10,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -115,7 +116,9 @@ public class WrappedAttribute extends AbstractWrapper {
 		public String key;
 	}
 
-	private static final Class<?> ATTRIBUTE_BASE_CLASS = MinecraftReflection.getNullableNMS("AttributeBase");
+	private static final Class<?> ATTRIBUTE_BASE_CLASS = MinecraftReflection.getNullableNMS(
+			"world.entity.ai.attributes.AttributeBase", "AttributeBase"
+	);
 
 	private static final AutoWrapper<WrappedAttributeBase> ATTRIBUTE_BASE = AutoWrapper.wrap(
 			WrappedAttributeBase.class, ATTRIBUTE_BASE_CLASS
@@ -418,15 +421,18 @@ public class WrappedAttribute extends AbstractWrapper {
 			if (Double.isNaN(baseValue)) {
 				throw new IllegalStateException("Base value has not been set.");
 			}
-			
-			// Retrieve the correct constructor
+
+			boolean isStatic = MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
+
 			if (ATTRIBUTE_CONSTRUCTOR == null) {
-				ATTRIBUTE_CONSTRUCTOR = FuzzyReflection.fromClass(MinecraftReflection.getAttributeSnapshotClass(), true)
-						.getConstructor(FuzzyMethodContract.newBuilder().parameterCount(4)
-								.parameterDerivedOf(MinecraftReflection.getPacketClass(), 0)
-								.parameterExactType(double.class, 2).parameterDerivedOf(Collection.class, 3)
-								.build()
-						);
+				FuzzyReflection ref = FuzzyReflection.fromClass(MinecraftReflection.getAttributeSnapshotClass(), true);
+				FuzzyMethodContract.Builder contract = FuzzyMethodContract.newBuilder().parameterCount(isStatic ? 3 : 4);
+				if (!isStatic) {
+					contract.parameterDerivedOf(MinecraftReflection.getPacketClass(), 0);
+				}
+				contract.parameterExactType(double.class).parameterDerivedOf(Collection.class);
+				ATTRIBUTE_CONSTRUCTOR = ref.getConstructor(contract.build());
+
 				// Just in case
 				ATTRIBUTE_CONSTRUCTOR.setAccessible(true);
 			}
@@ -434,12 +440,7 @@ public class WrappedAttribute extends AbstractWrapper {
 			Object attributeKey;
 			if (KEY_WRAPPED) {
 				if (REGISTRY == null) {
-					Class<?> iRegistry = MinecraftReflection.getMinecraftClass("IRegistry");
-					try {
-						REGISTRY = iRegistry.getDeclaredField("ATTRIBUTE").get(null);
-					} catch (ReflectiveOperationException ex) {
-						throw new RuntimeException("Failed to obtain ATTRIBUTE registry", ex);
-					}
+					REGISTRY = WrappedRegistry.getAttributeRegistry();
 				}
 
 				if (REGISTRY_GET == null) {
@@ -459,15 +460,14 @@ public class WrappedAttribute extends AbstractWrapper {
 			}
 
 			try {
-				Object handle = ATTRIBUTE_CONSTRUCTOR.newInstance(
-					packet.getHandle(),
-					attributeKey,
-					baseValue,
-					getUnwrappedModifiers());
+				Object handle;
+				if (isStatic) {
+					handle = ATTRIBUTE_CONSTRUCTOR.newInstance(attributeKey, baseValue, getUnwrappedModifiers());
+				} else {
+					handle = ATTRIBUTE_CONSTRUCTOR.newInstance(packet.getHandle(), attributeKey, baseValue, getUnwrappedModifiers());
+				}
 
-				// Create it
 				return new WrappedAttribute(handle);
-				
 			} catch (Exception e) {
 				throw new RuntimeException("Cannot construct AttributeSnapshot.", e);
 			}

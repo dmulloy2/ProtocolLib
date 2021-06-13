@@ -698,7 +698,7 @@ public class BukkitConverters {
 			@Override
 			public Object getGeneric(EntityType specific) {
 				if (entityTypeFromName == null) {
-					Class<?> entityTypesClass = MinecraftReflection.getMinecraftClass("EntityTypes");
+					Class<?> entityTypesClass = MinecraftReflection.getEntityTypes();
 					entityTypeFromName = Accessors.getMethodAccessor(
 							FuzzyReflection
 									.fromClass(entityTypesClass, false)
@@ -716,7 +716,7 @@ public class BukkitConverters {
 			@Override
 			public EntityType getSpecific(Object generic) {
 				if (getEntityTypeName == null) {
-					Class<?> entityTypesClass = MinecraftReflection.getMinecraftClass("EntityTypes");
+					Class<?> entityTypesClass = MinecraftReflection.getEntityTypes();
 					getEntityTypeName = Accessors.getMethodAccessor(
 							FuzzyReflection
 									.fromClass(entityTypesClass, false)
@@ -1073,7 +1073,7 @@ public class BukkitConverters {
 			public Advancement getSpecific(Object generic) {
 				try {
 					return (Advancement) getCraftBukkitClass("advancement.CraftAdvancement")
-							.getConstructor(getMinecraftClass("Advancement"))
+							.getConstructor(getMinecraftClass("advancements.Advancement", "Advancement"))
 							.newInstance(generic);
 				} catch (ReflectiveOperationException ex) {
 					throw new RuntimeException(ex);
@@ -1232,7 +1232,7 @@ public class BukkitConverters {
 
 				if (worldKeyField == null) {
 					Class<?> worldClass = MinecraftReflection.getNmsWorldClass();
-					Class<?> resourceKeyClass = MinecraftReflection.getMinecraftClass("ResourceKey");
+					Class<?> resourceKeyClass = MinecraftReflection.getResourceKey();
 
 					FuzzyReflection fuzzy = FuzzyReflection.fromClass(nmsWorld.getClass(), true);
 					worldKeyField = Accessors.getFieldAccessor(fuzzy.getParameterizedField(resourceKeyClass, worldClass));
@@ -1297,7 +1297,7 @@ public class BukkitConverters {
 			@Override
 			public Object getGeneric(Integer specific) {
 				if (dimensionManager == null) {
-					dimensionManager = MinecraftReflection.getNullableNMS("DimensionManager");
+					dimensionManager = MinecraftReflection.getDimensionManager();
 				}
 
 				if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
@@ -1333,7 +1333,7 @@ public class BukkitConverters {
 			@Override
 			public Integer getSpecific(Object generic) {
 				if (dimensionManager == null) {
-					dimensionManager = MinecraftReflection.getNullableNMS("DimensionManager");
+					dimensionManager = MinecraftReflection.getDimensionManager();
 				}
 
 				if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
@@ -1391,7 +1391,7 @@ public class BukkitConverters {
 			@Override
 			public Object getGeneric(List<MerchantRecipe> specific) {
 				if (merchantRecipeListConstructor == null) {
-					Class<?> merchantRecipeListClass = MinecraftReflection.getMinecraftClass("MerchantRecipeList");
+					Class<?> merchantRecipeListClass = MinecraftReflection.getMerchantRecipeList();
 					merchantRecipeListConstructor = Accessors.getConstructorAccessor(merchantRecipeListClass);
 					Class<?> craftMerchantRecipeClass = MinecraftReflection.getCraftBukkitClass("inventory.CraftMerchantRecipe");
 					FuzzyReflection reflection = FuzzyReflection.fromClass(craftMerchantRecipeClass, false);
@@ -1405,7 +1405,9 @@ public class BukkitConverters {
 			@Override
 			public List<MerchantRecipe> getSpecific(Object generic) {
 				if (nmsMerchantRecipeToBukkit == null) {
-					Class<?> merchantRecipeClass = MinecraftReflection.getMinecraftClass("MerchantRecipe");
+					Class<?> merchantRecipeClass = MinecraftReflection.getMinecraftClass(
+							"world.item.trading.MerchantRecipe","MerchantRecipe"
+					);
 					FuzzyReflection reflection = FuzzyReflection.fromClass(merchantRecipeClass, false);
 					nmsMerchantRecipeToBukkit = Accessors.getMethodAccessor(reflection.getMethodByName("asBukkit"));
 				}
@@ -1430,7 +1432,7 @@ public class BukkitConverters {
 			@Override
 			public Object getGeneric(BlockPosition specific) {
 				if (sectionPositionClass == null) {
-					sectionPositionClass = MinecraftReflection.getMinecraftClass("SectionPosition");
+					sectionPositionClass = MinecraftReflection.getSectionPosition();
 				}
 
 				if (sectionPositionCreate == null) {

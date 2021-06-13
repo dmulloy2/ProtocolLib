@@ -104,7 +104,7 @@ public class PacketContainerTest {
 
 	private <T> void testObjectArray(StructureModifier<T[]> modifier, int index, T[] initialValue, T[] testValue) {
 		// Check initial value
-		assertNull(modifier.read(index));
+		assertEquals(modifier.read(index).length, 0);
 		modifier.writeDefaults();
 
 		// Test initial
@@ -173,7 +173,7 @@ public class PacketContainerTest {
 	@Test
 	public void testGetStrings() {
 		PacketContainer explosion = new PacketContainer(PacketType.Play.Client.CHAT);
-		testPrimitive(explosion.getStrings(), 0, null, "hello");
+		testPrimitive(explosion.getStrings(), 0, "", "hello");
 	}
 
 	@Test
@@ -185,7 +185,7 @@ public class PacketContainerTest {
 	@Test
 	public void testGetIntegerArrays() {
 		// Contains a byte array we will test
-		PacketContainer packet = new PacketContainer(PacketType.Play.Server.ENTITY_DESTROY);
+		PacketContainer packet = new PacketContainer(PacketType.Play.Server.MAP_CHUNK);
 		StructureModifier<int[]> integers = packet.getIntegerArrays();
 		int[] testArray = new int[] { 1, 2, 3 };
 
@@ -230,7 +230,7 @@ public class PacketContainerTest {
 		items.add(itemWithData());
 		items.add(new ItemStack(Material.DIAMOND_AXE));
 
-		assertNull(itemAccess.read(0));
+		assertEquals(itemAccess.read(0).size(), 0);
 
 		// Insert and check that it was succesful
 		itemAccess.write(0, items);
@@ -316,7 +316,7 @@ public class PacketContainerTest {
 		PacketContainer explosionPacket = new PacketContainer(PacketType.Play.Server.EXPLOSION);
 		StructureModifier<List<BlockPosition>> positionAccessor = explosionPacket.getBlockPositionCollectionModifier();
 
-		assertNull(positionAccessor.read(0));
+		assertEquals(positionAccessor.read(0).size(), 0);
 
 		List<BlockPosition> positions = Lists.newArrayList();
 		positions.add(new BlockPosition(1, 2, 3));

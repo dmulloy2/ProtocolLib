@@ -66,7 +66,9 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 	}
 
 	static {
-		OPERATION_CLASS = OPERATION_ENUM ? MinecraftReflection.getMinecraftClass("AttributeModifier$Operation") : null;
+		OPERATION_CLASS = OPERATION_ENUM ? MinecraftReflection.getMinecraftClass(
+				"world.entity.ai.attributes.AttributeModifier$Operation", "AttributeModifier$Operation"
+		) : null;
 		OPERATION_CONVERTER = OPERATION_ENUM ? new IndexedEnumConverter<>(Operation.class, OPERATION_CLASS) : null;
 	}
 

@@ -7,9 +7,12 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 public class WrappedVillagerData extends AbstractWrapper implements ClonableWrapper {
-    private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS("VillagerData");
-    private static final Class<?> TYPE_CLASS = MinecraftReflection.getNullableNMS("VillagerType");
-    private static final Class<?> PROF_CLASS = MinecraftReflection.getNullableNMS("VillagerProfession");
+    private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS(
+            "world.entity.npc.VillagerData","VillagerData");
+    private static final Class<?> TYPE_CLASS = MinecraftReflection.getNullableNMS(
+            "world.entity.npc.VillagerType", "VillagerType");
+    private static final Class<?> PROF_CLASS = MinecraftReflection.getNullableNMS(
+            "world.entity.npc.VillagerProfession", "VillagerProfession");
 
     private static EquivalentConverter<Type> TYPE_CONVERTER;
     private static EquivalentConverter<Profession> PROF_CONVERTER;

@@ -1831,11 +1831,7 @@ public class MinecraftReflection {
 	}
 
 	public static boolean signUpdateExists() {
-		try {
-			return getMinecraftClass("PacketPlayOutUpdateSign") != null;
-		} catch (RuntimeException ex) {
-			return false;
-		}
+		return getNullableNMS("PacketPlayOutUpdateSign") != null;
 	}
 
 	public static Class<?> getNonNullListClass() {
@@ -2158,5 +2154,33 @@ public class MinecraftReflection {
 
 	public static Class<?> getResourceKey() {
 		return getMinecraftClass("resources.ResourceKey", "ResourceKey");
+	}
+
+	public static Class<?> getEntityTypes() {
+		return getMinecraftClass("world.entity.EntityTypes", "EntityTypes");
+	}
+
+	public static Class<?> getParticleParam() {
+		return getMinecraftClass("core.particles.ParticleParam", "ParticleParam");
+	}
+
+	public static Class<?> getSectionPosition() {
+		return getMinecraftClass("core.SectionPosition", "SectionPosition");
+	}
+
+	public static Class<?> getChunkProviderServer() {
+		return getMinecraftClass("server.level.ChunkProviderServer", "ChunkProviderServer");
+	}
+
+	public static Class<?> getPlayerChunkMap() {
+		return getMinecraftClass("server.level.PlayerChunkMap", "PlayerChunkMap");
+	}
+
+	public static Class<?> getIRegistry() {
+		return getMinecraftClass("core.IRegistry", "IRegistry");
+	}
+
+	public static Class<?> getAttributeBase() {
+		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "AttributeBase");
 	}
 }

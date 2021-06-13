@@ -496,7 +496,7 @@ public abstract class EnumWrappers {
 
 		try {
 			// TODO enum names are more stable than their packet associations
-			ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("EnumItemSlot");
+			ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("world.entity.EnumItemSlot", "EnumItemSlot");
 		} catch (Exception ex) {
 			ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
 		}
@@ -504,7 +504,7 @@ public abstract class EnumWrappers {
 		HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
 		DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
-		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("EntityPose");
+		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "EntityPose");
 
 		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());

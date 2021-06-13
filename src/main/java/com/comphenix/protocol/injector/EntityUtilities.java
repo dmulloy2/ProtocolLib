@@ -139,7 +139,7 @@ class EntityUtilities {
 	@SuppressWarnings("unchecked")
 	private Object getNewEntityTracker(Object worldServer, int entityId) {
 		if (getChunkProvider == null) {
-			Class<?> chunkProviderClass = MinecraftReflection.getMinecraftClass("ChunkProviderServer");
+			Class<?> chunkProviderClass = MinecraftReflection.getChunkProviderServer();
 			getChunkProvider = Accessors.getMethodAccessor(
 					FuzzyReflection.fromClass(worldServer.getClass(), false).getMethod(
 							FuzzyMethodContract.newBuilder().parameterCount(0).returnTypeExact(chunkProviderClass).build()));
@@ -148,7 +148,7 @@ class EntityUtilities {
 		Object chunkProvider = getChunkProvider.invoke(worldServer);
 
 		if (chunkMapField == null) {
-			Class<?> chunkMapClass = MinecraftReflection.getMinecraftClass("PlayerChunkMap");
+			Class<?> chunkMapClass = MinecraftReflection.getPlayerChunkMap();
 			chunkMapField = Accessors.getFieldAccessor(
 					FuzzyReflection.fromClass(chunkProvider.getClass(), false).getField(
 							FuzzyFieldContract.newBuilder().typeExact(chunkMapClass).build()));

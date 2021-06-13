@@ -424,7 +424,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<EntityType> getEntityTypeModifier() {
 		return structureModifier.withType(
-				MinecraftReflection.getMinecraftClass("EntityTypes"),
+				MinecraftReflection.getEntityTypes(),
 				BukkitConverters.getEntityTypeConverter());
 	}
 	
@@ -855,7 +855,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<WrappedParticle> getNewParticles() {
 		return structureModifier.withType(
-				MinecraftReflection.getMinecraftClass("ParticleParam"),
+				MinecraftReflection.getParticleParam(),
 				BukkitConverters.getParticleConverter()
 		);
     }
@@ -1001,7 +1001,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<World> getWorldKeys() {
 		return structureModifier.withParamType(
-				MinecraftReflection.getMinecraftClass("ResourceKey"),
+				MinecraftReflection.getResourceKey(),
 				BukkitConverters.getWorldKeyConverter(),
 				MinecraftReflection.getNmsWorldClass()
 		);
@@ -1013,7 +1013,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<BlockPosition> getSectionPositions() {
 		return structureModifier.withType(
-				MinecraftReflection.getMinecraftClass("SectionPosition"),
+				MinecraftReflection.getSectionPosition(),
 				BukkitConverters.getSectionPositionConverter()
 		);
 	}

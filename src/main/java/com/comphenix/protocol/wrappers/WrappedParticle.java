@@ -31,14 +31,14 @@ public class WrappedParticle<T> {
 				.newBuilder()
 				.requireModifier(Modifier.STATIC)
 				.returnTypeExact(Particle.class)
-				.parameterExactType(MinecraftReflection.getMinecraftClass("ParticleParam"))
+				.parameterExactType(MinecraftReflection.getParticleParam())
 				.build();
 		toBukkit = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 
 		contract = FuzzyMethodContract
 				.newBuilder()
 				.requireModifier(Modifier.STATIC)
-				.returnTypeExact(MinecraftReflection.getMinecraftClass("ParticleParam"))
+				.returnTypeExact(MinecraftReflection.getParticleParam())
 				.parameterCount(2)
 				.build();
 		toNMS = Accessors.getMethodAccessor(fuzzy.getMethod(contract));

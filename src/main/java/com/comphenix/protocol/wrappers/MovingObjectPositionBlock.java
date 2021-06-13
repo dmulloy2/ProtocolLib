@@ -10,7 +10,8 @@ import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
 import org.bukkit.util.Vector;
 
 public class MovingObjectPositionBlock implements Cloneable {
-	private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS("MovingObjectPositionBlock");
+	private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS(
+			"world.phys.MovingObjectPositionBlock", "MovingObjectPositionBlock");
 
 	private BlockPosition position;
 	private Vector posVector;

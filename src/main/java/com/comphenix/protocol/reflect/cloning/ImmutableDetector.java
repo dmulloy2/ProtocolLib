@@ -62,29 +62,29 @@ public class ImmutableDetector implements Cloner {
 		add(MinecraftReflection::getDataWatcherSerializerClass);
 		add(MinecraftReflection::getBlockClass);
 		add(MinecraftReflection::getItemClass);
-		add("SoundEffect");
+		add("sounds.SoundEffect", "SoundEffect");
 
 		if (MinecraftVersion.AQUATIC_UPDATE.atOrAbove()) {
 			add(MinecraftReflection::getFluidTypeClass);
 			add(MinecraftReflection::getParticleTypeClass);
-			add("Particle");
+			add("core.particles.Particle", "Particle");
 		}
 
 		if (MinecraftVersion.VILLAGE_UPDATE.atOrAbove()) {
-			add("EntityTypes");
-			add("VillagerType");
-			add("VillagerProfession");
+			add(MinecraftReflection::getEntityTypes);
+			add("world.entity.npc.VillagerType", "VillagerType");
+			add("world.entity.npc.VillagerProfession", "VillagerProfession");
 		}
 
 		// TODO automatically detect the technically-not-an-enum enums that Mojang is so fond of
 		// Would also probably go in tandem with having the FieldCloner use this
 
 		if (MinecraftVersion.NETHER_UPDATE.atOrAbove()) {
-			add("IRegistry");
+			add("core.IRegistry", "IRegistry");
 		}
 
 		if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
-			add("ResourceKey");
+			add(MinecraftReflection::getResourceKey);
 		}
 	}
 
@@ -97,13 +97,11 @@ public class ImmutableDetector implements Cloner {
 		} catch (RuntimeException ignored) { }
 	}
 
-	private static void add(String className) {
-		try {
-			Class<?> clazz = MinecraftReflection.getMinecraftClass(className);
-			if (clazz != null) {
-				immutableNMS.add(clazz);
-			}
-		} catch (RuntimeException ignored) { }
+	private static void add(String className, String... aliases) {
+		Class<?> clazz = MinecraftReflection.getNullableNMS(className, aliases);
+		if (clazz != null) {
+			immutableNMS.add(clazz);
+		}
 	}
 	
 	@Override

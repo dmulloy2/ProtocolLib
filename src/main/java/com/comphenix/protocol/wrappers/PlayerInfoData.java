@@ -17,10 +17,14 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.google.common.base.Objects;
 
@@ -94,14 +98,17 @@ public class PlayerInfoData {
 			public Object getGeneric(PlayerInfoData specific) {
 				if (constructor == null) {
 					try {
-						// public PlayerInfoData(Packet, GameProfile, int, GameMode, ChatComponent)
-						constructor = MinecraftReflection.getPlayerInfoDataClass().getConstructor(
-								MinecraftReflection.getMinecraftClass("PacketPlayOutPlayerInfo"),
-								MinecraftReflection.getGameProfileClass(),
-								int.class,
-								EnumWrappers.getGameModeClass(),
-								MinecraftReflection.getIChatBaseComponentClass()
-						);
+						List<Class<?>> args = new ArrayList<>();
+						if (!MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+							args.add(PacketType.Play.Server.PLAYER_INFO.getPacketClass());
+						}
+
+						args.add(MinecraftReflection.getGameProfileClass());
+						args.add(int.class);
+						args.add(EnumWrappers.getGameModeClass());
+						args.add(MinecraftReflection.getIChatBaseComponentClass());
+
+						constructor = MinecraftReflection.getPlayerInfoDataClass().getConstructor(args.toArray(new Class<?>[0]));
 					} catch (Exception e) {
 						throw new RuntimeException("Cannot find PlayerInfoData constructor.", e);
 					}
@@ -110,16 +117,14 @@ public class PlayerInfoData {
 				// Attempt to construct the underlying PlayerInfoData
 
 				try {
-					// public PlayerInfoData(null, GameProfile, ping, GameMode, ChatComponent)
-					// The packet isn't a field, so it can be null
-					Object result = constructor.newInstance(
-							null,
-							specific.profile.handle,
-							specific.latency,
-							EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode),
-							specific.displayName != null ? specific.displayName.handle : null
-					);
-					return result;
+					Object gameMode = EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode);
+					Object displayName = specific.displayName != null ? specific.displayName.handle : null;
+
+					if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+						return constructor.newInstance(specific.profile.handle, specific.latency, gameMode, displayName);
+					} else {
+						return constructor.newInstance(null, specific.profile.handle, specific.latency, gameMode, displayName);
+					}
 				} catch (Exception e) {
 					throw new RuntimeException("Failed to construct PlayerInfoData.", e);
 				}

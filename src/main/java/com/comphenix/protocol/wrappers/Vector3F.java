@@ -83,10 +83,10 @@ public class Vector3F {
 	}
 
 	private static Constructor<?> constructor = null;
-	private static Class<?> clazz = MinecraftReflection.getMinecraftClass("Vector3f");
+	private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS("core.Vector3f","Vector3f");
 
 	public static Class<?> getMinecraftClass() {
-		return clazz;
+		return NMS_CLASS;
 	}
 
 	public static EquivalentConverter<Vector3F> getConverter() {
@@ -100,7 +100,7 @@ public class Vector3F {
 			public Object getGeneric(Vector3F specific) {
 				if (constructor == null) {
 					try {
-						constructor = clazz.getConstructor(float.class, float.class, float.class);
+						constructor = NMS_CLASS.getConstructor(float.class, float.class, float.class);
 					} catch (ReflectiveOperationException ex) {
 						throw new RuntimeException("Failed to find constructor for Vector3f", ex);
 					}
