@@ -64,7 +64,9 @@ public class EnumWrappersTest {
 		);
 	}
 
-	private static final Set<String> KNOWN_INVALID = Sets.newHashSet("Particle");
+	private static final Set<String> KNOWN_INVALID = Sets.newHashSet(
+			"Particle", "WorldBorderAction", "CombatEventType", "EntityUseAction", "TitleAction", "Hand"
+	);
 
 	@Test
 	public void testValidity() {

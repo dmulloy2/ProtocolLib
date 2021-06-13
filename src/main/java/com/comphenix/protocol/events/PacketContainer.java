@@ -948,6 +948,7 @@ public class PacketContainer implements Serializable {
 	 * Retrieve a read/write structure for dimension IDs in 1.13.1+
 	 * @return A modifier for dimension IDs
 	 */
+	@Deprecated
 	public StructureModifier<Integer> getDimensions() {
 		if (MinecraftVersion.NETHER_UPDATE.atOrAbove() && !MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
 			return structureModifier.withParamType(
@@ -962,6 +963,13 @@ public class PacketContainer implements Serializable {
 			);
 		}
     }
+
+    public StructureModifier<World> getDimensionTypes() {
+		return structureModifier.withType(
+				MinecraftReflection.getDimensionManager(),
+				BukkitConverters.getDimensionConverter()
+		);
+	}
 	
 	/**
 	 * Retrieve a read/write structure for the MerchantRecipeList class.

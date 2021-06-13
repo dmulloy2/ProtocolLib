@@ -52,8 +52,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import com.mojang.serialization.DataResult;
+import net.minecraft.nbt.DynamicOpsNBT;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.dimension.DimensionManager;
 import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
+import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
@@ -1292,6 +1297,32 @@ public class BukkitConverters {
 		}
 	}
 
+	private static FieldAccessor dimensionKey;
+
+	public static EquivalentConverter<World> getDimensionConverter() {
+		return ignoreNull(new EquivalentConverter<World>() {
+			@Override
+			public Object getGeneric(World specific) {
+				return ((CraftWorld) specific).getHandle().getDimensionManager();
+			}
+
+			@Override
+			public World getSpecific(Object generic) {
+				for (World world : Bukkit.getWorlds()) {
+					if (((CraftWorld) world).getHandle().getDimensionManager() == generic) {
+						return world;
+					}
+				}
+				throw new IllegalArgumentException();
+			}
+
+			@Override
+			public Class<World> getSpecificType() {
+				return World.class;
+			}
+		});
+	}
+
 	public static EquivalentConverter<Integer> getDimensionIDConverter() {
 		return ignoreNull(new EquivalentConverter<Integer>() {
 			@Override
@@ -1300,6 +1331,32 @@ public class BukkitConverters {
 					dimensionManager = MinecraftReflection.getDimensionManager();
 				}
 
+				if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+					World world = null;
+					if (specific == 0) {
+						world = Bukkit.getWorlds().get(0);
+					} else if (specific == -1) {
+						for (World world1 : Bukkit.getWorlds()) {
+							if (world1.getEnvironment() == World.Environment.NETHER) {
+								world = world1;
+								break;
+							}
+						}
+					} else if (specific == 1) {
+						for (World world1 : Bukkit.getWorlds()) {
+							if (world1.getEnvironment() == World.Environment.THE_END) {
+								world = world1;
+								break;
+							}
+						}
+					}
+
+					if (world != null) {
+						return ((CraftWorld) world).getHandle().getDimensionManager();
+					}
+
+					throw new IllegalArgumentException();
+				}
 				if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
 					if (dimensionImplConverter == null) {
 						dimensionImplConverter = new FauxEnumConverter<>(DimensionImpl.class, dimensionManager);
@@ -1336,6 +1393,28 @@ public class BukkitConverters {
 					dimensionManager = MinecraftReflection.getDimensionManager();
 				}
 
+				if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+					if (dimensionKey == null) {
+						FuzzyReflection fuzzy = FuzzyReflection.fromClass(dimensionManager, false);
+						dimensionKey = Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract
+								.newBuilder()
+								.typeExact(MinecraftReflection.getMinecraftKeyClass())
+								.banModifier(Modifier.STATIC)
+								.build()));
+					}
+
+					MinecraftKey key = MinecraftKey.fromHandle(dimensionKey.get(generic));
+					switch (key.getKey()) {
+						case "overworld":
+							return Dimension.OVERWORLD.getId();
+						case "the_nether":
+							return Dimension.THE_NETHER.getId();
+						case "the_end":
+							return Dimension.THE_END.getId();
+						default:
+							throw new IllegalArgumentException("id not supported for extra dimensions");
+					}
+				}
 				if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
 					if (dimensionImplConverter == null) {
 						dimensionImplConverter = new FauxEnumConverter<>(DimensionImpl.class, dimensionManager);

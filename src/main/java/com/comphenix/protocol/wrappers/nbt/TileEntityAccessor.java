@@ -35,7 +35,8 @@ import org.bukkit.block.BlockState;
  * @author Kristian
  */
 class TileEntityAccessor<T extends BlockState> {
-	private static final boolean BLOCK_DATA_INCL = MinecraftVersion.NETHER_UPDATE.atOrAbove();
+	private static final boolean BLOCK_DATA_INCL = MinecraftVersion.NETHER_UPDATE.atOrAbove()
+			&& !MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
 
 	/**
 	 * Token indicating that the given block state doesn't contain any tile entities.
