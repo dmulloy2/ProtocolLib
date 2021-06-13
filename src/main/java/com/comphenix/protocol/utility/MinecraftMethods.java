@@ -248,8 +248,8 @@ public class MinecraftMethods {
 				}
 			}
 
-			if (packetReadByteBuf == null)
-				throw new IllegalStateException("Unable to find Packet.read(PacketDataSerializer)");
+//			if (packetReadByteBuf == null)
+//				throw new IllegalStateException("Unable to find Packet.read(PacketDataSerializer)");
 			if (packetWriteByteBuf == null)
 				throw new IllegalStateException("Unable to find Packet.write(PacketDataSerializer)");
 		}

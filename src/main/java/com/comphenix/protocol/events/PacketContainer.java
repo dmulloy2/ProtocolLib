@@ -51,6 +51,7 @@ import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
+import net.minecraft.network.PacketDataSerializer;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -949,13 +950,13 @@ public class PacketContainer implements Serializable {
 	public StructureModifier<Integer> getDimensions() {
 		if (MinecraftVersion.NETHER_UPDATE.atOrAbove() && !MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {
 			return structureModifier.withParamType(
-					MinecraftReflection.getMinecraftClass("ResourceKey"),
+					MinecraftReflection.getResourceKey(),
 					BukkitConverters.getDimensionIDConverter(),
-					MinecraftReflection.getMinecraftClass("DimensionManager")
+					MinecraftReflection.getDimensionManager()
 			);
 		} else {
 			return structureModifier.withType(
-					MinecraftReflection.getMinecraftClass("DimensionManager"),
+					MinecraftReflection.getDimensionManager(),
 					BukkitConverters.getDimensionIDConverter()
 			);
 		}
@@ -967,7 +968,7 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<List<MerchantRecipe>> getMerchantRecipeLists() {
 		return structureModifier.withType(
-				MinecraftReflection.getMinecraftClass("MerchantRecipeList"),
+				MinecraftReflection.getMerchantRecipeList(),
 				BukkitConverters.getMerchantRecipeListConverter()
 		);
     }
@@ -1217,30 +1218,30 @@ public class PacketContainer implements Serializable {
 
 	    // Don't read NULL packets
 	    if (input.readBoolean()) {
+			ByteBuf buffer = createPacketBuffer();
+			buffer.writeBytes(input, input.readInt());
 	    	
 	    	// Create a default instance of the packet
-	    	handle = StructureCache.newPacket(type);
-	    	
-			// Call the read method
-			try {
-				if (MinecraftReflection.isUsingNetty()) {
-					ByteBuf buffer = createPacketBuffer();
-					buffer.writeBytes(input, input.readInt());
-					
-					MinecraftMethods.getPacketReadByteBufMethod().invoke(handle, buffer);
-				} else {
-					if (input.readInt() != -1)
-						throw new IllegalArgumentException("Cannot load a packet from 1.7.2 in 1.6.4.");
-					
-					getMethodLazily(readMethods, handle.getClass(), "read", DataInput.class).
-						invoke(handle, new DataInputStream(input));
+			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+				try {
+					PacketDataSerializer serializer = new PacketDataSerializer(buffer);
+					handle = type.getPacketClass().getConstructor(PacketDataSerializer.class).newInstance(serializer);
+				} catch (ReflectiveOperationException ex) {
+					throw new RuntimeException("", ex);
 				}
-			} catch (IllegalArgumentException e) {
-				throw new IOException("Minecraft packet doesn't support DataInputStream", e);
-			} catch (IllegalAccessException e) {
-				throw new RuntimeException("Insufficient security privileges.", e);
-			} catch (InvocationTargetException e) {
-				throw new IOException("Could not deserialize Minecraft packet.", e);
+			} else {
+				handle = StructureCache.newPacket(type);
+
+				// Call the read method
+				try {
+					MinecraftMethods.getPacketReadByteBufMethod().invoke(handle, buffer);
+				} catch (IllegalArgumentException e) {
+					throw new IOException("Minecraft packet doesn't support DataInputStream", e);
+				} catch (IllegalAccessException e) {
+					throw new RuntimeException("Insufficient security privileges.", e);
+				} catch (InvocationTargetException e) {
+					throw new IOException("Could not deserialize Minecraft packet.", e);
+				}
 			}
 			
 			// And we're done

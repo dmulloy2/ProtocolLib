@@ -29,7 +29,12 @@ import com.comphenix.protocol.ProtocolLogger;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
+import net.minecraft.core.NonNullList;
 import net.minecraft.network.PacketDataSerializer;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.item.ItemStack;
+import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * Used to construct default instances of any type.
@@ -37,12 +42,23 @@ import net.minecraft.network.PacketDataSerializer;
  *
  */
 public class DefaultInstances implements InstanceProvider {
+	private static final UUID SYS_UUID = new UUID(0L, 0L);
 
-	public static final InstanceProvider UUID_GENERATOR = type -> type == UUID.class ? new UUID(0L, 0L) : null;
-
-	public static final InstanceProvider ENUM_GENERATOR = type -> {
-		if (type != null && type.isEnum()) {
-			return type.getEnumConstants()[0];
+	public static final InstanceProvider MINECRAFT_GENERATOR = type -> {
+		if (type != null) {
+			if (type == UUID.class) {
+				return SYS_UUID;
+			} else if (type.isEnum()) {
+				return type.getEnumConstants()[0];
+			} else if (type == ItemStack.class) {
+				return ItemStack.b;
+			} else if (type == EntityTypes.class) {
+				return EntityTypes.b;
+			} else if (type == Int2ObjectMap.class) {
+				return new Int2ObjectOpenHashMap<>();
+			} else if (type == NonNullList.class) {
+				return NonNullList.a();
+			}
 		}
 
 		return null;
@@ -54,7 +70,7 @@ public class DefaultInstances implements InstanceProvider {
 	public static final DefaultInstances DEFAULT = DefaultInstances.fromArray(
 			PrimitiveGenerator.INSTANCE,
 			CollectionGenerator.INSTANCE,
-			UUID_GENERATOR, ENUM_GENERATOR
+			MINECRAFT_GENERATOR
 	);
 
 	/**

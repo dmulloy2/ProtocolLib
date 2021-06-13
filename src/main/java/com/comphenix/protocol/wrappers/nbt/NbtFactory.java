@@ -592,7 +592,7 @@ public class NbtFactory {
 		Constructor<?> constructor = CONSTRUCTORS.get(type);
 		if (constructor == null) {
 			if (getTagType == null) {
-				Class<?> tagTypes = MinecraftReflection.getMinecraftClass("NBTTagTypes");
+				Class<?> tagTypes = MinecraftReflection.getNbtTagTypes();
 				FuzzyReflection fuzzy = FuzzyReflection.fromClass(tagTypes, false);
 				getTagType = fuzzy.getMethod(
 						FuzzyMethodContract.newBuilder().parameterCount(1).parameterExactType(int.class).build());

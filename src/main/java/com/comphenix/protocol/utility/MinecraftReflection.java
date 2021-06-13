@@ -580,7 +580,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getEntityPlayerClass() {
 		try {
-			return getMinecraftClass("EntityPlayer");
+			return getMinecraftClass("server.level.EntityPlayer","EntityPlayer");
 		} catch (RuntimeException e) {
 			try {
 				// Grab CraftPlayer's handle
@@ -637,7 +637,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getEntityClass() {
 		try {
-			return getMinecraftClass("Entity");
+			return getMinecraftClass("server.world.Entity", "Entity");
 		} catch (RuntimeException e) {
 			return fallbackMethodReturn("Entity", "entity.CraftEntity", "getHandle");
 		}
@@ -657,7 +657,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getWorldServerClass() {
 		try {
-			return getMinecraftClass("WorldServer");
+			return getMinecraftClass("server.level.WorldServer", "WorldServer");
 		} catch (RuntimeException e) {
 			return fallbackMethodReturn("WorldServer", "CraftWorld", "getHandle");
 		}
@@ -669,7 +669,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getNmsWorldClass() {
 		try {
-			return getMinecraftClass("World");
+			return getMinecraftClass("world.level.World", "World");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("World", getWorldServerClass().getSuperclass());
 		}
@@ -771,7 +771,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getIChatBaseComponentClass() {
 		try {
-			return getMinecraftClass("IChatBaseComponent");
+			return getMinecraftClass("network.chat.IChatbaseComponent", "IChatBaseComponent");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("IChatBaseComponent",
 				Accessors.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
@@ -790,7 +790,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getChatComponentTextClass() {
 		try {
-			return getMinecraftClass("ChatComponentText");
+			return getMinecraftClass("network.chat.ChatComponentText", "ChatComponentText");
 		} catch (RuntimeException e) {
 			try {
 				Method getScoreboardDisplayName = FuzzyReflection.fromClass(getEntityClass()).
@@ -818,7 +818,8 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getChatSerializerClass() {
 		try {
-			return getMinecraftClass("ChatSerializer", "IChatBaseComponent$ChatSerializer");
+			return getMinecraftClass("network.chat.IChatBaseComponent$ChatSerializer",
+					"ChatSerializer", "IChatBaseComponent$ChatSerializer");
 		} catch (RuntimeException e) {
 			// TODO: Figure out a functional fallback
 			throw new IllegalStateException("Could not find ChatSerializer class.", e);
@@ -830,11 +831,8 @@ public class MinecraftReflection {
 	 * @return The ServerPing class.
 	 */
 	public static Class<?> getServerPingClass() {
-		if (!isUsingNetty())
-			throw new IllegalStateException("ServerPing is only supported in 1.7.2.");
-
 		try {
-			return getMinecraftClass("ServerPing");
+			return getMinecraftClass("network.protocol.status.ServerPing", "ServerPing");
 		} catch (RuntimeException e) {
 			Class<?> statusServerInfo = PacketType.Status.Server.SERVER_INFO.getPacketClass();
 
@@ -856,11 +854,9 @@ public class MinecraftReflection {
 	 * @return The ServerPingServerData class.
 	 */
 	public static Class<?> getServerPingServerDataClass() {
-		if (!isUsingNetty())
-			throw new IllegalStateException("ServerPingServerData is only supported in 1.7.2.");
-
 		try {
-			return getMinecraftClass("ServerPingServerData", "ServerPing$ServerData");
+			return getMinecraftClass("network.protocol.status.ServerPing$ServerData",
+					"ServerPingServerData", "ServerPing$ServerData");
 		} catch (RuntimeException e) {
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(getServerPingClass(), true);
 			return setMinecraftClass("ServerPingServerData", fuzzy.getFieldByType("(.*)(ServerData)(.*)").getType());
@@ -872,11 +868,9 @@ public class MinecraftReflection {
 	 * @return The ServerPingPlayerSample class.
 	 */
 	public static Class<?> getServerPingPlayerSampleClass() {
-		if (!isUsingNetty())
-			throw new IllegalStateException("ServerPingPlayerSample is only supported in 1.7.2.");
-
 		try {
-			return getMinecraftClass("ServerPingPlayerSample", "ServerPing$ServerPingPlayerSample");
+			return getMinecraftClass("network.protocol.status.ServerPing$ServerPingPlayerSample",
+					"ServerPingPlayerSample", "ServerPing$ServerPingPlayerSample");
 		} catch (RuntimeException e) {
 			Class<?> serverPing = getServerPingClass();
 
@@ -958,7 +952,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getStatisticClass() {
 		// TODO: Implement fallback
-		return getMinecraftClass("Statistic");
+		return getMinecraftClass("stats.Statistic", "Statistic");
 	}
 
 	/**
@@ -967,7 +961,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getStatisticListClass() {
 		// TODO: Implement fallback
-		return getMinecraftClass("StatisticList");
+		return getMinecraftClass("stats.StatisticList", "StatisticList");
 	}
 
 	/**
@@ -994,7 +988,8 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getPlayerListClass() {
 		try {
-			return getMinecraftClass("ServerConfigurationManager", "PlayerList");
+			return getMinecraftClass("server.players.PlayerList",
+					"ServerConfigurationManager", "PlayerList");
 		} catch (RuntimeException e) {
 			useFallbackServer();
 
@@ -1033,7 +1028,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getPlayerConnectionClass() {
 		try  {
-			return getMinecraftClass("PlayerConnection", "NetServerHandler");
+			return getMinecraftClass("server.network.PlayerConnection","PlayerConnection", "NetServerHandler");
 		} catch (RuntimeException e) {
 			try {
 				// Use the player connection field
@@ -1077,7 +1072,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getNetworkManagerClass() {
 		try {
-			return getMinecraftClass("INetworkManager", "NetworkManager");
+			return getMinecraftClass("network.NetworkManager", "INetworkManager", "NetworkManager");
 		} catch (RuntimeException e) {
 			Constructor<?> selected = FuzzyReflection.fromClass(getPlayerConnectionClass()).
 					getConstructor(FuzzyMethodContract.newBuilder().
@@ -1149,15 +1144,15 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getItemClass() {
-		return getNullableNMS("Item");
+		return getNullableNMS("world.item.Item", "Item");
 	}
 
 	public static Class<?> getFluidTypeClass() {
-		return getNullableNMS("FluidType");
+		return getNullableNMS("world.level.material.FluidType", "FluidType");
 	}
 
 	public static Class<?> getParticleTypeClass() {
-		return getNullableNMS("ParticleType");
+		return getNullableNMS("core.particles.ParticleType", "ParticleType");
 	}
 
 	/**
@@ -1188,7 +1183,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getDataWatcherClass() {
 		try {
-			return getMinecraftClass("DataWatcher");
+			return getMinecraftClass("network.syncher.DataWatcher", "DataWatcher");
 		} catch (RuntimeException e) {
 			// Describe the DataWatcher
 			FuzzyClassContract dataWatcherContract = FuzzyClassContract.newBuilder().
@@ -1236,7 +1231,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getBlockPositionClass() {
 		try {
-			return getMinecraftClass("BlockPosition");
+			return getMinecraftClass("core.BlockPosition", "BlockPosition");
 		} catch (RuntimeException e) {
 			try {
 				Class<?> normalChunkGenerator = getCraftBukkitClass("generator.NormalChunkGenerator");
@@ -1263,7 +1258,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getVec3DClass() {
 		try {
-			return getMinecraftClass("Vec3D");
+			return getMinecraftClass("world.phys.Vec3D", "Vec3D");
 		} catch (RuntimeException e) {
 			// TODO: Figure out a fuzzy field contract
 			return null;
@@ -1288,11 +1283,8 @@ public class MinecraftReflection {
 	 * @return The ChunkCoordIntPair class.
 	 */
 	public static Class<?> getChunkCoordIntPair() {
-		if (!isUsingNetty())
-			throw new IllegalArgumentException("Not supported on 1.6.4 and older.");
-
 		try {
-			return getMinecraftClass("ChunkCoordIntPair");
+			return getMinecraftClass("world.level.ChunkCoordIntPair", "ChunkCoordIntPair");
 		} catch (RuntimeException e) {
 			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
 
@@ -1326,7 +1318,8 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getDataWatcherItemClass() {
 		try {
-			return getMinecraftClass("DataWatcher$Item", "DataWatcher$WatchableObject", "WatchableObject");
+			return getMinecraftClass("network.syncher.DataWatcher$Item",
+					"DataWatcher$Item", "DataWatcher$WatchableObject", "WatchableObject");
 		} catch (RuntimeException e) {
 			Method selected = FuzzyReflection.fromClass(getDataWatcherClass(), true).
 					getMethod(FuzzyMethodContract.newBuilder().
@@ -1342,7 +1335,7 @@ public class MinecraftReflection {
 
 	public static Class<?> getDataWatcherObjectClass() {
 		try {
-			return getMinecraftClass("DataWatcherObject");
+			return getMinecraftClass("network.syncher.DataWatcherObject", "DataWatcherObject");
 		} catch (RuntimeException ex) {
 			return null;
 		}
@@ -1362,27 +1355,27 @@ public class MinecraftReflection {
 
 	public static Class<?> getDataWatcherSerializerClass() {
 		// TODO Implement a fallback
-		return getNullableNMS("DataWatcherSerializer");
+		return getNullableNMS("network.syncher.DataWatcherSerializer", "DataWatcherSerializer");
 	}
 
 	public static Class<?> getDataWatcherRegistryClass() {
 		// TODO Implement a fallback
-		return getMinecraftClass("DataWatcherRegistry");
+		return getMinecraftClass("network.syncher.DataWatcherRegistry", "DataWatcherRegistry");
 	}
 
 	public static Class<?> getMinecraftKeyClass() {
 		// TODO Implement a fallback
-		return getMinecraftClass("MinecraftKey");
+		return getMinecraftClass("resources.MinecraftKey", "MinecraftKey");
 	}
 
 	public static Class<?> getMobEffectListClass() {
 		// TODO Implement a fallback
-		return getMinecraftClass("MobEffectList");
+		return getMinecraftClass("world.effect.MobEffectList", "MobEffectList");
 	}
 
 	public static Class<?> getSoundEffectClass() {
 		try {
-			return getMinecraftClass("SoundEffect");
+			return getMinecraftClass("sounds.SoundEffect", "SoundEffect");
 		} catch (RuntimeException ex) {
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(PacketType.Play.Server.NAMED_SOUND_EFFECT.getPacketClass(), true);
 			Field field = fuzzy.getFieldByType("(.*)(Sound)(.*)");
@@ -1396,7 +1389,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getServerConnectionClass() {
 		try {
-			return getMinecraftClass("ServerConnection");
+			return getMinecraftClass("server.network.ServerConnection", "ServerConnection");
 		} catch (RuntimeException e) {
 			Method selected = null;
 			FuzzyClassContract.Builder serverConnectionContract = FuzzyClassContract.newBuilder().
@@ -1441,7 +1434,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getNBTBaseClass() {
 		try {
-			return getMinecraftClass("NBTBase");
+			return getMinecraftClass("nbt.NBTBase", "NBTBase");
 		} catch (RuntimeException e) {
 			Class<?> nbtBase = null;
 
@@ -1501,7 +1494,7 @@ public class MinecraftReflection {
 	 * @return The NBT read limiter.
 	 */
 	public static Class<?> getNBTReadLimiterClass() {
-		return getMinecraftClass("NBTReadLimiter");
+		return getMinecraftClass("nbt.NBTReadLimiter", "NBTReadLimiter");
 	}
 
 	/**
@@ -1510,7 +1503,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getNBTCompoundClass() {
 		try {
-			return getMinecraftClass("NBTTagCompound");
+			return getMinecraftClass("nbt.NBTTagCompound","NBTTagCompound");
 		} catch (RuntimeException e) {
 			return setMinecraftClass(
 				"NBTTagCompound",
@@ -1525,7 +1518,8 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getEntityTrackerClass() {
 		try {
-			return getMinecraftClass("EntityTracker", "PlayerChunkMap$EntityTracker");
+			return getMinecraftClass("server.level.PlayerChunkMap$EntityTracker",
+					"EntityTracker", "PlayerChunkMap$EntityTracker");
 		} catch (RuntimeException e) {
 			FuzzyClassContract entityTrackerContract = FuzzyClassContract.newBuilder().
 					field(FuzzyFieldContract.newBuilder().
@@ -1554,38 +1548,6 @@ public class MinecraftReflection {
 	}
 
 	/**
-	 * Retrieve the NetworkListenThread class (NMS).
-	 * <p>
-	 * Note that this class was removed after Minecraft 1.3.1.
-	 * @return NetworkListenThread class.
-	 */
-	public static Class<?> getNetworkListenThreadClass() {
-		try {
-			return getMinecraftClass("NetworkListenThread");
-		} catch (RuntimeException e) {
-			FuzzyClassContract networkListenContract = FuzzyClassContract.newBuilder().
-					field(FuzzyFieldContract.newBuilder().
-						  typeDerivedOf(ServerSocket.class)).
-					field(FuzzyFieldContract.newBuilder().
-						  typeDerivedOf(Thread.class)).
-					field(FuzzyFieldContract.newBuilder().
-						  typeDerivedOf(List.class)).
-					method(FuzzyMethodContract.newBuilder().
-						  parameterExactType(getPlayerConnectionClass())).
-			build();
-
-			Field selected = FuzzyReflection.fromClass(MinecraftReflection.getMinecraftServerClass(), true).
-					getField(FuzzyFieldContract.newBuilder().
-							   typeMatches(networkListenContract).
-							   build()
-					);
-
-			// Go by the defined type of this field
-			return setMinecraftClass("NetworkListenThread", selected.getType());
-		}
-	}
-
-	/**
 	 * Retrieve the attribute snapshot class.
 	 * <p>
 	 * This stores the final value of an attribute, along with all the associated computational steps.
@@ -1593,7 +1555,8 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getAttributeSnapshotClass() {
 		try {
-			return getMinecraftClass("AttributeSnapshot", "PacketPlayOutUpdateAttributes$AttributeSnapshot");
+			return getMinecraftClass("network.protocol.game.PacketPlayOutUpdateAttributes$AttributeSnapshot",
+					"AttributeSnapshot", "PacketPlayOutUpdateAttributes$AttributeSnapshot");
 		} catch (RuntimeException ex) {
 			try {
 				// It should be the parameter of a list in the update attributes packet
@@ -1652,7 +1615,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getAttributeModifierClass() {
 		try {
-			return getMinecraftClass("AttributeModifier");
+			return getMinecraftClass("world.entity.ai.attributes.AttributeModifier", "AttributeModifier");
 		} catch (RuntimeException e) {
 			getAttributeSnapshotClass();
 
@@ -1668,7 +1631,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getMobEffectClass() {
 		try {
-			return getMinecraftClass("MobEffect");
+			return getMinecraftClass("world.effect.MobEffect", "MobEffect");
 		} catch (RuntimeException e) {
 			// It is the second parameter in Packet41MobEffect
 			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.ENTITY_EFFECT);
@@ -1689,7 +1652,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getPacketDataSerializerClass() {
 		try {
-			return getMinecraftClass("PacketDataSerializer");
+			return getMinecraftClass("network.PacketDataSerializer", "PacketDataSerializer");
 		} catch (RuntimeException e) {
 			Class<?> packet = getPacketClass();
 			Method method = FuzzyReflection.fromClass(packet).getMethod(
@@ -1709,7 +1672,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getNbtCompressedStreamToolsClass() {
 		try {
-			return getMinecraftClass("NBTCompressedStreamTools");
+			return getMinecraftClass("nbt.NBTCompressedStreamTools", "NBTCompressedStreamTools");
 		} catch (RuntimeException e) {
 			Class<?> packetSerializer = getPacketDataSerializerClass();
 
@@ -1738,7 +1701,7 @@ public class MinecraftReflection {
 	 * @return The tile entity class.
 	 */
 	public static Class<?> getTileEntityClass() {
-		return getMinecraftClass("TileEntity");
+		return getMinecraftClass("world.level.block.entity.TileEntity", "TileEntity");
 	}
 
 	/**
@@ -1820,7 +1783,8 @@ public class MinecraftReflection {
 	 * @return The PlayerInfoData class
 	 */
 	public static Class<?> getPlayerInfoDataClass() {
-		return getMinecraftClass("PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
+		return getMinecraftClass("network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
+				"PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
 	}
 
 	/**
@@ -1837,7 +1801,7 @@ public class MinecraftReflection {
 	 * @return The IBlockData class
 	 */
 	public static Class<?> getIBlockDataClass() {
-		return getMinecraftClass("IBlockData");
+		return getMinecraftClass("world.level.block.state.IBlockData", "IBlockData");
 	}
 
 	/**
@@ -1875,7 +1839,7 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getNonNullListClass() {
-		return getMinecraftClass("NonNullList");
+		return getMinecraftClass("core.NonNullList", "NonNullList");
 	}
 
 	public static Class<?> getCraftSoundClass() {
@@ -1883,7 +1847,7 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getSectionPositionClass() {
-		return getMinecraftClass("SectionPosition");
+		return getMinecraftClass("core.SectionPosition", "SectionPosition");
 	}
 
 	// ---- ItemStack conversions
@@ -2037,10 +2001,12 @@ public class MinecraftReflection {
 				.orElseThrow(() -> new RuntimeException("Failed to find NMS class: " + className));
 	}
 
-	public static Class<?> getNullableNMS(String className) {
-		if (minecraftPackage == null)
-			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
-		return minecraftPackage.getPackageClass(className).orElse(null);
+	public static Class<?> getNullableNMS(String className, String... aliases) {
+		try {
+			return getMinecraftClass(className, aliases);
+		} catch (RuntimeException ex) {
+			return null;
+		}
 	}
 
 	/**
@@ -2172,5 +2138,25 @@ public class MinecraftReflection {
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
+	}
+
+	public static Class<?> getNbtTagTypes() {
+		return getMinecraftClass("nbt.NBTTagTypes", "NBTTagTypes");
+	}
+
+	public static Class<?> getChatDeserializer() {
+		return getMinecraftClass("util.ChatDeserializer", "ChatDeserializer");
+	}
+
+	public static Class<?> getDimensionManager() {
+		return getMinecraftClass("world.level.dimension.DimensionManager", "DimensionManager");
+	}
+
+	public static Class<?> getMerchantRecipeList() {
+		return getMinecraftClass("world.item.trading.MerchantRecipeList", "MerchantRecipeList");
+	}
+
+	public static Class<?> getResourceKey() {
+		return getMinecraftClass("resources.ResourceKey", "ResourceKey");
 	}
 }

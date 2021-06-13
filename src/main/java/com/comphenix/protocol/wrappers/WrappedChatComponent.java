@@ -42,7 +42,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 		}
 
 		try {
-			DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getMinecraftClass("ChatDeserializer"), true)
+			DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getChatDeserializer(), true)
 				.getMethodByParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
 		} catch (IllegalArgumentException ex) {
 			// We'll handle it in the ComponentParser
