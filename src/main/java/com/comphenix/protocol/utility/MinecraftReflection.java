@@ -222,30 +222,34 @@ public class MinecraftReflection {
 				Class<?> craftEntity = getCraftEntityClass();
 				Method getHandle = craftEntity.getMethod("getHandle");
 
-				MINECRAFT_FULL_PACKAGE = getPackage(getHandle.getReturnType().getCanonicalName());
-
-				// Pretty important invariantt
-				if (!MINECRAFT_FULL_PACKAGE.startsWith(MINECRAFT_PREFIX_PACKAGE)) {
-					// See if we got the Forge entity package
-					if (MINECRAFT_FULL_PACKAGE.equals(FORGE_ENTITY_PACKAGE)) {
-						// USe the standard NMS versioned package
-						MINECRAFT_FULL_PACKAGE = CachedPackage.combine(MINECRAFT_PREFIX_PACKAGE, packageVersion);
-					} else {
-						// Assume they're the same instead
-						MINECRAFT_PREFIX_PACKAGE = MINECRAFT_FULL_PACKAGE;
-					}
-
-					// The package is usualy flat, so go with that assumption
-					String matcher =
-							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ?
-									Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + CANONICAL_REGEX;
-
-					// We'll still accept the default location, however
-					setDynamicPackageMatcher("(" + matcher + ")|(" + MINECRAFT_OBJECT + ")");
-
+				if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+					// total rework of the NMS structure in 1.17 (at least there's no versioning)
+					MINECRAFT_FULL_PACKAGE = MINECRAFT_PREFIX_PACKAGE = "net.minecraft";
 				} else {
-					// Use the standard matcher
-					setDynamicPackageMatcher(MINECRAFT_OBJECT);
+					MINECRAFT_FULL_PACKAGE = getPackage(getHandle.getReturnType().getCanonicalName());
+
+					// Pretty important invariantt
+					if (!MINECRAFT_FULL_PACKAGE.startsWith(MINECRAFT_PREFIX_PACKAGE)) {
+						// See if we got the Forge entity package
+						if (MINECRAFT_FULL_PACKAGE.equals(FORGE_ENTITY_PACKAGE)) {
+							// USe the standard NMS versioned package
+							MINECRAFT_FULL_PACKAGE = CachedPackage.combine(MINECRAFT_PREFIX_PACKAGE, packageVersion);
+						} else {
+							// Assume they're the same instead
+							MINECRAFT_PREFIX_PACKAGE = MINECRAFT_FULL_PACKAGE;
+						}
+
+						// The package is usualy flat, so go with that assumption
+						String matcher =
+								(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + CANONICAL_REGEX;
+
+						// We'll still accept the default location, however
+						setDynamicPackageMatcher("(" + matcher + ")|(" + MINECRAFT_OBJECT + ")");
+
+					} else {
+						// Use the standard matcher
+						setDynamicPackageMatcher(MINECRAFT_OBJECT);
+					}
 				}
 
 				return MINECRAFT_FULL_PACKAGE;
@@ -752,7 +756,9 @@ public class MinecraftReflection {
 	 * @return The Enum protocol class.
 	 */
 	public static Class<?> getEnumProtocolClass() {
-		try {
+		return getMinecraftClass("network.EnumProtocol", "EnumProtocol");
+
+		/* try {
 			return getMinecraftClass("network.EnumProtocol", "EnumProtocol");
 		} catch (RuntimeException e) {
 			Method protocolMethod = FuzzyReflection.fromClass(getNetworkManagerClass()).getMethod(
@@ -762,7 +768,7 @@ public class MinecraftReflection {
 					build()
 			);
 			return setMinecraftClass("EnumProtocol", protocolMethod.getParameterTypes()[0]);
-		}
+		} */
 	}
 
 	/**
