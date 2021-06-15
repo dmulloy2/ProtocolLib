@@ -1,7 +1,9 @@
 package com.comphenix.protocol.utility;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
+import sun.misc.Unsafe;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
@@ -41,5 +43,14 @@ public class TestUtils {
 		} else {
 			return first.getType().equals(second.getType());
 		}
+	}
+
+	public static void setFinalField(Object obj, Field field, Object newValue) throws ReflectiveOperationException {
+		Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+		unsafeField.setAccessible(true);
+		Unsafe unsafe = (Unsafe) unsafeField.get(null);
+
+		long offset = unsafe.objectFieldOffset(field);
+		unsafe.putObject(obj, offset, newValue);
 	}
 }

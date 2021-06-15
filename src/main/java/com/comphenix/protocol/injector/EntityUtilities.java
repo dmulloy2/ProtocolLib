@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.injector;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -157,9 +158,21 @@ class EntityUtilities {
 		Object playerChunkMap = chunkMapField.get(chunkProvider);
 
 		if (trackedEntitiesField == null) {
-			trackedEntitiesField = Accessors.getFieldAccessor(
+			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+				trackedEntitiesField = Accessors.getFieldAccessor(
+					FuzzyReflection.fromClass(playerChunkMap.getClass(), true).getField(
+						FuzzyFieldContract.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.requirePublic()
+							.typeExact(org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap.class)
+							.build()
+					)
+				);
+			} else {
+				trackedEntitiesField = Accessors.getFieldAccessor(
 					FuzzyReflection.fromClass(playerChunkMap.getClass(), false).getField(
 							FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).nameExact("trackedEntities").build()));
+			}
 		}
 
 		Map<Integer, Object> trackedEntities = (Map<Integer, Object>) trackedEntitiesField.get(playerChunkMap);
@@ -229,14 +242,17 @@ class EntityUtilities {
 			Object tracker = null;
 
 			if (trackerEntry != null) {
-				// plugins like citizens will use their own tracker
+				// plugins like citizens will use their own tracker class, so cache the result
 				FieldAccessor trackerField = trackerFields.computeIfAbsent(trackerEntry.getClass(), x -> {
+					// get the first entity field
 					try {
-						return Accessors.getFieldAccessor(trackerEntry.getClass(), "tracker", true);
-					} catch (Exception e) {
-						// Assume it's the first entity field then
-						return Accessors.getFieldAccessor(FuzzyReflection.fromObject(trackerEntry, true)
-								.getFieldByType("tracker", MinecraftReflection.getEntityClass()));
+						return Accessors.getFieldAccessor(FuzzyReflection.fromClass(trackerEntry.getClass(), true)
+								.getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getEntityClass()).build()));
+					} catch (Exception ex) {
+						// try with the default class
+						Class<?> trackerEntryClass = MinecraftReflection.getEntityTrackerClass();
+						return Accessors.getFieldAccessor(FuzzyReflection.fromClass(trackerEntryClass, true)
+								.getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getEntityClass()).build()));
 					}
 				});
 
