@@ -20,7 +20,9 @@ package com.comphenix.protocol.reflect.instances;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 import javax.annotation.Nullable;
@@ -33,8 +35,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.network.PacketDataSerializer;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.ItemStack;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * Used to construct default instances of any type.
@@ -43,6 +43,8 @@ import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectOpenHash
  */
 public class DefaultInstances implements InstanceProvider {
 	private static final UUID SYS_UUID = new UUID(0L, 0L);
+
+	private static final Map<Class<?>, Constructor<?>> FAST_MAP_CONSTRUCTORS = new ConcurrentHashMap<>();
 
 	public static final InstanceProvider MINECRAFT_GENERATOR = type -> {
 		if (type != null) {
@@ -54,8 +56,21 @@ public class DefaultInstances implements InstanceProvider {
 				return ItemStack.b;
 			} else if (type == EntityTypes.class) {
 				return EntityTypes.b;
-			} else if (type == Int2ObjectMap.class) {
-				return new Int2ObjectOpenHashMap<>();
+			} else if (type.isAssignableFrom(Map.class)) {
+				Constructor<?> ctor = FAST_MAP_CONSTRUCTORS.computeIfAbsent(type, __ -> {
+					try {
+						String name = type.getCanonicalName();
+						if (name != null && name.contains("it.unimi.fastutils")) {
+							return Class.forName(name.substring(name.length() - 3) + "OpenHashMap").getConstructor();
+						}
+					} catch (Exception ignored) {}
+					return null;
+				});
+				if (ctor != null) {
+					try {
+						return ctor.newInstance();
+					} catch (ReflectiveOperationException ignored) {}
+				}
 			} else if (type == NonNullList.class) {
 				return NonNullList.a();
 			}
