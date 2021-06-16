@@ -35,6 +35,7 @@ import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -82,11 +83,11 @@ public class PacketContainer implements Serializable {
 	// Support for serialization
 	private static ConcurrentMap<Class<?>, Method> writeMethods = Maps.newConcurrentMap();
 	private static ConcurrentMap<Class<?>, Method> readMethods = Maps.newConcurrentMap();
-	
+
 	// Used to clone packets
 	private static final AggregateCloner DEEP_CLONER = AggregateCloner
 			.newBuilder()
-			.instanceProvider(DefaultInstances.DEFAULT)
+			.instanceProvider(StructureCache::newPacket)
 			.andThen(BukkitCloner.class)
 			.andThen(ImmutableDetector.class)
 			.andThen(JavaOptionalCloner.class)
@@ -97,7 +98,7 @@ public class PacketContainer implements Serializable {
 	
 	private static final AggregateCloner SHALLOW_CLONER = AggregateCloner
 			.newBuilder()
-			.instanceProvider(DefaultInstances.DEFAULT)
+			.instanceProvider(StructureCache::newPacket)
 			.andThen(param -> {
 				if (param == null)
 					throw new IllegalArgumentException("Cannot be NULL.");
@@ -110,8 +111,12 @@ public class PacketContainer implements Serializable {
 			.build();
 	
 	// Packets that cannot be cloned by our default deep cloner
-	private static final Set<PacketType> CLONING_UNSUPPORTED = Sets.newHashSet(
-		PacketType.Play.Server.UPDATE_ATTRIBUTES, PacketType.Status.Server.SERVER_INFO);
+	private static final Set<PacketType> FAST_CLONE_UNSUPPORTED = Sets.newHashSet(
+		PacketType.Play.Server.BOSS,
+		PacketType.Play.Server.ADVANCEMENTS,
+		PacketType.Play.Client.USE_ENTITY,
+		PacketType.Status.Server.SERVER_INFO
+	);
 
 	/**
 	 * Creates a packet container for a new packet.
@@ -1155,14 +1160,16 @@ public class PacketContainer implements Serializable {
 	 */
 	public PacketContainer deepClone() {
 		Object clonedPacket = null;
-		
-		// Fall back on the alternative (but slower) method of reading and writing back the packet
-		if (!CLONING_UNSUPPORTED.contains(type)) {
+
+		if (!FAST_CLONE_UNSUPPORTED.contains(type)) {
 			try {
 				clonedPacket = DEEP_CLONER.clone(getHandle());
-			} catch (Exception ignored) {}
+			} catch (Exception ex) {
+				FAST_CLONE_UNSUPPORTED.add(type);
+			}
 		}
 
+		// Fall back on the slower alternative method of reading and writing back the packet
 		if (clonedPacket == null) {
 			clonedPacket = SerializableCloner.clone(this).getHandle();
 		}

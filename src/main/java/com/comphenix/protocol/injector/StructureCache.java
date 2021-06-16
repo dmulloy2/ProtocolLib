@@ -26,7 +26,6 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
-import com.comphenix.protocol.reflect.compiler.CompileListener;
 import com.comphenix.protocol.reflect.compiler.CompiledStructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -41,9 +40,28 @@ import net.minecraft.network.PacketDataSerializer;
  */
 public class StructureCache {
 	// Structure modifiers
-	private static ConcurrentMap<PacketType, StructureModifier<Object>> structureModifiers = new ConcurrentHashMap<>();
+	private static final ConcurrentMap<PacketType, StructureModifier<Object>> structureModifiers = new ConcurrentHashMap<>();
 
-	private static Set<PacketType> compiling = new HashSet<>();
+	private static final Set<PacketType> compiling = new HashSet<>();
+
+	public static Object newPacket(Class<?> clazz) {
+		Object result = DefaultInstances.DEFAULT.create(clazz);
+
+		// TODO make these generic
+		if (result == null) {
+			try {
+				return clazz.getConstructor(PacketDataSerializer.class).newInstance(new PacketDataSerializer(new ZeroBuffer()));
+			} catch (ReflectiveOperationException ex) {
+				try {
+					return clazz.getConstructor(PacketDataSerializer.class).newInstance(new ZeroPacketDataSerializer());
+				} catch (ReflectiveOperationException ex1) {
+					throw new IllegalArgumentException("Failed to create packet: " + clazz, ex);
+				}
+			}
+		}
+
+		return result;
+	}
 
 	/**
 	 * Creates an empty Minecraft packet of the given type.
@@ -52,25 +70,8 @@ public class StructureCache {
 	 */
 	public static Object newPacket(PacketType type) {
 		Class<?> clazz = PacketRegistry.getPacketClassFromType(type, true);
-
-		// Check the return value
 		if (clazz != null) {
-			// TODO: Optimize DefaultInstances
-			Object result = DefaultInstances.DEFAULT.create(clazz);
-
-			if (result == null) {
-				try {
-					return clazz.getConstructor(PacketDataSerializer.class).newInstance(new PacketDataSerializer(new ZeroBuffer()));
-				} catch (ReflectiveOperationException ex) {
-					try {
-						return clazz.getConstructor(PacketDataSerializer.class).newInstance(new ZeroPacketDataSerializer());
-					} catch (ReflectiveOperationException ex1) {
-						throw new IllegalArgumentException("Failed to create packet for type: " + type, ex);
-					}
-				}
-			}
-
-			return result;
+			return newPacket(clazz);
 		}
 		throw new IllegalArgumentException("Cannot find associated packet class: " + type);
 	}
@@ -115,13 +116,13 @@ public class StructureCache {
 	 * @return A structure modifier.
 	 */
 	public static StructureModifier<Object> getStructure(final PacketType type, boolean compile) {
-		Preconditions.checkNotNull(type);
+		Preconditions.checkNotNull(type, "type cannot be null");
 		StructureModifier<Object> result = structureModifiers.get(type);
 
 		// We don't want to create this for every lookup
 		if (result == null) {
 			// Use the vanilla class definition
-			final StructureModifier<Object> value = new StructureModifier<Object>(
+			final StructureModifier<Object> value = new StructureModifier<>(
 					PacketRegistry.getPacketClassFromType(type, true), MinecraftReflection.getPacketClass(), true);
 
 			result = structureModifiers.putIfAbsent(type, value);
@@ -139,12 +140,8 @@ public class StructureCache {
 				final BackgroundCompiler compiler = BackgroundCompiler.getInstance();
 
 				if (!compiling.contains(type) && compiler != null) {
-					compiler.scheduleCompilation(result, new CompileListener<Object>() {
-						@Override
-						public void onCompiled(StructureModifier<Object> compiledModifier) {
-							structureModifiers.put(type, compiledModifier);
-						}
-					});
+					compiler.scheduleCompilation(result,
+							compiledModifier -> structureModifiers.put(type, compiledModifier));
 					compiling.add(type);
 				}
 			}

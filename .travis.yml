@@ -1,6 +1,8 @@
 language: java
+os: linux
+dist: focal
 jdk:
-  - openjdk8
+  - openjdk16
 script: mvn clean test
 install: true
 notifications:

@@ -117,12 +117,11 @@ public class ObjectWriter {
 			}
 			
 			// Copy private fields underneath
-			Class<?> superclass = commonType.getSuperclass();
-			
-			if (superclass != null && !superclass.equals(Object.class)) {
-				copyToInternal(source, destination, superclass, false);
-			}
-			
+//			Class<?> superclass = commonType.getSuperclass();
+//
+//			if (superclass != null && !superclass.equals(Object.class)) {
+//				copyToInternal(source, destination, superclass, false);
+//			}
 		} catch (FieldAccessException e) {
 			throw new RuntimeException("Unable to copy fields from " + commonType.getName(), e);
 		}

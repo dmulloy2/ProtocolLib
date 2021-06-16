@@ -413,7 +413,7 @@ public class PacketContainerTest {
 				}
 
 				field.setAccessible(true);
-				assertEquals(field.get(snapshot), field.get(clonedSnapshot));
+				testEquality(field.get(snapshot), field.get(clonedSnapshot));
 			} catch (AssertionError e) {
 				throw e;
 			} catch (Throwable ex) {
@@ -611,8 +611,27 @@ public class PacketContainerTest {
 		assertArrayEquals(components, back);
 	}
 
+	private void assertPacketsEqual(PacketContainer constructed, PacketContainer cloned) {
+		StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
+		assertEquals(firstMod.size(), secondMod.size());
+
+		if (PacketType.Status.Server.SERVER_INFO.equals(constructed.getType())) {
+			assertArrayEquals(SerializationUtils.serialize(constructed), SerializationUtils.serialize(cloned));
+		} else {
+			// Make sure all the fields are equivalent
+			for (int i = 0; i < firstMod.size(); i++) {
+				if (firstMod.getField(i).getType().isArray())
+					assertArrayEquals(getArray(firstMod.read(i)), getArray(secondMod.read(i)));
+				else
+					testEquality(firstMod.read(i), secondMod.read(i));
+			}
+		}
+	}
+
 	@Test
-	public void testDeepClone() {
+	public void testCloning() {
+		boolean failed = false;
+
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
 			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS") || !type.isSupported()
@@ -644,28 +663,19 @@ public class PacketContainerTest {
 					//constructed.getModifier().write(1, TEST_COMPONENT);
 				}
 
-				// Clone the packet
-				PacketContainer cloned = constructed.deepClone();
+				// Clone the packet both ways
+				PacketContainer shallowCloned = constructed.shallowClone();
+				assertPacketsEqual(constructed, shallowCloned);
 
-				// Make sure they're equivalent
-				StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
-				assertEquals(firstMod.size(), secondMod.size());
-
-				if (PacketType.Status.Server.SERVER_INFO.equals(type)) {
-					assertArrayEquals(SerializationUtils.serialize(constructed), SerializationUtils.serialize(cloned));
-				} else {
-					// Make sure all the fields are equivalent
-					for (int i = 0; i < firstMod.size(); i++) {
-						if (firstMod.getField(i).getType().isArray())
-							assertArrayEquals(getArray(firstMod.read(i)), getArray(secondMod.read(i)));
-						else
-							testEquality(firstMod.read(i), secondMod.read(i));
-					}
-				}
+				PacketContainer deepCloned = constructed.deepClone();
+				assertPacketsEqual(constructed, deepCloned);
 			} catch (Exception ex) {
 				ex.printStackTrace();
+				failed = true;
 			}
 		}
+
+		assertFalse("Packet(s) failed to clone", failed);
 	}
 
 	// Convert to objects that support equals()

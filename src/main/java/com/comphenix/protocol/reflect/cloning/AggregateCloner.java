@@ -256,11 +256,11 @@ public class AggregateCloner implements Cloner {
 		if (index < cloners.size()) {
 			Cloner cloner = cloners.get(index);
 
-			try {
-				return cloner.clone(source);
-			} catch (Exception ex) {
-				throw new RuntimeException("Failed to clone " + source + " (" + source.getClass() + ") with " + cloner, ex);
-			}
+//			try {
+			return cloner.clone(source);
+//			} catch (Exception ex) {
+//				throw new RuntimeException("Failed to clone " + source + " (" + source.getClass() + ") with " + cloner, ex);
+//			}
 		}
 
 		// Damn - failure
