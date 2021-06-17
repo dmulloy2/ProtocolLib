@@ -1011,7 +1011,7 @@ public abstract class EnumWrappers {
 		@Override
 		public T getSpecific(Object generic) {
 			FieldAccessor accessor = fieldAccessor.apply(generic);
-			return accessor == null ? null : downstream.getSpecific(accessor.get(generic));
+			return accessor == null ? downstream.getSpecific(generic) : downstream.getSpecific(accessor.get(generic));
 		}
 
 		@Override
