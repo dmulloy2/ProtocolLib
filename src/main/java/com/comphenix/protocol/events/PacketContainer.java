@@ -727,16 +727,23 @@ public class PacketContainer implements Serializable {
 				EnumWrappers.getDifficultyClass(),
 				EnumWrappers.getDifficultyConverter());
 	}
-	
+
 	/**
 	 * Retrieve a read/write structure for the EntityUse enum in 1.7.2.
 	 * @return A modifier for EntityUse enum fields.
 	 */
 	public StructureModifier<EntityUseAction> getEntityUseActions() {
 		// Convert to and from the wrapper
-		return structureModifier.withType(
-				EnumWrappers.getEntityUseActionClass(),
-				EnumWrappers.getEntityUseActionConverter());
+		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+			// In 1.17+ the use action is only available via a wrapping interface
+			return structureModifier.withType(
+					MinecraftReflection.getEnumEntityUseActionClass(),
+					EnumWrappers.getWrappedEntityUseActionConverter());
+		} else {
+			return structureModifier.withType(
+					EnumWrappers.getEntityUseActionClass(),
+					EnumWrappers.getEntityUseActionConverter());
+		}
 	}
 
 	/**
@@ -909,9 +916,15 @@ public class PacketContainer implements Serializable {
      * @return A modifier for Hand enum fields.
      */
     public StructureModifier<Hand> getHands() {
-    	return structureModifier.withType(
-    			EnumWrappers.getHandClass(),
-			    EnumWrappers.getHandConverter());
+    	if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+    		return structureModifier.withType(
+    				MinecraftReflection.getEnumEntityUseActionClass(),
+						EnumWrappers.getWrappedHandConverter());
+			} else {
+				return structureModifier.withType(
+						EnumWrappers.getHandClass(),
+						EnumWrappers.getHandConverter());
+			}
     }
 
     /**

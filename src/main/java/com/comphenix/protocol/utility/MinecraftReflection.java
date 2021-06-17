@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol.utility;
 
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.lang.reflect.Array;
@@ -27,10 +29,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -1791,6 +1791,39 @@ public class MinecraftReflection {
 	public static Class<?> getPlayerInfoDataClass() {
 		return getMinecraftClass("network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
 				"PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
+	}
+
+	/**
+	 * Retrieves the entity use action class in 1.17.
+	 * @return The EntityUseAction class
+	 */
+	public static Class<?> getEnumEntityUseActionClass() {
+		Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
+		return FuzzyReflection.fromClass(packetClass, true).getFieldByType("^.*(EnumEntityUseAction)").getType();
+	}
+
+	/**
+	 * Get a method accessor to get the actual use action out of the wrapping EnumEntityUseAction in 1.17.
+	 * @return a method accessor to get the actual use action
+	 */
+	public static MethodAccessor getEntityUseActionEnumMethodAccessor() {
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
+		return Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+				.returnTypeExact(EnumWrappers.getEntityUseActionClass())
+				.build()));
+	}
+
+	/**
+	 * Get a field accessor for the hand in the wrapping EnumEntityUseAction in 1.17.
+	 *
+	 * @param enumEntityUseAction the object instance of the action, the field is not present in attack.
+	 * @return a field accessor for the hand in the wrapping EnumEntityUseAction
+	 */
+	public static FieldAccessor getHandEntityUseActionEnumFieldAccessor(Object enumEntityUseAction) {
+		FuzzyReflection fuzzy = FuzzyReflection.fromObject(enumEntityUseAction, true);
+		return Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract.newBuilder()
+				.typeExact(EnumWrappers.getHandClass())
+				.build()));
 	}
 
 	/**
