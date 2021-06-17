@@ -916,16 +916,21 @@ public class PacketContainer implements Serializable {
      * @return A modifier for Hand enum fields.
      */
     public StructureModifier<Hand> getHands() {
-    	if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-    		return structureModifier.withType(
-    				MinecraftReflection.getEnumEntityUseActionClass(),
-						EnumWrappers.getWrappedHandConverter());
-			} else {
-				return structureModifier.withType(
-						EnumWrappers.getHandClass(),
-						EnumWrappers.getHandConverter());
-			}
+    	return structureModifier.withType(
+					EnumWrappers.getHandClass(),
+					EnumWrappers.getHandConverter());
     }
+
+		/**
+		 * Retrieve a read/write structure for the Hand enum in the USE_ENTITY packet for 1.17+.
+		 * @return a modifier for Hand enum fields in USE_ENTITY for 1.17+.
+		 */
+		public StructureModifier<Hand> getEntityUseHands() {
+			// In the 1.17+ UseEntity packet the hand field is wrapped in a class.
+			return structureModifier.withType(
+					MinecraftReflection.getEnumEntityUseActionClass(),
+					EnumWrappers.getWrappedHandConverter());
+		}
 
     /**
      * Retrieve a read/write structure for the Direction enum in 1.10.
