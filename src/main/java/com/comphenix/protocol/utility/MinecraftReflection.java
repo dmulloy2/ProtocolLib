@@ -1890,6 +1890,19 @@ public class MinecraftReflection {
 		return getMinecraftClass("core.NonNullList", "NonNullList");
 	}
 
+	public static MethodAccessor getNonNullListCreateAccessor() {
+		try {
+			Class<?> nonNullListType = MinecraftReflection.getNonNullListClass();
+			return Accessors.getMethodAccessor(FuzzyReflection.fromClass(nonNullListType).getMethod(
+					FuzzyMethodContract.newBuilder()
+							.returnTypeExact(nonNullListType)
+							.requireModifier(Modifier.STATIC)
+							.build()));
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+
 	public static Class<?> getCraftSoundClass() {
 		return getCraftBukkitClass("CraftSound");
 	}

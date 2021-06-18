@@ -17,13 +17,22 @@
 
 package com.comphenix.protocol.events;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -34,8 +43,6 @@ import com.comphenix.protocol.reflect.*;
 import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.reflect.instances.DefaultInstances;
-import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -45,6 +52,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers.*;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -53,7 +61,6 @@ import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
-import net.minecraft.network.PacketDataSerializer;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -1247,10 +1254,12 @@ public class PacketContainer implements Serializable {
 	    	
 	    	// Create a default instance of the packet
 			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-				PacketDataSerializer serializer = new PacketDataSerializer(buffer);
+				Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
 
 				try {
-					handle = type.getPacketClass().getConstructor(PacketDataSerializer.class).newInstance(serializer);
+					handle = type.getPacketClass()
+							.getConstructor(MinecraftReflection.getPacketDataSerializerClass())
+							.newInstance(serializer);
 				} catch (ReflectiveOperationException ex) {
 					// they might have a static method to create them instead
 					Method method = FuzzyReflection.fromClass(type.getPacketClass(), true)
@@ -1258,7 +1267,7 @@ public class PacketContainer implements Serializable {
 									.newBuilder()
 									.requireModifier(Modifier.STATIC)
 									.returnTypeExact(type.getPacketClass())
-									.parameterExactArray(PacketDataSerializer.class)
+									.parameterExactArray(MinecraftReflection.getPacketDataSerializerClass())
 									.build());
 					try {
 						handle = method.invoke(null, serializer);
