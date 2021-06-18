@@ -150,4 +150,10 @@ public class MinecraftReflectionTest {
 	public void testGameProfile() {
 		assertEquals(GameProfile.class, MinecraftReflection.getGameProfileClass());
 	}
+
+	@Test
+	public void testEnumEntityUseAction() {
+		// this class is package-private in PacketPlayInUseEntity, so we can only check if no exception is thrown during retrieval
+		MinecraftReflection.getEnumEntityUseActionClass();
+	}
 }

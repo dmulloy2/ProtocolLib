@@ -289,6 +289,7 @@ public final class Accessors {
 	 * @return The method accessor.
 	 */
 	public static ConstructorAccessor getConstructorAccessor(final Constructor<?> constructor) {
+		constructor.setAccessible(true); // let us in even if we are not allowed to
 		return new DefaultConstrutorAccessor(constructor);
 	}
 	

@@ -10,6 +10,7 @@ import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
@@ -481,7 +482,6 @@ public abstract class EnumWrappers {
 			DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
 		}
 
-		ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
 		RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
 		PLAYER_INFO_ACTION_CLASS = getEnum(PacketType.Play.Server.PLAYER_INFO.getPacketClass(), 0);
@@ -501,7 +501,16 @@ public abstract class EnumWrappers {
 			ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
 		}
 
-		HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
+		// In 1.17 the hand and use action class is no longer a field in the packet
+		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+			HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand");
+			// class is named 'b' in the packet but class order differs in spigot and paper so we can only use the first method's return type (safest way)
+			ENTITY_USE_ACTION_CLASS = MinecraftReflection.getEnumEntityUseActionClass().getMethods()[0].getReturnType();
+		} else {
+			HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
+			ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
+		}
+
 		DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
 		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "EntityPose");
@@ -510,7 +519,6 @@ public abstract class EnumWrappers {
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
 		associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
 		associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());
-		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
 		associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
 		associate(RESOURCE_PACK_STATUS_CLASS, ResourcePackStatus.class, getResourcePackStatusConverter());
 		associate(PLAYER_INFO_ACTION_CLASS, PlayerInfoAction.class, getPlayerInfoActionConverter());
@@ -523,15 +531,14 @@ public abstract class EnumWrappers {
 		associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
 		associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
 		associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
-		associate(HAND_CLASS, Hand.class, getHandConverter());
 		associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
 		associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
-		
+		associate(HAND_CLASS, Hand.class, getHandConverter());
+		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
+
 		if (ENTITY_POSE_CLASS != null) {
 			associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
 		}
-		
-		INITIALIZED = true;
 	}
 
 	private static void associate(Class<?> nativeClass, Class<?> wrapperClass, EquivalentConverter<?> converter) {

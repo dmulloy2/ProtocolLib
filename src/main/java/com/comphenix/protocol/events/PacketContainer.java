@@ -732,7 +732,7 @@ public class PacketContainer implements Serializable {
 				EnumWrappers.getDifficultyClass(),
 				EnumWrappers.getDifficultyConverter());
 	}
-	
+
 	/**
 	 * Retrieve a read/write structure for the EntityUse enum in 1.7.2.
 	 * @return A modifier for EntityUse enum fields.
@@ -742,6 +742,17 @@ public class PacketContainer implements Serializable {
 		return structureModifier.withType(
 				EnumWrappers.getEntityUseActionClass(),
 				EnumWrappers.getEntityUseActionConverter());
+	}
+
+	/**
+	 * Retrieves a read/write structure for the EntityUseAction class in the UseEntity packet sent by the client for
+	 * 1.17 and above.
+	 * @return A modifier for EntityUseAction class fields.
+	 */
+	public StructureModifier<WrappedEnumEntityUseAction> getEnumEntityUseActions() {
+		return structureModifier.withType(
+				MinecraftReflection.getEnumEntityUseActionClass(),
+				WrappedEnumEntityUseAction.CONVERTER);
 	}
 
 	/**
@@ -916,7 +927,7 @@ public class PacketContainer implements Serializable {
     public StructureModifier<Hand> getHands() {
     	return structureModifier.withType(
     			EnumWrappers.getHandClass(),
-			    EnumWrappers.getHandConverter());
+    			EnumWrappers.getHandConverter());
     }
 
     /**

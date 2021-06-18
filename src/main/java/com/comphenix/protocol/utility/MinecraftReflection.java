@@ -27,10 +27,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -57,6 +55,7 @@ import com.comphenix.protocol.reflect.ClassAnalyser;
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
@@ -65,6 +64,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException;
 import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
@@ -1791,6 +1791,52 @@ public class MinecraftReflection {
 	public static Class<?> getPlayerInfoDataClass() {
 		return getMinecraftClass("network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
 				"PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
+	}
+
+	/**
+	 * Retrieves the entity use action class in 1.17.
+	 * @return The EntityUseAction class
+	 */
+	public static Class<?> getEnumEntityUseActionClass() {
+		Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
+		return FuzzyReflection.fromClass(packetClass, true).getFieldByType("^.*(EnumEntityUseAction)").getType();
+	}
+
+	/**
+	 * Get a method accessor to get the actual use action out of the wrapping EnumEntityUseAction in 1.17.
+	 * @return a method accessor to get the actual use action
+	 */
+	public static MethodAccessor getEntityUseActionEnumMethodAccessor() {
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
+		return Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+				.returnTypeExact(EnumWrappers.getEntityUseActionClass())
+				.build()));
+	}
+
+	/**
+	 * Get a field accessor for the hand in the wrapping EnumEntityUseAction in 1.17.
+	 *
+	 * @param enumEntityUseAction the object instance of the action, the field is not present in attack.
+	 * @return a field accessor for the hand in the wrapping EnumEntityUseAction
+	 */
+	public static FieldAccessor getHandEntityUseActionEnumFieldAccessor(Object enumEntityUseAction) {
+		FuzzyReflection fuzzy = FuzzyReflection.fromObject(enumEntityUseAction, true);
+		return Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract.newBuilder()
+				.typeExact(EnumWrappers.getHandClass())
+				.build()));
+	}
+
+	/**
+	 * Get a field accessor for the vec3d in the wrapping EnumEntityUseAction in 1.17.
+	 *
+	 * @param enumEntityUseAction the object instance of the action, the field is not present in attack.
+	 * @return a field accessor for the hand in the wrapping EnumEntityUseAction
+	 */
+	public static FieldAccessor getVec3EntityUseActionEnumFieldAccessor(Object enumEntityUseAction) {
+		FuzzyReflection fuzzy = FuzzyReflection.fromObject(enumEntityUseAction, true);
+		return Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract.newBuilder()
+				.typeExact(MinecraftReflection.getVec3DClass())
+				.build()));
 	}
 
 	/**
