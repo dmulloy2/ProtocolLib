@@ -734,16 +734,20 @@ public class PacketContainer implements Serializable {
 	 */
 	public StructureModifier<EntityUseAction> getEntityUseActions() {
 		// Convert to and from the wrapper
-		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-				// In 1.17+ the use action is only available via a wrapping interface
-				return structureModifier.withType(
-						MinecraftReflection.getEnumEntityUseActionClass(),
-						EnumWrappers.getWrappedEntityUseActionConverter());
-		} else {
-				return structureModifier.withType(
-						EnumWrappers.getEntityUseActionClass(),
-						EnumWrappers.getEntityUseActionConverter());
-		}
+		return structureModifier.withType(
+				EnumWrappers.getEntityUseActionClass(),
+				EnumWrappers.getEntityUseActionConverter());
+	}
+
+	/**
+	 * Retrieves a read/write structure for the EntityUseAction class in the UseEntity packet sent by the client for
+	 * 1.17 and above.
+	 * @return A modifier for EntityUseAction class fields.
+	 */
+	public StructureModifier<WrappedEnumEntityUseAction> getEnumEntityUseActions() {
+		return structureModifier.withType(
+				MinecraftReflection.getEnumEntityUseActionClass(),
+				WrappedEnumEntityUseAction.CONVERTER);
 	}
 
 	/**
@@ -919,17 +923,6 @@ public class PacketContainer implements Serializable {
     	return structureModifier.withType(
     			EnumWrappers.getHandClass(),
     			EnumWrappers.getHandConverter());
-    }
-
-    /**
-     * Retrieve a read/write structure for the Hand enum in the USE_ENTITY packet for 1.17+.
-     * @return a modifier for Hand enum fields in USE_ENTITY for 1.17+.
-     */
-    public StructureModifier<Hand> getEntityUseHands() {
-    	// In the 1.17+ UseEntity packet the hand field is wrapped in a class.
-    	return structureModifier.withType(
-    			MinecraftReflection.getEnumEntityUseActionClass(),
-    			EnumWrappers.getWrappedHandConverter());
     }
 
     /**

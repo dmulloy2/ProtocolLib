@@ -1,8 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,10 +10,10 @@ import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.Maps;
 
-import java.util.function.Function;
 import org.apache.commons.lang.Validate;
 import org.bukkit.GameMode;
 
@@ -509,15 +506,9 @@ public abstract class EnumWrappers {
 			HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand");
 			// class is named 'b' in the packet but class order differs in spigot and paper so we can only use the first method's return type (safest way)
 			ENTITY_USE_ACTION_CLASS = MinecraftReflection.getEnumEntityUseActionClass().getMethods()[0].getReturnType();
-			// associate now as we need another converter for 1.17
-			associate(HAND_CLASS, Hand.class, getWrappedHandConverter());
-			associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getWrappedEntityUseActionConverter());
 		} else {
 			HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
 			ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
-			// associate now as we need another converter for 1.17
-			associate(HAND_CLASS, Hand.class, getHandConverter());
-			associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
 		}
 
 		DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
@@ -542,7 +533,9 @@ public abstract class EnumWrappers {
 		associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
 		associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
 		associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
-		
+		associate(HAND_CLASS, Hand.class, getHandConverter());
+		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
+
 		if (ENTITY_POSE_CLASS != null) {
 			associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
 		}
@@ -707,11 +700,6 @@ public abstract class EnumWrappers {
 		return new EnumConverter<>(getEntityUseActionClass(), EntityUseAction.class);
 	}
 
-	public static MethodWrappedEnumConverter<EntityUseAction> getWrappedEntityUseActionConverter() {
-		return new MethodWrappedEnumConverter<>(getEntityUseActionConverter(),
-				MinecraftReflection.getEntityUseActionEnumMethodAccessor());
-	}
-
 	public static EquivalentConverter<NativeGameMode> getGameModeConverter() {
 		return new EnumConverter<>(getGameModeClass(), NativeGameMode.class);
 	}
@@ -762,17 +750,6 @@ public abstract class EnumWrappers {
 
 	public static EquivalentConverter<Hand> getHandConverter() {
 		return new EnumConverter<>(getHandClass(), Hand.class);
-	}
-
-	public static FunctionalFieldClassWrappedEnumConverter<Hand> getWrappedHandConverter() {
-		return new FunctionalFieldClassWrappedEnumConverter<>(getHandConverter(), generic -> {
-			try {
-				return MinecraftReflection.getHandEntityUseActionEnumFieldAccessor(generic);
-			} catch (IllegalArgumentException ex) {
-				// attack does not contain the hand field
-				return null;
-			}
-		});
 	}
 
 	public static EquivalentConverter<Direction> getDirectionConverter() {
@@ -962,61 +939,6 @@ public abstract class EnumWrappers {
 		@Override
 		public Class<T> getSpecificType() {
 			return specificClass;
-		}
-	}
-
-	public static class MethodWrappedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
-
-		private final EquivalentConverter<T> downstream;
-		private final MethodAccessor methodAccessor;
-
-		public MethodWrappedEnumConverter(EquivalentConverter<T> downstream, MethodAccessor methodAccessor) {
-			this.downstream = downstream;
-			this.methodAccessor = methodAccessor;
-		}
-
-		@Override
-		public Object getGeneric(T specific) {
-			return downstream.getGeneric(specific);
-		}
-
-		@Override
-		public T getSpecific(Object generic) {
-			Object handle = methodAccessor.invoke(generic);
-			return downstream.getSpecific(handle);
-		}
-
-		@Override
-		public Class<T> getSpecificType() {
-			return downstream.getSpecificType();
-		}
-	}
-
-	public static class FunctionalFieldClassWrappedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
-
-		private final EquivalentConverter<T> downstream;
-		private final Function<Object, FieldAccessor> fieldAccessor;
-
-		public FunctionalFieldClassWrappedEnumConverter(EquivalentConverter<T> downstream,
-				Function<Object, FieldAccessor> fieldAccessor) {
-			this.downstream = downstream;
-			this.fieldAccessor = fieldAccessor;
-		}
-
-		@Override
-		public Object getGeneric(T specific) {
-			return downstream.getGeneric(specific);
-		}
-
-		@Override
-		public T getSpecific(Object generic) {
-			FieldAccessor accessor = fieldAccessor.apply(generic);
-			return accessor == null ? downstream.getSpecific(generic) : downstream.getSpecific(accessor.get(generic));
-		}
-
-		@Override
-		public Class<T> getSpecificType() {
-			return downstream.getSpecificType();
 		}
 	}
 

@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.utility;
 
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.lang.reflect.Array;
@@ -57,6 +55,7 @@ import com.comphenix.protocol.reflect.ClassAnalyser;
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
@@ -65,6 +64,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException;
 import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
@@ -1823,6 +1823,19 @@ public class MinecraftReflection {
 		FuzzyReflection fuzzy = FuzzyReflection.fromObject(enumEntityUseAction, true);
 		return Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract.newBuilder()
 				.typeExact(EnumWrappers.getHandClass())
+				.build()));
+	}
+
+	/**
+	 * Get a field accessor for the vec3d in the wrapping EnumEntityUseAction in 1.17.
+	 *
+	 * @param enumEntityUseAction the object instance of the action, the field is not present in attack.
+	 * @return a field accessor for the hand in the wrapping EnumEntityUseAction
+	 */
+	public static FieldAccessor getVec3EntityUseActionEnumFieldAccessor(Object enumEntityUseAction) {
+		FuzzyReflection fuzzy = FuzzyReflection.fromObject(enumEntityUseAction, true);
+		return Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract.newBuilder()
+				.typeExact(MinecraftReflection.getVec3DClass())
 				.build()));
 	}
 
