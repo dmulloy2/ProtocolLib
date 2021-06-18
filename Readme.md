@@ -1,4 +1,4 @@
-# ProtocolLib [![Travis Status](https://travis-ci.org/dmulloy2/ProtocolLib.svg?branch=master)](https://travis-ci.org/dmulloy2/ProtocolLib)
+# ProtocolLib [![Travis Status](https://travis-ci.com/dmulloy2/ProtocolLib.svg?branch=master)](https://travis-ci.com/dmulloy2/ProtocolLib)
 
 Certain tasks are impossible to perform with the standard Bukkit API, and may require
 working with and even modify Minecraft directly. A common technique is to modify incoming
