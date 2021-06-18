@@ -16,6 +16,8 @@
  */
 package com.comphenix.protocol.events;
 
+import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -583,6 +585,51 @@ public class PacketContainerTest {
 		assertTrue(packet.getGameStateIDs().read(0) == 0);
 		packet.getGameStateIDs().write(0, 2);
 		assertTrue(packet.getGameStateIDs().read(0) == 2);
+	}
+
+	@Test
+	public void testUseEntity() {
+		PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
+
+		WrappedEnumEntityUseAction action;
+		WrappedEnumEntityUseAction clone;
+		// test attack
+		packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.attack());
+		action = packet.getEnumEntityUseActions().read(0);
+		// attack's handle should always be the same
+		assertEquals(WrappedEnumEntityUseAction.attack(), action);
+		assertEquals(EntityUseAction.ATTACK, action.getAction());
+		// hand & position should not be available
+		assertThrows(IllegalArgumentException.class, action::getHand);
+		assertThrows(IllegalArgumentException.class, action::getPosition);
+		// test cloning
+		clone = action.deepClone();
+		assertSame(WrappedEnumEntityUseAction.attack(), clone);
+
+		// test interact
+		packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interact(Hand.OFF_HAND));
+		action = packet.getEnumEntityUseActions().read(0);
+		assertEquals(EntityUseAction.INTERACT, action.getAction());
+		assertEquals(Hand.OFF_HAND, action.getHand());
+		// position should not be available
+		assertThrows(IllegalArgumentException.class, action::getPosition);
+		// test cloning
+		clone = action.deepClone();
+		assertEquals(EntityUseAction.INTERACT, clone.getAction());
+		assertEquals(Hand.OFF_HAND, clone.getHand());
+
+		// test interact_at
+		Vector position = new Vector(1, 199, 4);
+		packet.getEnumEntityUseActions().write(0, WrappedEnumEntityUseAction.interactAt(Hand.MAIN_HAND, position));
+		action = packet.getEnumEntityUseActions().read(0);
+		assertEquals(EntityUseAction.INTERACT_AT, action.getAction());
+		assertEquals(Hand.MAIN_HAND, action.getHand());
+		assertEquals(position, action.getPosition());
+		// test cloning
+		clone = action.deepClone();
+		assertEquals(EntityUseAction.INTERACT_AT, clone.getAction());
+		assertEquals(Hand.MAIN_HAND, clone.getHand());
+		assertEquals(position, clone.getPosition());
 	}
 
 	/**
