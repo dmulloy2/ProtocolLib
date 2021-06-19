@@ -348,10 +348,10 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType JIGSAW_GENERATE =              new PacketType(PROTOCOL, SENDER, 0x0E, "JigsawGenerate");
 			public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x0F, "KeepAlive", "CPacketKeepAlive");
 			public static final PacketType DIFFICULTY_LOCK =              new PacketType(PROTOCOL, SENDER, 0x10, "DifficultyLock");
-			public static final PacketType POSITION =                     new PacketType(PROTOCOL, SENDER, 0x11, "Flying$PacketPlayInPosition");
-			public static final PacketType POSITION_LOOK =                new PacketType(PROTOCOL, SENDER, 0x12, "Flying$PacketPlayInPositionLook");
-			public static final PacketType LOOK =                         new PacketType(PROTOCOL, SENDER, 0x13, "Flying$PacketPlayInLook");
-			public static final PacketType GROUND =                       new PacketType(PROTOCOL, SENDER, 0x14, "Flying$d");
+			public static final PacketType POSITION =                     new PacketType(PROTOCOL, SENDER, 0x11, "Flying$Position", "CPacketPlayer$Position");
+			public static final PacketType POSITION_LOOK =                new PacketType(PROTOCOL, SENDER, 0x12, "Flying$PositionLook", "CPacketPlayer$PositionRotation");
+			public static final PacketType LOOK =                         new PacketType(PROTOCOL, SENDER, 0x13, "Flying$Look", "CPacketPlayer$Rotation");
+			public static final PacketType GROUND =                       new PacketType(PROTOCOL, SENDER, 0x14, "Flying$d", "Flying", "CPacketPlayer");
 			public static final PacketType VEHICLE_MOVE =                 new PacketType(PROTOCOL, SENDER, 0x15, "VehicleMove", "CPacketVehicleMove");
 			public static final PacketType BOAT_MOVE =                    new PacketType(PROTOCOL, SENDER, 0x16, "BoatMove", "CPacketSteerBoat");
 			public static final PacketType PICK_ITEM =                    new PacketType(PROTOCOL, SENDER, 0x17, "PickItem");
@@ -359,7 +359,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType ABILITIES =                    new PacketType(PROTOCOL, SENDER, 0x19, "Abilities", "CPacketPlayerAbilities");
 			public static final PacketType BLOCK_DIG =                    new PacketType(PROTOCOL, SENDER, 0x1A, "BlockDig", "CPacketPlayerDigging");
 			public static final PacketType ENTITY_ACTION =                new PacketType(PROTOCOL, SENDER, 0x1B, "EntityAction", "CPacketEntityAction");
-			public static final PacketType STEER_VEHICLE =                new PacketType(PROTOCOL, SENDER, 0x1C, "SteerVehicle");
+			public static final PacketType STEER_VEHICLE =                new PacketType(PROTOCOL, SENDER, 0x1C, "SteerVehicle", "CPacketInput");
 			public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x1D, "Pong", "ServerboundPongPacket");
 			public static final PacketType RECIPE_SETTINGS =              new PacketType(PROTOCOL, SENDER, 0x1E, "RecipeSettings");
 			public static final PacketType RECIPE_DISPLAYED =             new PacketType(PROTOCOL, SENDER, 0x1F, "RecipeDisplayed", "CPacketRecipeInfo");
@@ -379,6 +379,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x2D, "Spectate", "CPacketSpectate");
 			public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x2E, "UseItem", "CPacketPlayerTryUseItemOnBlock");
 			public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x2F, "BlockPlace", "CPacketPlayerTryUseItem");
+
+			/**
+			 * @deprecated Removed in 1.17
+			 */
+			@Deprecated
+			public static final PacketType TRANSACTION =                  new PacketType(PROTOCOL, SENDER, 255, "Transaction", "CPacketConfirmTransaction");
 
 			private final static Client INSTANCE = new Client();
 
