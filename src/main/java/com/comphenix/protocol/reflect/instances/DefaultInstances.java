@@ -49,8 +49,7 @@ public class DefaultInstances implements InstanceProvider {
 	// minecraft default types
 	private static final Object AIR_ITEM_STACK = BukkitConverters.getItemStackConverter().getGeneric(
 			new ItemStack(Material.AIR));
-	private static final Object DEFAULT_ENTITY_TYPES = BukkitConverters.getEntityTypeConverter().getGeneric(
-			EntityType.AREA_EFFECT_CLOUD);
+	private static Object DEFAULT_ENTITY_TYPES; // modern servers only (older servers will use an entity type id)
 	// minecraft method accessors
 	private static final MethodAccessor NON_NULL_LIST_CREATE = MinecraftReflection.getNonNullListCreateAccessor();
 	// fast util mappings for paper relocation
@@ -65,6 +64,14 @@ public class DefaultInstances implements InstanceProvider {
 			} else if (type == MinecraftReflection.getItemStackClass()) {
 				return AIR_ITEM_STACK;
 			} else if (type == MinecraftReflection.getEntityTypes()) {
+				if (DEFAULT_ENTITY_TYPES == null) {
+					// try to initialize now
+					try {
+						DEFAULT_ENTITY_TYPES = BukkitConverters.getEntityTypeConverter().getGeneric(EntityType.AREA_EFFECT_CLOUD);
+					} catch (Exception ignored) {
+						// not available in this version of minecraft
+					}
+				}
 				return DEFAULT_ENTITY_TYPES;
 			} else if (type.isAssignableFrom(Map.class)) {
 				Constructor<?> ctor = FAST_MAP_CONSTRUCTORS.computeIfAbsent(type, __ -> {

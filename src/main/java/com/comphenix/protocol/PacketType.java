@@ -143,9 +143,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType LOGIN =                        new PacketType(PROTOCOL, SENDER, 0x26, "Login", "SPacketJoinGame");
 			public static final PacketType MAP =                          new PacketType(PROTOCOL, SENDER, 0x27, "Map", "SPacketMaps");
 			public static final PacketType OPEN_WINDOW_MERCHANT =         new PacketType(PROTOCOL, SENDER, 0x28, "OpenWindowMerchant");
-			public static final PacketType REL_ENTITY_MOVE =              new PacketType(PROTOCOL, SENDER, 0x29, "Entity$PacketPlayOutRelEntityMove");
-			public static final PacketType REL_ENTITY_MOVE_LOOK =         new PacketType(PROTOCOL, SENDER, 0x2A, "Entity$PacketPlayOutRelEntityMoveLook");
-			public static final PacketType ENTITY_LOOK =                  new PacketType(PROTOCOL, SENDER, 0x2B, "Entity$PacketPlayOutEntityLook");
+			public static final PacketType REL_ENTITY_MOVE =              new PacketType(PROTOCOL, SENDER, 0x29, "Entity$RelEntityMove");
+			public static final PacketType REL_ENTITY_MOVE_LOOK =         new PacketType(PROTOCOL, SENDER, 0x2A, "Entity$RelEntityMoveLook");
+			public static final PacketType ENTITY_LOOK =                  new PacketType(PROTOCOL, SENDER, 0x2B, "Entity$EntityLook");
 			public static final PacketType VEHICLE_MOVE =                 new PacketType(PROTOCOL, SENDER, 0x2C, "VehicleMove", "SPacketMoveVehicle");
 			public static final PacketType OPEN_BOOK =                    new PacketType(PROTOCOL, SENDER, 0x2D, "OpenBook");
 			public static final PacketType OPEN_WINDOW =                  new PacketType(PROTOCOL, SENDER, 0x2E, "OpenWindow", "SPacketOpenWindow");
@@ -267,7 +267,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Removed in 1.14
 			 */
 			@Deprecated
-			public static final PacketType BED =                          new PacketType(PROTOCOL, SENDER, 0x33, "Bed", "SPacketUseBed");
+			public static final PacketType BED =                          new PacketType(PROTOCOL, SENDER, 251, "Bed", "SPacketUseBed");
 
 			/**
 			 * @deprecated Renamed to {@link #BED}
@@ -279,25 +279,37 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Removed in 1.16
 			 */
 			@Deprecated
-			public static final PacketType SPAWN_ENTITY_WEATHER =         new PacketType(PROTOCOL, SENDER, 0x02, "SpawnEntityWeather", "SPacketSpawnGlobalEntity");
+			public static final PacketType SPAWN_ENTITY_WEATHER =         new PacketType(PROTOCOL, SENDER, 250, "SpawnEntityWeather", "SPacketSpawnGlobalEntity");
 
 			/**
 			 * @deprecated Removed in 1.17, split into separate packets
 			 */
 			@Deprecated
-			public static final PacketType TITLE = new PacketType(PROTOCOL, SENDER, 0x00, "Title");
+			public static final PacketType TITLE = new PacketType(PROTOCOL, SENDER, 249, "Title");
 
 			/**
 			 * @deprecated Removed in 1.17, split into separate packets
 			 */
 			@Deprecated
-			public static final PacketType WORLD_BORDER = new PacketType(PROTOCOL, SENDER, 0x00, "WorldBorder");
+			public static final PacketType WORLD_BORDER = new PacketType(PROTOCOL, SENDER, 248, "WorldBorder");
 
 			/**
 			 * @deprecated Removed in 1.17, split into separate packets
 			 */
 			@Deprecated
-			public static final PacketType COMBAT_EVENT = new PacketType(PROTOCOL, SENDER, 0x00, "CombatEvent");
+			public static final PacketType COMBAT_EVENT = new PacketType(PROTOCOL, SENDER, 247, "CombatEvent");
+
+			/**
+			 * @deprecated Removed in 1.17
+			 */
+			@Deprecated
+			public static final PacketType TRANSACTION = new PacketType(PROTOCOL, SENDER, 246, "Transaction", "SPacketConfirmTransaction");
+
+			/**
+			 * @deprecated Made abstract in 1.17, no actual packet anymore
+			 */
+			@Deprecated
+			public static final PacketType ENTITY = new PacketType(PROTOCOL, SENDER, 245, "Entity", "SPacketEntity");
 
 			private final static Server INSTANCE = new Server();
 
