@@ -28,7 +28,7 @@ public class NbtCompoundTest {
 
 	@BeforeClass
 	public static void initializeBukkit() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeItemMeta();
 	}
 	
 	@Test

@@ -34,7 +34,7 @@ public class PlayerInfoDataTest {
 
 	@BeforeClass
 	public static void initializeBukkit() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeItemMeta();
 	}
 
 	@Test

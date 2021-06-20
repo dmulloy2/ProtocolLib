@@ -8,6 +8,7 @@ import com.comphenix.protocol.utility.Constants;
 import com.mojang.bridge.game.GameVersion;
 
 import net.minecraft.SharedConstants;
+import net.minecraft.core.IRegistry;
 import net.minecraft.server.DispenserRegistry;
 import net.minecraft.server.level.WorldServer;
 
@@ -55,8 +56,6 @@ public class BukkitInitialization {
 			// Denote that we're done
 			initialized = true;
 
-			initializePackage();
-
 			try {
 				LogManager.getLogger();
 			} catch (Throwable ex) {
@@ -64,8 +63,16 @@ public class BukkitInitialization {
 				ex.printStackTrace();
 			}
 
+			initializePackage();
+
 			SharedConstants.a();
 			DispenserRegistry.init();
+
+			try {
+				IRegistry.class.getName();
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
 
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
