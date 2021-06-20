@@ -1,0 +1,2 @@
+before_install:
+  - sdk install java 16.0.1-adpt
