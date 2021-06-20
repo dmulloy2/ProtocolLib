@@ -111,15 +111,10 @@ public abstract class ProtocolRegistry {
 	protected abstract void associatePackets(Register register, Map<Integer, Class<?>> lookup, Protocol protocol, Sender sender);
 
 	/**
-	 * Retrieve the number of mapping in all the maps.
-	 * @param maps - iterable of maps.
-	 * @return The sum of all the entries.
+	 * @deprecated Not a public API
 	 */
-	protected final int sum(Iterable<? extends Map<Integer, Class<?>>> maps) {
-		int count = 0;
-
-		for (Map<Integer, Class<?>> map : maps)
-			count += map.size();
-		return count;
+	@Deprecated
+	public void _associate(PacketType type, Class<?> clazz) {
+		register.typeToClass.put(type, clazz);
 	}
 }

@@ -187,7 +187,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType UPDATE_HEALTH =                new PacketType(PROTOCOL, SENDER, 0x52, "UpdateHealth", "SPacketUpdateHealth");
 			public static final PacketType SCOREBOARD_OBJECTIVE =         new PacketType(PROTOCOL, SENDER, 0x53, "ScoreboardObjective", "SPacketScoreboardObjective");
 			public static final PacketType MOUNT =                        new PacketType(PROTOCOL, SENDER, 0x54, "Mount", "SPacketSetPassengers");
-			public static final PacketType SCOREBOARD_TEAM =              new PacketType(PROTOCOL, SENDER, 0x55, "ScoreboardTeam", "SPacketTeams");
+			public static final PacketType SCOREBOARD_TEAM =              new PacketType(PROTOCOL, SENDER, 0x55, "ScoreboardTeam$b", "ScoreboardTeam", "SPacketTeams");
 			public static final PacketType SCOREBOARD_SCORE =             new PacketType(PROTOCOL, SENDER, 0x56, "ScoreboardScore", "SPacketUpdateScore");
 			public static final PacketType SET_SUBTITLE_TEXT =            new PacketType(PROTOCOL, SENDER, 0x57, "SetSubtitleText");
 			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x58, "UpdateTime", "SPacketTimeUpdate");

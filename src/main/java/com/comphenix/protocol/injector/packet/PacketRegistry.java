@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol.injector.packet;
 
+import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -62,7 +64,7 @@ public class PacketRegistry {
 	 */
 	public static boolean isSupported(PacketType type) {
 		initialize();
-		return NETTY.getPacketTypeLookup().containsKey(type);
+		return NETTY.getPacketTypeLookup().get(type) != null;
 	}
 
 	/**
@@ -136,7 +138,21 @@ public class PacketRegistry {
 	public static Class getPacketClassFromType(PacketType type) {
 		return getPacketClassFromType(type, false);
 	}
-	
+
+	private static Class<?> searchForPacket(List<String> classNames) {
+		for (String name : classNames) {
+			try {
+				Class<?> clazz = MinecraftReflection.getMinecraftClass(name);
+				if (MinecraftReflection.getPacketClass().isAssignableFrom(clazz)
+						&& !Modifier.isAbstract(clazz.getModifiers())) {
+					return clazz;
+				}
+			} catch (Exception ignored) {}
+		}
+
+		return null;
+	}
+
 	/**
 	 * Retrieves the correct packet class from a given type.
 	 * <p>
@@ -155,14 +171,10 @@ public class PacketRegistry {
 		}
 
 		// Then try looking up the class names
-		for (String name : type.getClassNames()) {
-			try {
-				clazz = MinecraftReflection.getMinecraftClass(name);
-				break;
-			} catch (Exception ignored) { }
-		}
+		clazz = searchForPacket(type.getClassNames());
 
-		// TODO Cache the result?
+		// cache it for next time
+		NETTY._associate(type, clazz);
 		return clazz;
 	}
 
