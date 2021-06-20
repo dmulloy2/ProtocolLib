@@ -17,6 +17,11 @@
 
 package com.comphenix.protocol.reflect.instances;
 
+import com.comphenix.protocol.ProtocolLogger;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
@@ -27,23 +32,27 @@ import java.util.logging.Level;
 
 import javax.annotation.Nullable;
 
-import com.comphenix.protocol.ProtocolLogger;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.core.NonNullList;
-import net.minecraft.network.PacketDataSerializer;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.item.ItemStack;
+import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Used to construct default instances of any type.
  * @author Kristian
- *
  */
 public class DefaultInstances implements InstanceProvider {
+	// system unique id representation
 	private static final UUID SYS_UUID = new UUID(0L, 0L);
-
+	// minecraft default types
+	private static final Object AIR_ITEM_STACK = BukkitConverters.getItemStackConverter().getGeneric(
+			new ItemStack(Material.AIR));
+	private static Object DEFAULT_ENTITY_TYPES; // modern servers only (older servers will use an entity type id)
+	// minecraft method accessors
+	private static final MethodAccessor NON_NULL_LIST_CREATE = MinecraftReflection.getNonNullListCreateAccessor();
+	// fast util mappings for paper relocation
 	private static final Map<Class<?>, Constructor<?>> FAST_MAP_CONSTRUCTORS = new ConcurrentHashMap<>();
 
 	public static final InstanceProvider MINECRAFT_GENERATOR = type -> {
@@ -52,10 +61,18 @@ public class DefaultInstances implements InstanceProvider {
 				return SYS_UUID;
 			} else if (type.isEnum()) {
 				return type.getEnumConstants()[0];
-			} else if (type == ItemStack.class) {
-				return ItemStack.b;
-			} else if (type == EntityTypes.class) {
-				return EntityTypes.b;
+			} else if (type == MinecraftReflection.getItemStackClass()) {
+				return AIR_ITEM_STACK;
+			} else if (type == MinecraftReflection.getEntityTypes()) {
+				if (DEFAULT_ENTITY_TYPES == null) {
+					// try to initialize now
+					try {
+						DEFAULT_ENTITY_TYPES = BukkitConverters.getEntityTypeConverter().getGeneric(EntityType.AREA_EFFECT_CLOUD);
+					} catch (Exception ignored) {
+						// not available in this version of minecraft
+					}
+				}
+				return DEFAULT_ENTITY_TYPES;
 			} else if (type.isAssignableFrom(Map.class)) {
 				Constructor<?> ctor = FAST_MAP_CONSTRUCTORS.computeIfAbsent(type, __ -> {
 					try {
@@ -71,8 +88,8 @@ public class DefaultInstances implements InstanceProvider {
 						return ctor.newInstance();
 					} catch (ReflectiveOperationException ignored) {}
 				}
-			} else if (type == NonNullList.class) {
-				return NonNullList.a();
+			} else if (NON_NULL_LIST_CREATE != null && type == MinecraftReflection.getNonNullListClass()) {
+				return NON_NULL_LIST_CREATE.invoke(null);
 			}
 		}
 
@@ -232,7 +249,7 @@ public class DefaultInstances implements InstanceProvider {
 			// Note that we don't allow recursive types - that is, types that
 			// require itself in the constructor.
 			if (types.length < lastCount) {
-				if (!contains(types, type) && !contains(types, PacketDataSerializer.class)) {
+				if (!contains(types, type) && !contains(types, MinecraftReflection.getPacketDataSerializerClass())) {
 					if (nonNull) {
 						// Make sure all of these types are non-null
 						if (isAnyNull(types, providers, recursionLevel)) {

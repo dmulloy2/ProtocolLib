@@ -632,6 +632,14 @@ public class PacketContainerTest {
 		assertEquals(position, clone.getPosition());
 	}
 
+	@Test
+	public void testMapChunk() {
+		// this is a special case as we are generating a data serializer class (we only need to construct the packet)
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.MAP_CHUNK);
+		// check if we can read an nbt compound from the class
+		assertTrue(container.getNbtModifier().optionRead(0).isPresent());
+	}
+
 	/**
 	 * Actions from the outbound Boss packet. Used for testing generic enums.
 	 * @author dmulloy2

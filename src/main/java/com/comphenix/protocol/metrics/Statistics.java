@@ -24,7 +24,6 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.utility.Util;
 
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -17,9 +17,20 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -47,18 +58,18 @@ import com.comphenix.protocol.wrappers.EnumWrappers.Dimension;
 import com.comphenix.protocol.wrappers.EnumWrappers.FauxEnumConverter;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-import com.mojang.serialization.DataResult;
-import net.minecraft.nbt.DynamicOpsNBT;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.level.dimension.DimensionManager;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.WorldType;
 import org.bukkit.advancement.Advancement;
-import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
@@ -1298,18 +1309,20 @@ public class BukkitConverters {
 	}
 
 	private static FieldAccessor dimensionKey;
+	private static MethodAccessor worldHandleAccessor;
+	private static MethodAccessor worldHandleDimensionManagerAccessor;
 
 	public static EquivalentConverter<World> getDimensionConverter() {
 		return ignoreNull(new EquivalentConverter<World>() {
 			@Override
 			public Object getGeneric(World specific) {
-				return ((CraftWorld) specific).getHandle().getDimensionManager();
+				return getWorldHandleDimensionManagerAccessor().invoke(getWorldHandleAccessor().invoke(specific));
 			}
 
 			@Override
 			public World getSpecific(Object generic) {
 				for (World world : Bukkit.getWorlds()) {
-					if (((CraftWorld) world).getHandle().getDimensionManager() == generic) {
+					if (getGeneric(world) == generic) {
 						return world;
 					}
 				}
@@ -1321,6 +1334,29 @@ public class BukkitConverters {
 				return World.class;
 			}
 		});
+	}
+
+	private static MethodAccessor getWorldHandleAccessor() {
+		if (worldHandleAccessor == null) {
+			Method handleMethod = FuzzyReflection.fromClass(MinecraftReflection.getCraftWorldClass())
+					.getMethod(FuzzyMethodContract.newBuilder()
+							.nameExact("getHandle") // i guess this will never change
+							.returnTypeExact(MinecraftReflection.getWorldServerClass())
+							.build());
+			worldHandleAccessor = Accessors.getMethodAccessor(handleMethod);
+		}
+		return worldHandleAccessor;
+	}
+
+	private static MethodAccessor getWorldHandleDimensionManagerAccessor() {
+		if (worldHandleDimensionManagerAccessor == null) {
+			Method dimensionGetter = FuzzyReflection.fromClass(MinecraftReflection.getWorldServerClass())
+					.getMethod(FuzzyMethodContract.newBuilder()
+							.returnTypeExact(MinecraftReflection.getDimensionManager())
+							.build());
+			worldHandleDimensionManagerAccessor = Accessors.getMethodAccessor(dimensionGetter);
+		}
+		return worldHandleDimensionManagerAccessor;
 	}
 
 	public static EquivalentConverter<Integer> getDimensionIDConverter() {
@@ -1352,7 +1388,11 @@ public class BukkitConverters {
 					}
 
 					if (world != null) {
-						return ((CraftWorld) world).getHandle().getDimensionManager();
+						try {
+							return getWorldHandleDimensionManagerAccessor().invoke(getWorldHandleAccessor().invoke(world));
+						} catch (Exception ignored) {
+							// method not available, fall through
+						}
 					}
 
 					throw new IllegalArgumentException();

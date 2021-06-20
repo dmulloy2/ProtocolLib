@@ -19,20 +19,29 @@ package com.comphenix.protocol.injector;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.compiler.CompiledStructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.ZeroBuffer;
-import com.comphenix.protocol.utility.ZeroPacketDataSerializer;
+
+import io.netty.buffer.ByteBuf;
 import com.google.common.base.Preconditions;
-import net.minecraft.network.PacketDataSerializer;
+
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.implementation.FixedValue;
+import net.bytebuddy.matcher.ElementMatchers;
 
 /**
  * Caches structure modifiers.
@@ -41,23 +50,37 @@ import net.minecraft.network.PacketDataSerializer;
 public class StructureCache {
 	// Structure modifiers
 	private static final ConcurrentMap<PacketType, StructureModifier<Object>> structureModifiers = new ConcurrentHashMap<>();
+	// invocation cache for packets
+	private static final ConcurrentMap<Class<?>, Supplier<Object>> PACKET_INSTANCE_CREATORS = new ConcurrentHashMap<>();
+	// packet data serializer which always returns an empty nbt tag compound
+	private static boolean trickTried;
+	private static ConstructorAccessor TRICKED_DATA_SERIALIZER;
 
 	private static final Set<PacketType> compiling = new HashSet<>();
 
 	public static Object newPacket(Class<?> clazz) {
 		Object result = DefaultInstances.DEFAULT.create(clazz);
 
-		// TODO make these generic
 		if (result == null) {
-			try {
-				return clazz.getConstructor(PacketDataSerializer.class).newInstance(new PacketDataSerializer(new ZeroBuffer()));
-			} catch (ReflectiveOperationException ex) {
-				try {
-					return clazz.getConstructor(PacketDataSerializer.class).newInstance(new ZeroPacketDataSerializer());
-				} catch (ReflectiveOperationException ex1) {
-					throw new IllegalArgumentException("Failed to create packet: " + clazz, ex);
+			return PACKET_INSTANCE_CREATORS.computeIfAbsent(clazz, $ -> {
+				ConstructorAccessor accessor = Accessors.getConstructorAccessorOrNull(clazz, MinecraftReflection.getPacketDataSerializerClass());
+				if (accessor != null) {
+					return () -> {
+						try {
+							return accessor.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()));
+						} catch (Exception exception) {
+							// try trick nms around as they want a non-null compound in the map_chunk packet constructor
+							ConstructorAccessor trickyDataSerializerAccessor = getTrickDataSerializerOrNull();
+							if (trickyDataSerializerAccessor != null) {
+								return accessor.invoke(trickyDataSerializerAccessor.invoke(new ZeroBuffer()));
+							}
+							// the tricks are over
+							throw new IllegalArgumentException("Unable to create packet " + clazz, exception);
+						}
+					};
 				}
-			}
+				throw new IllegalArgumentException("No matching constructor to create packet in class " + clazz);
+			}).get();
 		}
 
 		return result;
@@ -147,5 +170,35 @@ public class StructureCache {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Creates a packet data serializer sub-class if needed to allow the fixed read of a NbtTagCompound because of a null
+	 * check in the MapChunk packet constructor.
+	 * @return an accessor to a constructor which creates a data serializer.
+	 */
+	private static ConstructorAccessor getTrickDataSerializerOrNull() {
+		if (TRICKED_DATA_SERIALIZER == null && !trickTried) {
+			// ensure that we only try once to create the class
+			trickTried = true;
+			try {
+				// create an empty instance of a nbt tag compound that we can re-use when needed
+				Object compound = Accessors.getConstructorAccessor(MinecraftReflection.getNBTCompoundClass()).invoke();
+				// create the method in the class to read an empty nbt tag compound (currently used for MAP_CHUNK because of null check)
+				Class<?> generatedClass = ByteBuddyFactory.getInstance()
+						.createSubclass(MinecraftReflection.getPacketDataSerializerClass())
+						.name(MinecraftMethods.class.getPackage().getName() + ".ProtocolLibTricksNmsDataSerializer")
+						.method(ElementMatchers.returns(MinecraftReflection.getNBTCompoundClass())
+								.and(ElementMatchers.takesArguments(MinecraftReflection.getNBTReadLimiterClass())))
+						.intercept(FixedValue.value(compound))
+						.make()
+						.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
+						.getLoaded();
+				TRICKED_DATA_SERIALIZER = Accessors.getConstructorAccessor(generatedClass, ByteBuf.class);
+			} catch (Exception ignored) {
+				// can happen if unsupported
+			}
+		}
+		return TRICKED_DATA_SERIALIZER;
 	}
 }
