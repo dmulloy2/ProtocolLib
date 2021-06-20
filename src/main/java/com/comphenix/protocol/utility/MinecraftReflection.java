@@ -2248,4 +2248,18 @@ public class MinecraftReflection {
 	public static Class<?> getAttributeBase() {
 		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "AttributeBase");
 	}
+
+	public static Class<?> getInt2ObjectMapClass() {
+		try {
+			return getMinecraftLibraryClass("it.unimi.dsi.fastutil.ints.Int2ObjectMap");
+		} catch (RuntimeException ex) {
+			try {
+				Class<?> clazz = getMinecraftLibraryClass("org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap");
+				setMinecraftLibraryClass("it.unimi.dsi.fastutil.ints.Int2ObjectMap", clazz);
+				return clazz;
+			} catch (RuntimeException ignored) {
+				throw ex;
+			}
+		}
+	}
 }

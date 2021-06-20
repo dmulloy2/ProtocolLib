@@ -164,7 +164,7 @@ class EntityUtilities {
 						FuzzyFieldContract.newBuilder()
 							.banModifier(Modifier.STATIC)
 							.requirePublic()
-							.typeExact(org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap.class)
+							.typeExact(MinecraftReflection.getInt2ObjectMapClass())
 							.build()
 					)
 				);
