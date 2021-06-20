@@ -3,14 +3,12 @@ package com.comphenix.protocol.wrappers;
 import java.lang.reflect.Constructor;
 import java.util.*;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -34,9 +32,6 @@ public class WrappedAttribute extends AbstractWrapper {
 	
 	// The one constructor
 	private static Constructor<?> ATTRIBUTE_CONSTRUCTOR;
-
-	private static Object REGISTRY = null;
-	private static MethodAccessor REGISTRY_GET = null;
 
 	private static final Map<String, String> REMAP;
 
@@ -77,7 +72,7 @@ public class WrappedAttribute extends AbstractWrapper {
 		
 		// Initialize modifier
 		if (ATTRIBUTE_MODIFIER == null) {
-			ATTRIBUTE_MODIFIER = new StructureModifier<Object>(MinecraftReflection.getAttributeSnapshotClass());
+			ATTRIBUTE_MODIFIER = new StructureModifier<>(MinecraftReflection.getAttributeSnapshotClass());
 		}
 		this.modifier = ATTRIBUTE_MODIFIER.withTarget(handle);
 	}
@@ -170,8 +165,14 @@ public class WrappedAttribute extends AbstractWrapper {
 	/**
 	 * Retrieve the parent update attributes packet.
 	 * @return The parent packet.
+	 * @deprecated Removed in 1.17
 	 */
+	@Nullable
 	public PacketContainer getParentPacket() {
+		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+			return null;
+		}
+
 		return new PacketContainer(
 			PacketType.Play.Server.UPDATE_ATTRIBUTES,
 			modifier.withType(MinecraftReflection.getPacketClass()).read(0)
@@ -226,7 +227,7 @@ public class WrappedAttribute extends AbstractWrapper {
 				}
 			};
 			
-			attributeModifiers = new CachedSet<WrappedAttributeModifier>(converted);
+			attributeModifiers = new CachedSet<>(converted);
 		}
 		return Collections.unmodifiableSet(attributeModifiers);
 	}
@@ -249,9 +250,7 @@ public class WrappedAttribute extends AbstractWrapper {
 			
 			if (getBaseValue() == other.getBaseValue() &&
 				   Objects.equal(getAttributeKey(), other.getAttributeKey())) {
-				return getModifiers().stream()
-						.filter((elem) -> !other.getModifiers().contains(elem))
-						.count() == 0;
+				return other.getModifiers().containsAll(getModifiers());
 			}
 		}
 		return false;
@@ -414,7 +413,6 @@ public class WrappedAttribute extends AbstractWrapper {
 		 * @throws RuntimeException If anything went wrong with the reflection.
 		 */
 		public WrappedAttribute build() {
-			Preconditions.checkNotNull(packet, "packet cannot be NULL.");
 			Preconditions.checkNotNull(attributeKey, "attributeKey cannot be NULL.");
 			
 			// Remember to set the base value

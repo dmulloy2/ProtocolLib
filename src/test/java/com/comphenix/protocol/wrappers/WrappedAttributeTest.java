@@ -74,6 +74,11 @@ public class WrappedAttributeTest {
 		assertTrue(attribute.hasModifier(doubleModifier.getUUID()));
 		assertTrue(attribute.hasModifier(constantModifier.getUUID()));
 	}
+
+	@Test
+	public void testFromTemplate() {
+		assertEquals(attribute, WrappedAttribute.newBuilder(attribute).build());
+	}
 	
 	/**
 	 * Retrieve the equivalent NMS attribute.
