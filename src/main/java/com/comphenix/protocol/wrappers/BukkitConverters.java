@@ -1208,7 +1208,12 @@ public class BukkitConverters {
 			public Object getGeneric(PotionEffectType specific) {
 				Class<?> clazz = MinecraftReflection.getMobEffectListClass();
 				if (getMobEffect == null) {
-					getMobEffect = Accessors.getMethodAccessor(clazz, "fromId", int.class);
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
+					getMobEffect = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+							.parameterExactArray(int.class)
+							.returnTypeExact(clazz)
+							.requireModifier(Modifier.STATIC)
+							.build()));
 				}
 
 				int id = specific.getId();
@@ -1219,7 +1224,12 @@ public class BukkitConverters {
 			public PotionEffectType getSpecific(Object generic) {
 				Class<?> clazz = MinecraftReflection.getMobEffectListClass();
 				if (getMobEffectId == null) {
-					getMobEffectId = Accessors.getMethodAccessor(clazz, "getId", clazz);
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
+					getMobEffectId = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+							.parameterExactArray(clazz)
+							.returnTypeExact(int.class)
+							.requireModifier(Modifier.STATIC)
+							.build()));
 				}
 
 				int id = (int) getMobEffectId.invoke(null, generic);
