@@ -40,14 +40,6 @@ public interface ListenerInvoker {
 	void invokePacketSending(PacketEvent event);
 
 	/**
-	 * Retrieve the associated ID of a packet.
-	 * @param packet - the packet.
-	 * @return The packet ID.
-	 */
-	@Deprecated
-	int getPacketID(Object packet);
-
-	/**
 	 * Retrieve the associated type of a packet.
 	 * @param packet - the packet.
 	 * @return The packet type.

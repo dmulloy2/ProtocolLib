@@ -32,11 +32,11 @@ public class PacketTypeSet {
 	 * @param type - the type to add.
 	 */
 	public synchronized void addType(PacketType type) {
-		Class<?> packetClass = getPacketClass(type);
+		Class<?> packetClass = type.getPacketClass();
 		types.add(Preconditions.checkNotNull(type, "type cannot be NULL."));
 		
 		if (packetClass != null) {
-			classes.add(getPacketClass(type));
+			classes.add(type.getPacketClass());
 		}
 	}
 	
@@ -55,11 +55,11 @@ public class PacketTypeSet {
 	 * @param type - the type to remove.
 	 */
 	public synchronized void removeType(PacketType type) {
-		Class<?> packetClass = getPacketClass(type);
+		Class<?> packetClass = type.getPacketClass();
 		types.remove(Preconditions.checkNotNull(type, "type cannot be NULL."));
 		
 		if (packetClass != null) {
-			classes.remove(getPacketClass(type));
+			classes.remove(packetClass);
 		}
 	}
 	
@@ -72,16 +72,7 @@ public class PacketTypeSet {
 			removeType(type);
 		}
 	}
-	
-	/**
-	 * Retrieve the packet class associated with a particular type.
-	 * @param type - the packet type.
-	 * @return The associated packet type.
-	 */
-	protected Class<?> getPacketClass(PacketType type) {
-		return PacketRegistry.getPacketClassFromType(type);
-	}
-	
+
 	/**
 	 * Determine if the given packet type exists in the set.
 	 * @param type - the type to find.

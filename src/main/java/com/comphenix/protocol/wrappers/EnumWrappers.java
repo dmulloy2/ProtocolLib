@@ -557,12 +557,18 @@ public abstract class EnumWrappers {
 	 * @return The type of the enum field.
 	 */
 	private static Class<?> getEnum(Class<?> clazz, int index) {
-		try {
-			return FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class).get(index).getType();
-		} catch (Throwable ex) {
-			ProtocolLogger.debug("Exception getting enum from " + clazz + " at index " + index, ex);
+		if (clazz == null) {
+			// not supported in the current version
 			return null;
 		}
+
+		List<Field> enumFields = FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class);
+		if (enumFields.size() <= index) {
+			// also probably not supported
+			return null;
+		}
+
+		return enumFields.get(index).getType();
 	}
 
 	public static Map<Class<?>, EquivalentConverter<?>> getFromNativeMap() {
@@ -780,21 +786,16 @@ public abstract class EnumWrappers {
 	}
 
 	/**
-	 * @deprecated Replaced with {@link #getGenericConverter(Class, Class)}
-	 */
-	@Deprecated
-	public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<T> specificType) {
-		return new EnumConverter<>(null, specificType);
-	}
-
-	/**
 	 * The common Enum converter
 	 */
 	public static class EnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
-		private Class<?> genericType;
-		private Class<T> specificType;
+		private final Class<?> genericType;
+		private final Class<T> specificType;
 
 		public EnumConverter(Class<?> genericType, Class<T> specificType) {
+			Validate.notNull(specificType, "specificType cannot be null");
+			// would love to check if genericType is null, but it breaks other stuff
+
 			this.genericType = genericType;
 			this.specificType = specificType;
 		}
@@ -812,10 +813,6 @@ public abstract class EnumWrappers {
 		@Override
 		public Class<T> getSpecificType() {
 			return specificType;
-		}
-
-		void setGenericType(Class<?> genericType) {
-			this.genericType = genericType;
 		}
 	}
 

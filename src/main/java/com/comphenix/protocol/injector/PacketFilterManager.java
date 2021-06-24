@@ -980,12 +980,6 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	}
 
 	@Override
-	@Deprecated
-	public int getPacketID(Object packet) {
-		return PacketRegistry.getPacketID(packet.getClass());
-	}
-
-	@Override
 	public PacketType getPacketType(Object packet) {
 		if (packet == null)
 			throw new IllegalArgumentException("Packet cannot be NULL.");

@@ -20,6 +20,7 @@ package com.comphenix.protocol.injector;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Optional;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.error.RethrowErrorReporter;
@@ -146,13 +147,11 @@ public class PacketConstructor {
 				types[i] = Object.class;
 			}
 		}
-		Class<?> packetType = PacketRegistry.getPacketClassFromType(type, true);
-		
-		if (packetType == null)
-			throw new IllegalArgumentException("Could not find a packet by the type " + type);
-		
+
+		Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
+
 		// Find the correct constructor
-		for (Constructor<?> constructor : packetType.getConstructors()) {
+		for (Constructor<?> constructor : packetClass.getConstructors()) {
 			Class<?>[] params = constructor.getParameterTypes();
 
 			if (isCompatible(types, params)) {

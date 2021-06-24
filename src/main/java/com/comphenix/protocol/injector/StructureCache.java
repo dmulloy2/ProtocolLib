@@ -92,11 +92,7 @@ public class StructureCache {
 	 * @return Created packet.
 	 */
 	public static Object newPacket(PacketType type) {
-		Class<?> clazz = PacketRegistry.getPacketClassFromType(type, true);
-		if (clazz != null) {
-			return newPacket(clazz);
-		}
-		throw new IllegalArgumentException("Cannot find associated packet class: " + type);
+		return newPacket(PacketRegistry.getPacketClassFromType(type));
 	}
 
 	/**
@@ -146,7 +142,7 @@ public class StructureCache {
 		if (result == null) {
 			// Use the vanilla class definition
 			final StructureModifier<Object> value = new StructureModifier<>(
-					PacketRegistry.getPacketClassFromType(type, true), MinecraftReflection.getPacketClass(), true);
+					PacketRegistry.getPacketClassFromType(type), MinecraftReflection.getPacketClass(), true);
 
 			result = structureModifiers.putIfAbsent(type, value);
 

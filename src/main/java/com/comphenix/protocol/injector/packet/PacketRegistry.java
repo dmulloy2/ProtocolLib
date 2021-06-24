@@ -17,44 +17,275 @@
 
 package com.comphenix.protocol.injector.packet;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.injector.netty.NettyProtocolRegistry;
-import com.comphenix.protocol.injector.netty.ProtocolRegistry;
+import com.comphenix.protocol.ProtocolLogger;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.base.Function;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * Static packet registry in Minecraft.
  * @author Kristian
  */
-@SuppressWarnings("rawtypes")
 public class PacketRegistry {
-	// The Netty packet registry
-	private static volatile ProtocolRegistry NETTY;
-
 	// Whether or not the registry has been initialized
 	private static volatile boolean INITIALIZED = false;
+
+	/**
+	 * Represents a register we are currently building.
+	 * @author Kristian
+	 */
+	protected static class Register {
+		// The main lookup table
+		private final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
+		private final Map<Class<?>, PacketType> classToType = new ConcurrentHashMap<>();
+
+		private volatile Set<PacketType> serverPackets = Sets.newHashSet();
+		private volatile Set<PacketType> clientPackets = Sets.newHashSet();
+		private final List<MapContainer> containers = Lists.newArrayList();
+
+		public Register() {}
+
+		public void registerPacket(PacketType type, Class<?> clazz, Sender sender) {
+			typeToClass.put(type, Optional.of(clazz));
+			classToType.put(clazz, type);
+			if (sender == Sender.CLIENT) {
+				clientPackets.add(type);
+			} else {
+				serverPackets.add(type);
+			}
+		}
+
+		public void addContainer(MapContainer container) {
+			containers.add(container);
+		}
+
+		/**
+		 * Determine if the current register is outdated.
+		 * @return TRUE if it is, FALSE otherwise.
+		 */
+		public boolean isOutdated() {
+			for (MapContainer container : containers) {
+				if (container.hasChanged()) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	protected static final Class<?> ENUM_PROTOCOL = MinecraftReflection.getEnumProtocolClass();
+
+	// Current register
+	protected static volatile Register REGISTER;
+
+	/**
+	 * Ensure that our local register is up-to-date with Minecraft.
+	 * <p>
+	 * This operation may block the calling thread.
+	 */
+	public static synchronized void synchronize() {
+		// Check if the packet registry has changed
+		if (REGISTER.isOutdated()) {
+			initialize();
+		}
+	}
+
+	protected static synchronized Register createOldRegister() {
+		Object[] protocols = ENUM_PROTOCOL.getEnumConstants();
+
+		// ID to Packet class maps
+		Map<Object, Map<Integer, Class<?>>> serverMaps = Maps.newLinkedHashMap();
+		Map<Object, Map<Integer, Class<?>>> clientMaps = Maps.newLinkedHashMap();
+
+		Register result = new Register();
+		StructureModifier<Object> modifier = null;
+
+		// Iterate through the protocols
+		for (Object protocol : protocols) {
+			if (modifier == null) {
+				modifier = new StructureModifier<>(protocol.getClass().getSuperclass(), false);
+			}
+
+			StructureModifier<Map<Object, Map<Integer, Class<?>>>> maps = modifier.withTarget(protocol).withType(Map.class);
+			for (Map.Entry<Object, Map<Integer, Class<?>>> entry : maps.read(0).entrySet()) {
+				String direction = entry.getKey().toString();
+				if (direction.contains("CLIENTBOUND")) { // Sent by Server
+					serverMaps.put(protocol, entry.getValue());
+				} else if (direction.contains("SERVERBOUND")) { // Sent by Client
+					clientMaps.put(protocol, entry.getValue());
+				}
+			}
+		}
+
+		// Maps we have to occasionally check have changed
+		for (Object map : serverMaps.values()) {
+			REGISTER.addContainer(new MapContainer(map));
+		}
+
+		for (Object map : clientMaps.values()) {
+			REGISTER.addContainer(new MapContainer(map));
+		}
+
+		for (Object protocol : protocols) {
+			Enum<?> enumProtocol = (Enum<?>) protocol;
+			PacketType.Protocol equivalent = PacketType.Protocol.fromVanilla(enumProtocol);
+
+			// Associate known types
+			if (serverMaps.containsKey(protocol))
+				associatePackets(result, serverMaps.get(protocol), equivalent, Sender.SERVER);
+			if (clientMaps.containsKey(protocol))
+				associatePackets(result, clientMaps.get(protocol), equivalent, Sender.CLIENT);
+		}
+
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static synchronized Register createNewRegister() {
+		Object[] protocols = ENUM_PROTOCOL.getEnumConstants();
+
+		// ID to Packet class maps
+		Map<Object, Map<Class<?>, Integer>> serverMaps = Maps.newLinkedHashMap();
+		Map<Object, Map<Class<?>, Integer>> clientMaps = Maps.newLinkedHashMap();
+
+		Register result = new Register();
+		Field mainMapField = null;
+		Field packetMapField = null;
+
+		// Iterate through the protocols
+		for (Object protocol : protocols) {
+			if (mainMapField == null) {
+				FuzzyReflection fuzzy = FuzzyReflection.fromClass(protocol.getClass(), true);
+				mainMapField = fuzzy.getField(FuzzyFieldContract.newBuilder()
+						.banModifier(Modifier.STATIC)
+						.requireModifier(Modifier.FINAL)
+						.typeDerivedOf(Map.class)
+						.build());
+				mainMapField.setAccessible(true);
+			}
+
+			Map<Object, Object> directionMap;
+
+			try {
+				directionMap = (Map<Object, Object>) mainMapField.get(protocol);
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException("Failed to access packet map", ex);
+			}
+
+			for (Map.Entry<Object, Object> entry : directionMap.entrySet()) {
+				Object holder = entry.getValue();
+				if (packetMapField == null) {
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(holder.getClass(), true);
+					packetMapField = fuzzy.getField(FuzzyFieldContract.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.requireModifier(Modifier.FINAL)
+							.typeDerivedOf(Map.class)
+							.build());
+					packetMapField.setAccessible(true);
+				}
+
+				Map<Class<?>, Integer> packetMap;
+
+				try {
+					packetMap = (Map<Class<?>, Integer>) packetMapField.get(holder);
+				} catch (ReflectiveOperationException ex) {
+					throw new RuntimeException("Failed to access packet map", ex);
+				}
+
+				String direction = entry.getKey().toString();
+				if (direction.contains("CLIENTBOUND")) { // Sent by Server
+					serverMaps.put(protocol, packetMap);
+				} else if (direction.contains("SERVERBOUND")) { // Sent by Client
+					clientMaps.put(protocol, packetMap);
+				}
+			}
+		}
+
+		// Maps we have to occasionally check have changed
+		// TODO: Find equivalent in Object2IntMap
+
+		/* for (Object map : serverMaps.values()) {
+			result.containers.add(new MapContainer(map));
+		}
+
+		for (Object map : clientMaps.values()) {
+			result.containers.add(new MapContainer(map));
+		} */
+
+		for (Object protocol : protocols) {
+			Enum<?> enumProtocol = (Enum<?>) protocol;
+			PacketType.Protocol equivalent = PacketType.Protocol.fromVanilla(enumProtocol);
+
+			// Associate known types
+			if (serverMaps.containsKey(protocol)) {
+				associatePackets(result, reverse(serverMaps.get(protocol)), equivalent, Sender.SERVER);
+			}
+			if (clientMaps.containsKey(protocol)) {
+				associatePackets(result, reverse(clientMaps.get(protocol)), equivalent, Sender.CLIENT);
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Reverses a key->value map to value->key
+	 * Non-deterministic behavior when multiple keys are mapped to the same value
+	 */
+	private static <K, V> Map<V, K> reverse(Map<K, V> map) {
+		Map<V, K> newMap = new HashMap<>(map.size());
+		for (Map.Entry<K, V> entry : map.entrySet()) {
+			newMap.put(entry.getValue(), entry.getKey());
+		}
+		return newMap;
+	}
+
+	protected static void associatePackets(Register register, Map<Integer, Class<?>> lookup, PacketType.Protocol protocol, Sender sender) {
+		for (Map.Entry<Integer, Class<?>> entry : lookup.entrySet()) {
+			PacketType type = PacketType.fromCurrent(protocol, sender, entry.getKey(), entry.getValue());
+
+			try {
+				register.registerPacket(type, entry.getValue(), sender);
+			} catch (Exception ex) {
+				ProtocolLogger.debug("Encountered an exception associating packet " + type, ex);
+			}
+		}
+	}
+
+	private static void associate(PacketType type, Class<?> clazz) {
+		if (clazz != null) {
+			REGISTER.typeToClass.put(type, Optional.of(clazz));
+			REGISTER.classToType.put(clazz, type);
+		} else {
+			REGISTER.typeToClass.put(type, Optional.empty());
+		}
+	}
 
 	/**
 	 * Initializes the packet registry.
 	 */
 	private static void initialize() {
-		if (INITIALIZED) {
-			if (NETTY == null) {
-				throw new IllegalStateException("Failed to initialize packet registry.");
-			}
-			return;
-		}
+		if (!INITIALIZED) {
+			INITIALIZED = true;
 
-		NETTY = new NettyProtocolRegistry();
-		INITIALIZED = true;
+			if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
+				REGISTER = createNewRegister();
+			} else {
+				REGISTER = createOldRegister();
+			}
+		}
 	}
 
 	/**
@@ -64,35 +295,7 @@ public class PacketRegistry {
 	 */
 	public static boolean isSupported(PacketType type) {
 		initialize();
-		return NETTY.getPacketTypeLookup().get(type) != null;
-	}
-
-	/**
-	 * Retrieve a map of every packet class to every ID.
-	 * <p>
-	 * Deprecated: Use {@link #getPacketToType()} instead.
-	 * @return A map of packet classes and their corresponding ID.
-	 */
-	@Deprecated
-	public static Map<Class, Integer> getPacketToID() {
-		initialize();
-
-		@SuppressWarnings("unchecked")
-		Map<Class, Integer> result = (Map) Maps.transformValues(
-				NETTY.getPacketClassLookup(), PacketType::getCurrentId);
-		return result;
-	}
-
-	/**
-	 * Retrieve a map of every packet class to the respective packet type.
-	 * @return A map of packet classes and their corresponding packet type.
-	 */
-	public static Map<Class, PacketType> getPacketToType() {
-		initialize();
-
-		@SuppressWarnings("unchecked")
-		Map<Class, PacketType> result = (Map) NETTY.getPacketClassLookup();
-		return result;
+		return tryGetPacketClass(type).isPresent();
 	}
 
 	/**
@@ -101,9 +304,9 @@ public class PacketRegistry {
 	 */
 	public static Set<PacketType> getServerPacketTypes() {
 		initialize();
-		NETTY.synchronize();
+		synchronize();
 
-		return NETTY.getServerPackets();
+		return Collections.unmodifiableSet(REGISTER.serverPackets);
 	}
 	
 	/**
@@ -112,31 +315,9 @@ public class PacketRegistry {
 	 */
 	public static Set<PacketType> getClientPacketTypes() {
 		initialize();
-		NETTY.synchronize();
+		synchronize();
 
-		return NETTY.getClientPackets();
-	}
-
-	/**
-	 * Retrieves the correct packet class from a given packet ID.
-	 * <p>
-	 * Deprecated: Use {@link #getPacketClassFromType(PacketType)} instead.
-	 * @param packetID - the packet ID.
-	 * @return The associated class.
-	 */
-	@Deprecated
-	public static Class getPacketClassFromID(int packetID) {
-		initialize();
-		return NETTY.getPacketTypeLookup().get(PacketType.findLegacy(packetID));
-	}
-	
-	/**
-	 * Retrieves the correct packet class from a given type.
-	 * @param type - the packet type.
-	 * @return The associated class.
-	 */
-	public static Class getPacketClassFromType(PacketType type) {
-		return getPacketClassFromType(type, false);
+		return Collections.unmodifiableSet(REGISTER.clientPackets);
 	}
 
 	private static Class<?> searchForPacket(List<String> classNames) {
@@ -155,55 +336,43 @@ public class PacketRegistry {
 
 	/**
 	 * Retrieves the correct packet class from a given type.
-	 * <p>
-	 * Note that forceVanillla will be ignored on MC 1.7.2 and later.
+	 *
 	 * @param type - the packet type.
 	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
 	 * @return The associated class.
+	 * @deprecated forceVanilla no longer has any effect
 	 */
-	public static Class getPacketClassFromType(PacketType type, boolean forceVanilla) {
+	@Deprecated
+	public static Class<?> getPacketClassFromType(PacketType type, boolean forceVanilla) {
+		return getPacketClassFromType(type);
+	}
+
+	public static Optional<Class<?>> tryGetPacketClass(PacketType type) {
 		initialize();
 
-		// Try the lookup first
-		Class<?> clazz = NETTY.getPacketTypeLookup().get(type);
-		if (clazz != null) {
-			return clazz;
+		// Try the lookup first (may be null, so check contains)
+		Optional<Class<?>> res = REGISTER.typeToClass.get(type);
+		if (res != null) {
+			return res;
 		}
 
 		// Then try looking up the class names
-		clazz = searchForPacket(type.getClassNames());
+		Class<?> clazz = searchForPacket(type.getClassNames());
 
 		// cache it for next time
-		NETTY._associate(type, clazz);
-		return clazz;
+		associate(type, clazz);
+		return Optional.ofNullable(clazz);
 	}
 
 	/**
-	 * Retrieves the correct packet class from a given packet ID.
-	 * <p>
-	 * This method has been deprecated.
-	 * @param packetID - the packet ID.
- 	 * @param forceVanilla - whether or not to look for vanilla classes, not injected classes.
-	 * @return The associated class.
+	 * Get the packet class associated with a given type. First attempts to read from the
+	 * type-to-class mapping, and tries
+	 * @param type the packet type
+	 * @return The associated class
 	 */
-	@Deprecated
-	public static Class getPacketClassFromID(int packetID, boolean forceVanilla) {
-		initialize();
-		return getPacketClassFromID(packetID);
-	}
-
-	/**
-	 * Retrieve the packet ID of a given packet.
-	 * <p>
-	 * Deprecated: Use {@link #getPacketType(Class)}.
-	 * @param packet - the type of packet to check.
-	 * @return The legacy ID of the given packet.
-	 * @throws IllegalArgumentException If this is not a valid packet.
-	 */
-	@Deprecated
-	public static int getPacketID(Class<?> packet) {
-		initialize();
-		return NETTY.getPacketClassLookup().get(packet).getCurrentId();
+	public static Class<?> getPacketClassFromType(PacketType type) {
+		return tryGetPacketClass(type)
+				.orElseThrow(() -> new IllegalArgumentException("Could not find packet for type " + type.name()));
 	}
 
 	/**
@@ -212,7 +381,8 @@ public class PacketRegistry {
 	 * @return The packet type, or NULL if not found.
 	 */
 	public static PacketType getPacketType(Class<?> packet) {
-		return getPacketType(packet, null);
+		initialize();
+		return REGISTER.classToType.get(packet);
 	}
 	
 	/**
@@ -220,9 +390,10 @@ public class PacketRegistry {
 	 * @param packet - the class of the packet.
 	 * @param sender - the sender of the packet, or NULL.
 	 * @return The packet type, or NULL if not found.
+	 * @deprecated sender no longer has any effect
 	 */
+	@Deprecated
 	public static PacketType getPacketType(Class<?> packet, Sender sender) {
-		initialize();
-		return NETTY.getPacketClassLookup().get(packet);
+		return getPacketType(packet);
 	}
 }

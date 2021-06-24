@@ -110,22 +110,6 @@ public class PacketTypeEnum implements Iterable<PacketType> {
 	public boolean hasMember(PacketType member) {
 		return members.contains(member);
 	}
-	
-	/**
-	 * Retrieve a member by name,
-	 * @param name - name of member to retrieve.
-	 * @return The member, or NULL if not found.
-	 * @deprecated Don't use this
-	 */
-	@Deprecated
-	public PacketType valueOf(String name) {
-		for (PacketType member : members) {
-			if (member.name().equals(name))
-				return member;
-		}
-
-		return null;
-	}
 
 	/**
 	 * Retrieve every registered member.

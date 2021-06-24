@@ -1292,7 +1292,7 @@ public class MinecraftReflection {
 		try {
 			return getMinecraftClass("world.level.ChunkCoordIntPair", "ChunkCoordIntPair");
 		} catch (RuntimeException e) {
-			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
+			Class<?> packet = PacketType.Play.Server.MULTI_BLOCK_CHANGE.getPacketClass();
 
 			AbstractFuzzyMatcher<Class<?>> chunkCoordIntContract = FuzzyClassContract.newBuilder().
 					   field(FuzzyFieldContract.newBuilder().
@@ -1640,7 +1640,7 @@ public class MinecraftReflection {
 			return getMinecraftClass("world.effect.MobEffect", "MobEffect");
 		} catch (RuntimeException e) {
 			// It is the second parameter in Packet41MobEffect
-			Class<?> packet = PacketRegistry.getPacketClassFromType(PacketType.Play.Server.ENTITY_EFFECT);
+			Class<?> packet = PacketType.Play.Server.ENTITY_EFFECT.getPacketClass();
 			Constructor<?> constructor = FuzzyReflection.fromClass(packet).getConstructor(
 				FuzzyMethodContract.newBuilder().
 				parameterCount(2).

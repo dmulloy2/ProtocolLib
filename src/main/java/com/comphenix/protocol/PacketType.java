@@ -187,7 +187,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType UPDATE_HEALTH =                new PacketType(PROTOCOL, SENDER, 0x52, "UpdateHealth", "SPacketUpdateHealth");
 			public static final PacketType SCOREBOARD_OBJECTIVE =         new PacketType(PROTOCOL, SENDER, 0x53, "ScoreboardObjective", "SPacketScoreboardObjective");
 			public static final PacketType MOUNT =                        new PacketType(PROTOCOL, SENDER, 0x54, "Mount", "SPacketSetPassengers");
-			public static final PacketType SCOREBOARD_TEAM =              new PacketType(PROTOCOL, SENDER, 0x55, "ScoreboardTeam$b", "ScoreboardTeam", "SPacketTeams");
+			public static final PacketType SCOREBOARD_TEAM =              new PacketType(PROTOCOL, SENDER, 0x55, "ScoreboardTeam", "SPacketTeams");
 			public static final PacketType SCOREBOARD_SCORE =             new PacketType(PROTOCOL, SENDER, 0x56, "ScoreboardScore", "SPacketUpdateScore");
 			public static final PacketType SET_SUBTITLE_TEXT =            new PacketType(PROTOCOL, SENDER, 0x57, "SetSubtitleText");
 			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x58, "UpdateTime", "SPacketTimeUpdate");
@@ -647,7 +647,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	/**
 	 * Protocol version of all the current IDs.
 	 */
-	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.NETHER_UPDATE;
+	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.CAVES_CLIFFS_1;
 
 	private final Protocol protocol;
 	private final Sender sender;
@@ -935,7 +935,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 * Determine if a given class represents a packet class.
 	 * @param packetClass - the class to lookup.
 	 * @return TRUE if this is a packet class, FALSE otherwise.
+	 * @deprecated Doesn't really have a purpose
 	 */
+	@Deprecated
 	public static boolean hasClass(Class<?> packetClass) {
 		return PacketRegistry.getPacketType(packetClass) != null;
 	}
@@ -1090,11 +1092,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 * @return The packet class, or NULL if not found.
 	 */
 	public Class<?> getPacketClass() {
-		try {
-			return PacketRegistry.getPacketClassFromType(this);
-		} catch (Exception e) {
-			return null;
-		}
+		return PacketRegistry.tryGetPacketClass(this).orElse(null);
 	}
 
 	// Only used by Enum processor
