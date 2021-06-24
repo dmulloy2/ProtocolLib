@@ -17,11 +17,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -271,6 +267,8 @@ public class BukkitConverters {
 		};
 	}
 
+	private static Map<Class<?>, Supplier<List<Object>>> LIST_SUPPLIERS = new ConcurrentHashMap<>();
+
 	/**
 	 * Retrieve an equivalent converter for a list of generic items.
 	 * @param <T> Type
@@ -302,11 +300,26 @@ public class BukkitConverters {
 			@Override
 			public Object getGeneric(List<T> specific) {
 				List<Object> newList;
-
-				try {
-					newList = (List<Object>) specific.getClass().newInstance();
-				} catch (ReflectiveOperationException ex) {
-					newList = new ArrayList<>();
+				Supplier<List<Object>> supplier = LIST_SUPPLIERS.get(specific.getClass());
+				if (supplier == null) {
+					try {
+						Constructor<?> ctor = specific.getClass().getConstructor();
+						newList = (List<Object>) ctor.newInstance();
+						supplier = () -> {
+							try {
+								return (List<Object>) ctor.newInstance();
+							} catch (ReflectiveOperationException ex) {
+								throw new RuntimeException(ex);
+							}
+						};
+					} catch (ReflectiveOperationException ex) {
+						supplier = ArrayList::new;
+						newList = new ArrayList<>();
+					}
+					
+					LIST_SUPPLIERS.put(specific.getClass(), supplier);
+				} else {
+					newList = supplier.get();
 				}
 
 				// Convert each object
@@ -361,20 +374,6 @@ public class BukkitConverters {
 				return (Class<Pair<A, B>>) dummy;
 			}
 		});
-	}
-
-	/**
-	 * @deprecated While this solution is not as abhorrent as I had imagined, I still highly recommend switching to the
-	 * new conversion API.
-	 */
-	@Deprecated
-	public static <T> EquivalentConverter<Set<T>> getSetConverter(final Class<?> genericType,
-	                                                              final EquivalentConverter<T> itemConverter) {
-		if (itemConverter instanceof EnumWrappers.EnumConverter) {
-			((EnumWrappers.EnumConverter) itemConverter).setGenericType(genericType);
-		}
-
-		return getSetConverter(itemConverter);
 	}
 
 	/**
