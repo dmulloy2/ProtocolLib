@@ -17,6 +17,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Array;
+import java.util.Optional;
 import java.util.function.Function;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -147,6 +148,26 @@ public class Converters {
 			@Override
 			public Class<T[]> getSpecificType() {
 				return (Class<T[]>) MinecraftReflection.getArrayClass(converter.getSpecificType());
+			}
+		};
+	}
+
+	public static <T> EquivalentConverter<Optional<T>> optional(final EquivalentConverter<T> converter) {
+		return new EquivalentConverter<Optional<T>>() {
+			@Override
+			public Object getGeneric(Optional<T> specific) {
+				return specific.map(converter::getGeneric);
+			}
+
+			@Override
+			public Optional<T> getSpecific(Object generic) {
+				Optional<Object> optional = (Optional<Object>) generic;
+				return optional.map(converter::getSpecific);
+			}
+
+			@Override
+			public Class<Optional<T>> getSpecificType() {
+				return (Class<Optional<T>>) Optional.empty().getClass();
 			}
 		};
 	}

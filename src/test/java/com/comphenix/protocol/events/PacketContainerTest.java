@@ -515,6 +515,24 @@ public class PacketContainerTest {
 		// assertEquals(container.getEnumModifier(Action.class, PacketPlayOutBoss.d.class).read(0), Action.UPDATE_PCT);
 	}
 
+	@Test
+	public void testInternalStructures() {
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.SCOREBOARD_TEAM);
+		Optional<InternalStructure> optStruct = container.getOptionalStructures().read(0);
+		assertTrue(optStruct.isPresent());
+		InternalStructure struct = optStruct.get();
+		struct.getChatComponents().write(0, WrappedChatComponent.fromText("hi there"));
+		container.getOptionalStructures().write(0, Optional.of(struct));
+
+		optStruct = container.getOptionalStructures().read(0);
+		assertTrue(optStruct.isPresent());
+		struct = optStruct.get();
+		testEquality(
+				struct.getChatComponents().read(0),
+				WrappedChatComponent.fromText("hi there")
+		);
+	}
+
 	// @Test
 	public void testDimensions() {
 		// TODO this won't work in testing, but hopefully will in live
