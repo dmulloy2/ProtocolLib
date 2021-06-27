@@ -131,11 +131,11 @@ public class PacketRegistry {
 
 		// Maps we have to occasionally check have changed
 		for (Object map : serverMaps.values()) {
-			REGISTER.addContainer(new MapContainer(map));
+			result.addContainer(new MapContainer(map));
 		}
 
 		for (Object map : clientMaps.values()) {
-			REGISTER.addContainer(new MapContainer(map));
+			result.addContainer(new MapContainer(map));
 		}
 
 		for (Object protocol : protocols) {
