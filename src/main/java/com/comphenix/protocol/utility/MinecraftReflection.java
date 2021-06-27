@@ -225,6 +225,7 @@ public class MinecraftReflection {
 				if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
 					// total rework of the NMS structure in 1.17 (at least there's no versioning)
 					MINECRAFT_FULL_PACKAGE = MINECRAFT_PREFIX_PACKAGE = "net.minecraft";
+					setDynamicPackageMatcher(MINECRAFT_OBJECT);
 				} else {
 					MINECRAFT_FULL_PACKAGE = getPackage(getHandle.getReturnType().getCanonicalName());
 
