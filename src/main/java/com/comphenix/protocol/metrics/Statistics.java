@@ -86,13 +86,7 @@ public class Statistics {
 
 		for (PacketListener listener : ProtocolLibrary.getProtocolManager().getPacketListeners()) {
 			String name = PacketAdapter.getPluginName(listener);
-
-			// Increment occurence
-			if (!users.containsKey(name)) {
-				users.put(name, 1);
-			} else {
-				users.put(name, users.get(name) + 1);
-			}
+			users.put(name, 1);
 		}
 
 		return users;
