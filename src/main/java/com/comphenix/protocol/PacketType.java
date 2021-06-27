@@ -351,7 +351,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType POSITION =                     new PacketType(PROTOCOL, SENDER, 0x11, "Flying$PacketPlayInPosition", "Flying$Position", "CPacketPlayer$Position");
 			public static final PacketType POSITION_LOOK =                new PacketType(PROTOCOL, SENDER, 0x12, "Flying$PacketPlayInPositionLook", "Flying$PositionLook", "CPacketPlayer$PositionRotation");
 			public static final PacketType LOOK =                         new PacketType(PROTOCOL, SENDER, 0x13, "Flying$PacketPlayInLook", "Flying$Look", "CPacketPlayer$Rotation");
-			public static final PacketType GROUND =                       new PacketType(PROTOCOL, SENDER, 0x14, "Flying$d", "Flying", "CPacketPlayer");
+			public static final PacketType GROUND =                       new PacketType(PROTOCOL, SENDER, 0x14, "Flying$d");
 			public static final PacketType VEHICLE_MOVE =                 new PacketType(PROTOCOL, SENDER, 0x15, "VehicleMove", "CPacketVehicleMove");
 			public static final PacketType BOAT_MOVE =                    new PacketType(PROTOCOL, SENDER, 0x16, "BoatMove", "CPacketSteerBoat");
 			public static final PacketType PICK_ITEM =                    new PacketType(PROTOCOL, SENDER, 0x17, "PickItem");
@@ -385,6 +385,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 */
 			@Deprecated
 			public static final PacketType TRANSACTION =                  new PacketType(PROTOCOL, SENDER, 255, "Transaction", "CPacketConfirmTransaction");
+
+			/**
+			 * @deprecated Removed in 1.17
+			 */
+			@Deprecated
+			public static final PacketType FLYING = 					  new PacketType(PROTOCOL, SENDER, 254, "Flying", "CPacketPlayer");
 
 			private final static Client INSTANCE = new Client();
 

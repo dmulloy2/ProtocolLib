@@ -358,6 +358,10 @@ public class PacketRegistry {
 
 		// Then try looking up the class names
 		Class<?> clazz = searchForPacket(type.getClassNames());
+		if (clazz != null) {
+			// we'd like for it to be associated correctly from the get-go; this is OK on older versions though
+			ProtocolLogger.warnAbove(type.getCurrentVersion(), "Updating associated class for {0} to {1}", type.name(), clazz);
+		}
 
 		// cache it for next time
 		associate(type, clazz);

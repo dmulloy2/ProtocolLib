@@ -565,6 +565,7 @@ public abstract class EnumWrappers {
 		List<Field> enumFields = FuzzyReflection.fromClass(clazz, true).getFieldListByType(Enum.class);
 		if (enumFields.size() <= index) {
 			// also probably not supported
+			ProtocolLogger.debug("Enum field not found at index {0} of {1}", index, clazz);
 			return null;
 		}
 

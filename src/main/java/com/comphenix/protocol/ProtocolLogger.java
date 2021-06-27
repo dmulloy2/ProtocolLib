@@ -20,6 +20,7 @@ import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -80,6 +81,12 @@ public class ProtocolLogger {
 	public static void debug(String message, Throwable ex) {
 		if (debugEnabled) {
 			logger.log(Level.WARNING, "[Debug] " + message, ex);
+		}
+	}
+
+	public static void warnAbove(MinecraftVersion version, String message, Object... args) {
+		if (version.atOrAbove()) {
+			log(Level.WARNING, message, args);
 		}
 	}
 }
