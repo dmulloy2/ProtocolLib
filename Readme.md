@@ -10,6 +10,11 @@ Critically, different plugins that use this approach may _hook_ into the same cl
 with unpredictable outcomes. More than often this causes plugins to crash, but it may also
 lead to more subtle bugs.
 
+__ProtocolLib__ attempts to solve this problem by providing a event API, much like Bukkit,
+that allows plugins to monitor, modify, or cancel packets sent and received. But, more importantly,
+the API also hides all the gritty, obfuscated classes with a simple index based read/write system.
+You no longer have to reference CraftBukkit!
+
 Currently maintained by dmulloy2 on behalf of [Spigot](https://www.spigotmc.org/).
 
 ### Resources
@@ -21,13 +26,6 @@ Currently maintained by dmulloy2 on behalf of [Spigot](https://www.spigotmc.org/
 ### Compilation
 
 ProtocolLib is built with Maven and requires Spigot and SpigotAPI, which can be found [here](https://www.spigotmc.org/wiki/buildtools/).
-
-### A new API
-
-__ProtocolLib__ attempts to solve this problem by providing a event API, much like Bukkit,
-that allows plugins to monitor, modify, or cancel packets sent and received. But, more importantly,
-the API also hides all the gritty, obfuscated classes with a simple index based read/write system.
-You no longer have to reference CraftBukkit!
 
 ### Using ProtocolLib
 
