@@ -2250,17 +2250,21 @@ public class MinecraftReflection {
 		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "AttributeBase");
 	}
 
-	public static Class<?> getInt2ObjectMapClass() {
+	public static Class<?> getFastUtilClass(String className) {
 		try {
-			return getMinecraftLibraryClass("it.unimi.dsi.fastutil.ints.Int2ObjectMap");
+			return getMinecraftLibraryClass("it.unimi.dsi.fastutil." + className);
 		} catch (RuntimeException ex) {
-			try {
-				Class<?> clazz = getMinecraftLibraryClass("org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.ints.Int2ObjectMap");
-				setMinecraftLibraryClass("it.unimi.dsi.fastutil.ints.Int2ObjectMap", clazz);
-				return clazz;
-			} catch (RuntimeException ignored) {
-				throw ex;
-			}
+			Class<?> clazz = getMinecraftLibraryClass("org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil." + className);
+			setMinecraftLibraryClass("it.unimi.dsi.fastutil." + className, clazz);
+			return clazz;
 		}
+	}
+
+	public static Class<?> getInt2ObjectMapClass() {
+		return getFastUtilClass("ints.Int2ObjectMap");
+	}
+
+	public static Class<?> getIntArrayListClass() {
+		return getFastUtilClass("ints.IntArrayList");
 	}
 }

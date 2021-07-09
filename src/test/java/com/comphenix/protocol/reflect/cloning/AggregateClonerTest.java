@@ -3,6 +3,7 @@ package com.comphenix.protocol.reflect.cloning;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class AggregateClonerTest {
 
 	@BeforeClass
 	public static void initializeBukkit() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeItemMeta();
 	}
 	
 	@Test
@@ -29,7 +30,8 @@ public class AggregateClonerTest {
 		assertEquals(input, AggregateCloner.DEFAULT.clone(input));
 	}
 
-	@Test
+	// @Test
+	// Usages of NonNullList were removed in 1.17.1
 	public void testNonNullList() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.WINDOW_ITEMS);
 

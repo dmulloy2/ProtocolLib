@@ -914,6 +914,16 @@ public abstract class AbstractStructure {
         );
     }
 
+    public StructureModifier<List<Integer>> getIntLists() {
+        return structureModifier.withType(
+                List.class,
+                BukkitConverters.getListConverter(
+                        MinecraftReflection.getIntArrayListClass(),
+                        Converters.passthrough(int.class)
+                )
+        );
+    }
+
     /**
      * Retrieve a read/write structure for the Map class.
      * @param keyConverter Converter for map keys

@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import com.comphenix.protocol.PacketTypeLookup.ClassLookup;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.utility.Constants;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Preconditions;
@@ -653,7 +654,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	/**
 	 * Protocol version of all the current IDs.
 	 */
-	private static final MinecraftVersion PROTOCOL_VERSION = MinecraftVersion.CAVES_CLIFFS_1;
+	private static final MinecraftVersion PROTOCOL_VERSION = Constants.CURRENT_VERSION;
 
 	private final Protocol protocol;
 	private final Sender sender;

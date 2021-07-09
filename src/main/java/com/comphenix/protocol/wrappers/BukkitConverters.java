@@ -267,7 +267,86 @@ public class BukkitConverters {
 		};
 	}
 
-	private static Map<Class<?>, Supplier<List<Object>>> LIST_SUPPLIERS = new ConcurrentHashMap<>();
+	private static final Map<Class<?>, Supplier<List<Object>>> LIST_SUPPLIERS = new ConcurrentHashMap<>();
+
+	private static <T> Object getGenericList(Class<?> listClass, List<T> specific, EquivalentConverter<T> itemConverter) {
+		List<Object> newList;
+		Supplier<List<Object>> supplier = LIST_SUPPLIERS.get(listClass);
+		if (supplier == null) {
+			try {
+				Constructor<?> ctor = listClass.getConstructor();
+				newList = (List<Object>) ctor.newInstance();
+				supplier = () -> {
+					try {
+						return (List<Object>) ctor.newInstance();
+					} catch (ReflectiveOperationException ex) {
+						throw new RuntimeException(ex);
+					}
+				};
+			} catch (ReflectiveOperationException ex) {
+				ex.printStackTrace();
+				supplier = ArrayList::new;
+				newList = new ArrayList<>();
+			}
+
+			LIST_SUPPLIERS.put(listClass, supplier);
+		} else {
+			newList = supplier.get();
+		}
+
+		// Convert each object
+		for (T position : specific) {
+			if (position != null) {
+				Object converted = itemConverter.getGeneric(position);
+				if (converted != null) {
+					newList.add(converted);
+				}
+			} else {
+				newList.add(null);
+			}
+		}
+
+		return newList;
+	}
+
+	private static <T> List<T> getSpecificList(Object generic, EquivalentConverter<T> itemConverter) {
+		if (generic instanceof Collection) {
+			List<T> items = new ArrayList<>();
+
+			// Copy everything to a new list
+			for (Object item : (Collection<Object>) generic) {
+				T result = itemConverter.getSpecific(item);
+
+				if (item != null)
+					items.add(result);
+			}
+			return items;
+		}
+
+		// Not valid
+		return null;
+	}
+
+	public static <T> EquivalentConverter<List<T>> getListConverter(final Class<?> listClass, final EquivalentConverter<T> itemConverter) {
+		return ignoreNull(new EquivalentConverter<List<T>>() {
+			@Override
+			public List<T> getSpecific(Object generic) {
+				return getSpecificList(generic, itemConverter);
+			}
+
+			@Override
+			public Object getGeneric(List<T> specific) {
+				return getGenericList(listClass, specific, itemConverter);
+			}
+
+			@Override
+			public Class<List<T>> getSpecificType() {
+				// Damn you Java
+				Class<?> dummy = List.class;
+				return (Class<List<T>>) dummy;
+			}
+		});
+	}
 
 	/**
 	 * Retrieve an equivalent converter for a list of generic items.
@@ -280,61 +359,12 @@ public class BukkitConverters {
 		return ignoreNull(new EquivalentConverter<List<T>>() {
 			@Override
 			public List<T> getSpecific(Object generic) {
-				if (generic instanceof Collection) {
-					List<T> items = new ArrayList<>();
-
-					// Copy everything to a new list
-					for (Object item : (Collection<Object>) generic) {
-						T result = itemConverter.getSpecific(item);
-
-						if (item != null)
-							items.add(result);
-					}
-					return items;
-				}
-
-				// Not valid
-				return null;
+				return getSpecificList(generic, itemConverter);
 			}
 
 			@Override
 			public Object getGeneric(List<T> specific) {
-				List<Object> newList;
-				Supplier<List<Object>> supplier = LIST_SUPPLIERS.get(specific.getClass());
-				if (supplier == null) {
-					try {
-						Constructor<?> ctor = specific.getClass().getConstructor();
-						newList = (List<Object>) ctor.newInstance();
-						supplier = () -> {
-							try {
-								return (List<Object>) ctor.newInstance();
-							} catch (ReflectiveOperationException ex) {
-								throw new RuntimeException(ex);
-							}
-						};
-					} catch (ReflectiveOperationException ex) {
-						supplier = ArrayList::new;
-						newList = new ArrayList<>();
-					}
-					
-					LIST_SUPPLIERS.put(specific.getClass(), supplier);
-				} else {
-					newList = supplier.get();
-				}
-
-				// Convert each object
-				for (T position : specific) {
-					if (position != null) {
-						Object converted = itemConverter.getGeneric(position);
-						if (converted != null) {
-							newList.add(converted);
-						}
-					} else {
-						newList.add(null);
-					}
-				}
-
-				return newList;
+				return getGenericList(specific.getClass(), specific, itemConverter);
 			}
 
 			@Override

@@ -386,6 +386,19 @@ public class PacketContainerTest {
 	}
 
 	@Test
+	public void testIntList() {
+		PacketContainer destroy = new PacketContainer(PacketType.Play.Server.ENTITY_DESTROY);
+		destroy.getIntLists().write(0, new ArrayList<Integer>() {{
+			add(420);
+			add(69);
+		}});
+		List<Integer> back = destroy.getIntLists().read(0);
+		assertEquals(back.size(), 2);
+		assertEquals((int) back.get(0), 420);
+		assertEquals((int) back.get(1), 69);
+	}
+
+	@Test
 	public void testAttributeList() {
 		PacketContainer attribute = new PacketContainer(PacketType.Play.Server.UPDATE_ATTRIBUTES);
 		attribute.getIntegers().write(0, 123); // Entity ID
