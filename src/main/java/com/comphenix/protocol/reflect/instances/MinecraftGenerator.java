@@ -14,9 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MinecraftGenerator {
     // system unique id representation
-    private static final UUID SYS_UUID;
+    public static final UUID SYS_UUID;
     // minecraft default types
-    private static final Object AIR_ITEM_STACK;
+    public static final Object AIR_ITEM_STACK;
     private static Object DEFAULT_ENTITY_TYPES; // modern servers only (older servers will use an entity type id)
     // minecraft method accessors
     private static final MethodAccessor NON_NULL_LIST_CREATE;

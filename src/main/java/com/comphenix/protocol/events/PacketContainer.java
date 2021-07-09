@@ -43,6 +43,7 @@ import com.comphenix.protocol.reflect.*;
 import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.reflect.instances.MinecraftGenerator;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -149,11 +150,17 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 		
 		this.type = type;
 
-		if (type == PacketType.Play.Server.CHAT) {
-			getUUIDs().writeSafely(0, new UUID(0L, 0L));
+		setDefaults();
+	}
+
+	private void setDefaults() {
+		if (MinecraftVersion.NETHER_UPDATE.atOrAbove() && type == PacketType.Play.Server.CHAT) {
+			if (!getUUIDs().optionRead(0).isPresent()) {
+				getUUIDs().writeSafely(0, MinecraftGenerator.SYS_UUID);
+			}
 		}
 	}
-	
+
 	/**
 	 * Construct a new packet container from a given handle.
 	 * @param packet - the NMS packet.
