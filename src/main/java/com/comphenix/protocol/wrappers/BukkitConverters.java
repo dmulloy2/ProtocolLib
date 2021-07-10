@@ -284,7 +284,7 @@ public class BukkitConverters {
 					}
 				};
 			} catch (ReflectiveOperationException ex) {
-				ex.printStackTrace();
+				// ex.printStackTrace();
 				supplier = ArrayList::new;
 				newList = new ArrayList<>();
 			}

@@ -150,8 +150,8 @@
 			</activation>
 			<properties>
 				<project.build.number>-b${env.BUILD_NUMBER}</project.build.number>
-				<!--<project.fullVersion>${project.version}${project.build.number}</project.fullVersion>-->
-				<project.fullVersion>${project.version}</project.fullVersion>
+				<project.fullVersion>${project.version}${project.build.number}</project.fullVersion>
+				<!--<project.fullVersion>${project.version}</project.fullVersion>-->
 			</properties>
 		</profile>
 
