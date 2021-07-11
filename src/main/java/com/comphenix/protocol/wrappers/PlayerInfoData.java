@@ -188,7 +188,7 @@ public class PlayerInfoData {
 
 	@Override
 	public String toString() {
-		return String.format("PlayerInfoData[latency=%s, gameMode=%s, profile=%s, displayName=%s",
+		return String.format("PlayerInfoData[latency=%s, gameMode=%s, profile=%s, displayName=%s]",
 				latency, gameMode, profile, displayName);
 	}
 }
