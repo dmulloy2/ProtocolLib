@@ -15,15 +15,16 @@ public class MinecraftFields {
 	// Cached accessors
 	private static volatile FieldAccessor CONNECTION_ACCESSOR;
 	private static volatile FieldAccessor NETWORK_ACCESSOR;
-	
+	private static volatile FieldAccessor CONNECTION_ENTITY_ACCESSOR;
+
 	private MinecraftFields() {
 		// Not constructable
 	}
 	
 	/**
-	 * Retrieve the network mananger associated with a particular player.
+	 * Retrieve the network manager associated with a particular player.
 	 * @param player - the player.
-	 * @return The network manager, or NULL if no network manager has been asssociated yet.
+	 * @return The network manager, or NULL if no network manager has been associated yet.
 	 */
 	public static Object getNetworkManager(Player player) {
 		Object nmsPlayer = BukkitUnwrapper.getInstance().unwrapItem(player);
@@ -50,9 +51,13 @@ public class MinecraftFields {
 		Preconditions.checkNotNull(player, "player cannot be null!");
 		return getPlayerConnection(BukkitUnwrapper.getInstance().unwrapItem(player));
 	}
-	
-	// Retrieve player connection from a native instance
-	private static Object getPlayerConnection(Object nmsPlayer) {
+
+	/**
+	 * Retrieve the PlayerConnection (or NetServerHandler) associated with a player.
+	 * @param nmsPlayer - the NMS player.
+	 * @return The player connection.
+	 */
+	public static Object getPlayerConnection(Object nmsPlayer) {
 		Preconditions.checkNotNull(nmsPlayer, "nmsPlayer cannot be null!");
 
 		if (CONNECTION_ACCESSOR == null) {
@@ -60,5 +65,22 @@ public class MinecraftFields {
 			CONNECTION_ACCESSOR = Accessors.getFieldAccessor(nmsPlayer.getClass(), connectionClass, true);
 		}
 		return CONNECTION_ACCESSOR.get(nmsPlayer);
+	}
+
+	/**
+	 * Retrieves the EntityPlayer player field from a PlayerConnection.
+	 *
+	 * @param playerConnection The PlayerConnection object from which to retrieve the EntityPlayer field.
+	 * @return The value of the EntityPlayer field in the PlayerConnection.
+	 */
+	public static Object getPlayerFromConnection(Object playerConnection) {
+		Preconditions.checkNotNull(playerConnection, "playerConnection cannot be null!");
+
+		if (CONNECTION_ENTITY_ACCESSOR == null) {
+			Class<?> connectionClass = MinecraftReflection.getPlayerConnectionClass();
+			Class<?> entityPlayerClass = MinecraftReflection.getEntityPlayerClass();
+			CONNECTION_ENTITY_ACCESSOR = Accessors.getFieldAccessor(connectionClass, entityPlayerClass, true);
+		}
+		return CONNECTION_ENTITY_ACCESSOR.get(playerConnection);
 	}
 }
