@@ -41,6 +41,7 @@ import javax.annotation.Nonnull;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Server;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.comphenix.protocol.PacketType;
@@ -373,6 +374,21 @@ public class MinecraftReflection {
 			return accessor.invoke(nmsObject);
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Cannot get Bukkit entity from " + nmsObject, e);
+		}
+	}
+
+	/**
+	 * Retrieve the Bukkit player from a given PlayerConnection.
+	 * @param playerConnection The PlayerConnection.
+	 * @return A bukkit player.
+	 * @throws RuntimeException If we were unable to retrieve the Bukkit player.
+	 */
+	public static Player getBukkitPlayerFromConnection(Object playerConnection)
+	{
+		try {
+			return (Player) getBukkitEntity(MinecraftFields.getPlayerFromConnection(playerConnection));
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Cannot get Bukkit entity from connection " + playerConnection, e);
 		}
 	}
 

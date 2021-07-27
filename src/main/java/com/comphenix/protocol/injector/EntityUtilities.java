@@ -28,6 +28,7 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
@@ -67,7 +68,10 @@ class EntityUtilities {
 		Collection<?> trackedPlayers = getTrackedPlayers(entity);
 		List<Object> nmsPlayers = unwrapBukkit(observers);
 
-		trackedPlayers.removeAll(nmsPlayers);
+		List<Object> removingEntries = MinecraftVersion.CAVES_CLIFFS_1.atOrAbove() ?
+				getPlayerConnections(nmsPlayers) : nmsPlayers;
+
+		trackedPlayers.removeAll(removingEntries);
 
 		Object trackerEntry = getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
 
@@ -103,7 +107,9 @@ class EntityUtilities {
 
 		// Wrap every player - we also ensure that the underlying tracker list is immutable
 		for (Object tracker : trackedPlayers) {
-			if (MinecraftReflection.isMinecraftPlayer(tracker)) {
+			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove() && MinecraftReflection.isServerHandler(tracker)) {
+				result.add(MinecraftReflection.getBukkitPlayerFromConnection(tracker));
+			} else if (MinecraftReflection.isMinecraftPlayer(tracker)) {
 				result.add((Player) MinecraftReflection.getBukkitEntity(tracker));
 			}
 		}
@@ -264,6 +270,12 @@ class EntityUtilities {
 		} catch (Exception e) {
 			throw new FieldAccessException("Cannot find entity from ID " + entityID + ".", e);
 		}
+	}
+
+	private List<Object> getPlayerConnections(List<Object> nmsPlayers) {
+		List<Object> connections = new ArrayList<>(nmsPlayers.size());
+		nmsPlayers.forEach(nmsPlayer -> connections.add(MinecraftFields.getPlayerConnection(nmsPlayer)));
+		return connections;
 	}
 
 	private List<Object> unwrapBukkit(List<Player> players) {
