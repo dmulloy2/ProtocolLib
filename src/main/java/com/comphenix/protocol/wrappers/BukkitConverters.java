@@ -717,7 +717,7 @@ public class BukkitConverters {
 					ProtocolManager manager = managerRef.get();
 					
 					// Use the entity ID to get a reference to the entity
-					if (id != null && manager != null) {
+					if (id != null && id >= 0 && manager != null) {
 						return manager.getEntityFromID(world, id);
 					} else {
 						return null;
