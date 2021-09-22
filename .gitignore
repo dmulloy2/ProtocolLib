@@ -180,3 +180,4 @@ logs/
 .gradle/
 build/
 logs/
+.java-version

@@ -40,12 +40,27 @@ public class BukkitInitialization {
 	private boolean initialized;
 	private boolean packaged;
 
-	public static synchronized void initializePackage() {
-		instance.setPackage();
+	/**
+	 * Statically initializes the mock server for unit testing
+	 */
+	public static synchronized void initializeAll() {
+		instance.initialize();
 	}
 
+	/**
+	 * @deprecated - Replaced with initializeAll()
+	 */
+	@Deprecated
+	public static synchronized void initializePackage() {
+		initializeAll();
+	}
+
+	/**
+	 * @deprecated - Replaced with initializeAll()
+	 */
+	@Deprecated
 	public static synchronized void initializeItemMeta() {
-		instance.initialize();
+		initializeAll();
 	}
 
 	/**
@@ -63,7 +78,7 @@ public class BukkitInitialization {
 				ex.printStackTrace();
 			}
 
-			initializePackage();
+			instance.setPackage();
 
 			SharedConstants.a();
 			DispenserRegistry.init();

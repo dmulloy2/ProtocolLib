@@ -12,9 +12,8 @@ jobs:
       - name: Setup java
         uses: actions/setup-java@v2
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: '16'
-          check-latest: true
 
       - name: Run maven build lifecycle
         run: mvn --batch-mode clean test package
