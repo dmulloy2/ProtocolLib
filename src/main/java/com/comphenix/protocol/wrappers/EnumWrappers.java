@@ -384,6 +384,7 @@ public abstract class EnumWrappers {
 		SWIMMING, 
 		SPIN_ATTACK, 
 		CROUCHING,
+		LONG_JUMPING,
 		DYING;
 		
 		private final static EquivalentConverter<EntityPose> POSE_CONVERTER = EnumWrappers.getEntityPoseConverter();
