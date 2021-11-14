@@ -6,7 +6,8 @@ import io.netty.util.Version;
 import java.util.Map;
 
 public class NettyVersion {
-    private final static String NETTY_ARTIFACT_ID = "netty-common";
+    private final static String NETTY_COMMON_ID = "netty-common";
+    private final static String NETTY_ALL_ID = "netty-all";
     private static NettyVersion version;
 
     public static NettyVersion getVersion() {
@@ -18,7 +19,10 @@ public class NettyVersion {
 
     private static NettyVersion detectVersion() {
         Map<String, Version> nettyArtifacts = Version.identify();
-        Version version = nettyArtifacts.get(NETTY_ARTIFACT_ID);
+        Version version = nettyArtifacts.get(NETTY_COMMON_ID);
+        if(version == null) {
+            version = nettyArtifacts.get(NETTY_ALL_ID);
+        }
         if(version != null) {
             return new NettyVersion(version.artifactVersion());
         }
