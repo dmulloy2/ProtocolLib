@@ -19,6 +19,7 @@ package com.comphenix.protocol.wrappers;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -26,7 +27,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
-import com.google.common.base.Objects;
 
 /**
  * Represents an immutable PlayerInfoData in the PLAYER_INFO packet.
@@ -176,19 +176,19 @@ public class PlayerInfoData {
 		if (obj instanceof PlayerInfoData) {
 			PlayerInfoData other = (PlayerInfoData) obj;
 			return profile.equals(other.profile) && latency == other.latency && gameMode == other.gameMode
-					&& displayName.equals(other.displayName);
+					&& Objects.equals(displayName, other.displayName);
 		}
 		return false;
 	}
 	
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(latency, gameMode, profile, displayName);
+		return Objects.hash(latency, gameMode, profile, displayName);
 	}
 
 	@Override
 	public String toString() {
-		return String.format("PlayerInfoData[latency=%s, gameMode=%s, profile=%s, displayName=%s",
+		return String.format("PlayerInfoData[latency=%s, gameMode=%s, profile=%s, displayName=%s]",
 				latency, gameMode, profile, displayName);
 	}
 }
