@@ -363,7 +363,7 @@ public class PipelineProxy implements ChannelPipeline {
 	public ChannelFuture writeAndFlush(Object arg0) {
 		return pipeline.writeAndFlush(arg0);
 	}
-
+/*
 	@Override
 	public ChannelPromise newPromise() {
 		return pipeline.newPromise();
@@ -387,5 +387,5 @@ public class PipelineProxy implements ChannelPipeline {
 	@Override
 	public ChannelPromise voidPromise() {
 		return pipeline.voidPromise();
-	}
+	}*/
 }

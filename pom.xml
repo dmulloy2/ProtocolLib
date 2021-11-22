@@ -277,11 +277,25 @@
 	</repositories>
 
 	<dependencies>
+		<!-- Compile with the old version of Netty for backwards compat -->
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.1.70.Final</version>
+			<version>4.0.23.Final</version>
 			<scope>provided</scope>
+		</dependency>
+		<!-- since 1.18 minecraft uses new features of netty but netty is no longer bundled - make sure the new classes are available -->
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-common</artifactId>
+			<version>4.1.70.Final</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-transport</artifactId>
+			<version>4.1.70.Final</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.spigotmc</groupId>
