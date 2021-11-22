@@ -37,7 +37,6 @@ import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.google.common.base.Charsets;
 
-import org.apache.commons.io.HexDump;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
