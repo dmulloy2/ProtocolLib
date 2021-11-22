@@ -46,7 +46,11 @@ public class WrappedRegistry {
 
         REGISTRY = ImmutableMap.copyOf(regMap);
 
-        GET = Accessors.getMethodAccessor(regClass, "get", MinecraftReflection.getMinecraftKeyClass());
+        if (MinecraftVersion.CAVES_CLIFFS_2.atOrAbove()) {
+            GET = Accessors.getMethodAccessor(regClass, "a", MinecraftReflection.getMinecraftKeyClass());
+        } else {
+            GET = Accessors.getMethodAccessor(regClass, "get", MinecraftReflection.getMinecraftKeyClass());
+        }
 
         FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
         GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract

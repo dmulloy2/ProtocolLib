@@ -23,9 +23,9 @@ import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.GlassPane;
-import org.bukkit.craftbukkit.v1_17_R1.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_17_R1.block.impl.CraftStainedGlassPane;
-import org.bukkit.craftbukkit.v1_17_R1.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_18_R1.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_18_R1.block.impl.CraftStainedGlassPane;
+import org.bukkit.craftbukkit.v1_18_R1.util.CraftMagicNumbers;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -60,7 +60,7 @@ public class WrappedBlockDataTest {
 
 	@Test
 	public void testDataCreation() {
-		IBlockData nmsData = CraftMagicNumbers.getBlock(Material.CYAN_STAINED_GLASS_PANE).getBlockData();
+		IBlockData nmsData = CraftMagicNumbers.getBlock(Material.CYAN_STAINED_GLASS_PANE).n();
 		GlassPane data = (GlassPane) CraftBlockData.fromData(nmsData);
 		data.setFace(BlockFace.EAST, true);
 

@@ -4,7 +4,7 @@
     <groupId>com.comphenix.protocol</groupId>
 	<artifactId>ProtocolLib</artifactId>
 	<name>ProtocolLib</name>
-	<version>4.7.1-SNAPSHOT</version>
+	<version>4.7.2-SNAPSHOT</version>
 
 	<description>Provides read/write access to the Minecraft protocol.</description>
 	<url>https://github.com/dmulloy2/ProtocolLib</url>
@@ -16,8 +16,8 @@
 		<project.build.number></project.build.number>
 		<project.fullVersion>${project.version}</project.fullVersion>
 
-		<powermock.version>2.0.7</powermock.version>
-		<spigot.version>1.17.1-R0.1-SNAPSHOT</spigot.version>
+		<powermock.version>2.0.9</powermock.version>
+		<spigot.version>1.18-pre5-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
 	<build>
@@ -110,7 +110,7 @@
 					</systemProperties>
 					<!-- TODO figure out a better way to do this before Java 17 -->
 					<!-- We're currently waiting on powermock, but we may need to switch -->
-					<argLine>--illegal-access=permit</argLine>
+					<argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED</argLine>
 				</configuration>
 			</plugin>
 
@@ -277,11 +277,10 @@
 	</repositories>
 
 	<dependencies>
-		<!-- Compile with the old version of Netty for backwards compat -->
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.0.23.Final</version>
+			<version>4.1.70.Final</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -306,14 +305,14 @@
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.11.0</version>
+			<version>1.12.1</version>
 		</dependency>
 
 		<!-- Testing dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
+			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

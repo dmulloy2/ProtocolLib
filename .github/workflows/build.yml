@@ -13,7 +13,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: 'temurin'
-          java-version: '16'
+          java-version: '17'
 
       - name: Run maven build lifecycle
         run: mvn --batch-mode clean test package

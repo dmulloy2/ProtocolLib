@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
 
 // Damn final classes
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
+@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "org.bukkit.craftbukkit.libs.jline.*" })
 @PrepareForTest(PluginDescriptionFile.class)
 public class PluginVerifierTest {
 	@Test

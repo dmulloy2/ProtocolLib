@@ -115,6 +115,12 @@ public abstract class ChannelProxy implements Channel {
 		if (loopProxy == null) {
 			loopProxy = new EventLoopProxy() {
 				@Override
+				public ChannelFuture register(ChannelPromise channelPromise) {
+					channelPromise.channel().unsafe().register(this, channelPromise);
+					return channelPromise;
+				}
+
+				@Override
 				protected EventLoop getDelegate() {
 					return delegate.eventLoop();
 				}

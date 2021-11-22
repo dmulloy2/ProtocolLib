@@ -25,8 +25,8 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObje
 
 import net.minecraft.world.entity.projectile.EntityEgg;
 
-import org.bukkit.craftbukkit.v1_17_R1.entity.CraftEgg;
-import org.bukkit.craftbukkit.v1_17_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_18_R1.entity.CraftEgg;
+import org.bukkit.craftbukkit.v1_18_R1.entity.CraftEntity;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

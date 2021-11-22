@@ -33,7 +33,7 @@ import com.google.common.io.Files;
 // TODO Migrate this to Gradle if necessary
 // Damn final classes ...
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*" })
+@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "org.bukkit.craftbukkit.libs.jline.*" })
 @PrepareForTest(PluginDescriptionFile.class)
 public class SimpleCraftBukkitITCase {
 	// The fake plugin

@@ -1,11 +1,11 @@
 package com.comphenix.protocol;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
 import java.util.Collections;
 import java.util.List;
 
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.utility.Constants;
-import com.mojang.bridge.game.GameVersion;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.core.IRegistry;
@@ -16,10 +16,10 @@ import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_17_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_17_R1.util.Versioning;
+import org.bukkit.craftbukkit.v1_18_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_18_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_18_R1.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.Mockito.mock;
@@ -81,7 +81,7 @@ public class BukkitInitialization {
 			instance.setPackage();
 
 			SharedConstants.a();
-			DispenserRegistry.init();
+			DispenserRegistry.a();
 
 			try {
 				IRegistry.class.getName();
@@ -89,12 +89,15 @@ public class BukkitInitialization {
 				ex.printStackTrace();
 			}
 
+			String releaseTarget = SharedConstants.b().getReleaseTarget();
+			String serverVersion = CraftServer.class.getPackage().getImplementationVersion();
+
 			// Mock the server object
 			Server mockedServer = mock(Server.class);
 
 			when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
 			when(mockedServer.getName()).thenReturn("Mock Server");
-			when(mockedServer.getVersion()).thenReturn(CraftServer.class.getPackage().getImplementationVersion());
+			when(mockedServer.getVersion()).thenReturn(serverVersion + " (MC: " + releaseTarget + ")");
 			when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
 
 			when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
