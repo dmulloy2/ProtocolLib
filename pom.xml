@@ -116,7 +116,7 @@
 
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.3.1</version>
 				<configuration>
 					<failOnError>false</failOnError>
 					<encoding>ISO-8859-1</encoding>
@@ -312,7 +312,7 @@
 		<dependency>
 			<groupId>net.kyori</groupId>
 			<artifactId>adventure-text-serializer-gson</artifactId>
-			<version>4.5.1</version>
+			<version>4.9.3</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
@@ -332,7 +332,7 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>3.5.10</version>
+			<version>3.12.4</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
