@@ -298,7 +298,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 			// Intercept all write methods
 			channelField.setValue(new ChannelProxy(originalChannel, MinecraftReflection.getPacketClass()) {
-
 				// Compatibility with Spigot 1.8
 				private final PipelineProxy pipelineProxy = new PipelineProxy(originalChannel.pipeline(), this) {
 					@Override
