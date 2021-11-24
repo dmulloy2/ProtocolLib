@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -206,7 +207,8 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 			if (HEX_DUMP == null) {
 				Class<?> hexDumpClass = MinecraftReflection.getLibraryClass("org.apache.commons.io.HexDump");
-				HEX_DUMP = Accessors.getMethodAccessor(FuzzyReflection.fromClass(hexDumpClass).getMethodByName("dump"));
+				HEX_DUMP = Accessors.getMethodAccessor(FuzzyReflection.fromClass(hexDumpClass)
+						.getMethodByParameters("dump", byte[].class, long.class, OutputStream.class, int.class));
 			}
 
 			HEX_DUMP.invoke(null, bytes, 0, output, 0);
