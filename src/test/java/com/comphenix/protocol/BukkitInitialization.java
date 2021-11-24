@@ -1,6 +1,5 @@
 package com.comphenix.protocol;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
 import java.util.Collections;
 import java.util.List;
 
