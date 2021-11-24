@@ -2267,13 +2267,7 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getFastUtilClass(String className) {
-		try {
-			return getMinecraftLibraryClass("it.unimi.dsi.fastutil." + className);
-		} catch (RuntimeException ex) {
-			Class<?> clazz = getMinecraftLibraryClass("org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil." + className);
-			setMinecraftLibraryClass("it.unimi.dsi.fastutil." + className, clazz);
-			return clazz;
-		}
+		return getLibraryClass("it.unimi.dsi.fastutil." + className);
 	}
 
 	public static Class<?> getInt2ObjectMapClass() {
@@ -2282,5 +2276,15 @@ public class MinecraftReflection {
 
 	public static Class<?> getIntArrayListClass() {
 		return getFastUtilClass("ints.IntArrayList");
+	}
+
+	public static Class<?> getLibraryClass(String classname) {
+		try {
+			return getMinecraftLibraryClass(classname);
+		} catch (RuntimeException ex) {
+			Class<?> clazz = getMinecraftLibraryClass("org.bukkit.craftbukkit.libs." + classname);
+			setMinecraftLibraryClass(classname, clazz);
+			return clazz;
+		}
 	}
 }

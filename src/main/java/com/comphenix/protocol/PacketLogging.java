@@ -16,10 +16,6 @@
  */
 package com.comphenix.protocol;
 
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +31,10 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Charsets;
 
 import org.bukkit.ChatColor;
@@ -205,18 +205,7 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 	private static String hexDump(byte[] bytes) throws IOException {
 		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 			if (HEX_DUMP == null) {
-				// since 1.18 all craft bukkit libs are no longer relocated
-				Class<?> hexDumpClass;
-				try {
-					if (MinecraftVersion.CAVES_CLIFFS_2.atOrAbove()) {
-						hexDumpClass = Class.forName("org.apache.commons.io.HexDump");
-					} else {
-						hexDumpClass = Class.forName("org.bukkit.craftbukkit.libs.org.apache.commons.io.HexDump");
-					}
-				} catch (ClassNotFoundException exception) {
-					throw new RuntimeException("Failed to find HexDump class");
-				}
-
+				Class<?> hexDumpClass = MinecraftReflection.getLibraryClass("org.apache.commons.io.HexDump");
 				HEX_DUMP = Accessors.getMethodAccessor(FuzzyReflection.fromClass(hexDumpClass).getMethodByName("dump"));
 			}
 
