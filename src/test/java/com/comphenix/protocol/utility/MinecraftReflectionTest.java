@@ -31,7 +31,7 @@ import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.block.state.IBlockData;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "org.bukkit.craftbukkit.libs.jline.*" })
+@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
 public class MinecraftReflectionTest {
 
 	@BeforeClass

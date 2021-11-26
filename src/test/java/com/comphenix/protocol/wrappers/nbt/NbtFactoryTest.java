@@ -48,7 +48,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "org.bukkit.craftbukkit.libs.jline.*" })
+@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
 //@PrepareForTest(CraftItemFactory.class)
 public class NbtFactoryTest {
 	@BeforeClass

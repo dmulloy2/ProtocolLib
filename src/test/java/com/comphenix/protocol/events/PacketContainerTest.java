@@ -76,7 +76,7 @@ import static org.junit.Assert.*;
 
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "org.bukkit.craftbukkit.libs.jline.*", "javax.management.*", "javax.xml.parsers.*", "com.sun.org.apache.xerces.internal.jaxp.*" })
+@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
 //@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
 	// Helper converters
