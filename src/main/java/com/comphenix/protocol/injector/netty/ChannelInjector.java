@@ -44,6 +44,7 @@ import com.google.common.base.Preconditions;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.AttributeKey;
@@ -157,6 +158,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	// Other handlers
 	private ByteToMessageDecoder vanillaDecoder;
+	private MessageToMessageDecoder customDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
 
 	private final Deque<PacketEvent> finishQueue = new ArrayDeque<>();
@@ -209,7 +211,13 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 					ChannelHandlerContext.class, ByteBuf.class, List.class);
 			decodeBuffer.setAccessible(true);
 		} catch (NoSuchMethodException ex) {
-			throw new IllegalArgumentException("Unable to find decode method in " + vanillaDecoder.getClass());
+			try {
+			decodeBuffer = customDecoder.getClass().getDeclaredMethod("decode",
+					ChannelHandlerContext.class, ByteBuf.class, List.class);
+			decodeBuffer.setAccessible(true);
+			} catch (NoSuchMethodException ex) {
+				throw new IllegalArgumentException("Unable to find decode method in " + vanillaDecoder.getClass());
+			}
 		}
 
 		try {
@@ -247,10 +255,14 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 			// Get the vanilla decoder, so we don't have to replicate the work
 			vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
+			customDecoder = (MessageToMessageDecoder) originalChannel.pipeline().get("decoder");
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 
-			if (vanillaDecoder == null)
-				throw new IllegalArgumentException("Unable to find vanilla decoder in " + originalChannel.pipeline());
+			if (vanillaDecoder == null) {
+				if (customDecoder == null) {
+				throw new IllegalArgumentException("Unable to find a vanilla or custom decoder in " + originalChannel.pipeline());
+				}
+			}
 			if (vanillaEncoder == null)
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
 			patchEncoder(vanillaEncoder);
@@ -565,11 +577,20 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
 		try {
+			if (vanillaDecoder != null) {
 			try {
 				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
 			} catch (IllegalArgumentException ex) {
 				updateBufferMethods();
 				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
+			}
+			} else {
+			try {
+				decodeBuffer.invoke(customDecoder, ctx, byteBuffer, packets);
+			} catch (IllegalArgumentException ex) {
+				updateBufferMethods();
+				decodeBuffer.invoke(customDecoder, ctx, byteBuffer, packets);
+			}
 			}
 
 			// Reset queue
