@@ -172,6 +172,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// Closed
 	private boolean injected;
 	private boolean closed;
+	private boolean useCustomDecoder;
 
 	/**
 	 * Construct a new channel injector.
@@ -207,12 +208,12 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	private void updateBufferMethods() {
 		try {
-			decodeBuffer = vanillaDecoder != null ? vanillaDecoder.getClass().getDeclaredMethod("decode",
+			decodeBuffer = !useCustomDecoder ? vanillaDecoder.getClass().getDeclaredMethod("decode",
 					ChannelHandlerContext.class, ByteBuf.class, List.class) : customDecoder.getClass().getDeclaredMethod("decode",
 					ChannelHandlerContext.class, ByteBuf.class, List.class);
 			decodeBuffer.setAccessible(true);
 		} catch (NoSuchMethodException ex) {
-			Class<?> type = vanillaDecoder != null ? vanillaDecoder.getClass() : customDecoder.getClass();
+			Class<?> type = !useCustomDecoder ? vanillaDecoder.getClass() : customDecoder.getClass();
 			throw new IllegalArgumentException("Unable to find decode method in " + type);
 		}
 
@@ -250,8 +251,16 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			}
 
 			// Get the vanilla decoder, so we don't have to replicate the work
-			vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
-			customDecoder = (MessageToMessageDecoder<ByteBuf>) originalChannel.pipeline().get("decoder");
+			try {
+				vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
+			} catch (ClassCastException ignored) {
+				useCustomDecoder = true;
+			}
+			try {
+				customDecoder = (MessageToMessageDecoder<ByteBuf>) originalChannel.pipeline().get("decoder");
+			} catch (ClassCastException ignored) {
+				useCustomDecoder = false;
+			}
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 
 			if (vanillaDecoder == null && customDecoder == null) {
@@ -573,14 +582,14 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
 		try {
 			try {
-				if (vanillaDecoder == null) {
+				if (useCustomDecoder) {
 					decodeBuffer.invoke(customDecoder, ctx, byteBuffer, packets);
 				} else {
 					decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
 				}
 			} catch (IllegalArgumentException ex) {
 				updateBufferMethods();
-				if (vanillaDecoder == null) {
+				if (useCustomDecoder) {
 					decodeBuffer.invoke(customDecoder, ctx, byteBuffer, packets);
 				} else {
 					decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
