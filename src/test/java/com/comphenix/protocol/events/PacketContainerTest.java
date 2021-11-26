@@ -664,6 +664,14 @@ public class PacketContainerTest {
 	}
 
 	@Test
+	public void testSetSimulationDistance() {
+		// first packet which is a record - set will fail if we missed something during patching
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.UPDATE_SIMULATION_DISTANCE);
+		container.getIntegers().write(0, 1234);
+		assertEquals(1234, (int) container.getIntegers().read(0));
+	}
+
+	@Test
 	public void testMapChunk() {
 		// this is a special case as we are generating a data serializer class (we only need to construct the packet)
 		PacketContainer container = new PacketContainer(PacketType.Play.Server.MAP_CHUNK);
