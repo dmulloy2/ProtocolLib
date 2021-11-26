@@ -255,16 +255,19 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
 			} catch (ClassCastException ignored) {
 				useCustomDecoder = true;
-			}
-			try {
-				customDecoder = (MessageToMessageDecoder<ByteBuf>) originalChannel.pipeline().get("decoder");
-			} catch (ClassCastException ignored) {
-				useCustomDecoder = false;
+				try {
+					customDecoder = (MessageToMessageDecoder<ByteBuf>) originalChannel.pipeline().get("decoder");
+				} catch (ClassCastException ignored1) {
+					useCustomDecoder = false;
+					throw new IllegalArgumentException("Unable to find vanilla or custom decoder in " + originalChannel.pipeline() + " (not supported implementation?)");
+				}
 			}
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 
-			if (vanillaDecoder == null && customDecoder == null) {
-				throw new IllegalArgumentException("Unable to find vanilla or custom decoder in " + originalChannel.pipeline());
+			if (!useCustomDecoder && vanillaDecoder == null) {
+				throw new IllegalArgumentException("Unable to find vanilla decoder in " + originalChannel.pipeline());
+			} else if (useCustomDecoder && customDecoder == null) {
+				throw new IllegalArgumentException("Unable to find custom decoder in " + originalChannel.pipeline());
 			}
 			if (vanillaEncoder == null) {
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
