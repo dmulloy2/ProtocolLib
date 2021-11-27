@@ -44,7 +44,6 @@ import com.google.common.base.Preconditions;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.AttributeKey;
@@ -157,8 +156,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	private final PacketFilterQueue unfilteredProcessedPackets = new PacketFilterQueue();
 
 	// Other handlers
-	private ByteToMessageDecoder vanillaDecoder;
-	private MessageToMessageDecoder<ByteBuf> customDecoder;
+	private ChannelInboundHandler vanillaDecoder;
 	private MessageToByteEncoder<Object> vanillaEncoder;
 
 	private final Deque<PacketEvent> finishQueue = new ArrayDeque<>();
@@ -172,7 +170,6 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	// Closed
 	private boolean injected;
 	private boolean closed;
-	private boolean useCustomDecoder;
 
 	/**
 	 * Construct a new channel injector.
@@ -208,12 +205,11 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	private void updateBufferMethods() {
 		try {
-			decodeBuffer = !useCustomDecoder ? vanillaDecoder.getClass().getDeclaredMethod("decode",
-					ChannelHandlerContext.class, ByteBuf.class, List.class) : customDecoder.getClass().getDeclaredMethod("decode",
+			decodeBuffer = vanillaDecoder.getClass().getDeclaredMethod("decode",
 					ChannelHandlerContext.class, ByteBuf.class, List.class);
 			decodeBuffer.setAccessible(true);
 		} catch (NoSuchMethodException ex) {
-			Class<?> type = !useCustomDecoder ? vanillaDecoder.getClass() : customDecoder.getClass();
+			Class<?> type = vanillaDecoder.getClass();
 			throw new IllegalArgumentException("Unable to find decode method in " + type);
 		}
 
@@ -251,23 +247,12 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			}
 
 			// Get the vanilla decoder, so we don't have to replicate the work
-			try {
-				vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
-			} catch (ClassCastException ignored) {
-				useCustomDecoder = true;
-				try {
-					customDecoder = (MessageToMessageDecoder<ByteBuf>) originalChannel.pipeline().get("decoder");
-				} catch (ClassCastException ignored1) {
-					useCustomDecoder = false;
-					throw new IllegalArgumentException("Unable to find vanilla or custom decoder in " + originalChannel.pipeline() + " (not supported implementation?)");
-				}
-			}
+			vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
+
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 
-			if (!useCustomDecoder && vanillaDecoder == null) {
+			if (vanillaDecoder == null) {
 				throw new IllegalArgumentException("Unable to find vanilla decoder in " + originalChannel.pipeline());
-			} else if (useCustomDecoder && customDecoder == null) {
-				throw new IllegalArgumentException("Unable to find custom decoder in " + originalChannel.pipeline());
 			}
 			if (vanillaEncoder == null) {
 				throw new IllegalArgumentException("Unable to find vanilla encoder in " + originalChannel.pipeline());
@@ -585,18 +570,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuffer, List<Object> packets) throws Exception {
 		try {
 			try {
-				if (useCustomDecoder) {
-					decodeBuffer.invoke(customDecoder, ctx, byteBuffer, packets);
-				} else {
-					decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
-				}
+				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
 			} catch (IllegalArgumentException ex) {
 				updateBufferMethods();
-				if (useCustomDecoder) {
-					decodeBuffer.invoke(customDecoder, ctx, byteBuffer, packets);
-				} else {
-					decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
-				}
+				decodeBuffer.invoke(vanillaDecoder, ctx, byteBuffer, packets);
 			}
 
 			// Reset queue
