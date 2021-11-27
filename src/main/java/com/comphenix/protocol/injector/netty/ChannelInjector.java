@@ -247,7 +247,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			}
 
 			// Get the vanilla decoder, so we don't have to replicate the work
-			vanillaDecoder = (ByteToMessageDecoder) originalChannel.pipeline().get("decoder");
+			vanillaDecoder = (ChannelInboundHandler) originalChannel.pipeline().get("decoder");
 
 			vanillaEncoder = (MessageToByteEncoder<Object>) originalChannel.pipeline().get("encoder");
 
