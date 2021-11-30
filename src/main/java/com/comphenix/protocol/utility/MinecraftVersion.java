@@ -45,6 +45,11 @@ public class MinecraftVersion implements Comparable<MinecraftVersion>, Serializa
 	private static final Pattern VERSION_PATTERN = Pattern.compile(".*\\(.*MC.\\s*([a-zA-z0-9\\-.]+).*");
 
 	/**
+	 * Version 1.18 - caves and cliffs part 2
+	 */
+	public static final MinecraftVersion CAVES_CLIFFS_2 = new MinecraftVersion("1.18");
+
+	/**
 	 * Version 1.17 - caves and cliffs part 1
 	 */
 	public static final MinecraftVersion CAVES_CLIFFS_1 = new MinecraftVersion("1.17");

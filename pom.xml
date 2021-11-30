@@ -4,7 +4,7 @@
     <groupId>com.comphenix.protocol</groupId>
 	<artifactId>ProtocolLib</artifactId>
 	<name>ProtocolLib</name>
-	<version>4.7.1-SNAPSHOT</version>
+	<version>4.7.2-SNAPSHOT</version>
 
 	<description>Provides read/write access to the Minecraft protocol.</description>
 	<url>https://github.com/dmulloy2/ProtocolLib</url>
@@ -16,8 +16,8 @@
 		<project.build.number></project.build.number>
 		<project.fullVersion>${project.version}</project.fullVersion>
 
-		<powermock.version>2.0.7</powermock.version>
-		<spigot.version>1.17.1-R0.1-SNAPSHOT</spigot.version>
+		<powermock.version>2.0.9</powermock.version>
+		<spigot.version>1.18-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
 	<build>
@@ -110,13 +110,13 @@
 					</systemProperties>
 					<!-- TODO figure out a better way to do this before Java 17 -->
 					<!-- We're currently waiting on powermock, but we may need to switch -->
-					<argLine>--illegal-access=permit</argLine>
+					<argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED</argLine>
 				</configuration>
 			</plugin>
 
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.3.1</version>
 				<configuration>
 					<failOnError>false</failOnError>
 					<encoding>ISO-8859-1</encoding>
@@ -284,6 +284,19 @@
 			<version>4.0.23.Final</version>
 			<scope>provided</scope>
 		</dependency>
+		<!-- since 1.18 minecraft uses new features of netty but netty is no longer bundled - make sure the new classes are available -->
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-common</artifactId>
+			<version>4.1.70.Final</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-transport</artifactId>
+			<version>4.1.70.Final</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
@@ -299,27 +312,27 @@
 		<dependency>
 			<groupId>net.kyori</groupId>
 			<artifactId>adventure-text-serializer-gson</artifactId>
-			<version>4.5.1</version>
+			<version>4.9.3</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.11.0</version>
+			<version>1.12.1</version>
 		</dependency>
 
 		<!-- Testing dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
+			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>3.5.10</version>
+			<version>3.12.4</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

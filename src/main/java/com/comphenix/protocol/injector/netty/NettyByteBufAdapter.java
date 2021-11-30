@@ -54,7 +54,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	private static FieldAccessor READER_INDEX;
 	private static FieldAccessor WRITER_INDEX;
 	
-	private static final int CAPACITY = Short.MAX_VALUE;
+	private static final int CAPACITY = Integer.MAX_VALUE;
 	
 	private NettyByteBufAdapter(DataInputStream input, DataOutputStream output) {
 		// Just pick a figure

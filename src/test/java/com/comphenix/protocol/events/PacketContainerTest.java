@@ -76,7 +76,7 @@ import static org.junit.Assert.*;
 
 // Ensure that the CraftItemFactory is mockable
 @RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.log4j.*", "org.apache.logging.*", "org.bukkit.craftbukkit.libs.jline.*", "javax.management.*", "javax.xml.parsers.*", "com.sun.org.apache.xerces.internal.jaxp.*" })
+@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
 //@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
 	// Helper converters
@@ -191,7 +191,7 @@ public class PacketContainerTest {
 	@Test
 	public void testGetIntegerArrays() {
 		// Contains a byte array we will test
-		PacketContainer packet = new PacketContainer(PacketType.Play.Server.MAP_CHUNK);
+		PacketContainer packet = new PacketContainer(PacketType.Play.Server.MOUNT);
 		StructureModifier<int[]> integers = packet.getIntegerArrays();
 		int[] testArray = new int[] { 1, 2, 3 };
 
@@ -411,7 +411,7 @@ public class PacketContainerTest {
 		// are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
 		// members of the packet itself)
 		PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
-		AttributeBase base = IRegistry.al.get(MinecraftKey.a("generic.max_health"));
+		AttributeBase base = IRegistry.am.a(MinecraftKey.a("generic.max_health"));
 		AttributeSnapshot snapshot = new AttributeSnapshot(base, 20.0D, modifiers);
 		attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 
@@ -461,7 +461,7 @@ public class PacketContainerTest {
 	@SuppressWarnings("deprecation")
 	public void testPotionEffect() {
 		PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
-		MobEffect mobEffect = new MobEffect(MobEffectList.fromId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(),
+		MobEffect mobEffect = new MobEffect(MobEffectList.a(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(),
 				effect.hasParticles());
 		int entityId = 42;
 		
@@ -664,11 +664,19 @@ public class PacketContainerTest {
 	}
 
 	@Test
+	public void testSetSimulationDistance() {
+		// first packet which is a record - set will fail if we missed something during patching
+		PacketContainer container = new PacketContainer(PacketType.Play.Server.UPDATE_SIMULATION_DISTANCE);
+		container.getIntegers().write(0, 1234);
+		assertEquals(1234, (int) container.getIntegers().read(0));
+	}
+
+	@Test
 	public void testMapChunk() {
 		// this is a special case as we are generating a data serializer class (we only need to construct the packet)
 		PacketContainer container = new PacketContainer(PacketType.Play.Server.MAP_CHUNK);
 		// check if we can read an nbt compound from the class
-		assertTrue(container.getNbtModifier().optionRead(0).isPresent());
+		assertTrue(container.getStructures().read(0).getNbtModifier().optionRead(0).isPresent());
 	}
 
 	/**

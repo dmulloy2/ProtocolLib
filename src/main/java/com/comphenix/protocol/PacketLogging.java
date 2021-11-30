@@ -19,6 +19,7 @@ package com.comphenix.protocol;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,13 +32,16 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Charsets;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.libs.org.apache.commons.io.HexDump;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -46,6 +50,8 @@ import org.bukkit.plugin.Plugin;
  */
 public class PacketLogging implements CommandExecutor, PacketListener {
 	public static final String NAME = "packetlog";
+
+	private static MethodAccessor HEX_DUMP;
 
 	private List<PacketType> sendingTypes = new ArrayList<>();
 	private List<PacketType> receivingTypes = new ArrayList<>();
@@ -199,7 +205,13 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 
 	private static String hexDump(byte[] bytes) throws IOException {
 		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-			HexDump.dump(bytes, 0, output, 0);
+			if (HEX_DUMP == null) {
+				Class<?> hexDumpClass = MinecraftReflection.getLibraryClass("org.apache.commons.io.HexDump");
+				HEX_DUMP = Accessors.getMethodAccessor(FuzzyReflection.fromClass(hexDumpClass)
+						.getMethodByParameters("dump", byte[].class, long.class, OutputStream.class, int.class));
+			}
+
+			HEX_DUMP.invoke(null, bytes, 0, output, 0);
 			return new String(output.toByteArray(), Charsets.UTF_8);
 		}
 	}

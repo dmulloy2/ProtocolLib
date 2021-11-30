@@ -17,6 +17,7 @@ package com.comphenix.protocol.reflect;
  * limitations under the License.
  */
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -442,12 +443,8 @@ public class FieldUtils {
 		if (field == null) {
 			throw new IllegalArgumentException("The field must not be null");
 		}
-		if (forceAccess && !field.isAccessible()) {
-			field.setAccessible(true);
-		} else {
-			MemberUtils.setAccessibleWorkaround(field);
-		}
-		field.set(target, value);
+
+		Accessors.getFieldAccessor(field, forceAccess).set(target, value);
 	}
 
 	/**

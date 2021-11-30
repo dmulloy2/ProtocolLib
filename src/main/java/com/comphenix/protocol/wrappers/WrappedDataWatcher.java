@@ -495,7 +495,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 					.build();
 			List<Method> methods = fuzzy.getMethodList(contract);
 			for (Method method : methods) {
-				if (method.getName().equals("set") || method.getName().equals("watch")) {
+				if (method.getName().equals("set") || method.getName().equals("watch") || method.getName().equals("b")) {
 					SETTER = Accessors.getMethodAccessor(method);
 				} else {
 					REGISTER = Accessors.getMethodAccessor(method);

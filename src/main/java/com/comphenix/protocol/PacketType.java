@@ -137,7 +137,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType OPEN_WINDOW_HORSE =            new PacketType(PROTOCOL, SENDER, 0x1F, "OpenWindowHorse");
 			public static final PacketType INITIALIZE_BORDER =            new PacketType(PROTOCOL, SENDER, 0x20, "InitializeBorder");
 			public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x21, "KeepAlive", "SPacketKeepAlive");
-			public static final PacketType MAP_CHUNK =                    new PacketType(PROTOCOL, SENDER, 0x22, "MapChunk", "SPacketChunkData");
+			public static final PacketType MAP_CHUNK =                    new PacketType(PROTOCOL, SENDER, 0x22, "MapChunk", "SPacketChunkData", "LevelChunkWithLight");
 			public static final PacketType WORLD_EVENT =                  new PacketType(PROTOCOL, SENDER, 0x23, "WorldEvent", "SPacketEffect");
 			public static final PacketType WORLD_PARTICLES =              new PacketType(PROTOCOL, SENDER, 0x24, "WorldParticles", "SPacketParticles");
 			public static final PacketType LIGHT_UPDATE =                 new PacketType(PROTOCOL, SENDER, 0x25, "LightUpdate");
@@ -190,22 +190,23 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType MOUNT =                        new PacketType(PROTOCOL, SENDER, 0x54, "Mount", "SPacketSetPassengers");
 			public static final PacketType SCOREBOARD_TEAM =              new PacketType(PROTOCOL, SENDER, 0x55, "ScoreboardTeam", "SPacketTeams");
 			public static final PacketType SCOREBOARD_SCORE =             new PacketType(PROTOCOL, SENDER, 0x56, "ScoreboardScore", "SPacketUpdateScore");
-			public static final PacketType SET_SUBTITLE_TEXT =            new PacketType(PROTOCOL, SENDER, 0x57, "SetSubtitleText");
-			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x58, "UpdateTime", "SPacketTimeUpdate");
-			public static final PacketType SET_TITLE_TEXT =               new PacketType(PROTOCOL, SENDER, 0x59, "SetTitleText");
-			public static final PacketType SET_TITLES_ANIMATION =         new PacketType(PROTOCOL, SENDER, 0x5A, "SetTitlesAnimation");
-			public static final PacketType ENTITY_SOUND =                 new PacketType(PROTOCOL, SENDER, 0x5B, "EntitySound", "SPacketSoundEffect");
-			public static final PacketType NAMED_SOUND_EFFECT =           new PacketType(PROTOCOL, SENDER, 0x5C, "NamedSoundEffect");
-			public static final PacketType STOP_SOUND =                   new PacketType(PROTOCOL, SENDER, 0x5D, "StopSound");
-			public static final PacketType PLAYER_LIST_HEADER_FOOTER =    new PacketType(PROTOCOL, SENDER, 0x5E, "PlayerListHeaderFooter", "SPacketPlayerListHeaderFooter");
-			public static final PacketType NBT_QUERY =                    new PacketType(PROTOCOL, SENDER, 0x5F, "NBTQuery");
-			public static final PacketType COLLECT =                      new PacketType(PROTOCOL, SENDER, 0x60, "Collect", "SPacketCollectItem");
-			public static final PacketType ENTITY_TELEPORT =              new PacketType(PROTOCOL, SENDER, 0x61, "EntityTeleport", "SPacketEntityTeleport");
-			public static final PacketType ADVANCEMENTS =                 new PacketType(PROTOCOL, SENDER, 0x62, "Advancements", "SPacketAdvancementInfo");
-			public static final PacketType UPDATE_ATTRIBUTES =            new PacketType(PROTOCOL, SENDER, 0x63, "UpdateAttributes", "SPacketEntityProperties");
-			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x64, "EntityEffect", "SPacketEntityEffect");
-			public static final PacketType RECIPE_UPDATE =                new PacketType(PROTOCOL, SENDER, 0x65, "RecipeUpdate");
-			public static final PacketType TAGS =                         new PacketType(PROTOCOL, SENDER, 0x66, "Tags");
+			public static final PacketType UPDATE_SIMULATION_DISTANCE =   new PacketType(PROTOCOL, SENDER, 0x57, "SetSimulationDistance");
+			public static final PacketType SET_SUBTITLE_TEXT =            new PacketType(PROTOCOL, SENDER, 0x58, "SetSubtitleText");
+			public static final PacketType UPDATE_TIME =                  new PacketType(PROTOCOL, SENDER, 0x59, "UpdateTime", "SPacketTimeUpdate");
+			public static final PacketType SET_TITLE_TEXT =               new PacketType(PROTOCOL, SENDER, 0x5A, "SetTitleText");
+			public static final PacketType SET_TITLES_ANIMATION =         new PacketType(PROTOCOL, SENDER, 0x5B, "SetTitlesAnimation");
+			public static final PacketType ENTITY_SOUND =                 new PacketType(PROTOCOL, SENDER, 0x5C, "EntitySound", "SPacketSoundEffect");
+			public static final PacketType NAMED_SOUND_EFFECT =           new PacketType(PROTOCOL, SENDER, 0x5D, "NamedSoundEffect");
+			public static final PacketType STOP_SOUND =                   new PacketType(PROTOCOL, SENDER, 0x5E, "StopSound");
+			public static final PacketType PLAYER_LIST_HEADER_FOOTER =    new PacketType(PROTOCOL, SENDER, 0x5F, "PlayerListHeaderFooter", "SPacketPlayerListHeaderFooter");
+			public static final PacketType NBT_QUERY =                    new PacketType(PROTOCOL, SENDER, 0x60, "NBTQuery");
+			public static final PacketType COLLECT =                      new PacketType(PROTOCOL, SENDER, 0x61, "Collect", "SPacketCollectItem");
+			public static final PacketType ENTITY_TELEPORT =              new PacketType(PROTOCOL, SENDER, 0x62, "EntityTeleport", "SPacketEntityTeleport");
+			public static final PacketType ADVANCEMENTS =                 new PacketType(PROTOCOL, SENDER, 0x63, "Advancements", "SPacketAdvancementInfo");
+			public static final PacketType UPDATE_ATTRIBUTES =            new PacketType(PROTOCOL, SENDER, 0x64, "UpdateAttributes", "SPacketEntityProperties");
+			public static final PacketType ENTITY_EFFECT =                new PacketType(PROTOCOL, SENDER, 0x65, "EntityEffect", "SPacketEntityEffect");
+			public static final PacketType RECIPE_UPDATE =                new PacketType(PROTOCOL, SENDER, 0x66, "RecipeUpdate");
+			public static final PacketType TAGS =                         new PacketType(PROTOCOL, SENDER, 0x67, "Tags");
 
 			// ---- Removed in 1.9
 

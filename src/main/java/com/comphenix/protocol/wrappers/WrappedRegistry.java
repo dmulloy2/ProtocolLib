@@ -5,10 +5,10 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableMap;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -46,9 +46,14 @@ public class WrappedRegistry {
 
         REGISTRY = ImmutableMap.copyOf(regMap);
 
-        GET = Accessors.getMethodAccessor(regClass, "get", MinecraftReflection.getMinecraftKeyClass());
-
         FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
+        GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+                .newBuilder()
+            		.parameterCount(1)
+            		.returnDerivedOf(Object.class)
+            		.requireModifier(Modifier.ABSTRACT)
+            		.parameterExactType(MinecraftReflection.getMinecraftKeyClass())
+            		.build()));
         GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
                 .newBuilder()
                 .parameterCount(1)
