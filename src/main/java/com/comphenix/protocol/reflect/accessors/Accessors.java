@@ -134,7 +134,7 @@ public final class Accessors {
 	 * @param methodName - the method name.
 	 * @return The method accessor, or NULL if not found.
 	 */
-	public static MethodAccessor getMethodAcccessorOrNull(Class<?> clazz, String methodName) {
+	public static MethodAccessor getMethodAccessorOrNull(Class<?> clazz, String methodName) {
 		 try {
 			 return Accessors.getMethodAccessor(clazz, methodName);
 		 } catch (IllegalArgumentException e) {
