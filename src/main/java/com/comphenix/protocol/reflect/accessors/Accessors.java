@@ -114,7 +114,7 @@ public final class Accessors {
 	 * @param fieldType - assignable field type.
 	 * @return The field accessor, or NULL if not found.
 	 */
-	public static FieldAccessor getFieldAcccessorOrNull(Class<?> clazz, String fieldName, Class<?> fieldType) {
+	public static FieldAccessor getFieldAccessorOrNull(Class<?> clazz, String fieldName, Class<?> fieldType) {
 		 try {
 			 FieldAccessor accessor = Accessors.getFieldAccessor(clazz, fieldName, true);
 			 
