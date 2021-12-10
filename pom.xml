@@ -17,7 +17,7 @@
 		<project.fullVersion>${project.version}</project.fullVersion>
 
 		<powermock.version>2.0.9</powermock.version>
-		<spigot.version>1.18-R0.1-SNAPSHOT</spigot.version>
+		<spigot.version>1.18.1-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
 	<build>
@@ -319,7 +319,7 @@
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.12.1</version>
+			<version>1.12.3</version>
 		</dependency>
 
 		<!-- Testing dependencies -->
