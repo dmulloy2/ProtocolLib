@@ -30,6 +30,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.VolatileField;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ByteBuddyGenerated;
 import com.comphenix.protocol.utility.MinecraftFields;
@@ -56,6 +57,7 @@ import org.bukkit.entity.Player;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.*;
@@ -84,6 +86,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 
 	// Versioning
 	private static Class<?> PACKET_SET_PROTOCOL = null;
+	private static FieldAccessor PROTOCOL_VERSION_ACCESSOR = null;
 
 	private static AtomicInteger keyId = new AtomicInteger();
 	private static AttributeKey<Integer> PROTOCOL_KEY;
@@ -662,15 +665,21 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 		if (PACKET_SET_PROTOCOL == null) {
 			try {
 				PACKET_SET_PROTOCOL = PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass();
+
+				// resolve the protocol version field here - if we're unable to find it we don't need to worry about it
+				Field protocolVersionField = FuzzyReflection.fromClass(PACKET_SET_PROTOCOL, true).getField(FuzzyFieldContract.newBuilder()
+						.banModifier(Modifier.STATIC)
+						.typeExact(int.class)
+						.build());
+				PROTOCOL_VERSION_ACCESSOR = Accessors.getFieldAccessor(protocolVersionField);
 			} catch (Throwable ex) {
 				PACKET_SET_PROTOCOL = getClass(); // If we can't find it don't worry about it
 			}
 		}
 
 		if (PACKET_SET_PROTOCOL.equals(packetClass)) {
-			FuzzyReflection fuzzy = FuzzyReflection.fromObject(packet);
 			try {
-				int protocol = (int) fuzzy.invokeMethod(packet, "getProtocol", int.class);
+				int protocol = (int) PROTOCOL_VERSION_ACCESSOR.get(packet);
 				originalChannel.attr(PROTOCOL_KEY).set(protocol);
 			} catch (Throwable ex) {
 				// Oh well
