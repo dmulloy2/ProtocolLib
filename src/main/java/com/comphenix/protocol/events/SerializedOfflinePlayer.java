@@ -45,6 +45,7 @@ import net.bytebuddy.matcher.ElementMatchers;
 import org.bukkit.*;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.profile.PlayerProfile;
 
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 
@@ -176,7 +177,12 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	public UUID getUniqueId() {
 		return uuid;
 	}
-	
+
+	@Override
+	public PlayerProfile getPlayerProfile() {
+		return null;
+	}
+
 	@Override
 	public String getName() {
 		return name;
