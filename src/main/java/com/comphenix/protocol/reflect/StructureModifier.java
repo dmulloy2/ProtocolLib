@@ -308,7 +308,9 @@ public class StructureModifier<TField> {
 	 * @param fieldIndex - index of the field.
 	 * @param value - TRUE if this field should be read only, FALSE otherwise.
 	 * @throws FieldAccessException If we cannot modify the read-only status.
+	 * @deprecated In recent java versions (starting at 9) the modifier field is secured and will not be writeable.
 	 */
+	@Deprecated
 	public void setReadOnly(int fieldIndex, boolean value) throws FieldAccessException {
 		if (fieldIndex < 0 || fieldIndex >= data.size())
 			throw new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
@@ -325,7 +327,9 @@ public class StructureModifier<TField> {
 	 * @param field - the field to change.
 	 * @param isReadOnly - TRUE if the field should be read only, FALSE otherwise.
 	 * @throws IllegalAccessException If an error occured.
+	 * @deprecated In recent java versions (starting at 9) the modifier field is secured and will not be writeable.
 	 */
+	@Deprecated
 	protected static void setFinalState(Field field, boolean isReadOnly) throws IllegalAccessException {
 	    if (isReadOnly)
 	    	FieldUtils.writeField((Object) field, "modifiers", field.getModifiers() | Modifier.FINAL, true);
