@@ -1,17 +1,16 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.comphenix.protocol.BukkitInitialization;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class ChunkCoordIntPairTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void initializeBukkit() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeAll();
 	}
 
 	@Test
@@ -23,8 +22,8 @@ public class ChunkCoordIntPairTest {
 		assertEquals(2, specific.getChunkZ());
 
 		net.minecraft.world.level.ChunkCoordIntPair roundtrip =
-			(net.minecraft.world.level.ChunkCoordIntPair) ChunkCoordIntPair.getConverter().
-			getGeneric(specific);
+				(net.minecraft.world.level.ChunkCoordIntPair) ChunkCoordIntPair.getConverter().
+						getGeneric(specific);
 
 		assertEquals(1, roundtrip.c);
 		assertEquals(2, roundtrip.d);

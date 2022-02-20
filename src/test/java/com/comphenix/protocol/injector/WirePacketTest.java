@@ -3,32 +3,27 @@
  */
 package com.comphenix.protocol.injector;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.netty.WirePacket;
-import com.comphenix.protocol.wrappers.EnumWrappers.ChatType;
-
 import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author dmulloy2
  */
 public class WirePacketTest {
-	
-	@BeforeClass
+
+	@BeforeAll
 	public static void beforeClass() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeAll();
 	}
 
 	// @Test
@@ -36,8 +31,9 @@ public class WirePacketTest {
 		List<String> failures = new ArrayList<>();
 
 		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated())
+			if (type.isDeprecated()) {
 				continue;
+			}
 
 			try {
 				PacketContainer packet = new PacketContainer(type);
@@ -57,7 +53,7 @@ public class WirePacketTest {
 	@Test
 	public void testSerialization() {
 		int id = 42;
-		byte[] array = { 1, 3, 7, 21, 88, 67, 8 };
+		byte[] array = {1, 3, 7, 21, 88, 67, 8};
 
 		WirePacket packet = new WirePacket(id, array);
 

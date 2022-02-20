@@ -1,25 +1,16 @@
 package com.comphenix.protocol.utility;
 
 import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack;
-import org.bukkit.entity.Entity;
-import org.bukkit.inventory.ItemStack;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.mojang.authlib.GameProfile;
-
 import net.minecraft.nbt.NBTCompressedStreamTools;
 import net.minecraft.network.chat.ChatComponentText;
 import net.minecraft.network.chat.IChatBaseComponent;
@@ -29,26 +20,23 @@ import net.minecraft.network.syncher.DataWatcher;
 import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.block.state.IBlockData;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack;
+import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-@RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
 public class MinecraftReflectionTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void initializeBukkit() {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
 
-	// Mocking objects
-	private interface FakeEntity {
-		Entity getBukkitEntity();
-	}
-
-	private interface FakeBlock {
-		Block getBukkitEntity();
-	}
-
-	@AfterClass
+	@AfterAll
 	public static void undoMocking() {
 		// NOP
 		MinecraftReflection.minecraftPackage = null;
@@ -66,9 +54,9 @@ public class MinecraftReflectionTest {
 		verify(block, times(1)).getBukkitEntity();
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void testIllegalClass() {
-		MinecraftReflection.getBukkitEntity("Hello");
+		assertThrows(IllegalArgumentException.class, () -> MinecraftReflection.getBukkitEntity("Hello"));
 	}
 
 	@Test
@@ -78,7 +66,8 @@ public class MinecraftReflectionTest {
 
 	@Test
 	public void testAttributeSnapshot() {
-		assertEquals(PacketPlayOutUpdateAttributes.AttributeSnapshot.class, MinecraftReflection.getAttributeSnapshotClass());
+		assertEquals(PacketPlayOutUpdateAttributes.AttributeSnapshot.class,
+				MinecraftReflection.getAttributeSnapshotClass());
 	}
 
 	@Test
@@ -155,5 +144,16 @@ public class MinecraftReflectionTest {
 	public void testEnumEntityUseAction() {
 		// this class is package-private in PacketPlayInUseEntity, so we can only check if no exception is thrown during retrieval
 		MinecraftReflection.getEnumEntityUseActionClass();
+	}
+
+	// Mocking objects
+	private interface FakeEntity {
+
+		Entity getBukkitEntity();
+	}
+
+	private interface FakeBlock {
+
+		Block getBukkitEntity();
 	}
 }
