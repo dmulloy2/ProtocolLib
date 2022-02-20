@@ -1,26 +1,31 @@
 /**
- *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2012 Kristian S. Stangeland
- *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
- *  the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *  See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *  02111-1307 USA
+ * ProtocolLib - Bukkit server library that allows access to the Minecraft protocol. Copyright (C) 2012 Kristian S.
+ * Stangeland
+ * <p>
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * <p>
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ * <p>
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package com.comphenix.protocol.events;
 
-import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
-import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.*;
+import static com.comphenix.protocol.utility.TestUtils.assertItemCollectionsEqual;
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
+import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
@@ -30,30 +35,48 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.*;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.ComponentConverter;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
 import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
+import com.comphenix.protocol.wrappers.Pair;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
+import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
-
-import net.md_5.bungee.api.chat.*;
-
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import net.minecraft.core.IRegistry;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
+import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
-
-import net.minecraft.world.level.dimension.DimensionManager;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
@@ -66,34 +89,27 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
-import static com.comphenix.protocol.utility.TestUtils.*;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 // Ensure that the CraftItemFactory is mockable
-@RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
-//@PrepareForTest(CraftItemFactory.class)
 public class PacketContainerTest {
-	// Helper converters
-	private EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
-	private EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
+
 	private static BaseComponent[] TEST_COMPONENT;
+	// Helper converters
+	private final EquivalentConverter<WrappedDataWatcher> watchConvert = BukkitConverters.getDataWatcherConverter();
+	private final EquivalentConverter<ItemStack> itemConvert = BukkitConverters.getItemStackConverter();
 
-	@BeforeClass
+	@BeforeAll
 	public static void initializeBukkit() {
-		BukkitInitialization.initializeItemMeta();
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeAll();
+		BukkitInitialization.initializeAll();
 
-		TEST_COMPONENT =
-				new ComponentBuilder("Hit or miss?")
-						.event(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://reddit.com"))
-						.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new BaseComponent[] { new TextComponent("The \"front page\" of the internet") }))
-						.append("I guess they never miss, huh?").create();
+		TEST_COMPONENT = new ComponentBuilder("Hit or miss?")
+				.event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://reddit.com"))
+				.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("The \"front page\" of the internet")))
+				.append("I guess they never miss, huh?")
+				.create();
 	}
 
 	private <T> void testPrimitive(StructureModifier<T> modifier, int index, T initialValue, T testValue) {
@@ -123,7 +139,7 @@ public class PacketContainerTest {
 		// Contains a byte array we will test
 		PacketContainer customPayload = new PacketContainer(PacketType.Login.Client.ENCRYPTION_BEGIN);
 		StructureModifier<byte[]> bytes = customPayload.getByteArrays();
-		byte[] testArray = new byte[] { 1, 2, 3 };
+		byte[] testArray = new byte[]{1, 2, 3};
 
 		// It's NULL at first
 		// assertEquals(null, bytes.read(0));
@@ -140,51 +156,51 @@ public class PacketContainerTest {
 	@Test
 	public void testGetBytes() {
 		PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
-		testPrimitive(spawnMob.getBytes(), 0, (byte)0, (byte)1);
+		this.testPrimitive(spawnMob.getBytes(), 0, (byte) 0, (byte) 1);
 	}
 
 	@Test
 	public void testGetShorts() {
 		PacketContainer itemData = new PacketContainer(PacketType.Play.Server.REL_ENTITY_MOVE);
-		testPrimitive(itemData.getShorts(), 0, (short)0, (short)1);
+		this.testPrimitive(itemData.getShorts(), 0, (short) 0, (short) 1);
 	}
 
 	@Test
 	public void testGetIntegers() {
 		PacketContainer updateSign = new PacketContainer(PacketType.Play.Client.CLOSE_WINDOW);
-		testPrimitive(updateSign.getIntegers(), 0, 0, 1);
+		this.testPrimitive(updateSign.getIntegers(), 0, 0, 1);
 	}
 
 	@Test
 	public void testGetLongs() {
 		PacketContainer updateTime = new PacketContainer(PacketType.Play.Server.UPDATE_TIME);
-		testPrimitive(updateTime.getLongs(), 0, (long)0, (long)1);
+		this.testPrimitive(updateTime.getLongs(), 0, (long) 0, (long) 1);
 	}
 
 	@Test
 	public void testGetFloat() {
 		PacketContainer explosion = new PacketContainer(PacketType.Play.Server.EXPLOSION);
-		testPrimitive(explosion.getFloat(), 0, (float)0, (float)0.8);
+		this.testPrimitive(explosion.getFloat(), 0, (float) 0, (float) 0.8);
 	}
 
 	@Test
 	public void testGetDoubles() {
 		PacketContainer explosion = new PacketContainer(PacketType.Play.Server.EXPLOSION);
-		testPrimitive(explosion.getDoubles(), 0, (double)0, 0.8);
+		this.testPrimitive(explosion.getDoubles(), 0, (double) 0, 0.8);
 	}
 
 	@Test
 	public void testGetStrings() {
 		PacketContainer explosion = new PacketContainer(PacketType.Play.Client.CHAT);
-		testPrimitive(explosion.getStrings(), 0, "", "hello");
+		this.testPrimitive(explosion.getStrings(), 0, "", "hello");
 	}
 
 	@Test
 	public void testGetStringArrays() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Client.UPDATE_SIGN);
-		testObjectArray(packet.getStringArrays(), 0,
-				new String[] { "", "", "", "" },
-				new String[] { "hello", "world" }
+		this.testObjectArray(packet.getStringArrays(), 0,
+				new String[]{"", "", "", ""},
+				new String[]{"hello", "world"}
 		);
 	}
 
@@ -193,7 +209,7 @@ public class PacketContainerTest {
 		// Contains a byte array we will test
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.MOUNT);
 		StructureModifier<int[]> integers = packet.getIntegerArrays();
-		int[] testArray = new int[] { 1, 2, 3 };
+		int[] testArray = new int[]{1, 2, 3};
 
 		assertArrayEquals(new int[0], integers.read(0));
 
@@ -205,14 +221,14 @@ public class PacketContainerTest {
 	public void testGetItemModifier() {
 		PacketContainer windowClick = new PacketContainer(PacketType.Play.Client.WINDOW_CLICK);
 
-		ItemStack item = itemWithData();
+		ItemStack item = this.itemWithData();
 
 		StructureModifier<ItemStack> items = windowClick.getItemModifier();
 		// assertNull(items.read(0));
 
 		// Insert the item and check if it's there
 		items.write(0, item);
-		assertTrue("Item " + item + " != " + items.read(0), equivalentItem(item, items.read(0)));
+		assertTrue(equivalentItem(item, items.read(0)), "Item " + item + " != " + items.read(0));
 	}
 
 	private ItemStack itemWithData() {
@@ -230,7 +246,7 @@ public class PacketContainerTest {
 		StructureModifier<List<ItemStack>> itemAccess = windowItems.getItemListModifier();
 
 		List<ItemStack> items = new ArrayList<>();
-		items.add(itemWithData());
+		items.add(this.itemWithData());
 		items.add(new ItemStack(Material.DIAMOND_AXE));
 
 		assertEquals(itemAccess.read(0).size(), 0);
@@ -246,8 +262,9 @@ public class PacketContainerTest {
 	@Test
 	public void testGetWorldTypeModifier() {
 		// Not used in Netty
-		if (MinecraftReflection.isUsingNetty())
+		if (MinecraftReflection.isUsingNetty()) {
 			return;
+		}
 
 		PacketContainer loginPacket = new PacketContainer(PacketType.Play.Server.LOGIN);
 		StructureModifier<WorldType> worldAccess = loginPacket.getWorldTypeModifier();
@@ -358,7 +375,8 @@ public class PacketContainerTest {
 	@Test
 	public void testGameProfiles() {
 		PacketContainer spawnEntity = new PacketContainer(PacketType.Login.Server.SUCCESS);
-		WrappedGameProfile profile = new WrappedGameProfile(UUID.fromString("d7047a08-3150-4aa8-a2f2-7c1e2b17e298"), "name");
+		WrappedGameProfile profile = new WrappedGameProfile(UUID.fromString("d7047a08-3150-4aa8-a2f2-7c1e2b17e298"),
+				"name");
 		spawnEntity.getGameProfiles().write(0, profile);
 
 		assertEquals(profile, spawnEntity.getGameProfiles().read(0));
@@ -371,7 +389,7 @@ public class PacketContainerTest {
 				WrappedChatComponent.fromChatMessage("You shall not " + ChatColor.ITALIC + "pass!")[0]);
 
 		assertEquals("{\"extra\":[{\"text\":\"You shall not \"},{\"italic\":true,\"text\":\"pass!\"}],\"text\":\"\"}",
-				     chatPacket.getChatComponents().read(0).getJson());
+				chatPacket.getChatComponents().read(0).getJson());
 	}
 
 	@Test
@@ -389,8 +407,8 @@ public class PacketContainerTest {
 	public void testIntList() {
 		PacketContainer destroy = new PacketContainer(PacketType.Play.Server.ENTITY_DESTROY);
 		destroy.getIntLists().write(0, new ArrayList<Integer>() {{
-			add(420);
-			add(69);
+			this.add(420);
+			this.add(69);
 		}});
 		List<Integer> back = destroy.getIntLists().read(0);
 		assertEquals(back.size(), 2);
@@ -405,7 +423,8 @@ public class PacketContainerTest {
 
 		// Initialize some test data
 		List<AttributeModifier> modifiers = Lists.newArrayList(
-			new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10, AttributeModifier.Operation.a));
+				new AttributeModifier(UUID.randomUUID(), "Unknown synced attribute modifier", 10,
+						AttributeModifier.Operation.a));
 
 		// Obtain an AttributeSnapshot instance. This is complicated by the fact that AttributeSnapshots
 		// are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
@@ -428,7 +447,7 @@ public class PacketContainerTest {
 				}
 
 				field.setAccessible(true);
-				testEquality(field.get(snapshot), field.get(clonedSnapshot));
+				this.testEquality(field.get(snapshot), field.get(clonedSnapshot));
 			} catch (AssertionError e) {
 				throw e;
 			} catch (Throwable ex) {
@@ -461,13 +480,14 @@ public class PacketContainerTest {
 	@SuppressWarnings("deprecation")
 	public void testPotionEffect() {
 		PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
-		MobEffect mobEffect = new MobEffect(MobEffectList.a(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(),
+		MobEffect mobEffect = new MobEffect(MobEffectList.a(effect.getType().getId()), effect.getDuration(),
+				effect.getAmplifier(), effect.isAmbient(),
 				effect.hasParticles());
 		int entityId = 42;
-		
+
 		// The constructor we want to call
 		PacketConstructor creator = PacketConstructor.DEFAULT.withPacket(
-				PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[] { int.class, MobEffect.class });
+				PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[]{int.class, MobEffect.class});
 		PacketContainer packet = creator.createPacket(entityId, mobEffect);
 
 		assertEquals(entityId, (int) packet.getIntegers().read(0));
@@ -476,9 +496,15 @@ public class PacketContainerTest {
 		assertEquals(effect.getDuration(), (int) packet.getIntegers().read(1));
 
 		int e = 0;
-		if (effect.isAmbient()) e |= 1;
-		if (effect.hasParticles()) e |= 2;
-		if (effect.hasIcon()) e |= 4;
+		if (effect.isAmbient()) {
+			e |= 1;
+		}
+		if (effect.hasParticles()) {
+			e |= 2;
+		}
+		if (effect.hasIcon()) {
+			e |= 4;
+		}
 
 		assertEquals(e, (byte) packet.getBytes().read(2));
 	}
@@ -540,7 +566,7 @@ public class PacketContainerTest {
 		optStruct = container.getOptionalStructures().read(0);
 		assertTrue(optStruct.isPresent());
 		struct = optStruct.get();
-		testEquality(
+		this.testEquality(
 				struct.getChatComponents().read(0),
 				WrappedChatComponent.fromText("hi there")
 		);
@@ -591,14 +617,14 @@ public class PacketContainerTest {
 	public void testMultiBlockChange() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
 
-		packet.getShortArrays().writeSafely(0, new short[] { 420, 69 });
-		assertArrayEquals(new short[] { 420, 69}, packet.getShortArrays().readSafely(0));
+		packet.getShortArrays().writeSafely(0, new short[]{420, 69});
+		assertArrayEquals(new short[]{420, 69}, packet.getShortArrays().readSafely(0));
 
-		packet.getBlockDataArrays().writeSafely(0, new WrappedBlockData[] {
+		packet.getBlockDataArrays().writeSafely(0, new WrappedBlockData[]{
 				WrappedBlockData.createData(Material.IRON_BARS),
 				WrappedBlockData.createData(Material.IRON_BLOCK)
 		});
-		assertArrayEquals(new WrappedBlockData[] {
+		assertArrayEquals(new WrappedBlockData[]{
 				WrappedBlockData.createData(Material.IRON_BARS),
 				WrappedBlockData.createData(Material.IRON_BLOCK)
 		}, packet.getBlockDataArrays().readSafely(0));
@@ -613,9 +639,10 @@ public class PacketContainerTest {
 	@Test
 	public void testGameStateChange() {
 		PacketContainer packet = new PacketContainer(PacketType.Play.Server.GAME_STATE_CHANGE);
-		assertTrue(packet.getGameStateIDs().read(0) == 0);
+		assertEquals(0, (int) packet.getGameStateIDs().read(0));
+
 		packet.getGameStateIDs().write(0, 2);
-		assertTrue(packet.getGameStateIDs().read(0) == 2);
+		assertEquals(2, (int) packet.getGameStateIDs().read(0));
 	}
 
 	@Test
@@ -679,23 +706,10 @@ public class PacketContainerTest {
 		assertTrue(container.getStructures().read(0).getNbtModifier().optionRead(0).isPresent());
 	}
 
-	/**
-	 * Actions from the outbound Boss packet. Used for testing generic enums.
-	 * @author dmulloy2
-	 */
-	public enum Action {
-		ADD,
-		REMOVE,
-		UPDATE_PCT,
-		UPDATE_NAME,
-		UPDATE_STYLE,
-		UPDATE_PROPERTIES
-	}
-
 	@Test
 	public void testComponentArrays() {
 		PacketContainer signChange = new PacketContainer(PacketType.Play.Server.TILE_ENTITY_DATA);
-		WrappedChatComponent[] components = new WrappedChatComponent[] {
+		WrappedChatComponent[] components = new WrappedChatComponent[]{
 				WrappedChatComponent.fromText("hello world"), WrappedChatComponent.fromText(""),
 				WrappedChatComponent.fromText(""), WrappedChatComponent.fromText("")
 		};
@@ -714,10 +728,11 @@ public class PacketContainerTest {
 		} else {
 			// Make sure all the fields are equivalent
 			for (int i = 0; i < firstMod.size(); i++) {
-				if (firstMod.getField(i).getType().isArray())
-					assertArrayEquals(getArray(firstMod.read(i)), getArray(secondMod.read(i)));
-				else
-					testEquality(firstMod.read(i), secondMod.read(i));
+				if (firstMod.getField(i).getType().isArray()) {
+					assertArrayEquals(this.getArray(firstMod.read(i)), this.getArray(secondMod.read(i)));
+				} else {
+					this.testEquality(firstMod.read(i), secondMod.read(i));
+				}
 			}
 		}
 	}
@@ -728,8 +743,9 @@ public class PacketContainerTest {
 
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS") || !type.isSupported()
-				|| type == PacketType.Play.Server.RECIPES) {
+			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS")
+					|| !type.isSupported()
+					|| type == PacketType.Play.Server.RECIPES) {
 				continue;
 			}
 
@@ -748,9 +764,9 @@ public class PacketContainerTest {
 									"String"),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.getChatComponentSerializer(true)),
-							                           Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle())),
+									Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle())),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(VillagerData.class)),
-							                           new VillagerData(VillagerType.b, VillagerProfession.c, 69))
+									new VillagerData(VillagerType.b, VillagerProfession.c, 69))
 					));
 				} else if (type == PacketType.Play.Server.CHAT) {
 					constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
@@ -759,17 +775,17 @@ public class PacketContainerTest {
 
 				// Clone the packet both ways
 				PacketContainer shallowCloned = constructed.shallowClone();
-				assertPacketsEqual(constructed, shallowCloned);
+				this.assertPacketsEqual(constructed, shallowCloned);
 
 				PacketContainer deepCloned = constructed.deepClone();
-				assertPacketsEqual(constructed, deepCloned);
+				this.assertPacketsEqual(constructed, deepCloned);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				failed = true;
 			}
 		}
 
-		assertFalse("Packet(s) failed to clone", failed);
+		assertFalse(failed, "Packet(s) failed to clone");
 	}
 
 	// Convert to objects that support equals()
@@ -786,26 +802,26 @@ public class PacketContainerTest {
 
 		if (a instanceof Optional) {
 			if (b instanceof Optional) {
-				testEquality(((Optional<?>) a).orElse(null), ((Optional<?>) b).orElse(null));
+				this.testEquality(((Optional<?>) a).orElse(null), ((Optional<?>) b).orElse(null));
 				return;
 			} else {
 				throw new AssertionError("a was optional, but b was not");
 			}
 		}
 
-		if (a.equals(b) || Objects.equals(a, b) || stringEquality(a, b)) {
+		if (a.equals(b) || Objects.equals(a, b) || this.stringEquality(a, b)) {
 			return;
 		}
 
 		if (MinecraftReflection.isDataWatcher(a)) {
-			a = watchConvert.getSpecific(a);
-			b = watchConvert.getSpecific(b);
+			a = this.watchConvert.getSpecific(a);
+			b = this.watchConvert.getSpecific(b);
 		} else if (MinecraftReflection.isItemStack(a)) {
-			a = itemConvert.getSpecific(a);
-			b = itemConvert.getSpecific(b);
+			a = this.itemConvert.getSpecific(a);
+			b = this.itemConvert.getSpecific(b);
 		}
 
-		if (a instanceof ItemStack || b instanceof ItemStack) {
+		if (a instanceof ItemStack && b instanceof ItemStack) {
 			assertItemsEqual((ItemStack) a, (ItemStack) b);
 			return;
 		}
@@ -828,20 +844,38 @@ public class PacketContainerTest {
 
 	/**
 	 * Get the underlying array as an object array.
+	 *
 	 * @param val - array wrapped as an Object.
 	 * @return An object array.
 	 */
 	private Object[] getArray(Object val) {
-		if (val instanceof Object[])
+		if (val instanceof Object[]) {
 			return (Object[]) val;
-		if (val == null)
+		}
+		if (val == null) {
 			return null;
+		}
 
 		int arrlength = Array.getLength(val);
 		Object[] outputArray = new Object[arrlength];
 
-		for (int i = 0; i < arrlength; ++i)
+		for (int i = 0; i < arrlength; ++i) {
 			outputArray[i] = Array.get(val, i);
+		}
 		return outputArray;
+	}
+
+	/**
+	 * Actions from the outbound Boss packet. Used for testing generic enums.
+	 *
+	 * @author dmulloy2
+	 */
+	public enum Action {
+		ADD,
+		REMOVE,
+		UPDATE_PCT,
+		UPDATE_NAME,
+		UPDATE_STYLE,
+		UPDATE_PROPERTIES
 	}
 }

@@ -1,37 +1,29 @@
 package com.comphenix.protocol.utility;
 
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-
-import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static org.junit.Assert.assertEquals;
-
-@RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "org.bukkit.craftbukkit.libs.jline.*" })
-//@PrepareForTest(CraftItemFactory.class)
 public class StreamSerializerTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void initializeBukkit() {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
-
-	/*@Test
-	public void testMinecraftReflection() {
-		assertEquals(IntHashMap.class, MinecraftReflection.getIntHashMapClass());
-	}*/
 
 	@Test
 	public void testStrings() throws IOException {

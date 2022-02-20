@@ -1,45 +1,35 @@
 package com.comphenix.protocol.injector;
 
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.reflect.FieldUtils;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.reflect.accessors.Accessors;
+import static com.comphenix.protocol.utility.TestUtils.setFinalField;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import java.lang.reflect.Field;
 import net.minecraft.server.level.ChunkProviderServer;
-import net.minecraft.server.level.EntityTrackerEntry;
 import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.PlayerChunkMap.EntityTracker;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.Entity;
-
 import org.bukkit.craftbukkit.v1_18_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_18_R1.entity.CraftEntity;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.lang.reflect.Field;
-
-import static com.comphenix.protocol.utility.TestUtils.setFinalField;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class EntityUtilitiesTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void beforeClass() {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
 
 	@Test
-	public void testReflection() throws ReflectiveOperationException {
+	public void testReflection() {
 		CraftWorld bukkit = mock(CraftWorld.class);
 		WorldServer world = mock(WorldServer.class);
 		when(bukkit.getHandle()).thenReturn(world);

@@ -1,72 +1,70 @@
 package com.comphenix.protocol.events;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
+import java.util.UUID;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.UUID;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
-
 public class SerializedOfflinePlayerTest {
 
-    @Mock
-    static OfflinePlayer offlinePlayer;
+	private static final String name = "playerName";
+	private static final long firstPlayed = 1000L;
+	private static final long lastPlayed = firstPlayed + 100L;
+	private static final boolean isOp = false;
+	private static final boolean playedBefore = true;
+	private static final boolean whitelisted = true;
+	@Mock
+	static OfflinePlayer offlinePlayer;
+	private static UUID uuid;
+	private static SerializedOfflinePlayer serializedOfflinePlayer;
 
-    private static final String name = "playerName";
-    private static UUID uuid;
-    private static final long firstPlayed = 1000L;
-    private static final long lastPlayed = firstPlayed + 100L;
-    private static final boolean isOp = false;
-    private static final boolean playedBefore = true;
-    private static final boolean whitelisted = true;
+	@BeforeEach
+	public void initMocks() {
+		MockitoAnnotations.openMocks(this);
 
-    private static SerializedOfflinePlayer serializedOfflinePlayer;
+		uuid = UUID.randomUUID();
+		when(offlinePlayer.getName()).thenReturn(name);
+		when(offlinePlayer.getUniqueId()).thenReturn(uuid);
+		when(offlinePlayer.getFirstPlayed()).thenReturn(firstPlayed);
+		when(offlinePlayer.getLastPlayed()).thenReturn(lastPlayed);
+		when(offlinePlayer.isOp()).thenReturn(isOp);
+		when(offlinePlayer.hasPlayedBefore()).thenReturn(playedBefore);
+		when(offlinePlayer.isWhitelisted()).thenReturn(whitelisted);
 
-    @Before
-    public void initMocks() {
-        MockitoAnnotations.initMocks(this);
+		serializedOfflinePlayer = new SerializedOfflinePlayer(offlinePlayer);
+	}
 
-        uuid = UUID.randomUUID();
-        when(offlinePlayer.getName()).thenReturn(name);
-        when(offlinePlayer.getUniqueId()).thenReturn(uuid);
-        when(offlinePlayer.getFirstPlayed()).thenReturn(firstPlayed);
-        when(offlinePlayer.getLastPlayed()).thenReturn(lastPlayed);
-        when(offlinePlayer.isOp()).thenReturn(isOp);
-        when(offlinePlayer.hasPlayedBefore()).thenReturn(playedBefore);
-        when(offlinePlayer.isWhitelisted()).thenReturn(whitelisted);
+	@Test
+	public void getProxyPlayer() {
+		Player player = serializedOfflinePlayer.getProxyPlayer();
+		assertNotNull(player);
 
-        serializedOfflinePlayer = new SerializedOfflinePlayer(offlinePlayer);
-    }
+		// getDisplayName only works for online players.
+		assertThrows(UnsupportedOperationException.class, player::getDisplayName);
 
-    @Test
-    public void getProxyPlayer() {
-        Player player = serializedOfflinePlayer.getProxyPlayer();
-        Assert.assertNotNull(player);
+		assertEquals(uuid, player.getUniqueId());
+		assertEquals(name, player.getName());
+		assertEquals(firstPlayed, player.getFirstPlayed());
+		assertEquals(lastPlayed, player.getLastPlayed());
+		assertEquals(isOp, player.isOp());
+		assertEquals(playedBefore, player.hasPlayedBefore());
+		assertEquals(whitelisted, player.isWhitelisted());
+	}
 
-        // getDisplayName only works for online players.
-        assertThrows(UnsupportedOperationException.class, player::getDisplayName);
+	@Test
+	public void getSecondProxyPlayer() {
+		// Make sure that the proxyPlayer generation doesn't work only once.
+		Player player = serializedOfflinePlayer.getProxyPlayer();
+		assertNotNull(player);
 
-        assertEquals(uuid, player.getUniqueId());
-        assertEquals(name, player.getName());
-        assertEquals(firstPlayed, player.getFirstPlayed());
-        assertEquals(lastPlayed, player.getLastPlayed());
-        assertEquals(isOp, player.isOp());
-        assertEquals(playedBefore, player.hasPlayedBefore());
-        assertEquals(whitelisted, player.isWhitelisted());
-    }
-
-    @Test
-    public void getSecondProxyPlayer() {
-        // Make sure that the proxyPlayer generation doesn't work only once.
-        Player player = serializedOfflinePlayer.getProxyPlayer();
-        Assert.assertNotNull(player);
-
-        assertEquals(uuid, player.getUniqueId());
-    }
+		assertEquals(uuid, player.getUniqueId());
+	}
 }

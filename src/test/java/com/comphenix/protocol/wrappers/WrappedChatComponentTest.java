@@ -1,20 +1,19 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.comphenix.protocol.BukkitInitialization;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class WrappedChatComponentTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void initializeBukkit() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeAll();
 	}
-	
+
 	@Test
 	public void testText() {
 		WrappedChatComponent test = WrappedChatComponent.fromText("Hello.");

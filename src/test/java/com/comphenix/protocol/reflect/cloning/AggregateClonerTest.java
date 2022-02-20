@@ -1,31 +1,27 @@
 package com.comphenix.protocol.reflect.cloning;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-
+import java.util.Arrays;
+import java.util.List;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class AggregateClonerTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void initializeBukkit() {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
-	
+
 	@Test
-	public void testArrays() {		
+	public void testArrays() {
 		List<Integer> input = Arrays.asList(1, 2, 3);
 		assertEquals(input, AggregateCloner.DEFAULT.clone(input));
 	}
@@ -44,6 +40,6 @@ public class AggregateClonerTest {
 		NonNullList<ItemStack> list1 = (NonNullList<ItemStack>) cloned.getModifier().read(1);
 
 		assertEquals(list.size(), list1.size());
-		assertArrayEquals(list.toArray(), list1.toArray());
+		Assertions.assertArrayEquals(list.toArray(), list1.toArray());
 	}
 }
