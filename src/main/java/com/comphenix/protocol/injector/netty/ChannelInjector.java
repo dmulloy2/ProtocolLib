@@ -275,7 +275,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 				@Override
 				public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
 					super.write(ctx, packet, promise);
-					ChannelInjector.this.finalWrite();
+					ChannelInjector.this.finalWrite(packet);
 				}
 
 				@Override
@@ -544,7 +544,7 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 	/**
 	 * Invoked when a packet has been written to the channel
 	 */
-	private void finalWrite() {
+	private void finalWrite(Object packet) {
 		PacketEvent event = finalEvent;
 
 		if (event != null) {
@@ -553,6 +553,10 @@ public class ChannelInjector extends ByteToMessageDecoder implements Injector {
 			currentEvent = null;
 
 			processor.invokePostEvent(event, NetworkMarker.getNetworkMarker(event));
+
+			// remove the stored packet markers to prevent memory leaks
+			// See: https://github.com/dmulloy2/ProtocolLib/issues/1509
+			packetMarker.remove(packet);
 		}
 	}
 
