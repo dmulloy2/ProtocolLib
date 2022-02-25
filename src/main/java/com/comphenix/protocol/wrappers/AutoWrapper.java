@@ -16,6 +16,12 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.google.common.base.Defaults;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -41,8 +47,17 @@ import com.comphenix.protocol.utility.MinecraftReflection;
  * @author dmulloy2
  */
 public class AutoWrapper<T> implements EquivalentConverter<T> {
+	private static final Object[] NO_ARGS = new Object[0];
+
 	private Map<Integer, Function<Object, Object>> wrappers = new HashMap<>();
 	private Map<Integer, Function<Object, Object>> unwrappers = new HashMap<>();
+
+	// lazy
+	private FieldAccessor[] nmsAccessors;
+	private FieldAccessor[] wrapperAccessors;
+
+	private Object[] nmsDefaultArgs;
+	private ConstructorAccessor nmsInstanceCreator;
 
 	private Class<T> wrapperClass;
 	private Class<?> nmsClass;
@@ -79,75 +94,77 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 			throw new InvalidWrapperException(wrapperClass.getSimpleName() + " is not accessible!", ex);
 		}
 
-		Field[] wrapperFields = wrapperClass.getDeclaredFields();
-		Field[] nmsFields = Arrays
-				.stream(nmsClass.getDeclaredFields())
-				.filter(field -> !Modifier.isStatic(field.getModifiers()))
-				.toArray(Field[]::new);
+		// ensures that all accessors are present
+		computeFieldAccessors();
 
-		for (int i = 0; i < wrapperFields.length; i++) {
-			try {
-				Field wrapperField = wrapperFields[i];
+		for (int i = 0; i < wrapperAccessors.length; i++) {
+			FieldAccessor source = nmsAccessors[i];
+			FieldAccessor target = wrapperAccessors[i];
 
-				Field nmsField = nmsFields[i];
-				if (!nmsField.isAccessible())
-					nmsField.setAccessible(true);
+			Object value = source.get(nmsObject);
+			if (wrappers.containsKey(i))
+				value = wrappers.get(i).apply(value);
 
-				Object value = nmsField.get(nmsObject);
-				if (wrappers.containsKey(i))
-					value = wrappers.get(i).apply(value);
-
-				wrapperField.set(instance, value);
-			} catch (Exception ex) {
-				throw new InvalidWrapperException("Failed to wrap field at index " + i, ex);
-			}
+			target.set(instance, value);
 		}
 
 		return instance;
 	}
 
 	public Object unwrap(Object wrapper) {
-		Object instance;
+		// ensures that all accessors are present
+		computeFieldAccessors();
+		computeNmsConstructorAccess();
 
-		try {
-			instance = nmsClass.newInstance();
-		} catch (ReflectiveOperationException ex) {
-			throw new InvalidWrapperException("Failed to construct new " + nmsClass.getSimpleName(), ex);
-		}
+		Object instance = nmsInstanceCreator.invoke(nmsDefaultArgs);
 
-		Field[] wrapperFields = wrapperClass.getDeclaredFields();
-		Field[] nmsFields = Arrays
-				.stream(nmsClass.getDeclaredFields())
-				.filter(field -> !Modifier.isStatic(field.getModifiers()))
-				.toArray(Field[]::new);
+		for (int i = 0; i < wrapperAccessors.length; i++) {
+			FieldAccessor source = wrapperAccessors[i];
+			FieldAccessor target = nmsAccessors[i];
 
-		for (int i = 0; i < wrapperFields.length; i++) {
-			try {
-				Field wrapperField = wrapperFields[i];
+			Object value = source.get(wrapper);
+			if (unwrappers.containsKey(i))
+				value = unwrappers.get(i).apply(value);
 
-				Field nmsField = nmsFields[i];
-				if (!nmsField.isAccessible())
-					nmsField.setAccessible(true);
-				if (Modifier.isFinal(nmsField.getModifiers()))
-					unsetFinal(nmsField);
-
-				Object value = wrapperField.get(wrapper);
-				if (unwrappers.containsKey(i))
-					value = unwrappers.get(i).apply(value);
-
-				nmsField.set(instance, value);
-			} catch (ReflectiveOperationException ex) {
-				throw new InvalidWrapperException("Failed to unwrap field", ex);
-			}
+			target.set(instance, value);
 		}
 
 		return instance;
 	}
 
-	private void unsetFinal(Field field) throws ReflectiveOperationException {
-		Field modifiers = Field.class.getDeclaredField("modifiers");
-		modifiers.setAccessible(true);
-		modifiers.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+	private void computeFieldAccessors() {
+		if (nmsAccessors == null) {
+			nmsAccessors = Arrays
+					.stream(nmsClass.getDeclaredFields())
+					.filter(field -> !Modifier.isStatic(field.getModifiers()))
+					.map(field -> Accessors.getFieldAccessor(field, true))
+					.toArray(FieldAccessor[]::new);
+		}
+
+		if (wrapperAccessors == null) {
+			wrapperAccessors = Arrays
+					.stream(wrapperClass.getDeclaredFields())
+					.map(field -> Accessors.getFieldAccessor(field, true))
+					.toArray(FieldAccessor[]::new);
+		}
+	}
+
+	private void computeNmsConstructorAccess() {
+		if (nmsInstanceCreator == null) {
+			ConstructorAccessor noArgs = Accessors.getConstructorAccessorOrNull(nmsClass);
+			if (noArgs != null) {
+				// no args constructor is available - use it
+				nmsInstanceCreator = noArgs;
+				nmsDefaultArgs = NO_ARGS;
+			} else {
+				// use the first constructor of the class
+				nmsInstanceCreator = Accessors.getConstructorAccessor(nmsClass.getDeclaredConstructors()[0]);
+				nmsDefaultArgs = Arrays
+						.stream(nmsInstanceCreator.getConstructor().getParameterTypes())
+						.map(type -> type.isPrimitive() ? Defaults.defaultValue(type) : null)
+						.toArray(Object[]::new);
+			}
+		}
 	}
 
 	// ---- Equivalent conversion

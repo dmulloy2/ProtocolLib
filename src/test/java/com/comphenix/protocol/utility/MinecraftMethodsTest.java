@@ -1,19 +1,17 @@
 package com.comphenix.protocol.utility;
 
-import static org.junit.Assert.assertNotNull;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.comphenix.protocol.BukkitInitialization;
-
 import java.lang.reflect.Field;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class MinecraftMethodsTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void initializeReflection() {
-		BukkitInitialization.initializePackage();
+		BukkitInitialization.initializeAll();
 	}
 
 	@Test
@@ -30,8 +28,8 @@ public class MinecraftMethodsTest {
 
 	@Test
 	public void initializePacket() throws NoSuchFieldException, IllegalAccessException {
-		setNull("packetReadByteBuf");
-		setNull("packetWriteByteBuf");
+		this.setNull("packetReadByteBuf");
+		this.setNull("packetWriteByteBuf");
 
 		assertNotNull(MinecraftMethods.getPacketWriteByteBufMethod());
 		// TODO it's now a constructor

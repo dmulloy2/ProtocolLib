@@ -1,44 +1,35 @@
 /**
- *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2015 dmulloy2
- *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
- *  the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *  See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *  02111-1307 USA
+ * ProtocolLib - Bukkit server library that allows access to the Minecraft protocol. Copyright (C) 2015 dmulloy2
+ * <p>
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * <p>
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ * <p>
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.Assert.assertEquals;
-
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import org.bukkit.Location;
+import org.bukkit.Material;
 
 /**
  * @author dmulloy2
  */
-@RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
 public class MultiBlockChangeTest {
 
-	// @BeforeClass
+	// @BeforeAll
 	public static void initializeBukkit() {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
 
 	// @Test
@@ -55,7 +46,7 @@ public class MultiBlockChangeTest {
 		// Make sure the location is correct
 		assertEquals(loc, info.getLocation(null));
 
-		MultiBlockChangeInfo[] array = { info, info };
+		MultiBlockChangeInfo[] array = {info, info};
 
 		EquivalentConverter<MultiBlockChangeInfo[]> converter = Converters.array(
 				MinecraftReflection.getMultiBlockChangeInfoClass(),

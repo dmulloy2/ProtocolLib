@@ -395,20 +395,12 @@ public class FieldUtils {
 		writeStaticField(field, value);
 	}
 
+	/**
+	 * @deprecated Use {@link #writeStaticField(Class, String, Object, boolean)} instead.
+	 */
+	@Deprecated
 	public static void writeStaticFinalField(Class<?> clazz, String fieldName, Object value, boolean forceAccess) throws Exception {
-		Field field = getField(clazz, fieldName, forceAccess);
-		if (field == null) {
-			throw new IllegalArgumentException("Cannot locate field " + fieldName + " in " + clazz);
-		}
-
-		field.setAccessible(true);
-
-		Field modifiersField = Field.class.getDeclaredField("modifiers");
-		modifiersField.setAccessible(true);
-		modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-		field.setAccessible(true);
-		field.set(null, value);
+		writeStaticField(clazz, fieldName, value, forceAccess);
 	}
 
 	/**

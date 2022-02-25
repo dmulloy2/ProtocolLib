@@ -1,25 +1,24 @@
 package com.comphenix.protocol.wrappers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class BukkitConvertersTest {
-	@BeforeClass
+
+	@BeforeAll
 	public static void beforeClass() {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
 
 	@Test

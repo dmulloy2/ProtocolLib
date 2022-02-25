@@ -1,24 +1,24 @@
 package com.comphenix.protocol.wrappers;
 
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.inventory.ItemStack;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class WrappedParticleTest {
-	@BeforeClass
+
+	@BeforeAll
 	public static void beforeClass() {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
 
 	@Test

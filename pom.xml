@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-    <groupId>com.comphenix.protocol</groupId>
+	<groupId>com.comphenix.protocol</groupId>
 	<artifactId>ProtocolLib</artifactId>
 	<name>ProtocolLib</name>
 	<version>4.8.0-SNAPSHOT</version>
@@ -16,7 +16,9 @@
 		<project.build.number></project.build.number>
 		<project.fullVersion>${project.version}</project.fullVersion>
 
-		<powermock.version>2.0.9</powermock.version>
+		<junit.version>5.8.2</junit.version>
+		<mockito.version>4.3.1</mockito.version>
+		<netty.version>4.1.74.Final</netty.version>
 		<spigot.version>1.18.2-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
@@ -71,7 +73,7 @@
 
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>3.10.0</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -81,7 +83,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.2.2</version>
 				<configuration>
 					<archive>
 						<manifestEntries>
@@ -99,6 +101,14 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M5</version>
+				<dependencies>
+					<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
+					<dependency>
+						<groupId>org.junit.jupiter</groupId>
+						<artifactId>junit-jupiter-engine</artifactId>
+						<version>${junit.version}</version>
+					</dependency>
+				</dependencies>
 				<configuration>
 					<trimStackTrace>false</trimStackTrace>
 					<useFile>false</useFile>
@@ -108,22 +118,22 @@
 							<value>${project.version}</value>
 						</property>
 					</systemProperties>
-					<!-- TODO figure out a better way to do this before Java 17 -->
-					<!-- We're currently waiting on powermock, but we may need to switch -->
-					<argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED</argLine>
+					<!-- We need this as we use reflection in tests to ensure equality -->
+					<argLine>--add-opens java.base/java.util=ALL-UNNAMED</argLine>
 				</configuration>
 			</plugin>
 
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.3.1</version>
+				<version>3.3.2</version>
 				<configuration>
 					<failOnError>false</failOnError>
 					<encoding>ISO-8859-1</encoding>
 					<doctitle>ProtocolLib JavaDocs</doctitle>
 					<windowtitle>ProtocolLib JavaDocs</windowtitle>
 					<bottom>Copyright &#169; {inceptionYear}&#x2013;{currentYear}
-						Comphenix and dmulloy2. Licensed under the GNU GPL v2.</bottom>
+						Comphenix and dmulloy2. Licensed under the GNU GPL v2.
+					</bottom>
 					<additionalOptions>
 						<additionalOption>-Xdoclint:none</additionalOption>
 					</additionalOptions>
@@ -185,7 +195,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.2.0</version>
+						<version>3.3.2</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -227,7 +237,7 @@
 	<licenses>
 		<license>
 			<name>GNU GENERAL PUBLIC LICENSE - Version 2, June 1991</name>
-			<url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
+			<url>https://www.gnu.org/licenses/gpl-2.0.txt</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -236,7 +246,7 @@
 		<developer>
 			<id>dmulloy2</id>
 			<name>Dan Mulloy</name>
-			<url>http://dmulloy2.net/</url>
+			<url>https://dmulloy2.net/</url>
 			<roles>
 				<role>developer</role>
 				<role>maintainer</role>
@@ -246,7 +256,7 @@
 			<id>aadnk</id>
 			<name>Kristian S. Stangeland</name>
 			<email>kr_stang@hotmail.com</email>
-			<url>http://comphenix.net/</url>
+			<url>https://comphenix.net/</url>
 			<roles>
 				<role>former author</role>
 			</roles>
@@ -277,38 +287,41 @@
 	</repositories>
 
 	<dependencies>
-		<!-- Compile with the old version of Netty for backwards compat -->
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-all</artifactId>
-			<version>4.0.23.Final</version>
-			<scope>provided</scope>
-		</dependency>
-		<!-- since 1.18 minecraft uses new features of netty but netty is no longer bundled - make sure the new classes are available -->
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-common</artifactId>
-			<version>4.1.70.Final</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-transport</artifactId>
-			<version>4.1.70.Final</version>
-			<scope>test</scope>
-		</dependency>
+		<!-- core minecraft dependencies -->
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
 			<version>${spigot.version}</version>
 			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot</artifactId>
 			<version>${spigot.version}</version>
 			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+
+		<!-- Compile with the old version of Netty for backwards compat -->
+		<!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>4.0.23.Final</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/net.kyori/adventure-text-serializer-gson -->
 		<dependency>
 			<groupId>net.kyori</groupId>
 			<artifactId>adventure-text-serializer-gson</artifactId>
@@ -319,32 +332,43 @@
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.12.3</version>
+			<version>1.12.8</version>
 		</dependency>
 
 		<!-- Testing dependencies -->
+		<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.2</version>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>3.12.4</version>
+			<version>${mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-inline -->
 		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<version>${powermock.version}</version>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
+			<version>${mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.netty/netty-common -->
 		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito2</artifactId>
-			<version>${powermock.version}</version>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-common</artifactId>
+			<version>${netty.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.netty/netty-transport -->
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-transport</artifactId>
+			<version>${netty.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

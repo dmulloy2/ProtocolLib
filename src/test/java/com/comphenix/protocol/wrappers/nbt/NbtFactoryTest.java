@@ -17,51 +17,35 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.reflect.instances.DefaultInstances;
-import com.comphenix.protocol.utility.Constants;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
-
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-@RunWith(org.powermock.modules.junit4.PowerMockRunner.class)
-@PowerMockIgnore({ "org.apache.logging.log4j.core.config.xml.*", "javax.management.*" })
-//@PrepareForTest(CraftItemFactory.class)
 public class NbtFactoryTest {
-	@BeforeClass
+
+	@BeforeAll
 	public static void initializeBukkit() throws IllegalAccessException {
-		BukkitInitialization.initializeItemMeta();
+		BukkitInitialization.initializeAll();
 	}
-	
+
 	@Test
 	public void testFromStream() {
 		WrappedCompound compound = WrappedCompound.fromName("tag");
 		compound.put("name", "Test Testerson");
 		compound.put("age", 42);
-		
+
 		compound.put(NbtFactory.ofList("nicknames", "a", "b", "c"));
 
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -70,9 +54,9 @@ public class NbtFactoryTest {
 
 		ByteArrayInputStream source = new ByteArrayInputStream(buffer.toByteArray());
 		DataInput input = new DataInputStream(source);
-		
+
 		NbtCompound cloned = NbtBinarySerializer.DEFAULT.deserializeCompound(input);
-		
+
 		assertEquals(compound.getString("name"), cloned.getString("name"));
 		assertEquals(compound.getInteger("age"), cloned.getInteger("age"));
 		assertEquals(compound.getList("nicknames"), cloned.getList("nicknames"));
@@ -82,13 +66,13 @@ public class NbtFactoryTest {
 	public void testItemTag() {
 		ItemStack test = new ItemStack(Items.L);
 		org.bukkit.inventory.ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
-		
+
 		NbtCompound compound = NbtFactory.ofCompound("tag");
 		compound.put("name", "Test Testerson");
 		compound.put("age", 42);
-		
+
 		NbtFactory.setItemTag(craftTest, compound);
-		
+
 		assertEquals(compound, NbtFactory.fromItemTag(craftTest));
 	}
 

@@ -58,8 +58,6 @@ public abstract class CompiledStructureModifier extends StructureModifier<Object
 				throw new IllegalStateException("Cannot make compiled field " + fieldIndex + " read only.");
 			}
 		}
-		
-		super.setReadOnly(fieldIndex, value);
 	}
 	
 	// Speed up the default writer
