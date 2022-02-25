@@ -31,7 +31,7 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.nett.WirePacket;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;

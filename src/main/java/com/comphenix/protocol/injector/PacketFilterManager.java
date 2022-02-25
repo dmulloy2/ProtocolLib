@@ -36,7 +36,7 @@ import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.netty.ProtocolInjector;
-import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.nett.WirePacket;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;

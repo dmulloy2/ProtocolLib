@@ -1,0 +1,511 @@
+package com.comphenix.protocol.injector.nett;
+
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.NetworkMarker;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.NetworkProcessor;
+import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.netty.Injector;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.ByteBuddyGenerated;
+import com.comphenix.protocol.utility.MinecraftFields;
+import com.comphenix.protocol.utility.MinecraftMethods;
+import com.comphenix.protocol.utility.MinecraftProtocolVersion;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.util.AttributeKey;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
+public class NettyChannelInjector implements Injector {
+
+	// an accessor used when we're unable to retrieve the actual packet field in an outbound packet send
+	private static final FieldAccessor NO_OP_ACCESSOR = new FieldAccessor() {
+		@Override
+		public Object get(Object instance) {
+			return null;
+		}
+
+		@Override
+		public void set(Object instance, Object value) {
+		}
+
+		@Override
+		public Field getField() {
+			return null;
+		}
+	};
+
+	private static final String INTERCEPTOR_NAME = "protocol_lib_inbound_interceptor";
+	private static final String WIRE_PACKET_ENCODER_NAME = "protocol_lib_wire_packet_encoder";
+
+	// all registered channel handlers to easier make sure we unregister them all from the pipeline
+	private static final String[] PROTOCOL_LIB_HANDLERS = new String[]{
+			WIRE_PACKET_ENCODER_NAME, INTERCEPTOR_NAME
+	};
+
+	private static final ErrorReporter ERROR_REPORTER = ProtocolLibrary.getErrorReporter();
+	private static final ReportType REPORT_CANNOT_SEND_PACKET = new ReportType("Unable to send packet %s to %s");
+
+	private static final NetworkProcessor NETWORK_PROCESSOR = new NetworkProcessor(ERROR_REPORTER);
+	private static final Map<Class<?>, FieldAccessor> PACKET_ACCESSORS = new ConcurrentHashMap<>(16, 0.9f);
+
+	private static final WirePacketEncoder WIRE_PACKET_ENCODER = new WirePacketEncoder();
+
+	private static final Class<?> LOGIN_PACKET_START_CLASS = PacketType.Login.Client.START.getPacketClass();
+	private static final Class<?> PACKET_PROTOCOL_CLASS = PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass();
+
+	private static final AttributeKey<Integer> PROTOCOL_VERSION = AttributeKey.valueOf(getRandomKey());
+	private static final AttributeKey<NettyChannelInjector> INJECTOR = AttributeKey.valueOf(getRandomKey());
+
+	// lazy initialized fields, if we don't need them we don't bother about them
+	private static FieldAccessor LOGIN_GAME_PROFILE;
+	private static FieldAccessor PROTOCOL_VERSION_ACCESSOR;
+
+	private final Object networkManager;
+	private final Channel wrappedChannel;
+	private final ChannelListener channelListener;
+	private final InjectionFactory injectionFactory;
+
+	private final FieldAccessor channelField;
+
+	private final Set<Object> skippedPackets = new LinkedHashSet<>();
+	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
+
+	// status of this injector
+	private boolean closed = false;
+	private boolean injected = false;
+
+	// information about the player belonging to this injector
+	private String playerName;
+	private Player resolvedPlayer;
+
+	// lazy initialized fields, if we don't need them we don't bother about them
+	private Object playerConnection;
+	private FieldAccessor protocolAccessor;
+
+	public NettyChannelInjector(Object netManager, Channel channel, ChannelListener listener, InjectionFactory injector) {
+		this.networkManager = netManager;
+		this.wrappedChannel = channel;
+		this.channelListener = listener;
+		this.injectionFactory = injector;
+
+		// register us into the channel
+		this.wrappedChannel.attr(INJECTOR).set(this);
+
+		// read the channel field from the network manager given to this method
+		// we re-read this field every time as plugins/spigot forks might give us different network manager types
+		Field channelField = FuzzyReflection.fromObject(netManager, true).getField(FuzzyFieldContract.newBuilder()
+				.typeExact(Channel.class)
+				.banModifier(Modifier.STATIC)
+				.build());
+		this.channelField = Accessors.getFieldAccessor(channelField, true);
+	}
+
+	static NettyChannelInjector findInjector(Channel channel) {
+		return channel.attr(INJECTOR).get();
+	}
+
+	static Object findChannelHandler(Channel channel, Class<?> type) {
+		for (Entry<String, ChannelHandler> entry : channel.pipeline()) {
+			if (type.isAssignableFrom(entry.getValue().getClass())) {
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
+
+	private static String getRandomKey() {
+		return Long.toString(System.nanoTime());
+	}
+
+	private static boolean hasProtocolLibHandler(Channel channel) {
+		for (String handler : PROTOCOL_LIB_HANDLERS) {
+			if (channel.pipeline().get(handler) != null) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public int getProtocolVersion() {
+		Integer protocolVersion = this.wrappedChannel.attr(PROTOCOL_VERSION).get();
+		return protocolVersion == null ? MinecraftProtocolVersion.getCurrentVersion() : protocolVersion;
+	}
+
+	@Override
+	public boolean inject() {
+		// we only do this on the channel event loop to prevent blocking the main server thread
+		// and to be sure that the netty pipeline view we get is up-to-date
+		if (this.wrappedChannel.eventLoop().inEventLoop()) {
+			// ensure that we should actually inject into the channel
+			if (this.closed
+					|| this.injected
+					|| this.wrappedChannel instanceof ByteBuddyFactory
+					|| !this.wrappedChannel.isActive()
+			) {
+				return false;
+			}
+
+			// check if we already injected into the channel
+			if (hasProtocolLibHandler(this.wrappedChannel)) {
+				return false;
+			}
+
+			// inject our handlers
+			this.wrappedChannel.pipeline()
+					.addBefore("encoder", WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER)
+					.addAfter("decoder", INTERCEPTOR_NAME, new InboundPacketInterceptor(this, this.channelListener));
+
+			// override the channel of the player
+			Channel ch = new NettyChannelProxy(this.wrappedChannel, new NettyEventLoopProxy(this.wrappedChannel.eventLoop()) {
+				@Override
+				protected Runnable proxyRunnable(Runnable original) {
+					return NettyChannelInjector.this.processOutbound(original);
+				}
+
+				@Override
+				protected <T> Callable<T> proxyCallable(Callable<T> original) {
+					return NettyChannelInjector.this.processOutbound(original);
+				}
+			});
+			this.channelField.set(this.networkManager, ch);
+
+			this.injected = true;
+			return true;
+		} else {
+			// re-run in event loop, return false as we cannot be sure if the injection actually worked
+			this.ensureInEventLoop(this::inject);
+			return false;
+		}
+	}
+
+	@Override
+	public void uninject() {
+		// ensure that we injected into the channel before trying to remove anything from it
+		if (this.injected) {
+			// uninject on the event loop to ensure the instant visibility of the change and prevent blocks of other threads
+			if (this.wrappedChannel.eventLoop().inEventLoop()) {
+				this.injected = false;
+				this.channelField.set(this.networkManager, this.wrappedChannel);
+
+				for (String handler : PROTOCOL_LIB_HANDLERS) {
+					this.wrappedChannel.pipeline().remove(handler);
+				}
+			} else {
+				this.ensureInEventLoop(this::uninject);
+			}
+		}
+	}
+
+	@Override
+	public void close() {
+		// ensure that the injector wasn't close before
+		if (!this.closed) {
+			this.closed = true;
+
+			// remove all of our references from the channel
+			this.uninject();
+			this.wrappedChannel.attr(INJECTOR).remove();
+
+			// cleanup
+			this.savedMarkers.clear();
+			this.skippedPackets.clear();
+
+			// wipe this injector completely
+			this.injectionFactory.invalidate(this.resolvedPlayer, this.playerName);
+		}
+	}
+
+	@Override
+	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
+		// register the packet as filtered if we shouldn't post it to any listener
+		if (!filtered) {
+			this.skippedPackets.add(packet);
+		}
+
+		// save the given packet marker and send the packet
+		this.saveMarker(packet, marker);
+		try {
+			//
+			if (this.resolvedPlayer instanceof ByteBuddyGenerated) {
+				MinecraftMethods.getNetworkManagerHandleMethod().invoke(this.networkManager, packet);
+			} else {
+				MinecraftMethods.getSendPacketMethod().invoke(this.getPlayerConnection(), packet);
+			}
+		} catch (Exception exception) {
+			ERROR_REPORTER.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
+					.messageParam(packet, this.playerName)
+					.error(exception)
+					.build());
+		}
+	}
+
+	@Override
+	public void receiveClientPacket(Object packet) {
+		Runnable receiveAction = () -> {
+			try {
+				// try to invoke the method, this should normally not fail
+				MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(this.networkManager, null, packet);
+			} catch (Exception exception) {
+				// 99% the user gave wrong information to the server
+				ERROR_REPORTER.reportMinimal(this.injectionFactory.getPlugin(), "receiveClientPacket", exception);
+			}
+		};
+
+		// execute the action on the event loop rather than any thread which we should potentially not block
+		if (this.wrappedChannel.eventLoop().inEventLoop()) {
+			receiveAction.run();
+		} else {
+			this.ensureInEventLoop(receiveAction);
+		}
+	}
+
+	@Override
+	public Protocol getCurrentProtocol() {
+		// ensure that the accessor to the protocol field is available
+		if (this.protocolAccessor == null) {
+			this.protocolAccessor = Accessors.getFieldAccessor(
+					this.networkManager.getClass(),
+					MinecraftReflection.getEnumProtocolClass(),
+					true);
+		}
+
+		Object nmsProtocol = this.protocolAccessor.get(this.networkManager);
+		return Protocol.fromVanilla((Enum<?>) nmsProtocol);
+	}
+
+	@Override
+	public NetworkMarker getMarker(Object packet) {
+		return this.savedMarkers.get(packet);
+	}
+
+	@Override
+	public void saveMarker(Object packet, NetworkMarker marker) {
+		if (marker != null) {
+			this.savedMarkers.put(packet, marker);
+		}
+	}
+
+	@Override
+	public Player getPlayer() {
+		// if the player was already resolved there is no need to do further lookups
+		if (this.resolvedPlayer != null) {
+			return this.resolvedPlayer;
+		}
+
+		// check if the name of the player is already known to the injector
+		if (this.playerName != null) {
+			this.resolvedPlayer = Bukkit.getPlayerExact(this.playerName);
+		}
+
+		// either we resolved it or we didn't...
+		return this.resolvedPlayer;
+	}
+
+	@Override
+	public void setPlayer(Player player) {
+		this.resolvedPlayer = player;
+		this.playerName = player.getName();
+	}
+
+	@Override
+	public boolean isInjected() {
+		return this.injected;
+	}
+
+	@Override
+	public boolean isClosed() {
+		return this.closed;
+	}
+
+	void tryProcessLogin(Object packet) {
+		// check if the given packet is a login packet
+		if (LOGIN_PACKET_START_CLASS != null && LOGIN_PACKET_START_CLASS.equals(packet.getClass())) {
+			// ensure that the game profile accessor is available
+			if (LOGIN_GAME_PROFILE == null) {
+				LOGIN_GAME_PROFILE = Accessors.getFieldAccessor(
+						LOGIN_PACKET_START_CLASS,
+						MinecraftReflection.getGameProfileClass(),
+						true);
+			}
+
+			// the client only sends the name but the server wraps it into a GameProfile, so here we are
+			WrappedGameProfile profile = WrappedGameProfile.fromHandle(LOGIN_GAME_PROFILE.get(packet));
+
+			// cache the injector and the player name
+			this.playerName = profile.getName();
+			this.injectionFactory.cacheInjector(profile.getName(), this);
+
+			return;
+		}
+
+		// protocol version begin
+		if (PACKET_PROTOCOL_CLASS != null && PACKET_PROTOCOL_CLASS.equals(packet.getClass())) {
+			// ensure the protocol version accessor is available
+			if (PROTOCOL_VERSION_ACCESSOR == null) {
+				try {
+					Field ver = FuzzyReflection.fromClass(PACKET_PROTOCOL_CLASS, true).getField(FuzzyFieldContract.newBuilder()
+							.banModifier(Modifier.STATIC)
+							.typeExact(int.class)
+							.build());
+					PROTOCOL_VERSION_ACCESSOR = Accessors.getFieldAccessor(ver, true);
+				} catch (IllegalArgumentException exception) {
+					// unable to resolve that field, continue no-op
+					PROTOCOL_VERSION_ACCESSOR = NO_OP_ACCESSOR;
+				}
+			}
+
+			// read the protocol version from the field if available
+			if (PROTOCOL_VERSION_ACCESSOR != NO_OP_ACCESSOR) {
+				int protocolVersion = (int) PROTOCOL_VERSION_ACCESSOR.get(packet);
+				this.wrappedChannel.attr(PROTOCOL_VERSION).set(protocolVersion);
+			}
+		}
+	}
+
+	private void ensureInEventLoop(Runnable runnable) {
+		this.wrappedChannel.eventLoop().execute(runnable);
+	}
+
+	private <T> T processOutbound(T action) {
+		// get the accessor to the packet field
+		// if we are unable to look up the accessor then just return the runnable, probably nothing of our business
+		FieldAccessor packetAccessor = this.lookupPacketAccessor(action);
+		if (packetAccessor == NO_OP_ACCESSOR) {
+			return action;
+		}
+
+		// get the packet field and ensure that the field is actually present (should always be, just to be sure)
+		Object packet = packetAccessor.get(action);
+		if (packet == null) {
+			return action;
+		}
+
+		// filter out all packets which were explicitly send to not be processed by any event
+		NetworkMarker marker = this.savedMarkers.remove(packet);
+		if (this.skippedPackets.remove(packet)) {
+			// if a marker was set there might be scheduled packets to execute after the packet send
+			// for this to work we need to proxy the input action to provide access to them
+			if (marker != null) {
+				return this.proxyAction(action, null, marker);
+			}
+
+			// nothing special, just no processing
+			return action;
+		}
+
+		// no listener - no magic :)
+		if (!this.channelListener.hasListener(packet.getClass())) {
+			return action;
+		}
+
+		// ensure that we are on the main thread if we need to
+		if (this.channelListener.hasMainThreadListener(packet.getClass()) && !Bukkit.isPrimaryThread()) {
+			// not on the main thread but we are required to be - re-schedule the packet on the main thread
+			Bukkit.getScheduler().scheduleSyncDelayedTask(
+					this.injectionFactory.getPlugin(),
+					() -> this.sendServerPacket(packet, null, false));
+			return null;
+		}
+
+		// call all listeners which are listening to the outbound packet, if any
+		// null indicates that no listener was affected by the packet, meaning that we can directly send the original packet
+		PacketEvent event = this.channelListener.onPacketSending(this, packet, marker);
+		if (event == null) {
+			return action;
+		}
+
+		// if the event wasn't cancelled by this action we must recheck if the packet changed during the method call
+		if (!event.isCancelled()) {
+			// rewrite the packet in the given action if the packet was changed during the event call
+			Object interceptedPacket = event.getPacket().getHandle();
+			if (interceptedPacket != packet) {
+				packetAccessor.set(action, interceptedPacket);
+			}
+
+			// this is essential to do this way as a call to getMarker on the event will construct a new marker instance if needed
+			// we just want to know here if there is a marker to proceed correctly
+			// if the marker is null we can just schedule the action as we don't need to do anything after the packet was sent
+			NetworkMarker eventMarker = NetworkMarker.getNetworkMarker(event);
+			if (eventMarker == null) {
+				return action;
+			}
+
+			// we need to wrap the action to call the listeners set in the marker
+			return this.proxyAction(action, event, eventMarker);
+		}
+
+		// return null if the event was cancelled to schedule a no-op event
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> T proxyAction(T action, PacketEvent event, NetworkMarker marker) {
+		// hack - we only know that the given action is either a runnable or callable, but we need to work out which thing
+		// it is exactly to proceed correctly here.
+		if (action instanceof Runnable) {
+			// easier thing to do - just wrap the runnable in a new one
+			return (T) (Runnable) () -> {
+				((Runnable) action).run();
+				NETWORK_PROCESSOR.invokePostEvent(event, marker);
+			};
+		} else if (action instanceof Callable<?>) {
+			// okay this is a bit harder now - we need to wrap the action and return the value of it
+			return (T) (Callable<Object>) () -> {
+				Object value = ((Callable<Object>) action).call();
+				NETWORK_PROCESSOR.invokePostEvent(event, marker);
+				return value;
+			};
+		} else {
+			throw new IllegalStateException("Unexpected input action of type " + action.getClass());
+		}
+	}
+
+	private FieldAccessor lookupPacketAccessor(Object action) {
+		return PACKET_ACCESSORS.computeIfAbsent(action.getClass(), clazz -> {
+			try {
+				return Accessors.getFieldAccessor(action.getClass(), MinecraftReflection.getPacketClass(), true);
+			} catch (IllegalArgumentException exception) {
+				// no such field found :(
+				return NO_OP_ACCESSOR;
+			}
+		});
+	}
+
+	private Object getPlayerConnection() {
+		// resolve the player connection if needed
+		if (this.playerConnection == null) {
+			Player target = this.getPlayer();
+			if (target == null) {
+				throw new IllegalStateException("Cannot send packet to offline/unresolved player " + this.playerName);
+			}
+
+			this.playerConnection = MinecraftFields.getPlayerConnection(target);
+		}
+
+		// cannot be null at this point
+		return this.playerConnection;
+	}
+}

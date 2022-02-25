@@ -24,7 +24,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.nett.WirePacket;
 
 /**
  * Represents a object capable of sending or receiving packets.

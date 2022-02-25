@@ -7,15 +7,17 @@ package com.comphenix.protocol.injector.server;
  * </p>
  */
 public class TemporaryPlayer {
+
 	private volatile SocketInjector injector;
 
 	SocketInjector getInjector() {
-		return injector;
+		return this.injector;
 	}
 
 	void setInjector(SocketInjector injector) {
-		if (injector == null)
+		if (injector == null) {
 			throw new IllegalArgumentException("Injector cannot be NULL.");
+		}
 		this.injector = injector;
 	}
 }

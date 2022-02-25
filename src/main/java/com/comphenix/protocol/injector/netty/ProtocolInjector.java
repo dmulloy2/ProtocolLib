@@ -16,11 +16,11 @@
  */
 package com.comphenix.protocol.injector.netty;
 
+import com.comphenix.protocol.injector.nett.InjectionFactory;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
