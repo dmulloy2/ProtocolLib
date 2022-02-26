@@ -1,58 +1,37 @@
-/*
- *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2012 Kristian S. Stangeland
- *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
- *  the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *  See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *  02111-1307 USA
- */
-
 package com.comphenix.protocol.injector;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.*;
-import com.comphenix.protocol.injector.netty.ProtocolInjector;
-import com.comphenix.protocol.injector.nett.WirePacket;
+import com.comphenix.protocol.events.ListenerOptions;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.NetworkMarker;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
+import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
 import com.comphenix.protocol.injector.packet.PacketInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
-import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-
 import io.netty.channel.Channel;
-
-import org.bukkit.Bukkit;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -68,762 +47,348 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
-public final class PacketFilterManager implements ListenerInvoker, InternalManager {
+public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
-	public static final ReportType REPORT_CANNOT_LOAD_PACKET_LIST = new ReportType("Cannot load server and client packet list.");
-	public static final ReportType REPORT_CANNOT_INITIALIZE_PACKET_INJECTOR = new ReportType("Unable to initialize packet injector");
+	// plugin verifier reports
+	private static final ReportType PLUGIN_VERIFIER_ERROR = new ReportType("Plugin verifier error: %s");
+	private static final ReportType INVALID_PLUGIN_VERIFY = new ReportType("Plugin %s does not %s on ProtocolLib");
 
-	public static final ReportType REPORT_PLUGIN_DEPEND_MISSING =
-			new ReportType("%s doesn't depend on ProtocolLib. Check that its plugin.yml has a 'depend' directive.");
+	// listener registration reports
+	private static final ReportType UNSUPPORTED_PACKET = new ReportType(
+			"Plugin %s tried to register listener for unknown packet %s [direction: to %s]");
 
-	// Registering packet IDs that are not supported
-	public static final ReportType REPORT_UNSUPPORTED_SERVER_PACKET = new ReportType("[%s] Unsupported server packet in current Minecraft version: %s");
-	public static final ReportType REPORT_UNSUPPORTED_CLIENT_PACKET = new ReportType("[%s] Unsupported client packet in current Minecraft version: %s");
+	// bukkit references
+	private final Plugin plugin;
+	private final Server server;
 
-	// Problems injecting and uninjecting players
-	public static final ReportType REPORT_CANNOT_UNINJECT_PLAYER = new ReportType("Unable to uninject net handler for player.");
-	public static final ReportType REPORT_CANNOT_UNINJECT_OFFLINE_PLAYER = new ReportType("Unable to uninject logged off player.");
-	public static final ReportType REPORT_CANNOT_INJECT_PLAYER = new ReportType("Unable to inject player.");
+	// protocol lib references
+	private final ErrorReporter reporter;
+	private final MinecraftVersion minecraftVersion;
+	private final AsyncFilterManager asyncFilterManager;
 
-	public static final ReportType REPORT_CANNOT_UNREGISTER_PLUGIN = new ReportType("Unable to handle disabled plugin.");
-	public static final ReportType REPORT_PLUGIN_VERIFIER_ERROR = new ReportType("Verifier error: %s");
+	private final PluginVerifier pluginVerifier;
 
-	/**
-	 * The number of ticks in a second.
-	 */
-	public static final int TICKS_PER_SECOND = 20;
+	// packet listeners
+	private final SortedPacketListenerList inboundListeners;
+	private final SortedPacketListenerList outboundListeners;
 
-	// The amount of time to wait until we actually unhook every player
-	private static final int UNHOOK_DELAY = 5 * TICKS_PER_SECOND;
+	// only for api lookups
+	private final Set<PacketListener> registeredListeners;
 
-	// Delayed unhook
-	private DelayedSingleTask unhookTask;
+	// injectors
+	private final PacketInjector packetInjector;
+	private final PlayerInjectionHandler playerInjectionHandler;
+	private final NetworkManagerInjector networkManagerInjector;
 
-	// Create a concurrent set
-	private Set<PacketListener> packetListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+	// status of this manager
+	private boolean debug = false;
+	private boolean closed = false;
+	private boolean injected = false;
 
-	// Packet injection
-	private PacketInjector packetInjector;
-
-	// Different injection types per game phase
-	private PlayerInjectionHandler playerInjection;
-
-	// Whether or not a packet must be input buffered
-	private volatile Set<PacketType> inputBufferedPackets = Sets.newHashSet();
-
-	// The two listener containers
-	private SortedPacketListenerList recievedListeners;
-	private SortedPacketListenerList sendingListeners;
-
-	// Whether or not this class has been closed
-	private volatile boolean hasClosed;
-
-	// The default class loader
-	private ClassLoader classLoader;
-
-	// Error repoter
-	private ErrorReporter reporter;
-
-	// The current server
-	private Server server;
-
-	// The current ProtocolLib library
-	private Plugin library;
-
-	// The async packet handler
-	private AsyncFilterManager asyncFilterManager;
-
-	// Valid server and client packets
-	private boolean knowsServerPackets;
-	private boolean knowsClientPackets;
-
-	// Ensure that we're not performing too may injections
-	private AtomicInteger phaseLoginCount = new AtomicInteger(0);
-	private AtomicInteger phasePlayingCount = new AtomicInteger(0);
-
-	// Whether or not plugins are using the send/receive methods
-	private AtomicBoolean packetCreation = new AtomicBoolean();
-
-	// Netty injector (for 1.7.2)
-	private ProtocolInjector nettyInjector;
-
-	// Plugin verifier
-	private PluginVerifier pluginVerifier;
-
-	// Whether or not Location.distance(Location) exists - we assume this is the case
-	private boolean hasRecycleDistance = true;
-
-	// The current Minecraft version
-	private MinecraftVersion minecraftVersion;
-
-	// Debug mode
-	private boolean debug;
-
-	/**
-	 * Only create instances of this class if ProtocolLib is disabled.
-	 * @param builder - PacketFilterBuilder
-	 */
 	public PacketFilterManager(PacketFilterBuilder builder) {
-		// Used to determine if injection is needed
-		Predicate<GamePhase> isInjectionNecessary = phase -> {
-			boolean result = true;
-
-			if (phase.hasLogin())
-				result &= getPhaseLoginCount() > 0;
-			// Note that we will still hook players if the unhooking has been delayed
-			if (phase.hasPlaying())
-				result &= getPhasePlayingCount() > 0 || unhookTask.isRunning();
-			return result;
-		};
-
-		// Listener containers
-		this.recievedListeners = new SortedPacketListenerList();
-		this.sendingListeners = new SortedPacketListenerList();
-
-		// References
-		this.unhookTask = builder.getUnhookTask();
+		// bukkit references
+		this.plugin = builder.getLibrary();
 		this.server = builder.getServer();
-		this.classLoader = builder.getClassLoader();
+
+		// protocol lib references
 		this.reporter = builder.getReporter();
-
-		// The plugin verifier - we don't want to stop ProtocolLib just because its failing
-		try {
-			this.pluginVerifier = new PluginVerifier(builder.getLibrary());
-		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (Throwable e) {
-			reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_VERIFIER_ERROR).
-					messageParam(e.getMessage()).error(e));
-		}
-
-		// Prepare version
 		this.minecraftVersion = builder.getMinecraftVersion();
-
-		this.nettyInjector = new ProtocolInjector(builder.getLibrary(), this, reporter);
-		this.playerInjection = nettyInjector.getPlayerInjector();
-		this.packetInjector = nettyInjector.getPacketInjector();
-
 		this.asyncFilterManager = builder.getAsyncManager();
-		this.library = builder.getLibrary();
 
-		// Attempt to load the list of server and client packets
-		try {
-			knowsServerPackets = PacketRegistry.getClientPacketTypes() != null;
-			knowsClientPackets = PacketRegistry.getServerPacketTypes() != null;
-		} catch (FieldAccessException e) {
-			reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_LOAD_PACKET_LIST).error(e));
+		// other stuff
+		this.asyncFilterManager.setManager(this);
+		this.pluginVerifier = initializePluginVerifier(this, builder.getLibrary(), builder.getReporter());
+
+		// packet listeners
+		this.registeredListeners = new HashSet<>();
+		this.inboundListeners = new SortedPacketListenerList();
+		this.outboundListeners = new SortedPacketListenerList();
+
+		// injectors
+		this.networkManagerInjector = new NetworkManagerInjector(builder.getLibrary(), this, builder.getReporter());
+		this.packetInjector = this.networkManagerInjector.getPacketInjector();
+		this.playerInjectionHandler = this.networkManagerInjector.getPlayerInjectionHandler();
+
+		// ensure that all packet types are loaded and synced
+		PacketRegistry.getClientPacketTypes();
+		PacketRegistry.getServerPacketTypes();
+
+		// hook into all connected players
+		for (Player player : this.server.getOnlinePlayers()) {
+			this.playerInjectionHandler.injectPlayer(player, ConflictStrategy.BAIL_OUT);
 		}
 	}
 
-	/**
-	 * Construct a new packet filter builder.
-	 * @return New builder.
-	 */
 	public static PacketFilterBuilder newBuilder() {
 		return new PacketFilterBuilder();
 	}
 
-	@Override
-	public int getProtocolVersion(Player player) {
-		return playerInjection.getProtocolVersion(player);
-	}
-
-	@Override
-	public MinecraftVersion getMinecraftVersion() {
-		return minecraftVersion;
-	}
-
-	@Override
-	public AsynchronousManager getAsynchronousManager() {
-		return asyncFilterManager;
-	}
-
-	@Override
-	public boolean isDebug() {
-		return debug;
-	}
-
-	@Override
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-
-		// Inform components that can handle debug mode
-		if (nettyInjector != null) {
-			nettyInjector.setDebug(debug);
+	private static PluginVerifier initializePluginVerifier(
+			PacketFilterManager requester,
+			Plugin plugin,
+			ErrorReporter reporter
+	) {
+		try {
+			// do this here to prevent us from exploding just because the verifier fails
+			return new PluginVerifier(plugin);
+		} catch (Exception exception) {
+			reporter.reportWarning(requester, Report.newBuilder(PLUGIN_VERIFIER_ERROR)
+					.error(exception)
+					.messageParam(exception.getMessage())
+					.build());
+			return null;
 		}
 	}
 
-	/**
-	 * Retrieves how the server packets are read.
-	 * @return Injection method for reading server packets.
-	 */
 	@Override
-	public PlayerInjectHooks getPlayerHook() {
-		return playerInjection.getPlayerHook();
+	public void sendServerPacket(Player receiver, PacketContainer packet) {
+		this.sendServerPacket(receiver, packet, true);
 	}
 
-	/**
-	 * Sets how the server packets are read.
-	 * @param playerHook - the new injection method for reading server packets.
-	 */
 	@Override
-	public void setPlayerHook(PlayerInjectHooks playerHook) {
-		playerInjection.setPlayerHook(playerHook);
+	public void sendServerPacket(Player receiver, PacketContainer packet, boolean filters) {
+		this.sendServerPacket(receiver, packet, null, filters);
+	}
+
+	@Override
+	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters) {
+		if (!this.closed) {
+			// if we skip the packet events later when actually writing into the pipeline we at least notify all
+			// monitor listeners before doing so - they will not be able to change the event tho
+			if (!filters) {
+				// ensure we are on the main thread if any listener requires that
+				if (this.playerInjectionHandler.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
+					NetworkMarker copy = marker; // okay fine
+					this.server.getScheduler().scheduleSyncDelayedTask(
+							this.plugin,
+							() -> this.sendServerPacket(receiver, packet, copy, true));
+					return;
+				}
+
+				// construct the event and post to all monitor listeners
+				PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
+				this.outboundListeners.invokePacketSending(this.reporter, event, ListenerPriority.MONITOR);
+
+				// update the marker of the event without accidentally constructing it
+				marker = NetworkMarker.getNetworkMarker(event);
+			}
+
+			// process outbound
+			this.playerInjectionHandler.sendServerPacket(receiver, packet, marker, filters);
+		}
+	}
+
+	@Override
+	public void sendWirePacket(Player receiver, int id, byte[] bytes) {
+		this.sendWirePacket(receiver, new WirePacket(id, bytes));
+	}
+
+	@Override
+	public void sendWirePacket(Player receiver, WirePacket packet) {
+		if (!this.closed) {
+			// special case - we just throw the wire packet down the pipeline without processing it
+			Channel outboundChannel = this.playerInjectionHandler.getChannel(receiver);
+			if (outboundChannel == null) {
+				throw new IllegalArgumentException("Unable to obtain connection of player " + receiver);
+			}
+
+			outboundChannel.writeAndFlush(packet);
+		}
+	}
+
+	@Override
+	public void receiveClientPacket(Player sender, PacketContainer packet) {
+		this.receiveClientPacket(sender, packet, true);
+	}
+
+	@Override
+	public void receiveClientPacket(Player sender, PacketContainer packet, boolean filters) {
+		this.receiveClientPacket(sender, packet, null, filters);
+	}
+
+	@Override
+	public void receiveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters) {
+		if (!this.closed) {
+			// make sure we are on the main thread if any listener of the packet needs it
+			if (this.playerInjectionHandler.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
+				this.server.getScheduler().scheduleSyncDelayedTask(
+						this.plugin,
+						() -> this.receiveClientPacket(sender, packet, marker, filters));
+				return;
+			}
+
+			Object nmsPacket = packet.getHandle();
+
+			// make sure packets which are force received through this method are never cancelled
+			boolean oldCancelState = this.packetInjector.isCancelled(nmsPacket);
+			this.packetInjector.setCancelled(nmsPacket, false);
+
+			// check to which listeners we need to post the packet
+			if (filters) {
+				// post to all listeners
+				PacketEvent event = this.packetInjector.packetReceived(packet, sender);
+				if (event.isCancelled()) {
+					return;
+				}
+
+				// prevent possible de-sync
+				nmsPacket = event.getPacket().getHandle();
+			} else {
+				PacketEvent event = PacketEvent.fromClient(this, packet, marker, sender, false);
+				this.inboundListeners.invokePacketRecieving(this.reporter, event, ListenerPriority.MONITOR);
+			}
+
+			// post to the player inject, reset our cancel state change
+			this.playerInjectionHandler.receiveClientPacket(sender, nmsPacket);
+			this.packetInjector.setCancelled(nmsPacket, oldCancelState);
+		}
+	}
+
+	@Override
+	public int getProtocolVersion(Player player) {
+		return this.playerInjectionHandler.getProtocolVersion(player);
+	}
+
+	@Override
+	public void broadcastServerPacket(PacketContainer packet) {
+		this.broadcastServerPacket(packet, this.server.getOnlinePlayers());
+	}
+
+	@Override
+	public void broadcastServerPacket(PacketContainer packet, Entity entity, boolean includeTracker) {
+		if (!this.closed) {
+			Collection<Player> trackers = this.getEntityTrackers(entity);
+			if (includeTracker && entity instanceof Player) {
+				trackers.add((Player) entity);
+			}
+
+			this.broadcastServerPacket(packet, trackers);
+		}
+	}
+
+	@Override
+	public void broadcastServerPacket(PacketContainer packet, Location origin, int maxObserverDistance) {
+		if (!this.closed) {
+			World world = origin.getWorld();
+			if (world == null) {
+				throw new IllegalArgumentException("The given location " + origin + " has no world associated!");
+			}
+
+			Location copy = origin.clone();
+			int maxDistance = maxObserverDistance * maxObserverDistance;
+
+			// filter out all target players
+			Collection<Player> targetPlayers = new HashSet<>();
+			for (Player player : world.getPlayers()) {
+				if (player.getLocation().distanceSquared(copy) <= maxDistance) {
+					targetPlayers.add(player);
+				}
+			}
+
+			this.broadcastServerPacket(packet, targetPlayers);
+		}
+	}
+
+	@Override
+	public void broadcastServerPacket(PacketContainer packet, Collection<? extends Player> targetPlayers) {
+		for (Player player : targetPlayers) {
+			this.sendServerPacket(player, packet);
+		}
 	}
 
 	@Override
 	public ImmutableSet<PacketListener> getPacketListeners() {
-		return ImmutableSet.copyOf(packetListeners);
-	}
-
-	/**
-	 * Warn of common programming mistakes.
-	 * @param plugin - plugin to check.
-	 */
-	private void printPluginWarnings(Plugin plugin) {
-		if (pluginVerifier == null)
-			return;
-
-		try {
-			switch (pluginVerifier.verify(plugin)) {
-				case NO_DEPEND:
-					reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_DEPEND_MISSING).messageParam(plugin.getName()));
-				case VALID:
-					// Do nothing
-					break;
-			}
-		} catch (Exception e) {
-			reporter.reportWarning(this, Report.newBuilder(REPORT_PLUGIN_VERIFIER_ERROR).messageParam(e.getMessage()));
-		}
+		return ImmutableSet.copyOf(this.registeredListeners);
 	}
 
 	@Override
 	public void addPacketListener(PacketListener listener) {
-		if (listener == null)
-			throw new IllegalArgumentException("listener cannot be NULL.");
+		if (!this.closed && !this.registeredListeners.contains(listener)) {
+			// get the packet types which we should actually send
+			ListeningWhitelist outbound = listener.getSendingWhitelist();
+			ListeningWhitelist inbound = listener.getReceivingWhitelist();
 
-		// A listener can only be added once
-		if (packetListeners.contains(listener))
-			return;
-		ListeningWhitelist sending = listener.getSendingWhitelist();
-		ListeningWhitelist receiving = listener.getReceivingWhitelist();
-		boolean hasSending = sending != null && sending.isEnabled();
-		boolean hasReceiving = receiving != null && receiving.isEnabled();
-
-		// Check plugin
-		if (!(hasSending && sending.getOptions().contains(ListenerOptions.SKIP_PLUGIN_VERIFIER)) &&
-			!(hasReceiving && receiving.getOptions().contains(ListenerOptions.SKIP_PLUGIN_VERIFIER))) {
-
-			printPluginWarnings(listener.getPlugin());
-		}
-
-		if (hasSending || hasReceiving) {
-			// Add listeners and hooks
-			if (hasSending) {
-				// This doesn't make any sense
-				if (sending.getOptions().contains(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
-					throw new IllegalArgumentException("Sending whitelist cannot require input bufferes to be intercepted.");
-				}
-
-				verifyWhitelist(listener, sending);
-				sendingListeners.addListener(listener, sending);
-				enablePacketFilters(listener, sending.getTypes());
-
-				// Make sure this is possible
-				playerInjection.checkListener(listener);
+			// verify plugin if needed
+			if (this.shouldVerifyPlugin(outbound, inbound)) {
+				this.printPluginWarnings(listener.getPlugin());
 			}
-			if (hasSending)
-				incrementPhases(processPhase(sending));
 
-			// Handle receivers after senders
-			if (hasReceiving) {
-				verifyWhitelist(listener, receiving);
-				recievedListeners.addListener(listener, receiving);
-				enablePacketFilters(listener, receiving.getTypes());
+			// register as outbound listener if anything outbound is handled
+			if (outbound != null && outbound.isEnabled()) {
+				// verification
+				this.verifyWhitelist(listener, outbound);
+				this.playerInjectionHandler.checkListener(listener);
+
+				// registration
+				this.registeredListeners.add(listener);
+				this.outboundListeners.addListener(listener, outbound);
+
+				// let the injectors know about the change as well
+				this.registerPacketListenerInInjectors(listener, outbound.getTypes());
 			}
-			if (hasReceiving)
-				incrementPhases(processPhase(receiving));
 
-			// Inform our injected hooks
-			packetListeners.add(listener);
-			updateRequireInputBuffers();
-		}
-	}
+			// register as inbound listener if anything outbound is handled
+			if (inbound != null && inbound.isEnabled()) {
+				// verification
+				this.verifyWhitelist(listener, inbound);
+				this.playerInjectionHandler.checkListener(listener);
 
-	/**
-	 * Determine if a given packet may be sent during login.
-	 * @param type - the packet type.
-	 * @return TRUE if it may, FALSE otherwise.
-	 */
-	public boolean isLoginPacket(PacketType type) {
-		return PacketType.Login.Client.getInstance().hasMember(type) ||
-				PacketType.Login.Server.getInstance().hasMember(type) ||
-				PacketType.Status.Client.getInstance().hasMember(type) ||
-				PacketType.Status.Server.getInstance().hasMember(type);
-	}
+				// registration
+				this.registeredListeners.add(listener);
+				this.inboundListeners.addListener(listener, inbound);
 
-	private GamePhase processPhase(ListeningWhitelist whitelist) {
-		// Determine if this is a login packet, ensuring that gamephase detection is enabled
-		if (!whitelist.getGamePhase().hasLogin() &&
-			!whitelist.getOptions().contains(ListenerOptions.DISABLE_GAMEPHASE_DETECTION)) {
-
-			for (PacketType type : whitelist.getTypes()) {
-				if (isLoginPacket(type)) {
-					return GamePhase.BOTH;
-				}
-			}
-		}
-		return whitelist.getGamePhase();
-	}
-
-	/**
-	 * Invoked when we need to update the input buffer set.
-	 */
-	private void updateRequireInputBuffers() {
-		Set<PacketType> updated = Sets.newHashSet();
-
-		for (PacketListener listener : packetListeners) {
-			ListeningWhitelist whitelist = listener.getReceivingWhitelist();
-
-			// We only check the recieving whitelist
-			if (whitelist.getOptions().contains(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
-				updated.addAll(whitelist.getTypes());
-			}
-		}
-		// Update it
-		this.inputBufferedPackets = updated;
-		this.packetInjector.inputBuffersChanged(updated);
-	}
-
-	/**
-	 * Invoked to handle the different game phases of a added listener.
-	 * @param phase - listener's game game phase.
-	 */
-	private void incrementPhases(GamePhase phase) {
-		if (phase.hasLogin())
-			phaseLoginCount.incrementAndGet();
-
-		// We may have to inject into every current player
-		if (phase.hasPlaying()) {
-			if (phasePlayingCount.incrementAndGet() == 1) {
-				// If we're about to uninitialize every player, cancel that instead
-				if (unhookTask.isRunning())
-					unhookTask.cancel();
-				else
-					// Inject our hook into already existing players
-					initializePlayers(Util.getOnlinePlayers());
-			}
-		}
-	}
-
-	/**
-	 * Invoked to handle the different game phases of a removed listener.
-	 * @param phase - listener's game game phase.
-	 */
-	private void decrementPhases(GamePhase phase) {
-		if (phase.hasLogin())
-			phaseLoginCount.decrementAndGet();
-
-		// We may have to inject into every current player
-		if (phase.hasPlaying()) {
-			if (phasePlayingCount.decrementAndGet() == 0) {
-				// Schedule unhooking in the future
-				unhookTask.schedule(UNHOOK_DELAY, new Runnable() {
-					@Override
-					public void run() {
-						// Inject our hook into already existing players
-						uninitializePlayers(Util.getOnlinePlayers());
-					}
-				});
-			}
-		}
-	}
-
-	/**
-	 * Determine if the packet IDs in a whitelist is valid.
-	 * @param listener - the listener that will be mentioned in the error.
-	 * @param whitelist - whitelist of packet IDs.
-	 * @throws IllegalArgumentException If the whitelist is illegal.
-	 */
-	@Override
-	public void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist) {
-		for (PacketType type : whitelist.getTypes()) {
-			if (type == null) {
-				throw new IllegalArgumentException(String.format("Packet type in in listener %s was NULL.",
-						PacketAdapter.getPluginName(listener))
-				);
+				// let the injectors know about the change as well
+				this.registerPacketListenerInInjectors(listener, inbound.getTypes());
 			}
 		}
 	}
 
 	@Override
 	public void removePacketListener(PacketListener listener) {
-		if (listener == null)
-			throw new IllegalArgumentException("listener cannot be NULL");
+		if (!this.closed && this.registeredListeners.remove(listener)) {
+			ListeningWhitelist outbound = listener.getSendingWhitelist();
+			ListeningWhitelist inbound = listener.getReceivingWhitelist();
 
-		List<PacketType> sendingRemoved = null;
-		List<PacketType> receivingRemoved = null;
+			// remove outbound listeners (if any)
+			if (outbound != null && outbound.isEnabled()) {
+				Collection<PacketType> removed = this.outboundListeners.removeListener(listener, outbound);
+				if (!removed.isEmpty()) {
+					this.unregisterPacketListenerInInjectors(removed);
+				}
+			}
 
-		ListeningWhitelist sending = listener.getSendingWhitelist();
-		ListeningWhitelist receiving = listener.getReceivingWhitelist();
-
-		// Remove from the overal list of listeners
-		if (!packetListeners.remove(listener))
-			return;
-
-		// Remove listeners and phases
-		if (sending != null && sending.isEnabled()) {
-			sendingRemoved = sendingListeners.removeListener(listener, sending);
-			decrementPhases(processPhase(sending));
+			// remove inbound listeners (if any)
+			if (inbound != null && inbound.isEnabled()) {
+				Collection<PacketType> removed = this.inboundListeners.removeListener(listener, inbound);
+				if (!removed.isEmpty()) {
+					this.unregisterPacketListenerInInjectors(removed);
+				}
+			}
 		}
-		if (receiving != null && receiving.isEnabled()) {
-			receivingRemoved = recievedListeners.removeListener(listener, receiving);
-			decrementPhases(processPhase(receiving));
-		}
-
-		// Remove hooks, if needed
-		if (sendingRemoved != null && sendingRemoved.size() > 0)
-			disablePacketFilters(ConnectionSide.SERVER_SIDE, sendingRemoved);
-		if (receivingRemoved != null && receivingRemoved.size() > 0)
-			disablePacketFilters(ConnectionSide.CLIENT_SIDE, receivingRemoved);
-		updateRequireInputBuffers();
 	}
 
 	@Override
 	public void removePacketListeners(Plugin plugin) {
-		// Iterate through every packet listener
-		for (PacketListener listener : packetListeners) {
-			// Remove the listener
-			if (Objects.equal(listener.getPlugin(), plugin)) {
-				removePacketListener(listener);
+		for (PacketListener listener : this.getPacketListeners()) {
+			if (Objects.equals(listener.getPlugin(), plugin)) {
+				this.removePacketListener(listener);
 			}
-		}
-
-		// Do the same for the asynchronous events
-		asyncFilterManager.unregisterAsyncHandlers(plugin);
-	}
-
-	@Override
-	public void invokePacketRecieving(PacketEvent event) {
-		if (!hasClosed) {
-			handlePacket(recievedListeners, event, false);
-		}
-	}
-
-	@Override
-	public void invokePacketSending(PacketEvent event) {
-		if (!hasClosed) {
-			handlePacket(sendingListeners, event, true);
-		}
-	}
-
-	/**
-	 * Handle a packet sending or receiving event.
-	 * <p>
-	 * Note that we also handle asynchronous events.
-	 * @param packetListeners - packet listeners that will receive this event.
-	 * @param event - the evnet to broadcast.
-	 */
-	private void handlePacket(SortedPacketListenerList packetListeners, PacketEvent event, boolean sending) {
-		// By default, asynchronous packets are queued for processing
-		if (asyncFilterManager.hasAsynchronousListeners(event)) {
-			event.setAsyncMarker(asyncFilterManager.createAsyncMarker());
-		}
-
-		// Process synchronous events
-		if (sending)
-			packetListeners.invokePacketSending(reporter, event);
-		else
-			packetListeners.invokePacketRecieving(reporter, event);
-
-		// To cancel asynchronous processing, use the async marker
-		if (!event.isCancelled() && !hasAsyncCancelled(event.getAsyncMarker())) {
-			asyncFilterManager.enqueueSyncPacket(event, event.getAsyncMarker());
-
-			// The above makes a copy of the event, so it's safe to cancel it
-			event.setReadOnly(false);
-			event.setCancelled(true);
-		}
-	}
-
-	// NULL marker mean we're dealing with no asynchronous listeners
-	private boolean hasAsyncCancelled(AsyncMarker marker) {
-		return marker == null || marker.isAsyncCancelled();
-	}
-
-	/**
-	 * Enables packet events for a given packet ID.
-	 * <p>
-	 * Note that all packets are disabled by default.
-	 *
-	 * @param listener - the listener that requested to enable these filters.
-	 * @param packets - the packet id(s).
-	 */
-	private void enablePacketFilters(PacketListener listener, Iterable<PacketType> packets) {
-		// Note the difference between unsupported and valid.
-		// Every packet ID between and including 0 - 255 is valid, but only a subset is supported.
-
-		for (PacketType type : packets) {
-			// Only register server packets that are actually supported by Minecraft
-			if (type.getSender() == Sender.SERVER) {
-				// Note that we may update the packet list here
-				if (!knowsServerPackets || PacketRegistry.getServerPacketTypes().contains(type))
-					playerInjection.addPacketHandler(type, listener.getSendingWhitelist().getOptions());
-				else
-					reporter.reportWarning(this,
-							Report.newBuilder(REPORT_UNSUPPORTED_SERVER_PACKET).messageParam(PacketAdapter.getPluginName(listener), type)
-					);
-			}
-
-			// As above, only for client packets
-			if (type.getSender() == Sender.CLIENT && packetInjector != null) {
-				if (!knowsClientPackets || PacketRegistry.getClientPacketTypes().contains(type))
-					packetInjector.addPacketHandler(type, listener.getReceivingWhitelist().getOptions());
-				else
-					reporter.reportWarning(this,
-							Report.newBuilder(REPORT_UNSUPPORTED_CLIENT_PACKET).messageParam(PacketAdapter.getPluginName(listener), type)
-					);
-			}
-		}
-	}
-
-	/**
-	 * Disables packet events from a given packet ID.
-	 * @param packets - the packet id(s).
-	 * @param side - which side the event no longer should arrive from.
-	 */
-	private void disablePacketFilters(ConnectionSide side, Iterable<PacketType> packets) {
-		if (side == null)
-			throw new IllegalArgumentException("side cannot be NULL.");
-
-		for (PacketType type : packets) {
-			if (side.isForServer())
-				playerInjection.removePacketHandler(type);
-			if (side.isForClient() && packetInjector != null)
-				packetInjector.removePacketHandler(type);
-		}
-	}
-
-	@Override
-	public void broadcastServerPacket(PacketContainer packet) {
-		Preconditions.checkNotNull(packet, "packet cannot be NULL.");
-		broadcastServerPacket(packet, Util.getOnlinePlayers());
-	}
-
-	@Override
-	public void broadcastServerPacket(PacketContainer packet, Entity entity, boolean includeTracker) {
-		Preconditions.checkNotNull(packet, "packet cannot be NULL.");
- 		Preconditions.checkNotNull(entity, "entity cannot be NULL.");
- 		List<Player> trackers = getEntityTrackers(entity);
-
- 		// Only add it if it's a player
- 		if (includeTracker && entity instanceof Player) {
- 			trackers.add((Player) entity);
- 		}
-		broadcastServerPacket(packet, trackers);
-	}
-
-	@Override
-	public void broadcastServerPacket(PacketContainer packet, Location origin, int maxObserverDistance) {
-		try {
-			// Square the maximum too
-			int maxDistance = maxObserverDistance * maxObserverDistance;
-
-			World world = origin.getWorld();
-			Location recycle = origin.clone();
-
-			// Only broadcast the packet to nearby players
-			for (Player player : Util.getOnlinePlayers()) {
-				if (world.equals(player.getWorld()) &&
-				    getDistanceSquared(origin, recycle, player) <= maxDistance) {
-
-					sendServerPacket(player, packet);
-				}
-			}
-
-		} catch (InvocationTargetException e) {
-			throw new FieldAccessException("Unable to send server packet.", e);
-		}
-	}
-
-	/**
-	 * Retrieve the squared distance between a location and a player.
-	 * @param origin - the origin location.
-	 * @param recycle - a location object to be recycled, if supported.
-	 * @param player - the player.
-	 * @return The squared distance between the player and the origin,
-	 */
-	private double getDistanceSquared(Location origin, Location recycle, Player player) {
-		if (hasRecycleDistance) {
-			try {
-				return player.getLocation(recycle).distanceSquared(origin);
-			} catch (Error e) {
-				// Damn it
-				hasRecycleDistance = false;
-			}
-		}
-
-		// The fallback method
-		return player.getLocation().distanceSquared(origin);
-	}
-
-	/**
-	 * Broadcast a packet to a given iterable of players.
-	 * @param packet - the packet to broadcast.
-	 * @param players - the iterable of players.
-	 */
-	private void broadcastServerPacket(PacketContainer packet, Iterable<Player> players) {
-		try {
-			for (Player player : players) {
-				sendServerPacket(player, packet);
-			}
-		} catch (InvocationTargetException e) {
-			throw new FieldAccessException("Unable to send server packet.", e);
-		}
-	}
-
-	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet) throws InvocationTargetException {
-		sendServerPacket(reciever, packet, null, true);
-	}
-
-	@Override
-	public void sendServerPacket(Player reciever, PacketContainer packet, boolean filters) throws InvocationTargetException {
-		sendServerPacket(reciever, packet, null, filters);
-	}
-
-	@Override
-	public void sendServerPacket(final Player receiver, final PacketContainer packet, NetworkMarker marker, final boolean filters) throws InvocationTargetException {
-		if (receiver == null)
-			throw new IllegalArgumentException("receiver cannot be NULL.");
-		if (packet == null)
-			throw new IllegalArgumentException("packet cannot be NULL.");
-		if (packet.getType().getSender() == Sender.CLIENT)
-			throw new IllegalArgumentException("Packet of sender CLIENT cannot be sent to a client.");
-
-		// We may have to enable player injection indefinitely after this
-		if (packetCreation.compareAndSet(false, true))
-			incrementPhases(GamePhase.PLAYING);
-
-		if (!filters) {
-			// We may have to delay the packet due to non-asynchronous monitor listeners
-			if (!Bukkit.isPrimaryThread() && playerInjection.hasMainThreadListener(packet.getType())) {
-				final NetworkMarker copy = marker;
-
-				server.getScheduler().scheduleSyncDelayedTask(library, new Runnable() {
-					@Override
-					public void run() {
-						try {
-							// Prevent infinite loops
-							if (!Bukkit.isPrimaryThread())
-								throw new IllegalStateException("Scheduled task was not executed on the main thread!");
-							sendServerPacket(receiver, packet, copy, filters);
-						} catch (Exception e) {
-							reporter.reportMinimal(library, "sendServerPacket-run()", e);
-						}
-					}
-				});
-				return;
-			}
-
-			PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
-			sendingListeners.invokePacketSending(reporter, event, ListenerPriority.MONITOR);
-			marker = NetworkMarker.getNetworkMarker(event);
-		}
-		playerInjection.sendServerPacket(receiver, packet, marker, filters);
-	}
-
-	@Override
-	public void sendWirePacket(Player receiver, int id, byte[] bytes) throws InvocationTargetException {
-		WirePacket packet = new WirePacket(id, bytes);
-		sendWirePacket(receiver, packet);
-	}
-
-	@Override
-	public void sendWirePacket(Player receiver, WirePacket packet) throws InvocationTargetException {
-		Channel channel = playerInjection.getChannel(receiver);
-		if (channel == null) {
-			throw new InvocationTargetException(new NullPointerException(), "Failed to obtain channel for " + receiver.getName());
-		}
-
-		channel.writeAndFlush(packet);
-	}
-
-	@Override
-	public void recieveClientPacket(Player sender, PacketContainer packet) throws IllegalAccessException, InvocationTargetException {
-		recieveClientPacket(sender, packet, null, true);
-	}
-
-	@Override
-	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters) throws IllegalAccessException, InvocationTargetException {
-		recieveClientPacket(sender, packet, null, filters);
-	}
-
-	@Override
-	public void recieveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters) throws IllegalAccessException, InvocationTargetException {
-		if (sender == null)
-			throw new IllegalArgumentException("sender cannot be NULL.");
-		if (packet == null)
-			throw new IllegalArgumentException("packet cannot be NULL.");
-		if (packet.getType().getSender() == Sender.SERVER)
-			throw new IllegalArgumentException("Packet of sender SERVER cannot be sent to the server.");
-
-		// And here too
-		if (packetCreation.compareAndSet(false, true))
-			incrementPhases(GamePhase.PLAYING);
-
-		Object mcPacket = packet.getHandle();
-		boolean cancelled = packetInjector.isCancelled(mcPacket);
-
-		// Make sure the packet isn't cancelled
-		if (cancelled) {
-			packetInjector.setCancelled(mcPacket, false);
-		}
-
-		if (filters) {
-			byte[] data = NetworkMarker.getByteBuffer(marker);
-			PacketEvent event = packetInjector.packetRecieved(packet, sender, data);
-
-			if (!event.isCancelled())
-				mcPacket = event.getPacket().getHandle();
-			else
-				return;
-
-		} else {
-			// Let the monitors know though
-			recievedListeners.invokePacketSending(
-					reporter,
-					PacketEvent.fromClient(this, packet, marker, sender, false),
-					ListenerPriority.MONITOR);
-		}
-
-		playerInjection.recieveClientPacket(sender, mcPacket);
-
-		// Let it stay cancelled
-		if (cancelled) {
-			packetInjector.setCancelled(mcPacket, true);
 		}
 	}
 
 	@Override
 	public PacketContainer createPacket(PacketType type) {
-		return createPacket(type, true);
+		return this.createPacket(type, true);
 	}
 
 	@Override
 	public PacketContainer createPacket(PacketType type, boolean forceDefaults) {
-		PacketContainer packet = new PacketContainer(type);
-
-		// Use any default values if possible
+		PacketContainer container = new PacketContainer(type);
 		if (forceDefaults) {
-			try {
-				packet.getModifier().writeDefaults();
-			} catch (FieldAccessException e) {
-				throw new RuntimeException("Security exception.", e);
-			}
+			container.getModifier().writeDefaults();
 		}
 
-		return packet;
+		return container;
 	}
 
 	@Override
@@ -832,210 +397,227 @@ public final class PacketFilterManager implements ListenerInvoker, InternalManag
 	}
 
 	@Override
-	public Set<PacketType> getSendingFilterTypes() {
-		return Collections.unmodifiableSet(playerInjection.getSendingFilters());
-	}
-
-	@Override
-	public Set<PacketType> getReceivingFilterTypes() {
-		return Collections.unmodifiableSet(packetInjector.getPacketHandlers());
-	}
-
-	@Override
-	public void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException {
+	public void updateEntity(Entity entity, List<Player> observers) {
 		EntityUtilities.getInstance().updateEntity(entity, observers);
 	}
 
 	@Override
-	public Entity getEntityFromID(World container, int id) throws FieldAccessException {
-		return EntityUtilities.getInstance().getEntityFromID(container, id);
+	public Entity getEntityFromID(World container, int id) {
+		for (Entity entity : container.getEntities()) {
+			if (entity.getEntityId() == id) {
+				return entity;
+			}
+		}
+		return null;
 	}
 
 	@Override
-	public List<Player> getEntityTrackers(Entity entity) throws FieldAccessException {
+	public List<Player> getEntityTrackers(Entity entity) {
 		return EntityUtilities.getInstance().getEntityTrackers(entity);
 	}
 
-	/**
-	 * Initialize the packet injection for every player.
-	 * @param players - list of players to inject.
-	 */
-	public void initializePlayers(List<Player> players) {
-		for (Player player : players)
-			playerInjection.injectPlayer(player, ConflictStrategy.OVERRIDE);
-	}
-
-	/**
-	 * Uninitialize the packet injection of every player.
-	 * @param players - list of players to uninject.
-	 */
-	public void uninitializePlayers(List<Player> players) {
-		for (Player player : players) {
-			playerInjection.uninjectPlayer(player);
-		}
-	}
-
-	/**
-	 * Register this protocol manager on Bukkit.
-	 * 
-	 * @param manager - Bukkit plugin manager that provides player join/leave events.
-	 * @param plugin - the parent plugin.
-	 */
 	@Override
-	public void registerEvents(PluginManager manager, final Plugin plugin) {
-		if (nettyInjector != null)
-			nettyInjector.inject();
-
-		manager.registerEvents(new Listener() {
-
-			@EventHandler(priority = EventPriority.LOWEST)
-			public void onPlayerLogin(PlayerLoginEvent event) {
-					PacketFilterManager.this.onPlayerLogin(event);
-				}
-
-			@EventHandler(priority = EventPriority.LOWEST)
-			public void onPrePlayerJoin(PlayerJoinEvent event) {
-					PacketFilterManager.this.onPrePlayerJoin(event);
-				}
-
-			@EventHandler(priority = EventPriority.MONITOR)
-			public void onPlayerJoin(PlayerJoinEvent event) {
-					PacketFilterManager.this.onPlayerJoin(event);
-				}
-
-			@EventHandler(priority = EventPriority.MONITOR)
-			public void onPlayerQuit(PlayerQuitEvent event) {
-					PacketFilterManager.this.onPlayerQuit(event);
-				}
-
-			@EventHandler(priority = EventPriority.MONITOR)
-			public void onPluginDisabled(PluginDisableEvent event) {
-					PacketFilterManager.this.onPluginDisabled(event, plugin);
-				}
-
-		}, plugin);
-	}
-
-    private void onPlayerLogin(PlayerLoginEvent event) {
-		playerInjection.updatePlayer(event.getPlayer());
-    }
-
-    private void onPrePlayerJoin(PlayerJoinEvent event) {
-		playerInjection.updatePlayer(event.getPlayer());
-    }
-
-    private void onPlayerJoin(PlayerJoinEvent event) {
-		try {
-			// Let's clean up the other injection first.
-			playerInjection.uninjectPlayer(event.getPlayer().getAddress());
-			playerInjection.injectPlayer(event.getPlayer(), ConflictStrategy.OVERRIDE);
-		} catch (Exception e) {
-			reporter.reportDetailed(PacketFilterManager.this,
-					Report.newBuilder(REPORT_CANNOT_INJECT_PLAYER).callerParam(event).error(e)
-			);
-		}
-    }
-
-    private void onPlayerQuit(PlayerQuitEvent event) {
-		try {
-			Player player = event.getPlayer();
-
-			asyncFilterManager.removePlayer(player);
-			playerInjection.handleDisconnect(player);
-			playerInjection.uninjectPlayer(player);
-		} catch (Exception e) {
-			reporter.reportDetailed(PacketFilterManager.this,
-					Report.newBuilder(REPORT_CANNOT_UNINJECT_OFFLINE_PLAYER).callerParam(event).error(e)
-			);
-		}
-    }
-
-    private void onPluginDisabled(PluginDisableEvent event, Plugin protocolLibrary) {
-		try {
-			// Clean up in case the plugin forgets
-			if (event.getPlugin() != protocolLibrary) {
-				removePacketListeners(event.getPlugin());
-			}
-		} catch (Exception e) {
-			reporter.reportDetailed(PacketFilterManager.this,
-					Report.newBuilder(REPORT_CANNOT_UNREGISTER_PLUGIN).callerParam(event).error(e)
-			);
-		}
-    }
-
-	/**
-	 * Retrieve the number of listeners that expect packets during playing.
-	 * @return Number of listeners.
-	 */
-	private int getPhasePlayingCount() {
-		return phasePlayingCount.get();
-	}
-
-	/**
-	 * Retrieve the number of listeners that expect packets during login.
-	 * @return Number of listeners
-	 */
-	private int getPhaseLoginCount() {
-		return phaseLoginCount.get();
+	public Set<PacketType> getSendingFilterTypes() {
+		return Collections.unmodifiableSet(this.playerInjectionHandler.getSendingFilters());
 	}
 
 	@Override
-	public PacketType getPacketType(Object packet) {
-		if (packet == null)
-			throw new IllegalArgumentException("Packet cannot be NULL.");
-		if (!MinecraftReflection.isPacketClass(packet))
-			throw new IllegalArgumentException("The given object " + packet + " is not a packet.");
-
-		PacketType type = PacketRegistry.getPacketType(packet.getClass());
-
-		if (type != null) {
-			return type;
-		} else {
-			throw new IllegalArgumentException(
-					"Unable to find associated packet of " + packet + ": Lookup returned NULL.");
-		}
+	public Set<PacketType> getReceivingFilterTypes() {
+		return Collections.unmodifiableSet(this.packetInjector.getPacketHandlers());
 	}
 
-	/**
-	 * Retrieves the current plugin class loader.
-	 * @return Class loader.
-	 */
-	public ClassLoader getClassLoader() {
-		return classLoader;
+	@Override
+	public MinecraftVersion getMinecraftVersion() {
+		return this.minecraftVersion;
 	}
 
 	@Override
 	public boolean isClosed() {
-		return hasClosed;
+		return this.closed;
+	}
+
+	@Override
+	public AsynchronousManager getAsynchronousManager() {
+		return this.asyncFilterManager;
+	}
+
+	@Override
+	public void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist) {
+		for (PacketType type : whitelist.getTypes()) {
+			if (type == null) {
+				throw new IllegalArgumentException("Null packet type in listener of " + PacketAdapter.getPluginName(listener));
+			}
+		}
+	}
+
+	@Override
+	public void registerEvents(PluginManager manager, Plugin plugin) {
+		if (!this.closed && !this.injected) {
+			// prevent duplicate event registrations / injections
+			this.injected = true;
+			this.networkManagerInjector.inject();
+
+			// all listeners we need, this is a bit messy, but it makes the job correctly
+			manager.registerEvents(new Listener() {
+
+				@EventHandler(priority = EventPriority.LOWEST)
+				public void handleLogin(PlayerLoginEvent event) {
+					PacketFilterManager.this.playerInjectionHandler.updatePlayer(event.getPlayer());
+				}
+
+				@EventHandler(priority = EventPriority.MONITOR)
+				public void handleJoin(PlayerJoinEvent event) {
+					PacketFilterManager.this.playerInjectionHandler.updatePlayer(event.getPlayer());
+				}
+
+				@EventHandler(priority = EventPriority.MONITOR)
+				public void handleQuit(PlayerQuitEvent event) {
+					PacketFilterManager.this.asyncFilterManager.removePlayer(event.getPlayer());
+					PacketFilterManager.this.playerInjectionHandler.handleDisconnect(event.getPlayer());
+				}
+
+				@EventHandler(priority = EventPriority.MONITOR)
+				public void handlePluginUnload(PluginDisableEvent event) {
+					// don't do this for our plugin!
+					if (event.getPlugin() != PacketFilterManager.this.plugin) {
+						PacketFilterManager.this.removePacketListeners(event.getPlugin());
+					}
+				}
+			}, plugin);
+		}
 	}
 
 	@Override
 	public void close() {
-		// Guard
-		if (hasClosed)
-			return;
+		if (!this.closed) {
+			// mark as closed directly to prevent duplicate calls
+			this.closed = true;
+			this.injected = false;
 
-		// Remove packet handlers
-		if (packetInjector != null)
-			packetInjector.cleanupAll();
-		if (nettyInjector != null)
-			nettyInjector.close();
+			// uninject all clutter
+			this.networkManagerInjector.close();
+			this.playerInjectionHandler.close();
 
-		// Remove server handler
-		playerInjection.close();
-		hasClosed = true;
-
-		// Remove listeners
-		packetListeners.clear();
-		recievedListeners = null;
-		sendingListeners = null;
-
-		// Clean up async handlers. We have to do this last.
-		asyncFilterManager.cleanupAll();
+			// cleanup
+			this.registeredListeners.clear();
+			this.packetInjector.cleanupAll();
+			this.asyncFilterManager.cleanupAll();
+		}
 	}
 
 	@Override
-	protected void finalize() throws Throwable {
-		close();
+	public boolean isDebug() {
+		return this.debug;
+	}
+
+	@Override
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+
+	@Override
+	public void invokePacketReceiving(PacketEvent event) {
+		if (!this.closed) {
+			this.postPacketToListeners(this.inboundListeners, event, false);
+		}
+	}
+
+	@Override
+	public void invokePacketSending(PacketEvent event) {
+		if (!this.closed) {
+			this.postPacketToListeners(this.outboundListeners, event, true);
+		}
+	}
+
+	@Override
+	public PacketType getPacketType(Object packet) {
+		if (!MinecraftReflection.isPacketClass(packet)) {
+			throw new IllegalArgumentException("Given packet is not a minecraft packet instance");
+		}
+
+		PacketType type = PacketRegistry.getPacketType(packet.getClass());
+		if (type != null) {
+			return type;
+		}
+
+		throw new IllegalArgumentException("Unable to associate given packet " + packet + " with a registered packet!");
+	}
+
+	private void postPacketToListeners(SortedPacketListenerList listeners, PacketEvent event, boolean outbound) {
+		// append async marker if any async listener for the packet was registered
+		if (this.asyncFilterManager.hasAsynchronousListeners(event)) {
+			event.setAsyncMarker(this.asyncFilterManager.createAsyncMarker());
+		}
+
+		// post to sync listeners
+		if (outbound) {
+			listeners.invokePacketSending(this.reporter, event);
+		} else {
+			listeners.invokePacketRecieving(this.reporter, event);
+		}
+
+		// check if we need to post the packet to the async handler
+		if (!event.isCancelled() && event.getAsyncMarker() != null && !event.getAsyncMarker().isAsyncCancelled()) {
+			this.asyncFilterManager.enqueueSyncPacket(event, event.getAsyncMarker());
+
+			// cancel the packet here for async processing (enqueueSyncPacket will create a copy of the event)
+			event.setReadOnly(false);
+			event.setCancelled(true);
+		}
+	}
+
+	private boolean shouldVerifyPlugin(ListeningWhitelist out, ListeningWhitelist in) {
+		if (out != null && out.isEnabled() && !out.getOptions().contains(ListenerOptions.SKIP_PLUGIN_VERIFIER)) {
+			return true;
+		}
+
+		return in != null && in.isEnabled() && !in.getOptions().contains(ListenerOptions.SKIP_PLUGIN_VERIFIER);
+	}
+
+	private void printPluginWarnings(Plugin plugin) {
+		// check if we were able to initialize the plugin verifier
+		if (this.pluginVerifier != null) {
+			VerificationResult result = this.pluginVerifier.verify(plugin);
+			if (result != VerificationResult.VALID) {
+				this.reporter.reportWarning(this, Report.newBuilder(INVALID_PLUGIN_VERIFY)
+						.messageParam(plugin.getName(), result)
+						.build());
+			}
+		}
+	}
+
+	private void registerPacketListenerInInjectors(PacketListener listener, Collection<PacketType> packetTypes) {
+		for (PacketType packetType : packetTypes) {
+			// check the packet direction
+			if (packetType.getSender() == Sender.SERVER) {
+				// check if the packet is registered on the server side
+				if (PacketRegistry.getServerPacketTypes().contains(packetType)) {
+					this.playerInjectionHandler.addPacketHandler(packetType, listener.getSendingWhitelist().getOptions());
+				} else {
+					this.reporter.reportWarning(this, Report.newBuilder(UNSUPPORTED_PACKET)
+							.messageParam(PacketAdapter.getPluginName(listener), packetType, packetType.getSender())
+							.build());
+				}
+			} else if (packetType.getSender() == Sender.CLIENT) {
+				// check if the packet is registered on the client side
+				if (PacketRegistry.getClientPacketTypes().contains(packetType)) {
+					this.packetInjector.addPacketHandler(packetType, listener.getReceivingWhitelist().getOptions());
+				} else {
+					this.reporter.reportWarning(this, Report.newBuilder(UNSUPPORTED_PACKET)
+							.messageParam(PacketAdapter.getPluginName(listener), packetType, packetType.getSender())
+							.build());
+				}
+			}
+		}
+	}
+
+	private void unregisterPacketListenerInInjectors(Collection<PacketType> packetTypes) {
+		for (PacketType packetType : packetTypes) {
+			if (packetType.getSender() == Sender.SERVER) {
+				this.playerInjectionHandler.removePacketHandler(packetType);
+			} else if (packetType.getSender() == Sender.CLIENT) {
+				this.packetInjector.removePacketHandler(packetType);
+			}
+		}
 	}
 }

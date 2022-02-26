@@ -1,17 +1,17 @@
-package com.comphenix.protocol.injector.netty;
-
-import java.util.Set;
+package com.comphenix.protocol.injector.packet;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.injector.packet.PacketInjector;
+import java.util.Set;
 
 public abstract class AbstractPacketInjector implements PacketInjector {
-	private PacketTypeSet reveivedFilters;
-	
-	public AbstractPacketInjector(PacketTypeSet reveivedFilters) {
-		this.reveivedFilters = reveivedFilters;
+
+	private final PacketTypeSet inboundFilters;
+
+	public AbstractPacketInjector(PacketTypeSet inboundFilters) {
+		this.inboundFilters = inboundFilters;
 	}
 
 	@Override
@@ -27,28 +27,28 @@ public abstract class AbstractPacketInjector implements PacketInjector {
 
 	@Override
 	public boolean addPacketHandler(PacketType type, Set<ListenerOptions> options) {
-		reveivedFilters.addType(type);
+		this.inboundFilters.addType(type);
 		return true;
 	}
 
 	@Override
 	public boolean removePacketHandler(PacketType type) {
-		reveivedFilters.removeType(type);
+		this.inboundFilters.removeType(type);
 		return true;
 	}
 
 	@Override
 	public boolean hasPacketHandler(PacketType type) {
-		return reveivedFilters.contains(type);
+		return this.inboundFilters.contains(type);
 	}
 
 	@Override
 	public Set<PacketType> getPacketHandlers() {
-		return reveivedFilters.values();
+		return this.inboundFilters.values();
 	}
 
 	@Override
 	public void cleanupAll() {
-		reveivedFilters.clear();
+		this.inboundFilters.clear();
 	}
 }

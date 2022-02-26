@@ -24,7 +24,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.nett.WirePacket;
+import com.comphenix.protocol.injector.netty.WirePacket;
 
 /**
  * Represents a object capable of sending or receiving packets.
@@ -86,7 +86,7 @@ public interface PacketStream {
 	 * @throws InvocationTargetException If the reflection machinery failed.
 	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet)
+	public void receiveClientPacket(Player sender, PacketContainer packet)
 			throws IllegalAccessException, InvocationTargetException;
 
 	/**
@@ -97,7 +97,7 @@ public interface PacketStream {
 	 * @throws InvocationTargetException If the reflection machinery failed.
 	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters)
+	public void receiveClientPacket(Player sender, PacketContainer packet, boolean filters)
 			throws IllegalAccessException, InvocationTargetException;
 	
 	/**
@@ -109,6 +109,6 @@ public interface PacketStream {
 	 * @throws InvocationTargetException If the reflection machinery failed.
 	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters)
+	public void receiveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters)
 			throws IllegalAccessException, InvocationTargetException;
 }

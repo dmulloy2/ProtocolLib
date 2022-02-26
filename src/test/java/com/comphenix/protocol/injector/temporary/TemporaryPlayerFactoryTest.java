@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.server;
+package com.comphenix.protocol.injector.temporary;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,7 +17,7 @@ public class TemporaryPlayerFactoryTest {
 	@Mock
 	Server server;
 	@Mock
-	SocketInjector socketInjector;
+	MinimalInjector minimalInjector;
 
 	@BeforeEach
 	public void initMocks() {
@@ -33,7 +33,7 @@ public class TemporaryPlayerFactoryTest {
 	@Test
 	public void createTemporaryPlayer() {
 
-		Player player = temporaryPlayerFactory.createTemporaryPlayer(this.server, this.socketInjector);
+		Player player = temporaryPlayerFactory.createTemporaryPlayer(this.server, this.minimalInjector);
 		assertEquals(this.server, player.getServer());
 
 		// May seem dumb, but this makes sure that the .equals method is still instact.

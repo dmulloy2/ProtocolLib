@@ -388,7 +388,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 			if (event.isServerPacket()) {
 				packetStream.sendServerPacket(event.getPlayer(), event.getPacket(), NetworkMarker.getNetworkMarker(event), false);
 			} else {
-				packetStream.recieveClientPacket(event.getPlayer(), event.getPacket(), NetworkMarker.getNetworkMarker(event), false);
+				packetStream.receiveClientPacket(event.getPlayer(), event.getPacket(), NetworkMarker.getNetworkMarker(event), false);
 			}
 			transmitted = true;
 			

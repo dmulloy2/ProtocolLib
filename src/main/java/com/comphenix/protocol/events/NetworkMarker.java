@@ -89,7 +89,7 @@ public class NetworkMarker {
 	 * Add a listener that is invoked after a packet has been successfully sent to the client, or received by the server.
 	 * <p>
 	 * Received packets are not guarenteed to have been fully processed, but packets passed to {@link
-	 * ProtocolManager#recieveClientPacket(Player, PacketContainer)} will be processed after the current packet event.
+	 * ProtocolManager#receiveClientPacket(Player, PacketContainer)} will be processed after the current packet event.
 	 * <p>
 	 * Note that post listeners will be executed asynchronously off the main thread. They are not executed in any defined
 	 * order.

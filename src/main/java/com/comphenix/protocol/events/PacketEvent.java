@@ -23,7 +23,7 @@ import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.PluginContext;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.injector.server.TemporaryPlayer;
+import com.comphenix.protocol.injector.temporary.TemporaryPlayer;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;

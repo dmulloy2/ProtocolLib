@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.nett.WirePacket;
+import com.comphenix.protocol.injector.netty.WirePacket;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;

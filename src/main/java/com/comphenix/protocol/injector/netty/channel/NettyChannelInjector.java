@@ -1,8 +1,7 @@
-package com.comphenix.protocol.injector.nett;
+package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -30,6 +29,7 @@ import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
@@ -64,13 +64,10 @@ public class NettyChannelInjector implements Injector {
 			WIRE_PACKET_ENCODER_NAME, INTERCEPTOR_NAME
 	};
 
-	private static final ErrorReporter ERROR_REPORTER = ProtocolLibrary.getErrorReporter();
 	private static final ReportType REPORT_CANNOT_SEND_PACKET = new ReportType("Unable to send packet %s to %s");
 
-	private static final NetworkProcessor NETWORK_PROCESSOR = new NetworkProcessor(ERROR_REPORTER);
-	private static final Map<Class<?>, FieldAccessor> PACKET_ACCESSORS = new ConcurrentHashMap<>(16, 0.9f);
-
 	private static final WirePacketEncoder WIRE_PACKET_ENCODER = new WirePacketEncoder();
+	private static final Map<Class<?>, FieldAccessor> PACKET_ACCESSORS = new ConcurrentHashMap<>(16, 0.9f);
 
 	private static final Class<?> LOGIN_PACKET_START_CLASS = PacketType.Login.Client.START.getPacketClass();
 	private static final Class<?> PACKET_PROTOCOL_CLASS = PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass();
@@ -81,6 +78,10 @@ public class NettyChannelInjector implements Injector {
 	// lazy initialized fields, if we don't need them we don't bother about them
 	private static FieldAccessor LOGIN_GAME_PROFILE;
 	private static FieldAccessor PROTOCOL_VERSION_ACCESSOR;
+
+	// protocol lib stuff we need
+	private final ErrorReporter errorReporter;
+	private final NetworkProcessor networkProcessor;
 
 	private final Object networkManager;
 	private final Channel wrappedChannel;
@@ -104,7 +105,16 @@ public class NettyChannelInjector implements Injector {
 	private Object playerConnection;
 	private FieldAccessor protocolAccessor;
 
-	public NettyChannelInjector(Object netManager, Channel channel, ChannelListener listener, InjectionFactory injector) {
+	public NettyChannelInjector(
+			Object netManager,
+			Channel channel,
+			ChannelListener listener,
+			InjectionFactory injector,
+			ErrorReporter errorReporter
+	) {
+		this.errorReporter = errorReporter;
+		this.networkProcessor = new NetworkProcessor(errorReporter);
+
 		this.networkManager = netManager;
 		this.wrappedChannel = channel;
 		this.channelListener = listener;
@@ -160,13 +170,12 @@ public class NettyChannelInjector implements Injector {
 		// and to be sure that the netty pipeline view we get is up-to-date
 		if (this.wrappedChannel.eventLoop().inEventLoop()) {
 			// ensure that we should actually inject into the channel
-			if (this.closed
-					|| this.injected
-					|| this.wrappedChannel instanceof ByteBuddyFactory
-					|| !this.wrappedChannel.isActive()
-			) {
+			if (this.closed || this.wrappedChannel instanceof ByteBuddyFactory || !this.wrappedChannel.isActive()) {
 				return false;
 			}
+
+			// check here if we need to rewrite the channel field and do so
+			this.rewriteChannelField();
 
 			// check if we already injected into the channel
 			if (hasProtocolLibHandler(this.wrappedChannel)) {
@@ -174,23 +183,11 @@ public class NettyChannelInjector implements Injector {
 			}
 
 			// inject our handlers
-			this.wrappedChannel.pipeline()
-					.addBefore("encoder", WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER)
-					.addAfter("decoder", INTERCEPTOR_NAME, new InboundPacketInterceptor(this, this.channelListener));
-
-			// override the channel of the player
-			Channel ch = new NettyChannelProxy(this.wrappedChannel, new NettyEventLoopProxy(this.wrappedChannel.eventLoop()) {
-				@Override
-				protected Runnable proxyRunnable(Runnable original) {
-					return NettyChannelInjector.this.processOutbound(original);
-				}
-
-				@Override
-				protected <T> Callable<T> proxyCallable(Callable<T> original) {
-					return NettyChannelInjector.this.processOutbound(original);
-				}
-			});
-			this.channelField.set(this.networkManager, ch);
+			this.wrappedChannel.pipeline().addBefore("encoder", WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER);
+			this.wrappedChannel.pipeline().addAfter(
+					"decoder",
+					INTERCEPTOR_NAME,
+					new InboundPacketInterceptor(this, this.channelListener, this.networkProcessor));
 
 			this.injected = true;
 			return true;
@@ -211,7 +208,11 @@ public class NettyChannelInjector implements Injector {
 				this.channelField.set(this.networkManager, this.wrappedChannel);
 
 				for (String handler : PROTOCOL_LIB_HANDLERS) {
-					this.wrappedChannel.pipeline().remove(handler);
+					try {
+						this.wrappedChannel.pipeline().remove(handler);
+					} catch (NoSuchElementException ignored) {
+						// ignore that one, probably an edge case
+					}
 				}
 			} else {
 				this.ensureInEventLoop(this::uninject);
@@ -255,7 +256,7 @@ public class NettyChannelInjector implements Injector {
 				MinecraftMethods.getSendPacketMethod().invoke(this.getPlayerConnection(), packet);
 			}
 		} catch (Exception exception) {
-			ERROR_REPORTER.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
+			this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
 					.messageParam(packet, this.playerName)
 					.error(exception)
 					.build());
@@ -270,7 +271,7 @@ public class NettyChannelInjector implements Injector {
 				MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(this.networkManager, null, packet);
 			} catch (Exception exception) {
 				// 99% the user gave wrong information to the server
-				ERROR_REPORTER.reportMinimal(this.injectionFactory.getPlugin(), "receiveClientPacket", exception);
+				this.errorReporter.reportMinimal(this.injectionFactory.getPlugin(), "receiveClientPacket", exception);
 			}
 		};
 
@@ -331,6 +332,21 @@ public class NettyChannelInjector implements Injector {
 	}
 
 	@Override
+	public void disconnect(String message) {
+		// we're still during pre-login, just close the connection
+		if (this.playerConnection == null || this.resolvedPlayer instanceof ByteBuddyGenerated) {
+			this.wrappedChannel.disconnect();
+		} else {
+			try {
+				// try to call the disconnect method on the player
+				MinecraftMethods.getDisconnectMethod(this.playerConnection.getClass()).invoke(this.playerConnection, message);
+			} catch (Exception exception) {
+				throw new IllegalArgumentException("Unable to disconnect the current injector", exception);
+			}
+		}
+	}
+
+	@Override
 	public boolean isInjected() {
 		return this.injected;
 	}
@@ -385,6 +401,28 @@ public class NettyChannelInjector implements Injector {
 		}
 	}
 
+	private void rewriteChannelField() {
+		// check if we need to rewrite the channel or if the channel is already correct (prevent wrapping a wrapped channel)
+		Object currentChannel = this.channelField.get(this.networkManager);
+		if (currentChannel instanceof NettyChannelProxy) {
+			return;
+		}
+
+		// the field is not correct, rewrite now to our handler
+		Channel ch = new NettyChannelProxy(this.wrappedChannel, new NettyEventLoopProxy(this.wrappedChannel.eventLoop()) {
+			@Override
+			protected Runnable proxyRunnable(Runnable original) {
+				return NettyChannelInjector.this.processOutbound(original);
+			}
+
+			@Override
+			protected <T> Callable<T> proxyCallable(Callable<T> original) {
+				return NettyChannelInjector.this.processOutbound(original);
+			}
+		});
+		this.channelField.set(this.networkManager, ch);
+	}
+
 	private void ensureInEventLoop(Runnable runnable) {
 		this.wrappedChannel.eventLoop().execute(runnable);
 	}
@@ -430,6 +468,15 @@ public class NettyChannelInjector implements Injector {
 			return null;
 		}
 
+		// ensure that we're not on the main thread if we don't need to
+		if (!this.channelListener.hasMainThreadListener(packet.getClass()) && Bukkit.isPrimaryThread()) {
+			// re-schedule async
+			Bukkit.getScheduler().runTaskAsynchronously(
+					this.injectionFactory.getPlugin(),
+					() -> this.sendServerPacket(packet, null, false));
+			return null;
+		}
+
 		// call all listeners which are listening to the outbound packet, if any
 		// null indicates that no listener was affected by the packet, meaning that we can directly send the original packet
 		PacketEvent event = this.channelListener.onPacketSending(this, packet, marker);
@@ -469,13 +516,13 @@ public class NettyChannelInjector implements Injector {
 			// easier thing to do - just wrap the runnable in a new one
 			return (T) (Runnable) () -> {
 				((Runnable) action).run();
-				NETWORK_PROCESSOR.invokePostEvent(event, marker);
+				this.networkProcessor.invokePostEvent(event, marker);
 			};
 		} else if (action instanceof Callable<?>) {
 			// okay this is a bit harder now - we need to wrap the action and return the value of it
 			return (T) (Callable<Object>) () -> {
 				Object value = ((Callable<Object>) action).call();
-				NETWORK_PROCESSOR.invokePostEvent(event, marker);
+				this.networkProcessor.invokePostEvent(event, marker);
 				return value;
 			};
 		} else {
@@ -507,5 +554,9 @@ public class NettyChannelInjector implements Injector {
 
 		// cannot be null at this point
 		return this.playerConnection;
+	}
+
+	public Channel getWrappedChannel() {
+		return this.wrappedChannel;
 	}
 }

@@ -12,14 +12,13 @@
  * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package com.comphenix.protocol.injector.nett;
+package com.comphenix.protocol.injector.netty.channel;
 
-import com.comphenix.protocol.injector.netty.ChannelInjector;
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.netty.ChannelListener;
-import com.comphenix.protocol.injector.netty.ClosedInjector;
 import com.comphenix.protocol.injector.netty.Injector;
-import com.comphenix.protocol.injector.server.SocketInjector;
-import com.comphenix.protocol.injector.server.TemporaryPlayerFactory;
+import com.comphenix.protocol.injector.temporary.MinimalInjector;
+import com.comphenix.protocol.injector.temporary.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -34,22 +33,25 @@ import org.bukkit.plugin.Plugin;
 /**
  * Represents an injector factory.
  * <p>
- * Note that the factory will return {@link ClosedInjector} when the factory is closed.
+ * Note that the factory will return {@link EmptyInjector} when the factory is closed.
  *
  * @author Kristian
  */
 public class InjectionFactory {
 
 	// This should work as long as the injectors are, uh, injected
-	private final ConcurrentMap<Player, Injector> playerLookup = new MapMaker().weakKeys().weakValues().makeMap();
 	private final ConcurrentMap<String, Injector> nameLookup = new MapMaker().weakValues().makeMap();
+	private final ConcurrentMap<Player, Injector> playerLookup = new MapMaker().weakKeys().weakValues().makeMap();
 
 	// The current plugin
 	private final Plugin plugin;
+	private final ErrorReporter errorReporter;
+
 	private boolean closed;
 
-	public InjectionFactory(Plugin plugin) {
+	public InjectionFactory(Plugin plugin, ErrorReporter errorReporter) {
 		this.plugin = plugin;
+		this.errorReporter = errorReporter;
 	}
 
 	/**
@@ -76,6 +78,11 @@ public class InjectionFactory {
 
 		// try to get the injector using the player reference first
 		Injector injector = this.playerLookup.get(player);
+		if (injector == null) {
+			injector = this.getTemporaryInjector(player);
+		}
+
+		// check if we found an injector
 		if (injector != null && !injector.isClosed()) {
 			return injector;
 		}
@@ -100,7 +107,7 @@ public class InjectionFactory {
 			}
 		} else {
 			// construct a new injector as it seems like we have none yet
-			injector = new NettyChannelInjector(networkManager, channel, listener, this);
+			injector = new NettyChannelInjector(networkManager, channel, listener, this, this.errorReporter);
 			this.cacheInjector(player, injector);
 		}
 
@@ -146,12 +153,14 @@ public class InjectionFactory {
 			return EmptyInjector.WITHOUT_PLAYER;
 		}
 
-		Object networkManager = this.findNetworkManager(channel);
+		Object netManager = this.findNetworkManager(channel);
 		Player temporaryPlayer = playerFactory.createTemporaryPlayer(Bukkit.getServer());
-		Injector injector = new NettyChannelInjector(networkManager, channel, listener, this);
+
+		NettyChannelInjector injector = new NettyChannelInjector(netManager, channel, listener, this, this.errorReporter);
+		MinimalInjector minimalInjector = new NettyChannelMinimalInjector(injector);
 
 		// Initialize temporary player
-		TemporaryPlayerFactory.setInjectorInPlayer(temporaryPlayer, injector);
+		TemporaryPlayerFactory.setInjectorInPlayer(temporaryPlayer, minimalInjector);
 		return injector;
 	}
 
@@ -206,12 +215,12 @@ public class InjectionFactory {
 	 * @param player - the temporary player, or normal Bukkit player.
 	 * @return The associated injector, or NULL if this is a Bukkit player.
 	 */
-	private ChannelInjector getTemporaryInjector(Player player) {
-		SocketInjector injector = TemporaryPlayerFactory.getInjectorFromPlayer(player);
-
-		if (injector != null) {
-			return ((ChannelSocketInjector) injector).getChannelInjector();
+	private NettyChannelInjector getTemporaryInjector(Player player) {
+		MinimalInjector injector = TemporaryPlayerFactory.getInjectorFromPlayer(player);
+		if (injector instanceof NettyChannelMinimalInjector) {
+			return ((NettyChannelMinimalInjector) injector).getInjector();
 		}
+
 		return null;
 	}
 
@@ -223,7 +232,8 @@ public class InjectionFactory {
 	 */
 	private Object findNetworkManager(Channel channel) {
 		// Find the network manager
-		Object networkManager = NettyChannelInjector.findChannelHandler(channel, MinecraftReflection.getNetworkManagerClass());
+		Object networkManager = NettyChannelInjector.findChannelHandler(channel,
+				MinecraftReflection.getNetworkManagerClass());
 		if (networkManager != null) {
 			return networkManager;
 		}

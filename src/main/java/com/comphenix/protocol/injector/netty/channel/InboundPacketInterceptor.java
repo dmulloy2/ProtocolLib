@@ -1,6 +1,8 @@
-package com.comphenix.protocol.injector.nett;
+package com.comphenix.protocol.injector.netty.channel;
 
+import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.NetworkProcessor;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import io.netty.channel.ChannelHandlerContext;
@@ -10,10 +12,12 @@ final class InboundPacketInterceptor extends ChannelInboundHandlerAdapter {
 
 	private final NettyChannelInjector injector;
 	private final ChannelListener channelListener;
+	private final NetworkProcessor networkProcessor;
 
-	public InboundPacketInterceptor(NettyChannelInjector injector, ChannelListener channelListener) {
+	public InboundPacketInterceptor(NettyChannelInjector injector, ChannelListener listener, NetworkProcessor processor) {
 		this.injector = injector;
-		this.channelListener = channelListener;
+		this.channelListener = listener;
+		this.networkProcessor = processor;
 	}
 
 	@Override
@@ -33,6 +37,13 @@ final class InboundPacketInterceptor extends ChannelInboundHandlerAdapter {
 			// fire the intercepted packet down the pipeline if it wasn't cancelled
 			if (!interceptionResult.isCancelled()) {
 				ctx.fireChannelRead(interceptionResult.getPacket().getHandle());
+
+				// check if there were any post events added the packet after we fired it down the pipeline
+				// we use this way as we don't want to construct a new network manager accidentally
+				NetworkMarker marker = NetworkMarker.getNetworkMarker(interceptionResult);
+				if (marker != null) {
+					this.networkProcessor.invokePostEvent(interceptionResult, marker);
+				}
 			}
 		} else {
 			// just pass the message down the pipeline

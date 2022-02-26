@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.nett;
+package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
@@ -63,6 +63,10 @@ final class EmptyInjector implements Injector {
 	@Override
 	public void setPlayer(Player player) {
 		this.player = player;
+	}
+
+	@Override
+	public void disconnect(String message) {
 	}
 
 	@Override

@@ -1,7 +1,6 @@
-package com.comphenix.protocol.injector.server;
+package com.comphenix.protocol.injector.temporary;
 
 import com.comphenix.protocol.events.NetworkMarker;
-import java.lang.reflect.InvocationTargetException;
 import java.net.SocketAddress;
 import org.bukkit.entity.Player;
 
@@ -10,23 +9,21 @@ import org.bukkit.entity.Player;
  *
  * @author Kristian
  */
-public interface SocketInjector {
+public interface MinimalInjector {
 
 	/**
 	 * Retrieve the associated address of this player.
 	 *
 	 * @return The associated address.
-	 * @throws IllegalAccessException If we're unable to read the socket field.
 	 */
-	SocketAddress getAddress() throws IllegalAccessException;
+	SocketAddress getAddress();
 
 	/**
 	 * Attempt to disconnect the current client.
 	 *
 	 * @param message - the message to display.
-	 * @throws InvocationTargetException If disconnection failed.
 	 */
-	void disconnect(String message) throws InvocationTargetException;
+	void disconnect(String message);
 
 	/**
 	 * Send a packet to the client.
@@ -34,10 +31,8 @@ public interface SocketInjector {
 	 * @param packet   - server packet to send.
 	 * @param marker   - the network marker.
 	 * @param filtered - whether or not the packet will be filtered by our listeners.
-	 * @throws InvocationTargetException If an error occured when sending the packet.
 	 */
-	void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered)
-			throws InvocationTargetException;
+	void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered);
 
 	/**
 	 * Retrieve the hooked player.
@@ -45,13 +40,6 @@ public interface SocketInjector {
 	 * @return The hooked player.
 	 */
 	Player getPlayer();
-
-	/**
-	 * Invoked when a delegated socket injector transfers the state of one injector to the next.
-	 *
-	 * @param delegate - the new injector.
-	 */
-	void transferState(SocketInjector delegate);
 
 	/**
 	 * Determines if the player is currently connected.

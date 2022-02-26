@@ -124,7 +124,7 @@ public class ScheduledPacket {
 		
 		try {
 			if (getSender() == Sender.CLIENT) {
-				stream.recieveClientPacket(getTarget(), getPacket(), isFiltered());
+				stream.receiveClientPacket(getTarget(), getPacket(), isFiltered());
 			} else {
 				stream.sendServerPacket(getTarget(), getPacket(), isFiltered());
 			}

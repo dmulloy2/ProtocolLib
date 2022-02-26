@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.netty;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
@@ -50,6 +51,8 @@ public interface ChannelListener {
 	 * @return TRUE if there is, FALSE otherwise.
 	 */
 	boolean hasMainThreadListener(Class<?> packetClass);
+
+	boolean hasMainThreadListener(PacketType type);
 
 	/**
 	 * Retrieve the current error reporter.

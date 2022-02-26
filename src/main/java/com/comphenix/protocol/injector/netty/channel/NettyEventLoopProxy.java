@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.nett;
+package com.comphenix.protocol.injector.netty.channel;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
