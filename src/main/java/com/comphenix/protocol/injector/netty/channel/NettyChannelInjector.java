@@ -98,8 +98,8 @@ public class NettyChannelInjector implements Injector {
 	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
 
 	// status of this injector
-	private boolean closed = false;
-	private boolean injected = false;
+	private volatile boolean closed = false;
+	private volatile boolean injected = false;
 
 	// information about the player belonging to this injector
 	private String playerName;
@@ -140,6 +140,11 @@ public class NettyChannelInjector implements Injector {
 				.banModifier(Modifier.STATIC)
 				.build());
 		this.channelField = Accessors.getFieldAccessor(channelField, true);
+
+		// hook here into the close future to be 100% sure that this injector gets closed when the channel we wrap gets closed
+		// normally we listen to the disconnect event, but there is a very small period of time, between the login and actual
+		// join that is not covered by the disconnect event and may lead to unexpected injector states...
+		this.wrappedChannel.closeFuture().addListener(future -> this.close());
 	}
 
 	static NettyChannelInjector findInjector(Channel channel) {
@@ -248,12 +253,17 @@ public class NettyChannelInjector implements Injector {
 			this.skippedPackets.clear();
 
 			// wipe this injector completely
-			this.injectionFactory.invalidate(this.resolvedPlayer, this.playerName);
+			this.injectionFactory.invalidate(this.getPlayer(), this.playerName);
 		}
 	}
 
 	@Override
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
+		// do not send the packet if this injector was already closed / is not injected yet
+		if (this.closed || !this.injected) {
+			return;
+		}
+
 		// register the packet as filtered if we shouldn't post it to any listener
 		if (!filtered) {
 			this.skippedPackets.add(packet);
@@ -262,11 +272,14 @@ public class NettyChannelInjector implements Injector {
 		// save the given packet marker and send the packet
 		this.saveMarker(packet, marker);
 		try {
-			//
 			if (this.resolvedPlayer instanceof ByteBuddyGenerated) {
 				MinecraftMethods.getNetworkManagerHandleMethod().invoke(this.networkManager, packet);
 			} else {
-				MinecraftMethods.getSendPacketMethod().invoke(this.getPlayerConnection(), packet);
+				// ensure that the player is properly connected before sending
+				Object playerConnection = this.getPlayerConnection();
+				if (playerConnection != null) {
+					MinecraftMethods.getSendPacketMethod().invoke(playerConnection, packet);
+				}
 			}
 		} catch (Exception exception) {
 			this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
@@ -278,6 +291,11 @@ public class NettyChannelInjector implements Injector {
 
 	@Override
 	public void receiveClientPacket(Object packet) {
+		// do not do that if we're not injected or this injector was closed
+		if (this.closed || !this.injected) {
+			return;
+		}
+
 		Runnable receiveAction = () -> {
 			try {
 				// try to invoke the method, this should normally not fail
@@ -317,7 +335,7 @@ public class NettyChannelInjector implements Injector {
 
 	@Override
 	public void saveMarker(Object packet, NetworkMarker marker) {
-		if (marker != null) {
+		if (marker != null && !this.closed) {
 			this.savedMarkers.put(packet, marker);
 		}
 	}
@@ -559,7 +577,7 @@ public class NettyChannelInjector implements Injector {
 		if (this.playerConnection == null) {
 			Player target = this.getPlayer();
 			if (target == null) {
-				throw new IllegalStateException("Cannot send packet to offline/unresolved player " + this.playerName);
+				return null;
 			}
 
 			this.playerConnection = MinecraftFields.getPlayerConnection(target);

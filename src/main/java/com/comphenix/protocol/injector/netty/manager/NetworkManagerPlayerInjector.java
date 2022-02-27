@@ -5,11 +5,11 @@ import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
 import com.comphenix.protocol.injector.netty.channel.NettyChannelInjector;
 import com.comphenix.protocol.injector.player.AbstractPlayerInjectionHandler;
-import com.comphenix.protocol.injector.netty.ChannelListener;
-import com.comphenix.protocol.injector.netty.Injector;
 import io.netty.channel.Channel;
 import java.util.Set;
 import org.bukkit.entity.Player;
@@ -45,7 +45,7 @@ final class NetworkManagerPlayerInjector extends AbstractPlayerInjectionHandler 
 
 	@Override
 	public void handleDisconnect(Player player) {
-		this.injectionFactory.fromPlayer(player, this.listener).close();
+		// noop
 	}
 
 	@Override
