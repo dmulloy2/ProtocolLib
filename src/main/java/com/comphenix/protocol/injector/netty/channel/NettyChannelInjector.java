@@ -223,6 +223,9 @@ public class NettyChannelInjector implements Injector {
 			// uninject on the event loop to ensure the instant visibility of the change and prevent blocks of other threads
 			if (this.wrappedChannel.eventLoop().inEventLoop()) {
 				this.injected = false;
+
+				// remove known references to us
+				this.wrappedChannel.attr(INJECTOR).remove();
 				this.channelField.set(this.networkManager, this.wrappedChannel);
 
 				for (String handler : PROTOCOL_LIB_HANDLERS) {
@@ -246,7 +249,6 @@ public class NettyChannelInjector implements Injector {
 
 			// remove all of our references from the channel
 			this.uninject();
-			this.wrappedChannel.attr(INJECTOR).remove();
 
 			// cleanup
 			this.savedMarkers.clear();
