@@ -218,7 +218,9 @@ abstract class NettyEventLoopProxy implements EventLoop {
 	@Override
 	public void execute(Runnable command) {
 		Runnable proxied = this.proxyRunnable(command);
-		this.delegate.execute(proxied == null ? EMPTY_RUNNABLE : proxied);
+		if (proxied != null) {
+			this.delegate.execute(proxied);
+		}
 	}
 
 	@Override
