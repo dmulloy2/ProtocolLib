@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.Bukkit;
+import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 public class NettyChannelInjector implements Injector {
@@ -79,10 +79,14 @@ public class NettyChannelInjector implements Injector {
 	private static FieldAccessor LOGIN_GAME_PROFILE;
 	private static FieldAccessor PROTOCOL_VERSION_ACCESSOR;
 
+	// bukkit stuff
+	private final Server server;
+
 	// protocol lib stuff we need
 	private final ErrorReporter errorReporter;
 	private final NetworkProcessor networkProcessor;
 
+	// references
 	private final Object networkManager;
 	private final Channel wrappedChannel;
 	private final ChannelListener channelListener;
@@ -106,15 +110,21 @@ public class NettyChannelInjector implements Injector {
 	private FieldAccessor protocolAccessor;
 
 	public NettyChannelInjector(
+			Server server,
 			Object netManager,
 			Channel channel,
 			ChannelListener listener,
 			InjectionFactory injector,
 			ErrorReporter errorReporter
 	) {
+		// bukkit stuff
+		this.server = server;
+
+		// protocol lib stuff
 		this.errorReporter = errorReporter;
 		this.networkProcessor = new NetworkProcessor(errorReporter);
 
+		// references
 		this.networkManager = netManager;
 		this.wrappedChannel = channel;
 		this.channelListener = listener;
@@ -175,6 +185,9 @@ public class NettyChannelInjector implements Injector {
 			}
 
 			// check here if we need to rewrite the channel field and do so
+			// minecraft overrides the channel field when the channel actually becomes active, so we need to ensure that our
+			// proxied channel is always on that field - therefore this rewrite is event before we check if we're already
+			// injected into the channel
 			this.rewriteChannelField();
 
 			// check if we already injected into the channel
@@ -183,7 +196,7 @@ public class NettyChannelInjector implements Injector {
 			}
 
 			// inject our handlers
-			this.wrappedChannel.pipeline().addBefore("encoder", WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER);
+			this.wrappedChannel.pipeline().addAfter("encoder", WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER);
 			this.wrappedChannel.pipeline().addAfter(
 					"decoder",
 					INTERCEPTOR_NAME,
@@ -318,7 +331,7 @@ public class NettyChannelInjector implements Injector {
 
 		// check if the name of the player is already known to the injector
 		if (this.playerName != null) {
-			this.resolvedPlayer = Bukkit.getPlayerExact(this.playerName);
+			this.resolvedPlayer = this.server.getPlayerExact(this.playerName);
 		}
 
 		// either we resolved it or we didn't...
@@ -454,24 +467,24 @@ public class NettyChannelInjector implements Injector {
 			return action;
 		}
 
-		// no listener - no magic :)
-		if (!this.channelListener.hasListener(packet.getClass())) {
+		// no listener and no marker - no magic :)
+		if (!this.channelListener.hasListener(packet.getClass()) && marker == null) {
 			return action;
 		}
 
 		// ensure that we are on the main thread if we need to
-		if (this.channelListener.hasMainThreadListener(packet.getClass()) && !Bukkit.isPrimaryThread()) {
+		if (this.channelListener.hasMainThreadListener(packet.getClass()) && !this.server.isPrimaryThread()) {
 			// not on the main thread but we are required to be - re-schedule the packet on the main thread
-			Bukkit.getScheduler().scheduleSyncDelayedTask(
+			this.server.getScheduler().scheduleSyncDelayedTask(
 					this.injectionFactory.getPlugin(),
 					() -> this.sendServerPacket(packet, null, false));
 			return null;
 		}
 
 		// ensure that we're not on the main thread if we don't need to
-		if (!this.channelListener.hasMainThreadListener(packet.getClass()) && Bukkit.isPrimaryThread()) {
+		if (!this.channelListener.hasMainThreadListener(packet.getClass()) && this.server.isPrimaryThread()) {
 			// re-schedule async
-			Bukkit.getScheduler().runTaskAsynchronously(
+			this.server.getScheduler().runTaskAsynchronously(
 					this.injectionFactory.getPlugin(),
 					() -> this.sendServerPacket(packet, null, false));
 			return null;

@@ -26,7 +26,7 @@ import com.google.common.collect.MapMaker;
 import io.netty.channel.Channel;
 import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nonnull;
-import org.bukkit.Bukkit;
+import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -43,14 +43,19 @@ public class InjectionFactory {
 	private final ConcurrentMap<String, Injector> nameLookup = new MapMaker().weakValues().makeMap();
 	private final ConcurrentMap<Player, Injector> playerLookup = new MapMaker().weakKeys().weakValues().makeMap();
 
-	// The current plugin
+	// bukkit stuff
 	private final Plugin plugin;
+	private final Server server;
+
+	// protocol lib stuff
 	private final ErrorReporter errorReporter;
 
+	// state of the factory
 	private boolean closed;
 
-	public InjectionFactory(Plugin plugin, ErrorReporter errorReporter) {
+	public InjectionFactory(Plugin plugin, Server server, ErrorReporter errorReporter) {
 		this.plugin = plugin;
+		this.server = server;
 		this.errorReporter = errorReporter;
 	}
 
@@ -107,7 +112,7 @@ public class InjectionFactory {
 			}
 		} else {
 			// construct a new injector as it seems like we have none yet
-			injector = new NettyChannelInjector(networkManager, channel, listener, this, this.errorReporter);
+			injector = new NettyChannelInjector(this.server, networkManager, channel, listener, this, this.errorReporter);
 			this.cacheInjector(player, injector);
 		}
 
@@ -154,9 +159,15 @@ public class InjectionFactory {
 		}
 
 		Object netManager = this.findNetworkManager(channel);
-		Player temporaryPlayer = playerFactory.createTemporaryPlayer(Bukkit.getServer());
+		Player temporaryPlayer = playerFactory.createTemporaryPlayer(this.server);
 
-		NettyChannelInjector injector = new NettyChannelInjector(netManager, channel, listener, this, this.errorReporter);
+		NettyChannelInjector injector = new NettyChannelInjector(
+				this.server,
+				netManager,
+				channel,
+				listener,
+				this,
+				this.errorReporter);
 		MinimalInjector minimalInjector = new NettyChannelMinimalInjector(injector);
 
 		// Initialize temporary player

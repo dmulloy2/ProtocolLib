@@ -105,7 +105,11 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 		this.outboundListeners = new SortedPacketListenerList();
 
 		// injectors
-		this.networkManagerInjector = new NetworkManagerInjector(builder.getLibrary(), this, builder.getReporter());
+		this.networkManagerInjector = new NetworkManagerInjector(
+				builder.getLibrary(),
+				builder.getServer(),
+				this,
+				builder.getReporter());
 		this.packetInjector = this.networkManagerInjector.getPacketInjector();
 		this.playerInjectionHandler = this.networkManagerInjector.getPlayerInjectionHandler();
 
@@ -465,7 +469,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 					PacketFilterManager.this.playerInjectionHandler.updatePlayer(event.getPlayer());
 				}
 
-				@EventHandler(priority = EventPriority.MONITOR)
+				@EventHandler(priority = EventPriority.LOWEST)
 				public void handleJoin(PlayerJoinEvent event) {
 					PacketFilterManager.this.playerInjectionHandler.updatePlayer(event.getPlayer());
 				}
