@@ -26,7 +26,6 @@ import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -63,11 +62,9 @@ public interface ProtocolManager extends PacketStream {
 	 * @param receiver - the receiver.
 	 * @param packet   - packet to send.
 	 * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 * @throws InvocationTargetException - if an error occurred when sending the packet.
 	 */
 	@Override
-	void sendServerPacket(Player receiver, PacketContainer packet, boolean filters)
-			throws InvocationTargetException;
+	void sendServerPacket(Player receiver, PacketContainer packet, boolean filters);
 
 	/**
 	 * Simulate receiving a certain packet from a given player.
@@ -78,12 +75,9 @@ public interface ProtocolManager extends PacketStream {
 	 * @param sender  - the sender.
 	 * @param packet  - the packet that was sent.
 	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 * @throws InvocationTargetException If the reflection machinery failed.
-	 * @throws IllegalAccessException    If the underlying method caused an error.
 	 */
 	@Override
-	void receiveClientPacket(Player sender, PacketContainer packet, boolean filters)
-			throws IllegalAccessException, InvocationTargetException;
+	void receiveClientPacket(Player sender, PacketContainer packet, boolean filters);
 
 	/**
 	 * Broadcast a given packet to every connected player on the server.
@@ -189,7 +183,7 @@ public interface ProtocolManager extends PacketStream {
 	 * @param entity    - entity to refresh.
 	 * @param observers - the clients to update.
 	 */
-	void updateEntity(Entity entity, List<Player> observers) throws FieldAccessException;
+	void updateEntity(Entity entity, List<Player> observers);
 
 	/**
 	 * Retrieve the associated entity.
@@ -199,7 +193,7 @@ public interface ProtocolManager extends PacketStream {
 	 * @return The associated entity.
 	 * @throws FieldAccessException Reflection failed.
 	 */
-	Entity getEntityFromID(World container, int id) throws FieldAccessException;
+	Entity getEntityFromID(World container, int id);
 
 	/**
 	 * Retrieve every client that is receiving information about a given entity.
@@ -208,7 +202,7 @@ public interface ProtocolManager extends PacketStream {
 	 * @return Every client/player that is tracking the given entity.
 	 * @throws FieldAccessException If reflection failed.
 	 */
-	List<Player> getEntityTrackers(Entity entity) throws FieldAccessException;
+	List<Player> getEntityTrackers(Entity entity);
 
 	/**
 	 * Retrieves a immutable set containing the type of the sent server packets that will be observed by listeners.
