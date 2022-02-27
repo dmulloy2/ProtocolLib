@@ -104,7 +104,7 @@ public class InjectionFactory {
 
 		if (injector != null) {
 			// check if the new player is not the old one, this saves us a bit when many calls to the method are made
-			if (injector.getPlayer() != player) {
+			if (injector.getPlayer() != player || !this.playerLookup.containsKey(player)) {
 				this.playerLookup.remove(injector.getPlayer());
 				this.cacheInjector(player, injector);
 				// re-set the player of the injection
