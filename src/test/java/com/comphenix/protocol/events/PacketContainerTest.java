@@ -79,6 +79,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -429,7 +430,7 @@ public class PacketContainerTest {
 		// are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
 		// members of the packet itself)
 		PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
-		AttributeBase base = IRegistry.am.a(MinecraftKey.a("generic.max_health"));
+		AttributeBase base = IRegistry.aj.a(MinecraftKey.a("generic.max_health"));
 		AttributeSnapshot snapshot = new AttributeSnapshot(base, 20.0D, modifiers);
 		attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 
@@ -489,10 +490,14 @@ public class PacketContainerTest {
 				PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[]{int.class, MobEffect.class});
 		PacketContainer packet = creator.createPacket(entityId, mobEffect);
 
-		assertEquals(entityId, (int) packet.getIntegers().read(0));
-		assertEquals(effect.getType().getId(), (byte) packet.getBytes().read(0));
-		assertEquals(effect.getAmplifier(), (byte) packet.getBytes().read(1));
-		assertEquals(effect.getDuration(), (int) packet.getIntegers().read(1));
+		if (true) {
+			//throw new RuntimeException(ReflectionToStringBuilder.toString(packet.getHandle()));
+		}
+
+		assertEquals(entityId, packet.getIntegers().read(0));
+		assertEquals(effect.getType().getId(), packet.getIntegers().read(1));
+		assertEquals(effect.getAmplifier(), (byte) packet.getBytes().read(0));
+		assertEquals(effect.getDuration(), packet.getIntegers().read(2));
 
 		int e = 0;
 		if (effect.isAmbient()) {
@@ -505,7 +510,7 @@ public class PacketContainerTest {
 			e |= 4;
 		}
 
-		assertEquals(e, (byte) packet.getBytes().read(2));
+		assertEquals(e, (byte) packet.getBytes().read(1));
 	}
 
 	@Test

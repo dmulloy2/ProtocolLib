@@ -21,7 +21,7 @@ package com.comphenix.protocol.utility;
  */
 
 public final class Constants {
-	public static final String PACKAGE_VERSION = "v1_18_R1";
+	public static final String PACKAGE_VERSION = "v1_18_R2";
 	public static final String NMS = "net.minecraft";
 	public static final String OBC = "org.bukkit.craftbukkit." + PACKAGE_VERSION;
 	public static final MinecraftVersion CURRENT_VERSION = MinecraftVersion.CAVES_CLIFFS_2;
