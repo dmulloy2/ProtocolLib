@@ -79,7 +79,6 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -489,10 +488,6 @@ public class PacketContainerTest {
 		PacketConstructor creator = PacketConstructor.DEFAULT.withPacket(
 				PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[]{int.class, MobEffect.class});
 		PacketContainer packet = creator.createPacket(entityId, mobEffect);
-
-		if (true) {
-			//throw new RuntimeException(ReflectionToStringBuilder.toString(packet.getHandle()));
-		}
 
 		assertEquals(entityId, packet.getIntegers().read(0));
 		assertEquals(effect.getType().getId(), packet.getIntegers().read(1));
