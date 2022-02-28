@@ -26,7 +26,6 @@ import io.netty.channel.ChannelFuture;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -191,15 +190,27 @@ public class NetworkManagerInjector implements ChannelListener {
 
 		// loop over all fields which we need to override and try to do so if needed
 		for (Field field : listFields) {
-			FieldAccessor accessor = Accessors.getFieldAccessor(field, true);
+			// ensure that the generic type of the field is actually a channel future, rather than guessing
+			// by peeking objects from the list
+			if (field.getGenericType().getTypeName().contains(ChannelFuture.class.getName())) {
+				// we can only guess if we need to override it, but it looks like we should.
+				// we now need the old value of the field to wrap it into a new collection
+				FieldAccessor accessor = Accessors.getFieldAccessor(field, true);
+				List<Object> value = (List<Object>) accessor.get(serverConnection);
 
-			// try to check if we need to override the field
-			List<Object> value = (List<Object>) accessor.get(serverConnection);
-			if (value.isEmpty() || value.get(0) instanceof ChannelFuture) {
-				// we can only guess if we need to override it, but it looks like we should
-				// mark down that we've overridden the field and do actually inject into it
+				// mark down that we've overridden the field
 				this.overriddenLists.add(new Pair<>(serverConnection, accessor));
-				accessor.set(serverConnection, new BootstrapList(this.pipelineInjectorHandler, value));
+
+				// we need to synchronize accesses to the list ourselves, see Collections.SynchronizedCollection
+				//noinspection SynchronizationOnLocalVariableOrMethodParameter
+				synchronized (value) {
+					// then copy all old values into the new list
+					List<Object> newList = Collections.synchronizedList(new ListeningList(value, this.pipelineInjectorHandler));
+					newList.addAll(value);
+
+					// rewrite the actual field
+					accessor.set(serverConnection, newList);
+				}
 			}
 		}
 
@@ -219,16 +230,20 @@ public class NetworkManagerInjector implements ChannelListener {
 
 		// undo changes we did to any field
 		for (Pair<Object, FieldAccessor> list : this.overriddenLists) {
+			// get the value of the field we've overridden, if it is no longer a ListeningList someone probably jumped in
+			// and replaced the field himself - we are out safely as the other person needs to clean the mess...
 			List<Object> value = (List<Object>) list.getSecond().get(list.getFirst());
-			// move every element of the old list into a new one to unprocessed them if needed
-			List<Object> target = Collections.synchronizedList(new ArrayList<>());
-			for (int i = 0; i < value.size(); i++) {
-				Object element = value.remove(i);
-				target.add(i, element);
+			if (value instanceof ListeningList) {
+				// just reset to the list we wrapped originally
+				ListeningList ourList = (ListeningList) value;
+				List<Object> original = ourList.getOriginal();
+				//noinspection SynchronizationOnLocalVariableOrMethodParameter
+				synchronized (original) {
+					// revert the injection from all values of the list
+					ourList.unProcessAll();
+					list.getSecond().set(list.getFirst(), original);
+				}
 			}
-
-			// set the field
-			list.getSecond().set(list.getFirst(), target);
 		}
 
 		// clear up
