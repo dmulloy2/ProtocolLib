@@ -1,7 +1,5 @@
 package com.comphenix.protocol.events;
 
-import java.lang.reflect.InvocationTargetException;
-
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketStream;
@@ -121,17 +119,11 @@ public class ScheduledPacket {
 	 */
 	public void schedule(PacketStream stream) {
 		Preconditions.checkNotNull(stream, "stream cannot be NULL");
-		
-		try {
-			if (getSender() == Sender.CLIENT) {
-				stream.recieveClientPacket(getTarget(), getPacket(), isFiltered());
-			} else {
-				stream.sendServerPacket(getTarget(), getPacket(), isFiltered());
-			}
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Cannot send packet " + this + " to " + stream);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Cannot send packet " + this + " to " + stream);
+
+		if (getSender() == Sender.CLIENT) {
+			stream.receiveClientPacket(getTarget(), getPacket(), isFiltered());
+		} else {
+			stream.sendServerPacket(getTarget(), getPacket(), isFiltered());
 		}
 	}
 

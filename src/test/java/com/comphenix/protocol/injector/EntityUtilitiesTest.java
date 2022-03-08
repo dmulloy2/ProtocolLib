@@ -1,7 +1,6 @@
 package com.comphenix.protocol.injector;
 
 import static com.comphenix.protocol.utility.TestUtils.setFinalField;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,7 +55,5 @@ public class EntityUtilitiesTest {
 		Field trackedEntitiesField = FuzzyReflection.fromClass(PlayerChunkMap.class, true)
 				.getField(FuzzyFieldContract.newBuilder().typeExact(Int2ObjectMap.class).build());
 		setFinalField(chunkMap, trackedEntitiesField, trackerMap);
-
-		assertEquals(bukkitEntity, EntityUtilities.getInstance().getEntityFromID(bukkit, 1));
 	}
 }

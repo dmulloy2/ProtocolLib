@@ -1,23 +1,23 @@
-package com.comphenix.protocol.injector.netty;
-
-import org.bukkit.entity.Player;
+package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
+import com.comphenix.protocol.injector.netty.Injector;
+import org.bukkit.entity.Player;
 
-/**
- * Represents a closed injector.
- * @author Kristian
- */
-public class ClosedInjector implements Injector {
+final class EmptyInjector implements Injector {
+
+	public static final Injector WITHOUT_PLAYER = new EmptyInjector(null);
+
 	private Player player;
 
-	/**
-	 * Construct a new injector that is always closed.
-	 * @param player - the associated player.
-	 */
-	public ClosedInjector(Player player) {
+	public EmptyInjector(Player player) {
 		this.player = player;
+	}
+
+	@Override
+	public int getProtocolVersion() {
+		return Integer.MIN_VALUE;
 	}
 
 	@Override
@@ -26,18 +26,19 @@ public class ClosedInjector implements Injector {
 	}
 
 	@Override
+	public void uninject() {
+	}
+
+	@Override
 	public void close() {
-		// Do nothing
 	}
 
 	@Override
 	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
-		// Do nothing
 	}
 
 	@Override
-	public void recieveClientPacket(Object packet) {
-		// Do nothing
+	public void receiveClientPacket(Object packet) {
 	}
 
 	@Override
@@ -52,22 +53,20 @@ public class ClosedInjector implements Injector {
 
 	@Override
 	public void saveMarker(Object packet, NetworkMarker marker) {
-		// Do nothing
 	}
 
 	@Override
-	public void setUpdatedPlayer(Player player) {
-		// Do nothing
-	}
-	
-	@Override
 	public Player getPlayer() {
-		return player;
+		return this.player;
 	}
-	
+
 	@Override
 	public void setPlayer(Player player) {
 		this.player = player;
+	}
+
+	@Override
+	public void disconnect(String message) {
 	}
 
 	@Override
@@ -78,10 +77,5 @@ public class ClosedInjector implements Injector {
 	@Override
 	public boolean isClosed() {
 		return true;
-	}
-
-	@Override
-	public int getProtocolVersion() {
-		return Integer.MIN_VALUE;
 	}
 }

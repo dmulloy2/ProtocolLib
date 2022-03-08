@@ -17,98 +17,87 @@
 
 package com.comphenix.protocol;
 
-import java.lang.reflect.InvocationTargetException;
-
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.netty.WirePacket;
+import org.bukkit.entity.Player;
 
 /**
  * Represents a object capable of sending or receiving packets.
- * 
+ *
  * @author Kristian
  */
 public interface PacketStream {
-	/**
-	 * Send a packet to the given player.
-	 * @param receiver - the reciever.
-	 * @param packet - packet to send.
-	 * @throws InvocationTargetException - if an error occured when sending the packet.
-	 */
-	public void sendServerPacket(Player receiver, PacketContainer packet)
-			throws InvocationTargetException;
 
 	/**
 	 * Send a packet to the given player.
+	 *
 	 * @param receiver - the reciever.
-	 * @param packet - packet to send.
-	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 * @throws InvocationTargetException - if an error occured when sending the packet.
+	 * @param packet   - packet to send.
 	 */
-	public void sendServerPacket(Player receiver, PacketContainer packet, boolean filters)
-			throws InvocationTargetException;
-	
+	void sendServerPacket(Player receiver, PacketContainer packet);
+
 	/**
 	 * Send a packet to the given player.
-	 * @param receiver - the receiver.
-	 * @param packet - packet to send.
-	 * @param marker - the network marker to use.
-	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 * @throws InvocationTargetException - if an error occured when sending the packet.
+	 *
+	 * @param receiver - the reciever.
+	 * @param packet   - packet to send.
+	 * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
 	 */
-	public void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters)
-			throws InvocationTargetException;
+	void sendServerPacket(Player receiver, PacketContainer packet, boolean filters);
+
+	/**
+	 * Send a packet to the given player.
+	 *
+	 * @param receiver - the receiver.
+	 * @param packet   - packet to send.
+	 * @param marker   - the network marker to use.
+	 * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
+	 */
+	void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters);
 
 	/**
 	 * Send a wire packet to the given player.
+	 *
 	 * @param receiver - the receiver.
-	 * @param id - packet id.
-	 * @param bytes - packet bytes.
-	 * @throws InvocationTargetException if an error occured when sending the packet.
+	 * @param id       - packet id.
+	 * @param bytes    - packet bytes.
 	 */
-	public void sendWirePacket(Player receiver, int id, byte[] bytes) throws InvocationTargetException;
+	void sendWirePacket(Player receiver, int id, byte[] bytes);
 
 	/**
 	 * Send a wire packet to the given player.
+	 *
 	 * @param receiver - the receiver.
-	 * @param packet - packet to send.
-	 * @throws InvocationTargetException if an error occured when sending the packet.
+	 * @param packet   - packet to send.
 	 */
-	public void sendWirePacket(Player receiver, WirePacket packet) throws InvocationTargetException;
+	void sendWirePacket(Player receiver, WirePacket packet);
 
 	/**
 	 * Simulate recieving a certain packet from a given player.
+	 *
 	 * @param sender - the sender.
 	 * @param packet - the packet that was sent.
-	 * @throws InvocationTargetException If the reflection machinery failed.
-	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet)
-			throws IllegalAccessException, InvocationTargetException;
+	void receiveClientPacket(Player sender, PacketContainer packet);
 
 	/**
 	 * Simulate recieving a certain packet from a given player.
-	 * @param sender - the sender.
-	 * @param packet - the packet that was sent.
+	 *
+	 * @param sender  - the sender.
+	 * @param packet  - the packet that was sent.
 	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 * @throws InvocationTargetException If the reflection machinery failed.
-	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet, boolean filters)
-			throws IllegalAccessException, InvocationTargetException;
-	
+	void receiveClientPacket(Player sender, PacketContainer packet, boolean filters);
+
 	/**
 	 * Simulate recieving a certain packet from a given player.
-	 * @param sender - the sender.
-	 * @param packet - the packet that was sent.
-	 * @param marker - the network marker to use.
+	 *
+	 * @param sender  - the sender.
+	 * @param packet  - the packet that was sent.
+	 * @param marker  - the network marker to use.
 	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 * @throws InvocationTargetException If the reflection machinery failed.
-	 * @throws IllegalAccessException If the underlying method caused an error.
 	 */
-	public void recieveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters)
-			throws IllegalAccessException, InvocationTargetException;
+	void receiveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters);
 }

@@ -33,7 +33,6 @@ import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ComponentConverter;
@@ -234,7 +233,7 @@ public class PacketContainerTest {
 		ItemStack item = new ItemStack(Material.GREEN_WOOL, 1);
 		ItemMeta meta = item.getItemMeta();
 		meta.setDisplayName(ChatColor.GREEN + "Green Wool");
-		meta.setLore(Util.asList(ChatColor.WHITE + "This is lore."));
+		meta.setLore(Lists.newArrayList(ChatColor.WHITE + "This is lore."));
 		item.setItemMeta(meta);
 		return item;
 	}
@@ -756,7 +755,7 @@ public class PacketContainerTest {
 
 				// Make sure watchable collections can be cloned
 				if (type == PacketType.Play.Server.ENTITY_METADATA) {
-					constructed.getWatchableCollectionModifier().write(0, Util.asList(
+					constructed.getWatchableCollectionModifier().write(0, Lists.newArrayList(
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Byte.class)),
 									(byte) 1),
 							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(String.class)),

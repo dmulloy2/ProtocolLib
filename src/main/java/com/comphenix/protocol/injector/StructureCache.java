@@ -17,17 +17,11 @@
 
 package com.comphenix.protocol.injector;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
-import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.compiler.CompiledStructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
@@ -35,35 +29,42 @@ import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.ZeroBuffer;
-
-import io.netty.buffer.ByteBuf;
 import com.google.common.base.Preconditions;
-
+import io.netty.buffer.ByteBuf;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.matcher.ElementMatchers;
 
 /**
  * Caches structure modifiers.
+ *
  * @author Kristian
  */
 public class StructureCache {
-	// Structure modifiers
-	private static final ConcurrentMap<PacketType, StructureModifier<Object>> structureModifiers = new ConcurrentHashMap<>();
-	// invocation cache for packets
-	private static final ConcurrentMap<Class<?>, Supplier<Object>> PACKET_INSTANCE_CREATORS = new ConcurrentHashMap<>();
-	// packet data serializer which always returns an empty nbt tag compound
-	private static boolean trickTried;
-	private static ConstructorAccessor TRICKED_DATA_SERIALIZER;
 
-	private static final Set<PacketType> compiling = new HashSet<>();
+	// prevent duplicate compilations
+	private static final Set<PacketType> COMPILING = new HashSet<>();
+
+	// Structure modifiers
+	private static final Map<Class<?>, Supplier<Object>> PACKET_INSTANCE_CREATORS = new ConcurrentHashMap<>();
+	private static final Map<PacketType, StructureModifier<Object>> STRUCTURE_MODIFIER_CACHE = new ConcurrentHashMap<>();
+
+	// packet data serializer which always returns an empty nbt tag compound
+	private static boolean TRICK_TRIED = false;
+	private static ConstructorAccessor TRICKED_DATA_SERIALIZER;
 
 	public static Object newPacket(Class<?> clazz) {
 		Object result = DefaultInstances.DEFAULT.create(clazz);
 
 		if (result == null) {
 			return PACKET_INSTANCE_CREATORS.computeIfAbsent(clazz, $ -> {
-				ConstructorAccessor accessor = Accessors.getConstructorAccessorOrNull(clazz, MinecraftReflection.getPacketDataSerializerClass());
+				ConstructorAccessor accessor = Accessors.getConstructorAccessorOrNull(clazz,
+						MinecraftReflection.getPacketDataSerializerClass());
 				if (accessor != null) {
 					return () -> {
 						try {
@@ -88,6 +89,7 @@ public class StructureCache {
 
 	/**
 	 * Creates an empty Minecraft packet of the given type.
+	 *
 	 * @param type - packet type.
 	 * @return Created packet.
 	 */
@@ -97,6 +99,7 @@ public class StructureCache {
 
 	/**
 	 * Retrieve a cached structure modifier for the given packet type.
+	 *
 	 * @param type - packet type.
 	 * @return A structure modifier.
 	 */
@@ -107,6 +110,7 @@ public class StructureCache {
 
 	/**
 	 * Retrieve a cached structure modifier given a packet type.
+	 *
 	 * @param packetType - packet type.
 	 * @return A structure modifier.
 	 */
@@ -117,8 +121,9 @@ public class StructureCache {
 
 	/**
 	 * Retrieve a cached structure modifier given a packet type.
+	 *
 	 * @param packetType - packet type.
-	 * @param compile - whether or not to asynchronously compile the structure modifier.
+	 * @param compile    - whether or not to asynchronously compile the structure modifier.
 	 * @return A structure modifier.
 	 */
 	public static StructureModifier<Object> getStructure(Class<?> packetType, boolean compile) {
@@ -130,53 +135,43 @@ public class StructureCache {
 
 	/**
 	 * Retrieve a cached structure modifier for the given packet type.
-	 * @param type - packet type.
-	 * @param compile - whether or not to asynchronously compile the structure modifier.
+	 *
+	 * @param packetType - packet type.
+	 * @param compile    - whether or not to asynchronously compile the structure modifier.
 	 * @return A structure modifier.
 	 */
-	public static StructureModifier<Object> getStructure(final PacketType type, boolean compile) {
-		Preconditions.checkNotNull(type, "type cannot be null");
-		StructureModifier<Object> result = structureModifiers.get(type);
+	public static StructureModifier<Object> getStructure(final PacketType packetType, boolean compile) {
+		Preconditions.checkNotNull(packetType, "type cannot be null");
 
-		// We don't want to create this for every lookup
-		if (result == null) {
-			// Use the vanilla class definition
-			final StructureModifier<Object> value = new StructureModifier<>(
-					PacketRegistry.getPacketClassFromType(type), MinecraftReflection.getPacketClass(), true);
+		StructureModifier<Object> modifier = STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
+			Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
+			return new StructureModifier<>(packetClass, MinecraftReflection.getPacketClass(), true);
+		});
 
-			result = structureModifiers.putIfAbsent(type, value);
-
-			// We may end up creating multiple modifiers, but we'll agree on which to use
-			if (result == null) {
-				result = value;
+		// check if we should compile the structure modifier now
+		if (compile && !(modifier instanceof CompiledStructureModifier) && COMPILING.add(packetType)) {
+			// compile now
+			BackgroundCompiler compiler = BackgroundCompiler.getInstance();
+			if (compiler != null) {
+				compiler.scheduleCompilation(
+						modifier,
+						compiled -> STRUCTURE_MODIFIER_CACHE.put(packetType, compiled));
 			}
 		}
 
-		// Automatically compile the structure modifier
-		if (compile && !(result instanceof CompiledStructureModifier)) {
-			// Compilation is many orders of magnitude slower than synchronization
-			synchronized (compiling) {
-				final BackgroundCompiler compiler = BackgroundCompiler.getInstance();
-
-				if (!compiling.contains(type) && compiler != null) {
-					compiler.scheduleCompilation(result,
-							compiledModifier -> structureModifiers.put(type, compiledModifier));
-					compiling.add(type);
-				}
-			}
-		}
-		return result;
+		return modifier;
 	}
 
 	/**
 	 * Creates a packet data serializer sub-class if needed to allow the fixed read of a NbtTagCompound because of a null
 	 * check in the MapChunk packet constructor.
+	 *
 	 * @return an accessor to a constructor which creates a data serializer.
 	 */
 	private static ConstructorAccessor getTrickDataSerializerOrNull() {
-		if (TRICKED_DATA_SERIALIZER == null && !trickTried) {
+		if (TRICKED_DATA_SERIALIZER == null && !TRICK_TRIED) {
 			// ensure that we only try once to create the class
-			trickTried = true;
+			TRICK_TRIED = true;
 			try {
 				// create an empty instance of a nbt tag compound that we can re-use when needed
 				Object compound = Accessors.getConstructorAccessor(MinecraftReflection.getNBTCompoundClass()).invoke();

@@ -1,4 +1,4 @@
-package com.comphenix.protocol.injector.server;
+package com.comphenix.protocol.injector.temporary;
 
 /**
  * A temporary player created by ProtocolLib when a true player instance does not exist.
@@ -7,15 +7,18 @@ package com.comphenix.protocol.injector.server;
  * </p>
  */
 public class TemporaryPlayer {
-	private volatile SocketInjector injector;
 
-	SocketInjector getInjector() {
-		return injector;
+	private volatile MinimalInjector injector;
+
+	MinimalInjector getInjector() {
+		return this.injector;
 	}
 
-	void setInjector(SocketInjector injector) {
-		if (injector == null)
+	void setInjector(MinimalInjector injector) {
+		if (injector == null) {
 			throw new IllegalArgumentException("Injector cannot be NULL.");
+		}
+
 		this.injector = injector;
 	}
 }
