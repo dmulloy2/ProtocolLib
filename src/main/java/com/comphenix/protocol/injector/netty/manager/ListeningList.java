@@ -18,6 +18,9 @@ final class ListeningList implements List<Object> {
 	public ListeningList(List<Object> original, ChannelHandler channelHandler) {
 		this.original = original;
 		this.channelHandler = channelHandler;
+
+		// no need to copy all elements of the original list, but we need to inject them
+		original.forEach(this::processInsert);
 	}
 
 	@Override
