@@ -204,11 +204,8 @@ public class NetworkManagerInjector implements ChannelListener {
 				// we need to synchronize accesses to the list ourselves, see Collections.SynchronizedCollection
 				//noinspection SynchronizationOnLocalVariableOrMethodParameter
 				synchronized (value) {
-					// then copy all old values into the new list
+					// override the list field with our list
 					List<Object> newList = Collections.synchronizedList(new ListeningList(value, this.pipelineInjectorHandler));
-					newList.addAll(value);
-
-					// rewrite the actual field
 					accessor.set(serverConnection, newList);
 				}
 			}
