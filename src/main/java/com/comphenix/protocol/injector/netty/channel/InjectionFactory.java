@@ -112,7 +112,14 @@ public class InjectionFactory {
 			}
 		} else {
 			// construct a new injector as it seems like we have none yet
-			injector = new NettyChannelInjector(this.server, networkManager, channel, listener, this, this.errorReporter);
+			injector = new NettyChannelInjector(
+					player,
+					this.server,
+					networkManager,
+					channel,
+					listener,
+					this,
+					this.errorReporter);
 			this.cacheInjector(player, injector);
 		}
 
@@ -162,6 +169,7 @@ public class InjectionFactory {
 		Player temporaryPlayer = playerFactory.createTemporaryPlayer(this.server);
 
 		NettyChannelInjector injector = new NettyChannelInjector(
+				temporaryPlayer,
 				this.server,
 				netManager,
 				channel,
