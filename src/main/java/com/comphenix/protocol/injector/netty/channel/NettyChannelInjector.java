@@ -110,6 +110,7 @@ public class NettyChannelInjector implements Injector {
 	private FieldAccessor protocolAccessor;
 
 	public NettyChannelInjector(
+			Player player,
 			Server server,
 			Object netManager,
 			Channel channel,
@@ -119,6 +120,7 @@ public class NettyChannelInjector implements Injector {
 	) {
 		// bukkit stuff
 		this.server = server;
+		this.resolvedPlayer = player;
 
 		// protocol lib stuff
 		this.errorReporter = errorReporter;
