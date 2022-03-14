@@ -17,7 +17,7 @@
 		<project.fullVersion>${project.version}</project.fullVersion>
 
 		<junit.version>5.8.2</junit.version>
-		<mockito.version>4.3.1</mockito.version>
+		<mockito.version>4.4.0</mockito.version>
 		<netty.version>4.1.75.Final</netty.version>
 		<spigot.version>1.18.2-R0.1-SNAPSHOT</spigot.version>
 	</properties>
@@ -73,7 +73,7 @@
 
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.10.0</version>
+				<version>3.10.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -100,7 +100,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.0.0-M5</version>
+				<version>3.0.0-M9</version>
 				<dependencies>
 					<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
 					<dependency>
