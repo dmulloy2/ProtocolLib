@@ -329,7 +329,7 @@
 		<dependency>
 			<groupId>net.kyori</groupId>
 			<artifactId>adventure-text-serializer-gson</artifactId>
-			<version>4.9.3</version>
+			<version>4.10.1</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
