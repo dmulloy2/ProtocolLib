@@ -3,7 +3,6 @@ package com.comphenix.protocol.injector.packet;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.ListenerOptions;
-import com.comphenix.protocol.injector.packet.PacketInjector;
 import java.util.Set;
 
 public abstract class AbstractPacketInjector implements PacketInjector {
@@ -12,17 +11,6 @@ public abstract class AbstractPacketInjector implements PacketInjector {
 
 	public AbstractPacketInjector(PacketTypeSet inboundFilters) {
 		this.inboundFilters = inboundFilters;
-	}
-
-	@Override
-	public boolean isCancelled(Object packet) {
-		// No, it's never cancelled
-		return false;
-	}
-
-	@Override
-	public void setCancelled(Object packet, boolean cancelled) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override
