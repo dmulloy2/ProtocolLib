@@ -46,7 +46,7 @@ public class ProtocolConfig {
 
 	private static final String DEBUG_MODE_ENABLED = "debug";
 	private static final String DETAILED_ERROR = "detailed error";
-	private static final String INJECTION_METHOD = "injection method";
+	private static final String CHAT_WARNINGS = "chat warnings";
 
 	private static final String SCRIPT_ENGINE_NAME = "script engine";
 	private static final String SUPPRESSED_REPORTS = "suppressed reports";
@@ -225,12 +225,11 @@ public class ProtocolConfig {
 	}
 
 	/**
-	 * Set whether or not detailed error reporting is enabled.
-	 *
-	 * @param value - TRUE if it is enabled, FALSE otherwise.
+	 * Print warnings to players with protocol.info
+	 * @return true if enabled, false if not
 	 */
-	public void setDetailedErrorReporting(boolean value) {
-		global.set(DETAILED_ERROR, value);
+	public boolean isChatWarnings() {
+		return getGlobalValue(CHAT_WARNINGS, true);
 	}
 
 	/**
@@ -243,32 +242,12 @@ public class ProtocolConfig {
 	}
 
 	/**
-	 * Set whether or not ProtocolLib should determine if a new version has been released.
-	 *
-	 * @param value - TRUE to do this automatically, FALSE otherwise.
-	 */
-	public void setAutoNotify(boolean value) {
-		setConfig(updater, UPDATER_NOTIFY, value);
-		modCount++;
-	}
-
-	/**
 	 * Retrieve whether or not ProtocolLib should automatically download the new version.
 	 *
 	 * @return TRUE if it should, FALSE otherwise.
 	 */
 	public boolean isAutoDownload() {
 		return updater != null && getUpdaterValue(UPDATER_DOWNLAD, false);
-	}
-
-	/**
-	 * Set whether or not ProtocolLib should automatically download the new version.
-	 *
-	 * @param value - TRUE if it should. FALSE otherwise.
-	 */
-	public void setAutoDownload(boolean value) {
-		setConfig(updater, UPDATER_DOWNLAD, value);
-		modCount++;
 	}
 
 	/**
@@ -302,16 +281,6 @@ public class ProtocolConfig {
 	}
 
 	/**
-	 * Set the list of suppressed report types,
-	 *
-	 * @param reports - suppressed report types.
-	 */
-	public void setSuppressedReports(List<String> reports) {
-		global.set(SUPPRESSED_REPORTS, Lists.newArrayList(reports));
-		modCount++;
-	}
-
-	/**
 	 * Retrieve the amount of time to wait until checking for a new update.
 	 *
 	 * @return The amount of time to wait.
@@ -319,22 +288,6 @@ public class ProtocolConfig {
 	public long getAutoDelay() {
 		// Note that the delay must be greater than 59 seconds
 		return Math.max(getUpdaterValue(UPDATER_DELAY, 0), DEFAULT_UPDATER_DELAY);
-	}
-
-	/**
-	 * Set the amount of time to wait until checking for a new update.
-	 * <p>
-	 * This time must be greater than 59 seconds.
-	 *
-	 * @param delaySeconds - the amount of time to wait.
-	 */
-	public void setAutoDelay(long delaySeconds) {
-		// Silently fix the delay
-		if (delaySeconds < DEFAULT_UPDATER_DELAY) {
-			delaySeconds = DEFAULT_UPDATER_DELAY;
-		}
-		setConfig(updater, UPDATER_DELAY, delaySeconds);
-		modCount++;
 	}
 
 	/**
@@ -347,18 +300,6 @@ public class ProtocolConfig {
 	}
 
 	/**
-	 * Sets under which version of Minecraft the version safety feature will be ignored.
-	 * <p>
-	 * This is useful if a server operator has tested and verified that a version of ProtocolLib works, but doesn't want or can't upgrade to a newer version.
-	 *
-	 * @param ignoreVersion - the version of Minecraft where the satefy will be disabled.
-	 */
-	public void setIgnoreVersionCheck(String ignoreVersion) {
-		setConfig(global, IGNORE_VERSION_CHECK, ignoreVersion);
-		modCount++;
-	}
-
-	/**
 	 * Retrieve whether or not metrics is enabled.
 	 *
 	 * @return TRUE if metrics is enabled, FALSE otherwise.
@@ -368,36 +309,12 @@ public class ProtocolConfig {
 	}
 
 	/**
-	 * Set whether or not metrics is enabled.
-	 * <p>
-	 * This setting will take effect next time ProtocolLib is started.
-	 *
-	 * @param enabled - whether or not metrics is enabled.
-	 */
-	public void setMetricsEnabled(boolean enabled) {
-		setConfig(global, METRICS_ENABLED, enabled);
-		modCount++;
-	}
-
-	/**
 	 * Retrieve whether or not the background compiler for structure modifiers is enabled or not.
 	 *
 	 * @return TRUE if it is enabled, FALSE otherwise.
 	 */
 	public boolean isBackgroundCompilerEnabled() {
 		return getGlobalValue(BACKGROUND_COMPILER_ENABLED, true);
-	}
-
-	/**
-	 * Set whether or not the background compiler for structure modifiers is enabled or not.
-	 * <p>
-	 * This setting will take effect next time ProtocolLib is started.
-	 *
-	 * @param enabled - TRUE if is enabled/running, FALSE otherwise.
-	 */
-	public void setBackgroundCompilerEnabled(boolean enabled) {
-		setConfig(global, BACKGROUND_COMPILER_ENABLED, enabled);
-		modCount++;
 	}
 
 	/**
