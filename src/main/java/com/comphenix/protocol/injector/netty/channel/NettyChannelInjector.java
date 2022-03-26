@@ -503,15 +503,6 @@ public class NettyChannelInjector implements Injector {
 			return null;
 		}
 
-		// ensure that we're not on the main thread if we don't need to
-		if (!this.channelListener.hasMainThreadListener(packet.getClass()) && this.server.isPrimaryThread()) {
-			// re-schedule async
-			this.server.getScheduler().runTaskAsynchronously(
-					this.injectionFactory.getPlugin(),
-					() -> this.sendServerPacket(packet, null, false));
-			return null;
-		}
-
 		// call all listeners which are listening to the outbound packet, if any
 		// null indicates that no listener was affected by the packet, meaning that we can directly send the original packet
 		PacketEvent event = this.channelListener.onPacketSending(this, packet, marker);
