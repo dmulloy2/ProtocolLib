@@ -22,11 +22,11 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
-import com.comphenix.protocol.reflect.FieldUtils;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.primitives.Primitives;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -255,21 +255,22 @@ public class BukkitUnwrapper implements Unwrapper {
 	 * @return The cached field unwrapper.
 	 */
 	private Unwrapper getFieldUnwrapper(final Class<?> type) {
-		final Field find = FieldUtils.getField(type, "handle", true);
-
 		// See if we succeeded
-		if (find != null) {
+		FieldAccessor accessor = Accessors.getFieldAccessorOrNull(type, "handle", null);
+		if (accessor != null) {
 			Unwrapper fieldUnwrapper = new Unwrapper() {
 				@Override
 				public Object unwrapItem(Object wrappedObject) {
 					try {
 						if (wrappedObject instanceof Class) {
-							return checkClass((Class<?>) wrappedObject, type, find.getType());
+							return checkClass((Class<?>) wrappedObject, type, accessor.getField().getType());
 						}
-						return FieldUtils.readField(find, wrappedObject, true);
-					} catch (IllegalAccessException e) {
+
+						return accessor.get(wrappedObject);
+					} catch (IllegalStateException e) {
 						reporter.reportDetailed(this,
-								Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e).callerParam(wrappedObject, find)
+								Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e)
+										.callerParam(wrappedObject, accessor.getField())
 						);
 						return null;
 					}
@@ -282,7 +283,7 @@ public class BukkitUnwrapper implements Unwrapper {
 		} else {
 			// Inform about this too
 			reporter.reportDetailed(this,
-					Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(find)
+					Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(type)
 			);
 			return null;
 		}

@@ -85,7 +85,7 @@ class EntityUtilities {
 	}
 
 	private MethodAccessor findScanPlayers(Class<?> trackerClass) {
-		MethodAccessor candidate = Accessors.getMethodAcccessorOrNull(trackerClass, "scanPlayers");
+		MethodAccessor candidate = Accessors.getMethodAccessorOrNull(trackerClass, "scanPlayers");
 		if (candidate != null) {
 			return candidate;
 		}

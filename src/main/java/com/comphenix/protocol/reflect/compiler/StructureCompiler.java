@@ -17,75 +17,46 @@
 
 package com.comphenix.protocol.reflect.compiler;
 
+import static net.bytebuddy.jar.asm.Opcodes.AASTORE;
+import static net.bytebuddy.jar.asm.Opcodes.ACC_FINAL;
+import static net.bytebuddy.jar.asm.Opcodes.ACC_PROTECTED;
+import static net.bytebuddy.jar.asm.Opcodes.ACC_PUBLIC;
+import static net.bytebuddy.jar.asm.Opcodes.ALOAD;
+import static net.bytebuddy.jar.asm.Opcodes.ANEWARRAY;
+import static net.bytebuddy.jar.asm.Opcodes.ARETURN;
+import static net.bytebuddy.jar.asm.Opcodes.ATHROW;
+import static net.bytebuddy.jar.asm.Opcodes.CHECKCAST;
+import static net.bytebuddy.jar.asm.Opcodes.DUP;
+import static net.bytebuddy.jar.asm.Opcodes.GETFIELD;
+import static net.bytebuddy.jar.asm.Opcodes.GOTO;
+import static net.bytebuddy.jar.asm.Opcodes.ICONST_0;
+import static net.bytebuddy.jar.asm.Opcodes.ICONST_1;
+import static net.bytebuddy.jar.asm.Opcodes.ILOAD;
+import static net.bytebuddy.jar.asm.Opcodes.INVOKESPECIAL;
+import static net.bytebuddy.jar.asm.Opcodes.INVOKESTATIC;
+import static net.bytebuddy.jar.asm.Opcodes.INVOKEVIRTUAL;
+import static net.bytebuddy.jar.asm.Opcodes.NEW;
+import static net.bytebuddy.jar.asm.Opcodes.PUTFIELD;
+import static net.bytebuddy.jar.asm.Opcodes.RETURN;
+import static net.bytebuddy.jar.asm.Opcodes.V1_8;
+
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.definer.ClassDefiners;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.google.common.base.Objects;
-import com.google.common.primitives.Primitives;
-import net.bytebuddy.jar.asm.*;
-
-// public class CompiledStructureModifierPacket20<TField> extends CompiledStructureModifier<TField> {
-//
-//		private Packet20NamedEntitySpawn typedTarget;
-//
-//		public CompiledStructureModifierPacket20(StructureModifier<TField> other, StructureCompiler compiler) {
-//			super();
-//			initialize(other);
-//			this.target = other.getTarget();
-//			this.typedTarget = (Packet20NamedEntitySpawn) target;
-//			this.compiler = compiler;
-//		}
-//
-//		@Override
-//		protected Object readGenerated(int fieldIndex) throws FieldAccessException {
-//
-//			Packet20NamedEntitySpawn target = typedTarget;
-//
-//			switch (fieldIndex) {
-//			case 0: return (Object) target.a;
-//			case 1: return (Object) target.b;
-//			case 2: return (Object) target.c;
-//			case 3: return super.readReflected(fieldIndex);
-//			case 4: return super.readReflected(fieldIndex);
-//			case 5: return (Object) target.f;
-//			case 6: return (Object) target.g;
-//			case 7: return (Object) target.h;
-//			default:
-//				throw new FieldAccessException("Invalid index " + fieldIndex);
-//			}
-//		}
-//
-//		@Override
-//		protected StructureModifier<TField> writeGenerated(int index, Object value) throws FieldAccessException {
-//
-//			Packet20NamedEntitySpawn target = typedTarget;
-//
-//			switch (index) {
-//			case 0: target.a = (Integer) value; break;
-//			case 1: target.b = (String) value; break;
-//			case 2: target.c = (Integer) value; break;
-//			case 3: target.d = (Integer) value; break;
-//			case 4: super.writeReflected(index, value); break;
-//			case 5: super.writeReflected(index, value); break;
-//			case 6: target.g = (Byte) value; break;
-//			case 7: target.h = (Integer) value; break;
-//			default:
-//				throw new FieldAccessException("Invalid index " + index);
-//			}
-//
-//			// Chaining
-//			return this;
-//		}
-//	}
+import java.util.Objects;
+import java.util.UUID;
+import net.bytebuddy.jar.asm.ClassWriter;
+import net.bytebuddy.jar.asm.Label;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.jar.asm.Opcodes;
+import net.bytebuddy.jar.asm.Type;
 
 /**
  * Represents a StructureModifier compiler.
@@ -93,480 +64,291 @@ import net.bytebuddy.jar.asm.*;
  * @author Kristian
  */
 public final class StructureCompiler {
-	public static final ReportType REPORT_TOO_MANY_GENERATED_CLASSES = new ReportType("Generated too many classes (count: %s)");
 
-	// Used to store generated classes of different types
-	@SuppressWarnings("rawtypes")
-	static class StructureKey {
-		private Class targetType;
-		private Class fieldType;
+	// the format of the class names we generate
+	private static final String GENERATED_CLASS_FORMAT = "%s$CompiledStructureModifier_%s";
 
-		public StructureKey(StructureModifier<?> source) {
-			this(source.getTargetType(), source.getFieldType());
-		}
+	// shared types
+	private static final Type OBJECT_TYPE = Type.getType(Object.class);
+	private static final Type STRING_TYPE = Type.getType(String.class);
 
-		public StructureKey(Class targetType, Class fieldType) {
-			this.targetType = targetType;
-			this.fieldType = fieldType;
-		}
+	// the super class of our generated class
+	private static final String MODIFIER_CLASS = Type.getInternalName(StructureModifier.class);
+	private static final String COMPILED_MODIFIER_CLASS = Type.getInternalName(CompiledStructureModifier.class);
 
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(targetType, fieldType);
-		}
+	// exception throwing
+	private static final String ILLEGAL_ARGUMENT_CLASS = Type.getInternalName(IllegalArgumentException.class);
+	private static final String STRING_FORMAT_DESC = Type.getMethodDescriptor(
+			STRING_TYPE,
+			STRING_TYPE,
+			Type.getType(Object[].class));
+	private static final String MESSAGE_EXCEPTION_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, STRING_TYPE);
 
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof StructureKey) {
-				StructureKey other = (StructureKey) obj;
-				return Objects.equal(targetType, other.targetType) &&
-					   Objects.equal(fieldType, other.fieldType);
-			}
-			return false;
-		}
-	}
+	// methods we use which are inherited from StructureModifier
+	private static final String WRITE_DESC = Type.getMethodDescriptor(
+			Type.getType(StructureModifier.class),
+			Type.INT_TYPE,
+			OBJECT_TYPE);
+	private static final String READ_DESC = Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE);
 
-	// Used to load classes
-	private volatile static Method defineMethod;
+	// method descriptors of the methods we are generating
+	private static final String WRITE_METHOD_DESC = Type.getMethodDescriptor(
+			Type.VOID_TYPE,
+			OBJECT_TYPE,
+			Type.INT_TYPE,
+			OBJECT_TYPE);
+	private static final String CLASS_CONSTRUCTOR_DESC = Type.getMethodDescriptor(
+			Type.VOID_TYPE,
+			Type.getType(StructureCompiler.class),
+			Type.getType(StructureModifier.class));
+	private static final String READ_METHOD_DESC = Type.getMethodDescriptor(OBJECT_TYPE, OBJECT_TYPE, Type.INT_TYPE);
 
-	@SuppressWarnings("rawtypes")
-	private Map<StructureKey, Class> compiledCache = new ConcurrentHashMap<StructureKey, Class>();
-
-	// The class loader we'll store our classes
-	private ClassLoader loader;
-
-	// References to other classes
-	private static String PACKAGE_NAME = "com/comphenix/protocol/reflect/compiler";
-	private static String SUPER_CLASS = "com/comphenix/protocol/reflect/StructureModifier";
-	private static String COMPILED_CLASS = PACKAGE_NAME + "/CompiledStructureModifier";
-	private static String FIELD_EXCEPTION_CLASS = "com/comphenix/protocol/reflect/FieldAccessException";
-
-	// On java 9+ (53.0+) CLassLoader#defineClass(String, byte[], int, int) should not be used anymore.
-	// It will throw warnings and on Java 16+ (60.0+), it does not work at all anymore.
-	private static final boolean LEGACY_CLASS_DEFINITION =
-			Float.parseFloat(System.getProperty("java.class.version")) < 53;
-	/**
-	 * The MethodHandles.Lookup object for this compiler. Only used when using the modern defineClass strategy.
-	 */
-	private Object lookup = null;
-
-	// Used to get the MethodHandles.Lookup object on newer versions of Java.
-	private volatile static Method lookupMethod;
-
-	public static boolean attemptClassLoad = false;
+	// all modifiers which were already compiled
+	private final Map<StructureKey, ConstructorAccessor> compiledCache = new HashMap<>();
 
 	/**
 	 * Construct a structure compiler.
-	 * @param loader - main class loader.
 	 */
-	StructureCompiler(ClassLoader loader) {
-		this.loader = loader;
-	}
-
-	/**
-	 * Lookup the current class loader for any previously generated classes before we attempt to generate something.
-	 * @param <TField> Type
-	 * @param source - the structure modifier to look up.
-	 * @return TRUE if we successfully found a previously generated class, FALSE otherwise.
-	 */
-	public <TField> boolean lookupClassLoader(StructureModifier<TField> source) {
-		StructureKey key = new StructureKey(source);
-
-		// See if there's a need to lookup the class name
-		if (compiledCache.containsKey(key)) {
-			return true;
-		}
-
-		if (! attemptClassLoad) {
-			return false;
-		}
-
-		// This causes a ton of lag and doesn't seem to work
-
-		try {
-			String className = getCompiledName(source);
-
-			// This class might have been generated before. Try to load it.
-			Class<?> before = loader.loadClass(PACKAGE_NAME.replace('/', '.') + "." + className);
-
-			if (before != null) {
-				compiledCache.put(key, before);
-				return true;
-			}
-		} catch (ClassNotFoundException e) {
-			// That's ok.
-		}
-
-		// We need to compile the class
-		return false;
+	StructureCompiler() {
 	}
 
 	/**
 	 * Compiles the given structure modifier.
 	 * <p>
-	 * WARNING: Do NOT call this method in the main thread. Compiling may easily take 10 ms, which is already
-	 * over 1/4 of a tick (50 ms). Let the background thread automatically compile the structure modifiers instead.
-	 * @param <TField> Type
+	 * WARNING: Do NOT call this method in the main thread. Compiling may easily take 10 ms, which is already over 1/4 of
+	 * a tick (50 ms). Let the background thread automatically compile the structure modifiers instead.
+	 *
+	 * @param <T>    Type
 	 * @param source - structure modifier to compile.
 	 * @return A compiled structure modifier.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized <TField> StructureModifier<TField> compile(StructureModifier<TField> source) {
+	public <T> StructureModifier<T> compile(StructureModifier<T> source) {
+		StructureKey key = StructureKey.forStructureModifier(source);
 
-		// We cannot optimize a structure modifier with no public fields
-		if (!isAnyPublic(source.getFields())) {
-			return source;
+		// check if we already compiled the modifier
+		ConstructorAccessor compiledModifierAcc = this.compiledCache.get(key);
+		if (compiledModifierAcc != null) {
+			return (StructureModifier<T>) compiledModifierAcc.invoke(source, this, source);
 		}
 
-		StructureKey key = new StructureKey(source);
-		Class<?> compiledClass = compiledCache.get(key);
+		// try to compile the modifier
+		Class<?> compiledClass = this.generateClass(source);
+		compiledModifierAcc = Accessors.getConstructorAccessor(
+				compiledClass,
+				StructureCompiler.class,
+				StructureModifier.class);
 
-		if (!compiledCache.containsKey(key)) {
-			compiledClass = generateClass(source);
-			compiledCache.put(key, compiledClass);
-		}
-
-		// Next, create an instance of this class
-		try {
-			return (StructureModifier<TField>) compiledClass.getConstructor(
-					StructureModifier.class, StructureCompiler.class).
-					 newInstance(source, this);
-		} catch (OutOfMemoryError e) {
-			// Print the number of generated classes by the current instances
-			ProtocolLibrary.getErrorReporter().reportWarning(
-				this, Report.newBuilder(REPORT_TOO_MANY_GENERATED_CLASSES).messageParam(compiledCache.size())
-			);
-			throw e;
-		} catch (IllegalArgumentException e) {
-			throw new IllegalStateException("Used invalid parameters in instance creation", e);
-		} catch (SecurityException e) {
-			throw new RuntimeException("Security limitation!", e);
-		} catch (InstantiationException e) {
-			throw new RuntimeException("Error occured while instancing generated class.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Security limitation! Cannot create instance of dynamic class.", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Error occured while instancing generated class.", e);
-		} catch (NoSuchMethodException e) {
-			throw new IllegalStateException("Cannot happen.", e);
-		}
-	}
-
-	/**
-	 * Retrieve a variable identifier that can uniquely represent the given type.
-	 * @param type - a type.
-	 * @return A unique and legal identifier for the given type.
-	 */
-	private String getSafeTypeName(Class<?> type) {
-		return type.getCanonicalName().replace("[]", "Array").replace(".", "_");
-	}
-
-	/**
-	 * Retrieve the compiled name of a given structure modifier.
-	 * @param source - the structure modifier.
-	 * @return The unique, compiled name of a compiled structure modifier.
-	 */
-	private String getCompiledName(StructureModifier<?> source) {
-		Class<?> targetType = source.getTargetType();
-
-		// Concat class and field type
-		return "CompiledStructure$" +
-				getSafeTypeName(targetType) + "$" +
-				getSafeTypeName(source.getFieldType());
+		// cache and instantiate
+		this.compiledCache.put(key, compiledModifierAcc);
+		return (StructureModifier<T>) compiledModifierAcc.invoke(source, this, source);
 	}
 
 	/**
 	 * Compile a structure modifier.
+	 *
 	 * @param source - structure modifier.
 	 * @return The compiled structure modifier.
 	 */
-	private <TField> Class<?> generateClass(StructureModifier<TField> source) {
+	private <T> Class<?> generateClass(StructureModifier<T> source) {
+		String targetType = Type.getInternalName(source.getTargetType());
+		String className = String.format(GENERATED_CLASS_FORMAT, targetType, UUID.randomUUID().toString().split("-")[0]);
 
-		ClassWriter cw = new ClassWriter(0);
-		Class<?> targetType = source.getTargetType();
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		cw.visit(V1_8, ACC_PUBLIC | ACC_FINAL, className, null, COMPILED_MODIFIER_CLASS, null);
 
-		String className = getCompiledName(source);
-		String targetSignature = Type.getDescriptor(targetType);
-		String targetName = targetType.getName().replace('.', '/');
+		// put all members in
+		this.createConstructor(cw);
+		this.createReadMethod(cw, className, source.getFields(), source.getTargetType());
+		this.createWriteMethod(cw, targetType, source.getFields(), source.getTargetType());
 
-		// Define class
-		cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, PACKAGE_NAME + "/" + className,
-				 null, COMPILED_CLASS, null);
-
-		createFields(cw, targetSignature);
-		createConstructor(cw, className, targetSignature, targetName);
-		createReadMethod(cw, className, source.getFields(), targetSignature, targetName);
-		createWriteMethod(cw, className, source.getFields(), targetSignature, targetName);
+		// finish the class
 		cw.visitEnd();
-
-		byte[] data = cw.toByteArray();
-
-		Class<?> clazz = defineClass(data);
-		// DEBUG CODE: Print the content of the generated class.
-		//org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader(data);
-		//cr.accept(new ASMifierClassVisitor(new PrintWriter(System.out)), 0);
-		return clazz;
+		return ClassDefiners.availableDefiner().define(source.getTargetType(), cw.toByteArray());
 	}
 
-	private Class<?> defineClassLegacy(byte[] data) throws InvocationTargetException, IllegalAccessException,
-			NoSuchMethodException {
-		if (defineMethod == null) {
-			Method defined = ClassLoader.class.getDeclaredMethod("defineClass",
-					new Class<?>[]{String.class, byte[].class, int.class, int.class});
-
-			// Awesome. Now, create and return it.
-			defined.setAccessible(true);
-			defineMethod = defined;
-		}
-		return (Class<?>) defineMethod.invoke(loader, null, data, 0, data.length);
-	}
-
-	private Class<?> defineClassModern(byte[] data) throws InvocationTargetException, IllegalAccessException,
-			ClassNotFoundException, NoSuchMethodException {
-		if (defineMethod == null) {
-			defineMethod = Class.forName("java.lang.invoke.MethodHandles$Lookup")
-					.getDeclaredMethod("defineClass", byte[].class);
-		}
-		if (lookupMethod == null) {
-			lookupMethod = Class.forName("java.lang.invoke.MethodHandles").getDeclaredMethod("lookup");
-		}
-		if (lookup == null)
-			lookup = lookupMethod.invoke(null);
-
-		return (Class<?>) defineMethod.invoke(lookup, data);
-	}
-
-	private Class<?> defineClass(byte[] data) {
-		try {
-			return LEGACY_CLASS_DEFINITION ? defineClassLegacy(data) : defineClassModern(data);
-		} catch (SecurityException e) {
-			throw new RuntimeException("Cannot use reflection to dynamically load a class.", e);
-		} catch (NoSuchMethodException | ClassNotFoundException e) {
-			throw new IllegalStateException("Incompatible JVM.", e);
-		} catch (IllegalArgumentException e) {
-			throw new IllegalStateException("Cannot call defineMethod - wrong JVM?", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Security limitation! Cannot dynamically load class.", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Error occurred in code generator.", e);
-		}
-	}
-
-	/**
-	 * Determine if at least one of the given fields is public.
-	 * @param fields - field to test.
-	 * @return TRUE if one or more field is publically accessible, FALSE otherwise.
-	 */
-	private boolean isAnyPublic(List<Field> fields) {
-		// Are any of the fields public?
+	private void createWriteMethod(ClassWriter cw, String targetName, List<FieldAccessor> fields, Class<?> host) {
+		// the labels for each switch case
+		Label[] caseLabels = new Label[fields.size()];
 		for (int i = 0; i < fields.size(); i++) {
-			if (isPublic(fields.get(i))) {
-				return true;
-			}
+			caseLabels[i] = new Label();
 		}
 
-		return false;
-	}
+		// other labels
+		Label defaultLabel = new Label();
+		Label methodExitLabel = new Label();
 
-	private boolean isPublic(Field field) {
-		return Modifier.isPublic(field.getModifiers());
-	}
-
-	private boolean isNonFinal(Field field) {
-		return !Modifier.isFinal(field.getModifiers());
-	}
-
-	private void createFields(ClassWriter cw, String targetSignature) {
-		FieldVisitor typedField = cw.visitField(Opcodes.ACC_PRIVATE, "typedTarget", targetSignature, null, null);
-		typedField.visitEnd();
-	}
-
-	private void createWriteMethod(ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
-
-		String methodDescriptor = "(ILjava/lang/Object;)L" + SUPER_CLASS + ";";
-		String methodSignature = "(ILjava/lang/Object;)L" + SUPER_CLASS + "<Ljava/lang/Object;>;";
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "writeGenerated", methodDescriptor, methodSignature,
-									new String[] { FIELD_EXCEPTION_CLASS });
-		BoxingHelper boxingHelper = new BoxingHelper(mv);
-
-		String generatedClassName = PACKAGE_NAME + "/" + className;
-
+		// begin the method visit
+		MethodVisitor mv = cw.visitMethod(ACC_PROTECTED, "writeGenerated", WRITE_METHOD_DESC, null, null);
 		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitFieldInsn(Opcodes.GETFIELD, generatedClassName, "typedTarget", targetSignature);
-		mv.visitVarInsn(Opcodes.ASTORE, 3);
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
 
-		// The last $Label is for the default switch
-		Label[] $Labels = new Label[fields.size()];
-		Label error$Label = new Label();
-		Label return$Label = new Label();
+		// begins the switch case
+		mv.visitTableSwitchInsn(0, caseLabels.length - 1, defaultLabel, caseLabels);
+		for (int i = 0; i < caseLabels.length; i++) {
+			Field field = fields.get(i).getField();
+			Class<?> fieldType = field.getType();
 
-		// Generate $Labels
-		for (int i = 0; i < fields.size(); i++) {
-			$Labels[i] = new Label();
-		}
-
-		mv.visitTableSwitchInsn(0, $Labels.length - 1, error$Label, $Labels);
-
-		for (int i = 0; i < fields.size(); i++) {
-
-			Field field = fields.get(i);
-			Class<?> outputType = field.getType();
-			Class<?> inputType = Primitives.wrap(outputType);
-			String typeDescriptor = Type.getDescriptor(outputType);
-			String inputPath = inputType.getName().replace('.', '/');
-
-			mv.visitLabel($Labels[i]);
-
-			// Push the compare object
-			if (i == 0)
-				mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { targetName }, 0, null);
-			else
-				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-
-			// Only write to public non-final fields
-			if (isPublic(field) && isNonFinal(field)) {
-				mv.visitVarInsn(Opcodes.ALOAD, 3);
-				mv.visitVarInsn(Opcodes.ALOAD, 2);
-
-				if (!outputType.isPrimitive())
-					mv.visitTypeInsn(Opcodes.CHECKCAST, inputPath);
-				else
-					boxingHelper.unbox(Type.getType(outputType));
-
-				mv.visitFieldInsn(Opcodes.PUTFIELD, targetName, field.getName(), typeDescriptor);
-
+			// visits the next switch case, keeping the same locals as the previous one
+			mv.visitLabel(caseLabels[i]);
+			if (i == 0) {
+				mv.visitFrame(Opcodes.F_APPEND, 1, new Object[]{targetName}, 0, null);
 			} else {
-				// Use reflection. We don't have a choice, unfortunately.
-				mv.visitVarInsn(Opcodes.ALOAD, 0);
-				mv.visitVarInsn(Opcodes.ILOAD, 1);
-				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, generatedClassName, "writeReflected", "(ILjava/lang/Object;)V");
+				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
 			}
 
-			mv.visitJumpInsn(Opcodes.GOTO, return$Label);
+			// we can only write to fields which are within our current scope
+			if (this.canAccess(host, field)) {
+				// loads the needed stack items
+				mv.visitVarInsn(ALOAD, 1);
+				mv.visitVarInsn(ALOAD, 3);
+
+				// cast the input object to the correct type
+				if (fieldType.isPrimitive()) {
+					CodeGenUtil.unbox(mv, fieldType);
+				} else {
+					mv.visitTypeInsn(CHECKCAST, Type.getInternalName(fieldType));
+				}
+
+				// rewrite the field
+				mv.visitFieldInsn(
+						PUTFIELD,
+						Type.getInternalName(field.getDeclaringClass()),
+						field.getName(),
+						Type.getDescriptor(fieldType));
+			} else {
+				// use reflection :(
+				mv.visitVarInsn(ALOAD, 0);
+				mv.visitVarInsn(ILOAD, 2);
+				mv.visitVarInsn(ALOAD, 3);
+				mv.visitMethodInsn(INVOKEVIRTUAL, MODIFIER_CLASS, "write", WRITE_DESC, false);
+			}
+
+			// jump to the end of the method
+			mv.visitJumpInsn(GOTO, methodExitLabel);
 		}
 
-		mv.visitLabel(error$Label);
+		// throw an exception if the write is out of bounds
+		mv.visitLabel(defaultLabel);
 		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		mv.visitTypeInsn(Opcodes.NEW, FIELD_EXCEPTION_CLASS);
-		mv.visitInsn(Opcodes.DUP);
-		mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
-		mv.visitInsn(Opcodes.DUP);
-		mv.visitLdcInsn("Invalid index ");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
-		mv.visitInsn(Opcodes.ATHROW);
+		this.throwIllegalIndexException(mv);
 
-		mv.visitLabel(return$Label);
+		mv.visitLabel(methodExitLabel);
 		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
 		mv.visitVarInsn(Opcodes.ALOAD, 0);
 		mv.visitInsn(Opcodes.ARETURN);
-		mv.visitMaxs(5, 4);
+		mv.visitMaxs(0, 0);
 		mv.visitEnd();
 	}
 
-	private void createReadMethod(ClassWriter cw, String className, List<Field> fields, String targetSignature, String targetName) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "readGenerated", "(I)Ljava/lang/Object;", null,
-									new String[] { "com/comphenix/protocol/reflect/FieldAccessException" });
-		BoxingHelper boxingHelper = new BoxingHelper(mv);
-
-		String generatedClassName = PACKAGE_NAME + "/" + className;
-
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitFieldInsn(Opcodes.GETFIELD, generatedClassName, "typedTarget", targetSignature);
-		mv.visitVarInsn(Opcodes.ASTORE, 2);
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
-
-		// The last $Label is for the default switch
-		Label[] $Labels = new Label[fields.size()];
-		Label error$Label = new Label();
-
-		// Generate $Labels
+	private void createReadMethod(ClassWriter cw, String targetName, List<FieldAccessor> fields, Class<?> host) {
+		// the labels for each switch case
+		Label[] caseLabels = new Label[fields.size()];
 		for (int i = 0; i < fields.size(); i++) {
-			$Labels[i] = new Label();
+			caseLabels[i] = new Label();
 		}
 
-		mv.visitTableSwitchInsn(0, fields.size() - 1, error$Label, $Labels);
+		// other labels
+		Label defaultLabel = new Label();
 
-		for (int i = 0; i < fields.size(); i++) {
+		// begin the method visit
+		MethodVisitor mv = cw.visitMethod(ACC_PROTECTED, "readGenerated", READ_METHOD_DESC, null, null);
+		mv.visitCode();
 
-			Field field = fields.get(i);
-			Class<?> outputType = field.getType();
-			String typeDescriptor = Type.getDescriptor(outputType);
+		// begins the switch case
+		mv.visitTableSwitchInsn(0, caseLabels.length - 1, defaultLabel, caseLabels);
+		for (int i = 0; i < caseLabels.length; i++) {
+			Field field = fields.get(i).getField();
+			Class<?> fieldType = field.getType();
 
-			mv.visitLabel($Labels[i]);
-
-			// Push the compare object
-			if (i == 0)
-				mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { targetName }, 0, null);
-			else
-				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-
-			// Note that byte code cannot access non-public fields
-			if (isPublic(field)) {
-				mv.visitVarInsn(Opcodes.ALOAD, 2);
-				mv.visitFieldInsn(Opcodes.GETFIELD, targetName, field.getName(), typeDescriptor);
-
-				boxingHelper.box(Type.getType(outputType));
+			// visits the next switch case, keeping the same locals as the previous one
+			mv.visitLabel(caseLabels[i]);
+			if (i == 0) {
+				mv.visitFrame(Opcodes.F_APPEND, 1, new Object[]{targetName}, 0, null);
 			} else {
-				// We have to use reflection for private and protected fields.
-				mv.visitVarInsn(Opcodes.ALOAD, 0);
-				mv.visitVarInsn(Opcodes.ILOAD, 1);
-				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, generatedClassName, "readReflected", "(I)Ljava/lang/Object;");
+				mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
 			}
 
-			mv.visitInsn(Opcodes.ARETURN);
+			// check if the host class is allowed to access the field
+			if (this.canAccess(host, field)) {
+				// get the field
+				mv.visitVarInsn(ALOAD, 1);
+				mv.visitFieldInsn(
+						GETFIELD,
+						Type.getInternalName(field.getDeclaringClass()),
+						field.getName(),
+						Type.getDescriptor(fieldType));
+				// box before returning if needed
+				if (fieldType.isPrimitive()) {
+					CodeGenUtil.box(mv, fieldType);
+				}
+			} else {
+				mv.visitVarInsn(ALOAD, 0);
+				mv.visitVarInsn(ILOAD, 2);
+				mv.visitMethodInsn(INVOKEVIRTUAL, MODIFIER_CLASS, "read", READ_DESC, false);
+			}
+
+			// jump to the end of the method
+			mv.visitInsn(ARETURN);
 		}
 
-		mv.visitLabel(error$Label);
+		// throw an exception if the read is out of bounds
+		mv.visitLabel(defaultLabel);
 		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		mv.visitTypeInsn(Opcodes.NEW, FIELD_EXCEPTION_CLASS);
-		mv.visitInsn(Opcodes.DUP);
-		mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
-		mv.visitInsn(Opcodes.DUP);
-		mv.visitLdcInsn("Invalid index ");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
-		mv.visitVarInsn(Opcodes.ILOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, FIELD_EXCEPTION_CLASS, "<init>", "(Ljava/lang/String;)V");
-		mv.visitInsn(Opcodes.ATHROW);
-		mv.visitMaxs(5, 3);
+		this.throwIllegalIndexException(mv);
+
+		mv.visitMaxs(0, 0);
 		mv.visitEnd();
 	}
 
-	private void createConstructor(ClassWriter cw, String className, String targetSignature, String targetName) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>",
-				"(L" + SUPER_CLASS + ";L" + PACKAGE_NAME + "/StructureCompiler;)V",
-				"(L" + SUPER_CLASS + "<Ljava/lang/Object;>;L" + PACKAGE_NAME + "/StructureCompiler;)V", null);
-		String fullClassName = PACKAGE_NAME + "/" + className;
-
+	private void createConstructor(ClassWriter cw) {
+		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", CLASS_CONSTRUCTOR_DESC, null, null);
 		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, COMPILED_CLASS, "<init>", "()V");
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fullClassName, "initialize", "(L" + SUPER_CLASS + ";)V");
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, SUPER_CLASS, "getTarget", "()Ljava/lang/Object;");
-		mv.visitFieldInsn(Opcodes.PUTFIELD, fullClassName, "target", "Ljava/lang/Object;");
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitFieldInsn(Opcodes.GETFIELD, fullClassName, "target", "Ljava/lang/Object;");
-		mv.visitTypeInsn(Opcodes.CHECKCAST, targetName);
-		mv.visitFieldInsn(Opcodes.PUTFIELD, fullClassName, "typedTarget", targetSignature);
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 2);
-		mv.visitFieldInsn(Opcodes.PUTFIELD, fullClassName, "compiler", "L" + PACKAGE_NAME + "/StructureCompiler;");
-		mv.visitInsn(Opcodes.RETURN);
-		mv.visitMaxs(2, 3);
+
+		// invoke the super constructor
+		mv.visitVarInsn(ALOAD, 0);
+		mv.visitVarInsn(ALOAD, 1);
+		mv.visitVarInsn(ALOAD, 2);
+		mv.visitMethodInsn(INVOKESPECIAL, COMPILED_MODIFIER_CLASS, "<init>", CLASS_CONSTRUCTOR_DESC, false);
+
+		// exit from the constructor
+		mv.visitInsn(RETURN);
+		mv.visitMaxs(0, 0);
 		mv.visitEnd();
+	}
+
+	private void throwIllegalIndexException(MethodVisitor mv) {
+		mv.visitTypeInsn(NEW, ILLEGAL_ARGUMENT_CLASS);
+		mv.visitInsn(DUP);
+		mv.visitLdcInsn("Invalid field index %d");
+		mv.visitInsn(ICONST_1);
+		mv.visitTypeInsn(ANEWARRAY, OBJECT_TYPE.getInternalName());
+		mv.visitInsn(DUP);
+		mv.visitInsn(ICONST_0);
+		mv.visitVarInsn(ILOAD, 2);
+		CodeGenUtil.box(mv, int.class);
+		mv.visitInsn(AASTORE);
+		mv.visitMethodInsn(INVOKESTATIC, STRING_TYPE.getInternalName(), "format", STRING_FORMAT_DESC, false);
+		mv.visitMethodInsn(INVOKESPECIAL, ILLEGAL_ARGUMENT_CLASS, "<init>", MESSAGE_EXCEPTION_DESC, false);
+		mv.visitInsn(ATHROW);
+	}
+
+	private boolean canAccess(Class<?> host, Field field) {
+		// public and protected fields are always accessible
+		int mods = field.getModifiers();
+		if (Modifier.isPublic(mods) || Modifier.isProtected(mods)) {
+			return true;
+		}
+
+		// we can only access private members which are in the same host class
+		Class<?> declaring = field.getDeclaringClass();
+		if (Modifier.isPrivate(mods)) {
+			return host.equals(declaring);
+		}
+
+		// at this point the field must be package-private, validate that we have access by checking the package
+		Package hostPackage = host.getPackage();
+		Package declaringPackage = declaring.getPackage();
+
+		return (hostPackage == null && declaringPackage == null) || Objects.equals(hostPackage, declaringPackage);
 	}
 }

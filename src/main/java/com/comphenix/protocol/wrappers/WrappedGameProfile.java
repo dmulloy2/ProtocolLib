@@ -35,16 +35,16 @@ public class WrappedGameProfile extends AbstractWrapper {
 	private static final ConstructorAccessor CREATE_UUID_STRING = Accessors.getConstructorAccessorOrNull(
 			GAME_PROFILE, UUID.class, String.class);
 
-	private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAcccessorOrNull(
+	private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAccessorOrNull(
 			GAME_PROFILE, "id", String.class);
 
-	private static final MethodAccessor GET_ID = Accessors.getMethodAcccessorOrNull(
+	private static final MethodAccessor GET_ID = Accessors.getMethodAccessorOrNull(
 			GAME_PROFILE, "getId");
-	private static final MethodAccessor GET_NAME = Accessors.getMethodAcccessorOrNull(
+	private static final MethodAccessor GET_NAME = Accessors.getMethodAccessorOrNull(
 			GAME_PROFILE, "getName");
-	private static final MethodAccessor GET_PROPERTIES = Accessors.getMethodAcccessorOrNull(
+	private static final MethodAccessor GET_PROPERTIES = Accessors.getMethodAccessorOrNull(
 			GAME_PROFILE, "getProperties");
-	private static final MethodAccessor IS_COMPLETE = Accessors.getMethodAcccessorOrNull(
+	private static final MethodAccessor IS_COMPLETE = Accessors.getMethodAccessorOrNull(
 			GAME_PROFILE, "isComplete");
 
 	// Fetching game profile

@@ -1,52 +1,44 @@
 package com.comphenix.protocol.utility;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
-import javax.annotation.Nonnull;
-
-import org.apache.commons.lang.Validate;
-import org.bukkit.inventory.ItemStack;
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
-
 import com.comphenix.protocol.injector.netty.NettyByteBufAdapter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
-import com.google.common.base.Preconditions;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Base64;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Utility methods for reading and writing Minecraft objects to streams.
- * 
+ *
  * @author Kristian
  */
 public class StreamSerializer {
+
 	private static final StreamSerializer DEFAULT = new StreamSerializer();
-	
+
 	// Cached methods
 	private static MethodAccessor READ_ITEM_METHOD;
 	private static MethodAccessor WRITE_ITEM_METHOD;
 
 	private static MethodAccessor READ_NBT_METHOD;
 	private static MethodAccessor WRITE_NBT_METHOD;
-	
+
 	private static MethodAccessor READ_STRING_METHOD;
 	private static MethodAccessor WRITE_STRING_METHOD;
-	
+
 	/**
 	 * Retrieve a default stream serializer.
+	 *
 	 * @return A serializer.
 	 */
 	public static StreamSerializer getDefault() {
@@ -55,247 +47,145 @@ public class StreamSerializer {
 
 	/**
 	 * Write a variable integer to an output stream.
+	 *
 	 * @param destination - the destination.
-	 * @param value - the value to write.
+	 * @param value       - the value to write.
 	 * @throws IOException The destination stream threw an exception.
 	 */
-	public void serializeVarInt(@Nonnull DataOutputStream destination, int value) throws IOException {
-		Preconditions.checkNotNull(destination, "source cannot be NULL");
-		
-		while ((value & 0xFFFFFF80) != 0) {
-			destination.writeByte(value & 0x7F | 0x80);
-			value >>>= 7;
+	public void serializeVarInt(DataOutputStream destination, int value) throws IOException {
+		while (true) {
+			if ((value & ~0x7F) == 0) {
+				destination.writeByte(value);
+				break;
+			} else {
+				destination.writeByte((value & 0x7F) | 0x80);
+				value >>>= 7;
+			}
 		}
-		destination.writeByte(value);
 	}
 
 	/**
 	 * Read a variable integer from an input stream.
+	 *
 	 * @param source - the source.
 	 * @return The integer.
 	 * @throws IOException The source stream threw an exception.
 	 */
-	public int deserializeVarInt(@Nonnull DataInputStream source) throws IOException {
-		Preconditions.checkNotNull(source, "source cannot be NULL");
-		
+	public int deserializeVarInt(DataInputStream source) throws IOException {
 		int result = 0;
-		int length = 0;
-		byte currentByte;
-		do {
-			currentByte = source.readByte();
-			result |= (currentByte & 0x7F) << length++ * 7;
-			if (length > 5)
-				throw new RuntimeException("VarInt too big");
-		} while ((currentByte & 0x80) == 0x80);
-
-		return result;
+		for (byte j = 0; j < 5; j++) {
+			int nextByte = source.readByte();
+			result |= (nextByte & 0x7F) << j * 7;
+			if ((nextByte & 0x80) != 128) {
+				return result;
+			}
+		}
+		throw new RuntimeException("VarInt is too big");
 	}
 
 	/**
 	 * Write or serialize a NBT compound to the given output stream.
 	 * <p>
 	 * Note: An NBT compound can be written to a stream even if it's NULL.
-	 * 
-	 * @param output - the target output stream.
+	 *
+	 * @param output   - the target output stream.
 	 * @param compound - the NBT compound to be serialized, or NULL to represent nothing.
-	 * @throws IOException If the operation fails due to reflection problems.
 	 */
-	public void serializeCompound(@Nonnull DataOutputStream output, NbtCompound compound) throws IOException {
-		if (output == null)
-			throw new IllegalArgumentException("Output stream cannot be NULL.");
-		
+	public void serializeCompound(DataOutputStream output, NbtCompound compound) {
+		if (WRITE_NBT_METHOD == null) {
+			WRITE_NBT_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+					.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
+					.getMethodByParameters("writeNbtCompound", MinecraftReflection.getNBTCompoundClass()));
+		}
+
+		ByteBuf buf = NettyByteBufAdapter.packetWriter(output);
+		buf.writeByte(NbtType.TAG_COMPOUND.getRawID());
+
 		// Get the NMS version of the compound
 		Object handle = compound != null ? NbtFactory.fromBase(compound).getHandle() : null;
-		
-		if (MinecraftReflection.isUsingNetty()) {
-			if (WRITE_NBT_METHOD == null) {
-				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("writeNbtCompound", /* a */
-								MinecraftReflection.getNBTCompoundClass())
-				);
-			}
-
-			ByteBuf buf = NettyByteBufAdapter.packetWriter(output);
-			buf.writeByte(NbtType.TAG_COMPOUND.getRawID());
-
-			WRITE_NBT_METHOD.invoke(buf, handle);
-		} else {
-			if (WRITE_NBT_METHOD == null) {
-				WRITE_NBT_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass(), true).getMethod(
-						FuzzyMethodContract.newBuilder().
-						parameterCount(2).
-						parameterDerivedOf(MinecraftReflection.getNBTBaseClass(), 0).
-						parameterDerivedOf(DataOutput.class, 1).
-						returnTypeVoid().
-						build())
-				);
-			}
-
-			WRITE_NBT_METHOD.invoke(null, handle, output);
-		}
+		WRITE_NBT_METHOD.invoke(buf, handle);
 	}
 
 	/**
 	 * Read or deserialize an NBT compound from a input stream.
+	 *
 	 * @param input - the target input stream.
 	 * @return The resulting compound, or NULL.
-	 * @throws IOException If the operation failed due to reflection or corrupt data.
 	 */
-	public NbtCompound deserializeCompound(@Nonnull DataInputStream input) throws IOException {
-		if (input == null)
-			throw new IllegalArgumentException("Input stream cannot be NULL.");
-		Object nmsCompound = null;
-		
-		// Invoke the correct method
-		if (MinecraftReflection.isUsingNetty()) {
-			if (READ_NBT_METHOD == null) {
-				READ_NBT_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("readNbtCompound", /* h */
-								MinecraftReflection.getNBTCompoundClass(), new Class<?>[0])
-				);
-			}
-
-			ByteBuf buf = NettyByteBufAdapter.packetReader(input);
-			nmsCompound = READ_NBT_METHOD.invoke(buf);
-		} else {
-			if (READ_NBT_METHOD == null) {
-				READ_NBT_METHOD = Accessors.getMethodAccessor(
-				  FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
-					FuzzyMethodContract.newBuilder().
-					parameterCount(1).
-					parameterDerivedOf(DataInput.class).
-					returnDerivedOf(MinecraftReflection.getNBTBaseClass()).
-					build())
-				);
-			}
-			
-			try {
-				nmsCompound = READ_NBT_METHOD.invoke(null, input);
-			} catch (Exception e) {
-				throw new IOException("Cannot read item stack.", e);
-			}
+	public NbtCompound deserializeCompound(DataInputStream input) {
+		if (READ_NBT_METHOD == null) {
+			READ_NBT_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+					.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
+					.getMethodByReturnTypeAndParameters("readNbtCompound", MinecraftReflection.getNBTCompoundClass()));
 		}
 
-		// Convert back to an NBT Compound
-		if (nmsCompound != null)
-			return NbtFactory.fromNMSCompound(nmsCompound);
-		else
-			return null;
+		ByteBuf buf = NettyByteBufAdapter.packetReader(input);
+
+		// deserialize and wrap if needed
+		Object nmsCompound = READ_NBT_METHOD.invoke(buf);
+		return nmsCompound == null ? null : NbtFactory.fromNMSCompound(nmsCompound);
 	}
 
 	/**
 	 * Serialize a string using the standard Minecraft UTF-16 encoding.
 	 * <p>
 	 * Note that strings cannot exceed 32767 characters, regardless if maximum lenght.
+	 *
 	 * @param output - the output stream.
-	 * @param text - the string to serialize.
-	 * @throws IOException If the data in the string cannot be written.
+	 * @param text   - the string to serialize.
 	 */
-	public void serializeString(@Nonnull DataOutputStream output, String text) throws IOException {
-		if (output == null)
-			throw new IllegalArgumentException("output stream cannot be NULL.");
-		if (text == null)
-			throw new IllegalArgumentException("text cannot be NULL.");
-		
-		if (MinecraftReflection.isUsingNetty()) {
-			if (WRITE_STRING_METHOD == null) {
-				WRITE_STRING_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("writeString", /* a */
-								String.class)
-				);
-			}
-
-			ByteBuf buf = NettyByteBufAdapter.packetWriter(output);
-			WRITE_STRING_METHOD.invoke(buf, text);
-		} else {
-			if (WRITE_STRING_METHOD == null) {
-				WRITE_STRING_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
-						FuzzyMethodContract.newBuilder().
-						parameterCount(2).
-						parameterExactType(String.class, 0).
-						parameterDerivedOf(DataOutput.class, 1).
-						returnTypeVoid().
-						build())
-				);
-			}
-
-			WRITE_STRING_METHOD.invoke(null, text, output);
+	public void serializeString(DataOutputStream output, String text) {
+		if (WRITE_STRING_METHOD == null) {
+			WRITE_STRING_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+					.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
+					.getMethodByParameters("writeString", String.class));
 		}
+
+		ByteBuf buf = NettyByteBufAdapter.packetWriter(output);
+		WRITE_STRING_METHOD.invoke(buf, text);
 	}
-	
+
 	/**
 	 * Deserialize a string using the standard Minecraft UTF-16 encoding.
 	 * <p>
 	 * Note that strings cannot exceed 32767 characters, regardless if maximum length.
-	 * @param input - the input stream.
+	 *
+	 * @param input         - the input stream.
 	 * @param maximumLength - the maximum length of the string.
 	 * @return The deserialized string.
-	 * @throws IOException If deserializing fails
 	 */
-	public String deserializeString(@Nonnull DataInputStream input, int maximumLength) throws IOException {
-		if (input == null)
-			throw new IllegalArgumentException("Input stream cannot be NULL.");
-		if (maximumLength > 32767)
-			throw new IllegalArgumentException("Maximum length cannot exceed 32767 characters.");
-		if (maximumLength < 0)
-			throw new IllegalArgumentException("Maximum length cannot be negative.");
-		
-		if (MinecraftReflection.isUsingNetty()) {
-			if (READ_STRING_METHOD == null) {
-				READ_STRING_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("readString", /* c */
-								String.class, new Class<?>[] { int.class })
-				);
-			}
-
-			ByteBuf buf = NettyByteBufAdapter.packetReader(input);
-			return (String) READ_STRING_METHOD.invoke(buf, maximumLength);
-		} else {
-			if (READ_STRING_METHOD == null) {
-				READ_STRING_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
-						FuzzyMethodContract.newBuilder().
-						parameterCount(2).
-						parameterDerivedOf(DataInput.class, 0).
-						parameterExactType(int.class, 1).
-						returnTypeExact(String.class).
-						build())
-					);
-			}
-
-			return (String) READ_STRING_METHOD.invoke(null, input, maximumLength);
+	public String deserializeString(DataInputStream input, int maximumLength) {
+		if (READ_STRING_METHOD == null) {
+			READ_STRING_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+					.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
+					.getMethodByReturnTypeAndParameters("readString", String.class, int.class));
 		}
+
+		ByteBuf buf = NettyByteBufAdapter.packetReader(input);
+		return (String) READ_STRING_METHOD.invoke(buf, maximumLength);
 	}
 
 	/**
 	 * Serialize an item stack as a base-64 encoded string.
 	 * <p>
 	 * Note: An ItemStack can be written to the serialized text even if it's NULL.
-	 * 
+	 *
 	 * @param stack - the item stack to serialize, or NULL to represent air/nothing.
 	 * @return A base-64 representation of the given item stack.
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public String serializeItemStack(ItemStack stack) throws IOException {
-		return Base64Coder.encodeLines(serializeItemStackToByteArray(stack));
+		return Base64.getEncoder().encodeToString(this.serializeItemStackToByteArray(stack));
 	}
 
 	/**
 	 * Deserialize an item stack from a base-64 encoded string.
+	 *
 	 * @param input - base-64 encoded string.
 	 * @return A deserialized item stack, or NULL if the serialized ItemStack was also NULL.
-	 * @throws IOException If the operation failed due to reflection or corrupt data.
 	 */
-	public ItemStack deserializeItemStack(String input) throws IOException {
-		Validate.notNull(input, "input cannot be null!");
-
-		return deserializeItemStackFromByteArray(Base64Coder.decodeLines(input));
+	public ItemStack deserializeItemStack(String input) {
+		return this.deserializeItemStackFromByteArray(Base64.getDecoder().decode(input));
 	}
 
 	/**
@@ -308,157 +198,80 @@ public class StreamSerializer {
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public byte[] serializeItemStackToByteArray(ItemStack stack) throws IOException {
-
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		DataOutputStream output = new DataOutputStream(outputStream);
-
-		serializeItemStack(output, stack);
-
-		return outputStream.toByteArray();
+		try (ByteArrayOutputStream out = new ByteArrayOutputStream(); DataOutputStream data = new DataOutputStream(out)) {
+			this.serializeItemStack(data, stack);
+			return out.toByteArray();
+		}
 	}
 
 	/**
 	 * Deserialize an item stack from a byte array.
+	 *
 	 * @param input - serialized item.
 	 * @return A deserialized item stack, or NULL if the serialized ItemStack was also NULL.
-	 * @throws IOException If the operation failed due to reflection or corrupt data.
 	 */
-	public ItemStack deserializeItemStackFromByteArray(byte[] input) throws IOException {
-		Validate.notNull(input, "input cannot be null!");
-
-		Object nmsItem;
-
-		if (MinecraftReflection.isUsingNetty()) {
-			ByteBuf buf = Unpooled.copiedBuffer(input);
-			Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
-
-			if (READ_ITEM_METHOD == null) {
-				READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("readItemStack", // i(ItemStack)
-								MinecraftReflection.getItemStackClass(), new Class<?>[0]));
-			}
-
-			nmsItem = READ_ITEM_METHOD.invoke(serializer);
-		} else {
-			if (READ_ITEM_METHOD == null) {
-				READ_ITEM_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
-						FuzzyMethodContract.newBuilder().
-						parameterCount(1).
-						parameterDerivedOf(DataInput.class).
-						returnDerivedOf(MinecraftReflection.getItemStackClass()).
-						build())
-					);
-			}
-
-			ByteArrayInputStream byteStream = new ByteArrayInputStream(input);
-			DataInputStream inputStream = new DataInputStream(byteStream);
-
-			nmsItem = READ_ITEM_METHOD.invoke(null, inputStream);
+	public ItemStack deserializeItemStackFromByteArray(byte[] input) {
+		if (READ_ITEM_METHOD == null) {
+			READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+					.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
+					.getMethodByReturnTypeAndParameters("readItemStack", MinecraftReflection.getItemStackClass()));
 		}
 
-		return nmsItem != null ? MinecraftReflection.getBukkitItemStack(nmsItem) : null;
+		ByteBuf buf = Unpooled.wrappedBuffer(input);
+		Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
+
+		try {
+			// unwrap the item
+			Object nmsItem = READ_ITEM_METHOD.invoke(serializer);
+			return nmsItem != null ? MinecraftReflection.getBukkitItemStack(nmsItem) : null;
+		} finally {
+			ReferenceCountUtil.safeRelease(buf);
+		}
 	}
 
 	/**
 	 * Write or serialize an item stack to the given output stream.
 	 * <p>
-	 * To supply a byte array, wrap it in a {@link java.io.ByteArrayOutputStream ByteArrayOutputStream}
-	 * and {@link java.io.DataOutputStream DataOutputStream}.
+	 * To supply a byte array, wrap it in a {@link java.io.ByteArrayOutputStream ByteArrayOutputStream} and {@link
+	 * java.io.DataOutputStream DataOutputStream}.
 	 * <p>
 	 * Note: An ItemStack can be written to a stream even if it's NULL.
-	 * 
+	 *
 	 * @param output - the target output stream.
-	 * @param stack - the item stack that will be written, or NULL to represent air/nothing.
+	 * @param stack  - the item stack that will be written, or NULL to represent air/nothing.
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public void serializeItemStack(DataOutputStream output, ItemStack stack) throws IOException {
-		Validate.notNull(output, "output cannot be null!");
-		
-		// Get the NMS version of the ItemStack
-		Object nmsItem = MinecraftReflection.getMinecraftItemStack(stack);
-		
-		if (MinecraftReflection.isUsingNetty()) {
-			if (WRITE_ITEM_METHOD == null) {
-				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("writeStack", /* a */
-								MinecraftReflection.getItemStackClass())
-				);
-			}
-
-			ByteBuf buf = Unpooled.buffer();
-			Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
-
-			WRITE_ITEM_METHOD.invoke(serializer, nmsItem);
-
-			output.write(buf.array());
-		} else {
-			if (WRITE_ITEM_METHOD == null)
-				WRITE_ITEM_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
-						FuzzyMethodContract.newBuilder().
-						parameterCount(2).
-						parameterDerivedOf(MinecraftReflection.getItemStackClass(), 0).
-						parameterDerivedOf(DataOutput.class, 1).
-						build())
-			);
-
-			WRITE_ITEM_METHOD.invoke(null, nmsItem, output);
+		if (WRITE_ITEM_METHOD == null) {
+			WRITE_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+					.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
+					.getMethodByParameters("writeStack", MinecraftReflection.getItemStackClass()));
 		}
+
+		ByteBuf buf = Unpooled.buffer();
+		Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
+
+		// Get the NMS version of the ItemStack and write it into the buffer
+		Object nmsItem = MinecraftReflection.getMinecraftItemStack(stack);
+		WRITE_ITEM_METHOD.invoke(serializer, nmsItem);
+
+		// write the serialized content to the stream
+		output.write(this.getBytesAndRelease(buf));
 	}
 
-	/**
-	 * Read or deserialize an item stack from an underlying input stream.
-	 * <p>
-	 * To supply a byte array, wrap it in a {@link java.io.ByteArrayInputStream ByteArrayInputStream}
-	 * and {@link java.io.DataInputStream DataInputStream}.
-	 * 
-	 * @param input - the target input stream.
-	 * @return The resulting item stack, or NULL if the serialized item stack was NULL.
-	 * @throws IOException If the operation failed due to reflection or corrupt data.
-	 * @deprecated This is a pretty hacky solution for backwards compatibility. See {@link #deserializeItemStack(DataInputStream)}
-	 */
-	@Deprecated
-	public ItemStack deserializeItemStack(DataInputStream input) throws IOException {
-		Validate.notNull(input, "input cannot be null!");
-		Object nmsItem;
-		
-		if (MinecraftReflection.isUsingNetty()) {
-			if (READ_ITEM_METHOD == null) {
-				READ_ITEM_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true).
-						getMethodByParameters("readItemStack", /* i */
-								MinecraftReflection.getItemStackClass(), new Class<?>[0])
-				);
+	public byte[] getBytesAndRelease(ByteBuf buf) {
+		try {
+			if (buf.hasArray()) {
+				// heap buffer, we can access the array directly
+				return buf.array();
+			} else {
+				// direct buffer, we need to copy the bytes into an array
+				byte[] bytes = new byte[buf.readableBytes()];
+				buf.readBytes(bytes);
+				return bytes;
 			}
-
-			byte[] bytes = new byte[8192];
-			input.read(bytes);
-
-			ByteBuf buf = Unpooled.copiedBuffer(bytes);
-			Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
-
-			nmsItem = READ_ITEM_METHOD.invoke(serializer);
-		} else {
-			if (READ_ITEM_METHOD == null) {
-				READ_ITEM_METHOD = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(MinecraftReflection.getPacketClass()).getMethod(
-						FuzzyMethodContract.newBuilder().
-						parameterCount(1).
-						parameterDerivedOf(DataInput.class).
-						returnDerivedOf(MinecraftReflection.getItemStackClass()).
-						build())
-					);
-			}
-
-			nmsItem = READ_ITEM_METHOD.invoke(null, input);
+		} finally {
+			ReferenceCountUtil.safeRelease(buf);
 		}
-	
-		// Convert back to a Bukkit item stack
-		if (nmsItem != null)
-			return MinecraftReflection.getBukkitItemStack(nmsItem);
-		else
-			return null;
 	}
 }

@@ -19,11 +19,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.StreamSerializer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.lang.reflect.Method;
+import io.netty.util.ReferenceCountUtil;
 import java.util.Arrays;
 
 /**
@@ -31,6 +33,7 @@ import java.util.Arrays;
  *
  * @author dmulloy2
  */
+@SuppressWarnings("deprecation") // yea we need to do that :/
 public class WirePacket {
 
 	private final int id;
@@ -38,7 +41,8 @@ public class WirePacket {
 
 	/**
 	 * Constructs a new WirePacket with a given type and contents
-	 * @param type Type of the packet
+	 *
+	 * @param type  Type of the packet
 	 * @param bytes Contents of the packet
 	 */
 	public WirePacket(PacketType type, byte[] bytes) {
@@ -48,7 +52,8 @@ public class WirePacket {
 
 	/**
 	 * Constructs a new WirePacket with a given id and contents
-	 * @param id ID of the packet
+	 *
+	 * @param id    ID of the packet
 	 * @param bytes Contents of the packet
 	 */
 	public WirePacket(int id, byte[] bytes) {
@@ -56,14 +61,9 @@ public class WirePacket {
 		this.bytes = bytes;
 	}
 
-	private static byte[] getBytes(ByteBuf buffer) {
-		byte[] array = new byte[buffer.readableBytes()];
-		buffer.readBytes(array);
-		return array;
-	}
-
 	/**
 	 * Creates a WirePacket from an existing PacketContainer
+	 *
 	 * @param packet Existing packet
 	 * @return The resulting WirePacket
 	 */
@@ -73,8 +73,7 @@ public class WirePacket {
 	}
 
 	/**
-	 * Creates a byte array from an existing PacketContainer containing all the
-	 * bytes from that packet
+	 * Creates a byte array from an existing PacketContainer containing all the bytes from that packet
 	 *
 	 * @param packet Existing packet
 	 * @return the byte array
@@ -86,17 +85,10 @@ public class WirePacket {
 		ByteBuf store = PacketContainer.createPacketBuffer();
 
 		// Read the bytes once
-		Method write = MinecraftMethods.getPacketWriteByteBufMethod();
+		MethodAccessor write = MinecraftMethods.getPacketWriteByteBufMethod();
+		write.invoke(packet.getHandle(), buffer);
 
-		try {
-			write.invoke(packet.getHandle(), buffer);
-		} catch (ReflectiveOperationException ex) {
-			throw new RuntimeException("Failed to read packet contents.", ex);
-		}
-
-		byte[] bytes = getBytes(buffer);
-
-		buffer.release();
+		byte[] bytes = StreamSerializer.getDefault().getBytesAndRelease(buffer);
 
 		// Rewrite them to the packet to avoid issues with certain packets
 		if (packet.getType() == PacketType.Play.Server.CUSTOM_PAYLOAD
@@ -105,24 +97,19 @@ public class WirePacket {
 			byte[] ret = Arrays.copyOf(bytes, bytes.length);
 			store.writeBytes(bytes);
 
-			Method read = MinecraftMethods.getPacketReadByteBufMethod();
+			MethodAccessor read = MinecraftMethods.getPacketReadByteBufMethod();
+			read.invoke(packet.getHandle(), store);
 
-			try {
-				read.invoke(packet.getHandle(), store);
-			} catch (ReflectiveOperationException ex) {
-				throw new RuntimeException("Failed to rewrite packet contents.", ex);
-			}
-
-			return ret;
+			bytes = ret;
 		}
 
-		store.release();
-
+		ReferenceCountUtil.safeRelease(store);
 		return bytes;
 	}
 
 	/**
 	 * Creates a WirePacket from an existing Minecraft packet
+	 *
 	 * @param packet Existing Minecraft packet
 	 * @return The resulting WirePacket
 	 * @throws IllegalArgumentException If the packet is null or not a Minecraft packet
@@ -131,57 +118,44 @@ public class WirePacket {
 		checkNotNull(packet, "packet cannot be null!");
 		checkArgument(MinecraftReflection.isPacketClass(packet), "packet must be a Minecraft packet");
 
-		PacketType type = PacketType.fromClass(packet.getClass());
-		int id = type.getCurrentId();
-
 		ByteBuf buffer = PacketContainer.createPacketBuffer();
-		Method write = MinecraftMethods.getPacketWriteByteBufMethod();
 
-		try {
-			write.invoke(packet, buffer);
-		} catch (ReflectiveOperationException ex) {
-			throw new RuntimeException("Failed to serialize packet contents.", ex);
-		}
+		MethodAccessor write = MinecraftMethods.getPacketWriteByteBufMethod();
+		write.invoke(packet, buffer);
 
-		byte[] bytes = getBytes(buffer);
-
-		buffer.release();
+		byte[] bytes = StreamSerializer.getDefault().getBytesAndRelease(buffer);
+		int id = PacketType.fromClass(packet.getClass()).getCurrentId();
 
 		return new WirePacket(id, bytes);
 	}
 
-	public static void writeVarInt(ByteBuf output, int i) {
-		checkNotNull(output, "output cannot be null!");
-
-		while ((i & -128) != 0) {
-			output.writeByte(i & 127 | 128);
-			i >>>= 7;
+	public static void writeVarInt(ByteBuf output, int value) {
+		while (true) {
+			if ((value & ~0x7F) == 0) {
+				output.writeByte(value);
+				break;
+			} else {
+				output.writeByte((value & 0x7F) | 0x80);
+				value >>>= 7;
+			}
 		}
-
-		output.writeByte(i);
 	}
 
 	public static int readVarInt(ByteBuf input) {
-		checkNotNull(input, "input cannot be null!");
-
-		int i = 0;
-		int j = 0;
-
-		byte b0;
-
-		do {
-			b0 = input.readByte();
-			i |= (b0 & 127) << j++ * 7;
-			if (j > 5) {
-				throw new RuntimeException("VarInt too big");
+		int result = 0;
+		for (byte j = 0; j < 5; j++) {
+			int nextByte = input.readByte();
+			result |= (nextByte & 0x7F) << j * 7;
+			if ((nextByte & 0x80) != 128) {
+				return result;
 			}
-		} while ((b0 & 128) == 128);
-
-		return i;
+		}
+		throw new RuntimeException("VarInt is too big");
 	}
 
 	/**
 	 * Gets this packet's ID
+	 *
 	 * @return The ID
 	 */
 	public int getId() {
@@ -190,6 +164,7 @@ public class WirePacket {
 
 	/**
 	 * Gets this packet's contents as a byte array
+	 *
 	 * @return The contents
 	 */
 	public byte[] getBytes() {
@@ -198,6 +173,7 @@ public class WirePacket {
 
 	/**
 	 * Writes the id of this packet to a given output
+	 *
 	 * @param output Output to write to
 	 */
 	public void writeId(ByteBuf output) {
@@ -206,6 +182,7 @@ public class WirePacket {
 
 	/**
 	 * Writes the contents of this packet to a given output
+	 *
 	 * @param output Output to write to
 	 */
 	public void writeBytes(ByteBuf output) {
@@ -215,6 +192,7 @@ public class WirePacket {
 
 	/**
 	 * Fully writes the ID and contents of this packet to a given output
+	 *
 	 * @param output Output to write to
 	 */
 	public void writeFully(ByteBuf output) {
@@ -224,6 +202,7 @@ public class WirePacket {
 
 	/**
 	 * Serializes this packet into a byte buffer
+	 *
 	 * @return The buffer
 	 */
 	public ByteBuf serialize() {

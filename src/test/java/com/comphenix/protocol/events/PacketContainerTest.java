@@ -81,7 +81,6 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.WorldType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -255,25 +254,6 @@ public class PacketContainerTest {
 		// Read back array
 		List<ItemStack> comparison = itemAccess.read(0);
 		assertItemCollectionsEqual(items, comparison);
-	}
-
-	@Test
-	public void testGetWorldTypeModifier() {
-		// Not used in Netty
-		if (MinecraftReflection.isUsingNetty()) {
-			return;
-		}
-
-		PacketContainer loginPacket = new PacketContainer(PacketType.Play.Server.LOGIN);
-		StructureModifier<WorldType> worldAccess = loginPacket.getWorldTypeModifier();
-
-		WorldType testValue = WorldType.LARGE_BIOMES;
-
-		assertNull(worldAccess.read(0));
-
-		// Insert and read back
-		worldAccess.write(0, testValue);
-		assertEquals(testValue, worldAccess.read(0));
 	}
 
 	@Test

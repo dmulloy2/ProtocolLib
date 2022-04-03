@@ -31,7 +31,6 @@ import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.NettyVersion;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -152,9 +151,6 @@ public class ProtocolLib extends JavaPlugin {
 		// Print the state of the debug mode
 		if (config.isDebug()) {
 			logger.warning("Debug mode is enabled!");
-			logger.info("Detected netty version: " + NettyVersion.getVersion());
-		} else {
-			NettyVersion.getVersion(); // this will cache the version
 		}
 
 		// And the state of the error reporter
@@ -335,7 +331,7 @@ public class ProtocolLib extends JavaPlugin {
 
 			// Initialize background compiler
 			if (this.backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
-				this.backgroundCompiler = new BackgroundCompiler(this.getClassLoader(), reporter);
+				this.backgroundCompiler = new BackgroundCompiler(reporter);
 				BackgroundCompiler.setInstance(this.backgroundCompiler);
 
 				logger.info("Started structure compiler thread.");

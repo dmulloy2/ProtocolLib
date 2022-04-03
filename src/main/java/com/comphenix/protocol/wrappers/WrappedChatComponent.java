@@ -32,7 +32,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER, true);
 
 		// Retrieve the correct methods
-		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("serialize", /* a */
+		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters("serialize", /* a */
 				String.class, new Class<?>[] { COMPONENT }));
 
 		try {
@@ -43,7 +43,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
 		try {
 			DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getChatDeserializer(), true)
-				.getMethodByParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
+				.getMethodByReturnTypeAndParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
 		} catch (IllegalArgumentException ex) {
 			// We'll handle it in the ComponentParser
 			DESERIALIZE = null;

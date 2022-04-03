@@ -22,7 +22,7 @@ import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.utility.Constants;
+import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -62,7 +62,7 @@ public class PacketTypeTest {
 
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
-		Constants.init();
+		MinecraftReflectionTestUtil.init();
 
 		Set<Class<?>> allTypes = new HashSet<>();
 		List<Class<?>> newTypes = new ArrayList<>();

@@ -17,79 +17,89 @@
 
 package com.comphenix.protocol.reflect.compiler;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryUsage;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.reflect.compiler.StructureCompiler.StructureKey;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Compiles structure modifiers on a background thread.
  * <p>
  * This is necessary as we cannot block the main thread.
- * 
+ *
  * @author Kristian
  */
 public class BackgroundCompiler {
-	public static final ReportType REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER = new ReportType("Cannot compile structure. Disabing compiler.");
-	public static final ReportType REPORT_CANNOT_SCHEDULE_COMPILATION = new ReportType("Unable to schedule compilation task.");
-	
+
+	public static final ReportType REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER = new ReportType(
+			"Cannot compile structure. Disabling compiler.");
+	public static final ReportType REPORT_CANNOT_SCHEDULE_COMPILATION = new ReportType(
+			"Unable to schedule compilation task.");
+
 	/**
 	 * The default format for the name of new worker threads.
 	 */
 	public static final String THREAD_FORMAT = "ProtocolLib-StructureCompiler %s";
-	
-	// How long to wait for a shutdown
-	public static final int SHUTDOWN_DELAY_MS = 2000;
-	
-	/**
-	 * The default fraction of perm gen space after which the background compiler will be disabled.
-	 */
-	public static final double DEFAULT_DISABLE_AT_PERM_GEN = 0.65;
-	
-	// The single background compiler we're using
-	private static BackgroundCompiler backgroundCompiler;
-	
-	// Classes we're currently compiling
-	private Map<StructureKey, List<CompileListener<?>>> listeners = Maps.newHashMap();
-	private Object listenerLock = new Object();
-	
-	private StructureCompiler compiler;
-	private boolean enabled;
-	private boolean shuttingDown;
-	
-	private ExecutorService executor;
-	private ErrorReporter reporter;
 
-	private final Object unknownPermGenBean = new Object();
-	private Object permGenBean = unknownPermGenBean;
-	private double disablePermGenFraction = DEFAULT_DISABLE_AT_PERM_GEN;
-	
+	/**
+	 * The default time to wait for the compiler thread pool to terminate on shutdown.
+	 */
+	public static final int SHUTDOWN_DELAY_MS = 2000;
+
+	// the instance of the background compiler, null if the compiler is disabled
+	private static BackgroundCompiler backgroundCompiler;
+
+	private final ErrorReporter reporter;
+	private final ExecutorService executor;
+	private final StructureCompiler compiler;
+
+	// Classes we're currently compiling
+	private final Map<StructureKey, Set<CompileListener<?>>> compileListeners = Maps.newHashMap();
+	// if this compiler is enabled
+	private final AtomicBoolean enabled = new AtomicBoolean(true);
+
+	/**
+	 * Initialize a background compiler.
+	 * <p>
+	 * Uses the default {@link #THREAD_FORMAT} to name worker threads.
+	 *
+	 * @param reporter - current error reporter.
+	 */
+	public BackgroundCompiler(ErrorReporter reporter) {
+		Objects.requireNonNull(reporter, "reporter must be given");
+
+		this.reporter = reporter;
+		this.compiler = new StructureCompiler();
+		this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+				.setDaemon(true)
+				.setPriority(Thread.MIN_PRIORITY)
+				.setNameFormat(THREAD_FORMAT)
+				.build());
+	}
+
 	/**
 	 * Retrieves the current background compiler.
+	 *
 	 * @return Current background compiler.
 	 */
 	public static BackgroundCompiler getInstance() {
 		return backgroundCompiler;
 	}
-	
+
 	/**
 	 * Sets the single background compiler we're using.
+	 *
 	 * @param backgroundCompiler - current background compiler, or NULL if the library is not loaded.
 	 */
 	public static void setInstance(BackgroundCompiler backgroundCompiler) {
@@ -97,289 +107,132 @@ public class BackgroundCompiler {
 	}
 
 	/**
-	 * Initialize a background compiler.
-	 * <p>
-	 * Uses the default {@link #THREAD_FORMAT} to name worker threads.
-	 * @param loader - class loader from Bukkit.
-	 * @param reporter - current error reporter.
-	 */
-	public BackgroundCompiler(ClassLoader loader, ErrorReporter reporter) {
-		ThreadFactory factory = new ThreadFactoryBuilder().
-			setDaemon(true).
-			setNameFormat(THREAD_FORMAT).
-			build();
-		initializeCompiler(loader, reporter, Executors.newSingleThreadExecutor(factory));
-	}
-	
-	/**
-	 * Initialize a background compiler utilizing the given thread pool.
-	 * @param loader - class loader from Bukkit.
-	 * @param reporter - current error reporter.
-	 * @param executor - thread pool we'll use.
-	 */
-	public BackgroundCompiler(ClassLoader loader, ErrorReporter reporter, ExecutorService executor) {
-		initializeCompiler(loader, reporter, executor);
-	}
-
-	// Avoid "Constructor call must be the first statement".
-	private void initializeCompiler(ClassLoader loader, ErrorReporter reporter, ExecutorService executor) {
-		if (loader == null)
-			throw new IllegalArgumentException("loader cannot be NULL");
-		if (executor == null)
-			throw new IllegalArgumentException("executor cannot be NULL");
-		if (reporter == null)
-			throw new IllegalArgumentException("reporter cannot be NULL.");
-		
-		this.compiler = new StructureCompiler(loader);
-		this.reporter = reporter;
-		this.executor = executor;
-		this.enabled = true;
-	}
-	
-	/**
 	 * Ensure that the indirectly given structure modifier is eventually compiled.
+	 *
 	 * @param cache - store of structure modifiers.
-	 * @param key - key of the structure modifier to compile.
+	 * @param key   - key of the structure modifier to compile.
 	 */
-	@SuppressWarnings("rawtypes")
-	public void scheduleCompilation(final Map<Class, StructureModifier> cache, final Class key) {
-		
-		@SuppressWarnings("unchecked")
-		final StructureModifier<Object> uncompiled = cache.get(key);
-		
+	public void scheduleCompilation(final Map<Class<?>, StructureModifier<?>> cache, final Class<?> key) {
+		StructureModifier<?> uncompiled = cache.get(key);
 		if (uncompiled != null) {
-			scheduleCompilation(uncompiled, new CompileListener<Object>() {
-				@Override
-				public void onCompiled(StructureModifier<Object> compiledModifier) {
-					// Update cache
-					cache.put(key, compiledModifier);
-				}
-			});
+			this.scheduleCompilation(uncompiled, compiledModifier -> cache.put(key, compiledModifier));
 		}
 	}
-	
+
 	/**
 	 * Ensure that the given structure modifier is eventually compiled.
-	 * @param <TKey> Type
+	 *
+	 * @param <T>        Type
 	 * @param uncompiled - structure modifier to compile.
-	 * @param listener - listener responsible for responding to the compilation.
-	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	public <TKey> void scheduleCompilation(final StructureModifier<TKey> uncompiled, final CompileListener<TKey> listener) {
-		// Only schedule if we're enabled
-		if (enabled && !shuttingDown) {
-			// Check perm gen
-			if (getPermGenUsage() > disablePermGenFraction)
-				return;
-			
-			// Don't try to schedule anything
-			if (executor == null || executor.isShutdown())
-				return;
-
-			// Use to look up structure modifiers
-			final StructureKey key = new StructureKey(uncompiled);
-			
-			// Allow others to listen in too
-			synchronized (listenerLock) {
-				List list = listeners.get(key);
-				
-				if (!listeners.containsKey(key)) {
-					listeners.put(key, (List) Lists.newArrayList(listener));
-				} else {
-					// We're currently compiling
-					list.add(listener);
-					return;
-				}
-			}
-			
-			// Create the worker that will compile our modifier
-			Callable<?> worker = new Callable<Object>() {
-				@Override
-				public Object call() throws Exception {
-					StructureModifier<TKey> modifier = uncompiled;
-					List list = null;
-					
-					// Do our compilation
-					try {
-						modifier = compiler.compile(modifier);
-						
-						synchronized (listenerLock) {
-							list = listeners.get(key);
-							
-							// Prevent ConcurrentModificationExceptions
-							if (list != null) {
-								list = Lists.newArrayList(list);
-							}
-						}
-						
-						// Only execute the listeners if there is a list
-						if (list != null) {
-							for (Object compileListener : list) {
-								((CompileListener<TKey>) compileListener).onCompiled(modifier);
-							}
-							
-							// Remove it when we're done
-							synchronized (listenerLock) {
-								list = listeners.remove(key);
-							}
-						}
-						
-					} catch (OutOfMemoryError e) {
-						setEnabled(false);
-						throw e;
-					} catch (ThreadDeath e) {
-						setEnabled(false);
-						throw e;
-					} catch (Throwable e) {
-						// Disable future compilations!
-						setEnabled(false);
-						
-						// Inform about this error as best as we can
-						reporter.reportDetailed(BackgroundCompiler.this,
-								Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(e)
-						);
-					}
-					
-					// We'll also return the new structure modifier
-					return modifier;
-					
-				}
-			};
-			
-			try {
-				// Lookup the previous class name on the main thread.
-				// This is necessary as the Bukkit class loaders are not thread safe
-				if (compiler.lookupClassLoader(uncompiled)) {
-					try {
-						worker.call();
-					} catch (Exception e) {
-						// Impossible!
-						e.printStackTrace();
-					}
-					
-				} else {
-					
-					// Perform the compilation on a seperate thread
-					executor.submit(worker);
-				}
-				
-			} catch (RejectedExecutionException e) {
-				// Occures when the underlying queue is overflowing. Since the compilation
-				// is only an optmization and not really essential we'll just log this failure
-				// and move on.
-				reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SCHEDULE_COMPILATION).error(e));
-			}
-		}
-	}
-	
-	/**
-	 * Add a compile listener if we are still waiting for the structure modifier to be compiled.
-	 * @param <TKey> Type
-	 * @param uncompiled - the structure modifier that may get compiled.
-	 * @param listener - the listener to invoke in that case.
+	 * @param listener   - listener responsible for responding to the compilation.
 	 */
 	@SuppressWarnings("unchecked")
-	public <TKey> void addListener(final StructureModifier<TKey> uncompiled, final CompileListener<TKey> listener) {
-		synchronized (listenerLock) {
-			StructureKey key = new StructureKey(uncompiled);
-			
-			@SuppressWarnings("rawtypes")
-			List list = listeners.get(key);
-			
-			if (list != null) {
-				list.add(listener);
+	public <T> void scheduleCompilation(StructureModifier<T> uncompiled, CompileListener<T> listener) {
+		// Only schedule if we're enabled
+		if (this.enabled.get() && !this.executor.isShutdown()) {
+			StructureKey key = StructureKey.forStructureModifier(uncompiled);
+
+			// check if we're currently compiling
+			Set<CompileListener<?>> listeners = this.compileListeners.get(key);
+			if (listeners == null) {
+				// not compiling - register and proceed
+				this.compileListeners.put(key, Sets.newHashSet(listener));
+			} else {
+				// compiling already - do not compile twice
+				listeners.add(listener);
+				return;
 			}
-		}
-	}
-	
-	/**
-	 * Retrieve the current usage of the Perm Gen space in percentage.
-	 * @return Usage of the perm gen space.
-	 */
-	private double getPermGenUsage() {
-		Object permGenBean = this.permGenBean;
-		if (permGenBean == unknownPermGenBean) {
-			for (MemoryPoolMXBean item : ManagementFactory.getMemoryPoolMXBeans()) {
-				if (item.getName().contains("Perm Gen")) {
-					permGenBean = this.permGenBean = item;
-					break;
+
+			// Create the worker that will compile our modifier
+			Runnable runnable = () -> {
+				try {
+					// compile the modifier
+					StructureModifier<T> compiled = this.compiler.compile(uncompiled);
+
+					// post the result to all listeners
+					Set<CompileListener<?>> registeredListeners = this.compileListeners.get(key);
+					if (registeredListeners != null) {
+						registeredListeners.forEach(l -> ((CompileListener<T>) l).onCompiled(compiled));
+					}
+				} catch (Exception exception) {
+					this.setEnabled(false);
+					this.reporter.reportDetailed(
+							BackgroundCompiler.this,
+							Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(exception));
 				}
-			}
-			if (permGenBean == unknownPermGenBean) {
-				permGenBean = this.permGenBean = null;
+			};
+
+			try {
+				// try to submit the task to the background worker
+				this.executor.execute(runnable);
+			} catch (RejectedExecutionException exception) {
+				// might occur if the compiler queue is too full or the executor is now shutting down
+				this.reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SCHEDULE_COMPILATION).error(exception));
 			}
 		}
-		if (permGenBean != null) {
-			MemoryUsage usage = ((MemoryPoolMXBean) permGenBean).getUsage();
-			return usage.getUsed() / (double) usage.getCommitted();
-		}
-		
-		// Unknown
-		return 0;
 	}
-	
+
+	/**
+	 * Add a compile listener if we are still waiting for the structure modifier to be compiled.
+	 *
+	 * @param <T>        Type
+	 * @param uncompiled - the structure modifier that may get compiled.
+	 * @param listener   - the listener to invoke in that case.
+	 */
+	public <T> void addListener(final StructureModifier<T> uncompiled, final CompileListener<T> listener) {
+		Set<CompileListener<?>> listeners = this.compileListeners.get(StructureKey.forStructureModifier(uncompiled));
+		if (listeners != null) {
+			listeners.add(listener);
+		}
+	}
+
 	/**
 	 * Clean up after ourselves using the default timeout.
 	 */
 	public void shutdownAll() {
-		shutdownAll(SHUTDOWN_DELAY_MS, TimeUnit.MILLISECONDS);
+		this.shutdownAll(SHUTDOWN_DELAY_MS, TimeUnit.MILLISECONDS);
 	}
-	
+
 	/**
 	 * Clean up after ourselves.
+	 *
 	 * @param timeout - the maximum time to wait.
-	 * @param unit - the time unit of the timeout argument.
+	 * @param unit    - the time unit of the timeout argument.
 	 */
 	public void shutdownAll(long timeout, TimeUnit unit) {
-		setEnabled(false);
-		shuttingDown = true;
-		executor.shutdown();
-		
-		try {
-			executor.awaitTermination(timeout, unit);
-		} catch (InterruptedException e) {
-			// Unlikely to ever occur - it's the main thread
-			e.printStackTrace();
+		if (this.enabled.getAndSet(false)) {
+			try {
+				this.executor.shutdown();
+				this.executor.awaitTermination(timeout, unit);
+			} catch (InterruptedException ignored) {
+			}
 		}
 	}
-	
+
 	/**
-	 * Retrieve whether or not the background compiler is enabled.
+	 * Retrieve whether the background compiler is enabled.
+	 *
 	 * @return TRUE if it is enabled, FALSE otherwise.
 	 */
 	public boolean isEnabled() {
-		return enabled;
+		return this.enabled.get();
 	}
 
 	/**
-	 * Sets whether or not the background compiler is enabled.
+	 * Sets whether the background compiler is enabled.
+	 *
 	 * @param enabled - TRUE to enable it, FALSE otherwise.
 	 */
 	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
+		this.enabled.set(enabled);
 	}
 
 	/**
-	 * Retrieve the fraction of perm gen space used after which the background compiler will be disabled.
-	 * @return The fraction after which the background compiler is disabled.
-	 */
-	public double getDisablePermGenFraction() {
-		return disablePermGenFraction;
-	}
-	
-	/**
-	 * Set the fraction of perm gen space used after which the background compiler will be disabled.
-	 * @param fraction - the maximum use of perm gen space.
-	 */
-	public void setDisablePermGenFraction(double fraction) {
-		this.disablePermGenFraction = fraction;
-	}
-	
-	/**
 	 * Retrieve the current structure compiler.
+	 *
 	 * @return Current structure compiler.
 	 */
 	public StructureCompiler getCompiler() {
-		return compiler;
+		return this.compiler;
 	}
 }

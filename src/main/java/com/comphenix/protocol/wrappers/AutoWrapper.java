@@ -137,14 +137,14 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 			nmsAccessors = Arrays
 					.stream(nmsClass.getDeclaredFields())
 					.filter(field -> !Modifier.isStatic(field.getModifiers()))
-					.map(field -> Accessors.getFieldAccessor(field, true))
+					.map(field -> Accessors.getFieldAccessor(field))
 					.toArray(FieldAccessor[]::new);
 		}
 
 		if (wrapperAccessors == null) {
 			wrapperAccessors = Arrays
 					.stream(wrapperClass.getDeclaredFields())
-					.map(field -> Accessors.getFieldAccessor(field, true))
+					.map(field -> Accessors.getFieldAccessor(field))
 					.toArray(FieldAccessor[]::new);
 		}
 	}

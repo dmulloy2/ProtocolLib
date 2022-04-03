@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.collect.Sets;
@@ -50,11 +51,8 @@ public class EnumWrappersTest {
 
 	@SuppressWarnings("unchecked")
 	public <T extends Enum<T>> T roundtrip(Object target, String fieldName, EquivalentConverter<T> converter) {
-		FieldAccessor accessor = Accessors.getFieldAccessor(target.getClass(), fieldName, true);
-
-		return (T) converter.getGeneric(
-				converter.getSpecific(accessor.get(target))
-		);
+		FieldAccessor accessor = Accessors.getFieldAccessor(ExactReflection.fromObject(target, true).getField(fieldName));
+		return (T) converter.getGeneric(converter.getSpecific(accessor.get(target)));
 	}
 
 	@Test

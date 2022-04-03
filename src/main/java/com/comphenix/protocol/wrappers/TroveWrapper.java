@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.invoke.LambdaMetafactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -12,7 +13,6 @@ import javax.annotation.Nonnull;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.ReadOnlyFieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.utility.ClassSource;
@@ -39,7 +39,7 @@ public class TroveWrapper {
 	 * @param accessor - the accessor.
 	 * @return The read only accessor.
 	 */
-	public static ReadOnlyFieldAccessor wrapMapField(final FieldAccessor accessor) {
+	public static FieldAccessor wrapMapField(final FieldAccessor accessor) {
 		return wrapMapField(accessor, null);
 	}
 	
@@ -49,8 +49,8 @@ public class TroveWrapper {
 	 * @param noEntryTransform - transform the no entry value, or NULL to ignore.
 	 * @return The read only accessor.
 	 */
-	public static ReadOnlyFieldAccessor wrapMapField(final FieldAccessor accessor, final Function<Integer, Integer> noEntryTransform) {
-		return new ReadOnlyFieldAccessor() {
+	public static FieldAccessor wrapMapField(final FieldAccessor accessor, final Function<Integer, Integer> noEntryTransform) {
+		/*return new ReadOnlyFieldAccessor() {
 			@Override
 			public Object get(Object instance) {
 				Object troveMap = accessor.get(instance);
@@ -64,43 +64,8 @@ public class TroveWrapper {
 			public Field getField() {
 				return accessor.getField();
 			}
-		};
-	}
-	
-	/**
-	 * Retrieve a read-only field accessor that automatically wraps the underlying Trove instance.
-	 * @param accessor - the accessor.
-	 * @return The read only accessor.
-	 */
-	public static ReadOnlyFieldAccessor wrapSetField(final FieldAccessor accessor) {
-		return new ReadOnlyFieldAccessor() {
-			@Override
-			public Object get(Object instance) {
-				return getDecoratedSet(accessor.get(instance));
-			}
-			@Override
-			public Field getField() {
-				return accessor.getField();
-			}
-		};
-	}
-	
-	/**
-	 * Retrieve a read-only field accessor that automatically wraps the underlying Trove instance.
-	 * @param accessor - the accessor.
-	 * @return The read only accessor.
-	 */
-	public static ReadOnlyFieldAccessor wrapListField(final FieldAccessor accessor) {
-		return new ReadOnlyFieldAccessor() {
-			@Override
-			public Object get(Object instance) {
-				return getDecoratedList(accessor.get(instance));
-			}
-			@Override
-			public Field getField() {
-				return accessor.getField();
-			}
-		};
+		};*/
+		return null;
 	}
 	
 	/**

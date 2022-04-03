@@ -297,10 +297,6 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 			buffer.readBytes(output, buffer.readableBytes());
 		} catch (IllegalArgumentException e) {
 			throw new IOException("Minecraft packet doesn't support DataOutputStream", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Insufficient security privileges.", e);
-		} catch (InvocationTargetException e) {
-			throw new IOException("Could not serialize Minecraft packet.", e);
 		}
 	}
 
@@ -347,10 +343,6 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 					MinecraftMethods.getPacketReadByteBufMethod().invoke(handle, buffer);
 				} catch (IllegalArgumentException e) {
 					throw new IOException("Minecraft packet doesn't support DataInputStream", e);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException("Insufficient security privileges.", e);
-				} catch (InvocationTargetException e) {
-					throw new IOException("Could not deserialize Minecraft packet.", e);
 				}
 			}
 			

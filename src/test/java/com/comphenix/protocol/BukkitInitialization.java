@@ -4,7 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.comphenix.protocol.reflect.FieldUtils;
-import com.comphenix.protocol.utility.Constants;
+import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 import java.util.Collections;
 import java.util.List;
 import net.minecraft.SharedConstants;
@@ -118,7 +118,7 @@ public class BukkitInitialization {
 				ex.printStackTrace();
 			}
 
-			Constants.init();
+			MinecraftReflectionTestUtil.init();
 		}
 	}
 }

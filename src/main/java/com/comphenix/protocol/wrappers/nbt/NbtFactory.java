@@ -549,7 +549,7 @@ public class NbtFactory {
 	 * @param params - the parameters.
 	 */
 	private static Method findCreateMethod(Class<?> base, Class<?>... params) {
-		Method method = FuzzyReflection.fromClass(base, true).getMethodByParameters("createTag", base, params);
+		Method method = FuzzyReflection.fromClass(base, true).getMethodByReturnTypeAndParameters("createTag", base, params);
 		method.setAccessible(true);
 		return method;
 	}

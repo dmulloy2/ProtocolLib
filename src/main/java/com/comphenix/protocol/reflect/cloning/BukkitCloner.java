@@ -74,7 +74,6 @@ public class BukkitCloner implements Cloner {
 				MinecraftReflection.getMinecraftItemStack(MinecraftReflection.getBukkitItemStack(source).clone()));
 		fromWrapper(MinecraftReflection::getDataWatcherClass, WrappedDataWatcher::new);
 		fromConverter(MinecraftReflection::getBlockPositionClass, BlockPosition.getConverter());
-		fromConverter(MinecraftReflection::getChunkPositionClass, ChunkPosition.getConverter());
 		fromWrapper(MinecraftReflection::getServerPingClass, WrappedServerPing::fromHandle);
 		fromConverter(MinecraftReflection::getMinecraftKeyClass, MinecraftKey.getConverter());
 		fromWrapper(MinecraftReflection::getIBlockDataClass, WrappedBlockData::fromHandle);

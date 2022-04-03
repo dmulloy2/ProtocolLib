@@ -195,7 +195,7 @@ public class NetworkManagerInjector implements ChannelListener {
 			if (field.getGenericType().getTypeName().contains(ChannelFuture.class.getName())) {
 				// we can only guess if we need to override it, but it looks like we should.
 				// we now need the old value of the field to wrap it into a new collection
-				FieldAccessor accessor = Accessors.getFieldAccessor(field, true);
+				FieldAccessor accessor = Accessors.getFieldAccessor(field);
 				List<Object> value = (List<Object>) accessor.get(serverConnection);
 
 				// mark down that we've overridden the field

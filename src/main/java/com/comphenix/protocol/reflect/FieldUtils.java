@@ -39,6 +39,7 @@ import java.util.List;
  * @since 2.5
  * @version $Id: FieldUtils.java 1057009 2011-01-09 19:48:06Z niallp $
  */
+@Deprecated
 @SuppressWarnings("rawtypes")
 public class FieldUtils {
 
@@ -436,7 +437,7 @@ public class FieldUtils {
 			throw new IllegalArgumentException("The field must not be null");
 		}
 
-		Accessors.getFieldAccessor(field, forceAccess).set(target, value);
+		Accessors.getFieldAccessor(field).set(target, value);
 	}
 
 	/**

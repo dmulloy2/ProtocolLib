@@ -1,166 +1,34 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Determine if a given class implements a given fuzzy (duck typed) contract.
- * 
+ *
  * @author Kristian
  */
-public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
+public class FuzzyClassContract implements AbstractFuzzyMatcher<Class<?>> {
+
 	private final ImmutableList<AbstractFuzzyMatcher<Field>> fieldContracts;
 	private final ImmutableList<AbstractFuzzyMatcher<MethodInfo>> methodContracts;
 	private final ImmutableList<AbstractFuzzyMatcher<MethodInfo>> constructorContracts;
-	
+
 	private final ImmutableList<AbstractFuzzyMatcher<Class<?>>> baseclassContracts;
 	private final ImmutableList<AbstractFuzzyMatcher<Class<?>>> interfaceContracts;
-	
-	/**
-	 * Represents a class contract builder.
-	 * @author Kristian
-	 *
-	 */
-	public static class Builder {
-		private List<AbstractFuzzyMatcher<Field>> fieldContracts = Lists.newArrayList();
-		private List<AbstractFuzzyMatcher<MethodInfo>> methodContracts = Lists.newArrayList();
-		private List<AbstractFuzzyMatcher<MethodInfo>> constructorContracts = Lists.newArrayList();
-		
-		private List<AbstractFuzzyMatcher<Class<?>>> baseclassContracts = Lists.newArrayList();
-		private List<AbstractFuzzyMatcher<Class<?>>> interfaceContracts = Lists.newArrayList();
-		
-		/**
-		 * Add a new field contract.
-		 * @param matcher - new field contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder field(AbstractFuzzyMatcher<Field> matcher) {
-			fieldContracts.add(matcher);
-			return this;
-		}
-		
-		/**
-		 * Add a new field contract via a builder.
-		 * @param builder - builder for the new field contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder field(FuzzyFieldContract.Builder builder) {
-			return field(builder.build());
-		}
-		
-		/**
-		 * Add a new method contract.
-		 * @param matcher - new method contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder method(AbstractFuzzyMatcher<MethodInfo> matcher) {
-			methodContracts.add(matcher);
-			return this;
-		}
-		
-		/**
-		 * Add a new method contract via a builder.
-		 * @param builder - builder for the new method contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder method(FuzzyMethodContract.Builder builder) {
-			return method(builder.build());
-		}
-		
-		/**
-		 * Add a new constructor contract.
-		 * @param matcher - new constructor contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder constructor(AbstractFuzzyMatcher<MethodInfo> matcher) {
-			constructorContracts.add(matcher);
-			return this;
-		}
-		
-		/**
-		 * Add a new constructor contract via a builder.
-		 * @param builder - builder for the new constructor contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder constructor(FuzzyMethodContract.Builder builder) {
-			return constructor(builder.build());
-		}
-		
-		/**
-		 * Add a new base class contract.
-		 * @param matcher - new base class contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder baseclass(AbstractFuzzyMatcher<Class<?>> matcher) {
-			baseclassContracts.add(matcher);
-			return this;
-		}
-		
-		/**
-		 * Add a new base class contract.
-		 * @param builder - builder for the new base class contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder baseclass(FuzzyClassContract.Builder builder) {
-			return baseclass(builder.build());
-		}
-		
-		/**
-		 * Add a new interface contract.
-		 * @param matcher - new interface contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder interfaces(AbstractFuzzyMatcher<Class<?>> matcher) {
-			interfaceContracts.add(matcher);
-			return this;
-		}
-		
-		/**
-		 * Add a new interface contract.
-		 * @param builder - builder for the new interface contract.
-		 * @return This builder, for chaining.
-		 */
-		public Builder interfaces(FuzzyClassContract.Builder builder) {
-			return interfaces(builder.build());
-		}
 
-		public FuzzyClassContract build() {
-			Collections.sort(fieldContracts);
-			Collections.sort(methodContracts);
-			Collections.sort(constructorContracts);
-			Collections.sort(baseclassContracts);
-			Collections.sort(interfaceContracts);
-			
-			// Construct a new class matcher
-			return new FuzzyClassContract(this);
-		}
-	}
-
-	/**
-	 * Construct a new fuzzy class contract builder.
-	 * @return A new builder.
-	 */
-	public static Builder newBuilder() {
-		return new Builder();
-	}
-	
 	/**
 	 * Constructs a new fuzzy class contract with the given contracts.
+	 *
 	 * @param builder - the builder that is constructing us.
 	 */
 	private FuzzyClassContract(Builder builder) {
-		super();
 		this.fieldContracts = ImmutableList.copyOf(builder.fieldContracts);
 		this.methodContracts = ImmutableList.copyOf(builder.methodContracts);
 		this.constructorContracts = ImmutableList.copyOf(builder.constructorContracts);
@@ -169,159 +37,266 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 	}
 
 	/**
+	 * Construct a new fuzzy class contract builder.
+	 *
+	 * @return A new builder.
+	 */
+	public static Builder newBuilder() {
+		return new Builder();
+	}
+
+	/**
 	 * Retrieve an immutable list of every field contract.
 	 * <p>
 	 * This list is ordered in descending order of priority.
+	 *
 	 * @return List of every field contract.
 	 */
 	public ImmutableList<AbstractFuzzyMatcher<Field>> getFieldContracts() {
-		return fieldContracts;
+		return this.fieldContracts;
 	}
 
 	/**
 	 * Retrieve an immutable list of every method contract.
 	 * <p>
 	 * This list is ordered in descending order of priority.
+	 *
 	 * @return List of every method contract.
 	 */
 	public ImmutableList<AbstractFuzzyMatcher<MethodInfo>> getMethodContracts() {
-		return methodContracts;
+		return this.methodContracts;
 	}
 
 	/**
 	 * Retrieve an immutable list of every constructor contract.
 	 * <p>
 	 * This list is ordered in descending order of priority.
+	 *
 	 * @return List of every constructor contract.
 	 */
 	public ImmutableList<AbstractFuzzyMatcher<MethodInfo>> getConstructorContracts() {
-		return constructorContracts;
+		return this.constructorContracts;
 	}
-	
+
 	/**
 	 * Retrieve an immutable list of every baseclass contract.
 	 * <p>
 	 * This list is ordered in descending order of priority.
+	 *
 	 * @return List of every baseclass contract.
 	 */
 	public ImmutableList<AbstractFuzzyMatcher<Class<?>>> getBaseclassContracts() {
-		return baseclassContracts;
+		return this.baseclassContracts;
 	}
-	
+
 	/**
 	 * Retrieve an immutable list of every interface contract.
 	 * <p>
 	 * This list is ordered in descending order of priority.
+	 *
 	 * @return List of every interface contract.
 	 */
 	public ImmutableList<AbstractFuzzyMatcher<Class<?>>> getInterfaceContracts() {
-		return interfaceContracts;
-	}
-	
-	@Override
-	protected int calculateRoundNumber() {
-		// Find the highest round number
-		return combineRounds(findHighestRound(fieldContracts), 
-			    		     findHighestRound(methodContracts), 
-					    	 findHighestRound(constructorContracts),
-					    	 findHighestRound(interfaceContracts),
-					    	 findHighestRound(baseclassContracts));
-	}
-	
-	private <T> int findHighestRound(Collection<AbstractFuzzyMatcher<T>> list) {
-		int highest = 0;
-		
-		// Go through all the elements
-		for (AbstractFuzzyMatcher<T> matcher : list) 
-			highest = combineRounds(highest, matcher.getRoundNumber());
-		return highest;
+		return this.interfaceContracts;
 	}
 
 	@Override
 	public boolean isMatch(Class<?> value, Object parent) {
 		FuzzyReflection reflection = FuzzyReflection.fromClass(value, true);
-		
+
 		// Make sure all the contracts are valid
-		return (fieldContracts.size() == 0 || 
-					processContracts(reflection.getFields(), value, fieldContracts)) &&
-			   (methodContracts.size() == 0 ||
-			   	 	processContracts(MethodInfo.fromMethods(reflection.getMethods()), value, methodContracts)) &&
-			   (constructorContracts.size() == 0 || 
-			   		processContracts(MethodInfo.fromConstructors(value.getDeclaredConstructors()), value, constructorContracts)) &&
-			   (baseclassContracts.size() == 0 || 
-			   		processValue(value.getSuperclass(), parent, baseclassContracts)) &&
-			   (interfaceContracts.size() == 0 ||
-			    	processContracts(Arrays.asList(value.getInterfaces()), parent, interfaceContracts));
+		return this.processValue(value.getSuperclass(), parent, this.baseclassContracts)
+				&& this.processContracts(Arrays.asList(value.getInterfaces()), parent, this.interfaceContracts)
+				&& this.processContracts(reflection.getFields(), value, this.fieldContracts)
+				&& this.processContracts(MethodInfo.fromMethods(reflection.getMethods()), value, this.methodContracts)
+				&& this.processContracts(MethodInfo.fromConstructors(value.getDeclaredConstructors()), value,
+				this.constructorContracts);
 	}
 
 	private <T> boolean processContracts(Collection<T> values, Object parent, List<AbstractFuzzyMatcher<T>> matchers) {
-		boolean[] accepted = new boolean[matchers.size()];
-		int count = accepted.length;
+		// they all match if no values are present
+		if (values.isEmpty() || matchers.isEmpty()) {
+			return true;
+		}
 
-		// Process every value in turn
+		// check if all contracts match the given objects
+		int acceptingMatchers = 0;
 		for (T value : values) {
-			int index = processValue(value, parent, accepted, matchers);
-			
-			// See if this worked
-			if (index >= 0) {
-				accepted[index] = true;
-				count--;
-			}
-			
-			// Break early
-			if (count == 0)
-				return true;
-		}
-		return count == 0;
-	}
-	
-	private <T> boolean processValue(T value, Object parent, List<AbstractFuzzyMatcher<T>> matchers) {
-		for (int i = 0; i < matchers.size(); i++) {
-			if (matchers.get(i).isMatch(value, parent)) {
-				return true;
-			}
-		}
-		
-		// No match
-		return false;
-	}
-	
-	private <T> int processValue(T value, Object parent, boolean accepted[], List<AbstractFuzzyMatcher<T>> matchers) {
-		// The order matters
-		for (int i = 0; i < matchers.size(); i++) {
-			if (!accepted[i]) {
-				AbstractFuzzyMatcher<T> matcher = matchers.get(i);
-				
-				// Mark this as detected
-				if (matcher.isMatch(value, parent)) {
-					return i;
+			if (this.processValue(value, parent, matchers)) {
+				acceptingMatchers++;
+				// if all matchers found one match we're done
+				if (acceptingMatchers == matchers.size()) {
+					return true;
 				}
 			}
 		}
-		
-		// Failure
-		return -1;
+
+		return false;
 	}
-	
+
+	private <T> boolean processValue(T value, Object parent, List<AbstractFuzzyMatcher<T>> matchers) {
+		// check if all given contracts match the given value
+		for (AbstractFuzzyMatcher<T> matcher : matchers) {
+			if (!matcher.isMatch(value, parent)) {
+				return false;
+			}
+		}
+
+		// they all match
+		return true;
+	}
+
 	@Override
 	public String toString() {
-		Map<String, Object> params = Maps.newLinkedHashMap();
-		
-		if (fieldContracts.size() > 0) {
-			params.put("fields", fieldContracts);
+		StringBuilder builder = new StringBuilder("FuzzyClassContract={\n");
+
+		// append all subcontracts
+		if (!this.fieldContracts.isEmpty()) {
+			builder.append("  fields=").append(this.fieldContracts).append("\n");
 		}
-		if (methodContracts.size() > 0) {
-			params.put("methods", methodContracts);
+
+		if (!this.methodContracts.isEmpty()) {
+			builder.append("  methods=").append(this.methodContracts).append("\n");
 		}
-		if (constructorContracts.size() > 0) {
-			params.put("constructors", constructorContracts);
+
+		if (!this.constructorContracts.isEmpty()) {
+			builder.append("  constructors=").append(this.constructorContracts).append("\n");
 		}
-		if (baseclassContracts.size() > 0) {
-			params.put("baseclasses", baseclassContracts);
+
+		if (!this.baseclassContracts.isEmpty()) {
+			builder.append("  baseClasses=").append(this.baseclassContracts).append("\n");
 		}
-		if (interfaceContracts.size() > 0) {
-			params.put("interfaces", interfaceContracts);
+
+		if (!this.interfaceContracts.isEmpty()) {
+			builder.append("  interfaceClasses=").append(this.interfaceContracts).append("\n");
 		}
-		return "{\n  " + Joiner.on(", \n  ").join(params.entrySet()) + "\n}";
+
+		// finish off
+		return builder.append("}").toString();
+	}
+
+	/**
+	 * Represents a class contract builder.
+	 *
+	 * @author Kristian
+	 */
+	public static final class Builder {
+
+		private final List<AbstractFuzzyMatcher<Field>> fieldContracts = new ArrayList<>();
+		private final List<AbstractFuzzyMatcher<MethodInfo>> methodContracts = new ArrayList<>();
+		private final List<AbstractFuzzyMatcher<MethodInfo>> constructorContracts = new ArrayList<>();
+
+		private final List<AbstractFuzzyMatcher<Class<?>>> baseclassContracts = new ArrayList<>();
+		private final List<AbstractFuzzyMatcher<Class<?>>> interfaceContracts = new ArrayList<>();
+
+		/**
+		 * Add a new field contract.
+		 *
+		 * @param matcher - new field contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder field(AbstractFuzzyMatcher<Field> matcher) {
+			this.fieldContracts.add(matcher);
+			return this;
+		}
+
+		/**
+		 * Add a new field contract via a builder.
+		 *
+		 * @param builder - builder for the new field contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder field(FuzzyFieldContract.Builder builder) {
+			return this.field(builder.build());
+		}
+
+		/**
+		 * Add a new method contract.
+		 *
+		 * @param matcher - new method contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder method(AbstractFuzzyMatcher<MethodInfo> matcher) {
+			this.methodContracts.add(matcher);
+			return this;
+		}
+
+		/**
+		 * Add a new method contract via a builder.
+		 *
+		 * @param builder - builder for the new method contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder method(FuzzyMethodContract.Builder builder) {
+			return this.method(builder.build());
+		}
+
+		/**
+		 * Add a new constructor contract.
+		 *
+		 * @param matcher - new constructor contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder constructor(AbstractFuzzyMatcher<MethodInfo> matcher) {
+			this.constructorContracts.add(matcher);
+			return this;
+		}
+
+		/**
+		 * Add a new constructor contract via a builder.
+		 *
+		 * @param builder - builder for the new constructor contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder constructor(FuzzyMethodContract.Builder builder) {
+			return this.constructor(builder.build());
+		}
+
+		/**
+		 * Add a new base class contract.
+		 *
+		 * @param matcher - new base class contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder baseclass(AbstractFuzzyMatcher<Class<?>> matcher) {
+			this.baseclassContracts.add(matcher);
+			return this;
+		}
+
+		/**
+		 * Add a new base class contract.
+		 *
+		 * @param builder - builder for the new base class contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder baseclass(FuzzyClassContract.Builder builder) {
+			return this.baseclass(builder.build());
+		}
+
+		/**
+		 * Add a new interface contract.
+		 *
+		 * @param matcher - new interface contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder interfaces(AbstractFuzzyMatcher<Class<?>> matcher) {
+			this.interfaceContracts.add(matcher);
+			return this;
+		}
+
+		/**
+		 * Add a new interface contract.
+		 *
+		 * @param builder - builder for the new interface contract.
+		 * @return This builder, for chaining.
+		 */
+		public Builder interfaces(FuzzyClassContract.Builder builder) {
+			return this.interfaces(builder.build());
+		}
+
+		public FuzzyClassContract build() {
+			// Construct a new class matcher
+			return new FuzzyClassContract(this);
+		}
 	}
 }

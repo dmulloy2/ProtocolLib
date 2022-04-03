@@ -189,11 +189,11 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 				TO_LEGACY_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract, "toLegacyData"));
 
 				fuzzy = FuzzyReflection.fromClass(MAGIC_NUMBERS);
-				GET_NMS_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getBlock", BLOCK,
+				GET_NMS_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters("getBlock", BLOCK,
 						new Class<?>[]{Material.class}));
 
 				fuzzy = FuzzyReflection.fromClass(IBLOCK_DATA);
-				GET_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getBlock", BLOCK,
+				GET_BLOCK = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters("getBlock", BLOCK,
 						new Class<?>[0]));
 			}
 		}

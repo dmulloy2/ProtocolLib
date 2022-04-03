@@ -1,52 +1,33 @@
 package com.comphenix.protocol.reflect.accessors;
 
-import java.lang.reflect.InvocationTargetException;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 final class DefaultMethodAccessor implements MethodAccessor {
+
 	private final Method method;
-	
-	public DefaultMethodAccessor(Method method) {
+	private final boolean staticMethod;
+
+	private final MethodHandle methodHandle;
+
+	public DefaultMethodAccessor(Method method, MethodHandle methodHandle, boolean staticMethod) {
 		this.method = method;
+		this.methodHandle = methodHandle;
+		this.staticMethod = staticMethod;
 	}
-	
+
 	@Override
 	public Object invoke(Object target, Object... args) {
 		try {
-			return method.invoke(target, args);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException("Cannot use reflection.", e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("An internal error occured.", e.getCause());
-		} catch (IllegalArgumentException e) {
-			throw e;
+			return this.methodHandle.invoke(target, args);
+		} catch (Throwable throwable) {
+			throw new IllegalStateException("Unable to invoke method " + this.method, throwable);
 		}
 	}
-	
+
 	@Override
 	public Method getMethod() {
-		return method;
-	}
-
-	@Override
-	public int hashCode() {
-		return method != null ? method.hashCode() : 0;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		
-		if (obj instanceof DefaultMethodAccessor) {
-			DefaultMethodAccessor other = (DefaultMethodAccessor) obj;
-			return other.method == method;
-		}
-		return true;
-	}
-	
-	@Override
-	public String toString() {
-		return "DefaultMethodAccessor [method=" + method + "]";
+		return this.method;
 	}
 }
