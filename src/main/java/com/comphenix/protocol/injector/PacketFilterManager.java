@@ -222,11 +222,6 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 			}
 
 			Object nmsPacket = packet.getHandle();
-
-			// make sure packets which are force received through this method are never cancelled
-			boolean oldCancelState = this.packetInjector.isCancelled(nmsPacket);
-			this.packetInjector.setCancelled(nmsPacket, false);
-
 			// check to which listeners we need to post the packet
 			if (filters) {
 				// post to all listeners
@@ -244,7 +239,6 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
 			// post to the player inject, reset our cancel state change
 			this.playerInjectionHandler.receiveClientPacket(sender, nmsPacket);
-			this.packetInjector.setCancelled(nmsPacket, oldCancelState);
 		}
 	}
 

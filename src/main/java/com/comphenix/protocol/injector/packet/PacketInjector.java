@@ -15,22 +15,6 @@ import org.bukkit.entity.Player;
 public interface PacketInjector {
 
 	/**
-	 * Determine if a packet is cancelled or not.
-	 *
-	 * @param packet - the packet to check.
-	 * @return TRUE if it is, FALSE otherwise.
-	 */
-	boolean isCancelled(Object packet);
-
-	/**
-	 * Set whether or not a packet is cancelled.
-	 *
-	 * @param packet    - the packet to set.
-	 * @param cancelled - TRUE to cancel the packet, FALSE otherwise.
-	 */
-	void setCancelled(Object packet, boolean cancelled);
-
-	/**
 	 * Start intercepting packets with the given packet type.
 	 *
 	 * @param type    - the type of the packets to start intercepting.
