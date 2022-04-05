@@ -56,6 +56,7 @@ class EntityUtilities {
 	private FieldAccessor entityTrackerField;
 	private FieldAccessor trackedPlayersField;
 	private FieldAccessor trackedEntitiesField;
+	private MethodAccessor worldServerGetEntityOrPart;
 
 	private MethodAccessor getChunkProvider;
 
@@ -64,6 +65,15 @@ class EntityUtilities {
 
 	public static EntityUtilities getInstance() {
 		return INSTANCE;
+	}
+
+	public Entity getEntityFromID(World container, int id) {
+		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
+		Object worldServer = unwrapper.unwrapItem(container);
+		if (this.worldServerGetEntityOrPart == null) {
+			this.worldServerGetEntityOrPart = Accessors.getMethodAccessor(MinecraftReflection.getWorldServerClass(), "b", Integer.TYPE);
+		}
+		return (Entity) MinecraftReflection.getBukkitEntity(this.worldServerGetEntityOrPart.invoke(worldServer, id));
 	}
 
 	public void updateEntity(Entity entity, List<Player> observers) {
