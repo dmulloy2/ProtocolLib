@@ -499,7 +499,7 @@ public class NettyChannelInjector implements Injector {
 			// not on the main thread but we are required to be - re-schedule the packet on the main thread
 			this.server.getScheduler().scheduleSyncDelayedTask(
 					this.injectionFactory.getPlugin(),
-					() -> this.sendServerPacket(packet, null, false));
+					() -> this.sendServerPacket(packet, null, true));
 			return null;
 		}
 
