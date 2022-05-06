@@ -34,8 +34,16 @@ public class WrappedRegistry {
                         if (genType instanceof ParameterizedType) {
                             ParameterizedType par = (ParameterizedType) genType;
                             Type paramType = par.getActualTypeArguments()[0];
-                            if (paramType instanceof Class) {
-                                regMap.put((Class<?>) paramType, new WrappedRegistry(field.get(null)));
+                            Class<?> clazzToAdd = null;
+
+                            if (paramType instanceof Class<?>) {
+                                clazzToAdd = (Class<?>) paramType;
+                            } else if(paramType instanceof ParameterizedType) {
+                                clazzToAdd = (Class<?>) ((ParameterizedType) paramType).getRawType();
+                            }
+
+                            if(clazzToAdd != null) {
+                                regMap.put(clazzToAdd, new WrappedRegistry(field.get(null)));
                             }
                         }
                     }

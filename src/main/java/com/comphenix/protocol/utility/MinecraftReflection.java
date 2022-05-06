@@ -2289,10 +2289,11 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getBlockEntityTypeClass() {
-		return getMinecraftClass("world.level.block.entity.BlockEntityType", "BlockEntityType");
+		return getMinecraftClass("world.level.block.entity.BlockEntityType", "world.level.block.entity.TileEntityTypes", "TileEntityTypes");
 	}
 
 	public static Class<?> getBlockEntityInfoClass() {
-		return getMinecraftClass("network.protocol.game.ClientboundLevelChunkWithLightPacket$a", "ClientboundLevelChunkWithLightPacket$a");
+		return getMinecraftClass("network.protocol.game.ClientboundLevelChunkPacketData$BlockEntityInfo",
+				"network.protocol.game.ClientboundLevelChunkPacketData$a");
 	}
 }

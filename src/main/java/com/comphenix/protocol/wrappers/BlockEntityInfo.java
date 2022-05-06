@@ -125,12 +125,13 @@ public class BlockEntityInfo {
             return false;
         }
         BlockEntityInfo that = (BlockEntityInfo) o;
-        return sectionX == that.sectionX && sectionZ == that.sectionZ && y == that.y && Objects.equal(typeKey, that.typeKey) && Objects.equal(additionalData, that.additionalData);
+        return sectionX == that.sectionX && sectionZ == that.sectionZ && y == that.y
+                && Objects.equal(typeKey.getFullKey(), that.typeKey.getFullKey()) && Objects.equal(additionalData, that.additionalData);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(sectionX, sectionZ, y, typeKey, additionalData);
+        return Objects.hashCode(sectionX, sectionZ, y, typeKey.getFullKey(), additionalData);
     }
 
     @Override
@@ -170,7 +171,7 @@ public class BlockEntityInfo {
                 Object tagHandle = TAG_ACCESSOR.get(generic);
                 NbtCompound compound = tagHandle == null ? null : NbtFactory.fromNMSCompound(tagHandle);
 
-                return new BlockEntityInfo(packedXZ >> 4, packedXZ, (int) Y_ACCESSOR.get(generic),
+                return new BlockEntityInfo(packedXZ >> 4, packedXZ & 0xF, (int) Y_ACCESSOR.get(generic),
                         WrappedRegistry.getBlockEntityTypeRegistry().getKey(TYPE_ACCESSOR.get(generic)), compound);
             }
 
