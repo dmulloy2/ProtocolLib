@@ -925,6 +925,15 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for BlockEntityInfo in 1.18+
+     *
+     * @return The Structure Modifier
+     */
+    public StructureModifier<List<BlockEntityInfo>> getBlockEntityInfoLists() {
+        return getLists(BlockEntityInfo.getConverter());
+    }
+
+    /**
      * Retrieve a read/write structure for the Map class.
      * @param keyConverter Converter for map keys
      * @param valConverter Converter for map values

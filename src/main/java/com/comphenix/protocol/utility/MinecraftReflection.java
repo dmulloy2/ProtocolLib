@@ -2287,4 +2287,12 @@ public class MinecraftReflection {
 			return clazz;
 		}
 	}
+
+	public static Class<?> getBlockEntityTypeClass() {
+		return getMinecraftClass("world.level.block.entity.BlockEntityType", "BlockEntityType");
+	}
+
+	public static Class<?> getBlockEntityInfoClass() {
+		return getMinecraftClass("network.protocol.game.ClientboundLevelChunkWithLightPacket$a", "ClientboundLevelChunkWithLightPacket$a");
+	}
 }

@@ -88,4 +88,8 @@ public class WrappedRegistry {
     public static WrappedRegistry getDimensionRegistry() {
         return REGISTRY.get(MinecraftReflection.getDimensionManager());
     }
+
+    public static WrappedRegistry getBlockEntityTypeRegistry() {
+        return REGISTRY.get(MinecraftReflection.getBlockEntityTypeClass());
+    }
 }
