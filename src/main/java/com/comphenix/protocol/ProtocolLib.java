@@ -379,18 +379,6 @@ public class ProtocolLib extends JavaPlugin {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_METRICS_GENERIC_ERROR).error(e).callerParam(
 					this.statistics));
 		}
-
-		protocolManager.addPacketListener(new PacketAdapter(this, PacketType.Play.Server.MAP_CHUNK) {
-
-			@Override
-			public void onPacketSending(PacketEvent event) {
-				PacketContainer container = event.getPacket();
-
-				System.out.println("-----");
-				System.out.println(container.getLevelChunkData().read(0));
-				System.out.println(container.getLightUpdateData().read(0));
-			}
-		});
 	}
 
 	private void checkForIncompatibility(PluginManager manager) {
