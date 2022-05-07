@@ -25,12 +25,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * Wrapper classes for ClientboundLevelChunkWithLightPacket
+ *
  * @author Etrayed
  */
 public final class WrappedLevelChunkData {
 
     private WrappedLevelChunkData() {}
 
+    /**
+     * Wrapper for ClientboundLevelChunkPacketData
+     */
     public static class ChunkData {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getLevelChunkPacketDataClass();
@@ -39,12 +44,18 @@ public final class WrappedLevelChunkData {
 
         private final byte[] buffer;
 
-        private final List<BlockEntityInfo> blockEntityInfos;
+        private final List<BlockEntityInfo> blockEntityInfo;
 
-        public ChunkData(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfos) {
+        /**
+         *
+         * @param heightmapsTag   Heightmap information
+         * @param buffer          The actual chunk data
+         * @param blockEntityInfo All block entities
+         */
+        public ChunkData(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
             this.heightmapsTag = heightmapsTag;
             this.buffer = buffer;
-            this.blockEntityInfos = blockEntityInfos;
+            this.blockEntityInfo = blockEntityInfo;
         }
 
         public NbtCompound getHeightmapsTag() {
@@ -55,8 +66,8 @@ public final class WrappedLevelChunkData {
             return Unpooled.wrappedBuffer(buffer);
         }
 
-        public List<BlockEntityInfo> getBlockEntityInfos() {
-            return blockEntityInfos;
+        public List<BlockEntityInfo> getBlockEntityInfo() {
+            return blockEntityInfo;
         }
 
         @Override
@@ -68,12 +79,12 @@ public final class WrappedLevelChunkData {
                 return false;
             }
             ChunkData chunkData = (ChunkData) o;
-            return Objects.equal(heightmapsTag, chunkData.heightmapsTag) && Arrays.equals(buffer, chunkData.buffer) && Objects.equal(blockEntityInfos, chunkData.blockEntityInfos);
+            return Objects.equal(heightmapsTag, chunkData.heightmapsTag) && Arrays.equals(buffer, chunkData.buffer) && Objects.equal(blockEntityInfo, chunkData.blockEntityInfo);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(heightmapsTag, buffer, blockEntityInfos);
+            return Objects.hashCode(heightmapsTag, buffer, blockEntityInfo);
         }
 
         @Override
@@ -81,7 +92,7 @@ public final class WrappedLevelChunkData {
             return "ChunkData{" +
                     "heightmapsTag=" + heightmapsTag +
                     ", buffer=" + Arrays.toString(buffer) +
-                    ", blockEntityInfos=" + blockEntityInfos +
+                    ", blockEntityInfo=" + blockEntityInfo +
                     '}';
         }
 
@@ -120,7 +131,7 @@ public final class WrappedLevelChunkData {
                     Object generic = levelChunkPacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
 
                     //noinspection unchecked
-                    specific.blockEntityInfos.stream().map(BlockEntityInfo.getConverter()::getGeneric).forEach(((List) blockEntitiesDataAccessor.get(generic))::add);
+                    specific.blockEntityInfo.stream().map(BlockEntityInfo.getConverter()::getGeneric).forEach(((List) blockEntitiesDataAccessor.get(generic))::add);
 
                     return generic;
                 }
@@ -148,6 +159,9 @@ public final class WrappedLevelChunkData {
         }
     }
 
+    /**
+     * Wrapper for ClientboundLightUpdatePacketData
+     */
     public static class LightData {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getLightUpdatePacketDataClass();
@@ -415,9 +429,9 @@ public final class WrappedLevelChunkData {
             if(o == null || getClass() != o.getClass()) {
                 return false;
             }
-            BlockEntityInfo that = (BlockEntityInfo) o;
-            return sectionX == that.sectionX && sectionZ == that.sectionZ && y == that.y
-                    && Objects.equal(typeKey, that.typeKey) && Objects.equal(additionalData, that.additionalData);
+            BlockEntityInfo info = (BlockEntityInfo) o;
+            return sectionX == info.sectionX && sectionZ == info.sectionZ && y == info.y
+                    && Objects.equal(typeKey, info.typeKey) && Objects.equal(additionalData, info.additionalData);
         }
 
         @Override

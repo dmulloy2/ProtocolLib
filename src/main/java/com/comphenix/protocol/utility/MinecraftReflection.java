@@ -2289,11 +2289,11 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getLevelChunkPacketDataClass() {
-		return getMinecraftClass("network.protocol.game.ClientboundLevelChunkPacketData");
+		return getNullableNMS("network.protocol.game.ClientboundLevelChunkPacketData");
 	}
 
 	public static Class<?> getLightUpdatePacketDataClass() {
-		return getMinecraftClass("network.protocol.game.ClientboundLightUpdatePacketData");
+		return getNullableNMS("network.protocol.game.ClientboundLightUpdatePacketData");
 	}
 
 	public static Class<?> getBlockEntityTypeClass() {
@@ -2301,7 +2301,7 @@ public class MinecraftReflection {
 	}
 
 	public static Class<?> getBlockEntityInfoClass() {
-		return getMinecraftClass("network.protocol.game.ClientboundLevelChunkPacketData$BlockEntityInfo",
+		return getNullableNMS("network.protocol.game.ClientboundLevelChunkPacketData$BlockEntityInfo",
 				"network.protocol.game.ClientboundLevelChunkPacketData$a");
 	}
 }
