@@ -17,7 +17,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 
 class PacketTypeParser {
-	public final static Range<Integer> DEFAULT_MAX_RANGE = Range.closed(0, 255);
+	public static final Range<Integer> DEFAULT_MAX_RANGE = Range.closed(0, 255);
 	
 	private Sender side = null;
 	private Protocol protocol = null;
