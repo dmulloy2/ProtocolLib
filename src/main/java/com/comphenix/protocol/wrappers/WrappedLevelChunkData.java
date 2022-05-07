@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -7,7 +8,6 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
@@ -17,7 +17,6 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -106,24 +105,24 @@ public final class WrappedLevelChunkData {
 
                     ByteBuf byteBuf = Unpooled.buffer();
 
-                    try (DataOutputStream outputStream = new DataOutputStream(new ByteBufOutputStream(byteBuf))) {
+                    try (ByteBufOutputStream outputStream = new ByteBufOutputStream(byteBuf)) {
                         NbtBinarySerializer.DEFAULT.serialize(specific.heightmapsTag, outputStream);
-
-                        StreamSerializer.getDefault().serializeVarInt(outputStream, specific.buffer.length);
-
-                        byteBuf.writeBytes(specific.buffer);
-
-                        StreamSerializer.getDefault().serializeVarInt(outputStream, 0); // we will inject block entity info later
-
-                        Object generic = levelChunkPacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
-
-                        //noinspection unchecked
-                        specific.blockEntityInfos.stream().map(BlockEntityInfo.getConverter()::getGeneric).forEach(((List) blockEntitiesDataAccessor.get(generic))::add);
-
-                        return generic;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+
+                    WirePacket.writeVarInt(byteBuf, specific.buffer.length);
+
+                    byteBuf.writeBytes(specific.buffer);
+
+                    WirePacket.writeVarInt(byteBuf, 0); // we will inject block entity info later
+
+                    Object generic = levelChunkPacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
+
+                    //noinspection unchecked
+                    specific.blockEntityInfos.stream().map(BlockEntityInfo.getConverter()::getGeneric).forEach(((List) blockEntitiesDataAccessor.get(generic))::add);
+
+                    return generic;
                 }
 
                 @Override
@@ -247,34 +246,30 @@ public final class WrappedLevelChunkData {
 
                     byteBuf.writeBoolean(specific.trustEdges);
 
-                    try (DataOutputStream outputStream = new DataOutputStream(new ByteBufOutputStream(byteBuf))) {
-                        serializeBitSet(byteBuf, outputStream, specific.skyYMask);
-                        serializeBitSet(byteBuf, outputStream, specific.blockYMask);
-                        serializeBitSet(byteBuf, outputStream, specific.emptySkyYMask);
-                        serializeBitSet(byteBuf, outputStream, specific.emptyBlockYMask);
-                        serializeByteArrayList(byteBuf, outputStream, specific.skyUpdates);
-                        serializeByteArrayList(byteBuf, outputStream, specific.blockUpdates);
+                    serializeBitSet(byteBuf, specific.skyYMask);
+                    serializeBitSet(byteBuf, specific.blockYMask);
+                    serializeBitSet(byteBuf, specific.emptySkyYMask);
+                    serializeBitSet(byteBuf, specific.emptyBlockYMask);
+                    serializeByteArrayList(byteBuf, specific.skyUpdates);
+                    serializeByteArrayList(byteBuf, specific.blockUpdates);
 
-                        return lightUpdatePacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    return lightUpdatePacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
                 }
 
-                private void serializeByteArrayList(ByteBuf byteBuf, DataOutputStream outputStream, List<byte[]> bytes) throws IOException {
-                    StreamSerializer.getDefault().serializeVarInt(outputStream, bytes.size());
+                private void serializeByteArrayList(ByteBuf byteBuf, List<byte[]> bytes) {
+                    WirePacket.writeVarInt(byteBuf, bytes.size());
 
                     for (byte[] entry : bytes) {
-                        StreamSerializer.getDefault().serializeVarInt(outputStream, entry.length);
+                        WirePacket.writeVarInt(byteBuf, entry.length);
 
                         byteBuf.writeBytes(entry);
                     }
                 }
 
-                private void serializeBitSet(ByteBuf byteBuf, DataOutputStream outputStream, BitSet bitSet) throws IOException {
+                private void serializeBitSet(ByteBuf byteBuf, BitSet bitSet) {
                     long[] toSerialize = bitSet.toLongArray();
 
-                    StreamSerializer.getDefault().serializeVarInt(outputStream, toSerialize.length);
+                    WirePacket.writeVarInt(byteBuf, toSerialize.length);
 
                     for (long l : toSerialize) {
                         byteBuf.writeLong(l);
