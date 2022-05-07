@@ -42,7 +42,7 @@ final class RangeParser {
 	 * @return The parsed ranges.
 	 */
 	public static List<Range<Integer>> getRanges(String text, Range<Integer> legalRange) {
-		return getRanges(new ArrayDeque<String>(Arrays.asList(text)), legalRange);
+		return getRanges(new ArrayDeque<>(Arrays.asList(text)), legalRange);
 	}
 	
 	/**
@@ -53,7 +53,7 @@ final class RangeParser {
 	 */
 	public static List<Range<Integer>> getRanges(Deque<String> input, Range<Integer> legalRange) {
 		List<String> tokens = tokenizeInput(input);
-		List<Range<Integer>> ranges = new ArrayList<Range<Integer>>();
+		List<Range<Integer>> ranges = new ArrayList<>();
 		
 		for (int i = 0; i < tokens.size(); i++) {
 			Range<Integer> range;
@@ -96,7 +96,7 @@ final class RangeParser {
 	 * @return A simplified list of ranges.
 	 */
 	private static List<Range<Integer>> simplify(List<Range<Integer>> ranges, int maximum) {
-		List<Range<Integer>> result = new ArrayList<Range<Integer>>();
+		List<Range<Integer>> result = new ArrayList<>();
 		boolean[] set = new boolean[maximum + 1];
 		int start = -1;
 		
@@ -125,7 +125,7 @@ final class RangeParser {
 	}
 	
 	private static List<String> tokenizeInput(Deque<String> input) {
-		List<String> tokens = new ArrayList<String>();
+		List<String> tokens = new ArrayList<>();
 		
 		// Tokenize the input
 		while (!input.isEmpty()) {
