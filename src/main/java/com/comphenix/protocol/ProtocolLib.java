@@ -22,6 +22,9 @@ import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
@@ -376,6 +379,18 @@ public class ProtocolLib extends JavaPlugin {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_METRICS_GENERIC_ERROR).error(e).callerParam(
 					this.statistics));
 		}
+
+		protocolManager.addPacketListener(new PacketAdapter(this, PacketType.Play.Server.MAP_CHUNK) {
+
+			@Override
+			public void onPacketSending(PacketEvent event) {
+				PacketContainer container = event.getPacket();
+
+				System.out.println("-----");
+				System.out.println(container.getLevelChunkData().read(0));
+				System.out.println(container.getLightUpdateData().read(0));
+			}
+		});
 	}
 
 	private void checkForIncompatibility(PluginManager manager) {
