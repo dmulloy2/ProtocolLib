@@ -32,7 +32,9 @@ import com.google.common.collect.Range;
  * 
  * @author Kristian
  */
-class RangeParser {
+final class RangeParser {
+	private RangeParser() {}
+
 	/**
 	 * Parse a range from a given text.
 	 * @param text - the text.
