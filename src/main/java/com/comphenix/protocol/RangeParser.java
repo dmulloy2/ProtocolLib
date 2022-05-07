@@ -45,9 +45,7 @@ class RangeParser {
 	
 	/**
 	 * Parse ranges from an array of elements.
-	 * @param args - array of elements.
-	 * @param offset - beginning offset.
-	 * @param lastIndex - the last index of the array to read.
+	 * @param input the input to parse the ranges from
 	 * @param legalRange - range of legal values.
 	 * @return The parsed ranges.
 	 */
