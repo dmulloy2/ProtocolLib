@@ -17,7 +17,6 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
@@ -695,7 +694,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 * @return Every packet type.
 	 */
 	public static Iterable<PacketType> values() {
-		List<Iterable<? extends PacketType>> sources = Lists.newArrayList();
+		final List<Iterable<? extends PacketType>> sources = new ArrayList<>();
+
 		sources.add(Handshake.Client.getInstance());
 		sources.add(Handshake.Server.getInstance());
 		sources.add(Play.Client.getInstance());

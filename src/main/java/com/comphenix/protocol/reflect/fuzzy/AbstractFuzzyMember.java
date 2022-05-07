@@ -2,13 +2,13 @@ package com.comphenix.protocol.reflect.fuzzy;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.Maps;
 
 /**
  * Represents a matcher that matches members.
@@ -251,7 +251,7 @@ public abstract class AbstractFuzzyMember<T extends Member> extends AbstractFuzz
 	 * @return A modifiable key-value view.
 	 */
 	protected Map<String, Object> getKeyValueView() {
-		Map<String, Object> map = Maps.newLinkedHashMap();
+		final Map<String, Object> map = new LinkedHashMap<>();
 		
 		// Build our representation
 		if (modifiersRequired != Integer.MAX_VALUE || modifiersBanned != 0) {

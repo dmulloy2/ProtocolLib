@@ -1,9 +1,11 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +13,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**
@@ -33,12 +34,12 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 	 *
 	 */
 	public static class Builder {
-		private List<AbstractFuzzyMatcher<Field>> fieldContracts = Lists.newArrayList();
-		private List<AbstractFuzzyMatcher<MethodInfo>> methodContracts = Lists.newArrayList();
-		private List<AbstractFuzzyMatcher<MethodInfo>> constructorContracts = Lists.newArrayList();
+		private final List<AbstractFuzzyMatcher<Field>> fieldContracts = new ArrayList<>();
+		private final List<AbstractFuzzyMatcher<MethodInfo>> methodContracts = new ArrayList<>();
+		private final List<AbstractFuzzyMatcher<MethodInfo>> constructorContracts = new ArrayList<>();
 		
-		private List<AbstractFuzzyMatcher<Class<?>>> baseclassContracts = Lists.newArrayList();
-		private List<AbstractFuzzyMatcher<Class<?>>> interfaceContracts = Lists.newArrayList();
+		private final List<AbstractFuzzyMatcher<Class<?>>> baseclassContracts = new ArrayList<>();
+		private final List<AbstractFuzzyMatcher<Class<?>>> interfaceContracts = new ArrayList<>();
 		
 		/**
 		 * Add a new field contract.
@@ -305,7 +306,7 @@ public class FuzzyClassContract extends AbstractFuzzyMatcher<Class<?>> {
 	
 	@Override
 	public String toString() {
-		Map<String, Object> params = Maps.newLinkedHashMap();
+		final Map<String, Object> params = new LinkedHashMap<>();
 		
 		if (fieldContracts.size() > 0) {
 			params.put("fields", fieldContracts);

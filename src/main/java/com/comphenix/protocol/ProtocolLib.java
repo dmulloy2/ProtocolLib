@@ -34,9 +34,9 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.NettyVersion;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
@@ -235,7 +235,7 @@ public class ProtocolLib extends JavaPlugin {
 	private ErrorReporter getFilteredReporter(ErrorReporter reporter) {
 		return new DelegatedErrorReporter(reporter) {
 			private int lastModCount = -1;
-			private Set<String> reports = Sets.newHashSet();
+			private Set<String> reports = new HashSet<>();
 
 			@Override
 			protected Report filterReport(Object sender, Report report, boolean detailed) {
@@ -245,7 +245,7 @@ public class ProtocolLib extends JavaPlugin {
 
 					if (config != null && config.getModificationCount() != this.lastModCount) {
 						// Update our cached set again
-						this.reports = Sets.newHashSet(config.getSuppressedReports());
+						this.reports = new HashSet<>(config.getSuppressedReports());
 						this.lastModCount = config.getModificationCount();
 					}
 

@@ -2,10 +2,10 @@ package com.comphenix.protocol.reflect;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod.AsmOpcodes;
-import com.google.common.collect.Lists;
 import net.bytebuddy.jar.asm.ClassReader;
 import net.bytebuddy.jar.asm.ClassVisitor;
 import net.bytebuddy.jar.asm.MethodVisitor;
@@ -109,7 +109,7 @@ public class ClassAnalyser {
 	 */
 	private List<AsmMethod> getMethodCalls(Class<?> clazz, Method method) throws IOException {
 		final ClassReader reader = new ClassReader(clazz.getCanonicalName());
-		final List<AsmMethod> output = Lists.newArrayList();
+		final List<AsmMethod> output = new ArrayList<>();
 		
 		// The method we are looking for
 		final String methodName = method.getName();

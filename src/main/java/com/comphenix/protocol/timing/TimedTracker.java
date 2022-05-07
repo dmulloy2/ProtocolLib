@@ -1,7 +1,6 @@
 package com.comphenix.protocol.timing;
 
 import com.comphenix.protocol.PacketType;
-import com.google.common.collect.Maps;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,7 +59,7 @@ public class TimedTracker {
 	 * @return The map of statistics.
 	 */
 	public synchronized Map<PacketType, StatisticsStream> getStatistics() {
-		Map<PacketType, StatisticsStream> clone = Maps.newHashMap();
+		final Map<PacketType, StatisticsStream> clone = new HashMap<>();
 
 		for (Entry<PacketType, StatisticsStream> entry : this.packets.entrySet()) {
 			clone.put(

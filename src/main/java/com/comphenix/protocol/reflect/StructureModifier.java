@@ -36,7 +36,6 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
@@ -58,7 +57,7 @@ public class StructureModifier<TField> {
 	
 	// The fields to read in order
 	protected Class fieldType;
-	protected List<Field> data = new ArrayList<Field>();
+	protected List<Field> data = new ArrayList<>();
 	
 	// Improved default values
 	protected Map<Field, Integer> defaultFields;
@@ -76,7 +75,7 @@ public class StructureModifier<TField> {
 	private static DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
 
 	private static DefaultInstances getDefaultGenerator() {
-		List<InstanceProvider> providers = Lists.newArrayList();
+		final List<InstanceProvider> providers = new ArrayList<>();
 		
 		// Prevent certain classes from being generated
 		providers.add(new BannedGenerator(MinecraftReflection.getItemStackClass(), MinecraftReflection.getBlockClass()));
@@ -120,10 +119,9 @@ public class StructureModifier<TField> {
 	 */
 	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault, boolean useStructureCompiler) {
 		List<Field> fields = getFields(targetType, superclassExclude);
-		Map<Field, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<Field, Integer>();
+		Map<Field, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<>();
 		
-		initialize(targetType, Object.class, fields, defaults, null,
-				   new ConcurrentHashMap<Class, StructureModifier>(), useStructureCompiler);
+		initialize(targetType, Object.class, fields, defaults, null, new ConcurrentHashMap<>(), useStructureCompiler);
 	}
 	
 	/**
@@ -510,8 +508,8 @@ public class StructureModifier<TField> {
 		
 		// Do we need to update the cache?
 		if (result == null) {
-			List<Field> filtered = new ArrayList<Field>();
-			Map<Field, Integer> defaults = new HashMap<Field, Integer>();
+			List<Field> filtered = new ArrayList<>();
+			Map<Field, Integer> defaults = new HashMap<>();
 			int index = 0;
 			
 			for (Field field : data) {
@@ -607,9 +605,9 @@ public class StructureModifier<TField> {
 			Class fieldType, List<Field> filtered,
 			Map<Field, Integer> defaults, EquivalentConverter<T> converter) {
 		
-		StructureModifier<T> result = new StructureModifier<T>();
+		StructureModifier<T> result = new StructureModifier<>();
 		result.initialize(targetType, fieldType, filtered, defaults,
-						  converter, new ConcurrentHashMap<Class, StructureModifier>(),
+						  converter, new ConcurrentHashMap<>(),
 						  useStructureCompiler);
 		return result;
 	}
@@ -620,7 +618,7 @@ public class StructureModifier<TField> {
 	 * @return Structure modifier with the new target.
 	 */
 	public StructureModifier<TField> withTarget(Object target) {
-		StructureModifier<TField> copy = new StructureModifier<TField>();
+		final StructureModifier<TField> copy = new StructureModifier<>();
 		
 		// Create a new instance
 		copy.initialize(this);
@@ -676,7 +674,7 @@ public class StructureModifier<TField> {
 	 * @throws FieldAccessException Unable to access one or all of the fields
 	 */
 	public List<TField> getValues() throws FieldAccessException {
-		List<TField> values = new ArrayList<TField>();
+		final List<TField> values = new ArrayList<>();
 		
 		for (int i = 0; i < size(); i++) {
 			values.add(read(i));
@@ -687,8 +685,7 @@ public class StructureModifier<TField> {
 	
 	// Used to generate plausible default values
 	private static Map<Field, Integer> generateDefaultFields(List<Field> fields) {
-		
-		Map<Field, Integer> requireDefaults = new HashMap<Field, Integer>();
+		final Map<Field, Integer> requireDefaults = new HashMap<>();
 		DefaultInstances generator = DEFAULT_GENERATOR;
 		int index = 0;
 		
@@ -714,7 +711,7 @@ public class StructureModifier<TField> {
 	
 	// Used to filter out irrelevant fields
 	private static List<Field> getFields(Class type, Class superclassExclude) {
-		List<Field> result = new ArrayList<Field>();
+		final List<Field> result = new ArrayList<>();
 		
 		// Retrieve every private and public field
 		for (Field field : FuzzyReflection.fromClass(type, true).getDeclaredFields(superclassExclude)) {

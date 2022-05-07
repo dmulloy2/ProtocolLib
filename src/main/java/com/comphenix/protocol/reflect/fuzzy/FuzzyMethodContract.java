@@ -1,5 +1,6 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +11,6 @@ import javax.annotation.Nonnull;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
 /**
  * Represents a contract for matching methods or constructors.
  * 
@@ -394,8 +393,8 @@ public class FuzzyMethodContract extends AbstractFuzzyMember<MethodInfo> {
 	
 	private FuzzyMethodContract() {
 		// Only allow construction from the builder
-		paramMatchers = Lists.newArrayList();
-		exceptionMatchers = Lists.newArrayList();
+		paramMatchers = new ArrayList<>();
+		exceptionMatchers = new ArrayList<>();
 	}
 	
 	private FuzzyMethodContract(FuzzyMethodContract other) {

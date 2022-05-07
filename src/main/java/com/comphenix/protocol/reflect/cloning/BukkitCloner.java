@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -39,7 +40,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
  * @author Kristian
  */
 public class BukkitCloner implements Cloner {
-	private static final Map<Class<?>, Function<Object, Object>> CLONERS = Maps.newConcurrentMap();
+	private static final Map<Class<?>, Function<Object, Object>> CLONERS = new ConcurrentHashMap<>();
 
 	private static void fromWrapper(Supplier<Class<?>> getClass, Function<Object, ClonableWrapper> fromHandle) {
 		try {

@@ -1,10 +1,10 @@
 package com.comphenix.protocol.collections;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 
 /**
  * Represents a very quick integer-based lookup map, with a fixed key space size.
@@ -119,7 +119,7 @@ public class IntegerMap<T> {
 	 * @return The Integer map.
 	 */
 	public Map<Integer, Object> toMap() {
-		Map<Integer, Object> map = Maps.newHashMap();
+		final Map<Integer, Object> map = new HashMap<>();
 		
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] != null) {

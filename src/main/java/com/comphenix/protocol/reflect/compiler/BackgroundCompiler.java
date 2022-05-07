@@ -20,6 +20,7 @@ package com.comphenix.protocol.reflect.compiler;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -35,7 +36,6 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.compiler.StructureCompiler.StructureKey;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
@@ -66,7 +66,7 @@ public class BackgroundCompiler {
 	private static BackgroundCompiler backgroundCompiler;
 	
 	// Classes we're currently compiling
-	private Map<StructureKey, List<CompileListener<?>>> listeners = Maps.newHashMap();
+	private Map<StructureKey, List<CompileListener<?>>> listeners = new HashMap<>();
 	private Object listenerLock = new Object();
 	
 	private StructureCompiler compiler;
