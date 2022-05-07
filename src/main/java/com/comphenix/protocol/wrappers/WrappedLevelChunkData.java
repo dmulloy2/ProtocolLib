@@ -58,14 +58,29 @@ public final class WrappedLevelChunkData {
             this.blockEntityInfo = blockEntityInfo;
         }
 
+        /**
+         * The heightmap of this chunk.
+         *
+         * @return an NBT-Tag
+         */
         public NbtCompound getHeightmapsTag() {
             return heightmapsTag;
         }
 
+        /**
+         * The actual structural data of this chunk as bytes.
+         *
+         * @return a byte array containing the chunks structural data.
+         */
         public ByteBuf getBuffer() {
             return Unpooled.wrappedBuffer(buffer);
         }
 
+        /**
+         * All block entities of this chunk.
+         *
+         * @return a list containing {@link  BlockEntityInfo}
+         */
         public List<BlockEntityInfo> getBlockEntityInfo() {
             return blockEntityInfo;
         }
@@ -172,6 +187,16 @@ public final class WrappedLevelChunkData {
 
         private final boolean trustEdges;
 
+        /**
+         *
+         * @param skyYMask        the sky light mask
+         * @param blockYMask      the block light mask
+         * @param emptySkyYMask   the empty sky light mask
+         * @param emptyBlockYMask the empty block light mask
+         * @param skyUpdates      a list of sky light arrays
+         * @param blockUpdates    a list of block light arrays
+         * @param trustEdges      whether edges can be trusted for light updates
+         */
         public LightData(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
                          List<byte[]> skyUpdates, List<byte[]> blockUpdates, boolean trustEdges) {
             this.skyYMask = skyYMask;
@@ -183,30 +208,65 @@ public final class WrappedLevelChunkData {
             this.trustEdges = trustEdges;
         }
 
+        /**
+         * The sky light mask.
+         *
+         * @return a {@link BitSet}
+         */
         public BitSet getSkyYMask() {
             return skyYMask;
         }
 
+        /**
+         * The block light mask.
+         *
+         * @return a {@link BitSet}
+         */
         public BitSet getBlockYMask() {
             return blockYMask;
         }
 
+        /**
+         * The empty sky light mask.
+         *
+         * @return a {@link BitSet}
+         */
         public BitSet getEmptySkyYMask() {
             return emptySkyYMask;
         }
 
+        /**
+         * The empty block light mask.
+         *
+         * @return a {@link BitSet}
+         */
         public BitSet getEmptyBlockYMask() {
             return emptyBlockYMask;
         }
 
+        /**
+         * A list of sky light arrays.
+         *
+         * @return a list of byte arrays.
+         */
         public List<byte[]> getSkyUpdates() {
             return skyUpdates;
         }
 
+        /**
+         * A list of block light arrays.
+         *
+         * @return a list of byte arrays.
+         */
         public List<byte[]> getBlockUpdates() {
             return blockUpdates;
         }
 
+        /**
+         * Whether edges can be trusted for light updates or not.
+         *
+         * @return {@code true} if edges can be trusted, {@code false} otherwise.
+         */
         public boolean isTrustEdges() {
             return trustEdges;
         }
