@@ -20,6 +20,7 @@ package com.comphenix.protocol;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
@@ -42,7 +43,7 @@ final class RangeParser {
 	 * @return The parsed ranges.
 	 */
 	public static List<Range<Integer>> getRanges(String text, Range<Integer> legalRange) {
-		return getRanges(new ArrayDeque<>(Arrays.asList(text)), legalRange);
+		return getRanges(new ArrayDeque<>(Collections.singletonList(text)), legalRange);
 	}
 	
 	/**
