@@ -17,15 +17,6 @@ public class IntegerMap<T> {
 	private int size;
 	
 	/**
-	 * Construct a new integer map.
-	 * @param <T> Parameter type
-	 * @return A new integer map.
-	 */
-	public static <T> IntegerMap<T> newMap() {
-		return new IntegerMap<T>();
-	}
-	
-	/**
 	 * Construct a new integer map with a default capacity.
 	 */
 	public IntegerMap() {
