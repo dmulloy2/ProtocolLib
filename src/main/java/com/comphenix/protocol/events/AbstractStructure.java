@@ -925,12 +925,21 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieve a read/write structure for BlockEntityInfo in 1.18+
+     * Retrieve a read/write structure for LevelChunkPacketData in 1.18+
      *
      * @return The Structure Modifier
      */
-    public StructureModifier<List<BlockEntityInfo>> getBlockEntityInfoLists() {
-        return getLists(BlockEntityInfo.getConverter());
+    public StructureModifier<WrappedLevelChunkData.ChunkData> getLevelChunkData() {
+        return structureModifier.withType(WrappedLevelChunkData.ChunkData.class, WrappedLevelChunkData.ChunkData.getConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for LightUpdatePacketData in 1.18+
+     *
+     * @return The Structure Modifier
+     */
+    public StructureModifier<WrappedLevelChunkData.LightData> getLightUpdateData() {
+        return structureModifier.withType(WrappedLevelChunkData.LightData.class, WrappedLevelChunkData.LightData.getConverter());
     }
 
     /**
