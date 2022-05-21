@@ -7,6 +7,7 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketPostListener;
 import com.comphenix.protocol.events.ScheduledPacket;
+
 import java.util.Set;
 
 /**

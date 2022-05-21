@@ -1,19 +1,15 @@
 package com.comphenix.protocol.wrappers.nbt.io;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.lang.reflect.Method;
-
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.nbt.NbtBase;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.comphenix.protocol.wrappers.nbt.NbtList;
-import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
+import com.comphenix.protocol.wrappers.nbt.*;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.lang.reflect.Method;
 
 public class NbtBinarySerializer {
 	private static final Class<?> NBT_BASE_CLASS = MinecraftReflection.getNBTBaseClass();

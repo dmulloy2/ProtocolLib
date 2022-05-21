@@ -16,12 +16,12 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-import java.util.Locale;
-
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+
+import java.lang.reflect.Constructor;
+import java.util.Locale;
 
 /**
  * Represents a MinecraftKey in 1.9.

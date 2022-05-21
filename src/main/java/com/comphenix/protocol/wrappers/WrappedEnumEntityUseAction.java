@@ -1,8 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -14,8 +11,10 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
-
 import org.bukkit.util.Vector;
+
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 
 /**
  * Represents an entity used action used in the UseEntity packet sent by the client.

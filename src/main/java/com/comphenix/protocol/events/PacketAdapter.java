@@ -22,9 +22,10 @@ import com.comphenix.protocol.injector.GamePhase;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import java.util.Set;
-import javax.annotation.Nonnull;
 import org.bukkit.plugin.Plugin;
+
+import javax.annotation.Nonnull;
+import java.util.Set;
 
 /**
  * Represents a packet listener with useful constructors.

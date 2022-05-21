@@ -1,14 +1,14 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.wrappers.collection.ConvertedSet;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import com.comphenix.protocol.wrappers.collection.ConvertedSet;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset;
 
 /**
  * Represents wrappers for Minecraft's own version of Guava.

@@ -14,28 +14,20 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
-import com.comphenix.protocol.utility.ByteBuddyGenerated;
-import com.comphenix.protocol.utility.MinecraftFields;
-import com.comphenix.protocol.utility.MinecraftMethods;
-import com.comphenix.protocol.utility.MinecraftProtocolVersion;
-import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.*;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.util.AttributeKey;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NettyChannelInjector implements Injector {
 

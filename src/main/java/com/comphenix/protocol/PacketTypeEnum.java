@@ -17,16 +17,13 @@
 
 package com.comphenix.protocol;
 
+import com.google.common.collect.Sets;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-
-import com.comphenix.protocol.PacketType;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Sets;
 
 /**
  * Represents a more modern object-based enum.

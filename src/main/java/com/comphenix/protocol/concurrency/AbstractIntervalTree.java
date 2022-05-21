@@ -17,14 +17,10 @@
 
 package com.comphenix.protocol.concurrency;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Set;
-import java.util.TreeMap;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.Range;
+
+import java.util.*;
 
 /**
  * Represents a generic store of intervals and associated values. No two intervals

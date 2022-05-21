@@ -17,15 +17,14 @@
 
 package com.comphenix.protocol.wrappers.collection;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
 
 /**
  * Represents a map that wraps another map by transforming the entries going in and out.

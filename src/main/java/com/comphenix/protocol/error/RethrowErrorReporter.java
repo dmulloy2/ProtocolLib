@@ -1,9 +1,8 @@
 package com.comphenix.protocol.error;
 
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.error.Report.ReportBuilder;
 import com.google.common.base.Joiner;
+import org.bukkit.plugin.Plugin;
 
 /**
  * Represents an error reporter that rethrows every exception instead.

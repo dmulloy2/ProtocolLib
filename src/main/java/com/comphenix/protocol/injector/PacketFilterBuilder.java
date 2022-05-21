@@ -3,9 +3,10 @@ package com.comphenix.protocol.injector;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import javax.annotation.Nonnull;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
+
+import javax.annotation.Nonnull;
 
 public class PacketFilterBuilder {
 

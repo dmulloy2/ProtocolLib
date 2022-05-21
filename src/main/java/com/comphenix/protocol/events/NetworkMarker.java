@@ -3,11 +3,12 @@ package com.comphenix.protocol.events;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
 import com.google.common.base.Preconditions;
+import org.bukkit.entity.Player;
+
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import javax.annotation.Nonnull;
-import org.bukkit.entity.Player;
 
 /**
  * Marker containing the serialized packet data seen from the network, or output handlers that will serialize the

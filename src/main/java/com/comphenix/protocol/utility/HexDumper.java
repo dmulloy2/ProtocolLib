@@ -1,13 +1,13 @@
 package com.comphenix.protocol.utility;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.base.Preconditions;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Represents a class for printing hexadecimal dumps.

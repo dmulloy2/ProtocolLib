@@ -1,8 +1,8 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
-import java.util.regex.Pattern;
-
 import com.google.common.base.Objects;
+
+import java.util.regex.Pattern;
 
 /**
  * Determine if a class matches based on its name using a regular expression.

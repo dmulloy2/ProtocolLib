@@ -1,11 +1,10 @@
 package com.comphenix.protocol.utility;
 
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.base.Preconditions;
+import org.bukkit.entity.Player;
 
 /**
  * Retrieve the content of well-known fields in Minecraft.

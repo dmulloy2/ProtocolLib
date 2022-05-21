@@ -1,5 +1,8 @@
 package com.comphenix.protocol.utility;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
+
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -8,9 +11,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.ComparisonChain;
 
 /**
  * Used to parse a snapshot version.

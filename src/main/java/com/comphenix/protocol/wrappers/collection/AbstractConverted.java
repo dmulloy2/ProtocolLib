@@ -17,9 +17,9 @@
 
 package com.comphenix.protocol.wrappers.collection;
 
-import javax.annotation.Nullable;
-
 import com.google.common.base.Function;
+
+import javax.annotation.Nullable;
 
 /**
  * Represents an object that transform elements of type VInner to type VOuter and back again.

@@ -4,8 +4,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import java.util.Set;
 import org.bukkit.entity.Player;
+
+import java.util.Set;
 
 /**
  * Represents an incoming packet injector.

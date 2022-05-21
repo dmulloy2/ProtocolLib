@@ -6,7 +6,6 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
-
 import org.bukkit.util.Vector;
 
 public class MovingObjectPositionBlock implements Cloneable {

@@ -17,15 +17,11 @@
 
 package com.comphenix.protocol;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.List;
-
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
+
+import java.util.*;
 
 /**
  * Used to parse ranges in CommandPacket.

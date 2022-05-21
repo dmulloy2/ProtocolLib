@@ -17,6 +17,8 @@
 
 package com.comphenix.protocol.reflect.cloning;
 
+import com.google.common.collect.BiMap;
+
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -24,8 +26,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import com.google.common.collect.BiMap;
 
 /**
  * Attempts to clone collection and array classes.

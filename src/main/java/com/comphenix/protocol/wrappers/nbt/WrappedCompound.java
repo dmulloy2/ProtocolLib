@@ -17,14 +17,14 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
+import com.comphenix.protocol.wrappers.collection.ConvertedMap;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+
 import java.io.DataOutput;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import com.comphenix.protocol.wrappers.collection.ConvertedMap;
-import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
 /**
  * A concrete implementation of an NbtCompound that wraps an underlying NMS Compound.

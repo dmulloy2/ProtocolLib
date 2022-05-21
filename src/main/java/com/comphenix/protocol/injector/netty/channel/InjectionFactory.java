@@ -24,11 +24,12 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.MapMaker;
 import io.netty.channel.Channel;
-import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nonnull;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+
+import javax.annotation.Nonnull;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Represents an injector factory.

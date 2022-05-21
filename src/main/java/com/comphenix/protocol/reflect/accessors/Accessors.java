@@ -1,13 +1,13 @@
 package com.comphenix.protocol.reflect.accessors;
 
+import com.comphenix.protocol.reflect.ExactReflection;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.google.common.base.Joiner;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
-
-import com.comphenix.protocol.reflect.ExactReflection;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.google.common.base.Joiner;
 
 public final class Accessors {
 	/**

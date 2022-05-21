@@ -16,16 +16,14 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-
-import org.bukkit.Location;
-import org.bukkit.World;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import org.bukkit.Location;
+import org.bukkit.World;
+
+import java.lang.reflect.Constructor;
 
 /**
  * Represents a single block change.

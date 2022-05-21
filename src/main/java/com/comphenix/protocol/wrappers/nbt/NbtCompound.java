@@ -1,11 +1,10 @@
 package com.comphenix.protocol.wrappers.nbt;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import javax.annotation.Nonnull;
 
 /**
  * Represents a mapping of arbitrary NBT elements and their unique names.

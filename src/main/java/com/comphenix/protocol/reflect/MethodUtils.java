@@ -17,6 +17,8 @@ package com.comphenix.protocol.reflect;
  * limitations under the License.
  */
 
+import org.bukkit.Bukkit;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -26,8 +28,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
-
-import org.bukkit.Bukkit;
 
 /**
  * <p> Utility reflection methods focussed on methods in general rather than properties in particular. </p>

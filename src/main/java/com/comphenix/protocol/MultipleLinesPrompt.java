@@ -1,11 +1,6 @@
 package com.comphenix.protocol;
 
-import org.bukkit.conversations.Conversation;
-import org.bukkit.conversations.ConversationCanceller;
-import org.bukkit.conversations.ConversationContext;
-import org.bukkit.conversations.ExactMatchConversationCanceller;
-import org.bukkit.conversations.Prompt;
-import org.bukkit.conversations.StringPrompt;
+import org.bukkit.conversations.*;
 
 /**
  * Represents a conversation prompt that accepts a list of lines.

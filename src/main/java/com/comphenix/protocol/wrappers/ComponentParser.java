@@ -19,8 +19,8 @@ package com.comphenix.protocol.wrappers;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * Handles component parsing in 1.8

@@ -17,18 +17,17 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.io.DataOutput;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.annotation.Nullable;
-
 import com.comphenix.protocol.wrappers.collection.ConvertedList;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+
+import javax.annotation.Nullable;
+import java.io.DataOutput;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Represents a concrete implementation of an NBT list that wraps an underlying NMS list.

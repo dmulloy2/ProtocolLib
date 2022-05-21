@@ -1,16 +1,16 @@
 package com.comphenix.protocol.wrappers;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.wrappers.collection.ConvertedSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Wrap multimap and multiset from another version of Guava by using reflection.

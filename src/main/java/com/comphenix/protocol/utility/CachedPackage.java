@@ -16,12 +16,12 @@
  */
 package com.comphenix.protocol.utility;
 
-import java.util.Map;
-import java.util.Optional;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Represents a dynamic package and an arbitrary number of cached classes.

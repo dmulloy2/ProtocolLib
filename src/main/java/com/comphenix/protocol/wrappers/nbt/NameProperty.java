@@ -1,9 +1,9 @@
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.util.Map;
-
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.google.common.collect.Maps;
+
+import java.util.Map;
 
 public abstract class NameProperty {
 	private static final Map<Class<?>, StructureModifier<String>> MODIFIERS = Maps.newConcurrentMap();

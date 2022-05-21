@@ -23,6 +23,9 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.Pair;
 import io.netty.channel.ChannelFuture;
+import org.bukkit.Server;
+import org.bukkit.plugin.Plugin;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -30,8 +33,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.bukkit.Server;
-import org.bukkit.plugin.Plugin;
 
 public class NetworkManagerInjector implements ChannelListener {
 

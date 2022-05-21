@@ -1,8 +1,8 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
-import java.util.Set;
-
 import com.google.common.base.Objects;
+
+import java.util.Set;
 
 /**
  * Represents a class matcher that checks for equality using a given set of classes.

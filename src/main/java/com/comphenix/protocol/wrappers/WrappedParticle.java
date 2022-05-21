@@ -1,19 +1,18 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Modifier;
-
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.mojang.math.Vector3fa;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.inventory.ItemStack;
+
+import java.lang.reflect.Modifier;
 
 /**
  * Represents an immutable wrapped ParticleParam in 1.13

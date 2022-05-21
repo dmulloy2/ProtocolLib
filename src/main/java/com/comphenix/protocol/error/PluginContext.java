@@ -1,13 +1,12 @@
 package com.comphenix.protocol.error;
 
-import java.io.File;
-import java.net.URLDecoder;
-import java.security.CodeSource;
-
+import com.google.common.base.Preconditions;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
-import com.google.common.base.Preconditions;
+import java.io.File;
+import java.net.URLDecoder;
+import java.security.CodeSource;
 
 public final class PluginContext {
 	// Determine plugin folder

@@ -1,14 +1,14 @@
 package com.comphenix.protocol.utility;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalListener;
+
+import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents a Guava CacheBuilder that is compatible with both Guava 10 and 13.

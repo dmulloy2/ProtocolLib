@@ -1,18 +1,18 @@
 package com.comphenix.protocol.timing;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Date;
-import java.util.Map;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Date;
+import java.util.Map;
 
 public class TimingReportGenerator {
 	private static final String NEWLINE = System.getProperty("line.separator");

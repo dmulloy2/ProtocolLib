@@ -17,13 +17,13 @@
 
 package com.comphenix.protocol.wrappers.collection;
 
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 
 /**
  * Represents a collection that wraps another collection by transforming the elements going in and out.

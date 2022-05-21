@@ -1,10 +1,10 @@
 package com.comphenix.protocol.utility;
 
+import com.google.common.collect.Maps;
+
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-
-import com.google.common.collect.Maps;
 
 /**
  * A lookup of the associated protocol version of a given Minecraft server.

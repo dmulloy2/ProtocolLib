@@ -4,8 +4,8 @@ import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.ListenerInvoker;
-import com.comphenix.protocol.injector.packet.AbstractPacketInjector;
 import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.packet.AbstractPacketInjector;
 import org.bukkit.entity.Player;
 
 final class NetworkManagerPacketInjector extends AbstractPacketInjector {

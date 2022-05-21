@@ -17,14 +17,14 @@
 
 package com.comphenix.protocol.reflect.compiler;
 
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.Set;
-
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.google.common.collect.Sets;
+
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a compiled structure modifier.

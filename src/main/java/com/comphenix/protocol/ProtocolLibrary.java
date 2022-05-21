@@ -16,14 +16,13 @@
  */
 package com.comphenix.protocol;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * The main entry point for ProtocolLib.

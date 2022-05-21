@@ -16,6 +16,19 @@
  */
 package com.comphenix.protocol;
 
+import com.comphenix.protocol.error.DetailedErrorReporter;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.timing.TimedListenerManager;
+import com.comphenix.protocol.timing.TimingReportGenerator;
+import com.comphenix.protocol.updater.Updater;
+import com.comphenix.protocol.updater.Updater.UpdateType;
+import com.comphenix.protocol.utility.Closer;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,20 +40,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-
-import com.comphenix.protocol.error.DetailedErrorReporter;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimingReportGenerator;
-import com.comphenix.protocol.updater.Updater;
-import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.Closer;
-
 /**
  * Handles the "protocol" administration command.
  *
@@ -51,7 +50,7 @@ class CommandProtocol extends CommandBase {
 	 * Name of this command.
 	 */
 	public static final String NAME = "protocol";
-	
+
 	private Plugin plugin;
 	private Updater updater;
 	private ProtocolConfig config;

@@ -1,10 +1,6 @@
 package com.comphenix.protocol.reflect.cloning;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 
 /**
  * Represents a cloner that can clone any class that implements Serializable.

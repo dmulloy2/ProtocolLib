@@ -2,8 +2,9 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.injector.temporary.MinimalInjector;
-import java.net.SocketAddress;
 import org.bukkit.entity.Player;
+
+import java.net.SocketAddress;
 
 final class NettyChannelMinimalInjector implements MinimalInjector {
 

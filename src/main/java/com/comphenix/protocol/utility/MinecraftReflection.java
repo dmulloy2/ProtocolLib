@@ -17,15 +17,37 @@
 
 package com.comphenix.protocol.utility;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolLogger;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.comphenix.protocol.reflect.ClassAnalyser;
+import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.*;
+import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException;
+import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.comphenix.protocol.wrappers.nbt.NbtType;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import javax.annotation.Nonnull;
 import java.io.DataInputStream;
 import java.io.DataOutput;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,41 +57,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolLogger;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.injector.BukkitUnwrapper;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.reflect.ClassAnalyser;
-import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException;
-import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.comphenix.protocol.wrappers.nbt.NbtType;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.

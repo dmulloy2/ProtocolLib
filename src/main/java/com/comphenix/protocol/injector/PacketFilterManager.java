@@ -7,14 +7,7 @@ import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.ListenerOptions;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
@@ -26,12 +19,6 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
 import io.netty.channel.Channel;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -46,6 +33,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+
+import java.util.*;
 
 public class PacketFilterManager implements ListenerInvoker, InternalManager {
 

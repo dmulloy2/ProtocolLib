@@ -3,11 +3,8 @@ package com.comphenix.protocol.injector.netty.manager;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
+
+import java.util.*;
 
 @SuppressWarnings("NullableProblems")
 final class ListeningList implements List<Object> {

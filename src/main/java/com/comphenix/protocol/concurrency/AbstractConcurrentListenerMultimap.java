@@ -21,6 +21,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.google.common.collect.Iterables;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

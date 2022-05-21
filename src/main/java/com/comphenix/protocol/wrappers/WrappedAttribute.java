@@ -1,10 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-import java.util.*;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -18,6 +13,11 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.lang.reflect.Constructor;
+import java.util.*;
 
 
 /**

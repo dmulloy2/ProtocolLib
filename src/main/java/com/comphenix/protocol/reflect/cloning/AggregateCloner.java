@@ -17,17 +17,16 @@
 
 package com.comphenix.protocol.reflect.cloning;
 
-import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.List;
-
-import javax.annotation.Nullable;
-
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.ExistingGenerator;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+
+import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implements a cloning procedure by trying multiple methods in turn until one is successful.

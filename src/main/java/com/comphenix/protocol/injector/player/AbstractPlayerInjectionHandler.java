@@ -4,6 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.PacketListener;
+
 import java.util.Set;
 
 public abstract class AbstractPlayerInjectionHandler implements PlayerInjectionHandler {

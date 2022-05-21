@@ -11,8 +11,9 @@ import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
 import com.comphenix.protocol.injector.netty.channel.NettyChannelInjector;
 import com.comphenix.protocol.injector.player.AbstractPlayerInjectionHandler;
 import io.netty.channel.Channel;
-import java.util.Set;
 import org.bukkit.entity.Player;
+
+import java.util.Set;
 
 final class NetworkManagerPlayerInjector extends AbstractPlayerInjectionHandler {
 

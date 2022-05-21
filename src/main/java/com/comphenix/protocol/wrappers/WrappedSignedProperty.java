@@ -1,11 +1,11 @@
 package com.comphenix.protocol.wrappers;
 
-import java.security.PublicKey;
-
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.google.common.base.Objects;
+
+import java.security.PublicKey;
 
 /**
  * Represents a wrapper over a signed property.

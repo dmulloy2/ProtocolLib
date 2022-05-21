@@ -3,6 +3,7 @@ package com.comphenix.protocol.injector.packet;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.events.ListenerOptions;
+
 import java.util.Set;
 
 public abstract class AbstractPacketInjector implements PacketInjector {

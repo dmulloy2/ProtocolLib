@@ -1,12 +1,12 @@
 package com.comphenix.protocol.wrappers.collection;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterators;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
 
 /**
  * Represents a set that will (best effort) cache elements before using 

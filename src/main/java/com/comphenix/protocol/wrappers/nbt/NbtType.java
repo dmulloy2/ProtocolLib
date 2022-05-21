@@ -17,11 +17,11 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
+import com.google.common.primitives.Primitives;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.google.common.primitives.Primitives;
 
 /**
  * Represents all the element types 

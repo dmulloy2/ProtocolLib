@@ -16,12 +16,12 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.utility.MinecraftReflection;
+
 import java.lang.reflect.Array;
 import java.util.Optional;
 import java.util.function.Function;
-
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Utility class for converters

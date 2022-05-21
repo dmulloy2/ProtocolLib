@@ -16,6 +16,14 @@
  */
 package com.comphenix.protocol.reflect.cloning;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.*;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.google.common.collect.Maps;
+import net.md_5.bungee.api.chat.BaseComponent;
+
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,15 +31,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.*;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.google.common.collect.Maps;
-
-import net.md_5.bungee.api.chat.BaseComponent;
 
 /**
  * Represents an object that can clone a specific list of Bukkit- and Minecraft-related objects.

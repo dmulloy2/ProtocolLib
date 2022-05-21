@@ -16,9 +16,6 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.*;
-import java.util.*;
-
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -33,11 +30,13 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableBiMap;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
+
+import java.lang.reflect.*;
+import java.util.*;
 
 /**
  * Represents a DataWatcher

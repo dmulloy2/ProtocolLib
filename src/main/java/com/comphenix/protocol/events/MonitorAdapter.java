@@ -17,11 +17,10 @@
 
 package com.comphenix.protocol.events;
 
-import java.util.logging.Logger;
-
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-
 import org.bukkit.plugin.Plugin;
+
+import java.util.logging.Logger;
 
 /**
  * Represents a listener that is notified of every sent and received packet.

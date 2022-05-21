@@ -22,7 +22,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.utility.Util;
-
 import org.bukkit.Bukkit;
 
 import java.io.IOException;

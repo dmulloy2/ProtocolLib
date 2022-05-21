@@ -17,13 +17,13 @@
 
 package com.comphenix.protocol.reflect;
 
+import com.comphenix.protocol.injector.StructureCache;
+import com.comphenix.protocol.utility.MinecraftReflection;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import com.comphenix.protocol.injector.StructureCache;
-import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Can copy an object field by field.

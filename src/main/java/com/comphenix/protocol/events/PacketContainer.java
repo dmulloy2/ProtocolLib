@@ -17,29 +17,11 @@
 
 package com.comphenix.protocol.events;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.injector.StructureCache;
-import com.comphenix.protocol.reflect.*;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.ObjectWriter;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
@@ -47,31 +29,24 @@ import com.comphenix.protocol.reflect.instances.MinecraftGenerator;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.StreamSerializer;
-import com.comphenix.protocol.wrappers.*;
-import com.comphenix.protocol.wrappers.EnumWrappers.*;
-import com.comphenix.protocol.wrappers.nbt.NbtBase;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-
+import com.comphenix.protocol.wrappers.Converters;
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.MerchantRecipe;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Represents a Minecraft packet indirectly.

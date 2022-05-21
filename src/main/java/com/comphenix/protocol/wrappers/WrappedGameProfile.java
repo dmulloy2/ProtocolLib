@@ -1,11 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.PluginContext;
 import com.comphenix.protocol.error.Report;
@@ -20,6 +14,11 @@ import com.comphenix.protocol.wrappers.collection.ConvertedMultimap;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.collect.Multimap;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents a wrapper for a game profile.

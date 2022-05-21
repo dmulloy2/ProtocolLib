@@ -17,12 +17,12 @@
 
 package com.comphenix.protocol.reflect;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 
 /**
  * Represents a traditional int field enum.

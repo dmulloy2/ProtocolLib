@@ -17,9 +17,9 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.io.DataOutput;
-
 import com.comphenix.protocol.wrappers.ClonableWrapper;
+
+import java.io.DataOutput;
 
 /**
  * Indicates that this NBT wraps an underlying net.minecraft.server instance.

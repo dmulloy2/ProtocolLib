@@ -1,20 +1,11 @@
 package com.comphenix.protocol;
 
-import java.util.Collection;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.events.ConnectionSide;
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Range;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
+
+import java.util.*;
 
 class PacketTypeParser {
 	public final static Range<Integer> DEFAULT_MAX_RANGE = Range.closed(0, 255);

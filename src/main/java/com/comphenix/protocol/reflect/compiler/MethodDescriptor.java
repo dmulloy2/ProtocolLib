@@ -17,10 +17,10 @@
 
 package com.comphenix.protocol.reflect.compiler;
 
+import net.bytebuddy.jar.asm.Type;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import net.bytebuddy.jar.asm.Type;
 
 /**
  * Represents a method.

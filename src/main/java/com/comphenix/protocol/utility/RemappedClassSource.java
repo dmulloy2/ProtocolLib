@@ -21,14 +21,13 @@ package com.comphenix.protocol.utility;
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import java.lang.reflect.Method;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
-
 import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.MethodUtils;
 import com.comphenix.protocol.utility.RemappedClassSource.RemapperUnavailableException.Reason;
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
+
+import java.lang.reflect.Method;
 
 class RemappedClassSource extends ClassSource {
 	private Object classRemapper;

@@ -1,27 +1,15 @@
 package com.comphenix.protocol.wrappers.nbt.io;
 
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import com.comphenix.protocol.wrappers.nbt.NbtBase;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.comphenix.protocol.wrappers.nbt.NbtList;
-import com.comphenix.protocol.wrappers.nbt.NbtType;
-import com.comphenix.protocol.wrappers.nbt.NbtVisitor;
-import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
+import com.comphenix.protocol.wrappers.nbt.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.primitives.Ints;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.*;
 
 /**
  * Serialize and deserialize NBT information from a configuration section.

@@ -1,8 +1,7 @@
 package com.comphenix.protocol.error;
 
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.error.Report.ReportBuilder;
+import org.bukkit.plugin.Plugin;
 
 /**
  * Construct an error reporter that delegates to another error reporter.

@@ -1,8 +1,9 @@
 package com.comphenix.protocol.injector.packet;
 
+import com.comphenix.protocol.reflect.FieldUtils;
+
 import java.lang.reflect.Field;
 
-import com.comphenix.protocol.reflect.FieldUtils;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**

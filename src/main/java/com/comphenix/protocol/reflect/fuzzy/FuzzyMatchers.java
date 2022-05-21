@@ -1,13 +1,12 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
+
+import javax.annotation.Nonnull;
 import java.lang.reflect.Member;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 
 /**
  * Contains factory methods for matching classes.

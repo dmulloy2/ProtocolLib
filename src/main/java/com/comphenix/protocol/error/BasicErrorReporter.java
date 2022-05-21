@@ -1,11 +1,10 @@
 package com.comphenix.protocol.error;
 
-import java.io.PrintStream;
-
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.error.Report.ReportBuilder;
 import com.comphenix.protocol.reflect.PrettyPrinter;
+import org.bukkit.plugin.Plugin;
+
+import java.io.PrintStream;
 
 /**
  * Represents a basic error reporter that prints error reports to the standard error stream.

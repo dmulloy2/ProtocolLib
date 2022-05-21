@@ -17,11 +17,6 @@
 
 package com.comphenix.protocol.injector.packet;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLogger;
@@ -33,6 +28,11 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Static packet registry in Minecraft.

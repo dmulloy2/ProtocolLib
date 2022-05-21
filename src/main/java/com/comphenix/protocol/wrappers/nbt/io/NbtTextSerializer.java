@@ -1,17 +1,12 @@
 package com.comphenix.protocol.wrappers.nbt.io;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
-
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtList;
 import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
+
+import java.io.*;
 
 /**
  * Serializes NBT to a base-64 encoded string and back.

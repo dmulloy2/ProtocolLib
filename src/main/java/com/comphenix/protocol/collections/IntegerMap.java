@@ -1,10 +1,10 @@
 package com.comphenix.protocol.collections;
 
-import java.util.Arrays;
-import java.util.Map;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Represents a very quick integer-based lookup map, with a fixed key space size.

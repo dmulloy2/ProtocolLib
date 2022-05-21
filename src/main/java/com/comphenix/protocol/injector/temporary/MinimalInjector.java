@@ -1,8 +1,9 @@
 package com.comphenix.protocol.injector.temporary;
 
 import com.comphenix.protocol.events.NetworkMarker;
-import java.net.SocketAddress;
 import org.bukkit.entity.Player;
+
+import java.net.SocketAddress;
 
 /**
  * Represents an injector that only gives access to a player's socket.

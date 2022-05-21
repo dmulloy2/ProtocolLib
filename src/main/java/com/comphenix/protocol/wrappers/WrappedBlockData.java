@@ -16,16 +16,15 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Modifier;
-
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-
 import org.bukkit.Material;
+
+import java.lang.reflect.Modifier;
 
 /**
  * Represents a wrapper around IBlockData.

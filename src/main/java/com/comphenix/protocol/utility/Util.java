@@ -16,12 +16,12 @@
  */
 package com.comphenix.protocol.utility;
 
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 /**
  * General utility class

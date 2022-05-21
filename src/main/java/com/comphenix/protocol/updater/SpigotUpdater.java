@@ -16,18 +16,16 @@
  */
 package com.comphenix.protocol.updater;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.utility.Closer;
+import org.bukkit.plugin.Plugin;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import org.bukkit.plugin.Plugin;
-
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.utility.Closer;
-import com.google.common.base.Charsets;
 
 /**
  * Adapted version of the Bukkit updater for use with Spigot resources

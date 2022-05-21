@@ -18,6 +18,7 @@ package com.comphenix.protocol.reflect;
  */
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
+
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;

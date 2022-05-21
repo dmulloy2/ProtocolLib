@@ -17,15 +17,14 @@
 
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-
-import org.bukkit.util.Vector;
-
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
+import org.bukkit.util.Vector;
+
+import java.lang.reflect.Constructor;
 
 /**
  * Copies a immutable net.minecraft.server.ChunkPosition, which represents a integer 3D vector.

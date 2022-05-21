@@ -1,15 +1,8 @@
 package com.comphenix.protocol.injector.netty.channel;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.ProgressivePromise;
-import io.netty.util.concurrent.Promise;
-import io.netty.util.concurrent.ScheduledFuture;
+import io.netty.channel.*;
+import io.netty.util.concurrent.*;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;

@@ -1,16 +1,12 @@
 package com.comphenix.protocol.reflect;
 
+import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod.AsmOpcodes;
+import com.google.common.collect.Lists;
+import net.bytebuddy.jar.asm.*;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
-
-import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod.AsmOpcodes;
-import com.google.common.collect.Lists;
-import net.bytebuddy.jar.asm.ClassReader;
-import net.bytebuddy.jar.asm.ClassVisitor;
-import net.bytebuddy.jar.asm.MethodVisitor;
-import net.bytebuddy.jar.asm.Opcodes;
-import net.bytebuddy.jar.asm.Type;
 
 public class ClassAnalyser {
 	/**

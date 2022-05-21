@@ -17,15 +17,14 @@
 
 package com.comphenix.protocol;
 
-import java.util.Set;
-
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.async.AsyncListenerHandler;
 import com.comphenix.protocol.async.AsyncMarker;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import org.bukkit.plugin.Plugin;
+
+import java.util.Set;
 
 /**
  * Represents a asynchronous packet handler.

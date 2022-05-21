@@ -16,12 +16,7 @@
 package com.comphenix.protocol;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.error.BasicErrorReporter;
-import com.comphenix.protocol.error.DelegatedErrorReporter;
-import com.comphenix.protocol.error.DetailedErrorReporter;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.error.*;
 import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
@@ -35,6 +30,13 @@ import com.comphenix.protocol.utility.NettyVersion;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.bukkit.Server;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
@@ -45,12 +47,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.bukkit.Server;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * The main entry point for ProtocolLib.

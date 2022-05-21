@@ -19,12 +19,8 @@ package com.comphenix.protocol.concurrency;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+
+import java.util.*;
 
 /**
  * An implicitly sorted array list that preserves insertion order and maintains duplicates.

@@ -1,10 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-import java.util.UUID;
-import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -13,6 +8,11 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+
+import javax.annotation.Nonnull;
+import java.lang.reflect.Constructor;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Represents a wrapper around a AttributeModifier.
