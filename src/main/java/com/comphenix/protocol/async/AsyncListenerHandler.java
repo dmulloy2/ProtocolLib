@@ -653,7 +653,7 @@ public class AsyncListenerHandler {
 		
 		// Now, get the next non-cancelled listener
 		if (!marker.hasExpired()) {
-			for (; marker.getListenerTraversal().hasNext(); ) {
+			while (marker.getListenerTraversal().hasNext()) {
 				AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
 				
 				if (!handler.isCancelled()) {

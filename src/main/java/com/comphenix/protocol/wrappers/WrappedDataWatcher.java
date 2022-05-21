@@ -638,7 +638,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 			if (size() != other.size())
 				return false;
 
-			for (; first.hasNext() && second.hasNext();) {
+			while (first.hasNext() && second.hasNext()) {
 				// See if the two elements are equal
 				if (!first.next().equals(second.next()))
 					return false;
