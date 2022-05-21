@@ -49,12 +49,7 @@ public class ExpireHashMap<K, V> {
 	private PriorityQueue<ExpireEntry> expireQueue =  new PriorityQueue<ExpireEntry>();
 	
 	// View of keyLookup with direct values
-	private Map<K, V> valueView = Maps.transformValues(keyLookup, new Function<ExpireEntry, V>() {
-		@Override
-		public V apply(ExpireEntry entry) {
-			return entry.expireValue;
-		}
-	});
+	private Map<K, V> valueView = Maps.transformValues(keyLookup, entry -> entry.expireValue);
 	
 	// Supplied by the constructor
 	private Ticker ticker;

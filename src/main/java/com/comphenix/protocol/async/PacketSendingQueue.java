@@ -198,12 +198,9 @@ abstract class PacketSendingQueue {
 
 						// Let's give it what it wants
 						if (onMainThread && wantAsync) {
-							asynchronousSender.execute(new Runnable() {
-								@Override
-								public void run() {
-									// We know this isn't on the main thread
-									processPacketHolder(false, holder);
-								}
+							asynchronousSender.execute(() -> {
+								// We know this isn't on the main thread
+								processPacketHolder(false, holder);
 							});
 
 							// Scheduler will do the rest

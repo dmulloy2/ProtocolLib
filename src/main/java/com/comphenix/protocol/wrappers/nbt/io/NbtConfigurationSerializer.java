@@ -272,14 +272,11 @@ public class NbtConfigurationSerializer {
 		// Convert to integers
 		List<String> sorted = new ArrayList<String>(unsorted);
 		
-		Collections.sort(sorted, new Comparator<String>() {
-			@Override
-			public int compare(String o1, String o2) {
-				// Parse the name
-				int index1 = Integer.parseInt(getDecodedName(o1)[0]);
-				int index2 = Integer.parseInt(getDecodedName(o2)[0]);
-				return Ints.compare(index1, index2);
-			}
+		sorted.sort((o1, o2) -> {
+			// Parse the name
+			int index1 = Integer.parseInt(getDecodedName(o1)[0]);
+			int index2 = Integer.parseInt(getDecodedName(o2)[0]);
+			return Ints.compare(index1, index2);
 		});
 		return sorted;
 	}

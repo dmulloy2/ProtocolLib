@@ -384,12 +384,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
 
 	@Override
 	public Iterator<TType> iterator() {
-		return Iterables.transform(getValue(), new Function<NbtBase<TType>, TType>() {
-			@Override
-			public TType apply(@Nullable NbtBase<TType> param) {
-				return param.getValue();
-			}
-		}).iterator();
+		return Iterables.transform(getValue(), NbtBase::getValue).iterator();
 	}
 	
 	@Override

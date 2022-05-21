@@ -38,12 +38,7 @@ public class PrettyPrinter {
 	 * @author Kristian
 	 */
 	public interface ObjectPrinter {
-		public static final ObjectPrinter DEFAULT = new ObjectPrinter() {
-			@Override
-			public boolean print(StringBuilder output, Object value) {
-				return false;
-			}
-		};
+		public static final ObjectPrinter DEFAULT = (output, value) -> false;
 		
 		/**
 		 * Print the content of the given object.

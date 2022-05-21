@@ -270,10 +270,8 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 				return LINE_SEPARATOR;
 			}
 
-			StringBuilder message = new StringBuilder();
-			message.append(MessageFormat.format(FORMAT, DATE.format(record.getMillis()), string));
-			message.append(LINE_SEPARATOR);
-			return message.toString();
+			return MessageFormat.format(FORMAT, DATE.format(record.getMillis()), string) +
+					LINE_SEPARATOR;
 		}
 	}
 }

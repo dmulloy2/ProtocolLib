@@ -63,12 +63,9 @@ public class SimpleCraftBukkitITCase {
 		FieldUtils.writeStaticField(ProtocolLibrary.class, "UPDATES_DISABLED", Boolean.TRUE, true);
 
 		// Wait until the server and all the plugins have loaded
-		Bukkit.getScheduler().callSyncMethod(FAKE_PLUGIN, new Callable<Object>() {
-			@Override
-			public Object call() throws Exception {
-				initializePlugin(FAKE_PLUGIN);
-				return null;
-			}
+		Bukkit.getScheduler().callSyncMethod(FAKE_PLUGIN, () -> {
+			initializePlugin(FAKE_PLUGIN);
+			return null;
 		}).get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
 		// Plugins are now ready

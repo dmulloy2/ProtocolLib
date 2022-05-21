@@ -74,9 +74,7 @@ public class Vector3F {
 				return false;
 			if (Float.floatToIntBits(y) != Float.floatToIntBits(that.y))
 				return false;
-			if (Float.floatToIntBits(z) != Float.floatToIntBits(that.z))
-				return false;
-			return true;
+			return Float.floatToIntBits(z) == Float.floatToIntBits(that.z);
 		}
 
 		return false;

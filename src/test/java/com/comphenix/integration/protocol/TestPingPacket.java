@@ -65,19 +65,16 @@ public class TestPingPacket {
 				});
 
 		// Invoke the client on a separate thread
-		return Executors.newSingleThreadExecutor().submit(new Callable<String>() {
-			@Override
-			public String call() throws Exception {
-				SimpleMinecraftClient client = new SimpleMinecraftClient(PROTOCOL_VERSION);
-				String information = client.queryLocalPing();
+		return Executors.newSingleThreadExecutor().submit(() -> {
+			SimpleMinecraftClient client = new SimpleMinecraftClient(PROTOCOL_VERSION);
+			String information = client.queryLocalPing();
 
-				// Wait for the listener to catch up
-				for (int i = 0; i < 1000 && (TestPingPacket.this.source == null); i++) {
-					Thread.sleep(1);
-				}
-
-				return information;
+			// Wait for the listener to catch up
+			for (int i = 0; i < 1000 && (TestPingPacket.this.source == null); i++) {
+				Thread.sleep(1);
 			}
+
+			return information;
 		});
 	}
 }

@@ -23,7 +23,6 @@ import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
@@ -101,20 +100,17 @@ public class AggregateCloner implements Cloner {
 		 */
 		public Builder andThen(final Class<? extends Cloner> type) {
 			// Use reflection to generate a factory on the fly
-			return andThen(new Function<BuilderParameters, Cloner>() {
-				@Override
-				public Cloner apply(@Nullable BuilderParameters param) {
-					Object result = param.typeConstructor.create(type);
-					
-					if (result == null) {
-						throw new IllegalStateException("Constructed NULL instead of " + type);
-					}
-						
-					if (type.isAssignableFrom(result.getClass())) 
-						return (Cloner) result;
-					else 
-						throw new IllegalStateException("Constructed " + result.getClass() + " instead of " + type);
+			return andThen(param -> {
+				Object result = param.typeConstructor.create(type);
+
+				if (result == null) {
+					throw new IllegalStateException("Constructed NULL instead of " + type);
 				}
+
+				if (type.isAssignableFrom(result.getClass()))
+					return (Cloner) result;
+				else
+					throw new IllegalStateException("Constructed " + result.getClass() + " instead of " + type);
 			});
 		}
 		
