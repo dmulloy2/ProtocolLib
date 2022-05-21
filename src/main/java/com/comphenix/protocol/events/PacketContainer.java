@@ -250,7 +250,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 								modifierDest.write(fieldIndex, modifierSource.read(fieldIndex));
 							else
 								defaultTransform(modifierSource, modifierDest, getDefaultCloner(), fieldIndex);
-						};
+						}
 					};
 				}};
 			}

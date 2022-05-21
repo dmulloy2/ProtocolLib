@@ -172,11 +172,8 @@ class PluginVerifier {
 		}
 		
 		// No dependency - check the load order
-		if (beforePlugin.getDescription().getLoad() == PluginLoadOrder.STARTUP &&
-			afterPlugin.getDescription().getLoad() == PluginLoadOrder.POSTWORLD) {
-			return true;
-		}
-		return false;
+		return beforePlugin.getDescription().getLoad() == PluginLoadOrder.STARTUP &&
+				afterPlugin.getDescription().getLoad() == PluginLoadOrder.POSTWORLD;
 	}
 	
 	/**

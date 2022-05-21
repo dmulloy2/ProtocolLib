@@ -352,7 +352,7 @@ public class PacketRegistry {
 
 		// Try the lookup first (may be null, so check contains)
 		Optional<Class<?>> res = REGISTER.typeToClass.get(type);
-		if (res != null) {
+		if (res.isPresent()) {
 			return res;
 		}
 

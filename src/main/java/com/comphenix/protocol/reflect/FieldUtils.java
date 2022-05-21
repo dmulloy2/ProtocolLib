@@ -163,13 +163,13 @@ public class FieldUtils {
         while (cls != null) {
             Class[] interfaces = cls.getInterfaces();
             for (int i = 0; i < interfaces.length; i++) {
-                if (list.contains(interfaces[i]) == false) {
+                if (!list.contains(interfaces[i])) {
                     list.add(interfaces[i]);
                 }
                 List superInterfaces = getAllInterfaces(interfaces[i]);
                 for (Iterator it = superInterfaces.iterator(); it.hasNext();) {
                     Class intface = (Class) it.next();
-                    if (list.contains(intface) == false) {
+                    if (!list.contains(intface)) {
                         list.add(intface);
                     }
                 }

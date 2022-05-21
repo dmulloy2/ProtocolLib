@@ -656,9 +656,7 @@ public class FuzzyReflection {
 		Set<T> result = new LinkedHashSet<T>();
 		
 		for (T[] elements : array) {
-			for (T element : elements) {
-				result.add(element);
-			}
+			Collections.addAll(result, elements);
 		}
 		return result;
 	}

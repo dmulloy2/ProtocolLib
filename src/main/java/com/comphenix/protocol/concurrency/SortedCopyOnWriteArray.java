@@ -152,9 +152,7 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 			return false;
 		}
 
-		List<T> copy = new ArrayList<T>();
-
-		copy.addAll(this.list);
+		List<T> copy = new ArrayList<T>(this.list);
 		copy.removeAll(values);
 
 		this.list = copy;
@@ -171,9 +169,7 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 			return false;
 		}
 
-		List<T> copy = new ArrayList<T>();
-
-		copy.addAll(this.list);
+		List<T> copy = new ArrayList<T>(this.list);
 		copy.removeAll(values);
 
 		this.list = copy;

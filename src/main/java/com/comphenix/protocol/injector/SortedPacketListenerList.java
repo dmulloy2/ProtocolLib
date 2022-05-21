@@ -108,7 +108,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param event - the related packet event.
 	 * @param element - the listener to invoke.
 	 */
-	private final void invokeReceivingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
+	private void invokeReceivingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
 		try {
 			event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 			element.getListener().onPacketReceiving(event);
@@ -189,7 +189,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param event - the related packet event.
 	 * @param element - the listener to invoke.
 	 */
-	private final void invokeSendingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
+	private void invokeSendingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
 		try {
 			event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 			element.getListener().onPacketSending(event);
