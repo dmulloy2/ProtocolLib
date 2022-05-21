@@ -124,16 +124,20 @@ class PacketTypeParser {
 		if (text == null)
 			return null;
 		String candidate = text.toLowerCase();
-		
-		if ("handshake".equals(candidate) || "handshaking".equals(candidate))
-			return Protocol.HANDSHAKING;
-		else if ("login".equals(candidate))
-			return Protocol.LOGIN;
-		else if ("play".equals(candidate) || "game".equals(candidate))
-			return Protocol.PLAY;
-		else if ("status".equals(candidate))
-			return Protocol.STATUS;
-		else
-			return null;
+
+		switch (candidate) {
+			case "handshake":
+			case "handshaking":
+				return Protocol.HANDSHAKING;
+			case "login":
+				return Protocol.LOGIN;
+			case "play":
+			case "game":
+				return Protocol.PLAY;
+			case "status":
+				return Protocol.STATUS;
+			default:
+				return null;
+		}
 	}
 }
