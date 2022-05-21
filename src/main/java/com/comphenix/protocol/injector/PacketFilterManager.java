@@ -165,7 +165,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 					NetworkMarker copy = marker; // okay fine
 					this.server.getScheduler().scheduleSyncDelayedTask(
 							this.plugin,
-							() -> this.sendServerPacket(receiver, packet, copy, true));
+							() -> this.sendServerPacket(receiver, packet, copy, false));
 					return;
 				}
 
