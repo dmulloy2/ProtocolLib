@@ -20,7 +20,6 @@ import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
 import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -87,6 +86,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -717,13 +717,9 @@ public class PacketContainerTest {
 
 	@Test
 	public void testCloning() {
-		boolean failed = false;
-
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS")
-					|| !type.isSupported()
-					|| type == PacketType.Play.Server.RECIPES) {
+			if (type.isDeprecated() || !type.isSupported() || type.name().contains("CUSTOM_PAYLOAD")) {
 				continue;
 			}
 
@@ -748,8 +744,10 @@ public class PacketContainerTest {
 					));
 				} else if (type == PacketType.Play.Server.CHAT) {
 					constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
-					//constructed.getModifier().write(1, TEST_COMPONENT);
 				}
+
+				// gives some indication which cloning process fails as the checks itself are happening outside this method
+				System.out.println("Cloning " + type);
 
 				// Clone the packet both ways
 				PacketContainer shallowCloned = constructed.shallowClone();
@@ -758,12 +756,9 @@ public class PacketContainerTest {
 				PacketContainer deepCloned = constructed.deepClone();
 				this.assertPacketsEqual(constructed, deepCloned);
 			} catch (Exception ex) {
-				ex.printStackTrace();
-				failed = true;
+				Assertions.fail("Unable to clone " + type, ex);
 			}
 		}
-
-		assertFalse(failed, "Packet(s) failed to clone");
 	}
 
 	// Convert to objects that support equals()
