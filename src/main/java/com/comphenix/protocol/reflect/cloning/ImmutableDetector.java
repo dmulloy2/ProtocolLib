@@ -28,6 +28,7 @@ import java.security.PublicKey;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import javax.crypto.SecretKey;
@@ -35,7 +36,6 @@ import javax.crypto.SecretKey;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.primitives.Primitives;
 
 /**
@@ -55,7 +55,7 @@ public class ImmutableDetector implements Cloner {
 			SecretKey.class, PublicKey.class
 	);
 
-	private static final Set<Class<?>> immutableNMS = Sets.newConcurrentHashSet();
+	private static final Set<Class<?>> immutableNMS = ConcurrentHashMap.newKeySet();
 
 	static {
 		add(MinecraftReflection::getGameProfileClass);

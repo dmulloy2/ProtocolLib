@@ -1,10 +1,10 @@
 package com.comphenix.protocol.collections;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 
 /**
  * Represents a very quick integer-based lookup map, with a fixed key space size.
@@ -15,15 +15,6 @@ import com.google.common.collect.Maps;
 public class IntegerMap<T> {
 	private T[] array;
 	private int size;
-	
-	/**
-	 * Construct a new integer map.
-	 * @param <T> Parameter type
-	 * @return A new integer map.
-	 */
-	public static <T> IntegerMap<T> newMap() {
-		return new IntegerMap<T>();
-	}
 	
 	/**
 	 * Construct a new integer map with a default capacity.
@@ -128,7 +119,7 @@ public class IntegerMap<T> {
 	 * @return The Integer map.
 	 */
 	public Map<Integer, Object> toMap() {
-		Map<Integer, Object> map = Maps.newHashMap();
+		final Map<Integer, Object> map = new HashMap<>();
 		
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] != null) {

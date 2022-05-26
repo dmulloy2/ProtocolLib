@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -69,7 +70,6 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -142,7 +142,7 @@ public class MinecraftReflection {
 	private static Class<?> itemStackArrayClass;
 
 	// Cache of getBukkitEntity
-	private static ConcurrentMap<Class<?>, MethodAccessor> getBukkitEntityCache = Maps.newConcurrentMap();
+	private static final ConcurrentMap<Class<?>, MethodAccessor> getBukkitEntityCache = new ConcurrentHashMap<>();
 
 	// The current class source
 	private static ClassSource classSource;

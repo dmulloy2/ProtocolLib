@@ -6,11 +6,10 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
-import com.google.common.collect.Lists;
 
 /**
  * Represents a method or a constructor.
@@ -103,11 +102,10 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	 * @return Method info list.
 	 */
 	public static List<MethodInfo> fromMethods(Collection<Method> methods) {
-		List<MethodInfo> infos = Lists.newArrayList();
-		
-		for (Method method : methods)
-			infos.add(fromMethod(method));
-		return infos;
+		final List<MethodInfo> list = new ArrayList<>();
+
+		for (Method method : methods) list.add(fromMethod(method));
+		return list;
 	}
 	
 	/**
@@ -195,7 +193,7 @@ public abstract class MethodInfo implements GenericDeclaration, Member {
 	 * @return Method info list.
 	 */
 	public static List<MethodInfo> fromConstructors(Collection<Constructor<?>> constructors) {
-		List<MethodInfo> infos = Lists.newArrayList();
+		final List<MethodInfo> infos = new ArrayList<>();
 		
 		for (Constructor<?> constructor : constructors)
 			infos.add(fromConstructor(constructor));

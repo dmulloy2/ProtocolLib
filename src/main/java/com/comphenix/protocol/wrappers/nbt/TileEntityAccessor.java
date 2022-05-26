@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
@@ -17,8 +18,6 @@ import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-
-import com.google.common.collect.Maps;
 
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
@@ -41,12 +40,12 @@ class TileEntityAccessor<T extends BlockState> {
 	/**
 	 * Token indicating that the given block state doesn't contain any tile entities.
 	 */
-	private static final TileEntityAccessor<BlockState> EMPTY_ACCESSOR = new TileEntityAccessor<BlockState>();
+	private static final TileEntityAccessor<BlockState> EMPTY_ACCESSOR = new TileEntityAccessor<>();
 
 	/**
 	 * Cached field accessors - {@link #EMPTY_ACCESSOR} represents no valid tile entity.
 	 */
-	private static final ConcurrentMap<Class<?>, TileEntityAccessor<?>> cachedAccessors = Maps.newConcurrentMap();
+	private static final ConcurrentMap<Class<?>, TileEntityAccessor<?>> cachedAccessors = new ConcurrentHashMap<>();
 
 	private static Constructor<?> nbtCompoundParserConstructor;
 

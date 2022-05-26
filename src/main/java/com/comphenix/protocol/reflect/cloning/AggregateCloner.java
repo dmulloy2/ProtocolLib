@@ -18,6 +18,7 @@
 package com.comphenix.protocol.reflect.cloning;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -75,8 +76,8 @@ public class AggregateCloner implements Cloner {
 	 * @author Kristian
 	 */
 	public static class Builder {
-		private List<Function<BuilderParameters, Cloner>> factories = Lists.newArrayList();
-		private BuilderParameters parameters;
+		private final List<Function<BuilderParameters, Cloner>> factories = new ArrayList<>();
+		private final BuilderParameters parameters;
 		
 		/**
 		 * Create a new aggregate builder.
@@ -147,7 +148,7 @@ public class AggregateCloner implements Cloner {
 			);
 			
 			// Build every cloner in the correct order
-			List<Cloner> cloners = Lists.newArrayList();
+			final List<Cloner> cloners = new ArrayList<>();
 			
 			for (int i = 0; i < factories.size(); i++) {
 				Cloner cloner = factories.get(i).apply(parameters);

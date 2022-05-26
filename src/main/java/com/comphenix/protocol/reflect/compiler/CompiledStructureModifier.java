@@ -18,13 +18,13 @@
 package com.comphenix.protocol.reflect.compiler;
 
 import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
-import com.google.common.collect.Sets;
 
 /**
  * Represents a compiled structure modifier.
@@ -48,7 +48,7 @@ public abstract class CompiledStructureModifier extends StructureModifier<Object
 		// We can remove the read-only status
 		if (isReadOnly(fieldIndex) && !value) {
 			if (exempted == null)
-				exempted = Sets.newHashSet();
+				exempted = new HashSet<>();
 			exempted.add(fieldIndex);
 		}
 		

@@ -20,6 +20,8 @@ package com.comphenix.protocol.reflect;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +33,6 @@ import org.apache.commons.lang.Validate;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 /**
@@ -211,7 +211,7 @@ public class FuzzyReflection {
 	 * @return List of found methods.
 	 */
 	public List<Method> getMethodList(AbstractFuzzyMatcher<MethodInfo> matcher) {
-		List<Method> methods = Lists.newArrayList();
+		final List<Method> methods = new ArrayList<>();
 		
 		// Add all matching fields to the list
 		for (Method method : getMethods()) {
@@ -349,7 +349,7 @@ public class FuzzyReflection {
 	 * @return Every method that satisfies the given constraints.
 	 */
 	public List<Method> getMethodListByParameters(Class<?> returnType, Class<?>[] args) {
-		List<Method> methods = new ArrayList<Method>();
+		final List<Method> methods = new ArrayList<>();
 		
 		// Find the correct method to call
 		for (Method method : getMethods()) {
@@ -388,7 +388,7 @@ public class FuzzyReflection {
 	 * @return The first field with a type that is an instance of the given type.
 	 */
 	public Field getFieldByType(String name, Class<?> type) {
-		List<Field> fields = getFieldListByType(type);
+		final List<Field> fields = getFieldListByType(type);
 		
 		if (fields.size() > 0) {
 			return fields.get(0);
@@ -406,7 +406,7 @@ public class FuzzyReflection {
 	 * @return Every field with a type that is an instance of the given type.
 	 */
 	public List<Field> getFieldListByType(Class<?> type) {
-		List<Field> fields = new ArrayList<Field>();
+		final List<Field> fields = new ArrayList<>();
 		
 		// Field with a compatible type
 		for (Field field : getFields()) {
@@ -468,7 +468,7 @@ public class FuzzyReflection {
 	 * @return List of found fields.
 	 */
 	public List<Field> getFieldList(AbstractFuzzyMatcher<Field> matcher) {
-		List<Field> fields = Lists.newArrayList();
+		final List<Field> fields = new ArrayList<>();
 		
 		// Add all matching fields to the list
 		for (Field field : getFields()) {
@@ -550,7 +550,7 @@ public class FuzzyReflection {
 	 * @throws IllegalArgumentException If the constructor cannot be found.
 	 */
 	public Constructor<?> getConstructor(AbstractFuzzyMatcher<MethodInfo> matcher) {
-		List<Constructor<?>> result = getConstructorList(matcher);
+		final List<Constructor<?>> result = getConstructorList(matcher);
 		
 		if (result.size() > 0)
 			return result.get(0);
@@ -566,7 +566,7 @@ public class FuzzyReflection {
 	 * @return A map over every given method.
 	 */
 	public Map<String, Method> getMappedMethods(List<Method> methods) {
-		Map<String, Method> map = Maps.newHashMap();
+		final Map<String, Method> map = new HashMap<>();
 		
 		for (Method method : methods) {
 			map.put(method.getName(), method);
@@ -582,7 +582,7 @@ public class FuzzyReflection {
 	 * @return List of found constructors.
 	 */
 	public List<Constructor<?>> getConstructorList(AbstractFuzzyMatcher<MethodInfo> matcher) {
-		List<Constructor<?>> constructors = Lists.newArrayList();
+		final List<Constructor<?>> constructors = new ArrayList<>();
 		
 		// Add all matching fields to the list
 		for (Constructor<?> constructor : getConstructors()) {
@@ -659,12 +659,10 @@ public class FuzzyReflection {
 
 	@SafeVarargs
 	private static <T> Set<T> setUnion(T[]... array) {
-		Set<T> result = new LinkedHashSet<T>();
+		final Set<T> result = new LinkedHashSet<>();
 		
 		for (T[] elements : array) {
-			for (T element : elements) {
-				result.add(element);
-			}
+			Collections.addAll(result, elements);
 		}
 		return result;
 	}

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Date;
 import java.util.Map;
+import java.util.TreeSet;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
@@ -75,7 +76,7 @@ public class TimingReportGenerator {
 		destination.write(SEPERATION_LINE);
 		
 		// Write every packet ID that we care about
-		for (PacketType key : Sets.newTreeSet(streams.keySet())) {
+		for (PacketType key : new TreeSet<>(streams.keySet())) {
 			final StatisticsStream stream = streams.get(key);
 			
 			if (stream != null && stream.getCount() > 0) {

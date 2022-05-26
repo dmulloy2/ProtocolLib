@@ -17,22 +17,24 @@
 
 package com.comphenix.protocol;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.List;
-
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
 
 /**
  * Used to parse ranges in CommandPacket.
  * 
  * @author Kristian
  */
-class RangeParser {
+final class RangeParser {
+	private RangeParser() {}
+
 	/**
 	 * Parse a range from a given text.
 	 * @param text - the text.
@@ -40,20 +42,18 @@ class RangeParser {
 	 * @return The parsed ranges.
 	 */
 	public static List<Range<Integer>> getRanges(String text, Range<Integer> legalRange) {
-		return getRanges(new ArrayDeque<String>(Arrays.asList(text)), legalRange);
+		return getRanges(new ArrayDeque<>(Collections.singletonList(text)), legalRange);
 	}
 	
 	/**
 	 * Parse ranges from an array of elements.
-	 * @param args - array of elements.
-	 * @param offset - beginning offset.
-	 * @param lastIndex - the last index of the array to read.
+	 * @param input the input to parse the ranges from
 	 * @param legalRange - range of legal values.
 	 * @return The parsed ranges.
 	 */
 	public static List<Range<Integer>> getRanges(Deque<String> input, Range<Integer> legalRange) {
 		List<String> tokens = tokenizeInput(input);
-		List<Range<Integer>> ranges = new ArrayList<Range<Integer>>();
+		List<Range<Integer>> ranges = new ArrayList<>();
 		
 		for (int i = 0; i < tokens.size(); i++) {
 			Range<Integer> range;
@@ -96,7 +96,7 @@ class RangeParser {
 	 * @return A simplified list of ranges.
 	 */
 	private static List<Range<Integer>> simplify(List<Range<Integer>> ranges, int maximum) {
-		List<Range<Integer>> result = new ArrayList<Range<Integer>>();
+		List<Range<Integer>> result = new ArrayList<>();
 		boolean[] set = new boolean[maximum + 1];
 		int start = -1;
 		
@@ -125,7 +125,7 @@ class RangeParser {
 	}
 	
 	private static List<String> tokenizeInput(Deque<String> input) {
-		List<String> tokens = new ArrayList<String>();
+		List<String> tokens = new ArrayList<>();
 		
 		// Tokenize the input
 		while (!input.isEmpty()) {

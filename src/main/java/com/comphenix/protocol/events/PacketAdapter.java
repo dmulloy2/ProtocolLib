@@ -396,7 +396,7 @@ public abstract class PacketAdapter implements PacketListener {
 			if (options == null) {
 				return options(option);
 			} else {
-				Set<ListenerOptions> current = Sets.newHashSet(options);
+				final Set<ListenerOptions> current = Sets.newHashSet(options);
 				current.add(option);
 				return options(current);
 			}

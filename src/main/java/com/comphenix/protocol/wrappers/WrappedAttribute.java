@@ -399,7 +399,7 @@ public class WrappedAttribute extends AbstractWrapper {
 		 * @return Unwrapped modifiers.
 		 */
 		private Set<Object> getUnwrappedModifiers() {
-			Set<Object> output = Sets.newHashSet();
+			final Set<Object> output = new HashSet<>();
 			
 			for (WrappedAttributeModifier modifier : modifiers) {
 				output.add(modifier.getHandle());
