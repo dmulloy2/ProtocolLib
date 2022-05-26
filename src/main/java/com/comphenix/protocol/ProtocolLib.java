@@ -88,8 +88,6 @@ public class ProtocolLib extends JavaPlugin {
 	private static final int ASYNC_MANAGER_DELAY = 1;
 	private static final String PERMISSION_INFO = "protocol.info";
 
-	public static boolean UPDATES_DISABLED = false;
-
 	// these fields are only existing once, we can make them static
 	private static Logger logger;
 	private static ProtocolConfig config;
@@ -501,7 +499,7 @@ public class ProtocolLib extends JavaPlugin {
 				ProtocolLib.this.updateConfiguration();
 
 				// Check for updates too
-				if (!UPDATES_DISABLED && (ProtocolLib.this.tickCounter % 20) == 0) {
+				if (!ProtocolLibrary.updatesDisabled() && (ProtocolLib.this.tickCounter % 20) == 0) {
 					ProtocolLib.this.checkUpdates();
 				}
 			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
@@ -543,7 +541,7 @@ public class ProtocolLib extends JavaPlugin {
 			}
 		} catch (Exception e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e));
-			UPDATES_DISABLED = true;
+			ProtocolLibrary.disableUpdates();
 		}
 	}
 

@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.reflect.instances;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,7 +26,6 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.collect.Lists;
 
@@ -125,7 +125,7 @@ public class ExistingGenerator implements InstanceProvider {
 		// Read instances from every field.
 		for (Field field : FuzzyReflection.fromClass(type, true).getFields()) {
 			try {
-				Object value = FieldUtils.readField(field, object, true);
+				Object value = Accessors.getFieldAccessor(field).get(object);
 
 				// Use the type of the field, not the object itself
 				if (value != null)

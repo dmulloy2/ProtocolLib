@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.reflect;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.google.common.primitives.Primitives;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -224,7 +225,7 @@ public class PrettyPrinter {
 			// Skip a good number of the fields
 			if (!Modifier.isTransient(mod) && !Modifier.isStatic(mod)) {
 				Class<?> type = field.getType();
-				Object value = FieldUtils.readField(field, object, true);
+				Object value = Accessors.getFieldAccessor(field).get(object);
 
 				if (first) {
 					first = false;

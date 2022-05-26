@@ -3,7 +3,8 @@ package com.comphenix.protocol;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.comphenix.protocol.reflect.FieldUtils;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 import java.util.Collections;
 import java.util.List;
@@ -88,7 +89,8 @@ public class BukkitInitialization {
 			SpigotWorldConfig mockWorldConfig = mock(SpigotWorldConfig.class);
 
 			try {
-				FieldUtils.writeField(nmsWorld.getClass().getField("spigotConfig"), nmsWorld, mockWorldConfig, true);
+				FieldAccessor spigotConfig = Accessors.getFieldAccessor(nmsWorld.getClass().getField("spigotConfig"));
+				spigotConfig.set(nmsWorld, mockWorldConfig);
 			} catch (ReflectiveOperationException ex) {
 				throw new RuntimeException(ex);
 			}

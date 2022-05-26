@@ -1,7 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -11,7 +9,6 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
@@ -121,28 +118,6 @@ public class TroveWrapper {
 	 */
 	public static boolean isTroveClass(Class<?> clazz) {
 		return getClassSource(clazz) != null;
-	}
-	
-	/**
-	 * Transform the no entry value in the given map.
-	 * @param troveMap - the trove map.
-	 * @param transform - the transform.
-	 */
-	public static void transformNoEntryValue(Object troveMap, Function<Integer, Integer> transform) {
-		// Check for stupid no_entry_values
-		try {
-			Field field = FieldUtils.getField(troveMap.getClass(), "no_entry_value", true);
-			int current = (Integer) FieldUtils.readField(field, troveMap, true);
-			int transformed = transform.apply(current);
-			
-			if (current != transformed) {
-				FieldUtils.writeField(field, troveMap, transformed);
-			}
-		} catch (IllegalArgumentException e) {
-			throw new CannotFindTroveNoEntryValue(e);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException("Cannot access reflection.", e);
-		}
 	}
 	
 	/**
