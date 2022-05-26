@@ -116,7 +116,7 @@ public class ListeningWhitelist {
 	 */
 	private static <T> Set<T> safeSet(Collection<T> set) {
 		if (set != null) {
-			return Sets.newHashSet(set);
+			return new HashSet<>(set);
 		} else {
 			return Collections.emptySet();
 		}
@@ -204,9 +204,9 @@ public class ListeningWhitelist {
 
 		// Default values
 		private ListenerPriority priority = ListenerPriority.NORMAL;
-		private Set<PacketType> types = Sets.newHashSet();
+		private Set<PacketType> types = new HashSet<>();
 		private GamePhase gamePhase = GamePhase.PLAYING;
-		private Set<ListenerOptions> options = Sets.newHashSet();
+		private Set<ListenerOptions> options = new HashSet<>();
 
 		/**
 		 * Construct a new listening whitelist template.

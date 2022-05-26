@@ -28,7 +28,6 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
-import com.google.common.collect.Lists;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -221,7 +220,7 @@ class EntityUtilities {
 	}
 
 	private List<Object> unwrapBukkit(List<Player> players) {
-		List<Object> output = Lists.newArrayList();
+		final List<Object> output = new ArrayList<>();
 		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 
 		// Get the NMS equivalent

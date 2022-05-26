@@ -458,8 +458,8 @@ public abstract class EnumWrappers {
 	private static Class<?> ENTITY_POSE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
-	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
-	private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = Maps.newHashMap();
+	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
+	private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = new HashMap<>();
 	static Set<String> INVALID = new HashSet<>();
 
 	/**

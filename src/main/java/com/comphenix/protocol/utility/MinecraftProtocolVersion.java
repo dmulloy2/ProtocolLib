@@ -1,6 +1,5 @@
 package com.comphenix.protocol.utility;
 
-import com.google.common.collect.Maps;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -15,7 +14,7 @@ public final class MinecraftProtocolVersion {
 	private static final NavigableMap<MinecraftVersion, Integer> LOOKUP = createLookup();
 
 	private static NavigableMap<MinecraftVersion, Integer> createLookup() {
-		TreeMap<MinecraftVersion, Integer> map = Maps.newTreeMap();
+		TreeMap<MinecraftVersion, Integer> map = new TreeMap<>();
 
 		// Source: http://wiki.vg/Protocol_version_numbers
 		// Doesn't include pre-releases

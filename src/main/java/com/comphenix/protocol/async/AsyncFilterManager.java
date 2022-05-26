@@ -36,7 +36,6 @@ import com.comphenix.protocol.injector.SortedPacketListenerList;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -87,7 +86,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 		// Initialize timeout listeners
 		this.serverTimeoutListeners = new SortedPacketListenerList();
 		this.clientTimeoutListeners = new SortedPacketListenerList();
-		this.timeoutListeners = Sets.newSetFromMap(new ConcurrentHashMap<>());
+		this.timeoutListeners = ConcurrentHashMap.newKeySet();
 
 		this.playerSendingHandler = new PlayerSendingHandler(reporter, serverTimeoutListeners, clientTimeoutListeners);
 		this.serverProcessingQueue = new PacketProcessingQueue(playerSendingHandler);

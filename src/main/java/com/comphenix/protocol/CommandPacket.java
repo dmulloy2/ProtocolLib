@@ -22,6 +22,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,25 +35,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.utility.ByteBuddyGenerated;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.PrettyPrinter;
-import com.comphenix.protocol.reflect.PrettyPrinter.ObjectPrinter;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.HexDumper;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.collect.MapMaker;
-import com.google.common.collect.Sets;
 
 /**
  * Handles the "packet" debug command.
@@ -294,7 +287,7 @@ class CommandPacket extends CommandBase {
 	}
 		
 	private Set<PacketType> filterTypes(Set<PacketType> types, Sender sender) {
-		Set<PacketType> result = Sets.newHashSet();
+		final Set<PacketType> result = new HashSet<>();
 		
 		for (PacketType type : types) {
 			if (type.getSender() == sender) {

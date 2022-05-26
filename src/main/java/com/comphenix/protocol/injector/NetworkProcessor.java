@@ -7,7 +7,7 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketPostListener;
 import com.comphenix.protocol.events.ScheduledPacket;
-import java.util.Set;
+import java.util.Deque;
 
 /**
  * Represents a processor for network markers.
@@ -61,11 +61,12 @@ public class NetworkProcessor {
 	 */
 	private void sendScheduledPackets(NetworkMarker marker) {
 		// Next, invoke post packet transmission
-		Set<ScheduledPacket> scheduled = NetworkMarker.readScheduledPackets(marker);
+		Deque<ScheduledPacket> scheduled = NetworkMarker.readScheduledPackets(marker);
 		ProtocolManager manager = ProtocolLibrary.getProtocolManager();
 
 		if (scheduled != null) {
-			for (ScheduledPacket packet : scheduled) {
+			ScheduledPacket packet;
+			while ((packet = scheduled.poll()) != null) {
 				packet.schedule(manager);
 			}
 		}

@@ -18,12 +18,12 @@
 package com.comphenix.protocol.wrappers.collection;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 
 /**
  * Represents a collection that wraps another collection by transforming the elements going in and out.
@@ -103,7 +103,7 @@ public abstract class ConvertedCollection<VInner, VOuter> extends AbstractConver
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean retainAll(Collection<?> c) {
-		List<VInner> innerCopy = Lists.newArrayList();
+		final List<VInner> innerCopy = new ArrayList<>();
 		
 		// Convert all the elements
 		for (Object outer : c)

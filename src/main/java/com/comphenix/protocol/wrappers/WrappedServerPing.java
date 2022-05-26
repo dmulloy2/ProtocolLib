@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -29,7 +30,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
 import io.netty.buffer.ByteBuf;
@@ -288,7 +288,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param players - the players to display.
 	 */
 	public void setBukkitPlayers(Iterable<? extends Player> players) {
-		List<WrappedGameProfile> profiles = Lists.newArrayList();
+		final List<WrappedGameProfile> profiles = new ArrayList<>();
 
 		for (Player player : players) {
 			Object profile = ENTITY_HUMAN_PROFILE.get(BukkitUnwrapper.getInstance().unwrapItem(player));

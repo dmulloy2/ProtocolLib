@@ -30,9 +30,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 /**
  * Static packet registry in Minecraft.
@@ -51,9 +48,9 @@ public class PacketRegistry {
 		private final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
 		private final Map<Class<?>, PacketType> classToType = new ConcurrentHashMap<>();
 
-		private volatile Set<PacketType> serverPackets = Sets.newHashSet();
-		private volatile Set<PacketType> clientPackets = Sets.newHashSet();
-		private final List<MapContainer> containers = Lists.newArrayList();
+		private volatile Set<PacketType> serverPackets = new HashSet<>();
+		private volatile Set<PacketType> clientPackets = new HashSet<>();
+		private final List<MapContainer> containers = new ArrayList<>();
 
 		public Register() {}
 
@@ -106,8 +103,8 @@ public class PacketRegistry {
 		Object[] protocols = ENUM_PROTOCOL.getEnumConstants();
 
 		// ID to Packet class maps
-		Map<Object, Map<Integer, Class<?>>> serverMaps = Maps.newLinkedHashMap();
-		Map<Object, Map<Integer, Class<?>>> clientMaps = Maps.newLinkedHashMap();
+		final Map<Object, Map<Integer, Class<?>>> serverMaps = new LinkedHashMap<>();
+		final Map<Object, Map<Integer, Class<?>>> clientMaps = new LinkedHashMap<>();
 
 		Register result = new Register();
 		StructureModifier<Object> modifier = null;
@@ -157,8 +154,8 @@ public class PacketRegistry {
 		Object[] protocols = ENUM_PROTOCOL.getEnumConstants();
 
 		// ID to Packet class maps
-		Map<Object, Map<Class<?>, Integer>> serverMaps = Maps.newLinkedHashMap();
-		Map<Object, Map<Class<?>, Integer>> clientMaps = Maps.newLinkedHashMap();
+		final Map<Object, Map<Class<?>, Integer>> serverMaps = new LinkedHashMap<>();
+		final Map<Object, Map<Class<?>, Integer>> clientMaps = new LinkedHashMap<>();
 
 		Register result = new Register();
 		Field mainMapField = null;
