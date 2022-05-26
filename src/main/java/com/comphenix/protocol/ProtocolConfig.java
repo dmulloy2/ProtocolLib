@@ -42,7 +42,6 @@ public class ProtocolConfig {
 	private static final String METRICS_ENABLED = "metrics";
 
 	private static final String IGNORE_VERSION_CHECK = "ignore version check";
-	private static final String BACKGROUND_COMPILER_ENABLED = "background compiler";
 
 	private static final String DEBUG_MODE_ENABLED = "debug";
 	private static final String DETAILED_ERROR = "detailed error";
@@ -306,15 +305,6 @@ public class ProtocolConfig {
 	 */
 	public boolean isMetricsEnabled() {
 		return getGlobalValue(METRICS_ENABLED, true);
-	}
-
-	/**
-	 * Retrieve whether or not the background compiler for structure modifiers is enabled or not.
-	 *
-	 * @return TRUE if it is enabled, FALSE otherwise.
-	 */
-	public boolean isBackgroundCompilerEnabled() {
-		return getGlobalValue(BACKGROUND_COMPILER_ENABLED, true);
 	}
 
 	/**

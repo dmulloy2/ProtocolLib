@@ -25,7 +25,6 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
-import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
@@ -99,7 +98,6 @@ public class ProtocolLib extends JavaPlugin {
 	private static ErrorReporter reporter = new BasicErrorReporter();
 
 	private Statistics statistics;
-	private BackgroundCompiler backgroundCompiler;
 
 	private int packetTask = -1;
 	private int tickCounter = 0;
@@ -329,16 +327,6 @@ public class ProtocolLib extends JavaPlugin {
 			// Check for incompatible plugins
 			this.checkForIncompatibility(manager);
 
-			// Initialize background compiler
-			if (this.backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
-				this.backgroundCompiler = new BackgroundCompiler(reporter);
-				BackgroundCompiler.setInstance(this.backgroundCompiler);
-
-				logger.info("Started structure compiler thread.");
-			} else {
-				logger.info("Structure compiler thread has been disabled.");
-			}
-
 			// Set up command handlers
 			this.registerCommand(CommandProtocol.NAME, this.commandProtocol);
 			this.registerCommand(CommandPacket.NAME, this.commandPacket);
@@ -563,13 +551,6 @@ public class ProtocolLib extends JavaPlugin {
 	public void onDisable() {
 		if (this.skipDisable) {
 			return;
-		}
-
-		// Disable compiler
-		if (this.backgroundCompiler != null) {
-			this.backgroundCompiler.shutdownAll();
-			this.backgroundCompiler = null;
-			BackgroundCompiler.setInstance(null);
 		}
 
 		// Clean up

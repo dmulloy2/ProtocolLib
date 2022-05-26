@@ -22,8 +22,6 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
-import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
-import com.comphenix.protocol.reflect.compiler.CompiledStructureModifier;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
@@ -31,9 +29,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.ZeroBuffer;
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -46,9 +42,6 @@ import net.bytebuddy.matcher.ElementMatchers;
  * @author Kristian
  */
 public class StructureCache {
-
-	// prevent duplicate compilations
-	private static final Set<PacketType> COMPILING = new HashSet<>();
 
 	// Structure modifiers
 	private static final Map<Class<?>, Supplier<Object>> PACKET_INSTANCE_CREATORS = new ConcurrentHashMap<>();
@@ -98,66 +91,31 @@ public class StructureCache {
 	}
 
 	/**
-	 * Retrieve a cached structure modifier for the given packet type.
-	 *
-	 * @param type - packet type.
-	 * @return A structure modifier.
-	 */
-	public static StructureModifier<Object> getStructure(PacketType type) {
-		// Compile structures by default
-		return getStructure(type, true);
-	}
-
-	/**
 	 * Retrieve a cached structure modifier given a packet type.
 	 *
 	 * @param packetType - packet type.
 	 * @return A structure modifier.
 	 */
 	public static StructureModifier<Object> getStructure(Class<?> packetType) {
-		// Compile structures by default
-		return getStructure(packetType, true);
-	}
-
-	/**
-	 * Retrieve a cached structure modifier given a packet type.
-	 *
-	 * @param packetType - packet type.
-	 * @param compile    - whether or not to asynchronously compile the structure modifier.
-	 * @return A structure modifier.
-	 */
-	public static StructureModifier<Object> getStructure(Class<?> packetType, boolean compile) {
 		// Get the ID from the class
 		PacketType type = PacketRegistry.getPacketType(packetType);
 		Preconditions.checkNotNull(type, "No packet type associated with " + packetType);
-		return getStructure(type, compile);
+		return getStructure(type);
 	}
 
 	/**
 	 * Retrieve a cached structure modifier for the given packet type.
 	 *
 	 * @param packetType - packet type.
-	 * @param compile    - whether or not to asynchronously compile the structure modifier.
 	 * @return A structure modifier.
 	 */
-	public static StructureModifier<Object> getStructure(final PacketType packetType, boolean compile) {
+	public static StructureModifier<Object> getStructure(final PacketType packetType) {
 		Preconditions.checkNotNull(packetType, "type cannot be null");
 
 		StructureModifier<Object> modifier = STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
 			Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
 			return new StructureModifier<>(packetClass, MinecraftReflection.getPacketClass(), true);
 		});
-
-		// check if we should compile the structure modifier now
-		if (compile && !(modifier instanceof CompiledStructureModifier) && COMPILING.add(packetType)) {
-			// compile now
-			BackgroundCompiler compiler = BackgroundCompiler.getInstance();
-			if (compiler != null) {
-				compiler.scheduleCompilation(
-						modifier,
-						compiled -> STRUCTURE_MODIFIER_CACHE.put(packetType, compiled));
-			}
-		}
 
 		return modifier;
 	}

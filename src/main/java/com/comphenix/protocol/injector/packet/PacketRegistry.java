@@ -115,7 +115,7 @@ public class PacketRegistry {
 		// Iterate through the protocols
 		for (Object protocol : protocols) {
 			if (modifier == null) {
-				modifier = new StructureModifier<>(protocol.getClass().getSuperclass(), false);
+				modifier = new StructureModifier<>(protocol.getClass().getSuperclass());
 			}
 
 			StructureModifier<Map<Object, Map<Integer, Class<?>>>> maps = modifier.withTarget(protocol).withType(Map.class);

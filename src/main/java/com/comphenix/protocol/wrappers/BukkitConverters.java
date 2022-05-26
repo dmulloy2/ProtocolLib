@@ -922,7 +922,7 @@ public class BukkitConverters {
 			@Override
 			public PotionEffect getSpecific(Object generic) {
 				if (mobEffectModifier == null) {
-					mobEffectModifier = new StructureModifier<>(MinecraftReflection.getMobEffectClass(), false);
+					mobEffectModifier = new StructureModifier<>(MinecraftReflection.getMobEffectClass());
 				}
 				StructureModifier<Integer> ints = mobEffectModifier.withTarget(generic).withType(int.class);
 				StructureModifier<Boolean> bools = mobEffectModifier.withTarget(generic).withType(boolean.class);
@@ -978,7 +978,7 @@ public class BukkitConverters {
 			@Override
 			public Vector getSpecific(Object generic) {
 				if (vec3dModifier == null) {
-					vec3dModifier = new StructureModifier<>(MinecraftReflection.getVec3DClass(), false);
+					vec3dModifier = new StructureModifier<>(MinecraftReflection.getVec3DClass());
 				}
 
 				StructureModifier<Double> doubles = vec3dModifier.withTarget(generic).withType(double.class);

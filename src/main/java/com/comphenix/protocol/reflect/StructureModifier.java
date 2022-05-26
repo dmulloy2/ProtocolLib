@@ -19,7 +19,6 @@ package com.comphenix.protocol.reflect;
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.reflect.instances.BannedGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
@@ -36,7 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -50,8 +48,20 @@ import java.util.stream.Collectors;
  */
 public class StructureModifier<T> {
 
-	// Instance generator we wil use
+	// Instance generator we will use
 	private static final DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
+	// a structure modifier which does nothing
+	private static final StructureModifier<Object> NO_OP_MODIFIER = new StructureModifier<Object>() {
+		@Override
+		public Object read(int fieldIndex) throws FieldAccessException {
+			return null;
+		}
+
+		@Override
+		public StructureModifier<Object> write(int fieldIndex, Object value) throws FieldAccessException {
+			return this;
+		}
+	};
 
 	// Object and its type
 	protected Object target;
@@ -71,8 +81,6 @@ public class StructureModifier<T> {
 
 	// Whether or subclasses should handle conversion
 	protected boolean customConvertHandling;
-	// Whether to automatically compile the structure modifier
-	protected boolean useStructureCompiler;
 
 	/**
 	 * Creates a structure modifier.
@@ -80,17 +88,7 @@ public class StructureModifier<T> {
 	 * @param targetType - the structure to modify.
 	 */
 	public StructureModifier(Class<?> targetType) {
-		this(targetType, null, true);
-	}
-
-	/**
-	 * Creates a structure modifier.
-	 *
-	 * @param targetType           - the structure to modify.
-	 * @param useStructureCompiler - whether to use a structure compiler.
-	 */
-	public StructureModifier(Class<?> targetType, boolean useStructureCompiler) {
-		this(targetType, Object.class, true, useStructureCompiler);
+		this(targetType, Object.class, true);
 	}
 
 	/**
@@ -98,30 +96,17 @@ public class StructureModifier<T> {
 	 *
 	 * @param targetType        - the structure to modify.
 	 * @param superclassExclude - a superclass to exclude.
-	 * @param requireDefault    - whether we will be using writeDefaults().
-	 */
-	public StructureModifier(Class<?> targetType, Class<?> superclassExclude, boolean requireDefault) {
-		this(targetType, superclassExclude, requireDefault, true);
-	}
-
-	/**
-	 * Creates a structure modifier.
-	 *
-	 * @param targetType           - the structure to modify.
-	 * @param superclassExclude    - a superclass to exclude.
-	 * @param requireDefault       - whether we will be using writeDefaults().
-	 * @param useStructureCompiler - whether to automatically compile this structure modifier.
+	 * @param requireDefault    - whether we will be using writeDefaults()
 	 */
 	public StructureModifier(
 			Class<?> targetType,
 			Class<?> superclassExclude,
-			boolean requireDefault,
-			boolean useStructureCompiler
+			boolean requireDefault
 	) {
 		List<FieldAccessor> fields = getFields(targetType, superclassExclude);
 		Map<FieldAccessor, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<>();
 
-		this.initialize(targetType, Object.class, fields, defaults, null, new HashMap<>(), useStructureCompiler);
+		this.initialize(targetType, Object.class, fields, defaults, null, new HashMap<>());
 	}
 
 	/**
@@ -181,8 +166,7 @@ public class StructureModifier<T> {
 				other.accessors,
 				other.defaultFields,
 				other.converter,
-				other.subtypeCache,
-				other.useStructureCompiler);
+				other.subtypeCache);
 	}
 
 	/**
@@ -203,36 +187,12 @@ public class StructureModifier<T> {
 			EquivalentConverter<T> converter,
 			Map<Class<?>, StructureModifier<?>> subTypeCache
 	) {
-		this.initialize(targetType, fieldType, data, defaultFields, converter, subTypeCache, true);
-	}
-
-	/**
-	 * Initialize every field of this class.
-	 *
-	 * @param targetType           - type of the object we're reading and writing from.
-	 * @param fieldType            - the common type of the fields we're modifying.
-	 * @param data                 - list of fields to modify.
-	 * @param defaultFields        - list of fields that will be automatically initialized.
-	 * @param converter            - converts between the common field type and the actual type the consumer expects.
-	 * @param subTypeCache         - a structure modifier cache.
-	 * @param useStructureCompiler - whether or not to automatically compile this structure modifier.
-	 */
-	protected void initialize(
-			Class<?> targetType,
-			Class<?> fieldType,
-			List<FieldAccessor> data,
-			Map<FieldAccessor, Integer> defaultFields,
-			EquivalentConverter<T> converter,
-			Map<Class<?>, StructureModifier<?>> subTypeCache,
-			boolean useStructureCompiler
-	) {
 		this.targetType = targetType;
 		this.fieldType = fieldType;
 		this.accessors = data;
 		this.defaultFields = defaultFields;
 		this.converter = converter;
 		this.subtypeCache = subTypeCache;
-		this.useStructureCompiler = useStructureCompiler;
 	}
 
 	/**
@@ -250,10 +210,10 @@ public class StructureModifier<T> {
 	public T read(int fieldIndex) throws FieldAccessException {
 		FieldAccessor accessor = this.findFieldAccessor(fieldIndex);
 		if (accessor == null) {
-			throw new FieldAccessException(String.format(
+			throw FieldAccessException.fromFormat(
 					"Field index %d is out of bounds for length %s",
 					fieldIndex,
-					this.accessors.size()));
+					this.accessors.size());
 		}
 
 		return this.readInternal(accessor);
@@ -326,10 +286,10 @@ public class StructureModifier<T> {
 	public StructureModifier<T> write(int fieldIndex, T value) throws FieldAccessException {
 		FieldAccessor accessor = this.findFieldAccessor(fieldIndex);
 		if (accessor == null) {
-			throw new FieldAccessException(String.format(
+			throw FieldAccessException.fromFormat(
 					"Field index %d is out of bounds for length %s",
 					fieldIndex,
-					this.accessors.size()));
+					this.accessors.size());
 		}
 
 		return this.writeInternal(accessor, value);
@@ -392,7 +352,7 @@ public class StructureModifier<T> {
 	}
 
 	/**
-	 * Whether or not we should use the converter instance.
+	 * Whether we should use the converter instance.
 	 *
 	 * @return TRUE if we should, FALSE otherwise.
 	 */
@@ -544,17 +504,7 @@ public class StructureModifier<T> {
 	) {
 		if (fieldType == null) {
 			// It's not supported in this version, so return an empty modifier
-			return new StructureModifier<R>() {
-				@Override
-				public R read(int index) {
-					return null;
-				}
-
-				@Override
-				public StructureModifier<R> write(int index, R value) {
-					return this;
-				}
-			};
+			return (StructureModifier<R>) NO_OP_MODIFIER;
 		}
 
 		// Do we need to update the cache?
@@ -598,11 +548,6 @@ public class StructureModifier<T> {
 			// Cache structure modifiers
 			result = this.withFieldType(fieldType, fields, defaults);
 			this.subtypeCache.put(fieldType, result);
-
-			// Automatically compile the structure modifier
-			if (this.useStructureCompiler && BackgroundCompiler.getInstance() != null) {
-				BackgroundCompiler.getInstance().scheduleCompilation(this.subtypeCache, fieldType);
-			}
 		}
 
 		// Add the target too
@@ -653,8 +598,7 @@ public class StructureModifier<T> {
 				filtered,
 				defaults,
 				converter,
-				new ConcurrentHashMap<>(),
-				this.useStructureCompiler);
+				new HashMap<>());
 		return result;
 	}
 
