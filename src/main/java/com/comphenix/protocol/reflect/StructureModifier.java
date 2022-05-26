@@ -61,6 +61,11 @@ public class StructureModifier<T> {
 		public StructureModifier<Object> write(int fieldIndex, Object value) throws FieldAccessException {
 			return this;
 		}
+
+		@Override
+		protected FieldAccessor findFieldAccessor(int fieldIndex) {
+			return null;
+		}
 	};
 
 	// Object and its type
@@ -338,7 +343,7 @@ public class StructureModifier<T> {
 		return this;
 	}
 
-	private FieldAccessor findFieldAccessor(int fieldIndex) {
+	protected FieldAccessor findFieldAccessor(int fieldIndex) {
 		if (this.target == null) {
 			throw new IllegalStateException("Cannot read from modifier which has no target!");
 		}
