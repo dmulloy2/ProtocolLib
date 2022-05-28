@@ -153,7 +153,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetBytes() {
-		PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
+		PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
 		this.testPrimitive(spawnMob.getBytes(), 0, (byte) 0, (byte) 1);
 	}
 
