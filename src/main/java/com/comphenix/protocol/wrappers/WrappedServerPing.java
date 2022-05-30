@@ -259,7 +259,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 				// Recreate the count and maximum
 				Server server = Bukkit.getServer();
 				setPlayersMaximum(server.getMaxPlayers());
-				setPlayersOnline(Util.getOnlinePlayers().size());
+				setPlayersOnline(Bukkit.getOnlinePlayers().size());
 			} else {
 				PLAYERS.set(handle, players = null);
 			}
