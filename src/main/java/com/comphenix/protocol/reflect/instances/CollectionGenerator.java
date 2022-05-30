@@ -48,18 +48,12 @@ public class CollectionGenerator implements InstanceProvider {
 	public Object create(@Nullable Class<?> type) {
 		// Standard collection types
 		if (type != null && type.isInterface()) {
-			if (type.equals(Collection.class) || type.equals(List.class))
-				return new ArrayList<Object>();
-			else if (type.equals(Set.class))
-				return new HashSet<Object>();
-			else if (type.equals(Map.class))
-				return new HashMap<Object, Object>();
-			else if (type.equals(SortedSet.class))
-				return new TreeSet<Object>();
-			else if (type.equals(SortedMap.class))
-				return new TreeMap<Object, Object>();
-			else if (type.equals(Queue.class))
-				return new LinkedList<Object>();
+			if (type.equals(Collection.class) || type.equals(List.class)) return new ArrayList<>();
+			else if (type.equals(Set.class)) return new HashSet<>();
+			else if (type.equals(Map.class)) return new HashMap<>();
+			else if (type.equals(SortedSet.class)) return new TreeSet<>();
+			else if (type.equals(SortedMap.class)) return new TreeMap<>();
+			else if (type.equals(Queue.class)) return new LinkedList<>();
 		}
 		
 		// Cannot provide an instance
