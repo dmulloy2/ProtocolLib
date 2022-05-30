@@ -221,7 +221,7 @@ public class ExistingGenerator implements InstanceProvider {
 	}
 	
 	private Class<?>[] getHierachy(Class<?> type) {
-		LinkedList<Class<?>> levels = Lists.newLinkedList();
+		final LinkedList<Class<?>> levels = new LinkedList<>();
 		
 		// Add each class from the hierachy
 		for (; type != null; type = type.getSuperclass()) {
