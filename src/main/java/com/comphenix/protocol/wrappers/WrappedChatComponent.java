@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import java.io.StringReader;
 
+import net.minecraft.network.chat.IChatBaseComponent;
 import org.bukkit.ChatColor;
 
 import com.comphenix.protocol.reflect.FieldUtils;
@@ -26,7 +27,6 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
 	private static MethodAccessor SERIALIZE_COMPONENT = null;
 	private static MethodAccessor CONSTRUCT_COMPONENT = null;
-	private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
 
 	static {
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER, true);
@@ -51,9 +51,6 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
 		// Get a component from a standard Minecraft message
 		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class, boolean.class);
-
-		// And the component text constructor
-		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
 	}
 
 	private static Object deserialize(String json) {
@@ -103,7 +100,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 	 */
 	public static WrappedChatComponent fromText(String text) {
 		Preconditions.checkNotNull(text, "text cannot be NULL.");
-		return fromHandle(CONSTRUCT_TEXT_COMPONENT.invoke(text));
+		return fromLegacyText(text); // TODO: CraftChatMessage.fromString now takes a "plain" boolean parameter
 	}
 	
 	/**

@@ -642,7 +642,7 @@ public class MinecraftReflection {
 			try {
 				return getClass("net.minecraft.util.com.mojang.authlib.GameProfile");
 			} catch (Throwable ex1) {
-				FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Login.Client.START.getPacketClass(), true);
+				FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Login.Server.SUCCESS.getPacketClass(), true);
 				FuzzyFieldContract contract = FuzzyFieldContract.newBuilder()
 						.banModifier(Modifier.STATIC)
 						.typeMatches(FuzzyMatchers.matchRegex("(.*)(GameProfile)", 1))
@@ -794,7 +794,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getIChatBaseComponentClass() {
 		try {
-			return getMinecraftClass("network.chat.IChatbaseComponent", "IChatBaseComponent");
+			return getMinecraftClass("network.chat.IChatBaseComponent", "network.chat.IChatbaseComponent", "IChatBaseComponent");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("IChatBaseComponent",
 				Accessors.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
@@ -2226,6 +2226,10 @@ public class MinecraftReflection {
 		return getMinecraftClass("util.ChatDeserializer", "ChatDeserializer");
 	}
 
+	public static Class<?> getChatMutableComponentClass() {
+		return getMinecraftClass("network.chat.IChatMutableComponent");
+	}
+
 	public static Class<?> getDimensionManager() {
 		return getMinecraftClass("world.level.dimension.DimensionManager", "DimensionManager");
 	}
@@ -2264,6 +2268,14 @@ public class MinecraftReflection {
 
 	public static Class<?> getAttributeBase() {
 		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "AttributeBase");
+	}
+
+	public static Class<?> getProfilePublicKeyClass() {
+		return getMinecraftClass("world.entity.player.ProfilePublicKey");
+	}
+
+	public static Class<?> getProfilePublicKeyDataClass() {
+		return getProfilePublicKeyClass().getClasses()[0];
 	}
 
 	public static Class<?> getFastUtilClass(String className) {

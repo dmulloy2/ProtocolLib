@@ -150,7 +150,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x2D, "Ping");
 			public static final PacketType AUTO_RECIPE =                  new PacketType(PROTOCOL, SENDER, 0x2E, "AutoRecipe", "SPacketPlaceGhostRecipe");
 			public static final PacketType ABILITIES =                    new PacketType(PROTOCOL, SENDER, 0x2F, "Abilities", "SPacketPlayerAbilities");
-			public static final PacketType CHAT =                         new PacketType(PROTOCOL, SENDER, 0x30, "Chat", "SPacketChat");
+			public static final PacketType CHAT =                         new PacketType(PROTOCOL, SENDER, 0x30, "PlayerChat", "Chat", "SPacketChat");
 			public static final PacketType PLAYER_COMBAT_END =            new PacketType(PROTOCOL, SENDER, 0x31, "PlayerCombatEnd");
 			public static final PacketType PLAYER_COMBAT_ENTER =          new PacketType(PROTOCOL, SENDER, 0x32, "PlayerCombatEnter");
 			public static final PacketType PLAYER_COMBAT_KILL =           new PacketType(PROTOCOL, SENDER, 0x33, "PlayerCombatKill");

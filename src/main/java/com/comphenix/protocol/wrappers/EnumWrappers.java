@@ -512,7 +512,13 @@ public abstract class EnumWrappers {
 			ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		}
 
-		DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
+		// 1.19 removed the entity spawn packet and moved the direction into a seperated class
+		if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+			DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection");
+		} else {
+			DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
+		}
+
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
 		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "EntityPose");
 
@@ -532,7 +538,7 @@ public abstract class EnumWrappers {
 		associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
 		associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
 		associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
-		associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
+		associate(DIRECTION_CLASS,  Direction.class, getDirectionConverter());
 		associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
 		associate(HAND_CLASS, Hand.class, getHandConverter());
 		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());

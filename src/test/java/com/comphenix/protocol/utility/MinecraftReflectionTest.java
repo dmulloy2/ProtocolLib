@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import com.comphenix.protocol.BukkitInitialization;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.nbt.NBTCompressedStreamTools;
-import net.minecraft.network.chat.ChatComponentText;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.status.ServerPing;
@@ -73,11 +72,6 @@ public class MinecraftReflectionTest {
 	@Test
 	public void testChatComponent() {
 		assertEquals(IChatBaseComponent.class, MinecraftReflection.getIChatBaseComponentClass());
-	}
-
-	@Test
-	public void testChatComponentText() {
-		assertEquals(ChatComponentText.class, MinecraftReflection.getChatComponentTextClass());
 	}
 
 	@Test
