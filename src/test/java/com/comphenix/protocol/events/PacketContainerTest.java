@@ -21,7 +21,7 @@ import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -50,6 +50,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedRegistry;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -492,9 +493,12 @@ public class PacketContainerTest {
 		PacketContainer packet = creator.createPacket(entityId, mobEffect);
 
 		assertEquals(entityId, packet.getIntegers().read(0));
-		// assertEquals(effect.getType().getId(), packet.getIntegers().read(1));
 		assertEquals(effect.getAmplifier(), (byte) packet.getBytes().read(0));
 		assertEquals(effect.getDuration(), packet.getIntegers().read(1));
+
+		WrappedRegistry registry = WrappedRegistry.getRegistry(MinecraftReflection.getMobEffectListClass());
+		Object effectList = assertInstanceOf(MobEffectList.class, packet.getStructures().read(0).getHandle());
+		assertEquals(effect.getType().getId(), registry.getId(effectList));
 
 		int e = 0;
 		if (effect.isAmbient()) {
