@@ -32,7 +32,10 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -57,11 +60,13 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -80,7 +85,6 @@ import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -94,7 +98,6 @@ import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-// Ensure that the CraftItemFactory is mockable
 public class PacketContainerTest {
 
 	private static BaseComponent[] TEST_COMPONENT;
@@ -846,12 +849,36 @@ public class PacketContainerTest {
 			}
 		}
 
-		if (EqualsBuilder.reflectionEquals(a, b)) {
+		if (a.getClass().isArray()) {
+			if (b.getClass().isArray()) {
+				int arrayLengthA = Array.getLength(a);
+				int arrayLengthB = Array.getLength(b);
+
+				assertEquals(arrayLengthA, arrayLengthB);
+				for (int i = 0; i < arrayLengthA; i++) {
+					Object elementA = Array.get(a, i);
+					Object elementB = Array.get(b, i);
+
+					testEquality(elementA, elementB);
+				}
+				return;
+			} else {
+				throw new AssertionError("a was an array, but b was not");
+			}
+		}
+
+		if (!a.getClass().isAssignableFrom(b.getClass())) {
+			assertEquals(a, b);
 			return;
 		}
 
-		// TODO: figure this out, seems like reflection validation above is not working as expected (manually verified that its working)
-		// assertEquals(a, b);
+		Set<Field> fields = FuzzyReflection.fromObject(a, true).getFields();
+		for (Field field : fields) {
+			if (!Modifier.isStatic(field.getModifiers())) {
+				FieldAccessor accessor = Accessors.getFieldAccessor(field, true);
+				testEquality(accessor.get(a), accessor.get(b));
+			}
+		}
 	}
 
 	private boolean stringEquality(Object a, Object b) {
