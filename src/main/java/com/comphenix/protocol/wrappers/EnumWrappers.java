@@ -538,7 +538,7 @@ public abstract class EnumWrappers {
 		associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
 		associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
 		associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
-		associate(DIRECTION_CLASS,  Direction.class, getDirectionConverter());
+		associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
 		associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
 		associate(HAND_CLASS, Hand.class, getHandConverter());
 		associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
