@@ -11,6 +11,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Preconditions;
+import java.time.Instant;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -922,6 +923,14 @@ public abstract class AbstractStructure {
                         Converters.passthrough(int.class)
                 )
         );
+    }
+
+    /**
+     * Retrieve a read/write structure for Instants in (mostly for use in 1.19+)
+     * @return The Structure Modifier
+     */
+    public StructureModifier<Instant> getInstants() {
+        return structureModifier.withType(Instant.class);
     }
 
     /**

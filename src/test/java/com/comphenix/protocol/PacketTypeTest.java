@@ -76,7 +76,7 @@ public class PacketTypeTest {
 
 			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
 			for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
-				Field mapField = entry.getValue().getClass().getDeclaredField("a");
+				Field mapField = entry.getValue().getClass().getDeclaredField("b");
 				mapField.setAccessible(true);
 
 				Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());

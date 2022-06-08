@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import com.comphenix.protocol.BukkitInitialization;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.nbt.NBTCompressedStreamTools;
-import net.minecraft.network.chat.ChatComponentText;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.status.ServerPing;
@@ -22,7 +21,7 @@ import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.AfterAll;
@@ -73,11 +72,6 @@ public class MinecraftReflectionTest {
 	@Test
 	public void testChatComponent() {
 		assertEquals(IChatBaseComponent.class, MinecraftReflection.getIChatBaseComponentClass());
-	}
-
-	@Test
-	public void testChatComponentText() {
-		assertEquals(ChatComponentText.class, MinecraftReflection.getChatComponentTextClass());
 	}
 
 	@Test
