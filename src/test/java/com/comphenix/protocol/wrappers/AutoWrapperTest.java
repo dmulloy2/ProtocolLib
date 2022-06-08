@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.comphenix.protocol.BukkitInitialization;
-import java.util.List;
 import net.minecraft.advancements.AdvancementDisplay;
 import net.minecraft.advancements.AdvancementFrameType;
 import net.minecraft.network.chat.IChatBaseComponent;
@@ -45,7 +44,7 @@ public class AutoWrapperTest {
     assertTrue(nms.h());
     assertTrue(nms.j());
     assertFalse(nms.i());
-    assertEquals(nms.d().a(), "test");
+    assertEquals("test", nms.d().a());
     validateRawText(nms.a(), "Test123");
     validateRawText(nms.b(), "Test567");
     assertSame(AdvancementFrameType.b, nms.e());
@@ -94,12 +93,8 @@ public class AutoWrapperTest {
   }
 
   private void validateRawText(IChatBaseComponent component, String expected) {
-    List<IChatBaseComponent> siblings = component.c();
-    assertEquals(1, siblings.size());
-
-    IChatBaseComponent sibling = siblings.get(0);
-    assertInstanceOf(LiteralContents.class, sibling.b());
-    assertEquals(expected, ((LiteralContents) sibling.b()).a());
+    LiteralContents content = assertInstanceOf(LiteralContents.class, component.b());
+    assertEquals(expected, content.a());
   }
 
   public enum WrappedFrameType {
