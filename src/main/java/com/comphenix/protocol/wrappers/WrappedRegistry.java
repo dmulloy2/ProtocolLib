@@ -19,6 +19,7 @@ public class WrappedRegistry {
     private static final Map<Class<?>, WrappedRegistry> REGISTRY;
 
     private static final MethodAccessor GET;
+    private static final MethodAccessor GET_ID;
     private static final MethodAccessor GET_KEY;
 
     static {
@@ -29,7 +30,7 @@ public class WrappedRegistry {
             for (Field field : regClass.getFields()) {
                 try {
                     // make sure it's actually a registry
-                    if (field.getType().isAssignableFrom(regClass)) {
+                    if (regClass.isAssignableFrom(field.getType())) {
                         Type genType = field.getGenericType();
                         if (genType instanceof ParameterizedType) {
                             ParameterizedType par = (ParameterizedType) genType;
@@ -48,12 +49,19 @@ public class WrappedRegistry {
 
         FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
         GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+		        .newBuilder()
+		        .parameterCount(1)
+		        .returnDerivedOf(Object.class)
+		        .requireModifier(Modifier.ABSTRACT)
+                .parameterExactType(MinecraftReflection.getMinecraftKeyClass())
+                .build()));
+        GET_ID = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
                 .newBuilder()
-            		.parameterCount(1)
-            		.returnDerivedOf(Object.class)
-            		.requireModifier(Modifier.ABSTRACT)
-            		.parameterExactType(MinecraftReflection.getMinecraftKeyClass())
-            		.build()));
+                .parameterCount(1)
+                .returnTypeExact(int.class)
+                .requireModifier(Modifier.ABSTRACT)
+                .parameterDerivedOf(Object.class)
+                .build()));
         GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
                 .newBuilder()
                 .parameterCount(1)
@@ -79,13 +87,27 @@ public class WrappedRegistry {
         return MinecraftKey.getConverter().getSpecific(GET_KEY.invoke(handle, generic));
     }
 
-    // TODO add more methods
+	public int getId(MinecraftKey key) {
+		return getId(get(key));
+	}
+
+	public int getId(String key) {
+	    return getId(new MinecraftKey(key));
+	}
+
+	public int getId(Object entry) {
+		return (int) GET_ID.invoke(this.handle, entry);
+	}
 
     public static WrappedRegistry getAttributeRegistry() {
-        return REGISTRY.get(MinecraftReflection.getAttributeBase());
+        return getRegistry(MinecraftReflection.getAttributeBase());
     }
 
     public static WrappedRegistry getDimensionRegistry() {
-        return REGISTRY.get(MinecraftReflection.getDimensionManager());
+        return getRegistry(MinecraftReflection.getDimensionManager());
     }
+
+	public static WrappedRegistry getRegistry(Class<?> type) {
+		return REGISTRY.get(type);
+	}
 }
