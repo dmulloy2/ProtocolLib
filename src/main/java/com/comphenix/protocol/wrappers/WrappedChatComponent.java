@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import com.google.gson.JsonObject;
 import java.io.StringReader;
 
 import org.bukkit.ChatColor;
@@ -25,6 +26,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
 	private static MethodAccessor SERIALIZE_COMPONENT = null;
 	private static MethodAccessor CONSTRUCT_COMPONENT = null;
+
 	private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
 
 	static {
@@ -47,8 +49,12 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 		// Get a component from a standard Minecraft message
 		CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class, boolean.class);
 
-		// And the component text constructor
-		CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
+		try {
+			// And the component text constructor
+			CONSTRUCT_TEXT_COMPONENT = Accessors.getConstructorAccessor(MinecraftReflection.getChatComponentTextClass(), String.class);
+		} catch (Exception ignored) {
+			// We don't need it
+		}
 	}
 
 	private static Object deserialize(String json) {
@@ -98,7 +104,15 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 	 */
 	public static WrappedChatComponent fromText(String text) {
 		Preconditions.checkNotNull(text, "text cannot be NULL.");
-		return fromHandle(CONSTRUCT_TEXT_COMPONENT.invoke(text));
+
+		if (CONSTRUCT_TEXT_COMPONENT != null) {
+			return fromHandle(CONSTRUCT_TEXT_COMPONENT.invoke(text));
+		}
+
+		// this is a bit hacky, but it works good enough and has no need for additional magic
+		JsonObject object = new JsonObject();
+		object.addProperty("text", text);
+		return fromJson(object.toString());
 	}
 
 	/**

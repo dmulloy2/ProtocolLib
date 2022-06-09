@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -9,7 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import com.comphenix.protocol.BukkitInitialization;
 import net.minecraft.advancements.AdvancementDisplay;
 import net.minecraft.advancements.AdvancementFrameType;
-import net.minecraft.network.chat.ChatComponentText;
+import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.world.item.Items;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -28,7 +30,7 @@ public class AutoWrapperTest {
     WrappedAdvancementDisplay display = new WrappedAdvancementDisplay();
     display.title = WrappedChatComponent.fromText("Test123");
     display.description = WrappedChatComponent.fromText("Test567");
-    display.item = new ItemStack(Material.SAND);
+    display.item = new ItemStack(Material.DARK_OAK_SAPLING);
     display.background = new MinecraftKey("test");
     display.frameType = WrappedFrameType.CHALLENGE;
     display.announceChat = false;
@@ -43,8 +45,8 @@ public class AutoWrapperTest {
     assertTrue(nms.j());
     assertFalse(nms.i());
     assertEquals("test", nms.d().a());
-    assertEquals("Test123", nms.a().a());
-    assertEquals("Test567", nms.b().a());
+    validateRawText(nms.a(), "Test123");
+    validateRawText(nms.b(), "Test567");
     assertSame(AdvancementFrameType.b, nms.e());
     assertSame(Items.L, nms.c().c());
     assertEquals(5f, nms.f(), 0f);
@@ -54,9 +56,9 @@ public class AutoWrapperTest {
   @Test
   public void testFromNms() {
     AdvancementDisplay display = new AdvancementDisplay(
-        new net.minecraft.world.item.ItemStack(Items.L),
-        new ChatComponentText("Test123"),
-        new ChatComponentText("Test567"),
+        new net.minecraft.world.item.ItemStack(Items.qA),
+        IChatBaseComponent.b("Test123"),
+        IChatBaseComponent.b("Test567"),
         new net.minecraft.resources.MinecraftKey("minecraft", "test"),
         AdvancementFrameType.b,
         true,
@@ -74,7 +76,7 @@ public class AutoWrapperTest {
     assertEquals("{\"text\":\"Test123\"}", wrapped.title.getJson());
     assertEquals("{\"text\":\"Test567\"}", wrapped.description.getJson());
     assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
-    assertSame(Material.SAND, wrapped.item.getType());
+    assertSame(Material.ENDER_EYE, wrapped.item.getType());
     assertEquals(5f, wrapped.x, 0f);
     assertEquals(67f, wrapped.y, 0f);
   }
@@ -88,6 +90,11 @@ public class AutoWrapperTest {
         .field(3, MinecraftKey.getConverter())
         .field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType"),
             WrappedFrameType.class));
+  }
+
+  private void validateRawText(IChatBaseComponent component, String expected) {
+    LiteralContents content = assertInstanceOf(LiteralContents.class, component.b());
+    assertEquals(expected, content.a());
   }
 
   public enum WrappedFrameType {

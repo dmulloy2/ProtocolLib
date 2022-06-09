@@ -9,6 +9,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.collect.Sets;
 import java.util.Set;
+import net.minecraft.core.EnumDirection;
 import net.minecraft.network.EnumProtocol;
 import net.minecraft.network.protocol.game.PacketPlayInClientCommand.EnumClientCommand;
 import net.minecraft.world.EnumDifficulty;
@@ -21,7 +22,7 @@ import org.junit.jupiter.api.Test;
 public class EnumWrappersTest {
 
 	private static final Set<String> KNOWN_INVALID = Sets.newHashSet(
-			"Particle", "WorldBorderAction", "CombatEventType", "TitleAction"
+			"Particle", "WorldBorderAction", "CombatEventType", "TitleAction", "ChatType"
 	);
 
 	@BeforeAll
@@ -39,6 +40,7 @@ public class EnumWrappersTest {
 		obj.hand = EnumHand.b;
 		// obj.action = EnumEntityUseAction.INTERACT;
 		obj.mode = EnumGamemode.e;
+		obj.direction = EnumDirection.f;
 
 		assertEquals(obj.protocol, this.roundtrip(obj, "protocol", EnumWrappers.getProtocolConverter()));
 		assertEquals(obj.command, this.roundtrip(obj, "command", EnumWrappers.getClientCommandConverter()));
@@ -47,6 +49,7 @@ public class EnumWrappersTest {
 		assertEquals(obj.hand, this.roundtrip(obj, "hand", EnumWrappers.getHandConverter()));
 		// assertEquals(obj.action, roundtrip(obj, "action", EnumWrappers.getEntityUseActionConverter()) );
 		assertEquals(obj.mode, this.roundtrip(obj, "mode", EnumWrappers.getGameModeConverter()));
+		assertEquals(obj.direction, this.roundtrip(obj, "direction", EnumWrappers.getDirectionConverter()));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -69,5 +72,6 @@ public class EnumWrappersTest {
 		public EnumHand hand;
 		// public EnumEntityUseAction action; // moved to PacketPlayInUseEntity but is private
 		public EnumGamemode mode;
+		public EnumDirection direction;
 	}
 }

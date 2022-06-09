@@ -19,6 +19,7 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -75,7 +76,7 @@ public class NettyChannelInjector implements Injector {
 	private static final AttributeKey<NettyChannelInjector> INJECTOR = AttributeKey.valueOf(getRandomKey());
 
 	// lazy initialized fields, if we don't need them we don't bother about them
-	private static FieldAccessor LOGIN_GAME_PROFILE;
+	private static FieldAccessor LOGIN_PROFILE_ACCESSOR;
 	private static FieldAccessor PROTOCOL_VERSION_ACCESSOR;
 
 	// bukkit stuff
@@ -393,20 +394,35 @@ public class NettyChannelInjector implements Injector {
 	void tryProcessLogin(Object packet) {
 		// check if the given packet is a login packet
 		if (LOGIN_PACKET_START_CLASS != null && LOGIN_PACKET_START_CLASS.equals(packet.getClass())) {
-			// ensure that the game profile accessor is available
-			if (LOGIN_GAME_PROFILE == null) {
-				LOGIN_GAME_PROFILE = Accessors.getFieldAccessor(
-						LOGIN_PACKET_START_CLASS,
-						MinecraftReflection.getGameProfileClass(),
-						true);
+			if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+				// 1.19 removed the profile from the packet and now sends the plain username directly
+				// ensure that the game profile accessor is available
+				if (LOGIN_PROFILE_ACCESSOR == null) {
+					LOGIN_PROFILE_ACCESSOR = Accessors.getFieldAccessor(LOGIN_PACKET_START_CLASS, String.class, true);
+				}
+
+				// get the username from the packet
+				String username = (String) LOGIN_PROFILE_ACCESSOR.get(packet);
+
+				// cache the injector and the player name
+				this.playerName = username;
+				this.injectionFactory.cacheInjector(username, this);
+			} else {
+				// ensure that the game profile accessor is available
+				if (LOGIN_PROFILE_ACCESSOR == null) {
+					LOGIN_PROFILE_ACCESSOR = Accessors.getFieldAccessor(
+							LOGIN_PACKET_START_CLASS,
+							MinecraftReflection.getGameProfileClass(),
+							true);
+				}
+
+				// the client only sends the name but the server wraps it into a GameProfile, so here we are
+				WrappedGameProfile profile = WrappedGameProfile.fromHandle(LOGIN_PROFILE_ACCESSOR.get(packet));
+
+				// cache the injector and the player name
+				this.playerName = profile.getName();
+				this.injectionFactory.cacheInjector(profile.getName(), this);
 			}
-
-			// the client only sends the name but the server wraps it into a GameProfile, so here we are
-			WrappedGameProfile profile = WrappedGameProfile.fromHandle(LOGIN_GAME_PROFILE.get(packet));
-
-			// cache the injector and the player name
-			this.playerName = profile.getName();
-			this.injectionFactory.cacheInjector(profile.getName(), this);
 
 			return;
 		}

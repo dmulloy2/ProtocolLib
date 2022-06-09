@@ -594,7 +594,7 @@ public final class MinecraftReflection {
 	 * @return The IChatBaseComponent.
 	 */
 	public static Class<?> getIChatBaseComponentClass() {
-		return getMinecraftClass("network.chat.IChatBaseComponent", "IChatBaseComponent");
+		return getMinecraftClass("network.chat.IChatBaseComponent", "network.chat.IChatbaseComponent", "IChatBaseComponent");
 	}
 
 	public static Class<?> getIChatBaseComponentArrayClass() {
@@ -1449,6 +1449,10 @@ public final class MinecraftReflection {
 		return getMinecraftClass("util.ChatDeserializer", "ChatDeserializer");
 	}
 
+	public static Class<?> getChatMutableComponentClass() {
+		return getMinecraftClass("network.chat.IChatMutableComponent");
+	}
+
 	public static Class<?> getDimensionManager() {
 		return getMinecraftClass("world.level.dimension.DimensionManager", "DimensionManager");
 	}
@@ -1487,6 +1491,14 @@ public final class MinecraftReflection {
 
 	public static Class<?> getAttributeBase() {
 		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "AttributeBase");
+	}
+
+	public static Class<?> getProfilePublicKeyClass() {
+		return getMinecraftClass("world.entity.player.ProfilePublicKey");
+	}
+
+	public static Class<?> getProfilePublicKeyDataClass() {
+		return getProfilePublicKeyClass().getClasses()[0];
 	}
 
 	public static Class<?> getFastUtilClass(String className) {

@@ -27,6 +27,7 @@ import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.ZeroBuffer;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import java.util.Map;
@@ -131,7 +132,8 @@ public class StructureCache {
 			// ensure that we only try once to create the class
 			TRICK_TRIED = true;
 			try {
-				// create an empty instance of a nbt tag compound that we can re-use when needed
+				// create an empty instance of a nbt tag compound / text compound that we can re-use when needed
+				Object textCompound = WrappedChatComponent.fromText("").getHandle();
 				Object compound = Accessors.getConstructorAccessor(MinecraftReflection.getNBTCompoundClass()).invoke();
 				// create the method in the class to read an empty nbt tag compound (currently used for MAP_CHUNK because of null check)
 				Class<?> generatedClass = ByteBuddyFactory.getInstance()
@@ -140,6 +142,8 @@ public class StructureCache {
 						.method(ElementMatchers.returns(MinecraftReflection.getNBTCompoundClass())
 								.and(ElementMatchers.takesArguments(MinecraftReflection.getNBTReadLimiterClass())))
 						.intercept(FixedValue.value(compound))
+						.method(ElementMatchers.returns(MinecraftReflection.getIChatBaseComponentClass()))
+						.intercept(FixedValue.value(textCompound))
 						.make()
 						.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
 						.getLoaded();

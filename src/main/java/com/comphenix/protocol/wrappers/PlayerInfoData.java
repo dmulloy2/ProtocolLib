@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,13 +40,19 @@ public class PlayerInfoData {
 	private final NativeGameMode gameMode;
 	private final WrappedGameProfile profile;
 	private final WrappedChatComponent displayName;
+	private final WrappedProfileKeyData profileKeyData;
 
 	// This is the same order as the NMS class, minus the packet (which isn't a field)
 	public PlayerInfoData(WrappedGameProfile profile, int latency, NativeGameMode gameMode, WrappedChatComponent displayName) {
+		this(profile, latency, gameMode, displayName, null);
+	}
+
+	public PlayerInfoData(WrappedGameProfile profile, int latency, NativeGameMode gameMode, WrappedChatComponent displayName, WrappedProfileKeyData keyData) {
 		this.profile = profile;
 		this.latency = latency;
 		this.gameMode = gameMode;
 		this.displayName = displayName;
+		this.profileKeyData = keyData;
 	}
 
 	/**
@@ -89,6 +96,14 @@ public class PlayerInfoData {
 	}
 
 	/**
+	 * Gets the profile key data of the player represented by this data, null if not present.
+	 * @return The profile key data
+	 */
+	public WrappedProfileKeyData getProfileKeyData() {
+		return this.profileKeyData;
+	}
+
+	/**
 	 * Used to convert between NMS PlayerInfoData and the wrapper instance.
 	 * @return A new converter.
 	 */
@@ -108,6 +123,10 @@ public class PlayerInfoData {
 						args.add(EnumWrappers.getGameModeClass());
 						args.add(MinecraftReflection.getIChatBaseComponentClass());
 
+						if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+							args.add(MinecraftReflection.getProfilePublicKeyDataClass());
+						}
+
 						constructor = MinecraftReflection.getPlayerInfoDataClass().getConstructor(args.toArray(new Class<?>[0]));
 					} catch (Exception e) {
 						throw new RuntimeException("Cannot find PlayerInfoData constructor.", e);
@@ -120,7 +139,14 @@ public class PlayerInfoData {
 					Object gameMode = EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode);
 					Object displayName = specific.displayName != null ? specific.displayName.handle : null;
 
-					if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+					if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+						return constructor.newInstance(
+								specific.profile.handle,
+								specific.latency,
+								gameMode,
+								displayName,
+								specific.profileKeyData == null ? null : specific.profileKeyData.handle);
+					} else if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
 						return constructor.newInstance(specific.profile.handle, specific.latency, gameMode, displayName);
 					} else {
 						return constructor.newInstance(null, specific.profile.handle, specific.latency, gameMode, displayName);
@@ -150,8 +176,12 @@ public class PlayerInfoData {
 					StructureModifier<WrappedChatComponent> displayNames = modifier.withType(
 							MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 					WrappedChatComponent displayName = displayNames.read(0);
-					
-					return new PlayerInfoData(gameProfile, latency, gameMode, displayName);
+
+					StructureModifier<WrappedProfileKeyData> keyData = modifier.withType(
+							MinecraftReflection.getProfilePublicKeyDataClass(), BukkitConverters.getWrappedPublicKeyDataConverter());
+					WrappedProfileKeyData key = keyData.optionRead(0).orElse(null);
+
+					return new PlayerInfoData(gameProfile, latency, gameMode, displayName, key);
 				}
 
 				// Otherwise, return null
@@ -171,7 +201,7 @@ public class PlayerInfoData {
 		// Fast checks
 		if (this == obj) return true;
 		if (obj == null) return false;
-		
+
 		// Only compare objects of similar type
 		if (obj instanceof PlayerInfoData) {
 			PlayerInfoData other = (PlayerInfoData) obj;
@@ -180,7 +210,7 @@ public class PlayerInfoData {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(latency, gameMode, profile, displayName);

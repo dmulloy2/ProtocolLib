@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
 import java.util.ArrayList;
@@ -554,7 +555,15 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedAttribute> getWrappedAttributeConverter() {
 		return ignoreNull(handle(WrappedAttribute::getHandle, WrappedAttribute::fromHandle, WrappedAttribute.class));
 	}
-	
+
+	public static EquivalentConverter<WrappedProfilePublicKey> getWrappedProfilePublicKeyConverter() {
+		return ignoreNull(handle(WrappedProfilePublicKey::getHandle, WrappedProfilePublicKey::new, WrappedProfilePublicKey.class));
+	}
+
+	public static EquivalentConverter<WrappedProfileKeyData> getWrappedPublicKeyDataConverter() {
+		return ignoreNull(handle(WrappedProfileKeyData::getHandle, WrappedProfileKeyData::new, WrappedProfileKeyData.class));
+	}
+
 	/**
 	 * Retrieve a converter for watchable objects and the respective wrapper.
 	 * @return A watchable object converter.

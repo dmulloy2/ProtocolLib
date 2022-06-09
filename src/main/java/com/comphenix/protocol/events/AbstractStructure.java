@@ -7,10 +7,12 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.*;
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Preconditions;
+import java.time.Instant;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -899,6 +901,34 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for Instants in (mostly for use in 1.19+)
+     * @return The Structure Modifier
+     */
+    public StructureModifier<Instant> getInstants() {
+        return structureModifier.withType(Instant.class);
+    }
+
+    /**
+     * Retrieve a read/write structure for profile public keys in 1.9
+     * @return The Structure Modifier
+     */
+    public StructureModifier<WrappedProfilePublicKey> getProfilePublicKeys() {
+        return structureModifier.withType(
+            MinecraftReflection.getProfilePublicKeyClass(),
+            BukkitConverters.getWrappedProfilePublicKeyConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for profile public key data in 1.9
+     * @return The Structure Modifier
+     */
+    public StructureModifier<WrappedProfileKeyData> getProfilePublicKeyData() {
+        return structureModifier.withType(
+            MinecraftReflection.getProfilePublicKeyDataClass(),
+            BukkitConverters.getWrappedPublicKeyDataConverter());
+    }
+
+    /**
      * Retrieve a read/write structure for the Map class.
      * @param keyConverter Converter for map keys
      * @param valConverter Converter for map values
@@ -972,6 +1002,19 @@ public abstract class AbstractStructure {
         return getEnumModifier(
                 enumClass,
                 structureModifier.getField(index).getType());
+    }
+
+    /**
+     * Retrieve a read/write structure for an optional, passing
+     * the value of the optional field through the given converter
+     * if present.
+     *
+     * @param converter Converter for internal element of optional, if present
+     * @param <T> The inner type of the optional
+     * @return The modifier
+     */
+    public <T> StructureModifier<Optional<T>> getOptionals(EquivalentConverter<T> converter) {
+        return structureModifier.withType(Optional.class, Converters.optional(converter));
     }
 
     /**
