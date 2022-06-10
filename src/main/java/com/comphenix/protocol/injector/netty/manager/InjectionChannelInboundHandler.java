@@ -27,6 +27,9 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) {
+		// call the minecraft channelActive method first
+		ctx.fireChannelActive();
+
 		// the channel is now active, at this point minecraft has eventually prepared everything in the connection
 		// of the player so that we can come in and hook as we are after the minecraft handler
 		try {
@@ -40,9 +43,6 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
 		// remove this handler from the pipeline now to prevent multiple injections
 		ctx.channel().pipeline().remove(this);
-
-		// fire it down the pipeline in case someone else needs it
-		ctx.fireChannelActive();
 	}
 
 	@Override
