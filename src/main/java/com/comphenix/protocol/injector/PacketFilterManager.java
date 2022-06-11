@@ -55,7 +55,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
 	// listener registration reports
 	private static final ReportType UNSUPPORTED_PACKET = new ReportType(
-			"Plugin %s tried to register listener for unknown packet %s [direction: to %s]");
+			"Plugin %s tried to register listener for unknown packet %s [direction: from %s]");
 
 	// bukkit references
 	private final Plugin plugin;

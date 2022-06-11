@@ -317,25 +317,25 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			 * @deprecated Removed in 1.19
 			 */
 			@Deprecated
-			public static final PacketType SPAWN_ENTITY_LIVING = new PacketType(PROTOCOL, SENDER, 246, "SpawnEntityLiving", "SPacketSpawnMob");
+			public static final PacketType SPAWN_ENTITY_LIVING = new PacketType(PROTOCOL, SENDER, 244, "SpawnEntityLiving", "SPacketSpawnMob");
 
 			/**
 			 * @deprecated Removed in 1.19
 			 */
 			@Deprecated
-			public static final PacketType SPAWN_ENTITY_PAINTING = new PacketType(PROTOCOL, SENDER, 247, "SpawnEntityPainting", "SPacketSpawnPainting");
+			public static final PacketType SPAWN_ENTITY_PAINTING = new PacketType(PROTOCOL, SENDER, 243, "SpawnEntityPainting", "SPacketSpawnPainting");
 
 			/**
 			 * @deprecated Removed in 1.19
 			 */
 			@Deprecated
-			public static final PacketType ADD_VIBRATION_SIGNAL = new PacketType(PROTOCOL, SENDER, 248, "AddVibrationSignal");
+			public static final PacketType ADD_VIBRATION_SIGNAL = new PacketType(PROTOCOL, SENDER, 242, "AddVibrationSignal");
 
 			/**
 			 * @deprecated Removed in 1.19
 			 */
 			@Deprecated
-			public static final PacketType BLOCK_BREAK = new PacketType(PROTOCOL, SENDER, 249, "BlockBreak");
+			public static final PacketType BLOCK_BREAK = new PacketType(PROTOCOL, SENDER, 241, "BlockBreak");
 
 			private final static Server INSTANCE = new Server();
 
