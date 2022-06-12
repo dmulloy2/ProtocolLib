@@ -594,7 +594,7 @@ public class NettyChannelInjector implements Injector {
 						.newBuilder()
 						.typeSuperOf(MinecraftReflection.getPacketClass())
 						.build());
-				return Accessors.getFieldAccessor(packetField, true);
+				return Accessors.getFieldAccessor(packetField);
 			} catch (IllegalArgumentException exception) {
 				// no such field found :(
 				return NO_OP_ACCESSOR;
