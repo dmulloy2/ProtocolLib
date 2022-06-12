@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,51 +23,76 @@ public class WrappedRegistry {
     private static final MethodAccessor GET_ID;
     private static final MethodAccessor GET_KEY;
 
-    static {
-        Map<Class<?>, WrappedRegistry> regMap = new HashMap<>();
+	static {
+		Map<Class<?>, WrappedRegistry> regMap = new HashMap<>();
 
-        Class<?> regClass = MinecraftReflection.getIRegistry();
-        if (regClass != null) {
-            for (Field field : regClass.getFields()) {
-                try {
-                    // make sure it's actually a registry
-                    if (regClass.isAssignableFrom(field.getType())) {
-                        Type genType = field.getGenericType();
-                        if (genType instanceof ParameterizedType) {
-                            ParameterizedType par = (ParameterizedType) genType;
-                            Type paramType = par.getActualTypeArguments()[0];
-                            if (paramType instanceof Class) {
-                                regMap.put((Class<?>) paramType, new WrappedRegistry(field.get(null)));
-                            }
-                        }
-                    }
-                } catch (ReflectiveOperationException ignored) {
-                }
-            }
-        }
+		Class<?> regClass = MinecraftReflection.getIRegistry();
+		if (regClass != null) {
+			for (Field field : regClass.getFields()) {
+				try {
+					// make sure it's actually a registry
+					if (regClass.isAssignableFrom(field.getType())) {
+						Type genType = field.getGenericType();
+						if (genType instanceof ParameterizedType) {
+							ParameterizedType par = (ParameterizedType) genType;
+							Type paramType = par.getActualTypeArguments()[0];
+							if (paramType instanceof Class) {
+								// for example Registry<Item>
+								regMap.put((Class<?>) paramType, new WrappedRegistry(field.get(null)));
+							} else if (paramType instanceof ParameterizedType) {
+								// for example Registry<EntityType<?>>
+								par = (ParameterizedType) paramType;
+								paramType = par.getActualTypeArguments()[0];
+								if (paramType instanceof WildcardType) {
+									// some registry types are even more nested, but we don't want them
+									// for example Registry<Codec<ChunkGenerator>>, Registry<Codec<WorldChunkManager>>
+									WildcardType wildcard = (WildcardType) paramType;
+									if (wildcard.getUpperBounds().length != 1 || wildcard.getLowerBounds().length > 0) {
+										continue;
+									}
 
-        REGISTRY = ImmutableMap.copyOf(regMap);
+									// we only want types with an undefined upper bound (aka. ?)
+									if (wildcard.getUpperBounds()[0] != Object.class) {
+										continue;
+									}
+								}
 
-        FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
-        GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
-		        .newBuilder()
-		        .parameterCount(1)
-		        .returnDerivedOf(Object.class)
-		        .requireModifier(Modifier.ABSTRACT)
-                .parameterExactType(MinecraftReflection.getMinecraftKeyClass())
-                .build()));
-        GET_ID = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
-                .newBuilder()
-                .parameterCount(1)
-                .returnTypeExact(int.class)
-                .requireModifier(Modifier.ABSTRACT)
-                .parameterDerivedOf(Object.class)
-                .build()));
-        GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
-                .newBuilder()
-                .parameterCount(1)
-                .returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
-                .build()));
+								paramType = par.getRawType();
+								if (paramType instanceof Class<?>) {
+									// there might be duplicate registries, like the codec registries
+									// we don't want them to be registered here
+									regMap.put((Class<?>) paramType, new WrappedRegistry(field.get(null)));
+								}
+							}
+						}
+					}
+				} catch (ReflectiveOperationException ignored) {
+				}
+			}
+		}
+
+		REGISTRY = ImmutableMap.copyOf(regMap);
+
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
+		GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+				.newBuilder()
+				.parameterCount(1)
+				.returnDerivedOf(Object.class)
+				.requireModifier(Modifier.ABSTRACT)
+				.parameterExactType(MinecraftReflection.getMinecraftKeyClass())
+				.build()));
+		GET_ID = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+				.newBuilder()
+				.parameterCount(1)
+				.returnTypeExact(int.class)
+				.requireModifier(Modifier.ABSTRACT)
+				.parameterDerivedOf(Object.class)
+				.build()));
+		GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+				.newBuilder()
+				.parameterCount(1)
+				.returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
+				.build()));
     }
 
     private final Object handle;

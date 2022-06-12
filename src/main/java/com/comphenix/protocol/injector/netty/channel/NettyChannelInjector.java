@@ -26,7 +26,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.util.AttributeKey;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
@@ -94,7 +94,8 @@ public class NettyChannelInjector implements Injector {
 
 	private final FieldAccessor channelField;
 
-	private final Set<Object> skippedPackets = new LinkedHashSet<>();
+	private final Set<Object> skippedPackets = new HashSet<>();
+	private final Set<Object> processedPackets = new HashSet<>();
 	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
 
 	// status of this injector
@@ -462,14 +463,14 @@ public class NettyChannelInjector implements Injector {
 		Channel ch = new NettyChannelProxy(this.wrappedChannel, new NettyEventLoopProxy(this.wrappedChannel.eventLoop()) {
 			@Override
 			protected Runnable proxyRunnable(Runnable original) {
-				return NettyChannelInjector.this.processOutbound(original);
+				return NettyChannelInjector.this.processOutbound(original, true);
 			}
 
 			@Override
 			protected <T> Callable<T> proxyCallable(Callable<T> original) {
-				return NettyChannelInjector.this.processOutbound(original);
+				return NettyChannelInjector.this.processOutbound(original, true);
 			}
-		});
+		}, this);
 		this.channelField.set(this.networkManager, ch);
 	}
 
@@ -477,7 +478,7 @@ public class NettyChannelInjector implements Injector {
 		this.wrappedChannel.eventLoop().execute(runnable);
 	}
 
-	private <T> T processOutbound(T action) {
+	<T> T processOutbound(T action, boolean markSeen) {
 		// get the accessor to the packet field
 		// if we are unable to look up the accessor then just return the runnable, probably nothing of our business
 		FieldAccessor packetAccessor = this.lookupPacketAccessor(action);
@@ -497,16 +498,16 @@ public class NettyChannelInjector implements Injector {
 			// if a marker was set there might be scheduled packets to execute after the packet send
 			// for this to work we need to proxy the input action to provide access to them
 			if (marker != null) {
-				return this.proxyAction(action, null, marker);
+				return this.markProcessed(packet, this.proxyAction(action, null, marker), markSeen);
 			}
 
 			// nothing special, just no processing
-			return action;
+			return this.markProcessed(packet, action, markSeen);
 		}
 
 		// no listener and no marker - no magic :)
 		if (!this.channelListener.hasListener(packet.getClass()) && marker == null) {
-			return action;
+			return this.markProcessed(packet, action, markSeen);
 		}
 
 		// ensure that we are on the main thread if we need to
@@ -522,7 +523,7 @@ public class NettyChannelInjector implements Injector {
 		// null indicates that no listener was affected by the packet, meaning that we can directly send the original packet
 		PacketEvent event = this.channelListener.onPacketSending(this, packet, marker);
 		if (event == null) {
-			return action;
+			return this.markProcessed(packet, action, markSeen);
 		}
 
 		// if the event wasn't cancelled by this action we must recheck if the packet changed during the method call
@@ -538,11 +539,11 @@ public class NettyChannelInjector implements Injector {
 			// if the marker is null we can just schedule the action as we don't need to do anything after the packet was sent
 			NetworkMarker eventMarker = NetworkMarker.getNetworkMarker(event);
 			if (eventMarker == null) {
-				return action;
+				return this.markProcessed(packet, action, markSeen);
 			}
 
 			// we need to wrap the action to call the listeners set in the marker
-			return this.proxyAction(action, event, eventMarker);
+			return this.markProcessed(packet, this.proxyAction(action, event, eventMarker), markSeen);
 		}
 
 		// return null if the event was cancelled to schedule a no-op event
@@ -571,10 +572,29 @@ public class NettyChannelInjector implements Injector {
 		}
 	}
 
+	private <T> T markProcessed(Object packet, T actualAction, boolean shouldMarkPackets) {
+		if (shouldMarkPackets) {
+			// tiny hack to prevent duplicate packet processing, on main thread and async
+			this.processedPackets.add(packet);
+		}
+
+		// return the requested action
+		return actualAction;
+	}
+
+	boolean wasProcessedBefore(Object packet) {
+		return this.processedPackets.remove(packet);
+	}
+
 	private FieldAccessor lookupPacketAccessor(Object action) {
 		return PACKET_ACCESSORS.computeIfAbsent(action.getClass(), clazz -> {
 			try {
-				return Accessors.getFieldAccessor(action.getClass(), MinecraftReflection.getPacketClass(), true);
+				// find the field
+				Field packetField = FuzzyReflection.fromClass(clazz, true).getField(FuzzyFieldContract
+						.newBuilder()
+						.typeSuperOf(MinecraftReflection.getPacketClass())
+						.build());
+				return Accessors.getFieldAccessor(packetField, true);
 			} catch (IllegalArgumentException exception) {
 				// no such field found :(
 				return NO_OP_ACCESSOR;

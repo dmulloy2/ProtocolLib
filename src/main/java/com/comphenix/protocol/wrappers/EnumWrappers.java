@@ -386,8 +386,14 @@ public abstract class EnumWrappers {
 		SPIN_ATTACK, 
 		CROUCHING,
 		LONG_JUMPING,
-		DYING;
-		
+		DYING,
+		CROAKING,
+		USING_TONGUE,
+		ROARING,
+		SNIFFING,
+		EMERGING,
+		DIGGING;
+
 		private final static EquivalentConverter<EntityPose> POSE_CONVERTER = EnumWrappers.getEntityPoseConverter();
 		
 		/**
@@ -522,7 +528,7 @@ public abstract class EnumWrappers {
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
 		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "EntityPose");
 
-		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
+		associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
 		associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
 		associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());

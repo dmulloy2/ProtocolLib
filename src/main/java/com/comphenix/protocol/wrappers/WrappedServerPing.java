@@ -51,6 +51,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
 	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
 	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
+	private static FieldAccessor PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
 
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
@@ -179,6 +180,24 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 */
 	public void setFavicon(CompressedImage image) {
 		FAVICON.set(handle, (image != null) ? image.toEncodedText() : null);
+	}
+
+	/**
+	 * Retrieve whether chat preview is enabled on the server.
+	 * @return whether chat preview is enabled on the server.
+	 * @since 1.19
+	 */
+	public boolean isChatPreviewEnabled() {
+		return (Boolean) PREVIEWS_CHAT.get(handle);
+	}
+
+	/**
+	 * Sets whether chat preview is enabled on the server.
+	 * @param chatPreviewEnabled true if enabled, false otherwise.
+	 * @since 1.19
+	 */
+	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
+		PREVIEWS_CHAT.set(handle, chatPreviewEnabled);
 	}
 
 	/**

@@ -164,6 +164,11 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 	public void setStatistic(Statistic statistic, EntityType entityType, int i) { }
 
 	@Override
+	public Location getLastDeathLocation() {
+		return null;
+	}
+
+	@Override
 	public long getFirstPlayed() {
 		return firstPlayed;
 	}

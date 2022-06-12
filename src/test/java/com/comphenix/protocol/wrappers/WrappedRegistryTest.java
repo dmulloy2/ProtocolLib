@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.EntityType;
 import org.bukkit.potion.PotionEffectType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ public class WrappedRegistryTest {
 	@Test
 	void testRegistries() {
 		// some randomly selected registries which we can proof to work using the bukkit api
+		validate(MinecraftReflection.getEntityTypes(), EntityType.WARDEN.getKey());
 		validate(MinecraftReflection.getItemClass(), Material.DIAMOND_AXE.getKey());
 		validate(MinecraftReflection.getAttributeBase(), Attribute.GENERIC_MAX_HEALTH.getKey());
 		validate(MinecraftReflection.getSoundEffectClass(), Sound.ENTITY_WARDEN_SNIFF.getKey());

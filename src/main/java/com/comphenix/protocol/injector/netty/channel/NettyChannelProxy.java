@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.netty.channel;
 
+import com.comphenix.protocol.utility.MinecraftReflection;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
@@ -12,6 +13,7 @@ import io.netty.channel.EventLoop;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import java.net.SocketAddress;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -23,10 +25,12 @@ final class NettyChannelProxy implements Channel {
 
 	private final Channel delegate;
 	private final EventLoop eventLoop;
+	private final NettyChannelInjector injector;
 
-	public NettyChannelProxy(Channel delegate, EventLoop eventLoop) {
+	public NettyChannelProxy(Channel delegate, EventLoop eventLoop, NettyChannelInjector injector) {
 		this.delegate = delegate;
 		this.eventLoop = eventLoop;
+		this.injector = injector;
 	}
 
 	@Override
@@ -192,12 +196,19 @@ final class NettyChannelProxy implements Channel {
 
 	@Override
 	public ChannelFuture write(Object msg) {
-		return this.delegate.write(msg);
+		return this.write(msg, this.newPromise());
 	}
 
 	@Override
 	public ChannelFuture write(Object msg, ChannelPromise promise) {
-		return this.delegate.write(msg, promise);
+		// only need to do our special handling if we are in the event loop
+		if (this.isPacketEventCallNeeded(msg)) {
+			this.processPacketOutbound(msg, packet -> this.delegate.write(packet, promise));
+			return promise;
+		} else {
+			// no special handling needed, just write the packet
+			return this.delegate.write(msg, promise);
+		}
 	}
 
 	@Override
@@ -207,12 +218,19 @@ final class NettyChannelProxy implements Channel {
 
 	@Override
 	public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
-		return this.delegate.writeAndFlush(msg, promise);
+		// only need to do our special handling if we are in the event loop
+		if (this.isPacketEventCallNeeded(msg)) {
+			this.processPacketOutbound(msg, packet -> this.delegate.writeAndFlush(packet, promise));
+			return promise;
+		} else {
+			// no special handling needed, just write the packet
+			return this.delegate.writeAndFlush(msg, promise);
+		}
 	}
 
 	@Override
 	public ChannelFuture writeAndFlush(Object msg) {
-		return this.delegate.writeAndFlush(msg);
+		return this.writeAndFlush(msg, this.newPromise());
 	}
 
 	@Override
@@ -223,5 +241,16 @@ final class NettyChannelProxy implements Channel {
 	@Override
 	public int compareTo(@NotNull Channel o) {
 		return this.delegate.compareTo(o);
+	}
+
+	private boolean isPacketEventCallNeeded(Object msg) {
+		return MinecraftReflection.isPacketClass(msg) && !this.injector.wasProcessedBefore(msg);
+	}
+
+	private void processPacketOutbound(Object packet, Consumer<Object> delegateActionHandler) {
+		Runnable action = this.injector.processOutbound(() -> delegateActionHandler.accept(packet), false);
+		if (action != null) {
+			action.run();
+		}
 	}
 }
