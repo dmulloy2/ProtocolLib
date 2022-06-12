@@ -540,11 +540,11 @@ public class NettyChannelInjector implements Injector {
 			// if the marker is null we can just schedule the action as we don't need to do anything after the packet was sent
 			NetworkMarker eventMarker = NetworkMarker.getNetworkMarker(event);
 			if (eventMarker == null) {
-				return this.markProcessed(packet, action, markSeen);
+				return this.markProcessed(interceptedPacket, action, markSeen);
 			}
 
 			// we need to wrap the action to call the listeners set in the marker
-			return this.markProcessed(packet, this.proxyAction(action, event, eventMarker), markSeen);
+			return this.markProcessed(interceptedPacket, this.proxyAction(action, event, eventMarker), markSeen);
 		}
 
 		// return null if the event was cancelled to schedule a no-op event
