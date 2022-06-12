@@ -1,29 +1,29 @@
 package com.comphenix.protocol;
 
-import java.util.Collection;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
-import com.google.common.collect.Sets;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 class PacketTypeParser {
-	public final static Range<Integer> DEFAULT_MAX_RANGE = Range.closed(0, 255);
+	public static final Range<Integer> DEFAULT_MAX_RANGE = Range.closed(0, 255);
 	
 	private Sender side = null;
 	private Protocol protocol = null;
 	
 	public Set<PacketType> parseTypes(Deque<String> arguments, Range<Integer> defaultRange) {
-		Set<PacketType> result = Sets.newHashSet();
+		final Set<PacketType> result = new HashSet<>();
 		side = null;
 		protocol = null;
 		
@@ -68,8 +68,7 @@ class PacketTypeParser {
 		
 		// Supply a default integer range
 		if (ranges.isEmpty() && result.isEmpty()) {
-			ranges = Lists.newArrayList();
-			ranges.add(defaultRange);
+			ranges = Collections.singletonList(defaultRange);
 		}
 		
 		for (Range<Integer> range : ranges) {
@@ -130,19 +129,20 @@ class PacketTypeParser {
 	 * @return The protocol, or NULL if not found.
 	 */
 	public Protocol parseProtocol(String text) {
-		if (text == null)
-			return null;
-		String candidate = text.toLowerCase();
-		
-		if ("handshake".equals(candidate) || "handshaking".equals(candidate))
-			return Protocol.HANDSHAKING;
-		else if ("login".equals(candidate))
-			return Protocol.LOGIN;
-		else if ("play".equals(candidate) || "game".equals(candidate))
-			return Protocol.PLAY;
-		else if ("status".equals(candidate))
-			return Protocol.STATUS;
-		else
-			return null;
+		if (text == null) return null;
+
+		switch (text.toLowerCase()) {
+			case "handshake":
+			case "handshaking":
+				return Protocol.HANDSHAKING;
+			case "login":
+				return Protocol.LOGIN;
+			case "play":
+			case "game":
+				return Protocol.PLAY;
+			case "status":
+				return Protocol.STATUS;
+			default: return null;
+		}
 	}
 }

@@ -385,8 +385,14 @@ public abstract class EnumWrappers {
 		SPIN_ATTACK, 
 		CROUCHING,
 		LONG_JUMPING,
-		DYING;
-		
+		DYING,
+		CROAKING,
+		USING_TONGUE,
+		ROARING,
+		SNIFFING,
+		EMERGING,
+		DIGGING;
+
 		private final static EquivalentConverter<EntityPose> POSE_CONVERTER = EnumWrappers.getEntityPoseConverter();
 		
 		/**
@@ -457,8 +463,8 @@ public abstract class EnumWrappers {
 	private static Class<?> ENTITY_POSE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
-	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = Maps.newHashMap();
-	private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = Maps.newHashMap();
+	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
+	private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = new HashMap<>();
 	static Set<String> INVALID = new HashSet<>();
 
 	/**
@@ -512,11 +518,17 @@ public abstract class EnumWrappers {
 			ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
 		}
 
-		DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
+		// 1.19 removed the entity spawn packet and moved the direction into a seperated class
+		if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+			DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection");
+		} else {
+			DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
+		}
+
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
 		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "EntityPose");
 
-		associate(PROTOCOL_CLASS, Protocol.class, getClientCommandConverter());
+		associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
 		associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
 		associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());

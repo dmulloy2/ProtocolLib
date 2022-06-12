@@ -4,8 +4,6 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-import com.google.common.collect.Maps;
-
 /**
  * A lookup of the associated protocol version of a given Minecraft server.
  * @author Kristian
@@ -14,7 +12,7 @@ public class MinecraftProtocolVersion {
 	private static final NavigableMap<MinecraftVersion, Integer> lookup = createLookup();
 	
 	private static NavigableMap<MinecraftVersion, Integer> createLookup() {
-		TreeMap<MinecraftVersion, Integer> map = Maps.newTreeMap();
+		TreeMap<MinecraftVersion, Integer> map = new TreeMap<>();
 		
 		// Source: http://wiki.vg/Protocol_version_numbers
 		// Doesn't include pre-releases
@@ -80,6 +78,8 @@ public class MinecraftProtocolVersion {
 		map.put(new MinecraftVersion(1, 18, 0), 757);
 		map.put(new MinecraftVersion(1, 18, 1), 757);
 		map.put(new MinecraftVersion(1, 18, 2), 758);
+
+		map.put(new MinecraftVersion(1, 19, 0), 759);
 
 		return map;
 	}

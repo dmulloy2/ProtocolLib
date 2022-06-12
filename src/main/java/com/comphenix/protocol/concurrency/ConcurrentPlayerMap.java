@@ -7,7 +7,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalListener;
 import com.google.common.collect.AbstractIterator;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import org.bukkit.entity.Player;
@@ -73,7 +72,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return Concurrent player map.
 	 */
 	public static <T> ConcurrentPlayerMap<T> usingAddress() {
-		return new ConcurrentPlayerMap<T>(PlayerKey.ADDRESS);
+		return new ConcurrentPlayerMap<>(PlayerKey.ADDRESS);
 	}
 	
 	/**
@@ -82,7 +81,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return Concurrent player map.
 	 */
 	public static <T> ConcurrentPlayerMap<T> usingName() {
-		return new ConcurrentPlayerMap<T>(PlayerKey.NAME);
+		return new ConcurrentPlayerMap<>(PlayerKey.NAME);
 	}
 	
 	/**
@@ -108,7 +107,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return The value map.
 	 */
 	private ConcurrentMap<Object, TValue> createValueMap() {
-		return Maps.newConcurrentMap();
+		return new ConcurrentHashMap<>();
 	}
 	
 	/**

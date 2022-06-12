@@ -30,6 +30,10 @@ public class InternalStructure extends AbstractStructure {
         }
     };
 
+    public static EquivalentConverter<InternalStructure> getConverter() {
+        return CONVERTER;
+    }
+
     public StructureModifier<InternalStructure> getStructures() {
         return structureModifier.withType(Object.class, CONVERTER);
     }

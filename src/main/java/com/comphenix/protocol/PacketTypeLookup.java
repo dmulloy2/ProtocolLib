@@ -19,14 +19,14 @@ import com.google.common.collect.Multimap;
 class PacketTypeLookup {
 	public static class ProtocolSenderLookup {
 		// Unroll lookup for performance reasons
-		public final IntegerMap<PacketType> HANDSHAKE_CLIENT = IntegerMap.newMap();
-		public final IntegerMap<PacketType> HANDSHAKE_SERVER = IntegerMap.newMap();
-		public final IntegerMap<PacketType> GAME_CLIENT = IntegerMap.newMap();
-		public final IntegerMap<PacketType> GAME_SERVER = IntegerMap.newMap();
-		public final IntegerMap<PacketType> STATUS_CLIENT = IntegerMap.newMap();
-		public final IntegerMap<PacketType> STATUS_SERVER = IntegerMap.newMap();
-		public final IntegerMap<PacketType> LOGIN_CLIENT = IntegerMap.newMap();
-		public final IntegerMap<PacketType> LOGIN_SERVER = IntegerMap.newMap();
+		public final IntegerMap<PacketType> HANDSHAKE_CLIENT = new IntegerMap<>();
+		public final IntegerMap<PacketType> HANDSHAKE_SERVER = new IntegerMap<>();
+		public final IntegerMap<PacketType> GAME_CLIENT = new IntegerMap<>();
+		public final IntegerMap<PacketType> GAME_SERVER = new IntegerMap<>();
+		public final IntegerMap<PacketType> STATUS_CLIENT = new IntegerMap<>();
+		public final IntegerMap<PacketType> STATUS_SERVER = new IntegerMap<>();
+		public final IntegerMap<PacketType> LOGIN_CLIENT = new IntegerMap<>();
+		public final IntegerMap<PacketType> LOGIN_SERVER = new IntegerMap<>();
 		
 		/**
 		 * Retrieve the correct integer map for a specific protocol and sender.
@@ -52,14 +52,14 @@ class PacketTypeLookup {
 
 	public static class ClassLookup {
 		// Unroll lookup for performance reasons
-		public final Map<String, PacketType> HANDSHAKE_CLIENT = new ConcurrentHashMap<String, PacketType>();
-		public final Map<String, PacketType> HANDSHAKE_SERVER = new ConcurrentHashMap<String, PacketType>();
-		public final Map<String, PacketType> GAME_CLIENT = new ConcurrentHashMap<String, PacketType>();
-		public final Map<String, PacketType> GAME_SERVER = new ConcurrentHashMap<String, PacketType>();
-		public final Map<String, PacketType> STATUS_CLIENT = new ConcurrentHashMap<String, PacketType>();
-		public final Map<String, PacketType> STATUS_SERVER = new ConcurrentHashMap<String, PacketType>();
-		public final Map<String, PacketType> LOGIN_CLIENT = new ConcurrentHashMap<String, PacketType>();
-		public final Map<String, PacketType> LOGIN_SERVER = new ConcurrentHashMap<String, PacketType>();
+		public final Map<String, PacketType> HANDSHAKE_CLIENT = new ConcurrentHashMap<>();
+		public final Map<String, PacketType> HANDSHAKE_SERVER = new ConcurrentHashMap<>();
+		public final Map<String, PacketType> GAME_CLIENT = new ConcurrentHashMap<>();
+		public final Map<String, PacketType> GAME_SERVER = new ConcurrentHashMap<>();
+		public final Map<String, PacketType> STATUS_CLIENT = new ConcurrentHashMap<>();
+		public final Map<String, PacketType> STATUS_SERVER = new ConcurrentHashMap<>();
+		public final Map<String, PacketType> LOGIN_CLIENT = new ConcurrentHashMap<>();
+		public final Map<String, PacketType> LOGIN_SERVER = new ConcurrentHashMap<>();
 		
 		/**
 		 * Retrieve the correct integer map for a specific protocol and sender.
@@ -84,9 +84,9 @@ class PacketTypeLookup {
 	}
 	
 	// Packet IDs from 1.6.4 and below
-	private final IntegerMap<PacketType> legacyLookup = new IntegerMap<PacketType>();
-	private final IntegerMap<PacketType> serverLookup = new IntegerMap<PacketType>();
-	private final IntegerMap<PacketType> clientLookup = new IntegerMap<PacketType>();
+	private final IntegerMap<PacketType> legacyLookup = new IntegerMap<>();
+	private final IntegerMap<PacketType> serverLookup = new IntegerMap<>();
+	private final IntegerMap<PacketType> clientLookup = new IntegerMap<>();
 	
 	// Packets for 1.7.2
 	private final ProtocolSenderLookup idLookup = new ProtocolSenderLookup();

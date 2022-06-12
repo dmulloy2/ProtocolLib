@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,54 +20,79 @@ public class WrappedRegistry {
     private static final Map<Class<?>, WrappedRegistry> REGISTRY;
 
     private static final MethodAccessor GET;
+    private static final MethodAccessor GET_ID;
     private static final MethodAccessor GET_KEY;
 
-    static {
-        Map<Class<?>, WrappedRegistry> regMap = new HashMap<>();
+	static {
+		Map<Class<?>, WrappedRegistry> regMap = new HashMap<>();
 
-        Class<?> regClass = MinecraftReflection.getIRegistry();
-        if (regClass != null) {
-            for (Field field : regClass.getFields()) {
-                try {
-                    // make sure it's actually a registry
-                    if (field.getType().isAssignableFrom(regClass)) {
-                        Type genType = field.getGenericType();
-                        if (genType instanceof ParameterizedType) {
-                            ParameterizedType par = (ParameterizedType) genType;
-                            Type paramType = par.getActualTypeArguments()[0];
-                            Class<?> clazzToAdd = null;
+		Class<?> regClass = MinecraftReflection.getIRegistry();
+		if (regClass != null) {
+			for (Field field : regClass.getFields()) {
+				try {
+					// make sure it's actually a registry
+					if (regClass.isAssignableFrom(field.getType())) {
+						Type genType = field.getGenericType();
+						if (genType instanceof ParameterizedType) {
+							ParameterizedType par = (ParameterizedType) genType;
+							Type paramType = par.getActualTypeArguments()[0];
+							if (paramType instanceof Class) {
+								// for example Registry<Item>
+								regMap.put((Class<?>) paramType, new WrappedRegistry(field.get(null)));
+							} else if (paramType instanceof ParameterizedType) {
+								// for example Registry<EntityType<?>>
+								par = (ParameterizedType) paramType;
+								paramType = par.getActualTypeArguments()[0];
+								if (paramType instanceof WildcardType) {
+									// some registry types are even more nested, but we don't want them
+									// for example Registry<Codec<ChunkGenerator>>, Registry<Codec<WorldChunkManager>>
+									WildcardType wildcard = (WildcardType) paramType;
+									if (wildcard.getUpperBounds().length != 1 || wildcard.getLowerBounds().length > 0) {
+										continue;
+									}
 
-                            if (paramType instanceof Class<?>) {
-                                clazzToAdd = (Class<?>) paramType;
-                            } else if(paramType instanceof ParameterizedType) {
-                                clazzToAdd = (Class<?>) ((ParameterizedType) paramType).getRawType();
-                            }
+									// we only want types with an undefined upper bound (aka. ?)
+									if (wildcard.getUpperBounds()[0] != Object.class) {
+										continue;
+									}
+								}
 
-                            if(clazzToAdd != null) {
-                                regMap.put(clazzToAdd, new WrappedRegistry(field.get(null)));
-                            }
-                        }
-                    }
-                } catch (ReflectiveOperationException ignored) {
-                }
-            }
-        }
+								paramType = par.getRawType();
+								if (paramType instanceof Class<?>) {
+									// there might be duplicate registries, like the codec registries
+									// we don't want them to be registered here
+									regMap.put((Class<?>) paramType, new WrappedRegistry(field.get(null)));
+								}
+							}
+						}
+					}
+				} catch (ReflectiveOperationException ignored) {
+				}
+			}
+		}
 
-        REGISTRY = ImmutableMap.copyOf(regMap);
+		REGISTRY = ImmutableMap.copyOf(regMap);
 
-        FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
-        GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
-                .newBuilder()
-            		.parameterCount(1)
-            		.returnDerivedOf(Object.class)
-            		.requireModifier(Modifier.ABSTRACT)
-            		.parameterExactType(MinecraftReflection.getMinecraftKeyClass())
-            		.build()));
-        GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
-                .newBuilder()
-                .parameterCount(1)
-                .returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
-                .build()));
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
+		GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+				.newBuilder()
+				.parameterCount(1)
+				.returnDerivedOf(Object.class)
+				.requireModifier(Modifier.ABSTRACT)
+				.parameterExactType(MinecraftReflection.getMinecraftKeyClass())
+				.build()));
+		GET_ID = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+				.newBuilder()
+				.parameterCount(1)
+				.returnTypeExact(int.class)
+				.requireModifier(Modifier.ABSTRACT)
+				.parameterDerivedOf(Object.class)
+				.build()));
+		GET_KEY = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+				.newBuilder()
+				.parameterCount(1)
+				.returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
+				.build()));
     }
 
     private final Object handle;
@@ -87,17 +113,31 @@ public class WrappedRegistry {
         return MinecraftKey.getConverter().getSpecific(GET_KEY.invoke(handle, generic));
     }
 
-    // TODO add more methods
+	public int getId(MinecraftKey key) {
+		return getId(get(key));
+	}
+
+	public int getId(String key) {
+	    return getId(new MinecraftKey(key));
+	}
+
+	public int getId(Object entry) {
+		return (int) GET_ID.invoke(this.handle, entry);
+	}
 
     public static WrappedRegistry getAttributeRegistry() {
-        return REGISTRY.get(MinecraftReflection.getAttributeBase());
+        return getRegistry(MinecraftReflection.getAttributeBase());
     }
 
     public static WrappedRegistry getDimensionRegistry() {
-        return REGISTRY.get(MinecraftReflection.getDimensionManager());
+        return getRegistry(MinecraftReflection.getDimensionManager());
     }
 
+	public static WrappedRegistry getRegistry(Class<?> type) {
+		return REGISTRY.get(type);
+	}
+
     public static WrappedRegistry getBlockEntityTypeRegistry() {
-        return REGISTRY.get(MinecraftReflection.getBlockEntityTypeClass());
+        return getRegistry(MinecraftReflection.getBlockEntityTypeClass());
     }
 }

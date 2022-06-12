@@ -23,11 +23,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.comphenix.protocol.PacketType;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Sets;
-
 /**
  * Represents a more modern object-based enum.
  * <p>
@@ -37,7 +32,7 @@ import com.google.common.collect.Sets;
  */
 public class PacketTypeEnum implements Iterable<PacketType> {
 	// Used to convert between IDs and names
-	protected Set<PacketType> members = Sets.newHashSet();
+	protected Set<PacketType> members = new HashSet<>();
 
 	/**
 	 * Registers every declared PacketType field.

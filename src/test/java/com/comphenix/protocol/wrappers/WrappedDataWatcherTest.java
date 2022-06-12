@@ -26,8 +26,8 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import java.util.UUID;
 import net.minecraft.world.entity.projectile.EntityEgg;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftEgg;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEgg;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

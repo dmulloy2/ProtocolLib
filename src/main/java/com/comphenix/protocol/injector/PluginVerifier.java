@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
+import com.google.common.collect.ImmutableSet;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoadOrder;
 
@@ -55,12 +56,12 @@ class PluginVerifier {
 	/**
 	 * Contains a list of plugins that will detect and use ProtocolLib dynamically, instead of relying on the dependency system.
 	 */
-	private static final Set<String> DYNAMIC_DEPENDENCY = Sets.newHashSet("mcore", "MassiveCore");
+	private static final Set<String> DYNAMIC_DEPENDENCY = ImmutableSet.of("mcore", "MassiveCore");
 	
 	/**
 	 * Set of plugins that have been loaded after ProtocolLib.
 	 */
-	private final Set<String> loadedAfter = new HashSet<String>();
+	private final Set<String> loadedAfter = new HashSet<>();
 	
 	/**
 	 * Reference to ProtocolLib.
@@ -201,7 +202,7 @@ class PluginVerifier {
 		if (list == null)
 			return Collections.emptySet();
 		else
-			return Sets.newHashSet(list);
+			return new HashSet<>(list);
 	}
 	
 	// Avoid cycles. DFS.

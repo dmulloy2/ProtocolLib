@@ -3,6 +3,7 @@ package com.comphenix.protocol.timing;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -10,7 +11,6 @@ import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.events.PacketListener;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 /**
  * Represents a system for recording the time spent by each packet listener.
@@ -33,7 +33,7 @@ public class TimedListenerManager {
 	private volatile Date stopped;
 	
 	// The map of time trackers
-	private ConcurrentMap<String, ImmutableMap<ListenerType, TimedTracker>> map = Maps.newConcurrentMap();
+	private final ConcurrentMap<String, ImmutableMap<ListenerType, TimedTracker>> map = new ConcurrentHashMap<>();
 
 	/**
 	 * Retrieve the shared listener manager.

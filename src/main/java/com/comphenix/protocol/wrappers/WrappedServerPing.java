@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -29,7 +30,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
 import io.netty.buffer.ByteBuf;
@@ -51,6 +51,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
 	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
 	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
+	private static FieldAccessor PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
 
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
@@ -182,6 +183,24 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	}
 
 	/**
+	 * Retrieve whether chat preview is enabled on the server.
+	 * @return whether chat preview is enabled on the server.
+	 * @since 1.19
+	 */
+	public boolean isChatPreviewEnabled() {
+		return (Boolean) PREVIEWS_CHAT.get(handle);
+	}
+
+	/**
+	 * Sets whether chat preview is enabled on the server.
+	 * @param chatPreviewEnabled true if enabled, false otherwise.
+	 * @since 1.19
+	 */
+	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
+		PREVIEWS_CHAT.set(handle, chatPreviewEnabled);
+	}
+
+	/**
 	 * Retrieve the displayed number of online players.
 	 * @return The displayed number.
 	 * @throws IllegalStateException If the player count has been hidden via {@link #setPlayersVisible(boolean)}.
@@ -288,7 +307,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param players - the players to display.
 	 */
 	public void setBukkitPlayers(Iterable<? extends Player> players) {
-		List<WrappedGameProfile> profiles = Lists.newArrayList();
+		final List<WrappedGameProfile> profiles = new ArrayList<>();
 
 		for (Player player : players) {
 			Object profile = ENTITY_HUMAN_PROFILE.get(BukkitUnwrapper.getInstance().unwrapItem(player));

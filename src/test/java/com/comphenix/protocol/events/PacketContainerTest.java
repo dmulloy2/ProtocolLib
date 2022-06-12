@@ -21,6 +21,7 @@ import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -31,7 +32,10 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -49,16 +53,20 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedRegistry;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -77,7 +85,6 @@ import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -91,7 +98,6 @@ import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-// Ensure that the CraftItemFactory is mockable
 public class PacketContainerTest {
 
 	private static BaseComponent[] TEST_COMPONENT;
@@ -153,7 +159,7 @@ public class PacketContainerTest {
 
 	@Test
 	public void testGetBytes() {
-		PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
+		PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
 		this.testPrimitive(spawnMob.getBytes(), 0, (byte) 0, (byte) 1);
 	}
 
@@ -394,6 +400,7 @@ public class PacketContainerTest {
 	public void testSerialization() {
 		PacketContainer chat = new PacketContainer(PacketType.Play.Client.CHAT);
 		chat.getStrings().write(0, "Test");
+		chat.getInstants().write(0, Instant.now());
 
 		PacketContainer copy = (PacketContainer) SerializationUtils.clone(chat);
 
@@ -428,7 +435,7 @@ public class PacketContainerTest {
 		// are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
 		// members of the packet itself)
 		PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
-		AttributeBase base = IRegistry.aj.a(MinecraftKey.a("generic.max_health"));
+		AttributeBase base = IRegistry.ak.a(MinecraftKey.a("generic.max_health"));
 		AttributeSnapshot snapshot = new AttributeSnapshot(base, 20.0D, modifiers);
 		attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 
@@ -489,9 +496,12 @@ public class PacketContainerTest {
 		PacketContainer packet = creator.createPacket(entityId, mobEffect);
 
 		assertEquals(entityId, packet.getIntegers().read(0));
-		assertEquals(effect.getType().getId(), packet.getIntegers().read(1));
 		assertEquals(effect.getAmplifier(), (byte) packet.getBytes().read(0));
-		assertEquals(effect.getDuration(), packet.getIntegers().read(2));
+		assertEquals(effect.getDuration(), packet.getIntegers().read(1));
+
+		WrappedRegistry registry = WrappedRegistry.getRegistry(MinecraftReflection.getMobEffectListClass());
+		Object effectList = assertInstanceOf(MobEffectList.class, packet.getStructures().read(0).getHandle());
+		assertEquals(effect.getType().getId(), registry.getId(effectList));
 
 		int e = 0;
 		if (effect.isAmbient()) {
@@ -824,11 +834,51 @@ public class PacketContainerTest {
 			return;
 		}
 
-		if (EqualsBuilder.reflectionEquals(a, b)) {
+		if (a instanceof List<?>) {
+			if (b instanceof List<?>) {
+				List<?> listA = (List<?>) a;
+				List<?> listB = (List<?>) b;
+
+				assertEquals(listA.size(), listB.size());
+				for (int i = 0; i < listA.size(); i++) {
+					this.testEquality(listA.get(i), listB.get(i));
+				}
+				return;
+			} else {
+				throw new AssertionError("a was a list, but b was not");
+			}
+		}
+
+		if (a.getClass().isArray()) {
+			if (b.getClass().isArray()) {
+				int arrayLengthA = Array.getLength(a);
+				int arrayLengthB = Array.getLength(b);
+
+				assertEquals(arrayLengthA, arrayLengthB);
+				for (int i = 0; i < arrayLengthA; i++) {
+					Object elementA = Array.get(a, i);
+					Object elementB = Array.get(b, i);
+
+					testEquality(elementA, elementB);
+				}
+				return;
+			} else {
+				throw new AssertionError("a was an array, but b was not");
+			}
+		}
+
+		if (!a.getClass().isAssignableFrom(b.getClass())) {
+			assertEquals(a, b);
 			return;
 		}
 
-		assertEquals(a, b);
+		Set<Field> fields = FuzzyReflection.fromObject(a, true).getFields();
+		for (Field field : fields) {
+			if (!Modifier.isStatic(field.getModifiers())) {
+				FieldAccessor accessor = Accessors.getFieldAccessor(field, true);
+				testEquality(accessor.get(a), accessor.get(b));
+			}
+		}
 	}
 
 	private boolean stringEquality(Object a, Object b) {

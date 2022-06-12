@@ -4,7 +4,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.bukkit.entity.Player;
@@ -23,7 +25,7 @@ public class NetworkMarker {
 
 	// Post-processing of the packet
 	private Set<PacketPostListener> postListeners;
-	private Set<ScheduledPacket> scheduledPackets;
+	private Deque<ScheduledPacket> scheduledPackets;
 
 	/**
 	 * Construct a new network marker.
@@ -68,7 +70,7 @@ public class NetworkMarker {
 	 * @param marker - the marker.
 	 * @return The list, or NULL if not found or initialized.
 	 */
-	public static Set<ScheduledPacket> readScheduledPackets(NetworkMarker marker) {
+	public static Deque<ScheduledPacket> readScheduledPackets(NetworkMarker marker) {
 		return marker.scheduledPackets;
 	}
 
@@ -129,16 +131,14 @@ public class NetworkMarker {
 	}
 
 	/**
-	 * Retrieve a list of packets that will be schedule (in-order) when the current packet has been successfully
-	 * transmitted.
-	 * <p>
-	 * This list is modifiable.
+	 * Retrieve a modifiable queue of packets that will be schedule (in-order) when the current packet has been
+	 * successfully transmitted.
 	 *
-	 * @return List of packets that will be scheduled.
+	 * @return the queue of packets to schedule after this packet, in order.
 	 */
-	public Set<ScheduledPacket> getScheduledPackets() {
+	public Deque<ScheduledPacket> getScheduledPackets() {
 		if (this.scheduledPackets == null) {
-			this.scheduledPackets = new HashSet<>();
+			this.scheduledPackets = new LinkedList<>();
 		}
 
 		return this.scheduledPackets;

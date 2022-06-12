@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.comphenix.protocol.BukkitInitialization;
@@ -31,11 +32,13 @@ public class WrappedServerPingTest {
 			serverPing.setVersionName("Minecraft 123");
 			serverPing.setVersionProtocol(4);
 			serverPing.setFavicon(tux);
+			serverPing.setChatPreviewEnabled(true);
 
 			assertEquals(5, serverPing.getPlayersOnline());
 			assertEquals(10, serverPing.getPlayersMaximum());
 			assertEquals("Minecraft 123", serverPing.getVersionName());
 			assertEquals(4, serverPing.getVersionProtocol());
+			assertTrue(serverPing.isChatPreviewEnabled());
 
 			assertArrayEquals(original, serverPing.getFavicon().getData());
 

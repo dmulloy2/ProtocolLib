@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -69,7 +70,6 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -142,7 +142,7 @@ public class MinecraftReflection {
 	private static Class<?> itemStackArrayClass;
 
 	// Cache of getBukkitEntity
-	private static ConcurrentMap<Class<?>, MethodAccessor> getBukkitEntityCache = Maps.newConcurrentMap();
+	private static final ConcurrentMap<Class<?>, MethodAccessor> getBukkitEntityCache = new ConcurrentHashMap<>();
 
 	// The current class source
 	private static ClassSource classSource;
@@ -642,7 +642,7 @@ public class MinecraftReflection {
 			try {
 				return getClass("net.minecraft.util.com.mojang.authlib.GameProfile");
 			} catch (Throwable ex1) {
-				FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Login.Client.START.getPacketClass(), true);
+				FuzzyReflection reflection = FuzzyReflection.fromClass(PacketType.Login.Server.SUCCESS.getPacketClass(), true);
 				FuzzyFieldContract contract = FuzzyFieldContract.newBuilder()
 						.banModifier(Modifier.STATIC)
 						.typeMatches(FuzzyMatchers.matchRegex("(.*)(GameProfile)", 1))
@@ -794,7 +794,7 @@ public class MinecraftReflection {
 	 */
 	public static Class<?> getIChatBaseComponentClass() {
 		try {
-			return getMinecraftClass("network.chat.IChatbaseComponent", "IChatBaseComponent");
+			return getMinecraftClass("network.chat.IChatBaseComponent", "network.chat.IChatbaseComponent", "IChatBaseComponent");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("IChatBaseComponent",
 				Accessors.getMethodAccessor(getCraftChatMessage(), "fromString", String.class).
@@ -2226,6 +2226,10 @@ public class MinecraftReflection {
 		return getMinecraftClass("util.ChatDeserializer", "ChatDeserializer");
 	}
 
+	public static Class<?> getChatMutableComponentClass() {
+		return getMinecraftClass("network.chat.IChatMutableComponent");
+	}
+
 	public static Class<?> getDimensionManager() {
 		return getMinecraftClass("world.level.dimension.DimensionManager", "DimensionManager");
 	}
@@ -2264,6 +2268,14 @@ public class MinecraftReflection {
 
 	public static Class<?> getAttributeBase() {
 		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "AttributeBase");
+	}
+
+	public static Class<?> getProfilePublicKeyClass() {
+		return getMinecraftClass("world.entity.player.ProfilePublicKey");
+	}
+
+	public static Class<?> getProfilePublicKeyDataClass() {
+		return getProfilePublicKeyClass().getClasses()[0];
 	}
 
 	public static Class<?> getFastUtilClass(String className) {

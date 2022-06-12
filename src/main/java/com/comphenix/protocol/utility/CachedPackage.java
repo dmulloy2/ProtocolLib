@@ -18,6 +18,7 @@ package com.comphenix.protocol.utility;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -40,7 +41,7 @@ class CachedPackage {
 	 */
 	public CachedPackage(String packageName, ClassSource source) {
 		this.packageName = packageName;
-		this.cache = Maps.newConcurrentMap();
+		this.cache = new ConcurrentHashMap<>();
 		this.source = source;
 	}
 
