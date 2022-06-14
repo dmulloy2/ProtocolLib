@@ -20,11 +20,8 @@ import org.bukkit.entity.Player;
  */
 public class WrappedProfilePublicKey extends AbstractWrapper {
 
-	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getProfilePublicKeyClass();
-	private static final Class<?> KEY_DATA_TYPE = MinecraftReflection.getProfilePublicKeyDataClass();
-
-	private static final ConstructorAccessor CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE, KEY_DATA_TYPE);
-	private static final FieldAccessor DATA_ACCESSOR = Accessors.getFieldAccessor(HANDLE_TYPE, KEY_DATA_TYPE, true);
+	private static ConstructorAccessor CONSTRUCTOR;
+	private static FieldAccessor DATA_ACCESSOR;
 
 	// lazy initialized when needed
 	private static FieldAccessor PROFILE_KEY_ACCESSOR;
@@ -35,7 +32,7 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 	 * @param handle the handle to create the wrapper from.
 	 */
 	public WrappedProfilePublicKey(Object handle) {
-		super(HANDLE_TYPE);
+		super(MinecraftReflection.getProfilePublicKeyClass());
 		this.setHandle(handle);
 	}
 
@@ -45,7 +42,13 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 	 * @param keyData the data of the key.
 	 */
 	public WrappedProfilePublicKey(WrappedProfileKeyData keyData) {
-		this(CONSTRUCTOR.invoke(keyData.getHandle()));
+		super(MinecraftReflection.getProfilePublicKeyClass());
+
+		if (CONSTRUCTOR == null) {
+			CONSTRUCTOR = Accessors.getConstructorAccessor(this.getHandleType(),
+					MinecraftReflection.getProfilePublicKeyDataClass());
+		}
+		this.setHandle(CONSTRUCTOR.invoke(keyData.getHandle()));
 	}
 
 	/**
@@ -57,7 +60,8 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 	public static WrappedProfilePublicKey ofPlayer(Player player) {
 		FieldAccessor accessor = PROFILE_KEY_ACCESSOR;
 		if (accessor == null) {
-			accessor = Accessors.getFieldAccessor(MinecraftReflection.getEntityHumanClass(), HANDLE_TYPE, true);
+			accessor = Accessors.getFieldAccessor(MinecraftReflection.getEntityHumanClass(),
+					MinecraftReflection.getProfilePublicKeyClass(), true);
 			PROFILE_KEY_ACCESSOR = accessor;
 		}
 
@@ -71,6 +75,10 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 	 * @return the data of this key.
 	 */
 	public WrappedProfileKeyData getKeyData() {
+		if (DATA_ACCESSOR == null) {
+			DATA_ACCESSOR = Accessors.getFieldAccessor(this.getHandleType(),
+					MinecraftReflection.getProfilePublicKeyDataClass(), true);
+		}
 		return new WrappedProfileKeyData(DATA_ACCESSOR.get(this.getHandle()));
 	}
 
@@ -81,6 +89,10 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 	 * @param keyData the new data of this key.
 	 */
 	public void setKeyData(WrappedProfileKeyData keyData) {
+		if (DATA_ACCESSOR == null) {
+			DATA_ACCESSOR = Accessors.getFieldAccessor(this.getHandleType(),
+					MinecraftReflection.getProfilePublicKeyDataClass(), true);
+		}
 		DATA_ACCESSOR.set(this.getHandle(), keyData.getHandle());
 	}
 
@@ -91,9 +103,7 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 	 */
 	public static class WrappedProfileKeyData extends AbstractWrapper {
 
-		private static final ConstructorAccessor CONSTRUCTOR = Accessors.getConstructorAccessor(
-				KEY_DATA_TYPE,
-				Instant.class, PublicKey.class, byte[].class);
+		private static ConstructorAccessor CONSTRUCTOR;
 		private static final Encoder MIME_ENCODER = Base64.getMimeEncoder(76, "\n".getBytes(StandardCharsets.UTF_8));
 
 		private final StructureModifier<Object> modifier;
@@ -104,9 +114,9 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 		 * @param handle the handle to create the wrapper from.
 		 */
 		public WrappedProfileKeyData(Object handle) {
-			super(KEY_DATA_TYPE);
+			super(MinecraftReflection.getProfilePublicKeyDataClass());
 			this.setHandle(handle);
-			this.modifier = new StructureModifier<>(KEY_DATA_TYPE).withTarget(handle);
+			this.modifier = new StructureModifier<>(MinecraftReflection.getProfilePublicKeyDataClass()).withTarget(handle);
 		}
 
 		/**
@@ -117,7 +127,16 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
 		 * @param signature  the signature of the public key.
 		 */
 		public WrappedProfileKeyData(Instant expireTime, PublicKey key, byte[] signature) {
-			this(CONSTRUCTOR.invoke(expireTime, key, signature));
+			super(MinecraftReflection.getProfilePublicKeyDataClass());
+
+			if (CONSTRUCTOR == null) {
+				CONSTRUCTOR = Accessors.getConstructorAccessor(
+						this.getHandleType(),
+						Instant.class, PublicKey.class, byte[].class);
+			}
+
+			this.setHandle(CONSTRUCTOR.invoke(expireTime, key, signature));
+			this.modifier = new StructureModifier<>(MinecraftReflection.getProfilePublicKeyDataClass()).withTarget(this.handle);
 		}
 
 		/**

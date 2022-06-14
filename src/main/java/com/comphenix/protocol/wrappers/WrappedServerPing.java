@@ -51,7 +51,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
 	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
 	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
-	private static FieldAccessor PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
+	private static FieldAccessor PREVIEWS_CHAT;
 
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
@@ -188,6 +188,11 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19
 	 */
 	public boolean isChatPreviewEnabled() {
+		if (PREVIEWS_CHAT == null) {
+			// TODO: at some point we should make everything nullable to make updates easier
+			// see https://github.com/dmulloy2/ProtocolLib/issues/1644 for an example reference
+			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
+		}
 		return (Boolean) PREVIEWS_CHAT.get(handle);
 	}
 
@@ -197,6 +202,9 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19
 	 */
 	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
+		if (PREVIEWS_CHAT == null) {
+			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
+		}
 		PREVIEWS_CHAT.set(handle, chatPreviewEnabled);
 	}
 
