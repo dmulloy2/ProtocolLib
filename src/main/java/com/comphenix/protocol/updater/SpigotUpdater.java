@@ -27,7 +27,6 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.utility.Closer;
-import com.google.common.base.Charsets;
 
 /**
  * Adapted version of the Bukkit updater for use with Spigot resources

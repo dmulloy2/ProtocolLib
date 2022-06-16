@@ -12,7 +12,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.collect.Maps;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.GameMode;

@@ -52,7 +52,6 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.ClassAnalyser;
 import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
 import com.comphenix.protocol.reflect.FuzzyReflection;

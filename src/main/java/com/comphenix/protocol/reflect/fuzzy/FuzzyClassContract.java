@@ -13,7 +13,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.MethodInfo;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 
 /**
  * Determine if a given class implements a given fuzzy (duck typed) contract.

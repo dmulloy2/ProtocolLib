@@ -30,7 +30,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.google.common.collect.Maps;
 
 import net.md_5.bungee.api.chat.BaseComponent;
 

@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
 
 /**
  * Represents a dynamic package and an arbitrary number of cached classes.

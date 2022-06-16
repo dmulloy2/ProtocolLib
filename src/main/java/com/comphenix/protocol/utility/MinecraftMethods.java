@@ -16,7 +16,6 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
-import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.Origin;

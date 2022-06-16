@@ -12,7 +12,6 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 public class TimingReportGenerator {

@@ -8,7 +8,6 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Ticker;
