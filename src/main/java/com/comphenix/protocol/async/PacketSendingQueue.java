@@ -38,9 +38,9 @@ abstract class PacketSendingQueue {
 	public static final int INITIAL_CAPACITY = 10;
 	// Whether or not packet transmission must occur on a specific thread
 	private final boolean notThreadSafe;
-	private PriorityBlockingQueue<PacketEventHolder> sendingQueue;
+	private final PriorityBlockingQueue<PacketEventHolder> sendingQueue;
 	// Asynchronous packet sending
-	private Executor asynchronousSender;
+	private final Executor asynchronousSender;
 	// Whether or not we've run the cleanup procedure
 	private boolean cleanedUp = false;
 
@@ -50,7 +50,7 @@ abstract class PacketSendingQueue {
 	 * @param notThreadSafe - whether or not to synchronize with the main thread or a background thread.
 	 */
 	public PacketSendingQueue(boolean notThreadSafe, Executor asynchronousSender) {
-		this.sendingQueue = new PriorityBlockingQueue<PacketEventHolder>(INITIAL_CAPACITY);
+		this.sendingQueue = new PriorityBlockingQueue<>(INITIAL_CAPACITY);
 		this.notThreadSafe = notThreadSafe;
 		this.asynchronousSender = asynchronousSender;
 	}
@@ -103,10 +103,10 @@ abstract class PacketSendingQueue {
 	/***
 	 * Invoked when a list of packet IDs are no longer associated with any listeners.
 	 * @param packetsRemoved - packets that no longer have any listeners.
-	 * @param onMainThread - whether or not this is occuring on the main thread.
+	 * @param onMainThread - whether or not this is occurring on the main thread.
 	 */
 	public synchronized void signalPacketUpdate(List<PacketType> packetsRemoved, boolean onMainThread) {
-		Set<PacketType> lookup = new HashSet<PacketType>(packetsRemoved);
+		Set<PacketType> lookup = new HashSet<>(packetsRemoved);
 
 		// Note that this is O(n), so it might be expensive
 		for (PacketEventHolder holder : sendingQueue) {
@@ -197,13 +197,8 @@ abstract class PacketSendingQueue {
 
 						// Let's give it what it wants
 						if (onMainThread && wantAsync) {
-							asynchronousSender.execute(new Runnable() {
-								@Override
-								public void run() {
-									// We know this isn't on the main thread
-									processPacketHolder(false, holder);
-								}
-							});
+							// We know this isn't on the main thread
+							asynchronousSender.execute(() -> processPacketHolder(false, holder));
 
 							// Scheduler will do the rest
 							return true;

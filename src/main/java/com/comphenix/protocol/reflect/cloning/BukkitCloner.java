@@ -91,8 +91,7 @@ public class BukkitCloner implements Cloner {
 		} catch (Throwable ignored) { }
 
 		try {
-			fromManual(AdventureComponentConverter::getComponentClass, source ->
-					AdventureComponentConverter.clone(source));
+			fromManual(AdventureComponentConverter::getComponentClass, AdventureComponentConverter::clone);
 		} catch (Throwable ignored) { }
 	}
 

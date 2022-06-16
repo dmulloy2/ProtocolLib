@@ -224,17 +224,14 @@ public class BukkitUnwrapper implements Unwrapper {
 			if (Player.class.isAssignableFrom(type)) {
 				final Method getHandle = MinecraftReflection.getCraftPlayerClass().getMethod("getHandle");
 
-				Unwrapper unwrapper = new Unwrapper() {
-					@Override
-					public Object unwrapItem(Object wrapped) {
+				Unwrapper unwrapper = wrapped -> {
+					try {
+						return getHandle.invoke(((Player) wrapped).getPlayer());
+					} catch (Throwable ex) {
 						try {
-							return getHandle.invoke(((Player) wrapped).getPlayer());
-						} catch (Throwable ex) {
-							try {
-								return getHandle.invoke(Bukkit.getPlayer(((Player) wrapped).getUniqueId()));
-							} catch (ReflectiveOperationException ex1) {
-								throw new RuntimeException("Failed to unwrap proxy " + wrapped, ex);
-							}
+							return getHandle.invoke(Bukkit.getPlayer(((Player) wrapped).getUniqueId()));
+						} catch (ReflectiveOperationException ex1) {
+							throw new RuntimeException("Failed to unwrap proxy " + wrapped, ex);
 						}
 					}
 				};

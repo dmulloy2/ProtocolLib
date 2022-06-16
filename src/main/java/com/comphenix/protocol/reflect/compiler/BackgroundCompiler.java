@@ -66,8 +66,8 @@ public class BackgroundCompiler {
 	private static BackgroundCompiler backgroundCompiler;
 	
 	// Classes we're currently compiling
-	private Map<StructureKey, List<CompileListener<?>>> listeners = new HashMap<>();
-	private Object listenerLock = new Object();
+	private final Map<StructureKey, List<CompileListener<?>>> listeners = new HashMap<>();
+	private final Object listenerLock = new Object();
 	
 	private StructureCompiler compiler;
 	private boolean enabled;
@@ -148,13 +148,8 @@ public class BackgroundCompiler {
 		final StructureModifier<Object> uncompiled = cache.get(key);
 		
 		if (uncompiled != null) {
-			scheduleCompilation(uncompiled, new CompileListener<Object>() {
-				@Override
-				public void onCompiled(StructureModifier<Object> compiledModifier) {
-					// Update cache
-					cache.put(key, compiledModifier);
-				}
-			});
+			// Update cache
+			scheduleCompilation(uncompiled, compiledModifier -> cache.put(key, compiledModifier));
 		}
 	}
 	
@@ -193,57 +188,54 @@ public class BackgroundCompiler {
 			}
 			
 			// Create the worker that will compile our modifier
-			Callable<?> worker = new Callable<Object>() {
-				@Override
-				public Object call() throws Exception {
-					StructureModifier<TKey> modifier = uncompiled;
-					List list = null;
-					
-					// Do our compilation
-					try {
-						modifier = compiler.compile(modifier);
-						
-						synchronized (listenerLock) {
-							list = listeners.get(key);
-							
-							// Prevent ConcurrentModificationExceptions
-							if (list != null) {
-								list = Lists.newArrayList(list);
-							}
-						}
-						
-						// Only execute the listeners if there is a list
+			Callable<?> worker = (Callable<Object>) () -> {
+				StructureModifier<TKey> modifier = uncompiled;
+				List list = null;
+
+				// Do our compilation
+				try {
+					modifier = compiler.compile(modifier);
+
+					synchronized (listenerLock) {
+						list = listeners.get(key);
+
+						// Prevent ConcurrentModificationExceptions
 						if (list != null) {
-							for (Object compileListener : list) {
-								((CompileListener<TKey>) compileListener).onCompiled(modifier);
-							}
-							
-							// Remove it when we're done
-							synchronized (listenerLock) {
-								list = listeners.remove(key);
-							}
+							list = Lists.newArrayList(list);
 						}
-						
-					} catch (OutOfMemoryError e) {
-						setEnabled(false);
-						throw e;
-					} catch (ThreadDeath e) {
-						setEnabled(false);
-						throw e;
-					} catch (Throwable e) {
-						// Disable future compilations!
-						setEnabled(false);
-						
-						// Inform about this error as best as we can
-						reporter.reportDetailed(BackgroundCompiler.this,
-								Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(e)
-						);
 					}
-					
-					// We'll also return the new structure modifier
-					return modifier;
-					
+
+					// Only execute the listeners if there is a list
+					if (list != null) {
+						for (Object compileListener : list) {
+							((CompileListener<TKey>) compileListener).onCompiled(modifier);
+						}
+
+						// Remove it when we're done
+						synchronized (listenerLock) {
+							list = listeners.remove(key);
+						}
+					}
+
+				} catch (OutOfMemoryError e) {
+					setEnabled(false);
+					throw e;
+				} catch (ThreadDeath e) {
+					setEnabled(false);
+					throw e;
+				} catch (Throwable e) {
+					// Disable future compilations!
+					setEnabled(false);
+
+					// Inform about this error as best as we can
+					reporter.reportDetailed(BackgroundCompiler.this,
+							Report.newBuilder(REPORT_CANNOT_COMPILE_STRUCTURE_MODIFIER).callerParam(uncompiled).error(e)
+					);
 				}
+
+				// We'll also return the new structure modifier
+				return modifier;
+
 			};
 			
 			try {

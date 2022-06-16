@@ -38,12 +38,7 @@ public class PrettyPrinter {
 	 * @author Kristian
 	 */
 	public interface ObjectPrinter {
-		public static final ObjectPrinter DEFAULT = new ObjectPrinter() {
-			@Override
-			public boolean print(StringBuilder output, Object value) {
-				return false;
-			}
-		};
+		ObjectPrinter DEFAULT = (output, value) -> false;
 		
 		/**
 		 * Print the content of the given object.
@@ -53,13 +48,13 @@ public class PrettyPrinter {
 		 * @param value - the value to print, may be NULL.
 		 * @return TRUE if we processed the value and added to the output, FALSE otherwise.
 		 */
-		public boolean print(StringBuilder output, Object value);
+		boolean print(StringBuilder output, Object value);
 	}
 	
 	/**
 	 * How far we will recurse.
 	 */
-	public final static int RECURSE_DEPTH = 3;
+	public static final int RECURSE_DEPTH = 3;
 
 	/**
 	 * Print the contents of an object.

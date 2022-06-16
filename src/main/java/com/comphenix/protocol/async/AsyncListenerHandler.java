@@ -121,16 +121,10 @@ public class AsyncListenerHandler {
 	}
 	
 	private void startWarningTask() {
-		warningTask = filterManager.getScheduler().scheduleSyncDelayedTask(getPlugin(), new Runnable() {
-			@Override
-			public void run() {
-				ProtocolLibrary.getErrorReporter().reportWarning(AsyncListenerHandler.this, Report.
-						newBuilder(REPORT_HANDLER_NOT_STARTED).
-						messageParam(listener.getPlugin(), AsyncListenerHandler.this).
-						build()
-				);
-			}
-		}, 2 * TICKS_PER_SECOND);
+		warningTask = filterManager.getScheduler().scheduleSyncDelayedTask(getPlugin(), () -> ProtocolLibrary.getErrorReporter().reportWarning(AsyncListenerHandler.this, Report.
+																 newBuilder(REPORT_HANDLER_NOT_STARTED).
+																 messageParam(listener.getPlugin(), AsyncListenerHandler.this).
+																 build()), 2 * TICKS_PER_SECOND);
 	}
 	
 	private void stopWarningTask() {
@@ -287,19 +281,16 @@ public class AsyncListenerHandler {
 		final AsyncRunnable listenerLoop = getListenerLoop();
 		
 		stopWarningTask();
-		scheduleAsync(new Runnable() {
-			@Override
-			public void run() {
-				Thread thread = Thread.currentThread();
-				
-				String previousName = thread.getName();
-				String workerName = getFriendlyWorkerName(listenerLoop.getID());
+		scheduleAsync(() -> {
+			Thread thread = Thread.currentThread();
 
-				// Add the friendly worker name
-				thread.setName(workerName);
-				listenerLoop.run();
-				thread.setName(previousName);
-			}
+			String previousName = thread.getName();
+			String workerName = getFriendlyWorkerName(listenerLoop.getID());
+
+			// Add the friendly worker name
+			thread.setName(workerName);
+			listenerLoop.run();
+			thread.setName(previousName);
 		});
 	}
 	
@@ -335,12 +326,7 @@ public class AsyncListenerHandler {
 		final AsyncRunnable listenerLoop = getListenerLoop();
 		final Function<AsyncRunnable, Void> delegateCopy = executor;
 		
-		scheduleAsync(new Runnable() {
-			@Override
-			public void run() {
-				delegateCopy.apply(listenerLoop);
-			}
-		});
+		scheduleAsync(() -> delegateCopy.apply(listenerLoop));
 	}
 	
 	private void scheduleAsync(Runnable runnable) {
@@ -423,31 +409,28 @@ public class AsyncListenerHandler {
 		if (syncTask < 0) {
 			stopWarningTask();
 			
-			syncTask = filterManager.getScheduler().scheduleSyncRepeatingTask(getPlugin(), new Runnable() {
-				@Override
-				public void run() {
-					long stopTime = System.nanoTime() + unit.convert(time, TimeUnit.NANOSECONDS);
-					
-					while (!cancelled) {
-						PacketEvent packet = queuedPackets.poll();
-						
-						if (packet == INTERUPT_PACKET || packet == WAKEUP_PACKET) {
-							// Sorry, asynchronous threads!
-							queuedPackets.add(packet);
-							
-							// Try again next tick
-							break;
-						} else if (packet != null && packet.getAsyncMarker() != null) {
-							processPacket(workerID, packet, "onSyncPacket()");
-						} else {
-							// No more packets left - wait a tick
-							break;
-						}
-						
-						// Check time here, ensuring that we at least process one packet
-						if (System.nanoTime() < stopTime)
-							break;
+			syncTask = filterManager.getScheduler().scheduleSyncRepeatingTask(getPlugin(), () -> {
+				long stopTime = System.nanoTime() + unit.convert(time, TimeUnit.NANOSECONDS);
+
+				while (!cancelled) {
+					PacketEvent packet = queuedPackets.poll();
+
+					if (packet == INTERUPT_PACKET || packet == WAKEUP_PACKET) {
+						// Sorry, asynchronous threads!
+						queuedPackets.add(packet);
+
+						// Try again next tick
+						break;
+					} else if (packet != null && packet.getAsyncMarker() != null) {
+						processPacket(workerID, packet, "onSyncPacket()");
+					} else {
+						// No more packets left - wait a tick
+						break;
 					}
+
+					// Check time here, ensuring that we at least process one packet
+					if (System.nanoTime() < stopTime)
+						break;
 				}
 			}, tickDelay, tickDelay);
 			
