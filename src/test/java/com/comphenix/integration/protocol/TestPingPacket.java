@@ -6,6 +6,7 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import org.bukkit.plugin.Plugin;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -56,11 +57,14 @@ public class TestPingPacket {
 	}
 
 	private Future<String> testInterception(Plugin test) {
+		final CountDownLatch latch = new CountDownLatch(1);
+
 		ProtocolLibrary.getProtocolManager().addPacketListener(
 				new PacketAdapter(test, PacketType.Status.Server.SERVER_INFO) {
 					@Override
 					public void onPacketSending(PacketEvent event) {
 						TestPingPacket.this.source = event.getPacket().getServerPings().read(0).toJson();
+						latch.countDown();
 					}
 				});
 
@@ -70,10 +74,7 @@ public class TestPingPacket {
 			String information = client.queryLocalPing();
 
 			// Wait for the listener to catch up
-			for (int i = 0; i < 1000 && (TestPingPacket.this.source == null); i++) {
-				Thread.sleep(1);
-			}
-
+			latch.await(1, TimeUnit.SECONDS);
 			return information;
 		});
 	}
