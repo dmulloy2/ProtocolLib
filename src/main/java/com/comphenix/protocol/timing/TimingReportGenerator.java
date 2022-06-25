@@ -1,19 +1,18 @@
 package com.comphenix.protocol.timing;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
+import com.google.common.base.Strings;
+import com.google.common.io.Files;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeSet;
-
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
-import com.google.common.base.Charsets;
-import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 
 public class TimingReportGenerator {
 	private static final String NEWLINE = System.getProperty("line.separator");
@@ -27,31 +26,28 @@ public class TimingReportGenerator {
 		"Max (ms):       Mean (ms):      Std (ms): " + NEWLINE;
 	private static final String STATISTICS_ROW =    " %-15s %-29s %-19s %-12d %-15.6f %-15.6f %-15.6f %.6f " + NEWLINE;
 	private static final String SUM_MAIN_THREAD = " => Time on main thread: %.6f ms" + NEWLINE;
-	
-	public void saveTo(File destination, TimedListenerManager manager) throws IOException {
-		BufferedWriter writer = null;
-		Date started = manager.getStarted();
-		Date stopped = manager.getStopped();
-		long seconds = Math.abs((stopped.getTime() - started.getTime()) / 1000);
-		
-		try {
-			writer = Files.newWriter(destination, Charsets.UTF_8);
 
+	public void saveTo(File destination, TimedListenerManager manager) throws IOException {
+		final Date started = manager.getStarted();
+		final Date stopped = manager.getStopped();
+		final long seconds = Math.abs((stopped.getTime() - started.getTime()) / 1000);
+
+		try (BufferedWriter writer = Files.newWriter(destination, StandardCharsets.UTF_8)) {
 			// Write some timing information
 			writer.write(String.format(META_STARTED, started));
 			writer.write(String.format(META_STOPPED, stopped, seconds));
 			writer.write(NEWLINE);
-			
+
 			for (String plugin : manager.getTrackedPlugins()) {
 				writer.write(String.format(PLUGIN_HEADER, plugin));
-				
+
 				for (ListenerType type : ListenerType.values()) {
 					TimedTracker tracker = manager.getTracker(plugin, type);
-					
+
 					// We only care if it has any observations at all
 					if (tracker.getObservations() > 0) {
 						writer.write(String.format(LISTENER_HEADER, type));
-						
+
 						writer.write(SEPERATION_LINE);
 						saveStatistics(writer, tracker, type);
 						writer.write(SEPERATION_LINE);
@@ -60,34 +56,30 @@ public class TimingReportGenerator {
 				// Next plugin
 				writer.write(NEWLINE);
 			}
-		} finally {
-			if (writer != null) {
-				writer.flush();
-			}
 		}
 	}
-	
+
 	private void saveStatistics(Writer destination, TimedTracker tracker, ListenerType type) throws IOException {
 		Map<PacketType, StatisticsStream> streams = tracker.getStatistics();
 		StatisticsStream sum = new StatisticsStream();
 		int count = 0;
-		
+
 		destination.write(STATISTICS_HEADER);
 		destination.write(SEPERATION_LINE);
-		
+
 		// Write every packet ID that we care about
 		for (PacketType key : new TreeSet<>(streams.keySet())) {
 			final StatisticsStream stream = streams.get(key);
-			
+
 			if (stream != null && stream.getCount() > 0) {
 				printStatistic(destination, key, stream);
-				
+
 				// Add it
 				count++;
 				sum = sum.add(stream);
 			}
 		}
-		
+
 		// Write the sum - if its useful
 		if (count > 1) {
 			printStatistic(destination, null, sum);
@@ -116,7 +108,7 @@ public class TimingReportGenerator {
 	private String getPacketId(PacketType type) {
 		return Strings.padStart(Integer.toString(type.getCurrentId()), 2, '0');
 	}
-	
+
 	/**
 	 * Convert a value in nanoseconds to milliseconds.
 	 * @param value - the value.

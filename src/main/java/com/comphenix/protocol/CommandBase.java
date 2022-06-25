@@ -41,9 +41,9 @@ abstract class CommandBase implements CommandExecutor {
 	
 	public static final String PERMISSION_ADMIN = "protocol.admin";
 	
-	private String permission;
-	private String name;
-	private int minimumArgumentCount;
+	private final String permission;
+	private final String name;
+	private final int minimumArgumentCount;
 	
 	protected ErrorReporter reporter;
 	
@@ -97,18 +97,23 @@ abstract class CommandBase implements CommandExecutor {
 		Boolean result = null;
 		
 		if (!arguments.isEmpty()) {
-			String arg = arguments.peek();
-			
-			if (arg.equalsIgnoreCase("true") || arg.equalsIgnoreCase("on"))
-				result = true;
-			else if (arg.equalsIgnoreCase(parameterName))
-				result = true;
-			else if (arg.equalsIgnoreCase("false") || arg.equalsIgnoreCase("off"))
-				result = false;
+			final String arg = arguments.peek().toLowerCase();
+			switch (arg) {
+				case "true":
+				case "on":
+					result = true;
+					break;
+				case "false":
+				case "off":
+					result = false;
+					break;
+				default:
+					if (arg.equalsIgnoreCase(parameterName)) result = true;
+					break;
+			}
 		}
 		
-		if (result != null)
-			arguments.poll();
+		if (result != null) arguments.poll();
 		return result;
 	}
 		
@@ -119,7 +124,7 @@ abstract class CommandBase implements CommandExecutor {
 	 * @return A queue that contains every element in the array, starting at the given index.
 	 */
 	protected Deque<String> toQueue(String[] args, int start) {
-		return new ArrayDeque<String>(Arrays.asList(args).subList(start, args.length));
+		return new ArrayDeque<>(Arrays.asList(args).subList(start, args.length));
 	}
 	
 	/**

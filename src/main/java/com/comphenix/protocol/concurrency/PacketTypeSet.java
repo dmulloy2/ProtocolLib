@@ -25,9 +25,7 @@ public class PacketTypeSet {
 		this.types = new HashSet<>(values.size(), 0.9f);
 		this.classes = new HashSet<>(values.size(), 0.9f);
 
-		for (PacketType type : values) {
-			this.addType(type);
-		}
+		this.addAll(values);
 	}
 
 	/**

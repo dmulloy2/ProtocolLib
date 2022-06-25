@@ -218,14 +218,13 @@ class CommandProtocol extends CommandBase {
 	private static SimpleDateFormat TIMESTAMP_FORMAT;
 
 	private void dump(CommandSender sender) {
-		Closer closer = Closer.create();
 
 		if (FILE_FORMAT == null)
 			FILE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
 		if (TIMESTAMP_FORMAT == null)
 			TIMESTAMP_FORMAT = new SimpleDateFormat("MM/dd/yy HH:mm:ss");
 
-		try {
+		try (Closer closer = Closer.create()) {
 			Date date = new Date();
 			File file = new File(plugin.getDataFolder(), "dump-" + FILE_FORMAT.format(date) + ".txt");
 			if (file.exists()) {
@@ -233,7 +232,7 @@ class CommandProtocol extends CommandBase {
 			}
 
 			file.createNewFile();
-			
+
 			FileWriter fw = closer.register(new FileWriter(file));
 			PrintWriter pw = closer.register(new PrintWriter(fw));
 
@@ -285,8 +284,6 @@ class CommandProtocol extends CommandBase {
 		} catch (IOException ex) {
 			ProtocolLogger.log(Level.SEVERE, "Failed to create dump:", ex);
 			sender.sendMessage(ChatColor.RED + "Failed to create dump! Check console!");
-		} finally {
-			closer.close();
 		}
 	}
 }

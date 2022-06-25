@@ -24,12 +24,11 @@ import java.util.List;
  * @author dmulloy2
  */
 
-// TODO Switch to AutoCloseable w/ Java 7
-public class Closer implements Closeable {
+public class Closer implements AutoCloseable {
 	private final List<Closeable> list;
 
 	private Closer() {
-		this.list = new ArrayList<Closeable>();
+		this.list = new ArrayList<>();
 	}
 
 	public static Closer create() {

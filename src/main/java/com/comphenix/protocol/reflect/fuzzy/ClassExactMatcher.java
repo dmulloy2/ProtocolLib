@@ -56,18 +56,21 @@ class ClassExactMatcher extends AbstractFuzzyMatcher<Class<?>> {
 	 */
 	@Override
 	public boolean isMatch(Class<?> input, Object parent) {
-		if (input == null)
-			throw new IllegalArgumentException("Input class cannot be NULL.");
+		if (input == null) throw new IllegalArgumentException("Input class cannot be NULL.");
 		
 		// Do our checking
-		if (matcher == null)
-			return option != Options.MATCH_EXACT;
-		else if (option == Options.MATCH_SUPER)
-			return input.isAssignableFrom(matcher); // matcher instanceof input
-		else if (option == Options.MATCH_DERIVED)
-			return matcher.isAssignableFrom(input); // input instanceof matcher
-		else
-			return input.equals(matcher);
+		if (matcher == null) return option != Options.MATCH_EXACT;
+
+		switch (option) {
+			case MATCH_SUPER:
+				return input.isAssignableFrom(matcher); // matcher instanceof input
+			case MATCH_DERIVED:
+				return matcher.isAssignableFrom(input); // input instanceof matcher
+			case MATCH_EXACT:
+				return input.equals(matcher);
+			default:
+				throw new IllegalStateException("Unknown option.");
+		}
 	}
 	
 	@Override
@@ -87,7 +90,7 @@ class ClassExactMatcher extends AbstractFuzzyMatcher<Class<?>> {
 		
 		// Move up the hierachy
 		while (clazz != null) {
-			count++;
+			++count;
 			clazz = clazz.getSuperclass();
 		}
 		return count;
@@ -111,12 +114,16 @@ class ClassExactMatcher extends AbstractFuzzyMatcher<Class<?>> {
 	
 	@Override
 	public String toString() {
-		if (option == Options.MATCH_SUPER)
-			return matcher + " instanceof input";
-		else if (option == Options.MATCH_DERIVED)
-			return "input instanceof " + matcher;
-		else
-			return "Exact " + matcher;
+		switch(option) {
+			case MATCH_SUPER:
+				return matcher + " instanceof input";
+			case MATCH_DERIVED:
+				return "input instanceof " + matcher;
+			case MATCH_EXACT:
+				return "Exact " + matcher;
+			default:
+				throw new IllegalStateException("Unknown option.");
+		}
 	}
 	
 	@Override
