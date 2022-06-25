@@ -39,12 +39,12 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * @author Kristian
  */
 class PlayerSendingHandler {
-	private ErrorReporter reporter;
-	private ConcurrentMap<Player, QueueContainer> playerSendingQueues;
+	private final ErrorReporter reporter;
+	private final ConcurrentMap<Player, QueueContainer> playerSendingQueues;
 	
 	// Timeout listeners
-	private SortedPacketListenerList serverTimeoutListeners;
-	private SortedPacketListenerList clientTimeoutListeners;
+	private final SortedPacketListenerList serverTimeoutListeners;
+	private final SortedPacketListenerList clientTimeoutListeners;
 	
 	// Asynchronous packet sending
 	private Executor asynchronousSender;
@@ -58,8 +58,8 @@ class PlayerSendingHandler {
 	 * @author Kristian
 	 */
 	private class QueueContainer {
-		private PacketSendingQueue serverQueue;
-		private PacketSendingQueue clientQueue;
+		private final PacketSendingQueue serverQueue;
+		private final PacketSendingQueue clientQueue;
 		
 		public QueueContainer() {
 			// Server packets can be sent concurrently
@@ -174,7 +174,7 @@ class PlayerSendingHandler {
 	/**
 	 * Immediately send every server packet with the given list of IDs.
 	 * @param types - types of every packet to send immediately.
-	 * @param synchronusOK - whether or not we're running on the main thread. 
+	 * @param synchronusOK - whether we're running on the main thread.
 	 */
 	public void sendServerPackets(List<PacketType> types, boolean synchronusOK) {
 		if (!cleaningUp) {
@@ -186,8 +186,7 @@ class PlayerSendingHandler {
 	
 	/**
 	 * Immediately send every client packet with the given list of IDs.
-	 * @param ids - ID of every packet to send immediately.
-	 * @param synchronusOK - whether or not we're running on the main thread. 
+	 * @param synchronusOK - whether we're running on the main thread.
 	 */
 	public void sendClientPackets(List<PacketType> types, boolean synchronusOK) {
 		if (!cleaningUp) {
@@ -199,7 +198,7 @@ class PlayerSendingHandler {
 	
 	/**
 	 * Send any outstanding server packets.
-	 * @param onMainThread - whether or not this is occuring on the main thread.
+	 * @param onMainThread - whether this is occurring on the main thread.
 	 */
 	public void trySendServerPackets(boolean onMainThread) {
 		for (QueueContainer queue : playerSendingQueues.values()) {
@@ -209,7 +208,7 @@ class PlayerSendingHandler {
 	
 	/**
 	 * Send any outstanding server packets.
-	 * @param onMainThread - whether or not this is occuring on the main thread.
+	 * @param onMainThread - whether this is occurring on the main thread.
 	 */
 	public void trySendClientPackets(boolean onMainThread) {
 		for (QueueContainer queue : playerSendingQueues.values()) {
@@ -222,7 +221,7 @@ class PlayerSendingHandler {
 	 * @return Every sever packet queue.
 	 */
 	public List<PacketSendingQueue> getServerQueues() {
-		List<PacketSendingQueue> result = new ArrayList<PacketSendingQueue>();
+		List<PacketSendingQueue> result = new ArrayList<>();
 		
 		for (QueueContainer queue : playerSendingQueues.values())
 			result.add(queue.getServerQueue());
@@ -234,7 +233,7 @@ class PlayerSendingHandler {
 	 * @return Every client packet queue.
 	 */
 	public List<PacketSendingQueue> getClientQueues() {
-		List<PacketSendingQueue> result = new ArrayList<PacketSendingQueue>();
+		List<PacketSendingQueue> result = new ArrayList<>();
 		
 		for (QueueContainer queue : playerSendingQueues.values())
 			result.add(queue.getClientQueue());

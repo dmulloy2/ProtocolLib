@@ -1,20 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.imageio.ImageIO;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -26,15 +11,27 @@ import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.Util;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a server ping packet data.
@@ -51,7 +48,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
 	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
 	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
-	private static FieldAccessor PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
+	private static FieldAccessor PREVIEWS_CHAT;
 
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
@@ -188,6 +185,11 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19
 	 */
 	public boolean isChatPreviewEnabled() {
+		if (PREVIEWS_CHAT == null) {
+			// TODO: at some point we should make everything nullable to make updates easier
+			// see https://github.com/dmulloy2/ProtocolLib/issues/1644 for an example reference
+			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
+		}
 		return (Boolean) PREVIEWS_CHAT.get(handle);
 	}
 
@@ -197,6 +199,9 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19
 	 */
 	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
+		if (PREVIEWS_CHAT == null) {
+			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
+		}
 		PREVIEWS_CHAT.set(handle, chatPreviewEnabled);
 	}
 
@@ -262,7 +267,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 				// Recreate the count and maximum
 				Server server = Bukkit.getServer();
 				setPlayersMaximum(server.getMaxPlayers());
-				setPlayersOnline(Util.getOnlinePlayers().size());
+				setPlayersOnline(Bukkit.getOnlinePlayers().size());
 			} else {
 				PLAYERS.set(handle, players = null);
 			}
@@ -509,7 +514,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 			if (encoded == null) {
 				final ByteBuf buffer = Unpooled.wrappedBuffer(getDataCopy());
 				encoded = "data:" + getMime() + ";base64," +
-						Base64.encode(buffer).toString(Charsets.UTF_8);
+						Base64.encode(buffer).toString(StandardCharsets.UTF_8);
 			}
 
 			return encoded;
@@ -542,7 +547,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 				if (segment.startsWith("data:")) {
 					this.mime = segment.substring(5);
 				} else if (segment.startsWith("base64,")) {
-					byte[] encoded = segment.substring(7).getBytes(Charsets.UTF_8);
+					byte[] encoded = segment.substring(7).getBytes(StandardCharsets.UTF_8);
 					ByteBuf decoded = Base64.decode(Unpooled.wrappedBuffer(encoded));
 
 					// Read into a byte array

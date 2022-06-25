@@ -72,7 +72,7 @@ public abstract class TinyProtocol {
 	private List<Object> networkManagers;
 
 	// Injected channel handlers
-	private List<Channel> serverChannels = Lists.newArrayList();
+	private List<Channel> serverChannels = new ArrayList<>();
 	private ChannelInboundHandlerAdapter serverChannelHandler;
 	private ChannelInitializer<Channel> beginInitProtocol;
 	private ChannelInitializer<Channel> endInitProtocol;

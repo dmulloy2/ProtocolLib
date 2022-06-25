@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.bukkit.Server;
@@ -20,11 +22,11 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 // Damn final classes
-public class PluginVerifierTest {
+class PluginVerifierTest {
 
 	@Test
-	public void testDependecies() {
-		List<Plugin> plugins = Lists.newArrayList();
+	void testDependecies() {
+		List<Plugin> plugins = new ArrayList<>();
 		Server server = this.mockServer(plugins);
 
 		Plugin library = this.mockPlugin(server, "ProtocolLib", PluginLoadOrder.POSTWORLD);

@@ -177,9 +177,12 @@ public class PlayerInfoData {
 							MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 					WrappedChatComponent displayName = displayNames.read(0);
 
-					StructureModifier<WrappedProfileKeyData> keyData = modifier.withType(
-							MinecraftReflection.getProfilePublicKeyDataClass(), BukkitConverters.getWrappedPublicKeyDataConverter());
-					WrappedProfileKeyData key = keyData.optionRead(0).orElse(null);
+					WrappedProfileKeyData key = null;
+					if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+						StructureModifier<WrappedProfileKeyData> keyData = modifier.withType(
+								MinecraftReflection.getProfilePublicKeyDataClass(), BukkitConverters.getWrappedPublicKeyDataConverter());
+						key = keyData.read(0);
+					}
 
 					return new PlayerInfoData(gameProfile, latency, gameMode, displayName, key);
 				}

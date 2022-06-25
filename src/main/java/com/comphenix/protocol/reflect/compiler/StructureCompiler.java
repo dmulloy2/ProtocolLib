@@ -359,12 +359,11 @@ public final class StructureCompiler {
 	 */
 	private boolean isAnyPublic(List<Field> fields) {
 		// Are any of the fields public?
-		for (int i = 0; i < fields.size(); i++) {
-			if (isPublic(fields.get(i))) {
+		for (Field field : fields) {
+			if (isPublic(field)) {
 				return true;
 			}
 		}
-
 		return false;
 	}
 

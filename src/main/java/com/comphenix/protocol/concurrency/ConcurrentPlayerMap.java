@@ -9,6 +9,7 @@ import com.google.common.cache.RemovalListener;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.AbstractMap;
@@ -161,7 +162,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
 	 * @return The player with the given key, or NULL if not found.
 	 */
 	private Player findOnlinePlayer(Object key) {
-		for (Player player : Util.getOnlinePlayers()) {
+		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (key.equals(keyMethod.apply(player))) {
 				return player;
 			}
