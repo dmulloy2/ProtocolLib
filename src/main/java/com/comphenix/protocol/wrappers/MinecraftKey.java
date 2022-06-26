@@ -18,11 +18,11 @@ package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
 import java.util.Locale;
+import java.util.Objects;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.base.Objects;
 
 /**
  * Represents a MinecraftKey in 1.9.
@@ -122,12 +122,12 @@ public class MinecraftKey {
 			return false;
 		}
 		MinecraftKey that = (MinecraftKey) o;
-		return Objects.equal(prefix, that.prefix) && Objects.equal(key, that.key);
+		return Objects.equals(prefix, that.prefix) && Objects.equals(key, that.key);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(prefix, key);
+		return Objects.hash(prefix, key);
 	}
 
 	private static Constructor<?> constructor = null;

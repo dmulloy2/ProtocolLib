@@ -11,7 +11,6 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
-import com.google.common.base.Objects;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
@@ -22,6 +21,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -94,12 +94,12 @@ public final class WrappedLevelChunkData {
                 return false;
             }
             ChunkData chunkData = (ChunkData) o;
-            return Objects.equal(heightmapsTag, chunkData.heightmapsTag) && Arrays.equals(buffer, chunkData.buffer) && Objects.equal(blockEntityInfo, chunkData.blockEntityInfo);
+            return Objects.equals(heightmapsTag, chunkData.heightmapsTag) && Arrays.equals(buffer, chunkData.buffer) && Objects.equals(blockEntityInfo, chunkData.blockEntityInfo);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(heightmapsTag, buffer, blockEntityInfo);
+            return Objects.hash(heightmapsTag, buffer, blockEntityInfo);
         }
 
         @Override
@@ -280,12 +280,18 @@ public final class WrappedLevelChunkData {
                 return false;
             }
             LightData lightData = (LightData) o;
-            return trustEdges == lightData.trustEdges && Objects.equal(skyYMask, lightData.skyYMask) && Objects.equal(blockYMask, lightData.blockYMask) && Objects.equal(emptySkyYMask, lightData.emptySkyYMask) && Objects.equal(emptyBlockYMask, lightData.emptyBlockYMask) && Arrays.deepEquals(skyUpdates.toArray(), lightData.skyUpdates.toArray()) && Arrays.deepEquals(blockUpdates.toArray(), lightData.blockUpdates.toArray());
+            return trustEdges == lightData.trustEdges
+                    && Objects.equals(skyYMask, lightData.skyYMask)
+                    && Objects.equals(blockYMask, lightData.blockYMask)
+                    && Objects.equals(emptySkyYMask, lightData.emptySkyYMask)
+                    && Objects.equals(emptyBlockYMask, lightData.emptyBlockYMask)
+                    && Arrays.deepEquals(skyUpdates.toArray(), lightData.skyUpdates.toArray())
+                    && Arrays.deepEquals(blockUpdates.toArray(), lightData.blockUpdates.toArray());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(skyYMask, blockYMask, emptySkyYMask, emptyBlockYMask, skyUpdates, blockUpdates, trustEdges);
+            return Objects.hash(skyYMask, blockYMask, emptySkyYMask, emptyBlockYMask, skyUpdates, blockUpdates, trustEdges);
         }
 
         @Override
@@ -491,12 +497,12 @@ public final class WrappedLevelChunkData {
             }
             BlockEntityInfo info = (BlockEntityInfo) o;
             return sectionX == info.sectionX && sectionZ == info.sectionZ && y == info.y
-                    && Objects.equal(typeKey, info.typeKey) && Objects.equal(additionalData, info.additionalData);
+                    && Objects.equals(typeKey, info.typeKey) && Objects.equals(additionalData, info.additionalData);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(sectionX, sectionZ, y, typeKey.getFullKey(), additionalData);
+            return Objects.hash(sectionX, sectionZ, y, typeKey.getFullKey(), additionalData);
         }
 
         @Override
