@@ -18,11 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * Wrapper classes for ClientboundLevelChunkWithLightPacket
@@ -145,8 +141,10 @@ public final class WrappedLevelChunkData {
 
                     Object generic = levelChunkPacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
 
-                    //noinspection unchecked
-                    specific.blockEntityInfo.stream().map(BlockEntityInfo.getConverter()::getGeneric).forEach(((List) blockEntitiesDataAccessor.get(generic))::add);
+                    for (BlockEntityInfo entityInfo : specific.blockEntityInfo) {
+                        //noinspection unchecked
+                        ((List) blockEntitiesDataAccessor.get(generic)).add(BlockEntityInfo.getConverter().getGeneric(entityInfo));
+                    }
 
                     return generic;
                 }
@@ -160,10 +158,23 @@ public final class WrappedLevelChunkData {
                                 .getField(FuzzyFieldContract.newBuilder().typeExact(byte[].class).build()));
                     }
 
-                    return new ChunkData(NbtFactory.fromNMSCompound(heightmapsAccessor.get(generic)), (byte[]) bufferAccessor.get(generic),
-                            ((List<?>) blockEntitiesDataAccessor.get(generic)).stream()
-                                    .map(BlockEntityInfo.getConverter()::getSpecific)
-                                    .collect(Collectors.toList()));
+                    List<?> genericBlockEntities = (List<?>) blockEntitiesDataAccessor.get(generic);
+                    List<WrappedLevelChunkData.BlockEntityInfo> wrappedEntityInfo;
+
+                    if(genericBlockEntities.isEmpty()) {
+                        wrappedEntityInfo = Collections.emptyList();
+                    } else {
+                        wrappedEntityInfo = new ArrayList<>(genericBlockEntities.size());
+
+                        for (Object genericBE : ((List<?>) blockEntitiesDataAccessor.get(generic))) {
+                            wrappedEntityInfo.add(BlockEntityInfo.getConverter().getSpecific(genericBE));
+                        }
+
+                        wrappedEntityInfo = Collections.unmodifiableList(wrappedEntityInfo);
+                    }
+
+                    return new ChunkData(NbtFactory.fromNMSCompound(heightmapsAccessor.get(generic)),
+                            (byte[]) bufferAccessor.get(generic), wrappedEntityInfo);
                 }
 
                 @Override
@@ -359,14 +370,10 @@ public final class WrappedLevelChunkData {
                 @Override
                 public LightData getSpecific(Object generic) {
                     if(bitSetAccessors == null) {
-                        bitSetAccessors = FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                                .getFieldList(FuzzyFieldContract.newBuilder().typeExact(BitSet.class).build()).stream()
-                                .map(Accessors::getFieldAccessor)
-                                .collect(Collectors.toList());
-                        byteArrayListAccessors = FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                                .getFieldList(FuzzyFieldContract.newBuilder().typeExact(List.class).build()).stream()
-                                .map(Accessors::getFieldAccessor)
-                                .collect(Collectors.toList());
+                        bitSetAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                                .getFieldList(FuzzyFieldContract.newBuilder().typeExact(BitSet.class).build()));
+                        byteArrayListAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                                .getFieldList(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
                         trustEdgesAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
                                 .getField(FuzzyFieldContract.newBuilder().typeExact(boolean.class).build()));
                     }
@@ -376,6 +383,16 @@ public final class WrappedLevelChunkData {
                             (BitSet) bitSetAccessors.get(2).get(generic), (BitSet) bitSetAccessors.get(3).get(generic),
                             (List<byte[]>) byteArrayListAccessors.get(0).get(generic), (List<byte[]>) byteArrayListAccessors.get(1).get(generic),
                             (Boolean) trustEdgesAccessor.get(generic));
+                }
+
+                private List<FieldAccessor> asFieldAccessors(List<Field> fields) {
+                    List<FieldAccessor> accessors = new ArrayList<>(fields.size());
+
+                    for (Field field : fields) {
+                        accessors.add(Accessors.getFieldAccessor(field));
+                    }
+
+                    return accessors;
                 }
 
                 @Override
