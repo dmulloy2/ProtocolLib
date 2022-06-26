@@ -95,7 +95,13 @@ public final class WrappedLevelChunkData {
 
         @Override
         public int hashCode() {
-            return Objects.hash(heightmapsTag, buffer, blockEntityInfo);
+            int hash = 1;
+
+            hash = 31 * hash + Objects.hashCode(heightmapsTag);
+            hash = 31 * hash + Arrays.hashCode(buffer);
+            hash = 31 * hash + Objects.hashCode(blockEntityInfo);
+
+            return hash;
         }
 
         @Override
