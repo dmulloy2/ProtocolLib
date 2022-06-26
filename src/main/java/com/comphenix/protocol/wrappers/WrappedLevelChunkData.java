@@ -115,7 +115,9 @@ public final class WrappedLevelChunkData {
 
         private static ConstructorAccessor levelChunkPacketDataConstructor;
 
-        private static FieldAccessor blockEntitiesDataAccessor, heightmapsAccessor, bufferAccessor;
+        private static FieldAccessor blockEntitiesDataAccessor;
+        private static FieldAccessor heightmapsAccessor;
+        private static FieldAccessor bufferAccessor;
 
         public static EquivalentConverter<ChunkData> getConverter() {
             if(blockEntitiesDataAccessor == null) {
@@ -198,9 +200,13 @@ public final class WrappedLevelChunkData {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getLightUpdatePacketDataClass();
 
-        private final BitSet skyYMask, blockYMask, emptySkyYMask, emptyBlockYMask;
+        private final BitSet skyYMask;
+        private final BitSet blockYMask;
+        private final BitSet emptySkyYMask;
+        private final BitSet emptyBlockYMask;
 
-        private final List<byte[]> skyUpdates, blockUpdates;
+        private final List<byte[]> skyUpdates;
+        private final List<byte[]> blockUpdates;
 
         private final boolean trustEdges;
 
@@ -326,7 +332,8 @@ public final class WrappedLevelChunkData {
 
         private static ConstructorAccessor lightUpdatePacketDataConstructor;
 
-        private static List<FieldAccessor> bitSetAccessors, byteArrayListAccessors;
+        private static List<FieldAccessor> bitSetAccessors;
+        private static List<FieldAccessor> byteArrayListAccessors;
 
         private static FieldAccessor trustEdgesAccessor;
 
@@ -418,7 +425,10 @@ public final class WrappedLevelChunkData {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getBlockEntityInfoClass();
 
-        private static final FieldAccessor PACKED_XZ_ACCESSOR, Y_ACCESSOR, TYPE_ACCESSOR, TAG_ACCESSOR;
+        private static final FieldAccessor PACKED_XZ_ACCESSOR;
+        private static final FieldAccessor Y_ACCESSOR;
+        private static final FieldAccessor TYPE_ACCESSOR;
+        private static final FieldAccessor TAG_ACCESSOR;
 
         static {
             List<Field> posFields = FuzzyReflection.fromClass(HANDLE_TYPE, true)
@@ -432,7 +442,9 @@ public final class WrappedLevelChunkData {
                     .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getNBTCompoundClass()).build()));
         }
 
-        private final int sectionX, sectionZ, y;
+        private final int sectionX;
+        private final int sectionZ;
+        private final int y;
 
         private final MinecraftKey typeKey;
 
@@ -525,7 +537,7 @@ public final class WrappedLevelChunkData {
 
         @Override
         public int hashCode() {
-            return Objects.hash(sectionX, sectionZ, y, typeKey.getFullKey(), additionalData);
+            return Objects.hash(sectionX, sectionZ, y, typeKey, additionalData);
         }
 
         @Override
