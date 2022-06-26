@@ -26,7 +26,6 @@ import io.netty.channel.ChannelFuture;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -205,7 +204,7 @@ public class NetworkManagerInjector implements ChannelListener {
 				//noinspection SynchronizationOnLocalVariableOrMethodParameter
 				synchronized (value) {
 					// override the list field with our list
-					List<Object> newList = Collections.synchronizedList(new ListeningList(value, this.pipelineInjectorHandler));
+					List<Object> newList = new ListeningList(value, this.pipelineInjectorHandler);
 					accessor.set(serverConnection, newList);
 				}
 			}
@@ -215,7 +214,6 @@ public class NetworkManagerInjector implements ChannelListener {
 		this.injected = true;
 	}
 
-	@SuppressWarnings("unchecked")
 	public void close() {
 		if (this.closed || !this.injected) {
 			return;
@@ -229,10 +227,11 @@ public class NetworkManagerInjector implements ChannelListener {
 		for (Pair<Object, FieldAccessor> list : this.overriddenLists) {
 			// get the value of the field we've overridden, if it is no longer a ListeningList someone probably jumped in
 			// and replaced the field himself - we are out safely as the other person needs to clean the mess...
-			List<Object> value = (List<Object>) list.getSecond().get(list.getFirst());
-			if (value instanceof ListeningList) {
+			// just reset to the list we wrapped originally
+			Object currentFieldValue = list.getSecond().get(list.getFirst());
+			if (currentFieldValue instanceof ListeningList) {
 				// just reset to the list we wrapped originally
-				ListeningList ourList = (ListeningList) value;
+				ListeningList ourList = (ListeningList) currentFieldValue;
 				List<Object> original = ourList.getOriginal();
 				//noinspection SynchronizationOnLocalVariableOrMethodParameter
 				synchronized (original) {
