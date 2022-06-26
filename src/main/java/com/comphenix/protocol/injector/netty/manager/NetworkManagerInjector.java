@@ -227,7 +227,6 @@ public class NetworkManagerInjector implements ChannelListener {
 		for (Pair<Object, FieldAccessor> list : this.overriddenLists) {
 			// get the value of the field we've overridden, if it is no longer a ListeningList someone probably jumped in
 			// and replaced the field himself - we are out safely as the other person needs to clean the mess...
-			// just reset to the list we wrapped originally
 			Object currentFieldValue = list.getSecond().get(list.getFirst());
 			if (currentFieldValue instanceof ListeningList) {
 				// just reset to the list we wrapped originally
