@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -120,7 +121,7 @@ public class ChatExtensions {
 			throw new IllegalArgumentException("message cannot be NULL.");
 		
 		// Send this message to every online player
-		for (Player player : Util.getOnlinePlayers()) {
+		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (permission == null || player.hasPermission(permission)) {
 				sendMessageSilently(player, message);
 			}

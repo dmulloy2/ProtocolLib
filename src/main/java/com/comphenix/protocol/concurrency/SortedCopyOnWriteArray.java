@@ -19,11 +19,11 @@ package com.comphenix.protocol.concurrency;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -40,7 +40,7 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 	 * Construct an empty sorted array.
 	 */
 	public SortedCopyOnWriteArray() {
-		this.list = new LinkedList<>();
+		this.list = new ArrayList<>();
 	}
 
 	/**
@@ -49,21 +49,8 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 	 * @param wrapped - the collection whose elements are to be placed into the list.
 	 */
 	public SortedCopyOnWriteArray(Collection<T> wrapped) {
-		this.list = new LinkedList<>(wrapped);
-	}
-
-	/**
-	 * Create a sorted array from the given list.
-	 *
-	 * @param wrapped - the collection whose elements are to be placed into the list.
-	 * @param sort    - TRUE to automatically sort the collection, FALSE if it is already sorted.
-	 */
-	public SortedCopyOnWriteArray(Collection<T> wrapped, boolean sort) {
-		this.list = new ArrayList<T>(wrapped);
-
-		if (sort) {
-			Collections.sort(this.list);
-		}
+		this.list = new ArrayList<>(wrapped);
+		Collections.sort(this.list);
 	}
 
 	/**
@@ -74,23 +61,22 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 	@Override
 	public synchronized boolean add(T value) {
 		// We use NULL as a special marker, so we don't allow it
-		if (value == null) {
-			throw new IllegalArgumentException("value cannot be NULL");
-		}
+		if (value == null) throw new IllegalArgumentException("value cannot be NULL");
 
-		List<T> copy = new ArrayList<T>();
+		List<T> copy = new ArrayList<>();
+		boolean inserted = false;
 
 		for (T element : this.list) {
 			// If the value is now greater than the current element, it should be placed right before it
-			if (value != null && value.compareTo(element) < 0) {
+			if (!inserted && value.compareTo(element) < 0) {
 				copy.add(value);
-				value = null;
+				inserted = true;
 			}
 			copy.add(element);
 		}
 
 		// Don't forget to add it
-		if (value != null) {
+		if (!inserted) {
 			copy.add(value);
 		}
 
@@ -100,17 +86,15 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 
 	@Override
 	public synchronized boolean addAll(Collection<? extends T> values) {
-		if (values == null) {
-			throw new IllegalArgumentException("values cannot be NULL");
-		}
+		if (values == null) throw new IllegalArgumentException("values cannot be NULL");
+
 		if (values.size() == 0) {
 			return false;
 		}
 
-		List<T> copy = new ArrayList<T>();
+		List<T> copy = new ArrayList<>(this.list);
 
 		// Insert the new content and sort it
-		copy.addAll(this.list);
 		copy.addAll(values);
 		Collections.sort(copy);
 
@@ -127,7 +111,7 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 	 */
 	@Override
 	public synchronized boolean remove(Object value) {
-		List<T> copy = new ArrayList<T>();
+		List<T> copy = new ArrayList<>();
 		boolean result = false;
 
 		// Note that there's not much to be gained from using BinarySearch, as we
@@ -149,16 +133,13 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 	@Override
 	public boolean removeAll(Collection<?> values) {
 		// Special cases
-		if (values == null) {
-			throw new IllegalArgumentException("values cannot be NULL");
-		}
+		if (values == null) throw new IllegalArgumentException("values cannot be NULL");
+
 		if (values.size() == 0) {
 			return false;
 		}
 
-		List<T> copy = new ArrayList<T>();
-
-		copy.addAll(this.list);
+		List<T> copy = new ArrayList<>(this.list);
 		copy.removeAll(values);
 
 		this.list = copy;
@@ -168,16 +149,11 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 	@Override
 	public boolean retainAll(Collection<?> values) {
 		// Special cases
-		if (values == null) {
-			throw new IllegalArgumentException("values cannot be NULL");
-		}
-		if (values.size() == 0) {
-			return false;
-		}
+		if (values == null) throw new IllegalArgumentException("values cannot be NULL");
 
-		List<T> copy = new ArrayList<T>();
+		if (values.isEmpty()) return false;
 
-		copy.addAll(this.list);
+		List<T> copy = new ArrayList<>(this.list);
 		copy.removeAll(values);
 
 		this.list = copy;
@@ -190,7 +166,7 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 	 * @param index - index of the element to remove.
 	 */
 	public synchronized void remove(int index) {
-		List<T> copy = new ArrayList<T>(this.list);
+		List<T> copy = new ArrayList<>(this.list);
 
 		copy.remove(index);
 		this.list = copy;
@@ -225,7 +201,7 @@ public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collecti
 
 	@Override
 	public void clear() {
-		this.list = new ArrayList<T>();
+		this.list = new ArrayList<>();
 	}
 
 	@Override

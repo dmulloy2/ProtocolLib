@@ -17,26 +17,16 @@
 package com.comphenix.protocol.utility;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 /**
  * General utility class
  * @author dmulloy2
  */
-public class Util {
+public final class Util {
 
-	/**
-	 * Gets a list of currently online Players.
-	 * @return The list
-	 */
-	@SuppressWarnings("unchecked")
-	public static List<Player> getOnlinePlayers() {
-		return (List<Player>) Bukkit.getOnlinePlayers();
-	}
+	private Util() {}
 
 	/**
 	 * Converts a variable argument array into a List.
@@ -46,7 +36,7 @@ public class Util {
 	@SafeVarargs
 	public static <E> List<E> asList(E... elements) {
 		List<E> list = new ArrayList<>(elements.length);
-		list.addAll(Arrays.asList(elements));
+		Collections.addAll(list, elements);
 		return list;
 	}
 

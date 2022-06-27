@@ -18,13 +18,15 @@ package com.comphenix.protocol.reflect;
  */
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
+
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Utilities for working with fields by reflection. Adapted and refactored from
@@ -153,29 +155,21 @@ public class FieldUtils {
      * @return the <code>List</code> of interfaces in order,
      *  <code>null</code> if null input
      */
-    private static List getAllInterfaces(Class cls) {
-        if (cls == null) {
-            return null;
-        }
-        List<Class> list = new ArrayList<Class>();
-        
-        while (cls != null) {
-            Class[] interfaces = cls.getInterfaces();
-            for (int i = 0; i < interfaces.length; i++) {
-                if (list.contains(interfaces[i]) == false) {
-                    list.add(interfaces[i]);
-                }
-                List superInterfaces = getAllInterfaces(interfaces[i]);
-                for (Iterator it = superInterfaces.iterator(); it.hasNext();) {
-                    Class intface = (Class) it.next();
-                    if (list.contains(intface) == false) {
-                        list.add(intface);
-                    }
-                }
-            }
-            cls = cls.getSuperclass();
-        }
-        return list;
+    private static Set<Class> getAllInterfaces(Class cls) {
+		if (cls == null) return null;
+
+		final Set<Class> result = new HashSet<>();
+
+		while (cls != null) {
+			final Class[] interfaces = cls.getInterfaces();
+			Collections.addAll(result, interfaces);
+
+			for (Class anInterface : interfaces) {
+				result.addAll(getAllInterfaces(anInterface));
+			}
+			cls = cls.getSuperclass();
+		}
+		return result;
     }
 
 	/**
