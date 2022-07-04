@@ -20,7 +20,7 @@ Currently maintained by dmulloy2 on behalf of [Spigot](https://www.spigotmc.org/
 
 ### Compilation
 
-ProtocolLib is built with [Maven](https://maven.apache.org/). If you have it installed, just run 
+ProtocolLib is built with [Maven](https://maven.apache.org/). If you have it installed, just run
 `mvn package` in the root project folder.
 
 ### A new API
@@ -36,7 +36,7 @@ To use this library, first add ProtocolLib.jar to your Java build path. Then, ad
 as a dependency or soft dependency to your plugin.yml file like any other plugin:
 
 ````yml
-depend: [ProtocolLib]
+depend: [ ProtocolLib ]
 ````
 
 You can also add ProtocolLib as a Maven dependency:
@@ -85,12 +85,14 @@ To listen for packets sent by the server to a client, add a server-side listener
 
 ````java
 // Disable all sound effects
-protocolManager.addPacketListener(
-  new PacketAdapter(this, ListenerPriority.NORMAL,
-          PacketType.Play.Server.NAMED_SOUND_EFFECT) {
+protocolManager.addPacketListener(new PacketAdapter(
+    this,
+    ListenerPriority.NORMAL,
+    PacketType.Play.Server.NAMED_SOUND_EFFECT
+) {
     @Override
     public void onPacketSending(PacketEvent event) {
-		event.setCancelled(true);
+        event.setCancelled(true);
     }
 });
 ````
@@ -100,18 +102,20 @@ censor by listening for Packet3Chat events:
 
 ````java
 // Censor
-protocolManager.addPacketListener(new PacketAdapter(this,
-        ListenerPriority.NORMAL,
-        PacketType.Play.Client.CHAT) {
+protocolManager.addPacketListener(new PacketAdapter(
+    this,
+    ListenerPriority.NORMAL,
+    PacketType.Play.Client.CHAT
+) {
     @Override
     public void onPacketReceiving(PacketEvent event) {
-		PacketContainer packet = event.getPacket();
-		String message = packet.getStrings().read(0);
+        PacketContainer packet = event.getPacket();
+        String message = packet.getStrings().read(0);
 
-		if (message.contains("shit") || message.contains("damn")) {
-			event.setCancelled(true);
-			event.getPlayer().sendMessage("Bad manners!");
-		}
+        if (message.contains("shit") || message.contains("damn")) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage("Bad manners!");
+        }
     }
 });
 ````
@@ -122,16 +126,16 @@ Normally, you might have to do something ugly like the following:
 
 ````java
 PacketPlayOutExplosion fakeExplosion = new PacketPlayOutExplosion(
-		player.getLocation().getX(),
-		player.getLocation().getY(),
-		player.getLocation().getZ(),
-		3.0F,
-		new ArrayList<>(),
-		new Vec3D(
-				player.getVelocity().getX() + 1,
-				player.getVelocity().getY() + 1,
-				player.getVelocity().getZ() + 1
-		)
+    player.getLocation().getX(),
+    player.getLocation().getY(),
+    player.getLocation().getZ(),
+    3.0F,
+    new ArrayList<>(),
+    new Vec3D(
+        player.getVelocity().getX() + 1,
+        player.getVelocity().getY() + 1,
+        player.getVelocity().getZ() + 1
+    )
 );
 
 ((CraftPlayer) player).getHandle().b.a(fakeExplosion);
@@ -142,9 +146,9 @@ But with ProtocolLib, you can turn that into something more manageable:
 ````java
 PacketContainer fakeExplosion = new PacketContainer(PacketType.Play.Server.EXPLOSION);
 fakeExplosion.getDoubles()
-		.write(0, player.getLocation().getX())
-		.write(1, player.getLocation().getY())
-		.write(2, player.getLocation().getZ());
+    .write(0, player.getLocation().getX())
+    .write(1, player.getLocation().getY())
+    .write(2, player.getLocation().getZ());
 fakeExplosion.getFloat().write(0, 3.0F);
 fakeExplosion.getBlockPositionCollectionModifier().write(0, new ArrayList<>());
 fakeExplosion.getVectors().write(0, player.getVelocity().add(new Vector(1, 1, 1)));
