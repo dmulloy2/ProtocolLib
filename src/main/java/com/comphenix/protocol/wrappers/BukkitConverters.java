@@ -84,7 +84,7 @@ import static com.comphenix.protocol.wrappers.Converters.ignoreNull;
 
 /**
  * Contains several useful equivalent converters for normal Bukkit types.
- *
+ * 
  * @author Kristian
  */
 @SuppressWarnings("unchecked")
@@ -92,11 +92,11 @@ public class BukkitConverters {
 	// Check whether or not certain classes exists
 	private static boolean hasWorldType = false;
 	private static boolean hasAttributeSnapshot = false;
-
+	
 	// The static maps
 	private static Map<Class<?>, EquivalentConverter<Object>> genericConverters;
 	private static List<Unwrapper> unwrappers;
-
+	
 	// Used to access the world type
 	private static Method worldTypeName;
 	private static Method worldTypeGetType;
@@ -104,23 +104,23 @@ public class BukkitConverters {
 	// Used for potion effect conversion
 	private static volatile Constructor<?> mobEffectConstructor;
 	private static volatile StructureModifier<Object> mobEffectModifier;
-
+	
 	// Used for fetching the CraftWorld associated with a WorldServer
 	private static FieldAccessor craftWorldField;
-
+	
 	static {
 		try {
 			MinecraftReflection.getWorldTypeClass();
 			hasWorldType = true;
 		} catch (Exception e) {
 		}
-
+		
 		try {
 			MinecraftReflection.getAttributeSnapshotClass();
 			hasAttributeSnapshot = true;
 		} catch (Exception e) {
 		}
-
+		
 		// Fetch CraftWorld field
 		try {
 			craftWorldField = Accessors.getFieldAccessor(
@@ -130,10 +130,10 @@ public class BukkitConverters {
 			e.printStackTrace();
 		}
 	}
-
+	
 	/**
 	 * Represents a typical equivalence converter.
-	 *
+	 * 
 	 * @author Kristian
 	 * @param <TType> - type that can be converted.
 	 * @deprecated Replaced by {@link Converters#ignoreNull(EquivalentConverter)}
@@ -147,14 +147,14 @@ public class BukkitConverters {
 			else
 				return null;
 		}
-
+		
 		/**
 		 * Retrieve a copy of the actual generic value.
 		 * @param specific - the specific type-
 		 * @return A copy of the specific type.
 		 */
 		public abstract Object getGenericValue(TType specific);
-
+		
 		@Override
 		public final TType getSpecific(Object generic) {
 			if (generic != null)
@@ -162,14 +162,14 @@ public class BukkitConverters {
 			else
 				return null;
 		}
-
+		
 		/**
 		 * Retrieve a copy of the specific type using an instance of the generic type.
 		 * @param generic - generic type.
 		 * @return A copy of the specific type.
 		 */
 		public abstract TType getSpecificValue(Object generic);
-
+		
 		@Override
 		public boolean equals(Object obj) {
 			if (this == obj) return true;
@@ -187,10 +187,10 @@ public class BukkitConverters {
 			return Objects.hashCode(this.getSpecificType());
 		}
 	}
-
+	
 	/**
 	 * Represents a converter that is only valid in a given world.
-	 *
+	 * 
 	 * @author Kristian
 	 * @param <TType> - instance types it converts.
 	 */
@@ -555,7 +555,7 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	/**
 	 * Retrieve a converter for wrapped game profiles.
 	 * @return Wrapped game profile converter.
@@ -563,7 +563,7 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedGameProfile> getWrappedGameProfileConverter() {
 		return ignoreNull(handle(WrappedGameProfile::getHandle, WrappedGameProfile::fromHandle, WrappedGameProfile.class));
 	}
-
+	
 	/**
 	 * Retrieve a converter for wrapped chat components.
 	 * @return Wrapped chat component.
@@ -571,7 +571,7 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedChatComponent> getWrappedChatComponentConverter() {
 		return ignoreNull(handle(WrappedChatComponent::getHandle, WrappedChatComponent::fromHandle, WrappedChatComponent.class));
 	}
-
+	
 	/**
 	 * Retrieve a converter for wrapped block data.
 	 * @return Wrapped block data.
@@ -579,7 +579,7 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedBlockData> getWrappedBlockDataConverter() {
 		return ignoreNull(handle(WrappedBlockData::getHandle, WrappedBlockData::fromHandle, WrappedBlockData.class));
 	}
-
+	
 	/**
 	 * Retrieve a converter for wrapped attribute snapshots.
 	 * @return Wrapped attribute snapshot converter.
@@ -627,7 +627,7 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	/**
 	 * Retrieve a converter for the NMS DataWatcher class and our wrapper.
 	 * @return A DataWatcher converter.
@@ -655,7 +655,7 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	/**
 	 * Retrieve a converter for Bukkit's world type enum and the NMS equivalent.
 	 * @return A world type enum converter.
@@ -713,7 +713,7 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	/**
 	 * Retrieve an equivalent converter for net.minecraft.server NBT classes and their wrappers.
 	 * @return An equivalent converter for NBT.
@@ -739,7 +739,7 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	/**
 	 * Retrieve a converter for NMS entities and Bukkit entities.
 	 * @param world - the current world.
@@ -754,25 +754,25 @@ public class BukkitConverters {
 				// Simple enough
 				return specific.getEntityId();
 			}
-
+			
 			@Override
 			public Entity getSpecific(Object generic) {
 				try {
 					Integer id = (Integer) generic;
 					ProtocolManager manager = managerRef.get();
-
+					
 					// Use the entity ID to get a reference to the entity
 					if (id != null && id >= 0 && manager != null) {
 						return manager.getEntityFromID(world, id);
 					} else {
 						return null;
 					}
-
+					
 				} catch (FieldAccessException e) {
 					throw new RuntimeException("Cannot retrieve entity from ID.", e);
 				}
 			}
-
+			
 			@Override
 			public Class<Entity> getSpecificType() {
 				return Entity.class;
@@ -827,7 +827,7 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	/**
 	 * Retrieve the converter used to convert NMS ItemStacks to Bukkit's ItemStack.
 	 * @return Item stack converter.
@@ -858,7 +858,7 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedServerPing> getWrappedServerPingConverter() {
 		return ignoreNull(handle(WrappedServerPing::getHandle, WrappedServerPing::fromHandle, WrappedServerPing.class));
 	}
-
+	
 	/**
 	 * Retrieve the converter for a statistic.
 	 * @return Statistic converter.
@@ -935,7 +935,7 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	/**
 	 * Retrieve the converter used to convert between a PotionEffect and the equivalent NMS Mobeffect.
 	 * @return The potion effect converter.
@@ -1250,7 +1250,7 @@ public class BukkitConverters {
 			ProtocolLogger.debug("Exception registering converter", ex);
 		}
 	}
-
+	
 	/**
 	 * Retrieve every NMS to/from Bukkit converter as unwrappers.
 	 * @return Every unwrapper.
@@ -1258,7 +1258,7 @@ public class BukkitConverters {
 	public static List<Unwrapper> getUnwrappers() {
 		if (unwrappers == null) {
 			ImmutableList.Builder<Unwrapper> builder = ImmutableList.builder();
-
+			
 			for (Map.Entry<Class<?>, EquivalentConverter<Object>> entry : getConvertersForGeneric().entrySet()) {
 				builder.add(asUnwrapper(entry.getKey(), entry.getValue()));
 			}
@@ -1575,12 +1575,12 @@ public class BukkitConverters {
 			}
 		});
 	}
-
+	
 	private static ConstructorAccessor merchantRecipeListConstructor = null;
 	private static MethodAccessor bukkitMerchantRecipeToCraft = null;
 	private static MethodAccessor craftMerchantRecipeToNMS = null;
 	private static MethodAccessor nmsMerchantRecipeToBukkit = null;
-
+	
 	/**
 	 * Creates a converter from a MerchantRecipeList (which is just an ArrayList of MerchantRecipe wrapper)
 	 * to a {@link List} of {@link MerchantRecipe}. Primarily for the packet OPEN_WINDOW_MERCHANT which is present
@@ -1590,7 +1590,7 @@ public class BukkitConverters {
 	 */
 	public static EquivalentConverter<List<MerchantRecipe>> getMerchantRecipeListConverter() {
 		return ignoreNull(new EquivalentConverter<List<MerchantRecipe>>() {
-
+			
 			@Override
 			public Object getGeneric(List<MerchantRecipe> specific) {
 				if (merchantRecipeListConstructor == null) {
@@ -1604,7 +1604,7 @@ public class BukkitConverters {
 				return specific.stream().map(recipe -> craftMerchantRecipeToNMS.invoke(bukkitMerchantRecipeToCraft.invoke(null, recipe)))
 						.collect(() -> (List<Object>)merchantRecipeListConstructor.invoke(), List::add, List::addAll);
 			}
-
+			
 			@Override
 			public List<MerchantRecipe> getSpecific(Object generic) {
 				if (nmsMerchantRecipeToBukkit == null) {
@@ -1616,14 +1616,14 @@ public class BukkitConverters {
 				}
 				return ((List<Object>)generic).stream().map(o -> (MerchantRecipe)nmsMerchantRecipeToBukkit.invoke(o)).collect(Collectors.toList());
 			}
-
+			
 			@Override
 			public Class<List<MerchantRecipe>> getSpecificType() {
 				// Damn you Java
 				Class<?> dummy = List.class;
 				return (Class<List<MerchantRecipe>>) dummy;
 			}
-
+			
 		});
 	}
 
