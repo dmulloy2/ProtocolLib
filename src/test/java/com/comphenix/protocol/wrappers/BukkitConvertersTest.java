@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.wrappers.Either.Left;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -38,4 +40,19 @@ public class BukkitConvertersTest {
 		assertEquals(item.hasItemMeta(), back.hasItemMeta());
 		assertTrue(Bukkit.getItemFactory().equals(item.getItemMeta(), back.getItemMeta()));
 	}
+
+    @Test
+    public void testEither() {
+        Either<String, String> test = new Left<>("bla");
+
+        EquivalentConverter<Either<String, String>> converter = BukkitConverters.getEitherConverter(
+            Converters.passthrough(String.class), Converters.passthrough(String.class)
+        );
+
+        com.mojang.datafixers.util.Either<String, String> nmsEither = (com.mojang.datafixers.util.Either<String, String>) converter.getGeneric(test);
+        Either<String, String> wrapped = converter.getSpecific(nmsEither);
+
+        assertEquals(wrapped.getLeft(), nmsEither.left());
+        assertEquals(wrapped.getRight(), nmsEither.right());
+    }
 }

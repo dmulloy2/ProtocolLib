@@ -40,6 +40,8 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ComponentConverter;
+import com.comphenix.protocol.wrappers.Either.Left;
+import com.comphenix.protocol.wrappers.Either.Right;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
@@ -53,6 +55,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedLoginSignature;
 import com.comphenix.protocol.wrappers.WrappedRegistry;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -726,6 +729,32 @@ public class PacketContainerTest {
 		WrappedChatComponent[] back = signChange.getChatComponentArrays().read(0);
 		assertArrayEquals(components, back);
 	}
+
+    @Test
+    public void testLoginSignatureNonce() {
+        PacketContainer encryptionStart = new PacketContainer(PacketType.Login.Client.ENCRYPTION_BEGIN);
+        encryptionStart.getByteArrays().write(0, new byte[]{1, 2, 3});
+
+        byte[] nonce = {4, 5, 6};
+        encryptionStart.getLoginSignatures().write(0, new Left<>(nonce));
+
+        byte[] read = encryptionStart.getLoginSignatures().read(0).getLeft().get();
+        assertArrayEquals(nonce, read);
+    }
+
+    @Test
+    public void testLoginSignatureSigned() {
+        PacketContainer encryptionStart = new PacketContainer(PacketType.Login.Client.ENCRYPTION_BEGIN);
+        encryptionStart.getByteArrays().write(0, new byte[]{1, 2, 3});
+
+        byte[] signature = new byte[512];
+        long salt = 124L;
+        encryptionStart.getLoginSignatures().write(0, new Right<>(new WrappedLoginSignature(salt, signature)));
+
+        WrappedLoginSignature read = encryptionStart.getLoginSignatures().read(0).getRight().get();
+        assertEquals(salt, read.getSalt());
+        assertArrayEquals(signature, read.getSignature());
+    }
 
 	private void assertPacketsEqual(PacketContainer constructed, PacketContainer cloned) {
 		StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();

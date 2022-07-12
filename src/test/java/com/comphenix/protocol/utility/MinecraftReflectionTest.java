@@ -17,6 +17,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.status.ServerPing;
 import net.minecraft.network.syncher.DataWatcher;
 import net.minecraft.server.network.PlayerConnection;
+import net.minecraft.util.MinecraftEncryption;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
@@ -118,6 +119,11 @@ public class MinecraftReflectionTest {
 	public void testDataWatcherItem() {
 		assertEquals(DataWatcher.Item.class, MinecraftReflection.getDataWatcherItemClass());
 	}
+
+    @Test
+    public void testLoginSignature() {
+        assertEquals(MinecraftEncryption.b.class, MinecraftReflection.getLoginSignatureClass());
+    }
 
 	@Test
 	public void testItemStacks() {

@@ -954,6 +954,15 @@ public abstract class AbstractStructure {
             BukkitConverters.getWrappedPublicKeyDataConverter());
     }
 
+    public StructureModifier<Either<byte[], WrappedLoginSignature>> getLoginSignatures() {
+        return structureModifier.withType(
+            com.mojang.datafixers.util.Either.class,
+            BukkitConverters.getEitherConverter(
+                Converters.passthrough(byte[].class), BukkitConverters.getWrappedSignatureConverter()
+            )
+        );
+    }
+
     /**
      * Retrieve a read/write structure for the Map class.
      * @param keyConverter Converter for map keys

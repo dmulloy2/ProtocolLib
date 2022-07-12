@@ -435,7 +435,7 @@ public class MinecraftReflection {
 	 * Determine if a given Object is compatible with a given Class. That is,
 	 * whether or not the Object is an instance of that Class or one of its
 	 * subclasses. If either is null, false is returned.
-	 * 
+	 *
 	 * @param clazz Class to test for, may be null
 	 * @param object the Object to test, may be null
 	 * @return True if it is, false if not
@@ -628,7 +628,7 @@ public class MinecraftReflection {
 
 	/**
 	 * Retrieve the GameProfile class in 1.7.2 and later.
-	 * 
+	 *
 	 * @return The game profile class.
 	 * @throws IllegalStateException If we are running 1.6.4 or earlier.
 	 */
@@ -1249,7 +1249,7 @@ public class MinecraftReflection {
 
 	/**
 	 * Retrieves the BlockPosition class.
-	 * 
+	 *
 	 * @return The BlockPosition class.
 	 */
 	public static Class<?> getBlockPositionClass() {
@@ -1940,7 +1940,7 @@ public class MinecraftReflection {
 	 * Retrieves the Bukkit equivalent of a NMS ItemStack. This method should
 	 * preserve NBT data and will never return null when supplied with a valid
 	 * ItemStack. Empty ItemStacks are treated as AIR.
-	 * 
+	 *
 	 * @param generic NMS ItemStack
 	 * @return The Bukkit equivalent
 	 */
@@ -2005,7 +2005,7 @@ public class MinecraftReflection {
 	 * Retrieves the NMS equivalent of a Bukkit ItemStack. This method will
 	 * never return null and should preserve NBT data. Null inputs are treated
 	 * as empty (AIR) ItemStacks.
-	 * 
+	 *
 	 * @param specific Bukkit ItemStack
 	 * @return The NMS equivalent
 	 */
@@ -2065,7 +2065,7 @@ public class MinecraftReflection {
 		return craftbukkitPackage.getPackageClass(className)
 				.orElseThrow(() -> new RuntimeException("Failed to find CraftBukkit class: " + className));
 	}
-	
+
 	/**
 	 * Retrieve the class object of a specific Minecraft class.
 	 * @param className - the specific Minecraft class.
@@ -2273,6 +2273,10 @@ public class MinecraftReflection {
 	public static Class<?> getProfilePublicKeyClass() {
 		return getMinecraftClass("world.entity.player.ProfilePublicKey");
 	}
+
+    public static Class<?> getLoginSignatureClass() {
+        return getMinecraftClass("util.MinecraftEncryption").getClasses()[0];
+    }
 
 	public static Class<?> getProfilePublicKeyDataClass() {
 		return getProfilePublicKeyClass().getClasses()[0];
