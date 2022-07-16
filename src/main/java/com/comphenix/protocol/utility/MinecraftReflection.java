@@ -2274,7 +2274,28 @@ public class MinecraftReflection {
 	}
 
     public static Class<?> getSaltedSignatureClass() {
-        return getMinecraftClass("util.MinecraftEncryption").getClasses()[0];
+        try {
+            return getMinecraftClass("SaltedSignature");
+        } catch (RuntimeException runtimeException) {
+            Class<?> messageSigClass = getMinecraftClass("network.chat.MessageSignature", "MessageSignature");
+
+            FuzzyClassContract signatureContract = FuzzyClassContract.newBuilder().
+                    constructor(FuzzyMethodContract.newBuilder().
+                            parameterCount(2).
+                            parameterSuperOf(Long.TYPE, 0).
+                            parameterSuperOf(byte[].class, 1).
+                            build()
+                    ).build();
+
+            FuzzyFieldContract fuzzyFieldContract = FuzzyFieldContract.newBuilder().
+                    typeMatches(getMinecraftObjectMatcher().and(signatureContract)).
+                    build();
+
+            Class<?> signatureClass = FuzzyReflection.fromClass(messageSigClass, true)
+                    .getField(fuzzyFieldContract)
+                    .getType();
+            return setMinecraftClass("SaltedSignature", signatureClass);
+        }
     }
 
 	public static Class<?> getProfilePublicKeyDataClass() {
