@@ -9,7 +9,7 @@ public abstract class Either<L, R> {
 
         private final L value;
 
-        public Left(L value) {
+        protected Left(L value) {
             this.value = value;
         }
 
@@ -33,7 +33,7 @@ public abstract class Either<L, R> {
 
         private final R value;
 
-        public Right(R value) {
+        protected Right(R value) {
             this.value = value;
         }
 
@@ -59,4 +59,11 @@ public abstract class Either<L, R> {
 
     public abstract Optional<R> getRight();
 
+    public static <L, R>  Either<L, R> left(L value) {
+        return new Left<>(value);
+    }
+
+    public static <L, R>  Either<L, R> right(R value) {
+        return new Right<>(value);
+    }
 }

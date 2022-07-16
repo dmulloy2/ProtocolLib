@@ -40,8 +40,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.ComponentConverter;
-import com.comphenix.protocol.wrappers.Either.Left;
-import com.comphenix.protocol.wrappers.Either.Right;
+import com.comphenix.protocol.wrappers.Either;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
@@ -736,7 +735,7 @@ public class PacketContainerTest {
         encryptionStart.getByteArrays().write(0, new byte[]{1, 2, 3});
 
         byte[] nonce = {4, 5, 6};
-        encryptionStart.getLoginSignatures().write(0, new Left<>(nonce));
+        encryptionStart.getLoginSignatures().write(0, Either.left(nonce));
 
         byte[] read = encryptionStart.getLoginSignatures().read(0).getLeft().get();
         assertArrayEquals(nonce, read);
@@ -749,7 +748,7 @@ public class PacketContainerTest {
 
         byte[] signature = new byte[512];
         long salt = 124L;
-        encryptionStart.getLoginSignatures().write(0, new Right<>(new WrappedLoginSignature(salt, signature)));
+        encryptionStart.getLoginSignatures().write(0, Either.right(new WrappedLoginSignature(salt, signature)));
 
         WrappedLoginSignature read = encryptionStart.getLoginSignatures().read(0).getRight().get();
         assertEquals(salt, read.getSalt());
