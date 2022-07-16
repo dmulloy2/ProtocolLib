@@ -596,8 +596,8 @@ public class BukkitConverters {
 		return ignoreNull(handle(WrappedProfileKeyData::getHandle, WrappedProfileKeyData::new, WrappedProfileKeyData.class));
 	}
 
-    public static EquivalentConverter<WrappedLoginSignature> getWrappedSignatureConverter() {
-        return ignoreNull(handle(WrappedLoginSignature::getHandle, WrappedLoginSignature::new, WrappedLoginSignature.class));
+    public static EquivalentConverter<WrappedSaltedSignature> getWrappedSignatureConverter() {
+        return ignoreNull(handle(WrappedSaltedSignature::getHandle, WrappedSaltedSignature::new, WrappedSaltedSignature.class));
     }
 
 	/**

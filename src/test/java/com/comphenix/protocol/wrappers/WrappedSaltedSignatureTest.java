@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class WrappedLoginSignatureTest {
+class WrappedSaltedSignatureTest {
 
     @BeforeAll
     static void initializeBukkit() {
@@ -25,7 +25,7 @@ class WrappedLoginSignatureTest {
         ThreadLocalRandom.current().nextBytes(signature);
 
         // test key data conversion
-        WrappedLoginSignature loginSignature = new WrappedLoginSignature(salt, signature);
+        WrappedSaltedSignature loginSignature = new WrappedSaltedSignature(salt, signature);
 
         Object handle = loginSignature.getHandle();
         MinecraftEncryption.b data = assertInstanceOf(MinecraftEncryption.b.class, handle);
@@ -35,7 +35,7 @@ class WrappedLoginSignatureTest {
         assertEquals(salt, data.c());
 
         // test key data unwrapping
-        WrappedLoginSignature unwrapped = BukkitConverters.getWrappedSignatureConverter().getSpecific(data);
+        WrappedSaltedSignature unwrapped = BukkitConverters.getWrappedSignatureConverter().getSpecific(data);
         assertNotNull(unwrapped);
         assertTrue(unwrapped.isSigned());
         assertEquals(loginSignature.getSalt(), unwrapped.getSalt());
@@ -58,7 +58,7 @@ class WrappedLoginSignatureTest {
         byte[] signature = {};
 
         // test key data conversion
-        WrappedLoginSignature loginSignature = new WrappedLoginSignature(salt, signature);
+        WrappedSaltedSignature loginSignature = new WrappedSaltedSignature(salt, signature);
 
         Object handle = loginSignature.getHandle();
         MinecraftEncryption.b data = assertInstanceOf(MinecraftEncryption.b.class, handle);
@@ -68,7 +68,7 @@ class WrappedLoginSignatureTest {
         assertEquals(salt, data.c());
 
         // test key data unwrapping
-        WrappedLoginSignature unwrapped = BukkitConverters.getWrappedSignatureConverter().getSpecific(data);
+        WrappedSaltedSignature unwrapped = BukkitConverters.getWrappedSignatureConverter().getSpecific(data);
         assertNotNull(unwrapped);
         assertFalse(unwrapped.isSigned());
         assertEquals(loginSignature.getSalt(), unwrapped.getSalt());

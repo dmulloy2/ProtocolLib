@@ -122,7 +122,7 @@ public class MinecraftReflectionTest {
 
     @Test
     public void testLoginSignature() {
-        assertEquals(MinecraftEncryption.b.class, MinecraftReflection.getLoginSignatureClass());
+        assertEquals(MinecraftEncryption.b.class, MinecraftReflection.getSaltedSignatureClass());
     }
 
 	@Test

@@ -2273,7 +2273,7 @@ public class MinecraftReflection {
 		return getMinecraftClass("world.entity.player.ProfilePublicKey");
 	}
 
-    public static Class<?> getLoginSignatureClass() {
+    public static Class<?> getSaltedSignatureClass() {
         return getMinecraftClass("util.MinecraftEncryption").getClasses()[0];
     }
 

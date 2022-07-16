@@ -6,7 +6,7 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.primitives.Longs;
 
-public class WrappedLoginSignature extends AbstractWrapper {
+public class WrappedSaltedSignature extends AbstractWrapper {
 
     private static ConstructorAccessor CONSTRUCTOR;
 
@@ -15,15 +15,15 @@ public class WrappedLoginSignature extends AbstractWrapper {
     /**
      * Construct a new NMS wrapper.
      */
-    public WrappedLoginSignature(Object handle) {
-        super(MinecraftReflection.getLoginSignatureClass());
+    public WrappedSaltedSignature(Object handle) {
+        super(MinecraftReflection.getSaltedSignatureClass());
 
         this.setHandle(handle);
-        this.modifier = new StructureModifier<>(MinecraftReflection.getLoginSignatureClass()).withTarget(handle);
+        this.modifier = new StructureModifier<>(MinecraftReflection.getSaltedSignatureClass()).withTarget(handle);
     }
 
-    public WrappedLoginSignature(long salt, byte[] signature) {
-        super(MinecraftReflection.getLoginSignatureClass());
+    public WrappedSaltedSignature(long salt, byte[] signature) {
+        super(MinecraftReflection.getSaltedSignatureClass());
 
         if (CONSTRUCTOR == null) {
             CONSTRUCTOR = Accessors.getConstructorAccessor(
@@ -32,7 +32,7 @@ public class WrappedLoginSignature extends AbstractWrapper {
         }
 
         this.setHandle(CONSTRUCTOR.invoke(salt, signature));
-        this.modifier = new StructureModifier<>(MinecraftReflection.getLoginSignatureClass()).withTarget(this.handle);
+        this.modifier = new StructureModifier<>(MinecraftReflection.getSaltedSignatureClass()).withTarget(this.handle);
     }
 
     public boolean isSigned() {

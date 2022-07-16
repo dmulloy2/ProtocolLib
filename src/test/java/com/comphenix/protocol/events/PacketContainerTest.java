@@ -54,7 +54,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedLoginSignature;
+import com.comphenix.protocol.wrappers.WrappedSaltedSignature;
 import com.comphenix.protocol.wrappers.WrappedRegistry;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -748,12 +748,26 @@ public class PacketContainerTest {
 
         byte[] signature = new byte[512];
         long salt = 124L;
-        encryptionStart.getLoginSignatures().write(0, Either.right(new WrappedLoginSignature(salt, signature)));
+        encryptionStart.getLoginSignatures().write(0, Either.right(new WrappedSaltedSignature(salt, signature)));
 
-        WrappedLoginSignature read = encryptionStart.getLoginSignatures().read(0).right().get();
+        WrappedSaltedSignature read = encryptionStart.getLoginSignatures().read(0).right().get();
         assertEquals(salt, read.getSalt());
         assertArrayEquals(signature, read.getSignature());
     }
+
+	@Test
+	public void testSignedChatMessage() {
+		PacketContainer chatPacket = new PacketContainer(PacketType.Play.Client.CHAT);
+
+		byte[] signature = new byte[512];
+		long salt = 124L;
+		WrappedSaltedSignature wrappedSignature = new WrappedSaltedSignature(salt, signature);
+		chatPacket.getSignatures().write(0, wrappedSignature);
+
+		WrappedSaltedSignature read = chatPacket.getSignatures().read(0);
+		assertEquals(salt, read.getSalt());
+		assertArrayEquals(signature, read.getSignature());
+	}
 
 	private void assertPacketsEqual(PacketContainer constructed, PacketContainer cloned) {
 		StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();

@@ -954,12 +954,24 @@ public abstract class AbstractStructure {
             BukkitConverters.getWrappedPublicKeyDataConverter());
     }
 
-    public StructureModifier<Either<byte[], WrappedLoginSignature>> getLoginSignatures() {
+    public StructureModifier<Either<byte[], WrappedSaltedSignature>> getLoginSignatures() {
+        return getEithers(Converters.passthrough(byte[].class), BukkitConverters.getWrappedSignatureConverter());
+    }
+
+    public StructureModifier<WrappedSaltedSignature> getSignatures() {
         return structureModifier.withType(
-            com.mojang.datafixers.util.Either.class,
-            BukkitConverters.getEitherConverter(
-                Converters.passthrough(byte[].class), BukkitConverters.getWrappedSignatureConverter()
-            )
+                MinecraftReflection.getSaltedSignatureClass(),
+                BukkitConverters.getWrappedSignatureConverter()
+        );
+    }
+
+    public <L, R> StructureModifier<Either<L, R>> getEithers(EquivalentConverter<L> leftConverter,
+                                                             EquivalentConverter<R> rightConverter) {
+        return structureModifier.withType(
+                com.mojang.datafixers.util.Either.class,
+                BukkitConverters.getEitherConverter(
+                        leftConverter, rightConverter
+                )
         );
     }
 
