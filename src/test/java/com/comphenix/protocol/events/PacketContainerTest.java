@@ -737,7 +737,7 @@ public class PacketContainerTest {
         byte[] nonce = {4, 5, 6};
         encryptionStart.getLoginSignatures().write(0, Either.left(nonce));
 
-        byte[] read = encryptionStart.getLoginSignatures().read(0).getLeft().get();
+        byte[] read = encryptionStart.getLoginSignatures().read(0).left().get();
         assertArrayEquals(nonce, read);
     }
 
@@ -750,7 +750,7 @@ public class PacketContainerTest {
         long salt = 124L;
         encryptionStart.getLoginSignatures().write(0, Either.right(new WrappedLoginSignature(salt, signature)));
 
-        WrappedLoginSignature read = encryptionStart.getLoginSignatures().read(0).getRight().get();
+        WrappedLoginSignature read = encryptionStart.getLoginSignatures().read(0).right().get();
         assertEquals(salt, read.getSalt());
         assertArrayEquals(signature, read.getSignature());
     }

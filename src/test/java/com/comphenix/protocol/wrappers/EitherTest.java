@@ -15,8 +15,8 @@ class EitherTest {
     void testLeft() {
         Left<String, ?> left = new Left<>("left");
 
-        assertEquals(left.getLeft(), Optional.of("left"));
-        assertEquals(left.getRight(), Optional.empty());
+        assertEquals(left.left(), Optional.of("left"));
+        assertEquals(left.right(), Optional.empty());
 
         String map = left.map(l -> l + "left", r -> r + "right");
         assertEquals("leftleft", map);
@@ -26,8 +26,8 @@ class EitherTest {
     void testRight() {
         Right<?, String> right = new Right<>("right");
 
-        assertEquals(right.getLeft(), Optional.empty());
-        assertEquals(right.getRight(), Optional.of("right"));
+        assertEquals(right.left(), Optional.empty());
+        assertEquals(right.right(), Optional.of("right"));
 
         String map = right.map(l -> l + "left", r -> r + "right");
         assertEquals("rightright", map);

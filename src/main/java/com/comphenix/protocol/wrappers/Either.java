@@ -19,12 +19,12 @@ public abstract class Either<L, R> {
         }
 
         @Override
-        public Optional<L> getLeft() {
+        public Optional<L> left() {
             return Optional.ofNullable(value);
         }
 
         @Override
-        public Optional<R> getRight() {
+        public Optional<R> right() {
             return Optional.empty();
         }
     }
@@ -43,21 +43,21 @@ public abstract class Either<L, R> {
         }
 
         @Override
-        public Optional<L> getLeft() {
+        public Optional<L> left() {
             return Optional.empty();
         }
 
         @Override
-        public Optional<R> getRight() {
+        public Optional<R> right() {
             return Optional.ofNullable(value);
         }
     }
 
     public abstract <T> T map(Function<L, T> leftConsumer, Function<R, T> rightConsumer);
 
-    public abstract Optional<L> getLeft();
+    public abstract Optional<L> left();
 
-    public abstract Optional<R> getRight();
+    public abstract Optional<R> right();
 
     public static <L, R>  Either<L, R> left(L value) {
         return new Left<>(value);

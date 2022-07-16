@@ -52,7 +52,7 @@ public class BukkitConvertersTest {
         com.mojang.datafixers.util.Either<String, String> nmsEither = (com.mojang.datafixers.util.Either<String, String>) converter.getGeneric(test);
         Either<String, String> wrapped = converter.getSpecific(nmsEither);
 
-        assertEquals(wrapped.getLeft(), nmsEither.left());
-        assertEquals(wrapped.getRight(), nmsEither.right());
+        assertEquals(wrapped.left(), nmsEither.left());
+        assertEquals(wrapped.right(), nmsEither.right());
     }
 }
