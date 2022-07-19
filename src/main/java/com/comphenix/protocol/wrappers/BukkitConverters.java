@@ -423,9 +423,9 @@ public class BukkitConverters {
 
             @Override
             public Either<A, B> getSpecific(Object generic) {
-                com.mojang.datafixers.util.Either mjEither = (com.mojang.datafixers.util.Either) generic;
+                com.mojang.datafixers.util.Either<A, B> mjEither = (com.mojang.datafixers.util.Either<A, B>) generic;
 
-                return (Either<A, B>) mjEither.map(
+                return mjEither.map(
                     left -> new Left<>(leftConverter.getSpecific(left)),
                     right -> new Right<>(rightConverter.getSpecific(right))
                 );
