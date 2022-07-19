@@ -30,8 +30,8 @@ public class WrappedSaltedSignature extends AbstractWrapper {
 
     /**
      * Construct a wrapper and NMS handle containing the given values
-     * @param salt 
-     * @param signature
+     * @param salt salt/nonce for this signature
+     * @param signature binary cryptographic signature
      */
     public WrappedSaltedSignature(long salt, byte[] signature) {
         super(MinecraftReflection.getSaltedSignatureClass());

@@ -410,6 +410,13 @@ public class BukkitConverters {
 	}
 
 
+	/**
+	 * @param leftConverter convert the left value if available
+	 * @param rightConverter convert the right value if available
+	 * @return converter for Mojang either class
+	 * @param <A> converted left type
+	 * @param <B> converted right type
+	 */
     public static <A, B> EquivalentConverter<Either<A, B>> getEitherConverter(EquivalentConverter<A> leftConverter,
                                                                               EquivalentConverter<B> rightConverter) {
         return ignoreNull(new EquivalentConverter<Either<A, B>>() {
@@ -596,6 +603,9 @@ public class BukkitConverters {
 		return ignoreNull(handle(WrappedProfileKeyData::getHandle, WrappedProfileKeyData::new, WrappedProfileKeyData.class));
 	}
 
+	/**
+	 * @return converter for cryptographic signature data that are used in login and chat packets
+	 */
     public static EquivalentConverter<WrappedSaltedSignature> getWrappedSignatureConverter() {
         return ignoreNull(handle(WrappedSaltedSignature::getHandle, WrappedSaltedSignature::new, WrappedSaltedSignature.class));
     }

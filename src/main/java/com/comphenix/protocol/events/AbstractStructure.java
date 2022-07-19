@@ -974,7 +974,7 @@ public abstract class AbstractStructure {
     /**
      * @param leftConverter converter for left values
      * @param rightConverter converter for right values
-     * @return ProtocolLib read/write structure for Mojang either structures
+     * @return ProtocolLib's read/write structure for Mojang either structures
      * @param <L> left data type after converting from NMS
      * @param <R> right data type after converting from NMS
      */
