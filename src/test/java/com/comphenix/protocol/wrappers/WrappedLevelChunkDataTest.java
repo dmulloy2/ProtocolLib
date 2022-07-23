@@ -82,7 +82,8 @@ public class WrappedLevelChunkDataTest {
         Object rawInstance = container.getSpecificModifier(MinecraftReflection.getLevelChunkPacketDataClass()).read(0);
         Object virtualInstance = WrappedLevelChunkData.ChunkData.getConverter().getGeneric(container.getLevelChunkData().read(0));
 
-        assertTrue(new ReflectionEquals(rawInstance, "d")
+        assertTrue(new ReflectionEquals(rawInstance, FuzzyReflection.fromClass(rawInstance.getClass(), true)
+                .getFieldListByType(List.class).get(0).getName())
                 .matches(virtualInstance));
         assertTrue(blockEntitiesEqual(rawInstance, virtualInstance));
     }
