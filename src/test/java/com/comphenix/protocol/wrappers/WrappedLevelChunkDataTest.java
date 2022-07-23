@@ -1,20 +1,39 @@
 package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.google.common.io.BaseEncoding;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.level.block.entity.TileEntityTypes;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistry;
+import net.minecraft.core.IRegistryCustom;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.level.BlockAccessAir;
+import net.minecraft.world.level.ChunkCoordIntPair;
+import net.minecraft.world.level.block.entity.TileEntityBell;
+import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.chunk.Chunk;
+import net.minecraft.world.level.chunk.ILightAccess;
+import net.minecraft.world.level.lighting.LightEngine;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 
+import java.lang.reflect.Field;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Etrayed
@@ -22,61 +41,106 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class WrappedLevelChunkDataTest {
 
     @BeforeAll
-    public static void initializeBukkit() {
+    public static void initializeBukkitAndNMS() {
         BukkitInitialization.initializeAll();
+
+        ILightAccess access = mock(ILightAccess.class);
+
+        when(access.c(0, 0)).thenReturn(BlockAccessAir.a);
+        when(access.p()).thenReturn(BlockAccessAir.a);
+
+        LightEngine engine = new LightEngine(access, true, true);
+        WorldServer nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
+
+        when(nmsWorld.s()).thenReturn(IRegistryCustom.d.get());
+        // TODO: somehow find a way to always call the real code for all LevelHeightAccessor implementations
+        when(nmsWorld.v_()).thenReturn(256);
+        when(nmsWorld.ai()).thenReturn(16); // LevelHeightAccessor is mocked and therefore always returns 0, there are further methods like this which might cause errors in the future
+
+        when(nmsWorld.l_()).thenReturn(engine);
     }
 
-    private final Random random = new Random();
+    private final WorldServer nmsWorld;
 
-    private WrappedLevelChunkData.BlockEntityInfo sampleInfo;
+    private final Chunk chunk;
 
     public WrappedLevelChunkDataTest() {
-        this.sampleInfo = new WrappedLevelChunkData.BlockEntityInfo(1, 8, 7, new MinecraftKey("minecraft", "sign"), null);
+        this.nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
+        this.chunk = new Chunk(nmsWorld, new ChunkCoordIntPair(5, 5));
+
+        IBlockData bellData = IRegistry.V.a(new MinecraftKey("bell")).m();
+
+        chunk.b(0).a(0, 0, 0, bellData);
+        chunk.a(new TileEntityBell(BlockPosition.b, bellData));
     }
 
     @Test
     public void testChunkData() {
-        NbtCompound compound = NbtFactory.fromNMSCompound(new NBTTagCompound());
+        ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(chunk,
+                nmsWorld.l_(), null, null, false);
+        PacketContainer container = PacketContainer.fromPacket(packet);
+        Object rawInstance = container.getSpecificModifier(MinecraftReflection.getLevelChunkPacketDataClass()).read(0);
+        Object virtualInstance = WrappedLevelChunkData.ChunkData.getConverter().getGeneric(container.getLevelChunkData().read(0));
 
-        compound.put("test", 69);
+        assertTrue(new ReflectionEquals(rawInstance, "d")
+                .matches(virtualInstance));
+        assertTrue(blockEntitiesEqual(rawInstance, virtualInstance));
+    }
 
-        WrappedLevelChunkData.ChunkData chunkData = new WrappedLevelChunkData.ChunkData(compound,
-                BaseEncoding.base64().decode("ML3C7mBk8kMpOoj461P95A"), Collections.singletonList(sampleInfo));
-        Object generic = WrappedLevelChunkData.ChunkData.getConverter().getGeneric(chunkData);
-        WrappedLevelChunkData.ChunkData back = WrappedLevelChunkData.ChunkData.getConverter().getSpecific(generic);
+    private boolean blockEntitiesEqual(Object raw, Object virtual) {
+        if (raw == null && virtual == null) {
+            return true;
+        }
 
-        assertEquals(chunkData, back);
+        if (raw == null ^ virtual == null) {
+            return false;
+        }
+
+        FieldAccessor accessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(raw.getClass(), true)
+                .getField(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
+        List rawList = (List) accessor.get(raw);
+        List virtualList = (List) accessor.get(virtual);
+
+        if (rawList.size() != virtualList.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < rawList.size(); i++) {
+            if (!EqualsBuilder.reflectionEquals(rawList.get(0), virtualList.get(0))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Test
     public void testLightData() {
-        WrappedLevelChunkData.LightData lightData = new WrappedLevelChunkData.LightData(randomBitSet(), randomBitSet(),
-                randomBitSet(), randomBitSet(), randomByteArrayList(), randomByteArrayList(), true);
-        Object generic = WrappedLevelChunkData.LightData.getConverter().getGeneric(lightData);
-        WrappedLevelChunkData.LightData back = WrappedLevelChunkData.LightData.getConverter().getSpecific(generic);
+        ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(chunk,
+                nmsWorld.l_(), null, null, false);
+        PacketContainer container = PacketContainer.fromPacket(packet);
 
-        assertEquals(lightData, back);
+        randomizeBitSets(container.getSpecificModifier(MinecraftReflection.getLightUpdatePacketDataClass()).read(0));
+
+        assertTrue(new ReflectionEquals(container.getSpecificModifier(MinecraftReflection.getLightUpdatePacketDataClass()).read(0))
+                .matches(WrappedLevelChunkData.LightData.getConverter().getGeneric(container.getLightUpdateData().read(0))));
     }
 
-    private BitSet randomBitSet() {
-        return BitSet.valueOf(random.longs().limit(30).toArray());
+    private void randomizeBitSets(Object lightData) {
+        for (Field field : FuzzyReflection.fromClass(MinecraftReflection.getLightUpdatePacketDataClass(), true).getFieldListByType(BitSet.class)) {
+            try {
+                field.setAccessible(true);
+
+                randomizeBitSet((BitSet) field.get(lightData));
+            } catch (IllegalAccessException ignored) {}
+        }
     }
 
-    private List<byte[]> randomByteArrayList() {
-        byte[] bytes = new byte[random.nextInt(50)];
-
-        random.nextBytes(bytes);
-
-        return Collections.singletonList(bytes);
-    }
-
-    @Test
-    public void testBlockEntityInfo() {
-        TileEntityTypes.class.getName();
-
-        Object generic = WrappedLevelChunkData.BlockEntityInfo.getConverter().getGeneric(sampleInfo);
-        WrappedLevelChunkData.BlockEntityInfo back = WrappedLevelChunkData.BlockEntityInfo.getConverter().getSpecific(generic);
-
-        assertEquals(sampleInfo, back);
+    private void randomizeBitSet(BitSet bitSet) {
+        for (int i = 0; i < bitSet.size(); i++) {
+            if (Math.random() >= 0.5D) {
+                bitSet.set(i);
+            }
+        }
     }
 }

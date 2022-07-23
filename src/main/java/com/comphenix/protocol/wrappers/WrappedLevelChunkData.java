@@ -83,10 +83,10 @@ public final class WrappedLevelChunkData {
 
         @Override
         public boolean equals(Object o) {
-            if(this == o) {
+            if (this == o) {
                 return true;
             }
-            if(o == null || getClass() != o.getClass()) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
             ChunkData chunkData = (ChunkData) o;
@@ -558,7 +558,7 @@ public final class WrappedLevelChunkData {
 
                 @Override
                 public Object getGeneric(BlockEntityInfo specific) {
-                    if(blockEntityInfoConstructor == null) {
+                    if (blockEntityInfoConstructor == null) {
                         blockEntityInfoConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, int.class, int.class,
                                 MinecraftReflection.getBlockEntityTypeClass(), MinecraftReflection.getNBTCompoundClass());
                     }
