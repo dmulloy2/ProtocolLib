@@ -32,6 +32,7 @@ import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.NettyVersion;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import java.io.File;
@@ -567,6 +568,19 @@ public class ProtocolLib extends JavaPlugin {
 	public void onDisable() {
 		if (this.skipDisable) {
 			return;
+		}
+
+		// that reloading the server might break ProtocolLib / plugins depending on it
+		if (Util.isCurrentlyReloading()) {
+			logger.severe("╔══════════════════════════════════════════════════════════════════╗");
+			logger.severe("║                               WARNING                            ║");
+			logger.severe("║     RELOADING THE SERVER WHILE PROTOCOL LIB IS ENABLED MIGHT     ║");
+			logger.severe("║                    LEAD TO UNEXPECTED ERRORS!                    ║");
+			logger.severe("║                                                                  ║");
+			logger.severe("║     Consider to cleanly restart your server if you encounter     ║");
+			logger.severe("║    any issues related to Protocol Lib before opening an issue    ║");
+			logger.severe("║                            on GitHub!                            ║");
+			logger.severe("╚══════════════════════════════════════════════════════════════════╝");
 		}
 
 		// Disable compiler

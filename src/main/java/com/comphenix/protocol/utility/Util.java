@@ -1,18 +1,16 @@
 /**
- *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2015 dmulloy2
- *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
- *  the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *  See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *  02111-1307 USA
+ * ProtocolLib - Bukkit server library that allows access to the Minecraft protocol. Copyright (C) 2015 dmulloy2
+ * <p>
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * <p>
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ * <p>
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package com.comphenix.protocol.utility;
 
@@ -26,7 +24,10 @@ import java.util.List;
  */
 public final class Util {
 
-	private Util() {}
+	private static final boolean spigot = classExists("org.spigotmc.SpigotConfig");
+
+	private Util() {
+	}
 
 	/**
 	 * Converts a variable argument array into a List.
@@ -49,8 +50,6 @@ public final class Util {
 		}
 	}
 
-	private static final boolean spigot = classExists("org.spigotmc.SpigotConfig");
-
 	/**
 	 * Whether or not this server is running Spigot or a Spigot fork. This works by checking
 	 * if the SpigotConfig exists, which should be true of all forks.
@@ -58,5 +57,23 @@ public final class Util {
 	 */
 	public static boolean isUsingSpigot() {
 		return spigot;
+	}
+
+	/**
+	 * Checks if the server is getting reloaded by walking down the current thread stack trace.
+	 *
+	 * @return true if the server is getting reloaded, false otherwise.
+	 */
+	public static boolean isCurrentlyReloading() {
+		StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+		for (StackTraceElement element : stackTrace) {
+			String clazz = element.getClassName();
+			if (clazz.startsWith("org.bukkit.craftbukkit.")
+					&& clazz.endsWith(".CraftServer")
+					&& element.getMethodName().equals("reload")) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

@@ -27,6 +27,9 @@ import io.netty.channel.ChannelHandler;
 import io.netty.util.AttributeKey;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -95,8 +98,8 @@ public class NettyChannelInjector implements Injector {
 
 	private final FieldAccessor channelField;
 
-	private final Set<Object> skippedPackets = new HashSet<>();
-	private final Set<Object> processedPackets = new HashSet<>();
+	private final Set<Object> skippedPackets = Collections.synchronizedSet(new HashSet<>());
+	private final Collection<Object> processedPackets = Collections.synchronizedList(new ArrayList<>());
 	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
 
 	// status of this injector
