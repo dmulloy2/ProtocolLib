@@ -401,12 +401,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
 	@Override
 	public Entity getEntityFromID(World container, int id) {
-		for (Entity entity : container.getEntities()) {
-			if (entity.getEntityId() == id) {
-				return entity;
-			}
-		}
-		return null;
+		return EntityUtilities.getInstance().getEntity(container, id);
 	}
 
 	@Override

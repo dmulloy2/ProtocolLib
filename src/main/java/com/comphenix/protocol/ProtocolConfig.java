@@ -15,17 +15,16 @@
  */
 package com.comphenix.protocol;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 /**
  * Represents the configuration of ProtocolLib.
@@ -101,7 +100,7 @@ public class ProtocolConfig {
 
 		if (dataFile.exists()) {
 			try {
-				return Long.parseLong(Files.toString(dataFile, Charsets.UTF_8));
+				return Long.parseLong(Files.toString(dataFile, StandardCharsets.UTF_8));
 			} catch (NumberFormatException e) {
 				plugin.getLogger().warning("Cannot parse " + dataFile + " as a number.");
 			} catch (IOException e) {
@@ -128,7 +127,7 @@ public class ProtocolConfig {
 		}
 
 		try {
-			Files.write(Long.toString(value), dataFile, Charsets.UTF_8);
+			Files.write(Long.toString(value), dataFile, StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write " + dataFile, e);
 		}

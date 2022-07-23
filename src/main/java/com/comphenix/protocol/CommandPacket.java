@@ -442,19 +442,21 @@ class CommandPacket extends CommandBase {
 		return listener;
 	}
 	
-	private SubCommand parseCommand(Deque<String> arguments) {
-		String text = arguments.poll().toLowerCase();
-		
-		// Parse this too
-		if ("add".startsWith(text))
-			return SubCommand.ADD;
-		else if ("remove".startsWith(text))
-			return SubCommand.REMOVE;
-		else if ("names".startsWith(text)) 
-			return SubCommand.NAMES;
-		else if ("page".startsWith(text)) 
-			return SubCommand.PAGE;
-		else
-			throw new IllegalArgumentException(text + " is not a valid sub command. Must be add or remove.");
+	private SubCommand parseCommand(Deque<String> arguments)
+	{
+		final String text = arguments.remove().toLowerCase();
+
+		switch (arguments.remove().toLowerCase()) {
+			case "add":
+				return SubCommand.ADD;
+			case "remove":
+				return SubCommand.REMOVE;
+			case "names":
+				return SubCommand.NAMES;
+			case "page":
+				return SubCommand.PAGE;
+			default:
+				throw new IllegalArgumentException(text + " is not a valid sub command. Must be add or remove.");
+		}
 	}
 }

@@ -19,7 +19,7 @@ package com.comphenix.protocol.utility;
  *
  * @author dmulloy2
  */
-public class Util {
+public final class Util {
 
 	private static final boolean SPIGOT = classExists("org.spigotmc.SpigotConfig");
 
@@ -40,5 +40,23 @@ public class Util {
 	 */
 	public static boolean isUsingSpigot() {
 		return SPIGOT;
+	}
+
+	/**
+	 * Checks if the server is getting reloaded by walking down the current thread stack trace.
+	 *
+	 * @return true if the server is getting reloaded, false otherwise.
+	 */
+	public static boolean isCurrentlyReloading() {
+		StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+		for (StackTraceElement element : stackTrace) {
+			String clazz = element.getClassName();
+			if (clazz.startsWith("org.bukkit.craftbukkit.")
+					&& clazz.endsWith(".CraftServer")
+					&& element.getMethodName().equals("reload")) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

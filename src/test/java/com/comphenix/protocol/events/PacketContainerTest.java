@@ -322,7 +322,7 @@ public class PacketContainerTest {
 
 		assertEquals(positionAccessor.read(0).size(), 0);
 
-		List<BlockPosition> positions = Lists.newArrayList();
+		List<BlockPosition> positions = new ArrayList<>();
 		positions.add(new BlockPosition(1, 2, 3));
 		positions.add(new BlockPosition(3, 4, 5));
 

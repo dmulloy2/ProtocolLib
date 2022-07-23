@@ -9,6 +9,8 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
 import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.IRegistry;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
@@ -85,7 +87,7 @@ public class WrappedAttributeTest {
 	 * @return The equivalent NMS attribute.
 	 */
 	private AttributeSnapshot getAttributeCopy(WrappedAttribute attribute) {
-		List<AttributeModifier> modifiers = Lists.newArrayList();
+		List<AttributeModifier> modifiers = new ArrayList<>();
 
 		for (WrappedAttributeModifier wrapper : attribute.getModifiers()) {
 			modifiers.add((AttributeModifier) wrapper.getHandle());

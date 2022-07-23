@@ -26,6 +26,9 @@ import io.netty.channel.ChannelHandler;
 import io.netty.util.AttributeKey;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -94,8 +97,8 @@ public class NettyChannelInjector implements Injector {
 
 	private final FieldAccessor channelField;
 
-	private final Set<Object> skippedPackets = new HashSet<>();
-	private final Set<Object> processedPackets = new HashSet<>();
+	private final Set<Object> skippedPackets = Collections.synchronizedSet(new HashSet<>());
+	private final Collection<Object> processedPackets = Collections.synchronizedList(new ArrayList<>());
 	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
 
 	// status of this injector
@@ -539,11 +542,11 @@ public class NettyChannelInjector implements Injector {
 			// if the marker is null we can just schedule the action as we don't need to do anything after the packet was sent
 			NetworkMarker eventMarker = NetworkMarker.getNetworkMarker(event);
 			if (eventMarker == null) {
-				return this.markProcessed(packet, action, markSeen);
+				return this.markProcessed(interceptedPacket, action, markSeen);
 			}
 
 			// we need to wrap the action to call the listeners set in the marker
-			return this.markProcessed(packet, this.proxyAction(action, event, eventMarker), markSeen);
+			return this.markProcessed(interceptedPacket, this.proxyAction(action, event, eventMarker), markSeen);
 		}
 
 		// return null if the event was cancelled to schedule a no-op event
