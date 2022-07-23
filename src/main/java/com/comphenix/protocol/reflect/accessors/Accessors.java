@@ -9,6 +9,8 @@ import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.google.common.base.Joiner;
 
+// TODO: at some point we should make everything nullable to make updates easier
+
 public final class Accessors {
 	/**
 	 * Represents a field accessor that synchronizes access to the underlying field.

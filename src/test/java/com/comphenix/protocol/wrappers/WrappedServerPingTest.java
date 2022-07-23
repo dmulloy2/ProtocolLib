@@ -33,12 +33,14 @@ public class WrappedServerPingTest {
 			serverPing.setVersionProtocol(4);
 			serverPing.setFavicon(tux);
 			serverPing.setChatPreviewEnabled(true);
+			serverPing.setEnforceSecureChat(true);
 
 			assertEquals(5, serverPing.getPlayersOnline());
 			assertEquals(10, serverPing.getPlayersMaximum());
 			assertEquals("Minecraft 123", serverPing.getVersionName());
 			assertEquals(4, serverPing.getVersionProtocol());
 			assertTrue(serverPing.isChatPreviewEnabled());
+			assertTrue(serverPing.isEnforceSecureChat());
 
 			assertArrayEquals(original, serverPing.getFavicon().getData());
 
