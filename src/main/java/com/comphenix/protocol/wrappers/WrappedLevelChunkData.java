@@ -120,7 +120,7 @@ public final class WrappedLevelChunkData {
         private static FieldAccessor bufferAccessor;
 
         public static EquivalentConverter<ChunkData> getConverter() {
-            if(blockEntitiesDataAccessor == null) {
+            if (blockEntitiesDataAccessor == null) {
                 blockEntitiesDataAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
                         .getField(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
             }
@@ -129,7 +129,7 @@ public final class WrappedLevelChunkData {
 
                 @Override
                 public Object getGeneric(ChunkData specific) {
-                    if(levelChunkPacketDataConstructor == null) {
+                    if (levelChunkPacketDataConstructor == null) {
                         levelChunkPacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
                     }
 
@@ -159,7 +159,7 @@ public final class WrappedLevelChunkData {
 
                 @Override
                 public ChunkData getSpecific(Object generic) {
-                    if(heightmapsAccessor == null) {
+                    if (heightmapsAccessor == null) {
                         heightmapsAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
                                 .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getNBTCompoundClass()).build()));
                         bufferAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
@@ -169,7 +169,7 @@ public final class WrappedLevelChunkData {
                     List<?> genericBlockEntities = (List<?>) blockEntitiesDataAccessor.get(generic);
                     List<WrappedLevelChunkData.BlockEntityInfo> wrappedEntityInfo;
 
-                    if(genericBlockEntities.isEmpty()) {
+                    if (genericBlockEntities.isEmpty()) {
                         wrappedEntityInfo = Collections.emptyList();
                     } else {
                         wrappedEntityInfo = new ArrayList<>(genericBlockEntities.size());
@@ -296,10 +296,10 @@ public final class WrappedLevelChunkData {
 
         @Override
         public boolean equals(Object o) {
-            if(this == o) {
+            if (this == o) {
                 return true;
             }
-            if(o == null || getClass() != o.getClass()) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
             LightData lightData = (LightData) o;
@@ -342,7 +342,7 @@ public final class WrappedLevelChunkData {
 
                 @Override
                 public Object getGeneric(LightData specific) {
-                    if(lightUpdatePacketDataConstructor == null) {
+                    if (lightUpdatePacketDataConstructor == null) {
                         lightUpdatePacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
                     }
 
@@ -382,7 +382,7 @@ public final class WrappedLevelChunkData {
 
                 @Override
                 public LightData getSpecific(Object generic) {
-                    if(bitSetAccessors == null) {
+                    if (bitSetAccessors == null) {
                         bitSetAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
                                 .getFieldList(FuzzyFieldContract.newBuilder().typeExact(BitSet.class).build()));
                         byteArrayListAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
@@ -524,10 +524,10 @@ public final class WrappedLevelChunkData {
 
         @Override
         public boolean equals(Object o) {
-            if(this == o) {
+            if (this == o) {
                 return true;
             }
-            if(o == null || getClass() != o.getClass()) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
             BlockEntityInfo info = (BlockEntityInfo) o;
