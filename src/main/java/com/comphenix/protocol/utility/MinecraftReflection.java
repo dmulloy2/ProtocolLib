@@ -30,16 +30,11 @@ import java.util.regex.Pattern;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
-import com.comphenix.protocol.reflect.ClassAnalyser;
-import com.comphenix.protocol.reflect.ClassAnalyser.AsmMethod;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.reflect.fuzzy.*;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 
 import org.bukkit.Bukkit;
