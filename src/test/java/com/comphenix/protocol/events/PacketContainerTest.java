@@ -20,7 +20,6 @@ import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
 import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -90,13 +89,13 @@ import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.WorldType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -263,25 +262,6 @@ public class PacketContainerTest {
 		// Read back array
 		List<ItemStack> comparison = itemAccess.read(0);
 		assertItemCollectionsEqual(items, comparison);
-	}
-
-	@Test
-	public void testGetWorldTypeModifier() {
-		// Not used in Netty
-		if (MinecraftReflection.isUsingNetty()) {
-			return;
-		}
-
-		PacketContainer loginPacket = new PacketContainer(PacketType.Play.Server.LOGIN);
-		StructureModifier<WorldType> worldAccess = loginPacket.getWorldTypeModifier();
-
-		WorldType testValue = WorldType.LARGE_BIOMES;
-
-		assertNull(worldAccess.read(0));
-
-		// Insert and read back
-		worldAccess.write(0, testValue);
-		assertEquals(testValue, worldAccess.read(0));
 	}
 
 	@Test
@@ -789,13 +769,9 @@ public class PacketContainerTest {
 
 	@Test
 	public void testCloning() {
-		boolean failed = false;
-
 		// Try constructing all the packets
 		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("TAGS")
-					|| !type.isSupported()
-					|| type == PacketType.Play.Server.RECIPES) {
+			if (type.isDeprecated() || !type.isSupported() || type.name().contains("CUSTOM_PAYLOAD")) {
 				continue;
 			}
 
@@ -808,20 +784,28 @@ public class PacketContainerTest {
 				// Make sure watchable collections can be cloned
 				if (type == PacketType.Play.Server.ENTITY_METADATA) {
 					constructed.getWatchableCollectionModifier().write(0, Lists.newArrayList(
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Byte.class)),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(Byte.class)),
 									(byte) 1),
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(String.class)),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(String.class)),
 									"String"),
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(Float.class)), 1.0F),
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.getChatComponentSerializer(true)),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(Float.class)),
+									1.0F),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.getChatComponentSerializer(true)),
 									Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle())),
-							new WrappedWatchableObject(new WrappedDataWatcherObject(0, Registry.get(VillagerData.class)),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(VillagerData.class)),
 									new VillagerData(VillagerType.b, VillagerProfession.c, 69))
 					));
 				} else if (type == PacketType.Play.Server.CHAT) {
 					constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
-					//constructed.getModifier().write(1, TEST_COMPONENT);
 				}
+
+				// gives some indication which cloning process fails as the checks itself are happening outside this method
+				System.out.println("Cloning " + type);
 
 				// Clone the packet both ways
 				PacketContainer shallowCloned = constructed.shallowClone();
@@ -830,12 +814,9 @@ public class PacketContainerTest {
 				PacketContainer deepCloned = constructed.deepClone();
 				this.assertPacketsEqual(constructed, deepCloned);
 			} catch (Exception ex) {
-				ex.printStackTrace();
-				failed = true;
+				Assertions.fail("Unable to clone " + type, ex);
 			}
 		}
-
-		assertFalse(failed, "Packet(s) failed to clone");
 	}
 
 	// Convert to objects that support equals()
@@ -917,7 +898,7 @@ public class PacketContainerTest {
 		Set<Field> fields = FuzzyReflection.fromObject(a, true).getFields();
 		for (Field field : fields) {
 			if (!Modifier.isStatic(field.getModifiers())) {
-				FieldAccessor accessor = Accessors.getFieldAccessor(field, true);
+				FieldAccessor accessor = Accessors.getFieldAccessor(field);
 				testEquality(accessor.get(a), accessor.get(b));
 			}
 		}

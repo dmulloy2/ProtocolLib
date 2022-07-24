@@ -17,13 +17,9 @@
 
 package com.comphenix.protocol.async;
 
-import org.bukkit.plugin.Plugin;
+import com.comphenix.protocol.events.*;
 
-import com.comphenix.protocol.events.ListenerOptions;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
+import org.bukkit.plugin.Plugin;
 
 /**
  * Represents a NO OPERATION listener.

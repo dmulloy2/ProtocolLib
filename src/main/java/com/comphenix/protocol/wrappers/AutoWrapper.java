@@ -19,10 +19,8 @@ package com.comphenix.protocol.wrappers;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.google.common.base.Defaults;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
+
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -137,14 +135,14 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 			nmsAccessors = Arrays
 					.stream(nmsClass.getDeclaredFields())
 					.filter(field -> !Modifier.isStatic(field.getModifiers()))
-					.map(field -> Accessors.getFieldAccessor(field, true))
+					.map(field -> Accessors.getFieldAccessor(field))
 					.toArray(FieldAccessor[]::new);
 		}
 
 		if (wrapperAccessors == null) {
 			wrapperAccessors = Arrays
 					.stream(wrapperClass.getDeclaredFields())
-					.map(field -> Accessors.getFieldAccessor(field, true))
+					.map(field -> Accessors.getFieldAccessor(field))
 					.toArray(FieldAccessor[]::new);
 		}
 	}

@@ -28,6 +28,7 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,6 +57,7 @@ class EntityUtilities {
 	private FieldAccessor trackedPlayersField;
 	private FieldAccessor trackedEntitiesField;
 
+	private MethodAccessor getEntity;
 	private MethodAccessor getChunkProvider;
 
 	private EntityUtilities() {
@@ -83,8 +85,22 @@ class EntityUtilities {
 				.invoke(trackerEntry, nmsPlayers);
 	}
 
+	public Entity getEntity(World world, int id) {
+		Object level = BukkitUnwrapper.getInstance().unwrapItem(world);
+		if (getEntity == null) {
+			Method entityGetter = FuzzyReflection.fromObject(level).getMethodByReturnTypeAndParameters(
+					"getEntity",
+					MinecraftReflection.getEntityClass(),
+					int.class);
+			getEntity = Accessors.getMethodAccessor(entityGetter);
+		}
+
+		Object entity = getEntity.invoke(level, id);
+		return (Entity) MinecraftReflection.getBukkitEntity(entity);
+	}
+
 	private MethodAccessor findScanPlayers(Class<?> trackerClass) {
-		MethodAccessor candidate = Accessors.getMethodAcccessorOrNull(trackerClass, "scanPlayers");
+		MethodAccessor candidate = Accessors.getMethodAccessorOrNull(trackerClass, "scanPlayers");
 		if (candidate != null) {
 			return candidate;
 		}

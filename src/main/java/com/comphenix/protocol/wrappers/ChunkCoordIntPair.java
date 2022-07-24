@@ -38,15 +38,6 @@ public class ChunkCoordIntPair {
 	}
 	
 	/**
-	 * Retrieve the equivalent chunk position.
-	 * @param y - the y position.
-	 * @return The chunk position.
-	 */
-	public ChunkPosition getPosition(int y) {
-		return new ChunkPosition((chunkX << 4) + 8, y, (chunkZ << 4) + 8);
-	}
-	
-	/**
 	 * Retrieve the chunk index in the x-dimension.
 	 * <p>
 	 * This is the number of adjacent chunks to (0, 0), not a block coordinate.

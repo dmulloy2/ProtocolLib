@@ -1,5 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.ExactReflection;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,7 +13,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.collect.Maps;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.GameMode;
@@ -471,8 +471,7 @@ public abstract class EnumWrappers {
 	 * Initialize the wrappers, if we haven't already.
 	 */
 	private static void initialize() {
-		if (!MinecraftReflection.isUsingNetty())
-			throw new IllegalArgumentException("Not supported on 1.6.4 and earlier.");
+
 
 		if (INITIALIZED)
 			return;
@@ -920,10 +919,8 @@ public abstract class EnumWrappers {
 		public Object getGeneric(T specific) {
 			Validate.notNull(specific, "specific object cannot be null");
 
-			return Accessors
-					.getFieldAccessor(genericClass, specific
-							.name(), false)
-					.get(null);
+			Field field = ExactReflection.fromClass(this.genericClass, false).findField(specific.name());
+			return Accessors.getFieldAccessor(field).get(null);
 		}
 
 		@Override

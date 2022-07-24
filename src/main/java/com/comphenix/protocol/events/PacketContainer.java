@@ -17,32 +17,6 @@
 
 package com.comphenix.protocol.events;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.injector.StructureCache;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.ObjectWriter;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.reflect.cloning.AggregateCloner;
-import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
-import com.comphenix.protocol.reflect.cloning.BukkitCloner;
-import com.comphenix.protocol.reflect.cloning.Cloner;
-import com.comphenix.protocol.reflect.cloning.CollectionCloner;
-import com.comphenix.protocol.reflect.cloning.FieldCloner;
-import com.comphenix.protocol.reflect.cloning.GuavaOptionalCloner;
-import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
-import com.comphenix.protocol.reflect.cloning.JavaOptionalCloner;
-import com.comphenix.protocol.reflect.cloning.SerializableCloner;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.reflect.instances.MinecraftGenerator;
-import com.comphenix.protocol.utility.MinecraftMethods;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.Converters;
-import com.google.common.base.Function;
-import com.google.common.collect.Sets;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
-
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -55,6 +29,25 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.injector.StructureCache;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.ObjectWriter;
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.cloning.*;
+import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.reflect.instances.MinecraftGenerator;
+import com.comphenix.protocol.utility.MinecraftMethods;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.Converters;
+import com.google.common.base.Function;
+import com.google.common.collect.Sets;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -280,10 +273,6 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 			buffer.readBytes(output, buffer.readableBytes());
 		} catch (IllegalArgumentException e) {
 			throw new IOException("Minecraft packet doesn't support DataOutputStream", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Insufficient security privileges.", e);
-		} catch (InvocationTargetException e) {
-			throw new IOException("Could not serialize Minecraft packet.", e);
 		}
 	}
 
@@ -307,7 +296,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 					handle = type.getPacketClass()
 							.getConstructor(MinecraftReflection.getPacketDataSerializerClass())
 							.newInstance(serializer);
-				} catch (ReflectiveOperationException ex) {
+				} catch (NoSuchMethodException | IllegalAccessException | InstantiationException ex) {
 					// they might have a static method to create them instead
 					Method method = FuzzyReflection.fromClass(type.getPacketClass(), true)
 							.getMethod(FuzzyMethodContract
@@ -318,9 +307,11 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 									.build());
 					try {
 						handle = method.invoke(null, serializer);
-					} catch (ReflectiveOperationException ignored) {
-						throw new RuntimeException("Failed to construct packet for " + type, ex);
+					} catch (ReflectiveOperationException exception) {
+						throw new RuntimeException("Failed to construct packet for " + type, exception);
 					}
+				} catch (InvocationTargetException ex) {
+					throw new RuntimeException("Unable to clone packet " + type + " using constructor", ex.getCause());
 				}
 			} else {
 				handle = StructureCache.newPacket(type);
@@ -330,10 +321,6 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 					MinecraftMethods.getPacketReadByteBufMethod().invoke(handle, buffer);
 				} catch (IllegalArgumentException e) {
 					throw new IOException("Minecraft packet doesn't support DataInputStream", e);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException("Insufficient security privileges.", e);
-				} catch (InvocationTargetException e) {
-					throw new IOException("Could not deserialize Minecraft packet.", e);
 				}
 			}
 			

@@ -1,5 +1,10 @@
 package com.comphenix.protocol.events;
 
+import javax.annotation.Nonnull;
+import java.lang.reflect.Array;
+import java.time.Instant;
+import java.util.*;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -12,7 +17,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Preconditions;
-import java.time.Instant;
+
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -24,10 +29,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-
-import javax.annotation.Nonnull;
-import java.lang.reflect.Array;
-import java.util.*;
 
 public abstract class AbstractStructure {
     protected transient Object handle;
@@ -297,17 +298,6 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieves a read/write structure for chunk positions.
-     * @return A modifier for a ChunkPosition.
-     */
-    public StructureModifier<ChunkPosition> getPositionModifier() {
-        // Convert to and from the Bukkit wrapper
-        return structureModifier.withType(
-                MinecraftReflection.getChunkPositionClass(),
-                ChunkPosition.getConverter());
-    }
-
-    /**
      * Retrieves a read/write structure for block positions.
      * @return A modifier for a BlockPosition.
      */
@@ -376,21 +366,6 @@ public abstract class AbstractStructure {
                 Collection.class,
                 BukkitConverters.getListConverter(BukkitConverters.getWrappedAttributeConverter())
         );
-    }
-
-    /**
-     * Retrieves a read/write structure for collections of chunk positions.
-     * <p>
-     * This modifier will automatically marshal between the visible ProtocolLib ChunkPosition and the
-     * internal Minecraft ChunkPosition.
-     *
-     * @return A modifier for ChunkPosition list fields.
-     */
-    public StructureModifier<List<ChunkPosition>> getPositionCollectionModifier() {
-        // Convert to and from the ProtocolLib wrapper
-        return structureModifier.withType(
-                Collection.class,
-                BukkitConverters.getListConverter(ChunkPosition.getConverter()));
     }
 
     /**

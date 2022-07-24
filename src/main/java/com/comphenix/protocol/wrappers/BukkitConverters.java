@@ -623,7 +623,7 @@ public class BukkitConverters {
 
 			@Override
 			public WrappedWatchableObject getSpecific(Object generic) {
-				if (MinecraftReflection.isWatchableObject(generic))
+				if (MinecraftReflection.is(MinecraftReflection.getDataWatcherItemClass(), generic))
 					return new WrappedWatchableObject(generic);
 				else if (generic instanceof WrappedWatchableObject)
 					return (WrappedWatchableObject) generic;
@@ -684,7 +684,7 @@ public class BukkitConverters {
 					// Deduce getType method by parameters alone
 					if (worldTypeGetType == null) {
 						worldTypeGetType = FuzzyReflection.fromClass(worldType).
-								getMethodByParameters("getType", worldType, new Class<?>[]{String.class});
+								getMethodByReturnTypeAndParameters("getType", worldType, new Class<?>[]{String.class});
 					}
 
 					// Convert to the Bukkit world type
@@ -704,7 +704,7 @@ public class BukkitConverters {
 						} catch (Exception e) {
 							// Assume the first method is the one
 							worldTypeName = FuzzyReflection.fromClass(worldType).
-									getMethodByParameters("name", String.class, new Class<?>[]{});
+									getMethodByReturnTypeAndParameters("name", String.class, new Class<?>[]{});
 						}
 					}
 
@@ -977,7 +977,7 @@ public class BukkitConverters {
 			@Override
 			public PotionEffect getSpecific(Object generic) {
 				if (mobEffectModifier == null) {
-					mobEffectModifier = new StructureModifier<>(MinecraftReflection.getMobEffectClass(), false);
+					mobEffectModifier = new StructureModifier<>(MinecraftReflection.getMobEffectClass());
 				}
 				StructureModifier<Integer> ints = mobEffectModifier.withTarget(generic).withType(int.class);
 				StructureModifier<Boolean> bools = mobEffectModifier.withTarget(generic).withType(boolean.class);
@@ -1033,7 +1033,7 @@ public class BukkitConverters {
 			@Override
 			public Vector getSpecific(Object generic) {
 				if (vec3dModifier == null) {
-					vec3dModifier = new StructureModifier<>(MinecraftReflection.getVec3DClass(), false);
+					vec3dModifier = new StructureModifier<>(MinecraftReflection.getVec3DClass());
 				}
 
 				StructureModifier<Double> doubles = vec3dModifier.withTarget(generic).withType(double.class);
@@ -1064,19 +1064,19 @@ public class BukkitConverters {
 				Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
 				FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
 
-				getSoundEffectByKey = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+				getSoundEffectByKey = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
 						"getSoundEffect",
 						MinecraftReflection.getSoundEffectClass(),
 						new Class<?>[]{String.class}
 				));
 
-				getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+				getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
 						"getSoundEffect",
 						MinecraftReflection.getSoundEffectClass(),
 						new Class<?>[]{Sound.class}
 				));
 
-				getSoundByEffect = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+				getSoundByEffect = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
 						"getBukkit",
 						Sound.class,
 						new Class<?>[]{MinecraftReflection.getSoundEffectClass()}
@@ -1108,8 +1108,8 @@ public class BukkitConverters {
 			Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
 			getSound = Accessors.getMethodAccessor(
-					fuzzy.getMethodByParameters("getSound", String.class, new Class<?>[]{Sound.class}));
-			getSoundEffect = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSoundEffect",
+					fuzzy.getMethodByReturnTypeAndParameters("getSound", String.class, new Class<?>[]{Sound.class}));
+			getSoundEffect = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters("getSoundEffect",
 					MinecraftReflection.getSoundEffectClass(), new Class<?>[]{String.class}));
 		}
 

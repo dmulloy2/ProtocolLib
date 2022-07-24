@@ -6,14 +6,16 @@ import java.util.TreeMap;
 
 /**
  * A lookup of the associated protocol version of a given Minecraft server.
+ *
  * @author Kristian
  */
-public class MinecraftProtocolVersion {
-	private static final NavigableMap<MinecraftVersion, Integer> lookup = createLookup();
-	
+public final class MinecraftProtocolVersion {
+
+	private static final NavigableMap<MinecraftVersion, Integer> LOOKUP = createLookup();
+
 	private static NavigableMap<MinecraftVersion, Integer> createLookup() {
 		TreeMap<MinecraftVersion, Integer> map = new TreeMap<>();
-		
+
 		// Source: http://wiki.vg/Protocol_version_numbers
 		// Doesn't include pre-releases
 		map.put(new MinecraftVersion(1, 0, 0), 22);
@@ -31,7 +33,7 @@ public class MinecraftProtocolVersion {
 		map.put(new MinecraftVersion(1, 6, 1), 73);
 		map.put(new MinecraftVersion(1, 6, 2), 74);
 		map.put(new MinecraftVersion(1, 6, 4), 78);
-		
+
 		// After Netty
 		map.put(new MinecraftVersion(1, 7, 1), 4);
 		map.put(new MinecraftVersion(1, 7, 6), 5);
@@ -86,19 +88,21 @@ public class MinecraftProtocolVersion {
 
 	/**
 	 * Retrieve the version of the Minecraft protocol for the current version of Minecraft.
+	 *
 	 * @return The version number.
 	 */
 	public static int getCurrentVersion() {
 		return getVersion(MinecraftVersion.getCurrentVersion());
 	}
-	
+
 	/**
 	 * Retrieve the version of the Minecraft protocol for this version of Minecraft.
+	 *
 	 * @param version - the version.
 	 * @return The version number.
 	 */
 	public static int getVersion(MinecraftVersion version) {
-		Entry<MinecraftVersion, Integer> result = lookup.floorEntry(version);
+		Entry<MinecraftVersion, Integer> result = LOOKUP.floorEntry(version);
 		return result != null ? result.getValue() : Integer.MIN_VALUE;
 	}
 }

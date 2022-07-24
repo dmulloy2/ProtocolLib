@@ -17,18 +17,15 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
+import com.comphenix.protocol.wrappers.collection.ConvertedList;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+
 import java.io.DataOutput;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.annotation.Nullable;
-
-import com.comphenix.protocol.wrappers.collection.ConvertedList;
-import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 
 /**
  * Represents a concrete implementation of an NBT list that wraps an underlying NMS list.
@@ -38,7 +35,7 @@ import com.google.common.collect.Iterables;
  */
 class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TType> {	
 	// A list container
-	private WrappedElement<List<Object>> container;
+	private final WrappedElement<List<Object>> container;
 	
 	// Saved wrapper list
 	private ConvertedList<Object, NbtBase<TType>> savedList;
@@ -105,7 +102,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
 	 * @param handle - NMS instance.
 	 */
 	public WrappedList(Object handle) {
-		this.container = new WrappedElement<List<Object>>(handle);
+		this.container = new WrappedElement<>(handle);
 		this.elementType = container.getSubType();
 	}
 	
@@ -115,7 +112,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
 	 * @param name - name of the current list.
 	 */
 	public WrappedList(Object handle, String name) {
-		this.container = new WrappedElement<List<Object>>(handle, name);
+		this.container = new WrappedElement<>(handle, name);
 		this.elementType = container.getSubType();
 	}
 
@@ -385,12 +382,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
 
 	@Override
 	public Iterator<TType> iterator() {
-		return Iterables.transform(getValue(), new Function<NbtBase<TType>, TType>() {
-			@Override
-			public TType apply(@Nullable NbtBase<TType> param) {
-				return param.getValue();
-			}
-		}).iterator();
+		return Iterables.transform(getValue(), NbtBase::getValue).iterator();
 	}
 	
 	@Override
