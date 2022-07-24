@@ -36,7 +36,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 
 /**
  * Represents an object that can clone a specific list of Bukkit- and Minecraft-related objects.
- * 
+ *
  * @author Kristian
  */
 public class BukkitCloner implements Cloner {
@@ -75,7 +75,6 @@ public class BukkitCloner implements Cloner {
 				MinecraftReflection.getMinecraftItemStack(MinecraftReflection.getBukkitItemStack(source).clone()));
 		fromWrapper(MinecraftReflection::getDataWatcherClass, WrappedDataWatcher::new);
 		fromConverter(MinecraftReflection::getBlockPositionClass, BlockPosition.getConverter());
-		fromConverter(MinecraftReflection::getChunkPositionClass, ChunkPosition.getConverter());
 		fromWrapper(MinecraftReflection::getServerPingClass, WrappedServerPing::fromHandle);
 		fromConverter(MinecraftReflection::getMinecraftKeyClass, MinecraftKey.getConverter());
 		fromWrapper(MinecraftReflection::getIBlockDataClass, WrappedBlockData::fromHandle);
@@ -133,7 +132,7 @@ public class BukkitCloner implements Cloner {
 
 			@Override
 			public Object clone(Object source) {
-				StructureModifier<Object> modifier = new StructureModifier<>(source.getClass(), true).withTarget(source);
+				StructureModifier<Object> modifier = new StructureModifier<>(source.getClass()).withTarget(source);
 				List<?> list = (List<?>) modifier.read(0);
 				Object empty = modifier.read(1);
 

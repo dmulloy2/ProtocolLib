@@ -19,7 +19,7 @@ package com.comphenix.protocol.reflect;
 
 /**
  * Invoked when a field is inaccessible due to security limitations, or when it simply doesn't exist.
- * 
+ *
  * @author Kristian
  */
 public class FieldAccessException extends RuntimeException {
@@ -32,7 +32,7 @@ public class FieldAccessException extends RuntimeException {
 	public FieldAccessException() {
 		super();
 	}
-	
+
 	public FieldAccessException(String message, Throwable cause) {
 		super(message, cause);
 	}
@@ -44,7 +44,7 @@ public class FieldAccessException extends RuntimeException {
 	public FieldAccessException(Throwable cause) {
 		super(cause);
 	}
-	
+
 	public static FieldAccessException fromFormat(String message, Object... params) {
 		return new FieldAccessException(String.format(message, params));
 	}

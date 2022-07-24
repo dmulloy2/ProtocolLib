@@ -17,76 +17,38 @@
 
 package com.comphenix.protocol.utility;
 
-import java.lang.reflect.InvocationTargetException;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.google.common.base.Strings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.reflect.FieldAccessException;
-import com.google.common.base.Strings;
-
 /**
  * Utility methods for sending chat messages.
- * 
+ *
  * @author Kristian
  */
-public class ChatExtensions {
-	// Used to sent chat messages
-	private final ProtocolManager manager;
+public final class ChatExtensions {
 
 	private static final UUID SERVER_UUID = new UUID(0L, 0L);
+
+	// Used to sent chat messages
+	private final ProtocolManager manager;
 
 	public ChatExtensions(ProtocolManager manager) {
 		this.manager = manager;
 	}
-	
-	/**
-	 * Send a message without invoking the packet listeners.
-	 * @param receiver - the receiver.
-	 * @param message - the message to send.
-	 * @throws InvocationTargetException If we were unable to send the message.
-	 */
-	public void sendMessageSilently(CommandSender receiver, String message) throws InvocationTargetException {
-		if (receiver == null)
-			throw new IllegalArgumentException("receiver cannot be NULL.");
-		if (message == null)
-			throw new IllegalArgumentException("message cannot be NULL.");
-		
-		// Handle the player case by manually sending packets
-		if (receiver instanceof Player) {
-			sendMessageSilently((Player) receiver, message);
-		} else {
-			receiver.sendMessage(message);
-		}
-	}
-	
-	/**
-	 * Send a message without invoking the packet listeners.
-	 * @param player - the player to send it to.
-	 * @param message - the message to send.
-	 * @throws InvocationTargetException If we were unable to send the message.
-	 */
-	private void sendMessageSilently(Player player, String message) throws InvocationTargetException {
-		try {
-			for (PacketContainer packet : createChatPackets(message)) {
-				manager.sendServerPacket(player, packet, false);
-			}
-		} catch (FieldAccessException e) {
-			throw new InvocationTargetException(e);
-		}
-	}
 
 	/**
 	 * Construct chat packet to send in order to display a given message.
+	 *
 	 * @param message - the message to send.
 	 * @return The packets.
 	 */
@@ -111,44 +73,27 @@ public class ChatExtensions {
 	}
 
 	/**
-	 * Broadcast a message without invoking any packet listeners.
-	 * @param message - message to send.
-	 * @param permission - permission required to receieve the message. NULL to target everyone.
-	 * @throws InvocationTargetException If we were unable to send the message.
-	 */
-	public void broadcastMessageSilently(String message, String permission) throws InvocationTargetException {
-		if (message == null)
-			throw new IllegalArgumentException("message cannot be NULL.");
-		
-		// Send this message to every online player
-		for (Player player : Bukkit.getOnlinePlayers()) {
-			if (permission == null || player.hasPermission(permission)) {
-				sendMessageSilently(player, message);
-			}
-		}
-	}
-	
-	/**
 	 * Print a flower box around a given message.
-	 * @param message - the message to print.
-	 * @param marginChar - the character to use as margin.
-	 * @param marginWidth - the width (in characters) of the left and right margin.
+	 *
+	 * @param message      - the message to print.
+	 * @param marginChar   - the character to use as margin.
+	 * @param marginWidth  - the width (in characters) of the left and right margin.
 	 * @param marginHeight - the height (in characters) of the top and buttom margin.
 	 * @return Flowerboxed message
 	 */
 	public static String[] toFlowerBox(String[] message, String marginChar, int marginWidth, int marginHeight) {
 		String[] output = new String[message.length + marginHeight * 2];
 		int width = getMaximumLength(message);
-		
+
 		// Margins
 		String topButtomMargin = Strings.repeat(marginChar, width + marginWidth * 2);
 		String leftRightMargin = Strings.repeat(marginChar, marginWidth);
-		
+
 		// Add left and right margin
 		for (int i = 0; i < message.length; i++) {
 			output[i + marginHeight] = leftRightMargin + Strings.padEnd(message[i], width, ' ') + leftRightMargin;
 		}
-		
+
 		// Insert top and bottom margin
 		for (int i = 0; i < marginHeight; i++) {
 			output[i] = topButtomMargin;
@@ -156,21 +101,76 @@ public class ChatExtensions {
 		}
 		return output;
 	}
-	
+
 	/**
 	 * Retrieve the longest line lenght in a list of strings.
+	 *
 	 * @param lines - the lines.
 	 * @return Longest line lenght.
 	 */
 	private static int getMaximumLength(String[] lines) {
 		int current = 0;
-		
+
 		// Find the longest line
 		for (String line : lines) {
-			if (current < line.length())
+			if (current < line.length()) {
 				current = line.length();
+			}
 		}
 
 		return current;
+	}
+
+	/**
+	 * Send a message without invoking the packet listeners.
+	 *
+	 * @param receiver - the receiver.
+	 * @param message  - the message to send.
+	 */
+	public void sendMessageSilently(CommandSender receiver, String message) {
+		if (receiver == null) {
+			throw new IllegalArgumentException("receiver cannot be NULL.");
+		}
+		if (message == null) {
+			throw new IllegalArgumentException("message cannot be NULL.");
+		}
+
+		// Handle the player case by manually sending packets
+		if (receiver instanceof Player) {
+			this.sendMessageSilently((Player) receiver, message);
+		} else {
+			receiver.sendMessage(message);
+		}
+	}
+
+	/**
+	 * Send a message without invoking the packet listeners.
+	 *
+	 * @param player  - the player to send it to.
+	 * @param message - the message to send.
+	 */
+	private void sendMessageSilently(Player player, String message) {
+		for (PacketContainer packet : createChatPackets(message)) {
+			this.manager.sendServerPacket(player, packet, false);
+		}
+	}
+
+	/**
+	 * Broadcast a message without invoking any packet listeners.
+	 *
+	 * @param message    - message to send.
+	 * @param permission - permission required to receieve the message. NULL to target everyone.
+	 */
+	public void broadcastMessageSilently(String message, String permission) {
+		if (message == null) {
+			throw new IllegalArgumentException("message cannot be NULL.");
+		}
+
+		// Send this message to every online player
+		for (Player player : Bukkit.getOnlinePlayers()) {
+			if (permission == null || player.hasPermission(permission)) {
+				this.sendMessageSilently(player, message);
+			}
+		}
 	}
 }

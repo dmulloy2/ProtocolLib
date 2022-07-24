@@ -141,7 +141,7 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 		if (methodGetTypeID == null) {
 			// Use the base class
 			methodGetTypeID = FuzzyReflection.fromClass(MinecraftReflection.getNBTBaseClass()).
-				getMethodByParameters("getTypeID", byte.class, new Class<?>[0]);
+					getMethodByReturnTypeAndParameters("getTypeID", byte.class, new Class<?>[0]);
 		}
 		if (type == null) {
 			try {
@@ -205,7 +205,7 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 			
 			// Use the base class
 			methodClone = FuzzyReflection.fromClass(base).
-					getMethodByParameters("clone", base, new Class<?>[0]);
+					getMethodByReturnTypeAndParameters("clone", base, new Class<?>[0]);
 		}
 		
 		try {

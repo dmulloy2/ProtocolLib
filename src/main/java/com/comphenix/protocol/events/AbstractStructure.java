@@ -297,17 +297,6 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieves a read/write structure for chunk positions.
-     * @return A modifier for a ChunkPosition.
-     */
-    public StructureModifier<ChunkPosition> getPositionModifier() {
-        // Convert to and from the Bukkit wrapper
-        return structureModifier.withType(
-                MinecraftReflection.getChunkPositionClass(),
-                ChunkPosition.getConverter());
-    }
-
-    /**
      * Retrieves a read/write structure for block positions.
      * @return A modifier for a BlockPosition.
      */
@@ -376,21 +365,6 @@ public abstract class AbstractStructure {
                 Collection.class,
                 BukkitConverters.getListConverter(BukkitConverters.getWrappedAttributeConverter())
         );
-    }
-
-    /**
-     * Retrieves a read/write structure for collections of chunk positions.
-     * <p>
-     * This modifier will automatically marshal between the visible ProtocolLib ChunkPosition and the
-     * internal Minecraft ChunkPosition.
-     *
-     * @return A modifier for ChunkPosition list fields.
-     */
-    public StructureModifier<List<ChunkPosition>> getPositionCollectionModifier() {
-        // Convert to and from the ProtocolLib wrapper
-        return structureModifier.withType(
-                Collection.class,
-                BukkitConverters.getListConverter(ChunkPosition.getConverter()));
     }
 
     /**

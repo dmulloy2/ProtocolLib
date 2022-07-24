@@ -1,7 +1,10 @@
 package com.comphenix.protocol.reflect.accessors;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.comphenix.protocol.reflect.ExactReflection;
+import java.lang.reflect.Field;
 import org.junit.jupiter.api.Test;
 
 public class AccessorsTest {
@@ -10,9 +13,13 @@ public class AccessorsTest {
 	public void testField() {
 		Player player = new Player(123, "ABC");
 
-		Accessors.getFieldAccessor(player.getClass(), "id", true).set(player, 0);
-		Accessors.getFieldAccessor(player.getClass(), "name", true).set(player, "MODIFIED");
-		assertEquals(0, player.getId());
+		Field id = assertDoesNotThrow(() -> ExactReflection.fromClass(Player.class, true).getField("id"));
+		Field name = assertDoesNotThrow(() -> ExactReflection.fromClass(Player.class, true).getField("name"));
+
+		assertDoesNotThrow(() -> Accessors.getFieldAccessor(id).set(player, 15));
+		assertDoesNotThrow(() -> Accessors.getFieldAccessor(name).set(player, "MODIFIED"));
+
+		assertEquals(15, player.getId());
 		assertEquals("MODIFIED", player.getName());
 	}
 
@@ -20,8 +27,17 @@ public class AccessorsTest {
 	public void testMethod() {
 		Player player = new Player(123, "ABC");
 
-		Accessors.getMethodAccessor(player.getClass(), "setId", int.class).invoke(player, 0);
+		assertDoesNotThrow(() -> Accessors.getMethodAccessor(player.getClass(), "setId", int.class).invoke(player, 0));
 		assertEquals(0, player.getId());
+	}
+
+	@Test
+	public void testConstructor() {
+		Player player = (Player) assertDoesNotThrow(() -> Accessors
+				.getConstructorAccessor(Player.class, int.class, String.class)
+				.invoke(12, "hi"));
+		assertEquals(12, player.getId());
+		assertEquals("hi", player.getName());
 	}
 
 	// --- Some classes we can use for testing ---

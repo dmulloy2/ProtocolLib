@@ -14,32 +14,14 @@
  */
 package com.comphenix.protocol.utility;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * General utility class
+ *
  * @author dmulloy2
  */
 public final class Util {
 
-	private static final boolean spigot = classExists("org.spigotmc.SpigotConfig");
-
-	private Util() {
-	}
-
-	/**
-	 * Converts a variable argument array into a List.
-	 * @param elements Array to convert
-	 * @return The list
-	 */
-	@SafeVarargs
-	public static <E> List<E> asList(E... elements) {
-		List<E> list = new ArrayList<>(elements.length);
-		Collections.addAll(list, elements);
-		return list;
-	}
+	private static final boolean SPIGOT = classExists("org.spigotmc.SpigotConfig");
 
 	public static boolean classExists(String className) {
 		try {
@@ -51,12 +33,13 @@ public final class Util {
 	}
 
 	/**
-	 * Whether or not this server is running Spigot or a Spigot fork. This works by checking
-	 * if the SpigotConfig exists, which should be true of all forks.
+	 * Whether this server is running Spigot or a Spigot fork. This works by checking if the SpigotConfig exists, which
+	 * should be true of all forks.
+	 *
 	 * @return True if it is, false if not.
 	 */
 	public static boolean isUsingSpigot() {
-		return spigot;
+		return SPIGOT;
 	}
 
 	/**

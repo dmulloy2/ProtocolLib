@@ -8,8 +8,6 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 
 /**
  * Represents a Minecraft statistics.
@@ -23,7 +21,7 @@ public class WrappedStatistic extends AbstractWrapper {
 	static {
 		try {
 			FIND_STATISTICS = Accessors.getMethodAccessor(
-					FuzzyReflection.fromClass(STATISTIC_LIST).getMethodByParameters(
+					FuzzyReflection.fromClass(STATISTIC_LIST).getMethodByReturnTypeAndParameters(
 							"findStatistic", STATISTIC, new Class<?>[]{String.class}));
 			MAP_ACCESSOR = Accessors.getFieldAccessor(STATISTIC_LIST, Map.class, true);
 			GET_NAME = Accessors.getFieldAccessor(STATISTIC, String.class, true);

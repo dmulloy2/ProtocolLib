@@ -1,25 +1,26 @@
 /**
- *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2015 dmulloy2
- *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
- *  the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *  See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *  02111-1307 USA
+ * ProtocolLib - Bukkit server library that allows access to the Minecraft protocol. Copyright (C) 2015 dmulloy2
+ * <p>
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * <p>
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ * <p>
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package com.comphenix.protocol.injector.netty;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.io.ByteStreams;
 import io.netty.buffer.AbstractByteBuf;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -33,35 +34,31 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.io.ByteStreams;
-
 /**
  * Construct a ByteBuf around an input stream and an output stream.
  * <p>
- * Note that as streams usually don't support seeking, this implementation will ignore
- * all indexing in the byte buffer.
+ * Note that as streams usually don't support seeking, this implementation will ignore all indexing in the byte buffer.
+ *
  * @author Kristian
  */
 @SuppressWarnings("unused")
 public class NettyByteBufAdapter extends AbstractByteBuf {
-	private DataInputStream input;
-	private DataOutputStream output;
-	
+
+	private static final int CAPACITY = Integer.MAX_VALUE;
+
 	// For modifying the reader or writer index
 	private static FieldAccessor READER_INDEX;
 	private static FieldAccessor WRITER_INDEX;
-	
-	private static final int CAPACITY = Integer.MAX_VALUE;
-	
+
+	private final DataInputStream input;
+	private final DataOutputStream output;
+
 	private NettyByteBufAdapter(DataInputStream input, DataOutputStream output) {
 		// Just pick a figure
 		super(CAPACITY);
 		this.input = input;
 		this.output = output;
-		
+
 		// Prepare accessors
 		try {
 			if (READER_INDEX == null) {
@@ -73,32 +70,37 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot initialize ByteBufAdapter.", e);
 		}
-		
+
 		// "Infinite" reading/writing
-		if (input == null)
+		if (input == null) {
 			READER_INDEX.set(this, Integer.MAX_VALUE);
-		if (output == null)
+		}
+
+		if (output == null) {
 			WRITER_INDEX.set(this, Integer.MAX_VALUE);
+		}
 	}
 
 	/**
 	 * Construct a new Minecraft packet serializer using the current byte buf adapter.
+	 *
 	 * @param input - the input stream.
 	 * @return A packet serializer with a wrapped byte buf adapter.
 	 */
 	public static ByteBuf packetReader(DataInputStream input) {
 		return (ByteBuf) MinecraftReflection.getPacketDataSerializer(new NettyByteBufAdapter(input, null));
 	}
-	
+
 	/**
 	 * Construct a new Minecraft packet deserializer using the current byte buf adapter.
+	 *
 	 * @param output - the output stream.
 	 * @return A packet serializer with a wrapped byte buf adapter.
 	 */
 	public static ByteBuf packetWriter(DataOutputStream output) {
 		return (ByteBuf) MinecraftReflection.getPacketDataSerializer(new NettyByteBufAdapter(null, output));
 	}
-	
+
 	@Override
 	public int refCnt() {
 		return 1;
@@ -117,7 +119,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected byte _getByte(int paramInt) {
 		try {
-			return input.readByte();
+			return this.input.readByte();
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
 		}
@@ -126,7 +128,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected short _getShort(int paramInt) {
 		try {
-			return input.readShort();
+			return this.input.readShort();
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
 		}
@@ -135,7 +137,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected int _getUnsignedMedium(int paramInt) {
 		try {
-			return input.readUnsignedShort();
+			return this.input.readUnsignedShort();
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
 		}
@@ -144,7 +146,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected int _getInt(int paramInt) {
 		try {
-			return input.readInt();
+			return this.input.readInt();
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
 		}
@@ -153,7 +155,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected long _getLong(int paramInt) {
 		try {
-			return input.readLong();
+			return this.input.readLong();
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
 		}
@@ -162,7 +164,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected void _setByte(int index, int value) {
 		try {
-			output.writeByte(value);
+			this.output.writeByte(value);
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write output.", e);
 		}
@@ -171,7 +173,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected void _setShort(int index, int value) {
 		try {
-			output.writeShort(value);
+			this.output.writeShort(value);
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write output.", e);
 		}
@@ -180,7 +182,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected void _setMedium(int index, int value) {
 		try {
-			output.writeShort(value);
+			this.output.writeShort(value);
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write output.", e);
 		}
@@ -189,7 +191,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected void _setInt(int index, int value) {
 		try {
-			output.writeInt(value);
+			this.output.writeInt(value);
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write output.", e);
 		}
@@ -198,7 +200,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	protected void _setLong(int index, long value) {
 		try {
-			output.writeLong(value);
+			this.output.writeLong(value);
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write output.", e);
 		}
@@ -238,7 +240,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	public ByteBuf getBytes(int index, ByteBuf dst, int dstIndex, int length) {
 		try {
 			for (int i = 0; i < length; i++) {
-				dst.setByte(dstIndex + i, input.read());
+				dst.setByte(dstIndex + i, this.input.read());
 			}
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
@@ -249,7 +251,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	public ByteBuf getBytes(int index, byte[] dst, int dstIndex, int length) {
 		try {
-			input.read(dst, dstIndex, length);
+			this.input.read(dst, dstIndex, length);
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
 		}
@@ -259,7 +261,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	public ByteBuf getBytes(int index, ByteBuffer dst) {
 		try {
-			dst.put(ByteStreams.toByteArray(input));
+			dst.put(ByteStreams.toByteArray(this.input));
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read input.", e);
 		}
@@ -268,14 +270,14 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 
 	@Override
 	public ByteBuf getBytes(int index, OutputStream dst, int length) throws IOException {
-		ByteStreams.copy(ByteStreams.limit(input, length), dst);
+		ByteStreams.copy(ByteStreams.limit(this.input, length), dst);
 		return this;
 	}
 
 	@Override
 	public int getBytes(int index, GatheringByteChannel out, int length) throws IOException {
-		byte[] data = ByteStreams.toByteArray(ByteStreams.limit(input, length));
-		
+		byte[] data = ByteStreams.toByteArray(ByteStreams.limit(this.input, length));
+
 		out.write(ByteBuffer.wrap(data));
 		return data.length;
 	}
@@ -284,9 +286,9 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	public ByteBuf setBytes(int index, ByteBuf src, int srcIndex, int length) {
 		byte[] buffer = new byte[length];
 		src.getBytes(srcIndex, buffer);
-		
+
 		try {
-			output.write(buffer);
+			this.output.write(buffer);
 			return this;
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write output.", e);
@@ -296,7 +298,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	public ByteBuf setBytes(int index, byte[] src, int srcIndex, int length) {
 		try {
-			output.write(src, srcIndex, length);
+			this.output.write(src, srcIndex, length);
 			return this;
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot write output.", e);
@@ -306,7 +308,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	public ByteBuf setBytes(int index, ByteBuffer src) {
 		try {
-			WritableByteChannel channel = Channels.newChannel(output);
+			WritableByteChannel channel = Channels.newChannel(this.output);
 
 			channel.write(src);
 			return this;
@@ -318,15 +320,15 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 	@Override
 	public int setBytes(int index, InputStream in, int length) throws IOException {
 		InputStream limit = ByteStreams.limit(in, length);
-		ByteStreams.copy(limit, output);
+		ByteStreams.copy(limit, this.output);
 		return length - limit.available();
 	}
 
 	@Override
 	public int setBytes(int index, ScatteringByteChannel in, int length) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(length);
-		WritableByteChannel channel = Channels.newChannel(output);
-		
+		WritableByteChannel channel = Channels.newChannel(this.output);
+
 		int count = in.read(buffer);
 		channel.write(buffer);
 		return count;
@@ -424,7 +426,7 @@ public class NettyByteBufAdapter extends AbstractByteBuf {
 		return 0;
 	}
 
-	public int setBytes(int arg0, FileChannel arg1, long arg2, int arg3) throws IOException {
+	public int setBytes(int arg0, FileChannel arg1, long arg2, int arg3) {
 		return 0;
 	}
 
