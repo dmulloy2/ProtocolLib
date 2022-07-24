@@ -17,8 +17,8 @@
 		<project.fullVersion>${project.version}</project.fullVersion>
 
 		<junit.version>5.8.2</junit.version>
-		<mockito.version>4.6.1</mockito.version>
-		<netty.version>4.1.79.Final</netty.version>
+		<mockito.version>4.3.1</mockito.version>
+		<netty.version>4.1.74.Final</netty.version>
 		<spigot.version>1.19-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
