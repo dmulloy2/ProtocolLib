@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.reflect;
 
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.google.common.primitives.Primitives;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -26,6 +24,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.google.common.primitives.Primitives;
 
 /**
  * Used to print the content of an arbitrary class.
@@ -37,7 +38,7 @@ public class PrettyPrinter {
 	/**
 	 * How far we will recurse.
 	 */
-	public final static int RECURSE_DEPTH = 3;
+	public static final int RECURSE_DEPTH = 3;
 
 	/**
 	 * Print the contents of an object.

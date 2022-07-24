@@ -1,11 +1,10 @@
 package com.comphenix.protocol.events;
 
+import java.util.Optional;
+
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.Converters;
-
-import java.util.List;
-import java.util.Optional;
 
 public class InternalStructure extends AbstractStructure {
 

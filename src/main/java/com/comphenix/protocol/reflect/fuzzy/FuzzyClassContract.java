@@ -1,13 +1,14 @@
 package com.comphenix.protocol.reflect.fuzzy;
 
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.MethodInfo;
-import com.google.common.collect.ImmutableList;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.MethodInfo;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Determine if a given class implements a given fuzzy (duck typed) contract.

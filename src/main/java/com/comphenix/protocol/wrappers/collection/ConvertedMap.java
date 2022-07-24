@@ -17,15 +17,12 @@
 
 package com.comphenix.protocol.wrappers.collection;
 
+import com.google.common.collect.Collections2;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
 
 /**
  * Represents a map that wraps another map by transforming the entries going in and out.
@@ -40,20 +37,10 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 	private Map<Key, VInner> inner;
 
 	// Inner conversion
-	private BiFunction<Key, VOuter, VInner> innerConverter = new BiFunction<Key, VOuter, VInner>() {
-		@Override
-		public VInner apply(Key key, VOuter outer) {
-			return toInner(key, outer);
-		}
-	};
+	private final BiFunction<Key, VOuter, VInner> innerConverter = this::toInner;
 	
 	// Outer conversion
-	private BiFunction<Key, VInner, VOuter> outerConverter = new BiFunction<Key, VInner, VOuter>() {
-		@Override
-		public VOuter apply(Key key, VInner inner) {
-			return toOuter(key, inner);
-		}
-	};
+	private final BiFunction<Key, VInner, VOuter> outerConverter = this::toOuter;
 	
 	public ConvertedMap(Map<Key, VInner> inner) {
 		if (inner == null)
@@ -143,12 +130,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
 
 	@Override
 	public Collection<VOuter> values() {
-		return Collections2.transform(entrySet(), new Function<Entry<Key, VOuter>, VOuter>() {
-			@Override
-			public VOuter apply(@Nullable java.util.Map.Entry<Key, VOuter> entry) {
-				return entry.getValue();
-			}
-		});
+		return Collections2.transform(entrySet(), Entry::getValue);
 	}
 
     /**

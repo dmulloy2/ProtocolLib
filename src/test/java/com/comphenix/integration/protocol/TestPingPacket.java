@@ -1,17 +1,18 @@
 package com.comphenix.integration.protocol;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
-import java.util.concurrent.Callable;
+import org.bukkit.plugin.Plugin;
+
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.bukkit.plugin.Plugin;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestPingPacket {
 
@@ -56,28 +57,25 @@ public class TestPingPacket {
 	}
 
 	private Future<String> testInterception(Plugin test) {
+		final CountDownLatch latch = new CountDownLatch(1);
+
 		ProtocolLibrary.getProtocolManager().addPacketListener(
 				new PacketAdapter(test, PacketType.Status.Server.SERVER_INFO) {
 					@Override
 					public void onPacketSending(PacketEvent event) {
 						TestPingPacket.this.source = event.getPacket().getServerPings().read(0).toJson();
+						latch.countDown();
 					}
 				});
 
 		// Invoke the client on a separate thread
-		return Executors.newSingleThreadExecutor().submit(new Callable<String>() {
-			@Override
-			public String call() throws Exception {
-				SimpleMinecraftClient client = new SimpleMinecraftClient(PROTOCOL_VERSION);
-				String information = client.queryLocalPing();
+		return Executors.newSingleThreadExecutor().submit(() -> {
+			SimpleMinecraftClient client = new SimpleMinecraftClient(PROTOCOL_VERSION);
+			String information = client.queryLocalPing();
 
-				// Wait for the listener to catch up
-				for (int i = 0; i < 1000 && (TestPingPacket.this.source == null); i++) {
-					Thread.sleep(1);
-				}
-
-				return information;
-			}
+			// Wait for the listener to catch up
+			latch.await(1, TimeUnit.SECONDS);
+			return information;
 		});
 	}
 }

@@ -16,13 +16,14 @@
  */
 package com.comphenix.protocol.events;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import org.apache.commons.lang.Validate;
-
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
+import org.apache.commons.lang.Validate;
 
 /**
  * Stores and retrieves metadata for applicable packet objects.

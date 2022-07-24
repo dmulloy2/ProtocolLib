@@ -27,7 +27,6 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketEvent;
-import com.google.common.collect.Sets;
 
 /**
  * A command to apply JavaScript filtering to the packet command.
