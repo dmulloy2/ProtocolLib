@@ -307,7 +307,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 					handle = type.getPacketClass()
 							.getConstructor(MinecraftReflection.getPacketDataSerializerClass())
 							.newInstance(serializer);
-				} catch (ReflectiveOperationException ex) {
+				} catch (NoSuchMethodException | IllegalAccessException | InstantiationException ex) {
 					// they might have a static method to create them instead
 					Method method = FuzzyReflection.fromClass(type.getPacketClass(), true)
 							.getMethod(FuzzyMethodContract
@@ -318,9 +318,11 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 									.build());
 					try {
 						handle = method.invoke(null, serializer);
-					} catch (ReflectiveOperationException ignored) {
-						throw new RuntimeException("Failed to construct packet for " + type, ex);
+					} catch (ReflectiveOperationException exception) {
+						throw new RuntimeException("Failed to construct packet for " + type, exception);
 					}
+				} catch (InvocationTargetException ex) {
+					throw new RuntimeException("Unable to clone packet " + type + " using constructor", ex.getCause());
 				}
 			} else {
 				handle = StructureCache.newPacket(type);
