@@ -1,5 +1,10 @@
 package com.comphenix.protocol.events;
 
+import javax.annotation.Nonnull;
+import java.lang.reflect.Array;
+import java.time.Instant;
+import java.util.*;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -12,7 +17,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Preconditions;
-import java.time.Instant;
+
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -24,10 +29,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-
-import javax.annotation.Nonnull;
-import java.lang.reflect.Array;
-import java.util.*;
 
 public abstract class AbstractStructure {
     protected transient Object handle;

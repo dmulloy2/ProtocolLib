@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.google.common.collect.Maps;
 
 public abstract class NameProperty {
 	private static final Map<Class<?>, StructureModifier<String>> MODIFIERS = new ConcurrentHashMap<>();

@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
-import org.bukkit.plugin.Plugin;
 
 /**
  * @author dmulloy2

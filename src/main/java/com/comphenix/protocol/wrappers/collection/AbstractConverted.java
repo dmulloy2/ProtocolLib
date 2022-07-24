@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol.wrappers.collection;
 
-import javax.annotation.Nullable;
-
 import com.google.common.base.Function;
 
 /**
@@ -31,20 +29,10 @@ import com.google.common.base.Function;
  */
 public abstract class AbstractConverted<VInner, VOuter> {
 	// Inner conversion
-	private Function<VOuter, VInner> innerConverter = new Function<VOuter, VInner>() {
-		@Override
-		public VInner apply(@Nullable VOuter param) {
-			return toInner(param);
-		}
-	};
+	private final Function<VOuter, VInner> innerConverter = this::toInner;
 	
 	// Outer conversion
-	private Function<VInner, VOuter> outerConverter = new Function<VInner, VOuter>() {
-		@Override
-		public VOuter apply(@Nullable VInner param) {
-			return toOuter(param);
-		}
-	};
+	private final Function<VInner, VOuter> outerConverter = this::toOuter;
 	
 	/**
 	 * Convert a value from the inner map to the outer visible map.
