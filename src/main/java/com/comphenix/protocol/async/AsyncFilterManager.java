@@ -347,7 +347,7 @@ public class AsyncFilterManager implements AsynchronousManager {
 	@Override
 	public boolean hasAsynchronousListeners(PacketEvent packet) {
 		 Collection<?> list = getProcessingQueue(packet).getListener(packet.getPacketType());
-		 return list != null && list.size() > 0;
+		 return list != null && !list.isEmpty();
 	}
 	
 	/**
