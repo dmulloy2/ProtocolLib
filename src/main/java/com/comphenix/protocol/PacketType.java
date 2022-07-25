@@ -48,11 +48,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Client extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.CLIENT;
+			private static final Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType SET_PROTOCOL =                 new PacketType(PROTOCOL, SENDER, 0x00, "SetProtocol", "C00Handshake");
 
-			private final static Client INSTANCE = new Client();
+			private static final Client INSTANCE = new Client();
 
 			// Prevent accidental construction
 			private Client() { super(); }
@@ -70,8 +70,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Server extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.CLIENT;
-			private final static Server INSTANCE = new Server();
+			private static final Sender SENDER = Sender.CLIENT;
+			private static final Server INSTANCE = new Server();
 			private Server() { super(); }
 
 			public static Server getInstance() {
@@ -99,7 +99,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Server extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.SERVER;
+			private static final Sender SENDER = Sender.SERVER;
 
 			public static final PacketType SPAWN_ENTITY =                 new PacketType(PROTOCOL, SENDER, 0x00, "SpawnEntity", "SPacketSpawnObject");
 			public static final PacketType SPAWN_ENTITY_EXPERIENCE_ORB =  new PacketType(PROTOCOL, SENDER, 0x01, "SpawnEntityExperienceOrb", "SPacketSpawnExperienceOrb");
@@ -336,7 +336,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			@Deprecated
 			public static final PacketType BLOCK_BREAK = new PacketType(PROTOCOL, SENDER, 241, "BlockBreak");
 
-			private final static Server INSTANCE = new Server();
+			private static final Server INSTANCE = new Server();
 
 			// Prevent accidental construction
 			private Server() { super(); }
@@ -354,7 +354,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Client extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.CLIENT;
+			private static final Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType TELEPORT_ACCEPT =              new PacketType(PROTOCOL, SENDER, 0x00, "TeleportAccept", "CPacketConfirmTeleport");
 			public static final PacketType TILE_NBT_QUERY =               new PacketType(PROTOCOL, SENDER, 0x01, "TileNBTQuery");
@@ -419,7 +419,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			@Deprecated
 			public static final PacketType FLYING = 					  new PacketType(PROTOCOL, SENDER, 254, "Flying", "CPacketPlayer");
 
-			private final static Client INSTANCE = new Client();
+			private static final Client INSTANCE = new Client();
 
 			// Prevent accidental construction
 			private Client() { super(); }
@@ -449,7 +449,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Server extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.SERVER;
+			private static final Sender SENDER = Sender.SERVER;
 
 			@ForceAsync
 			public static final PacketType SERVER_INFO =                  new PacketType(PROTOCOL, SENDER, 0x00, "ServerInfo", "SPacketServerInfo");
@@ -462,7 +462,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			@ForceAsync
 			public static final PacketType OUT_SERVER_INFO =              SERVER_INFO.clone();
 
-			private final static Server INSTANCE = new Server();
+			private static final Server INSTANCE = new Server();
 
 			// Prevent accidental construction
 			private Server() { super(); }
@@ -480,12 +480,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Client extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.CLIENT;
+			private static final Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, "Start", "CPacketServerQuery");
 			public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x01, "Ping", "CPacketPing");
 
-			private final static Client INSTANCE = new Client();
+			private static final Client INSTANCE = new Client();
 
 			// Prevent accidental construction
 			private Client() { super(); }
@@ -515,7 +515,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Server extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.SERVER;
+			private static final Sender SENDER = Sender.SERVER;
 
 			public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x00, "Disconnect", "SPacketDisconnect");
 			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, "EncryptionBegin", "SPacketEncryptionRequest");
@@ -523,7 +523,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x03, "SetCompression", "SPacketEnableCompression");
 			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x04, "CustomPayload", "SPacketCustomPayload");
 
-			private final static Server INSTANCE = new Server();
+			private static final Server INSTANCE = new Server();
 
 			// Prevent accidental construction
 			private Server() { super(); }
@@ -541,13 +541,13 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @author Kristian
 		 */
 		public static class Client extends PacketTypeEnum {
-			private final static Sender SENDER = Sender.CLIENT;
+			private static final Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, "Start", "CPacketLoginStart");
 			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, "EncryptionBegin", "CPacketEncryptionResponse");
 			public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, "CustomPayload", "CPacketCustomPayload");
 
-			private final static Client INSTANCE = new Client();
+			private static final Client INSTANCE = new Client();
 
 			// Prevent accidental construction
 			private Client() { super(); }
