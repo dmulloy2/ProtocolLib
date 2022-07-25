@@ -176,8 +176,7 @@ public class BlockPosition {
 				
 				// Construct the underlying BlockPosition
 				try {
-					Object result = blockPositionConstructor.newInstance(specific.x, specific.y, specific.z);
-					return result;
+					return blockPositionConstructor.newInstance(specific.x, specific.y, specific.z);
 				} catch (Exception e) {
 					throw new RuntimeException("Cannot construct BlockPosition.", e);
 				}
@@ -197,8 +196,7 @@ public class BlockPosition {
 					if (intModifier.size() >= 3) {
 						try {
 							StructureModifier<Integer> instance = intModifier.withTarget(generic);
-							BlockPosition result = new BlockPosition(instance.read(0), instance.read(1), instance.read(2));
-							return result;
+							return new BlockPosition(instance.read(0), instance.read(1), instance.read(2));
 						} catch (FieldAccessException e) {
 							// This is an exeptional work-around, so we don't want to burden the caller with the messy details
 							throw new RuntimeException("Field access error.", e);

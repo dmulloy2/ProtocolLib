@@ -113,12 +113,10 @@ public class StructureCache {
 	public static StructureModifier<Object> getStructure(final PacketType packetType) {
 		Preconditions.checkNotNull(packetType, "type cannot be null");
 
-		StructureModifier<Object> modifier = STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
+		return STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
 			Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
 			return new StructureModifier<>(packetClass, MinecraftReflection.getPacketClass(), true);
 		});
-
-		return modifier;
 	}
 
 	/**
