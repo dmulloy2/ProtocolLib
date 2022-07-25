@@ -37,6 +37,8 @@ import com.comphenix.protocol.timing.TimedTracker;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -77,30 +79,30 @@ public class AsyncListenerHandler {
 	private final AtomicInteger started = new AtomicInteger();
 	
 	// The packet listener
-	private PacketListener listener;
+	private final PacketListener listener;
 
 	// The filter manager
-	private AsyncFilterManager filterManager;
+	private final AsyncFilterManager filterManager;
 	private NullPacketListener nullPacketListener;
 	
 	// List of queued packets
-	private ArrayBlockingQueue<PacketEvent> queuedPackets = new ArrayBlockingQueue<PacketEvent>(DEFAULT_CAPACITY);
+	private final ArrayBlockingQueue<PacketEvent> queuedPackets = new ArrayBlockingQueue<>(DEFAULT_CAPACITY);
 	
 	// List of cancelled tasks
-	private final Set<Integer> stoppedTasks = new HashSet<Integer>();
+	private final IntSet stoppedTasks = new IntOpenHashSet();
 	private final Object stopLock = new Object();
 	
 	// Processing task on the main thread
 	private int syncTask = -1;
 	
 	// Minecraft main thread
-	private Thread mainThread;
+	private final Thread mainThread;
 	
 	// Warn plugins that the async listener handler must be started
 	private int warningTask;
 	
 	// Timing manager
-	private TimedListenerManager timedManager = TimedListenerManager.getInstance();
+	private final TimedListenerManager timedManager = TimedListenerManager.getInstance();
 	
 	/**
 	 * Construct a manager for an asynchronous packet handler.
@@ -530,7 +532,7 @@ public class AsyncListenerHandler {
 	 */
 	private boolean waitForStops() throws InterruptedException {
 		synchronized (stopLock) {
-			while (stoppedTasks.size() > 0 && !cancelled) {
+			while (!stoppedTasks.isEmpty() && !cancelled) {
 				stopLock.wait();
 			}
 			return cancelled;
