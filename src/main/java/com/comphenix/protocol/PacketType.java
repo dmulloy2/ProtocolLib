@@ -580,8 +580,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 */
 		LEGACY("", "");
 
-		private String packetName;
-		private String mojangName;
+		private final String packetName;
+		private final String mojangName;
 
 		Protocol(String packetName, String mojangName) {
 			this.packetName = packetName;
@@ -636,9 +636,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 */
 		SERVER("Clientbound", "Out", "server");
 
-		private String mojangName;
-		private String packetName;
-		private String mcpName;
+		private final String mojangName;
+		private final String packetName;
+		private final String mcpName;
 
 		Sender(String mojangName, String packetName, String mcpName) {
 			this.mojangName = mojangName;

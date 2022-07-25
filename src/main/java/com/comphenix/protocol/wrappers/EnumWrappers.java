@@ -159,7 +159,7 @@ public abstract class EnumWrappers {
 		RELEASE_USE_ITEM,
 		SWAP_HELD_ITEMS("SWAP_ITEM_WITH_OFFHAND");
 
-		String[] aliases;
+		final String[] aliases;
 		PlayerDigType(String... aliases) {
 			this.aliases = aliases;
 		}
@@ -180,7 +180,7 @@ public abstract class EnumWrappers {
 		OPEN_INVENTORY,
 		START_FALL_FLYING;
 
-		String[] aliases;
+		final String[] aliases;
 		PlayerAction(String... aliases) {
 			this.aliases = aliases;
 		}

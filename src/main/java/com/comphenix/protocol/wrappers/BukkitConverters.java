@@ -1341,7 +1341,7 @@ public class BukkitConverters {
 		THE_NETHER_IMPL(-1),
 		THE_END_IMPL(1);
 
-		int id;
+		final int id;
 		DimensionImpl(int id) {
 			this.id = id;
 		}

@@ -102,9 +102,9 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 		 */
 		ADD_PERCENTAGE(2);
 		
-		private int id;
+		private final int id;
 		
-		private Operation(int id) {
+		Operation(int id) {
 			this.id = id;
 		}
 		

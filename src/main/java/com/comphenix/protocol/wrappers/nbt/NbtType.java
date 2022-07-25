@@ -94,19 +94,19 @@ public enum NbtType {
 	 */
 	TAG_LONG_ARRAY(12, long[].class);
 	
-	private int rawID;
-	private Class<?> valueType;
+	private final int rawID;
+	private final Class<?> valueType;
 	
 	// Used to lookup a specified NBT
-	private static NbtType[] lookup;
+	private static final NbtType[] lookup;
 	
 	// Lookup NBT by class
-	private static Map<Class<?>, NbtType> classLookup;
+	private static final Map<Class<?>, NbtType> classLookup;
 	
 	static {
 		NbtType[] values = values();
 		lookup = new NbtType[values.length];
-		classLookup = new HashMap<Class<?>, NbtType>();
+		classLookup = new HashMap<>();
 		
 		// Initialize lookup tables
 		for (NbtType type : values) {
@@ -124,7 +124,7 @@ public enum NbtType {
 		classLookup.put(NbtCompound.class, TAG_COMPOUND);
 	}
 	
-	private NbtType(int rawID, Class<?> valueType) {
+	NbtType(int rawID, Class<?> valueType) {
 		this.rawID = rawID;
 		this.valueType = valueType;
 	}
