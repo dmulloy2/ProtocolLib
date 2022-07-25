@@ -186,7 +186,7 @@ public abstract class AbstractFuzzyMember<T extends Member> implements AbstractF
 	 *
 	 * @author Kristian
 	 */
-	public static abstract class Builder<T extends AbstractFuzzyMember<?>> {
+	public abstract static class Builder<T extends AbstractFuzzyMember<?>> {
 
 		protected T member = this.initialMember();
 
