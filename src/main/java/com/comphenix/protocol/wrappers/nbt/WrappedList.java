@@ -390,11 +390,11 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
 		// Essentially JSON
 		StringBuilder builder = new StringBuilder();
 		
-		builder.append("{\"name\": \"" + getName() + "\", \"value\": [");
+		builder.append("{\"name\": \"").append(getName()).append("\", \"value\": [");
 		
 		if (size() > 0) {
 			if (getElementType() == NbtType.TAG_STRING) 
-				builder.append("\"" + Joiner.on("\", \"").join(this) + "\"");
+				builder.append('\"').append(Joiner.on("\", \"").join(this)).append('\"');
 			 else 
 				builder.append(Joiner.on(", ").join(this));
 		}

@@ -668,22 +668,21 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
 	
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 
-		builder.append("{");
-		builder.append("\"name\": \"" + getName() + "\"");
+		builder.append("{\"name\": \"").append(getName()).append('\"');
 		
 		for (NbtBase<?> element : this) {
-			builder.append(", ");
+			builder.append(", \"").append(element.getName()).append("\": ");
 			
 			// Wrap in quotation marks
 			if (element.getType() == NbtType.TAG_STRING)
-				builder.append("\"" + element.getName() + "\": \"" + element.getValue() + "\"");
+				builder.append('\"').append(element.getValue()).append('\"');
 			else
-				builder.append("\"" + element.getName() + "\": " + element.getValue());
+				builder.append(element.getValue());
 		}
 		
-		builder.append("}");
+		builder.append('}');
 		return builder.toString();
 	}
 }

@@ -241,17 +241,17 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
 		result.append("{");
 		
 		if (name != null && name.length() > 0)
-			result.append("name: '" + name + "', ");
+			result.append("name: '").append(name).append("', ");
 		
 		result.append("value: ");
 		
 		// Wrap quotation marks
 		if (getType() == NbtType.TAG_STRING)
-			result.append("'" + getValue() + "'");
+			result.append('\'').append(getValue()).append('\'');
 		else
 			result.append(getValue());
 		
-		result.append("}");
+		result.append('}');
 		return result.toString();
 	}
 }
