@@ -594,17 +594,18 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		 * @return The corresponding protocol.
 		 */
 		public static Protocol fromVanilla(Enum<?> vanilla) {
-			String name = vanilla.name();
-
-			if ("HANDSHAKING".equals(name))
-				return HANDSHAKING;
-			if ("PLAY".equals(name))
-				return PLAY;
-			if ("STATUS".equals(name))
-				return STATUS;
-			if ("LOGIN".equals(name))
-				return LOGIN;
-			throw new IllegalArgumentException("Unrecognized vanilla enum " + vanilla);
+			switch (vanilla.name()) {
+				case "HANDSHAKING":
+					return HANDSHAKING;
+				case "PLAY":
+					return PLAY;
+				case "STATUS":
+					return STATUS;
+				case "LOGIN":
+					return LOGIN;
+				default:
+					throw new IllegalArgumentException("Unrecognized vanilla enum " + vanilla);
+			}
 		}
 
 		public String getPacketName() {
