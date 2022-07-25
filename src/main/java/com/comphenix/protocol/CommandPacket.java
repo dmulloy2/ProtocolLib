@@ -17,7 +17,6 @@
 
 package com.comphenix.protocol;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;

@@ -2,7 +2,6 @@ package com.comphenix.protocol.reflect.accessors;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 final class DefaultFieldAccessor implements FieldAccessor {
 

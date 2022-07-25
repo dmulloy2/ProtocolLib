@@ -1,7 +1,6 @@
 package com.comphenix.protocol.concurrency;
 
 import com.comphenix.protocol.utility.SafeCacheBuilder;
-import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
