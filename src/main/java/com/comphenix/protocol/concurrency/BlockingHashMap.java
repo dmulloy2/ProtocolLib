@@ -77,10 +77,10 @@ public class BlockingHashMap<TKey, TValue> {
 						}
 					}
 				}).
-			build(BlockingHashMap.<TKey, TValue> newInvalidCacheLoader());
+			build(BlockingHashMap.newInvalidCacheLoader());
 		
 		// Normal concurrent hash map
-		locks = new ConcurrentHashMap<TKey, Object>();
+		locks = new ConcurrentHashMap<>();
 	}
 	
 	/**
@@ -90,7 +90,7 @@ public class BlockingHashMap<TKey, TValue> {
 	 * @return The created map.
 	 */
 	public static <TKey, TValue> BlockingHashMap<TKey, TValue> create() {
-		return new BlockingHashMap<TKey, TValue>();
+		return new BlockingHashMap<>();
 	}
 	
 	/**

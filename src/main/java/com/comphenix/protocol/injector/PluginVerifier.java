@@ -188,7 +188,7 @@ class PluginVerifier {
 	 * @return TRUE if the plugin has the given dependency, FALSE otherwise.
 	 */
 	private boolean hasDependency(Plugin plugin, Plugin dependency) {
-		return hasDependency(plugin, dependency, Sets.<String>newHashSet());
+		return hasDependency(plugin, dependency, new HashSet<>());
 	}
 	
 	/**

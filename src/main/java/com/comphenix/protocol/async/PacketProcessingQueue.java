@@ -76,8 +76,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
 		try {
 			this.processingQueue = Synchronization.queue(MinMaxPriorityQueue.
 					expectedSize(initialSize).
-					maximumSize(maximumSize).
-					<PacketEventHolder>create(), null);
+					maximumSize(maximumSize).create(), null);
 		} catch (IncompatibleClassChangeError e) {
 			// Print in the console
 			ProtocolLibrary.getErrorReporter().reportWarning(

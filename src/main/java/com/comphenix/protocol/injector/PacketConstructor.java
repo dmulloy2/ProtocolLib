@@ -56,7 +56,7 @@ public class PacketConstructor {
 
 	private PacketConstructor(Constructor<?> constructorMethod) {
 		this.constructorMethod = constructorMethod;
-		this.unwrappers = Lists.newArrayList((Unwrapper) new BukkitUnwrapper(new RethrowErrorReporter()));
+		this.unwrappers = Lists.newArrayList(new BukkitUnwrapper(new RethrowErrorReporter()));
 		this.unwrappers.addAll(BukkitConverters.getUnwrappers());
 	}
 
