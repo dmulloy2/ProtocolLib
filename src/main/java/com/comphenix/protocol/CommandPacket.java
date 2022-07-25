@@ -69,25 +69,25 @@ class CommandPacket extends CommandBase {
 	 */
 	public static final int PAGE_LINE_COUNT = 9;
 	
-	private Plugin plugin;
-	private Logger logger;
-	private ProtocolManager manager;
+	private final Plugin plugin;
+	private final Logger logger;
+	private final ProtocolManager manager;
 		
-	private ChatExtensions chatter;
+	private final ChatExtensions chatter;
 	
 	// The main parser
-	private PacketTypeParser typeParser = new PacketTypeParser();
+	private final PacketTypeParser typeParser = new PacketTypeParser();
 	
 	// Paged message
-	private Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<CommandSender, List<String>>();
+	private final Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<>();
 	
 	// Current registered packet types
-	private PacketTypeSet packetTypes = new PacketTypeSet();
-	private PacketTypeSet extendedTypes = new PacketTypeSet();
+	private final PacketTypeSet packetTypes = new PacketTypeSet();
+	private final PacketTypeSet extendedTypes = new PacketTypeSet();
 	
 	// Compare listeners
-	private PacketTypeSet compareTypes = new PacketTypeSet();
-	private Map<PacketEvent, String> originalPackets = new MapMaker().weakKeys().makeMap();
+	private final PacketTypeSet compareTypes = new PacketTypeSet();
+	private final Map<PacketEvent, String> originalPackets = new MapMaker().weakKeys().makeMap();
 	
 	// The packet listener
 	private PacketListener listener;
@@ -96,7 +96,7 @@ class CommandPacket extends CommandBase {
 	private PacketListener compareListener;
 	
 	// Filter packet events
-	private CommandFilter filter;
+	private final CommandFilter filter;
 	
 	public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, CommandFilter filter, ProtocolManager manager) {
 		super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
@@ -111,7 +111,6 @@ class CommandPacket extends CommandBase {
 	 * Send a message without invoking the packet listeners.
 	 * @param receiver - the player to send it to.
 	 * @param message - the message to send.
-	 * @return TRUE if the message was sent successfully, FALSE otherwise.
 	 */
 	public void sendMessageSilently(CommandSender receiver, String message) {
 		chatter.sendMessageSilently(receiver, message);
@@ -156,7 +155,7 @@ class CommandPacket extends CommandBase {
 	@Override
 	protected boolean handleCommand(CommandSender sender, String[] args) {
 		try {
-			Deque<String> arguments = new ArrayDeque<String>(Arrays.asList(args));
+			Deque<String> arguments = new ArrayDeque<>(Arrays.asList(args));
 			SubCommand subCommand = parseCommand(arguments);
 
 			// Commands with different parameters
@@ -183,7 +182,8 @@ class CommandPacket extends CommandBase {
 			if (typeParser.getLastProtocol() == null) {
 				sender.sendMessage(ChatColor.YELLOW + "Warning: Missing protocol (PLAY, etc) - assuming legacy IDs.");
 			}
-			if (arguments.size() > 0) {
+
+			if (!arguments.isEmpty()) {
 				throw new IllegalArgumentException("Cannot parse " + arguments);
 			}
 		
@@ -247,15 +247,15 @@ class CommandPacket extends CommandBase {
 	}
 	
 	private void executeNamesCommand(CommandSender sender, Set<PacketType> types) {
-		List<String> messages = new ArrayList<String>();
+		final List<String> messages = new ArrayList<>();
 		
 		// Print the equivalent name of every given ID
 		for (PacketType type : types) {
 			messages.add(ChatColor.YELLOW + type.toString());
 		}
 		
-		if (sender instanceof Player && messages.size() > 0 && messages.size() > PAGE_LINE_COUNT) {
-			// Divide the messages into chuncks
+		if (sender instanceof Player && !messages.isEmpty() && messages.size() > PAGE_LINE_COUNT) {
+			// Divide the messages into chunks
 			pagedMessage.put(sender, messages);
 			printPage(sender, 1);
 			
