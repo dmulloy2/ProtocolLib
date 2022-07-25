@@ -28,7 +28,7 @@ public interface Cloner {
 	 * @param source - the object that is being considered.
 	 * @return TRUE if this cloner can actually clone the given object, FALSE otherwise.
 	 */
-	public boolean canClone(Object source);
+    boolean canClone(Object source);
 	
 	/**
 	 * Perform the clone. 
@@ -38,5 +38,5 @@ public interface Cloner {
 	 * @return A cloned value.
 	 * @throws IllegalArgumentException If this cloner cannot perform the clone.
 	 */
-	public Object clone(Object source);
+    Object clone(Object source);
 }

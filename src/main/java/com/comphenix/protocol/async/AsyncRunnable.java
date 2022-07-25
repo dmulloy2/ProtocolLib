@@ -28,7 +28,7 @@ public interface AsyncRunnable extends Runnable {
 	 * Retrieve a unique worker ID.
 	 * @return Unique worker ID.
 	 */
-	public int getID();
+	int getID();
 	
 	/**
 	 * Stop the given runnable.
@@ -37,13 +37,13 @@ public interface AsyncRunnable extends Runnable {
 	 * @return TRUE if the thread was stopped, FALSE if it was already stopped.
 	 * @throws InterruptedException if it is interrupted
 	 */
-	public boolean stop() throws InterruptedException;
+	boolean stop() throws InterruptedException;
 	
 	/**
 	 * Determine if we're running or not.
 	 * @return TRUE if we're running, FALSE otherwise.
 	 */
-	public boolean isRunning();
+	boolean isRunning();
 
 	/**
 	 * Determine if this runnable has already run its course.

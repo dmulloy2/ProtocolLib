@@ -242,7 +242,7 @@ public class PacketConstructor {
 	 *
 	 * @author Kristian
 	 */
-	public static interface Unwrapper {
+	public interface Unwrapper {
 
 		/**
 		 * Convert the given wrapped object to the equivalent net.minecraft.server object.
@@ -253,6 +253,6 @@ public class PacketConstructor {
 		 * @param wrappedObject - wrapped object or class.
 		 * @return The equivalent net.minecraft.server object or class.
 		 */
-		public Object unwrapItem(Object wrappedObject);
+        Object unwrapItem(Object wrappedObject);
 	}
 }

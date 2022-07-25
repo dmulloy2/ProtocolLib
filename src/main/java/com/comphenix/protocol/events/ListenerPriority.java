@@ -54,7 +54,7 @@ public enum ListenerPriority {
 
 	private final int slot;
 
-	private ListenerPriority(int slot) {
+	ListenerPriority(int slot) {
 		this.slot = slot;
 	}
 

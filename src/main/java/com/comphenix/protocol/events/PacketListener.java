@@ -38,7 +38,7 @@ public interface PacketListener {
 	 * have been specified in the listener. This is off by default.
 	 * @param event - the packet that should be sent.
 	 */
-	public void onPacketSending(PacketEvent event);
+    void onPacketSending(PacketEvent event);
 
 	/**
 	 * Invoked right before a received packet from a client is being processed.
@@ -49,23 +49,23 @@ public interface PacketListener {
 	 * if you need to call the Bukkit API.
 	 * @param event - the packet that has been received.
 	 */
-	public void onPacketReceiving(PacketEvent event);
+    void onPacketReceiving(PacketEvent event);
 	
 	/**
 	 * Retrieve which packets sent by the server this listener will observe.
 	 * @return List of server packets to observe, along with the priority.
 	 */
-	public ListeningWhitelist getSendingWhitelist();
+    ListeningWhitelist getSendingWhitelist();
 	
 	/**
 	 * Retrieve which packets sent by the client this listener will observe.
 	 * @return List of server packets to observe, along with the priority.
 	 */
-	public ListeningWhitelist getReceivingWhitelist();
+    ListeningWhitelist getReceivingWhitelist();
 	
 	/**
 	 * Retrieve the plugin that created list packet listener.
 	 * @return The plugin, or NULL if not available.
 	 */
-	public Plugin getPlugin();
+    Plugin getPlugin();
 }

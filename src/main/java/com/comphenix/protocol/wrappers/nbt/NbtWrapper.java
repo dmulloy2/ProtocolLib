@@ -35,11 +35,11 @@ public interface NbtWrapper<TType> extends NbtBase<TType>, ClonableWrapper {
 	 * Retrieve the underlying net.minecraft.server instance.
 	 * @return The NMS instance.
 	 */
-	public Object getHandle();
+    Object getHandle();
 	
 	/**
 	 * Write the current NBT tag to an output stream.
 	 * @param destination - the destination stream.
 	 */
-	public void write(DataOutput destination);
+    void write(DataOutput destination);
 }

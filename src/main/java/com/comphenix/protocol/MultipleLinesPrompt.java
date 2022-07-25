@@ -17,9 +17,9 @@ class MultipleLinesPrompt extends StringPrompt {
 	 * Represents a canceller that determines if the multiple lines prompt is finished.
 	 * @author Kristian
 	 */
-	public static interface MultipleConversationCanceller extends ConversationCanceller {
+	public interface MultipleConversationCanceller extends ConversationCanceller {
 		@Override
-		public boolean cancelBasedOnInput(ConversationContext context, String currentLine);
+		boolean cancelBasedOnInput(ConversationContext context, String currentLine);
 
 		/**
 		 * Determine if the current prompt is done based on the context, last
@@ -31,7 +31,7 @@ class MultipleLinesPrompt extends StringPrompt {
 		 * @param lineCount - number of lines.
 		 * @return TRUE if we are done, FALSE otherwise.
 		 */
-		public boolean cancelBasedOnInput(ConversationContext context, String currentLine, 
+		boolean cancelBasedOnInput(ConversationContext context, String currentLine,
 										  StringBuilder lines, int lineCount);
 	}
 

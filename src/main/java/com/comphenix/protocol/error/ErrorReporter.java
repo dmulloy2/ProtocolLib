@@ -33,7 +33,7 @@ public interface ErrorReporter {
 	 * @param methodName - name of the caller method.
 	 * @param error - the exception itself.
 	 */
-	public abstract void reportMinimal(Plugin sender, String methodName, Throwable error);
+    void reportMinimal(Plugin sender, String methodName, Throwable error);
 
 	/**
 	 * Prints a small minimal error report regarding an exception from another plugin.
@@ -42,7 +42,7 @@ public interface ErrorReporter {
 	 * @param error - the exception itself.
 	 * @param parameters - any relevant parameters to print.
 	 */
-	public abstract void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters);
+    void reportMinimal(Plugin sender, String methodName, Throwable error, Object... parameters);
 	
 	/**
 	 * Prints a debug message from the current sender.
@@ -51,40 +51,40 @@ public interface ErrorReporter {
 	 * @param sender - the sender.
 	 * @param report - the report.
 	 */
-	public abstract void reportDebug(Object sender, Report report);
+    void reportDebug(Object sender, Report report);
 	
 	/**
 	 * Prints a debug message from the current sender.
 	 * @param sender - the sender.
 	 * @param builder - the report builder.
 	 */
-	public abstract void reportDebug(Object sender, ReportBuilder builder);
+    void reportDebug(Object sender, ReportBuilder builder);
 	
 	/**
 	 * Prints a warning message from the current plugin.
 	 * @param sender - the object containing the caller method.
 	 * @param report - an error report to include.
 	 */
-	public abstract void reportWarning(Object sender, Report report);
+    void reportWarning(Object sender, Report report);
 	
 	/**
 	 * Prints a warning message from the current plugin.
 	 * @param sender - the object containing the caller method.
 	 * @param reportBuilder - an error report builder that will be used to get the report.
 	 */
-	public abstract void reportWarning(Object sender, ReportBuilder reportBuilder);
+    void reportWarning(Object sender, ReportBuilder reportBuilder);
 
 	/**
 	 * Prints a detailed error report about an unhandled exception.
 	 * @param sender - the object containing the caller method.
 	 * @param report - an error report to include.
 	 */
-	public abstract void reportDetailed(Object sender, Report report);
+    void reportDetailed(Object sender, Report report);
 	
 	/**
 	 * Prints a detailed error report about an unhandled exception.
 	 * @param sender - the object containing the caller method.
 	 * @param reportBuilder - an error report builder that will be used to get the report.
 	 */
-	public abstract void reportDetailed(Object sender, ReportBuilder reportBuilder);
+    void reportDetailed(Object sender, ReportBuilder reportBuilder);
 }
