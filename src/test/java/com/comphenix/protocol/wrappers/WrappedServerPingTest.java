@@ -47,12 +47,7 @@ public class WrappedServerPingTest {
 			CompressedImage copy = CompressedImage.fromBase64Png(Base64Coder.encodeLines(tux.getData()));
 			assertArrayEquals(copy.getData(), serverPing.getFavicon().getData());
 		} catch (Throwable ex) {
-			if (ex.getCause() instanceof SecurityException) {
-				// There was a global package seal for a while, but not anymore
-				System.err.println("Encountered a SecurityException, update your Spigot jar!");
-			} else {
-				fail("Encountered an exception testing ServerPing", ex);
-			}
+			fail("Encountered an exception testing ServerPing", ex);
 		}
 	}
 }
