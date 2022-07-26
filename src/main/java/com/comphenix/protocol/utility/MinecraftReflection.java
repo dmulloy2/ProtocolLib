@@ -58,7 +58,7 @@ public final class MinecraftReflection {
 	/**
 	 * Regular expression that matches a canonical Java class.
 	 */
-	private static final String CANONICAL_REGEX = "\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*";
+	private static final String CANONICAL_REGEX = "(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*\\.)+\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*";
 	private static final String MINECRAFT_CLASS_NAME_REGEX = "net\\.minecraft\\." + CANONICAL_REGEX;
 
 	/**
