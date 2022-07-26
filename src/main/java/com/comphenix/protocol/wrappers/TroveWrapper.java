@@ -1,6 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -10,9 +9,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.ReadOnlyFieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.utility.ClassSource;
@@ -39,7 +36,7 @@ public class TroveWrapper {
 	 * @param accessor - the accessor.
 	 * @return The read only accessor.
 	 */
-	public static ReadOnlyFieldAccessor wrapMapField(final FieldAccessor accessor) {
+	public static FieldAccessor wrapMapField(final FieldAccessor accessor) {
 		return wrapMapField(accessor, null);
 	}
 	
@@ -49,8 +46,8 @@ public class TroveWrapper {
 	 * @param noEntryTransform - transform the no entry value, or NULL to ignore.
 	 * @return The read only accessor.
 	 */
-	public static ReadOnlyFieldAccessor wrapMapField(final FieldAccessor accessor, final Function<Integer, Integer> noEntryTransform) {
-		return new ReadOnlyFieldAccessor() {
+	public static FieldAccessor wrapMapField(final FieldAccessor accessor, final Function<Integer, Integer> noEntryTransform) {
+		/*return new ReadOnlyFieldAccessor() {
 			@Override
 			public Object get(Object instance) {
 				Object troveMap = accessor.get(instance);
@@ -64,43 +61,8 @@ public class TroveWrapper {
 			public Field getField() {
 				return accessor.getField();
 			}
-		};
-	}
-	
-	/**
-	 * Retrieve a read-only field accessor that automatically wraps the underlying Trove instance.
-	 * @param accessor - the accessor.
-	 * @return The read only accessor.
-	 */
-	public static ReadOnlyFieldAccessor wrapSetField(final FieldAccessor accessor) {
-		return new ReadOnlyFieldAccessor() {
-			@Override
-			public Object get(Object instance) {
-				return getDecoratedSet(accessor.get(instance));
-			}
-			@Override
-			public Field getField() {
-				return accessor.getField();
-			}
-		};
-	}
-	
-	/**
-	 * Retrieve a read-only field accessor that automatically wraps the underlying Trove instance.
-	 * @param accessor - the accessor.
-	 * @return The read only accessor.
-	 */
-	public static ReadOnlyFieldAccessor wrapListField(final FieldAccessor accessor) {
-		return new ReadOnlyFieldAccessor() {
-			@Override
-			public Object get(Object instance) {
-				return getDecoratedList(accessor.get(instance));
-			}
-			@Override
-			public Field getField() {
-				return accessor.getField();
-			}
-		};
+		};*/
+		return null;
 	}
 	
 	/**
@@ -156,28 +118,6 @@ public class TroveWrapper {
 	 */
 	public static boolean isTroveClass(Class<?> clazz) {
 		return getClassSource(clazz) != null;
-	}
-	
-	/**
-	 * Transform the no entry value in the given map.
-	 * @param troveMap - the trove map.
-	 * @param transform - the transform.
-	 */
-	public static void transformNoEntryValue(Object troveMap, Function<Integer, Integer> transform) {
-		// Check for stupid no_entry_values
-		try {
-			Field field = FieldUtils.getField(troveMap.getClass(), "no_entry_value", true);
-			int current = (Integer) FieldUtils.readField(field, troveMap, true);
-			int transformed = transform.apply(current);
-			
-			if (current != transformed) {
-				FieldUtils.writeField(field, troveMap, transformed);
-			}
-		} catch (IllegalArgumentException e) {
-			throw new CannotFindTroveNoEntryValue(e);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException("Cannot access reflection.", e);
-		}
 	}
 	
 	/**

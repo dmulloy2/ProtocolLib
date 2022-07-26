@@ -66,7 +66,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
 	private static MethodAccessor GSON_TO_JSON = Accessors.getMethodAccessor(GSON_CLASS, "toJson", Object.class);
 	private static MethodAccessor GSON_FROM_JSON = Accessors.getMethodAccessor(GSON_CLASS, "fromJson", String.class, Class.class);
-	private static FieldAccessor PING_GSON = Accessors.getCached(Accessors.getFieldAccessor(
+	private static FieldAccessor PING_GSON = Accessors.getMemorizing(Accessors.getFieldAccessor(
 		PacketType.Status.Server.SERVER_INFO.getPacketClass(), GSON_CLASS, true
 	));
 

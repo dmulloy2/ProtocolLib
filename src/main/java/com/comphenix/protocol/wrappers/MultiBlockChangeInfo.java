@@ -16,7 +16,6 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 
 import org.bukkit.Location;

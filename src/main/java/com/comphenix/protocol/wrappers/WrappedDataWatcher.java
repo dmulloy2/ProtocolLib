@@ -329,16 +329,6 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 	}
 
 	/**
-	 * Get a watched string.
-	 * 
-	 * @param index - index of the watched string.
-	 * @return The watched string, or NULL if this value doesn't exist.
-	 */
-	public WrappedChunkCoordinate getChunkCoordinate(int index) {
-		return (WrappedChunkCoordinate) getObject(index);
-	}
-
-	/**
 	 * Retrieve a watchable object by index.
 	 * 
 	 * @param index Index of the object to retrieve.
@@ -748,7 +738,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		public Serializer getSerializer() {
 			if (getSerializer == null) {
 				getSerializer = Accessors.getMethodAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-						.getMethodByParameters("getSerializer", MinecraftReflection.getDataWatcherSerializerClass(), new Class[0]));
+						.getMethodByReturnTypeAndParameters("getSerializer", MinecraftReflection.getDataWatcherSerializerClass(), new Class[0]));
 			}
 
 			Object serializer = getSerializer.invoke(handle);

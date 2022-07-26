@@ -6,4 +6,5 @@ package com.comphenix.protocol.utility;
  * @author Pim
  */
 public interface ByteBuddyGenerated {
+
 }

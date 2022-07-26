@@ -8,7 +8,6 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Ticker;
@@ -49,19 +48,14 @@ public class ExpireHashMap<K, V> {
 		}
 	}
 	
-	private Map<K, ExpireEntry> keyLookup = new HashMap<K, ExpireEntry>();
-	private PriorityQueue<ExpireEntry> expireQueue =  new PriorityQueue<ExpireEntry>();
+	private final Map<K, ExpireEntry> keyLookup = new HashMap<>();
+	private final PriorityQueue<ExpireEntry> expireQueue =  new PriorityQueue<>();
 	
 	// View of keyLookup with direct values
-	private Map<K, V> valueView = Maps.transformValues(keyLookup, new Function<ExpireEntry, V>() {
-		@Override
-		public V apply(ExpireEntry entry) {
-			return entry.expireValue;
-		}
-	});
+	private final Map<K, V> valueView = Maps.transformValues(keyLookup, entry -> entry.expireValue);
 	
 	// Supplied by the constructor
-	private Ticker ticker;
+	private final Ticker ticker;
 	
 	/**
 	 * Construct a new hash map where each entry may expire at a given time.

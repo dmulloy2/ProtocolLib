@@ -17,12 +17,11 @@
 
 package com.comphenix.protocol.async;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Queue;
-
-import javax.annotation.Nullable;
 
 import com.google.common.base.Preconditions;
 

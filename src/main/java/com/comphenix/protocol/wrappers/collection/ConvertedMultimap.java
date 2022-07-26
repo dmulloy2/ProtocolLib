@@ -183,18 +183,7 @@ public abstract class ConvertedMultimap<Key, VInner, VOuter> extends AbstractCon
 
 	@Override
 	public Collection<Entry<Key, VOuter>> entries() {
-		return ConvertedMap.convertedEntrySet(inner.entries(), 
-			new BiFunction<Key, VOuter, VInner>() {
-				public VInner apply(Key key, VOuter outer) {
-					return toInner(outer);
-				}
-			},
-			new BiFunction<Key, VInner, VOuter>() {
-				public VOuter apply(Key key, VInner inner) {
-					return toOuter(inner);
-				}
-			}
-		);
+		return ConvertedMap.convertedEntrySet(inner.entries(), (key, outer) -> toInner(outer), (key, inner) -> toOuter(inner));
 	}
 
 	@Override
