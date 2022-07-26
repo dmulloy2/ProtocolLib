@@ -930,6 +930,40 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * @return read/write structure for login encryption packets
+     */
+    public StructureModifier<Either<byte[], WrappedSaltedSignature>> getLoginSignatures() {
+        return getEithers(Converters.passthrough(byte[].class), BukkitConverters.getWrappedSignatureConverter());
+    }
+
+    /**
+     * @return read/writer structure direct access to signature data like chat messages
+     */
+    public StructureModifier<WrappedSaltedSignature> getSignatures() {
+        return structureModifier.withType(
+                MinecraftReflection.getSaltedSignatureClass(),
+                BukkitConverters.getWrappedSignatureConverter()
+        );
+    }
+
+    /**
+     * @param leftConverter converter for left values
+     * @param rightConverter converter for right values
+     * @return ProtocolLib's read/write structure for Mojang either structures
+     * @param <L> left data type after converting from NMS
+     * @param <R> right data type after converting from NMS
+     */
+    public <L, R> StructureModifier<Either<L, R>> getEithers(EquivalentConverter<L> leftConverter,
+                                                             EquivalentConverter<R> rightConverter) {
+        return structureModifier.withType(
+                com.mojang.datafixers.util.Either.class,
+                BukkitConverters.getEitherConverter(
+                        leftConverter, rightConverter
+                )
+        );
+    }
+
+    /**
      * Retrieve a read/write structure for the Map class.
      * @param keyConverter Converter for map keys
      * @param valConverter Converter for map values

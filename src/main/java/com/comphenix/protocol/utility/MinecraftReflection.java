@@ -34,10 +34,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
+import com.comphenix.protocol.reflect.fuzzy.*;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 
 import org.bukkit.Bukkit;
@@ -1498,6 +1495,31 @@ public final class MinecraftReflection {
 	public static Class<?> getProfilePublicKeyClass() {
 		return getMinecraftClass("world.entity.player.ProfilePublicKey");
 	}
+
+    public static Class<?> getSaltedSignatureClass() {
+        try {
+            return getMinecraftClass("SaltedSignature");
+        } catch (RuntimeException runtimeException) {
+            Class<?> messageSigClass = getMinecraftClass("network.chat.MessageSignature", "MessageSignature");
+
+            FuzzyClassContract signatureContract = FuzzyClassContract.newBuilder().
+                    constructor(FuzzyMethodContract.newBuilder().
+                            parameterCount(2).
+                            parameterSuperOf(Long.TYPE, 0).
+                            parameterSuperOf(byte[].class, 1).
+                            build()
+                    ).build();
+
+            FuzzyFieldContract fuzzyFieldContract = FuzzyFieldContract.newBuilder().
+                    typeMatches(getMinecraftObjectMatcher().and(signatureContract)).
+                    build();
+
+            Class<?> signatureClass = FuzzyReflection.fromClass(messageSigClass, true)
+                    .getField(fuzzyFieldContract)
+                    .getType();
+            return setMinecraftClass("SaltedSignature", signatureClass);
+        }
+    }
 
 	public static Class<?> getProfilePublicKeyDataClass() {
 		return getProfilePublicKeyClass().getClasses()[0];

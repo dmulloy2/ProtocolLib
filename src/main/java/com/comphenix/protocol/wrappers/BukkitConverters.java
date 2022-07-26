@@ -16,6 +16,8 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.wrappers.Either.Left;
+import com.comphenix.protocol.wrappers.Either.Right;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
@@ -407,6 +409,43 @@ public class BukkitConverters {
 		});
 	}
 
+
+	/**
+	 * @param leftConverter convert the left value if available
+	 * @param rightConverter convert the right value if available
+	 * @return converter for Mojang either class
+	 * @param <A> converted left type
+	 * @param <B> converted right type
+	 */
+    public static <A, B> EquivalentConverter<Either<A, B>> getEitherConverter(EquivalentConverter<A> leftConverter,
+                                                                              EquivalentConverter<B> rightConverter) {
+        return ignoreNull(new EquivalentConverter<Either<A, B>>() {
+            @Override
+            public Object getGeneric(Either<A, B> specific) {
+                return specific.map(
+                    left -> com.mojang.datafixers.util.Either.left(leftConverter.getGeneric(left)),
+                    right -> com.mojang.datafixers.util.Either.right(rightConverter.getGeneric(right))
+                );
+            }
+
+            @Override
+            public Either<A, B> getSpecific(Object generic) {
+                com.mojang.datafixers.util.Either<A, B> mjEither = (com.mojang.datafixers.util.Either<A, B>) generic;
+
+                return mjEither.map(
+                    left -> new Left<>(leftConverter.getSpecific(left)),
+                    right -> new Right<>(rightConverter.getSpecific(right))
+                );
+            }
+
+            @Override
+            public Class<Either<A, B>> getSpecificType() {
+                Class<?> dummy = Either.class;
+                return (Class<Either<A, B>>) dummy;
+            }
+        });
+    }
+
 	/**
 	 * Retrieve an equivalent converter for a set of generic items.
 	 * @param <T> Element type
@@ -563,6 +602,13 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedProfileKeyData> getWrappedPublicKeyDataConverter() {
 		return ignoreNull(handle(WrappedProfileKeyData::getHandle, WrappedProfileKeyData::new, WrappedProfileKeyData.class));
 	}
+
+	/**
+	 * @return converter for cryptographic signature data that are used in login and chat packets
+	 */
+    public static EquivalentConverter<WrappedSaltedSignature> getWrappedSignatureConverter() {
+        return ignoreNull(handle(WrappedSaltedSignature::getHandle, WrappedSaltedSignature::new, WrappedSaltedSignature.class));
+    }
 
 	/**
 	 * Retrieve a converter for watchable objects and the respective wrapper.
