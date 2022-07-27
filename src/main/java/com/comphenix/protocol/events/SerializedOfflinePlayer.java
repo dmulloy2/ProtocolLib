@@ -26,8 +26,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 
 import org.bukkit.*;
@@ -43,8 +45,9 @@ import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.FieldValue;
-import net.bytebuddy.implementation.bind.annotation.Pipe;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -289,18 +292,33 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 		for (int idx = 0; idx < offlinePlayerMethods.length; ++idx)
 			methodNames[idx] = offlinePlayerMethods[idx].getName();
 
+		final Map<Method, MethodAccessor> accessorCache = new ConcurrentHashMap<>();
 		final ElementMatcher.Junction<ByteCodeElement> forwardedMethods = ElementMatchers.namedOneOf(methodNames);
 
 		try {
-			final MethodDelegation forwarding = MethodDelegation.withDefaultConfiguration()
-					.withBinders(Pipe.Binder.install(Function.class))
-					.to(new Object() {
-						@RuntimeType
-						public Object intercept(@Pipe Function<OfflinePlayer, Object> pipe,
-												@FieldValue("offlinePlayer") OfflinePlayer proxy) {
-							return pipe.apply(proxy);
+			final MethodDelegation forwarding = MethodDelegation.withDefaultConfiguration().to(new Object() {
+				@RuntimeType
+				public Object intercept(
+						@Origin Method calledMethod,
+						@AllArguments Object[] args,
+						@FieldValue("offlinePlayer") OfflinePlayer proxy
+				) {
+					MethodAccessor accessor = accessorCache.computeIfAbsent(calledMethod, method -> {
+						// special case - some methods (like getName) are defined in OfflinePlayer as well
+						// as the online Player class. This causes cast exceptions if we try to invoke the method on
+						// the online player with our proxy. Prevent that
+						if (OfflinePlayer.class.isAssignableFrom(method.getDeclaringClass())) {
+							return Accessors.getMethodAccessor(
+									OfflinePlayer.class,
+									method.getName(),
+									method.getParameterTypes());
+						} else {
+							return Accessors.getMethodAccessor(method);
 						}
 					});
+					return accessor.invoke(proxy, args);
+				}
+			});
 
 			final InvocationHandlerAdapter throwException = InvocationHandlerAdapter.of((obj, method, args) -> {
 					throw new UnsupportedOperationException(
