@@ -15,9 +15,9 @@
  */
 package com.comphenix.protocol.utility;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a dynamic package and an arbitrary number of cached classes.
@@ -39,7 +39,7 @@ final class CachedPackage {
 	public CachedPackage(String packageName, ClassSource source) {
 		this.source = source;
 		this.packageName = packageName;
-		this.cache = new HashMap<>();
+		this.cache = new ConcurrentHashMap<>();
 	}
 
 	/**
