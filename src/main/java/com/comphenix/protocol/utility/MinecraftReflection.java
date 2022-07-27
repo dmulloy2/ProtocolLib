@@ -22,6 +22,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -1500,24 +1501,39 @@ public final class MinecraftReflection {
         try {
             return getMinecraftClass("SaltedSignature");
         } catch (RuntimeException runtimeException) {
-            Class<?> messageSigClass = getMinecraftClass("network.chat.MessageSignature", "MessageSignature");
+	        Class<?> minecraftEncryption = getMinecraftClass("util.MinecraftEncryption", "MinecraftEncryption");
+	        FuzzyMethodContract constructorContract = FuzzyMethodContract.newBuilder()
+			        .parameterCount(2)
+			        .parameterExactType(Long.TYPE, 0)
+			        .parameterExactType(byte[].class, 1)
+			        .build();
 
-            FuzzyClassContract signatureContract = FuzzyClassContract.newBuilder().
-                    constructor(FuzzyMethodContract.newBuilder().
-                            parameterCount(2).
-                            parameterSuperOf(Long.TYPE, 0).
-                            parameterSuperOf(byte[].class, 1).
-                            build()
-                    ).build();
+	        for (Class<?> subclass : minecraftEncryption.getClasses()) {
+		        FuzzyReflection fuzzyReflection = FuzzyReflection.fromClass(subclass, true);
+		        List<Constructor<?>> constructors = fuzzyReflection.getConstructorList(constructorContract);
 
-            FuzzyFieldContract fuzzyFieldContract = FuzzyFieldContract.newBuilder().
-                    typeMatches(getMinecraftObjectMatcher().and(signatureContract)).
-                    build();
+		        if (!constructors.isEmpty()) {
+			        return setMinecraftClass("SaltedSignature", subclass);
+		        }
+	        }
 
-            Class<?> signatureClass = FuzzyReflection.fromClass(messageSigClass, true)
-                    .getField(fuzzyFieldContract)
-                    .getType();
-            return setMinecraftClass("SaltedSignature", signatureClass);
+	        Class<?> messageSigClass = getMinecraftClass("network.chat.MessageSignature", "MessageSignature");
+	        FuzzyClassContract signatureContract = FuzzyClassContract.newBuilder()
+			        .constructor(FuzzyMethodContract.newBuilder()
+					        .parameterCount(2)
+					        .parameterSuperOf(Long.TYPE, 0)
+					        .parameterSuperOf(byte[].class, 1)
+					        .build())
+			        .build();
+
+	        FuzzyFieldContract fuzzyFieldContract = FuzzyFieldContract.newBuilder()
+			        .typeMatches(getMinecraftObjectMatcher().and(signatureContract))
+			        .build();
+
+	        Class<?> signatureClass = FuzzyReflection.fromClass(messageSigClass, true)
+			        .getField(fuzzyFieldContract)
+			        .getType();
+	        return setMinecraftClass("SaltedSignature", signatureClass);
         }
     }
 
