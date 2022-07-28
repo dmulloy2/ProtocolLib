@@ -935,7 +935,7 @@ public abstract class AbstractStructure {
      * @return The Structure Modifier
      */
     public StructureModifier<WrappedLevelChunkData.ChunkData> getLevelChunkData() {
-        return structureModifier.withType(MinecraftReflection.getLevelChunkPacketDataClass(), WrappedLevelChunkData.ChunkData.getConverter());
+        return structureModifier.withType(MinecraftReflection.getLevelChunkPacketDataClass(), BukkitConverters.getWrappedChunkDataConverter());
     }
 
     /**
@@ -944,7 +944,7 @@ public abstract class AbstractStructure {
      * @return The Structure Modifier
      */
     public StructureModifier<WrappedLevelChunkData.LightData> getLightUpdateData() {
-        return structureModifier.withType(MinecraftReflection.getLightUpdatePacketDataClass(), WrappedLevelChunkData.LightData.getConverter());
+        return structureModifier.withType(MinecraftReflection.getLightUpdatePacketDataClass(), BukkitConverters.getWrappedLightDataConverter());
     }
 
     /**

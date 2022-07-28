@@ -80,7 +80,7 @@ public class WrappedLevelChunkDataTest {
                 nmsWorld.l_(), null, null, false);
         PacketContainer container = PacketContainer.fromPacket(packet);
         Object rawInstance = container.getSpecificModifier(MinecraftReflection.getLevelChunkPacketDataClass()).read(0);
-        Object virtualInstance = WrappedLevelChunkData.ChunkData.getConverter().getGeneric(container.getLevelChunkData().read(0));
+        Object virtualInstance = BukkitConverters.getWrappedChunkDataConverter().getGeneric(container.getLevelChunkData().read(0));
 
         assertTrue(new ReflectionEquals(rawInstance, FuzzyReflection.fromClass(rawInstance.getClass(), true)
                 .getFieldListByType(List.class).get(0).getName())
@@ -124,7 +124,7 @@ public class WrappedLevelChunkDataTest {
         randomizeBitSets(container.getSpecificModifier(MinecraftReflection.getLightUpdatePacketDataClass()).read(0));
 
         assertTrue(new ReflectionEquals(container.getSpecificModifier(MinecraftReflection.getLightUpdatePacketDataClass()).read(0))
-                .matches(WrappedLevelChunkData.LightData.getConverter().getGeneric(container.getLightUpdateData().read(0))));
+                .matches(BukkitConverters.getWrappedLightDataConverter().getGeneric(container.getLightUpdateData().read(0))));
     }
 
     private void randomizeBitSets(Object lightData) {

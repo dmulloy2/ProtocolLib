@@ -1,7 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.injector.StructureCache;
-import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
@@ -11,6 +10,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.jetbrains.annotations.Nullable;
@@ -30,26 +30,27 @@ public final class WrappedLevelChunkData {
     /**
      * Wrapper for ClientboundLevelChunkPacketData
      */
-    public static class ChunkData {
+    public static final class ChunkData extends AbstractWrapper {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getLevelChunkPacketDataClass();
 
-        private final NbtCompound heightmapsTag;
+        private static final FieldAccessor BLOCK_ENTITIES_DATA_ACCESSOR;
+        private static final FieldAccessor HEIGHTMAPS_ACCESSOR;
+        private static final FieldAccessor BUFFER_ACCESSOR;
 
-        private final byte[] buffer;
+        static {
+            BLOCK_ENTITIES_DATA_ACCESSOR = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                    .getField(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
+            HEIGHTMAPS_ACCESSOR = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                    .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getNBTCompoundClass()).build()));
+            BUFFER_ACCESSOR = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                    .getField(FuzzyFieldContract.newBuilder().typeExact(byte[].class).build()));
+        }
 
-        private final List<BlockEntityInfo> blockEntityInfo;
+        public ChunkData(Object handle) {
+            super(HANDLE_TYPE);
 
-        /**
-         *
-         * @param heightmapsTag   Heightmap information
-         * @param buffer          The actual chunk data
-         * @param blockEntityInfo All block entities
-         */
-        public ChunkData(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            this.heightmapsTag = heightmapsTag;
-            this.buffer = buffer;
-            this.blockEntityInfo = blockEntityInfo;
+            setHandle(handle);
         }
 
         /**
@@ -58,7 +59,16 @@ public final class WrappedLevelChunkData {
          * @return an NBT-Tag
          */
         public NbtCompound getHeightmapsTag() {
-            return heightmapsTag;
+            return NbtFactory.fromNMSCompound(HEIGHTMAPS_ACCESSOR.get(handle));
+        }
+
+        /**
+         * Sets the heightmap tag of this chunk.
+         *
+         * @param heightmapsTag the new heightmaps tag.
+         */
+        public void setHeightmapsTag(NbtCompound heightmapsTag) {
+            HEIGHTMAPS_ACCESSOR.set(handle, NbtFactory.fromBase(heightmapsTag).getHandle());
         }
 
         /**
@@ -67,311 +77,95 @@ public final class WrappedLevelChunkData {
          * @return a byte array containing the chunks structural data.
          */
         public ByteBuf getBuffer() {
-            return Unpooled.wrappedBuffer(buffer);
+            return Unpooled.wrappedBuffer((byte[]) BUFFER_ACCESSOR.get(handle));
         }
 
         /**
-         * All block entities of this chunk.
+         * Sets the structural data of this chunk using a {@link ByteBuf}.
          *
-         * @return a list containing {@link  BlockEntityInfo}
+         * @param buffer the new buffer.
+         */
+        public void setBuffer(ByteBuf buffer) {
+            byte[] extracted = new byte[buffer.readableBytes()];
+
+            buffer.readBytes(extracted);
+
+            setBuffer(extracted);
+        }
+
+        /**
+         * Sets the structural data of this chunk.
+         *
+         * @param buffer the new buffer.
+         */
+        public void setBuffer(byte[] buffer) {
+            BUFFER_ACCESSOR.set(handle, buffer);
+        }
+
+        /**
+         * All block entities of this chunk. Supports removal and other edits.
+         *
+         * @return a mutable list containing {@link  BlockEntityInfo}
          */
         public List<BlockEntityInfo> getBlockEntityInfo() {
-            return blockEntityInfo;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ChunkData chunkData = (ChunkData) o;
-            return Objects.equals(heightmapsTag, chunkData.heightmapsTag) && Arrays.equals(buffer, chunkData.buffer) && Objects.equals(blockEntityInfo, chunkData.blockEntityInfo);
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 1;
-
-            hash = 31 * hash + Objects.hashCode(heightmapsTag);
-            hash = 31 * hash + Arrays.hashCode(buffer);
-            hash = 31 * hash + Objects.hashCode(blockEntityInfo);
-
-            return hash;
-        }
-
-        @Override
-        public String toString() {
-            return "ChunkData{" +
-                    "heightmapsTag=" + heightmapsTag +
-                    ", buffer=" + Arrays.toString(buffer) +
-                    ", blockEntityInfo=" + blockEntityInfo +
-                    '}';
+            //noinspection StaticPseudoFunctionalStyleMethod
+            return Lists.transform((List<?>) BLOCK_ENTITIES_DATA_ACCESSOR.get(handle), BlockEntityInfo::new);
         }
 
         private static ConstructorAccessor levelChunkPacketDataConstructor;
 
-        private static FieldAccessor blockEntitiesDataAccessor;
-        private static FieldAccessor heightmapsAccessor;
-        private static FieldAccessor bufferAccessor;
-
-        public static EquivalentConverter<ChunkData> getConverter() {
-            if (blockEntitiesDataAccessor == null) {
-                blockEntitiesDataAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                        .getField(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
-                heightmapsAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                        .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getNBTCompoundClass()).build()));
-                bufferAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                        .getField(FuzzyFieldContract.newBuilder().typeExact(byte[].class).build()));
+        /**
+         * Creates a new wrapper using predefined values.
+         *
+         * @param heightmapsTag   the heightmaps tag
+         * @param buffer          the buffer
+         * @param blockEntityInfo a list of wrapped block entities
+         * @return a newly created wrapper
+         */
+        public static ChunkData fromValues(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
+            if(levelChunkPacketDataConstructor == null) {
+                levelChunkPacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
             }
 
-            return new EquivalentConverter<ChunkData>() {
+            ConstructorAccessor trickySerializer = StructureCache.getTrickDataSerializerOrNull();
 
-                @Override
-                public Object getGeneric(ChunkData specific) {
-                    if(levelChunkPacketDataConstructor == null) {
-                        levelChunkPacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
-                    }
+            if(trickySerializer == null) {
+                throw new UnsupportedOperationException("TrickySerializer is not supported");
+            }
 
-                    ConstructorAccessor trickySerializer = StructureCache.getTrickDataSerializerOrNull();
+            Object instance = levelChunkPacketDataConstructor.invoke(trickySerializer.invoke(new ZeroBuffer()), 0, 0);
 
-                    if(trickySerializer == null) {
-                        throw new UnsupportedOperationException("TrickySerializer is not supported");
-                    }
+            BUFFER_ACCESSOR.set(instance, buffer);
+            HEIGHTMAPS_ACCESSOR.set(instance, NbtFactory.fromBase(heightmapsTag).getHandle());
 
-                    Object instance = levelChunkPacketDataConstructor.invoke(trickySerializer.invoke(new ZeroBuffer()), 0, 0);
+            for (BlockEntityInfo entityInfo : blockEntityInfo) {
+                //noinspection unchecked
+                ((List) BLOCK_ENTITIES_DATA_ACCESSOR.get(instance)).add(entityInfo.getHandle());
+            }
 
-                    bufferAccessor.set(instance, specific.buffer);
-                    heightmapsAccessor.set(instance, NbtFactory.fromBase(specific.heightmapsTag).getHandle());
-
-                    for (BlockEntityInfo entityInfo : specific.blockEntityInfo) {
-                        //noinspection unchecked
-                        ((List) blockEntitiesDataAccessor.get(instance)).add(BlockEntityInfo.getConverter().getGeneric(entityInfo));
-                    }
-
-                    return instance;
-                }
-
-                @Override
-                public ChunkData getSpecific(Object generic) {
-                    List<?> genericBlockEntities = (List<?>) blockEntitiesDataAccessor.get(generic);
-                    List<WrappedLevelChunkData.BlockEntityInfo> wrappedEntityInfo;
-
-                    if (genericBlockEntities.isEmpty()) {
-                        wrappedEntityInfo = Collections.emptyList();
-                    } else {
-                        wrappedEntityInfo = new ArrayList<>(genericBlockEntities.size());
-
-                        for (Object genericBE : ((List<?>) blockEntitiesDataAccessor.get(generic))) {
-                            wrappedEntityInfo.add(BlockEntityInfo.getConverter().getSpecific(genericBE));
-                        }
-
-                        wrappedEntityInfo = Collections.unmodifiableList(wrappedEntityInfo);
-                    }
-
-                    return new ChunkData(NbtFactory.fromNMSCompound(heightmapsAccessor.get(generic)),
-                            (byte[]) bufferAccessor.get(generic), wrappedEntityInfo);
-                }
-
-                @Override
-                public Class<ChunkData> getSpecificType() {
-                    return ChunkData.class;
-                }
-            };
+            return new ChunkData(instance);
         }
     }
 
     /**
      * Wrapper for ClientboundLightUpdatePacketData
      */
-    public static class LightData {
+    public static class LightData extends AbstractWrapper {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getLightUpdatePacketDataClass();
 
-        private final BitSet skyYMask;
-        private final BitSet blockYMask;
-        private final BitSet emptySkyYMask;
-        private final BitSet emptyBlockYMask;
+        private static final List<FieldAccessor> BIT_SET_ACCESSORS;
+        private static final List<FieldAccessor> BYTE_ARRAY_LIST_ACCESSORS;
 
-        private final List<byte[]> skyUpdates;
-        private final List<byte[]> blockUpdates;
+        private static final FieldAccessor TRUST_EDGES_ACCESSOR;
 
-        private final boolean trustEdges;
-
-        /**
-         *
-         * @param skyYMask        the sky light mask
-         * @param blockYMask      the block light mask
-         * @param emptySkyYMask   the empty sky light mask
-         * @param emptyBlockYMask the empty block light mask
-         * @param skyUpdates      a list of sky light arrays
-         * @param blockUpdates    a list of block light arrays
-         * @param trustEdges      whether edges can be trusted for light updates
-         */
-        public LightData(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
-                         List<byte[]> skyUpdates, List<byte[]> blockUpdates, boolean trustEdges) {
-            this.skyYMask = skyYMask;
-            this.blockYMask = blockYMask;
-            this.emptySkyYMask = emptySkyYMask;
-            this.emptyBlockYMask = emptyBlockYMask;
-            this.skyUpdates = skyUpdates;
-            this.blockUpdates = blockUpdates;
-            this.trustEdges = trustEdges;
-        }
-
-        /**
-         * The sky light mask.
-         *
-         * @return a {@link BitSet}
-         */
-        public BitSet getSkyYMask() {
-            return skyYMask;
-        }
-
-        /**
-         * The block light mask.
-         *
-         * @return a {@link BitSet}
-         */
-        public BitSet getBlockYMask() {
-            return blockYMask;
-        }
-
-        /**
-         * The empty sky light mask.
-         *
-         * @return a {@link BitSet}
-         */
-        public BitSet getEmptySkyYMask() {
-            return emptySkyYMask;
-        }
-
-        /**
-         * The empty block light mask.
-         *
-         * @return a {@link BitSet}
-         */
-        public BitSet getEmptyBlockYMask() {
-            return emptyBlockYMask;
-        }
-
-        /**
-         * A list of sky light arrays.
-         *
-         * @return a list of byte arrays.
-         */
-        public List<byte[]> getSkyUpdates() {
-            return skyUpdates;
-        }
-
-        /**
-         * A list of block light arrays.
-         *
-         * @return a list of byte arrays.
-         */
-        public List<byte[]> getBlockUpdates() {
-            return blockUpdates;
-        }
-
-        /**
-         * Whether edges can be trusted for light updates or not.
-         *
-         * @return {@code true} if edges can be trusted, {@code false} otherwise.
-         */
-        public boolean isTrustEdges() {
-            return trustEdges;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            LightData lightData = (LightData) o;
-            return trustEdges == lightData.trustEdges
-                    && Objects.equals(skyYMask, lightData.skyYMask)
-                    && Objects.equals(blockYMask, lightData.blockYMask)
-                    && Objects.equals(emptySkyYMask, lightData.emptySkyYMask)
-                    && Objects.equals(emptyBlockYMask, lightData.emptyBlockYMask)
-                    && Arrays.deepEquals(skyUpdates.toArray(), lightData.skyUpdates.toArray())
-                    && Arrays.deepEquals(blockUpdates.toArray(), lightData.blockUpdates.toArray());
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(skyYMask, blockYMask, emptySkyYMask, emptyBlockYMask, skyUpdates, blockUpdates, trustEdges);
-        }
-
-        @Override
-        public String toString() {
-            return "LightData{" +
-                    "skyYMask=" + skyYMask +
-                    ", blockYMask=" + blockYMask +
-                    ", emptySkyYMask=" + emptySkyYMask +
-                    ", emptyBlockYMask=" + emptyBlockYMask +
-                    ", skyUpdates=" + skyUpdates +
-                    ", blockUpdates=" + blockUpdates +
-                    ", trustEdges=" + trustEdges +
-                    '}';
-        }
-
-        private static ConstructorAccessor lightUpdatePacketDataConstructor;
-
-        private static List<FieldAccessor> bitSetAccessors;
-        private static List<FieldAccessor> byteArrayListAccessors;
-
-        private static FieldAccessor trustEdgesAccessor;
-
-        public static EquivalentConverter<LightData> getConverter() {
-            if (bitSetAccessors == null) {
-                bitSetAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                        .getFieldList(FuzzyFieldContract.newBuilder().typeExact(BitSet.class).build()));
-                byteArrayListAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                        .getFieldList(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
-                trustEdgesAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                        .getField(FuzzyFieldContract.newBuilder().typeExact(boolean.class).build()));
-            }
-
-            return new EquivalentConverter<LightData>() {
-
-                @Override
-                public Object getGeneric(LightData specific) {
-                    if (lightUpdatePacketDataConstructor == null) {
-                        lightUpdatePacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
-                    }
-
-                    Object instance = lightUpdatePacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()), 0, 0);
-
-                    trustEdgesAccessor.set(instance, specific.trustEdges);
-                    bitSetAccessors.get(0).set(instance, specific.skyYMask);
-                    bitSetAccessors.get(1).set(instance, specific.blockYMask);
-                    bitSetAccessors.get(2).set(instance, specific.emptySkyYMask);
-                    bitSetAccessors.get(3).set(instance, specific.emptyBlockYMask);
-                    byteArrayListAccessors.get(0).set(instance, specific.skyUpdates);
-                    byteArrayListAccessors.get(1).set(instance, specific.blockUpdates);
-
-                    return instance;
-                }
-
-                @Override
-                public LightData getSpecific(Object generic) {
-                    //noinspection unchecked
-                    return new LightData((BitSet) bitSetAccessors.get(0).get(generic), (BitSet) bitSetAccessors.get(1).get(generic),
-                            (BitSet) bitSetAccessors.get(2).get(generic), (BitSet) bitSetAccessors.get(3).get(generic),
-                            (List<byte[]>) byteArrayListAccessors.get(0).get(generic), (List<byte[]>) byteArrayListAccessors.get(1).get(generic),
-                            (Boolean) trustEdgesAccessor.get(generic));
-                }
-
-                @Override
-                public Class<LightData> getSpecificType() {
-                    return LightData.class;
-                }
-            };
+        static {
+            BIT_SET_ACCESSORS = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                    .getFieldList(FuzzyFieldContract.newBuilder().typeExact(BitSet.class).build()));
+            BYTE_ARRAY_LIST_ACCESSORS = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                    .getFieldList(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
+            TRUST_EDGES_ACCESSOR = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                    .getField(FuzzyFieldContract.newBuilder().typeExact(boolean.class).build()));
         }
 
         private static List<FieldAccessor> asFieldAccessors(List<Field> fields) {
@@ -383,6 +177,143 @@ public final class WrappedLevelChunkData {
 
             return accessors;
         }
+
+        public LightData(Object handle) {
+            super(HANDLE_TYPE);
+
+            setHandle(handle);
+        }
+
+        /**
+         * The sky light mask.
+         *
+         * @return a {@link BitSet}
+         */
+        public BitSet getSkyYMask() {
+            return (BitSet) BIT_SET_ACCESSORS.get(0).get(handle);
+        }
+
+        /**
+         * Sets the sky light mask
+         *
+         * @param skyYMask the new mask
+         */
+        public void setSkyYMask(BitSet skyYMask) {
+            BIT_SET_ACCESSORS.get(0).set(handle, skyYMask);
+        }
+
+        /**
+         * The block light mask.
+         *
+         * @return a {@link BitSet}
+         */
+        public BitSet getBlockYMask() {
+            return (BitSet) BIT_SET_ACCESSORS.get(1).get(handle);
+        }
+
+        /**
+         * Sets the block light mask
+         *
+         * @param blockYMask the new mask
+         */
+        public void setBlockYMask(BitSet blockYMask) {
+            BIT_SET_ACCESSORS.get(1).set(handle, blockYMask);
+        }
+
+        /**
+         * The empty sky light mask.
+         *
+         * @return a {@link BitSet}
+         */
+        public BitSet getEmptySkyYMask() {
+            return (BitSet) BIT_SET_ACCESSORS.get(2).get(handle);
+        }
+
+        /**
+         * Sets the empty sky light mask
+         *
+         * @param emptySkyYMask the new mask
+         */
+        public void setEmptySkyYMask(BitSet emptySkyYMask) {
+            BIT_SET_ACCESSORS.get(2).set(handle, emptySkyYMask);
+        }
+
+        /**
+         * The empty block light mask.
+         *
+         * @return a {@link BitSet}
+         */
+        public BitSet getEmptyBlockYMask() {
+            return (BitSet) BIT_SET_ACCESSORS.get(3).get(handle);
+        }
+
+        /**
+         * Sets the empty block light mask
+         *
+         * @param emptyBlockYMask the new mask
+         */
+        public void setEmptyBlockYMask(BitSet emptyBlockYMask) {
+            BIT_SET_ACCESSORS.get(3).set(handle, emptyBlockYMask);
+        }
+
+        /**
+         * A mutable list of sky light arrays.
+         *
+         * @return a mutable list of byte arrays.
+         */
+        public List<byte[]> getSkyUpdates() {
+            //noinspection unchecked
+            return (List<byte[]>) BYTE_ARRAY_LIST_ACCESSORS.get(0).get(handle);
+        }
+
+        /**
+         * A mutable list of block light arrays.
+         *
+         * @return a mutable list of byte arrays.
+         */
+        public List<byte[]> getBlockUpdates() {
+            //noinspection unchecked
+            return (List<byte[]>) BYTE_ARRAY_LIST_ACCESSORS.get(1).get(handle);
+        }
+
+        /**
+         * Whether edges can be trusted for light updates or not.
+         *
+         * @return {@code true} if edges can be trusted, {@code false} otherwise.
+         */
+        public boolean isTrustEdges() {
+            return (boolean) TRUST_EDGES_ACCESSOR.get(handle);
+        }
+
+        /**
+         * Sets whether edges can be trusted for light updates or not.
+         *
+         * @param trustEdges the new value
+         */
+        public void setTrustEdges(boolean trustEdges) {
+            TRUST_EDGES_ACCESSOR.set(handle, trustEdges);
+        }
+
+        private static ConstructorAccessor lightUpdatePacketDataConstructor;
+
+        public static LightData fromValues(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
+                                           List<byte[]> skyUpdates, List<byte[]> blockUpdates, boolean trustEdges) {
+            if (lightUpdatePacketDataConstructor == null) {
+                lightUpdatePacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
+            }
+
+            Object instance = lightUpdatePacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()), 0, 0);
+
+            TRUST_EDGES_ACCESSOR.set(instance, trustEdges);
+            BIT_SET_ACCESSORS.get(0).set(instance, skyYMask);
+            BIT_SET_ACCESSORS.get(1).set(instance, blockYMask);
+            BIT_SET_ACCESSORS.get(2).set(instance, emptySkyYMask);
+            BIT_SET_ACCESSORS.get(3).set(instance, emptyBlockYMask);
+            BYTE_ARRAY_LIST_ACCESSORS.get(0).set(instance, skyUpdates);
+            BYTE_ARRAY_LIST_ACCESSORS.get(1).set(instance, blockUpdates);
+
+            return new LightData(instance);
+        }
     }
 
     /**
@@ -390,7 +321,7 @@ public final class WrappedLevelChunkData {
      *
      * @author Etrayed
      */
-    public static class BlockEntityInfo {
+    public static class BlockEntityInfo extends AbstractWrapper {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getBlockEntityInfoClass();
 
@@ -411,38 +342,10 @@ public final class WrappedLevelChunkData {
                     .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getNBTCompoundClass()).build()));
         }
 
-        private final int sectionX;
-        private final int sectionZ;
-        private final int y;
+        public BlockEntityInfo(Object handle) {
+            super(HANDLE_TYPE);
 
-        private final MinecraftKey typeKey;
-
-        @Nullable
-        private final NbtCompound additionalData;
-
-        /**
-         * @param sectionX       the section-relative X-coordinate of the block entity.
-         * @param sectionZ       the section-relative Z-coordinate of the block entity.
-         * @param y              the Y-coordinate of the block entity.
-         * @param typeKey        the minecraft key of the block entity type.
-         */
-        public BlockEntityInfo(int sectionX, int sectionZ, int y, MinecraftKey typeKey) {
-            this(sectionX, sectionZ, y, typeKey, null);
-        }
-
-        /**
-         * @param sectionX       the section-relative X-coordinate of the block entity.
-         * @param sectionZ       the section-relative Z-coordinate of the block entity.
-         * @param y              the Y-coordinate of the block entity.
-         * @param typeKey        the minecraft key of the block entity type.
-         * @param additionalData An NBT-Tag containing additional information. Can be {@code null}.
-         */
-        public BlockEntityInfo(int sectionX, int sectionZ, int y, MinecraftKey typeKey, @Nullable NbtCompound additionalData) {
-            this.sectionX = sectionX;
-            this.sectionZ = sectionZ;
-            this.y = y;
-            this.typeKey = typeKey;
-            this.additionalData = additionalData;
+            setHandle(handle);
         }
 
         /**
@@ -451,16 +354,34 @@ public final class WrappedLevelChunkData {
          * @return the unpacked X-coordinate.
          */
         public int getSectionX() {
-            return sectionX;
+            return (int) PACKED_XZ_ACCESSOR.get(handle) >> 4;
+       }
+
+        /**
+         * Sets the section-relative X-coordinate of the block entity
+         *
+         * @param sectionX the section-relative x coordinate
+         */
+       public void setSectionX(int sectionX) {
+            PACKED_XZ_ACCESSOR.set(handle, sectionX << 4 | getSectionZ());
+       }
+
+        /**
+         * The section-relative Z-coordinate of the block entity.
+         *
+         * @return the unpacked Z-coordinate.
+         */
+        public int getSectionZ() {
+            return (int) PACKED_XZ_ACCESSOR.get(handle) & 0xF;
         }
 
         /**
-         * The section-relative Y-coordinate of the block entity.
+         * Sets the section-relative Z-coordinate of the block entity
          *
-         * @return the unpacked Y-coordinate.
+         * @param sectionZ the section-relative z coordinate
          */
-        public int getSectionZ() {
-            return sectionZ;
+        public void setSectionZ(int sectionZ) {
+            PACKED_XZ_ACCESSOR.set(handle, getSectionX() << 4 | sectionZ);
         }
 
         /**
@@ -469,7 +390,16 @@ public final class WrappedLevelChunkData {
          * @return the Y-coordinate.
          */
         public int getY() {
-            return y;
+            return (int) Y_ACCESSOR.get(handle);
+        }
+
+        /**
+         * Sets the Y-coordinate of the block entity.
+         *
+         * @param y the new y coordinate
+         */
+        public void setY(int y) {
+            Y_ACCESSOR.set(handle, y);
         }
 
         /**
@@ -478,7 +408,16 @@ public final class WrappedLevelChunkData {
          * @return the registry key.
          */
         public MinecraftKey getTypeKey() {
-            return typeKey;
+            return WrappedRegistry.getBlockEntityTypeRegistry().getKey(TYPE_ACCESSOR.get(handle));
+        }
+
+        /**
+         * Sets the registry key of the block entity type
+         *
+         * @param typeKey the new block entity type key
+         */
+        public void setTypeKey(MinecraftKey typeKey) {
+            TYPE_ACCESSOR.set(handle, WrappedRegistry.getBlockEntityTypeRegistry().get(typeKey));
         }
 
         /**
@@ -488,73 +427,55 @@ public final class WrappedLevelChunkData {
          */
         @Nullable
         public NbtCompound getAdditionalData() {
-            return additionalData;
+            Object tagHandle = TAG_ACCESSOR.get(handle);
+
+            return tagHandle == null ? null : NbtFactory.fromNMSCompound(tagHandle);
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            BlockEntityInfo info = (BlockEntityInfo) o;
-            return sectionX == info.sectionX && sectionZ == info.sectionZ && y == info.y
-                    && Objects.equals(typeKey, info.typeKey) && Objects.equals(additionalData, info.additionalData);
+        /**
+         * Edits the additional data specified for this block entity.
+         *
+         * @param additionalData the additional data for this block entity, can be {@code null}
+         */
+        public void setAdditionalData(@Nullable NbtCompound additionalData) {
+            TAG_ACCESSOR.set(handle, additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle());
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(sectionX, sectionZ, y, typeKey, additionalData);
-        }
-
-        @Override
-        public String toString() {
-            return "BlockEntityInfo{" +
-                    "sectionX=" + sectionX +
-                    ", sectionZ=" + sectionZ +
-                    ", y=" + y +
-                    ", typeKey=" + typeKey.getFullKey() +
-                    ", additionalData=" + additionalData +
-                    '}';
+        /**
+         * Creates a wrapper using raw values
+         *
+         * @param sectionX       the section-relative X-coordinate of the block entity.
+         * @param sectionZ       the section-relative Z-coordinate of the block entity.
+         * @param y              the Y-coordinate of the block entity.
+         * @param typeKey        the minecraft key of the block entity type.
+         */
+        public static BlockEntityInfo fromValues(int sectionX, int sectionZ, int y, MinecraftKey typeKey) {
+            return fromValues(sectionX, sectionZ, y, typeKey, null);
         }
 
         private static ConstructorAccessor blockEntityInfoConstructor;
 
-        public static EquivalentConverter<BlockEntityInfo> getConverter() {
-            return new EquivalentConverter<BlockEntityInfo>() {
+        /**
+         * Creates a wrapper using raw values
+         *
+         * @param sectionX       the section-relative X-coordinate of the block entity.
+         * @param sectionZ       the section-relative Z-coordinate of the block entity.
+         * @param y              the Y-coordinate of the block entity.
+         * @param typeKey        the minecraft key of the block entity type.
+         * @param additionalData An NBT-Tag containing additional information. Can be {@code null}.
+         */
+        public static BlockEntityInfo fromValues(int sectionX, int sectionZ, int y, MinecraftKey typeKey, @Nullable NbtCompound additionalData) {
+            if (blockEntityInfoConstructor == null) {
+                blockEntityInfoConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, int.class, int.class,
+                        MinecraftReflection.getBlockEntityTypeClass(), MinecraftReflection.getNBTCompoundClass());
+            }
 
-                @Override
-                public Object getGeneric(BlockEntityInfo specific) {
-                    if (blockEntityInfoConstructor == null) {
-                        blockEntityInfoConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, int.class, int.class,
-                                MinecraftReflection.getBlockEntityTypeClass(), MinecraftReflection.getNBTCompoundClass());
-                    }
-
-                    return blockEntityInfoConstructor.invoke(
-                            specific.sectionX << 4 | specific.sectionZ,
-                            specific.y,
-                            WrappedRegistry.getBlockEntityTypeRegistry().get(specific.typeKey),
-                            specific.additionalData == null ? null : NbtFactory.fromBase(specific.additionalData).getHandle()
-                    );
-                }
-
-                @Override
-                public BlockEntityInfo getSpecific(Object generic) {
-                    int packedXZ = (int) PACKED_XZ_ACCESSOR.get(generic);
-                    Object tagHandle = TAG_ACCESSOR.get(generic);
-                    NbtCompound compound = tagHandle == null ? null : NbtFactory.fromNMSCompound(tagHandle);
-
-                    return new BlockEntityInfo(packedXZ >> 4, packedXZ & 0xF, (int) Y_ACCESSOR.get(generic),
-                            WrappedRegistry.getBlockEntityTypeRegistry().getKey(TYPE_ACCESSOR.get(generic)), compound);
-                }
-
-                @Override
-                public Class<BlockEntityInfo> getSpecificType() {
-                    return BlockEntityInfo.class;
-                }
-            };
+            return new BlockEntityInfo(blockEntityInfoConstructor.invoke(
+                    sectionX << 4 | sectionZ,
+                    y,
+                    WrappedRegistry.getBlockEntityTypeRegistry().get(typeKey),
+                    additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle()
+            ));
         }
     }
 }
