@@ -1,6 +1,6 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -8,15 +8,13 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -123,49 +121,41 @@ public final class WrappedLevelChunkData {
             if (blockEntitiesDataAccessor == null) {
                 blockEntitiesDataAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
                         .getField(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
+                heightmapsAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                        .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getNBTCompoundClass()).build()));
+                bufferAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                        .getField(FuzzyFieldContract.newBuilder().typeExact(byte[].class).build()));
             }
 
             return new EquivalentConverter<ChunkData>() {
 
                 @Override
                 public Object getGeneric(ChunkData specific) {
-                    if (levelChunkPacketDataConstructor == null) {
+                    if(levelChunkPacketDataConstructor == null) {
                         levelChunkPacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
                     }
 
-                    ByteBuf byteBuf = Unpooled.buffer();
+                    ConstructorAccessor trickySerializer = StructureCache.getTrickDataSerializerOrNull();
 
-                    try (ByteBufOutputStream outputStream = new ByteBufOutputStream(byteBuf)) {
-                        NbtBinarySerializer.DEFAULT.serialize(specific.heightmapsTag, outputStream);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                    if(trickySerializer == null) {
+                        throw new UnsupportedOperationException("TrickySerializer is not supported");
                     }
 
-                    WirePacket.writeVarInt(byteBuf, specific.buffer.length);
+                    Object instance = levelChunkPacketDataConstructor.invoke(trickySerializer.invoke(new ZeroBuffer()), 0, 0);
 
-                    byteBuf.writeBytes(specific.buffer);
-
-                    WirePacket.writeVarInt(byteBuf, 0); // we will inject block entity info later
-
-                    Object generic = levelChunkPacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
+                    bufferAccessor.set(instance, specific.buffer);
+                    heightmapsAccessor.set(instance, NbtFactory.fromBase(specific.heightmapsTag).getHandle());
 
                     for (BlockEntityInfo entityInfo : specific.blockEntityInfo) {
                         //noinspection unchecked
-                        ((List) blockEntitiesDataAccessor.get(generic)).add(BlockEntityInfo.getConverter().getGeneric(entityInfo));
+                        ((List) blockEntitiesDataAccessor.get(instance)).add(BlockEntityInfo.getConverter().getGeneric(entityInfo));
                     }
 
-                    return generic;
+                    return instance;
                 }
 
                 @Override
                 public ChunkData getSpecific(Object generic) {
-                    if (heightmapsAccessor == null) {
-                        heightmapsAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                                .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getNBTCompoundClass()).build()));
-                        bufferAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                                .getField(FuzzyFieldContract.newBuilder().typeExact(byte[].class).build()));
-                    }
-
                     List<?> genericBlockEntities = (List<?>) blockEntitiesDataAccessor.get(generic);
                     List<WrappedLevelChunkData.BlockEntityInfo> wrappedEntityInfo;
 
@@ -338,6 +328,15 @@ public final class WrappedLevelChunkData {
         private static FieldAccessor trustEdgesAccessor;
 
         public static EquivalentConverter<LightData> getConverter() {
+            if (bitSetAccessors == null) {
+                bitSetAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                        .getFieldList(FuzzyFieldContract.newBuilder().typeExact(BitSet.class).build()));
+                byteArrayListAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                        .getFieldList(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
+                trustEdgesAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
+                        .getField(FuzzyFieldContract.newBuilder().typeExact(boolean.class).build()));
+            }
+
             return new EquivalentConverter<LightData>() {
 
                 @Override
@@ -346,51 +345,21 @@ public final class WrappedLevelChunkData {
                         lightUpdatePacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
                     }
 
-                    ByteBuf byteBuf = Unpooled.buffer();
+                    Object instance = lightUpdatePacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()), 0, 0);
 
-                    byteBuf.writeBoolean(specific.trustEdges);
+                    trustEdgesAccessor.set(instance, specific.trustEdges);
+                    bitSetAccessors.get(0).set(instance, specific.skyYMask);
+                    bitSetAccessors.get(1).set(instance, specific.blockYMask);
+                    bitSetAccessors.get(2).set(instance, specific.emptySkyYMask);
+                    bitSetAccessors.get(3).set(instance, specific.emptyBlockYMask);
+                    byteArrayListAccessors.get(0).set(instance, specific.skyUpdates);
+                    byteArrayListAccessors.get(1).set(instance, specific.blockUpdates);
 
-                    serializeBitSet(byteBuf, specific.skyYMask);
-                    serializeBitSet(byteBuf, specific.blockYMask);
-                    serializeBitSet(byteBuf, specific.emptySkyYMask);
-                    serializeBitSet(byteBuf, specific.emptyBlockYMask);
-                    serializeByteArrayList(byteBuf, specific.skyUpdates);
-                    serializeByteArrayList(byteBuf, specific.blockUpdates);
-
-                    return lightUpdatePacketDataConstructor.invoke(MinecraftReflection.getPacketDataSerializer(byteBuf), 0, 0);
-                }
-
-                private void serializeByteArrayList(ByteBuf byteBuf, List<byte[]> bytes) {
-                    WirePacket.writeVarInt(byteBuf, bytes.size());
-
-                    for (byte[] entry : bytes) {
-                        WirePacket.writeVarInt(byteBuf, entry.length);
-
-                        byteBuf.writeBytes(entry);
-                    }
-                }
-
-                private void serializeBitSet(ByteBuf byteBuf, BitSet bitSet) {
-                    long[] toSerialize = bitSet.toLongArray();
-
-                    WirePacket.writeVarInt(byteBuf, toSerialize.length);
-
-                    for (long l : toSerialize) {
-                        byteBuf.writeLong(l);
-                    }
+                    return instance;
                 }
 
                 @Override
                 public LightData getSpecific(Object generic) {
-                    if (bitSetAccessors == null) {
-                        bitSetAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                                .getFieldList(FuzzyFieldContract.newBuilder().typeExact(BitSet.class).build()));
-                        byteArrayListAccessors = asFieldAccessors(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                                .getFieldList(FuzzyFieldContract.newBuilder().typeExact(List.class).build()));
-                        trustEdgesAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(HANDLE_TYPE, true)
-                                .getField(FuzzyFieldContract.newBuilder().typeExact(boolean.class).build()));
-                    }
-
                     //noinspection unchecked
                     return new LightData((BitSet) bitSetAccessors.get(0).get(generic), (BitSet) bitSetAccessors.get(1).get(generic),
                             (BitSet) bitSetAccessors.get(2).get(generic), (BitSet) bitSetAccessors.get(3).get(generic),
@@ -398,21 +367,21 @@ public final class WrappedLevelChunkData {
                             (Boolean) trustEdgesAccessor.get(generic));
                 }
 
-                private List<FieldAccessor> asFieldAccessors(List<Field> fields) {
-                    List<FieldAccessor> accessors = new ArrayList<>(fields.size());
-
-                    for (Field field : fields) {
-                        accessors.add(Accessors.getFieldAccessor(field));
-                    }
-
-                    return accessors;
-                }
-
                 @Override
                 public Class<LightData> getSpecificType() {
                     return LightData.class;
                 }
             };
+        }
+
+        private static List<FieldAccessor> asFieldAccessors(List<Field> fields) {
+            List<FieldAccessor> accessors = new ArrayList<>(fields.size());
+
+            for (Field field : fields) {
+                accessors.add(Accessors.getFieldAccessor(field));
+            }
+
+            return accessors;
         }
     }
 

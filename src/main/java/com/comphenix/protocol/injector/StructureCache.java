@@ -127,7 +127,7 @@ public class StructureCache {
 	 *
 	 * @return an accessor to a constructor which creates a data serializer.
 	 */
-	private static ConstructorAccessor getTrickDataSerializerOrNull() {
+	public static ConstructorAccessor getTrickDataSerializerOrNull() {
 		if (TRICKED_DATA_SERIALIZER == null && !TRICK_TRIED) {
 			// ensure that we only try once to create the class
 			TRICK_TRIED = true;
