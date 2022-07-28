@@ -17,229 +17,220 @@
 
 package com.comphenix.protocol.reflect;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolLogger;
-import com.comphenix.protocol.error.PluginContext;
-import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.instances.BannedGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.base.Function;
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
  * <p>
  * Implemented by using reflection. Use a CompiledStructureModifier, if speed is essential.
- * 
+ *
+ * @param <T> Type of the fields to retrieve.
  * @author Kristian
- * @param <TField> Type of the fields to retrieve.
  */
-@SuppressWarnings("rawtypes")
-public class StructureModifier<TField> {
-	
+public class StructureModifier<T> {
+
+	// Instance generator we will use
+	private static final DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
+	// a structure modifier which does nothing
+	private static final StructureModifier<Object> NO_OP_MODIFIER = new StructureModifier<Object>() {
+		@Override
+		public Object read(int fieldIndex) throws FieldAccessException {
+			return null;
+		}
+
+		@Override
+		public StructureModifier<Object> write(int fieldIndex, Object value) throws FieldAccessException {
+			return this;
+		}
+
+		@Override
+		protected FieldAccessor findFieldAccessor(int fieldIndex) {
+			return null;
+		}
+	};
+
 	// Object and its type
-	protected Class targetType;
 	protected Object target;
-	
-	// Converter. May be NULL.
-	protected EquivalentConverter<TField> converter;
-	
+	protected Class<?> targetType;
+
 	// The fields to read in order
-	protected Class fieldType;
-	protected List<Field> data = new ArrayList<>();
-	
+	protected Class<?> fieldType;
+	protected List<FieldAccessor> accessors = new ArrayList<>();
+
+	// Converter. May be NULL.
+	protected EquivalentConverter<T> converter;
+
 	// Improved default values
-	protected Map<Field, Integer> defaultFields;
-	
+	protected Map<FieldAccessor, Integer> defaultFields;
 	// Cache of previous types
-	protected Map<Class, StructureModifier> subtypeCache;
-	
+	protected Map<Class<?>, StructureModifier<?>> subtypeCache;
+
 	// Whether or subclasses should handle conversion
 	protected boolean customConvertHandling;
-	
-	// Whether or not to automatically compile the structure modifier
-	protected boolean useStructureCompiler;
-	
-	// Instance generator we wil use
-	private static DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
+
+	/**
+	 * Creates a structure modifier.
+	 *
+	 * @param targetType - the structure to modify.
+	 */
+	public StructureModifier(Class<?> targetType) {
+		this(targetType, Object.class, true);
+	}
+
+	/**
+	 * Creates a structure modifier.
+	 *
+	 * @param targetType        - the structure to modify.
+	 * @param superclassExclude - a superclass to exclude.
+	 * @param requireDefault    - whether we will be using writeDefaults()
+	 */
+	public StructureModifier(
+			Class<?> targetType,
+			Class<?> superclassExclude,
+			boolean requireDefault
+	) {
+		List<FieldAccessor> fields = getFields(targetType, superclassExclude);
+		Map<FieldAccessor, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<>();
+
+		this.initialize(targetType, Object.class, fields, defaults, null, new HashMap<>());
+	}
+
+	/**
+	 * Consumers of this method should call "initialize".
+	 */
+	protected StructureModifier() {
+
+	}
 
 	private static DefaultInstances getDefaultGenerator() {
-		final List<InstanceProvider> providers = new ArrayList<>();
-		
+		List<InstanceProvider> providers = new ArrayList<>();
+
 		// Prevent certain classes from being generated
 		providers.add(new BannedGenerator(MinecraftReflection.getItemStackClass(), MinecraftReflection.getBlockClass()));
 		providers.addAll(DefaultInstances.DEFAULT.getRegistered());
 		return DefaultInstances.fromCollection(providers);
 	}
 
-	/**
-	 * Creates a structure modifier.
-	 * @param targetType - the structure to modify.
-	 */
-	public StructureModifier(Class targetType) {
-		this(targetType, null, true);
+	// Used to generate plausible default values
+	private static Map<FieldAccessor, Integer> generateDefaultFields(Collection<FieldAccessor> fields) {
+		int currentFieldIndex = 0;
+		Map<FieldAccessor, Integer> requireDefaults = new HashMap<>();
+
+		for (FieldAccessor accessor : fields) {
+			Field field = accessor.getField();
+			if (!field.getType().isPrimitive() && !Modifier.isFinal(field.getModifiers())) {
+				Object defaultInstance = DEFAULT_GENERATOR.getDefault(field.getType());
+				if (defaultInstance != null) {
+					requireDefaults.put(accessor, currentFieldIndex);
+				}
+			}
+
+			// increment the index of the processed fields
+			currentFieldIndex++;
+		}
+
+		return requireDefaults;
 	}
-	
-	/**
-	 * Creates a structure modifier.
-	 * @param targetType - the structure to modify.
-	 * @param useStructureCompiler - whether or not to use a structure compiler.
-	 */
-	public StructureModifier(Class targetType, boolean useStructureCompiler) {
-		this(targetType, null, true, useStructureCompiler);
+
+	// Used to filter out irrelevant fields
+	private static List<FieldAccessor> getFields(Class<?> type, Class<?> superclassExclude) {
+		return FuzzyReflection.fromClass(type, true).getDeclaredFields(superclassExclude).stream()
+				.filter(field -> !Modifier.isStatic(field.getModifiers()))
+				.map(Accessors::getFieldAccessor)
+				.collect(Collectors.toList());
 	}
-	
-	/**
-	 * Creates a structure modifier.
-	 * @param targetType - the structure to modify.
-	 * @param superclassExclude - a superclass to exclude.
-	 * @param requireDefault - whether or not we will be using writeDefaults().
-	 */
-	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault) {
-		this(targetType, superclassExclude, requireDefault, true);
-	}
-	
-	/**
-	 * Creates a structure modifier.
-	 * @param targetType - the structure to modify.
-	 * @param superclassExclude - a superclass to exclude.
-	 * @param requireDefault - whether or not we will be using writeDefaults().
-	 * @param useStructureCompiler - whether or not to automatically compile this structure modifier.
-	 */
-	public StructureModifier(Class targetType, Class superclassExclude, boolean requireDefault, boolean useStructureCompiler) {
-		List<Field> fields = getFields(targetType, superclassExclude);
-		Map<Field, Integer> defaults = requireDefault ? generateDefaultFields(fields) : new HashMap<>();
-		
-		initialize(targetType, Object.class, fields, defaults, null, new ConcurrentHashMap<>(), useStructureCompiler);
-	}
-	
-	/**
-	 * Consumers of this method should call "initialize".
-	 */
-	protected StructureModifier() {
-		
-	}
-	
+
 	/**
 	 * Initialize using the same field types.
+	 *
 	 * @param other - information to set.
 	 */
-	protected void initialize(StructureModifier<TField> other) {
-		initialize(other.targetType, other.fieldType, other.data,
-				   other.defaultFields, other.converter, other.subtypeCache,
-				   other.useStructureCompiler);
+	protected void initialize(StructureModifier<T> other) {
+		this.initialize(
+				other.targetType,
+				other.fieldType,
+				other.accessors,
+				other.defaultFields,
+				other.converter,
+				other.subtypeCache);
 	}
-	
+
 	/**
 	 * Initialize every field of this class.
-	 * @param targetType - type of the object we're reading and writing from.
-	 * @param fieldType - the common type of the fields we're modifying.
-	 * @param data - list of fields to modify.
+	 *
+	 * @param targetType    - type of the object we're reading and writing from.
+	 * @param fieldType     - the common type of the fields we're modifying.
+	 * @param data          - list of fields to modify.
 	 * @param defaultFields - list of fields that will be automatically initialized.
-	 * @param converter - converts between the common field type and the actual type the consumer expects.
-	 * @param subTypeCache - a structure modifier cache.
+	 * @param converter     - converts between the common field type and the actual type the consumer expects.
+	 * @param subTypeCache  - a structure modifier cache.
 	 */
-	protected void initialize(Class targetType, Class fieldType,
-			  List<Field> data, Map<Field, Integer> defaultFields,
-			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache) {
-		initialize(targetType, fieldType, data, defaultFields, converter, subTypeCache, true);
-	}
-	
-	/**
-	 * Initialize every field of this class.
-	 * @param targetType - type of the object we're reading and writing from.
-	 * @param fieldType - the common type of the fields we're modifying.
-	 * @param data - list of fields to modify.
-	 * @param defaultFields - list of fields that will be automatically initialized.
-	 * @param converter - converts between the common field type and the actual type the consumer expects.
-	 * @param subTypeCache - a structure modifier cache.
-	 * @param useStructureCompiler - whether or not to automatically compile this structure modifier.
-	 */
-	protected void initialize(Class targetType, Class fieldType,
-			  List<Field> data, Map<Field, Integer> defaultFields,
-			  EquivalentConverter<TField> converter, Map<Class, StructureModifier> subTypeCache,
-			  boolean useStructureCompiler) {
-		
+	protected void initialize(
+			Class<?> targetType,
+			Class<?> fieldType,
+			List<FieldAccessor> data,
+			Map<FieldAccessor, Integer> defaultFields,
+			EquivalentConverter<T> converter,
+			Map<Class<?>, StructureModifier<?>> subTypeCache
+	) {
 		this.targetType = targetType;
 		this.fieldType = fieldType;
-		this.data = data;
+		this.accessors = data;
 		this.defaultFields = defaultFields;
 		this.converter = converter;
 		this.subtypeCache = subTypeCache;
-		this.useStructureCompiler = useStructureCompiler;
 	}
 
 	/**
 	 * Reads the value of a field given its index.
 	 * <p>
 	 * Note: This method is prone to exceptions (there are currently 5 total throw statements). It is recommended that you
-	 * use {@link #readSafely(int)}, which returns {@code null} if the field doesn't exist, instead of throwing an exception.
-	 * 
+	 * use {@link #readSafely(int)}, which returns {@code null} if the field doesn't exist, instead of throwing an
+	 * exception.
+	 *
 	 * @param fieldIndex - index of the field.
 	 * @return Value of the field.
-	 * @throws FieldAccessException if the field doesn't exist, or it cannot be accessed under the current security contraints.
+	 * @throws FieldAccessException  if the given field index is out of bounds.
+	 * @throws IllegalStateException if this modifier has no target set.
 	 */
-	public TField read(int fieldIndex) throws FieldAccessException {
-		try {
-			return readInternal(fieldIndex);
-		} catch (FieldAccessException ex) {
-			String plugin = PluginContext.getPluginCaller(ex);
-			if (ProtocolLibrary.INCOMPATIBLE.contains(plugin)) {
-				ProtocolLogger.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
-				ProtocolLogger.log(Level.WARNING, "It is advised that you remove it.");
-			}
-
-			throw ex;
+	public T read(int fieldIndex) throws FieldAccessException {
+		FieldAccessor accessor = this.findFieldAccessor(fieldIndex);
+		if (accessor == null) {
+			throw FieldAccessException.fromFormat(
+					"Field index %d is out of bounds for length %s",
+					fieldIndex,
+					this.accessors.size());
 		}
+
+		return this.readInternal(accessor);
 	}
 
-	@SuppressWarnings("unchecked")
-	private TField readInternal(int fieldIndex) throws FieldAccessException {
-		if (target == null)
-			throw new IllegalStateException("Cannot read from a null target!");
-
-		if (fieldIndex < 0)
-			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
-
-		if (data.size() == 0)
-			throw new FieldAccessException(String.format("No field with type %s exists in class %s.", fieldType.getName(),
-					target.getClass().getSimpleName()));
-
-		if (fieldIndex >= data.size())
-			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
-
-		try {
-			Object result = FieldUtils.readField(data.get(fieldIndex), target, true);
-
-			// Use the converter, if we have it
-			if (needConversion()) {
-				return converter.getSpecific(result);
-			} else {
-				return (TField) result;
-			}
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Cannot read field due to a security limitation.", e);
-		}
-	}
-	
 	/**
 	 * Reads the value of a field only if it exists. If the field does not exist, {@code null} is returned.
 	 * <p>
-	 * As its name implies, this method is a much safer alternative to {@link #read(int)}.
-	 * In addition to throwing less exceptions and thereby causing less console spam, this
-	 * method makes providing backwards compatiblity signficiantly easier, as shown below:
-	 * 
+	 * As its name implies, this method is a much safer alternative to {@link #read(int)}. In addition to throwing less
+	 * exceptions and thereby causing less console spam, this method makes providing backwards compatiblity signficiantly
+	 * easier, as shown below:
+	 *
 	 * <pre><code>
 	 * BlockPosition position = packet.getBlockPositionModifier().readSafely(0);
 	 * if (position != null) {
@@ -248,17 +239,13 @@ public class StructureModifier<TField> {
 	 *     // Handle 1.7-
 	 * }
 	 * </code></pre>
-	 * 
+	 *
 	 * @param fieldIndex - index of the field.
 	 * @return Value of the field, or NULL if it doesn't exist.
-	 * @throws FieldAccessException if the field cannot be accessed under the current security constraints.
+	 * @throws IllegalStateException if this modifier has no target set.
 	 */
-	public TField readSafely(int fieldIndex) throws FieldAccessException {
-		if (fieldIndex >= 0 && fieldIndex < data.size()) {
-			return read(fieldIndex);
-		} else {
-			return null;
-		}
+	public T readSafely(int fieldIndex) throws FieldAccessException {
+		return this.readInternal(this.findFieldAccessor(fieldIndex));
 	}
 
 	/**
@@ -271,465 +258,394 @@ public class StructureModifier<TField> {
 	 * @return An optional that may contain the value of the field
 	 * @see #readSafely(int)
 	 */
-	public Optional<TField> optionRead(int fieldIndex) {
-		try {
-			return Optional.ofNullable(read(fieldIndex));
-		} catch (FieldAccessException ex) {
-			return Optional.empty();
-		}
+	public Optional<T> optionRead(int fieldIndex) {
+		return Optional.ofNullable(this.readSafely(fieldIndex));
 	}
-	
-	/**
-	 * Determine whether or not a field is read-only (final).
-	 * @param fieldIndex - index of the field.
-	 * @return TRUE if the field by the given index is read-only, FALSE otherwise.
-	 */
-	public boolean isReadOnly(int fieldIndex) {
-		return Modifier.isFinal(getField(fieldIndex).getModifiers());
-	}
-	
-	/**
-	 * Determine if a given field is public or not.
-	 * @param fieldIndex - field index.
-	 * @return TRUE if the field is public, FALSE otherwise.
-	 */
-	public boolean isPublic(int fieldIndex) {
-		return Modifier.isPublic(getField(fieldIndex).getModifiers());
-	}
-	
-	/**
-	 * Set whether or not a field should be treated as read only.
-	 * <p>
-	 * Note that changing the read-only state to TRUE will only work if the current
-	 * field was recently read-only or the current structure modifier hasn't been compiled yet.
-	 * 
-	 * @param fieldIndex - index of the field.
-	 * @param value - TRUE if this field should be read only, FALSE otherwise.
-	 * @throws FieldAccessException If we cannot modify the read-only status.
-	 * @deprecated In recent java versions (starting at 9) the modifier field is secured and will not be writeable.
-	 */
-	@Deprecated
-	public void setReadOnly(int fieldIndex, boolean value) throws FieldAccessException {
-		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
 
-		try {
-			StructureModifier.setFinalState(data.get(fieldIndex), value);
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Cannot write read only status due to a security limitation.", e);
+	@SuppressWarnings("unchecked")
+	private T readInternal(FieldAccessor accessor) {
+		// just return null if the accessor is null
+		if (accessor == null) {
+			return null;
 		}
+
+		// don't try to convert null, just return null
+		Object fieldValue = accessor.get(this.target);
+		if (fieldValue == null) {
+			return null;
+		}
+
+		// check if we need to convert the field value and do so if needed
+		return this.needConversion() ? this.converter.getSpecific(fieldValue) : (T) fieldValue;
 	}
-	
-	/**
-	 * Alter the final status of a field.
-	 * @param field - the field to change.
-	 * @param isReadOnly - TRUE if the field should be read only, FALSE otherwise.
-	 * @throws IllegalAccessException If an error occured.
-	 * @deprecated In recent java versions (starting at 9) the modifier field is secured and will not be writeable.
-	 */
-	@Deprecated
-	protected static void setFinalState(Field field, boolean isReadOnly) throws IllegalAccessException {
-	    if (isReadOnly)
-	    	FieldUtils.writeField((Object) field, "modifiers", field.getModifiers() | Modifier.FINAL, true);
-	    else
-	    	FieldUtils.writeField((Object) field, "modifiers", field.getModifiers() & ~Modifier.FINAL, true);
-	}
-	
+
 	/**
 	 * Writes the value of a field given its index.
+	 *
 	 * @param fieldIndex - index of the field.
-	 * @param value - new value of the field.
+	 * @param value      - new value of the field.
 	 * @return This structure modifier - for chaining.
-	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security contraints.
+	 * @throws FieldAccessException The field doesn't exist, or it cannot be accessed under the current security
+	 *                              contraints.
 	 */
-	public StructureModifier<TField> write(int fieldIndex, TField value) throws FieldAccessException {
-		try {
-			return writeInternal(fieldIndex, value);
-		} catch (FieldAccessException ex) {
-			String plugin = PluginContext.getPluginCaller(ex);
-			if (ProtocolLibrary.INCOMPATIBLE.contains(plugin)) {
-				ProtocolLogger.log(Level.WARNING, "Encountered an exception caused by incompatible plugin {0}.", plugin);
-				ProtocolLogger.log(Level.WARNING, "It is advised that you remove it.");
-			}
-
-			throw ex;
-		}
-	}
-
-	private StructureModifier<TField> writeInternal(int fieldIndex, TField value) throws FieldAccessException {
-		if (target == null)
-			throw new IllegalStateException("Cannot read from a null target!");
-
-		if (fieldIndex < 0)
-			throw new FieldAccessException(String.format("Field index (%s) cannot be negative.", fieldIndex));
-
-		if (data.size() == 0)
-			throw new FieldAccessException(String.format("No field with type %s exists in class %s.", fieldType.getName(),
-					target.getClass().getSimpleName()));
-
-		if (fieldIndex >= data.size())
-			throw new FieldAccessException(String.format("Field index out of bounds. (Index: %s, Size: %s)", fieldIndex, data.size()));
-
-		// Use the converter, if it exists
-		Object obj = needConversion() ? converter.getGeneric(value) : value;
-
-		try {
-			FieldUtils.writeField(data.get(fieldIndex), target, obj, true);
-		} catch (IllegalAccessException e) {
-			throw new FieldAccessException("Cannot read field due to a security limitation.", e);
+	public StructureModifier<T> write(int fieldIndex, T value) throws FieldAccessException {
+		FieldAccessor accessor = this.findFieldAccessor(fieldIndex);
+		if (accessor == null) {
+			throw FieldAccessException.fromFormat(
+					"Field index %d is out of bounds for length %s",
+					fieldIndex,
+					this.accessors.size());
 		}
 
-		// Make this method chainable
-		return this;
+		return this.writeInternal(accessor, value);
 	}
-	
-	/**
-	 * Retrieve the type of a specified field.
-	 * @param index - the index.
-	 * @return The type of the given field.
-	 */
-	protected Class<?> getFieldType(int index) {
-		return data.get(index).getType();
-	}
-	
-	/**
-	 * Whether or not we should use the converter instance.
-	 * @return TRUE if we should, FALSE otherwise.
-	 */
-	private final boolean needConversion() {
-		return converter != null && !customConvertHandling;
-	}
-	
+
 	/**
 	 * Writes the value of a given field IF and ONLY if it exists.
+	 *
 	 * @param fieldIndex - index of the potential field.
-	 * @param value - new value of the field.
+	 * @param value      - new value of the field.
 	 * @return This structure modifer - for chaining.
 	 * @throws FieldAccessException The field cannot be accessed under the current security contraints.
 	 */
-	public StructureModifier<TField> writeSafely(int fieldIndex, TField value) throws FieldAccessException {
-		if (fieldIndex >= 0 && fieldIndex < data.size()) {
-			write(fieldIndex, value);
-		}
-		return this;
+	public StructureModifier<T> writeSafely(int fieldIndex, T value) throws FieldAccessException {
+		FieldAccessor accessor = this.findFieldAccessor(fieldIndex);
+		return this.writeInternal(accessor, value);
 	}
-	
+
 	/**
 	 * Correctly modifies the value of a field.
+	 *
 	 * @param fieldIndex - index of the field to modify.
-	 * @param select - the function that modifies the field value.
+	 * @param select     - the function that modifies the field value.
 	 * @return This structure modifier - for chaining.
 	 * @throws FieldAccessException The field cannot be accessed under the current security contraints.
 	 */
-	public StructureModifier<TField> modify(int fieldIndex, Function<TField, TField> select) throws FieldAccessException {
-		TField value = read(fieldIndex);
-		return write(fieldIndex, select.apply(value));
+	public StructureModifier<T> modify(int fieldIndex, UnaryOperator<T> select) throws FieldAccessException {
+		T value = this.read(fieldIndex);
+		return this.write(fieldIndex, select.apply(value));
 	}
-	
+
+	private StructureModifier<T> writeInternal(FieldAccessor accessor, T value) throws FieldAccessException {
+		// just ignore if the accessor is not present
+		if (accessor == null) {
+			return this;
+		}
+
+		// just write the value if the specific given one is null or no conversion is needed
+		if (value == null || !this.needConversion()) {
+			accessor.set(this.target, value);
+			return this;
+		}
+
+		// convert and write
+		accessor.set(this.target, this.converter.getGeneric(value));
+		return this;
+	}
+
+	protected FieldAccessor findFieldAccessor(int fieldIndex) {
+		if (this.target == null) {
+			throw new IllegalStateException("Cannot read from modifier which has no target!");
+		}
+
+		// check if the field is out of bounds
+		if (fieldIndex < 0 || fieldIndex >= this.accessors.size()) {
+			return null;
+		}
+
+		return this.accessors.get(fieldIndex);
+	}
+
 	/**
-	 * Retrieves a structure modifier that only reads and writes fields of a given type.
-	 * @param <T> Type
-	 * @param fieldType - the type, or supertype, of every field to modify.
-	 * @return A structure modifier for fields of this type.
+	 * Whether we should use the converter instance.
+	 *
+	 * @return TRUE if we should, FALSE otherwise.
 	 */
-	public <T> StructureModifier<T> withType(Class fieldType) {
-		return withType(fieldType, null);
+	private boolean needConversion() {
+		return this.converter != null && !this.customConvertHandling;
 	}
-	
+
 	/**
 	 * Sets all non-primitive fields to a more fitting default value. See {@link DefaultInstances#getDefault(Class)}.
+	 *
 	 * @return The current structure modifier - for chaining.
 	 * @throws FieldAccessException If we're unable to write to the fields due to a security limitation.
 	 */
-	public StructureModifier<TField> writeDefaults() throws FieldAccessException {
-		DefaultInstances generator = DefaultInstances.DEFAULT;
-
+	public StructureModifier<T> writeDefaults() throws FieldAccessException {
 		// Write a default instance to every field
-		for (Field field : defaultFields.keySet()) {
-			try {
-				// Special case for Spigot's custom chat components
-				// They must be null or messages will be blank
-				if (field.getType().getCanonicalName().equals("net.md_5.bungee.api.chat.BaseComponent[]")) {
-					FieldUtils.writeField(field, target, null, true);
-					continue;
-				}
-
-				FieldUtils.writeField(field, target, generator.getDefault(field.getType()), true);
-			} catch (IllegalAccessException e) {
-				throw new FieldAccessException("Cannot write to field due to a security limitation.", e);
+		for (FieldAccessor accessor : this.defaultFields.keySet()) {
+			// Special case for Spigot's custom chat components
+			// They must be null or messages will be blank
+			Field field = accessor.getField();
+			if (field.getType().getCanonicalName().equals("net.md_5.bungee.api.chat.BaseComponent[]")) {
+				accessor.set(this.target, null);
+				continue;
 			}
+
+			// get the default value and write the field
+			Object defaultValue = DEFAULT_GENERATOR.getDefault(field.getType());
+			accessor.set(this.target, defaultValue);
 		}
 
 		return this;
 	}
 
-	private static Type[] getParamTypes(Field field) {
-		Type genericType = field.getGenericType();
-		if (genericType instanceof ParameterizedType) {
-			return  ((ParameterizedType) genericType).getActualTypeArguments();
-		}
-
-		return new Class<?>[0];
-	}
-
-	/**
-	 * Retrieves a structure modifier that only reads and writes fields of a given type.
-	 * @param <T> Type
-	 * @param fieldType - the type, or supertype, of every field to modify.
-	 * @param converter - converts objects into the given type.
-	 * @return A structure modifier for fields of this type.
-	 */
-	public <T> StructureModifier<T> withType(Class fieldType, EquivalentConverter<T> converter) {
-		return withParamType(fieldType, converter);
-	}
-
-	/**
-	 * Retrieves a structure modifier that only reads and writes fields of a given type.
-	 * @param <T> Type
-	 * @param fieldType - the type, or supertype, of every field to modify.
-	 * @param converter - converts objects into the given type.
-	 * @param paramTypes - field type parameters
-	 * @return A structure modifier for fields of this type.
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> StructureModifier<T> withParamType(Class fieldType, EquivalentConverter<T> converter, Class... paramTypes) {
-		if (fieldType == null) {
-			// It's not supported in this version, so return an empty modifier
-			return new StructureModifier<T>() {
-				@Override
-				public T read(int index) { return null; }
-
-				@Override
-				public StructureModifier<T> write(int index, T value) { return this; }
-			};
-		}
-
-		StructureModifier<T> result = subtypeCache.get(fieldType);
-		
-		// Do we need to update the cache?
-		if (result == null) {
-			List<Field> filtered = new ArrayList<>();
-			Map<Field, Integer> defaults = new HashMap<>();
-			int index = 0;
-			
-			for (Field field : data) {
-				if (fieldType.isAssignableFrom(field.getType())) {
-					if (paramTypes.length == 0 || Arrays.equals(getParamTypes(field), paramTypes)) {
-						filtered.add(field);
-
-						// Don't use the original index
-						if (defaultFields.containsKey(field))
-							defaults.put(field, index);
-					}
-				}
-				
-				// Keep track of the field index
-				index++;
-			}
-			
-			// Cache structure modifiers
-			result = withFieldType(fieldType, filtered, defaults);
-
-			subtypeCache.put(fieldType, result);
-				
-			// Automatically compile the structure modifier
-			if (useStructureCompiler && BackgroundCompiler.getInstance() != null)
-				BackgroundCompiler.getInstance().scheduleCompilation(subtypeCache, fieldType);
-		}
-		
-		// Add the target too
-		result = result.withTarget(target);
-		
-		// And the converter, if it's needed
-		if (!Objects.equal(result.converter, converter)) {
-			result = result.withConverter(converter);
-		}
-		return result;
-	}
-	
 	/**
 	 * Retrieves the common type of each field.
+	 *
 	 * @return Common type of each field.
 	 */
-	public Class getFieldType() {
-		return fieldType;
+	public Class<?> getFieldType() {
+		return this.fieldType;
 	}
-	
+
 	/**
 	 * Retrieves the type of the object we're modifying.
+	 *
 	 * @return Type of the object.
 	 */
-	public Class getTargetType() {
-		return targetType;
+	public Class<?> getTargetType() {
+		return this.targetType;
 	}
-	
+
 	/**
 	 * Retrieves the object we're currently modifying.
+	 *
 	 * @return Object we're modifying.
 	 */
 	public Object getTarget() {
-		return target;
+		return this.target;
 	}
-	
+
 	/**
 	 * Retrieve the number of readable types.
+	 *
 	 * @return Readable types.
 	 */
 	public int size() {
-		return data.size();
+		return this.accessors.size();
 	}
-	
-	/**
-	 * Create a new structure modifier for the new field type.
-	 * @param <T> Type
-	 * @param fieldType - common type of each field.
-	 * @param filtered - list of fields after filtering the original modifier.
-	 * @param defaults - list of default values after filtering the original.
-	 * @return A new structure modifier.
-	 */
-	protected <T> StructureModifier<T> withFieldType(
-			Class fieldType, List<Field> filtered, Map<Field, Integer> defaults) {
-		return withFieldType(fieldType, filtered, defaults, null);
-	}
-	
-	/**
-	 * Create a new structure modifier for the new field type.
-	 * @param <T> Type
-	 * @param fieldType - common type of each field.
-	 * @param filtered - list of fields after filtering the original modifier.
-	 * @param defaults - list of default values after filtering the original.
-	 * @param converter - the new converter, or NULL.
-	 * @return A new structure modifier.
-	 */
-	protected <T> StructureModifier<T> withFieldType(
-			Class fieldType, List<Field> filtered,
-			Map<Field, Integer> defaults, EquivalentConverter<T> converter) {
-		
-		StructureModifier<T> result = new StructureModifier<>();
-		result.initialize(targetType, fieldType, filtered, defaults,
-						  converter, new ConcurrentHashMap<>(),
-						  useStructureCompiler);
-		return result;
-	}
-	
-	/**
-	 * Retrieves a structure modifier of the same type for a different object target.
-	 * @param target - different target of the same type.
-	 * @return Structure modifier with the new target.
-	 */
-	public StructureModifier<TField> withTarget(Object target) {
-		final StructureModifier<TField> copy = new StructureModifier<>();
-		
-		// Create a new instance
-		copy.initialize(this);
-		copy.target = target;
-		return copy;
-	}
-	
-	/**
-	 * Retrieves a structure modifier with the same type and target, but using a new object converter.
-	 * @param converter - the object converter to use.
-	 * @return Structure modifier with the new converter.
-	 */
-	@SuppressWarnings("unchecked")
-	private <T> StructureModifier<T> withConverter(EquivalentConverter<T> converter) {
-		StructureModifier copy = withTarget(target);
-		
-		copy.setConverter(converter);
-		return copy;
-	}
-	
-	/**
-	 * Set the current object converter. Should only be called during construction.
-	 * @param converter - current object converter.
-	 */
-	protected void setConverter(EquivalentConverter<TField> converter) {
-		this.converter = converter;
-	}
-	
+
 	/**
 	 * Retrieves a list of the fields matching the constraints of this structure modifier.
+	 *
 	 * @return List of fields.
 	 */
-	public List<Field> getFields() {
-		return ImmutableList.copyOf(data);
+	public List<FieldAccessor> getFields() {
+		return Collections.unmodifiableList(this.accessors);
 	}
 
 	/**
 	 * Retrieve a field by index.
+	 *
 	 * @param fieldIndex - index of the field to retrieve.
 	 * @return The field represented with the given index.
 	 * @throws IllegalArgumentException If no field with the given index can be found.
 	 */
 	public Field getField(int fieldIndex) {
-		if (fieldIndex < 0 || fieldIndex >= data.size())
-			throw new IllegalArgumentException("Index parameter is not within [0 - " + data.size() + ")");
-		
-		return data.get(fieldIndex);
+		FieldAccessor accessor = this.findFieldAccessor(fieldIndex);
+		if (accessor == null) {
+			throw new IllegalArgumentException(String.format(
+					"Field index %d is out of bounds for length %s",
+					fieldIndex,
+					this.accessors.size()));
+		}
+
+		return accessor.getField();
 	}
-	
+
 	/**
 	 * Retrieve every value stored in the fields of the current type.
+	 *
 	 * @return Every field value.
 	 * @throws FieldAccessException Unable to access one or all of the fields
 	 */
-	public List<TField> getValues() throws FieldAccessException {
-		final List<TField> values = new ArrayList<>();
-		
-		for (int i = 0; i < size(); i++) {
-			values.add(read(i));
+	public List<T> getValues() throws FieldAccessException {
+		List<T> values = new ArrayList<>();
+		for (int i = 0; i < this.size(); i++) {
+			values.add(this.readSafely(i));
 		}
-		
+
 		return values;
 	}
-	
-	// Used to generate plausible default values
-	private static Map<Field, Integer> generateDefaultFields(List<Field> fields) {
-		final Map<Field, Integer> requireDefaults = new HashMap<>();
-		DefaultInstances generator = DEFAULT_GENERATOR;
-		int index = 0;
-		
-		for (Field field : fields) {
-			Class<?> type = field.getType();
-			int modifier = field.getModifiers();
-			
-			// First, ignore primitive fields and final fields
-			if (!type.isPrimitive() && !Modifier.isFinal(modifier)) {
-				// Next, see if we actually can generate a default value
-				if (generator.getDefault(type) != null) {
-					// If so, require it
-					requireDefaults.put(field, index);
+
+	/**
+	 * Retrieves a structure modifier that only reads and writes fields of a given type.
+	 *
+	 * @param <R>       Type
+	 * @param fieldType - the type, or supertype, of every field to modify.
+	 * @return A structure modifier for fields of this type.
+	 */
+	public <R> StructureModifier<R> withType(Class<?> fieldType) {
+		return this.withType(fieldType, null);
+	}
+
+	/**
+	 * Retrieves a structure modifier that only reads and writes fields of a given type.
+	 *
+	 * @param <R>       Type
+	 * @param fieldType - the type, or supertype, of every field to modify.
+	 * @param converter - converts objects into the given type.
+	 * @return A structure modifier for fields of this type.
+	 */
+	public <R> StructureModifier<R> withType(Class<?> fieldType, EquivalentConverter<R> converter) {
+		return this.withParamType(fieldType, converter);
+	}
+
+	/**
+	 * Retrieves a structure modifier that only reads and writes fields of a given type.
+	 *
+	 * @param <R>        Type
+	 * @param fieldType  - the type, or supertype, of every field to modify.
+	 * @param converter  - converts objects into the given type.
+	 * @param paramTypes - field type parameters
+	 * @return A structure modifier for fields of this type.
+	 */
+	@SuppressWarnings("unchecked")
+	public <R> StructureModifier<R> withParamType(
+			Class<?> fieldType,
+			EquivalentConverter<R> converter,
+			Class<?>... paramTypes
+	) {
+		if (fieldType == null) {
+			// It's not supported in this version, so return an empty modifier
+			return (StructureModifier<R>) NO_OP_MODIFIER;
+		}
+
+		// Do we need to update the cache?
+		StructureModifier<R> result = (StructureModifier<R>) this.subtypeCache.get(fieldType);
+		if (result == null) {
+			List<FieldAccessor> fields = new ArrayList<>();
+			Map<FieldAccessor, Integer> defaults = new HashMap<>();
+
+			// filter out all fields we don't need
+			for (int i = 0; i < this.accessors.size(); i++) {
+				FieldAccessor accessor = this.accessors.get(i);
+				Field field = accessor.getField();
+
+				// check if the field type matches
+				if (!fieldType.isAssignableFrom(field.getType())) {
+					continue;
+				}
+
+				// check if we need to check for parameters
+				if (paramTypes.length > 0) {
+					// check if the field is parameterized
+					Type generic = field.getGenericType();
+					if (!(generic instanceof ParameterizedType)) {
+						continue;
+					}
+
+					// check if the type arguments of the field are matching
+					ParameterizedType parameterized = (ParameterizedType) generic;
+					if (!Arrays.equals(parameterized.getActualTypeArguments(), paramTypes)) {
+						continue;
+					}
+				}
+
+				// this field should be included
+				fields.add(accessor);
+				if (this.defaultFields.containsKey(accessor)) {
+					defaults.put(accessor, i);
 				}
 			}
-			
-			// Increment field index
-			index++;
+
+			// Cache structure modifiers
+			result = this.withFieldType(fieldType, fields, defaults);
+			this.subtypeCache.put(fieldType, result);
 		}
-		
-		return requireDefaults;
-	}
-	
-	// Used to filter out irrelevant fields
-	private static List<Field> getFields(Class type, Class superclassExclude) {
-		final List<Field> result = new ArrayList<>();
-		
-		// Retrieve every private and public field
-		for (Field field : FuzzyReflection.fromClass(type, true).getDeclaredFields(superclassExclude)) {
-			int mod = field.getModifiers();
-			
-			// Ignore static and "abstract packet" fields
-			if (!Modifier.isStatic(mod) &&
-					(superclassExclude == null || !field.getDeclaringClass().equals(superclassExclude)
-				)) {
-				
-				result.add(field);
-			}
-		}
+
+		// Add the target too
+		result = result.withTarget(this.target);
+		result.converter = converter;
+
 		return result;
+	}
+
+	/**
+	 * Create a new structure modifier for the new field type.
+	 *
+	 * @param <V>       Type
+	 * @param fieldType - common type of each field.
+	 * @param filtered  - list of fields after filtering the original modifier.
+	 * @param defaults  - list of default values after filtering the original.
+	 * @return A new structure modifier.
+	 */
+	protected <V> StructureModifier<V> withFieldType(
+			Class<?> fieldType,
+			List<FieldAccessor> filtered,
+			Map<FieldAccessor, Integer> defaults
+	) {
+		return this.withFieldType(fieldType, filtered, defaults, null);
+	}
+
+	/**
+	 * Create a new structure modifier for the new field type.
+	 *
+	 * @param <V>       Type
+	 * @param fieldType - common type of each field.
+	 * @param filtered  - list of fields after filtering the original modifier.
+	 * @param defaults  - list of default values after filtering the original.
+	 * @param converter - the new converter, or NULL.
+	 * @return A new structure modifier.
+	 */
+	@SuppressWarnings("SameParameterValue") // api method, maybe someone needs it
+	protected <V> StructureModifier<V> withFieldType(
+			Class<?> fieldType,
+			List<FieldAccessor> filtered,
+			Map<FieldAccessor, Integer> defaults,
+			EquivalentConverter<V> converter
+	) {
+		StructureModifier<V> result = new StructureModifier<>();
+		result.initialize(
+				this.targetType,
+				fieldType,
+				filtered,
+				defaults,
+				converter,
+				new HashMap<>());
+		return result;
+	}
+
+	/**
+	 * Retrieves a structure modifier of the same type for a different object target.
+	 *
+	 * @param target - different target of the same type.
+	 * @return Structure modifier with the new target.
+	 */
+	public StructureModifier<T> withTarget(Object target) {
+		StructureModifier<T> copy = new StructureModifier<>();
+
+		// Create a new instance
+		copy.initialize(this);
+		copy.target = target;
+		return copy;
+	}
+
+	/**
+	 * Retrieves a structure modifier with the same type and target, but using a new object converter.
+	 *
+	 * @param converter - the object converter to use.
+	 * @return Structure modifier with the new converter.
+	 */
+	@SuppressWarnings("unchecked")
+	private <V> StructureModifier<V> withConverter(EquivalentConverter<V> converter) {
+		StructureModifier<V> copy = (StructureModifier<V>) this.withTarget(this.target);
+		copy.setConverter(converter);
+		return copy;
+	}
+
+	/**
+	 * Set the current object converter. Should only be called during construction.
+	 *
+	 * @param converter - current object converter.
+	 */
+	protected void setConverter(EquivalentConverter<T> converter) {
+		this.converter = converter;
 	}
 
 	@Override
 	public String toString() {
-		return "StructureModifier[fieldType=" + fieldType + ", data=" + data + "]";
+		return "StructureModifier[fieldType=" + this.fieldType + ", data=" + this.accessors + "]";
 	}
 }

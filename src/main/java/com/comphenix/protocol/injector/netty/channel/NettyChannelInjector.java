@@ -14,7 +14,6 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ByteBuddyGenerated;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftMethods;
@@ -146,7 +145,7 @@ public class NettyChannelInjector implements Injector {
 				.typeExact(Channel.class)
 				.banModifier(Modifier.STATIC)
 				.build());
-		this.channelField = Accessors.getFieldAccessor(channelField, true);
+		this.channelField = Accessors.getFieldAccessor(channelField);
 
 		// hook here into the close future to be 100% sure that this injector gets closed when the channel we wrap gets closed
 		// normally we listen to the disconnect event, but there is a very small period of time, between the login and actual
@@ -192,7 +191,7 @@ public class NettyChannelInjector implements Injector {
 		// and to be sure that the netty pipeline view we get is up-to-date
 		if (this.wrappedChannel.eventLoop().inEventLoop()) {
 			// ensure that we should actually inject into the channel
-			if (this.closed || this.wrappedChannel instanceof ByteBuddyFactory || !this.wrappedChannel.isActive()) {
+			if (this.closed || this.wrappedChannel instanceof ByteBuddyGenerated || !this.wrappedChannel.isActive()) {
 				return false;
 			}
 
@@ -441,7 +440,7 @@ public class NettyChannelInjector implements Injector {
 							.banModifier(Modifier.STATIC)
 							.typeExact(int.class)
 							.build());
-					PROTOCOL_VERSION_ACCESSOR = Accessors.getFieldAccessor(ver, true);
+					PROTOCOL_VERSION_ACCESSOR = Accessors.getFieldAccessor(ver);
 				} catch (IllegalArgumentException exception) {
 					// unable to resolve that field, continue no-op
 					PROTOCOL_VERSION_ACCESSOR = NO_OP_ACCESSOR;
@@ -598,7 +597,7 @@ public class NettyChannelInjector implements Injector {
 						.newBuilder()
 						.typeSuperOf(MinecraftReflection.getPacketClass())
 						.build());
-				return Accessors.getFieldAccessor(packetField, true);
+				return Accessors.getFieldAccessor(packetField);
 			} catch (IllegalArgumentException exception) {
 				// no such field found :(
 				return NO_OP_ACCESSOR;

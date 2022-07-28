@@ -1,82 +1,50 @@
 package com.comphenix.protocol.reflect.accessors;
 
-import com.comphenix.protocol.ProtocolLogger;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 final class DefaultFieldAccessor implements FieldAccessor {
 
 	private final Field field;
+	private final boolean staticField;
 
-	private MethodHandle setter;
+	private final MethodHandle setter;
+	private final MethodHandle getter;
 
-	public DefaultFieldAccessor(Field field) {
+	public DefaultFieldAccessor(Field field, MethodHandle setter, MethodHandle getter, boolean staticField) {
 		this.field = field;
-		// try to get a getter and setter handle for the field
-		if (UnsafeFieldAccess.hasTrustedLookup()) {
-			try {
-				setter = UnsafeFieldAccess.findSetter(field);
-			} catch (ReflectiveOperationException exception) {
-				ProtocolLogger.debug("Unable to get setter for field " + field, exception);
-			}
-		}
+		this.setter = setter;
+		this.getter = getter;
+		this.staticField = staticField;
 	}
 
 	@Override
 	public Object get(Object instance) {
 		try {
-			return field.get(instance);
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException("Cannot read  " + field, e);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException("Cannot use reflection.", e);
+			// we need this check to as the handle will treat "null" as an instance too
+			return this.staticField ? this.getter.invokeExact() : this.getter.invokeExact(instance);
+		} catch (Throwable throwable) {
+			throw new IllegalStateException("Unable to read field value of " + this.field, throwable);
 		}
 	}
 
 	@Override
 	public void set(Object instance, Object value) {
 		try {
-			if (setter == null) {
-				field.set(instance, value);
+			// we need this check to as the handle will treat "null" as an instance too
+			if (this.staticField) {
+				this.setter.invokeExact(value);
 			} else {
-				setter.invoke(instance, value);
+				this.setter.invokeExact(instance, value);
 			}
-		} catch (IllegalArgumentException | ClassCastException e) {
-			throw new RuntimeException("Cannot set field " + field + " to value " + value, e);
-		} catch (IllegalAccessException | WrongMethodTypeException e) {
-			throw new IllegalStateException("Cannot use reflection.", e);
-		} catch (Throwable ignored) {
-			// cannot happen - this might only occur when the handle targets a method
-			throw new RuntimeException("Cannot happen");
+		} catch (Throwable throwable) {
+			throw new IllegalStateException("Unable to set value of field " + this.field, throwable);
 		}
 	}
 
 	@Override
 	public Field getField() {
-		return field;
-	}
-
-	@Override
-	public int hashCode() {
-		return field != null ? field.hashCode() : 0;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-
-		if (obj instanceof DefaultFieldAccessor) {
-			DefaultFieldAccessor other = (DefaultFieldAccessor) obj;
-			return other.field == field;
-		}
-		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "DefaultFieldAccessor [field=" + field + "]";
+		return this.field;
 	}
 }

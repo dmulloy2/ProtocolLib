@@ -1,8 +1,8 @@
 package com.comphenix.protocol.events;
 
-import org.bukkit.plugin.Plugin;
-
 import com.google.common.base.Preconditions;
+
+import org.bukkit.plugin.Plugin;
 
 /**
  * Represents an adapter version of a post listener.

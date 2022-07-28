@@ -47,6 +47,6 @@ public class TestUtils {
 	}
 
 	public static void setFinalField(Object obj, Field field, Object newValue) {
-		Accessors.getFieldAccessor(field, true).set(obj, newValue);
+		Accessors.getFieldAccessor(field).set(obj, newValue);
 	}
 }

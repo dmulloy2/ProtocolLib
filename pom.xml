@@ -19,7 +19,7 @@
 		<junit.version>5.8.2</junit.version>
 		<mockito.version>4.3.1</mockito.version>
 		<netty.version>4.1.74.Final</netty.version>
-		<spigot.version>1.19-R0.1-SNAPSHOT</spigot.version>
+		<spigot.version>1.19.1-R0.1-SNAPSHOT</spigot.version>
 	</properties>
 
 	<build>
@@ -329,14 +329,14 @@
 		<dependency>
 			<groupId>net.kyori</groupId>
 			<artifactId>adventure-text-serializer-gson</artifactId>
-			<version>4.9.3</version>
+			<version>4.11.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.12.8</version>
+			<version>1.12.12</version>
 		</dependency>
 
 		<!-- Testing dependencies -->

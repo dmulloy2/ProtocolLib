@@ -1,8 +1,8 @@
 package com.comphenix.protocol.injector.packet;
 
-import java.lang.reflect.Field;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 
-import com.comphenix.protocol.reflect.FieldUtils;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -11,7 +11,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class MapContainer {
 	// For detecting changes
-	private final Field modCountField;
+	private final FieldAccessor modCountField;
 	private int lastModCount;
 	
 	// The object along with whether or not this is the initial run
@@ -21,9 +21,10 @@ public class MapContainer {
 	public MapContainer(Object source) {
 		this.source = source;
 		this.changed = false;
-		
-		Field modCountField = FieldUtils.getField(source.getClass(), "modCount", true);
-		this.modCountField = checkNotNull(modCountField, "Could not obtain modCount field");
+
+		this.modCountField = Accessors.getFieldAccessorOrNull(source.getClass(), "modCount", int.class);
+		checkNotNull(this.modCountField, "unable to retrieve modCount field for " + source.getClass());
+
 		this.lastModCount = getModificationCount();
 	}
 	
@@ -62,10 +63,6 @@ public class MapContainer {
 	 * @return The current count
 	 */
 	private int getModificationCount() {
-		try {
-			return modCountField.getInt(source);
-		} catch (ReflectiveOperationException ex) {
-			throw new RuntimeException("Unable to retrieve modCount.", ex);
-		}
+		return (int) modCountField.get(source);
 	}
 }

@@ -17,9 +17,9 @@
 
 package com.comphenix.protocol.error;
 
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.error.Report.ReportBuilder;
+
+import org.bukkit.plugin.Plugin;
 
 /**
  * Represents an object that can forward an error {@link Report} to the display and permanent storage.

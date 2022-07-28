@@ -1,34 +1,33 @@
 /**
- *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
- *  Copyright (C) 2016 dmulloy2
- *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of
- *  the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *  See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with this program;
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *  02111-1307 USA
+ * ProtocolLib - Bukkit server library that allows access to the Minecraft protocol. Copyright (C) 2016 dmulloy2
+ * <p>
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ * <p>
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ * <p>
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package com.comphenix.protocol;
 
 import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import java.util.List;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
-
-import java.util.List;
 
 /**
  * The main entry point for ProtocolLib.
  * @author dmulloy2
  */
 public class ProtocolLibrary {
+
 	/**
 	 * The minimum version ProtocolLib has been tested with.
 	 */
@@ -37,12 +36,12 @@ public class ProtocolLibrary {
 	/**
 	 * The maximum version ProtocolLib has been tested with.
 	 */
-	public static final String MAXIMUM_MINECRAFT_VERSION = "1.19";
+	public static final String MAXIMUM_MINECRAFT_VERSION = MinecraftVersion.LATEST.getVersion();
 
 	/**
-	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19) was released.
+	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19.1) was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-06-07";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-07-27";
 
 	/**
 	 * Plugins that are currently incompatible with ProtocolLib.
@@ -106,7 +105,7 @@ public class ProtocolLibrary {
 	}
 
 	/**
-	 * Whether or not updates are currently disabled.
+	 * Whether updates are currently disabled.
 	 * @return True if it is, false if not
 	 */
 	public static boolean updatesDisabled() {

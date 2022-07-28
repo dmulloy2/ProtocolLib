@@ -48,7 +48,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
 	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
 	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
-	private static FieldAccessor PREVIEWS_CHAT;
+	private static FieldAccessor[] BOOLEAN_ACCESSORS = Accessors.getFieldAccessorArray(SERVER_PING, boolean.class, true);
 
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
@@ -66,7 +66,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
 	private static MethodAccessor GSON_TO_JSON = Accessors.getMethodAccessor(GSON_CLASS, "toJson", Object.class);
 	private static MethodAccessor GSON_FROM_JSON = Accessors.getMethodAccessor(GSON_CLASS, "fromJson", String.class, Class.class);
-	private static FieldAccessor PING_GSON = Accessors.getCached(Accessors.getFieldAccessor(
+	private static FieldAccessor PING_GSON = Accessors.getMemorizing(Accessors.getFieldAccessor(
 		PacketType.Status.Server.SERVER_INFO.getPacketClass(), GSON_CLASS, true
 	));
 
@@ -185,12 +185,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19
 	 */
 	public boolean isChatPreviewEnabled() {
-		if (PREVIEWS_CHAT == null) {
-			// TODO: at some point we should make everything nullable to make updates easier
-			// see https://github.com/dmulloy2/ProtocolLib/issues/1644 for an example reference
-			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
-		}
-		return (Boolean) PREVIEWS_CHAT.get(handle);
+		return (Boolean) BOOLEAN_ACCESSORS[0].get(handle);
 	}
 
 	/**
@@ -199,10 +194,25 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19
 	 */
 	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
-		if (PREVIEWS_CHAT == null) {
-			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
-		}
-		PREVIEWS_CHAT.set(handle, chatPreviewEnabled);
+		BOOLEAN_ACCESSORS[0].set(handle, chatPreviewEnabled);
+	}
+
+	/**
+	 * Sets whether the server enforces secure chat.
+	 * @return whether the server enforces secure chat.
+	 * @since 1.19.1
+	 */
+	public boolean isEnforceSecureChat() {
+		return (Boolean) BOOLEAN_ACCESSORS[1].get(handle);
+	}
+
+	/**
+	 * Sets whether the server enforces secure chat.
+	 * @param enforceSecureChat true if enabled, false otherwise.
+	 * @since 1.19.1
+	 */
+	public void setEnforceSecureChat(boolean enforceSecureChat) {
+		BOOLEAN_ACCESSORS[1].set(handle, enforceSecureChat);
 	}
 
 	/**

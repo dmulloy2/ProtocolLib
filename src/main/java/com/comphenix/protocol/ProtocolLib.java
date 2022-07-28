@@ -25,13 +25,11 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
-import com.comphenix.protocol.reflect.compiler.BackgroundCompiler;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.NettyVersion;
 import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -91,8 +89,6 @@ public class ProtocolLib extends JavaPlugin {
 	private static final int ASYNC_MANAGER_DELAY = 1;
 	private static final String PERMISSION_INFO = "protocol.info";
 
-	public static boolean UPDATES_DISABLED = false;
-
 	// these fields are only existing once, we can make them static
 	private static Logger logger;
 	private static ProtocolConfig config;
@@ -101,7 +97,6 @@ public class ProtocolLib extends JavaPlugin {
 	private static ErrorReporter reporter = new BasicErrorReporter();
 
 	private Statistics statistics;
-	private BackgroundCompiler backgroundCompiler;
 
 	private int packetTask = -1;
 	private int tickCounter = 0;
@@ -153,9 +148,6 @@ public class ProtocolLib extends JavaPlugin {
 		// Print the state of the debug mode
 		if (config.isDebug()) {
 			logger.warning("Debug mode is enabled!");
-			logger.info("Detected netty version: " + NettyVersion.getVersion());
-		} else {
-			NettyVersion.getVersion(); // this will cache the version
 		}
 
 		// And the state of the error reporter
@@ -334,16 +326,6 @@ public class ProtocolLib extends JavaPlugin {
 			// Check for incompatible plugins
 			this.checkForIncompatibility(manager);
 
-			// Initialize background compiler
-			if (this.backgroundCompiler == null && config.isBackgroundCompilerEnabled()) {
-				this.backgroundCompiler = new BackgroundCompiler(this.getClassLoader(), reporter);
-				BackgroundCompiler.setInstance(this.backgroundCompiler);
-
-				logger.info("Started structure compiler thread.");
-			} else {
-				logger.info("Structure compiler thread has been disabled.");
-			}
-
 			// Set up command handlers
 			this.registerCommand(CommandProtocol.NAME, this.commandProtocol);
 			this.registerCommand(CommandPacket.NAME, this.commandPacket);
@@ -518,7 +500,7 @@ public class ProtocolLib extends JavaPlugin {
 				ProtocolLib.this.updateConfiguration();
 
 				// Check for updates too
-				if (!UPDATES_DISABLED && (ProtocolLib.this.tickCounter % 20) == 0) {
+				if (!ProtocolLibrary.updatesDisabled() && (ProtocolLib.this.tickCounter % 20) == 0) {
 					ProtocolLib.this.checkUpdates();
 				}
 			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
@@ -560,7 +542,7 @@ public class ProtocolLib extends JavaPlugin {
 			}
 		} catch (Exception e) {
 			reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(e));
-			UPDATES_DISABLED = true;
+			ProtocolLibrary.disableUpdates();
 		}
 	}
 
@@ -581,13 +563,6 @@ public class ProtocolLib extends JavaPlugin {
 			logger.severe("║    any issues related to Protocol Lib before opening an issue    ║");
 			logger.severe("║                            on GitHub!                            ║");
 			logger.severe("╚══════════════════════════════════════════════════════════════════╝");
-		}
-
-		// Disable compiler
-		if (this.backgroundCompiler != null) {
-			this.backgroundCompiler.shutdownAll();
-			this.backgroundCompiler = null;
-			BackgroundCompiler.setInstance(null);
 		}
 
 		// Clean up

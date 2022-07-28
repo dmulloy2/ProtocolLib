@@ -1,19 +1,10 @@
 package com.comphenix.integration.protocol;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.reflect.FieldUtils;
+import com.comphenix.protocol.reflect.ExactReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.simple.SimpleLogger;
 import org.bukkit.Bukkit;
@@ -21,6 +12,16 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.plugin.PluginManager;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SimpleCraftBukkitITCase {
 
@@ -60,15 +61,12 @@ public class SimpleCraftBukkitITCase {
 		FAKE_PLUGIN = createPlugin("FakeTestPluginIntegration");
 
 		// No need to look for updates
-		FieldUtils.writeStaticField(ProtocolLibrary.class, "UPDATES_DISABLED", Boolean.TRUE, true);
+		ProtocolLibrary.disableUpdates();
 
 		// Wait until the server and all the plugins have loaded
-		Bukkit.getScheduler().callSyncMethod(FAKE_PLUGIN, new Callable<Object>() {
-			@Override
-			public Object call() throws Exception {
-				initializePlugin(FAKE_PLUGIN);
-				return null;
-			}
+		Bukkit.getScheduler().callSyncMethod(FAKE_PLUGIN, () -> {
+			initializePlugin(FAKE_PLUGIN);
+			return null;
 		}).get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
 		// Plugins are now ready
@@ -141,15 +139,17 @@ public class SimpleCraftBukkitITCase {
 	@SuppressWarnings("unchecked")
 	private static void initializePlugin(Plugin plugin) {
 		PluginManager manager = Bukkit.getPluginManager();
+		ExactReflection reflect = ExactReflection.fromObject(manager, true);
 
 		try {
-			List<Plugin> plugins = (List<Plugin>) FieldUtils.readField(manager, "plugins", true);
-			Map<String, Plugin> lookupNames = (Map<String, Plugin>) FieldUtils.readField(manager, "lookupNames", true);
+			List<Object> plugins = (List<Object>) Accessors.getFieldAccessor(reflect.getField("plugins")).get(manager);
+			Map<String, Plugin> lookupNames = (Map<String, Plugin>) Accessors
+					.getFieldAccessor(reflect.getField("lookupNames"))
+					.get(manager);
 
-			/// Associate this plugin
+			// Associate this plugin
 			plugins.add(plugin);
 			lookupNames.put(plugin.getName(), plugin);
-
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to access the fields of " + manager, e);
 		}

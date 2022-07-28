@@ -114,13 +114,7 @@ class CommandPacket extends CommandBase {
 	 * @return TRUE if the message was sent successfully, FALSE otherwise.
 	 */
 	public void sendMessageSilently(CommandSender receiver, String message) {
-		try {
-			chatter.sendMessageSilently(receiver, message);
-		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, 
-					Report.newBuilder(REPORT_CANNOT_SEND_MESSAGE).error(e).callerParam(receiver, message)
-			);
-		}
+		chatter.sendMessageSilently(receiver, message);
 	}
 	
 	/**
@@ -129,13 +123,7 @@ class CommandPacket extends CommandBase {
 	 * @param permission - permission required to receieve the message. NULL to target everyone.
 	 */
 	public void broadcastMessageSilently(String message, String permission) {
-		try {
-			chatter.broadcastMessageSilently(message, permission);
-		} catch (InvocationTargetException e) {
-			reporter.reportDetailed(this, 
-					Report.newBuilder(REPORT_CANNOT_SEND_MESSAGE).error(e).callerParam(message, permission)
-			);
-		}
+		chatter.broadcastMessageSilently(message, permission);
 	}
 	
 	private void printPage(CommandSender sender, int pageIndex) {

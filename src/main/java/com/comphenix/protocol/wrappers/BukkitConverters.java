@@ -16,6 +16,8 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.wrappers.Either.Left;
+import com.comphenix.protocol.wrappers.Either.Right;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
@@ -407,6 +409,43 @@ public class BukkitConverters {
 		});
 	}
 
+
+	/**
+	 * @param leftConverter convert the left value if available
+	 * @param rightConverter convert the right value if available
+	 * @return converter for Mojang either class
+	 * @param <A> converted left type
+	 * @param <B> converted right type
+	 */
+    public static <A, B> EquivalentConverter<Either<A, B>> getEitherConverter(EquivalentConverter<A> leftConverter,
+                                                                              EquivalentConverter<B> rightConverter) {
+        return ignoreNull(new EquivalentConverter<Either<A, B>>() {
+            @Override
+            public Object getGeneric(Either<A, B> specific) {
+                return specific.map(
+                    left -> com.mojang.datafixers.util.Either.left(leftConverter.getGeneric(left)),
+                    right -> com.mojang.datafixers.util.Either.right(rightConverter.getGeneric(right))
+                );
+            }
+
+            @Override
+            public Either<A, B> getSpecific(Object generic) {
+                com.mojang.datafixers.util.Either<A, B> mjEither = (com.mojang.datafixers.util.Either<A, B>) generic;
+
+                return mjEither.map(
+                    left -> new Left<>(leftConverter.getSpecific(left)),
+                    right -> new Right<>(rightConverter.getSpecific(right))
+                );
+            }
+
+            @Override
+            public Class<Either<A, B>> getSpecificType() {
+                Class<?> dummy = Either.class;
+                return (Class<Either<A, B>>) dummy;
+            }
+        });
+    }
+
 	/**
 	 * Retrieve an equivalent converter for a set of generic items.
 	 * @param <T> Element type
@@ -565,6 +604,13 @@ public class BukkitConverters {
 	}
 
 	/**
+	 * @return converter for cryptographic signature data that are used in login and chat packets
+	 */
+    public static EquivalentConverter<WrappedSaltedSignature> getWrappedSignatureConverter() {
+        return ignoreNull(handle(WrappedSaltedSignature::getHandle, WrappedSaltedSignature::new, WrappedSaltedSignature.class));
+    }
+
+	/**
 	 * Retrieve a converter for watchable objects and the respective wrapper.
 	 * @return A watchable object converter.
 	 */
@@ -577,7 +623,7 @@ public class BukkitConverters {
 
 			@Override
 			public WrappedWatchableObject getSpecific(Object generic) {
-				if (MinecraftReflection.isWatchableObject(generic))
+				if (MinecraftReflection.is(MinecraftReflection.getDataWatcherItemClass(), generic))
 					return new WrappedWatchableObject(generic);
 				else if (generic instanceof WrappedWatchableObject)
 					return (WrappedWatchableObject) generic;
@@ -638,7 +684,7 @@ public class BukkitConverters {
 					// Deduce getType method by parameters alone
 					if (worldTypeGetType == null) {
 						worldTypeGetType = FuzzyReflection.fromClass(worldType).
-								getMethodByParameters("getType", worldType, new Class<?>[]{String.class});
+								getMethodByReturnTypeAndParameters("getType", worldType, new Class<?>[]{String.class});
 					}
 
 					// Convert to the Bukkit world type
@@ -658,7 +704,7 @@ public class BukkitConverters {
 						} catch (Exception e) {
 							// Assume the first method is the one
 							worldTypeName = FuzzyReflection.fromClass(worldType).
-									getMethodByParameters("name", String.class, new Class<?>[]{});
+									getMethodByReturnTypeAndParameters("name", String.class, new Class<?>[]{});
 						}
 					}
 
@@ -931,7 +977,7 @@ public class BukkitConverters {
 			@Override
 			public PotionEffect getSpecific(Object generic) {
 				if (mobEffectModifier == null) {
-					mobEffectModifier = new StructureModifier<>(MinecraftReflection.getMobEffectClass(), false);
+					mobEffectModifier = new StructureModifier<>(MinecraftReflection.getMobEffectClass());
 				}
 				StructureModifier<Integer> ints = mobEffectModifier.withTarget(generic).withType(int.class);
 				StructureModifier<Boolean> bools = mobEffectModifier.withTarget(generic).withType(boolean.class);
@@ -987,7 +1033,7 @@ public class BukkitConverters {
 			@Override
 			public Vector getSpecific(Object generic) {
 				if (vec3dModifier == null) {
-					vec3dModifier = new StructureModifier<>(MinecraftReflection.getVec3DClass(), false);
+					vec3dModifier = new StructureModifier<>(MinecraftReflection.getVec3DClass());
 				}
 
 				StructureModifier<Double> doubles = vec3dModifier.withTarget(generic).withType(double.class);
@@ -1018,19 +1064,19 @@ public class BukkitConverters {
 				Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
 				FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
 
-				getSoundEffectByKey = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+				getSoundEffectByKey = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
 						"getSoundEffect",
 						MinecraftReflection.getSoundEffectClass(),
 						new Class<?>[]{String.class}
 				));
 
-				getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+				getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
 						"getSoundEffect",
 						MinecraftReflection.getSoundEffectClass(),
 						new Class<?>[]{Sound.class}
 				));
 
-				getSoundByEffect = Accessors.getMethodAccessor(fuzzy.getMethodByParameters(
+				getSoundByEffect = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
 						"getBukkit",
 						Sound.class,
 						new Class<?>[]{MinecraftReflection.getSoundEffectClass()}
@@ -1062,8 +1108,8 @@ public class BukkitConverters {
 			Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
 			getSound = Accessors.getMethodAccessor(
-					fuzzy.getMethodByParameters("getSound", String.class, new Class<?>[]{Sound.class}));
-			getSoundEffect = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("getSoundEffect",
+					fuzzy.getMethodByReturnTypeAndParameters("getSound", String.class, new Class<?>[]{Sound.class}));
+			getSoundEffect = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters("getSoundEffect",
 					MinecraftReflection.getSoundEffectClass(), new Class<?>[]{String.class}));
 		}
 

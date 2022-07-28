@@ -88,10 +88,10 @@ class EntityUtilities {
 	public Entity getEntity(World world, int id) {
 		Object level = BukkitUnwrapper.getInstance().unwrapItem(world);
 		if (getEntity == null) {
-			Method entityGetter = FuzzyReflection.fromObject(level).getMethodByParameters(
+			Method entityGetter = FuzzyReflection.fromObject(level).getMethodByReturnTypeAndParameters(
 					"getEntity",
 					MinecraftReflection.getEntityClass(),
-					new Class[]{int.class});
+					int.class);
 			getEntity = Accessors.getMethodAccessor(entityGetter);
 		}
 
@@ -100,7 +100,7 @@ class EntityUtilities {
 	}
 
 	private MethodAccessor findScanPlayers(Class<?> trackerClass) {
-		MethodAccessor candidate = Accessors.getMethodAcccessorOrNull(trackerClass, "scanPlayers");
+		MethodAccessor candidate = Accessors.getMethodAccessorOrNull(trackerClass, "scanPlayers");
 		if (candidate != null) {
 			return candidate;
 		}

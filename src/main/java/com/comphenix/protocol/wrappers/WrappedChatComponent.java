@@ -5,7 +5,6 @@ import java.io.StringReader;
 
 import org.bukkit.ChatColor;
 
-import com.comphenix.protocol.reflect.FieldUtils;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
@@ -34,18 +33,14 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 		FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER, true);
 
 		// Retrieve the correct methods
-		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("serialize", /* a */
+		SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters("serialize", /* a */
 				String.class, new Class<?>[] { COMPONENT }));
 
-		try {
-			GSON = FieldUtils.readStaticField(fuzzy.getFieldByType("gson", GSON_CLASS), true);
-		} catch (IllegalAccessException ex) {
-			throw new RuntimeException("Failed to obtain GSON field", ex);
-		}
+		GSON = Accessors.getFieldAccessor(fuzzy.getFieldByType("gson", GSON_CLASS)).get(null);
 
 		try {
 			DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getChatDeserializer(), true)
-				.getMethodByParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
+				.getMethodByReturnTypeAndParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
 		} catch (IllegalArgumentException ex) {
 			// We'll handle it in the ComponentParser
 			DESERIALIZE = null;
