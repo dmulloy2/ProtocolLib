@@ -25,7 +25,8 @@ import java.util.*;
  */
 public final class WrappedLevelChunkData {
 
-    private WrappedLevelChunkData() {}
+    private WrappedLevelChunkData() {
+    }
 
     /**
      * Wrapper for ClientboundLevelChunkPacketData
@@ -123,13 +124,13 @@ public final class WrappedLevelChunkData {
          * @return a newly created wrapper
          */
         public static ChunkData fromValues(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            if(levelChunkPacketDataConstructor == null) {
+            if (levelChunkPacketDataConstructor == null) {
                 levelChunkPacketDataConstructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
             }
 
             ConstructorAccessor trickySerializer = StructureCache.getTrickDataSerializerOrNull();
 
-            if(trickySerializer == null) {
+            if (trickySerializer == null) {
                 throw new UnsupportedOperationException("TrickySerializer is not supported");
             }
 
@@ -355,16 +356,16 @@ public final class WrappedLevelChunkData {
          */
         public int getSectionX() {
             return (int) PACKED_XZ_ACCESSOR.get(handle) >> 4;
-       }
+        }
 
         /**
          * Sets the section-relative X-coordinate of the block entity
          *
          * @param sectionX the section-relative x coordinate
          */
-       public void setSectionX(int sectionX) {
+        public void setSectionX(int sectionX) {
             PACKED_XZ_ACCESSOR.set(handle, sectionX << 4 | getSectionZ());
-       }
+        }
 
         /**
          * The section-relative Z-coordinate of the block entity.
@@ -444,10 +445,10 @@ public final class WrappedLevelChunkData {
         /**
          * Creates a wrapper using raw values
          *
-         * @param sectionX       the section-relative X-coordinate of the block entity.
-         * @param sectionZ       the section-relative Z-coordinate of the block entity.
-         * @param y              the Y-coordinate of the block entity.
-         * @param typeKey        the minecraft key of the block entity type.
+         * @param sectionX the section-relative X-coordinate of the block entity.
+         * @param sectionZ the section-relative Z-coordinate of the block entity.
+         * @param y        the Y-coordinate of the block entity.
+         * @param typeKey  the minecraft key of the block entity type.
          */
         public static BlockEntityInfo fromValues(int sectionX, int sectionZ, int y, MinecraftKey typeKey) {
             return fromValues(sectionX, sectionZ, y, typeKey, null);
