@@ -1592,7 +1592,7 @@ public final class MinecraftReflection {
 	private static Class<?> blockEntityInfoClass;
 
 	public static Class<?> getBlockEntityInfoClass() {
-		if(blockEntityInfoClass == null) {
+		if (blockEntityInfoClass == null) {
 			blockEntityInfoClass = (Class<?>) ((ParameterizedType) FuzzyReflection.fromClass(getLevelChunkPacketDataClass(),
 					true).getFieldListByType(List.class).get(0).getGenericType()).getActualTypeArguments()[0];
 		}
