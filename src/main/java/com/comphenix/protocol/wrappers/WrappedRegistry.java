@@ -136,8 +136,4 @@ public class WrappedRegistry {
 	public static WrappedRegistry getRegistry(Class<?> type) {
 		return REGISTRY.get(type);
 	}
-
-    public static WrappedRegistry getBlockEntityTypeRegistry() {
-        return getRegistry(MinecraftReflection.getBlockEntityTypeClass());
-    }
 }

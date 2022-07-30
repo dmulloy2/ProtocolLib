@@ -93,7 +93,7 @@ public class WrappedLevelChunkDataTest {
             return true;
         }
 
-        if (raw == null ^ virtual == null) {
+        if (raw == null || virtual == null) {
             return false;
         }
 

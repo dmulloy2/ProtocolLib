@@ -98,11 +98,27 @@ public final class WrappedLevelChunkData {
         /**
          * All block entities of this chunk. Supports removal and other edits.
          *
-         * @return a mutable list containing {@link  BlockEntityInfo}
+         * @return a mutable (remove only) list containing {@link  BlockEntityInfo}
          */
         public List<BlockEntityInfo> getBlockEntityInfo() {
             //noinspection StaticPseudoFunctionalStyleMethod
             return Lists.transform((List<?>) BLOCK_ENTITIES_DATA_ACCESSOR.get(handle), BlockEntityInfo::new);
+        }
+
+        /**
+         * Sets the block entities of this chunk. Supports removal and other edits.
+         *
+         * @param blockEntityInfo the new list of block entities
+         */
+        public void setBlockEntityInfo(List<BlockEntityInfo> blockEntityInfo) {
+            List handleList = new ArrayList<>(blockEntityInfo.size());
+
+            for (BlockEntityInfo info : blockEntityInfo) {
+                //noinspection unchecked
+                handleList.add(info.getHandle());
+            }
+
+            BLOCK_ENTITIES_DATA_ACCESSOR.set(handle, handleList);
         }
 
         /**
@@ -114,17 +130,13 @@ public final class WrappedLevelChunkData {
          * @return a newly created wrapper
          */
         public static ChunkData fromValues(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            Object instance = LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.getTrickDataSerializerOrNull().invoke(new ZeroBuffer()), 0, 0);
+            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.getTrickDataSerializerOrNull().invoke(new ZeroBuffer()), 0, 0));
 
-            BUFFER_ACCESSOR.set(instance, buffer);
-            HEIGHTMAPS_ACCESSOR.set(instance, NbtFactory.fromBase(heightmapsTag).getHandle());
+            data.setHeightmapsTag(heightmapsTag);
+            data.setBuffer(buffer);
+            data.setBlockEntityInfo(blockEntityInfo);
 
-            for (BlockEntityInfo entityInfo : blockEntityInfo) {
-                //noinspection unchecked
-                ((List) BLOCK_ENTITIES_DATA_ACCESSOR.get(instance)).add(entityInfo.getHandle());
-            }
-
-            return new ChunkData(instance);
+            return new ChunkData(data);
         }
     }
 
@@ -137,8 +149,8 @@ public final class WrappedLevelChunkData {
 
         private static final ConstructorAccessor LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR;
 
-        private static final List<FieldAccessor> BIT_SET_ACCESSORS;
-        private static final List<FieldAccessor> BYTE_ARRAY_LIST_ACCESSORS;
+        private static final FieldAccessor[] BIT_SET_ACCESSORS;
+        private static final FieldAccessor[] BYTE_ARRAY_LIST_ACCESSORS;
 
         private static final FieldAccessor TRUST_EDGES_ACCESSOR;
 
@@ -147,25 +159,11 @@ public final class WrappedLevelChunkData {
 
             LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE,
                     MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
-            BIT_SET_ACCESSORS = asFieldAccessors(reflection.getFieldList(FuzzyFieldContract.newBuilder()
-                    .typeExact(BitSet.class)
-                    .build()));
-            BYTE_ARRAY_LIST_ACCESSORS = asFieldAccessors(reflection.getFieldList(FuzzyFieldContract.newBuilder()
-                    .typeExact(List.class)
-                    .build()));
+            BIT_SET_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, BitSet.class, true);
+            BYTE_ARRAY_LIST_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, List.class, true);
             TRUST_EDGES_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
                     .typeExact(boolean.class)
                     .build()));
-        }
-
-        private static List<FieldAccessor> asFieldAccessors(List<Field> fields) {
-            List<FieldAccessor> accessors = new ArrayList<>(fields.size());
-
-            for (Field field : fields) {
-                accessors.add(Accessors.getFieldAccessor(field));
-            }
-
-            return accessors;
         }
 
         public LightData(Object handle) {
@@ -180,7 +178,7 @@ public final class WrappedLevelChunkData {
          * @return a {@link BitSet}
          */
         public BitSet getSkyYMask() {
-            return (BitSet) BIT_SET_ACCESSORS.get(0).get(handle);
+            return (BitSet) BIT_SET_ACCESSORS[0].get(handle);
         }
 
         /**
@@ -189,7 +187,7 @@ public final class WrappedLevelChunkData {
          * @param skyYMask the new mask
          */
         public void setSkyYMask(BitSet skyYMask) {
-            BIT_SET_ACCESSORS.get(0).set(handle, skyYMask);
+            BIT_SET_ACCESSORS[0].set(handle, skyYMask);
         }
 
         /**
@@ -198,7 +196,7 @@ public final class WrappedLevelChunkData {
          * @return a {@link BitSet}
          */
         public BitSet getBlockYMask() {
-            return (BitSet) BIT_SET_ACCESSORS.get(1).get(handle);
+            return (BitSet) BIT_SET_ACCESSORS[1].get(handle);
         }
 
         /**
@@ -207,7 +205,7 @@ public final class WrappedLevelChunkData {
          * @param blockYMask the new mask
          */
         public void setBlockYMask(BitSet blockYMask) {
-            BIT_SET_ACCESSORS.get(1).set(handle, blockYMask);
+            BIT_SET_ACCESSORS[1].set(handle, blockYMask);
         }
 
         /**
@@ -216,7 +214,7 @@ public final class WrappedLevelChunkData {
          * @return a {@link BitSet}
          */
         public BitSet getEmptySkyYMask() {
-            return (BitSet) BIT_SET_ACCESSORS.get(2).get(handle);
+            return (BitSet) BIT_SET_ACCESSORS[2].get(handle);
         }
 
         /**
@@ -225,7 +223,7 @@ public final class WrappedLevelChunkData {
          * @param emptySkyYMask the new mask
          */
         public void setEmptySkyYMask(BitSet emptySkyYMask) {
-            BIT_SET_ACCESSORS.get(2).set(handle, emptySkyYMask);
+            BIT_SET_ACCESSORS[2].set(handle, emptySkyYMask);
         }
 
         /**
@@ -234,7 +232,7 @@ public final class WrappedLevelChunkData {
          * @return a {@link BitSet}
          */
         public BitSet getEmptyBlockYMask() {
-            return (BitSet) BIT_SET_ACCESSORS.get(3).get(handle);
+            return (BitSet) BIT_SET_ACCESSORS[3].get(handle);
         }
 
         /**
@@ -243,7 +241,7 @@ public final class WrappedLevelChunkData {
          * @param emptyBlockYMask the new mask
          */
         public void setEmptyBlockYMask(BitSet emptyBlockYMask) {
-            BIT_SET_ACCESSORS.get(3).set(handle, emptyBlockYMask);
+            BIT_SET_ACCESSORS[3].set(handle, emptyBlockYMask);
         }
 
         /**
@@ -253,7 +251,7 @@ public final class WrappedLevelChunkData {
          */
         public List<byte[]> getSkyUpdates() {
             //noinspection unchecked
-            return (List<byte[]>) BYTE_ARRAY_LIST_ACCESSORS.get(0).get(handle);
+            return (List<byte[]>) BYTE_ARRAY_LIST_ACCESSORS[0].get(handle);
         }
 
         /**
@@ -263,7 +261,7 @@ public final class WrappedLevelChunkData {
          */
         public List<byte[]> getBlockUpdates() {
             //noinspection unchecked
-            return (List<byte[]>) BYTE_ARRAY_LIST_ACCESSORS.get(1).get(handle);
+            return (List<byte[]>) BYTE_ARRAY_LIST_ACCESSORS[1].get(handle);
         }
 
         /**
@@ -286,17 +284,17 @@ public final class WrappedLevelChunkData {
 
         public static LightData fromValues(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
                                            List<byte[]> skyUpdates, List<byte[]> blockUpdates, boolean trustEdges) {
-            Object instance = LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()), 0, 0);
+            LightData data = new LightData(LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()), 0, 0));
 
-            TRUST_EDGES_ACCESSOR.set(instance, trustEdges);
-            BIT_SET_ACCESSORS.get(0).set(instance, skyYMask);
-            BIT_SET_ACCESSORS.get(1).set(instance, blockYMask);
-            BIT_SET_ACCESSORS.get(2).set(instance, emptySkyYMask);
-            BIT_SET_ACCESSORS.get(3).set(instance, emptyBlockYMask);
-            BYTE_ARRAY_LIST_ACCESSORS.get(0).set(instance, skyUpdates);
-            BYTE_ARRAY_LIST_ACCESSORS.get(1).set(instance, blockUpdates);
+            data.setTrustEdges(trustEdges);
+            data.setSkyYMask(skyYMask);
+            data.setBlockYMask(blockYMask);
+            data.setEmptySkyYMask(emptySkyYMask);
+            data.setEmptyBlockYMask(emptyBlockYMask);
+            data.getSkyUpdates().addAll(skyUpdates);
+            data.getBlockUpdates().addAll(blockUpdates);
 
-            return new LightData(instance);
+            return data;
         }
     }
 
@@ -308,6 +306,7 @@ public final class WrappedLevelChunkData {
     public static class BlockEntityInfo extends AbstractWrapper {
 
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getBlockEntityInfoClass();
+        private static final WrappedRegistry REGISTRY = WrappedRegistry.getRegistry(MinecraftReflection.getBlockEntityTypeClass());
 
         private static final ConstructorAccessor BLOCK_ENTITY_INFO_CONSTRUCTOR;
 
@@ -398,7 +397,7 @@ public final class WrappedLevelChunkData {
          * @return the registry key.
          */
         public MinecraftKey getTypeKey() {
-            return WrappedRegistry.getBlockEntityTypeRegistry().getKey(TYPE_ACCESSOR.get(handle));
+            return REGISTRY.getKey(TYPE_ACCESSOR.get(handle));
         }
 
         /**
@@ -407,7 +406,7 @@ public final class WrappedLevelChunkData {
          * @param typeKey the new block entity type key
          */
         public void setTypeKey(MinecraftKey typeKey) {
-            TYPE_ACCESSOR.set(handle, WrappedRegistry.getBlockEntityTypeRegistry().get(typeKey));
+            TYPE_ACCESSOR.set(handle, REGISTRY.get(typeKey));
         }
 
         /**
@@ -456,7 +455,7 @@ public final class WrappedLevelChunkData {
             return new BlockEntityInfo(BLOCK_ENTITY_INFO_CONSTRUCTOR.invoke(
                     sectionX << 4 | sectionZ,
                     y,
-                    WrappedRegistry.getBlockEntityTypeRegistry().get(typeKey),
+                    REGISTRY.get(typeKey),
                     additionalData == null ? null : NbtFactory.fromBase(additionalData).getHandle()
             ));
         }
