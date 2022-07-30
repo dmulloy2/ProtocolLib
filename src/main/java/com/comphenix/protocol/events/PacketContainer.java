@@ -17,7 +17,6 @@
 
 package com.comphenix.protocol.events;
 
-import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.logging.Level;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -62,7 +60,7 @@ import io.netty.buffer.ByteBuf;
  * @author Kristian
  */
 @SuppressWarnings("unused")
-public class PacketContainer extends AbstractStructure implements Serializable { // TODO: remove Serializable
+public class PacketContainer extends AbstractStructure implements Serializable {
 	private static final long serialVersionUID = 3;
 
 	private PacketType type;
@@ -269,7 +267,6 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 		};
 	}
 
-	@Deprecated
 	private void writeObject(ObjectOutputStream output) throws IOException {
 		// Default serialization
 		output.defaultWriteObject();
@@ -285,7 +282,6 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 		}
 	}
 
-	@Deprecated
 	private void readObject(ObjectInputStream input) throws ClassNotFoundException, IOException {
 		// Default deserialization
 		input.defaultReadObject();
@@ -296,20 +292,24 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 			int dataLength = input.readInt();
 
 			ByteBuf byteBuf = (ByteBuf) MinecraftReflection.createPacketDataSerializer(dataLength);
-			byteBuf.writeBytes(input, dataLength);
+			while (true) {
+				// ObjectInputStream only reads a specific amount of bytes before moving the cursor forwards and
+				// allows reading the next byte chunk. So we need to read until the data is gone from the stream and
+				// fully transferred into the buffer.
+				int transferredBytes = byteBuf.writeBytes(input, dataLength);
+
+				// check if we reached the end of the stream, or if the stream has no more data available
+				dataLength -= transferredBytes;
+				if (dataLength <= 0 || transferredBytes <= 0) {
+					break;
+				}
+			}
 
 			Object packet = deserializeFromBuffer(this.type, byteBuf);
 
 			this.handle = packet;
 			this.structureModifier = this.structureModifier.withTarget(packet);
 		}
-
-		ProtocolLogger.log(
-				Level.SEVERE,
-				"Using ObjectInputStream to deserialize a PacketContainer is deprecated and will be removed in a "
-						+ "future version as it can lead to unexpected results! Please DO NOT report this to ProtocolLib "
-						+ "this is not a bug! Report it to the plugin you see in the following stack trace:",
-				new Throwable());
 	}
 
 	/**

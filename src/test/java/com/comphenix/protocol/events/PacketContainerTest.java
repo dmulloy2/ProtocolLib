@@ -36,6 +36,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -61,6 +62,7 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
+import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -71,6 +73,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -381,7 +384,6 @@ public class PacketContainerTest {
 	}
 
 	@Test
-	@Deprecated // TODO: remove when PacketContainer is no longer Serializable
 	public void testSerialization() {
 		PacketContainer useItem = new PacketContainer(PacketType.Play.Client.USE_ITEM);
 		useItem.getMovingBlockPositions().write(0, new MovingObjectPositionBlock(
@@ -403,6 +405,32 @@ public class PacketContainerTest {
 		assertEquals(1, pos.getBlockPosition().getY());
 		assertEquals(Direction.DOWN, pos.getDirection());
 		assertFalse(pos.isInsideBlock());
+	}
+
+	@Test
+	public void testBigPacketSerialization() {
+		PacketContainer payload = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
+		payload.getMinecraftKeys().write(0, new com.comphenix.protocol.wrappers.MinecraftKey("test"));
+
+		byte[] randomData = new byte[8192];
+		ThreadLocalRandom.current().nextBytes(randomData);
+
+		ByteBuf serializer = (ByteBuf) MinecraftReflection.createPacketDataSerializer(randomData.length);
+		serializer.writeBytes(randomData);
+
+		payload.getModifier().withType(MinecraftReflection.getPacketDataSerializerClass()).write(0, serializer);
+
+		PacketContainer cloned = SerializableCloner.clone(payload);
+		com.comphenix.protocol.wrappers.MinecraftKey clonedKey = cloned.getMinecraftKeys().read(0);
+
+		byte[] clonedData = new byte[randomData.length];
+		ByteBuf clonedBuffer = (ByteBuf) cloned.getModifier()
+				.withType(MinecraftReflection.getPacketDataSerializerClass())
+				.read(0);
+		clonedBuffer.readBytes(clonedData);
+
+		assertEquals("minecraft:test", clonedKey.getFullKey());
+		assertArrayEquals(randomData, clonedData);
 	}
 
 	@Test
