@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.utility;
 
+import io.netty.buffer.Unpooled;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -1434,11 +1435,22 @@ public final class MinecraftReflection {
 	 */
 	public static Object getPacketDataSerializer(Object buffer) {
 		try {
+			// TODO: move this to MinecraftMethods, or at least, cache the constructor accessor
 			Class<?> packetSerializer = getPacketDataSerializerClass();
 			return packetSerializer.getConstructor(getByteBufClass()).newInstance(buffer);
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
+	}
+
+	public static Object createPacketDataSerializer(int initialSize) {
+		// validate the initial size
+		if (initialSize <= 0) {
+			initialSize = 256;
+		}
+
+		Object buffer = Unpooled.buffer(initialSize);
+		return getPacketDataSerializer(buffer);
 	}
 
 	public static Class<?> getNbtTagTypes() {
