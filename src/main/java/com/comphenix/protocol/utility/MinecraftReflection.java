@@ -17,7 +17,11 @@
 
 package com.comphenix.protocol.utility;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +36,11 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.*;
+import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 
 import org.bukkit.Bukkit;
@@ -1589,14 +1597,16 @@ public final class MinecraftReflection {
 		return getMinecraftClass("world.level.block.entity.BlockEntityType", "world.level.block.entity.TileEntityTypes", "TileEntityTypes");
 	}
 
-	private static Class<?> blockEntityInfoClass;
-
 	public static Class<?> getBlockEntityInfoClass() {
-		if (blockEntityInfoClass == null) {
-			blockEntityInfoClass = (Class<?>) ((ParameterizedType) FuzzyReflection.fromClass(getLevelChunkPacketDataClass(),
+		try {
+			return getMinecraftClass("BlockEntityInfo");
+		} catch (RuntimeException expected) {
+			Class<?> infoClass = (Class<?>) ((ParameterizedType) FuzzyReflection.fromClass(getLevelChunkPacketDataClass(),
 					true).getFieldListByType(List.class).get(0).getGenericType()).getActualTypeArguments()[0];
-		}
 
-		return blockEntityInfoClass;
+			setMinecraftClass("BlockEntityInfo", infoClass);
+
+			return infoClass;
+		}
 	}
 }
