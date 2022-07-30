@@ -21,6 +21,8 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.util.ReferenceCountUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -241,6 +243,8 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 		Object serialized = this.serializeToBuffer();
 		Object deserialized = deserializeFromBuffer(this.type, serialized);
 
+		// ensure that we don't leak memory
+		ReferenceCountUtil.safeRelease(serialized);
 		return new PacketContainer(this.type, deserialized);
 	}
 
@@ -277,6 +281,9 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 			output.writeBoolean(true);
 			output.writeInt(buffer.readableBytes());
 			buffer.readBytes(output, buffer.readableBytes());
+
+			// ensure that we don't leak memory
+			ReferenceCountUtil.safeRelease(buffer);
 		} else {
 			output.writeBoolean(false);
 		}
@@ -305,7 +312,9 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 				}
 			}
 
+			// deserialize & ensure that we don't leak memory
 			Object packet = deserializeFromBuffer(this.type, byteBuf);
+			ReferenceCountUtil.safeRelease(byteBuf);
 
 			this.handle = packet;
 			this.structureModifier = this.structureModifier.withTarget(packet);
