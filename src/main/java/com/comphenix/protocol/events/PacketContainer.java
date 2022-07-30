@@ -324,7 +324,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 
 	// ---- Cloning
 
-	private static Object deserializeFromBuffer(PacketType packetType, Object buffer) {
+	public static Object deserializeFromBuffer(PacketType packetType, Object buffer) {
 		if (buffer == null) {
 			return null;
 		}
@@ -370,7 +370,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 		return deserializer.apply(buffer);
 	}
 
-	private Object serializeToBuffer() {
+	public Object serializeToBuffer() {
 		Object handle = this.getHandle();
 		if (handle == null) {
 			return null;

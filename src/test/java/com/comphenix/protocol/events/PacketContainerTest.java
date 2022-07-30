@@ -381,6 +381,7 @@ public class PacketContainerTest {
 	}
 
 	@Test
+	@Deprecated // TODO: remove when PacketContainer is no longer Serializable
 	public void testSerialization() {
 		PacketContainer useItem = new PacketContainer(PacketType.Play.Client.USE_ITEM);
 		useItem.getMovingBlockPositions().write(0, new MovingObjectPositionBlock(
