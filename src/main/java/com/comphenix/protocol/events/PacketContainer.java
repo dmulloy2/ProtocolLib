@@ -58,7 +58,7 @@ import io.netty.buffer.ByteBuf;
 
 /**
  * Represents a Minecraft packet indirectly.
- * 
+ *
  * @author Kristian
  */
 @SuppressWarnings("unused")
@@ -81,7 +81,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 			.andThen(CollectionCloner.class)
 			.andThen(getSpecializedDeepClonerFactory())
 			.build();
-	
+
 	private static final AggregateCloner SHALLOW_CLONER = AggregateCloner
 			.newBuilder()
 			.instanceProvider(StructureCache::newPacket)
@@ -95,7 +95,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 				}};
 			})
 			.build();
-	
+
 	// Packets that cannot be cloned by our default deep cloner
 	private static final Set<PacketType> FAST_CLONE_UNSUPPORTED = Sets.newHashSet(
 		PacketType.Play.Server.BOSS,
@@ -111,7 +111,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 	public PacketContainer(PacketType type) {
 		this(type, StructureCache.newPacket(type));
 	}
-	
+
 	/**
 	 * Creates a packet container for an existing packet.
 	 * @param type - Type of the given packet.
@@ -120,7 +120,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 	public PacketContainer(PacketType type, Object handle) {
 		this(type, handle, StructureCache.getStructure(type).withTarget(handle));
 	}
-	
+
 	/**
 	 * Creates a packet container for an existing packet.
 	 * @param type - Type of the given packet.
@@ -129,7 +129,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 	 */
 	public PacketContainer(PacketType type, Object handle, StructureModifier<Object> structure) {
 		super(handle, structure);
-		
+
 		this.type = type;
 
 		setDefaults();
@@ -152,13 +152,13 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 		PacketType type = PacketType.fromClass(packet.getClass());
 		return new PacketContainer(type, packet);
 	}
-	
+
 	/**
 	 * For serialization.
 	 */
 	protected PacketContainer() {
 	}
-	
+
 	/**
 	 * Retrieves the underlying Minecraft packet.
 	 * @return Underlying Minecraft packet.
@@ -166,7 +166,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 	public Object getHandle() {
 		return handle;
 	}
-	
+
 	/**
 	 * Retrieves the generic structure modifier for this packet.
 	 * @return Structure modifier.
@@ -198,20 +198,20 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 	public PacketType getType() {
 		return type;
 	}
-	
+
 	/**
 	 * Create a shallow copy of the current packet.
 	 * <p>
 	 * This merely writes the content of each field to the new class directly,
 	 * without performing any expensive copies.
-	 * 
+	 *
 	 * @return A shallow copy of the current packet.
 	 */
 	public PacketContainer shallowClone() {
 		Object clonedPacket = SHALLOW_CLONER.clone(getHandle());
 		return new PacketContainer(getType(), clonedPacket);
 	}
-	
+
 	/**
 	 * Create a deep copy of the current packet.
 	 * <p>
@@ -219,33 +219,34 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 	 * known immutable objects and primitive types.
 	 * <p>
 	 * Note that the inflated buffers in packet 51 and 56 will be copied directly to save memory.
-	 * 
+	 *
 	 * @return A deep copy of the current packet.
 	 */
 	public PacketContainer deepClone() {
 		Object handle = this.getHandle();
-		if (handle == null) {
+		PacketType packetType = this.getType();
+		if (handle == null || packetType == null) {
 			// nothing to clone, just carry on (this should normally not happen)
 			return this;
 		}
 
 		// try fast cloning first
-		if (!FAST_CLONE_UNSUPPORTED.contains(this.type)) {
+		if (!FAST_CLONE_UNSUPPORTED.contains(packetType)) {
 			try {
 				Object cloned = DEEP_CLONER.clone(handle);
-				return new PacketContainer(this.type, cloned);
+				return new PacketContainer(packetType, cloned);
 			} catch (Exception ex) {
-				FAST_CLONE_UNSUPPORTED.add(this.type);
+				FAST_CLONE_UNSUPPORTED.add(packetType);
 			}
 		}
 
 		// Fall back on the slower alternative method of reading and writing back the packet
 		Object serialized = this.serializeToBuffer();
-		Object deserialized = deserializeFromBuffer(this.type, serialized);
+		Object deserialized = deserializeFromBuffer(packetType, serialized);
 
 		// ensure that we don't leak memory
 		ReferenceCountUtil.safeRelease(serialized);
-		return new PacketContainer(this.type, deserialized);
+		return new PacketContainer(packetType, deserialized);
 	}
 
 	// To save space, we'll skip copying the inflated buffers in packet 51 and 56
@@ -435,7 +436,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 	private Method getMethodLazily(ConcurrentMap<Class<?>, Method> lookup,
 								   Class<?> handleClass, String methodName, Class<?> parameterClass) {
 		Method method = lookup.get(handleClass);
-		
+
 		// Atomic operation
 		if (method == null) {
 			Method initialized = FuzzyReflection.fromClass(handleClass).getMethod(
@@ -445,13 +446,13 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 							returnTypeVoid().
 							build());
 			method = lookup.putIfAbsent(handleClass, initialized);
-			
+
 			// Use our version if we succeeded
 			if (method == null) {
 				method = initialized;
 			}
 		}
-		
+
 		return method;
 	}
 
