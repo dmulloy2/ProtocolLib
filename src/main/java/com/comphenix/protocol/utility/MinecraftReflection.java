@@ -35,9 +35,13 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.*;
+import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-
+import io.netty.buffer.Unpooled;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Server;
@@ -1434,11 +1438,22 @@ public final class MinecraftReflection {
 	 */
 	public static Object getPacketDataSerializer(Object buffer) {
 		try {
+			// TODO: move this to MinecraftMethods, or at least, cache the constructor accessor
 			Class<?> packetSerializer = getPacketDataSerializerClass();
 			return packetSerializer.getConstructor(getByteBufClass()).newInstance(buffer);
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot construct packet serializer.", e);
 		}
+	}
+
+	public static Object createPacketDataSerializer(int initialSize) {
+		// validate the initial size
+		if (initialSize <= 0) {
+			initialSize = 256;
+		}
+
+		Object buffer = Unpooled.buffer(initialSize);
+		return getPacketDataSerializer(buffer);
 	}
 
 	public static Class<?> getNbtTagTypes() {
