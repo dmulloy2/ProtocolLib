@@ -17,7 +17,6 @@
 
 package com.comphenix.protocol.utility;
 
-import io.netty.buffer.Unpooled;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -36,9 +35,13 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.*;
+import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-
+import io.netty.buffer.Unpooled;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Server;
