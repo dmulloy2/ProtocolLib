@@ -31,14 +31,19 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
 		ctx.fireChannelActive();
 
 		// the channel is now active, at this point minecraft has eventually prepared everything in the connection
-		// of the player so that we can come in and hook as we are after the minecraft handler
-		try {
-			this.factory.fromChannel(ctx.channel(), this.listener, this.playerFactory).inject();
-		} catch (Exception exception) {
-			this.listener.getReporter().reportDetailed(this.listener, Report.newBuilder(CANNOT_INJECT_CHANNEL)
-					.messageParam(ctx.channel())
-					.error(exception)
-					.build());
+		// of the player so that we can come in and hook as we are after the minecraft handler.
+		// We're first checking if the factory is still open, just might be a delay between accepting the connection
+		// (which adds this handler to the pipeline) and the actual channelActive call. If the injector is closed at
+		// that point we might accidentally trigger class loads which result in exceptions.
+		if (!this.factory.isClosed()) {
+			try {
+				this.factory.fromChannel(ctx.channel(), this.listener, this.playerFactory).inject();
+			} catch (Exception exception) {
+				this.listener.getReporter().reportDetailed(this, Report.newBuilder(CANNOT_INJECT_CHANNEL)
+						.messageParam(ctx.channel())
+						.error(exception)
+						.build());
+			}
 		}
 
 		// remove this handler from the pipeline now to prevent multiple injections
