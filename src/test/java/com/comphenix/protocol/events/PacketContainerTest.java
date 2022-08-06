@@ -15,18 +15,16 @@
  */
 package com.comphenix.protocol.events;
 
-import static com.comphenix.protocol.utility.TestUtils.assertItemCollectionsEqual;
-import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
@@ -36,6 +34,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -55,22 +54,13 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedSaltedSignature;
 import com.comphenix.protocol.wrappers.WrappedRegistry;
+import com.comphenix.protocol.wrappers.WrappedSaltedSignature;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -100,6 +90,19 @@ import org.bukkit.util.Vector;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static com.comphenix.protocol.utility.TestUtils.assertItemCollectionsEqual;
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
+import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PacketContainerTest {
 
@@ -402,6 +405,32 @@ public class PacketContainerTest {
 		assertEquals(1, pos.getBlockPosition().getY());
 		assertEquals(Direction.DOWN, pos.getDirection());
 		assertFalse(pos.isInsideBlock());
+	}
+
+	@Test
+	public void testBigPacketSerialization() {
+		PacketContainer payload = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
+		payload.getMinecraftKeys().write(0, new com.comphenix.protocol.wrappers.MinecraftKey("test"));
+
+		byte[] randomData = new byte[8192];
+		ThreadLocalRandom.current().nextBytes(randomData);
+
+		ByteBuf serializer = (ByteBuf) MinecraftReflection.createPacketDataSerializer(randomData.length);
+		serializer.writeBytes(randomData);
+
+		payload.getModifier().withType(MinecraftReflection.getPacketDataSerializerClass()).write(0, serializer);
+
+		PacketContainer cloned = SerializableCloner.clone(payload);
+		com.comphenix.protocol.wrappers.MinecraftKey clonedKey = cloned.getMinecraftKeys().read(0);
+
+		byte[] clonedData = new byte[randomData.length];
+		ByteBuf clonedBuffer = (ByteBuf) cloned.getModifier()
+				.withType(MinecraftReflection.getPacketDataSerializerClass())
+				.read(0);
+		clonedBuffer.readBytes(clonedData);
+
+		assertEquals("minecraft:test", clonedKey.getFullKey());
+		assertArrayEquals(randomData, clonedData);
 	}
 
 	@Test
