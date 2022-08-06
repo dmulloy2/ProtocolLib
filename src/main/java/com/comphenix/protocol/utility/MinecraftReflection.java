@@ -21,6 +21,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1593,5 +1594,30 @@ public final class MinecraftReflection {
 		// Jackpot - two classes at the same time!
 		setMinecraftClass("MinecraftServer", params[0]);
 		setMinecraftClass("PlayerList", params[1]);
+	}
+
+	public static Class<?> getLevelChunkPacketDataClass() {
+		return getNullableNMS("network.protocol.game.ClientboundLevelChunkPacketData");
+	}
+
+	public static Class<?> getLightUpdatePacketDataClass() {
+		return getNullableNMS("network.protocol.game.ClientboundLightUpdatePacketData");
+	}
+
+	public static Class<?> getBlockEntityTypeClass() {
+		return getMinecraftClass("world.level.block.entity.BlockEntityType", "world.level.block.entity.TileEntityTypes", "TileEntityTypes");
+	}
+
+	public static Class<?> getBlockEntityInfoClass() {
+		try {
+			return getMinecraftClass("BlockEntityInfo");
+		} catch (RuntimeException expected) {
+			Class<?> infoClass = (Class<?>) ((ParameterizedType) FuzzyReflection.fromClass(getLevelChunkPacketDataClass(),
+					true).getFieldListByType(List.class).get(0).getGenericType()).getActualTypeArguments()[0];
+
+			setMinecraftClass("BlockEntityInfo", infoClass);
+
+			return infoClass;
+		}
 	}
 }

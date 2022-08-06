@@ -610,6 +610,14 @@ public class BukkitConverters {
         return ignoreNull(handle(WrappedSaltedSignature::getHandle, WrappedSaltedSignature::new, WrappedSaltedSignature.class));
     }
 
+	public static EquivalentConverter<WrappedLevelChunkData.ChunkData> getWrappedChunkDataConverter() {
+		return ignoreNull(handle(WrappedLevelChunkData.ChunkData::getHandle, WrappedLevelChunkData.ChunkData::new, WrappedLevelChunkData.ChunkData.class));
+	}
+
+	public static EquivalentConverter<WrappedLevelChunkData.LightData> getWrappedLightDataConverter() {
+		return ignoreNull(handle(WrappedLevelChunkData.LightData::getHandle, WrappedLevelChunkData.LightData::new, WrappedLevelChunkData.LightData.class));
+	}
+
 	/**
 	 * Retrieve a converter for watchable objects and the respective wrapper.
 	 * @return A watchable object converter.

@@ -65,9 +65,9 @@ public class StructureCache {
 							return accessor.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()));
 						} catch (Exception exception) {
 							// try trick nms around as they want a non-null compound in the map_chunk packet constructor
-							ConstructorAccessor trickyDataSerializerAccessor = getTrickDataSerializerOrNull();
-							if (trickyDataSerializerAccessor != null) {
-								return accessor.invoke(trickyDataSerializerAccessor.invoke(new ZeroBuffer()));
+							Object trickyDataSerializer = getTrickDataSerializerOrNull();
+							if (trickyDataSerializer != null) {
+								return accessor.invoke(trickyDataSerializer);
 							}
 							// the tricks are over
 							throw new IllegalArgumentException("Unable to create packet " + clazz, exception);
@@ -127,7 +127,7 @@ public class StructureCache {
 	 *
 	 * @return an accessor to a constructor which creates a data serializer.
 	 */
-	private static ConstructorAccessor getTrickDataSerializerOrNull() {
+	public static Object getTrickDataSerializerOrNull() {
 		if (TRICKED_DATA_SERIALIZER == null && !TRICK_TRIED) {
 			// ensure that we only try once to create the class
 			TRICK_TRIED = true;
@@ -152,6 +152,7 @@ public class StructureCache {
 				// can happen if unsupported
 			}
 		}
-		return TRICKED_DATA_SERIALIZER;
+
+		return TRICKED_DATA_SERIALIZER == null ? null : TRICKED_DATA_SERIALIZER.invoke(new ZeroBuffer());
 	}
 }

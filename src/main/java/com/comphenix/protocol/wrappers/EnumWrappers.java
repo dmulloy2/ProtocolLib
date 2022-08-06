@@ -400,7 +400,7 @@ public abstract class EnumWrappers {
 		 * @return Wrapped {@link EntityPose}
 		 */
 		public static EntityPose fromNms(Object nms) {
-			if(POSE_CONVERTER == null) {
+			if (POSE_CONVERTER == null) {
 				throw new IllegalStateException("EntityPose is only available in Minecraft version 1.13 +");
 			}
 			return POSE_CONVERTER.getSpecific(nms);
@@ -408,7 +408,7 @@ public abstract class EnumWrappers {
 		
 		/** @return net.minecraft.server.EntityPose enum equivalent to this wrapper enum */
 		public Object toNms() {
-			if(POSE_CONVERTER == null) {
+			if (POSE_CONVERTER == null) {
 				throw new IllegalStateException("EntityPose is only available in Minecraft version 1.13 +");
 			}
 			return POSE_CONVERTER.getGeneric(this);
@@ -784,7 +784,7 @@ public abstract class EnumWrappers {
 	 * @return {@link EnumConverter} or null (if bellow 1.13 / nms EnumPose class cannot be found)
 	 */
 	public static EquivalentConverter<EntityPose> getEntityPoseConverter() {
-		if(getEntityPoseClass() == null) return null;
+		if (getEntityPoseClass() == null) return null;
 		return new EnumConverter<>(getEntityPoseClass(), EntityPose.class);
 	}
 

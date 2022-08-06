@@ -18,6 +18,7 @@ package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Constructor;
 import java.util.Locale;
+import java.util.Objects;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -110,6 +111,23 @@ public class MinecraftKey {
 	@Deprecated
 	public String getEnumFormat() {
 		return key.toUpperCase(Locale.ENGLISH).replace(".", "_");
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		MinecraftKey that = (MinecraftKey) o;
+		return Objects.equals(prefix, that.prefix) && Objects.equals(key, that.key);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(prefix, key);
 	}
 
 	private static Constructor<?> constructor = null;

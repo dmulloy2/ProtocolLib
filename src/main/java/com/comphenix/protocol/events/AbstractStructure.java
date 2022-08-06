@@ -930,6 +930,24 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for LevelChunkPacketData in 1.18+
+     *
+     * @return The Structure Modifier
+     */
+    public StructureModifier<WrappedLevelChunkData.ChunkData> getLevelChunkData() {
+        return structureModifier.withType(MinecraftReflection.getLevelChunkPacketDataClass(), BukkitConverters.getWrappedChunkDataConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for LightUpdatePacketData in 1.18+
+     *
+     * @return The Structure Modifier
+     */
+    public StructureModifier<WrappedLevelChunkData.LightData> getLightUpdateData() {
+        return structureModifier.withType(MinecraftReflection.getLightUpdatePacketDataClass(), BukkitConverters.getWrappedLightDataConverter());
+    }
+
+    /**
      * @return read/write structure for login encryption packets
      */
     public StructureModifier<Either<byte[], WrappedSaltedSignature>> getLoginSignatures() {
