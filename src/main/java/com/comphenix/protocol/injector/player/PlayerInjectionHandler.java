@@ -1,12 +1,13 @@
 package com.comphenix.protocol.injector.player;
 
+import java.util.Set;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import io.netty.channel.Channel;
-import java.util.Set;
 import org.bukkit.entity.Player;
 
 public interface PlayerInjectionHandler {
@@ -121,8 +122,6 @@ public interface PlayerInjectionHandler {
 
 	/**
 	 * Determine if we have packet listeners with the given type that must be executed on the main thread.
-	 * <p>
-	 * This only applies for onPacketSending(), as it makes certain guarantees.
 	 *
 	 * @param type - the packet type.
 	 * @return TRUE if we do, FALSE otherwise.
