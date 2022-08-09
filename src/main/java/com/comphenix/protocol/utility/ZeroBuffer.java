@@ -366,7 +366,7 @@ public class ZeroBuffer extends ByteBuf {
 
 	@Override
 	public short readUnsignedByte() {
-		return 0;
+		return 255;
 	}
 
 	@Override
