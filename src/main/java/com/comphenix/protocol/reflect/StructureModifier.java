@@ -269,13 +269,8 @@ public class StructureModifier<T> {
 			return null;
 		}
 
-		// don't try to convert null, just return null
+		// get the field value and convert it if needed
 		Object fieldValue = accessor.get(this.target);
-		if (fieldValue == null) {
-			return null;
-		}
-
-		// check if we need to convert the field value and do so if needed
 		return this.needConversion() ? this.converter.getSpecific(fieldValue) : (T) fieldValue;
 	}
 

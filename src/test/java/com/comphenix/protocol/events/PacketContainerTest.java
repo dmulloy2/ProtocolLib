@@ -35,6 +35,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.cloning.SerializableCloner;
+import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -797,7 +798,7 @@ public class PacketContainerTest {
 		assertArrayEquals(signature, read.getSignature());
 	}*/
 
-	private void assertPacketsEqual(PacketContainer constructed, PacketContainer cloned) {
+	private void assertPacketsEqualAndSerializable(PacketContainer constructed, PacketContainer cloned) {
 		StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
 		assertEquals(firstMod.size(), secondMod.size());
 
@@ -813,6 +814,9 @@ public class PacketContainerTest {
 				}
 			}
 		}
+
+		Object buffer = MinecraftReflection.createPacketDataSerializer(0);
+		MinecraftMethods.getPacketWriteByteBufMethod().invoke(cloned.getHandle(), buffer);
 	}
 
 	@Test
@@ -881,17 +885,17 @@ public class PacketContainerTest {
 
 				// Clone the packet all three ways
 				PacketContainer shallowCloned = constructed.shallowClone();
-				this.assertPacketsEqual(constructed, shallowCloned);
+				this.assertPacketsEqualAndSerializable(constructed, shallowCloned);
 
 				PacketContainer deepCloned = constructed.deepClone();
-				this.assertPacketsEqual(constructed, deepCloned);
+				this.assertPacketsEqualAndSerializable(constructed, deepCloned);
 
 				PacketContainer serializedCloned = SerializableCloner.clone(constructed);
 				if (type == PacketType.Play.Client.USE_ITEM || type == PacketType.Play.Client.BLOCK_PLACE) {
 					// shit fix - but what are we supposed to do :/
 					serializedCloned.getLongs().write(0, 0L);
 				}
-				this.assertPacketsEqual(constructed, serializedCloned);
+				this.assertPacketsEqualAndSerializable(constructed, serializedCloned);
 			} catch (Exception ex) {
 				Assertions.fail("Unable to clone " + type, ex);
 			}
