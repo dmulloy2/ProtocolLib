@@ -1,5 +1,19 @@
 package com.comphenix.protocol.injector.netty.channel;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -23,20 +37,9 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -211,7 +214,7 @@ public class NettyChannelInjector implements Injector {
 			this.wrappedChannel.pipeline().addAfter(
 					"decoder",
 					INTERCEPTOR_NAME,
-					new InboundPacketInterceptor(this, this.channelListener, this.networkProcessor));
+					new InboundPacketInterceptor(this, this.channelListener));
 
 			this.injected = true;
 			return true;
@@ -478,7 +481,57 @@ public class NettyChannelInjector implements Injector {
 	}
 
 	private void ensureInEventLoop(Runnable runnable) {
-		this.wrappedChannel.eventLoop().execute(runnable);
+		this.ensureInEventLoop(this.wrappedChannel.eventLoop(), runnable);
+	}
+
+	private void ensureInEventLoop(EventLoop eventLoop, Runnable runnable) {
+		if (eventLoop.inEventLoop()) {
+			runnable.run();
+		} else {
+			eventLoop.execute(runnable);
+		}
+	}
+
+	void processInboundPacket(ChannelHandlerContext ctx, Object packet, Class<?> packetClass) {
+		if (this.channelListener.hasMainThreadListener(packetClass) && !this.server.isPrimaryThread()) {
+			// not on the main thread but we are required to be - re-schedule the packet on the main thread
+			this.server.getScheduler().runTask(
+					this.injectionFactory.getPlugin(),
+					() -> this.processInboundPacket(ctx, packet, packetClass));
+			return;
+		}
+
+		if (ctx.channel().eventLoop().inEventLoop()) {
+			// we're in a netty event loop - prevent that from happening as it slows down netty
+			// in normal cases netty only has 4 processing threads available which is *really* bad when we're
+			// then blocking these (or more specifically a plugin) to process the incoming packet
+			// See https://twitter.com/fbrasisil/status/1163974576511995904 for a reference what can happen
+			this.server.getScheduler().runTaskAsynchronously(
+					this.injectionFactory.getPlugin(),
+					() -> this.processInboundPacket(ctx, packet, packetClass));
+			return;
+		}
+
+		// call packet handlers, a null result indicates that we shouldn't change anything
+		PacketEvent interceptionResult = this.channelListener.onPacketReceiving(this, packet, null);
+		if (interceptionResult == null) {
+			this.ensureInEventLoop(ctx.channel().eventLoop(), () -> ctx.fireChannelRead(packet));
+			return;
+		}
+
+		// fire the intercepted packet down the pipeline if it wasn't cancelled
+		if (!interceptionResult.isCancelled()) {
+			this.ensureInEventLoop(
+					ctx.channel().eventLoop(),
+					() -> ctx.fireChannelRead(interceptionResult.getPacket().getHandle()));
+
+			// check if there were any post events added the packet after we fired it down the pipeline
+			// we use this way as we don't want to construct a new network manager accidentally
+			NetworkMarker marker = NetworkMarker.getNetworkMarker(interceptionResult);
+			if (marker != null) {
+				this.networkProcessor.invokePostEvent(interceptionResult, marker);
+			}
+		}
 	}
 
 	<T> T processOutbound(T action, boolean markSeen) {
