@@ -1,10 +1,11 @@
 package com.comphenix.protocol.injector.packet;
 
+import java.util.Set;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import java.util.Set;
 import org.bukkit.entity.Player;
 
 /**
@@ -54,6 +55,14 @@ public interface PacketInjector {
 	 * @return The resulting packet event.
 	 */
 	PacketEvent packetReceived(PacketContainer packet, Player client);
+
+	/**
+	 * Determine if we have packet listeners with the given type that must be executed on the main thread.
+	 *
+	 * @param type - the packet type.
+	 * @return TRUE if we do, FALSE otherwise.
+	 */
+	boolean hasMainThreadListener(PacketType type);
 
 	/**
 	 * Perform any necessary cleanup before unloading ProtocolLib.
