@@ -78,9 +78,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.animal.FrogVariant;
-import net.minecraft.world.entity.npc.VillagerData;
-import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.npc.VillagerType;
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -858,9 +855,6 @@ public class PacketContainerTest {
 							new WrappedWatchableObject(
 									new WrappedDataWatcherObject(0, Registry.getItemStackSerializer(false)),
 									BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.WOODEN_AXE))),
-							new WrappedWatchableObject(
-									new WrappedDataWatcherObject(0, Registry.get(VillagerData.class)),
-									new VillagerData(VillagerType.b, VillagerProfession.c, 69)),
 							new WrappedWatchableObject(
 									new WrappedDataWatcherObject(0, Registry.get(CatVariant.class)),
 									CatVariant.a),
