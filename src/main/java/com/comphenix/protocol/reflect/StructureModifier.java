@@ -327,14 +327,10 @@ public class StructureModifier<T> {
 			return this;
 		}
 
-		// just write the value if the specific given one is null or no conversion is needed
-		if (value == null || !this.needConversion()) {
-			accessor.set(this.target, value);
-			return this;
-		}
-
 		// convert and write
-		accessor.set(this.target, this.converter.getGeneric(value));
+		Object fieldValue = this.needConversion() ? this.converter.getGeneric(value) : value;
+		accessor.set(this.target, fieldValue);
+
 		return this;
 	}
 
