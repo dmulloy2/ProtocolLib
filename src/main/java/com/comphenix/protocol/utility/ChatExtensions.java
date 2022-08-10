@@ -17,15 +17,16 @@
 
 package com.comphenix.protocol.utility;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.google.common.base.Strings;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -56,15 +57,24 @@ public final class ChatExtensions {
 		List<PacketContainer> packets = new ArrayList<>();
 		WrappedChatComponent[] components = WrappedChatComponent.fromChatMessage(message);
 		for (WrappedChatComponent component : components) {
-			PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
-			packet.getChatComponents().write(0, component);
+			PacketContainer packet;
+			if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+				// since 1.19 system chat is extracted into a separate packet
+				packet = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
 
-			// 1.12+
-			packet.getChatTypes().writeSafely(0, EnumWrappers.ChatType.SYSTEM);
-			// 1.8-1.12
-			packet.getBytes().writeSafely(0, (byte) 1);
-			// 1.16+
-			packet.getUUIDs().writeSafely(0, SERVER_UUID);
+				packet.getStrings().write(0, component.getJson());
+				packet.getBooleans().write(0, false);
+			} else {
+				packet = new PacketContainer(PacketType.Play.Server.CHAT);
+				packet.getChatComponents().write(0, component);
+
+				// 1.12+
+				packet.getChatTypes().writeSafely(0, EnumWrappers.ChatType.SYSTEM);
+				// 1.8-1.12
+				packet.getBytes().writeSafely(0, (byte) 1);
+				// 1.16+
+				packet.getUUIDs().writeSafely(0, SERVER_UUID);
+			}
 
 			packets.add(packet);
 		}
