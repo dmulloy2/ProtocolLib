@@ -28,6 +28,8 @@ import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -35,6 +37,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.lang.Validate;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -50,7 +54,8 @@ class EntityUtilities {
 	private static final EntityUtilities INSTANCE = new EntityUtilities();
 	private static final boolean NEW_TRACKER = MinecraftVersion.VILLAGE_UPDATE.atOrAbove();
 
-	private final Map<Class<?>, MethodAccessor> scanPlayersMethods = new HashMap<>();
+	private final Map<Class<?>, MethodAccessor> scanPlayersMethods = new ConcurrentHashMap<>();
+	private final Map<Class<?>, FieldAccessor> trackedEntityFields = new ConcurrentHashMap<>();
 
 	private FieldAccessor chunkMapField;
 	private FieldAccessor entityTrackerField;
@@ -86,16 +91,46 @@ class EntityUtilities {
 	}
 
 	public Entity getEntity(World world, int id) {
-		Object level = BukkitUnwrapper.getInstance().unwrapItem(world);
-		if (getEntity == null) {
-			Method entityGetter = FuzzyReflection.fromObject(level).getMethodByReturnTypeAndParameters(
-					"getEntity",
-					MinecraftReflection.getEntityClass(),
-					int.class);
-			getEntity = Accessors.getMethodAccessor(entityGetter);
+		// new tracker registers the entity before sending out any packets - we can use the supported getter method here
+		if (NEW_TRACKER) {
+			Object level = BukkitUnwrapper.getInstance().unwrapItem(world);
+			if (this.getEntity == null) {
+				Method entityGetter = FuzzyReflection.fromObject(level).getMethodByReturnTypeAndParameters(
+						"getEntity",
+						MinecraftReflection.getEntityClass(),
+						int.class);
+				this.getEntity = Accessors.getMethodAccessor(entityGetter);
+			}
+
+			Object entity = this.getEntity.invoke(level, id);
+			return (Entity) MinecraftReflection.getBukkitEntity(entity);
 		}
 
-		Object entity = getEntity.invoke(level, id);
+		// old tracker - now the pain begins
+		Object trackerEntry = this.getEntityTrackerEntry(world, id);
+		if (trackerEntry == null) {
+			// not tracked
+			return null;
+		}
+
+		FieldAccessor trackedEntityAccessor = this.trackedEntityFields.computeIfAbsent(trackerEntry.getClass(), clz -> {
+			try {
+				// try to get the first entity field from the tracker class
+				Field entityField = FuzzyReflection.fromClass(clz, true).getField(FuzzyFieldContract.newBuilder()
+						.typeExact(MinecraftReflection.getEntityClass())
+						.build());
+				return Accessors.getFieldAccessor(entityField);
+			} catch (IllegalArgumentException exception) {
+				// no such field, try the base tracker class instead
+				Class<?> trackerClass = MinecraftReflection.getEntityTrackerClass();
+				Field entityField = FuzzyReflection.fromClass(trackerClass, true).getField(FuzzyFieldContract.newBuilder()
+						.typeExact(MinecraftReflection.getEntityClass())
+						.build());
+				return Accessors.getFieldAccessor(entityField);
+			}
+		});
+
+		Object entity = trackedEntityAccessor.get(trackerEntry);
 		return (Entity) MinecraftReflection.getBukkitEntity(entity);
 	}
 
