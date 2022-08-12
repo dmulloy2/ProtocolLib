@@ -76,6 +76,9 @@ public class ImmutableDetector implements Cloner {
 			add("world.entity.npc.VillagerProfession", "VillagerProfession");
 		}
 
+		add("world.entity.animal.CatVariant");
+		add("world.entity.animal.FrogVariant");
+
 		// TODO automatically detect the technically-not-an-enum enums that Mojang is so fond of
 		// Would also probably go in tandem with having the FieldCloner use this
 

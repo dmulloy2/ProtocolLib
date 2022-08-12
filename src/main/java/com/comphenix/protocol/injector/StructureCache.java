@@ -17,6 +17,11 @@
 
 package com.comphenix.protocol.injector;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -26,13 +31,11 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -52,33 +55,34 @@ public class StructureCache {
 	private static boolean TRICK_TRIED = false;
 	private static ConstructorAccessor TRICKED_DATA_SERIALIZER;
 
-	public static Object newPacket(Class<?> clazz) {
-		Object result = DefaultInstances.DEFAULT.create(clazz);
-
-		if (result == null) {
-			return PACKET_INSTANCE_CREATORS.computeIfAbsent(clazz, $ -> {
-				ConstructorAccessor accessor = Accessors.getConstructorAccessorOrNull(clazz,
+	public static Object newPacket(Class<?> packetClass) {
+		Supplier<Object> packetConstructor = PACKET_INSTANCE_CREATORS.computeIfAbsent(packetClass, clazz -> {
+			// prefer construction via PacketDataSerializer constructor on 1.17 and above
+			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+				ConstructorAccessor serializerAccessor = Accessors.getConstructorAccessorOrNull(
+						clazz,
 						MinecraftReflection.getPacketDataSerializerClass());
-				if (accessor != null) {
+				if (serializerAccessor != null) {
 					return () -> {
-						try {
-							return accessor.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()));
-						} catch (Exception exception) {
-							// try trick nms around as they want a non-null compound in the map_chunk packet constructor
-							Object trickyDataSerializer = getTrickDataSerializerOrNull();
-							if (trickyDataSerializer != null) {
-								return accessor.invoke(trickyDataSerializer);
-							}
-							// the tricks are over
-							throw new IllegalArgumentException("Unable to create packet " + clazz, exception);
+						// the tricked serializer should always be present... If not try using a normal buffer
+						Object dataSerializer = getTrickDataSerializerOrNull();
+						if (dataSerializer == null) {
+							dataSerializer = MinecraftReflection.getPacketDataSerializer(new ZeroBuffer());
 						}
+
+						return serializerAccessor.invoke(dataSerializer);
 					};
 				}
-				throw new IllegalArgumentException("No matching constructor to create packet in class " + clazz);
-			}).get();
-		}
+			}
 
-		return result;
+			// try via DefaultInstances as fallback
+			return () -> {
+				Object packetInstance = DefaultInstances.DEFAULT.create(clazz);
+				Objects.requireNonNull(packetInstance, "Unable to create packet instance for class " + clazz);
+				return packetInstance;
+			};
+		});
+		return packetConstructor.get();
 	}
 
 	/**
@@ -113,17 +117,15 @@ public class StructureCache {
 	public static StructureModifier<Object> getStructure(final PacketType packetType) {
 		Preconditions.checkNotNull(packetType, "type cannot be null");
 
-		StructureModifier<Object> modifier = STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
+		return STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
 			Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
 			return new StructureModifier<>(packetClass, MinecraftReflection.getPacketClass(), true);
 		});
-
-		return modifier;
 	}
 
 	/**
-	 * Creates a packet data serializer sub-class if needed to allow the fixed read of a NbtTagCompound because of a null
-	 * check in the MapChunk packet constructor.
+	 * Creates a packet data serializer sub-class if needed to allow the fixed read of a NbtTagCompound because of a
+	 * null check in the MapChunk packet constructor.
 	 *
 	 * @return an accessor to a constructor which creates a data serializer.
 	 */

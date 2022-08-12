@@ -35,6 +35,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.cloning.SerializableCloner;
+import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -67,6 +68,7 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.minecraft.core.IRegistry;
+import net.minecraft.network.protocol.game.PacketPlayOutGameStateChange;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 import net.minecraft.resources.MinecraftKey;
@@ -74,9 +76,8 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.npc.VillagerData;
-import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.entity.animal.CatVariant;
+import net.minecraft.world.entity.animal.FrogVariant;
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -794,7 +795,7 @@ public class PacketContainerTest {
 		assertArrayEquals(signature, read.getSignature());
 	}*/
 
-	private void assertPacketsEqual(PacketContainer constructed, PacketContainer cloned) {
+	private void assertPacketsEqualAndSerializable(PacketContainer constructed, PacketContainer cloned) {
 		StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
 		assertEquals(firstMod.size(), secondMod.size());
 
@@ -810,6 +811,9 @@ public class PacketContainerTest {
 				}
 			}
 		}
+
+		Object buffer = MinecraftReflection.createPacketDataSerializer(0);
+		MinecraftMethods.getPacketWriteByteBufMethod().invoke(cloned.getHandle(), buffer);
 	}
 
 	@Test
@@ -834,31 +838,58 @@ public class PacketContainerTest {
 									new WrappedDataWatcherObject(0, Registry.get(Byte.class)),
 									(byte) 1),
 							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(Integer.class)),
+									1),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(Float.class)),
+									1F),
+							new WrappedWatchableObject(
 									new WrappedDataWatcherObject(0, Registry.get(String.class)),
 									"String"),
 							new WrappedWatchableObject(
-									new WrappedDataWatcherObject(0, Registry.get(Float.class)),
-									1.0F),
+									new WrappedDataWatcherObject(0, Registry.get(Boolean.class)),
+									true),
 							new WrappedWatchableObject(
 									new WrappedDataWatcherObject(0, Registry.getChatComponentSerializer(true)),
 									Optional.of(ComponentConverter.fromBaseComponent(TEST_COMPONENT).getHandle())),
 							new WrappedWatchableObject(
-									new WrappedDataWatcherObject(0, Registry.get(VillagerData.class)),
-									new VillagerData(VillagerType.b, VillagerProfession.c, 69))
+									new WrappedDataWatcherObject(0, Registry.getItemStackSerializer(false)),
+									BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.WOODEN_AXE))),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(CatVariant.class)),
+									CatVariant.a),
+							new WrappedWatchableObject(
+									new WrappedDataWatcherObject(0, Registry.get(FrogVariant.class)),
+									FrogVariant.c)
 					));
 				} else if (type == PacketType.Play.Server.CHAT) {
 					constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
+				} else if (type == PacketType.Play.Server.REMOVE_ENTITY_EFFECT || type == PacketType.Play.Server.ENTITY_EFFECT) {
+					constructed.getEffectTypes().write(0, PotionEffectType.GLOWING);
+				} else if (type == PacketType.Play.Server.GAME_STATE_CHANGE) {
+					constructed.getStructures().write(
+							0,
+							InternalStructure.getConverter().getSpecific(PacketPlayOutGameStateChange.a));
+				} else if (type == PacketType.Play.Client.USE_ITEM || type == PacketType.Play.Client.BLOCK_PLACE) {
+					constructed.getLongs().write(0, 0L); // timestamp of the packet, not sent over the network
 				}
 
 				// gives some indication which cloning process fails as the checks itself are happening outside this method
 				System.out.println("Cloning " + type);
 
-				// Clone the packet both ways
+				// Clone the packet all three ways
 				PacketContainer shallowCloned = constructed.shallowClone();
-				this.assertPacketsEqual(constructed, shallowCloned);
+				this.assertPacketsEqualAndSerializable(constructed, shallowCloned);
 
 				PacketContainer deepCloned = constructed.deepClone();
-				this.assertPacketsEqual(constructed, deepCloned);
+				this.assertPacketsEqualAndSerializable(constructed, deepCloned);
+
+				PacketContainer serializedCloned = SerializableCloner.clone(constructed);
+				if (type == PacketType.Play.Client.USE_ITEM || type == PacketType.Play.Client.BLOCK_PLACE) {
+					// shit fix - but what are we supposed to do :/
+					serializedCloned.getLongs().write(0, 0L);
+				}
+				this.assertPacketsEqualAndSerializable(constructed, serializedCloned);
 			} catch (Exception ex) {
 				Assertions.fail("Unable to clone " + type, ex);
 			}
