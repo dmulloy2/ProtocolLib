@@ -9,9 +9,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,8 +45,6 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 public class NettyChannelInjector implements Injector {
-
-	private static final Random RANDOM = new Random();
 
 	// an accessor used when we're unable to retrieve the actual packet field in an outbound packet send
 	private static final FieldAccessor NO_OP_ACCESSOR = new FieldAccessor() {
@@ -173,7 +171,7 @@ public class NettyChannelInjector implements Injector {
 	}
 
 	private static String getRandomKey() {
-		return "ProtocolLib-" + RANDOM.nextLong();
+		return "ProtocolLib-" + ThreadLocalRandom.current().nextLong();
 	}
 
 	private static boolean hasProtocolLibHandler(Channel channel) {
