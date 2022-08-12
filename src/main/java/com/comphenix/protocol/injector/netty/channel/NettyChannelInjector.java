@@ -501,17 +501,6 @@ public class NettyChannelInjector implements Injector {
 			return;
 		}
 
-		if (ctx.channel().eventLoop().inEventLoop()) {
-			// we're in a netty event loop - prevent that from happening as it slows down netty
-			// in normal cases netty only has 4 processing threads available which is *really* bad when we're
-			// then blocking these (or more specifically a plugin) to process the incoming packet
-			// See https://twitter.com/fbrasisil/status/1163974576511995904 for a reference what can happen
-			this.server.getScheduler().runTaskAsynchronously(
-					this.injectionFactory.getPlugin(),
-					() -> this.processInboundPacket(ctx, packet, packetClass));
-			return;
-		}
-
 		// call packet handlers, a null result indicates that we shouldn't change anything
 		PacketEvent interceptionResult = this.channelListener.onPacketReceiving(this, packet, null);
 		if (interceptionResult == null) {
