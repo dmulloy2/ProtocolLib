@@ -24,6 +24,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.NetworkProcessor;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
@@ -501,7 +502,10 @@ public class NettyChannelInjector implements Injector {
 			return;
 		}
 
-		if (ctx.channel().eventLoop().inEventLoop()) {
+		// check the async force status - in the context of incoming listeners this is more a "check execution should
+		// be directly on calling thread" thing, but the method is already there and suits the use case the best
+		PacketType packetType = PacketRegistry.getPacketType(packetClass);
+		if (!packetType.isAsyncForced() && ctx.channel().eventLoop().inEventLoop()) {
 			// we're in a netty event loop - prevent that from happening as it slows down netty
 			// in normal cases netty only has 4 processing threads available which is *really* bad when we're
 			// then blocking these (or more specifically a plugin) to process the incoming packet
