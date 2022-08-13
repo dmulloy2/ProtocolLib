@@ -50,6 +50,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Client extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.CLIENT;
 
+			@ForceAsync
 			public static final PacketType SET_PROTOCOL =                 new PacketType(PROTOCOL, SENDER, 0x00, "SetProtocol", "C00Handshake");
 
 			private final static Client INSTANCE = new Client();
@@ -457,6 +458,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
 			@ForceAsync
 			public static final PacketType SERVER_INFO =                  new PacketType(PROTOCOL, SENDER, 0x00, "ServerInfo", "SPacketServerInfo");
+			@ForceAsync
 			public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x01, "Pong", "SPacketPong");
 
 			/**
@@ -487,6 +489,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			private final static Sender SENDER = Sender.CLIENT;
 
 			public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, "Start", "CPacketServerQuery");
+			@ForceAsync
 			public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x01, "Ping", "CPacketPing");
 
 			private final static Client INSTANCE = new Client();
