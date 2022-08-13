@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -170,7 +171,7 @@ public class NettyChannelInjector implements Injector {
 	}
 
 	private static String getRandomKey() {
-		return Long.toString(System.nanoTime());
+		return "ProtocolLib-" + ThreadLocalRandom.current().nextLong();
 	}
 
 	private static boolean hasProtocolLibHandler(Channel channel) {
