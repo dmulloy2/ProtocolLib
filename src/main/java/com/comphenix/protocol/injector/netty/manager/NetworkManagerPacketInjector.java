@@ -33,7 +33,7 @@ final class NetworkManagerPacketInjector extends AbstractPacketInjector {
 
 	@Override
 	public boolean addPacketHandler(PacketType type, Set<ListenerOptions> options) {
-		if (!type.isAsyncForced() && (options == null || !options.contains(ListenerOptions.ASYNC))) {
+		if (!type.isAsyncForced() && options != null && options.contains(ListenerOptions.SYNC)) {
 			this.mainThreadListeners.addType(type);
 		}
 
