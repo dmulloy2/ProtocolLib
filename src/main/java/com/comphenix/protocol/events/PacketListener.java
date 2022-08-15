@@ -34,8 +34,8 @@ public interface PacketListener {
 	 * Note that the packet may be replaced, if needed.
 	 * <p>
 	 * This method is executed on the main server thread by default. However, some spigot forks (like paper) schedule
-	 * specific packets off the main thread. If the {@link ListenerOptions#ASYNC} option is specified any invocation of
-	 * this method will be on the main server thread.
+	 * specific packets off the main thread. If the {@link ListenerOptions#ASYNC} option is not specified any invocation
+	 * of this method will be on the main server thread.
 	 *
 	 * @param event - the packet that should be sent.
 	 */
