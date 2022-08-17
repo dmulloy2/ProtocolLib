@@ -23,5 +23,11 @@ public enum ListenerOptions {
 	/**
 	 * Notify ProtocolLib that {@link PacketListener#onPacketSending(PacketEvent)} is thread safe.
 	 */
-	ASYNC;
+	ASYNC,
+
+	/**
+	 * Notify ProtocolLib that {@link PacketListener#onPacketReceiving(PacketEvent)} must be executed on the main server
+	 * thread.
+	 */
+	SYNC
 }
