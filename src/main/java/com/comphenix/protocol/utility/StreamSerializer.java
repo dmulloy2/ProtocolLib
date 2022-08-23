@@ -14,7 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Base64;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -175,7 +175,7 @@ public class StreamSerializer {
 	 * @throws IOException If the operation fails due to reflection problems.
 	 */
 	public String serializeItemStack(ItemStack stack) throws IOException {
-		return Base64.getEncoder().encodeToString(this.serializeItemStackToByteArray(stack));
+		return Base64Coder.encodeLines(serializeItemStackToByteArray(stack));
 	}
 
 	/**
@@ -185,7 +185,7 @@ public class StreamSerializer {
 	 * @return A deserialized item stack, or NULL if the serialized ItemStack was also NULL.
 	 */
 	public ItemStack deserializeItemStack(String input) {
-		return this.deserializeItemStackFromByteArray(Base64.getDecoder().decode(input));
+		return this.deserializeItemStackFromByteArray(Base64Coder.decodeLines(input));
 	}
 
 	/**
