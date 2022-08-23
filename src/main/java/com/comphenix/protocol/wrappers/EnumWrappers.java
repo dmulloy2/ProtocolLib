@@ -502,14 +502,14 @@ public abstract class EnumWrappers {
 
 		try {
 			// TODO enum names are more stable than their packet associations
-			ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("world.entity.EnumItemSlot", "EnumItemSlot");
+			ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("world.entity.EnumItemSlot", "world.entity.EquipmentSlot", "EnumItemSlot");
 		} catch (Exception ex) {
 			ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
 		}
 
 		// In 1.17 the hand and use action class is no longer a field in the packet
 		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-			HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand");
+			HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand", "world.InteractionHand");
 			// class is named 'b' in the packet but class order differs in spigot and paper so we can only use the first method's return type (safest way)
 			ENTITY_USE_ACTION_CLASS = MinecraftReflection.getEnumEntityUseActionClass().getMethods()[0].getReturnType();
 		} else {
@@ -519,13 +519,13 @@ public abstract class EnumWrappers {
 
 		// 1.19 removed the entity spawn packet and moved the direction into a seperated class
 		if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
-			DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection");
+			DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection", "core.Direction");
 		} else {
 			DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
 		}
 
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
-		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "EntityPose");
+		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
 
 		associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());

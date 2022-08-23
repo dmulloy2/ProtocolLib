@@ -73,6 +73,10 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		return wrap(wrapperClass, MinecraftReflection.getMinecraftClass(nmsClassName));
 	}
 
+	public static <T> AutoWrapper<T> wrap(Class<T> wrapperClass, String nmsClassName, String... aliases) {
+		return wrap(wrapperClass, MinecraftReflection.getMinecraftClass(nmsClassName, aliases));
+	}
+
 	public AutoWrapper<T> field(int index, Function<Object, Object> wrapper, Function<Object, Object> unwrapper) {
 		wrappers.put(index, wrapper);
 		unwrappers.put(index, unwrapper);
