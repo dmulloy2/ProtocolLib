@@ -130,7 +130,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 		// Mojang added difficulty to lightning strikes, so this'll have to do
 		if (eggConstructor == null) {
 			eggConstructor = Accessors.getConstructorAccessor(
-					MinecraftReflection.getMinecraftClass("world.entity.projectile.EntityEgg", "EntityEgg"),
+					MinecraftReflection.getMinecraftClass("world.entity.projectile.EntityEgg", "world.entity.projectile.ThrownEgg", "EntityEgg"),
 					MinecraftReflection.getNmsWorldClass(), double.class, double.class, double.class
 			);
 		}

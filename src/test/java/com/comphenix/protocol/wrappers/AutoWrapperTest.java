@@ -83,12 +83,12 @@ public class AutoWrapperTest {
 
   private AutoWrapper<WrappedAdvancementDisplay> displayWrapper() {
     return AutoWrapper
-        .wrap(WrappedAdvancementDisplay.class, "advancements.AdvancementDisplay")
+        .wrap(WrappedAdvancementDisplay.class, "advancements.AdvancementDisplay", "advancements.DisplayInfo")
         .field(0, BukkitConverters.getWrappedChatComponentConverter())
         .field(1, BukkitConverters.getWrappedChatComponentConverter())
         .field(2, BukkitConverters.getItemStackConverter())
         .field(3, MinecraftKey.getConverter())
-        .field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType"),
+        .field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType", "advancements.FrameType"),
             WrappedFrameType.class));
   }
 

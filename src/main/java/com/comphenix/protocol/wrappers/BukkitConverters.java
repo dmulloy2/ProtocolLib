@@ -1627,7 +1627,7 @@ public class BukkitConverters {
 			public List<MerchantRecipe> getSpecific(Object generic) {
 				if (nmsMerchantRecipeToBukkit == null) {
 					Class<?> merchantRecipeClass = MinecraftReflection.getMinecraftClass(
-							"world.item.trading.MerchantRecipe","MerchantRecipe"
+							"world.item.trading.MerchantRecipe", "world.item.trading.MerchantOffer","MerchantRecipe"
 					);
 					FuzzyReflection reflection = FuzzyReflection.fromClass(merchantRecipeClass, false);
 					nmsMerchantRecipeToBukkit = Accessors.getMethodAccessor(reflection.getMethodByName("asBukkit"));

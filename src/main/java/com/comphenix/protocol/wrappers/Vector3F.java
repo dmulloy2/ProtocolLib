@@ -83,7 +83,7 @@ public class Vector3F {
 	}
 
 	private static Constructor<?> constructor = null;
-	private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS("core.Vector3f","Vector3f");
+	private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS("core.Vector3f", "core.Rotations", "Vector3f");
 
 	public static Class<?> getMinecraftClass() {
 		return NMS_CLASS;
