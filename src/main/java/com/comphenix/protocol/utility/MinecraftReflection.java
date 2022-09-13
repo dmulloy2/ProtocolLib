@@ -867,7 +867,7 @@ public final class MinecraftReflection {
 	}
 
 	public static Class<?> getMobEffectListClass() {
-		return getMinecraftClass("world.effect.MobEffectList", "world.effect.MobEffect", "MobEffectList");
+		return getMinecraftClass("world.effect.MobEffectList", "MobEffectList", "world.effect.MobEffect");
 	}
 
 	public static Class<?> getSoundEffectClass() {
