@@ -539,8 +539,10 @@ public class NettyChannelInjector implements Injector {
 		}
 
 		// filter out all packets which were explicitly send to not be processed by any event
-		NetworkMarker marker = this.savedMarkers.remove(packet);
-		if (this.skippedPackets.remove(packet)) {
+		// pre-checking isEmpty will reduce the need of hashing packets which don't override the
+		// hashCode method; this presents calls to the very slow identityHashCode default implementation
+		NetworkMarker marker = this.savedMarkers.isEmpty() ? null : this.savedMarkers.remove(packet);
+		if (!this.skippedPackets.isEmpty() && this.skippedPackets.remove(packet)) {
 			// if a marker was set there might be scheduled packets to execute after the packet send
 			// for this to work we need to proxy the input action to provide access to them
 			if (marker != null) {
