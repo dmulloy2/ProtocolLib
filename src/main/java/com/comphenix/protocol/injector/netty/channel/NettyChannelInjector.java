@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -33,13 +34,11 @@ import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.google.common.collect.MapMaker;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
-import jdk.internal.misc.TerminatingThreadLocal;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -101,8 +100,8 @@ public class NettyChannelInjector implements Injector {
 	private final FieldAccessor channelField;
 
 	// packet marking
+	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
 	private final Set<Object> skippedPackets = Collections.synchronizedSet(new HashSet<>());
-	private final Map<Object, NetworkMarker> savedMarkers = new MapMaker().weakKeys().makeMap();
 	protected final ThreadLocal<Boolean> processedPackets = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
 	// status of this injector
