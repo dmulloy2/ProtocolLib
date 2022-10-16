@@ -31,9 +31,41 @@ abstract class NettyEventLoopProxy implements EventLoop {
 	};
 
 	private final EventLoop delegate;
+	private final NettyChannelInjector injector;
 
-	public NettyEventLoopProxy(EventLoop delegate) {
+	public NettyEventLoopProxy(EventLoop delegate, NettyChannelInjector injector) {
 		this.delegate = delegate;
+		this.injector = injector;
+	}
+
+	private Runnable proxyRunnable(Runnable original) {
+		// execute the proxy and check if we need to do anything
+		Runnable proxied = this.doProxyRunnable(original);
+		if (proxied != null && proxied == original) {
+			// was not changed, we need to mark the packet as processed manually
+			return () -> {
+				this.injector.processedPackets.set(Boolean.TRUE);
+				original.run();
+			};
+		} else {
+			// either the action was not executed, or the proxy will set the packet as processes
+			return proxied;
+		}
+	}
+
+	private <T> Callable<T> proxyCallable(Callable<T> original) {
+		// execute the proxy and check if we need to do anything
+		Callable<T> proxied = this.doProxyCallable(original);
+		if (proxied != null && proxied == original) {
+			// was not changed, we need to mark the packet as processed manually
+			return () -> {
+				this.injector.processedPackets.set(Boolean.TRUE);
+				return proxied.call();
+			};
+		} else {
+			// either the action was not executed, or the proxy will set the packet as processes
+			return proxied;
+		}
 	}
 
 	/**
@@ -43,7 +75,7 @@ abstract class NettyEventLoopProxy implements EventLoop {
 	 * @param original the runnable to proxy.
 	 * @return the runnable to execute instead, null to execute no action.
 	 */
-	protected abstract Runnable proxyRunnable(Runnable original);
+	protected abstract Runnable doProxyRunnable(Runnable original);
 
 	/**
 	 * Proxies the given callable. The returned callable will be executed instead of the original. If this method returns
@@ -54,7 +86,7 @@ abstract class NettyEventLoopProxy implements EventLoop {
 	 * @param <T>      the return type of the original callable.
 	 * @return the callable to execute instead of the original, null to use a no-op callable instead.
 	 */
-	protected abstract <T> Callable<T> proxyCallable(Callable<T> original);
+	protected abstract <T> Callable<T> doProxyCallable(Callable<T> original);
 
 	@Override
 	public EventLoopGroup parent() {

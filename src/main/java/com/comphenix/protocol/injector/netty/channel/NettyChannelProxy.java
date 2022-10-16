@@ -244,11 +244,26 @@ final class NettyChannelProxy implements Channel {
 	}
 
 	private boolean isPacketEventCallNeeded(Object msg) {
-		return MinecraftReflection.isPacketClass(msg) && !this.injector.wasProcessedBefore(msg);
+		if (MinecraftReflection.isPacketClass(msg)) {
+			// check if any packet was marked as processed before during the current execution
+			// then reset the thread local as there will always be only one packet per write op (if needed)
+			Boolean hasProcessedPacket = this.injector.processedPackets.get();
+			if (hasProcessedPacket == Boolean.TRUE) {
+				// at least one packet was processed before, so no need for us to process as well
+				this.injector.processedPackets.set(Boolean.FALSE);
+				return false;
+			} else {
+				// no packet was processed in the current context, we need to process
+				return true;
+			}
+		} else {
+			// not a packet, just ignore
+			return false;
+		}
 	}
 
 	private void processPacketOutbound(Object packet, Consumer<Object> delegateActionHandler) {
-		Runnable action = this.injector.processOutbound(() -> delegateActionHandler.accept(packet), false);
+		Runnable action = this.injector.processOutbound(() -> delegateActionHandler.accept(packet));
 		if (action != null) {
 			action.run();
 		}
