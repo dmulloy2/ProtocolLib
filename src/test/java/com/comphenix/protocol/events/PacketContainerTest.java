@@ -19,6 +19,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,9 +48,11 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
+import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
 import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import com.comphenix.protocol.wrappers.Pair;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
@@ -778,6 +783,44 @@ public class PacketContainerTest {
         assertEquals(salt, read.getSalt());
         assertArrayEquals(signature, read.getSignature());
     }
+
+	@Test
+	public void testPlayerInfoActions() {
+		PacketContainer updatePlayerInfoActions = new PacketContainer(PacketType.Play.Server.PLAYER_INFO);
+
+		EnumSet<EnumWrappers.PlayerInfoAction> actions = EnumSet.of(
+				EnumWrappers.PlayerInfoAction.ADD_PLAYER,
+				EnumWrappers.PlayerInfoAction.UPDATE_LATENCY,
+				EnumWrappers.PlayerInfoAction.UPDATE_LISTED);
+		updatePlayerInfoActions.getPlayerInfoActions().write(0, actions);
+
+		UUID id = UUID.randomUUID();
+		PlayerInfoData data = new PlayerInfoData(
+				id,
+				20,
+				false,
+				NativeGameMode.CREATIVE,
+				new WrappedGameProfile(new UUID(0, 0), "system"),
+				null,
+				null);
+		updatePlayerInfoActions.getPlayerInfoDataLists().write(0, Collections.singletonList(data));
+
+
+		Set<EnumWrappers.PlayerInfoAction> readActions = updatePlayerInfoActions.getPlayerInfoActions().read(0);
+		Assertions.assertTrue(readActions.contains(EnumWrappers.PlayerInfoAction.ADD_PLAYER));
+		Assertions.assertTrue(readActions.contains(EnumWrappers.PlayerInfoAction.UPDATE_LATENCY));
+		Assertions.assertTrue(readActions.contains(EnumWrappers.PlayerInfoAction.UPDATE_LISTED));
+
+		Collection<PlayerInfoData> readData = updatePlayerInfoActions.getPlayerInfoDataLists().read(0);
+		Assertions.assertEquals(1, readData.size());
+
+		PlayerInfoData firstData = readData.iterator().next();
+		Assertions.assertFalse(data.isListed());
+		Assertions.assertEquals(id, data.getProfileId());
+		Assertions.assertEquals("system", firstData.getProfile().getName());
+		Assertions.assertEquals(20, firstData.getLatency());
+		Assertions.assertEquals(NativeGameMode.CREATIVE, firstData.getGameMode());
+	}
 
 	// TODO: fix this this at some point
 	/*

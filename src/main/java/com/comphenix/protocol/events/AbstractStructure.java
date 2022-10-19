@@ -626,6 +626,20 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for an EnumSet of PlayerInfos.
+     * @return A modifier for an EnumSet of PlayerInfo fields.
+     */
+    public StructureModifier<Set<EnumWrappers.PlayerInfoAction>> getPlayerInfoActions() {
+        // Convert to and from the wrapper
+        return structureModifier.withType(
+                EnumSet.class,
+                Converters.collection(
+                        EnumWrappers.getPlayerInfoActionConverter(),
+                        generic -> EnumSet.noneOf(EnumWrappers.PlayerInfoAction.class),
+                        specific -> EnumWrappers.createEmptyEnumSet(EnumWrappers.getPlayerInfoActionClass())));
+    }
+
+    /**
      * Retrieve a read/write structure for the TitleAction enum in 1.8.
      * @return A modifier for TitleAction enum fields.
      */

@@ -37,6 +37,11 @@ import org.bukkit.Server;
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
 
 	/**
+	 * Version 1.19.3 - introducing feature preview
+	 * TODO: is this a good idea?
+	 */
+	public static final MinecraftVersion FEATURE_PREVIEW_UPDATE = new MinecraftVersion("1.19.3");
+	/**
 	 * Version 1.19 - the wild update
 	 */
 	public static final MinecraftVersion WILD_UPDATE = new MinecraftVersion("1.19");
