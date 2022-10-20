@@ -183,7 +183,9 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * Retrieve whether chat preview is enabled on the server.
 	 * @return whether chat preview is enabled on the server.
 	 * @since 1.19
+	 * @deprecated Removed in 1.19.3
 	 */
+	@Deprecated
 	public boolean isChatPreviewEnabled() {
 		return (Boolean) BOOLEAN_ACCESSORS[0].get(handle);
 	}
@@ -192,7 +194,9 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * Sets whether chat preview is enabled on the server.
 	 * @param chatPreviewEnabled true if enabled, false otherwise.
 	 * @since 1.19
+	 * @deprecated Removed in 1.19.3
 	 */
+	@Deprecated
 	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
 		BOOLEAN_ACCESSORS[0].set(handle, chatPreviewEnabled);
 	}
