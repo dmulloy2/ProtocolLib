@@ -410,24 +410,25 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 			public static final PacketType ENTITY_ACTION =                new PacketType(PROTOCOL, SENDER, 0x1D, "EntityAction", "CPacketEntityAction");
 			public static final PacketType STEER_VEHICLE =                new PacketType(PROTOCOL, SENDER, 0x1E, "SteerVehicle", "CPacketInput");
 			public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x1F, "Pong", "ServerboundPongPacket");
-			public static final PacketType RECIPE_SETTINGS =              new PacketType(PROTOCOL, SENDER, 0x20, "RecipeSettings");
-			public static final PacketType RECIPE_DISPLAYED =             new PacketType(PROTOCOL, SENDER, 0x21, "RecipeDisplayed", "CPacketRecipeInfo");
-			public static final PacketType ITEM_NAME =                    new PacketType(PROTOCOL, SENDER, 0x22, "ItemName");
-			public static final PacketType RESOURCE_PACK_STATUS =         new PacketType(PROTOCOL, SENDER, 0x23, "ResourcePackStatus", "CPacketResourcePackStatus");
-			public static final PacketType ADVANCEMENTS =                 new PacketType(PROTOCOL, SENDER, 0x24, "Advancements", "CPacketSeenAdvancements");
-			public static final PacketType TR_SEL =                       new PacketType(PROTOCOL, SENDER, 0x25, "TrSel");
-			public static final PacketType BEACON =                       new PacketType(PROTOCOL, SENDER, 0x26, "Beacon");
-			public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x27, "HeldItemSlot", "CPacketHeldItemChange");
-			public static final PacketType SET_COMMAND_BLOCK =            new PacketType(PROTOCOL, SENDER, 0x28, "SetCommandBlock");
-			public static final PacketType SET_COMMAND_MINECART =         new PacketType(PROTOCOL, SENDER, 0x29, "SetCommandMinecart");
-			public static final PacketType SET_CREATIVE_SLOT =            new PacketType(PROTOCOL, SENDER, 0x2A, "SetCreativeSlot", "CPacketCreativeInventoryAction");
-			public static final PacketType SET_JIGSAW =                   new PacketType(PROTOCOL, SENDER, 0x2B, "SetJigsaw");
-			public static final PacketType STRUCT =                       new PacketType(PROTOCOL, SENDER, 0x2C, "Struct");
-			public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x2D, "UpdateSign", "CPacketUpdateSign");
-			public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 0x2E, "ArmAnimation", "CPacketAnimation");
-			public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x2F, "Spectate", "CPacketSpectate");
-			public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x30, "UseItem", "CPacketPlayerTryUseItemOnBlock");
-			public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x31, "BlockPlace", "CPacketPlayerTryUseItem");
+			public static final PacketType CHAT_SESSION_UPDATE =          new PacketType(PROTOCOL, SENDER, 0x20, "ChatSessionUpdate");
+			public static final PacketType RECIPE_SETTINGS =              new PacketType(PROTOCOL, SENDER, 0x21, "RecipeSettings");
+			public static final PacketType RECIPE_DISPLAYED =             new PacketType(PROTOCOL, SENDER, 0x22, "RecipeDisplayed", "CPacketRecipeInfo");
+			public static final PacketType ITEM_NAME =                    new PacketType(PROTOCOL, SENDER, 0x23, "ItemName");
+			public static final PacketType RESOURCE_PACK_STATUS =         new PacketType(PROTOCOL, SENDER, 0x24, "ResourcePackStatus", "CPacketResourcePackStatus");
+			public static final PacketType ADVANCEMENTS =                 new PacketType(PROTOCOL, SENDER, 0x25, "Advancements", "CPacketSeenAdvancements");
+			public static final PacketType TR_SEL =                       new PacketType(PROTOCOL, SENDER, 0x26, "TrSel");
+			public static final PacketType BEACON =                       new PacketType(PROTOCOL, SENDER, 0x27, "Beacon");
+			public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x28, "HeldItemSlot", "CPacketHeldItemChange");
+			public static final PacketType SET_COMMAND_BLOCK =            new PacketType(PROTOCOL, SENDER, 0x29, "SetCommandBlock");
+			public static final PacketType SET_COMMAND_MINECART =         new PacketType(PROTOCOL, SENDER, 0x2A, "SetCommandMinecart");
+			public static final PacketType SET_CREATIVE_SLOT =            new PacketType(PROTOCOL, SENDER, 0x2B, "SetCreativeSlot", "CPacketCreativeInventoryAction");
+			public static final PacketType SET_JIGSAW =                   new PacketType(PROTOCOL, SENDER, 0x2C, "SetJigsaw");
+			public static final PacketType STRUCT =                       new PacketType(PROTOCOL, SENDER, 0x2D, "Struct");
+			public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x2E, "UpdateSign", "CPacketUpdateSign");
+			public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 0x2F, "ArmAnimation", "CPacketAnimation");
+			public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x30, "Spectate", "CPacketSpectate");
+			public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x31, "UseItem", "CPacketPlayerTryUseItemOnBlock");
+			public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x32, "BlockPlace", "CPacketPlayerTryUseItem");
 
 			/**
 			 * @deprecated Removed in 1.17
