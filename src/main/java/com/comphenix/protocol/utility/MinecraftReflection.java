@@ -540,7 +540,7 @@ public final class MinecraftReflection {
 	 */
 	public static Class<?> getEntityClass() {
 		try {
-			return getMinecraftClass("server.level.Entity", "server.level.ServerEntity", "Entity");
+			return getMinecraftClass("world.entity.Entity", "Entity");
 		} catch (RuntimeException e) {
 			return fallbackMethodReturn("Entity", "entity.CraftEntity", "getHandle");
 		}
