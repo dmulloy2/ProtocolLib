@@ -27,10 +27,10 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
+import org.bukkit.command.*;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -40,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -47,12 +48,14 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
 
 /**
  * Logs packets to a given stream
  * @author dmulloy2
  */
-public class PacketLogging implements CommandExecutor, PacketListener {
+public class PacketLogging implements TabExecutor, PacketListener {
 	public static final String NAME = "packetlog";
 
 	private static MethodAccessor HEX_DUMP;
@@ -137,9 +140,7 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 				}
 
 				if (pSender == Sender.CLIENT) {
-					if (receivingTypes.contains(type)) {
-						receivingTypes.remove(type);
-					} else {
+					if (!receivingTypes.remove(type)) {
 						receivingTypes.add(type);
 					}
 				} else {
@@ -161,6 +162,31 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 			sender.sendMessage(ChatColor.RED + "Failed to parse command: " + ex.toString());
 			return true;
 		}
+	}
+
+	@Nullable
+	@Override
+	public List<String> onTabComplete(@NotNull final CommandSender commandSender, @NotNull final Command command, @NotNull final String s, @NotNull final String[] strings) {
+
+		switch (strings.length) {
+			case 0:
+				return null;
+			case 1:
+				return Arrays.stream(Protocol.values()).map(Enum::name).filter(protocol -> protocol.toLowerCase().startsWith(strings[0].toLowerCase())).collect(Collectors.toList());
+			case 2:
+				return Arrays.stream(Sender.values()).map(Enum::name).filter(sender -> sender.toLowerCase().startsWith(strings[1].toLowerCase())).collect(Collectors.toList());
+			case 3:
+
+				try {
+					Protocol protocol = Protocol.valueOf(strings[0].toUpperCase());
+					Sender sender = Sender.valueOf(strings[1].toUpperCase());
+					return PacketType.getLookup().getAllClassNames(protocol, sender).stream().map(PacketType::name).filter(name -> name.toLowerCase().startsWith(strings[2].toLowerCase())).collect(Collectors.toList());
+				} catch (Exception ex) {
+					return null;
+				}
+		}
+
+		return null;
 	}
 
 	private void startLogging() {

@@ -1,8 +1,6 @@
 package com.comphenix.protocol;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.comphenix.protocol.PacketType.Protocol;
@@ -174,4 +172,9 @@ class PacketTypeLookup {
 	public ClassLookup getClassLookup() {
 		return classLookup;
 	}
+
+	public Collection<PacketType> getAllClassNames(Protocol protocol, Sender sender) {
+		return classLookup.getMap(protocol, sender).values();
+	}
+
 }

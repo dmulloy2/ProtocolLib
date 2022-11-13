@@ -47,6 +47,8 @@ import java.util.regex.Pattern;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -332,6 +334,7 @@ public class ProtocolLib extends JavaPlugin {
 			this.registerCommand(CommandFilter.NAME, this.commandFilter);
 			this.registerCommand(PacketLogging.NAME, this.packetLogging);
 
+
 			// Player login and logout events
 			protocolManager.registerEvents(manager, this);
 
@@ -462,11 +465,16 @@ public class ProtocolLib extends JavaPlugin {
 				return;
 			}
 
-			PluginCommand command = this.getCommand(name);
+			final PluginCommand command = this.getCommand(name);
 
 			// Try to load the command
 			if (command != null) {
+
 				command.setExecutor(executor);
+
+				if (executor instanceof TabCompleter) {
+					command.setTabCompleter((TabExecutor) executor);
+				}
 			} else {
 				throw new RuntimeException("plugin.yml might be corrupt.");
 			}

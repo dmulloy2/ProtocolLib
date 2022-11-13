@@ -707,7 +707,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 	 * Retrieve the current packet/legacy lookup.
 	 * @return The packet type lookup.
 	 */
-	private static PacketTypeLookup getLookup() {
+	public static PacketTypeLookup getLookup() {
 		if (LOOKUP == null) {
 			LOOKUP = new PacketTypeLookup().
 				addPacketTypes(Handshake.Client.getInstance()).
