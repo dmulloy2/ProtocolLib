@@ -1,6 +1,8 @@
 package com.comphenix.protocol.reflect.accessors;
 
 import com.comphenix.protocol.ProtocolLogger;
+import com.google.common.collect.MapMaker;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -9,11 +11,17 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 final class MethodHandleHelper {
 
 	private static final Lookup LOOKUP;
+
+	// Field -> (MethodName -> Handle)
+	private static final Map<Field, EnumMap<FieldAccessorType, MethodHandle>> LOOKUP_CACHE = new HashMap<>();
 
 	// static fields, converted as "public Object get()" and "public void set(Object value)"
 	private static final MethodType STATIC_FIELD_GETTER = MethodType.methodType(Object.class);
@@ -50,6 +58,11 @@ final class MethodHandleHelper {
 	private MethodHandleHelper() {
 	}
 
+	enum FieldAccessorType {
+		GETTER,
+		SETTER,
+	}
+
 	public static MethodAccessor getMethodAccessor(Method method) {
 		try {
 			MethodHandle unreflected = LOOKUP.unreflect(method);
@@ -75,26 +88,35 @@ final class MethodHandleHelper {
 
 	public static FieldAccessor getFieldAccessor(Field field) {
 		try {
-			boolean staticField = Modifier.isStatic(field.getModifiers());
 
-			// java hates us - unreflecting a trusted field always results in an exception, finding them doesn't...
-			MethodHandle getter;
-			MethodHandle setter;
-			if (staticField) {
-				getter = LOOKUP.findStaticGetter(field.getDeclaringClass(), field.getName(), field.getType());
-				setter = LOOKUP.findStaticSetter(field.getDeclaringClass(), field.getName(), field.getType());
-			} else {
-				getter = LOOKUP.findGetter(field.getDeclaringClass(), field.getName(), field.getType());
-				setter = LOOKUP.findSetter(field.getDeclaringClass(), field.getName(), field.getType());
+			final boolean staticField = Modifier.isStatic(field.getModifiers());
+
+			// Use cache to avoid repeated lookups
+			EnumMap<FieldAccessorType, MethodHandle> cached = LOOKUP_CACHE.get(field);
+			if (cached == null) {
+				cached = new EnumMap<>(FieldAccessorType.class);
+				LOOKUP_CACHE.put(field, cached);
 			}
 
-			// generify the method type so that we don't need to worry about it when using the handles
-			if (staticField) {
-				getter = getter.asType(STATIC_FIELD_GETTER);
-				setter = setter.asType(STATIC_FIELD_SETTER);
-			} else {
-				getter = getter.asType(VIRTUAL_FIELD_GETTER);
-				setter = setter.asType(VIRTUAL_FIELD_SETTER);
+			MethodHandle getter = cached.get(FieldAccessorType.GETTER);
+			MethodHandle setter = cached.get(FieldAccessorType.SETTER);
+
+			if (getter == null) {
+
+				getter = staticField ?
+					LOOKUP.findStaticGetter(field.getDeclaringClass(), field.getName(), field.getType()).asType(STATIC_FIELD_GETTER) :
+					LOOKUP.findGetter(field.getDeclaringClass(), field.getName(), field.getType()).asType(VIRTUAL_FIELD_GETTER);
+
+				cached.put(FieldAccessorType.GETTER, getter);
+			}
+
+			if (setter == null) {
+
+				setter = staticField ?
+					LOOKUP.findStaticSetter(field.getDeclaringClass(), field.getName(), field.getType()).asType(STATIC_FIELD_SETTER) :
+					LOOKUP.findSetter(field.getDeclaringClass(), field.getName(), field.getType()).asType(VIRTUAL_FIELD_SETTER);
+
+				cached.put(FieldAccessorType.SETTER, setter);
 			}
 
 			return new DefaultFieldAccessor(field, setter, getter, staticField);
