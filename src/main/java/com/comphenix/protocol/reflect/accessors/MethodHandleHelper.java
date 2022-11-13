@@ -1,7 +1,7 @@
 package com.comphenix.protocol.reflect.accessors;
 
 import com.comphenix.protocol.ProtocolLogger;
-import com.google.common.collect.MapMaker;
+import com.comphenix.protocol.collections.ExpireHashMap;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -12,8 +12,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 final class MethodHandleHelper {
@@ -21,7 +20,7 @@ final class MethodHandleHelper {
 	private static final Lookup LOOKUP;
 
 	// Field -> (MethodName -> Handle)
-	private static final Map<Field, EnumMap<FieldAccessorType, MethodHandle>> LOOKUP_CACHE = new HashMap<>();
+	private static final ExpireHashMap<Field, EnumMap<FieldAccessorType, MethodHandle>> LOOKUP_CACHE = new ExpireHashMap<>();
 
 	// static fields, converted as "public Object get()" and "public void set(Object value)"
 	private static final MethodType STATIC_FIELD_GETTER = MethodType.methodType(Object.class);
@@ -95,7 +94,7 @@ final class MethodHandleHelper {
 			EnumMap<FieldAccessorType, MethodHandle> cached = LOOKUP_CACHE.get(field);
 			if (cached == null) {
 				cached = new EnumMap<>(FieldAccessorType.class);
-				LOOKUP_CACHE.put(field, cached);
+				LOOKUP_CACHE.put(field, cached, 30, TimeUnit.MINUTES);
 			}
 
 			MethodHandle getter = cached.get(FieldAccessorType.GETTER);

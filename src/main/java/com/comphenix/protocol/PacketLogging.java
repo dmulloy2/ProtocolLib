@@ -144,9 +144,7 @@ public class PacketLogging implements TabExecutor, PacketListener {
 						receivingTypes.add(type);
 					}
 				} else {
-					if (sendingTypes.contains(type)) {
-						sendingTypes.remove(type);
-					} else {
+					if (!sendingTypes.remove(type)) {
 						sendingTypes.add(type);
 					}
 				}
