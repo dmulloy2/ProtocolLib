@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Objects;
@@ -49,7 +49,7 @@ public class ExpireHashMap<K, V> {
 	}
 	
 	private final Map<K, ExpireEntry> keyLookup = new HashMap<>();
-	private final PriorityQueue<ExpireEntry> expireQueue =  new PriorityQueue<>();
+	private final PriorityBlockingQueue<ExpireEntry> expireQueue =  new PriorityBlockingQueue<>();
 	
 	// View of keyLookup with direct values
 	private final Map<K, V> valueView = Maps.transformValues(keyLookup, entry -> entry.expireValue);
