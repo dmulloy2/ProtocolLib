@@ -8,6 +8,8 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 import java.lang.reflect.Constructor;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author dmulloy2
@@ -74,54 +76,71 @@ public class Vector3F {
 				return false;
 			if (Float.floatToIntBits(y) != Float.floatToIntBits(that.y))
 				return false;
-			if (Float.floatToIntBits(z) != Float.floatToIntBits(that.z))
-				return false;
-			return true;
+			return Float.floatToIntBits(z) == Float.floatToIntBits(that.z);
 		}
 
 		return false;
 	}
 
-	private static Constructor<?> constructor = null;
 	private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS("core.Vector3f", "core.Rotations", "Vector3f");
 
 	public static Class<?> getMinecraftClass() {
 		return NMS_CLASS;
 	}
 
-	public static EquivalentConverter<Vector3F> getConverter() {
-		return Converters.ignoreNull(new EquivalentConverter<Vector3F>() {
-			@Override
-			public Class<Vector3F> getSpecificType() {
-				return Vector3F.class;
-			}
+	private static final ConcurrentMap<Class<?>, Vector3FConverter> CONVERTERS =
+			new ConcurrentHashMap<>();
 
-			@Override
-			public Object getGeneric(Vector3F specific) {
-				if (constructor == null) {
-					try {
-						constructor = NMS_CLASS.getConstructor(float.class, float.class, float.class);
-					} catch (ReflectiveOperationException ex) {
-						throw new RuntimeException("Failed to find constructor for Vector3f", ex);
-					}
-				}
+	static class Vector3FConverter implements EquivalentConverter<Vector3F> {
+		private Constructor<?> constructor = null;
+		private final Class<?> genericClass;
 
+		Vector3FConverter(Class<?> genericClass) {
+			this.genericClass = genericClass;
+		}
+
+		@Override
+		public Class<Vector3F> getSpecificType() {
+			return Vector3F.class;
+		}
+
+		@Override
+		public Object getGeneric(Vector3F specific) {
+			if (specific == null) return null;
+
+			if (constructor == null) {
 				try {
-					return constructor.newInstance(specific.x, specific.y, specific.z);
+					constructor = genericClass.getConstructor(float.class, float.class, float.class);
 				} catch (ReflectiveOperationException ex) {
-					throw new RuntimeException("Failed to create new instance of Vector3f", ex);
+					throw new RuntimeException("Failed to find constructor for Vector3f", ex);
 				}
 			}
 
-			@Override
-			public Vector3F getSpecific(Object generic) {
-				StructureModifier<Float> modifier = new StructureModifier<Float>(generic.getClass())
-						.withTarget(generic).withType(float.class);
-				float x = modifier.read(0);
-				float y = modifier.read(1);
-				float z = modifier.read(2);
-				return new Vector3F(x, y, z);
+			try {
+				return constructor.newInstance(specific.x, specific.y, specific.z);
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException("Failed to create new instance of Vector3f", ex);
 			}
-		});
+		}
+
+		@Override
+		public Vector3F getSpecific(Object generic) {
+			if (generic == null) return null;
+
+			StructureModifier<Float> modifier = new StructureModifier<Float>(generic.getClass())
+					.withTarget(generic).withType(float.class);
+			float x = modifier.read(0);
+			float y = modifier.read(1);
+			float z = modifier.read(2);
+			return new Vector3F(x, y, z);
+		}
+	}
+
+	public static EquivalentConverter<Vector3F> getConverter() {
+		return getConverter(NMS_CLASS);
+	}
+
+	public static EquivalentConverter<Vector3F> getConverter(Class<?> genericClass) {
+		return CONVERTERS.computeIfAbsent(genericClass, Vector3FConverter::new);
 	}
 }

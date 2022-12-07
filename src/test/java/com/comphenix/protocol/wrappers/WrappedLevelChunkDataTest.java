@@ -22,7 +22,7 @@ import net.minecraft.world.level.chunk.ILightAccess;
 import net.minecraft.world.level.lighting.LightEngine;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;

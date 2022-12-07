@@ -143,12 +143,12 @@ public class PlayerInfoData {
 							args.add(PacketType.Play.Server.PLAYER_INFO.getPacketClass());
 						}
 
-						if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+						if (MinecraftVersion.WILD_UPDATE_2.atOrAbove()) {
 							args.add(UUID.class);
 						}
 
 						args.add(MinecraftReflection.getGameProfileClass());
-						if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+						if (MinecraftVersion.WILD_UPDATE_2.atOrAbove()) {
 							args.add(boolean.class);
 						}
 
@@ -156,7 +156,7 @@ public class PlayerInfoData {
 						args.add(EnumWrappers.getGameModeClass());
 						args.add(MinecraftReflection.getIChatBaseComponentClass());
 
-						if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+						if (MinecraftVersion.WILD_UPDATE_2.atOrAbove()) {
 							args.add(MinecraftReflection.getRemoteChatSessionClass());
 						} else if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
 							args.add(MinecraftReflection.getProfilePublicKeyDataClass());
@@ -174,7 +174,7 @@ public class PlayerInfoData {
 					Object gameMode = EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode);
 					Object displayName = specific.displayName != null ? specific.displayName.handle : null;
 
-					if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+					if (MinecraftVersion.WILD_UPDATE_2.atOrAbove()) {
 						return constructor.newInstance(
 								specific.profileId,
 								specific.profile.handle,

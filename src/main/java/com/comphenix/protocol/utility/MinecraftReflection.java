@@ -1428,16 +1428,34 @@ public final class MinecraftReflection {
 	 * Retrieve the class object of a specific Minecraft library class.
 	 *
 	 * @param className - the specific library Minecraft class.
+	 * @param aliases - other class names to try
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	public static Class<?> getMinecraftLibraryClass(String className) {
+	public static Class<?> getMinecraftLibraryClass(String className, String... aliases) {
 		if (libraryPackage == null) {
 			libraryPackage = new CachedPackage("", getClassSource());
 		}
 
-		return libraryPackage.getPackageClass(className)
-				.orElseThrow(() -> new RuntimeException("Failed to find class: " + className));
+		return libraryPackage.getPackageClass(className).orElseGet(() -> {
+			Class<?> resolved = null;
+			for (String alias : aliases) {
+				// try to resolve the class and stop searching if we found it
+				resolved = libraryPackage.getPackageClass(alias).orElse(null);
+				if (resolved != null) {
+					break;
+				}
+			}
+
+			// if we resolved the class cache it and return the result
+			if (resolved != null) {
+				libraryPackage.setPackageClass(className, resolved);
+				return resolved;
+			}
+
+			// unable to find the class
+			throw new RuntimeException(String.format("Unable to find %s (%s)", className, String.join(", ", aliases)));
+		});
 	}
 
 	/**
@@ -1545,6 +1563,10 @@ public final class MinecraftReflection {
 
 	public static Class<?> getProfilePublicKeyClass() {
 		return getMinecraftClass("world.entity.player.ProfilePublicKey");
+	}
+
+	public static Class<?> getVector3fClass() {
+		return getMinecraftLibraryClass("org.joml.Vector3f", "com.mojang.math.Vector3fa");
 	}
 
     public static Class<?> getSaltedSignatureClass() {

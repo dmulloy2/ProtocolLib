@@ -1,19 +1,18 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Modifier;
-
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.mojang.math.Vector3fa;
+
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.inventory.ItemStack;
+
+import java.lang.reflect.Modifier;
 
 /**
  * Represents an immutable wrapped ParticleParam in 1.13
@@ -136,12 +135,16 @@ public class WrappedParticle<T> {
 		float alpha;
 
 		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-			StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
-			Vector3fa rgb = (Vector3fa) modifier.withType(Vector3fa.class).read(0);
+			Class<?> vectorClass = MinecraftReflection.getVector3fClass();
 
-			r = (int) (rgb.a() * 255);
-			g = (int) (rgb.b() * 255);
-			b = (int) (rgb.c() * 255);
+			StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+			StructureModifier<Vector3F> vecModifier = modifier.withType(vectorClass, Vector3F.getConverter(vectorClass));
+			Vector3F rgb = vecModifier.read(0);
+
+			r = (int) (rgb.getX() * 255);
+			g = (int) (rgb.getY() * 255);
+			b = (int) (rgb.getZ() * 255);
+
 			alpha = (float) modifier.withType(float.class).read(0);
 		} else {
 			StructureModifier<Float> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle).withType(float.class);
