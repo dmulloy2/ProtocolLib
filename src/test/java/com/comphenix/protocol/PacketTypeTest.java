@@ -61,7 +61,8 @@ public class PacketTypeTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void main(String[] args) throws Exception {
+	// @Test
+	public void GeneratePacketTypes() throws Exception {
 		MinecraftReflectionTestUtil.init();
 
 		Set<Class<?>> allTypes = new HashSet<>();
@@ -173,18 +174,28 @@ public class PacketTypeTest {
 
 		className = classNames.get(classNames.size() - 1);
 
-		// Format it like SET_PROTOCOL
-		StringBuilder fieldName = new StringBuilder();
-		char[] chars = className.toCharArray();
-		for (int i = 0; i < chars.length; i++) {
-			char c = chars[i];
-			if (i != 0 && Character.isUpperCase(c)) {
-				fieldName.append("_");
+		String fieldName;
+
+		try {
+			// prefer existing field name
+			PacketType existing = PacketType.fromClass(clazz);
+			fieldName = existing.name();
+		} catch (Exception ignored) {
+			// generate new one like SET_PROTOCOL
+			StringBuilder fieldNameBuilder = new StringBuilder();
+			char[] chars = className.toCharArray();
+			for (int i = 0; i < chars.length; i++) {
+				char c = chars[i];
+				if (i != 0 && Character.isUpperCase(c)) {
+					fieldNameBuilder.append("_");
+				}
+				fieldNameBuilder.append(Character.toUpperCase(c));
 			}
-			fieldName.append(Character.toUpperCase(c));
+
+			fieldName = fieldNameBuilder.toString().replace("N_B_T", "NBT");
 		}
 
-		builder.append(fieldName.toString().replace("N_B_T", "NBT"));
+		builder.append(fieldName);
 		builder.append(" = ");
 
 		// Add spacing
