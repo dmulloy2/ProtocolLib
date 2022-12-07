@@ -10,6 +10,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.level.WorldServer;
@@ -47,17 +48,17 @@ public class WrappedLevelChunkDataTest {
         ILightAccess access = mock(ILightAccess.class);
 
         when(access.c(0, 0)).thenReturn(BlockAccessAir.a);
-        when(access.p()).thenReturn(BlockAccessAir.a);
+        when(access.q()).thenReturn(BlockAccessAir.a);
 
         LightEngine engine = new LightEngine(access, true, true);
         WorldServer nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
 
-        when(nmsWorld.s()).thenReturn(IRegistryCustom.d.get());
+        when(nmsWorld.s()).thenReturn(IRegistryCustom.b);
         // TODO: somehow find a way to always call the real code for all LevelHeightAccessor implementations
         when(nmsWorld.v_()).thenReturn(256);
         when(nmsWorld.ai()).thenReturn(16); // LevelHeightAccessor is mocked and therefore always returns 0, there are further methods like this which might cause errors in the future
 
-        when(nmsWorld.l_()).thenReturn(engine);
+        when(nmsWorld.m_()).thenReturn(engine);
     }
 
     private final WorldServer nmsWorld;
@@ -68,7 +69,7 @@ public class WrappedLevelChunkDataTest {
         this.nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
         this.chunk = new Chunk(nmsWorld, new ChunkCoordIntPair(5, 5));
 
-        IBlockData bellData = IRegistry.V.a(new MinecraftKey("bell")).m();
+        IBlockData bellData = BuiltInRegistries.f.a(new MinecraftKey("bell")).n();
 
         chunk.b(0).a(0, 0, 0, bellData);
         chunk.a(new TileEntityBell(BlockPosition.b, bellData));
@@ -77,7 +78,7 @@ public class WrappedLevelChunkDataTest {
     @Test
     public void testChunkData() {
         ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(chunk,
-                nmsWorld.l_(), null, null, false);
+                nmsWorld.m_(), null, null, false);
         PacketContainer container = PacketContainer.fromPacket(packet);
         Object rawInstance = container.getSpecificModifier(MinecraftReflection.getLevelChunkPacketDataClass()).read(0);
         Object virtualInstance = BukkitConverters.getWrappedChunkDataConverter().getGeneric(container.getLevelChunkData().read(0));
@@ -118,7 +119,7 @@ public class WrappedLevelChunkDataTest {
     @Test
     public void testLightData() {
         ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(chunk,
-                nmsWorld.l_(), null, null, false);
+                nmsWorld.m_(), null, null, false);
         PacketContainer container = PacketContainer.fromPacket(packet);
 
         randomizeBitSets(container.getSpecificModifier(MinecraftReflection.getLightUpdatePacketDataClass()).read(0));

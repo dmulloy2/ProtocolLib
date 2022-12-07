@@ -70,7 +70,7 @@ public class BukkitInitialization {
 				ex.printStackTrace();
 			}
 
-			String releaseTarget = SharedConstants.b().getReleaseTarget();
+			String releaseTarget = SharedConstants.b().getName();
 			String serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
 			// Mock the server object

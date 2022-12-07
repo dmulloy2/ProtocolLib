@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
@@ -93,7 +94,7 @@ public class WrappedAttributeTest {
 			modifiers.add((AttributeModifier) wrapper.getHandle());
 		}
 
-		AttributeBase base = IRegistry.ak.a(MinecraftKey.a(attribute.getAttributeKey()));
+		AttributeBase base = BuiltInRegistries.u.a(MinecraftKey.a(attribute.getAttributeKey()));
 		return new AttributeSnapshot(base, attribute.getBaseValue(), modifiers);
 	}
 

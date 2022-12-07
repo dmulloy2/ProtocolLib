@@ -56,7 +56,7 @@ public class WrappedBlockDataTest {
 
 	@Test
 	public void testDataCreation() {
-		IBlockData nmsData = CraftMagicNumbers.getBlock(Material.CYAN_STAINED_GLASS_PANE).m();
+		IBlockData nmsData = CraftMagicNumbers.getBlock(Material.CYAN_STAINED_GLASS_PANE).n();
 		GlassPane data = (GlassPane) CraftBlockData.fromData(nmsData);
 		data.setFace(BlockFace.EAST, true);
 
