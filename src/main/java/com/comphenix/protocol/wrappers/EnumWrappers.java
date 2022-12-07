@@ -120,9 +120,15 @@ public abstract class EnumWrappers {
 
 	public enum PlayerInfoAction {
 		ADD_PLAYER,
+		INITIALIZE_CHAT,
 		UPDATE_GAME_MODE,
+		UPDATE_LISTED,
 		UPDATE_LATENCY,
 		UPDATE_DISPLAY_NAME,
+		/**
+		 * @deprecated Removed in 1.19.3
+		 */
+		@Deprecated
 		REMOVE_PLAYER
 	}
 
@@ -796,6 +802,17 @@ public abstract class EnumWrappers {
 	 */
 	public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<?> genericClass, Class<T> specificType) {
 		return new EnumConverter<>(genericClass, specificType);
+	}
+
+	/**
+	 * Creates an enum set with no elements based off the given class. The given must be an enum.
+	 *
+	 * @param clazz the element type of the enum set
+	 * @return a new enum set with the given class as its element type
+	 * @throws ClassCastException if the given class is not an enum
+	 */
+	public static <E extends Enum<E>> EnumSet<E> createEmptyEnumSet(Class<?> clazz) {
+		return EnumSet.noneOf((Class<E>) clazz);
 	}
 
 	/**

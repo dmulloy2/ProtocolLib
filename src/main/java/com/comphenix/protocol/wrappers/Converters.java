@@ -17,6 +17,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Array;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -170,5 +171,52 @@ public class Converters {
 				return (Class<Optional<T>>) Optional.empty().getClass();
 			}
 		};
+	}
+
+	public static <T, C extends Collection<T>> EquivalentConverter<C> collection(
+			final EquivalentConverter<T> elementConverter,
+			final Function<Collection<Object>, C> genericToSpecificCollectionFactory,
+			final Function<C, Collection<?>> specificToGenericCollectionFactory
+	) {
+		return ignoreNull(new EquivalentConverter<C>() {
+
+			@Override
+			public Object getGeneric(C specific) {
+				// generics are very cool, thank you java
+				Collection<Object> targetCollection = (Collection<Object>) specificToGenericCollectionFactory.apply(specific);
+				for (T element : specific) {
+					Object generic = elementConverter.getGeneric(element);
+					if (generic != null) {
+						targetCollection.add(generic);
+					}
+				}
+
+				return targetCollection;
+			}
+
+			@Override
+			public C getSpecific(Object generic) {
+				if (generic instanceof Collection<?>) {
+					Collection<Object> sourceCollection = (Collection<Object>) generic;
+					C targetCollection = genericToSpecificCollectionFactory.apply(sourceCollection);
+					// copy over all elements into a new collection
+					for (Object element : sourceCollection) {
+						T specific = elementConverter.getSpecific(element);
+						if (specific != null) {
+							targetCollection.add(specific);
+						}
+					}
+
+					return targetCollection;
+				}
+				// not valid
+				return null;
+			}
+
+			@Override
+			public Class<C> getSpecificType() {
+				return (Class<C>) Collection.class;
+			}
+		});
 	}
 }
