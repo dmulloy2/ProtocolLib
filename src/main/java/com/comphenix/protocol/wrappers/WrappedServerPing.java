@@ -207,7 +207,8 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19.1
 	 */
 	public boolean isEnforceSecureChat() {
-		return (Boolean) BOOLEAN_ACCESSORS[1].get(handle);
+		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
+		return (Boolean) BOOLEAN_ACCESSORS[index].get(handle);
 	}
 
 	/**
@@ -216,7 +217,8 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19.1
 	 */
 	public void setEnforceSecureChat(boolean enforceSecureChat) {
-		BOOLEAN_ACCESSORS[1].set(handle, enforceSecureChat);
+		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
+		BOOLEAN_ACCESSORS[index].set(handle, enforceSecureChat);
 	}
 
 	/**

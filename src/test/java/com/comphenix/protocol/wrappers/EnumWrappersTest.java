@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 public class EnumWrappersTest {
 
 	private static final Set<String> KNOWN_INVALID = Sets.newHashSet(
-			"Particle", "WorldBorderAction", "CombatEventType", "TitleAction", "ChatType"
+			"Particle", "WorldBorderAction", "CombatEventType", "TitleAction", "ChatType", "TitleAction"
 	);
 
 	@BeforeAll

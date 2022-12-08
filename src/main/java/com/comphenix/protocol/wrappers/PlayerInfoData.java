@@ -157,7 +157,8 @@ public class PlayerInfoData {
 						args.add(MinecraftReflection.getIChatBaseComponentClass());
 
 						if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
-							args.add(MinecraftReflection.getRemoteChatSessionClass());
+							// RemoteChatSession$a...
+							args.add(MinecraftReflection.getRemoteChatSessionClass().getClasses()[0]);
 						} else if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
 							args.add(MinecraftReflection.getProfilePublicKeyDataClass());
 						}
@@ -222,7 +223,7 @@ public class PlayerInfoData {
 					WrappedChatComponent displayName = displayNames.read(0);
 
 					WrappedProfileKeyData key = null;
-					if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+					if (MinecraftVersion.WILD_UPDATE.atOrAbove() && !MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
 						StructureModifier<WrappedProfileKeyData> keyData = modifier.withType(
 								MinecraftReflection.getProfilePublicKeyDataClass(), BukkitConverters.getWrappedPublicKeyDataConverter());
 						key = keyData.read(0);

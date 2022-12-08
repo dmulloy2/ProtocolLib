@@ -398,6 +398,17 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieves a read/write structure for collections of data values.
+     * @return A modifier for data values.
+     */
+    public StructureModifier<List<WrappedDataValue>> getDataValueCollectionModifier() {
+        // Convert to and from the ProtocolLib wrapper
+        return structureModifier.withType(
+                Collection.class,
+                BukkitConverters.getListConverter(BukkitConverters.getDataValueConverter()));
+    }
+
+    /**
      * Retrieves a read/write structure for block fields.
      * <p>
      * This modifier will automatically marshal between Material and the

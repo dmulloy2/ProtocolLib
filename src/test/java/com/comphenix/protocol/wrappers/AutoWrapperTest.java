@@ -30,7 +30,7 @@ public class AutoWrapperTest {
     WrappedAdvancementDisplay display = new WrappedAdvancementDisplay();
     display.title = WrappedChatComponent.fromText("Test123");
     display.description = WrappedChatComponent.fromText("Test567");
-    display.item = new ItemStack(Material.DARK_OAK_SAPLING);
+    display.item = new ItemStack(Material.GOLD_INGOT);
     display.background = new MinecraftKey("test");
     display.frameType = WrappedFrameType.CHALLENGE;
     display.announceChat = false;
@@ -48,7 +48,7 @@ public class AutoWrapperTest {
     validateRawText(nms.a(), "Test123");
     validateRawText(nms.b(), "Test567");
     assertSame(AdvancementFrameType.b, nms.e());
-    assertSame(Items.L, nms.c().c());
+    assertSame(Items.nv, nms.c().c());
     assertEquals(5f, nms.f(), 0f);
     assertEquals(67f, nms.g(), 0f);
   }
@@ -56,7 +56,7 @@ public class AutoWrapperTest {
   @Test
   public void testFromNms() {
     AdvancementDisplay display = new AdvancementDisplay(
-        new net.minecraft.world.item.ItemStack(Items.qA),
+        new net.minecraft.world.item.ItemStack(Items.rc),
         IChatBaseComponent.b("Test123"),
         IChatBaseComponent.b("Test567"),
         new net.minecraft.resources.MinecraftKey("minecraft", "test"),

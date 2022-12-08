@@ -16,10 +16,10 @@ import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_19_R1.util.Versioning;
+import org.bukkit.craftbukkit.v1_19_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_19_R2.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 /**
@@ -70,7 +70,7 @@ public class BukkitInitialization {
 				ex.printStackTrace();
 			}
 
-			String releaseTarget = SharedConstants.b().getReleaseTarget();
+			String releaseTarget = MinecraftReflectionTestUtil.RELEASE_TARGET;
 			String serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
 			// Mock the server object

@@ -215,7 +215,7 @@ public class Converters {
 
 			@Override
 			public Class<C> getSpecificType() {
-				return (Class<C>) Collection.class;
+				return (Class) Collection.class;
 			}
 		});
 	}

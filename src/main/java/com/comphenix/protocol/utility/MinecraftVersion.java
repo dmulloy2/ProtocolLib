@@ -38,7 +38,6 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 
 	/**
 	 * Version 1.19.3 - introducing feature preview
-	 * TODO: is this a good idea?
 	 */
 	public static final MinecraftVersion FEATURE_PREVIEW_UPDATE = new MinecraftVersion("1.19.3");
 	/**
@@ -117,7 +116,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 	/**
 	 * The latest release version of minecraft.
 	 */
-	public static final MinecraftVersion LATEST = WILD_UPDATE;
+	public static final MinecraftVersion LATEST = FEATURE_PREVIEW_UPDATE;
 
 	// used when serializing
 	private static final long serialVersionUID = -8695133558996459770L;
