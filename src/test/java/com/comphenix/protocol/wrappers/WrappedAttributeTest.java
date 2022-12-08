@@ -1,17 +1,13 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
 import com.google.common.collect.Lists;
-
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 import net.minecraft.resources.MinecraftKey;
@@ -20,6 +16,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WrappedAttributeTest {
 

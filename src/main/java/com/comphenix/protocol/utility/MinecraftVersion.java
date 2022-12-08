@@ -17,15 +17,16 @@
 
 package com.comphenix.protocol.utility;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.comphenix.protocol.ProtocolLibrary;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 

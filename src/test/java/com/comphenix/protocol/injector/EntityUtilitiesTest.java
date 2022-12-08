@@ -1,15 +1,12 @@
 package com.comphenix.protocol.injector;
 
-import static com.comphenix.protocol.utility.TestUtils.setFinalField;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.lang.reflect.Field;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import java.lang.reflect.Field;
 import net.minecraft.server.level.ChunkProviderServer;
 import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.PlayerChunkMap.EntityTracker;
@@ -19,6 +16,10 @@ import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R2.entity.CraftEntity;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static com.comphenix.protocol.utility.TestUtils.setFinalField;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class EntityUtilitiesTest {
 

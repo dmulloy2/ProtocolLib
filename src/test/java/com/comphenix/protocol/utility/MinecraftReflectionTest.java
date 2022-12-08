@@ -1,14 +1,5 @@
 package com.comphenix.protocol.utility;
 
-import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.nbt.NBTCompressedStreamTools;
@@ -28,6 +19,15 @@ import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class MinecraftReflectionTest {
 
@@ -120,10 +120,10 @@ public class MinecraftReflectionTest {
 		assertEquals(DataWatcher.Item.class, MinecraftReflection.getDataWatcherItemClass());
 	}
 
-    @Test
-    public void testLoginSignature() {
-        assertEquals(MinecraftEncryption.b.class, MinecraftReflection.getSaltedSignatureClass());
-    }
+	@Test
+	public void testLoginSignature() {
+		assertEquals(MinecraftEncryption.b.class, MinecraftReflection.getSaltedSignatureClass());
+	}
 
 	@Test
 	public void testItemStacks() {
@@ -132,7 +132,8 @@ public class MinecraftReflectionTest {
 		assertItemsEqual(stack, MinecraftReflection.getBukkitItemStack(nmsStack));
 
 		// The NMS handle for CraftItemStack is null with Material.AIR, make sure it is handled correctly
-		assertNotNull(MinecraftReflection.getMinecraftItemStack(CraftItemStack.asCraftCopy(new ItemStack(Material.AIR))));
+		assertNotNull(
+				MinecraftReflection.getMinecraftItemStack(CraftItemStack.asCraftCopy(new ItemStack(Material.AIR))));
 	}
 
 	@Test
