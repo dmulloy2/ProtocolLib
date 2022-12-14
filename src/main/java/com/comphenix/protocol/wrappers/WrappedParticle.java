@@ -12,7 +12,6 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.inventory.ItemStack;
-import org.joml.Vector3f;
 
 /**
  * Represents an immutable wrapped ParticleParam in 1.13
@@ -138,7 +137,7 @@ public class WrappedParticle<T> {
 
 		if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
 			StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
-			Vector3f rgb = (Vector3f) modifier.withType(Vector3f.class).read(0);
+			org.joml.Vector3f rgb = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(0);
 
 			r = (int) (rgb.x() * 255);
 			g = (int) (rgb.y() * 255);
