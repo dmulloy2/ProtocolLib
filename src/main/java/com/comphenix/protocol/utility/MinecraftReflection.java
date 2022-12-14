@@ -73,6 +73,11 @@ public final class MinecraftReflection {
 	// Cache of getBukkitEntity
 	private static final Map<Class<?>, MethodAccessor> BUKKIT_ENTITY_CACHE = new HashMap<>();
 
+	/**
+	 * The Entity package in Forge 1.5.2
+	 */
+	private static final String FORGE_ENTITY_PACKAGE = "net.minecraft.entity";
+
 	// Package private for the purpose of unit testing
 	static CachedPackage minecraftPackage;
 	static CachedPackage craftbukkitPackage;
@@ -171,7 +176,28 @@ public final class MinecraftReflection {
 				Method getHandle = getCraftEntityClass().getMethod("getHandle");
 				MINECRAFT_FULL_PACKAGE = getHandle.getReturnType().getPackage().getName();
 
-				setDynamicPackageMatcher(MINECRAFT_CLASS_NAME_REGEX);
+				// Pretty important invariant
+				if (!MINECRAFT_FULL_PACKAGE.startsWith(MINECRAFT_PREFIX_PACKAGE)) {
+					// See if we got the Forge entity package
+					if (MINECRAFT_FULL_PACKAGE.equals(FORGE_ENTITY_PACKAGE)) {
+						// Use the standard NMS versioned package
+						MINECRAFT_FULL_PACKAGE = CachedPackage.combine(MINECRAFT_PREFIX_PACKAGE, packageVersion);
+					} else {
+						// Assume they're the same instead
+						MINECRAFT_PREFIX_PACKAGE = MINECRAFT_FULL_PACKAGE;
+					}
+
+					// The package is usually flat, so go with that assumption
+					String matcher =
+							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + CANONICAL_REGEX;
+
+					// We'll still accept the default location, however
+					setDynamicPackageMatcher("(" + matcher + ")|(" + MINECRAFT_CLASS_NAME_REGEX + ")");
+
+				} else {
+					// Use the standard matcher
+					setDynamicPackageMatcher(MINECRAFT_CLASS_NAME_REGEX);
+				}
 			}
 
 			return MINECRAFT_FULL_PACKAGE;
@@ -514,7 +540,7 @@ public final class MinecraftReflection {
 	 */
 	public static Class<?> getEntityClass() {
 		try {
-			return getMinecraftClass("server.level.Entity", "server.level.ServerEntity", "Entity");
+			return getMinecraftClass("world.entity.Entity", "Entity");
 		} catch (RuntimeException e) {
 			return fallbackMethodReturn("Entity", "entity.CraftEntity", "getHandle");
 		}
@@ -841,7 +867,7 @@ public final class MinecraftReflection {
 	}
 
 	public static Class<?> getMobEffectListClass() {
-		return getMinecraftClass("world.effect.MobEffectList", "world.effect.MobEffect", "MobEffectList");
+		return getMinecraftClass("world.effect.MobEffectList", "MobEffectList", "world.effect.MobEffect");
 	}
 
 	public static Class<?> getSoundEffectClass() {
