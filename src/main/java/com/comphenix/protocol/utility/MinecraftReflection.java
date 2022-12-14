@@ -1071,10 +1071,17 @@ public final class MinecraftReflection {
 	 * @return The PlayerInfoData class
 	 */
 	public static Class<?> getPlayerInfoDataClass() {
-		return getMinecraftClass(
-				"network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
-				"network.protocol.game.ClientboundPlayerInfoPacket$PlayerUpdate",
-				"PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
+		try {
+			return getMinecraftClass(
+					"network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
+					"network.protocol.game.ClientboundPlayerInfoPacket$PlayerUpdate",
+					"PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
+		} catch (Exception ex) {
+			// todo: ClientboundPlayerInfoUpdatePacket$b, maybe get this via field type
+			return setMinecraftClass(
+					"network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
+					PacketType.Play.Server.PLAYER_INFO.getPacketClass().getClasses()[0]);
+		}
 	}
 
 	/**
@@ -1539,6 +1546,10 @@ public final class MinecraftReflection {
 		return getNullableNMS("core.IRegistry", "core.Registry", "IRegistry");
 	}
 
+	public static Class<?> getBuiltInRegistries() {
+		return getNullableNMS("core.registries.BuiltInRegistries");
+	}
+
 	public static Class<?> getAttributeBase() {
 		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "world.entity.ai.attributes.Attribute", "AttributeBase");
 	}
@@ -1589,6 +1600,10 @@ public final class MinecraftReflection {
 
 	public static Class<?> getProfilePublicKeyDataClass() {
 		return getProfilePublicKeyClass().getClasses()[0];
+	}
+
+	public static Class<?> getRemoteChatSessionClass() {
+		return getMinecraftClass("network.chat.RemoteChatSession");
 	}
 
 	public static Class<?> getFastUtilClass(String className) {

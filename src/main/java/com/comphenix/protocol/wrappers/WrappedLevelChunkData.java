@@ -132,7 +132,7 @@ public final class WrappedLevelChunkData {
          * @return a newly created wrapper
          */
         public static ChunkData fromValues(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
-            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.getTrickDataSerializerOrNull(), 0, 0));
+            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
 
             data.setHeightmapsTag(heightmapsTag);
             data.setBuffer(buffer);

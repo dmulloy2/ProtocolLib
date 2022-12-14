@@ -398,6 +398,17 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieves a read/write structure for collections of data values.
+     * @return A modifier for data values.
+     */
+    public StructureModifier<List<WrappedDataValue>> getDataValueCollectionModifier() {
+        // Convert to and from the ProtocolLib wrapper
+        return structureModifier.withType(
+                Collection.class,
+                BukkitConverters.getListConverter(BukkitConverters.getDataValueConverter()));
+    }
+
+    /**
      * Retrieves a read/write structure for block fields.
      * <p>
      * This modifier will automatically marshal between Material and the
@@ -623,6 +634,20 @@ public abstract class AbstractStructure {
         return structureModifier.withType(
                 EnumWrappers.getPlayerInfoActionClass(),
                 EnumWrappers.getPlayerInfoActionConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for an EnumSet of PlayerInfos.
+     * @return A modifier for an EnumSet of PlayerInfo fields.
+     */
+    public StructureModifier<Set<EnumWrappers.PlayerInfoAction>> getPlayerInfoActions() {
+        // Convert to and from the wrapper
+        return structureModifier.withType(
+                EnumSet.class,
+                Converters.collection(
+                        EnumWrappers.getPlayerInfoActionConverter(),
+                        generic -> EnumSet.noneOf(EnumWrappers.PlayerInfoAction.class),
+                        specific -> EnumWrappers.createEmptyEnumSet(EnumWrappers.getPlayerInfoActionClass())));
     }
 
     /**

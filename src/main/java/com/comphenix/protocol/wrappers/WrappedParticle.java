@@ -8,9 +8,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.mojang.math.Vector3fa;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.inventory.ItemStack;
@@ -19,6 +17,8 @@ import org.bukkit.inventory.ItemStack;
  * Represents an immutable wrapped ParticleParam in 1.13
  */
 public class WrappedParticle<T> {
+	private static Class<?> VECTOR_3FA;
+
 	private static MethodAccessor toBukkit;
 	private static MethodAccessor toNMS;
 	private static MethodAccessor toCraftData;
@@ -135,13 +135,27 @@ public class WrappedParticle<T> {
 		int r, g, b;
 		float alpha;
 
-		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+		if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
 			StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
-			Vector3fa rgb = (Vector3fa) modifier.withType(Vector3fa.class).read(0);
+			org.joml.Vector3f rgb = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(0);
 
-			r = (int) (rgb.a() * 255);
-			g = (int) (rgb.b() * 255);
-			b = (int) (rgb.c() * 255);
+			r = (int) (rgb.x() * 255);
+			g = (int) (rgb.y() * 255);
+			b = (int) (rgb.z() * 255);
+			alpha = (float) modifier.withType(float.class).read(0);
+		} else if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+			if (VECTOR_3FA == null) {
+				VECTOR_3FA = MinecraftReflection.getLibraryClass("com.mojang.math.Vector3fa");
+			}
+
+			StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+
+			Object rgb = modifier.withType(VECTOR_3FA).read(0);
+			StructureModifier<Object> rgbModifier = new StructureModifier<>(VECTOR_3FA).withTarget(rgb);
+
+			r = (int) (rgbModifier.<Float>withType(float.class).read(0) * 255);
+			g = (int) (rgbModifier.<Float>withType(float.class).read(1) * 255);
+			b = (int) (rgbModifier.<Float>withType(float.class).read(2) * 255);
 			alpha = (float) modifier.withType(float.class).read(0);
 		} else {
 			StructureModifier<Float> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle).withType(float.class);

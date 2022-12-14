@@ -645,6 +645,29 @@ public class BukkitConverters {
 			}
 		});
 	}
+
+	/**
+	 * Retrieve a converter for data values in 1.19.3+.
+	 * @return A data value converter.
+	 */
+	public static EquivalentConverter<WrappedDataValue> getDataValueConverter() {
+		return ignoreNull(new EquivalentConverter<WrappedDataValue>() {
+			@Override
+			public Object getGeneric(WrappedDataValue specific) {
+				return specific.getHandle();
+			}
+
+			@Override
+			public WrappedDataValue getSpecific(Object generic) {
+				return new WrappedDataValue(generic);
+			}
+
+			@Override
+			public Class<WrappedDataValue> getSpecificType() {
+				return WrappedDataValue.class;
+			}
+		});
+	}
 	
 	/**
 	 * Retrieve a converter for the NMS DataWatcher class and our wrapper.
