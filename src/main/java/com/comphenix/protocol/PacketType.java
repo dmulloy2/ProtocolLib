@@ -553,6 +553,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
+			@ForceAsync
 			public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x00, "Disconnect", "SPacketDisconnect");
 			public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, "EncryptionBegin", "SPacketEncryptionRequest");
 			public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, "Success", "SPacketLoginSuccess");
