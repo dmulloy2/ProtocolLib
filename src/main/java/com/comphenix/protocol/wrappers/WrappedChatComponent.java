@@ -135,14 +135,8 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 		if (message == null) {
 			throw new NullPointerException("message cannot be NULL.");
 		}
-		BaseComponent[] components = TextComponent.fromLegacyText(message);
-		
-		WrappedChatComponent[] result = new WrappedChatComponent[components.length];
-		
-		for (int i = 0; i < components.length; i++) {
-			result[i] = fromSpigotComponent(components[i]);
-		}
-		return result;
+		return new WrappedChatComponent[] {
+				fromSpigotComponents(TextComponent.fromLegacyText(message)) };
 	}
 	
 	/**
