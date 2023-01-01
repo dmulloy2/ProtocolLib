@@ -926,6 +926,12 @@ public abstract class AbstractStructure {
         );
     }
 
+    public StructureModifier<List<UUID>> getUUIDLists() {
+        return structureModifier.withType(
+                List.class,
+                BukkitConverters.getListConverter(Converters.passthrough(UUID.class)));
+    }
+
     /**
      * Retrieve a read/write structure for Instants in (mostly for use in 1.19+)
      * @return The Structure Modifier
