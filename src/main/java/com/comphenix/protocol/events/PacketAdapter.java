@@ -405,7 +405,7 @@ public abstract class PacketAdapter implements PacketListener {
 		}
 
 		/**
-		 * Set the listener option to {@link ListenerOptions#ASYNC}, indicating that our listener is thread safe.
+		 * Set the listener option to {@link ListenerOptions#ASYNC}, indicating that our outbound listener is thread safe.
 		 * <p>
 		 * This allows ProtocolLib to perform certain optimizations.
 		 *
@@ -413,6 +413,16 @@ public abstract class PacketAdapter implements PacketListener {
 		 */
 		public AdapterParameteters optionAsync() {
 			return addOption(ListenerOptions.ASYNC);
+		}
+
+		/**
+		 * Set the listener option to {@link ListenerOptions#SYNC}, indicating that our inbound listener must be executed
+		 * on the main server thread.
+		 *
+		 * @return This builder, for chaining.
+		 */
+		public AdapterParameteters optionSync() {
+			return addOption(ListenerOptions.SYNC);
 		}
 
 		/**

@@ -120,9 +120,15 @@ public abstract class EnumWrappers {
 
 	public enum PlayerInfoAction {
 		ADD_PLAYER,
+		INITIALIZE_CHAT,
 		UPDATE_GAME_MODE,
+		UPDATE_LISTED,
 		UPDATE_LATENCY,
 		UPDATE_DISPLAY_NAME,
+		/**
+		 * @deprecated Removed in 1.19.3
+		 */
+		@Deprecated
 		REMOVE_PLAYER
 	}
 
@@ -388,6 +394,7 @@ public abstract class EnumWrappers {
 		DYING,
 		CROAKING,
 		USING_TONGUE,
+		SITTING,
 		ROARING,
 		SNIFFING,
 		EMERGING,
@@ -400,7 +407,7 @@ public abstract class EnumWrappers {
 		 * @return Wrapped {@link EntityPose}
 		 */
 		public static EntityPose fromNms(Object nms) {
-			if(POSE_CONVERTER == null) {
+			if (POSE_CONVERTER == null) {
 				throw new IllegalStateException("EntityPose is only available in Minecraft version 1.13 +");
 			}
 			return POSE_CONVERTER.getSpecific(nms);
@@ -408,7 +415,7 @@ public abstract class EnumWrappers {
 		
 		/** @return net.minecraft.server.EntityPose enum equivalent to this wrapper enum */
 		public Object toNms() {
-			if(POSE_CONVERTER == null) {
+			if (POSE_CONVERTER == null) {
 				throw new IllegalStateException("EntityPose is only available in Minecraft version 1.13 +");
 			}
 			return POSE_CONVERTER.getGeneric(this);
@@ -490,7 +497,6 @@ public abstract class EnumWrappers {
 
 		GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
 		RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
-		PLAYER_INFO_ACTION_CLASS = getEnum(PacketType.Play.Server.PLAYER_INFO.getPacketClass(), 0);
 		TITLE_ACTION_CLASS = getEnum(PacketType.Play.Server.TITLE.getPacketClass(), 0);
 		WORLD_BORDER_ACTION_CLASS = getEnum(PacketType.Play.Server.WORLD_BORDER.getPacketClass(), 0);
 		COMBAT_EVENT_TYPE_CLASS = getEnum(PacketType.Play.Server.COMBAT_EVENT.getPacketClass(), 0);
@@ -498,18 +504,29 @@ public abstract class EnumWrappers {
 		PLAYER_ACTION_CLASS = getEnum(PacketType.Play.Client.ENTITY_ACTION.getPacketClass(), 0);
 		SCOREBOARD_ACTION_CLASS = getEnum(PacketType.Play.Server.SCOREBOARD_SCORE.getPacketClass(), 0);
 		PARTICLE_CLASS = getEnum(PacketType.Play.Server.WORLD_PARTICLES.getPacketClass(), 0);
-		SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.CUSTOM_SOUND_EFFECT.getPacketClass(), 0);
+
+		PLAYER_INFO_ACTION_CLASS = getEnum(PacketType.Play.Server.PLAYER_INFO.getPacketClass(), 0);
+		if (PLAYER_INFO_ACTION_CLASS == null) {
+			// todo: we can also use getField(0).getGenericType().getTypeParameters()[0]; but this should hold for now
+			PLAYER_INFO_ACTION_CLASS = PacketType.Play.Server.PLAYER_INFO.getPacketClass().getClasses()[1];
+		}
+
+		try {
+			SOUND_CATEGORY_CLASS = MinecraftReflection.getMinecraftClass("sounds.SoundCategory");
+		} catch (Exception ex) {
+			SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.NAMED_SOUND_EFFECT.getPacketClass(), 0);
+		}
 
 		try {
 			// TODO enum names are more stable than their packet associations
-			ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("world.entity.EnumItemSlot", "EnumItemSlot");
+			ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("world.entity.EnumItemSlot", "world.entity.EquipmentSlot", "EnumItemSlot");
 		} catch (Exception ex) {
 			ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
 		}
 
 		// In 1.17 the hand and use action class is no longer a field in the packet
 		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-			HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand");
+			HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand", "world.InteractionHand");
 			// class is named 'b' in the packet but class order differs in spigot and paper so we can only use the first method's return type (safest way)
 			ENTITY_USE_ACTION_CLASS = MinecraftReflection.getEnumEntityUseActionClass().getMethods()[0].getReturnType();
 		} else {
@@ -519,13 +536,13 @@ public abstract class EnumWrappers {
 
 		// 1.19 removed the entity spawn packet and moved the direction into a seperated class
 		if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
-			DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection");
+			DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection", "core.Direction");
 		} else {
 			DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
 		}
 
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
-		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "EntityPose");
+		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
 
 		associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -784,7 +801,7 @@ public abstract class EnumWrappers {
 	 * @return {@link EnumConverter} or null (if bellow 1.13 / nms EnumPose class cannot be found)
 	 */
 	public static EquivalentConverter<EntityPose> getEntityPoseConverter() {
-		if(getEntityPoseClass() == null) return null;
+		if (getEntityPoseClass() == null) return null;
 		return new EnumConverter<>(getEntityPoseClass(), EntityPose.class);
 	}
 
@@ -796,6 +813,17 @@ public abstract class EnumWrappers {
 	 */
 	public static <T extends Enum<T>> EquivalentConverter<T> getGenericConverter(Class<?> genericClass, Class<T> specificType) {
 		return new EnumConverter<>(genericClass, specificType);
+	}
+
+	/**
+	 * Creates an enum set with no elements based off the given class. The given must be an enum.
+	 *
+	 * @param clazz the element type of the enum set
+	 * @return a new enum set with the given class as its element type
+	 * @throws ClassCastException if the given class is not an enum
+	 */
+	public static <E extends Enum<E>> EnumSet<E> createEmptyEnumSet(Class<?> clazz) {
+		return EnumSet.noneOf((Class<E>) clazz);
 	}
 
 	/**

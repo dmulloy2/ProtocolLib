@@ -16,6 +16,7 @@ package com.comphenix.protocol;
 
 import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import java.util.List;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.Validate;
@@ -35,12 +36,12 @@ public class ProtocolLibrary {
 	/**
 	 * The maximum version ProtocolLib has been tested with.
 	 */
-	public static final String MAXIMUM_MINECRAFT_VERSION = "1.19";
+	public static final String MAXIMUM_MINECRAFT_VERSION = MinecraftVersion.LATEST.getVersion();
 
 	/**
-	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19) was released.
+	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19.2) was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-06-07";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-08-05";
 
 	/**
 	 * Plugins that are currently incompatible with ProtocolLib.

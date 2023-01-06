@@ -112,7 +112,7 @@ public class WrappedAttribute extends AbstractWrapper {
 	}
 
 	private static final Class<?> ATTRIBUTE_BASE_CLASS = MinecraftReflection.getNullableNMS(
-			"world.entity.ai.attributes.AttributeBase", "AttributeBase"
+			"world.entity.ai.attributes.AttributeBase", "world.entity.ai.attributes.Attribute", "AttributeBase"
 	);
 
 	private static final AutoWrapper<WrappedAttributeBase> ATTRIBUTE_BASE = AutoWrapper.wrap(

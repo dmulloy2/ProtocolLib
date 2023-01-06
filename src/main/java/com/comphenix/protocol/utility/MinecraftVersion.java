@@ -17,15 +17,16 @@
 
 package com.comphenix.protocol.utility;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.comphenix.protocol.ProtocolLibrary;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 
@@ -36,6 +37,10 @@ import org.bukkit.Server;
  */
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
 
+	/**
+	 * Version 1.19.3 - introducing feature preview
+	 */
+	public static final MinecraftVersion FEATURE_PREVIEW_UPDATE = new MinecraftVersion("1.19.3");
 	/**
 	 * Version 1.19 - the wild update
 	 */
@@ -112,7 +117,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 	/**
 	 * The latest release version of minecraft.
 	 */
-	public static final MinecraftVersion LATEST = CAVES_CLIFFS_2;
+	public static final MinecraftVersion LATEST = FEATURE_PREVIEW_UPDATE;
 
 	// used when serializing
 	private static final long serialVersionUID = -8695133558996459770L;

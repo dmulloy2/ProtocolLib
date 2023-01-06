@@ -1,5 +1,18 @@
 package com.comphenix.protocol.injector.netty.channel;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -23,20 +36,9 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -97,9 +99,10 @@ public class NettyChannelInjector implements Injector {
 
 	private final FieldAccessor channelField;
 
-	private final Set<Object> skippedPackets = Collections.synchronizedSet(new HashSet<>());
-	private final Collection<Object> processedPackets = Collections.synchronizedList(new ArrayList<>());
+	// packet marking
 	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
+	private final Set<Object> skippedPackets = Collections.synchronizedSet(new HashSet<>());
+	protected final ThreadLocal<Boolean> processedPackets = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
 	// status of this injector
 	private volatile boolean closed = false;
@@ -167,7 +170,7 @@ public class NettyChannelInjector implements Injector {
 	}
 
 	private static String getRandomKey() {
-		return Long.toString(System.nanoTime());
+		return "ProtocolLib-" + ThreadLocalRandom.current().nextLong();
 	}
 
 	private static boolean hasProtocolLibHandler(Channel channel) {
@@ -211,7 +214,7 @@ public class NettyChannelInjector implements Injector {
 			this.wrappedChannel.pipeline().addAfter(
 					"decoder",
 					INTERCEPTOR_NAME,
-					new InboundPacketInterceptor(this, this.channelListener, this.networkProcessor));
+					new InboundPacketInterceptor(this, this.channelListener));
 
 			this.injected = true;
 			return true;
@@ -463,25 +466,64 @@ public class NettyChannelInjector implements Injector {
 		}
 
 		// the field is not correct, rewrite now to our handler
-		Channel ch = new NettyChannelProxy(this.wrappedChannel, new NettyEventLoopProxy(this.wrappedChannel.eventLoop()) {
+		Channel ch = new NettyChannelProxy(this.wrappedChannel, new NettyEventLoopProxy(this.wrappedChannel.eventLoop(), this) {
 			@Override
-			protected Runnable proxyRunnable(Runnable original) {
-				return NettyChannelInjector.this.processOutbound(original, true);
+			protected Runnable doProxyRunnable(Runnable original) {
+				return NettyChannelInjector.this.processOutbound(original);
 			}
 
 			@Override
-			protected <T> Callable<T> proxyCallable(Callable<T> original) {
-				return NettyChannelInjector.this.processOutbound(original, true);
+			protected <T> Callable<T> doProxyCallable(Callable<T> original) {
+				return NettyChannelInjector.this.processOutbound(original);
 			}
 		}, this);
 		this.channelField.set(this.networkManager, ch);
 	}
 
 	private void ensureInEventLoop(Runnable runnable) {
-		this.wrappedChannel.eventLoop().execute(runnable);
+		this.ensureInEventLoop(this.wrappedChannel.eventLoop(), runnable);
 	}
 
-	<T> T processOutbound(T action, boolean markSeen) {
+	private void ensureInEventLoop(EventLoop eventLoop, Runnable runnable) {
+		if (eventLoop.inEventLoop()) {
+			runnable.run();
+		} else {
+			eventLoop.execute(runnable);
+		}
+	}
+
+	void processInboundPacket(ChannelHandlerContext ctx, Object packet, Class<?> packetClass) {
+		if (this.channelListener.hasMainThreadListener(packetClass) && !this.server.isPrimaryThread()) {
+			// not on the main thread but we are required to be - re-schedule the packet on the main thread
+			this.server.getScheduler().runTask(
+					this.injectionFactory.getPlugin(),
+					() -> this.processInboundPacket(ctx, packet, packetClass));
+			return;
+		}
+
+		// call packet handlers, a null result indicates that we shouldn't change anything
+		PacketEvent interceptionResult = this.channelListener.onPacketReceiving(this, packet, null);
+		if (interceptionResult == null) {
+			this.ensureInEventLoop(ctx.channel().eventLoop(), () -> ctx.fireChannelRead(packet));
+			return;
+		}
+
+		// fire the intercepted packet down the pipeline if it wasn't cancelled
+		if (!interceptionResult.isCancelled()) {
+			this.ensureInEventLoop(
+					ctx.channel().eventLoop(),
+					() -> ctx.fireChannelRead(interceptionResult.getPacket().getHandle()));
+
+			// check if there were any post events added the packet after we fired it down the pipeline
+			// we use this way as we don't want to construct a new network manager accidentally
+			NetworkMarker marker = NetworkMarker.getNetworkMarker(interceptionResult);
+			if (marker != null) {
+				this.networkProcessor.invokePostEvent(interceptionResult, marker);
+			}
+		}
+	}
+
+	<T> T processOutbound(T action) {
 		// get the accessor to the packet field
 		// if we are unable to look up the accessor then just return the runnable, probably nothing of our business
 		FieldAccessor packetAccessor = this.lookupPacketAccessor(action);
@@ -496,21 +538,23 @@ public class NettyChannelInjector implements Injector {
 		}
 
 		// filter out all packets which were explicitly send to not be processed by any event
-		NetworkMarker marker = this.savedMarkers.remove(packet);
-		if (this.skippedPackets.remove(packet)) {
+		// pre-checking isEmpty will reduce the need of hashing packets which don't override the
+		// hashCode method; this presents calls to the very slow identityHashCode default implementation
+		NetworkMarker marker = this.savedMarkers.isEmpty() ? null : this.savedMarkers.remove(packet);
+		if (!this.skippedPackets.isEmpty() && this.skippedPackets.remove(packet)) {
 			// if a marker was set there might be scheduled packets to execute after the packet send
 			// for this to work we need to proxy the input action to provide access to them
 			if (marker != null) {
-				return this.markProcessed(packet, this.proxyAction(action, null, marker), markSeen);
+				return this.proxyAction(action, null, marker);
 			}
 
 			// nothing special, just no processing
-			return this.markProcessed(packet, action, markSeen);
+			return action;
 		}
 
 		// no listener and no marker - no magic :)
 		if (!this.channelListener.hasListener(packet.getClass()) && marker == null) {
-			return this.markProcessed(packet, action, markSeen);
+			return action;
 		}
 
 		// ensure that we are on the main thread if we need to
@@ -526,7 +570,7 @@ public class NettyChannelInjector implements Injector {
 		// null indicates that no listener was affected by the packet, meaning that we can directly send the original packet
 		PacketEvent event = this.channelListener.onPacketSending(this, packet, marker);
 		if (event == null) {
-			return this.markProcessed(packet, action, markSeen);
+			return action;
 		}
 
 		// if the event wasn't cancelled by this action we must recheck if the packet changed during the method call
@@ -542,11 +586,11 @@ public class NettyChannelInjector implements Injector {
 			// if the marker is null we can just schedule the action as we don't need to do anything after the packet was sent
 			NetworkMarker eventMarker = NetworkMarker.getNetworkMarker(event);
 			if (eventMarker == null) {
-				return this.markProcessed(interceptedPacket, action, markSeen);
+				return action;
 			}
 
 			// we need to wrap the action to call the listeners set in the marker
-			return this.markProcessed(interceptedPacket, this.proxyAction(action, event, eventMarker), markSeen);
+			return this.proxyAction(action, event, eventMarker);
 		}
 
 		// return null if the event was cancelled to schedule a no-op event
@@ -560,12 +604,18 @@ public class NettyChannelInjector implements Injector {
 		if (action instanceof Runnable) {
 			// easier thing to do - just wrap the runnable in a new one
 			return (T) (Runnable) () -> {
+				// notify the outbound handler that the packets are processed
+				this.processedPackets.set(Boolean.TRUE);
+				// execute the action & invoke the post event
 				((Runnable) action).run();
 				this.networkProcessor.invokePostEvent(event, marker);
 			};
 		} else if (action instanceof Callable<?>) {
 			// okay this is a bit harder now - we need to wrap the action and return the value of it
 			return (T) (Callable<Object>) () -> {
+				// notify the outbound handler that the packets are processed
+				this.processedPackets.set(Boolean.TRUE);
+				// execute the action & invoke the post event
 				Object value = ((Callable<Object>) action).call();
 				this.networkProcessor.invokePostEvent(event, marker);
 				return value;
@@ -573,20 +623,6 @@ public class NettyChannelInjector implements Injector {
 		} else {
 			throw new IllegalStateException("Unexpected input action of type " + action.getClass());
 		}
-	}
-
-	private <T> T markProcessed(Object packet, T actualAction, boolean shouldMarkPackets) {
-		if (shouldMarkPackets) {
-			// tiny hack to prevent duplicate packet processing, on main thread and async
-			this.processedPackets.add(packet);
-		}
-
-		// return the requested action
-		return actualAction;
-	}
-
-	boolean wasProcessedBefore(Object packet) {
-		return this.processedPackets.remove(packet);
 	}
 
 	private FieldAccessor lookupPacketAccessor(Object action) {

@@ -21,7 +21,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -34,9 +36,13 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.fuzzy.*;
+import com.comphenix.protocol.reflect.fuzzy.AbstractFuzzyMatcher;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-
+import io.netty.buffer.Unpooled;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Server;
@@ -66,6 +72,11 @@ public final class MinecraftReflection {
 
 	// Cache of getBukkitEntity
 	private static final Map<Class<?>, MethodAccessor> BUKKIT_ENTITY_CACHE = new HashMap<>();
+
+	/**
+	 * The Entity package in Forge 1.5.2
+	 */
+	private static final String FORGE_ENTITY_PACKAGE = "net.minecraft.entity";
 
 	// Package private for the purpose of unit testing
 	static CachedPackage minecraftPackage;
@@ -165,7 +176,28 @@ public final class MinecraftReflection {
 				Method getHandle = getCraftEntityClass().getMethod("getHandle");
 				MINECRAFT_FULL_PACKAGE = getHandle.getReturnType().getPackage().getName();
 
-				setDynamicPackageMatcher(MINECRAFT_CLASS_NAME_REGEX);
+				// Pretty important invariant
+				if (!MINECRAFT_FULL_PACKAGE.startsWith(MINECRAFT_PREFIX_PACKAGE)) {
+					// See if we got the Forge entity package
+					if (MINECRAFT_FULL_PACKAGE.equals(FORGE_ENTITY_PACKAGE)) {
+						// Use the standard NMS versioned package
+						MINECRAFT_FULL_PACKAGE = CachedPackage.combine(MINECRAFT_PREFIX_PACKAGE, packageVersion);
+					} else {
+						// Assume they're the same instead
+						MINECRAFT_PREFIX_PACKAGE = MINECRAFT_FULL_PACKAGE;
+					}
+
+					// The package is usually flat, so go with that assumption
+					String matcher =
+							(MINECRAFT_PREFIX_PACKAGE.length() > 0 ? Pattern.quote(MINECRAFT_PREFIX_PACKAGE + ".") : "") + CANONICAL_REGEX;
+
+					// We'll still accept the default location, however
+					setDynamicPackageMatcher("(" + matcher + ")|(" + MINECRAFT_CLASS_NAME_REGEX + ")");
+
+				} else {
+					// Use the standard matcher
+					setDynamicPackageMatcher(MINECRAFT_CLASS_NAME_REGEX);
+				}
 			}
 
 			return MINECRAFT_FULL_PACKAGE;
@@ -466,7 +498,7 @@ public final class MinecraftReflection {
 	 */
 	public static Class<?> getEntityPlayerClass() {
 		try {
-			return getMinecraftClass("server.level.EntityPlayer", "EntityPlayer");
+			return getMinecraftClass("server.level.EntityPlayer", "server.level.ServerPlayer", "EntityPlayer");
 		} catch (RuntimeException e) {
 			try {
 				// Grab CraftPlayer's handle
@@ -508,7 +540,7 @@ public final class MinecraftReflection {
 	 */
 	public static Class<?> getEntityClass() {
 		try {
-			return getMinecraftClass("server.world.Entity", "Entity");
+			return getMinecraftClass("world.entity.Entity", "Entity");
 		} catch (RuntimeException e) {
 			return fallbackMethodReturn("Entity", "entity.CraftEntity", "getHandle");
 		}
@@ -530,7 +562,7 @@ public final class MinecraftReflection {
 	 */
 	public static Class<?> getWorldServerClass() {
 		try {
-			return getMinecraftClass("server.level.WorldServer", "WorldServer");
+			return getMinecraftClass("server.level.WorldServer", "server.level.ServerLevel", "WorldServer");
 		} catch (RuntimeException e) {
 			return fallbackMethodReturn("WorldServer", "CraftWorld", "getHandle");
 		}
@@ -543,7 +575,7 @@ public final class MinecraftReflection {
 	 */
 	public static Class<?> getNmsWorldClass() {
 		try {
-			return getMinecraftClass("world.level.World", "World");
+			return getMinecraftClass("world.level.World", "world.level.Level", "World");
 		} catch (RuntimeException e) {
 			return setMinecraftClass("World", getWorldServerClass().getSuperclass());
 		}
@@ -584,7 +616,7 @@ public final class MinecraftReflection {
 	 * @return The Enum protocol class.
 	 */
 	public static Class<?> getEnumProtocolClass() {
-		return getMinecraftClass("network.EnumProtocol", "EnumProtocol");
+		return getMinecraftClass("network.EnumProtocol", "network.ConnectionProtocol", "EnumProtocol");
 	}
 
 	/**
@@ -593,7 +625,7 @@ public final class MinecraftReflection {
 	 * @return The IChatBaseComponent.
 	 */
 	public static Class<?> getIChatBaseComponentClass() {
-		return getMinecraftClass("network.chat.IChatBaseComponent", "network.chat.IChatbaseComponent", "IChatBaseComponent");
+		return getMinecraftClass("network.chat.IChatBaseComponent", "network.chat.IChatbaseComponent", "network.chat.Component", "IChatBaseComponent");
 	}
 
 	public static Class<?> getIChatBaseComponentArrayClass() {
@@ -606,7 +638,7 @@ public final class MinecraftReflection {
 	 * @return The chat component class.
 	 */
 	public static Class<?> getChatComponentTextClass() {
-		return getMinecraftClass("network.chat.ChatComponentText", "ChatComponentText");
+		return getMinecraftClass("network.chat.ChatComponentText", "network.chat.TextComponent", "ChatComponentText");
 	}
 
 	/**
@@ -616,7 +648,7 @@ public final class MinecraftReflection {
 	 * @throws IllegalStateException If the class could not be found or deduced.
 	 */
 	public static Class<?> getChatSerializerClass() {
-		return getMinecraftClass("network.chat.IChatBaseComponent$ChatSerializer", "IChatBaseComponent$ChatSerializer");
+		return getMinecraftClass("network.chat.IChatBaseComponent$ChatSerializer", "network.chat.Component$Serializer", "IChatBaseComponent$ChatSerializer");
 	}
 
 	/**
@@ -625,7 +657,7 @@ public final class MinecraftReflection {
 	 * @return The ServerPing class.
 	 */
 	public static Class<?> getServerPingClass() {
-		return getMinecraftClass("network.protocol.status.ServerPing", "ServerPing");
+		return getMinecraftClass("network.protocol.status.ServerPing", "network.protocol.status.ServerStatus", "ServerPing");
 	}
 
 	/**
@@ -634,7 +666,7 @@ public final class MinecraftReflection {
 	 * @return The ServerPingServerData class.
 	 */
 	public static Class<?> getServerPingServerDataClass() {
-		return getMinecraftClass("network.protocol.status.ServerPing$ServerData", "ServerPing$ServerData");
+		return getMinecraftClass("network.protocol.status.ServerPing$ServerData", "network.protocol.status.ServerStatus$Version", "ServerPing$ServerData");
 	}
 
 	/**
@@ -645,6 +677,7 @@ public final class MinecraftReflection {
 	public static Class<?> getServerPingPlayerSampleClass() {
 		return getMinecraftClass(
 				"network.protocol.status.ServerPing$ServerPingPlayerSample",
+				"network.protocol.status.ServerStatus$Players",
 				"ServerPing$ServerPingPlayerSample");
 	}
 
@@ -671,7 +704,7 @@ public final class MinecraftReflection {
 	 * @return The statistics class.
 	 */
 	public static Class<?> getStatisticClass() {
-		return getMinecraftClass("stats.Statistic", "Statistic");
+		return getMinecraftClass("stats.Statistic", "stats.Stat", "Statistic");
 	}
 
 	/**
@@ -680,7 +713,7 @@ public final class MinecraftReflection {
 	 * @return The statistic list class.
 	 */
 	public static Class<?> getStatisticListClass() {
-		return getMinecraftClass("stats.StatisticList", "StatisticList");
+		return getMinecraftClass("stats.StatisticList", "stats.Stats", "StatisticList");
 	}
 
 	/**
@@ -706,7 +739,7 @@ public final class MinecraftReflection {
 	 * @return The PlayerConnection class.
 	 */
 	public static Class<?> getPlayerConnectionClass() {
-		return getMinecraftClass("server.network.PlayerConnection", "PlayerConnection");
+		return getMinecraftClass("server.network.PlayerConnection", "server.network.ServerGamePacketListenerImpl", "PlayerConnection");
 	}
 
 	/**
@@ -715,7 +748,7 @@ public final class MinecraftReflection {
 	 * @return The NetworkManager class.
 	 */
 	public static Class<?> getNetworkManagerClass() {
-		return getMinecraftClass("network.NetworkManager", "NetworkManager");
+		return getMinecraftClass("network.NetworkManager", "network.Connection", "NetworkManager");
 	}
 
 	/**
@@ -748,11 +781,11 @@ public final class MinecraftReflection {
 	}
 
 	public static Class<?> getFluidTypeClass() {
-		return getNullableNMS("world.level.material.FluidType", "FluidType");
+		return getNullableNMS("world.level.material.FluidType", "world.level.material.Fluid", "FluidType");
 	}
 
 	public static Class<?> getParticleTypeClass() {
-		return getNullableNMS("core.particles.ParticleType", "ParticleType");
+		return getNullableNMS("core.particles.ParticleType", "core.particles.SimpleParticleType", "ParticleType");
 	}
 
 	/**
@@ -770,7 +803,7 @@ public final class MinecraftReflection {
 	 * @return The DataWatcher class.
 	 */
 	public static Class<?> getDataWatcherClass() {
-		return getMinecraftClass("network.syncher.DataWatcher", "DataWatcher");
+		return getMinecraftClass("network.syncher.DataWatcher", "network.syncher.SynchedEntityData", "DataWatcher");
 	}
 
 	/**
@@ -779,7 +812,7 @@ public final class MinecraftReflection {
 	 * @return The BlockPosition class.
 	 */
 	public static Class<?> getBlockPositionClass() {
-		return getMinecraftClass("core.BlockPosition", "BlockPosition");
+		return getMinecraftClass("core.BlockPosition", "core.BlockPos", "BlockPosition");
 	}
 
 	/**
@@ -788,7 +821,7 @@ public final class MinecraftReflection {
 	 * @return The Vec3D class.
 	 */
 	public static Class<?> getVec3DClass() {
-		return getMinecraftClass("world.phys.Vec3D", "Vec3D");
+		return getMinecraftClass("world.phys.Vec3D", "world.phys.Vec3", "Vec3D");
 	}
 
 	/**
@@ -797,7 +830,7 @@ public final class MinecraftReflection {
 	 * @return The ChunkCoordIntPair class.
 	 */
 	public static Class<?> getChunkCoordIntPair() {
-		return getMinecraftClass("world.level.ChunkCoordIntPair", "ChunkCoordIntPair");
+		return getMinecraftClass("world.level.ChunkCoordIntPair", "world.level.ChunkPos", "ChunkCoordIntPair");
 	}
 
 	/**
@@ -806,11 +839,11 @@ public final class MinecraftReflection {
 	 * @return The class
 	 */
 	public static Class<?> getDataWatcherItemClass() {
-		return getMinecraftClass("network.syncher.DataWatcher$Item", "DataWatcher$Item", "DataWatcher$WatchableObject");
+		return getMinecraftClass("network.syncher.DataWatcher$Item", "network.syncher.SynchedEntityData$DataItem", "DataWatcher$Item", "DataWatcher$WatchableObject");
 	}
 
 	public static Class<?> getDataWatcherObjectClass() {
-		return getNullableNMS("network.syncher.DataWatcherObject", "DataWatcherObject");
+		return getNullableNMS("network.syncher.DataWatcherObject", "network.syncher.EntityDataAccessor", "DataWatcherObject");
 	}
 
 	public static boolean watcherObjectExists() {
@@ -822,23 +855,23 @@ public final class MinecraftReflection {
 	}
 
 	public static Class<?> getDataWatcherSerializerClass() {
-		return getNullableNMS("network.syncher.DataWatcherSerializer", "DataWatcherSerializer");
+		return getNullableNMS("network.syncher.DataWatcherSerializer", "network.syncher.EntityDataSerializer", "DataWatcherSerializer");
 	}
 
 	public static Class<?> getDataWatcherRegistryClass() {
-		return getMinecraftClass("network.syncher.DataWatcherRegistry", "DataWatcherRegistry");
+		return getMinecraftClass("network.syncher.DataWatcherRegistry", "network.syncher.EntityDataSerializers", "DataWatcherRegistry");
 	}
 
 	public static Class<?> getMinecraftKeyClass() {
-		return getMinecraftClass("resources.MinecraftKey", "MinecraftKey");
+		return getMinecraftClass("resources.MinecraftKey", "resources.ResourceLocation", "MinecraftKey");
 	}
 
 	public static Class<?> getMobEffectListClass() {
-		return getMinecraftClass("world.effect.MobEffectList", "MobEffectList");
+		return getMinecraftClass("world.effect.MobEffectList", "MobEffectList", "world.effect.MobEffect");
 	}
 
 	public static Class<?> getSoundEffectClass() {
-		return getNullableNMS("sounds.SoundEffect", "SoundEffect");
+		return getNullableNMS("sounds.SoundEffect", "sounds.SoundEvent", "SoundEffect");
 	}
 
 	/**
@@ -847,7 +880,7 @@ public final class MinecraftReflection {
 	 * @return The ServerConnection class.
 	 */
 	public static Class<?> getServerConnectionClass() {
-		return getMinecraftClass("server.network.ServerConnection", "ServerConnection");
+		return getMinecraftClass("server.network.ServerConnection", "server.network.ServerConnectionListener", "ServerConnection");
 	}
 
 	/**
@@ -856,7 +889,7 @@ public final class MinecraftReflection {
 	 * @return The NBT base class.
 	 */
 	public static Class<?> getNBTBaseClass() {
-		return getMinecraftClass("nbt.NBTBase", "NBTBase");
+		return getMinecraftClass("nbt.NBTBase", "nbt.Tag", "NBTBase");
 	}
 
 	/**
@@ -865,7 +898,7 @@ public final class MinecraftReflection {
 	 * @return The NBT read limiter.
 	 */
 	public static Class<?> getNBTReadLimiterClass() {
-		return getMinecraftClass("nbt.NBTReadLimiter", "NBTReadLimiter");
+		return getMinecraftClass("nbt.NBTReadLimiter", "nbt.NbtAccounter", "NBTReadLimiter");
 	}
 
 	/**
@@ -874,7 +907,7 @@ public final class MinecraftReflection {
 	 * @return The NBT Compond class.
 	 */
 	public static Class<?> getNBTCompoundClass() {
-		return getMinecraftClass("nbt.NBTTagCompound", "NBTTagCompound");
+		return getMinecraftClass("nbt.NBTTagCompound", "nbt.CompoundTag", "NBTTagCompound");
 	}
 
 	/**
@@ -883,7 +916,7 @@ public final class MinecraftReflection {
 	 * @return EntityTracker class.
 	 */
 	public static Class<?> getEntityTrackerClass() {
-		return getMinecraftClass("server.level.PlayerChunkMap$EntityTracker", "EntityTracker");
+		return getMinecraftClass("server.level.PlayerChunkMap$EntityTracker", "server.level.ChunkMap$TrackedEntity", "EntityTracker");
 	}
 
 	/**
@@ -896,6 +929,7 @@ public final class MinecraftReflection {
 	public static Class<?> getAttributeSnapshotClass() {
 		return getMinecraftClass(
 				"network.protocol.game.PacketPlayOutUpdateAttributes$AttributeSnapshot",
+				"network.protocol.game.ClientboundUpdateAttributesPacket$AttributeSnapshot",
 				"AttributeSnapshot",
 				"PacketPlayOutUpdateAttributes$AttributeSnapshot");
 	}
@@ -924,7 +958,7 @@ public final class MinecraftReflection {
 	 * @return The mob effect class.
 	 */
 	public static Class<?> getMobEffectClass() {
-		return getMinecraftClass("world.effect.MobEffect", "MobEffect");
+		return getMinecraftClass("world.effect.MobEffect", "world.effect.MobEffectInstance", "MobEffect");
 	}
 
 	/**
@@ -933,7 +967,7 @@ public final class MinecraftReflection {
 	 * @return The data serializer class.
 	 */
 	public static Class<?> getPacketDataSerializerClass() {
-		return getMinecraftClass("network.PacketDataSerializer", "PacketDataSerializer");
+		return getMinecraftClass("network.PacketDataSerializer", "network.FriendlyByteBuf", "PacketDataSerializer");
 	}
 
 	/**
@@ -942,7 +976,7 @@ public final class MinecraftReflection {
 	 * @return The NBTCompressedStreamTools class.
 	 */
 	public static Class<?> getNbtCompressedStreamToolsClass() {
-		return getMinecraftClass("nbt.NBTCompressedStreamTools", "NBTCompressedStreamTools");
+		return getMinecraftClass("nbt.NBTCompressedStreamTools", "nbt.NbtIo", "NBTCompressedStreamTools");
 	}
 
 	/**
@@ -951,7 +985,7 @@ public final class MinecraftReflection {
 	 * @return The tile entity class.
 	 */
 	public static Class<?> getTileEntityClass() {
-		return getMinecraftClass("world.level.block.entity.TileEntity", "TileEntity");
+		return getMinecraftClass("world.level.block.entity.TileEntity", "world.level.block.entity.BlockEntity", "TileEntity");
 	}
 
 	/**
@@ -1037,9 +1071,17 @@ public final class MinecraftReflection {
 	 * @return The PlayerInfoData class
 	 */
 	public static Class<?> getPlayerInfoDataClass() {
-		return getMinecraftClass(
-				"network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
-				"PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
+		try {
+			return getMinecraftClass(
+					"network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
+					"network.protocol.game.ClientboundPlayerInfoPacket$PlayerUpdate",
+					"PacketPlayOutPlayerInfo$PlayerInfoData", "PlayerInfoData");
+		} catch (Exception ex) {
+			// todo: ClientboundPlayerInfoUpdatePacket$b, maybe get this via field type
+			return setMinecraftClass(
+					"network.protocol.game.PacketPlayOutPlayerInfo$PlayerInfoData",
+					PacketType.Play.Server.PLAYER_INFO.getPacketClass().getClasses()[0]);
+		}
 	}
 
 	/**
@@ -1049,7 +1091,12 @@ public final class MinecraftReflection {
 	 */
 	public static Class<?> getEnumEntityUseActionClass() {
 		Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
-		return FuzzyReflection.fromClass(packetClass, true).getFieldByType("^.*(EnumEntityUseAction)").getType();
+		FuzzyReflection fuzzyReflection = FuzzyReflection.fromClass(packetClass, true);
+		try {
+			return fuzzyReflection.getFieldByType("^.*(EnumEntityUseAction)").getType();
+		} catch (IllegalArgumentException ignored) {
+			return fuzzyReflection.getFieldByType("^.*(Action)").getType();
+		}
 	}
 
 	/**
@@ -1106,7 +1153,7 @@ public final class MinecraftReflection {
 	 * @return The IBlockData class
 	 */
 	public static Class<?> getIBlockDataClass() {
-		return getMinecraftClass("world.level.block.state.IBlockData", "IBlockData");
+		return getMinecraftClass("world.level.block.state.IBlockData", "world.level.block.state.BlockState", "IBlockData");
 	}
 
 	/**
@@ -1164,7 +1211,7 @@ public final class MinecraftReflection {
 	}
 
 	public static Class<?> getSectionPositionClass() {
-		return getMinecraftClass("core.SectionPosition", "SectionPosition");
+		return getMinecraftClass("core.SectionPosition", "core.SectionPos", "SectionPosition");
 	}
 
 	/**
@@ -1433,6 +1480,7 @@ public final class MinecraftReflection {
 	 */
 	public static Object getPacketDataSerializer(Object buffer) {
 		try {
+			// TODO: move this to MinecraftMethods, or at least, cache the constructor accessor
 			Class<?> packetSerializer = getPacketDataSerializerClass();
 			return packetSerializer.getConstructor(getByteBufClass()).newInstance(buffer);
 		} catch (Exception e) {
@@ -1440,24 +1488,34 @@ public final class MinecraftReflection {
 		}
 	}
 
+	public static Object createPacketDataSerializer(int initialSize) {
+		// validate the initial size
+		if (initialSize <= 0) {
+			initialSize = 256;
+		}
+
+		Object buffer = Unpooled.buffer(initialSize);
+		return getPacketDataSerializer(buffer);
+	}
+
 	public static Class<?> getNbtTagTypes() {
-		return getMinecraftClass("nbt.NBTTagTypes", "NBTTagTypes");
+		return getMinecraftClass("nbt.NBTTagTypes", "nbt.TagTypes", "NBTTagTypes");
 	}
 
 	public static Class<?> getChatDeserializer() {
-		return getMinecraftClass("util.ChatDeserializer", "ChatDeserializer");
+		return getMinecraftClass("util.ChatDeserializer", "util.GsonHelper", "ChatDeserializer");
 	}
 
 	public static Class<?> getChatMutableComponentClass() {
-		return getMinecraftClass("network.chat.IChatMutableComponent");
+		return getMinecraftClass("network.chat.IChatMutableComponent", "network.chat.MutableComponent");
 	}
 
 	public static Class<?> getDimensionManager() {
-		return getMinecraftClass("world.level.dimension.DimensionManager", "DimensionManager");
+		return getMinecraftClass("world.level.dimension.DimensionManager", "world.level.dimension.DimensionType", "DimensionManager");
 	}
 
 	public static Class<?> getMerchantRecipeList() {
-		return getMinecraftClass("world.item.trading.MerchantRecipeList", "MerchantRecipeList");
+		return getMinecraftClass("world.item.trading.MerchantRecipeList", "world.item.trading.MerchantOffers", "MerchantRecipeList");
 	}
 
 	public static Class<?> getResourceKey() {
@@ -1465,31 +1523,35 @@ public final class MinecraftReflection {
 	}
 
 	public static Class<?> getEntityTypes() {
-		return getMinecraftClass("world.entity.EntityTypes", "EntityTypes");
+		return getMinecraftClass("world.entity.EntityTypes", "world.entity.EntityType", "EntityTypes");
 	}
 
 	public static Class<?> getParticleParam() {
-		return getMinecraftClass("core.particles.ParticleParam", "ParticleParam");
+		return getMinecraftClass("core.particles.ParticleParam", "core.particles.ParticleOptions", "ParticleParam");
 	}
 
 	public static Class<?> getSectionPosition() {
-		return getMinecraftClass("core.SectionPosition", "SectionPosition");
+		return getMinecraftClass("core.SectionPosition", "core.SectionPos", "SectionPosition");
 	}
 
 	public static Class<?> getChunkProviderServer() {
-		return getMinecraftClass("server.level.ChunkProviderServer", "ChunkProviderServer");
+		return getMinecraftClass("server.level.ChunkProviderServer", "server.level.ServerChunkCache", "ChunkProviderServer");
 	}
 
 	public static Class<?> getPlayerChunkMap() {
-		return getMinecraftClass("server.level.PlayerChunkMap", "PlayerChunkMap");
+		return getMinecraftClass("server.level.PlayerChunkMap", "server.level.ChunkMap", "PlayerChunkMap");
 	}
 
 	public static Class<?> getIRegistry() {
-		return getNullableNMS("core.IRegistry", "IRegistry");
+		return getNullableNMS("core.IRegistry", "core.Registry", "IRegistry");
+	}
+
+	public static Class<?> getBuiltInRegistries() {
+		return getNullableNMS("core.registries.BuiltInRegistries");
 	}
 
 	public static Class<?> getAttributeBase() {
-		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "AttributeBase");
+		return getMinecraftClass("world.entity.ai.attributes.AttributeBase", "world.entity.ai.attributes.Attribute", "AttributeBase");
 	}
 
 	public static Class<?> getProfilePublicKeyClass() {
@@ -1500,29 +1562,48 @@ public final class MinecraftReflection {
         try {
             return getMinecraftClass("SaltedSignature");
         } catch (RuntimeException runtimeException) {
-            Class<?> messageSigClass = getMinecraftClass("network.chat.MessageSignature", "MessageSignature");
+	        Class<?> minecraftEncryption = getMinecraftClass("util.MinecraftEncryption", "util.Crypt", "MinecraftEncryption");
+	        FuzzyMethodContract constructorContract = FuzzyMethodContract.newBuilder()
+			        .parameterCount(2)
+			        .parameterExactType(Long.TYPE, 0)
+			        .parameterExactType(byte[].class, 1)
+			        .build();
 
-            FuzzyClassContract signatureContract = FuzzyClassContract.newBuilder().
-                    constructor(FuzzyMethodContract.newBuilder().
-                            parameterCount(2).
-                            parameterSuperOf(Long.TYPE, 0).
-                            parameterSuperOf(byte[].class, 1).
-                            build()
-                    ).build();
+	        for (Class<?> subclass : minecraftEncryption.getClasses()) {
+		        FuzzyReflection fuzzyReflection = FuzzyReflection.fromClass(subclass, true);
+		        List<Constructor<?>> constructors = fuzzyReflection.getConstructorList(constructorContract);
 
-            FuzzyFieldContract fuzzyFieldContract = FuzzyFieldContract.newBuilder().
-                    typeMatches(getMinecraftObjectMatcher().and(signatureContract)).
-                    build();
+		        if (!constructors.isEmpty()) {
+			        return setMinecraftClass("SaltedSignature", subclass);
+		        }
+	        }
 
-            Class<?> signatureClass = FuzzyReflection.fromClass(messageSigClass, true)
-                    .getField(fuzzyFieldContract)
-                    .getType();
-            return setMinecraftClass("SaltedSignature", signatureClass);
+	        Class<?> messageSigClass = getMinecraftClass("network.chat.MessageSignature", "MessageSignature");
+	        FuzzyClassContract signatureContract = FuzzyClassContract.newBuilder()
+			        .constructor(FuzzyMethodContract.newBuilder()
+					        .parameterCount(2)
+					        .parameterSuperOf(Long.TYPE, 0)
+					        .parameterSuperOf(byte[].class, 1)
+					        .build())
+			        .build();
+
+	        FuzzyFieldContract fuzzyFieldContract = FuzzyFieldContract.newBuilder()
+			        .typeMatches(getMinecraftObjectMatcher().and(signatureContract))
+			        .build();
+
+	        Class<?> signatureClass = FuzzyReflection.fromClass(messageSigClass, true)
+			        .getField(fuzzyFieldContract)
+			        .getType();
+	        return setMinecraftClass("SaltedSignature", signatureClass);
         }
     }
 
 	public static Class<?> getProfilePublicKeyDataClass() {
 		return getProfilePublicKeyClass().getClasses()[0];
+	}
+
+	public static Class<?> getRemoteChatSessionClass() {
+		return getMinecraftClass("network.chat.RemoteChatSession");
 	}
 
 	public static Class<?> getFastUtilClass(String className) {
@@ -1562,5 +1643,30 @@ public final class MinecraftReflection {
 		// Jackpot - two classes at the same time!
 		setMinecraftClass("MinecraftServer", params[0]);
 		setMinecraftClass("PlayerList", params[1]);
+	}
+
+	public static Class<?> getLevelChunkPacketDataClass() {
+		return getNullableNMS("network.protocol.game.ClientboundLevelChunkPacketData");
+	}
+
+	public static Class<?> getLightUpdatePacketDataClass() {
+		return getNullableNMS("network.protocol.game.ClientboundLightUpdatePacketData");
+	}
+
+	public static Class<?> getBlockEntityTypeClass() {
+		return getMinecraftClass("world.level.block.entity.BlockEntityType", "world.level.block.entity.TileEntityTypes", "TileEntityTypes");
+	}
+
+	public static Class<?> getBlockEntityInfoClass() {
+		try {
+			return getMinecraftClass("BlockEntityInfo");
+		} catch (RuntimeException expected) {
+			Class<?> infoClass = (Class<?>) ((ParameterizedType) FuzzyReflection.fromClass(getLevelChunkPacketDataClass(),
+					true).getFieldListByType(List.class).get(0).getGenericType()).getActualTypeArguments()[0];
+
+			setMinecraftClass("BlockEntityInfo", infoClass);
+
+			return infoClass;
+		}
 	}
 }

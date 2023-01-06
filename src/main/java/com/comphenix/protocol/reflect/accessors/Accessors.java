@@ -6,6 +6,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+// TODO: at some point we should make everything nullable to make updates easier
+
 public final class Accessors {
 
 	// Seal this class

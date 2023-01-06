@@ -17,6 +17,12 @@
 
 package com.comphenix.protocol.injector;
 
+import java.security.PublicKey;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -26,14 +32,13 @@ import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.matcher.ElementMatchers;
 
@@ -50,35 +55,50 @@ public class StructureCache {
 
 	// packet data serializer which always returns an empty nbt tag compound
 	private static boolean TRICK_TRIED = false;
-	private static ConstructorAccessor TRICKED_DATA_SERIALIZER;
+	private static ConstructorAccessor TRICKED_DATA_SERIALIZER_BASE;
+	private static ConstructorAccessor TRICKED_DATA_SERIALIZER_JSON;
 
-	public static Object newPacket(Class<?> clazz) {
-		Object result = DefaultInstances.DEFAULT.create(clazz);
-
-		if (result == null) {
-			return PACKET_INSTANCE_CREATORS.computeIfAbsent(clazz, $ -> {
-				ConstructorAccessor accessor = Accessors.getConstructorAccessorOrNull(clazz,
+	public static Object newPacket(Class<?> packetClass) {
+		Supplier<Object> packetConstructor = PACKET_INSTANCE_CREATORS.computeIfAbsent(packetClass, clazz -> {
+			// prefer construction via PacketDataSerializer constructor on 1.17 and above
+			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+				ConstructorAccessor serializerAccessor = Accessors.getConstructorAccessorOrNull(
+						clazz,
 						MinecraftReflection.getPacketDataSerializerClass());
-				if (accessor != null) {
-					return () -> {
+				if (serializerAccessor != null) {
+					// check if the method is possible
+					if (tryInitTrickDataSerializer()) {
 						try {
-							return accessor.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()));
-						} catch (Exception exception) {
-							// try trick nms around as they want a non-null compound in the map_chunk packet constructor
-							ConstructorAccessor trickyDataSerializerAccessor = getTrickDataSerializerOrNull();
-							if (trickyDataSerializerAccessor != null) {
-								return accessor.invoke(trickyDataSerializerAccessor.invoke(new ZeroBuffer()));
-							}
-							// the tricks are over
-							throw new IllegalArgumentException("Unable to create packet " + clazz, exception);
-						}
-					};
-				}
-				throw new IllegalArgumentException("No matching constructor to create packet in class " + clazz);
-			}).get();
-		}
+							// first try with the base accessor
+							Object serializer = TRICKED_DATA_SERIALIZER_BASE.invoke(new ZeroBuffer());
+							serializerAccessor.invoke(serializer); // throwaway instance, for testing
 
-		return result;
+							// method is working
+							return () -> serializerAccessor.invoke(serializer);
+						} catch (Exception exception) {
+							try {
+								// try with the json accessor
+								Object serializer = TRICKED_DATA_SERIALIZER_JSON.invoke(new ZeroBuffer());
+								serializerAccessor.invoke(serializer); // throwaway instance, for testing
+
+								// method is working
+								return () -> serializerAccessor.invoke(serializer);
+							} catch (Exception ignored) {
+								// shrug, fall back to default behaviour
+							}
+						}
+					}
+				}
+			}
+
+			// try via DefaultInstances as fallback
+			return () -> {
+				Object packetInstance = DefaultInstances.DEFAULT.create(clazz);
+				Objects.requireNonNull(packetInstance, "Unable to create packet instance for class " + clazz);
+				return packetInstance;
+			};
+		});
+		return packetConstructor.get();
 	}
 
 	/**
@@ -113,45 +133,70 @@ public class StructureCache {
 	public static StructureModifier<Object> getStructure(final PacketType packetType) {
 		Preconditions.checkNotNull(packetType, "type cannot be null");
 
-		StructureModifier<Object> modifier = STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
+		return STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
 			Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
 			return new StructureModifier<>(packetClass, MinecraftReflection.getPacketClass(), true);
 		});
-
-		return modifier;
 	}
 
 	/**
-	 * Creates a packet data serializer sub-class if needed to allow the fixed read of a NbtTagCompound because of a null
-	 * check in the MapChunk packet constructor.
+	 * Returns a new mocked null data serializer instance, if possible.
 	 *
-	 * @return an accessor to a constructor which creates a data serializer.
+	 * @return a new null data serializer instance.
 	 */
-	private static ConstructorAccessor getTrickDataSerializerOrNull() {
-		if (TRICKED_DATA_SERIALIZER == null && !TRICK_TRIED) {
-			// ensure that we only try once to create the class
-			TRICK_TRIED = true;
-			try {
-				// create an empty instance of a nbt tag compound / text compound that we can re-use when needed
-				Object textCompound = WrappedChatComponent.fromText("").getHandle();
-				Object compound = Accessors.getConstructorAccessor(MinecraftReflection.getNBTCompoundClass()).invoke();
-				// create the method in the class to read an empty nbt tag compound (currently used for MAP_CHUNK because of null check)
-				Class<?> generatedClass = ByteBuddyFactory.getInstance()
-						.createSubclass(MinecraftReflection.getPacketDataSerializerClass())
-						.name(MinecraftMethods.class.getPackage().getName() + ".ProtocolLibTricksNmsDataSerializer")
-						.method(ElementMatchers.returns(MinecraftReflection.getNBTCompoundClass())
-								.and(ElementMatchers.takesArguments(MinecraftReflection.getNBTReadLimiterClass())))
-						.intercept(FixedValue.value(compound))
-						.method(ElementMatchers.returns(MinecraftReflection.getIChatBaseComponentClass()))
-						.intercept(FixedValue.value(textCompound))
-						.make()
-						.load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
-						.getLoaded();
-				TRICKED_DATA_SERIALIZER = Accessors.getConstructorAccessor(generatedClass, ByteBuf.class);
-			} catch (Exception ignored) {
-				// can happen if unsupported
-			}
+	public static Object newNullDataSerializer() {
+		tryInitTrickDataSerializer();
+		return TRICKED_DATA_SERIALIZER_BASE.invoke(new ZeroBuffer());
+	}
+
+	/**
+	 * Creates a packet data serializer sub-class if needed to allow the fixed read of a NbtTagCompound because of a
+	 * null check in the MapChunk packet constructor.
+	 */
+	public static boolean tryInitTrickDataSerializer() {
+		if (TRICK_TRIED) {
+			return TRICKED_DATA_SERIALIZER_BASE != null;
 		}
-		return TRICKED_DATA_SERIALIZER;
+
+		// prevent double init
+		TRICK_TRIED = true;
+
+		try {
+			// create an empty instance of a nbt tag compound / text compound that we can re-use when needed
+			Object textCompound = WrappedChatComponent.fromText("").getHandle();
+			Object compound = Accessors.getConstructorAccessor(MinecraftReflection.getNBTCompoundClass()).invoke();
+			// base builder which intercepts a few methods
+			DynamicType.Builder<?> baseBuilder = ByteBuddyFactory.getInstance()
+					.createSubclass(MinecraftReflection.getPacketDataSerializerClass())
+					.name(MinecraftMethods.class.getPackage().getName() + ".ProtocolLibTricksNmsDataSerializerBase")
+					.method(ElementMatchers.returns(MinecraftReflection.getNBTCompoundClass())
+							.and(ElementMatchers.takesArguments(MinecraftReflection.getNBTReadLimiterClass())))
+					.intercept(FixedValue.value(compound))
+					.method(ElementMatchers.returns(MinecraftReflection.getIChatBaseComponentClass()))
+					.intercept(FixedValue.value(textCompound))
+					.method(ElementMatchers.returns(PublicKey.class).and(ElementMatchers.takesNoArguments()))
+					.intercept(FixedValue.nullValue());
+			Class<?> serializerBase = baseBuilder.make()
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), Default.INJECTION)
+					.getLoaded();
+			TRICKED_DATA_SERIALIZER_BASE = Accessors.getConstructorAccessor(serializerBase, ByteBuf.class);
+
+			// extended builder which intercepts the read string method as well
+			Class<?> withStringIntercept = baseBuilder
+					.name(MinecraftMethods.class.getPackage().getName() + ".ProtocolLibTricksNmsDataSerializerJson")
+					.method(ElementMatchers.returns(String.class).and(ElementMatchers.takesArguments(int.class)))
+					.intercept(FixedValue.value("{}"))
+					.make()
+					.load(ByteBuddyFactory.getInstance().getClassLoader(), Default.INJECTION)
+					.getLoaded();
+			TRICKED_DATA_SERIALIZER_JSON = Accessors.getConstructorAccessor(withStringIntercept, ByteBuf.class);
+
+			// worked
+			return true;
+		} catch (Exception ignored) {
+		}
+
+		// didn't work
+		return false;
 	}
 }

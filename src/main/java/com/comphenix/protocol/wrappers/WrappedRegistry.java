@@ -14,6 +14,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class WrappedRegistry {
     // map of NMS class to registry instance
@@ -26,12 +27,18 @@ public class WrappedRegistry {
 	static {
 		Map<Class<?>, WrappedRegistry> regMap = new HashMap<>();
 
-		Class<?> regClass = MinecraftReflection.getIRegistry();
-		if (regClass != null) {
-			for (Field field : regClass.getFields()) {
+		// get the possible registry fields
+		Class<?> iRegistry = MinecraftReflection.getIRegistry();
+		Class<?> builtInRegistries = MinecraftReflection.getBuiltInRegistries();
+		Set<Field> registries = FuzzyReflection.combineArrays(
+				iRegistry == null ? null : iRegistry.getFields(),
+				builtInRegistries == null ? null : builtInRegistries.getFields());
+
+		if (iRegistry != null && !registries.isEmpty()) {
+			for (Field field : registries) {
 				try {
 					// make sure it's actually a registry
-					if (regClass.isAssignableFrom(field.getType())) {
+					if (iRegistry.isAssignableFrom(field.getType())) {
 						Type genType = field.getGenericType();
 						if (genType instanceof ParameterizedType) {
 							ParameterizedType par = (ParameterizedType) genType;
@@ -73,7 +80,7 @@ public class WrappedRegistry {
 
 		REGISTRY = ImmutableMap.copyOf(regMap);
 
-		FuzzyReflection fuzzy = FuzzyReflection.fromClass(regClass, false);
+		FuzzyReflection fuzzy = FuzzyReflection.fromClass(iRegistry, false);
 		GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
 				.newBuilder()
 				.parameterCount(1)

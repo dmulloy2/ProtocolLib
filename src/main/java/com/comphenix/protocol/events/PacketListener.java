@@ -23,49 +23,53 @@ import org.bukkit.plugin.Plugin;
  * Represents a listener that receives notifications when packets are sending or being received.
  * <p>
  * Use {@link PacketAdapter} for a simple wrapper around this interface.
+ *
  * @author Kristian
  */
 public interface PacketListener {
-	
+
 	/**
 	 * Invoked right before a packet is transmitted from the server to the client.
 	 * <p>
 	 * Note that the packet may be replaced, if needed.
 	 * <p>
-	 * This method is executed on the main thread in 1.6.4 and earlier, and thus the Bukkit API is safe to use.
-	 * <p>
-	 * In Minecraft 1.7.2 and later, this method MAY be executed asynchronously, but only if {@link ListenerOptions#ASYNC}
-	 * have been specified in the listener. This is off by default.
+	 * This method is executed on the main server thread by default. However, some spigot forks (like paper) schedule
+	 * specific packets off the main thread. If the {@link ListenerOptions#ASYNC} option is not specified any invocation
+	 * of this method will be on the main server thread.
+	 *
 	 * @param event - the packet that should be sent.
 	 */
-	public void onPacketSending(PacketEvent event);
+	void onPacketSending(PacketEvent event);
 
 	/**
 	 * Invoked right before a received packet from a client is being processed.
 	 * <p>
-	 * <b>WARNING</b>: <br>
-	 * This method will be called <i>asynchronously</i>! You should synchronize with the main
-	 * thread using {@link org.bukkit.scheduler.BukkitScheduler#scheduleSyncDelayedTask(Plugin, Runnable, long) scheduleSyncDelayedTask}
-	 * if you need to call the Bukkit API.
+	 * This method will be called asynchronously (or on the netty event loop) by default. If the
+	 * {@link ListenerOptions#SYNC} option is specified, the invocation of this method will be synced to the main server
+	 * thread which might cause issues due to delayed packets.
+	 *
 	 * @param event - the packet that has been received.
 	 */
-	public void onPacketReceiving(PacketEvent event);
-	
+	void onPacketReceiving(PacketEvent event);
+
 	/**
 	 * Retrieve which packets sent by the server this listener will observe.
+	 *
 	 * @return List of server packets to observe, along with the priority.
 	 */
-	public ListeningWhitelist getSendingWhitelist();
-	
+	ListeningWhitelist getSendingWhitelist();
+
 	/**
 	 * Retrieve which packets sent by the client this listener will observe.
+	 *
 	 * @return List of server packets to observe, along with the priority.
 	 */
-	public ListeningWhitelist getReceivingWhitelist();
-	
+	ListeningWhitelist getReceivingWhitelist();
+
 	/**
 	 * Retrieve the plugin that created list packet listener.
+	 *
 	 * @return The plugin, or NULL if not available.
 	 */
-	public Plugin getPlugin();
+	Plugin getPlugin();
 }

@@ -11,7 +11,7 @@ import org.bukkit.util.Vector;
 
 public class MovingObjectPositionBlock implements Cloneable {
 	private static final Class<?> NMS_CLASS = MinecraftReflection.getNullableNMS(
-			"world.phys.MovingObjectPositionBlock", "MovingObjectPositionBlock");
+			"world.phys.MovingObjectPositionBlock", "world.phys.BlockHitResult", "MovingObjectPositionBlock");
 
 	private BlockPosition position;
 	private Vector posVector;

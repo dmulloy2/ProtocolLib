@@ -116,7 +116,9 @@ public class FuzzyReflection {
 	public static <T> Set<T> combineArrays(T[]... arrays) {
 		Set<T> result = new LinkedHashSet<>();
 		for (T[] elements : arrays) {
-			Collections.addAll(result, elements);
+			if (elements != null) {
+				Collections.addAll(result, elements);
+			}
 		}
 
 		return result;

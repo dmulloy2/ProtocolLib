@@ -62,12 +62,12 @@ public class ImmutableDetector implements Cloner {
 		add(MinecraftReflection::getDataWatcherSerializerClass);
 		add(MinecraftReflection::getBlockClass);
 		add(MinecraftReflection::getItemClass);
-		add("sounds.SoundEffect", "SoundEffect");
+		add("sounds.SoundEffect", "sounds.SoundEvents", "SoundEffect");
 
 		if (MinecraftVersion.AQUATIC_UPDATE.atOrAbove()) {
 			add(MinecraftReflection::getFluidTypeClass);
 			add(MinecraftReflection::getParticleTypeClass);
-			add("core.particles.Particle", "Particle");
+			add("core.particles.Particle","core.particles.ParticleType", "Particle");
 		}
 
 		if (MinecraftVersion.VILLAGE_UPDATE.atOrAbove()) {
@@ -76,11 +76,14 @@ public class ImmutableDetector implements Cloner {
 			add("world.entity.npc.VillagerProfession", "VillagerProfession");
 		}
 
+		add("world.entity.animal.CatVariant");
+		add("world.entity.animal.FrogVariant");
+
 		// TODO automatically detect the technically-not-an-enum enums that Mojang is so fond of
 		// Would also probably go in tandem with having the FieldCloner use this
 
 		if (MinecraftVersion.NETHER_UPDATE.atOrAbove()) {
-			add("core.IRegistry", "IRegistry");
+			add("core.IRegistry", "core.Registry", "IRegistry");
 		}
 
 		if (MinecraftVersion.NETHER_UPDATE_2.atOrAbove()) {

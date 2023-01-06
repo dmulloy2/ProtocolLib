@@ -48,7 +48,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
 	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
 	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
-	private static FieldAccessor PREVIEWS_CHAT;
+	private static FieldAccessor[] BOOLEAN_ACCESSORS = Accessors.getFieldAccessorArray(SERVER_PING, boolean.class, true);
 
 	// For converting to the underlying array
 	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
@@ -183,26 +183,42 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * Retrieve whether chat preview is enabled on the server.
 	 * @return whether chat preview is enabled on the server.
 	 * @since 1.19
+	 * @deprecated Removed in 1.19.3
 	 */
+	@Deprecated
 	public boolean isChatPreviewEnabled() {
-		if (PREVIEWS_CHAT == null) {
-			// TODO: at some point we should make everything nullable to make updates easier
-			// see https://github.com/dmulloy2/ProtocolLib/issues/1644 for an example reference
-			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
-		}
-		return (Boolean) PREVIEWS_CHAT.get(handle);
+		return (Boolean) BOOLEAN_ACCESSORS[0].get(handle);
 	}
 
 	/**
 	 * Sets whether chat preview is enabled on the server.
 	 * @param chatPreviewEnabled true if enabled, false otherwise.
 	 * @since 1.19
+	 * @deprecated Removed in 1.19.3
 	 */
+	@Deprecated
 	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
-		if (PREVIEWS_CHAT == null) {
-			PREVIEWS_CHAT = Accessors.getFieldAccessor(SERVER_PING, boolean.class, true);
-		}
-		PREVIEWS_CHAT.set(handle, chatPreviewEnabled);
+		BOOLEAN_ACCESSORS[0].set(handle, chatPreviewEnabled);
+	}
+
+	/**
+	 * Sets whether the server enforces secure chat.
+	 * @return whether the server enforces secure chat.
+	 * @since 1.19.1
+	 */
+	public boolean isEnforceSecureChat() {
+		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
+		return (Boolean) BOOLEAN_ACCESSORS[index].get(handle);
+	}
+
+	/**
+	 * Sets whether the server enforces secure chat.
+	 * @param enforceSecureChat true if enabled, false otherwise.
+	 * @since 1.19.1
+	 */
+	public void setEnforceSecureChat(boolean enforceSecureChat) {
+		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
+		BOOLEAN_ACCESSORS[index].set(handle, enforceSecureChat);
 	}
 
 	/**

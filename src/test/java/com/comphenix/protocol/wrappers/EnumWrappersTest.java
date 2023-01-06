@@ -1,22 +1,23 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.google.common.collect.Sets;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class EnumWrappersTest {
 
 	private static final Set<String> KNOWN_INVALID = Sets.newHashSet(
-			"Particle", "WorldBorderAction", "CombatEventType", "TitleAction", "ChatType"
+			"Particle", "WorldBorderAction", "CombatEventType", "TitleAction", "ChatType", "TitleAction"
 	);
 
 	@BeforeAll

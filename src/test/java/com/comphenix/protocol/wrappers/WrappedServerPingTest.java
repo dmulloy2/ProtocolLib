@@ -32,25 +32,20 @@ public class WrappedServerPingTest {
 			serverPing.setVersionName("Minecraft 123");
 			serverPing.setVersionProtocol(4);
 			serverPing.setFavicon(tux);
-			serverPing.setChatPreviewEnabled(true);
+			serverPing.setEnforceSecureChat(true);
 
 			assertEquals(5, serverPing.getPlayersOnline());
 			assertEquals(10, serverPing.getPlayersMaximum());
 			assertEquals("Minecraft 123", serverPing.getVersionName());
 			assertEquals(4, serverPing.getVersionProtocol());
-			assertTrue(serverPing.isChatPreviewEnabled());
+			assertTrue(serverPing.isEnforceSecureChat());
 
 			assertArrayEquals(original, serverPing.getFavicon().getData());
 
 			CompressedImage copy = CompressedImage.fromBase64Png(Base64Coder.encodeLines(tux.getData()));
 			assertArrayEquals(copy.getData(), serverPing.getFavicon().getData());
 		} catch (Throwable ex) {
-			if (ex.getCause() instanceof SecurityException) {
-				// There was a global package seal for a while, but not anymore
-				System.err.println("Encountered a SecurityException, update your Spigot jar!");
-			} else {
-				fail("Encountered an exception testing ServerPing", ex);
-			}
+			fail("Encountered an exception testing ServerPing", ex);
 		}
 	}
 }

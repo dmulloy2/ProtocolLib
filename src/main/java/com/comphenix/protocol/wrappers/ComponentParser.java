@@ -51,7 +51,8 @@ public class ComponentParser {
 	// Should only be needed on 1.8.
 	private static Object deserializeLegacy(Object gson, Class<?> component, StringReader str) {
 		try {
-			if(readerConstructor == null){
+			if (readerConstructor == null) {
+
 				Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
 				readerConstructor = readerClass.getDeclaredConstructor(Reader.class);
 				readerConstructor.setAccessible(true);

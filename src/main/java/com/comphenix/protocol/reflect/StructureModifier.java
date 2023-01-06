@@ -269,13 +269,8 @@ public class StructureModifier<T> {
 			return null;
 		}
 
-		// don't try to convert null, just return null
+		// get the field value and convert it if needed
 		Object fieldValue = accessor.get(this.target);
-		if (fieldValue == null) {
-			return null;
-		}
-
-		// check if we need to convert the field value and do so if needed
 		return this.needConversion() ? this.converter.getSpecific(fieldValue) : (T) fieldValue;
 	}
 
@@ -332,14 +327,10 @@ public class StructureModifier<T> {
 			return this;
 		}
 
-		// just write the value if the specific given one is null or no conversion is needed
-		if (value == null || !this.needConversion()) {
-			accessor.set(this.target, value);
-			return this;
-		}
-
 		// convert and write
-		accessor.set(this.target, this.converter.getGeneric(value));
+		Object fieldValue = this.needConversion() ? this.converter.getGeneric(value) : value;
+		accessor.set(this.target, fieldValue);
+
 		return this;
 	}
 

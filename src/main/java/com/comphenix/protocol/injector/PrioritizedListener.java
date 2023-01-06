@@ -50,7 +50,7 @@ public class PrioritizedListener<TListener> implements Comparable<PrioritizedLis
 	@Override
 	public boolean equals(Object obj) {
 		// We only care about the listener - priority itself should not make a difference
-	    if(obj instanceof PrioritizedListener){
+	    if (obj instanceof PrioritizedListener) {
 	        final PrioritizedListener<TListener> other = (PrioritizedListener<TListener>) obj;
 	        return Objects.equal(listener, other.listener);
 	    } else {
