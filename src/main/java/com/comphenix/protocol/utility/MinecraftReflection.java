@@ -1669,4 +1669,8 @@ public final class MinecraftReflection {
 			return infoClass;
 		}
 	}
+
+    public static Class<?> getHolderClass() {
+		return getMinecraftClass("core.Holder");
+    }
 }

@@ -15,11 +15,19 @@
 package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
@@ -216,5 +224,40 @@ public class Converters {
 				return (Class) Collection.class;
 			}
 		});
+	}
+
+	private static MethodAccessor holderGetValue;
+
+	public static <T> EquivalentConverter<T> holder(final EquivalentConverter<T> converter,
+													final WrappedRegistry registry) {
+		return new EquivalentConverter<T>() {
+			@Override
+			public Object getGeneric(T specific) {
+				Object generic = converter.getGeneric(specific);
+				return registry.getHolder(generic);
+			}
+
+			@Override
+			public T getSpecific(Object generic) {
+				if (holderGetValue == null) {
+					Class<?> holderClass = MinecraftReflection.getHolderClass();
+					FuzzyReflection fuzzy = FuzzyReflection.fromClass(holderClass, false);
+					holderGetValue = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+							.newBuilder()
+							.parameterCount(0)
+							.banModifier(Modifier.STATIC)
+							.returnTypeExact(Object.class)
+							.build()));
+				}
+
+				Object value = holderGetValue.invoke(generic);
+				return converter.getSpecific(value);
+			}
+
+			@Override
+			public Class<T> getSpecificType() {
+				return converter.getSpecificType();
+			}
+		};
 	}
 }

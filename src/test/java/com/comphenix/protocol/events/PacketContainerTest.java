@@ -568,7 +568,6 @@ public class PacketContainerTest {
 	}
 
 	@Test
-	@Disabled("effect is now wrapped in a holder") // todo
 	public void testSoundEffects() {
 		PacketContainer container = new PacketContainer(PacketType.Play.Server.NAMED_SOUND_EFFECT);
 		container.getSoundEffects().write(0, Sound.ENTITY_CAT_HISS);

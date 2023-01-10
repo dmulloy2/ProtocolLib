@@ -5,6 +5,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableMap;
 
 import java.lang.reflect.Field;
@@ -23,6 +24,8 @@ public class WrappedRegistry {
     private static final MethodAccessor GET;
     private static final MethodAccessor GET_ID;
     private static final MethodAccessor GET_KEY;
+
+	private static final MethodAccessor GET_HOLDER;
 
 	static {
 		Map<Class<?>, WrappedRegistry> regMap = new HashMap<>();
@@ -100,6 +103,22 @@ public class WrappedRegistry {
 				.parameterCount(1)
 				.returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
 				.build()));
+
+		MethodAccessor getHolder;
+
+		try {
+			getHolder = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+					.newBuilder()
+					.parameterCount(1)
+					.banModifier(Modifier.STATIC)
+					.returnTypeExact(MinecraftReflection.getHolderClass())
+					.requireModifier(Modifier.PUBLIC)
+					.build()));
+		} catch (IllegalArgumentException ignored) {
+			getHolder = null;
+		}
+		
+		GET_HOLDER = getHolder;
     }
 
     private final Object handle;
@@ -132,6 +151,10 @@ public class WrappedRegistry {
 		return (int) GET_ID.invoke(this.handle, entry);
 	}
 
+	public Object getHolder(Object generic) {
+		return GET_HOLDER.invoke(handle, generic);
+	}
+
     public static WrappedRegistry getAttributeRegistry() {
         return getRegistry(MinecraftReflection.getAttributeBase());
     }
@@ -139,6 +162,10 @@ public class WrappedRegistry {
     public static WrappedRegistry getDimensionRegistry() {
         return getRegistry(MinecraftReflection.getDimensionManager());
     }
+
+	public static WrappedRegistry getSoundRegistry() {
+		return getRegistry(MinecraftReflection.getSoundEffectClass());
+	}
 
 	public static WrappedRegistry getRegistry(Class<?> type) {
 		return REGISTRY.get(type);

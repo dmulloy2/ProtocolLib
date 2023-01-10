@@ -762,10 +762,30 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for a Holder&lt;T&gt; in 1.19.3.
+     * @param genericType NMS type of T
+     * @param converter Converter from genericType to T
+     * @return A modifier for Holder fields
+     * @param <T> Bukkit type
+     */
+    public <T> StructureModifier<T> getHolders(Class<?> genericType,
+                                               EquivalentConverter<T> converter) {
+        return structureModifier.withParamType(
+                MinecraftReflection.getHolderClass(),
+                Converters.holder(converter, WrappedRegistry.getRegistry(genericType)),
+                genericType
+        );
+    }
+
+    /**
      * Retrieve a read/write structure for the SoundEffect enum in 1.9.
      * @return A modifier for SoundEffect enum fields.
      */
     public StructureModifier<Sound> getSoundEffects() {
+        if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+            return getHolders(MinecraftReflection.getSoundEffectClass(), BukkitConverters.getSoundConverter());
+        }
+
         // Convert to and from Bukkit
         return structureModifier.withType(
                 MinecraftReflection.getSoundEffectClass(),
