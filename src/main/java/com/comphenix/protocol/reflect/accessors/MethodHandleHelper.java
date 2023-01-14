@@ -100,7 +100,7 @@ final class MethodHandleHelper {
 			return new DefaultFieldAccessor(field, setter, getter, staticField);
 		} catch (IllegalAccessException | NoSuchFieldException exception) {
 			// NoSuchFieldException can never happen, the field always exists
-			throw new IllegalStateException("Unable to access field " + field);
+			throw new IllegalStateException("Unable to access field " + field, exception);
 		}
 	}
 
