@@ -12,7 +12,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
  */
 public class WrappedDataValue extends AbstractWrapper {
 
-	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getMinecraftClass("network.syncher.DataWatcher$b");
+	private static final Class<?> HANDLE_TYPE = MinecraftReflection.getMinecraftClass("network.syncher.DataWatcher$b", "network.syncher.SynchedEntityData$DataValue");
 
 	private static ConstructorAccessor constructor;
 
