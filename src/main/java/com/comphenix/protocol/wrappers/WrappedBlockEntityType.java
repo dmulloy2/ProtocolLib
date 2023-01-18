@@ -47,12 +47,13 @@ public class WrappedBlockEntityType extends AbstractWrapper implements ClonableW
         setHandle(handle);
     }
 
-	public static WrappedBlockEntityType fromHandle(Object handle) {
-		return new WrappedBlockEntityType(handle);
-	}
+    public static WrappedBlockEntityType fromHandle(Object handle) {
+        return new WrappedBlockEntityType(handle);
+    }
 
     /**
      * Creates a new BlockEntityType instance with the given type and no data.
+     *
      * @param key BlockEntityType's Minecraft key
      * @return New BlockEntityType
      */
@@ -62,6 +63,7 @@ public class WrappedBlockEntityType extends AbstractWrapper implements ClonableW
 
     /**
      * Gets this BlockEntityType's Minecraft key
+     *
      * @return The Minecraft key
      */
     public MinecraftKey getKey() {
@@ -70,6 +72,7 @@ public class WrappedBlockEntityType extends AbstractWrapper implements ClonableW
 
     /**
      * Sets this BlockEntityType's Minecraft key
+     *
      * @param key Minecraft key
      */
     public void setKey(MinecraftKey key) {
