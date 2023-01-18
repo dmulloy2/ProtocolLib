@@ -309,6 +309,17 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieves a read/write structure for tile entities.
+     * @return A modifier for a BlockEntityType.
+     */
+    public StructureModifier<WrappedBlockEntityType> getBlockEntityTypeModifier() {
+        // Convert to and from the Bukkit wrapper
+        return structureModifier.withType(
+                MinecraftReflection.getBlockEntityTypeClass(),
+                BukkitConverters.getWrappedBlockEntityTypeConverter());
+    }
+
+    /**
      * Retrieves a read/write structure for wrapped ChunkCoordIntPairs.
      * @return A modifier for ChunkCoordIntPair.
      */

@@ -587,7 +587,15 @@ public class BukkitConverters {
 	public static EquivalentConverter<WrappedBlockData> getWrappedBlockDataConverter() {
 		return ignoreNull(handle(WrappedBlockData::getHandle, WrappedBlockData::fromHandle, WrappedBlockData.class));
 	}
-	
+
+	/**
+	 * Retrieve a converter for wrapped block entity type.
+	 * @return Wrapped block entity type.
+	 */
+	public static EquivalentConverter<WrappedBlockEntityType> getWrappedBlockEntityTypeConverter() {
+		return ignoreNull(handle(WrappedBlockEntityType::getHandle, WrappedBlockEntityType::fromHandle, WrappedBlockEntityType.class));
+	}
+
 	/**
 	 * Retrieve a converter for wrapped attribute snapshots.
 	 * @return Wrapped attribute snapshot converter.
