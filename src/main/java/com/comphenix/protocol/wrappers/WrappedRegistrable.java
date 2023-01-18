@@ -23,6 +23,9 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Represents a wrapper around registrable objects.
  *
@@ -39,7 +42,7 @@ public final class WrappedRegistrable extends AbstractWrapper implements Clonabl
     ) {
         super(factory.registrableClass);
         this.factory = factory;
-        this.setHandle(handle);
+        setHandle(handle);
     }
 
     @NotNull
@@ -55,7 +58,7 @@ public final class WrappedRegistrable extends AbstractWrapper implements Clonabl
         @NotNull final Class<?> registrableClass,
         @NotNull final Object handle
     ) {
-        return fromHandle(new Factory(registrableClass), handle);
+        return fromHandle(Factory.getOrCreate(registrableClass), handle);
     }
 
     @NotNull
@@ -63,7 +66,7 @@ public final class WrappedRegistrable extends AbstractWrapper implements Clonabl
         @NotNull final Class<?> registrableClass,
         @NotNull final MinecraftKey key
     ) {
-        final Factory factory = new Factory(registrableClass);
+        final Factory factory = Factory.getOrCreate(registrableClass);
         return fromHandle(factory, factory.getHandle(key));
     }
 
@@ -138,6 +141,8 @@ public final class WrappedRegistrable extends AbstractWrapper implements Clonabl
 
     private static final class Factory {
 
+        private static final Map<Class<?>, Factory> CACHE = new ConcurrentHashMap<>();
+
         @NotNull
         private final Class<?> registrableClass;
 
@@ -158,6 +163,13 @@ public final class WrappedRegistrable extends AbstractWrapper implements Clonabl
                             .build()
                     )
             );
+        }
+
+        @NotNull
+        public static Factory getOrCreate(
+            @NotNull final Class<?> registrableClass
+        ) {
+            return CACHE.computeIfAbsent(registrableClass, Factory::new);
         }
 
         @NotNull
