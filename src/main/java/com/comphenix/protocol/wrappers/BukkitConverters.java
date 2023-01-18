@@ -77,6 +77,7 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import static com.comphenix.protocol.utility.MinecraftReflection.getCraftBukkitClass;
 import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
@@ -592,8 +593,16 @@ public class BukkitConverters {
 	 * Retrieve a converter for wrapped block entity type.
 	 * @return Wrapped block entity type.
 	 */
-	public static EquivalentConverter<WrappedBlockEntityType> getWrappedBlockEntityTypeConverter() {
-		return ignoreNull(handle(WrappedBlockEntityType::getHandle, WrappedBlockEntityType::fromHandle, WrappedBlockEntityType.class));
+	public static EquivalentConverter<WrappedRegistrable> getWrappedRegistrable(
+		@NotNull final Class<?> registrableClass
+	) {
+		return ignoreNull(
+			handle(
+				WrappedRegistrable::getHandle,
+				handle -> WrappedRegistrable.fromHandle(registrableClass, handle),
+				WrappedRegistrable.class
+			)
+		);
 	}
 
 	/**
