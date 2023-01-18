@@ -62,6 +62,16 @@ public class WrappedBlockEntityType extends AbstractWrapper implements ClonableW
     }
 
     /**
+     * Creates a new BlockEntityType instance with the given type and no data.
+     *
+     * @param key BlockEntityType's Minecraft key
+     * @return New BlockEntityType
+     */
+    public static WrappedBlockEntityType create(String key) {
+        return create(new MinecraftKey(key));
+    }
+
+    /**
      * Gets this BlockEntityType's Minecraft key
      *
      * @return The Minecraft key
