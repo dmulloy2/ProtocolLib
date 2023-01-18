@@ -313,9 +313,7 @@ public abstract class AbstractStructure {
      * Retrieves a read/write structure for registrable objects.
      *
      * @param registrableClass The registrable object's class.
-     *
      * @return A modifier for a registrable objects.
-     *
      * @see MinecraftReflection#getBlockEntityTypeClass()
      */
     public StructureModifier<WrappedRegistrable> getRegistrableModifier(
