@@ -311,8 +311,11 @@ public abstract class AbstractStructure {
 
     /**
      * Retrieves a read/write structure for registrable objects.
+     *
      * @param registrableClass The registrable object's class.
+     *
      * @return A modifier for a registrable objects.
+     *
      * @see MinecraftReflection#getBlockEntityTypeClass()
      */
     public StructureModifier<WrappedRegistrable> getRegistrableModifier(
@@ -325,8 +328,8 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieves a read/write structure for registrable objects.
-     * @return A modifier for a registrable objects.
+     * Retrieves a read/write structure for BlockEntityType.
+     * @return A modifier for a BlockEntityType.
      */
     public StructureModifier<WrappedRegistrable> getBlockEntityTypeModifier() {
         // Convert to and from the Bukkit wrapper
