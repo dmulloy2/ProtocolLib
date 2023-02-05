@@ -182,6 +182,7 @@ public class StructureModifier<T> {
 			.map(Accessors::getFieldAccessor)
 			.collect(Collectors.toList());
 		fieldCache.put(type, superclassKey, new SoftReference<>(accessors));
+		fieldCache.cellSet().removeIf(entry -> entry.getValue().get() == null);
 		return accessors;
 	}
 
