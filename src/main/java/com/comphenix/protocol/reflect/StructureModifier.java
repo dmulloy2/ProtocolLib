@@ -23,6 +23,11 @@ import com.comphenix.protocol.reflect.instances.BannedGenerator;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.InstanceProvider;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -152,11 +157,33 @@ public class StructureModifier<T> {
 	}
 
 	// Used to filter out irrelevant fields
+	private static final ThreadLocal<Table<Class<?>, Class<?>, Reference<List<FieldAccessor>>>>
+		fieldCacheLocal = ThreadLocal.withInitial(HashBasedTable::create);
+	private static final Class<?> NULL_CACHE_CLASS_REPLACEMENT = Void.class;
+
+	// Used to filter out irrelevant fields
 	private static List<FieldAccessor> getFields(Class<?> type, Class<?> superclassExclude) {
-		return FuzzyReflection.fromClass(type, true).getDeclaredFields(superclassExclude).stream()
-				.filter(field -> !Modifier.isStatic(field.getModifiers()))
-				.map(Accessors::getFieldAccessor)
-				.collect(Collectors.toList());
+		if (type == null) {
+			throw new IllegalArgumentException("Type cannot be NULL.");
+		}
+		Table<Class<?>, Class<?>, Reference<List<FieldAccessor>>> fieldCache = fieldCacheLocal.get();
+		Class<?> superclassKey = superclassExclude == null ? NULL_CACHE_CLASS_REPLACEMENT : superclassExclude;
+		Reference<List<FieldAccessor>> cacheEntryReference = fieldCache.get(type, superclassKey);
+		if (cacheEntryReference != null) {
+			List<FieldAccessor> cacheEntry = cacheEntryReference.get();
+			if (cacheEntry != null) {
+				return cacheEntry;
+			}
+		}
+		List<FieldAccessor> accessors = FuzzyReflection.fromClass(type, true)
+			.getDeclaredFields(superclassExclude)
+			.stream()
+			.filter(field -> !Modifier.isStatic(field.getModifiers()))
+			.map(Accessors::getFieldAccessor)
+			.collect(Collectors.toList());
+		fieldCache.put(type, superclassKey, new SoftReference<>(accessors));
+		fieldCache.cellSet().removeIf(entry -> entry.getValue().get() == null);
+		return accessors;
 	}
 
 	/**
