@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"></meta>
+        <title>Missing Notice Report</title>
+        <style type="text/css">
+            body {
+                text-align:center
+            }
+
+            table {
+                font-family: Arial, Helvetica, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            th {
+                background-color: silver;
+            }
+
+            td, th {
+                border: 1px solid #ddd;
+                padding: 8px
+            }
+
+            tr:nth-child(odd){background-color: #f2f2f2;}
+
+            tr:hover {background-color: #ddd;}
+
+            .lic_clause {
+                font-style:italic
+            }
+
+            .number {
+                color: red;
+            }
+
+            .Index {
+                text-align: center;
+            }
+
+            .ChangeLog_Files {
+                text-align: center;
+            }
+
+            #container {
+                margin-left: 5%; 
+                margin-right: 5%; 
+                text-align:left
+            }
+
+            #controll_bar {
+                text-align: center;
+            }
+            
+        </style>
+    </head>
+
+    <body>
+        <div id="container">
+            <div>
+                <h1>Missing "notice" for modification commits on original work (violation of <text class="lic_name">$lic_name</text> license terms)</h1>        
+            </div>
+            <div>
+                <h2>1. "Notice" for modifications on original work (<text class="forked_proj">$forked_proj</text>): license term obligation for <text class="forking_proj">$forking_proj</text></h2>
+                <div>In <text class="lic_name">$lic_name</text>, the license term dictates that <text class="lic_clause">$lic_clause</text>. Therefore, We think the project is obligated to abide by the modification terms and conditions in <text class="lic_name">$lic_name</text>. </div>
+            </div>
+            <div>
+                <h2>2. Summary for license violation of <text class="forking_proj">$forking_proj</text></h2>
+                <div>We analyzed modifications that the project conducts to the original work in terms of git commits, then matched descriptions from possible ChangeLog files with commit messages using a similarity heuristic. Briefly, <text class="temp_sum">$temp_sum</text> <text class="temp_detail" hidden="true">$temp_detail</text> According to the license terms and conditions above, it is regarded as license violation. 
+                </div>
+                
+            </div>
+
+            <div>
+                <h2>3. Details of modification commits</h2>
+                <div>
+                    We have listed details of modification commits in the table. The violation types are described below.
+                </div>
+                <ul>
+                    <li><b>No ChangeLog</b>: The project has no ChangeLog files. Therefore, the commit has no corresponding notice entry.</li>
+                    <li><b>Missing Notice</b>: The commit has no corresponding notice entry at the ChangeLog file.</li>
+                    <li><b>Missing Date</b>: The commit has a corresponding notice entry at the ChangeLog file, however missing date as the license required.</li>
+                    <!-- <li><b>Missing Author</b>: XXXXx</li> -->
+                </ul>
+                <div>
+                    The ChangeLog files from <text class="forking_proj">$forking_proj</text> are listed below.
+                </div>
+                <ul id="all_descr_files"></ul>
+
+
+                <table id="data_window"></table>
+                <br/>
+                <div id="controll_bar">
+                    <button id="first_page_bt">&lt;&lt;&lt;</button>
+                    <button id="last_page_bt">&lt;&lt;</button>
+                    <button id="now_page_dbt" disabled="disabled"> 1/1 </button>
+                    <button id="next_page_bt">&gt;&gt;</button>
+                    <button id="end_page_bt">&gt;&gt;&gt;</button>
+                </div>   
+            </div>
+            <div>
+                <h2>4. Fix for license violation</h2>
+                <div>
+                    We approximated the fix solution for license term violation in a straightforward way: We <text class="action">$action</text> the ChangeLog file <text class="dest_file">$dest_file</text> using commit information from modification commits. Further, we created a PR where you can review and merge it into your branch for your convenience.<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+                </div>
+            </div>
+
+        </div>
+        <script type="text/javascript">
+            var host = "https://opensource.org/";var general_license_set = {"GPL-2.0": {"short_notice_terms": "You must cause the modified files to carry prominent notices stating that you changed the files and the date of any change.", "page_link": "licenses/GPL-2.0"}};var fake_json = {"child": ["dmulloy2/ProtocolLib"], "parent": ["aadnk/ProtocolLib"], "commit_count": 2, "descr_count": 112, "descr_files": ["Readme.md"], "valid_meta": {"count": 0, "proportion": 0.0}, "content_violate_meta": {"content_violate_count": 0, "content_violate_proportion": 0.0, "author_violate_count": 0, "date_violate_count": 0, "author_violate_proportion": 0.0, "date_violate_proportion": 0.0}, "unmatched_meta": {"count": 2, "proportion": 1.0}, "valid_pair_list": [], "content_violate_pair_list": [], "unmatched_pair_list": [{"commit_info": {"commit_id": "575174580e68c62016d534cb8c8aac36b769d1bd", "commit_message": "Small update for 1.19.2 (#1814)", "commit_date": "2022-08-11 04:49:01+08:00", "commit_author": "Pasqual Koschmieder", "commit_license_list": ["GPL-2.0"]}}, {"commit_info": {"commit_id": "5a7bd20806092afed037f10ff2dc38b1f14fa1e3", "commit_message": "Add wrapper for map icons, start lazy lists", "commit_date": "2021-05-30 04:18:48+08:00", "commit_author": "Dan Mulloy", "commit_license_list": ["GPL-2.0"]}}], "branch": "master", "need_date": true}
+        </script>
+        <script type="text/javascript">        
+
+            var content_violate_commit_list = fake_json.content_violate_pair_list
+            var unmatch_list = fake_json.unmatched_pair_list
+            var violate_list = []
+            var missing_changelog_file = (fake_json.descr_files.length == 0)
+            content_violate_commit_list.forEach(e => {
+                var commit_info = e.commit['commit_info']
+
+                var tz_tag_index = commit_info.commit_date.indexOf('+')                
+                if (tz_tag_index == -1) {
+                    tz_tag_index = commit_info.commit_date.length - 1                    
+                }
+
+                var violate_type = e.content_violate_type
+                var violation_type = 'error'
+                if (missing_changelog_file) {
+                    violation_type = 'No ChangeLog'
+                } else {
+                    violation_type = 'Missing Date'
+                }
+
+                var tmpEle = {
+                    'Commit SHA': '<a href=https://github.com/'+ fake_json.child + '/commit/' + commit_info.commit_id + '>' + commit_info.commit_id.substr(0, 7) + '</a>',
+                    'Commit Message': commit_info.commit_message,
+                    'Date': commit_info.commit_date.substring(0, tz_tag_index),
+                    'Author': commit_info.commit_author,
+                    'Violation Type': violation_type,
+                    'Licenses': commit_info.commit_license_list,
+                    'ChangeLog Files': e.descr.descr_entry.file_path
+                }
+                violate_list.push(tmpEle)
+            });
+
+            unmatch_list.forEach(e => {
+                var commit_info = e['commit_info']
+
+                var tz_tag_index = commit_info.commit_date.indexOf('+')                
+                if (tz_tag_index == -1) {
+                    tz_tag_index = commit_info.commit_date.length - 1                    
+                }
+
+                var violate_type = e.content_violate_type
+                var violation_type = 'error'
+                if (missing_changelog_file) {
+                    violation_type = 'No ChangeLog'
+                } else {
+                    violation_type = 'Missing Notice'
+                }
+
+                var tmpEle = {
+                    'Commit SHA': '<a href=https://github.com/'+ fake_json.child + '/commit/' + commit_info.commit_id + '>' + commit_info.commit_id.substr(0, 7) + '</a>',
+                    'Commit Message': commit_info.commit_message,
+                    'Date': commit_info.commit_date.substring(0, tz_tag_index),
+                    'Author': commit_info.commit_author,
+                    'Violation Type': violation_type,
+                    'Licenses': commit_info.commit_license_list,
+                    'ChangeLog Files': '————'
+                }
+                violate_list.push(tmpEle)
+            })
+
+            page_on = 1
+            page_size = 10
+            page_count = parseInt((violate_list.length - 1) / page_size) + 1
+
+            function update_page_on() {
+
+                var i_table = document.getElementById('data_window')
+                i_table.innerHTML = ""
+
+                var head_tr = document.createElement('tr')
+                
+                // No.
+                var no_th = document.createElement('th')
+                no_th.innerHTML = 'Index'
+                head_tr.appendChild(no_th)
+
+                // details
+                var head_ele = violate_list[0]
+                for (const key in head_ele) {
+                    var th = document.createElement('th')
+                    th.innerHTML = key
+                    head_tr.appendChild(th)
+                }
+
+                i_table.appendChild(head_tr)
+
+
+                for (var i = 0; i < page_size; i++) {
+                    real_page = page_on - 1
+                    var index = real_page * page_size + i
+                    if (index >= violate_list.length) {
+                        break
+                    }
+                    var tr = document.createElement('tr')
+
+                    // No.
+                    var no_td = document.createElement('td')
+                    no_td.setAttribute("class", "Index")
+                    no_td.innerHTML = index
+                    tr.appendChild(no_td)
+                    
+
+                    var ele = violate_list[index]
+                    for (const key in ele) {
+                        var td = document.createElement('td')
+                        td.setAttribute("class", key.replace(' ', '_'))
+                        td.innerHTML = ele[key]
+                        tr.appendChild(td)
+                    }
+
+                    i_table.appendChild(tr)
+                }
+
+                // insert link for licenses
+                var licenses_eles = document.getElementsByClassName('Licenses')
+                for (var i = 0; i < licenses_eles.length; i++) {
+                    var e = licenses_eles[i]
+                    var lic_name = e.innerHTML
+
+                    e.innerHTML = `<a href='${host}${general_license_set[lic_name].page_link}'>${lic_name}</a>`
+                }
+
+                // insert link for descripiton files
+                var file_eles = document.getElementsByClassName('ChangeLog_Files')
+                for (var i = 0; i < file_eles.length; i++) {
+                    var e = file_eles[i]
+                    var file_name = e.innerHTML
+
+                    if (file_name == '————') {
+                        continue                       
+                    }
+                    e.innerHTML =  `<a href=https://github.com/${fake_json.child}/blob/${fake_json.branch}/${file_name}>${file_name}</a>`
+                }
+                
+            }
+
+            var first_page_bt = document.getElementById('first_page_bt')
+            var last_page_bt = document.getElementById('last_page_bt')
+            var now_page_dbt = document.getElementById('now_page_dbt')
+            var next_page_bt = document.getElementById('next_page_bt')
+            var end_page_bt = document.getElementById('end_page_bt')
+
+            function update_available() {
+                now_page_dbt.innerHTML = (page_on + '/' + page_count)
+
+                if (page_count == 1) {
+                    first_page_bt.disabled=true
+                    last_page_bt.disabled=true 
+                    next_page_bt.disabled=true
+                    end_page_bt.disabled=true
+                } else if (page_on > 1 && page_on < page_count) {
+                    first_page_bt.disabled=false
+                    last_page_bt.disabled=false
+                    next_page_bt.disabled=false
+                    end_page_bt.disabled=false
+                } else if (page_on <= 1) {
+                    first_page_bt.disabled=true
+                    last_page_bt.disabled=true 
+                    next_page_bt.disabled=false                 
+                    end_page_bt.disabled=false
+                } else if (page_on >= page_count) {
+                    first_page_bt.disabled=false
+                    last_page_bt.disabled=false
+                    next_page_bt.disabled=true
+                    end_page_bt.disabled=true
+                }
+            }
+
+            first_page_bt.addEventListener('click', function() {
+                page_on = 1
+                update_page_on()
+                update_available()     
+            })
+
+            last_page_bt.addEventListener('click', function() {
+                page_on--
+                update_page_on()
+                update_available()            
+            })
+
+            next_page_bt.addEventListener('click', function() {
+                page_on++
+                update_page_on()
+                update_available()
+            })
+
+            end_page_bt.addEventListener('click', function() {
+                page_on = page_count
+                update_page_on()
+                update_available()
+            })
+
+            function fill_args(class_name, value) {
+                var eles = document.getElementsByClassName(class_name)
+                for (var i = 0; i < eles.length; i++) {
+                    eles[i].innerHTML = value
+                }
+            }
+
+            function fill_file_links(class_name, file_array) {
+                var eles = document.getElementsByClassName(class_name)
+                for (var i = 0; i < eles.length; i++) {
+                    // eles[i].innerHTML = value
+                    var new_str_array = new Array()
+                    file_array.forEach(file => {
+                        new_str_array.push(`<a href=https://github.com/${fake_json.child}/blob/${fake_json.branch}/${file}>${file}</a>`)
+                    })
+                    eles[i].innerHTML = new_str_array.join(', ')
+                }
+            }
+
+            function init_all_descr_files() {
+                var ul = document.getElementById('all_descr_files')
+                fake_json.descr_files.forEach(e => {
+                    var li = document.createElement('li')
+                    li.innerHTML = `<a href=https://github.com/${fake_json.child}/blob/${fake_json.branch}/${e}>${e}</a>`
+                    ul.appendChild(li)
+                })
+            }
+
+            function init_descr_files() {
+                // description files
+                var valid_files = new Set()
+                fake_json.valid_pair_list.forEach(e => {
+                    valid_files.add(e.descr.descr_entry.file_path)
+                })
+                fill_file_links('valid_file', Array.from(valid_files))
+
+
+                var lack_date_files = new Set()
+                fake_json.content_violate_pair_list.forEach(e => {
+                    if (e.content_violate_type.includes('date_violate')) {
+                        lack_date_files.add(e.descr.descr_entry.file_path)
+                    }
+                })
+                fill_file_links('file_lack_date', Array.from(lack_date_files))
+
+                fill_file_links('notice_file', fake_json.descr_files)
+                init_all_descr_files()
+            }
+
+            function fill_tempsum_tempdetail() {
+                var has_valid_descr = (fake_json.valid_pair_list.length > 0)
+                
+                // temp_sum
+                var temp_sum_div = document.getElementsByClassName('temp_sum')[0]
+                var temp_sum = ''
+                if (has_valid_descr) {
+                    temp_sum = `you have <text class='commit_count number'>$commit_total</text> commits which conduct modifications to the files of original work, <text class='commit_match number'>$commit_match</text> of which are declared in <text class='valid_file'>$valid_files</text> while <text class='commit_not_match number'>$commit_not_match</text> of which are not.`
+                } else {
+                    temp_sum = `you have <text class='commit_count number'>$commit_total</text> commits which conduct modifications to the files of original work, <text class='number'>all</text> of which are not declared in <text class='notice_file'>$descr_files</text>.`  
+                }
+                temp_sum_div.innerHTML = temp_sum
+
+                // temp_detail
+                var temp_detail_div = document.getElementsByClassName('temp_detail')[0]
+                var temp_detail = ''
+
+                var need_date = (fake_json['need_date'] == 'true')
+                
+                var date_desc = ''
+                var msg_desc = ''
+                var date_msg_desc = ''
+                if (has_valid_descr) { // gen_A_key()
+                    if (need_date) {
+                        var commit_lack_date = fake_json.content_violate_meta.date_violate_count
+                        if (commit_lack_date > 0) {
+                            date_desc = `<text class='commit_lack_date number'>$commit_lack_date</text> commits have corresponding notices in <text class='file_lack_date'>$file_lack_date</text> but are not announced with date of the change,` 
+                        }
+                        date_msg_desc = `<text class='commit_lack_msg number'>$commit_lack_msg</text> commits and their corresponding date of change are not announced in <text class='valid_file'>$valid_file</text>.`    
+                    } else {
+                        msg_desc = `<text class='commit_lack_msg number'>$commit_lack_msg</text> commits are not announced in <text class='valid_file'>$valid_file</text>.`
+                    }
+                } else { // gen_B_key()
+                    if (fake_json.descr_files.length > 0) {
+                        fake_file = 'the file'
+                        if (fake_json.descr_files.length > 1) {
+                            fake_file = 'these files'
+                        }
+                        if (need_date) {
+                            date_msg_desc = `<text class='commit_lack_msg number'>$commit_lack_msg</text> commits and their corresponding date of change are not announced in ${fake_file}.`
+                        } else {
+                            msg_desc = `<text class='commit_lack_msg number'>$commit_lack_msg</text> commits are not announced in ${fake_file}.`
+                        }                        
+                    } else {
+                        if (need_date) {
+                            date_msg_desc = `<text class='commit_lack_msg number'>$commit_lack_msg</text> commits and their corresponding date of change are not announced in a prominent changelog file.`
+                        } else {
+                            msg_desc = `<text class='commit_lack_msg number'>$commit_lack_msg</text> commits are not announced in a prominent changelog file.`
+                        }                        
+                    }
+                }
+
+                temp_detail = `Specifically, of the <text class='commit_not_match number'>$commit_not_match</text> commits, ${date_desc}${msg_desc}${date_msg_desc}`
+                temp_detail_div.innerHTML = temp_detail
+            }
+            
+            function fix_action() {
+                // fix action
+                has_std_changlog_file = false
+                dest_file_name = ''
+                fake_json.descr_files.forEach(e => {
+                    lower_e = e.toLowerCase()
+                    if (lower_e.includes('change')) {
+                        has_std_changlog_file = true
+                        dest_file_name = e
+                    }
+                })
+                                
+                if (has_std_changlog_file) {
+                    fill_args('action', 'added')
+                    fill_file_links('dest_file', dest_file_name)         
+                } else {
+                    fill_args('action', 'created')
+                    fill_args('dest_file', '<a href="https://github.com/xiayingfeng/ProtocolLib/blob/fulfill-license-obligation/CHANGELOG.md">changelog</a>')       
+                }
+            }
+
+
+
+            function init_text() {
+                // license name & key clause
+                var lic_name = fake_json.unmatched_pair_list[0]['commit_info'].commit_license_list[0]
+                var lic_ref = host + general_license_set[lic_name].page_link
+                fill_args('lic_name', `<a href='${lic_ref}'>${lic_name}<\a>`)
+
+                var clause = general_license_set[lic_name].short_notice_terms
+                fill_args('lic_clause', `\"...${clause}...\"`)
+
+                // forking project & forked project
+                var forking_proj = `<a href=https://github.com/${fake_json.child}>${fake_json.child}</a>`
+                fill_args('forking_proj', forking_proj)
+                var forked_proj = `<a href=https://github.com/${fake_json.parent}>${fake_json.parent}</a>`
+                fill_args('forked_proj', forked_proj)
+
+                fill_tempsum_tempdetail()
+
+                // commit count info
+                var commit_total = fake_json.valid_pair_list.length + fake_json.unmatched_pair_list.length + fake_json.content_violate_pair_list.length
+                fill_args('commit_count', commit_total)
+                fill_args('commit_match', fake_json.valid_pair_list.length)
+
+                
+                var commit_not_match = fake_json.unmatched_pair_list.length + fake_json.content_violate_pair_list.length
+                fill_args('commit_not_match', commit_not_match)
+
+                var commit_lack_msg = fake_json.unmatched_pair_list.length
+                if (commit_lack_msg == commit_not_match) {
+                    commit_lack_msg = 'all'
+                }
+                fill_args('commit_lack_msg', commit_lack_msg)
+                
+                var commit_lack_date = fake_json.content_violate_meta.date_violate_count
+                if (commit_lack_date == commit_not_match) {
+                    commit_lack_date = 'all'
+                }
+                fill_args('commit_lack_date', fake_json.content_violate_meta.date_violate_count)
+
+
+                // description files
+                init_descr_files()
+
+                fix_action()
+
+
+            }
+
+
+            
+            init_text()
+            update_page_on()
+            update_available()
+
+        </script>  
+        
+    </body>    
+  
+
+</html>
+
+
