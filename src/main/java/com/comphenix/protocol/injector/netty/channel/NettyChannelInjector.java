@@ -101,7 +101,7 @@ public class NettyChannelInjector implements Injector {
 
 	// packet marking
 	private final Map<Object, NetworkMarker> savedMarkers = new WeakHashMap<>(16, 0.9f);
-	private final Set<Object> skippedPackets = Collections.synchronizedSet(new HashSet<>());
+	private final Set<Object> skippedPackets = ConcurrentHashMap.newKeySet();
 	protected final ThreadLocal<Boolean> processedPackets = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
 	// status of this injector
