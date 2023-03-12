@@ -17,13 +17,13 @@ public class PacketTypeSet {
 	private final Set<Class<?>> classes;
 
 	public PacketTypeSet() {
-		this.types = new HashSet<>(16, 0.5f);
-		this.classes = new HashSet<>(16, 0.5f);
+		this.types = new HashSet<>(16, 0.9f);
+		this.classes = new HashSet<>(16, 0.9f);
 	}
 
 	public PacketTypeSet(Collection<? extends PacketType> values) {
-		this.types = new HashSet<>(values.size(), 0.5f);
-		this.classes = new HashSet<>(values.size(), 0.5f);
+		this.types = new HashSet<>(values.size(), 0.9f);
+		this.classes = new HashSet<>(values.size(), 0.9f);
 
 		this.addAll(values);
 	}
