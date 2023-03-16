@@ -48,7 +48,7 @@ public class AutoWrapperTest {
     validateRawText(nms.a(), "Test123");
     validateRawText(nms.b(), "Test567");
     assertSame(AdvancementFrameType.b, nms.e());
-    assertSame(Items.nv, nms.c().c());
+    assertSame(Items.nQ, nms.c().c());
     assertEquals(5f, nms.f(), 0f);
     assertEquals(67f, nms.g(), 0f);
   }
@@ -56,7 +56,7 @@ public class AutoWrapperTest {
   @Test
   public void testFromNms() {
     AdvancementDisplay display = new AdvancementDisplay(
-        new net.minecraft.world.item.ItemStack(Items.rc),
+        new net.minecraft.world.item.ItemStack(Items.rz),
         IChatBaseComponent.b("Test123"),
         IChatBaseComponent.b("Test567"),
         new net.minecraft.resources.MinecraftKey("minecraft", "test"),

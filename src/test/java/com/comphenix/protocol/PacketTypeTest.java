@@ -282,7 +282,7 @@ public class PacketTypeTest {
 
 		EnumProtocol[] protocols = EnumProtocol.values();
 		for (EnumProtocol protocol : protocols) {
-			Field field = EnumProtocol.class.getDeclaredField("j");
+			Field field = EnumProtocol.class.getDeclaredField("k");
 			field.setAccessible(true);
 
 			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
