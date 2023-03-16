@@ -306,6 +306,10 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 			ListeningWhitelist outbound = listener.getSendingWhitelist();
 			ListeningWhitelist inbound = listener.getReceivingWhitelist();
 
+			// Remove packets from the lists if they are not supposed to be in those lists
+			inbound.getTypes().removeIf(type -> !type.isClient());
+			outbound.getTypes().removeIf(type -> !type.isServer());
+
 			// verify plugin if needed
 			if (this.shouldVerifyPlugin(outbound, inbound)) {
 				this.printPluginWarnings(listener.getPlugin());
