@@ -102,7 +102,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 		public static class Server extends PacketTypeEnum {
 			private final static Sender SENDER = Sender.SERVER;
 
-			public static final PacketType BUNDLE_DELIMITER =             new PacketType(PROTOCOL, SENDER, 0x00, "BundleDelimiterPacket");
+			public static final PacketType BUNDLE =                       new PacketType(PROTOCOL, SENDER, 0x00, "Bundle");
 			public static final PacketType SPAWN_ENTITY =                 new PacketType(PROTOCOL, SENDER, 0x01, "SpawnEntity", "SPacketSpawnObject");
 			public static final PacketType SPAWN_ENTITY_EXPERIENCE_ORB =  new PacketType(PROTOCOL, SENDER, 0x02, "SpawnEntityExperienceOrb", "SPacketSpawnExperienceOrb");
 			public static final PacketType NAMED_ENTITY_SPAWN =           new PacketType(PROTOCOL, SENDER, 0x03, "NamedEntitySpawn", "SPacketSpawnPlayer");
