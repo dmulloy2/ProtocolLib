@@ -8,7 +8,7 @@ import com.comphenix.protocol.wrappers.Converters;
 
 public class InternalStructure extends AbstractStructure {
 
-    protected InternalStructure(Object handle, StructureModifier<Object> structureModifier) {
+    public InternalStructure(Object handle, StructureModifier<Object> structureModifier) {
         super(handle, structureModifier);
     }
 

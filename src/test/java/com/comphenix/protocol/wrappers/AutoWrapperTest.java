@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.utility.MinecraftReflection;
+
 import net.minecraft.advancements.AdvancementDisplay;
 import net.minecraft.advancements.AdvancementFrameType;
 import net.minecraft.network.chat.IChatBaseComponent;
@@ -20,100 +22,100 @@ import org.junit.jupiter.api.Test;
 
 public class AutoWrapperTest {
 
-  @BeforeAll
-  public static void initializeBukkit() {
-    BukkitInitialization.initializeAll();
-  }
+	@BeforeAll
+	public static void initializeBukkit() {
+		BukkitInitialization.initializeAll();
+	}
 
-  @Test
-  public void testToNms() {
-    WrappedAdvancementDisplay display = new WrappedAdvancementDisplay();
-    display.title = WrappedChatComponent.fromText("Test123");
-    display.description = WrappedChatComponent.fromText("Test567");
-    display.item = new ItemStack(Material.GOLD_INGOT);
-    display.background = new MinecraftKey("test");
-    display.frameType = WrappedFrameType.CHALLENGE;
-    display.announceChat = false;
-    display.showToast = true;
-    display.hidden = true;
-    display.x = 5f;
-    display.y = 67f;
+	@Test
+	public void testToNms() {
+		WrappedAdvancementDisplay display = new WrappedAdvancementDisplay();
+		display.title = WrappedChatComponent.fromText("Test123");
+		display.description = WrappedChatComponent.fromText("Test567");
+		display.item = new ItemStack(Material.GOLD_INGOT);
+		display.background = new MinecraftKey("test");
+		display.frameType = WrappedFrameType.CHALLENGE;
+		display.announceChat = false;
+		display.showToast = true;
+		display.hidden = true;
+		display.x = 5f;
+		display.y = 67f;
 
-    AdvancementDisplay nms = (AdvancementDisplay) displayWrapper().unwrap(display);
+		AdvancementDisplay nms = (AdvancementDisplay) displayWrapper().unwrap(display);
 
-    assertTrue(nms.h());
-    assertTrue(nms.j());
-    assertFalse(nms.i());
-    assertEquals("test", nms.d().a());
-    validateRawText(nms.a(), "Test123");
-    validateRawText(nms.b(), "Test567");
-    assertSame(AdvancementFrameType.b, nms.e());
-    assertSame(Items.nv, nms.c().c());
-    assertEquals(5f, nms.f(), 0f);
-    assertEquals(67f, nms.g(), 0f);
-  }
+		assertTrue(nms.h());
+		assertTrue(nms.j());
+		assertFalse(nms.i());
+		assertEquals("test", nms.d().a());
+		validateRawText(nms.a(), "Test123");
+		validateRawText(nms.b(), "Test567");
+		assertSame(AdvancementFrameType.b, nms.e());
+		assertSame(MinecraftReflection.getBukkitItemStack(nms.c()).getType(), Material.GOLD_INGOT);
+		assertEquals(5f, nms.f(), 0f);
+		assertEquals(67f, nms.g(), 0f);
+	}
 
-  @Test
-  public void testFromNms() {
-    AdvancementDisplay display = new AdvancementDisplay(
-        new net.minecraft.world.item.ItemStack(Items.rc),
-        IChatBaseComponent.b("Test123"),
-        IChatBaseComponent.b("Test567"),
-        new net.minecraft.resources.MinecraftKey("minecraft", "test"),
-        AdvancementFrameType.b,
-        true,
-        false,
-        true
-    );
-    display.a(5f, 67f);
+	@Test
+	public void testFromNms() {
+		AdvancementDisplay display = new AdvancementDisplay(
+              (net.minecraft.world.item.ItemStack)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
+              IChatBaseComponent.b("Test123"),
+              IChatBaseComponent.b("Test567"),
+              new net.minecraft.resources.MinecraftKey("minecraft", "test"),
+              AdvancementFrameType.b,
+              true,
+              false,
+              true
+		);
+		display.a(5f, 67f);
 
-    WrappedAdvancementDisplay wrapped = displayWrapper().wrap(display);
+		WrappedAdvancementDisplay wrapped = displayWrapper().wrap(display);
 
-    assertTrue(wrapped.showToast);
-    assertTrue(wrapped.hidden);
-    assertFalse(wrapped.announceChat);
-    assertEquals("test", wrapped.background.getKey());
-    assertEquals("{\"text\":\"Test123\"}", wrapped.title.getJson());
-    assertEquals("{\"text\":\"Test567\"}", wrapped.description.getJson());
-    assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
-    assertSame(Material.ENDER_EYE, wrapped.item.getType());
-    assertEquals(5f, wrapped.x, 0f);
-    assertEquals(67f, wrapped.y, 0f);
-  }
+		assertTrue(wrapped.showToast);
+		assertTrue(wrapped.hidden);
+		assertFalse(wrapped.announceChat);
+		assertEquals("test", wrapped.background.getKey());
+		assertEquals("{\"text\":\"Test123\"}", wrapped.title.getJson());
+		assertEquals("{\"text\":\"Test567\"}", wrapped.description.getJson());
+		assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
+		assertSame(Material.ENDER_EYE, wrapped.item.getType());
+		assertEquals(5f, wrapped.x, 0f);
+		assertEquals(67f, wrapped.y, 0f);
+	}
 
-  private AutoWrapper<WrappedAdvancementDisplay> displayWrapper() {
-    return AutoWrapper
-        .wrap(WrappedAdvancementDisplay.class, "advancements.AdvancementDisplay", "advancements.DisplayInfo")
-        .field(0, BukkitConverters.getWrappedChatComponentConverter())
-        .field(1, BukkitConverters.getWrappedChatComponentConverter())
-        .field(2, BukkitConverters.getItemStackConverter())
-        .field(3, MinecraftKey.getConverter())
-        .field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType", "advancements.FrameType"),
-            WrappedFrameType.class));
-  }
+	private AutoWrapper<WrappedAdvancementDisplay> displayWrapper() {
+		return AutoWrapper
+				.wrap(WrappedAdvancementDisplay.class, "advancements.AdvancementDisplay", "advancements.DisplayInfo")
+				.field(0, BukkitConverters.getWrappedChatComponentConverter())
+				.field(1, BukkitConverters.getWrappedChatComponentConverter())
+				.field(2, BukkitConverters.getItemStackConverter())
+				.field(3, MinecraftKey.getConverter())
+				.field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType", "advancements.FrameType"),
+						WrappedFrameType.class));
+	}
 
-  private void validateRawText(IChatBaseComponent component, String expected) {
-    LiteralContents content = assertInstanceOf(LiteralContents.class, component.b());
-    assertEquals(expected, content.a());
-  }
+	private void validateRawText(IChatBaseComponent component, String expected) {
+		LiteralContents content = assertInstanceOf(LiteralContents.class, component.b());
+		assertEquals(expected, content.a());
+	}
 
-  public enum WrappedFrameType {
-    TASK,
-    CHALLENGE,
-    GOAL
-  }
+	public enum WrappedFrameType {
+		TASK,
+		CHALLENGE,
+		GOAL
+	}
 
-  public static final class WrappedAdvancementDisplay {
+	public static final class WrappedAdvancementDisplay {
 
-    public WrappedChatComponent title;
-    public WrappedChatComponent description;
-    public ItemStack item;
-    public MinecraftKey background;
-    public WrappedFrameType frameType;
-    public boolean showToast;
-    public boolean announceChat;
-    public boolean hidden;
-    public float x;
-    public float y;
-  }
+		public WrappedChatComponent title;
+		public WrappedChatComponent description;
+		public ItemStack item;
+		public MinecraftKey background;
+		public WrappedFrameType frameType;
+		public boolean showToast;
+		public boolean announceChat;
+		public boolean hidden;
+		public float x;
+		public float y;
+	}
 }

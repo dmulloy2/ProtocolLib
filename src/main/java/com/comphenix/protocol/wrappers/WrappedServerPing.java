@@ -4,22 +4,21 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
+import com.comphenix.protocol.wrappers.ping.LegacyServerPing;
+import com.comphenix.protocol.wrappers.ping.ServerPingImpl;
+import com.comphenix.protocol.wrappers.ping.ServerPingRecord;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import javax.imageio.ImageIO;
@@ -37,52 +36,21 @@ import java.util.List;
  * Represents a server ping packet data.
  * @author Kristian
  */
-public class WrappedServerPing extends AbstractWrapper implements ClonableWrapper {
-	private static Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
-	private static Class<?> GAME_PROFILE_ARRAY = MinecraftReflection.getArrayClass(GAME_PROFILE);
-
-	// Server ping fields
-	private static Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
-	private static ConstructorAccessor SERVER_PING_CONSTRUCTOR = Accessors.getConstructorAccessor(SERVER_PING);
-	private static FieldAccessor DESCRIPTION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getIChatBaseComponentClass(), true);
-	private static FieldAccessor PLAYERS = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingPlayerSampleClass(), true);
-	private static FieldAccessor VERSION = Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getServerPingServerDataClass(), true);
-	private static FieldAccessor FAVICON = Accessors.getFieldAccessor(SERVER_PING, String.class, true);
-	private static FieldAccessor[] BOOLEAN_ACCESSORS = Accessors.getFieldAccessorArray(SERVER_PING, boolean.class, true);
+public class WrappedServerPing implements ClonableWrapper {
+	private static final Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
 
 	// For converting to the underlying array
-	private static EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
-		BukkitConverters.getArrayConverter(GAME_PROFILE, BukkitConverters.getWrappedGameProfileConverter());
-
-	// Server ping player sample fields
-	private static Class<?> PLAYERS_CLASS = MinecraftReflection.getServerPingPlayerSampleClass();
-	private static ConstructorAccessor PLAYERS_CONSTRUCTOR = Accessors.getConstructorAccessor(PLAYERS_CLASS, int.class, int.class);
-	private static FieldAccessor[] PLAYERS_INTS = Accessors.getFieldAccessorArray(PLAYERS_CLASS, int.class, true);
-	private static FieldAccessor PLAYERS_PROFILES = Accessors.getFieldAccessor(PLAYERS_CLASS, GAME_PROFILE_ARRAY, true);
-	private static FieldAccessor PLAYERS_MAXIMUM = PLAYERS_INTS[0];
-	private static FieldAccessor PLAYERS_ONLINE = PLAYERS_INTS[1];
-
-	// Server ping serialization
-	private static Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
-	private static MethodAccessor GSON_TO_JSON = Accessors.getMethodAccessor(GSON_CLASS, "toJson", Object.class);
-	private static MethodAccessor GSON_FROM_JSON = Accessors.getMethodAccessor(GSON_CLASS, "fromJson", String.class, Class.class);
-	private static FieldAccessor PING_GSON = Accessors.getMemorizing(Accessors.getFieldAccessor(
-		PacketType.Status.Server.SERVER_INFO.getPacketClass(), GSON_CLASS, true
-	));
-
-	// Server data fields
-	private static Class<?> VERSION_CLASS = MinecraftReflection.getServerPingServerDataClass();
-	private static ConstructorAccessor VERSION_CONSTRUCTOR = Accessors.getConstructorAccessor(VERSION_CLASS, String.class, int.class);
-	private static FieldAccessor VERSION_NAME = Accessors.getFieldAccessor(VERSION_CLASS, String.class, true);
-	private static FieldAccessor VERSION_PROTOCOL = Accessors.getFieldAccessor(VERSION_CLASS, int.class, true);
+	private static final EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
+	BukkitConverters.getArrayConverter(GAME_PROFILE, BukkitConverters.getWrappedGameProfileConverter());
 
 	// Get profile from player
-	private static FieldAccessor ENTITY_HUMAN_PROFILE = Accessors.getFieldAccessor(
-			MinecraftReflection.getEntityPlayerClass().getSuperclass(), GAME_PROFILE, true);
+	private static final FieldAccessor ENTITY_HUMAN_PROFILE = Accessors.getFieldAccessor(
+	MinecraftReflection.getEntityPlayerClass().getSuperclass(), GAME_PROFILE, true);
 
-	// Inner class
-	private Object players; // may be NULL
-	private Object version;
+	// Server ping fields
+	private static final Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
+
+	private final ServerPingImpl impl;
 
 	/**
 	 * Construct a new server ping initialized with a zero player count, and zero maximum.
@@ -90,34 +58,44 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * Note that the version string is set to 1.9.4.
 	 */
 	public WrappedServerPing() {
-		super(MinecraftReflection.getServerPingClass());
-		setHandle(SERVER_PING_CONSTRUCTOR.invoke());
+		this.impl = newImpl();
+
 		resetPlayers();
 		resetVersion();
 	}
 
 	private WrappedServerPing(Object handle) {
-		super(MinecraftReflection.getServerPingClass());
-		setHandle(handle);
-		this.players = PLAYERS.get(handle);
-		this.version = VERSION.get(handle);
+		this.impl = newImpl(handle);
+	}
+
+	private ServerPingImpl newImpl() {
+		if (MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
+			return new ServerPingRecord();
+		}
+
+		return new LegacyServerPing();
+	}
+
+	private ServerPingImpl newImpl(Object handle) {
+		if (MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
+			return new ServerPingRecord();
+		}
+
+		return new LegacyServerPing(handle);
 	}
 
 	/**
 	 * Set the player count and player maximum to the default values.
 	 */
 	protected void resetPlayers() {
-		players = PLAYERS_CONSTRUCTOR.invoke(0, 0);
-		PLAYERS.set(handle, players);
+		impl.resetPlayers();
 	}
 
 	/**
 	 * Reset the version string to the default state.
 	 */
 	protected void resetVersion() {
-		MinecraftVersion minecraftVersion = MinecraftVersion.getCurrentVersion();
-		version = VERSION_CONSTRUCTOR.invoke(minecraftVersion.toString(), MinecraftProtocolVersion.getCurrentVersion());
-		VERSION.set(handle, version);
+		impl.resetVersion();
 	}
 
 	/**
@@ -135,7 +113,8 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return The wrapped server ping.
 	 */
 	public static WrappedServerPing fromJson(String json) {
-		return fromHandle(GSON_FROM_JSON.invoke(PING_GSON.get(null), json, SERVER_PING));
+		// return fromHandle(GSON_FROM_JSON.invoke(PING_GSON.get(null), json, SERVER_PING));
+		return null;
 	}
 
 	/**
@@ -143,7 +122,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return The messge of the day.
 	 */
 	public WrappedChatComponent getMotD() {
-		return WrappedChatComponent.fromHandle(DESCRIPTION.get(handle));
+		return WrappedChatComponent.fromHandle(impl.getMotD());
 	}
 
 	/**
@@ -151,7 +130,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param description - message of the day.
 	 */
 	public void setMotD(WrappedChatComponent description) {
-		DESCRIPTION.set(handle, description.getHandle());
+		impl.setMotD(description.getHandle());
 	}
 
 	/**
@@ -167,7 +146,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return The favicon, or NULL if no favicon will be displayed.
 	 */
 	public CompressedImage getFavicon() {
-		String favicon = (String) FAVICON.get(handle);
+		String favicon = impl.getFavicon();
 		return (favicon != null) ? CompressedImage.fromEncodedText(favicon) : null;
 	}
 
@@ -176,7 +155,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param image - the new compressed image or NULL if no favicon should be displayed.
 	 */
 	public void setFavicon(CompressedImage image) {
-		FAVICON.set(handle, (image != null) ? image.toEncodedText() : null);
+		impl.setFavicon((image != null) ? image.toEncodedText() : null);
 	}
 
 	/**
@@ -187,7 +166,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 */
 	@Deprecated
 	public boolean isChatPreviewEnabled() {
-		return (Boolean) BOOLEAN_ACCESSORS[0].get(handle);
+		return impl.isChatPreviewEnabled();
 	}
 
 	/**
@@ -198,7 +177,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 */
 	@Deprecated
 	public void setChatPreviewEnabled(boolean chatPreviewEnabled) {
-		BOOLEAN_ACCESSORS[0].set(handle, chatPreviewEnabled);
+		impl.setChatPreviewEnabled(chatPreviewEnabled);
 	}
 
 	/**
@@ -207,8 +186,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19.1
 	 */
 	public boolean isEnforceSecureChat() {
-		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
-		return (Boolean) BOOLEAN_ACCESSORS[index].get(handle);
+		return impl.isEnforceSecureChat();
 	}
 
 	/**
@@ -217,8 +195,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @since 1.19.1
 	 */
 	public void setEnforceSecureChat(boolean enforceSecureChat) {
-		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
-		BOOLEAN_ACCESSORS[index].set(handle, enforceSecureChat);
+		impl.setEnforceSecureChat(enforceSecureChat);
 	}
 
 	/**
@@ -228,9 +205,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @see #setPlayersOnline(int)
 	 */
 	public int getPlayersOnline() {
-		if (players == null)
-			throw new IllegalStateException("The player count has been hidden.");
-		return (Integer) PLAYERS_ONLINE.get(players);
+		return impl.getPlayersOnline();
 	}
 
 	/**
@@ -241,9 +216,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param online - online players.
 	 */
 	public void setPlayersOnline(int online) {
-		if (players == null)
-			resetPlayers();
-		PLAYERS_ONLINE.set(players, online);
+		impl.setPlayersOnline(online);
 	}
 
 	/**
@@ -253,9 +226,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @see #setPlayersMaximum(int)
 	 */
 	public int getPlayersMaximum() {
-		if (players == null)
-			throw new IllegalStateException("The player maximum has been hidden.");
-		return (Integer) PLAYERS_MAXIMUM.get(players);
+		return impl.getPlayersMaximum();
 	}
 
 	/**
@@ -266,9 +237,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param maximum - maximum player count.
 	 */
 	public void setPlayersMaximum(int maximum) {
-		if (players == null)
-			resetPlayers();
-		PLAYERS_MAXIMUM.set(players, maximum);
+		impl.setPlayersMaximum(maximum);
 	}
 
 	/**
@@ -279,14 +248,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 */
 	public void setPlayersVisible(boolean visible) {
 		if (isPlayersVisible() != visible) {
-			if (visible) {
-				// Recreate the count and maximum
-				Server server = Bukkit.getServer();
-				setPlayersMaximum(server.getMaxPlayers());
-				setPlayersOnline(Bukkit.getOnlinePlayers().size());
-			} else {
-				PLAYERS.set(handle, players = null);
-			}
+			impl.setPlayersVisible(visible);
 		}
 	}
 
@@ -297,7 +259,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return TRUE if the player statistics is visible, FALSE otherwise.
 	 */
 	public boolean isPlayersVisible() {
-		return players != null;
+		return impl.arePlayersVisible();
 	}
 
 	/**
@@ -305,9 +267,9 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return Logged in players or an empty list if no player names will be displayed.
 	 */
 	public ImmutableList<WrappedGameProfile> getPlayers() {
-		if (players == null)
+		if (!isPlayersVisible())
 			return ImmutableList.of();
-		Object playerProfiles = PLAYERS_PROFILES.get(players);
+		Object playerProfiles = impl.getPlayers();
 		if (playerProfiles == null)
 			return ImmutableList.of();
 		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(playerProfiles));
@@ -318,9 +280,9 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param profile - every logged in player.
 	 */
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
-		if (players == null)
+		if (!isPlayersVisible())
 			resetPlayers();
-		PLAYERS_PROFILES.set(players, (profile != null) ? PROFILE_CONVERT.getGeneric(profile) : null);
+		impl.setPlayers((profile != null) ? PROFILE_CONVERT.getGeneric(profile) : null);
 	}
 
 	/**
@@ -343,7 +305,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return The version name.
 	 */
 	public String getVersionName() {
-		return (String) VERSION_NAME.get(version);
+		return impl.getVersionName();
 	}
 
 	/**
@@ -351,7 +313,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param name - the new version name.
 	 */
 	public void setVersionName(String name) {
-		VERSION_NAME.set(version, name);
+		impl.setVersionName(name);
 	}
 
 	/**
@@ -359,7 +321,7 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return The protocol.
 	 */
 	public int getVersionProtocol() {
-		return (Integer) VERSION_PROTOCOL.get(version);
+		return impl.getVersionProtocol();
 	}
 
 	/**
@@ -367,7 +329,12 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @param protocol - the protocol number.
 	 */
 	public void setVersionProtocol(int protocol) {
-		VERSION_PROTOCOL.set(version, protocol);
+		impl.setVersionProtocol(protocol);
+	}
+
+	@Override
+	public Object getHandle() {
+		return impl.getHandle();
 	}
 
 	/**
@@ -398,7 +365,8 @@ public class WrappedServerPing extends AbstractWrapper implements ClonableWrappe
 	 * @return The JSON representation.
 	 */
 	public String toJson() {
-		return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), handle);
+		return null;
+		// return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), getHandle());
 	}
 
 	@Override

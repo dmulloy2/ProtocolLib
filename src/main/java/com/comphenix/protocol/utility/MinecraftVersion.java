@@ -38,6 +38,11 @@ import org.bukkit.Server;
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
 
 	/**
+	 * Version 1.19.4 - the rest of the feature preview
+	 */
+	public static final MinecraftVersion FEATURE_PREVIEW_2 = new MinecraftVersion("1.19.4");
+
+	/**
 	 * Version 1.19.3 - introducing feature preview
 	 */
 	public static final MinecraftVersion FEATURE_PREVIEW_UPDATE = new MinecraftVersion("1.19.3");
@@ -117,7 +122,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 	/**
 	 * The latest release version of minecraft.
 	 */
-	public static final MinecraftVersion LATEST = FEATURE_PREVIEW_UPDATE;
+	public static final MinecraftVersion LATEST = FEATURE_PREVIEW_2;
 
 	// used when serializing
 	private static final long serialVersionUID = -8695133558996459770L;

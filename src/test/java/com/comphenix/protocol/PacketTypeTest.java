@@ -61,7 +61,9 @@ public class PacketTypeTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void main(String[] args) throws Exception {
+	// @Test
+	// public static void main(String[] args) throws Exception {
+	public void generateNewPackets() throws Exception {
 		MinecraftReflectionTestUtil.init();
 
 		Set<Class<?>> allTypes = new HashSet<>();
@@ -71,7 +73,7 @@ public class PacketTypeTest {
 		for (EnumProtocol protocol : protocols) {
 			System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
 
-			Field field = EnumProtocol.class.getDeclaredField("j");
+			Field field = EnumProtocol.class.getDeclaredField("k");
 			field.setAccessible(true);
 
 			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
@@ -173,18 +175,35 @@ public class PacketTypeTest {
 
 		className = classNames.get(classNames.size() - 1);
 
-		// Format it like SET_PROTOCOL
-		StringBuilder fieldName = new StringBuilder();
-		char[] chars = className.toCharArray();
-		for (int i = 0; i < chars.length; i++) {
-			char c = chars[i];
-			if (i != 0 && Character.isUpperCase(c)) {
-				fieldName.append("_");
+		PacketType existing = null;
+		try {
+			existing = PacketType.fromClass(clazz);
+			if (existing.isDynamic()) {
+				existing = null;
 			}
-			fieldName.append(Character.toUpperCase(c));
+		} catch (Exception ignored) {
+			// doesn't exist
 		}
 
-		builder.append(fieldName.toString().replace("N_B_T", "NBT"));
+		String fieldName;
+		if (existing == null) {
+			// Format it like SET_PROTOCOL
+			StringBuilder fieldNameBuilder = new StringBuilder();
+			char[] chars = className.toCharArray();
+			for (int i = 0; i < chars.length; i++) {
+				char c = chars[i];
+				if (i != 0 && Character.isUpperCase(c)) {
+					fieldNameBuilder.append("_");
+				}
+				fieldNameBuilder.append(Character.toUpperCase(c));
+			}
+
+			fieldName = fieldNameBuilder.toString().replace("N_B_T", "NBT");
+		} else {
+			fieldName = existing.name();
+		}
+
+		builder.append(fieldName);
 		builder.append(" = ");
 
 		// Add spacing
@@ -282,7 +301,7 @@ public class PacketTypeTest {
 
 		EnumProtocol[] protocols = EnumProtocol.values();
 		for (EnumProtocol protocol : protocols) {
-			Field field = EnumProtocol.class.getDeclaredField("j");
+			Field field = EnumProtocol.class.getDeclaredField("k");
 			field.setAccessible(true);
 
 			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
