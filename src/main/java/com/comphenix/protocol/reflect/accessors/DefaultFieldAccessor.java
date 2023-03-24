@@ -4,6 +4,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import com.google.common.base.Preconditions;
+
 final class DefaultFieldAccessor implements FieldAccessor {
 
 	private final Field field;
@@ -13,9 +15,9 @@ final class DefaultFieldAccessor implements FieldAccessor {
 	private final MethodHandle getter;
 
 	public DefaultFieldAccessor(Field field, MethodHandle setter, MethodHandle getter, boolean staticField) {
-		this.field = field;
-		this.setter = setter;
-		this.getter = getter;
+		this.field = Preconditions.checkNotNull(field, "field");
+		this.setter = Preconditions.checkNotNull(setter, "setter");
+		this.getter = Preconditions.checkNotNull(getter, "getter");
 		this.staticField = staticField;
 	}
 

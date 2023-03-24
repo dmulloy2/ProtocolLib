@@ -20,6 +20,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.google.common.base.Defaults;
+import com.google.common.base.Preconditions;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -88,6 +89,8 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 	}
 
 	public T wrap(Object nmsObject) {
+		Preconditions.checkNotNull(nmsObject);
+
 		T instance;
 
 		try {
@@ -114,6 +117,8 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 	}
 
 	public Object unwrap(Object wrapper) {
+		Preconditions.checkNotNull(wrapper);
+
 		// ensures that all accessors are present
 		computeFieldAccessors();
 		computeNmsConstructorAccess();
@@ -139,14 +144,14 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 			nmsAccessors = Arrays
 					.stream(nmsClass.getDeclaredFields())
 					.filter(field -> !Modifier.isStatic(field.getModifiers()))
-					.map(field -> Accessors.getFieldAccessor(field))
+					.map(Accessors::getFieldAccessor)
 					.toArray(FieldAccessor[]::new);
 		}
 
 		if (wrapperAccessors == null) {
 			wrapperAccessors = Arrays
 					.stream(wrapperClass.getDeclaredFields())
-					.map(field -> Accessors.getFieldAccessor(field))
+					.map(Accessors::getFieldAccessor)
 					.toArray(FieldAccessor[]::new);
 		}
 	}

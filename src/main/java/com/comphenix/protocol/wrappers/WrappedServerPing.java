@@ -68,7 +68,7 @@ public class WrappedServerPing implements ClonableWrapper {
 		this.impl = newImpl(handle);
 	}
 
-	private ServerPingImpl newImpl() {
+	private static ServerPingImpl newImpl() {
 		if (MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
 			return new ServerPingRecord();
 		}
@@ -76,9 +76,9 @@ public class WrappedServerPing implements ClonableWrapper {
 		return new LegacyServerPing();
 	}
 
-	private ServerPingImpl newImpl(Object handle) {
+	private static ServerPingImpl newImpl(Object handle) {
 		if (MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
-			return new ServerPingRecord();
+			return new ServerPingRecord(handle);
 		}
 
 		return new LegacyServerPing(handle);
@@ -87,14 +87,14 @@ public class WrappedServerPing implements ClonableWrapper {
 	/**
 	 * Set the player count and player maximum to the default values.
 	 */
-	protected void resetPlayers() {
+	private void resetPlayers() {
 		impl.resetPlayers();
 	}
 
 	/**
 	 * Reset the version string to the default state.
 	 */
-	protected void resetVersion() {
+	private void resetVersion() {
 		impl.resetVersion();
 	}
 

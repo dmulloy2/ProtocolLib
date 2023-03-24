@@ -26,7 +26,7 @@ public class ServerPingRecord implements ServerPingImpl {
 
 	private static ConstructorAccessor PING_CTOR;
 
-	private static boolean initialized;
+	private static boolean initialized = false;
 
 	private static void initialize() {
 		if (initialized) {
@@ -42,20 +42,9 @@ public class ServerPingRecord implements ServerPingImpl {
 
 			PING_CTOR = Accessors.getConstructorAccessor(SERVER_PING.getConstructors()[0]);
 
-			DATA_WRAPPER = AutoWrapper
-				.wrap(ServerData.class, SERVER_DATA_CLASS)
-				.field(0, Converters.passthrough(String.class))
-				.field(1, Converters.passthrough(int.class));
-
-			SAMPLE_WRAPPER = AutoWrapper
-				.wrap(PlayerSample.class, PLAYER_SAMPLE_CLASS)
-				.field(0, Converters.passthrough(int.class))
-				.field(1, Converters.passthrough(int.class))
-				.field(2, Converters.passthrough(Object.class));
-
-			FAVICON_WRAPPER = AutoWrapper
-				.wrap(Favicon.class, MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a"))
-				.field(0, Converters.passthrough(byte[].class));
+			DATA_WRAPPER = AutoWrapper.wrap(ServerData.class, SERVER_DATA_CLASS);
+			SAMPLE_WRAPPER = AutoWrapper.wrap(PlayerSample.class, PLAYER_SAMPLE_CLASS);
+			FAVICON_WRAPPER = AutoWrapper.wrap(Favicon.class, MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a"));
 
 			DEFAULT_DESCRIPTION = WrappedChatComponent.fromLegacyText("A Minecraft Server");
 		} catch (Exception ex) {
@@ -63,18 +52,18 @@ public class ServerPingRecord implements ServerPingImpl {
 		}
 	}
 
-	private static class PlayerSample {
+	public static final class PlayerSample {
 		public int max;
 		public int online;
 		public Object sample;
 	}
 
-	private static class ServerData {
+	public static final class ServerData {
 		public String name;
 		public int protocol;
 	}
 
-	private static class Favicon {
+	public static final class Favicon {
 		public byte[] iconBytes;
 	}
 
@@ -255,10 +244,10 @@ public class ServerPingRecord implements ServerPingImpl {
 
 	@Override
 	public Object getHandle() {
-		Optional<Object> players = Optional.of(SAMPLE_WRAPPER.unwrap(playerSample));
-		Optional<Object> version = Optional.of(DATA_WRAPPER.unwrap(serverData));
-		Optional<Object> favHandle = Optional.of(FAVICON_WRAPPER.unwrap(favicon));
+		Optional<Object> playersHandle = Optional.ofNullable(playerSample != null ? SAMPLE_WRAPPER.unwrap(playerSample) : null);
+		Optional<Object> versionHandle = Optional.ofNullable(serverData != null ? DATA_WRAPPER.unwrap(serverData) : null);
+		Optional<Object> favHandle = Optional.ofNullable(favicon != null ? FAVICON_WRAPPER.unwrap(favicon) : null);
 
-		return PING_CTOR.invoke(description, players, version, favHandle, enforceSafeChat);
+		return PING_CTOR.invoke(description, playersHandle, versionHandle, favHandle, enforceSafeChat);
 	}
 }

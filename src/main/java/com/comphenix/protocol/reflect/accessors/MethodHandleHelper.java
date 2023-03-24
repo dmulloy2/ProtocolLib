@@ -11,6 +11,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.logging.Level;
 
+import com.google.common.base.Preconditions;
+
 final class MethodHandleHelper {
 
 	private static final Lookup LOOKUP;
@@ -51,29 +53,35 @@ final class MethodHandleHelper {
 	}
 
 	public static MethodAccessor getMethodAccessor(Method method) {
+		Preconditions.checkNotNull(method, "method");
+
 		try {
 			MethodHandle unreflected = LOOKUP.unreflect(method);
 			boolean staticMethod = Modifier.isStatic(method.getModifiers());
 
 			MethodHandle generified = convertToGeneric(unreflected, staticMethod, false);
 			return new DefaultMethodAccessor(method, generified, staticMethod);
-		} catch (IllegalAccessException exception) {
-			throw new IllegalStateException("Unable to access method " + method);
+		} catch (IllegalAccessException ex) {
+			throw new IllegalStateException("Unable to access method " + method, ex);
 		}
 	}
 
 	public static ConstructorAccessor getConstructorAccessor(Constructor<?> constructor) {
+		Preconditions.checkNotNull(constructor, "constructor");
+
 		try {
 			MethodHandle unreflected = LOOKUP.unreflectConstructor(constructor);
 			MethodHandle generified = convertToGeneric(unreflected, false, true);
 
 			return new DefaultConstrutorAccessor(constructor, generified);
-		} catch (IllegalAccessException exception) {
-			throw new IllegalStateException("Unable to access constructor " + constructor);
+		} catch (IllegalAccessException ex) {
+			throw new IllegalStateException("Unable to access constructor " + constructor, ex);
 		}
 	}
 
 	public static FieldAccessor getFieldAccessor(Field field) {
+		Preconditions.checkNotNull(field, "field");
+
 		try {
 			boolean staticField = Modifier.isStatic(field.getModifiers());
 
@@ -97,10 +105,18 @@ final class MethodHandleHelper {
 				setter = setter.asType(VIRTUAL_FIELD_SETTER);
 			}
 
+			if (getter == null) {
+				throw new IllegalStateException("Unable to access field " + field + ". Could not find getter");
+			}
+
+			if (setter == null) {
+				throw new IllegalStateException("Unable to access field " + field + ". Could not find setter");
+			}
+
 			return new DefaultFieldAccessor(field, setter, getter, staticField);
-		} catch (IllegalAccessException | NoSuchFieldException exception) {
+		} catch (IllegalAccessException | NoSuchFieldException ex) {
 			// NoSuchFieldException can never happen, the field always exists
-			throw new IllegalStateException("Unable to access field " + field, exception);
+			throw new IllegalStateException("Unable to access field " + field, ex);
 		}
 	}
 
