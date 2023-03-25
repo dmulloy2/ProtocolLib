@@ -155,7 +155,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 				PacketType packetType = PacketRegistry.getPacketType(handle.getClass());
 				PacketContainer container = new PacketContainer(packetType, handle);
 				PacketEvent packetEvent = PacketEvent.fromServer(this, container, event.getNetworkMarker(), event.getPlayer());
-				invokePacketSending(reporter, packetEvent, priorityFilter);
+				invokeUnpackedPacketSending(reporter, packetEvent, priorityFilter);
 
 				if(packetEvent.isCancelled()) {
 					iterator.remove();
