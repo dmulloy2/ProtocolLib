@@ -148,7 +148,8 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param priorityFilter - the piority for a listener to be invoked. If null is provided, every registered listener will be invoked
 	 */
 	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, @Nullable ListenerPriority priorityFilter) {
-		if(event.getPacketType() == PacketType.Play.Server.DELIMITER) {
+		invokeUnpackedPacketSending(reporter, event, priorityFilter);
+		if(event.getPacketType() == PacketType.Play.Server.DELIMITER && !event.isCancelled()) {
 			// unpack the bundle and invoke for each packet in the bundle
 			StructureModifier<Iterable> iterableModifier = event.getPacket().getSpecificModifier(Iterable.class);
 			Iterable packets = iterableModifier.read(0);
@@ -168,8 +169,6 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			} else {
 				event.setCancelled(true); // cancel packet if each individual packet has been canceled
 			}
-		} else {
-			invokeUnpackedPacketSending(reporter, event, priorityFilter);
 		}
 	}
 
