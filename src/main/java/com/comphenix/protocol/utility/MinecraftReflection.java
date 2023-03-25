@@ -628,6 +628,14 @@ public final class MinecraftReflection {
 		return getMinecraftClass("network.chat.IChatBaseComponent", "network.chat.IChatbaseComponent", "network.chat.Component", "IChatBaseComponent");
 	}
 
+	public static Class<?> getPackedBundlePacketClass() {
+		return getMinecraftClass("network.protocol.game.ClientboundBundlePacket", "ClientboundBundlePacket");
+	}
+
+	public static Class<?> getBundleDelimiterClass() {
+		return getMinecraftClass("network.protocol.BundleDelimiterPacket","BundleDelimiterPacket");
+	}
+
 	public static Class<?> getIChatBaseComponentArrayClass() {
 		return getArrayClass(getIChatBaseComponentClass());
 	}

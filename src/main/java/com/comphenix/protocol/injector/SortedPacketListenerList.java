@@ -18,15 +18,21 @@
 package com.comphenix.protocol.injector;
 
 import java.util.Collection;
+import java.util.Iterator;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.timing.TimedListenerManager;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.timing.TimedTracker;
+
+import javax.annotation.Nullable;
 
 /**
  * Registry of synchronous packet listeners.
@@ -130,59 +136,67 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param event - the packet event to invoke.
 	 */
 	public void invokePacketSending(ErrorReporter reporter, PacketEvent event) {
-		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketType());
-		
-		if (list == null)
-			return;
-		
-		if (timedManager.isTiming()) {
-			for (PrioritizedListener<PacketListener> element : list) {
-				TimedTracker tracker = timedManager.getTracker(element.getListener(), ListenerType.SYNC_SERVER_SIDE);
-				long token = tracker.beginTracking();
-				
-				// Measure and record the execution time
-				invokeSendingListener(reporter, event, element);
-				tracker.endTracking(token, event.getPacketType());
-			}
-		} else {
-			for (PrioritizedListener<PacketListener> element : list) {
-				invokeSendingListener(reporter, event, element);
-			}
-		}
+		invokePacketSending(reporter, event, null);
 	}
 	
 	/**
 	 * Invokes the given packet event for every registered listener of the given priority.
 	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
 	 * @param event - the packet event to invoke.
-	 * @param priorityFilter - the required priority for a listener to be invoked.
+	 * @param priorityFilter - the piority for a listener to be invoked. If null is provided, every registered listener will be invoked
 	 */
-	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, ListenerPriority priorityFilter) {
+	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, @Nullable ListenerPriority priorityFilter) {
+		if(event.getPacketType() == PacketType.Play.Server.DELIMITER) {
+			// unpack the bundle and invoke for each packet in the bundle
+			Iterable packets = event.getPacket().getSpecificModifier(Iterable.class).read(0);
+			Iterator iterator = packets.iterator();
+			while (iterator.hasNext()) {
+				Object handle = iterator.next();
+				PacketType packetType = PacketRegistry.getPacketType(handle.getClass());
+				PacketContainer container = new PacketContainer(packetType, handle);
+				PacketEvent packetEvent = PacketEvent.fromServer(this, container, event.getNetworkMarker(), event.getPlayer());
+				invokePacketSending(reporter, packetEvent, priorityFilter);
+
+				if(packetEvent.isCancelled()) {
+					iterator.remove();
+				}
+			}
+			if(!packets.iterator().hasNext()) { // are there still packets in this bundle?
+				event.setCancelled(true);
+			} else {
+				event.getPacket().getSpecificModifier(Iterable.class).write(0, packets);
+			}
+		} else {
+			invokeUnpackedPacketSending(reporter, event, priorityFilter);
+		}
+	}
+
+	private void invokeUnpackedPacketSending(ErrorReporter reporter, PacketEvent event, @org.jetbrains.annotations.Nullable ListenerPriority priorityFilter) {
 		Collection<PrioritizedListener<PacketListener>> list = getListener(event.getPacketType());
-		
+
 		if (list == null)
 			return;
-		
+
 		if (timedManager.isTiming()) {
 			for (PrioritizedListener<PacketListener> element : list) {
-				if (element.getPriority() == priorityFilter) {
-				TimedTracker tracker = timedManager.getTracker(element.getListener(), ListenerType.SYNC_SERVER_SIDE);
-				long token = tracker.beginTracking();
-				
-				// Measure and record the execution time
-				invokeSendingListener(reporter, event, element);
-				tracker.endTracking(token, event.getPacketType());
+				if (priorityFilter == null || element.getPriority() == priorityFilter) {
+					TimedTracker tracker = timedManager.getTracker(element.getListener(), ListenerType.SYNC_SERVER_SIDE);
+					long token = tracker.beginTracking();
+
+					// Measure and record the execution time
+					invokeSendingListener(reporter, event, element);
+					tracker.endTracking(token, event.getPacketType());
 				}
 			}
 		} else {
 			for (PrioritizedListener<PacketListener> element : list) {
-				if (element.getPriority() == priorityFilter) {
+				if (priorityFilter == null || element.getPriority() == priorityFilter) {
 					invokeSendingListener(reporter, event, element);
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * Invoke a particular sending listener.
 	 * @param reporter - the error reporter.

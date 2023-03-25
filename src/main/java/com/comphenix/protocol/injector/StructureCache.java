@@ -135,6 +135,11 @@ public class StructureCache {
 
 		return STRUCTURE_MODIFIER_CACHE.computeIfAbsent(packetType, type -> {
 			Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
+
+			// We need to map the Bundle Delimiter to the synthetic bundle packet which contains a list of all packets in a bundle
+			if(MinecraftVersion.atOrAbove(MinecraftVersion.FEATURE_PREVIEW_2) && packetClass.equals(MinecraftReflection.getBundleDelimiterClass())) {
+				packetClass = MinecraftReflection.getPackedBundlePacketClass();
+			}
 			return new StructureModifier<>(packetClass, MinecraftReflection.getPacketClass(), true);
 		});
 	}

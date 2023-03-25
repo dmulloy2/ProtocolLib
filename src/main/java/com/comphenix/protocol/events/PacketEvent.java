@@ -40,6 +40,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
+import javax.annotation.Nullable;
+
 /**
  * Represents a packet sending or receiving event. Changes to the packet will be reflected in the final version to be
  * sent or received. It is also possible to cancel an event.
@@ -70,6 +72,9 @@ public class PacketEvent extends EventObject implements Cancellable {
 	private boolean readOnly;
 	private boolean filtered;
 
+	@Nullable
+	private PacketEvent bundle;
+
 	/**
 	 * Use the static constructors to create instances of this event.
 	 *
@@ -81,17 +86,18 @@ public class PacketEvent extends EventObject implements Cancellable {
 	}
 
 	private PacketEvent(Object source, PacketContainer packet, Player player, boolean serverPacket) {
-		this(source, packet, null, player, serverPacket, true);
+		this(source, packet, null, player, serverPacket, true, null);
 	}
 
 	private PacketEvent(Object source, PacketContainer packet, NetworkMarker marker, Player player, boolean serverPacket,
-			boolean filtered) {
+			boolean filtered, @Nullable PacketEvent bundleEvent) {
 		super(source);
 		this.packet = packet;
 		this.playerReference = new WeakReference<>(player);
 		this.networkMarker = marker;
 		this.serverPacket = serverPacket;
 		this.filtered = filtered;
+		this.bundle = bundleEvent;
 	}
 
 	private PacketEvent(PacketEvent origial, AsyncMarker asyncMarker) {
@@ -128,7 +134,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @return The event.
 	 */
 	public static PacketEvent fromClient(Object source, PacketContainer packet, NetworkMarker marker, Player client) {
-		return new PacketEvent(source, packet, marker, client, false, true);
+		return new PacketEvent(source, packet, marker, client, false, true, null);
 	}
 
 	/**
@@ -145,7 +151,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public static PacketEvent fromClient(Object source, PacketContainer packet, NetworkMarker marker, Player client,
 			boolean filtered) {
-		return new PacketEvent(source, packet, marker, client, false, filtered);
+		return new PacketEvent(source, packet, marker, client, false, filtered, null);
 	}
 
 	/**
@@ -170,7 +176,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @return The event.
 	 */
 	public static PacketEvent fromServer(Object source, PacketContainer packet, NetworkMarker marker, Player recipient) {
-		return new PacketEvent(source, packet, marker, recipient, true, true);
+		return new PacketEvent(source, packet, marker, recipient, true, true, null);
 	}
 
 	/**
@@ -187,7 +193,25 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 */
 	public static PacketEvent fromServer(Object source, PacketContainer packet, NetworkMarker marker, Player recipient,
 			boolean filtered) {
-		return new PacketEvent(source, packet, marker, recipient, true, filtered);
+		return fromServer(source, packet, marker, recipient, filtered, null);
+	}
+
+	/**
+	 * Creates an event representing a server packet transmission.
+	 * <p>
+	 * If <i>filtered</i> is FALSE, then this event is only processed by packet monitors.
+	 *
+	 * @param source    - the event source.
+	 * @param packet    - the packet.
+	 * @param marker    - the network marker.
+	 * @param recipient - the client that will receieve the packet.
+	 * @param filtered  - whether or not this packet event is processed by every packet listener.
+	 * @param bundle    - The corresponding packet event of the bundle if this packet is part of a bundle.
+	 * @return The event.
+	 */
+	public static PacketEvent fromServer(Object source, PacketContainer packet, NetworkMarker marker, Player recipient,
+			boolean filtered, PacketEvent bundle) {
+		return new PacketEvent(source, packet, marker, recipient, true, filtered, bundle);
 	}
 
 	/**
@@ -515,6 +539,15 @@ public class PacketEvent extends EventObject implements Cancellable {
 			Player offlinePlayer = serialized.getPlayer();
 			playerReference = new WeakReference<>(offlinePlayer);
 		}
+	}
+
+	/**
+	 * Whether this packet is part of the bundle
+	 * @return Corresponding packet event
+	 */
+	@Nullable
+	public PacketEvent getBundle() {
+		return bundle;
 	}
 
 	@Override

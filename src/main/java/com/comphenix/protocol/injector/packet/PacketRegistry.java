@@ -30,6 +30,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
 
 /**
  * Static packet registry in Minecraft.
@@ -382,6 +383,9 @@ public class PacketRegistry {
 	 * @return The packet type, or NULL if not found.
 	 */
 	public static PacketType getPacketType(Class<?> packet) {
+		if(Util.isBundlePacket(packet)) {
+			return PacketType.Play.Server.DELIMITER;
+		}
 		initialize();
 		return REGISTER.classToType.get(packet);
 	}
