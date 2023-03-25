@@ -40,7 +40,7 @@ public class AdventureComponentConverter {
 
  	/**
 	 * Converts a {@link Component} into a ProtocolLib wrapper
-	 * @param components Component
+	 * @param component Component
 	 * @return ProtocolLib wrapper
 	 */
   	public static WrappedChatComponent fromComponent(Component component) {

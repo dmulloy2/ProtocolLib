@@ -17,8 +17,9 @@
 
 package com.comphenix.protocol.injector;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.List;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
@@ -28,6 +29,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.timing.TimedListenerManager;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.timing.TimedTracker;
@@ -114,7 +116,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param event - the related packet event.
 	 * @param element - the listener to invoke.
 	 */
-	private final void invokeReceivingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
+	private void invokeReceivingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
 		try {
 			event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 			element.getListener().onPacketReceiving(event);
@@ -148,23 +150,23 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, @Nullable ListenerPriority priorityFilter) {
 		if(event.getPacketType() == PacketType.Play.Server.DELIMITER) {
 			// unpack the bundle and invoke for each packet in the bundle
-			Iterable packets = event.getPacket().getSpecificModifier(Iterable.class).read(0);
-			Iterator iterator = packets.iterator();
-			while (iterator.hasNext()) {
-				Object handle = iterator.next();
-				PacketType packetType = PacketRegistry.getPacketType(handle.getClass());
-				PacketContainer container = new PacketContainer(packetType, handle);
-				PacketEvent packetEvent = PacketEvent.fromServer(this, container, event.getNetworkMarker(), event.getPlayer());
-				invokeUnpackedPacketSending(reporter, packetEvent, priorityFilter);
+			StructureModifier<Iterable> iterableModifier = event.getPacket().getSpecificModifier(Iterable.class);
+			Iterable packets = iterableModifier.read(0);
+			List<Object> outPackets = new ArrayList<>();
+			for(Object handle : packets) {
+				PacketContainer subPacket = new PacketContainer(PacketRegistry.getPacketType(handle.getClass()), handle);
+				PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(), event.getPlayer());
+				invokeUnpackedPacketSending(reporter, subPacketEvent, priorityFilter);
 
-				if(packetEvent.isCancelled()) {
-					iterator.remove();
+				if(!subPacketEvent.isCancelled()) {
+					outPackets.add(subPacketEvent.getPacket().getHandle()); // if the packet event has been cancelled, the packet will be removed from the bundle.
+					                                               // event.getPacket().getHandle() can be different from handle at this point
 				}
 			}
-			if(!packets.iterator().hasNext()) { // are there still packets in this bundle?
-				event.setCancelled(true);
+			if(packets.iterator().hasNext()) { // are there still packets in this bundle?
+				iterableModifier.write(0, outPackets);
 			} else {
-				event.getPacket().getSpecificModifier(Iterable.class).write(0, packets);
+				event.setCancelled(true); // cancel packet if each individual packet has been canceled
 			}
 		} else {
 			invokeUnpackedPacketSending(reporter, event, priorityFilter);

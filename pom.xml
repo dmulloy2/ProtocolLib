@@ -125,7 +125,7 @@
 
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.4.0</version>
+				<version>3.5.0</version>
 				<configuration>
 					<failOnError>false</failOnError>
 					<encoding>ISO-8859-1</encoding>
