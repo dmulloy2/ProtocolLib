@@ -1,11 +1,5 @@
 package com.comphenix.protocol.wrappers.ping;
 
-import java.util.List;
-
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
-
 public interface ServerPingImpl {
 	Object getMotD();
 	void setMotD(Object description);

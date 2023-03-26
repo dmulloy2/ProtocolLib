@@ -113,8 +113,10 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return The wrapped server ping.
 	 */
 	public static WrappedServerPing fromJson(String json) {
-		// return fromHandle(GSON_FROM_JSON.invoke(PING_GSON.get(null), json, SERVER_PING));
-		return null;
+		if(MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
+			throw new UnsupportedOperationException("Creating server pings from JSON is currently unsupported for FEATURE_PREVIEW_2 / 1.19.4");
+		}
+		return new WrappedServerPing(LegacyServerPing.fromJson(json));
 	}
 
 	/**
@@ -122,7 +124,8 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return The messge of the day.
 	 */
 	public WrappedChatComponent getMotD() {
-		return WrappedChatComponent.fromHandle(impl.getMotD());
+		Object handle = impl.getMotD();
+		return handle instanceof WrappedChatComponent ? ((WrappedChatComponent) handle) : WrappedChatComponent.fromHandle(handle);
 	}
 
 	/**

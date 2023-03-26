@@ -1,11 +1,8 @@
 package com.comphenix.protocol.wrappers.ping;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
 
-import com.comphenix.protocol.events.AbstractStructure;
 import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -73,7 +70,7 @@ public class ServerPingRecord implements ServerPingImpl {
 
 	private static AutoWrapper<Favicon> FAVICON_WRAPPER;
 
-	private Object description;
+	private WrappedChatComponent description;
 	private PlayerSample playerSample;
 	private ServerData serverData;
 	private Favicon favicon;
@@ -143,13 +140,17 @@ public class ServerPingRecord implements ServerPingImpl {
 	}
 
 	@Override
-	public Object getMotD() {
+	public WrappedChatComponent getMotD() {
 		return description;
 	}
 
 	@Override
 	public void setMotD(Object description) {
-		this.description = description;
+		if(description instanceof WrappedChatComponent) {
+			this.description = (WrappedChatComponent) description;
+		} else {
+			this.description = WrappedChatComponent.fromHandle(description);
+		}
 	}
 
 	@Override
