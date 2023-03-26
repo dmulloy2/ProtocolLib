@@ -27,12 +27,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.utility.ByteBuddyGenerated;
-import com.comphenix.protocol.utility.MinecraftFields;
-import com.comphenix.protocol.utility.MinecraftMethods;
-import com.comphenix.protocol.utility.MinecraftProtocolVersion;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.*;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -558,7 +553,7 @@ public class NettyChannelInjector implements Injector {
 		}
 
 		// no listener and no marker - no magic :)
-		if (!this.channelListener.hasListener(packet.getClass()) && marker == null) {
+		if (!this.channelListener.hasListener(packet.getClass()) && marker == null && !Util.isBundlePacket(packet.getClass())) {
 			return action;
 		}
 

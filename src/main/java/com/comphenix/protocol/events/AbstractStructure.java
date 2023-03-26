@@ -1121,6 +1121,12 @@ public abstract class AbstractStructure {
         return structureModifier.withType(Optional.class, Converters.optional(converter));
     }
 
+    public StructureModifier<Iterable<PacketContainer>> getPacketBundles() {
+        return structureModifier.withType(Iterable.class, Converters.iterable(
+            BukkitConverters.getPacketContainerConverter(), ArrayList::new, ArrayList::new
+        ));
+    }
+
     /**
      * Represents an equivalent converter for ItemStack arrays.
      * @author Kristian

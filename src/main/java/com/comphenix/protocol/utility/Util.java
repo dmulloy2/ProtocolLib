@@ -22,6 +22,7 @@ package com.comphenix.protocol.utility;
 public final class Util {
 
 	private static final boolean SPIGOT = classExists("org.spigotmc.SpigotConfig");
+	private static Class<?> cachedBundleClass;
 
 	public static boolean classExists(String className) {
 		try {
@@ -58,5 +59,15 @@ public final class Util {
 			}
 		}
 		return false;
+	}
+
+	public static boolean isBundlePacket(Class<?> packetClass) {
+		if(!MinecraftVersion.atOrAbove(MinecraftVersion.FEATURE_PREVIEW_2)) {
+			return false;
+		}
+		if(cachedBundleClass == null) {
+			cachedBundleClass = MinecraftReflection.getPackedBundlePacketClass();
+		}
+		return packetClass.equals(cachedBundleClass);
 	}
 }

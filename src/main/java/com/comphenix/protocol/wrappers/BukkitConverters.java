@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.Either.Left;
 import com.comphenix.protocol.wrappers.Either.Right;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
@@ -616,6 +617,10 @@ public class BukkitConverters {
 
 	public static EquivalentConverter<WrappedLevelChunkData.LightData> getWrappedLightDataConverter() {
 		return ignoreNull(handle(WrappedLevelChunkData.LightData::getHandle, WrappedLevelChunkData.LightData::new, WrappedLevelChunkData.LightData.class));
+	}
+
+	public static EquivalentConverter<PacketContainer> getPacketContainerConverter() {
+		return handle(PacketContainer::getHandle, PacketContainer::fromPacket, PacketContainer.class);
 	}
 
 	/**

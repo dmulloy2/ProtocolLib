@@ -4,9 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.wrappers.Either.Left;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -55,4 +59,17 @@ public class BukkitConvertersTest {
         assertEquals(wrapped.left(), nmsEither.left());
         assertEquals(wrapped.right(), nmsEither.right());
     }
+
+	@Test
+	public void testPacketContainerConverter() {
+		for (PacketType type : PacketType.values()) {
+			if(!type.isSupported()) {
+				continue;
+			}
+			PacketContainer container = new PacketContainer(type);
+			Object generic = BukkitConverters.getPacketContainerConverter().getGeneric(container);
+			Object specific = BukkitConverters.getPacketContainerConverter().getSpecific(generic);
+			assertTrue(EqualsBuilder.reflectionEquals(container, specific)); // PacketContainer does not properly implement equals(.)
+		}
+	}
 }

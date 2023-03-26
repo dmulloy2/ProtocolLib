@@ -18,10 +18,12 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -29,6 +31,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import org.checkerframework.checker.units.qual.C;
 
 /**
  * Utility class for converters
@@ -222,6 +225,53 @@ public class Converters {
 			@Override
 			public Class<C> getSpecificType() {
 				return (Class) Collection.class;
+			}
+		});
+	}
+
+	public static <T> EquivalentConverter<Iterable<T>> iterable(
+			final EquivalentConverter<T> elementConverter,
+			final Supplier<List<T>> specificCollectionFactory,
+			final Supplier<List<?>> genericCollectionFactory
+	) {
+		return ignoreNull(new EquivalentConverter<Iterable<T>>() {
+
+			@Override
+			public Object getGeneric(Iterable<T> specific) {
+				// generics are very cool, thank you java
+				List<Object> targetCollection = (List<Object>) genericCollectionFactory.get();
+				for (T element : specific) {
+					Object generic = elementConverter.getGeneric(element);
+					if (generic != null) {
+						targetCollection.add(generic);
+					}
+				}
+
+				return targetCollection;
+			}
+
+			@Override
+			public Iterable<T> getSpecific(Object generic) {
+				if (generic instanceof Iterable<?>) {
+					Iterable<Object> sourceCollection = (Iterable<Object>) generic;
+					List<T> targetCollection = specificCollectionFactory.get();
+					// copy over all elements into a new collection
+					for (Object element : sourceCollection) {
+						T specific = elementConverter.getSpecific(element);
+						if (specific != null) {
+							targetCollection.add(specific);
+						}
+					}
+
+					return targetCollection;
+				}
+				// not valid
+				return null;
+			}
+
+			@Override
+			public Class<Iterable<T>> getSpecificType() {
+				return (Class) Iterable.class;
 			}
 		});
 	}

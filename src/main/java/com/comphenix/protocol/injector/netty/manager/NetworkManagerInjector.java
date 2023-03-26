@@ -28,6 +28,7 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.Pair;
 import io.netty.channel.ChannelFuture;
 import org.bukkit.Server;
@@ -90,7 +91,7 @@ public class NetworkManagerInjector implements ChannelListener {
 	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
 		// check if we need to intercept the packet
 		Class<?> packetClass = packet.getClass();
-		if (this.outboundListeners.contains(packetClass) || marker != null) {
+		if (this.outboundListeners.contains(packetClass) || marker != null || Util.isBundlePacket(packetClass)) {
 			// wrap packet and construct the event
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(packetClass), packet);
 			PacketEvent packetEvent = PacketEvent.fromServer(this, container, marker, injector.getPlayer());
