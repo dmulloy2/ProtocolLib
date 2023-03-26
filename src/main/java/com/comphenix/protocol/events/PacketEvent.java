@@ -100,14 +100,14 @@ public class PacketEvent extends EventObject implements Cancellable {
 		this.bundle = bundleEvent;
 	}
 
-	private PacketEvent(PacketEvent origial, AsyncMarker asyncMarker) {
-		super(origial.source);
-		this.packet = origial.packet;
-		this.playerReference = origial.getPlayerReference();
-		this.cancel = origial.cancel;
-		this.serverPacket = origial.serverPacket;
-		this.filtered = origial.filtered;
-		this.networkMarker = origial.networkMarker;
+	private PacketEvent(PacketEvent original, AsyncMarker asyncMarker) {
+		super(original.source);
+		this.packet = original.packet;
+		this.playerReference = original.getPlayerReference();
+		this.cancel = original.cancel;
+		this.serverPacket = original.serverPacket;
+		this.filtered = original.filtered;
+		this.networkMarker = original.networkMarker;
 		this.asyncMarker = asyncMarker;
 		this.asynchronous = true;
 	}
