@@ -145,27 +145,24 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * Invokes the given packet event for every registered listener of the given priority.
 	 * @param reporter - the error reporter that will be used to inform about listener exceptions.
 	 * @param event - the packet event to invoke.
-	 * @param priorityFilter - the piority for a listener to be invoked. If null is provided, every registered listener will be invoked
+	 * @param priorityFilter - the priority for a listener to be invoked. If null is provided, every registered listener will be invoked
 	 */
 	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, @Nullable ListenerPriority priorityFilter) {
 		invokeUnpackedPacketSending(reporter, event, priorityFilter);
 		if(event.getPacketType() == PacketType.Play.Server.DELIMITER && !event.isCancelled()) {
 			// unpack the bundle and invoke for each packet in the bundle
-			StructureModifier<Iterable> iterableModifier = event.getPacket().getSpecificModifier(Iterable.class);
-			Iterable packets = iterableModifier.read(0);
-			List<Object> outPackets = new ArrayList<>();
-			for(Object handle : packets) {
-				PacketContainer subPacket = new PacketContainer(PacketRegistry.getPacketType(handle.getClass()), handle);
+			Iterable<PacketContainer> packets = event.getPacket().getPacketBundles().read(0);
+			List<PacketContainer> outPackets = new ArrayList<>();
+			for(PacketContainer subPacket : packets) {
 				PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(), event.getPlayer());
 				invokeUnpackedPacketSending(reporter, subPacketEvent, priorityFilter);
 
 				if(!subPacketEvent.isCancelled()) {
-					outPackets.add(subPacketEvent.getPacket().getHandle()); // if the packet event has been cancelled, the packet will be removed from the bundle.
-					                                               // event.getPacket().getHandle() can be different from handle at this point
+					outPackets.add(subPacketEvent.getPacket()); // if the packet event has been cancelled, the packet will be removed from the bundle.
 				}
 			}
 			if(packets.iterator().hasNext()) { // are there still packets in this bundle?
-				iterableModifier.write(0, outPackets);
+				event.getPacket().getPacketBundles().write(0, outPackets);
 			} else {
 				event.setCancelled(true); // cancel packet if each individual packet has been canceled
 			}
