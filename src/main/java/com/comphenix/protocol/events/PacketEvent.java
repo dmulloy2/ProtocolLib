@@ -205,12 +205,12 @@ public class PacketEvent extends EventObject implements Cancellable {
 	 * @param packet    - the packet.
 	 * @param marker    - the network marker.
 	 * @param recipient - the client that will receieve the packet.
-	 * @param filtered  - whether or not this packet event is processed by every packet listener.
-	 * @param bundle    - The corresponding packet event of the bundle if this packet is part of a bundle.
+	 * @param filtered  - whether this packet event is processed by every packet listener.
+	 * @param bundle    - The corresponding packet event of the bundle if this packet is part of a bundle. Otherwise, null.
 	 * @return The event.
 	 */
 	public static PacketEvent fromServer(Object source, PacketContainer packet, NetworkMarker marker, Player recipient,
-			boolean filtered, PacketEvent bundle) {
+			boolean filtered, @Nullable PacketEvent bundle) {
 		return new PacketEvent(source, packet, marker, recipient, true, filtered, bundle);
 	}
 
@@ -542,8 +542,8 @@ public class PacketEvent extends EventObject implements Cancellable {
 	}
 
 	/**
-	 * Whether this packet is part of the bundle
-	 * @return Corresponding packet event
+	 * Returns the packet event corresponding to the bundle if this packet is sent as a part of a bundle, t. Otherwise, null.
+	 * @return Corresponding packet event or null.
 	 */
 	@Nullable
 	public PacketEvent getBundle() {
