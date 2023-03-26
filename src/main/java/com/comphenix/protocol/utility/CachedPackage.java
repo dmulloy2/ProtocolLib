@@ -75,12 +75,6 @@ final class CachedPackage {
 		return source.loadClass(combine(packageName, className));
 	}
 
-	public Class<?> requireClass(String className) throws ClassNotFoundException {
-		String canonicalName = combine(packageName, className);
-		return source.loadClass(canonicalName)
-			.orElseThrow(() -> new ClassNotFoundException(className));
-	}
-
 	/**
 	 * Retrieve the class object of a specific class in the current package.
 	 *
@@ -96,7 +90,7 @@ final class CachedPackage {
 			}
 
 			for (String alias : aliases) {
-				clazz = resolveClass(className);
+				clazz = resolveClass(alias);
 				if (clazz.isPresent()) {
 					return clazz;
 				}
