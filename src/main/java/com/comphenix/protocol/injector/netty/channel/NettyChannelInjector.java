@@ -553,7 +553,7 @@ public class NettyChannelInjector implements Injector {
 		}
 
 		// no listener and no marker - no magic :)
-		if (!this.channelListener.hasListener(packet.getClass()) && marker == null && !Util.isBundlePacket(packet.getClass())) {
+		if (!this.channelListener.hasListener(packet.getClass()) && marker == null && !MinecraftReflection.isBundlePacket(packet.getClass())) {
 			return action;
 		}
 

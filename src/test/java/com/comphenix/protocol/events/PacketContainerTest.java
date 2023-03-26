@@ -828,7 +828,7 @@ public class PacketContainerTest {
 		for (PacketType type : PacketType.values()) {
 			// TODO: try to support chat - for now chat contains to many sub classes to properly clone it
 			if (type.isDeprecated() || !type.isSupported() || type.name().contains("CUSTOM_PAYLOAD") || type.name().contains("CHAT")
-				|| type.name().contains("DELIMITER")) {
+				|| type.name().contains("BUNDLE")) {
 				continue;
 			}
 

@@ -46,12 +46,12 @@ public class PacketRegistry {
 	 */
 	protected static class Register {
 		// The main lookup table
-		private final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
-		private final Map<Class<?>, PacketType> classToType = new ConcurrentHashMap<>();
+		final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
+		final Map<Class<?>, PacketType> classToType = new ConcurrentHashMap<>();
 
-		private volatile Set<PacketType> serverPackets = new HashSet<>();
-		private volatile Set<PacketType> clientPackets = new HashSet<>();
-		private final List<MapContainer> containers = new ArrayList<>();
+		volatile Set<PacketType> serverPackets = new HashSet<>();
+		volatile Set<PacketType> clientPackets = new HashSet<>();
+		final List<MapContainer> containers = new ArrayList<>();
 
 		public Register() {}
 
@@ -383,10 +383,12 @@ public class PacketRegistry {
 	 * @return The packet type, or NULL if not found.
 	 */
 	public static PacketType getPacketType(Class<?> packet) {
-		if(Util.isBundlePacket(packet)) {
-			return PacketType.Play.Server.DELIMITER;
-		}
 		initialize();
+
+		if (MinecraftReflection.isBundlePacket(packet)) {
+			return PacketType.Play.Server.BUNDLE;
+		}
+		
 		return REGISTER.classToType.get(packet);
 	}
 	

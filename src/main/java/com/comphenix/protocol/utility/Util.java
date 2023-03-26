@@ -60,14 +60,4 @@ public final class Util {
 		}
 		return false;
 	}
-
-	public static boolean isBundlePacket(Class<?> packetClass) {
-		if(!MinecraftVersion.atOrAbove(MinecraftVersion.FEATURE_PREVIEW_2)) {
-			return false;
-		}
-		if(cachedBundleClass == null) {
-			cachedBundleClass = MinecraftReflection.getPackedBundlePacketClass();
-		}
-		return packetClass.equals(cachedBundleClass);
-	}
 }

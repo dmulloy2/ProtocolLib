@@ -91,7 +91,7 @@ public class NetworkManagerInjector implements ChannelListener {
 	public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
 		// check if we need to intercept the packet
 		Class<?> packetClass = packet.getClass();
-		if (this.outboundListeners.contains(packetClass) || marker != null || Util.isBundlePacket(packetClass)) {
+		if (marker != null || MinecraftReflection.isBundlePacket(packetClass) || outboundListeners.contains(packetClass)) {
 			// wrap packet and construct the event
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(packetClass), packet);
 			PacketEvent packetEvent = PacketEvent.fromServer(this, container, marker, injector.getPlayer());
@@ -109,7 +109,7 @@ public class NetworkManagerInjector implements ChannelListener {
 	public PacketEvent onPacketReceiving(Injector injector, Object packet, NetworkMarker marker) {
 		// check if we need to intercept the packet
 		Class<?> packetClass = packet.getClass();
-		if (this.inboundListeners.contains(packetClass) || marker != null) {
+		if (marker != null || inboundListeners.contains(packetClass)) {
 			// wrap the packet and construct the event
 			PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(packetClass), packet);
 			PacketEvent packetEvent = PacketEvent.fromClient(this, container, marker, injector.getPlayer());

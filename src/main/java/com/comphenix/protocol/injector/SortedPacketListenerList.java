@@ -121,9 +121,7 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 			element.getListener().onPacketReceiving(event);
 			
-		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
+		} catch (OutOfMemoryError | ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
 			// Minecraft doesn't want your Exception.
@@ -149,22 +147,25 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 */
 	public void invokePacketSending(ErrorReporter reporter, PacketEvent event, @Nullable ListenerPriority priorityFilter) {
 		invokeUnpackedPacketSending(reporter, event, priorityFilter);
-		if(event.getPacketType() == PacketType.Play.Server.DELIMITER && !event.isCancelled()) {
+		if (event.getPacketType() == PacketType.Play.Server.BUNDLE && !event.isCancelled()) {
 			// unpack the bundle and invoke for each packet in the bundle
 			Iterable<PacketContainer> packets = event.getPacket().getPacketBundles().read(0);
 			List<PacketContainer> outPackets = new ArrayList<>();
-			for(PacketContainer subPacket : packets) {
+			for (PacketContainer subPacket : packets) {
 				PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(), event.getPlayer());
 				invokeUnpackedPacketSending(reporter, subPacketEvent, priorityFilter);
 
-				if(!subPacketEvent.isCancelled()) {
-					outPackets.add(subPacketEvent.getPacket()); // if the packet event has been cancelled, the packet will be removed from the bundle.
+				if (!subPacketEvent.isCancelled()) {
+					// if the packet event has been cancelled, the packet will be removed from the bundle
+					outPackets.add(subPacketEvent.getPacket());
 				}
 			}
-			if(packets.iterator().hasNext()) { // are there still packets in this bundle?
+
+			if (packets.iterator().hasNext()) {
 				event.getPacket().getPacketBundles().write(0, outPackets);
 			} else {
-				event.setCancelled(true); // cancel packet if each individual packet has been canceled
+				// cancel entire packet if each individual packet has been cancelled
+				event.setCancelled(true);
 			}
 		}
 	}
@@ -201,14 +202,12 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 	 * @param event - the related packet event.
 	 * @param element - the listener to invoke.
 	 */
-	private final void invokeSendingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
+	private void invokeSendingListener(ErrorReporter reporter, PacketEvent event, PrioritizedListener<PacketListener> element) {
 		try {
 			event.setReadOnly(element.getPriority() == ListenerPriority.MONITOR);
 			element.getListener().onPacketSending(event);
 			
-		} catch (OutOfMemoryError e) {
-			throw e;
-		} catch (ThreadDeath e) {
+		} catch (OutOfMemoryError | ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
 			// Minecraft doesn't want your Exception.

@@ -632,6 +632,10 @@ public final class MinecraftReflection {
 		return getMinecraftClass("network.protocol.game.ClientboundBundlePacket", "ClientboundBundlePacket");
 	}
 
+	public static boolean isBundlePacket(Class<?> packetClass) {
+		return MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove() && packetClass.equals(getPackedBundlePacketClass());
+	}
+
 	public static Class<?> getBundleDelimiterClass() {
 		return getMinecraftClass("network.protocol.BundleDelimiterPacket","BundleDelimiterPacket");
 	}
