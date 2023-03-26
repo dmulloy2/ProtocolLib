@@ -39,16 +39,9 @@ import java.util.List;
 public class WrappedServerPing implements ClonableWrapper {
 	private static final Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
 
-	// For converting to the underlying array
-	private static final EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
-	BukkitConverters.getArrayConverter(GAME_PROFILE, BukkitConverters.getWrappedGameProfileConverter());
-
 	// Get profile from player
 	private static final FieldAccessor ENTITY_HUMAN_PROFILE = Accessors.getFieldAccessor(
-	MinecraftReflection.getEntityPlayerClass().getSuperclass(), GAME_PROFILE, true);
-
-	// Server ping fields
-	private static final Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
+		MinecraftReflection.getEntityPlayerClass().getSuperclass(), GAME_PROFILE, true);
 
 	private final ServerPingImpl impl;
 
@@ -59,9 +52,6 @@ public class WrappedServerPing implements ClonableWrapper {
 	 */
 	public WrappedServerPing() {
 		this.impl = newImpl();
-
-		resetPlayers();
-		resetVersion();
 	}
 
 	private WrappedServerPing(Object handle) {
@@ -119,10 +109,11 @@ public class WrappedServerPing implements ClonableWrapper {
 
 	/**
 	 * Retrieve the message of the day.
-	 * @return The messge of the day.
+	 * @return The message of the day.
 	 */
 	public WrappedChatComponent getMotD() {
-		return WrappedChatComponent.fromHandle(impl.getMotD());
+		Object handle = impl.getMotD();
+		return handle != null ? WrappedChatComponent.fromHandle(handle) : null;
 	}
 
 	/**
@@ -130,7 +121,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @param description - message of the day.
 	 */
 	public void setMotD(WrappedChatComponent description) {
-		impl.setMotD(description.getHandle());
+		impl.setMotD(description != null ? description.getHandle() : null);
 	}
 
 	/**
@@ -267,12 +258,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return Logged in players or an empty list if no player names will be displayed.
 	 */
 	public ImmutableList<WrappedGameProfile> getPlayers() {
-		if (!isPlayersVisible())
-			return ImmutableList.of();
-		Object playerProfiles = impl.getPlayers();
-		if (playerProfiles == null)
-			return ImmutableList.of();
-		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(playerProfiles));
+		return impl.getPlayers();
 	}
 
 	/**
@@ -282,7 +268,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
 		if (!isPlayersVisible())
 			resetPlayers();
-		impl.setPlayers((profile != null) ? PROFILE_CONVERT.getGeneric(profile) : null);
+		impl.setPlayers(profile);
 	}
 
 	/**

@@ -1,20 +1,20 @@
 package com.comphenix.protocol.wrappers.ping;
 
-import java.util.List;
+import java.util.Optional;
 
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
 
-public interface ServerPingImpl {
+import com.google.common.collect.ImmutableList;
+
+public interface ServerPingImpl extends Cloneable {
 	Object getMotD();
 	void setMotD(Object description);
 	int getPlayersMaximum();
 	void setPlayersMaximum(int maxPlayers);
 	int getPlayersOnline();
 	void setPlayersOnline(int onlineCount);
-	Object getPlayers();
-	void setPlayers(Object playerSample);
+	ImmutableList<WrappedGameProfile> getPlayers();
+	void setPlayers(Iterable<? extends WrappedGameProfile> playerSample);
 	String getVersionName();
 	void setVersionName(String versionName);
 	int getVersionProtocol();

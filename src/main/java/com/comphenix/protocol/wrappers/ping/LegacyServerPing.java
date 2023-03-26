@@ -14,6 +14,8 @@ import com.comphenix.protocol.wrappers.AbstractWrapper;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedServerPing;
+
 import com.google.common.collect.ImmutableList;
 
 import org.bukkit.Bukkit;
@@ -27,7 +29,7 @@ import java.util.List;
  * Represents a server ping packet data.
  * @author Kristian
  */
-public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl {
+public final class LegacyServerPing extends AbstractWrapper implements ServerPingImpl {
 	private static final Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
 
 	// For converting to the underlying array
@@ -132,32 +134,27 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 
 	/**
 	 * Retrieve the message of the day.
-	 * @return The messge of the day.
+	 * @return The message of the day.
 	 */
-	public WrappedChatComponent getMotD() {
-		return WrappedChatComponent.fromHandle(DESCRIPTION.get(handle));
+	@Override
+	public Object getMotD() {
+		return DESCRIPTION.get(handle);
 	}
 
 	/**
 	 * Set the message of the day.
 	 * @param description - message of the day.
 	 */
+	@Override
 	public void setMotD(Object description) {
 		DESCRIPTION.set(handle, description);
-	}
-
-	/**
-	 * Set the message of the day.
-	 * @param message - the message.
-	 */
-	public void setMotD(String message) {
-		setMotD(WrappedChatComponent.fromLegacyText(message));
 	}
 
 	/**
 	 * Retrieve the compressed PNG file that is being displayed as a favicon.
 	 * @return The favicon, or NULL if no favicon will be displayed.
 	 */
+	@Override
 	public String getFavicon() {
 		return (String) FAVICON.get(handle);
 	}
@@ -166,6 +163,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * Set the compressed PNG file that is being displayed.
 	 * @param image - the new compressed image or NULL if no favicon should be displayed.
 	 */
+	@Override
 	public void setFavicon(String image) {
 		FAVICON.set(handle, image);
 	}
@@ -197,6 +195,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * @return whether the server enforces secure chat.
 	 * @since 1.19.1
 	 */
+	@Override
 	public boolean isEnforceSecureChat() {
 		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
 		return (Boolean) BOOLEAN_ACCESSORS[index].get(handle);
@@ -207,6 +206,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * @param enforceSecureChat true if enabled, false otherwise.
 	 * @since 1.19.1
 	 */
+	@Override
 	public void setEnforceSecureChat(boolean enforceSecureChat) {
 		int index = MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove() ? 0 : 1;
 		BOOLEAN_ACCESSORS[index].set(handle, enforceSecureChat);
@@ -218,6 +218,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * @throws IllegalStateException If the player count has been hidden via {@link #setPlayersVisible(boolean)}.
 	 * @see #setPlayersOnline(int)
 	 */
+	@Override
 	public int getPlayersOnline() {
 		if (players == null)
 			throw new IllegalStateException("The player count has been hidden.");
@@ -231,6 +232,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * negative, as well as higher than the player maximum.
 	 * @param online - online players.
 	 */
+	@Override
 	public void setPlayersOnline(int online) {
 		if (players == null)
 			resetPlayers();
@@ -243,6 +245,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * @throws IllegalStateException If the player maximum has been hidden via {@link #setPlayersVisible(boolean)}.
 	 * @see #setPlayersMaximum(int)
 	 */
+	@Override
 	public int getPlayersMaximum() {
 		if (players == null)
 			throw new IllegalStateException("The player maximum has been hidden.");
@@ -256,6 +259,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * is less than the player count.
 	 * @param maximum - maximum player count.
 	 */
+	@Override
 	public void setPlayersMaximum(int maximum) {
 		if (players == null)
 			resetPlayers();
@@ -268,6 +272,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * Note that this may set the current player count and maximum to their respective real values.
 	 * @param visible - TRUE if it should be visible, FALSE otherwise.
 	 */
+	@Override
 	public void setPlayersVisible(boolean visible) {
 		if (arePlayersVisible() != visible) {
 			if (visible) {
@@ -287,6 +292,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * If not, the client will display ??? in the same location.
 	 * @return TRUE if the player statistics is visible, FALSE otherwise.
 	 */
+	@Override
 	public boolean arePlayersVisible() {
 		return players != null;
 	}
@@ -295,6 +301,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * Retrieve a copy of all the logged in players.
 	 * @return Logged in players or an empty list if no player names will be displayed.
 	 */
+	@Override
 	public ImmutableList<WrappedGameProfile> getPlayers() {
 		if (players == null)
 			return ImmutableList.of();
@@ -306,33 +313,21 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 
 	/**
 	 * Set the displayed list of logged in players.
-	 * @param profile - every logged in player.
+	 * @param playerSample - every logged in player.
 	 */
-	public void setPlayers(Object profile) {
+	@Override
+	public void setPlayers(Iterable<? extends WrappedGameProfile> playerSample) {
 		if (players == null)
 			resetPlayers();
-		PLAYERS_PROFILES.set(players, profile);
-	}
 
-	/**
-	 * Set the displayed lst of logged in players.
-	 * @param players - the players to display.
-	 */
-	public void setBukkitPlayers(Iterable<? extends Player> players) {
-		final List<WrappedGameProfile> profiles = new ArrayList<>();
-
-		for (Player player : players) {
-			Object profile = ENTITY_HUMAN_PROFILE.get(BukkitUnwrapper.getInstance().unwrapItem(player));
-			profiles.add(WrappedGameProfile.fromHandle(profile));
-		}
-
-		setPlayers(profiles);
+		PLAYERS_PROFILES.set(players, PROFILE_CONVERT.getGeneric(playerSample));
 	}
 
 	/**
 	 * Retrieve the version name of the current server.
 	 * @return The version name.
 	 */
+	@Override
 	public String getVersionName() {
 		return (String) VERSION_NAME.get(version);
 	}
@@ -341,6 +336,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * Set the version name of the current server.
 	 * @param name - the new version name.
 	 */
+	@Override
 	public void setVersionName(String name) {
 		VERSION_NAME.set(version, name);
 	}
@@ -349,6 +345,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * Retrieve the protocol number.
 	 * @return The protocol.
 	 */
+	@Override
 	public int getVersionProtocol() {
 		return (Integer) VERSION_PROTOCOL.get(version);
 	}
@@ -357,6 +354,7 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 * Set the version protocol
 	 * @param protocol - the protocol number.
 	 */
+	@Override
 	public void setVersionProtocol(int protocol) {
 		VERSION_PROTOCOL.set(version, protocol);
 	}
@@ -367,11 +365,11 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 	 */
 	public LegacyServerPing deepClone() {
 		LegacyServerPing copy = new LegacyServerPing();
-		WrappedChatComponent motd = getMotD();
+		Object motd = getMotD();
 
 		copy.setPlayers(getPlayers());
 		copy.setFavicon(getFavicon());
-		copy.setMotD(motd != null ? motd.deepClone() : null);
+		copy.setMotD(motd != null ? WrappedChatComponent.fromHandle(motd).getHandle() : null);
 		copy.setVersionName(getVersionName());
 		copy.setVersionProtocol(getVersionProtocol());
 
