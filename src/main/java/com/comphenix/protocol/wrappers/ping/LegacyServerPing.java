@@ -137,8 +137,8 @@ public final class LegacyServerPing extends AbstractWrapper implements ServerPin
 	 * @return The message of the day.
 	 */
 	@Override
-	public Object getMotD() {
-		return DESCRIPTION.get(handle);
+	public WrappedChatComponent getMotD() {
+		return WrappedChatComponent.fromHandle(DESCRIPTION.get(handle));
 	}
 
 	/**
@@ -146,8 +146,8 @@ public final class LegacyServerPing extends AbstractWrapper implements ServerPin
 	 * @param description - message of the day.
 	 */
 	@Override
-	public void setMotD(Object description) {
-		DESCRIPTION.set(handle, description);
+	public void setMotD(WrappedChatComponent description) {
+		DESCRIPTION.set(handle, description != null ? description.getHandle() : null);
 	}
 
 	/**
@@ -365,11 +365,11 @@ public final class LegacyServerPing extends AbstractWrapper implements ServerPin
 	 */
 	public LegacyServerPing deepClone() {
 		LegacyServerPing copy = new LegacyServerPing();
-		Object motd = getMotD();
+		WrappedChatComponent motd = getMotD();
 
 		copy.setPlayers(getPlayers());
 		copy.setFavicon(getFavicon());
-		copy.setMotD(motd != null ? WrappedChatComponent.fromHandle(motd).getHandle() : null);
+		copy.setMotD(motd != null ? motd : null);
 		copy.setVersionName(getVersionName());
 		copy.setVersionProtocol(getVersionProtocol());
 

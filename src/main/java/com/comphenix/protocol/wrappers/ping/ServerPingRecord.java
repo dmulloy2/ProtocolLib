@@ -106,7 +106,7 @@ public final class ServerPingRecord implements ServerPingImpl {
 
 	private static AutoWrapper<Favicon> FAVICON_WRAPPER;
 
-	private Object description;
+	private WrappedChatComponent description;
 	private PlayerSample playerSample;
 	private ServerData serverData;
 	private Favicon favicon;
@@ -163,12 +163,12 @@ public final class ServerPingRecord implements ServerPingImpl {
 	}
 
 	@Override
-	public Object getMotD() {
+	public WrappedChatComponent getMotD() {
 		return description;
 	}
 
 	@Override
-	public void setMotD(Object description) {
+	public void setMotD(WrappedChatComponent description) {
 		this.description = description;
 	}
 
@@ -279,7 +279,9 @@ public final class ServerPingRecord implements ServerPingImpl {
 
 	@Override
 	public Object getHandle() {
-		Object descHandle = description != null ? description : DEFAULT_DESCRIPTION;
+		WrappedChatComponent wrappedDescription = description != null ? description : DEFAULT_DESCRIPTION;
+		Object descHandle = wrappedDescription.getHandle();
+
 		Optional<Object> playersHandle = Optional.ofNullable(playerSample != null ? SAMPLE_WRAPPER.unwrap(playerSample) : null);
 		Optional<Object> versionHandle = Optional.ofNullable(serverData != null ? DATA_WRAPPER.unwrap(serverData) : null);
 		Optional<Object> favHandle = Optional.ofNullable(favicon != null ? FAVICON_WRAPPER.unwrap(favicon) : null);

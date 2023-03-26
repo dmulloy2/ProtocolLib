@@ -112,8 +112,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return The message of the day.
 	 */
 	public WrappedChatComponent getMotD() {
-		Object handle = impl.getMotD();
-		return handle != null ? WrappedChatComponent.fromHandle(handle) : null;
+		return impl.getMotD();
 	}
 
 	/**
@@ -121,7 +120,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @param description - message of the day.
 	 */
 	public void setMotD(WrappedChatComponent description) {
-		impl.setMotD(description != null ? description.getHandle() : null);
+		impl.setMotD(description);
 	}
 
 	/**

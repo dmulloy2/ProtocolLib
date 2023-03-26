@@ -2,13 +2,14 @@ package com.comphenix.protocol.wrappers.ping;
 
 import java.util.Optional;
 
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 
 import com.google.common.collect.ImmutableList;
 
 public interface ServerPingImpl extends Cloneable {
-	Object getMotD();
-	void setMotD(Object description);
+	WrappedChatComponent getMotD();
+	void setMotD(WrappedChatComponent description);
 	int getPlayersMaximum();
 	void setPlayersMaximum(int maxPlayers);
 	int getPlayersOnline();
