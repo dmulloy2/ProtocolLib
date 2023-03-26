@@ -273,7 +273,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 		currentVersion = version;
 	}
 
-	public static boolean atOrAbove(MinecraftVersion version) {
+	private static boolean atOrAbove(MinecraftVersion version) {
 		return getCurrentVersion().isAtLeast(version);
 	}
 
@@ -354,7 +354,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 	 */
 	public boolean atOrAbove() {
 		if (this.atCurrentOrAbove == null) {
-			this.atCurrentOrAbove = MinecraftVersion.atOrAbove(this);
+			this.atCurrentOrAbove = atOrAbove(this);
 		}
 
 		return this.atCurrentOrAbove;

@@ -137,8 +137,8 @@ public class StructureCache {
 			Class<?> packetClass = PacketRegistry.getPacketClassFromType(type);
 
 			// We need to map the Bundle Delimiter to the synthetic bundle packet which contains a list of all packets in a bundle
-			if (MinecraftVersion.atOrAbove(MinecraftVersion.FEATURE_PREVIEW_2) && packetClass.equals(MinecraftReflection.getBundleDelimiterClass())) {
-				packetClass = MinecraftReflection.getPackedBundlePacketClass();
+			if (MinecraftReflection.isBundleDelimiter(packetClass)) {
+				packetClass = MinecraftReflection.getPackedBundlePacketClass().get();
 			}
 
 			return new StructureModifier<>(packetClass, MinecraftReflection.getPacketClass(), true);

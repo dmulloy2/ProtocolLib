@@ -414,7 +414,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 				} else if (methods.size() == 1) {
 					// We're in 1.2.5
 					alwaysSync = true;
-				} else if (MinecraftVersion.getCurrentVersion().isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE)) {
+				} else if (MinecraftVersion.BOUNTIFUL_UPDATE.atOrAbove()) {
 					// The centralized async marker was removed in 1.8
 					// Incoming chat packets can be async
 					if (event.getPacketType() == PacketType.Play.Client.CHAT) {

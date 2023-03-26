@@ -204,15 +204,10 @@ public class NettyChannelInjector implements Injector {
 				return false;
 			}
 
-			String anchorHandler = "decoder";
-			if (MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
-				anchorHandler = "unbundler";
-			}
-
 			// inject our handlers
 			this.wrappedChannel.pipeline().addAfter("encoder", WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER);
 			this.wrappedChannel.pipeline().addAfter(
-					anchorHandler,
+					"decoder",
 					INTERCEPTOR_NAME,
 					new InboundPacketInterceptor(this, this.channelListener));
 

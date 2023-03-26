@@ -36,7 +36,7 @@ final class CachedPackage {
 	 * @param packageName - the name of the current package.
 	 * @param source      - the class source.
 	 */
-	public CachedPackage(String packageName, ClassSource source) {
+	CachedPackage(String packageName, ClassSource source) {
 		this.source = source;
 		this.packageName = packageName;
 		this.cache = new ConcurrentHashMap<>();
@@ -71,6 +71,16 @@ final class CachedPackage {
 		}
 	}
 
+	private Optional<Class<?>> resolveClass(String className) {
+		return source.loadClass(combine(packageName, className));
+	}
+
+	public Class<?> requireClass(String className) throws ClassNotFoundException {
+		String canonicalName = combine(packageName, className);
+		return source.loadClass(canonicalName)
+			.orElseThrow(() -> new ClassNotFoundException(className));
+	}
+
 	/**
 	 * Retrieve the class object of a specific class in the current package.
 	 *
@@ -78,13 +88,21 @@ final class CachedPackage {
 	 * @return Class object.
 	 * @throws RuntimeException If we are unable to find the given class.
 	 */
-	public Optional<Class<?>> getPackageClass(final String className) {
-		return this.cache.computeIfAbsent(className, x -> {
-			try {
-				return Optional.ofNullable(this.source.loadClass(combine(this.packageName, className)));
-			} catch (ClassNotFoundException ex) {
-				return Optional.empty();
+	public Optional<Class<?>> getPackageClass(String className, String... aliases) {
+		return cache.computeIfAbsent(className, x -> {
+			Optional<Class<?>> clazz = resolveClass(className);
+			if (clazz.isPresent()) {
+				return clazz;
 			}
+
+			for (String alias : aliases) {
+				clazz = resolveClass(className);
+				if (clazz.isPresent()) {
+					return clazz;
+				}
+			}
+
+			return Optional.empty();
 		});
 	}
 }

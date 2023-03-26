@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
@@ -142,17 +143,11 @@ public class TroveWrapper {
 	private static Object getDecorated(@Nonnull Object trove) {
 		if (trove == null)
 			throw new IllegalArgumentException("trove instance cannot be non-null.");
-		
+
 		AbstractFuzzyMatcher<Class<?>> match = FuzzyMatchers.matchSuper(trove.getClass());
-		Class<?> decorators = null;
-		
-		try {
-			// Attempt to get decorator class
-			decorators = getClassSource(trove.getClass()).loadClass("TDecorators");
-		} catch (ClassNotFoundException e) {
-			throw new IllegalStateException(e.getMessage(), e);
-		}
-		
+		Class<?> decorators = getClassSource(trove.getClass()).loadClass("TDecorator")
+			.orElseThrow(() -> new IllegalStateException("TDecorators class not found"));
+
 		// Find an appropriate wrapper method in TDecorators
 		for (Method method : decorators.getMethods()) {
 			Class<?>[] types = method.getParameterTypes();

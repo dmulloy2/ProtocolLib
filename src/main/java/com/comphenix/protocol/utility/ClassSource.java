@@ -2,6 +2,8 @@ package com.comphenix.protocol.utility;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Represents an abstract class loader that can only retrieve classes by their canonical name.
@@ -37,27 +39,25 @@ public interface ClassSource {
 	 * @return The corresponding class source.
 	 */
 	static ClassSource fromClassLoader(final ClassLoader loader) {
-		return loader::loadClass;
+		return canonicalName -> {
+			try {
+				return Optional.of(loader.loadClass(canonicalName));
+			} catch (ClassNotFoundException ignored) {
+				return Optional.empty();
+			}
+		};
 	}
 
 	/**
 	 * Construct a class source from a mapping of canonical names and the corresponding classes. If the map is null, it
 	 * will be interpreted as an empty map. If the map does not contain a Class with the specified name, or that string
-	 * maps to NULL explicitly, a {@link ClassNotFoundException} will be thrown.
+	 * maps to NULL explicitly, an empty optional will be returned
 	 *
 	 * @param map - map of class names and classes.
 	 * @return The class source.
 	 */
 	static ClassSource fromMap(final Map<String, Class<?>> map) {
-		return canonicalName -> {
-			Class<?> loaded = map == null ? null : map.get(canonicalName);
-			if (loaded == null) {
-				// Throw the appropriate exception if we can't load the class
-				throw new ClassNotFoundException("The specified class could not be found by this ClassLoader.");
-			}
-
-			return loaded;
-		};
+		return canonicalName -> Optional.ofNullable(map.get(canonicalName));
 	}
 
 	/**
@@ -94,14 +94,8 @@ public interface ClassSource {
 	 * @param other - the other class source.
 	 * @return A new class source.
 	 */
-	default ClassSource retry(final ClassSource other) {
-		return canonicalName -> {
-			try {
-				return ClassSource.this.loadClass(canonicalName);
-			} catch (ClassNotFoundException e) {
-				return other.loadClass(canonicalName);
-			}
-		};
+	default ClassSource retry(ClassSource other) {
+		return canonicalName -> Optionals.or(loadClass(canonicalName), () -> other.loadClass(canonicalName));
 	}
 
 	/**
@@ -115,12 +109,9 @@ public interface ClassSource {
 	}
 
 	/**
-	 * Retrieve a class by name.
-	 *
-	 * @param canonicalName - the full canonical name of the class.
-	 * @return The corresponding class. If the class is not found, NULL should <b>not</b> be returned, instead a {@code
-	 * ClassNotFoundException} exception should be thrown.
-	 * @throws ClassNotFoundException If the class could not be found.
+	 * Retrieve a class by its canonical name
+	 * @param canonicalName The class's canonical name, i.e. java.lang.Object
+	 * @return Optional that may contain a Class
 	 */
-	Class<?> loadClass(String canonicalName) throws ClassNotFoundException;
+	Optional<Class<?>> loadClass(String canonicalName);
 }

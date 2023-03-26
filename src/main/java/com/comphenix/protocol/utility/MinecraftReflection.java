@@ -25,6 +25,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -628,16 +629,20 @@ public final class MinecraftReflection {
 		return getMinecraftClass("network.chat.IChatBaseComponent", "network.chat.IChatbaseComponent", "network.chat.Component", "IChatBaseComponent");
 	}
 
-	public static Class<?> getPackedBundlePacketClass() {
-		return getMinecraftClass("network.protocol.game.ClientboundBundlePacket", "ClientboundBundlePacket");
+	public static Optional<Class<?>> getPackedBundlePacketClass() {
+		return getOptionalNMS("network.protocol.game.ClientboundBundlePacket", "ClientboundBundlePacket");
 	}
 
 	public static boolean isBundlePacket(Class<?> packetClass) {
-		return MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove() && packetClass.equals(getPackedBundlePacketClass());
+		return Optionals.Equals(getPackedBundlePacketClass(), packetClass);
 	}
 
-	public static Class<?> getBundleDelimiterClass() {
-		return getMinecraftClass("network.protocol.BundleDelimiterPacket","BundleDelimiterPacket");
+	public static boolean isBundleDelimiter(Class<?> packetClass) {
+		return Optionals.Equals(getBundleDelimiterClass(), packetClass);
+	}
+
+	public static Optional<Class<?>> getBundleDelimiterClass() {
+		return getOptionalNMS("network.protocol.BundleDelimiterPacket","BundleDelimiterPacket");
 	}
 
 	public static Class<?> getIChatBaseComponentArrayClass() {
@@ -1337,11 +1342,8 @@ public final class MinecraftReflection {
 	 * @return The class.
 	 */
 	private static Class<?> getClass(String className) {
-		try {
-			return getClassSource().loadClass(className);
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException("Cannot find class " + className, e);
-		}
+		return getClassSource().loadClass(className)
+			.orElseThrow(() -> new RuntimeException("Cannot find class " + className));
 	}
 
 	/**
@@ -1376,12 +1378,34 @@ public final class MinecraftReflection {
 				.orElseThrow(() -> new RuntimeException("Failed to find NMS class: " + className));
 	}
 
-	public static Class<?> getNullableNMS(String className, String... aliases) {
-		try {
-			return getMinecraftClass(className, aliases);
-		} catch (RuntimeException ex) {
-			return null;
+	/**
+	 * Optionally retrieve the class object of a NMS (net.minecraft.server) class.
+	 * If the class does not exist, the optional will be empty
+	 *
+	 * @param className NMS class name
+	 * @param aliases Potential aliases
+	 * @return Optional that may contain the class
+	 */
+	private static Optional<Class<?>> getOptionalNMS(String className, String... aliases) {
+		if (minecraftPackage == null) {
+			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
 		}
+
+		return minecraftPackage.getPackageClass(className, aliases);
+	}
+
+	/**
+	 * Retrieves a nullable NMS (net.minecraft.server) class. We will attempt to
+	 * look up the class and its aliases, but will return null if none is found.
+	 *
+	 * @deprecated - Use getOptionalNMS where possible
+	 * @param className NMS class name
+	 * @param aliases Potential aliases
+	 * @return The class, or null if not found
+	 */
+	@Deprecated
+	public static Class<?> getNullableNMS(String className, String... aliases) {
+		return getOptionalNMS(className, aliases).orElse(null);
 	}
 
 	/**
@@ -1418,29 +1442,8 @@ public final class MinecraftReflection {
 	 * @throws RuntimeException If we are unable to find any of the given classes.
 	 */
 	public static Class<?> getMinecraftClass(String className, String... aliases) {
-		if (minecraftPackage == null) {
-			minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
-		}
-
-		return minecraftPackage.getPackageClass(className).orElseGet(() -> {
-			Class<?> resolved = null;
-			for (String alias : aliases) {
-				// try to resolve the class and stop searching if we found it
-				resolved = minecraftPackage.getPackageClass(alias).orElse(null);
-				if (resolved != null) {
-					break;
-				}
-			}
-
-			// if we resolved the class cache it and return the result
-			if (resolved != null) {
-				minecraftPackage.setPackageClass(className, resolved);
-				return resolved;
-			}
-
-			// unable to find the class
-			throw new RuntimeException(String.format("Unable to find %s (%s)", className, String.join(", ", aliases)));
-		});
+		return getOptionalNMS(className, aliases)
+			.orElseThrow(() -> new RuntimeException(String.format("Unable to find %s (%s)", className, String.join(", ", aliases))));
 	}
 
 	/**

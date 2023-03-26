@@ -22,7 +22,7 @@ import com.google.common.base.Preconditions;
  * @author Kristian
  */
 public class WrappedAttributeModifier extends AbstractWrapper {
-	private static final boolean OPERATION_ENUM = MinecraftVersion.atOrAbove(MinecraftVersion.VILLAGE_UPDATE);
+	private static final boolean OPERATION_ENUM = MinecraftVersion.VILLAGE_UPDATE.atOrAbove();
 	private static final Class<?> OPERATION_CLASS;
 	private static final EquivalentConverter<Operation> OPERATION_CONVERTER;
 
