@@ -446,7 +446,7 @@ class CommandPacket extends CommandBase {
 	{
 		final String text = arguments.remove().toLowerCase();
 
-		switch (arguments.remove().toLowerCase()) {
+		switch (text) {
 			case "add":
 				return SubCommand.ADD;
 			case "remove":
