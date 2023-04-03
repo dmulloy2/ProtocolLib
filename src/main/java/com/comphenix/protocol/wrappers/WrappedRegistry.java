@@ -106,7 +106,7 @@ public class WrappedRegistry {
 
 		MethodAccessor getHolder = null;
 
-		if (MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
+		if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
 			try {
 				getHolder = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
 						.newBuilder()
