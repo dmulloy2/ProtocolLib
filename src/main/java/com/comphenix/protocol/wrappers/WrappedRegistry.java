@@ -104,20 +104,21 @@ public class WrappedRegistry {
 				.returnTypeExact(MinecraftReflection.getMinecraftKeyClass())
 				.build()));
 
-		MethodAccessor getHolder;
+		MethodAccessor getHolder = null;
 
-		try {
-			getHolder = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
-					.newBuilder()
-					.parameterCount(1)
-					.banModifier(Modifier.STATIC)
-					.returnTypeExact(MinecraftReflection.getHolderClass())
-					.requireModifier(Modifier.PUBLIC)
-					.build()));
-		} catch (IllegalArgumentException ignored) {
-			getHolder = null;
+		if (MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
+			try {
+				getHolder = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
+						.newBuilder()
+						.parameterCount(1)
+						.banModifier(Modifier.STATIC)
+						.returnTypeExact(MinecraftReflection.getHolderClass())
+						.requireModifier(Modifier.PUBLIC)
+						.build()));
+			} catch (IllegalArgumentException ignored) {
+			}
 		}
-		
+
 		GET_HOLDER = getHolder;
     }
 
