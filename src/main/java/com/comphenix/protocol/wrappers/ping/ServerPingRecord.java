@@ -3,6 +3,7 @@ package com.comphenix.protocol.wrappers.ping;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 
 import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -29,30 +30,38 @@ public final class ServerPingRecord implements ServerPingImpl {
 	private static EquivalentConverter<List<WrappedGameProfile>> PROFILE_LIST_CONVERTER;
 
 	private static boolean initialized = false;
+	private static final Object lock = new Object();
 
 	private static void initialize() {
 		if (initialized) {
 			return;
 		}
 
-		initialized = true;
+		synchronized (lock) {
+			// may have been initialized while waiting for the lock
+			if (initialized) {
+				return;
+			}
 
-		try {
-			SERVER_PING = MinecraftReflection.getServerPingClass();
-			PLAYER_SAMPLE_CLASS = MinecraftReflection.getServerPingPlayerSampleClass();
-			SERVER_DATA_CLASS = MinecraftReflection.getServerPingServerDataClass();
+			try {
+				SERVER_PING = MinecraftReflection.getServerPingClass();
+				PLAYER_SAMPLE_CLASS = MinecraftReflection.getServerPingPlayerSampleClass();
+				SERVER_DATA_CLASS = MinecraftReflection.getServerPingServerDataClass();
 
-			PING_CTOR = Accessors.getConstructorAccessor(SERVER_PING.getConstructors()[0]);
+				PING_CTOR = Accessors.getConstructorAccessor(SERVER_PING.getConstructors()[0]);
 
-			DATA_WRAPPER = AutoWrapper.wrap(ServerData.class, SERVER_DATA_CLASS);
-			SAMPLE_WRAPPER = AutoWrapper.wrap(PlayerSample.class, PLAYER_SAMPLE_CLASS);
-			FAVICON_WRAPPER = AutoWrapper.wrap(Favicon.class, MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a"));
+				DATA_WRAPPER = AutoWrapper.wrap(ServerData.class, SERVER_DATA_CLASS);
+				SAMPLE_WRAPPER = AutoWrapper.wrap(PlayerSample.class, PLAYER_SAMPLE_CLASS);
+				FAVICON_WRAPPER = AutoWrapper.wrap(Favicon.class, MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a"));
 
-			PROFILE_LIST_CONVERTER = BukkitConverters.getListConverter(BukkitConverters.getWrappedGameProfileConverter());
+				PROFILE_LIST_CONVERTER = BukkitConverters.getListConverter(BukkitConverters.getWrappedGameProfileConverter());
 
-			DEFAULT_DESCRIPTION = WrappedChatComponent.fromLegacyText("A Minecraft Server");
-		} catch (Exception ex) {
-			ex.printStackTrace(); // TODO
+				DEFAULT_DESCRIPTION = WrappedChatComponent.fromLegacyText("A Minecraft Server");
+			} catch (Exception ex) {
+				throw new RuntimeException("Failed to initialize Server Ping", ex);
+			} finally {
+				initialized = true;
+			}
 		}
 	}
 
