@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '20'
+          java-version: '19'
           cache: 'gradle'
 
       - name: Run gradle build lifecycle
