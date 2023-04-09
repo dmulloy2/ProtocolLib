@@ -65,6 +65,7 @@ public abstract class EnumWrappers {
 		/**
 		 * @deprecated Replaced by NOT_SET
 		 */
+		@Deprecated
 		NONE;
 
 		/**
