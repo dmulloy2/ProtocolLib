@@ -15,14 +15,14 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
+          java-version: '20'
+          cache: 'gradle'
 
-      - name: Run maven build lifecycle
-        run: mvn --batch-mode clean test package
+      - name: Run gradle build lifecycle
+        run: ./gradlew build shadowJar --no-daemon
 
       - name: Upload plugin file
         uses: actions/upload-artifact@v2
         with:
           name: ProtocolLib
-          path: target/ProtocolLib.jar
+          path: build/libs/ProtocolLib.jar

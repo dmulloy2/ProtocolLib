@@ -38,7 +38,7 @@ dependencies {
 
 shadowJar {
     dependencies {
-        include(dependency('net.bytebuddy:byte-buddy:*'))
+        include(dependency('net.bytebuddy:byte-buddy:.*'))
     }
     archiveFileName = 'ProtocolLib.jar'
 }
