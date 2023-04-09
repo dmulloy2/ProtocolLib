@@ -271,18 +271,28 @@ public class PacketRegistry {
 		}
 	}
 
+	private static final Object registryLock = new Object();
+
 	/**
 	 * Initializes the packet registry.
 	 */
 	private static void initialize() {
-		if (!INITIALIZED) {
-			INITIALIZED = true;
+		if (INITIALIZED) {
+			return;
+		}
+
+		synchronized (registryLock) {
+			if (INITIALIZED) {
+				return;
+			}
 
 			if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
 				REGISTER = createNewRegister();
 			} else {
 				REGISTER = createOldRegister();
 			}
+
+			INITIALIZED = true;
 		}
 	}
 

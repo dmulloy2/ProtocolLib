@@ -41,17 +41,24 @@ public class BukkitInitialization {
 	/**
 	 * Statically initializes the mock server for unit testing
 	 */
-	public static synchronized void initializeAll() {
+	public static void initializeAll() {
 		instance.initialize();
 	}
 
+	private static final Object initLock = new Object();
+
 	/**
-	 * Initialize Bukkit and ProtocolLib such that we can perfrom unit testing
+	 * Initialize Bukkit and ProtocolLib such that we can perform unit testing
 	 */
 	private void initialize() {
-		if (!this.initialized) {
-			// Denote that we're done
-			this.initialized = true;
+		if (initialized) {
+			return;
+		}
+
+		synchronized (initLock) {
+			if (initialized) {
+				return;
+			}
 
 			try {
 				LogManager.getLogger();
@@ -104,6 +111,8 @@ public class BukkitInitialization {
 
 			// Inject this fake server
 			Bukkit.setServer(mockedServer);
+
+			initialized = true;
 		}
 	}
 

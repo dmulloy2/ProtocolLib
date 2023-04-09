@@ -1,0 +1,86 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'com.comphenix.protocol'
+version = '5.0.0-SNAPSHOT'
+description = 'ProtocolLib'
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+
+    maven {
+        url = uri('https://repo.dmulloy2.net/repository/public/')
+    }
+
+    maven {
+        url = uri('https://hub.spigotmc.org/nexus/content/groups/public/')
+    }
+}
+
+dependencies {
+    api 'net.bytebuddy:byte-buddy:1.14.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testImplementation 'org.mockito:mockito-core:4.11.0'
+    testImplementation 'org.mockito:mockito-inline:4.11.0'
+    testImplementation 'io.netty:netty-common:4.1.77.Final'
+    testImplementation 'io.netty:netty-transport:4.1.77.Final'
+    implementation 'org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT'
+    implementation 'org.spigotmc:spigot:1.19.4-R0.1-SNAPSHOT'
+    implementation 'io.netty:netty-all:4.0.23.Final'
+    implementation 'net.kyori:adventure-text-serializer-gson:4.13.0'
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+}
+
+shadowJar {
+    dependencies {
+        include(dependency('net.bytebuddy:byte-buddy:*'))
+    }
+    archiveFileName = 'ProtocolLib.jar'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+processResources {
+    def fullVersion = System.getenv('BUILD_NUMBER')
+        ? version + '-' + System.getenv('BUILD_NUMBER')
+        : version
+
+    filter {
+        it.replace('${project.version}', fullVersion)
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            afterEvaluate {
+                artifactId = 'ProtocolLib'
+            }
+        }
+
+    }
+    repositories {
+        maven {
+            url = version.endsWith('SNAPSHOT')
+                ? 'https://repo.dmulloy2.net/repository/snapshots/'
+                : 'https://repo.dmulloy2.net/repository/releases/'
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+}
