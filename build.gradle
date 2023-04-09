@@ -7,7 +7,8 @@ plugins {
 group = 'com.comphenix.protocol'
 version = '5.0.0-SNAPSHOT'
 description = 'ProtocolLib'
-//java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
     // mavenLocal()
