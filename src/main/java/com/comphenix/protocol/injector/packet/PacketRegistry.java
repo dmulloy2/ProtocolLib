@@ -252,10 +252,17 @@ public class PacketRegistry {
 
 	protected static void associatePackets(Register register, Map<Integer, Class<?>> lookup, PacketType.Protocol protocol, Sender sender) {
 		for (Map.Entry<Integer, Class<?>> entry : lookup.entrySet()) {
-			PacketType type = PacketType.fromCurrent(protocol, sender, entry.getKey(), entry.getValue());
+			int packetId = entry.getKey();
+			Class<?> packetClass = entry.getValue();
+
+			if (MinecraftReflection.isBundleDelimiter(packetClass)) {
+				continue;
+			}
+
+			PacketType type = PacketType.fromCurrent(protocol, sender, packetId, packetClass);
 
 			try {
-				register.registerPacket(type, entry.getValue(), sender);
+				register.registerPacket(type, packetClass, sender);
 			} catch (Exception ex) {
 				ProtocolLogger.debug("Encountered an exception associating packet " + type, ex);
 			}
