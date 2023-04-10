@@ -328,7 +328,7 @@ public class PacketTypeTest {
 							if (ex.getMessage().contains("BundleDelimiterPacket")) {
 								continue;
 							}
-							
+
 							ex.printStackTrace();
 							fail = true;
 						}

@@ -28,7 +28,7 @@ public interface PacketOutputHandler {
 	 * Note that the buffer is initially filled with the output from the default write method.
 	 * <p>
 	 * In Minecraft 1.6.4, the header is always excluded, whereas it MUST be included in Minecraft 1.7.2. Call 
-	 * {@link NetworkMarker#requireOutputHeader()} to determine this.
+	 * NetworkMarker#requireOutputHeader() to determine this.
 	 * @param event - the packet that will be outputted.
 	 * @param buffer - the data that is currently scheduled to be outputted.
 	 * @return The modified byte array to write. NULL is not permitted.

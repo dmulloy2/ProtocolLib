@@ -941,8 +941,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
 		/**
 		 * Gets the first serializer associated with a given class and optional state.
-		 * 
-		 * <p><b>Note</b>: If the serializer is optional, values <i>must<i> be
+		 * <br/>
+		 * <b>Note</b>: If the serializer is optional, values <i>must</i> be
 		 * wrapped in an {@link Optional}
 		 *
 		 * @param clazz Class to find serializer for

@@ -1,17 +1,18 @@
 plugins {
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
     id 'java-library'
     id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.comphenix.protocol'
 version = '5.0.0-SNAPSHOT'
-description = 'ProtocolLib'
-java.sourceCompatibility = JavaVersion.VERSION_17
-java.targetCompatibility = JavaVersion.VERSION_17
+description = 'Provides access to the Minecraft protocol'
+
+// java.sourceCompatibility = JavaVersion.VERSION_17
+// java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
-    // mavenLocal()
+    mavenLocal()
     mavenCentral()
 
     maven {
@@ -39,6 +40,14 @@ dependencies {
     implementation 'io.netty:netty-all:4.0.23.Final'
     implementation 'net.kyori:adventure-text-serializer-gson:4.13.0'
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+
+    withJavadocJar()
+    withSourcesJar()
 }
 
 shadowJar {
