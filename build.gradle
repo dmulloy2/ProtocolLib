@@ -12,19 +12,24 @@ description = 'Provides access to the Minecraft protocol'
 // java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
-    mavenLocal()
+    // mavenLocal()
     mavenCentral()
 
     maven {
-        url = uri('https://repo.dmulloy2.net/repository/public/')
+        url 'https://repo.dmulloy2.net/repository/public/'
     }
 
     maven {
-        url = uri('https://hub.spigotmc.org/nexus/content/groups/public/')
+        url 'https://hub.spigotmc.org/nexus/content/groups/public/'
     }
 
     maven {
-        url = uri('https://libraries.minecraft.net/')
+        url 'https://libraries.minecraft.net/'
+        metadataSources {
+            mavenPom()
+            artifact()
+            ignoreGradleMetadataRedirection()
+        }
     }
 }
 
