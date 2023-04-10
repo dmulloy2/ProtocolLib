@@ -8,11 +8,10 @@ group = 'com.comphenix.protocol'
 version = '5.0.0-SNAPSHOT'
 description = 'Provides access to the Minecraft protocol'
 
-// java.sourceCompatibility = JavaVersion.VERSION_17
-// java.targetCompatibility = JavaVersion.VERSION_17
+def isSnapshot = version.endsWith('-SNAPSHOT')
 
 repositories {
-    // mavenLocal()
+    // mavenLocal() // can speed up build, but may fail in CI
     mavenCentral()
 
     maven {
@@ -41,7 +40,6 @@ dependencies {
     compileOnly 'net.kyori:adventure-text-serializer-gson:4.13.0'
     compileOnly 'com.googlecode.json-simple:json-simple:1.1.1'
 
-    // testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
     testImplementation 'org.mockito:mockito-core:4.11.0'
@@ -72,13 +70,12 @@ test {
 }
 
 processResources {
-    def fullVersion = System.getenv('BUILD_NUMBER')
+    def includeBuild = isSnapshot && System.getenv('BUILD_NUMBER')
+    def fullVersion = includeBuild
         ? version + '-' + System.getenv('BUILD_NUMBER')
         : version
 
-    filter {
-        it.replace('${project.version}', fullVersion)
-    }
+    eachFile { expand(['version': fullVersion]) }
 }
 
 publishing {
@@ -90,13 +87,18 @@ publishing {
                 artifactId = 'ProtocolLib'
             }
         }
-
     }
+
     repositories {
         maven {
-            url = version.endsWith('SNAPSHOT')
+            url isSnapshot
                 ? 'https://repo.dmulloy2.net/repository/snapshots/'
                 : 'https://repo.dmulloy2.net/repository/releases/'
+
+            credentials {
+                username project.nexusUsername
+                password project.nexusPassword
+            }
         }
     }
 }
