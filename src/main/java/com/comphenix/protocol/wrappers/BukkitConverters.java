@@ -620,7 +620,7 @@ public class BukkitConverters {
 	}
 
 	public static EquivalentConverter<PacketContainer> getPacketContainerConverter() {
-		return handle(PacketContainer::getHandle, PacketContainer::fromPacket, PacketContainer.class);
+		return ignoreNull(handle(PacketContainer::getHandle, PacketContainer::fromPacket, PacketContainer.class));
 	}
 
 	/**

@@ -3,6 +3,7 @@ package com.comphenix.protocol.injector;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
@@ -32,6 +33,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.logging.Level;
+
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -541,25 +544,29 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 	}
 
 	private void postPacketToListeners(SortedPacketListenerList listeners, PacketEvent event, boolean outbound) {
-		// append async marker if any async listener for the packet was registered
-		if (this.asyncFilterManager.hasAsynchronousListeners(event)) {
-			event.setAsyncMarker(this.asyncFilterManager.createAsyncMarker());
-		}
+		try {
+			// append async marker if any async listener for the packet was registered
+			if (this.asyncFilterManager.hasAsynchronousListeners(event)) {
+				event.setAsyncMarker(this.asyncFilterManager.createAsyncMarker());
+			}
 
-		// post to sync listeners
-		if (outbound) {
-			listeners.invokePacketSending(this.reporter, event);
-		} else {
-			listeners.invokePacketRecieving(this.reporter, event);
-		}
+			// post to sync listeners
+			if (outbound) {
+				listeners.invokePacketSending(this.reporter, event);
+			} else {
+				listeners.invokePacketRecieving(this.reporter, event);
+			}
 
-		// check if we need to post the packet to the async handler
-		if (!event.isCancelled() && event.getAsyncMarker() != null && !event.getAsyncMarker().isAsyncCancelled()) {
-			this.asyncFilterManager.enqueueSyncPacket(event, event.getAsyncMarker());
+			// check if we need to post the packet to the async handler
+			if (!event.isCancelled() && event.getAsyncMarker() != null && !event.getAsyncMarker().isAsyncCancelled()) {
+				this.asyncFilterManager.enqueueSyncPacket(event, event.getAsyncMarker());
 
-			// cancel the packet here for async processing (enqueueSyncPacket will create a copy of the event)
-			event.setReadOnly(false);
-			event.setCancelled(true);
+				// cancel the packet here for async processing (enqueueSyncPacket will create a copy of the event)
+				event.setReadOnly(false);
+				event.setCancelled(true);
+			}
+		} catch (Throwable t) {
+			plugin.getLogger().log(Level.WARNING, "Failed to process " + (outbound ? "outbound" : "inbound") + " packet event: " + event, t);
 		}
 	}
 

@@ -20,16 +20,16 @@ package com.comphenix.protocol.injector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.timing.TimedListenerManager;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.timing.TimedTracker;
@@ -152,12 +152,23 @@ public final class SortedPacketListenerList extends AbstractConcurrentListenerMu
 			Iterable<PacketContainer> packets = event.getPacket().getPacketBundles().read(0);
 			List<PacketContainer> outPackets = new ArrayList<>();
 			for (PacketContainer subPacket : packets) {
+				if(subPacket == null) {
+					ProtocolLibrary.getPlugin().getLogger().log(Level.WARNING, "Failed to invoke packet event " + (priorityFilter == null ? "" : ("with priority " + priorityFilter)) + " in bundle because bundle contains null packet: " + packets, new Throwable());
+					continue;
+				}
 				PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(), event.getPlayer());
 				invokeUnpackedPacketSending(reporter, subPacketEvent, priorityFilter);
 
 				if (!subPacketEvent.isCancelled()) {
 					// if the packet event has been cancelled, the packet will be removed from the bundle
-					outPackets.add(subPacketEvent.getPacket());
+					PacketContainer packet = subPacketEvent.getPacket();
+					if(packet == null) {
+						ProtocolLibrary.getPlugin().getLogger().log(Level.WARNING, "null packet container returned for " + subPacketEvent, new Throwable());
+					} else if(packet.getHandle() == null) {
+						ProtocolLibrary.getPlugin().getLogger().log(Level.WARNING, "null packet handle returned for " + subPacketEvent, new Throwable());
+					} else {
+						outPackets.add(packet);
+					}
 				}
 			}
 

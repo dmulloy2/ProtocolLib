@@ -92,6 +92,9 @@ public class PacketEvent extends EventObject implements Cancellable {
 	private PacketEvent(Object source, PacketContainer packet, NetworkMarker marker, Player player, boolean serverPacket,
 			boolean filtered, @Nullable PacketEvent bundleEvent) {
 		super(source);
+		if(packet == null) {
+			throw new IllegalArgumentException("packet cannot be null");
+		}
 		this.packet = packet;
 		this.playerReference = new WeakReference<>(player);
 		this.networkMarker = marker;
