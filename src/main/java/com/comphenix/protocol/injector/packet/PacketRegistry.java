@@ -30,7 +30,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
 
 /**
  * Static packet registry in Minecraft.
@@ -254,10 +253,6 @@ public class PacketRegistry {
 		for (Map.Entry<Integer, Class<?>> entry : lookup.entrySet()) {
 			int packetId = entry.getKey();
 			Class<?> packetClass = entry.getValue();
-
-			if (MinecraftReflection.isBundleDelimiter(packetClass)) {
-				continue;
-			}
 
 			PacketType type = PacketType.fromCurrent(protocol, sender, packetId, packetClass);
 
