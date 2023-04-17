@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
@@ -104,11 +105,10 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         this.playedBefore = offline.hasPlayedBefore();
         this.online = offline.isOnline();
         this.whitelisted = offline.isWhitelisted();
-        try {
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-			this.lastSeen = offline.getLastSeen();
-			this.lastLogin = offline.getLastLogin();
-        } catch (ClassNotFoundException ignored) {}
+        if (ProtocolLib.isFolia) {
+            this.lastSeen = offline.getLastSeen();
+            this.lastLogin = offline.getLastLogin();
+        }
     }
 
     @Override
