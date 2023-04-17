@@ -490,26 +490,34 @@ public class ProtocolLib extends JavaPlugin {
 			}
 
 			// Attempt to create task
-			this.packetTask = server.getScheduler().scheduleSyncRepeatingTask(this, () -> {
-				AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
 
-				// We KNOW we're on the main thread at the moment
-				manager.sendProcessedPackets(ProtocolLib.this.tickCounter++, true);
-
-				// House keeping
-				ProtocolLib.this.updateConfiguration();
-
-				// Check for updates too
-				if (!ProtocolLibrary.updatesDisabled() && (ProtocolLib.this.tickCounter % 20) == 0) {
-					ProtocolLib.this.checkUpdates();
-				}
-			}, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
+			try {
+				Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+				this.packetTask = 1;
+				server.getGlobalRegionScheduler().runAtFixedRate(this, task -> packetTaskRegistrator(), ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
+			} catch (ClassNotFoundException e) {
+				this.packetTask = server.getScheduler().scheduleSyncRepeatingTask(this, this::packetTaskRegistrator, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
+			}
 		} catch (OutOfMemoryError e) {
 			throw e;
 		} catch (Throwable e) {
 			if (this.packetTask == -1) {
 				reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CREATE_TIMEOUT_TASK).error(e));
 			}
+		}
+	}
+	
+	private void packetTaskRegistrator() {
+		AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
+		// We KNOW we're on the main thread at the moment
+		manager.sendProcessedPackets(ProtocolLib.this.tickCounter++, true);
+
+		// House keeping
+		ProtocolLib.this.updateConfiguration();
+
+		// Check for updates too
+		if (!ProtocolLibrary.updatesDisabled() && (ProtocolLib.this.tickCounter % 20) == 0) {
+			ProtocolLib.this.checkUpdates();
 		}
 	}
 
@@ -567,7 +575,12 @@ public class ProtocolLib extends JavaPlugin {
 
 		// Clean up
 		if (this.packetTask >= 0) {
-			this.getServer().getScheduler().cancelTask(this.packetTask);
+			try {
+				Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+				this.getServer().getGlobalRegionScheduler().cancelTasks(this);
+			} catch (ClassNotFoundException e) {
+				this.getServer().getScheduler().cancelTask(this.packetTask);
+			}
 			this.packetTask = -1;
 		}
 

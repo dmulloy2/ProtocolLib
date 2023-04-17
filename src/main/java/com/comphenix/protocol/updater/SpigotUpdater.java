@@ -80,7 +80,12 @@ public final class SpigotUpdater extends Updater {
 			} finally {
 				// Invoke the listeners on the main thread
 				for (Runnable listener : listeners) {
-					plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, listener);
+					try {
+						Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+						plugin.getServer().getGlobalRegionScheduler().execute(plugin, listener);
+					} catch (ClassNotFoundException e) {
+						plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, listener);
+					}
 				}
 			}
 		}

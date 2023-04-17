@@ -8,6 +8,8 @@ load: STARTUP
 database: false
 api-version: "1.13"
 
+folia-supported: true
+
 commands:
   protocol:
     description: Performs administrative tasks regarding ProtocolLib.

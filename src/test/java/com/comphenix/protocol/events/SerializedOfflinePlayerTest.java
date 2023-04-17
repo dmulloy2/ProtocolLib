@@ -17,6 +17,8 @@ public class SerializedOfflinePlayerTest {
 
 	private static final String name = "playerName";
 	private static final long firstPlayed = 1000L;
+	private static final long lastLogin = 1000L;
+	private static final long lastSeen = 1000L;
 	private static final long lastPlayed = firstPlayed + 100L;
 	private static final boolean isOp = false;
 	private static final boolean playedBefore = true;
