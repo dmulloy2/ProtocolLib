@@ -121,6 +121,12 @@ public class ProtocolLib extends JavaPlugin {
 
     @Override
     public void onLoad() {
+        // Folia support
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            isFolia = true;
+        } catch (ClassNotFoundException ignored) {}
+
         // Logging
         logger = this.getLogger();
         ProtocolLogger.init(this);
@@ -307,13 +313,6 @@ public class ProtocolLib extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        try {
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            isFolia = true;
-        } catch (ClassNotFoundException e) {
-            isFolia = false;
-        }
-
         try {
             Server server = this.getServer();
             PluginManager manager = server.getPluginManager();
