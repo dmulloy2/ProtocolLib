@@ -21,43 +21,49 @@ package com.comphenix.protocol.utility;
  */
 public final class Util {
 
-	private static final boolean SPIGOT = classExists("org.spigotmc.SpigotConfig");
-	private static Class<?> cachedBundleClass;
+    private static final boolean SPIGOT = classExists("org.spigotmc.SpigotConfig");
+    private static final boolean FOLIA = classExists("io.papermc.paper.threadedregions.RegionizedServer");
+    private static Class<?> cachedBundleClass;
 
-	public static boolean classExists(String className) {
-		try {
-			Class.forName(className);
-			return true;
-		} catch (ClassNotFoundException ex) {
-			return false;
-		}
-	}
+    public static boolean classExists(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
+    }
 
-	/**
-	 * Whether this server is running Spigot or a Spigot fork. This works by checking if the SpigotConfig exists, which
-	 * should be true of all forks.
-	 *
-	 * @return True if it is, false if not.
-	 */
-	public static boolean isUsingSpigot() {
-		return SPIGOT;
-	}
+    /**
+     * Whether this server is running Spigot or a Spigot fork. This works by checking if the SpigotConfig exists, which
+     * should be true of all forks.
+     *
+     * @return True if it is, false if not.
+     */
+    public static boolean isUsingSpigot() {
+        return SPIGOT;
+    }
 
-	/**
-	 * Checks if the server is getting reloaded by walking down the current thread stack trace.
-	 *
-	 * @return true if the server is getting reloaded, false otherwise.
-	 */
-	public static boolean isCurrentlyReloading() {
-		StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-		for (StackTraceElement element : stackTrace) {
-			String clazz = element.getClassName();
-			if (clazz.startsWith("org.bukkit.craftbukkit.")
-					&& clazz.endsWith(".CraftServer")
-					&& element.getMethodName().equals("reload")) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public static boolean isUsingFolia() {
+        return FOLIA;
+    }
+
+    /**
+     * Checks if the server is getting reloaded by walking down the current thread stack trace.
+     *
+     * @return true if the server is getting reloaded, false otherwise.
+     */
+    public static boolean isCurrentlyReloading() {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stackTrace) {
+            String clazz = element.getClassName();
+            if (clazz.startsWith("org.bukkit.craftbukkit.")
+                    && clazz.endsWith(".CraftServer")
+                    && element.getMethodName().equals("reload")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

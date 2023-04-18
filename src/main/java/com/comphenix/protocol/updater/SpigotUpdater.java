@@ -16,10 +16,10 @@
  */
 package com.comphenix.protocol.updater;
 
-import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.utility.Closer;
+import com.comphenix.protocol.utility.SchedulerUtil;
 import org.bukkit.plugin.Plugin;
 
 import java.io.BufferedReader;
@@ -81,11 +81,7 @@ public final class SpigotUpdater extends Updater {
             } finally {
                 // Invoke the listeners on the main thread
                 for (Runnable listener : listeners) {
-                    if (ProtocolLib.isFolia) {
-                        plugin.getServer().getGlobalRegionScheduler().execute(plugin, listener);
-                    } else {
-                        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, listener);
-                    }
+                    SchedulerUtil.execute(listener, plugin);
                 }
             }
         }

@@ -17,6 +17,30 @@
 
 package com.comphenix.protocol.events;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.Util;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
+import net.bytebuddy.implementation.FieldAccessor;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.FieldValue;
+import net.bytebuddy.implementation.bind.annotation.Origin;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.matcher.ElementMatchers;
+import org.bukkit.*;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -27,32 +51,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.comphenix.protocol.ProtocolLib;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
-
-import com.destroystokyo.paper.profile.PlayerProfile;
-import org.bukkit.*;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-
-import net.bytebuddy.description.ByteCodeElement;
-import net.bytebuddy.description.modifier.Visibility;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
-import net.bytebuddy.implementation.FieldAccessor;
-import net.bytebuddy.implementation.InvocationHandlerAdapter;
-import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bind.annotation.AllArguments;
-import net.bytebuddy.implementation.bind.annotation.Origin;
-import net.bytebuddy.implementation.bind.annotation.FieldValue;
-import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.matcher.ElementMatchers;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a player object that can be serialized by Java.
@@ -105,7 +103,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         this.playedBefore = offline.hasPlayedBefore();
         this.online = offline.isOnline();
         this.whitelisted = offline.isWhitelisted();
-        if (ProtocolLib.isFolia) {
+        if (Util.isUsingFolia()) {
             this.lastSeen = offline.getLastSeen();
             this.lastLogin = offline.getLastLogin();
         }

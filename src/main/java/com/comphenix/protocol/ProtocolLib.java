@@ -27,10 +27,7 @@ import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
-import com.comphenix.protocol.utility.ChatExtensions;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
+import com.comphenix.protocol.utility.*;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 
@@ -59,9 +56,6 @@ import org.bukkit.plugin.java.JavaPlugin;
  * @author Kristian
  */
 public class ProtocolLib extends JavaPlugin {
-
-    public static boolean isFolia = false;
-
     // Every possible error or warning report type
     public static final ReportType REPORT_CANNOT_DELETE_CONFIG = new ReportType(
             "Cannot delete old ProtocolLib configuration.");
@@ -121,12 +115,6 @@ public class ProtocolLib extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        // Folia support
-        try {
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            isFolia = true;
-        } catch (ClassNotFoundException ignored) {}
-
         // Logging
         logger = this.getLogger();
         ProtocolLogger.init(this);
@@ -500,33 +488,25 @@ public class ProtocolLib extends JavaPlugin {
             }
 
             // Attempt to create task
+            this.packetTask = SchedulerUtil.scheduleSyncRepeatingTask(this, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY, () -> {
+                AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
+                // We KNOW we're on the main thread at the moment
+                manager.sendProcessedPackets(ProtocolLib.this.tickCounter++, true);
 
-            if (isFolia) {
-                this.packetTask = 1;
-                server.getGlobalRegionScheduler().runAtFixedRate(this, task -> packetTaskRegistrator(), ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
-            } else {
-                this.packetTask = server.getScheduler().scheduleSyncRepeatingTask(this, this::packetTaskRegistrator, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
-            }
+                // House keeping
+                ProtocolLib.this.updateConfiguration();
+
+                // Check for updates too
+                if (!ProtocolLibrary.updatesDisabled() && (ProtocolLib.this.tickCounter % 20) == 0) {
+                    ProtocolLib.this.checkUpdates();
+                }
+            });
         } catch (OutOfMemoryError e) {
             throw e;
         } catch (Throwable e) {
             if (this.packetTask == -1) {
                 reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CREATE_TIMEOUT_TASK).error(e));
             }
-        }
-    }
-
-    private void packetTaskRegistrator() {
-        AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
-        // We KNOW we're on the main thread at the moment
-        manager.sendProcessedPackets(ProtocolLib.this.tickCounter++, true);
-
-        // House keeping
-        ProtocolLib.this.updateConfiguration();
-
-        // Check for updates too
-        if (!ProtocolLibrary.updatesDisabled() && (ProtocolLib.this.tickCounter % 20) == 0) {
-            ProtocolLib.this.checkUpdates();
         }
     }
 
@@ -584,11 +564,7 @@ public class ProtocolLib extends JavaPlugin {
 
         // Clean up
         if (this.packetTask >= 0) {
-            if (isFolia) {
-                this.getServer().getGlobalRegionScheduler().cancelTasks(this);
-            } else {
-                this.getServer().getScheduler().cancelTask(this.packetTask);
-            }
+            SchedulerUtil.cancelTask(this, packetTask);
             this.packetTask = -1;
         }
 
