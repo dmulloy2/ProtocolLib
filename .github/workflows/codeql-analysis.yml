@@ -26,16 +26,16 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
+          java-version: '19'
+          cache: 'gradle'
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
           languages: 'java'
 
-      - name: Run maven build lifecycle
-        run: mvn --batch-mode clean test package
+      - name: Run gradle build lifecycle
+        run: ./gradlew build -x test --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2

@@ -20,8 +20,10 @@ Currently maintained by dmulloy2 on behalf of [Spigot](https://www.spigotmc.org/
 
 ### Compilation
 
-ProtocolLib is built with [Maven](https://maven.apache.org/). If you have it installed, just run
-`mvn package` in the root project folder.
+ProtocolLib is built with [Gradle](https://gradle.org/). If you have it installed, just run
+`./gradlew build` in the root project folder. Other gradle targets you may be interested in 
+include `clean`, `test`, and `shadowJar`. `shadowJar` will create a jar with all dependencies
+(ByteBuddy) included.
 
 ### A new API
 
@@ -53,7 +55,7 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>4.7.0</version>
+    <version>5.0.0-SNAPSHOT</version>
     <scope>provided</scope>
   </dependency>
 </dependencies>
@@ -67,7 +69,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.7.0";
+    compileOnly 'com.comphenix.protocol:ProtocolLib:5.0.0-SNAPSHOT'
 }
 ```
 

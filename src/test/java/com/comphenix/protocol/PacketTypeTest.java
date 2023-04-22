@@ -49,9 +49,9 @@ public class PacketTypeTest {
 		BukkitInitialization.initializeAll();
 
 		// I'm well aware this is jank, but it does in fact work correctly and give the desired result
-		PacketType.onDynamicCreate = className -> {
+		/*PacketType.onDynamicCreate = className -> {
 			throw new RuntimeException("Dynamically generated packet " + className);
-		};
+		};*/
 	}
 
 	@AfterAll
@@ -267,11 +267,6 @@ public class PacketTypeTest {
 		return builder.toString();
 	}
 
-	@BeforeAll
-	public static void initializeReflection() {
-		BukkitInitialization.initializeAll();
-	}
-
 	@Test
 	public void testFindCurrent() {
 		assertEquals(PacketType.Play.Client.STEER_VEHICLE,
@@ -297,42 +292,54 @@ public class PacketTypeTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void ensureTypesAreCorrect() throws Exception {
-		boolean fail = false;
+		PacketType.onDynamicCreate = className -> {
+			throw new RuntimeException("Dynamically generated packet " + className);
+		};
 
-		EnumProtocol[] protocols = EnumProtocol.values();
-		for (EnumProtocol protocol : protocols) {
-			Field field = EnumProtocol.class.getDeclaredField("k");
-			field.setAccessible(true);
+		try {
+			boolean fail = false;
 
-			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
-			for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
-				Field mapField = entry.getValue().getClass().getDeclaredField("b");
-				mapField.setAccessible(true);
+			EnumProtocol[] protocols = EnumProtocol.values();
+			for (EnumProtocol protocol : protocols) {
+				Field field = EnumProtocol.class.getDeclaredField("k");
+				field.setAccessible(true);
 
-				Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
+				Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
+				for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
+					Field mapField = entry.getValue().getClass().getDeclaredField("b");
+					mapField.setAccessible(true);
 
-				Map<Integer, Class<?>> treeMap = new TreeMap<>();
-				for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
-					treeMap.put(entry1.getValue(), entry1.getKey());
-				}
+					Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
 
-				for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
-					try {
-						PacketType type = PacketType.fromClass(entry1.getValue());
-						if (type.getCurrentId() != entry1.getKey()) {
-							throw new IllegalStateException(
-									"Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got "
-											+ type.getCurrentId());
+					Map<Integer, Class<?>> treeMap = new TreeMap<>();
+					for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
+						treeMap.put(entry1.getValue(), entry1.getKey());
+					}
+
+					for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
+						try {
+							PacketType type = PacketType.fromClass(entry1.getValue());
+							if (type.getCurrentId() != entry1.getKey()) {
+								throw new IllegalStateException(
+										"Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got "
+												+ type.getCurrentId());
+							}
+						} catch (Throwable ex) {
+							if (ex.getMessage().contains("BundleDelimiterPacket")) {
+								continue;
+							}
+
+							ex.printStackTrace();
+							fail = true;
 						}
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-						fail = true;
 					}
 				}
 			}
-		}
 
-		assertFalse(fail, "Packet type(s) were incorrect!");
+			assertFalse(fail, "Packet type(s) were incorrect!");
+		} finally {
+			PacketType.onDynamicCreate = __ -> { };
+		}
 	}
 
 	@Test

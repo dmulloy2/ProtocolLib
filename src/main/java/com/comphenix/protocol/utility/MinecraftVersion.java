@@ -59,6 +59,10 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 	 */
 	public static final MinecraftVersion CAVES_CLIFFS_1 = new MinecraftVersion("1.17");
 	/**
+	 * Version 1.16.4
+	 */
+	public static final MinecraftVersion NETHER_UPDATE_4 = new MinecraftVersion("1.16.4");
+	/**
 	 * Version 1.16.2 - breaking change to the nether update
 	 */
 	public static final MinecraftVersion NETHER_UPDATE_2 = new MinecraftVersion("1.16.2");

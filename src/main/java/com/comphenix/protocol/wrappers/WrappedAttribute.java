@@ -168,6 +168,7 @@ public class WrappedAttribute extends AbstractWrapper {
 	 * @deprecated Removed in 1.17
 	 */
 	@Nullable
+	@Deprecated
 	public PacketContainer getParentPacket() {
 		if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
 			return null;

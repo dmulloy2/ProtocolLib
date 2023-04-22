@@ -1,0 +1,114 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.comphenix.protocol'
+version = '5.0.0-SNAPSHOT'
+description = 'Provides access to the Minecraft protocol'
+
+def isSnapshot = version.endsWith('-SNAPSHOT')
+
+repositories {
+    // mavenLocal() // can speed up build, but may fail in CI
+    mavenCentral()
+
+    maven {
+        url 'https://repo.dmulloy2.net/repository/public/'
+    }
+
+    maven {
+        url 'https://hub.spigotmc.org/nexus/content/groups/public/'
+    }
+
+    maven {
+        url 'https://libraries.minecraft.net/'
+        metadataSources {
+            mavenPom()
+            artifact()
+            ignoreGradleMetadataRedirection()
+        }
+    }
+}
+
+dependencies {
+    implementation 'net.bytebuddy:byte-buddy:1.14.3'
+    compileOnly 'org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot:1.19.4-R0.1-SNAPSHOT'
+    compileOnly 'io.netty:netty-all:4.0.23.Final'
+    compileOnly 'net.kyori:adventure-text-serializer-gson:4.13.0'
+    compileOnly 'com.googlecode.json-simple:json-simple:1.1.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+    testImplementation 'org.mockito:mockito-core:4.11.0'
+    testImplementation 'org.mockito:mockito-inline:4.11.0'
+    testImplementation 'io.netty:netty-common:4.1.77.Final'
+    testImplementation 'io.netty:netty-transport:4.1.77.Final'
+    testImplementation 'org.spigotmc:spigot:1.19.4-R0.1-SNAPSHOT'
+    testImplementation 'net.kyori:adventure-text-serializer-gson:4.13.0'
+    testImplementation 'net.kyori:adventure-text-serializer-plain:4.13.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+
+    withJavadocJar()
+    withSourcesJar()
+}
+
+shadowJar {
+    dependencies {
+        include(dependency('net.bytebuddy:byte-buddy:.*'))
+    }
+    relocate 'net.bytebuddy', 'com.comphenix.net.bytebuddy'
+    archiveFileName = 'ProtocolLib.jar'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+processResources {
+    def includeBuild = isSnapshot && System.getenv('BUILD_NUMBER')
+    def fullVersion = includeBuild
+        ? version + '-' + System.getenv('BUILD_NUMBER')
+        : version
+
+    eachFile { expand(['version': fullVersion]) }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            afterEvaluate {
+                artifactId = 'ProtocolLib'
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url isSnapshot
+                ? 'https://repo.dmulloy2.net/repository/snapshots/'
+                : 'https://repo.dmulloy2.net/repository/releases/'
+
+            credentials {
+                username project.nexusUsername
+                password project.nexusPassword
+            }
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+}

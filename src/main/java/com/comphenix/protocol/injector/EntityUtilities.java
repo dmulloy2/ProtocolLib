@@ -178,7 +178,9 @@ class EntityUtilities {
 		Validate.notNull(entity, "entity cannot be null");
 
 		Object trackerEntry = this.getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-		Validate.notNull(trackerEntry, "Could not find entity trackers for " + entity);
+		if (trackerEntry == null) { //entity.toString() is too expensive to be called every time
+			throw new IllegalArgumentException("Could not find entity trackers for " + entity);
+		}
 
 		if (this.trackedPlayersField == null) {
 			this.trackedPlayersField = Accessors.getFieldAccessor(

@@ -65,6 +65,7 @@ public abstract class EnumWrappers {
 		/**
 		 * @deprecated Replaced by NOT_SET
 		 */
+		@Deprecated
 		NONE;
 
 		/**
@@ -377,9 +378,9 @@ public abstract class EnumWrappers {
 	
 	/**
 	 * Wrapped EntityPose enum for use in Entity Metadata Packet.<br>
-	 * 
-	 * @apiNote Remember to use {@link #toNms()} when adding to a {@link WrappedDataWatcher}. <br>
-	 *          Serializer is obtained using Registry.get(EnumWrappers.getEntityPoseClass())
+	 * Remember to use {@link #toNms()} when adding to a {@link WrappedDataWatcher}. <br>
+	 * Serializer is obtained using Registry.get(EnumWrappers.getEntityPoseClass())
+	 *
 	 * @since 1.13
 	 * @author Lewys Davies (Lew_)
 	 */

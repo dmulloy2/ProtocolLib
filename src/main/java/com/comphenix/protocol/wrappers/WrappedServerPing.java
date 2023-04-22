@@ -1,11 +1,8 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
-import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.ping.LegacyServerPing;
@@ -15,7 +12,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
@@ -39,16 +35,9 @@ import java.util.List;
 public class WrappedServerPing implements ClonableWrapper {
 	private static final Class<?> GAME_PROFILE = MinecraftReflection.getGameProfileClass();
 
-	// For converting to the underlying array
-	private static final EquivalentConverter<Iterable<? extends WrappedGameProfile>> PROFILE_CONVERT =
-	BukkitConverters.getArrayConverter(GAME_PROFILE, BukkitConverters.getWrappedGameProfileConverter());
-
 	// Get profile from player
 	private static final FieldAccessor ENTITY_HUMAN_PROFILE = Accessors.getFieldAccessor(
-	MinecraftReflection.getEntityPlayerClass().getSuperclass(), GAME_PROFILE, true);
-
-	// Server ping fields
-	private static final Class<?> SERVER_PING = MinecraftReflection.getServerPingClass();
+		MinecraftReflection.getEntityPlayerClass().getSuperclass(), GAME_PROFILE, true);
 
 	private final ServerPingImpl impl;
 
@@ -59,9 +48,6 @@ public class WrappedServerPing implements ClonableWrapper {
 	 */
 	public WrappedServerPing() {
 		this.impl = newImpl();
-
-		resetPlayers();
-		resetVersion();
 	}
 
 	private WrappedServerPing(Object handle) {
@@ -121,11 +107,10 @@ public class WrappedServerPing implements ClonableWrapper {
 
 	/**
 	 * Retrieve the message of the day.
-	 * @return The messge of the day.
+	 * @return The message of the day.
 	 */
 	public WrappedChatComponent getMotD() {
-		Object handle = impl.getMotD();
-		return handle instanceof WrappedChatComponent ? ((WrappedChatComponent) handle) : WrappedChatComponent.fromHandle(handle);
+		return impl.getMotD();
 	}
 
 	/**
@@ -133,7 +118,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @param description - message of the day.
 	 */
 	public void setMotD(WrappedChatComponent description) {
-		impl.setMotD(description.getHandle());
+		impl.setMotD(description);
 	}
 
 	/**
@@ -270,12 +255,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return Logged in players or an empty list if no player names will be displayed.
 	 */
 	public ImmutableList<WrappedGameProfile> getPlayers() {
-		if (!isPlayersVisible())
-			return ImmutableList.of();
-		Object playerProfiles = impl.getPlayers();
-		if (playerProfiles == null)
-			return ImmutableList.of();
-		return ImmutableList.copyOf(PROFILE_CONVERT.getSpecific(playerProfiles));
+		return impl.getPlayers();
 	}
 
 	/**
@@ -285,7 +265,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	public void setPlayers(Iterable<? extends WrappedGameProfile> profile) {
 		if (!isPlayersVisible())
 			resetPlayers();
-		impl.setPlayers((profile != null) ? PROFILE_CONVERT.getGeneric(profile) : null);
+		impl.setPlayers(profile);
 	}
 
 	/**
@@ -562,5 +542,18 @@ public class WrappedServerPing implements ClonableWrapper {
 		public String toEncodedText() {
 			return encoded;
 		}
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(!(obj instanceof WrappedServerPing)) {
+			return false;
+		}
+		return getHandle().equals(((WrappedServerPing) obj).getHandle());
+	}
+
+	@Override
+	public int hashCode() {
+		return getHandle().hashCode();
 	}
 }

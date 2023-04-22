@@ -30,7 +30,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
 
 /**
  * Static packet registry in Minecraft.
@@ -252,10 +251,13 @@ public class PacketRegistry {
 
 	protected static void associatePackets(Register register, Map<Integer, Class<?>> lookup, PacketType.Protocol protocol, Sender sender) {
 		for (Map.Entry<Integer, Class<?>> entry : lookup.entrySet()) {
-			PacketType type = PacketType.fromCurrent(protocol, sender, entry.getKey(), entry.getValue());
+			int packetId = entry.getKey();
+			Class<?> packetClass = entry.getValue();
+
+			PacketType type = PacketType.fromCurrent(protocol, sender, packetId, packetClass);
 
 			try {
-				register.registerPacket(type, entry.getValue(), sender);
+				register.registerPacket(type, packetClass, sender);
 			} catch (Exception ex) {
 				ProtocolLogger.debug("Encountered an exception associating packet " + type, ex);
 			}
@@ -271,18 +273,28 @@ public class PacketRegistry {
 		}
 	}
 
+	private static final Object registryLock = new Object();
+
 	/**
 	 * Initializes the packet registry.
 	 */
 	private static void initialize() {
-		if (!INITIALIZED) {
-			INITIALIZED = true;
+		if (INITIALIZED) {
+			return;
+		}
+
+		synchronized (registryLock) {
+			if (INITIALIZED) {
+				return;
+			}
 
 			if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
 				REGISTER = createNewRegister();
 			} else {
 				REGISTER = createOldRegister();
 			}
+
+			INITIALIZED = true;
 		}
 	}
 

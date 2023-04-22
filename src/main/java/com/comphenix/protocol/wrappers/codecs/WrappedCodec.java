@@ -4,7 +4,6 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.AbstractWrapper;
-import sun.security.krb5.internal.APRep;
 
 public class WrappedCodec extends AbstractWrapper {
     private static final Class<?> HANDLE_TYPE = MinecraftReflection.getCodecClass();

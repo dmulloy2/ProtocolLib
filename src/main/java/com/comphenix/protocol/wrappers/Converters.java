@@ -14,20 +14,21 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Utility class for converters
@@ -305,5 +306,23 @@ public class Converters {
 				return converter.getSpecificType();
 			}
 		};
+	}
+
+	public static <T> List<T> toList(Iterable<? extends T> iterable) {
+		if (iterable instanceof List) {
+			return (List<T>) iterable;
+		}
+
+		List<T> result = new ArrayList<>();
+		if (iterable instanceof Collection) {
+			Collection<T> coll = (Collection<T>) iterable;
+			result.addAll(coll);
+		} else {
+			for (T elem : iterable) {
+				result.add(elem);
+			}
+		}
+
+		return result;
 	}
 }
