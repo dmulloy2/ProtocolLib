@@ -44,6 +44,10 @@ public class WrappedServerPingTest {
 
 			CompressedImage copy = CompressedImage.fromBase64Png(Base64Coder.encodeLines(tux.getData()));
 			assertArrayEquals(copy.getData(), serverPing.getFavicon().getData());
+
+			String asJson = serverPing.toJson();
+			WrappedServerPing deserialized = WrappedServerPing.fromJson(asJson);
+			assertEquals(serverPing, deserialized, "Failed to serialize as JSON and deserialize afterwards");
 		} catch (Throwable ex) {
 			fail("Encountered an exception testing ServerPing", ex);
 		}

@@ -114,7 +114,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 */
 	public static WrappedServerPing fromJson(String json) {
 		if(MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
-			throw new UnsupportedOperationException("Creating server pings from JSON is currently unsupported for FEATURE_PREVIEW_2 / 1.19.4");
+			return new WrappedServerPing(ServerPingRecord.fromJson(json).getHandle());
 		}
 		return new WrappedServerPing(LegacyServerPing.fromJson(json));
 	}
@@ -368,8 +368,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return The JSON representation.
 	 */
 	public String toJson() {
-		return null;
-		// return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), getHandle());
+		return impl.getJson();
 	}
 
 	@Override

@@ -281,6 +281,11 @@ public class LegacyServerPing extends AbstractWrapper implements ServerPingImpl 
 		}
 	}
 
+	@Override
+	public String getJson() {
+		return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), getHandle());
+	}
+
 	/**
 	 * Determine if the player count and maximum is visible.
 	 * <p>

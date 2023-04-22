@@ -31,6 +31,7 @@ public interface ServerPingImpl {
 
 	boolean arePlayersVisible();
 	void setPlayersVisible(boolean visible);
+	String getJson();
 
 	Object getHandle();
 }

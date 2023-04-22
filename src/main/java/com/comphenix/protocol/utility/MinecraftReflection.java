@@ -1685,6 +1685,22 @@ public final class MinecraftReflection {
 		}
 	}
 
+	public static Class<?> getDynamicOpsClass() {
+		return getLibraryClass("com.mojang.serialization.DynamicOps");
+	}
+
+	public static Class<?> getJsonOpsClass() {
+		return getLibraryClass("com.mojang.serialization.JsonOps");
+	}
+
+	public static Class<?> getNbtOpsClass() {
+		return getMinecraftClass("nbt.DynamicOpsNBT" /* Spigot Mappings */, "nbt.NbtOps" /* Mojang Mappings */);
+	}
+
+	public static Class<?> getCodecClass() {
+		return getLibraryClass("com.mojang.serialization.Codec");
+	}
+
     public static Class<?> getHolderClass() {
 		return getMinecraftClass("core.Holder");
     }

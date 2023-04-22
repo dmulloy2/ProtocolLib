@@ -1,27 +1,39 @@
 package com.comphenix.protocol.wrappers.ping;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-
 import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.*;
-
+import com.comphenix.protocol.wrappers.AutoWrapper;
+import com.comphenix.protocol.wrappers.Converters;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.codecs.WrappedCodec;
+import com.comphenix.protocol.wrappers.codecs.WrappedDynamicOps;
 import org.bukkit.Bukkit;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 public class ServerPingRecord implements ServerPingImpl {
 	private static Class<?> SERVER_PING;
 	private static Class<?> PLAYER_SAMPLE_CLASS;
 	private static Class<?> SERVER_DATA_CLASS;
 
+	private static Class<?> GSON_CLASS;
+	private static MethodAccessor GSON_TO_JSON;
+	private static MethodAccessor GSON_FROM_JSON;
+	private static FieldAccessor DATA_SERIALIZER_GSON;
+	private static Class<?> JSON_ELEMENT_CLASS;
+
 	private static WrappedChatComponent DEFAULT_DESCRIPTION;
 
 	private static ConstructorAccessor PING_CTOR;
+	private static WrappedCodec CODEC;
 
 	private static boolean initialized = false;
 
@@ -44,6 +56,13 @@ public class ServerPingRecord implements ServerPingImpl {
 			FAVICON_WRAPPER = AutoWrapper.wrap(Favicon.class, MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a"));
 
 			DEFAULT_DESCRIPTION = WrappedChatComponent.fromLegacyText("A Minecraft Server");
+
+			GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
+			GSON_TO_JSON = Accessors.getMethodAccessor(GSON_CLASS, "toJson", Object.class);
+			GSON_FROM_JSON = Accessors.getMethodAccessor(GSON_CLASS, "fromJson", String.class, Class.class);
+			DATA_SERIALIZER_GSON = Accessors.getFieldAccessor(MinecraftReflection.getPacketDataSerializerClass(), GSON_CLASS, true);
+			JSON_ELEMENT_CLASS = MinecraftReflection.getLibraryClass("com.google.gson.JsonElement");
+			CODEC = WrappedCodec.fromHandle(Accessors.getFieldAccessor(SERVER_PING, MinecraftReflection.getCodecClass(), false).get(null));
 		} catch (Exception ex) {
 			ex.printStackTrace(); // TODO
 		}
@@ -98,8 +117,19 @@ public class ServerPingRecord implements ServerPingImpl {
 		return favicon;
 	}
 
+	public static ServerPingRecord fromJson(String json) {
+
+		Object jsonElement = GSON_FROM_JSON.invoke(DATA_SERIALIZER_GSON.get(null), json, JSON_ELEMENT_CLASS);
+
+		Object decoded = CODEC.parse(jsonElement, WrappedDynamicOps.json(false)).getOrThrow(e -> new IllegalStateException("Failed to decode: " + e));
+		return new ServerPingRecord(decoded);
+	}
+
 	public ServerPingRecord(Object handle) {
 		initialize();
+		if(handle.getClass() != SERVER_PING) {
+			throw new IllegalArgumentException("Expected handle of type " + SERVER_PING.getName() + " but got " + handle.getClass().getName());
+		}
 
 		StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
 		InternalStructure structure = new InternalStructure(handle, modifier);
@@ -244,11 +274,17 @@ public class ServerPingRecord implements ServerPingImpl {
 	}
 
 	@Override
+	public String getJson() {
+		Object encoded = CODEC.encode(getHandle(), WrappedDynamicOps.json(false)).getOrThrow(e -> new IllegalStateException("Failed to encode: " + e));
+		return (String) GSON_TO_JSON.invoke(DATA_SERIALIZER_GSON.get(null), encoded);
+	}
+
+	@Override
 	public Object getHandle() {
 		Optional<Object> playersHandle = Optional.ofNullable(playerSample != null ? SAMPLE_WRAPPER.unwrap(playerSample) : null);
 		Optional<Object> versionHandle = Optional.ofNullable(serverData != null ? DATA_WRAPPER.unwrap(serverData) : null);
 		Optional<Object> favHandle = Optional.ofNullable(favicon != null ? FAVICON_WRAPPER.unwrap(favicon) : null);
 
-		return PING_CTOR.invoke(description, playersHandle, versionHandle, favHandle, enforceSafeChat);
+		return PING_CTOR.invoke(description.getHandle(), playersHandle, versionHandle, favHandle, enforceSafeChat);
 	}
 }
