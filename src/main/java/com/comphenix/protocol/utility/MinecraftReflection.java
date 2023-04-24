@@ -1621,6 +1621,10 @@ public final class MinecraftReflection {
 		return getMinecraftClass("network.chat.RemoteChatSession");
 	}
 
+	public static Class<?> getRemoteChatSessionDataClass() {
+		return getRemoteChatSessionClass().getClasses()[0];
+	}
+
 	public static Class<?> getFastUtilClass(String className) {
 		return getLibraryClass("it.unimi.dsi.fastutil." + className);
 	}

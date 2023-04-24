@@ -17,6 +17,7 @@ package com.comphenix.protocol.wrappers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.utility.TestUtils;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,14 +34,19 @@ public class PlayerInfoDataTest {
 	}
 
 	@Test
-	public void test() {
+	public void test() throws Exception {
 		WrappedGameProfile profile = new WrappedGameProfile(UUID.randomUUID(), "Name");
 		WrappedChatComponent displayName = WrappedChatComponent.fromText("Name's Name");
 
-		PlayerInfoData data = new PlayerInfoData(profile, 42, NativeGameMode.CREATIVE, displayName);
+		testWriteBack(new PlayerInfoData(profile, 42, NativeGameMode.CREATIVE, displayName));
+		testWriteBack(new PlayerInfoData(profile.getUUID(), 42, false, NativeGameMode.CREATIVE, profile, displayName, TestUtils.creteDummyRemoteChatSessionData()));
+		testWriteBack(new PlayerInfoData(profile.getUUID(), 42, false, NativeGameMode.CREATIVE, null, null, TestUtils.creteDummyRemoteChatSessionData()));
+		testWriteBack(new PlayerInfoData(profile.getUUID(), 42, false, NativeGameMode.CREATIVE, null, displayName, (WrappedRemoteChatSessionData) null));
+	}
+
+	private static void testWriteBack(PlayerInfoData data) {
 		Object generic = PlayerInfoData.getConverter().getGeneric(data);
 		PlayerInfoData back = PlayerInfoData.getConverter().getSpecific(generic);
-
 		assertEquals(data, back);
 	}
 }

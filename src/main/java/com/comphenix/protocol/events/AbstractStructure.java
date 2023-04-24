@@ -961,7 +961,7 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieve a read/write structure for profile public keys in 1.9
+     * Retrieve a read/write structure for profile public keys in 1.19
      * @return The Structure Modifier
      */
     public StructureModifier<WrappedProfilePublicKey> getProfilePublicKeys() {
@@ -971,13 +971,24 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieve a read/write structure for profile public key data in 1.9
+     * Retrieve a read/write structure for profile public key data in 1.19
      * @return The Structure Modifier
      */
     public StructureModifier<WrappedProfileKeyData> getProfilePublicKeyData() {
         return structureModifier.withType(
-            MinecraftReflection.getProfilePublicKeyDataClass(),
-            BukkitConverters.getWrappedPublicKeyDataConverter());
+                MinecraftReflection.getProfilePublicKeyDataClass(),
+                BukkitConverters.getWrappedPublicKeyDataConverter());
+    }
+
+    /**
+     * Retrieves read/write structure for remote chat session data in 1.19.3
+     * @return The Structure Modifier
+     */
+    public StructureModifier<WrappedRemoteChatSessionData> getRemoteChatSessionData() {
+        return structureModifier.withType(
+                MinecraftReflection.getRemoteChatSessionDataClass(),
+                BukkitConverters.getWrappedRemoteChatSessionDataConverter()
+        );
     }
 
     /**

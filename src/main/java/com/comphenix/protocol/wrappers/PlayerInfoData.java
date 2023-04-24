@@ -30,6 +30,8 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 
+import javax.annotation.Nullable;
+
 /**
  * Represents an immutable PlayerInfoData in the PLAYER_INFO packet.
  * @author dmulloy2
@@ -43,6 +45,9 @@ public class PlayerInfoData {
 	private final NativeGameMode gameMode;
 	private final WrappedGameProfile profile;
 	private final WrappedChatComponent displayName;
+	@Nullable
+	private final WrappedRemoteChatSessionData remoteChatSessionData;
+	@Nullable
 	private final WrappedProfileKeyData profileKeyData;
 
 	// This is the same order as the NMS class, minus the packet (which isn't a field)
@@ -54,6 +59,18 @@ public class PlayerInfoData {
 		this(profile.getUUID(), latency, true, gameMode, profile, displayName, keyData);
 	}
 
+	/**
+	 * Constructs a new PlayerInfoData for Minecraft 1.19.
+	 *
+	 * @param profileId the id of the profile (has to be non-null)
+	 * @param latency the latency in milliseconds
+	 * @param listed whether the player is listed in the tab list
+	 * @param gameMode the game mode
+	 * @param profile the game profile
+	 * @param displayName display name in tab list (optional)
+	 * @param profileKeyData the public key for the profile or null
+	 */
+	@Deprecated
 	public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, WrappedProfileKeyData profileKeyData) {
 		this.profileId = profileId;
 		this.latency = latency;
@@ -62,6 +79,29 @@ public class PlayerInfoData {
 		this.profile = profile;
 		this.displayName = displayName;
 		this.profileKeyData = profileKeyData;
+		this.remoteChatSessionData = null;
+	}
+
+	/**
+	 * Constructs a new PlayerInfoData for Minecraft 1.19.3 or later.
+	 *
+	 * @param profileId the id of the profile (has to be non-null)
+	 * @param latency the latency in milliseconds
+	 * @param listed whether the player is listed in the tab list
+	 * @param gameMode the game mode
+	 * @param profile the game profile
+	 * @param displayName display name in tab list (optional)
+	 * @param remoteChatSession the remote chat session for this profile or null
+	 */
+	public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, WrappedRemoteChatSessionData remoteChatSession) {
+		this.profileId = profileId;
+		this.latency = latency;
+		this.listed = listed;
+		this.gameMode = gameMode;
+		this.profile = profile;
+		this.displayName = displayName;
+		this.profileKeyData = null;
+		this.remoteChatSessionData = remoteChatSession;
 	}
 
 	/**
@@ -69,6 +109,9 @@ public class PlayerInfoData {
 	 * @return the id of the profile
 	 */
 	public UUID getProfileId() {
+		if(profileId == null && profile != null) {
+			return profile.getUUID(); // Ensure forward compatability
+		}
 		return profileId;
 	}
 
@@ -97,7 +140,7 @@ public class PlayerInfoData {
 	}
 
 	/**
-	 * Gets if the player is listed on the client.
+	 * Gets if the player is listed on the client (since 1.19.3)
 	 * @return if the player is listed
 	 */
 	public boolean isListed() {
@@ -121,11 +164,21 @@ public class PlayerInfoData {
 	}
 
 	/**
-	 * Gets the profile key data of the player represented by this data, null if not present.
-	 * @return The profile key data
+	 * Returns the public key of the profile (since 1.19). Returns the public key of the remote chat session since 1.19.3
+	 * @return The public key of the profile.
 	 */
+	@Nullable
 	public WrappedProfileKeyData getProfileKeyData() {
-		return this.profileKeyData;
+		return this.profileKeyData != null ? this.profileKeyData : (this.remoteChatSessionData != null ? this.remoteChatSessionData.getProfilePublicKey() : null);
+	}
+
+	/**
+	 * Returns the remoteChatSessionData (since 1.19.3)
+ 	 * @return The remote chat sesion data or null
+	 */
+	@Nullable
+	public WrappedRemoteChatSessionData getRemoteChatSessionData() {
+		return this.remoteChatSessionData;
 	}
 
 	/**
@@ -157,8 +210,7 @@ public class PlayerInfoData {
 						args.add(MinecraftReflection.getIChatBaseComponentClass());
 
 						if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
-							// RemoteChatSession$a...
-							args.add(MinecraftReflection.getRemoteChatSessionClass().getClasses()[0]);
+							args.add(MinecraftReflection.getRemoteChatSessionDataClass());
 						} else if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
 							args.add(MinecraftReflection.getProfilePublicKeyDataClass());
 						}
@@ -175,26 +227,28 @@ public class PlayerInfoData {
 					Object gameMode = EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode);
 					Object displayName = specific.displayName != null ? specific.displayName.handle : null;
 
+					Object profile = specific.profile != null ? specific.profile.handle : null;
 					if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
 						return constructor.newInstance(
 								specific.profileId,
-								specific.profile.handle,
+								profile,
 								specific.listed,
 								specific.latency,
 								gameMode,
 								displayName,
-								 null); // TODO: do we want to support this?
+								specific.remoteChatSessionData != null ? BukkitConverters.getWrappedRemoteChatSessionDataConverter().getGeneric(specific.remoteChatSessionData) : null
+						);
 					} else if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
 						return constructor.newInstance(
-								specific.profile.handle,
+								profile,
 								specific.latency,
 								gameMode,
 								displayName,
 								specific.profileKeyData == null ? null : specific.profileKeyData.handle);
 					} else if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-						return constructor.newInstance(specific.profile.handle, specific.latency, gameMode, displayName);
+						return constructor.newInstance(profile, specific.latency, gameMode, displayName);
 					} else {
-						return constructor.newInstance(null, specific.profile.handle, specific.latency, gameMode, displayName);
+						return constructor.newInstance(null, profile, specific.latency, gameMode, displayName);
 					}
 				} catch (Exception e) {
 					throw new RuntimeException("Failed to construct PlayerInfoData.", e);
@@ -222,8 +276,18 @@ public class PlayerInfoData {
 							MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
 					WrappedChatComponent displayName = displayNames.read(0);
 
+					if(MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+						return new PlayerInfoData(modifier.<UUID>withType(UUID.class).read(0),
+								latency,
+								modifier.<Boolean>withType(boolean.class).read(0),
+								gameMode,
+								gameProfile,
+								displayName,
+								modifier.withType(MinecraftReflection.getRemoteChatSessionDataClass(), BukkitConverters.getWrappedRemoteChatSessionDataConverter()).read(0)
+								);
+					}
 					WrappedProfileKeyData key = null;
-					if (MinecraftVersion.WILD_UPDATE.atOrAbove() && !MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+					if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
 						StructureModifier<WrappedProfileKeyData> keyData = modifier.withType(
 								MinecraftReflection.getProfilePublicKeyDataClass(), BukkitConverters.getWrappedPublicKeyDataConverter());
 						key = keyData.read(0);
@@ -253,20 +317,34 @@ public class PlayerInfoData {
 		// Only compare objects of similar type
 		if (obj instanceof PlayerInfoData) {
 			PlayerInfoData other = (PlayerInfoData) obj;
-			return profile.equals(other.profile) && latency == other.latency && gameMode == other.gameMode
-					&& Objects.equals(displayName, other.displayName);
+			return Objects.equals(profile, other.profile)
+					&& Objects.equals(profileId, other.profileId)
+					&& latency == other.latency
+					&& gameMode == other.gameMode
+					&& Objects.equals(displayName, other.displayName)
+					&& listed == other.listed
+					&& Objects.equals(remoteChatSessionData, other.remoteChatSessionData)
+					&& Objects.equals(profileKeyData, other.profileKeyData);
 		}
 		return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(latency, gameMode, profile, displayName);
+		return Objects.hash(latency, gameMode, profile, displayName, profileKeyData, remoteChatSessionData, listed);
 	}
 
 	@Override
 	public String toString() {
+		if(MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+			return String.format("PlayerInfoData[latency=%s, listed=%b, gameMode=%s, profile=%s, displayName=%s, remoteChatSession=%s]",
+					latency, listed, gameMode, profile, displayName, remoteChatSessionData);
+		}
+		if(MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+			return String.format("PlayerInfoData[latency=%s, listed=%b, gameMode=%s, profile=%s, displayName=%s, profilePublicKey=%s]",
+					latency, listed, gameMode, profile, displayName, profileKeyData);
+		}
 		return String.format("PlayerInfoData[latency=%s, gameMode=%s, profile=%s, displayName=%s]",
-				latency, gameMode, profile, displayName);
+			latency, gameMode, profile, displayName);
 	}
 }
