@@ -60,7 +60,23 @@ public class PlayerInfoData {
 	}
 
 	/**
-	 * Constructs a new PlayerInfoData for Minecraft 1.19.
+	 * Constructs a new PlayerInfoData for Minecraft 1.19 or later without signature data
+	 * @see PlayerInfoData#PlayerInfoData(UUID, int, boolean, NativeGameMode, WrappedGameProfile, WrappedChatComponent, WrappedRemoteChatSessionData)
+	 *
+	 * @param profileId the id of the profile (has to be non-null)
+	 * @param latency the latency in milliseconds
+	 * @param listed whether the player is listed in the tab list
+	 * @param gameMode the game mode
+	 * @param profile the game profile
+	 * @param displayName display name in tab list (optional)
+	 */
+	public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName) {
+		this(profileId, latency, listed, gameMode, profile, displayName, (WrappedRemoteChatSessionData) null);
+	}
+
+	/**
+	 * Constructs a new PlayerInfoData for Minecraft 1.19. This is incompatible on 1.19.3.
+	 * @see PlayerInfoData#PlayerInfoData(UUID, int, boolean, NativeGameMode, WrappedGameProfile, WrappedChatComponent, WrappedRemoteChatSessionData)
 	 *
 	 * @param profileId the id of the profile (has to be non-null)
 	 * @param latency the latency in milliseconds
@@ -71,7 +87,7 @@ public class PlayerInfoData {
 	 * @param profileKeyData the public key for the profile or null
 	 */
 	@Deprecated
-	public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, WrappedProfileKeyData profileKeyData) {
+	public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, @Nullable WrappedProfileKeyData profileKeyData) {
 		this.profileId = profileId;
 		this.latency = latency;
 		this.listed = listed;
@@ -93,7 +109,7 @@ public class PlayerInfoData {
 	 * @param displayName display name in tab list (optional)
 	 * @param remoteChatSession the remote chat session for this profile or null
 	 */
-	public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, WrappedRemoteChatSessionData remoteChatSession) {
+	public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, @Nullable WrappedRemoteChatSessionData remoteChatSession) {
 		this.profileId = profileId;
 		this.latency = latency;
 		this.listed = listed;
