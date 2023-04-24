@@ -1,8 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -19,6 +16,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BukkitConvertersTest {
 
@@ -71,5 +72,14 @@ public class BukkitConvertersTest {
 			Object specific = BukkitConverters.getPacketContainerConverter().getSpecific(generic);
 			assertTrue(EqualsBuilder.reflectionEquals(container, specific)); // PacketContainer does not properly implement equals(.)
 		}
+	}
+
+	@Test
+	void getWrappedMessageSignatureConverter() {
+		byte[] data = new byte[256];
+		new Random().nextBytes(data);
+		WrappedMessageSignature messageSignature = new WrappedMessageSignature(data);
+
+		assertArrayEquals(data, BukkitConverters.getWrappedMessageSignatureConverter().getSpecific(BukkitConverters.getWrappedMessageSignatureConverter().getGeneric(messageSignature)).getBytes());
 	}
 }

@@ -1006,12 +1006,22 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * @return read/writer structure direct access to signature data like chat messages
+     * @return read/writer structure direct access to salted signature data like chat messages
      */
     public StructureModifier<WrappedSaltedSignature> getSignatures() {
         return structureModifier.withType(
                 MinecraftReflection.getSaltedSignatureClass(),
                 BukkitConverters.getWrappedSignatureConverter()
+        );
+    }
+
+    /**
+     * @return read/writer structure direct access to unsalted signature data for example in chat message (since 1.19.3)
+     */
+    public StructureModifier<WrappedMessageSignature> getMessageSignatures() {
+        return structureModifier.withType(
+                MinecraftReflection.getMessageSignatureClass(),
+                BukkitConverters.getWrappedMessageSignatureConverter()
         );
     }
 

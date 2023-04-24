@@ -611,6 +611,13 @@ public class BukkitConverters {
         return ignoreNull(handle(WrappedSaltedSignature::getHandle, WrappedSaltedSignature::new, WrappedSaltedSignature.class));
     }
 
+	/**
+	 * @return converter for an encoded cryptographic message signature
+	 */
+    public static EquivalentConverter<WrappedMessageSignature> getWrappedMessageSignatureConverter() {
+        return ignoreNull(handle(WrappedMessageSignature::getHandle, WrappedMessageSignature::new, WrappedMessageSignature.class));
+    }
+
 	public static EquivalentConverter<WrappedLevelChunkData.ChunkData> getWrappedChunkDataConverter() {
 		return ignoreNull(handle(WrappedLevelChunkData.ChunkData::getHandle, WrappedLevelChunkData.ChunkData::new, WrappedLevelChunkData.ChunkData.class));
 	}

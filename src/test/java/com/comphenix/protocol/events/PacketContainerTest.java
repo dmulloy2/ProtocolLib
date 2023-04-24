@@ -40,26 +40,13 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.ComponentConverter;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
-import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
-import com.comphenix.protocol.wrappers.Pair;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedDataValue;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
-import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedRegistry;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
@@ -787,21 +774,17 @@ public class PacketContainerTest {
 		Assertions.assertEquals(NativeGameMode.CREATIVE, firstData.getGameMode());
 	}
 
-	// TODO: fix this this at some point
-	/*
 	@Test
 	public void testSignedChatMessage() {
 		PacketContainer chatPacket = new PacketContainer(PacketType.Play.Client.CHAT);
 
-		byte[] signature = new byte[512];
-		long salt = 124L;
-		WrappedSaltedSignature wrappedSignature = new WrappedSaltedSignature(salt, signature);
-		chatPacket.getSignatures().write(0, wrappedSignature);
+		byte[] signature = new byte[256];
+		WrappedMessageSignature wrappedSignature = new WrappedMessageSignature(signature);
+		chatPacket.getMessageSignatures().write(0, wrappedSignature);
 
-		WrappedSaltedSignature read = chatPacket.getSignatures().read(0);
-		assertEquals(salt, read.getSalt());
-		assertArrayEquals(signature, read.getSignature());
-	}*/
+		WrappedMessageSignature read = chatPacket.getMessageSignatures().read(0);
+		assertArrayEquals(signature, read.getBytes());
+	}
 
 	private void assertPacketsEqualAndSerializable(PacketContainer constructed, PacketContainer cloned) {
 		StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();
