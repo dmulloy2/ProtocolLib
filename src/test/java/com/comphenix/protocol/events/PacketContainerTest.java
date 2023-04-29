@@ -40,26 +40,13 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.cloning.SerializableCloner;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.BukkitConverters;
-import com.comphenix.protocol.wrappers.ComponentConverter;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.*;
 import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
 import com.comphenix.protocol.wrappers.EnumWrappers.SoundCategory;
-import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
-import com.comphenix.protocol.wrappers.Pair;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedDataValue;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
-import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedRegistry;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
@@ -768,7 +755,7 @@ public class PacketContainerTest {
 				NativeGameMode.CREATIVE,
 				new WrappedGameProfile(new UUID(0, 0), "system"),
 				null,
-				null);
+				(WrappedRemoteChatSessionData) null);
 		updatePlayerInfoActions.getPlayerInfoDataLists().write(1, Collections.singletonList(data));
 
 		Set<EnumWrappers.PlayerInfoAction> readActions = updatePlayerInfoActions.getPlayerInfoActions().read(0);
@@ -871,7 +858,6 @@ public class PacketContainerTest {
 				}
 
 				// gives some indication which cloning process fails as the checks itself are happening outside this method
-				System.out.println("Cloning " + type);
 
 				// Clone the packet all three ways
 				PacketContainer shallowCloned = constructed.shallowClone();
@@ -886,8 +872,8 @@ public class PacketContainerTest {
 					serializedCloned.getLongs().write(0, 0L);
 				}
 				this.assertPacketsEqualAndSerializable(constructed, serializedCloned);
-			} catch (Exception ex) {
-				Assertions.fail("Unable to clone " + type, ex);
+			} catch (Throwable t) {
+				Assertions.fail("Unable to clone " + type, t);
 			}
 		}
 	}
