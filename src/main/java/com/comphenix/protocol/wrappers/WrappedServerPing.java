@@ -1,11 +1,8 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
-import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.ping.LegacyServerPing;
@@ -15,7 +12,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
@@ -103,8 +99,10 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return The wrapped server ping.
 	 */
 	public static WrappedServerPing fromJson(String json) {
-		// return fromHandle(GSON_FROM_JSON.invoke(PING_GSON.get(null), json, SERVER_PING));
-		return null;
+		if(MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
+			return new WrappedServerPing(ServerPingRecord.fromJson(json).getHandle());
+		}
+		return new WrappedServerPing(LegacyServerPing.fromJson(json));
 	}
 
 	/**
@@ -350,8 +348,7 @@ public class WrappedServerPing implements ClonableWrapper {
 	 * @return The JSON representation.
 	 */
 	public String toJson() {
-		return null;
-		// return (String) GSON_TO_JSON.invoke(PING_GSON.get(null), getHandle());
+		return impl.getJson();
 	}
 
 	@Override
@@ -545,5 +542,18 @@ public class WrappedServerPing implements ClonableWrapper {
 		public String toEncodedText() {
 			return encoded;
 		}
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(!(obj instanceof WrappedServerPing)) {
+			return false;
+		}
+		return getHandle().equals(((WrappedServerPing) obj).getHandle());
+	}
+
+	@Override
+	public int hashCode() {
+		return getHandle().hashCode();
 	}
 }
