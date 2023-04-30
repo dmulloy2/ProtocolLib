@@ -1621,6 +1621,10 @@ public final class MinecraftReflection {
 		return getMinecraftClass("network.chat.RemoteChatSession");
 	}
 
+	public static Class<?> getRemoteChatSessionDataClass() {
+		return getRemoteChatSessionClass().getClasses()[0];
+	}
+
 	public static Class<?> getFastUtilClass(String className) {
 		return getLibraryClass("it.unimi.dsi.fastutil." + className);
 	}
@@ -1683,6 +1687,22 @@ public final class MinecraftReflection {
 
 			return infoClass;
 		}
+	}
+
+	public static Class<?> getDynamicOpsClass() {
+		return getLibraryClass("com.mojang.serialization.DynamicOps");
+	}
+
+	public static Class<?> getJsonOpsClass() {
+		return getLibraryClass("com.mojang.serialization.JsonOps");
+	}
+
+	public static Class<?> getNbtOpsClass() {
+		return getMinecraftClass("nbt.DynamicOpsNBT" /* Spigot Mappings */, "nbt.NbtOps" /* Mojang Mappings */);
+	}
+
+	public static Class<?> getCodecClass() {
+		return getLibraryClass("com.mojang.serialization.Codec");
 	}
 
     public static Class<?> getHolderClass() {

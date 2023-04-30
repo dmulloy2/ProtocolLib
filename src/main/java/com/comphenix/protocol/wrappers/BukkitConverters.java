@@ -604,6 +604,10 @@ public class BukkitConverters {
 		return ignoreNull(handle(WrappedProfileKeyData::getHandle, WrappedProfileKeyData::new, WrappedProfileKeyData.class));
 	}
 
+	public static EquivalentConverter<WrappedRemoteChatSessionData> getWrappedRemoteChatSessionDataConverter() {
+		return ignoreNull(handle(WrappedRemoteChatSessionData::getHandle, WrappedRemoteChatSessionData::new, WrappedRemoteChatSessionData.class));
+	}
+
 	/**
 	 * @return converter for cryptographic signature data that are used in login and chat packets
 	 */

@@ -1,10 +1,7 @@
 package com.comphenix.protocol.wrappers.ping;
 
-import java.util.Optional;
-
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-
 import com.google.common.collect.ImmutableList;
 
 public interface ServerPingImpl extends Cloneable {
@@ -38,6 +35,7 @@ public interface ServerPingImpl extends Cloneable {
 
 	boolean arePlayersVisible();
 	void setPlayersVisible(boolean visible);
+	String getJson();
 
 	Object getHandle();
 }
