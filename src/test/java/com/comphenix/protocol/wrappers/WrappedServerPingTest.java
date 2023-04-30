@@ -9,6 +9,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
 import com.google.common.io.Resources;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
@@ -48,6 +49,18 @@ public class WrappedServerPingTest {
 		packet.getServerPings().write(0, serverPing);
 
 		WrappedServerPing roundTrip = packet.getServerPings().read(0);
+
+		String asJson = serverPing.toJson();
+		WrappedServerPing deserialized = WrappedServerPing.fromJson(asJson);
+		deserialized.setMotD(serverPing.getMotD());
+
+		// Deserializing to JSON and parsing the JSON again can lead to a different object as the Mojang Datafixer optimizes server icons or reorders components in the server description
+		assertEquals(serverPing.getVersionName(), deserialized.getVersionName(), "Failed to serialize as JSON and deserialize afterwards (version name mismatch)");
+		assertEquals(serverPing.getVersionProtocol(), deserialized.getVersionProtocol(), "Failed to serialize as JSON and deserialize afterwards (version protocol mismatch)");
+		assertEquals(serverPing.getPlayersOnline(), deserialized.getPlayersOnline(), "Failed to serialize as JSON and deserialize afterwards (players online mismatch)");
+		assertEquals(serverPing.getPlayersMaximum(), deserialized.getPlayersMaximum(), "Failed to serialize as JSON and deserialize afterwards (players maximum mismatch)");
+		assertEquals(serverPing.getPlayers(), deserialized.getPlayers(), "Failed to serialize as JSON and deserialize afterwards (player sample mismatch)");
+		assertEquals(PlainTextComponentSerializer.plainText().serialize(AdventureComponentConverter.fromWrapper(serverPing.getMotD())), PlainTextComponentSerializer.plainText().serialize(AdventureComponentConverter.fromWrapper(deserialized.getMotD()))); // Check if plain text is equivalent
 
 		assertEquals(5, roundTrip.getPlayersOnline());
 		assertEquals(10, roundTrip.getPlayersMaximum());

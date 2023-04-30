@@ -47,6 +47,8 @@ dependencies {
     testImplementation 'io.netty:netty-common:4.1.77.Final'
     testImplementation 'io.netty:netty-transport:4.1.77.Final'
     testImplementation 'org.spigotmc:spigot:1.19.4-R0.1-SNAPSHOT'
+    testImplementation 'net.kyori:adventure-text-serializer-gson:4.13.0'
+    testImplementation 'net.kyori:adventure-text-serializer-plain:4.13.1'
 }
 
 java {

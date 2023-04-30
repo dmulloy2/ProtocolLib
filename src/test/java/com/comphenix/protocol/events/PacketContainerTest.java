@@ -755,7 +755,7 @@ public class PacketContainerTest {
 				NativeGameMode.CREATIVE,
 				new WrappedGameProfile(new UUID(0, 0), "system"),
 				null,
-				null);
+				(WrappedRemoteChatSessionData) null);
 		updatePlayerInfoActions.getPlayerInfoDataLists().write(1, Collections.singletonList(data));
 
 		Set<EnumWrappers.PlayerInfoAction> readActions = updatePlayerInfoActions.getPlayerInfoActions().read(0);
@@ -854,7 +854,6 @@ public class PacketContainerTest {
 				}
 
 				// gives some indication which cloning process fails as the checks itself are happening outside this method
-				System.out.println("Cloning " + type);
 
 				// Clone the packet all three ways
 				PacketContainer shallowCloned = constructed.shallowClone();
@@ -869,8 +868,8 @@ public class PacketContainerTest {
 					serializedCloned.getLongs().write(0, 0L);
 				}
 				this.assertPacketsEqualAndSerializable(constructed, serializedCloned);
-			} catch (Exception ex) {
-				Assertions.fail("Unable to clone " + type, ex);
+			} catch (Throwable t) {
+				Assertions.fail("Unable to clone " + type, t);
 			}
 		}
 	}
