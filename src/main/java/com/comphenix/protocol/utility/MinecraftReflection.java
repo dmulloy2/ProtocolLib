@@ -1573,6 +1573,10 @@ public final class MinecraftReflection {
 		return getMinecraftClass("world.entity.player.ProfilePublicKey");
 	}
 
+	public static Class<?> getMessageSignatureClass() {
+		return getMinecraftClass("network.chat.MessageSignature");
+	}
+
     public static Class<?> getSaltedSignatureClass() {
         try {
             return getMinecraftClass("SaltedSignature");

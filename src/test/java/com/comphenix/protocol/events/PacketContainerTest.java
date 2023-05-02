@@ -774,21 +774,17 @@ public class PacketContainerTest {
 		Assertions.assertEquals(NativeGameMode.CREATIVE, firstData.getGameMode());
 	}
 
-	// TODO: fix this this at some point
-	/*
 	@Test
 	public void testSignedChatMessage() {
 		PacketContainer chatPacket = new PacketContainer(PacketType.Play.Client.CHAT);
 
-		byte[] signature = new byte[512];
-		long salt = 124L;
-		WrappedSaltedSignature wrappedSignature = new WrappedSaltedSignature(salt, signature);
-		chatPacket.getSignatures().write(0, wrappedSignature);
+		byte[] signature = new byte[256];
+		WrappedMessageSignature wrappedSignature = new WrappedMessageSignature(signature);
+		chatPacket.getMessageSignatures().write(0, wrappedSignature);
 
-		WrappedSaltedSignature read = chatPacket.getSignatures().read(0);
-		assertEquals(salt, read.getSalt());
-		assertArrayEquals(signature, read.getSignature());
-	}*/
+		WrappedMessageSignature read = chatPacket.getMessageSignatures().read(0);
+		assertArrayEquals(signature, read.getBytes());
+	}
 
 	private void assertPacketsEqualAndSerializable(PacketContainer constructed, PacketContainer cloned) {
 		StructureModifier<Object> firstMod = constructed.getModifier(), secondMod = cloned.getModifier();

@@ -16,18 +16,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PublicKey;
-import java.security.spec.EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.time.Instant;
 import java.util.Random;
-import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BukkitConvertersTest {
 
@@ -69,18 +60,27 @@ public class BukkitConvertersTest {
         assertEquals(wrapped.right(), nmsEither.right());
     }
 
-    @Test
-    public void testPacketContainerConverter() {
-        for (PacketType type : PacketType.values()) {
-            if (!type.isSupported()) {
-                continue;
-            }
-            PacketContainer container = new PacketContainer(type);
-            Object generic = BukkitConverters.getPacketContainerConverter().getGeneric(container);
-            Object specific = BukkitConverters.getPacketContainerConverter().getSpecific(generic);
-            assertTrue(EqualsBuilder.reflectionEquals(container, specific)); // PacketContainer does not properly implement equals(.)
-        }
-    }
+	@Test
+	public void testPacketContainerConverter() {
+		for (PacketType type : PacketType.values()) {
+			if(!type.isSupported()) {
+				continue;
+			}
+			PacketContainer container = new PacketContainer(type);
+			Object generic = BukkitConverters.getPacketContainerConverter().getGeneric(container);
+			Object specific = BukkitConverters.getPacketContainerConverter().getSpecific(generic);
+			assertTrue(EqualsBuilder.reflectionEquals(container, specific)); // PacketContainer does not properly implement equals(.)
+		}
+	}
+
+	@Test
+	void getWrappedMessageSignatureConverter() {
+		byte[] data = new byte[256];
+		new Random().nextBytes(data);
+		WrappedMessageSignature messageSignature = new WrappedMessageSignature(data);
+
+		assertArrayEquals(data, BukkitConverters.getWrappedMessageSignatureConverter().getSpecific(BukkitConverters.getWrappedMessageSignatureConverter().getGeneric(messageSignature)).getBytes());
+	}
 
     @Test
     public void testRemoteChatSessionDataConverter() throws Exception {
