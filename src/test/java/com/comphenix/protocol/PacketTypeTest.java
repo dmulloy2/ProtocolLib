@@ -22,6 +22,7 @@ import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -31,6 +32,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import net.minecraft.network.EnumProtocol;
 import net.minecraft.network.protocol.EnumProtocolDirection;
 import net.minecraft.network.protocol.login.PacketLoginInStart;
@@ -356,5 +360,18 @@ public class PacketTypeTest {
 			}
 		}
 		assertFalse(fail, "Packet type(s) failed to instantiate");
+	}
+
+	@Test
+	public void testPacketBundleWriting() {
+		PacketContainer bundlePacket = new PacketContainer(PacketType.Play.Server.BUNDLE);
+		assertEquals(MinecraftReflection.getPackedBundlePacketClass().orElseThrow(() -> new IllegalStateException("Packet Bundle class is not present")), bundlePacket.getHandle().getClass());
+		List<PacketContainer> bundle = new ArrayList<>();
+
+		PacketContainer chatMessage = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
+		chatMessage.getStrings().write(0, WrappedChatComponent.fromText("Test").getJson());
+		chatMessage.getBooleans().write(0, false);
+		bundle.add(chatMessage);
+		bundlePacket.getPacketBundles().write(0, bundle);
 	}
 }
