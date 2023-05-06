@@ -9,6 +9,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -44,21 +45,25 @@ import com.mojang.authlib.GameProfile;
 public abstract class TinyProtocol {
 	private static final AtomicInteger ID = new AtomicInteger(0);
 
+	// Required Minecraft classes
+	private static final Class<?> entityPlayerClass = Reflection.getClass("{nms}.EntityPlayer", "net.minecraft.server.level.EntityPlayer");
+	private static final Class<?> playerConnectionClass = Reflection.getClass("{nms}.PlayerConnection", "net.minecraft.server.network.PlayerConnection");
+	private static final Class<?> networkManagerClass = Reflection.getClass("{nms}.NetworkManager", "net.minecraft.network.NetworkManager");
+
 	// Used in order to lookup a channel
 	private static final MethodInvoker getPlayerHandle = Reflection.getMethod("{obc}.entity.CraftPlayer", "getHandle");
-	private static final FieldAccessor<Object> getConnection = Reflection.getField("{nms}.EntityPlayer", "playerConnection", Object.class);
-	private static final FieldAccessor<Object> getManager = Reflection.getField("{nms}.PlayerConnection", "networkManager", Object.class);
-	private static final FieldAccessor<Channel> getChannel = Reflection.getField("{nms}.NetworkManager", Channel.class, 0);
+	private static final FieldAccessor<?> getConnection = Reflection.getField(entityPlayerClass, null, playerConnectionClass);
+	private static final FieldAccessor<?> getManager = Reflection.getField(playerConnectionClass, null, networkManagerClass);
+	private static final FieldAccessor<Channel> getChannel = Reflection.getField(networkManagerClass, Channel.class, 0);
 
 	// Looking up ServerConnection
-	private static final Class<Object> minecraftServerClass = Reflection.getUntypedClass("{nms}.MinecraftServer");
-	private static final Class<Object> serverConnectionClass = Reflection.getUntypedClass("{nms}.ServerConnection");
+	private static final Class<Object> minecraftServerClass = Reflection.getUntypedClass("{nms}.MinecraftServer", "net.minecraft.server.MinecraftServer");
+	private static final Class<Object> serverConnectionClass = Reflection.getUntypedClass("{nms}.ServerConnection", "net.minecraft.server.network.ServerConnection");
 	private static final FieldAccessor<Object> getMinecraftServer = Reflection.getField("{obc}.CraftServer", minecraftServerClass, 0);
 	private static final FieldAccessor<Object> getServerConnection = Reflection.getField(minecraftServerClass, serverConnectionClass, 0);
-	private static final MethodInvoker getNetworkMarkers = Reflection.getTypedMethod(serverConnectionClass, null, List.class, serverConnectionClass);
 
 	// Packets we have to intercept
-	private static final Class<?> PACKET_LOGIN_IN_START = Reflection.getMinecraftClass("PacketLoginInStart");
+	private static final Class<?> PACKET_LOGIN_IN_START = Reflection.getClass("{nms}.PacketLoginInStart", "net.minecraft.network.protocol.login.PacketLoginInStart");
 	private static final FieldAccessor<GameProfile> getGameProfile = Reflection.getField(PACKET_LOGIN_IN_START, GameProfile.class, 0);
 
 	// Speedup channel lookup
@@ -199,8 +204,22 @@ public abstract class TinyProtocol {
 		Object serverConnection = getServerConnection.get(mcServer);
 		boolean looking = true;
 
+		try {
+			Field field = Reflection.getParameterizedField(serverConnectionClass, List.class, networkManagerClass);
+			field.setAccessible(true);
+
+			networkManagers = (List<Object>) field.get(serverConnection);
+		} catch (Exception ex) {
+			plugin.getLogger().info("Encountered an exception checking list fields" + ex);
+			MethodInvoker method = Reflection.getTypedMethod(serverConnectionClass, null, List.class, serverConnectionClass);
+
+			networkManagers = (List<Object>) method.invoke(null, serverConnection);
+		}
+
+		if (networkManagers == null) {
+			throw new IllegalArgumentException("Failed to obtain list of network managers");
+		}
 		// We need to synchronize against this list
-		networkManagers = (List<Object>) getNetworkMarkers.invoke(null, serverConnection);
 		createServerChannelHandler();
 
 		// Find the correct list, or implicitly throw an exception

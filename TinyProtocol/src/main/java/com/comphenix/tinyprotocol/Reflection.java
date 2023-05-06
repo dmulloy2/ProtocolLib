@@ -3,6 +3,8 @@ package com.comphenix.tinyprotocol;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -178,6 +180,31 @@ public final class Reflection {
 	}
 
 	/**
+	 * Retrieves a field with a given type and parameters. This is most useful
+	 * when dealing with Collections.
+	 *
+	 * @param target the target class.
+	 * @param fieldType Type of the field
+	 * @param params Variable length array of type parameters
+	 * @return The field
+	 *
+	 * @throws IllegalArgumentException If the field cannot be found
+	 */
+	public static Field getParameterizedField(Class<?> target, Class<?> fieldType, Class<?>... params) {
+		for (Field field : target.getDeclaredFields()) {
+			if (field.getType().equals(fieldType)) {
+				Type type = field.getGenericType();
+				if (type instanceof ParameterizedType) {
+					if (Arrays.equals(((ParameterizedType) type).getActualTypeArguments(), params))
+						return field;
+				}
+			}
+		}
+
+		throw new IllegalArgumentException("Unable to find a field with type " + fieldType + " and params " + Arrays.toString(params));
+	}
+
+	/**
 	 * Search for the first publicly and privately defined method of the given name and parameter count.
 	 * 
 	 * @param className - lookup name of the class, see {@link #getClass(String)}.
@@ -302,6 +329,23 @@ public final class Reflection {
 	}
 
 	/**
+	 * Retrieve a class from its full name with alternatives, without knowing its type on compile time.
+	 * <p>
+	 * This is useful when looking up fields by a NMS or OBC type.
+	 * <p>
+	 * 
+	 * @see {@link #getClass()} for more information.
+	 * @param lookupName - the class name with variables.
+	 * @param aliases - alternative names for this class.
+	 * @return The class.
+	 */
+	public static Class<Object> getUntypedClass(String lookupName, String... aliases) {
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		Class<Object> clazz = (Class) getClass(lookupName, aliases);
+		return clazz;
+	}
+
+	/**
 	 * Retrieve a class from its full name.
 	 * <p>
 	 * Strings enclosed with curly brackets - such as {TEXT} - will be replaced according to the following table:
@@ -331,6 +375,61 @@ public final class Reflection {
 	 */
 	public static Class<?> getClass(String lookupName) {
 		return getCanonicalClass(expandVariables(lookupName));
+	}
+
+	/**
+	 * Retrieve the first class that matches the full class name.
+	 * <p>
+	 * Strings enclosed with curly brackets - such as {TEXT} - will be replaced according to the following table:
+	 * <p>
+	 * <table border="1">
+	 * <tr>
+	 * <th>Variable</th>
+	 * <th>Content</th>
+	 * </tr>
+	 * <tr>
+	 * <td>{nms}</td>
+	 * <td>Actual package name of net.minecraft.server.VERSION</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{obc}</td>
+	 * <td>Actual pacakge name of org.bukkit.craftbukkit.VERSION</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{version}</td>
+	 * <td>The current Minecraft package VERSION, if any.</td>
+	 * </tr>
+	 * </table>
+	 * 
+	 * @param lookupName - the class name with variables.
+	 * @param aliases - alternative names for this class.
+	 * @return Class object.
+	 * @throws RuntimeException If we are unable to find any of the given classes.
+	 */
+	public static Class<?> getClass(String lookupName, String... aliases) {
+		try {
+			// Try the main class first
+			return getClass(lookupName);
+		} catch (RuntimeException e) {
+			Class<?> success = null;
+
+			// Try every alias too
+			for (String alias : aliases) {
+				try {
+					success = getClass(alias);
+					break;
+				} catch (RuntimeException e1) {
+					// e1.printStackTrace();
+				}
+			}
+
+			if (success != null) {
+				return success;
+			} else {
+				// Hack failed
+				throw new RuntimeException(String.format("Unable to find %s (%s)", lookupName, String.join(",", aliases)));
+			}
+		}
 	}
 
 	/**
