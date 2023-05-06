@@ -1049,6 +1049,14 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieves a read/write structure for access to FilterMask
+     * @return The modifier
+     */
+    public StructureModifier<WrappedFilterMask> getFilterMasks() {
+        return structureModifier.withType(WrappedFilterMask.HANDLE_CLASS, WrappedFilterMask.getConverter());
+    }
+
+    /**
      * Retrieves a read/write structure for
      * @return The modifier
      */
