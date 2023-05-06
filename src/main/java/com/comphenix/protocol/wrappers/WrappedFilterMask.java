@@ -14,7 +14,7 @@ import java.util.BitSet;
  */
 public class WrappedFilterMask extends AbstractWrapper {
     public final static Class<?> HANDLE_CLASS = MinecraftReflection.getMinecraftClass("network.chat.FilterMask");
-    private final static Class<?> TYPE_CLASS = MinecraftReflection.getMinecraftClass("network.chat.FilterMask.Type");
+    private final static Class<?> TYPE_CLASS = MinecraftReflection.getMinecraftClass("network.chat.FilterMask$Type", "network.chat.FilterMask$a");
     private static FieldAccessor MASK_ACCESSOR = Accessors.getFieldAccessor(HANDLE_CLASS, BitSet.class, true);
     private static FieldAccessor TYPE_ACCESSOR = Accessors.getFieldAccessor(HANDLE_CLASS, TYPE_CLASS, true);
     private static ConstructorAccessor CONSTRUCTOR_ACCESSOR;
@@ -28,7 +28,7 @@ public class WrappedFilterMask extends AbstractWrapper {
         if(CONSTRUCTOR_ACCESSOR == null) {
             CONSTRUCTOR_ACCESSOR = Accessors.getConstructorAccessor(HANDLE_CLASS, BitSet.class, TYPE_CLASS);
         }
-        return new WrappedFilterMask(CONSTRUCTOR_ACCESSOR.invoke(bitSet, type));
+        return new WrappedFilterMask(CONSTRUCTOR_ACCESSOR.invoke(bitSet, Type.getConverter().getGeneric(type)));
     }
 
     public BitSet getMask() {
@@ -53,7 +53,7 @@ public class WrappedFilterMask extends AbstractWrapper {
         PARTIALLY_FILTERED;
 
         public static EquivalentConverter<Type> getConverter() {
-            return new EnumWrappers.IndexedEnumConverter<>(TYPE_CLASS, Type.class);
+            return new EnumWrappers.IndexedEnumConverter<>(Type.class, TYPE_CLASS);
         }
     }
 

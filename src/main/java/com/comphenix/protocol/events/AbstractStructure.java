@@ -354,6 +354,17 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieves a read/write structure for Vector3I.
+     * @return A modifier for Vector3I
+     */
+    public StructureModifier<Vector3I> getVector3Is() {
+        // Automatically marshal between Vec3i and the Bukkit wrapper
+        return structureModifier.withType(
+                Vector3I.HANDLE_TYPE,
+                Vector3I.getConverter());
+    }
+
+    /**
      * Retrieves a read/write structure for collections of attribute snapshots.
      * <p>
      * This modifier will automatically marshal between the visible ProtocolLib WrappedAttribute and the

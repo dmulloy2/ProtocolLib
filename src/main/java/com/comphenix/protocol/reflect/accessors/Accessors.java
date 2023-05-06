@@ -15,7 +15,7 @@ public final class Accessors {
 	}
 
 	/**
-	 * Retrieve an accessor (in declared order) for every field of the givne type.
+	 * Retrieve an accessor (in declared order) for every field of the given type.
 	 *
 	 * @param clazz       - the type of the instance to retrieve.
 	 * @param fieldClass  - type of the field(s) to retrieve.
