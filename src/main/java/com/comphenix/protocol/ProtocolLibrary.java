@@ -39,9 +39,9 @@ public class ProtocolLibrary {
 	public static final String MAXIMUM_MINECRAFT_VERSION = MinecraftVersion.LATEST.getVersion();
 
 	/**
-	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19.2) was released.
+	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19.4) was released.
 	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-08-05";
+	public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-03-14";
 
 	/**
 	 * Plugins that are currently incompatible with ProtocolLib.

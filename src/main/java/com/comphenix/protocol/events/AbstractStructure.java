@@ -629,6 +629,7 @@ public abstract class AbstractStructure {
      * Retrieve a read/write structure for the PlayerInfo enum in 1.8.
      * @return A modifier for PlayerInfoAction enum fields.
      */
+    @Deprecated
     public StructureModifier<EnumWrappers.PlayerInfoAction> getPlayerInfoAction() {
         // Convert to and from the wrapper
         return structureModifier.withType(
@@ -991,6 +992,15 @@ public abstract class AbstractStructure {
         );
     }
 
+
+    public StructureModifier<EnumWrappers.AdvancementAction> getAdvancementActions() {
+        return structureModifier.withType(EnumWrappers.getAdvancementActionClass(), EnumWrappers.getAdvancementActionConverter());
+    }
+
+    public StructureModifier<EnumWrappers.RecipeBookType> getRecipeBookTypes() {
+        return structureModifier.withType(EnumWrappers.getRecipeBookTypeClass(), EnumWrappers.getRecipeBookTypeConverter());
+    }
+
     /**
      * Retrieve a read/write structure for LevelChunkPacketData in 1.18+
      *
@@ -1142,10 +1152,23 @@ public abstract class AbstractStructure {
         return structureModifier.withType(Optional.class, Converters.optional(converter));
     }
 
+    /**
+     * Retrieve a read/write structure for a iterable
+     * of packets
+     * @return The modifier
+     */
     public StructureModifier<Iterable<PacketContainer>> getPacketBundles() {
         return structureModifier.withType(Iterable.class, Converters.iterable(
             BukkitConverters.getPacketContainerConverter(), ArrayList::new, ArrayList::new
         ));
+    }
+
+    /**
+     * Retrieves a read/write structure for a WrappedPacketDataSerializer
+     * @return The modifier
+     */
+    public StructureModifier<WrappedPacketDataSerializer> getPacketDataSerializers() {
+        return structureModifier.withType(WrappedPacketDataSerializer.PACKET_DATA_SERIALIZER_CLASS, WrappedPacketDataSerializer.getConverter());
     }
 
     /**

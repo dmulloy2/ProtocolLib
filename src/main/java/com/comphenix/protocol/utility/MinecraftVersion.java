@@ -170,7 +170,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
 	}
 
 	/**
-	 * Construct a version format from the standard release version or the snapshot verison.
+	 * Construct a version format from the standard release version or the snapshot version.
 	 *
 	 * @param versionOnly   - the version.
 	 * @param parseSnapshot - TRUE to parse the snapshot, FALSE otherwise.

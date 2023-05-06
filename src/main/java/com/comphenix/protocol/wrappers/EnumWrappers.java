@@ -14,6 +14,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
+import net.minecraft.util.OptionEnum;
 import org.apache.commons.lang.Validate;
 import org.bukkit.GameMode;
 
@@ -423,6 +424,65 @@ public abstract class EnumWrappers {
 		}
 	}
 
+	public enum AdvancementAction {
+		OPENED_TAB,
+		CLOSED_SCREEN
+	}
+
+	public enum RecipeBookType {
+		CRAFTING,
+		FURNACE,
+		BLAST_FURNACE,
+		SMOKER
+	}
+
+	public enum HumanoidArm {
+		LEFT,
+		RIGHT
+	}
+
+	public enum JointType {
+		ROLLABLE,
+		ALIGNED
+	}
+
+	public enum CommandBlockMode {
+		SEQUENCE,
+		AUTO,
+		REDSTONE
+	}
+
+	public enum StructureBlockUpdateType {
+		UPDATE_DATA,
+		SAVE_AREA,
+		LOAD_AREA,
+		SCAN_AREA;
+	}
+
+	public enum StructureMode {
+		SAVE,
+		LOAD,
+		CORNER,
+		DATA
+	}
+
+	public enum CustomChatTabCompletionsAction {
+		ADD,
+		REMOVE,
+		SET;
+	}
+
+	public enum RecipeUpdateState {
+		INIT,
+		ADD,
+		REMOVE;
+	}
+
+	public enum ObjectiveRenderType {
+		INTEGER,
+		HEARTS
+	}
+
 	public enum Dimension {
 		OVERWORLD(0),
 		THE_NETHER(-1),
@@ -469,6 +529,8 @@ public abstract class EnumWrappers {
 	private static Class<?> DIRECTION_CLASS = null;
 	private static Class<?> CHAT_TYPE_CLASS = null;
 	private static Class<?> ENTITY_POSE_CLASS = null;
+	private static Class<?> ADVANCEMENT_ACTION_CLASS = null;
+	private static Class<?> RECIPE_BOOK_TYPE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
@@ -544,6 +606,8 @@ public abstract class EnumWrappers {
 
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
 		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
+		ADVANCEMENT_ACTION_CLASS = MinecraftReflection.getNullableNMS("network.protocol.game.ServerboundSeenAdvancementsPacket.Action");
+		RECIPE_BOOK_TYPE_CLASS = MinecraftReflection.getNullableNMS("world.inventory.RecipeBookType");
 
 		associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -568,6 +632,12 @@ public abstract class EnumWrappers {
 
 		if (ENTITY_POSE_CLASS != null) {
 			associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
+		}
+		if (ADVANCEMENT_ACTION_CLASS != null) {
+			associate(ADVANCEMENT_ACTION_CLASS, AdvancementAction.class, getAdvancementActionConverter());
+		}
+		if (RECIPE_BOOK_TYPE_CLASS != null) {
+			associate(RECIPE_BOOK_TYPE_CLASS, RecipeBookType.class, getRecipeBookTypeConverter());
 		}
 	}
 
@@ -716,6 +786,16 @@ public abstract class EnumWrappers {
 		return ENTITY_POSE_CLASS;
 	}
 
+	public static Class<?> getAdvancementActionClass() {
+		initialize();
+		return ADVANCEMENT_ACTION_CLASS;
+	}
+
+	public static Class<?> getRecipeBookTypeClass() {
+		initialize();
+		return RECIPE_BOOK_TYPE_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -804,6 +884,22 @@ public abstract class EnumWrappers {
 	public static EquivalentConverter<EntityPose> getEntityPoseConverter() {
 		if (getEntityPoseClass() == null) return null;
 		return new EnumConverter<>(getEntityPoseClass(), EntityPose.class);
+	}
+
+	/**
+	 * @since 1.19+
+	 */
+	public static EquivalentConverter<AdvancementAction> getAdvancementActionConverter() {
+		if(getAdvancementActionClass() == null) throw new IllegalStateException("AdvancementAction is only available since 1.19");
+		return new EnumConverter<>(getAdvancementActionClass(), AdvancementAction.class);
+	}
+
+	/**
+	 * @since 1.19+
+	 */
+	public static EquivalentConverter<RecipeBookType> getRecipeBookTypeConverter() {
+		if(getRecipeBookTypeClass() == null) throw new IllegalStateException("RecipeBookType is only available since 1.19");
+		return new EnumConverter<>(getRecipeBookTypeClass(), RecipeBookType.class);
 	}
 
 	/**
