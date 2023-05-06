@@ -29,6 +29,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractStructure {
     protected transient Object handle;
@@ -306,6 +307,31 @@ public abstract class AbstractStructure {
         return structureModifier.withType(
                 MinecraftReflection.getBlockPositionClass(),
                 BlockPosition.getConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for registrable objects.
+     *
+     * @param registrableClass The registrable object's class.
+     * @return A modifier for a registrable objects.
+     * @see MinecraftReflection#getBlockEntityTypeClass()
+     */
+    public StructureModifier<WrappedRegistrable> getRegistrableModifier(
+        @NotNull final Class<?> registrableClass
+    ) {
+        // Convert to and from the Bukkit wrapper
+        return structureModifier.withType(
+            registrableClass,
+            BukkitConverters.getWrappedRegistrable(registrableClass));
+    }
+
+    /**
+     * Retrieves a read/write structure for BlockEntityType.
+     * @return A modifier for a BlockEntityType.
+     */
+    public StructureModifier<WrappedRegistrable> getBlockEntityTypeModifier() {
+        // Convert to and from the Bukkit wrapper
+        return getRegistrableModifier(MinecraftReflection.getBlockEntityTypeClass());
     }
 
     /**
