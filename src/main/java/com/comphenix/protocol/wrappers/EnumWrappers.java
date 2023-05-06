@@ -531,6 +531,14 @@ public abstract class EnumWrappers {
 	private static Class<?> ENTITY_POSE_CLASS = null;
 	private static Class<?> ADVANCEMENT_ACTION_CLASS = null;
 	private static Class<?> RECIPE_BOOK_TYPE_CLASS = null;
+	private static Class<?> HUMANOID_ARM_CLASS = null;
+	private static Class<?> JOINT_TYPE_CLASS = null;
+	private static Class<?> COMMAND_BLOCK_MODE_CLASS = null;
+	private static Class<?> STRUCTURE_BLOCK_UPDATE_TYPE_CLASS = null;
+	private static Class<?> STRUCTURE_MODE_CLASS = null;
+	private static Class<?> CUSTOM_CHAT_COMPLETION_ACTION_CLASS = null;
+	private static Class<?> RECIPE_UPDATE_STATE_CLASS = null;
+	private static Class<?> OBJECTIVE_RENDER_TYPE_CLASS = null;
 
 	private static boolean INITIALIZED = false;
 	private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
@@ -605,9 +613,17 @@ public abstract class EnumWrappers {
 		}
 
 		CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
-		ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
-		ADVANCEMENT_ACTION_CLASS = MinecraftReflection.getNullableNMS("network.protocol.game.ServerboundSeenAdvancementsPacket.Action");
-		RECIPE_BOOK_TYPE_CLASS = MinecraftReflection.getNullableNMS("world.inventory.RecipeBookType");
+		ENTITY_POSE_CLASS = MinecraftReflection.getOptionalNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose").orElse(null);
+		ADVANCEMENT_ACTION_CLASS = MinecraftReflection.getOptionalNMS("network.protocol.game.ServerboundSeenAdvancementsPacket.Action").orElse(null);
+		RECIPE_BOOK_TYPE_CLASS = MinecraftReflection.getOptionalNMS("world.inventory.RecipeBookType").orElse(null);
+		HUMANOID_ARM_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
+		JOINT_TYPE_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
+		COMMAND_BLOCK_MODE_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
+		STRUCTURE_BLOCK_UPDATE_TYPE_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
+		STRUCTURE_MODE_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
+		CUSTOM_CHAT_COMPLETION_ACTION_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
+		RECIPE_UPDATE_STATE_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
+		OBJECTIVE_RENDER_TYPE_CLASS = MinecraftReflection.getOptionalNMS("").orElse(null);
 
 		associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
 		associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -638,6 +654,30 @@ public abstract class EnumWrappers {
 		}
 		if (RECIPE_BOOK_TYPE_CLASS != null) {
 			associate(RECIPE_BOOK_TYPE_CLASS, RecipeBookType.class, getRecipeBookTypeConverter());
+		}
+		if(HUMANOID_ARM_CLASS != null) {
+			associate(HUMANOID_ARM_CLASS, HumanoidArm.class, getHumanoidArmConverter());
+		}
+		if (JOINT_TYPE_CLASS != null) {
+			associate(JOINT_TYPE_CLASS, JointType.class, getJointTypeConverter());
+		}
+		if (COMMAND_BLOCK_MODE_CLASS != null) {
+			associate(COMMAND_BLOCK_MODE_CLASS, CommandBlockMode.class, getCommandBlockModeConverter());
+		}
+		if (STRUCTURE_BLOCK_UPDATE_TYPE_CLASS  != null) {
+			associate(STRUCTURE_BLOCK_UPDATE_TYPE_CLASS, StructureBlockUpdateType.class, getStructureBlockUpdateTypeConverter());
+		}
+		if (STRUCTURE_MODE_CLASS != null) {
+			associate(STRUCTURE_MODE_CLASS, StructureMode.class, getStructureModeConverter());
+		}
+		if (CUSTOM_CHAT_COMPLETION_ACTION_CLASS != null) {
+			associate(CUSTOM_CHAT_COMPLETION_ACTION_CLASS, CustomChatTabCompletionsAction.class, getCustomChatCompletionActionConverter());
+		}
+		if (RECIPE_UPDATE_STATE_CLASS != null) {
+			associate(RECIPE_UPDATE_STATE_CLASS, RecipeUpdateState.class, getRecipeUpdateStateConverter());
+		}
+		if (OBJECTIVE_RENDER_TYPE_CLASS != null) {
+			associate(OBJECTIVE_RENDER_TYPE_CLASS, ObjectiveRenderType.class, getObjectiveRenderTypeConverter());
 		}
 	}
 
@@ -796,6 +836,46 @@ public abstract class EnumWrappers {
 		return RECIPE_BOOK_TYPE_CLASS;
 	}
 
+	public static Class<?> getHumanoidArmClass() {
+		initialize();
+		return HUMANOID_ARM_CLASS;
+	}
+
+	public static Class<?> getCommandBlockModeClass() {
+		initialize();
+		return COMMAND_BLOCK_MODE_CLASS;
+	}
+
+	public static Class<?> getJointTypeClass() {
+		initialize();
+		return JOINT_TYPE_CLASS;
+	}
+
+	public static Class<?> getStructureBlockUpdateTypeClass() {
+		initialize();
+		return STRUCTURE_BLOCK_UPDATE_TYPE_CLASS;
+	}
+
+	public static Class<?> getStructureModeClass() {
+		initialize();
+		return STRUCTURE_MODE_CLASS;
+	}
+
+	public static Class<?> getCustomChatCompletionActionClass() {
+		initialize();
+		return CUSTOM_CHAT_COMPLETION_ACTION_CLASS;
+	}
+
+	public static Class<?> getRecipeUpdateStateClass() {
+		initialize();
+		return RECIPE_UPDATE_STATE_CLASS;
+	}
+
+	public static Class<?> getObjectiveRenderTypeClass() {
+		initialize();
+		return OBJECTIVE_RENDER_TYPE_CLASS;
+	}
+
 	// Get the converters
 	public static EquivalentConverter<Protocol> getProtocolConverter() {
 		return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -876,7 +956,39 @@ public abstract class EnumWrappers {
 	public static EquivalentConverter<ChatType> getChatTypeConverter() {
 		return new EnumConverter<>(getChatTypeClass(), ChatType.class);
 	}
-	
+
+	public static EquivalentConverter<HumanoidArm> getHumanoidArmConverter() {
+		return new IndexedEnumConverter<>(getHumanoidArmClass(), HumanoidArm.class);
+	}
+
+	public static EquivalentConverter<CommandBlockMode> getCommandBlockModeConverter() {
+		return new IndexedEnumConverter<>(getCommandBlockModeClass(), CommandBlockMode.class);
+	}
+
+	public static EquivalentConverter<JointType> getJointTypeConverter() {
+		return new IndexedEnumConverter<>(getJointTypeClass(), JointType.class);
+	}
+
+	public static EquivalentConverter<StructureBlockUpdateType> getStructureBlockUpdateTypeConverter() {
+		return new IndexedEnumConverter<>(getStructureBlockUpdateTypeClass(), StructureBlockUpdateType.class);
+	}
+
+	public static EquivalentConverter<StructureMode> getStructureModeConverter() {
+		return new IndexedEnumConverter<>(getStructureModeClass(), StructureMode.class);
+	}
+
+	public static EquivalentConverter<CustomChatTabCompletionsAction> getCustomChatCompletionActionConverter() {
+		return new IndexedEnumConverter<>(getCustomChatCompletionActionClass(), CustomChatTabCompletionsAction.class);
+	}
+
+	public static EquivalentConverter<RecipeUpdateState> getRecipeUpdateStateConverter() {
+		return new IndexedEnumConverter<>(getRecipeUpdateStateClass(), RecipeUpdateState.class);
+	}
+
+	public static EquivalentConverter<ObjectiveRenderType> getObjectiveRenderTypeConverter() {
+		return new IndexedEnumConverter<>(getObjectiveRenderTypeClass(), ObjectiveRenderType.class);
+	}
+
 	/**
 	 * @since 1.13+
 	 * @return {@link EnumConverter} or null (if bellow 1.13 / nms EnumPose class cannot be found)
@@ -1075,18 +1187,19 @@ public abstract class EnumWrappers {
 		}
 	}
 
-	public static class IndexedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
-		private Class<T> specificClass;
+	public static class IndexedEnumConverter<T> implements EquivalentConverter<T> {
+		private Class<?> specificClass;
 		private Class<?> genericClass;
 
-		public IndexedEnumConverter(Class<T> specificClass, Class<?> genericClass) {
+		public IndexedEnumConverter(Class<?> specificClass, Class<?> genericClass) {
 			this.specificClass = specificClass;
 			this.genericClass = genericClass;
 		}
 
 		@Override
 		public Object getGeneric(T specific) {
-			int ordinal = specific.ordinal();
+			Enum<?> en = (Enum) specific;
+			int ordinal = en.ordinal();
 			for (Object elem : genericClass.getEnumConstants()) {
 				if (((Enum<?>) elem).ordinal() == ordinal) {
 					return elem;
@@ -1099,9 +1212,9 @@ public abstract class EnumWrappers {
 		@Override
 		public T getSpecific(Object generic) {
 			int ordinal = ((Enum<?>) generic).ordinal();
-			for (T elem : specificClass.getEnumConstants()) {
-				if (elem.ordinal() == ordinal) {
-					return elem;
+			for (Object elem : specificClass.getEnumConstants()) {
+				if (((Enum) elem).ordinal() == ordinal) {
+					return (T) elem;
 				}
 			}
 
@@ -1109,7 +1222,7 @@ public abstract class EnumWrappers {
 		}
 
 		@Override
-		public Class<T> getSpecificType() {
+		public Class getSpecificType() {
 			return specificClass;
 		}
 	}

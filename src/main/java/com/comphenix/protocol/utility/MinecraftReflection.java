@@ -1047,6 +1047,15 @@ public final class MinecraftReflection {
 	}
 
 	/**
+	 * Retrieve the CraftMagicNumbers class.
+	 *
+	 * @return The CraftMagicNumbers class.
+	 */
+	public static Class<?> getCraftMagicNumbersClass() {
+		return getCraftBukkitClass("util.CraftMagicNumbers");
+	}
+
+	/**
 	 * Retrieve the CraftPlayer class.
 	 *
 	 * @return CraftPlayer class.

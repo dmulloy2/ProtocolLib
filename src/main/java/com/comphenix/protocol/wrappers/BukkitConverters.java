@@ -933,7 +933,7 @@ public class BukkitConverters {
 	 */
 	public static EquivalentConverter<Material> getBlockConverter() {
 		if (BLOCK_FROM_MATERIAL == null || MATERIAL_FROM_BLOCK == null) {
-			Class<?> magicNumbers = MinecraftReflection.getCraftBukkitClass("util.CraftMagicNumbers");
+			Class<?> magicNumbers = MinecraftReflection.getCraftMagicNumbersClass();
 			Class<?> block = MinecraftReflection.getBlockClass();
 
 			FuzzyReflection fuzzy = FuzzyReflection.fromClass(magicNumbers);
@@ -1796,5 +1796,38 @@ public class BukkitConverters {
 				return Integer.class;
 			}
 		};
+	}
+
+	private static Class<?> CRAFT_MAGIC_NUMBERS_CLASS;
+	private static MethodAccessor ITEM_TO_MATERIAL_ACCESSOR;
+	private static MethodAccessor MATERIAL_TO_ITEM_ACCESSOR;
+
+	public static EquivalentConverter<Material> getMaterialConverter() {
+		if(CRAFT_MAGIC_NUMBERS_CLASS == null) {
+			CRAFT_MAGIC_NUMBERS_CLASS = MinecraftReflection.getCraftMagicNumbersClass();
+		}
+		if(ITEM_TO_MATERIAL_ACCESSOR == null) {
+			ITEM_TO_MATERIAL_ACCESSOR = Accessors.getMethodAccessor(CRAFT_MAGIC_NUMBERS_CLASS, "getMaterial", MinecraftReflection.getItemClass());
+		}
+		if(MATERIAL_TO_ITEM_ACCESSOR == null) {
+			MATERIAL_TO_ITEM_ACCESSOR = Accessors.getMethodAccessor(CRAFT_MAGIC_NUMBERS_CLASS, "getItem", Material.class);
+		}
+		return new EquivalentConverter<Material>() {
+			@Override
+			public Object getGeneric(Material specific) {
+				return MATERIAL_TO_ITEM_ACCESSOR.invoke(null, specific);
+			}
+
+			@Override
+			public Material getSpecific(Object generic) {
+				return (Material) ITEM_TO_MATERIAL_ACCESSOR.invoke(null, generic);
+			}
+
+			@Override
+			public Class<Material> getSpecificType() {
+				return Material.class;
+			}
+		};
+
 	}
 }

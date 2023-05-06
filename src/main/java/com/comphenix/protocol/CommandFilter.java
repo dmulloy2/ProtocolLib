@@ -40,7 +40,7 @@ public class CommandFilter extends CommandBase {
 	public static final ReportType REPORT_FILTER_REMOVED_FOR_ERROR = new ReportType("Removing filter %s for causing %s.");
 	public static final ReportType REPORT_CANNOT_HANDLE_CONVERSATION = new ReportType("Cannot handle conversation.");
 	
-	public interface FilterFailedHandler{
+	public interface FilterFailedHandler {
 		/**
 		 * Invoked when a given filter has failed.
 		 * @param event - the packet event.

@@ -413,12 +413,23 @@ public abstract class AbstractStructure {
      * <p>
      * This modifier will automatically marshal between Material and the
      * internal Minecraft Block.
-     * @return A modifier for GameProfile fields.
+     * @return A modifier for Block fields.
      */
     public StructureModifier<Material> getBlocks() {
         // Convert to and from the Bukkit wrapper
         return structureModifier.withType(
                 MinecraftReflection.getBlockClass(), BukkitConverters.getBlockConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for Items/Materials
+     * <p>
+     * This modifier will automatically marshal between Material and the
+     * internal Minecraft Item.
+     * @return A modifier for Item fields.
+     */
+    public StructureModifier<Material> getMaterials() {
+        return structureModifier.withType(MinecraftReflection.getItemClass(), BukkitConverters.getMaterialConverter());
     }
 
     /**
@@ -992,15 +1003,6 @@ public abstract class AbstractStructure {
         );
     }
 
-
-    public StructureModifier<EnumWrappers.AdvancementAction> getAdvancementActions() {
-        return structureModifier.withType(EnumWrappers.getAdvancementActionClass(), EnumWrappers.getAdvancementActionConverter());
-    }
-
-    public StructureModifier<EnumWrappers.RecipeBookType> getRecipeBookTypes() {
-        return structureModifier.withType(EnumWrappers.getRecipeBookTypeClass(), EnumWrappers.getRecipeBookTypeConverter());
-    }
-
     /**
      * Retrieve a read/write structure for LevelChunkPacketData in 1.18+
      *
@@ -1044,6 +1046,86 @@ public abstract class AbstractStructure {
                 MinecraftReflection.getMessageSignatureClass(),
                 BukkitConverters.getWrappedMessageSignatureConverter()
         );
+    }
+
+    /**
+     * Retrieves a read/write structure for
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.AdvancementAction> getAdvancementActions() {
+        return structureModifier.withType(EnumWrappers.getAdvancementActionClass(), EnumWrappers.getAdvancementActionConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for RecipeBookType
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.RecipeBookType> getRecipeBookTypes() {
+        return structureModifier.withType(EnumWrappers.getRecipeBookTypeClass(), EnumWrappers.getRecipeBookTypeConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for HumanoidArm
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.HumanoidArm> getHumanoidArms() {
+        return structureModifier.withType(EnumWrappers.getHumanoidArmClass(), EnumWrappers.getHumanoidArmConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for CommandBlockMode
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.CommandBlockMode> getCommandBlockModes() {
+        return structureModifier.withType(EnumWrappers.getCommandBlockModeClass(), EnumWrappers.getCommandBlockModeConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for JointType
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.JointType> getJointTypes() {
+        return structureModifier.withType(EnumWrappers.getJointTypeClass(), EnumWrappers.getJointTypeConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for StructureBlockUpdateType
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.StructureBlockUpdateType> getStructureBlockUpdateTypes() {
+        return structureModifier.withType(EnumWrappers.getStructureBlockUpdateTypeClass(), EnumWrappers.getStructureBlockUpdateTypeConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for StructureMode
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.StructureMode> getStructureModes() {
+        return structureModifier.withType(EnumWrappers.getStructureModeClass(), EnumWrappers.getStructureModeConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for CustomChatCompletionAction
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.CustomChatTabCompletionsAction> getCustomChatCompletionActions() {
+        return structureModifier.withType(EnumWrappers.getCustomChatCompletionActionClass(), EnumWrappers.getCustomChatCompletionActionConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for RecipeUpdateState
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.RecipeUpdateState> getRecipeUpdateStates() {
+        return structureModifier.withType(EnumWrappers.getRecipeUpdateStateClass(), EnumWrappers.getRecipeUpdateStateConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for ObjectiveRenderType
+     * @return The modifier
+     */
+    public StructureModifier<EnumWrappers.ObjectiveRenderType> getObjectiveRenderTypes() {
+        return structureModifier.withType(EnumWrappers.getObjectiveRenderTypeClass(), EnumWrappers.getObjectiveRenderTypeConverter());
     }
 
     /**
