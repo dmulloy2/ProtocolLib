@@ -363,6 +363,9 @@ public class PacketRegistry {
 		// Try the lookup first (may be null, so check contains)
 		Optional<Class<?>> res = REGISTER.typeToClass.get(type);
 		if (res != null) {
+			if(res.isPresent() && MinecraftReflection.isBundleDelimiter(res.get())) {
+				return MinecraftReflection.getPackedBundlePacketClass();
+			}
 			return res;
 		}
 
@@ -375,6 +378,9 @@ public class PacketRegistry {
 
 		// cache it for next time
 		associate(type, clazz);
+		if(clazz != null && MinecraftReflection.isBundleDelimiter(clazz)) {
+			clazz = MinecraftReflection.getPackedBundlePacketClass().orElseThrow(() -> new IllegalStateException("Packet bundle class not found."));
+		}
 		return Optional.ofNullable(clazz);
 	}
 
