@@ -60,35 +60,35 @@ public class BukkitConvertersTest {
         assertEquals(wrapped.right(), nmsEither.right());
     }
 
-	@Test
-	public void testPacketContainerConverter() {
-		for (PacketType type : PacketType.values()) {
-			if(!type.isSupported()) {
-				continue;
-			}
-			PacketContainer container = new PacketContainer(type);
-			Object generic = BukkitConverters.getPacketContainerConverter().getGeneric(container);
-			Object specific = BukkitConverters.getPacketContainerConverter().getSpecific(generic);
-			assertTrue(EqualsBuilder.reflectionEquals(container, specific)); // PacketContainer does not properly implement equals(.)
-		}
-	}
+    @Test
+    public void testPacketContainerConverter() {
+        for (PacketType type : PacketType.values()) {
+            if(!type.isSupported()) {
+                continue;
+            }
+            PacketContainer container = new PacketContainer(type);
+            Object generic = BukkitConverters.getPacketContainerConverter().getGeneric(container);
+            Object specific = BukkitConverters.getPacketContainerConverter().getSpecific(generic);
+            assertTrue(EqualsBuilder.reflectionEquals(container, specific)); // PacketContainer does not properly implement equals(.)
+        }
+    }
 
-	@Test
-	void getWrappedMessageSignatureConverter() {
-		byte[] data = new byte[256];
-		new Random().nextBytes(data);
-		WrappedMessageSignature messageSignature = new WrappedMessageSignature(data);
+    @Test
+    void getWrappedMessageSignatureConverter() {
+        byte[] data = new byte[256];
+        new Random().nextBytes(data);
+        WrappedMessageSignature messageSignature = new WrappedMessageSignature(data);
 
-		assertArrayEquals(data, BukkitConverters.getWrappedMessageSignatureConverter().getSpecific(BukkitConverters.getWrappedMessageSignatureConverter().getGeneric(messageSignature)).getBytes());
-	}
+        assertArrayEquals(data, BukkitConverters.getWrappedMessageSignatureConverter().getSpecific(BukkitConverters.getWrappedMessageSignatureConverter().getGeneric(messageSignature)).getBytes());
+    }
 
     @Test
     public void testRemoteChatSessionDataConverter() throws Exception {
         WrappedRemoteChatSessionData wrappedRemoteChatSessionData = TestUtils.creteDummyRemoteChatSessionData();
         Object generic = BukkitConverters.getWrappedRemoteChatSessionDataConverter().getGeneric(wrappedRemoteChatSessionData);
 
-		WrappedRemoteChatSessionData specific = BukkitConverters.getWrappedRemoteChatSessionDataConverter().getSpecific(generic);
-		assertEquals(wrappedRemoteChatSessionData, specific);
+        WrappedRemoteChatSessionData specific = BukkitConverters.getWrappedRemoteChatSessionDataConverter().getSpecific(generic);
+        assertEquals(wrappedRemoteChatSessionData, specific);
 
     }
 }

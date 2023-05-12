@@ -25,33 +25,33 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
  * Note: The Adventure API Component is not included in CraftBukkit, Bukkit or Spigot and but is present in PaperMC.
  */
 public class AdventureComponentConverter {
-	
-	private AdventureComponentConverter() {
-	}
+    
+    private AdventureComponentConverter() {
+    }
 
-	/**
-	 * Converts a {@link WrappedChatComponent} into a {@link Component}
-	 * @param wrapper ProtocolLib wrapper
-	 * @return Component
-	 */
-  	public static Component fromWrapper(WrappedChatComponent wrapper) {
-    		return GsonComponentSerializer.gson().deserialize(wrapper.getJson());
- 	}
+    /**
+     * Converts a {@link WrappedChatComponent} into a {@link Component}
+     * @param wrapper ProtocolLib wrapper
+     * @return Component
+     */
+    public static Component fromWrapper(WrappedChatComponent wrapper) {
+            return GsonComponentSerializer.gson().deserialize(wrapper.getJson());
+    }
 
- 	/**
-	 * Converts a {@link Component} into a ProtocolLib wrapper
-	 * @param component Component
-	 * @return ProtocolLib wrapper
-	 */
-  	public static WrappedChatComponent fromComponent(Component component) {
-    		return WrappedChatComponent.fromJson(GsonComponentSerializer.gson().serialize(component));
-  	}
+    /**
+     * Converts a {@link Component} into a ProtocolLib wrapper
+     * @param component Component
+     * @return ProtocolLib wrapper
+     */
+    public static WrappedChatComponent fromComponent(Component component) {
+            return WrappedChatComponent.fromJson(GsonComponentSerializer.gson().serialize(component));
+    }
 
-  	public static Class<?> getComponentClass() {
-    		return Component.class;
-  	}
+    public static Class<?> getComponentClass() {
+            return Component.class;
+    }
 
-  	public static Component clone(Object component) {
-		return (Component) component;
-  	}
+    public static Component clone(Object component) {
+        return (Component) component;
+    }
 }

@@ -26,36 +26,36 @@ import org.junit.jupiter.api.Test;
 
 public class MinecraftVersionTest {
 
-	@Test
-	public void testComparision() {
-		MinecraftVersion within = new MinecraftVersion(1, 2, 5);
-		MinecraftVersion outside = new MinecraftVersion(1, 7, 0);
+    @Test
+    public void testComparision() {
+        MinecraftVersion within = new MinecraftVersion(1, 2, 5);
+        MinecraftVersion outside = new MinecraftVersion(1, 7, 0);
 
-		MinecraftVersion lower = new MinecraftVersion(1, 0, 0);
-		MinecraftVersion highest = new MinecraftVersion(1, 4, 5);
+        MinecraftVersion lower = new MinecraftVersion(1, 0, 0);
+        MinecraftVersion highest = new MinecraftVersion(1, 4, 5);
 
-		MinecraftVersion atLeast = new MinecraftVersion(1, 8, 8);
+        MinecraftVersion atLeast = new MinecraftVersion(1, 8, 8);
 
-		// Make sure this is valid
-		assertTrue(lower.compareTo(within) < 0 && within.compareTo(highest) < 0);
-		assertFalse(outside.compareTo(within) < 0 && outside.compareTo(highest) < 0);
-		assertTrue(atLeast.isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE));
-	}
-	
-	/* @Test
-	public void testSnapshotVersion() {
-		MinecraftVersion version = MinecraftVersion.fromServerVersion("git-Spigot-1119 (MC: 13w39b)");
-		assertEquals(version.getSnapshot(), new SnapshotVersion("13w39b"));
-	} */
+        // Make sure this is valid
+        assertTrue(lower.compareTo(within) < 0 && within.compareTo(highest) < 0);
+        assertFalse(outside.compareTo(within) < 0 && outside.compareTo(highest) < 0);
+        assertTrue(atLeast.isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE));
+    }
+    
+    /* @Test
+    public void testSnapshotVersion() {
+        MinecraftVersion version = MinecraftVersion.fromServerVersion("git-Spigot-1119 (MC: 13w39b)");
+        assertEquals(version.getSnapshot(), new SnapshotVersion("13w39b"));
+    } */
 
-	@Test
-	public void testParsing() {
-		assertEquals(MinecraftVersion.extractVersion("CraftBukkit R3.0 (MC: 1.4.3)"), "1.4.3");
-		assertEquals(MinecraftVersion.extractVersion("CraftBukkit Test Beta 1 (MC: 1.10.01 )"), "1.10.01");
-		assertEquals(MinecraftVersion.extractVersion("Hello (MC: 2.3.4)"), "2.3.4");
+    @Test
+    public void testParsing() {
+        assertEquals(MinecraftVersion.extractVersion("CraftBukkit R3.0 (MC: 1.4.3)"), "1.4.3");
+        assertEquals(MinecraftVersion.extractVersion("CraftBukkit Test Beta 1 (MC: 1.10.01 )"), "1.10.01");
+        assertEquals(MinecraftVersion.extractVersion("Hello (MC: 2.3.4)"), "2.3.4");
 
-		assertEquals(MinecraftVersion.fromServerVersion("git-Cauldron-Reloaded-1.7.10-1.1388.1.0 (MC: 1.7.10)"),
-				new MinecraftVersion(1, 7, 10));
-		assertEquals(MinecraftVersion.fromServerVersion("git-Bukkit-18fbb24 (MC: 1.8.8)"), new MinecraftVersion(1, 8, 8));
-	}
+        assertEquals(MinecraftVersion.fromServerVersion("git-Cauldron-Reloaded-1.7.10-1.1388.1.0 (MC: 1.7.10)"),
+                new MinecraftVersion(1, 7, 10));
+        assertEquals(MinecraftVersion.fromServerVersion("git-Bukkit-18fbb24 (MC: 1.8.8)"), new MinecraftVersion(1, 8, 8));
+    }
 }

@@ -30,107 +30,107 @@ import static org.mockito.Mockito.when;
  */
 public class BukkitInitialization {
 
-	private static final BukkitInitialization instance = new BukkitInitialization();
-	private boolean initialized;
-	private boolean packaged;
+    private static final BukkitInitialization instance = new BukkitInitialization();
+    private boolean initialized;
+    private boolean packaged;
 
-	private BukkitInitialization() {
-		System.out.println("Created new BukkitInitialization on " + Thread.currentThread().getName());
-	}
+    private BukkitInitialization() {
+        System.out.println("Created new BukkitInitialization on " + Thread.currentThread().getName());
+    }
 
-	/**
-	 * Statically initializes the mock server for unit testing
-	 */
-	public static void initializeAll() {
-		instance.initialize();
-	}
+    /**
+     * Statically initializes the mock server for unit testing
+     */
+    public static void initializeAll() {
+        instance.initialize();
+    }
 
-	private static final Object initLock = new Object();
+    private static final Object initLock = new Object();
 
-	/**
-	 * Initialize Bukkit and ProtocolLib such that we can perform unit testing
-	 */
-	private void initialize() {
-		if (initialized) {
-			return;
-		}
+    /**
+     * Initialize Bukkit and ProtocolLib such that we can perform unit testing
+     */
+    private void initialize() {
+        if (initialized) {
+            return;
+        }
 
-		synchronized (initLock) {
-			if (initialized) {
-				return;
-			}
+        synchronized (initLock) {
+            if (initialized) {
+                return;
+            }
 
-			try {
-				LogManager.getLogger();
-			} catch (Throwable ex) {
-				// Happens only on my Jenkins, but if it errors here it works when it matters
-				ex.printStackTrace();
-			}
+            try {
+                LogManager.getLogger();
+            } catch (Throwable ex) {
+                // Happens only on my Jenkins, but if it errors here it works when it matters
+                ex.printStackTrace();
+            }
 
-			instance.setPackage();
+            instance.setPackage();
 
-			SharedConstants.a();
-			DispenserRegistry.a();
+            SharedConstants.a();
+            DispenserRegistry.a();
 
-			try {
-				IRegistry.class.getName();
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
+            try {
+                IRegistry.class.getName();
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+            }
 
-			String releaseTarget = MinecraftReflectionTestUtil.RELEASE_TARGET;
-			String serverVersion = CraftServer.class.getPackage().getImplementationVersion();
+            String releaseTarget = MinecraftReflectionTestUtil.RELEASE_TARGET;
+            String serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
-			// Mock the server object
-			Server mockedServer = mock(Server.class);
+            // Mock the server object
+            Server mockedServer = mock(Server.class);
 
-			when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
-			when(mockedServer.getName()).thenReturn("Mock Server");
-			when(mockedServer.getVersion()).thenReturn(serverVersion + " (MC: " + releaseTarget + ")");
-			when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
+            when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
+            when(mockedServer.getName()).thenReturn("Mock Server");
+            when(mockedServer.getVersion()).thenReturn(serverVersion + " (MC: " + releaseTarget + ")");
+            when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
 
-			when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
-			when(mockedServer.isPrimaryThread()).thenReturn(true);
+            when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
+            when(mockedServer.isPrimaryThread()).thenReturn(true);
 
-			WorldServer nmsWorld = mock(WorldServer.class);
+            WorldServer nmsWorld = mock(WorldServer.class);
 
-			SpigotWorldConfig mockWorldConfig = mock(SpigotWorldConfig.class);
+            SpigotWorldConfig mockWorldConfig = mock(SpigotWorldConfig.class);
 
-			try {
-				FieldAccessor spigotConfig = Accessors.getFieldAccessor(nmsWorld.getClass().getField("spigotConfig"));
-				spigotConfig.set(nmsWorld, mockWorldConfig);
-			} catch (ReflectiveOperationException ex) {
-				throw new RuntimeException(ex);
-			}
+            try {
+                FieldAccessor spigotConfig = Accessors.getFieldAccessor(nmsWorld.getClass().getField("spigotConfig"));
+                spigotConfig.set(nmsWorld, mockWorldConfig);
+            } catch (ReflectiveOperationException ex) {
+                throw new RuntimeException(ex);
+            }
 
-			CraftWorld world = mock(CraftWorld.class);
-			when(world.getHandle()).thenReturn(nmsWorld);
+            CraftWorld world = mock(CraftWorld.class);
+            when(world.getHandle()).thenReturn(nmsWorld);
 
-			List<World> worlds = Collections.singletonList(world);
-			when(mockedServer.getWorlds()).thenReturn(worlds);
+            List<World> worlds = Collections.singletonList(world);
+            when(mockedServer.getWorlds()).thenReturn(worlds);
 
-			// Inject this fake server
-			Bukkit.setServer(mockedServer);
+            // Inject this fake server
+            Bukkit.setServer(mockedServer);
 
-			initialized = true;
-		}
-	}
+            initialized = true;
+        }
+    }
 
-	/**
-	 * Ensure that package names are correctly set up.
-	 */
-	private void setPackage() {
-		if (!this.packaged) {
-			this.packaged = true;
+    /**
+     * Ensure that package names are correctly set up.
+     */
+    private void setPackage() {
+        if (!this.packaged) {
+            this.packaged = true;
 
-			try {
-				LogManager.getLogger();
-			} catch (Throwable ex) {
-				// Happens only on my Jenkins, but if it errors here it works when it matters
-				ex.printStackTrace();
-			}
+            try {
+                LogManager.getLogger();
+            } catch (Throwable ex) {
+                // Happens only on my Jenkins, but if it errors here it works when it matters
+                ex.printStackTrace();
+            }
 
-			MinecraftReflectionTestUtil.init();
-		}
-	}
+            MinecraftReflectionTestUtil.init();
+        }
+    }
 }

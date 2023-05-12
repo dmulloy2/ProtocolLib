@@ -31,62 +31,62 @@ import javax.annotation.Nullable;
  */
 public class PrimitiveGenerator implements InstanceProvider {
 
-	/**
-	 * Default value for Strings.
-	 */
-	@Deprecated
-	public static final String STRING_DEFAULT = "";
+    /**
+     * Default value for Strings.
+     */
+    @Deprecated
+    public static final String STRING_DEFAULT = "";
 
-	/**
-	 * Shared instance of this generator.
-	 */
-	public static PrimitiveGenerator INSTANCE = new PrimitiveGenerator();
+    /**
+     * Shared instance of this generator.
+     */
+    public static PrimitiveGenerator INSTANCE = new PrimitiveGenerator();
 
-	// Our default string value
-	private final String stringDefault;
+    // Our default string value
+    private final String stringDefault;
 
-	public PrimitiveGenerator() {
-		this.stringDefault = "";
-	}
+    public PrimitiveGenerator() {
+        this.stringDefault = "";
+    }
 
-	@Deprecated
-	public PrimitiveGenerator(String stringDefault) {
-		this.stringDefault = stringDefault;
-	}
+    @Deprecated
+    public PrimitiveGenerator(String stringDefault) {
+        this.stringDefault = stringDefault;
+    }
 
-	/**
-	 * Retrieve the string default.
-	 *
-	 * @return Default instance of a string.
-	 */
-	@Deprecated
-	public String getStringDefault() {
-		return stringDefault;
-	}
+    /**
+     * Retrieve the string default.
+     *
+     * @return Default instance of a string.
+     */
+    @Deprecated
+    public String getStringDefault() {
+        return stringDefault;
+    }
 
-	@Override
-	public Object create(@Nullable Class<?> type) {
-		if (type == null) {
-			return null;
-		} else if (type.isPrimitive()) {
-			return Defaults.defaultValue(type);
-		} else if (Primitives.isWrapperType(type)) {
-			return Defaults.defaultValue(Primitives.unwrap(type));
-		} else if (type.isArray()) {
-			Class<?> arrayType = type.getComponentType();
-			return Array.newInstance(arrayType, 0);
-		} else if (type.isEnum()) {
-			Object[] values = type.getEnumConstants();
-			if (values != null && values.length > 0) {
-				return values[0];
-			}
-		} else if (type.equals(String.class)) {
-			return this.stringDefault;
-		} else if (type.equals(Optional.class)) {
-			return Optional.empty();
-		}
+    @Override
+    public Object create(@Nullable Class<?> type) {
+        if (type == null) {
+            return null;
+        } else if (type.isPrimitive()) {
+            return Defaults.defaultValue(type);
+        } else if (Primitives.isWrapperType(type)) {
+            return Defaults.defaultValue(Primitives.unwrap(type));
+        } else if (type.isArray()) {
+            Class<?> arrayType = type.getComponentType();
+            return Array.newInstance(arrayType, 0);
+        } else if (type.isEnum()) {
+            Object[] values = type.getEnumConstants();
+            if (values != null && values.length > 0) {
+                return values[0];
+            }
+        } else if (type.equals(String.class)) {
+            return this.stringDefault;
+        } else if (type.equals(Optional.class)) {
+            return Optional.empty();
+        }
 
-		// Cannot handle this type
-		return null;
-	}
+        // Cannot handle this type
+        return null;
+    }
 }

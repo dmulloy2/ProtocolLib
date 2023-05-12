@@ -36,126 +36,126 @@ import com.comphenix.protocol.error.ReportType;
  * @author Kristian
  */
 abstract class CommandBase implements CommandExecutor {
-	public static final ReportType REPORT_COMMAND_ERROR = new ReportType("Cannot execute command %s.");
-	public static final ReportType REPORT_UNEXPECTED_COMMAND = new ReportType("Incorrect command assigned to %s.");
-	
-	public static final String PERMISSION_ADMIN = "protocol.admin";
-	
-	private final String permission;
-	private final String name;
-	private final int minimumArgumentCount;
-	
-	protected ErrorReporter reporter;
-	
-	public CommandBase(ErrorReporter reporter, String permission, String name) {
-		this(reporter, permission, name, 0);
-	}
-	
-	public CommandBase(ErrorReporter reporter, String permission, String name, int minimumArgumentCount) {
-		this.reporter = reporter;
-		this.name = name;
-		this.permission = permission;
-		this.minimumArgumentCount = minimumArgumentCount;
-	}
+    public static final ReportType REPORT_COMMAND_ERROR = new ReportType("Cannot execute command %s.");
+    public static final ReportType REPORT_UNEXPECTED_COMMAND = new ReportType("Incorrect command assigned to %s.");
+    
+    public static final String PERMISSION_ADMIN = "protocol.admin";
+    
+    private final String permission;
+    private final String name;
+    private final int minimumArgumentCount;
+    
+    protected ErrorReporter reporter;
+    
+    public CommandBase(ErrorReporter reporter, String permission, String name) {
+        this(reporter, permission, name, 0);
+    }
+    
+    public CommandBase(ErrorReporter reporter, String permission, String name, int minimumArgumentCount) {
+        this.reporter = reporter;
+        this.name = name;
+        this.permission = permission;
+        this.minimumArgumentCount = minimumArgumentCount;
+    }
 
-	@Override
-	public final boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		try {
-			// Make sure we're dealing with the correct command
-			if (!command.getName().equalsIgnoreCase(name)) {
-				reporter.reportWarning(this, Report.newBuilder(REPORT_UNEXPECTED_COMMAND).messageParam(this));
-				return false;
-			}
+    @Override
+    public final boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        try {
+            // Make sure we're dealing with the correct command
+            if (!command.getName().equalsIgnoreCase(name)) {
+                reporter.reportWarning(this, Report.newBuilder(REPORT_UNEXPECTED_COMMAND).messageParam(this));
+                return false;
+            }
 
-			if (permission != null && !sender.hasPermission(permission)) {
-				sender.sendMessage(ChatColor.RED + "You haven't got permission to run this command.");
-				return true;
-			}
-			
-			// Check argument length
-			if (args != null && args.length >= minimumArgumentCount) {
-				return handleCommand(sender, args);
-			} else {
-				sender.sendMessage(ChatColor.RED + "Insufficient arguments. You need at least " + minimumArgumentCount);
-				return false;
-			}
-		} catch (Throwable ex) {
-			reporter.reportDetailed(this,
-					Report.newBuilder(REPORT_COMMAND_ERROR).error(ex).messageParam(name).callerParam(sender, label, args)
-			);
-			return true;
-		}
-	}
+            if (permission != null && !sender.hasPermission(permission)) {
+                sender.sendMessage(ChatColor.RED + "You haven't got permission to run this command.");
+                return true;
+            }
+            
+            // Check argument length
+            if (args != null && args.length >= minimumArgumentCount) {
+                return handleCommand(sender, args);
+            } else {
+                sender.sendMessage(ChatColor.RED + "Insufficient arguments. You need at least " + minimumArgumentCount);
+                return false;
+            }
+        } catch (Throwable ex) {
+            reporter.reportDetailed(this,
+                    Report.newBuilder(REPORT_COMMAND_ERROR).error(ex).messageParam(name).callerParam(sender, label, args)
+            );
+            return true;
+        }
+    }
 
-	/**
-	 * Parse a boolean value at the head of the queue.
-	 * @param arguments - the queue of arguments.
-	 * @param parameterName - the parameter name we will match.
-	 * @return The parsed boolean, or NULL if not valid.
-	 */
-	protected Boolean parseBoolean(Deque<String> arguments, String parameterName) {
-		Boolean result = null;
-		
-		if (!arguments.isEmpty()) {
-			final String arg = arguments.peek().toLowerCase();
-			switch (arg) {
-				case "true":
-				case "on":
-					result = true;
-					break;
-				case "false":
-				case "off":
-					result = false;
-					break;
-				default:
-					if (arg.equalsIgnoreCase(parameterName)) result = true;
-					break;
-			}
-		}
-		
-		if (result != null) arguments.poll();
-		return result;
-	}
-		
-	/**
-	 * Create a queue from a sublist of a given array.
-	 * @param args - the source array.
-	 * @param start - the starting index.
-	 * @return A queue that contains every element in the array, starting at the given index.
-	 */
-	protected Deque<String> toQueue(String[] args, int start) {
-		return new ArrayDeque<>(Arrays.asList(args).subList(start, args.length));
-	}
-	
-	/**
-	 * Retrieve the permission necessary to execute this command.
-	 * @return The permission, or NULL if not needed.
-	 */
-	public String getPermission() {
-		return permission;
-	}
-	
-	/**
-	 * Retrieve the primary name of this command.
-	 * @return Primary name.
-	 */
-	public String getName() {
-		return name;
-	}
-	
-	/**
-	 * Retrieve the error reporter.
-	 * @return Error reporter.
-	 */
-	protected ErrorReporter getReporter() {
-		return reporter;
-	}
-	
-	/**
-	 * Main implementation of this command.
-	 * @param sender - command sender.
-	 * @param args - input arguments.
-	 * @return TRUE if the command was successfully handled, FALSE otherwise.
-	 */
-	protected abstract boolean handleCommand(CommandSender sender, String[] args);
+    /**
+     * Parse a boolean value at the head of the queue.
+     * @param arguments - the queue of arguments.
+     * @param parameterName - the parameter name we will match.
+     * @return The parsed boolean, or NULL if not valid.
+     */
+    protected Boolean parseBoolean(Deque<String> arguments, String parameterName) {
+        Boolean result = null;
+        
+        if (!arguments.isEmpty()) {
+            final String arg = arguments.peek().toLowerCase();
+            switch (arg) {
+                case "true":
+                case "on":
+                    result = true;
+                    break;
+                case "false":
+                case "off":
+                    result = false;
+                    break;
+                default:
+                    if (arg.equalsIgnoreCase(parameterName)) result = true;
+                    break;
+            }
+        }
+        
+        if (result != null) arguments.poll();
+        return result;
+    }
+        
+    /**
+     * Create a queue from a sublist of a given array.
+     * @param args - the source array.
+     * @param start - the starting index.
+     * @return A queue that contains every element in the array, starting at the given index.
+     */
+    protected Deque<String> toQueue(String[] args, int start) {
+        return new ArrayDeque<>(Arrays.asList(args).subList(start, args.length));
+    }
+    
+    /**
+     * Retrieve the permission necessary to execute this command.
+     * @return The permission, or NULL if not needed.
+     */
+    public String getPermission() {
+        return permission;
+    }
+    
+    /**
+     * Retrieve the primary name of this command.
+     * @return Primary name.
+     */
+    public String getName() {
+        return name;
+    }
+    
+    /**
+     * Retrieve the error reporter.
+     * @return Error reporter.
+     */
+    protected ErrorReporter getReporter() {
+        return reporter;
+    }
+    
+    /**
+     * Main implementation of this command.
+     * @param sender - command sender.
+     * @param args - input arguments.
+     * @return TRUE if the command was successfully handled, FALSE otherwise.
+     */
+    protected abstract boolean handleCommand(CommandSender sender, String[] args);
 }

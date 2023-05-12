@@ -11,30 +11,30 @@ import org.bukkit.plugin.PluginManager;
  */
 public interface InternalManager extends ProtocolManager {
 
-	/**
-	 * Register this protocol manager on Bukkit.
-	 *
-	 * @param manager - Bukkit plugin manager that provides player join/leave events.
-	 * @param plugin  - the parent plugin.
-	 */
-	void registerEvents(PluginManager manager, final Plugin plugin);
+    /**
+     * Register this protocol manager on Bukkit.
+     *
+     * @param manager - Bukkit plugin manager that provides player join/leave events.
+     * @param plugin  - the parent plugin.
+     */
+    void registerEvents(PluginManager manager, final Plugin plugin);
 
-	/**
-	 * Called when ProtocolLib is closing.
-	 */
-	void close();
+    /**
+     * Called when ProtocolLib is closing.
+     */
+    void close();
 
-	/**
-	 * Determine if debug mode is enabled.
-	 *
-	 * @return TRUE if it is, FALSE otherwise.
-	 */
-	boolean isDebug();
+    /**
+     * Determine if debug mode is enabled.
+     *
+     * @return TRUE if it is, FALSE otherwise.
+     */
+    boolean isDebug();
 
-	/**
-	 * Set whether or not debug mode is enabled.
-	 *
-	 * @param debug - TRUE if it is, FALSE otherwise.
-	 */
-	void setDebug(boolean debug);
+    /**
+     * Set whether or not debug mode is enabled.
+     *
+     * @param debug - TRUE if it is, FALSE otherwise.
+     */
+    void setDebug(boolean debug);
 }

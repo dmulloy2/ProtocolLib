@@ -35,53 +35,53 @@ import org.junit.jupiter.api.Test;
 
 public class NbtFactoryTest {
 
-	@BeforeAll
-	public static void initializeBukkit() throws IllegalAccessException {
-		BukkitInitialization.initializeAll();
-	}
+    @BeforeAll
+    public static void initializeBukkit() throws IllegalAccessException {
+        BukkitInitialization.initializeAll();
+    }
 
-	@Test
-	public void testFromStream() {
-		WrappedCompound compound = WrappedCompound.fromName("tag");
-		compound.put("name", "Test Testerson");
-		compound.put("age", 42);
+    @Test
+    public void testFromStream() {
+        WrappedCompound compound = WrappedCompound.fromName("tag");
+        compound.put("name", "Test Testerson");
+        compound.put("age", 42);
 
-		compound.put(NbtFactory.ofList("nicknames", "a", "b", "c"));
+        compound.put(NbtFactory.ofList("nicknames", "a", "b", "c"));
 
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		DataOutput test = new DataOutputStream(buffer);
-		compound.write(test);
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        DataOutput test = new DataOutputStream(buffer);
+        compound.write(test);
 
-		ByteArrayInputStream source = new ByteArrayInputStream(buffer.toByteArray());
-		DataInput input = new DataInputStream(source);
+        ByteArrayInputStream source = new ByteArrayInputStream(buffer.toByteArray());
+        DataInput input = new DataInputStream(source);
 
-		NbtCompound cloned = NbtBinarySerializer.DEFAULT.deserializeCompound(input);
+        NbtCompound cloned = NbtBinarySerializer.DEFAULT.deserializeCompound(input);
 
-		assertEquals(compound.getString("name"), cloned.getString("name"));
-		assertEquals(compound.getInteger("age"), cloned.getInteger("age"));
-		assertEquals(compound.getList("nicknames"), cloned.getList("nicknames"));
-	}
+        assertEquals(compound.getString("name"), cloned.getString("name"));
+        assertEquals(compound.getInteger("age"), cloned.getInteger("age"));
+        assertEquals(compound.getList("nicknames"), cloned.getList("nicknames"));
+    }
 
-	@Test
-	public void testItemTag() {
-		ItemStack test = new ItemStack(Items.L);
-		org.bukkit.inventory.ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
+    @Test
+    public void testItemTag() {
+        ItemStack test = new ItemStack(Items.L);
+        org.bukkit.inventory.ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
 
-		NbtCompound compound = NbtFactory.ofCompound("tag");
-		compound.put("name", "Test Testerson");
-		compound.put("age", 42);
+        NbtCompound compound = NbtFactory.ofCompound("tag");
+        compound.put("name", "Test Testerson");
+        compound.put("age", 42);
 
-		NbtFactory.setItemTag(craftTest, compound);
+        NbtFactory.setItemTag(craftTest, compound);
 
-		assertEquals(compound, NbtFactory.fromItemTag(craftTest));
-	}
+        assertEquals(compound, NbtFactory.fromItemTag(craftTest));
+    }
 
-	@Test
-	public void testCreateTags() {
-		for (NbtType type : NbtType.values()) {
-			if (type != NbtType.TAG_END) {
-				NbtFactory.ofWrapper(type, "");
-			}
-		}
-	}
+    @Test
+    public void testCreateTags() {
+        for (NbtType type : NbtType.values()) {
+            if (type != NbtType.TAG_END) {
+                NbtFactory.ofWrapper(type, "");
+            }
+        }
+    }
 }

@@ -51,242 +51,242 @@ import org.bukkit.entity.Player;
  */
 class EntityUtilities {
 
-	private static final EntityUtilities INSTANCE = new EntityUtilities();
-	private static final boolean NEW_TRACKER = MinecraftVersion.VILLAGE_UPDATE.atOrAbove();
+    private static final EntityUtilities INSTANCE = new EntityUtilities();
+    private static final boolean NEW_TRACKER = MinecraftVersion.VILLAGE_UPDATE.atOrAbove();
 
-	private final Map<Class<?>, MethodAccessor> scanPlayersMethods = new ConcurrentHashMap<>();
-	private final Map<Class<?>, FieldAccessor> trackedEntityFields = new ConcurrentHashMap<>();
+    private final Map<Class<?>, MethodAccessor> scanPlayersMethods = new ConcurrentHashMap<>();
+    private final Map<Class<?>, FieldAccessor> trackedEntityFields = new ConcurrentHashMap<>();
 
-	private FieldAccessor chunkMapField;
-	private FieldAccessor entityTrackerField;
-	private FieldAccessor trackedPlayersField;
-	private FieldAccessor trackedEntitiesField;
+    private FieldAccessor chunkMapField;
+    private FieldAccessor entityTrackerField;
+    private FieldAccessor trackedPlayersField;
+    private FieldAccessor trackedEntitiesField;
 
-	private MethodAccessor getEntity;
-	private MethodAccessor getChunkProvider;
+    private MethodAccessor getEntity;
+    private MethodAccessor getChunkProvider;
 
-	private EntityUtilities() {
-	}
+    private EntityUtilities() {
+    }
 
-	public static EntityUtilities getInstance() {
-		return INSTANCE;
-	}
+    public static EntityUtilities getInstance() {
+        return INSTANCE;
+    }
 
-	public void updateEntity(Entity entity, List<Player> observers) {
-		if (entity == null || !entity.isValid()) {
-			return;
-		}
+    public void updateEntity(Entity entity, List<Player> observers) {
+        if (entity == null || !entity.isValid()) {
+            return;
+        }
 
-		Collection<?> trackedPlayers = this.getTrackedPlayers(entity);
-		List<Object> nmsPlayers = this.unwrapBukkit(observers);
+        Collection<?> trackedPlayers = this.getTrackedPlayers(entity);
+        List<Object> nmsPlayers = this.unwrapBukkit(observers);
 
-		List<Object> removingEntries =
-				MinecraftVersion.CAVES_CLIFFS_1.atOrAbove() ? this.getPlayerConnections(nmsPlayers) : nmsPlayers;
-		trackedPlayers.removeAll(removingEntries);
+        List<Object> removingEntries =
+                MinecraftVersion.CAVES_CLIFFS_1.atOrAbove() ? this.getPlayerConnections(nmsPlayers) : nmsPlayers;
+        trackedPlayers.removeAll(removingEntries);
 
-		// there can be multiple different entity tracker entry impls, see GH-732....
-		Object trackerEntry = this.getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-		this.scanPlayersMethods.computeIfAbsent(trackerEntry.getClass(), this::findScanPlayers)
-				.invoke(trackerEntry, nmsPlayers);
-	}
+        // there can be multiple different entity tracker entry impls, see GH-732....
+        Object trackerEntry = this.getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
+        this.scanPlayersMethods.computeIfAbsent(trackerEntry.getClass(), this::findScanPlayers)
+                .invoke(trackerEntry, nmsPlayers);
+    }
 
-	public Entity getEntity(World world, int id) {
-		// new tracker registers the entity before sending out any packets - we can use the supported getter method here
-		if (NEW_TRACKER) {
-			Object level = BukkitUnwrapper.getInstance().unwrapItem(world);
-			if (this.getEntity == null) {
-				Method entityGetter = FuzzyReflection.fromObject(level).getMethodByReturnTypeAndParameters(
-						"getEntity",
-						MinecraftReflection.getEntityClass(),
-						int.class);
-				this.getEntity = Accessors.getMethodAccessor(entityGetter);
-			}
+    public Entity getEntity(World world, int id) {
+        // new tracker registers the entity before sending out any packets - we can use the supported getter method here
+        if (NEW_TRACKER) {
+            Object level = BukkitUnwrapper.getInstance().unwrapItem(world);
+            if (this.getEntity == null) {
+                Method entityGetter = FuzzyReflection.fromObject(level).getMethodByReturnTypeAndParameters(
+                        "getEntity",
+                        MinecraftReflection.getEntityClass(),
+                        int.class);
+                this.getEntity = Accessors.getMethodAccessor(entityGetter);
+            }
 
-			Object entity = this.getEntity.invoke(level, id);
-			return (Entity) MinecraftReflection.getBukkitEntity(entity);
-		}
+            Object entity = this.getEntity.invoke(level, id);
+            return (Entity) MinecraftReflection.getBukkitEntity(entity);
+        }
 
-		// old tracker - now the pain begins
-		Object trackerEntry = this.getEntityTrackerEntry(world, id);
-		if (trackerEntry == null) {
-			// not tracked
-			return null;
-		}
+        // old tracker - now the pain begins
+        Object trackerEntry = this.getEntityTrackerEntry(world, id);
+        if (trackerEntry == null) {
+            // not tracked
+            return null;
+        }
 
-		FieldAccessor trackedEntityAccessor = this.trackedEntityFields.computeIfAbsent(trackerEntry.getClass(), clz -> {
-			try {
-				// try to get the first entity field from the tracker class
-				Field entityField = FuzzyReflection.fromClass(clz, true).getField(FuzzyFieldContract.newBuilder()
-						.typeExact(MinecraftReflection.getEntityClass())
-						.build());
-				return Accessors.getFieldAccessor(entityField);
-			} catch (IllegalArgumentException exception) {
-				// no such field, try the base tracker class instead
-				Class<?> trackerClass = MinecraftReflection.getEntityTrackerClass();
-				Field entityField = FuzzyReflection.fromClass(trackerClass, true).getField(FuzzyFieldContract.newBuilder()
-						.typeExact(MinecraftReflection.getEntityClass())
-						.build());
-				return Accessors.getFieldAccessor(entityField);
-			}
-		});
+        FieldAccessor trackedEntityAccessor = this.trackedEntityFields.computeIfAbsent(trackerEntry.getClass(), clz -> {
+            try {
+                // try to get the first entity field from the tracker class
+                Field entityField = FuzzyReflection.fromClass(clz, true).getField(FuzzyFieldContract.newBuilder()
+                        .typeExact(MinecraftReflection.getEntityClass())
+                        .build());
+                return Accessors.getFieldAccessor(entityField);
+            } catch (IllegalArgumentException exception) {
+                // no such field, try the base tracker class instead
+                Class<?> trackerClass = MinecraftReflection.getEntityTrackerClass();
+                Field entityField = FuzzyReflection.fromClass(trackerClass, true).getField(FuzzyFieldContract.newBuilder()
+                        .typeExact(MinecraftReflection.getEntityClass())
+                        .build());
+                return Accessors.getFieldAccessor(entityField);
+            }
+        });
 
-		Object entity = trackedEntityAccessor.get(trackerEntry);
-		return (Entity) MinecraftReflection.getBukkitEntity(entity);
-	}
+        Object entity = trackedEntityAccessor.get(trackerEntry);
+        return (Entity) MinecraftReflection.getBukkitEntity(entity);
+    }
 
-	private MethodAccessor findScanPlayers(Class<?> trackerClass) {
-		MethodAccessor candidate = Accessors.getMethodAccessorOrNull(trackerClass, "scanPlayers");
-		if (candidate != null) {
-			return candidate;
-		}
+    private MethodAccessor findScanPlayers(Class<?> trackerClass) {
+        MethodAccessor candidate = Accessors.getMethodAccessorOrNull(trackerClass, "scanPlayers");
+        if (candidate != null) {
+            return candidate;
+        }
 
-		FuzzyReflection fuzzy = FuzzyReflection.fromClass(trackerClass, true);
-		return Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-				.returnTypeVoid()
-				.parameterExactArray(List.class)
-				.build()));
-	}
+        FuzzyReflection fuzzy = FuzzyReflection.fromClass(trackerClass, true);
+        return Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                .returnTypeVoid()
+                .parameterExactArray(List.class)
+                .build()));
+    }
 
-	/**
-	 * Retrieve every client that is receiving information about a given entity.
-	 *
-	 * @param entity - the entity that is being tracked.
-	 * @return Every client/player that is tracking the given entity.
-	 * @throws FieldAccessException If reflection failed.
-	 */
-	public List<Player> getEntityTrackers(Entity entity) {
-		if (entity == null || !entity.isValid()) {
-			return new ArrayList<>();
-		}
+    /**
+     * Retrieve every client that is receiving information about a given entity.
+     *
+     * @param entity - the entity that is being tracked.
+     * @return Every client/player that is tracking the given entity.
+     * @throws FieldAccessException If reflection failed.
+     */
+    public List<Player> getEntityTrackers(Entity entity) {
+        if (entity == null || !entity.isValid()) {
+            return new ArrayList<>();
+        }
 
-		List<Player> result = new ArrayList<>();
-		Collection<?> trackedPlayers = this.getTrackedPlayers(entity);
+        List<Player> result = new ArrayList<>();
+        Collection<?> trackedPlayers = this.getTrackedPlayers(entity);
 
-		// Wrap every player - we also ensure that the underlying tracker list is immutable
-		for (Object tracker : trackedPlayers) {
-			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove() && MinecraftReflection.isServerHandler(tracker)) {
-				result.add(MinecraftReflection.getBukkitPlayerFromConnection(tracker));
-			} else if (MinecraftReflection.isMinecraftPlayer(tracker)) {
-				result.add((Player) MinecraftReflection.getBukkitEntity(tracker));
-			}
-		}
+        // Wrap every player - we also ensure that the underlying tracker list is immutable
+        for (Object tracker : trackedPlayers) {
+            if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove() && MinecraftReflection.isServerHandler(tracker)) {
+                result.add(MinecraftReflection.getBukkitPlayerFromConnection(tracker));
+            } else if (MinecraftReflection.isMinecraftPlayer(tracker)) {
+                result.add((Player) MinecraftReflection.getBukkitEntity(tracker));
+            }
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	private Collection<?> getTrackedPlayers(Entity entity) {
-		Validate.notNull(entity, "entity cannot be null");
+    private Collection<?> getTrackedPlayers(Entity entity) {
+        Validate.notNull(entity, "entity cannot be null");
 
-		Object trackerEntry = this.getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
-		if (trackerEntry == null) { //entity.toString() is too expensive to be called every time
-			throw new IllegalArgumentException("Could not find entity trackers for " + entity);
-		}
+        Object trackerEntry = this.getEntityTrackerEntry(entity.getWorld(), entity.getEntityId());
+        if (trackerEntry == null) { //entity.toString() is too expensive to be called every time
+            throw new IllegalArgumentException("Could not find entity trackers for " + entity);
+        }
 
-		if (this.trackedPlayersField == null) {
-			this.trackedPlayersField = Accessors.getFieldAccessor(
-					FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*"));
-		}
+        if (this.trackedPlayersField == null) {
+            this.trackedPlayersField = Accessors.getFieldAccessor(
+                    FuzzyReflection.fromObject(trackerEntry).getFieldByType("java\\.util\\..*"));
+        }
 
-		Validate.notNull(this.trackedPlayersField, "Could not find trackedPlayers field");
+        Validate.notNull(this.trackedPlayersField, "Could not find trackedPlayers field");
 
-		Object value = this.trackedPlayersField.get(trackerEntry);
-		if (value instanceof Collection) {
-			return (Collection<?>) value;
-		} else if (value instanceof Map) {
-			return ((Map<?, ?>) value).keySet();
-		} else {
-			// Please. No more changes.
-			throw new IllegalStateException(
-					"trackedPlayers field was an unknown type: expected Collection or Map, but got " + value.getClass());
-		}
-	}
+        Object value = this.trackedPlayersField.get(trackerEntry);
+        if (value instanceof Collection) {
+            return (Collection<?>) value;
+        } else if (value instanceof Map) {
+            return ((Map<?, ?>) value).keySet();
+        } else {
+            // Please. No more changes.
+            throw new IllegalStateException(
+                    "trackedPlayers field was an unknown type: expected Collection or Map, but got " + value.getClass());
+        }
+    }
 
-	@SuppressWarnings("unchecked")
-	private Object getNewEntityTracker(Object worldServer, int entityId) {
-		if (this.getChunkProvider == null) {
-			Class<?> chunkProviderClass = MinecraftReflection.getChunkProviderServer();
-			this.getChunkProvider = Accessors.getMethodAccessor(FuzzyReflection.fromClass(worldServer.getClass(), false)
-					.getMethod(FuzzyMethodContract.newBuilder().parameterCount(0).returnTypeExact(chunkProviderClass).build()));
-		}
+    @SuppressWarnings("unchecked")
+    private Object getNewEntityTracker(Object worldServer, int entityId) {
+        if (this.getChunkProvider == null) {
+            Class<?> chunkProviderClass = MinecraftReflection.getChunkProviderServer();
+            this.getChunkProvider = Accessors.getMethodAccessor(FuzzyReflection.fromClass(worldServer.getClass(), false)
+                    .getMethod(FuzzyMethodContract.newBuilder().parameterCount(0).returnTypeExact(chunkProviderClass).build()));
+        }
 
-		Object chunkProvider = this.getChunkProvider.invoke(worldServer);
+        Object chunkProvider = this.getChunkProvider.invoke(worldServer);
 
-		if (this.chunkMapField == null) {
-			Class<?> chunkMapClass = MinecraftReflection.getPlayerChunkMap();
-			this.chunkMapField = Accessors.getFieldAccessor(FuzzyReflection.fromClass(chunkProvider.getClass(), false)
-					.getField(FuzzyFieldContract.newBuilder().typeExact(chunkMapClass).build()));
-		}
+        if (this.chunkMapField == null) {
+            Class<?> chunkMapClass = MinecraftReflection.getPlayerChunkMap();
+            this.chunkMapField = Accessors.getFieldAccessor(FuzzyReflection.fromClass(chunkProvider.getClass(), false)
+                    .getField(FuzzyFieldContract.newBuilder().typeExact(chunkMapClass).build()));
+        }
 
-		Object playerChunkMap = this.chunkMapField.get(chunkProvider);
+        Object playerChunkMap = this.chunkMapField.get(chunkProvider);
 
-		if (this.trackedEntitiesField == null) {
-			if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-				this.trackedEntitiesField = Accessors.getFieldAccessor(
-						FuzzyReflection.fromClass(playerChunkMap.getClass(), true)
-								.getField(FuzzyFieldContract.newBuilder()
-										.banModifier(Modifier.STATIC)
-										.requirePublic()
-										.typeExact(MinecraftReflection.getInt2ObjectMapClass())
-										.build()));
-			} else {
-				this.trackedEntitiesField = Accessors.getFieldAccessor(
-						FuzzyReflection.fromClass(playerChunkMap.getClass(), false).getField(
-								FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).nameExact("trackedEntities").build()));
-			}
-		}
+        if (this.trackedEntitiesField == null) {
+            if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+                this.trackedEntitiesField = Accessors.getFieldAccessor(
+                        FuzzyReflection.fromClass(playerChunkMap.getClass(), true)
+                                .getField(FuzzyFieldContract.newBuilder()
+                                        .banModifier(Modifier.STATIC)
+                                        .requirePublic()
+                                        .typeExact(MinecraftReflection.getInt2ObjectMapClass())
+                                        .build()));
+            } else {
+                this.trackedEntitiesField = Accessors.getFieldAccessor(
+                        FuzzyReflection.fromClass(playerChunkMap.getClass(), false).getField(
+                                FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).nameExact("trackedEntities").build()));
+            }
+        }
 
-		Map<Integer, Object> trackedEntities = (Map<Integer, Object>) this.trackedEntitiesField.get(playerChunkMap);
-		return trackedEntities.get(entityId);
-	}
+        Map<Integer, Object> trackedEntities = (Map<Integer, Object>) this.trackedEntitiesField.get(playerChunkMap);
+        return trackedEntities.get(entityId);
+    }
 
-	private Object getEntityTrackerEntry(World world, int entityID) {
-		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
-		Object worldServer = unwrapper.unwrapItem(world);
+    private Object getEntityTrackerEntry(World world, int entityID) {
+        BukkitUnwrapper unwrapper = new BukkitUnwrapper();
+        Object worldServer = unwrapper.unwrapItem(world);
 
-		if (NEW_TRACKER) {
-			return this.getNewEntityTracker(worldServer, entityID);
-		}
+        if (NEW_TRACKER) {
+            return this.getNewEntityTracker(worldServer, entityID);
+        }
 
-		if (this.entityTrackerField == null) {
-			this.entityTrackerField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(worldServer).
-					getFieldByType("tracker", MinecraftReflection.getEntityTrackerClass()));
-		}
+        if (this.entityTrackerField == null) {
+            this.entityTrackerField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(worldServer).
+                    getFieldByType("tracker", MinecraftReflection.getEntityTrackerClass()));
+        }
 
-		// Get the tracker
-		Object tracker = this.entityTrackerField.get(worldServer);
+        // Get the tracker
+        Object tracker = this.entityTrackerField.get(worldServer);
 
-		// Looking for an IntHashMap in the tracker entry
-		if (this.trackedEntitiesField == null) {
-			this.trackedEntitiesField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(tracker, false)
-					.getFieldByType("trackedEntities", MinecraftReflection.getIntHashMapClass()));
-		}
+        // Looking for an IntHashMap in the tracker entry
+        if (this.trackedEntitiesField == null) {
+            this.trackedEntitiesField = Accessors.getFieldAccessor(FuzzyReflection.fromObject(tracker, false)
+                    .getFieldByType("trackedEntities", MinecraftReflection.getIntHashMapClass()));
+        }
 
-		// Read the map
-		Object trackedEntities = this.trackedEntitiesField.get(tracker);
-		return WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
-	}
+        // Read the map
+        Object trackedEntities = this.trackedEntitiesField.get(tracker);
+        return WrappedIntHashMap.fromHandle(trackedEntities).get(entityID);
+    }
 
-	private List<Object> getPlayerConnections(List<Object> nmsPlayers) {
-		List<Object> connections = new ArrayList<>(nmsPlayers.size());
-		nmsPlayers.forEach(nmsPlayer -> connections.add(MinecraftFields.getPlayerConnection(nmsPlayer)));
-		return connections;
-	}
+    private List<Object> getPlayerConnections(List<Object> nmsPlayers) {
+        List<Object> connections = new ArrayList<>(nmsPlayers.size());
+        nmsPlayers.forEach(nmsPlayer -> connections.add(MinecraftFields.getPlayerConnection(nmsPlayer)));
+        return connections;
+    }
 
-	private List<Object> unwrapBukkit(List<Player> players) {
-		final List<Object> output = new ArrayList<>();
-		BukkitUnwrapper unwrapper = new BukkitUnwrapper();
+    private List<Object> unwrapBukkit(List<Player> players) {
+        final List<Object> output = new ArrayList<>();
+        BukkitUnwrapper unwrapper = new BukkitUnwrapper();
 
-		// Get the NMS equivalent
-		for (Player player : players) {
-			Object result = unwrapper.unwrapItem(player);
+        // Get the NMS equivalent
+        for (Player player : players) {
+            Object result = unwrapper.unwrapItem(player);
 
-			if (result != null) {
-				output.add(result);
-			} else {
-				throw new IllegalArgumentException("Cannot unwrap item " + player);
-			}
-		}
+            if (result != null) {
+                output.add(result);
+            } else {
+                throw new IllegalArgumentException("Cannot unwrap item " + player);
+            }
+        }
 
-		return output;
-	}
+        return output;
+    }
 }

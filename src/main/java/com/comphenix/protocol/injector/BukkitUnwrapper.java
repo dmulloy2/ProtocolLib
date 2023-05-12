@@ -48,241 +48,241 @@ import org.bukkit.entity.Player;
  */
 public class BukkitUnwrapper implements Unwrapper {
 
-	public static final ReportType REPORT_ILLEGAL_ARGUMENT = new ReportType("Illegal argument.");
-	public static final ReportType REPORT_SECURITY_LIMITATION = new ReportType("Security limitation.");
-	public static final ReportType REPORT_CANNOT_FIND_UNWRAP_METHOD = new ReportType("Cannot find method.");
-	public static final ReportType REPORT_CANNOT_READ_FIELD_HANDLE = new ReportType("Cannot read field 'handle'.");
+    public static final ReportType REPORT_ILLEGAL_ARGUMENT = new ReportType("Illegal argument.");
+    public static final ReportType REPORT_SECURITY_LIMITATION = new ReportType("Security limitation.");
+    public static final ReportType REPORT_CANNOT_FIND_UNWRAP_METHOD = new ReportType("Cannot find method.");
+    public static final ReportType REPORT_CANNOT_READ_FIELD_HANDLE = new ReportType("Cannot read field 'handle'.");
 
-	private static final Map<Class<?>, Unwrapper> UNWRAPPER_CACHE = new ConcurrentHashMap<Class<?>, Unwrapper>();
-	private static BukkitUnwrapper DEFAULT;
+    private static final Map<Class<?>, Unwrapper> UNWRAPPER_CACHE = new ConcurrentHashMap<Class<?>, Unwrapper>();
+    private static BukkitUnwrapper DEFAULT;
 
-	// The current error reporter
-	private final ErrorReporter reporter;
+    // The current error reporter
+    private final ErrorReporter reporter;
 
-	/**
-	 * Construct a new Bukkit unwrapper with ProtocolLib's default error reporter.
-	 */
-	public BukkitUnwrapper() {
-		this(ProtocolLibrary.getErrorReporter());
-	}
+    /**
+     * Construct a new Bukkit unwrapper with ProtocolLib's default error reporter.
+     */
+    public BukkitUnwrapper() {
+        this(ProtocolLibrary.getErrorReporter());
+    }
 
-	/**
-	 * Construct a new Bukkit unwrapper with the given error reporter.
-	 *
-	 * @param reporter - the error reporter to use.
-	 */
-	public BukkitUnwrapper(ErrorReporter reporter) {
-		this.reporter = reporter;
-	}
+    /**
+     * Construct a new Bukkit unwrapper with the given error reporter.
+     *
+     * @param reporter - the error reporter to use.
+     */
+    public BukkitUnwrapper(ErrorReporter reporter) {
+        this.reporter = reporter;
+    }
 
-	/**
-	 * Retrieve the default instance of the Bukkit unwrapper.
-	 *
-	 * @return The default instance.
-	 */
-	public static BukkitUnwrapper getInstance() {
-		ErrorReporter currentReporter = ProtocolLibrary.getErrorReporter();
+    /**
+     * Retrieve the default instance of the Bukkit unwrapper.
+     *
+     * @return The default instance.
+     */
+    public static BukkitUnwrapper getInstance() {
+        ErrorReporter currentReporter = ProtocolLibrary.getErrorReporter();
 
-		// Also recreate the unwrapper if the error reporter has changed
-		if (DEFAULT == null || DEFAULT.reporter != currentReporter) {
-			DEFAULT = new BukkitUnwrapper(currentReporter);
-		}
-		return DEFAULT;
-	}
+        // Also recreate the unwrapper if the error reporter has changed
+        if (DEFAULT == null || DEFAULT.reporter != currentReporter) {
+            DEFAULT = new BukkitUnwrapper(currentReporter);
+        }
+        return DEFAULT;
+    }
 
-	private static Class<?> checkClass(Class<?> input, Class<?> expected, Class<?> result) {
-		if (expected.isAssignableFrom(input)) {
-			return result;
-		}
-		return null;
-	}
+    private static Class<?> checkClass(Class<?> input, Class<?> expected, Class<?> result) {
+        if (expected.isAssignableFrom(input)) {
+            return result;
+        }
+        return null;
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public Object unwrapItem(Object wrappedObject) {
-		// Special case
-		if (wrappedObject == null) {
-			return null;
-		}
-		Class<?> currentClass = PacketConstructor.getClass(wrappedObject);
+    @SuppressWarnings("unchecked")
+    @Override
+    public Object unwrapItem(Object wrappedObject) {
+        // Special case
+        if (wrappedObject == null) {
+            return null;
+        }
+        Class<?> currentClass = PacketConstructor.getClass(wrappedObject);
 
-		// No need to unwrap primitives
-		if (currentClass.isPrimitive() || currentClass.equals(String.class)) {
-			return null;
-		}
+        // No need to unwrap primitives
+        if (currentClass.isPrimitive() || currentClass.equals(String.class)) {
+            return null;
+        }
 
-		// Next, check for types that doesn't have a getHandle()
-		if (wrappedObject instanceof Collection) {
-			return handleCollection((Collection<Object>) wrappedObject);
-		} else if (Primitives.isWrapperType(currentClass) || wrappedObject instanceof String) {
-			return null;
-		}
+        // Next, check for types that doesn't have a getHandle()
+        if (wrappedObject instanceof Collection) {
+            return handleCollection((Collection<Object>) wrappedObject);
+        } else if (Primitives.isWrapperType(currentClass) || wrappedObject instanceof String) {
+            return null;
+        }
 
-		Unwrapper specificUnwrapper = getSpecificUnwrapper(currentClass);
+        Unwrapper specificUnwrapper = getSpecificUnwrapper(currentClass);
 
-		// Retrieve the handle
-		if (specificUnwrapper != null) {
-			return specificUnwrapper.unwrapItem(wrappedObject);
-		} else {
-			return null;
-		}
-	}
+        // Retrieve the handle
+        if (specificUnwrapper != null) {
+            return specificUnwrapper.unwrapItem(wrappedObject);
+        } else {
+            return null;
+        }
+    }
 
-	// Handle a collection of items
-	private Object handleCollection(Collection<Object> wrappedObject) {
+    // Handle a collection of items
+    private Object handleCollection(Collection<Object> wrappedObject) {
 
-		@SuppressWarnings("unchecked")
-		Collection<Object> copy = DefaultInstances.DEFAULT.getDefault(wrappedObject.getClass());
+        @SuppressWarnings("unchecked")
+        Collection<Object> copy = DefaultInstances.DEFAULT.getDefault(wrappedObject.getClass());
 
-		if (copy != null) {
-			// Unwrap every element
-			for (Object element : wrappedObject) {
-				copy.add(unwrapItem(element));
-			}
-			return copy;
+        if (copy != null) {
+            // Unwrap every element
+            for (Object element : wrappedObject) {
+                copy.add(unwrapItem(element));
+            }
+            return copy;
 
-		} else {
-			// Impossible
-			return null;
-		}
-	}
+        } else {
+            // Impossible
+            return null;
+        }
+    }
 
-	/**
-	 * Retrieve a cached class unwrapper for the given class.
-	 *
-	 * @param type - the type of the class.
-	 * @return An unwrapper for the given class.
-	 */
-	private Unwrapper getSpecificUnwrapper(final Class<?> type) {
-		// See if we're already determined this
-		if (UNWRAPPER_CACHE.containsKey(type)) {
-			// We will never remove from the cache, so this ought to be thread safe
-			return UNWRAPPER_CACHE.get(type);
-		}
+    /**
+     * Retrieve a cached class unwrapper for the given class.
+     *
+     * @param type - the type of the class.
+     * @return An unwrapper for the given class.
+     */
+    private Unwrapper getSpecificUnwrapper(final Class<?> type) {
+        // See if we're already determined this
+        if (UNWRAPPER_CACHE.containsKey(type)) {
+            // We will never remove from the cache, so this ought to be thread safe
+            return UNWRAPPER_CACHE.get(type);
+        }
 
-		try {
-			final Method find = type.getMethod("getHandle");
+        try {
+            final Method find = type.getMethod("getHandle");
 
-			// It's thread safe, as getMethod should return the same handle
-			Unwrapper methodUnwrapper = new Unwrapper() {
-				@Override
-				public Object unwrapItem(Object wrappedObject) {
-					try {
-						if (wrappedObject instanceof Class) {
-							return checkClass((Class<?>) wrappedObject, type, find.getReturnType());
-						}
-						return find.invoke(wrappedObject);
+            // It's thread safe, as getMethod should return the same handle
+            Unwrapper methodUnwrapper = new Unwrapper() {
+                @Override
+                public Object unwrapItem(Object wrappedObject) {
+                    try {
+                        if (wrappedObject instanceof Class) {
+                            return checkClass((Class<?>) wrappedObject, type, find.getReturnType());
+                        }
+                        return find.invoke(wrappedObject);
 
-					} catch (IllegalArgumentException e) {
-						reporter.reportDetailed(this,
-								Report.newBuilder(REPORT_ILLEGAL_ARGUMENT).error(e).callerParam(wrappedObject, find)
-						);
-					} catch (IllegalAccessException e) {
-						// Should not occur either
-						return null;
-					} catch (InvocationTargetException e) {
-						// This is really bad
-						throw new RuntimeException("Minecraft error.", e);
-					}
+                    } catch (IllegalArgumentException e) {
+                        reporter.reportDetailed(this,
+                                Report.newBuilder(REPORT_ILLEGAL_ARGUMENT).error(e).callerParam(wrappedObject, find)
+                        );
+                    } catch (IllegalAccessException e) {
+                        // Should not occur either
+                        return null;
+                    } catch (InvocationTargetException e) {
+                        // This is really bad
+                        throw new RuntimeException("Minecraft error.", e);
+                    }
 
-					return null;
-				}
-			};
+                    return null;
+                }
+            };
 
-			UNWRAPPER_CACHE.put(type, methodUnwrapper);
-			return methodUnwrapper;
+            UNWRAPPER_CACHE.put(type, methodUnwrapper);
+            return methodUnwrapper;
 
-		} catch (SecurityException e) {
-			reporter.reportDetailed(this,
-					Report.newBuilder(REPORT_SECURITY_LIMITATION).error(e).callerParam(type)
-			);
-		} catch (NoSuchMethodException e) {
-			// Maybe it's a proxy?
-			Unwrapper proxyUnwrapper = getProxyUnwrapper(type);
-			if (proxyUnwrapper != null) {
-				return proxyUnwrapper;
-			}
+        } catch (SecurityException e) {
+            reporter.reportDetailed(this,
+                    Report.newBuilder(REPORT_SECURITY_LIMITATION).error(e).callerParam(type)
+            );
+        } catch (NoSuchMethodException e) {
+            // Maybe it's a proxy?
+            Unwrapper proxyUnwrapper = getProxyUnwrapper(type);
+            if (proxyUnwrapper != null) {
+                return proxyUnwrapper;
+            }
 
-			// Try getting the field unwrapper too
-			Unwrapper fieldUnwrapper = getFieldUnwrapper(type);
-			if (fieldUnwrapper != null) {
-				return fieldUnwrapper;
-			} else {
-				reporter.reportDetailed(this,
-						Report.newBuilder(REPORT_CANNOT_FIND_UNWRAP_METHOD).error(e).callerParam(type));
-			}
-		}
+            // Try getting the field unwrapper too
+            Unwrapper fieldUnwrapper = getFieldUnwrapper(type);
+            if (fieldUnwrapper != null) {
+                return fieldUnwrapper;
+            } else {
+                reporter.reportDetailed(this,
+                        Report.newBuilder(REPORT_CANNOT_FIND_UNWRAP_METHOD).error(e).callerParam(type));
+            }
+        }
 
-		// Default method
-		return null;
-	}
+        // Default method
+        return null;
+    }
 
-	// Players should /always/ be able to be unwrapped
-	// We should only get here if the 'Player' is a proxy
-	private Unwrapper getProxyUnwrapper(final Class<?> type) {
-		try {
-			if (Player.class.isAssignableFrom(type)) {
-				final Method getHandle = MinecraftReflection.getCraftPlayerClass().getMethod("getHandle");
+    // Players should /always/ be able to be unwrapped
+    // We should only get here if the 'Player' is a proxy
+    private Unwrapper getProxyUnwrapper(final Class<?> type) {
+        try {
+            if (Player.class.isAssignableFrom(type)) {
+                final Method getHandle = MinecraftReflection.getCraftPlayerClass().getMethod("getHandle");
 
-				Unwrapper unwrapper = wrapped -> {
-					try {
-						return getHandle.invoke(((Player) wrapped).getPlayer());
-					} catch (Throwable ex) {
-						try {
-							return getHandle.invoke(Bukkit.getPlayer(((Player) wrapped).getUniqueId()));
-						} catch (ReflectiveOperationException ex1) {
-							throw new RuntimeException("Failed to unwrap proxy " + wrapped, ex);
-						}
-					}
-				};
+                Unwrapper unwrapper = wrapped -> {
+                    try {
+                        return getHandle.invoke(((Player) wrapped).getPlayer());
+                    } catch (Throwable ex) {
+                        try {
+                            return getHandle.invoke(Bukkit.getPlayer(((Player) wrapped).getUniqueId()));
+                        } catch (ReflectiveOperationException ex1) {
+                            throw new RuntimeException("Failed to unwrap proxy " + wrapped, ex);
+                        }
+                    }
+                };
 
-				UNWRAPPER_CACHE.put(type, unwrapper);
-				return unwrapper;
-			}
-		} catch (Throwable ignored) {
-		}
+                UNWRAPPER_CACHE.put(type, unwrapper);
+                return unwrapper;
+            }
+        } catch (Throwable ignored) {
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	/**
-	 * Retrieve a cached unwrapper using the handle field.
-	 *
-	 * @param type - a cached field unwrapper.
-	 * @return The cached field unwrapper.
-	 */
-	private Unwrapper getFieldUnwrapper(final Class<?> type) {
-		// See if we succeeded
-		FieldAccessor accessor = Accessors.getFieldAccessorOrNull(type, "handle", null);
-		if (accessor != null) {
-			Unwrapper fieldUnwrapper = new Unwrapper() {
-				@Override
-				public Object unwrapItem(Object wrappedObject) {
-					try {
-						if (wrappedObject instanceof Class) {
-							return checkClass((Class<?>) wrappedObject, type, accessor.getField().getType());
-						}
+    /**
+     * Retrieve a cached unwrapper using the handle field.
+     *
+     * @param type - a cached field unwrapper.
+     * @return The cached field unwrapper.
+     */
+    private Unwrapper getFieldUnwrapper(final Class<?> type) {
+        // See if we succeeded
+        FieldAccessor accessor = Accessors.getFieldAccessorOrNull(type, "handle", null);
+        if (accessor != null) {
+            Unwrapper fieldUnwrapper = new Unwrapper() {
+                @Override
+                public Object unwrapItem(Object wrappedObject) {
+                    try {
+                        if (wrappedObject instanceof Class) {
+                            return checkClass((Class<?>) wrappedObject, type, accessor.getField().getType());
+                        }
 
-						return accessor.get(wrappedObject);
-					} catch (IllegalStateException e) {
-						reporter.reportDetailed(this,
-								Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e)
-										.callerParam(wrappedObject, accessor.getField())
-						);
-						return null;
-					}
-				}
-			};
+                        return accessor.get(wrappedObject);
+                    } catch (IllegalStateException e) {
+                        reporter.reportDetailed(this,
+                                Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e)
+                                        .callerParam(wrappedObject, accessor.getField())
+                        );
+                        return null;
+                    }
+                }
+            };
 
-			UNWRAPPER_CACHE.put(type, fieldUnwrapper);
-			return fieldUnwrapper;
+            UNWRAPPER_CACHE.put(type, fieldUnwrapper);
+            return fieldUnwrapper;
 
-		} else {
-			// Inform about this too
-			reporter.reportDetailed(this,
-					Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(type)
-			);
-			return null;
-		}
-	}
+        } else {
+            // Inform about this too
+            reporter.reportDetailed(this,
+                    Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(type)
+            );
+            return null;
+        }
+    }
 }

@@ -27,25 +27,25 @@ import com.comphenix.protocol.events.PacketEvent;
  */
 public interface ListenerInvoker {
 
-	/**
-	 * Invokes the given packet event for every registered listener.
-	 *
-	 * @param event - the packet event to invoke.
-	 */
-	void invokePacketReceiving(PacketEvent event);
+    /**
+     * Invokes the given packet event for every registered listener.
+     *
+     * @param event - the packet event to invoke.
+     */
+    void invokePacketReceiving(PacketEvent event);
 
-	/**
-	 * Invokes the given packet event for every registered listener.
-	 *
-	 * @param event - the packet event to invoke.
-	 */
-	void invokePacketSending(PacketEvent event);
+    /**
+     * Invokes the given packet event for every registered listener.
+     *
+     * @param event - the packet event to invoke.
+     */
+    void invokePacketSending(PacketEvent event);
 
-	/**
-	 * Retrieve the associated type of a packet.
-	 *
-	 * @param packet - the packet.
-	 * @return The packet type.
-	 */
-	PacketType getPacketType(Object packet);
+    /**
+     * Retrieve the associated type of a packet.
+     *
+     * @param packet - the packet.
+     * @return The packet type.
+     */
+    PacketType getPacketType(Object packet);
 }

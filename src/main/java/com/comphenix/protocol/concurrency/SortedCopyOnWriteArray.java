@@ -33,205 +33,205 @@ import java.util.List;
  */
 public class SortedCopyOnWriteArray<T extends Comparable<T>> implements Collection<T> {
 
-	// Prevent reordering
-	private volatile List<T> list;
+    // Prevent reordering
+    private volatile List<T> list;
 
-	/**
-	 * Construct an empty sorted array.
-	 */
-	public SortedCopyOnWriteArray() {
-		this.list = new ArrayList<>();
-	}
+    /**
+     * Construct an empty sorted array.
+     */
+    public SortedCopyOnWriteArray() {
+        this.list = new ArrayList<>();
+    }
 
-	/**
-	 * Create a sorted array from the given list. The elements will be automatically sorted.
-	 *
-	 * @param wrapped - the collection whose elements are to be placed into the list.
-	 */
-	public SortedCopyOnWriteArray(Collection<T> wrapped) {
-		this.list = new ArrayList<>(wrapped);
-		Collections.sort(this.list);
-	}
+    /**
+     * Create a sorted array from the given list. The elements will be automatically sorted.
+     *
+     * @param wrapped - the collection whose elements are to be placed into the list.
+     */
+    public SortedCopyOnWriteArray(Collection<T> wrapped) {
+        this.list = new ArrayList<>(wrapped);
+        Collections.sort(this.list);
+    }
 
-	/**
-	 * Inserts the given element in the proper location.
-	 *
-	 * @param value - element to insert.
-	 */
-	@Override
-	public synchronized boolean add(T value) {
-		// We use NULL as a special marker, so we don't allow it
-		if (value == null) throw new IllegalArgumentException("value cannot be NULL");
+    /**
+     * Inserts the given element in the proper location.
+     *
+     * @param value - element to insert.
+     */
+    @Override
+    public synchronized boolean add(T value) {
+        // We use NULL as a special marker, so we don't allow it
+        if (value == null) throw new IllegalArgumentException("value cannot be NULL");
 
-		List<T> copy = new ArrayList<>();
-		boolean inserted = false;
+        List<T> copy = new ArrayList<>();
+        boolean inserted = false;
 
-		for (T element : this.list) {
-			// If the value is now greater than the current element, it should be placed right before it
-			if (!inserted && value.compareTo(element) < 0) {
-				copy.add(value);
-				inserted = true;
-			}
-			copy.add(element);
-		}
+        for (T element : this.list) {
+            // If the value is now greater than the current element, it should be placed right before it
+            if (!inserted && value.compareTo(element) < 0) {
+                copy.add(value);
+                inserted = true;
+            }
+            copy.add(element);
+        }
 
-		// Don't forget to add it
-		if (!inserted) {
-			copy.add(value);
-		}
+        // Don't forget to add it
+        if (!inserted) {
+            copy.add(value);
+        }
 
-		this.list = copy;
-		return true;
-	}
+        this.list = copy;
+        return true;
+    }
 
-	@Override
-	public synchronized boolean addAll(Collection<? extends T> values) {
-		if (values == null) throw new IllegalArgumentException("values cannot be NULL");
+    @Override
+    public synchronized boolean addAll(Collection<? extends T> values) {
+        if (values == null) throw new IllegalArgumentException("values cannot be NULL");
 
-		if (values.size() == 0) {
-			return false;
-		}
+        if (values.size() == 0) {
+            return false;
+        }
 
-		List<T> copy = new ArrayList<>(this.list);
+        List<T> copy = new ArrayList<>(this.list);
 
-		// Insert the new content and sort it
-		copy.addAll(values);
-		Collections.sort(copy);
+        // Insert the new content and sort it
+        copy.addAll(values);
+        Collections.sort(copy);
 
-		this.list = copy;
-		return true;
-	}
+        this.list = copy;
+        return true;
+    }
 
-	/**
-	 * Removes from the list by making a new list with every element except the one given.
-	 * <p>
-	 * Objects will be compared using the given objects equals() method.
-	 *
-	 * @param value - value to remove.
-	 */
-	@Override
-	public synchronized boolean remove(Object value) {
-		List<T> copy = new ArrayList<>();
-		boolean result = false;
+    /**
+     * Removes from the list by making a new list with every element except the one given.
+     * <p>
+     * Objects will be compared using the given objects equals() method.
+     *
+     * @param value - value to remove.
+     */
+    @Override
+    public synchronized boolean remove(Object value) {
+        List<T> copy = new ArrayList<>();
+        boolean result = false;
 
-		// Note that there's not much to be gained from using BinarySearch, as we
-		// have to copy (and thus read) the entire list regardless.
+        // Note that there's not much to be gained from using BinarySearch, as we
+        // have to copy (and thus read) the entire list regardless.
 
-		// Copy every element except the one given to us.
-		for (T element : this.list) {
-			if (!Objects.equal(value, element)) {
-				copy.add(element);
-			} else {
-				result = true;
-			}
-		}
+        // Copy every element except the one given to us.
+        for (T element : this.list) {
+            if (!Objects.equal(value, element)) {
+                copy.add(element);
+            } else {
+                result = true;
+            }
+        }
 
-		this.list = copy;
-		return result;
-	}
+        this.list = copy;
+        return result;
+    }
 
-	@Override
-	public boolean removeAll(Collection<?> values) {
-		// Special cases
-		if (values == null) throw new IllegalArgumentException("values cannot be NULL");
+    @Override
+    public boolean removeAll(Collection<?> values) {
+        // Special cases
+        if (values == null) throw new IllegalArgumentException("values cannot be NULL");
 
-		if (values.size() == 0) {
-			return false;
-		}
+        if (values.size() == 0) {
+            return false;
+        }
 
-		List<T> copy = new ArrayList<>(this.list);
-		copy.removeAll(values);
+        List<T> copy = new ArrayList<>(this.list);
+        copy.removeAll(values);
 
-		this.list = copy;
-		return true;
-	}
+        this.list = copy;
+        return true;
+    }
 
-	@Override
-	public boolean retainAll(Collection<?> values) {
-		// Special cases
-		if (values == null) throw new IllegalArgumentException("values cannot be NULL");
+    @Override
+    public boolean retainAll(Collection<?> values) {
+        // Special cases
+        if (values == null) throw new IllegalArgumentException("values cannot be NULL");
 
-		if (values.isEmpty()) return false;
+        if (values.isEmpty()) return false;
 
-		List<T> copy = new ArrayList<>(this.list);
-		copy.removeAll(values);
+        List<T> copy = new ArrayList<>(this.list);
+        copy.removeAll(values);
 
-		this.list = copy;
-		return true;
-	}
+        this.list = copy;
+        return true;
+    }
 
-	/**
-	 * Removes from the list by making a copy of every element except the one with the given index.
-	 *
-	 * @param index - index of the element to remove.
-	 */
-	public synchronized void remove(int index) {
-		List<T> copy = new ArrayList<>(this.list);
+    /**
+     * Removes from the list by making a copy of every element except the one with the given index.
+     *
+     * @param index - index of the element to remove.
+     */
+    public synchronized void remove(int index) {
+        List<T> copy = new ArrayList<>(this.list);
 
-		copy.remove(index);
-		this.list = copy;
-	}
+        copy.remove(index);
+        this.list = copy;
+    }
 
-	/**
-	 * Retrieves an element by index.
-	 *
-	 * @param index - index of element to retrieve.
-	 * @return The element at the given location.
-	 */
-	public T get(int index) {
-		return this.list.get(index);
-	}
+    /**
+     * Retrieves an element by index.
+     *
+     * @param index - index of element to retrieve.
+     * @return The element at the given location.
+     */
+    public T get(int index) {
+        return this.list.get(index);
+    }
 
-	/**
-	 * Retrieve the size of the list.
-	 *
-	 * @return Size of the list.
-	 */
-	public int size() {
-		return this.list.size();
-	}
+    /**
+     * Retrieve the size of the list.
+     *
+     * @return Size of the list.
+     */
+    public int size() {
+        return this.list.size();
+    }
 
-	/**
-	 * Retrieves an iterator over the elements in the given list. Warning: No not attempt to remove elements using the
-	 * iterator.
-	 */
-	public Iterator<T> iterator() {
-		return Iterables.unmodifiableIterable(this.list).iterator();
-	}
+    /**
+     * Retrieves an iterator over the elements in the given list. Warning: No not attempt to remove elements using the
+     * iterator.
+     */
+    public Iterator<T> iterator() {
+        return Iterables.unmodifiableIterable(this.list).iterator();
+    }
 
-	@Override
-	public void clear() {
-		this.list = new ArrayList<>();
-	}
+    @Override
+    public void clear() {
+        this.list = new ArrayList<>();
+    }
 
-	@Override
-	public boolean contains(Object value) {
-		return this.list.contains(value);
-	}
+    @Override
+    public boolean contains(Object value) {
+        return this.list.contains(value);
+    }
 
-	@Override
-	public boolean containsAll(Collection<?> values) {
-		return this.list.containsAll(values);
-	}
+    @Override
+    public boolean containsAll(Collection<?> values) {
+        return this.list.containsAll(values);
+    }
 
-	@Override
-	public boolean isEmpty() {
-		return this.list.isEmpty();
-	}
+    @Override
+    public boolean isEmpty() {
+        return this.list.isEmpty();
+    }
 
-	@Override
-	public Object[] toArray() {
-		return this.list.toArray();
-	}
+    @Override
+    public Object[] toArray() {
+        return this.list.toArray();
+    }
 
-	@SuppressWarnings("hiding")
-	@Override
-	public <T> T[] toArray(T[] a) {
-		return this.list.toArray(a);
-	}
+    @SuppressWarnings("hiding")
+    @Override
+    public <T> T[] toArray(T[] a) {
+        return this.list.toArray(a);
+    }
 
-	@Override
-	public String toString() {
-		return this.list.toString();
-	}
+    @Override
+    public String toString() {
+        return this.list.toString();
+    }
 }

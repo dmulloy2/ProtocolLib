@@ -31,91 +31,91 @@ import java.util.Set;
  * @author Kristian
  */
 public class PacketTypeEnum implements Iterable<PacketType> {
-	// Used to convert between IDs and names
-	protected Set<PacketType> members = new HashSet<>();
+    // Used to convert between IDs and names
+    protected Set<PacketType> members = new HashSet<>();
 
-	/**
-	 * Registers every declared PacketType field.
-	 */
-	public PacketTypeEnum() {
-		registerAll();
-	}
+    /**
+     * Registers every declared PacketType field.
+     */
+    public PacketTypeEnum() {
+        registerAll();
+    }
 
-	/**
-	 * Registers every public assignable static field as a member.
-	 */
-	@SuppressWarnings("unchecked")
-	protected void registerAll() {
-		try {
-			// Register every non-deprecated field
-			for (Field entry : this.getClass().getFields()) {
-				if (Modifier.isStatic(entry.getModifiers()) && PacketType.class.isAssignableFrom(entry.getType())) {
-					PacketType value = (PacketType) entry.get(null);
-					if (value == null) {
-						throw new IllegalArgumentException("Field " + entry.getName() + " was null!");
-					}
+    /**
+     * Registers every public assignable static field as a member.
+     */
+    @SuppressWarnings("unchecked")
+    protected void registerAll() {
+        try {
+            // Register every non-deprecated field
+            for (Field entry : this.getClass().getFields()) {
+                if (Modifier.isStatic(entry.getModifiers()) && PacketType.class.isAssignableFrom(entry.getType())) {
+                    PacketType value = (PacketType) entry.get(null);
+                    if (value == null) {
+                        throw new IllegalArgumentException("Field " + entry.getName() + " was null!");
+                    }
 
-					value.setName(entry.getName());
+                    value.setName(entry.getName());
 
-					if (entry.getAnnotation(PacketType.ForceAsync.class) != null) {
-						value.forceAsync();
-					}
+                    if (entry.getAnnotation(PacketType.ForceAsync.class) != null) {
+                        value.forceAsync();
+                    }
 
-					boolean deprecated = entry.getAnnotation(Deprecated.class) != null;
-					if (deprecated) value.setDeprecated();
+                    boolean deprecated = entry.getAnnotation(Deprecated.class) != null;
+                    if (deprecated) value.setDeprecated();
 
-					if (members.contains(value)) {
-						// Replace potentially deprecated packet types with non-deprecated ones
-						if (!deprecated) {
-							members.remove(value);
-							members.add(value);
-						}
-					} else {
-						members.add(value);
-					}
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-	}
-	
-	/**
-	 * Registers a member if its not present.
-	 * @param instance - member instance.
-	 * @param name - name of member.
-	 * @return TRUE if the member was registered, FALSE otherwise.
-	 */
-	public boolean registerMember(PacketType instance, String name) {
-		instance.setName(name);
+                    if (members.contains(value)) {
+                        // Replace potentially deprecated packet types with non-deprecated ones
+                        if (!deprecated) {
+                            members.remove(value);
+                            members.add(value);
+                        }
+                    } else {
+                        members.add(value);
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    /**
+     * Registers a member if its not present.
+     * @param instance - member instance.
+     * @param name - name of member.
+     * @return TRUE if the member was registered, FALSE otherwise.
+     */
+    public boolean registerMember(PacketType instance, String name) {
+        instance.setName(name);
 
-		if (!members.contains(instance)) {
-			members.add(instance);
-			return true;
-		}
+        if (!members.contains(instance)) {
+            members.add(instance);
+            return true;
+        }
 
-		return false;
-	}
-	
-	/**
-	 * Determines whether or not the given member has been registered to this enum.
-	 * @param member - the member to check.
-	 * @return TRUE if the given member has been registered, FALSE otherwise.
-	 */
-	public boolean hasMember(PacketType member) {
-		return members.contains(member);
-	}
+        return false;
+    }
+    
+    /**
+     * Determines whether or not the given member has been registered to this enum.
+     * @param member - the member to check.
+     * @return TRUE if the given member has been registered, FALSE otherwise.
+     */
+    public boolean hasMember(PacketType member) {
+        return members.contains(member);
+    }
 
-	/**
-	 * Retrieve every registered member.
-	 * @return Enumeration of every value.
-	 */
-	public Set<PacketType> values() {
-		return new HashSet<>(members);
-	}
+    /**
+     * Retrieve every registered member.
+     * @return Enumeration of every value.
+     */
+    public Set<PacketType> values() {
+        return new HashSet<>(members);
+    }
 
-	@Override
-	public Iterator<PacketType> iterator() {
-		return members.iterator();
-	}
+    @Override
+    public Iterator<PacketType> iterator() {
+        return members.iterator();
+    }
 }

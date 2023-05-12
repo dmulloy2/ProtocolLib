@@ -37,80 +37,80 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class WrappedDataWatcherTest {
 
-	@BeforeAll
-	public static void prepare() {
-		BukkitInitialization.initializeAll();
-	}
+    @BeforeAll
+    public static void prepare() {
+        BukkitInitialization.initializeAll();
+    }
 
-	@Test
-	public void testBytes() {
-		// Create a fake lightning strike and get its watcher
-		EntityEgg nmsEgg = new EntityEgg(null, 0, 0, 0);
-		CraftEntity craftEgg = new CraftEgg(null, nmsEgg);
-		WrappedDataWatcher wrapper = WrappedDataWatcher.getEntityWatcher(craftEgg);
+    @Test
+    public void testBytes() {
+        // Create a fake lightning strike and get its watcher
+        EntityEgg nmsEgg = new EntityEgg(null, 0, 0, 0);
+        CraftEntity craftEgg = new CraftEgg(null, nmsEgg);
+        WrappedDataWatcher wrapper = WrappedDataWatcher.getEntityWatcher(craftEgg);
 
-		WrappedWatchableObject watchable = wrapper.getWatchableObject(0);
-		WrappedDataWatcherObject object = watchable.getWatcherObject();
+        WrappedWatchableObject watchable = wrapper.getWatchableObject(0);
+        WrappedDataWatcherObject object = watchable.getWatcherObject();
 
-		// Make sure the serializers work
-		assertEquals(object.getSerializer(), Registry.get(Byte.class));
+        // Make sure the serializers work
+        assertEquals(object.getSerializer(), Registry.get(Byte.class));
 
-		// Make sure we can set existing objects
-		wrapper.setObject(0, (byte) 21);
-		assertEquals(21, (byte) wrapper.getByte(0));
-	}
+        // Make sure we can set existing objects
+        wrapper.setObject(0, (byte) 21);
+        assertEquals(21, (byte) wrapper.getByte(0));
+    }
 
-	@Test
-	public void testStrings() {
-		WrappedDataWatcher wrapper = new WrappedDataWatcher();
+    @Test
+    public void testStrings() {
+        WrappedDataWatcher wrapper = new WrappedDataWatcher();
 
-		// Make sure we can create watcher objects
-		Serializer serializer = Registry.get(String.class);
-		WrappedDataWatcherObject object = new WrappedDataWatcherObject(3, serializer);
-		wrapper.setObject(object, "Test");
+        // Make sure we can create watcher objects
+        Serializer serializer = Registry.get(String.class);
+        WrappedDataWatcherObject object = new WrappedDataWatcherObject(3, serializer);
+        wrapper.setObject(object, "Test");
 
-		assertEquals(wrapper.getString(3), "Test");
-	}
+        assertEquals(wrapper.getString(3), "Test");
+    }
 
-	@Test
-	public void testFloats() {
-		WrappedDataWatcher wrapper = new WrappedDataWatcher();
+    @Test
+    public void testFloats() {
+        WrappedDataWatcher wrapper = new WrappedDataWatcher();
 
-		// Make sure we can add new entries
-		Serializer serializer = Registry.get(Float.class);
-		WrappedDataWatcherObject object = new WrappedDataWatcherObject(10, serializer);
-		wrapper.setObject(object, 21.0F);
+        // Make sure we can add new entries
+        Serializer serializer = Registry.get(Float.class);
+        WrappedDataWatcherObject object = new WrappedDataWatcherObject(10, serializer);
+        wrapper.setObject(object, 21.0F);
 
-		assertTrue(wrapper.hasIndex(10));
-	}
+        assertTrue(wrapper.hasIndex(10));
+    }
 
-	@Test
-	public void testSerializers() {
-		Serializer blockPos = Registry.get(net.minecraft.core.BlockPosition.class, false);
-		Serializer optionalBlockPos = Registry.get(net.minecraft.core.BlockPosition.class, true);
-		assertNotSame(blockPos, optionalBlockPos);
+    @Test
+    public void testSerializers() {
+        Serializer blockPos = Registry.get(net.minecraft.core.BlockPosition.class, false);
+        Serializer optionalBlockPos = Registry.get(net.minecraft.core.BlockPosition.class, true);
+        assertNotSame(blockPos, optionalBlockPos);
 
-		// assertNull(Registry.get(ItemStack.class, false));
-		assertNotNull(Registry.get(UUID.class, true));
-	}
+        // assertNull(Registry.get(ItemStack.class, false));
+        assertNotNull(Registry.get(UUID.class, true));
+    }
 
-	@Test
-	public void testHasIndex() {
-		WrappedDataWatcher watcher = new WrappedDataWatcher();
-		Serializer serializer = Registry.get(Integer.class);
+    @Test
+    public void testHasIndex() {
+        WrappedDataWatcher watcher = new WrappedDataWatcher();
+        Serializer serializer = Registry.get(Integer.class);
 
-		assertFalse(watcher.hasIndex(0));
-		watcher.setObject(0, serializer, 1);
-		assertTrue(watcher.hasIndex(0));
-	}
+        assertFalse(watcher.hasIndex(0));
+        watcher.setObject(0, serializer, 1);
+        assertTrue(watcher.hasIndex(0));
+    }
 
-	@Test
-	public void testDeepClone() {
-		WrappedDataWatcher watcher = new WrappedDataWatcher();
-		watcher.setObject(0, Registry.get(Integer.class), 1);
+    @Test
+    public void testDeepClone() {
+        WrappedDataWatcher watcher = new WrappedDataWatcher();
+        watcher.setObject(0, Registry.get(Integer.class), 1);
 
-		WrappedDataWatcher cloned = watcher.deepClone();
-		assertEquals(1, cloned.asMap().size());
-		assertEquals(1, (Object) cloned.getInteger(0));
-	}
+        WrappedDataWatcher cloned = watcher.deepClone();
+        assertEquals(1, cloned.asMap().size());
+        assertEquals(1, (Object) cloned.getInteger(0));
+    }
 }

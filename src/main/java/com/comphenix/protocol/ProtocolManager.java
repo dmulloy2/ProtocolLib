@@ -42,202 +42,202 @@ import org.bukkit.plugin.Plugin;
  */
 public interface ProtocolManager extends PacketStream {
 
-	/**
-	 * Retrieve the protocol version of a given player.
-	 * <p>
-	 * This only really makes sense of a server that support clients of multiple Minecraft versions, such as Spigot
-	 * #1628.
-	 *
-	 * @param player - the player.
-	 * @return The associated protocol version, or {@link Integer#MIN_VALUE} if unknown.
-	 */
-	int getProtocolVersion(Player player);
+    /**
+     * Retrieve the protocol version of a given player.
+     * <p>
+     * This only really makes sense of a server that support clients of multiple Minecraft versions, such as Spigot
+     * #1628.
+     *
+     * @param player - the player.
+     * @return The associated protocol version, or {@link Integer#MIN_VALUE} if unknown.
+     */
+    int getProtocolVersion(Player player);
 
-	/**
-	 * Send a packet to the given player.
-	 * <p>
-	 * Re-sending a previously cancelled packet is discouraged. Use {@link AsyncMarker#incrementProcessingDelay()} to
-	 * delay a packet until a certain condition has been met.
-	 *
-	 * @param receiver - the receiver.
-	 * @param packet   - packet to send.
-	 * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 */
-	@Override
-	void sendServerPacket(Player receiver, PacketContainer packet, boolean filters);
+    /**
+     * Send a packet to the given player.
+     * <p>
+     * Re-sending a previously cancelled packet is discouraged. Use {@link AsyncMarker#incrementProcessingDelay()} to
+     * delay a packet until a certain condition has been met.
+     *
+     * @param receiver - the receiver.
+     * @param packet   - packet to send.
+     * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
+     */
+    @Override
+    void sendServerPacket(Player receiver, PacketContainer packet, boolean filters);
 
-	/**
-	 * Simulate receiving a certain packet from a given player.
-	 * <p>
-	 * Receiving a previously cancelled packet is discouraged. Use {@link AsyncMarker#incrementProcessingDelay()} to delay
-	 * a packet until a certain condition has been met.
-	 *
-	 * @param sender  - the sender.
-	 * @param packet  - the packet that was sent.
-	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 */
-	@Override
-	void receiveClientPacket(Player sender, PacketContainer packet, boolean filters);
+    /**
+     * Simulate receiving a certain packet from a given player.
+     * <p>
+     * Receiving a previously cancelled packet is discouraged. Use {@link AsyncMarker#incrementProcessingDelay()} to delay
+     * a packet until a certain condition has been met.
+     *
+     * @param sender  - the sender.
+     * @param packet  - the packet that was sent.
+     * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
+     */
+    @Override
+    void receiveClientPacket(Player sender, PacketContainer packet, boolean filters);
 
-	/**
-	 * Broadcast a given packet to every connected player on the server.
-	 *
-	 * @param packet - the packet to broadcast.
-	 * @throws FieldAccessException If we were unable to send the packet due to reflection problems.
-	 */
-	void broadcastServerPacket(PacketContainer packet);
+    /**
+     * Broadcast a given packet to every connected player on the server.
+     *
+     * @param packet - the packet to broadcast.
+     * @throws FieldAccessException If we were unable to send the packet due to reflection problems.
+     */
+    void broadcastServerPacket(PacketContainer packet);
 
-	/**
-	 * Broadcast a packet to every player that is receiving information about a given entity.
-	 * <p>
-	 * This is usually every player in the same world within an observable distance. If the entity is a player, it will
-	 * only be included if <i>includeTracker</i> is TRUE.
-	 *
-	 * @param packet         - the packet to broadcast.
-	 * @param entity         - the entity whose trackers we will inform.
-	 * @param includeTracker - whether or not to also transmit the packet to the entity, if it is a tracker.
-	 * @throws FieldAccessException If we were unable to send the packet due to reflection problems.
-	 */
-	void broadcastServerPacket(PacketContainer packet, Entity entity, boolean includeTracker);
+    /**
+     * Broadcast a packet to every player that is receiving information about a given entity.
+     * <p>
+     * This is usually every player in the same world within an observable distance. If the entity is a player, it will
+     * only be included if <i>includeTracker</i> is TRUE.
+     *
+     * @param packet         - the packet to broadcast.
+     * @param entity         - the entity whose trackers we will inform.
+     * @param includeTracker - whether or not to also transmit the packet to the entity, if it is a tracker.
+     * @throws FieldAccessException If we were unable to send the packet due to reflection problems.
+     */
+    void broadcastServerPacket(PacketContainer packet, Entity entity, boolean includeTracker);
 
-	/**
-	 * Broadcast a packet to every player within the given maximum observer distance.
-	 *
-	 * @param packet              - the packet to broadcast.
-	 * @param origin              - the origin to consider when calculating the distance to each observer.
-	 * @param maxObserverDistance - the maximum distance to the origin.
-	 */
-	void broadcastServerPacket(PacketContainer packet, Location origin, int maxObserverDistance);
+    /**
+     * Broadcast a packet to every player within the given maximum observer distance.
+     *
+     * @param packet              - the packet to broadcast.
+     * @param origin              - the origin to consider when calculating the distance to each observer.
+     * @param maxObserverDistance - the maximum distance to the origin.
+     */
+    void broadcastServerPacket(PacketContainer packet, Location origin, int maxObserverDistance);
 
-	void broadcastServerPacket(PacketContainer packet, Collection<? extends Player> targetPlayers);
+    void broadcastServerPacket(PacketContainer packet, Collection<? extends Player> targetPlayers);
 
-	/**
-	 * Retrieves a list of every registered packet listener.
-	 *
-	 * @return Every registered packet listener.
-	 */
-	ImmutableSet<PacketListener> getPacketListeners();
+    /**
+     * Retrieves a list of every registered packet listener.
+     *
+     * @return Every registered packet listener.
+     */
+    ImmutableSet<PacketListener> getPacketListeners();
 
-	/**
-	 * Adds a packet listener.
-	 * <p>
-	 * Adding an already registered listener has no effect. If you need to change the packets the current listener is
-	 * observing, you must first remove the packet listener before you can register it again.
-	 *
-	 * @param listener - new packet listener.
-	 */
-	void addPacketListener(PacketListener listener);
+    /**
+     * Adds a packet listener.
+     * <p>
+     * Adding an already registered listener has no effect. If you need to change the packets the current listener is
+     * observing, you must first remove the packet listener before you can register it again.
+     *
+     * @param listener - new packet listener.
+     */
+    void addPacketListener(PacketListener listener);
 
-	/**
-	 * Removes a given packet listener.
-	 * <p>
-	 * Attempting to remove a listener that doesn't exist has no effect.
-	 *
-	 * @param listener - the packet listener to remove.
-	 */
-	void removePacketListener(PacketListener listener);
+    /**
+     * Removes a given packet listener.
+     * <p>
+     * Attempting to remove a listener that doesn't exist has no effect.
+     *
+     * @param listener - the packet listener to remove.
+     */
+    void removePacketListener(PacketListener listener);
 
-	/**
-	 * Removes every listener associated with the given plugin.
-	 *
-	 * @param plugin - the plugin to unload.
-	 */
-	void removePacketListeners(Plugin plugin);
+    /**
+     * Removes every listener associated with the given plugin.
+     *
+     * @param plugin - the plugin to unload.
+     */
+    void removePacketListeners(Plugin plugin);
 
-	/**
-	 * Constructs a new encapsulated Minecraft packet with the given ID.
-	 *
-	 * @param type - packet  type.
-	 * @return New encapsulated Minecraft packet.
-	 */
-	PacketContainer createPacket(PacketType type);
+    /**
+     * Constructs a new encapsulated Minecraft packet with the given ID.
+     *
+     * @param type - packet  type.
+     * @return New encapsulated Minecraft packet.
+     */
+    PacketContainer createPacket(PacketType type);
 
-	/**
-	 * Constructs a new encapsulated Minecraft packet with the given ID.
-	 * <p>
-	 * If set to true, the <i>forceDefaults</i> option will force the system to automatically give non-primitive fields in
-	 * the packet sensible default values. For instance, certain packets - like Packet60Explosion - require a List or Set
-	 * to be non-null. If the forceDefaults option is true, the List or Set will be automatically created.
-	 *
-	 * @param type          - packet type.
-	 * @param forceDefaults - TRUE to use sensible defaults in most fields, FALSE otherwise.
-	 * @return New encapsulated Minecraft packet.
-	 */
-	PacketContainer createPacket(PacketType type, boolean forceDefaults);
+    /**
+     * Constructs a new encapsulated Minecraft packet with the given ID.
+     * <p>
+     * If set to true, the <i>forceDefaults</i> option will force the system to automatically give non-primitive fields in
+     * the packet sensible default values. For instance, certain packets - like Packet60Explosion - require a List or Set
+     * to be non-null. If the forceDefaults option is true, the List or Set will be automatically created.
+     *
+     * @param type          - packet type.
+     * @param forceDefaults - TRUE to use sensible defaults in most fields, FALSE otherwise.
+     * @return New encapsulated Minecraft packet.
+     */
+    PacketContainer createPacket(PacketType type, boolean forceDefaults);
 
-	/**
-	 * Construct a packet using the special builtin Minecraft constructors.
-	 *
-	 * @param type      - the packet type.
-	 * @param arguments - arguments that will be passed to the constructor.
-	 * @return The packet constructor.
-	 */
-	PacketConstructor createPacketConstructor(PacketType type, Object... arguments);
+    /**
+     * Construct a packet using the special builtin Minecraft constructors.
+     *
+     * @param type      - the packet type.
+     * @param arguments - arguments that will be passed to the constructor.
+     * @return The packet constructor.
+     */
+    PacketConstructor createPacketConstructor(PacketType type, Object... arguments);
 
-	/**
-	 * Completely resend an entity to a list of clients.
-	 * <p>
-	 * Note that this method is NOT thread safe. If you call this method from anything but the main thread, it will throw
-	 * an exception.
-	 *
-	 * @param entity    - entity to refresh.
-	 * @param observers - the clients to update.
-	 */
-	void updateEntity(Entity entity, List<Player> observers);
+    /**
+     * Completely resend an entity to a list of clients.
+     * <p>
+     * Note that this method is NOT thread safe. If you call this method from anything but the main thread, it will throw
+     * an exception.
+     *
+     * @param entity    - entity to refresh.
+     * @param observers - the clients to update.
+     */
+    void updateEntity(Entity entity, List<Player> observers);
 
-	/**
-	 * Retrieve the associated entity.
-	 *
-	 * @param container - the world the entity belongs to.
-	 * @param id        - the unique ID of the entity.
-	 * @return The associated entity.
-	 * @throws FieldAccessException Reflection failed.
-	 */
-	Entity getEntityFromID(World container, int id);
+    /**
+     * Retrieve the associated entity.
+     *
+     * @param container - the world the entity belongs to.
+     * @param id        - the unique ID of the entity.
+     * @return The associated entity.
+     * @throws FieldAccessException Reflection failed.
+     */
+    Entity getEntityFromID(World container, int id);
 
-	/**
-	 * Retrieve every client that is receiving information about a given entity.
-	 *
-	 * @param entity - the entity that is being tracked.
-	 * @return Every client/player that is tracking the given entity.
-	 * @throws FieldAccessException If reflection failed.
-	 */
-	List<Player> getEntityTrackers(Entity entity);
+    /**
+     * Retrieve every client that is receiving information about a given entity.
+     *
+     * @param entity - the entity that is being tracked.
+     * @return Every client/player that is tracking the given entity.
+     * @throws FieldAccessException If reflection failed.
+     */
+    List<Player> getEntityTrackers(Entity entity);
 
-	/**
-	 * Retrieves a immutable set containing the type of the sent server packets that will be observed by listeners.
-	 *
-	 * @return Every filtered server packet.
-	 */
-	Set<PacketType> getSendingFilterTypes();
+    /**
+     * Retrieves a immutable set containing the type of the sent server packets that will be observed by listeners.
+     *
+     * @return Every filtered server packet.
+     */
+    Set<PacketType> getSendingFilterTypes();
 
-	/**
-	 * Retrieves a immutable set containing the type of the received client packets that will be observed by listeners.
-	 *
-	 * @return Every filtered client packet.
-	 */
-	Set<PacketType> getReceivingFilterTypes();
+    /**
+     * Retrieves a immutable set containing the type of the received client packets that will be observed by listeners.
+     *
+     * @return Every filtered client packet.
+     */
+    Set<PacketType> getReceivingFilterTypes();
 
-	/**
-	 * Retrieve the current Minecraft version.
-	 *
-	 * @return The current version.
-	 */
-	MinecraftVersion getMinecraftVersion();
+    /**
+     * Retrieve the current Minecraft version.
+     *
+     * @return The current version.
+     */
+    MinecraftVersion getMinecraftVersion();
 
-	/**
-	 * Determines whether or not this protocol manager has been disabled.
-	 *
-	 * @return TRUE if it has, FALSE otherwise.
-	 */
-	boolean isClosed();
+    /**
+     * Determines whether or not this protocol manager has been disabled.
+     *
+     * @return TRUE if it has, FALSE otherwise.
+     */
+    boolean isClosed();
 
-	/**
-	 * Retrieve the current asynchronous packet manager.
-	 *
-	 * @return Asynchronous packet manager.
-	 */
-	AsynchronousManager getAsynchronousManager();
+    /**
+     * Retrieve the current asynchronous packet manager.
+     *
+     * @return Asynchronous packet manager.
+     */
+    AsynchronousManager getAsynchronousManager();
 
-	void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist);
+    void verifyWhitelist(PacketListener listener, ListeningWhitelist whitelist);
 }

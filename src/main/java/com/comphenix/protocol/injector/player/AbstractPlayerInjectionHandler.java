@@ -8,44 +8,44 @@ import java.util.Set;
 
 public abstract class AbstractPlayerInjectionHandler implements PlayerInjectionHandler {
 
-	private final PacketTypeSet sendingFilters;
+    private final PacketTypeSet sendingFilters;
 
-	public AbstractPlayerInjectionHandler(PacketTypeSet sendingFilters) {
-		this.sendingFilters = sendingFilters;
-	}
+    public AbstractPlayerInjectionHandler(PacketTypeSet sendingFilters) {
+        this.sendingFilters = sendingFilters;
+    }
 
-	@Override
-	public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
-		this.sendingFilters.addType(type);
-	}
+    @Override
+    public void addPacketHandler(PacketType type, Set<ListenerOptions> options) {
+        this.sendingFilters.addType(type);
+    }
 
-	@Override
-	public void removePacketHandler(PacketType type) {
-		this.sendingFilters.removeType(type);
-	}
+    @Override
+    public void removePacketHandler(PacketType type) {
+        this.sendingFilters.removeType(type);
+    }
 
-	@Override
-	public Set<PacketType> getSendingFilters() {
-		return this.sendingFilters.values();
-	}
+    @Override
+    public Set<PacketType> getSendingFilters() {
+        return this.sendingFilters.values();
+    }
 
-	@Override
-	public void close() {
-		this.sendingFilters.clear();
-	}
+    @Override
+    public void close() {
+        this.sendingFilters.clear();
+    }
 
-	@Override
-	public boolean canReceivePackets() {
-		return true;
-	}
+    @Override
+    public boolean canReceivePackets() {
+        return true;
+    }
 
-	@Override
-	public void checkListener(PacketListener listener) {
-		// They're all fine!
-	}
+    @Override
+    public void checkListener(PacketListener listener) {
+        // They're all fine!
+    }
 
-	@Override
-	public void checkListener(Set<PacketListener> listeners) {
-		// Yes, really
-	}
+    @Override
+    public void checkListener(Set<PacketListener> listeners) {
+        // Yes, really
+    }
 }

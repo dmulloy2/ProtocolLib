@@ -33,38 +33,38 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WrappedBlockDataTest {
 
-	@BeforeAll
-	public static void initializeBukkit() {
-		BukkitInitialization.initializeAll();
-	}
+    @BeforeAll
+    public static void initializeBukkit() {
+        BukkitInitialization.initializeAll();
+    }
 
-	@Test
-	public void testMaterialCreation() {
-		Material type = Material.BLUE_WOOL;
+    @Test
+    public void testMaterialCreation() {
+        Material type = Material.BLUE_WOOL;
 
-		WrappedBlockData wrapper = WrappedBlockData.createData(type);
+        WrappedBlockData wrapper = WrappedBlockData.createData(type);
 
-		assertEquals(wrapper.getType(), type);
-		//assertEquals(wrapper.getData(), data);
+        assertEquals(wrapper.getType(), type);
+        //assertEquals(wrapper.getData(), data);
 
-		Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(wrapper);
-		WrappedBlockData back = BukkitConverters.getWrappedBlockDataConverter().getSpecific(generic);
+        Object generic = BukkitConverters.getWrappedBlockDataConverter().getGeneric(wrapper);
+        WrappedBlockData back = BukkitConverters.getWrappedBlockDataConverter().getSpecific(generic);
 
-		assertEquals(wrapper.getType(), back.getType());
-		assertEquals(wrapper.getData(), back.getData());
-	}
+        assertEquals(wrapper.getType(), back.getType());
+        assertEquals(wrapper.getData(), back.getData());
+    }
 
-	@Test
-	public void testDataCreation() {
-		IBlockData nmsData = CraftMagicNumbers.getBlock(Material.CYAN_STAINED_GLASS_PANE).o();
-		GlassPane data = (GlassPane) CraftBlockData.fromData(nmsData);
-		data.setFace(BlockFace.EAST, true);
+    @Test
+    public void testDataCreation() {
+        IBlockData nmsData = CraftMagicNumbers.getBlock(Material.CYAN_STAINED_GLASS_PANE).o();
+        GlassPane data = (GlassPane) CraftBlockData.fromData(nmsData);
+        data.setFace(BlockFace.EAST, true);
 
-		WrappedBlockData wrapper = WrappedBlockData.createData(data);
-		assertEquals(wrapper.getType(), Material.CYAN_STAINED_GLASS_PANE);
+        WrappedBlockData wrapper = WrappedBlockData.createData(data);
+        assertEquals(wrapper.getType(), Material.CYAN_STAINED_GLASS_PANE);
 
-		GlassPane back = new CraftStainedGlassPane((IBlockData) wrapper.getHandle());
-		assertEquals(back.hasFace(BlockFace.EAST), data.hasFace(BlockFace.EAST));
-		assertEquals(back.hasFace(BlockFace.SOUTH), data.hasFace(BlockFace.SOUTH));
-	}
+        GlassPane back = new CraftStainedGlassPane((IBlockData) wrapper.getHandle());
+        assertEquals(back.hasFace(BlockFace.EAST), data.hasFace(BlockFace.EAST));
+        assertEquals(back.hasFace(BlockFace.SOUTH), data.hasFace(BlockFace.SOUTH));
+    }
 }

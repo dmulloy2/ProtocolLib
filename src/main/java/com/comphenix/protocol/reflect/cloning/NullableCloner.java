@@ -23,27 +23,27 @@ package com.comphenix.protocol.reflect.cloning;
  * @author Kristian
  */
 public class NullableCloner implements Cloner {
-	protected Cloner wrapped;
-	
-	public NullableCloner(Cloner wrapped) {
-		this.wrapped = wrapped;
-	}
+    protected Cloner wrapped;
+    
+    public NullableCloner(Cloner wrapped) {
+        this.wrapped = wrapped;
+    }
 
-	@Override
-	public boolean canClone(Object source) {
-		return true;
-	}
+    @Override
+    public boolean canClone(Object source) {
+        return true;
+    }
 
-	@Override
-	public Object clone(Object source) {
-		// Don't pass the NULL value to the cloner
-		if (source == null)
-			return null;
-		else
-			return wrapped.clone(source);
-	}
+    @Override
+    public Object clone(Object source) {
+        // Don't pass the NULL value to the cloner
+        if (source == null)
+            return null;
+        else
+            return wrapped.clone(source);
+    }
 
-	public Cloner getWrapped() {
-		return wrapped;
-	}
+    public Cloner getWrapped() {
+        return wrapped;
+    }
 }

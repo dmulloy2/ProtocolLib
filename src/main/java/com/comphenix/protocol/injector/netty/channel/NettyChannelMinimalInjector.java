@@ -7,38 +7,38 @@ import org.bukkit.entity.Player;
 
 final class NettyChannelMinimalInjector implements MinimalInjector {
 
-	private final NettyChannelInjector injector;
+    private final NettyChannelInjector injector;
 
-	public NettyChannelMinimalInjector(NettyChannelInjector injector) {
-		this.injector = injector;
-	}
+    public NettyChannelMinimalInjector(NettyChannelInjector injector) {
+        this.injector = injector;
+    }
 
-	@Override
-	public SocketAddress getAddress() {
-		return this.injector.getWrappedChannel().remoteAddress();
-	}
+    @Override
+    public SocketAddress getAddress() {
+        return this.injector.getWrappedChannel().remoteAddress();
+    }
 
-	@Override
-	public void disconnect(String message) {
-		this.injector.disconnect(message);
-	}
+    @Override
+    public void disconnect(String message) {
+        this.injector.disconnect(message);
+    }
 
-	@Override
-	public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
-		this.injector.sendServerPacket(packet, marker, filtered);
-	}
+    @Override
+    public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
+        this.injector.sendServerPacket(packet, marker, filtered);
+    }
 
-	@Override
-	public Player getPlayer() {
-		return this.injector.getPlayer();
-	}
+    @Override
+    public Player getPlayer() {
+        return this.injector.getPlayer();
+    }
 
-	@Override
-	public boolean isConnected() {
-		return this.injector.getWrappedChannel().isActive();
-	}
+    @Override
+    public boolean isConnected() {
+        return this.injector.getWrappedChannel().isActive();
+    }
 
-	public NettyChannelInjector getInjector() {
-		return this.injector;
-	}
+    public NettyChannelInjector getInjector() {
+        return this.injector;
+    }
 }

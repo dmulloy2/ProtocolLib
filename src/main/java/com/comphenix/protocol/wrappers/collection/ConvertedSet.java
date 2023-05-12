@@ -29,7 +29,7 @@ import java.util.Set;
  * @param <VOuter> - type of the elements publically accessible in the outer set.
  */
 public abstract class ConvertedSet<VInner, VOuter> extends ConvertedCollection<VInner, VOuter> implements Set<VOuter> {
-	public ConvertedSet(Collection<VInner> inner) {
-		super(inner);
-	}
+    public ConvertedSet(Collection<VInner> inner) {
+        super(inner);
+    }
 }

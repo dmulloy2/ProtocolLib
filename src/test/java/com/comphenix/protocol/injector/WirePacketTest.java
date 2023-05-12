@@ -21,49 +21,49 @@ import org.junit.jupiter.api.Test;
  */
 public class WirePacketTest {
 
-	@BeforeAll
-	public static void beforeClass() {
-		BukkitInitialization.initializeAll();
-	}
+    @BeforeAll
+    public static void beforeClass() {
+        BukkitInitialization.initializeAll();
+    }
 
-	// @Test
-	public void testPackets() {
-		List<String> failures = new ArrayList<>();
+    // @Test
+    public void testPackets() {
+        List<String> failures = new ArrayList<>();
 
-		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated()) {
-				continue;
-			}
+        for (PacketType type : PacketType.values()) {
+            if (type.isDeprecated()) {
+                continue;
+            }
 
-			try {
-				PacketContainer packet = new PacketContainer(type);
-				WirePacket wire = WirePacket.fromPacket(packet);
-				WirePacket handle = WirePacket.fromPacket(packet.getHandle());
-				assertEquals(wire, handle);
-			} catch (Exception ex) {
-				failures.add(type + " :: " + ex.getMessage());
-				System.out.println(type);
-				ex.printStackTrace();
-			}
-		}
+            try {
+                PacketContainer packet = new PacketContainer(type);
+                WirePacket wire = WirePacket.fromPacket(packet);
+                WirePacket handle = WirePacket.fromPacket(packet.getHandle());
+                assertEquals(wire, handle);
+            } catch (Exception ex) {
+                failures.add(type + " :: " + ex.getMessage());
+                System.out.println(type);
+                ex.printStackTrace();
+            }
+        }
 
-		assertEquals(failures, new ArrayList<>());
-	}
+        assertEquals(failures, new ArrayList<>());
+    }
 
-	@Test
-	public void testSerialization() {
-		int id = 42;
-		byte[] array = {1, 3, 7, 21, 88, 67, 8};
+    @Test
+    public void testSerialization() {
+        int id = 42;
+        byte[] array = {1, 3, 7, 21, 88, 67, 8};
 
-		WirePacket packet = new WirePacket(id, array);
+        WirePacket packet = new WirePacket(id, array);
 
-		ByteBuf buf = packet.serialize();
+        ByteBuf buf = packet.serialize();
 
-		int backId = WirePacket.readVarInt(buf);
-		byte[] backArray = new byte[buf.readableBytes()];
-		buf.readBytes(backArray);
+        int backId = WirePacket.readVarInt(buf);
+        byte[] backArray = new byte[buf.readableBytes()];
+        buf.readBytes(backArray);
 
-		assertEquals(id, backId);
-		assertArrayEquals(array, backArray);
-	}
+        assertEquals(id, backId);
+        assertArrayEquals(array, backArray);
+    }
 }

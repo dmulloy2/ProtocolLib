@@ -27,27 +27,27 @@ import org.junit.jupiter.api.Test;
 
 public class BlockingHashMapTest {
 
-	@Test
-	public void test() throws InterruptedException, ExecutionException {
+    @Test
+    public void test() throws InterruptedException, ExecutionException {
 
-		final BlockingHashMap<Integer, String> map = BlockingHashMap.create();
+        final BlockingHashMap<Integer, String> map = BlockingHashMap.create();
 
-		ExecutorService service = Executors.newSingleThreadExecutor();
+        ExecutorService service = Executors.newSingleThreadExecutor();
 
-		// Create a reader
-		Future<String> future = service.submit(() -> {
-			// Combine for easy reading
-			return map.get(0) + map.get(1);
-		});
+        // Create a reader
+        Future<String> future = service.submit(() -> {
+            // Combine for easy reading
+            return map.get(0) + map.get(1);
+        });
 
-		// Wait a bit
-		Thread.sleep(50);
+        // Wait a bit
+        Thread.sleep(50);
 
-		// Insert values
-		map.put(0, "hello ");
-		map.put(1, "world");
+        // Insert values
+        map.put(0, "hello ");
+        map.put(1, "world");
 
-		// Wait for the other thread to complete
-		assertEquals(future.get(), "hello world");
-	}
+        // Wait for the other thread to complete
+        assertEquals(future.get(), "hello world");
+    }
 }

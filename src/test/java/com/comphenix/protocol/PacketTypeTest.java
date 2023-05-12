@@ -48,330 +48,330 @@ import org.junit.jupiter.api.Test;
  */
 public class PacketTypeTest {
 
-	@BeforeAll
-	public static void beforeClass() {
-		BukkitInitialization.initializeAll();
+    @BeforeAll
+    public static void beforeClass() {
+        BukkitInitialization.initializeAll();
 
-		// I'm well aware this is jank, but it does in fact work correctly and give the desired result
-		/*PacketType.onDynamicCreate = className -> {
-			throw new RuntimeException("Dynamically generated packet " + className);
-		};*/
-	}
+        // I'm well aware this is jank, but it does in fact work correctly and give the desired result
+        /*PacketType.onDynamicCreate = className -> {
+            throw new RuntimeException("Dynamically generated packet " + className);
+        };*/
+    }
 
-	@AfterAll
-	public static void afterClass() {
-		PacketType.onDynamicCreate = __ -> {
-		};
-	}
+    @AfterAll
+    public static void afterClass() {
+        PacketType.onDynamicCreate = __ -> {
+        };
+    }
 
-	@SuppressWarnings("unchecked")
-	// @Test
-	// public static void main(String[] args) throws Exception {
-	public void generateNewPackets() throws Exception {
-		MinecraftReflectionTestUtil.init();
+    @SuppressWarnings("unchecked")
+    // @Test
+    // public static void main(String[] args) throws Exception {
+    public void generateNewPackets() throws Exception {
+        MinecraftReflectionTestUtil.init();
 
-		Set<Class<?>> allTypes = new HashSet<>();
-		List<Class<?>> newTypes = new ArrayList<>();
+        Set<Class<?>> allTypes = new HashSet<>();
+        List<Class<?>> newTypes = new ArrayList<>();
 
-		EnumProtocol[] protocols = EnumProtocol.values();
-		for (EnumProtocol protocol : protocols) {
-			System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
+        EnumProtocol[] protocols = EnumProtocol.values();
+        for (EnumProtocol protocol : protocols) {
+            System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
 
-			Field field = EnumProtocol.class.getDeclaredField("k");
-			field.setAccessible(true);
+            Field field = EnumProtocol.class.getDeclaredField("k");
+            field.setAccessible(true);
 
-			Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
-			for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
-				Field mapField = entry.getValue().getClass().getDeclaredField("b");
-				mapField.setAccessible(true);
+            Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
+            for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
+                Field mapField = entry.getValue().getClass().getDeclaredField("b");
+                mapField.setAccessible(true);
 
-				Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
+                Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
 
-				Map<Integer, Class<?>> treeMap = new TreeMap<>();
-				for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
-					treeMap.put(entry1.getValue(), entry1.getKey());
-				}
+                Map<Integer, Class<?>> treeMap = new TreeMap<>();
+                for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
+                    treeMap.put(entry1.getValue(), entry1.getKey());
+                }
 
-				System.out.println("  " + entry.getKey());
-				for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
-					System.out.println(generateNewType(entry1.getKey(), entry1.getValue()));
-					allTypes.add(entry1.getValue());
+                System.out.println("  " + entry.getKey());
+                for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
+                    System.out.println(generateNewType(entry1.getKey(), entry1.getValue()));
+                    allTypes.add(entry1.getValue());
 
-					try {
-						PacketType.fromClass(entry1.getValue());
-					} catch (Exception ex) {
-						newTypes.add(entry1.getValue());
-					}
-				}
-			}
-		}
+                    try {
+                        PacketType.fromClass(entry1.getValue());
+                    } catch (Exception ex) {
+                        newTypes.add(entry1.getValue());
+                    }
+                }
+            }
+        }
 
-		System.out.println("New types: " + newTypes);
+        System.out.println("New types: " + newTypes);
 
-		for (PacketType type : PacketType.values()) {
-			if (type.isDeprecated()) {
-				continue;
-			}
+        for (PacketType type : PacketType.values()) {
+            if (type.isDeprecated()) {
+                continue;
+            }
 
-			if (!allTypes.contains(type.getPacketClass())) {
-				System.out.println(type + " was removed");
-			}
-		}
-	}
+            if (!allTypes.contains(type.getPacketClass())) {
+                System.out.println(type + " was removed");
+            }
+        }
+    }
 
-	private static String formatHex(int dec) {
-		if (dec < 0) {
-			return "0xFF";
-		}
+    private static String formatHex(int dec) {
+        if (dec < 0) {
+            return "0xFF";
+        }
 
-		String hex = Integer.toHexString(dec).toUpperCase();
-		return "0x" + (hex.length() < 2 ? "0" : "") + hex;
-	}
+        String hex = Integer.toHexString(dec).toUpperCase();
+        return "0x" + (hex.length() < 2 ? "0" : "") + hex;
+    }
 
-	private static List<String> splitOnCaps(String string) {
-		List<String> list = new ArrayList<>();
-		StringBuilder builder = new StringBuilder();
-		char[] chars = string.toCharArray();
-		for (int i = 0; i < chars.length; i++) {
-			char c = chars[i];
-			if (i != 0 && Character.isUpperCase(c)) {
-				list.add(builder.toString());
-				builder = new StringBuilder();
-			}
+    private static List<String> splitOnCaps(String string) {
+        List<String> list = new ArrayList<>();
+        StringBuilder builder = new StringBuilder();
+        char[] chars = string.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (i != 0 && Character.isUpperCase(c)) {
+                list.add(builder.toString());
+                builder = new StringBuilder();
+            }
 
-			builder.append(c);
-		}
+            builder.append(c);
+        }
 
-		list.add(builder.toString());
-		return list;
-	}
+        list.add(builder.toString());
+        return list;
+    }
 
-	private static String generateNewType(int packetId, Class<?> clazz) {
-		StringBuilder builder = new StringBuilder();
-		builder.append("\t\t\t");
-		builder.append("public static final PacketType ");
+    private static String generateNewType(int packetId, Class<?> clazz) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("\t\t\t");
+        builder.append("public static final PacketType ");
 
-		String fullName = clazz.getName();
-		fullName = fullName.substring(fullName.lastIndexOf(".") + 1);
+        String fullName = clazz.getName();
+        fullName = fullName.substring(fullName.lastIndexOf(".") + 1);
 
-		String className;
-		List<String> classNames = new ArrayList<>();
+        String className;
+        List<String> classNames = new ArrayList<>();
 
-		if (fullName.endsWith("Packet")) {
-			for (String name : fullName.split("\\$")) {
-				List<String> split = splitOnCaps(name);
-				StringBuilder nameBuilder = new StringBuilder();
-				for (int i = 1; i < split.size() - 1; i++) {
-					nameBuilder.append(split.get(i));
-				}
-				classNames.add(nameBuilder.toString());
-			}
-		} else {
-			for (String name : fullName.split("\\$")) {
-				List<String> split = splitOnCaps(name);
-				StringBuilder nameBuilder = new StringBuilder();
-				for (int i = 3; i < split.size(); i++) {
-					nameBuilder.append(split.get(i));
-				}
-				classNames.add(nameBuilder.toString());
-			}
-		}
+        if (fullName.endsWith("Packet")) {
+            for (String name : fullName.split("\\$")) {
+                List<String> split = splitOnCaps(name);
+                StringBuilder nameBuilder = new StringBuilder();
+                for (int i = 1; i < split.size() - 1; i++) {
+                    nameBuilder.append(split.get(i));
+                }
+                classNames.add(nameBuilder.toString());
+            }
+        } else {
+            for (String name : fullName.split("\\$")) {
+                List<String> split = splitOnCaps(name);
+                StringBuilder nameBuilder = new StringBuilder();
+                for (int i = 3; i < split.size(); i++) {
+                    nameBuilder.append(split.get(i));
+                }
+                classNames.add(nameBuilder.toString());
+            }
+        }
 
-		className = classNames.get(classNames.size() - 1);
+        className = classNames.get(classNames.size() - 1);
 
-		PacketType existing = null;
-		try {
-			existing = PacketType.fromClass(clazz);
-			if (existing.isDynamic()) {
-				existing = null;
-			}
-		} catch (Exception ignored) {
-			// doesn't exist
-		}
+        PacketType existing = null;
+        try {
+            existing = PacketType.fromClass(clazz);
+            if (existing.isDynamic()) {
+                existing = null;
+            }
+        } catch (Exception ignored) {
+            // doesn't exist
+        }
 
-		String fieldName;
-		if (existing == null) {
-			// Format it like SET_PROTOCOL
-			StringBuilder fieldNameBuilder = new StringBuilder();
-			char[] chars = className.toCharArray();
-			for (int i = 0; i < chars.length; i++) {
-				char c = chars[i];
-				if (i != 0 && Character.isUpperCase(c)) {
-					fieldNameBuilder.append("_");
-				}
-				fieldNameBuilder.append(Character.toUpperCase(c));
-			}
+        String fieldName;
+        if (existing == null) {
+            // Format it like SET_PROTOCOL
+            StringBuilder fieldNameBuilder = new StringBuilder();
+            char[] chars = className.toCharArray();
+            for (int i = 0; i < chars.length; i++) {
+                char c = chars[i];
+                if (i != 0 && Character.isUpperCase(c)) {
+                    fieldNameBuilder.append("_");
+                }
+                fieldNameBuilder.append(Character.toUpperCase(c));
+            }
 
-			fieldName = fieldNameBuilder.toString().replace("N_B_T", "NBT");
-		} else {
-			fieldName = existing.name();
-		}
+            fieldName = fieldNameBuilder.toString().replace("N_B_T", "NBT");
+        } else {
+            fieldName = existing.name();
+        }
 
-		builder.append(fieldName);
-		builder.append(" = ");
+        builder.append(fieldName);
+        builder.append(" = ");
 
-		// Add spacing
-		if (builder.length() > 65) {
-			builder.append("\n");
-		} else {
-			while (builder.length() < 65) {
-				builder.append(" ");
-			}
-		}
-		builder.append("new ");
-		builder.append("PacketType(PROTOCOL, SENDER, ");
+        // Add spacing
+        if (builder.length() > 65) {
+            builder.append("\n");
+        } else {
+            while (builder.length() < 65) {
+                builder.append(" ");
+            }
+        }
+        builder.append("new ");
+        builder.append("PacketType(PROTOCOL, SENDER, ");
 
-		builder.append(formatHex(packetId));
-		builder.append(", ");
+        builder.append(formatHex(packetId));
+        builder.append(", ");
 
-		StringBuilder nameBuilder = new StringBuilder();
-		for (int i = 0; i < classNames.size(); i++) {
-			if (i != 0) {
-				nameBuilder.append("$");
-			}
-			nameBuilder.append(classNames.get(i));
-		}
+        StringBuilder nameBuilder = new StringBuilder();
+        for (int i = 0; i < classNames.size(); i++) {
+            if (i != 0) {
+                nameBuilder.append("$");
+            }
+            nameBuilder.append(classNames.get(i));
+        }
 
-		String name = nameBuilder.toString();
-		String namesArg = listToString(getAllNames(clazz, name));
+        String name = nameBuilder.toString();
+        String namesArg = listToString(getAllNames(clazz, name));
 
-		builder.append(namesArg);
-		builder.append(");");
+        builder.append(namesArg);
+        builder.append(");");
 
-		return builder.toString();
-	}
+        return builder.toString();
+    }
 
-	private static List<String> getAllNames(Class<?> packetClass, String newName) {
-		List<String> names = new ArrayList<>();
-		names.add(newName);
+    private static List<String> getAllNames(Class<?> packetClass, String newName) {
+        List<String> names = new ArrayList<>();
+        names.add(newName);
 
-		try {
-			PacketType type = PacketType.fromClass(packetClass);
-			for (String alias : type.names) {
-				alias = alias.substring(alias.lastIndexOf('.') + 1);
-				if (!names.contains(alias)) {
-					names.add(alias);
-				}
-			}
-		} catch (Exception ignored) {
-		}
+        try {
+            PacketType type = PacketType.fromClass(packetClass);
+            for (String alias : type.names) {
+                alias = alias.substring(alias.lastIndexOf('.') + 1);
+                if (!names.contains(alias)) {
+                    names.add(alias);
+                }
+            }
+        } catch (Exception ignored) {
+        }
 
-		return names;
-	}
+        return names;
+    }
 
-	private static String listToString(List<String> list) {
-		StringBuilder builder = new StringBuilder();
-		for (int i = 0; i < list.size(); i++) {
-			if (i != 0) {
-				builder.append(", ");
-			}
-			builder.append("\"").append(list.get(i)).append("\"");
-		}
+    private static String listToString(List<String> list) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < list.size(); i++) {
+            if (i != 0) {
+                builder.append(", ");
+            }
+            builder.append("\"").append(list.get(i)).append("\"");
+        }
 
-		return builder.toString();
-	}
+        return builder.toString();
+    }
 
-	@Test
-	public void testFindCurrent() {
-		assertEquals(PacketType.Play.Client.STEER_VEHICLE,
-				PacketType.findCurrent(Protocol.PLAY, Sender.CLIENT, "SteerVehicle"));
-	}
+    @Test
+    public void testFindCurrent() {
+        assertEquals(PacketType.Play.Client.STEER_VEHICLE,
+                PacketType.findCurrent(Protocol.PLAY, Sender.CLIENT, "SteerVehicle"));
+    }
 
-	@Test
-	public void testLoginStart() {
-		// This packet is critical for handleLoin
-		assertEquals(PacketLoginInStart.class, PacketType.Login.Client.START.getPacketClass());
-	}
+    @Test
+    public void testLoginStart() {
+        // This packet is critical for handleLoin
+        assertEquals(PacketLoginInStart.class, PacketType.Login.Client.START.getPacketClass());
+    }
 
-	@Test
-	public void testDeprecation() {
-		assertTrue(PacketType.Status.Server.OUT_SERVER_INFO.isDeprecated(), "Packet isn't properly deprecated");
-		assertTrue(PacketRegistry.getServerPacketTypes().contains(PacketType.Status.Server.OUT_SERVER_INFO),
-				"Deprecated packet isn't properly included");
-		assertFalse(PacketType.Play.Server.CHAT.isDeprecated(), "Packet isn't properly deprecated");
-		assertEquals(PacketType.Status.Server.OUT_SERVER_INFO, PacketType.Status.Server.SERVER_INFO,
-				"Deprecated packets aren't equal");
-	}
+    @Test
+    public void testDeprecation() {
+        assertTrue(PacketType.Status.Server.OUT_SERVER_INFO.isDeprecated(), "Packet isn't properly deprecated");
+        assertTrue(PacketRegistry.getServerPacketTypes().contains(PacketType.Status.Server.OUT_SERVER_INFO),
+                "Deprecated packet isn't properly included");
+        assertFalse(PacketType.Play.Server.CHAT.isDeprecated(), "Packet isn't properly deprecated");
+        assertEquals(PacketType.Status.Server.OUT_SERVER_INFO, PacketType.Status.Server.SERVER_INFO,
+                "Deprecated packets aren't equal");
+    }
 
-	@Test
-	@SuppressWarnings("unchecked")
-	public void ensureTypesAreCorrect() throws Exception {
-		PacketType.onDynamicCreate = className -> {
-			throw new RuntimeException("Dynamically generated packet " + className);
-		};
+    @Test
+    @SuppressWarnings("unchecked")
+    public void ensureTypesAreCorrect() throws Exception {
+        PacketType.onDynamicCreate = className -> {
+            throw new RuntimeException("Dynamically generated packet " + className);
+        };
 
-		try {
-			boolean fail = false;
+        try {
+            boolean fail = false;
 
-			EnumProtocol[] protocols = EnumProtocol.values();
-			for (EnumProtocol protocol : protocols) {
-				Field field = EnumProtocol.class.getDeclaredField("k");
-				field.setAccessible(true);
+            EnumProtocol[] protocols = EnumProtocol.values();
+            for (EnumProtocol protocol : protocols) {
+                Field field = EnumProtocol.class.getDeclaredField("k");
+                field.setAccessible(true);
 
-				Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
-				for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
-					Field mapField = entry.getValue().getClass().getDeclaredField("b");
-					mapField.setAccessible(true);
+                Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
+                for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
+                    Field mapField = entry.getValue().getClass().getDeclaredField("b");
+                    mapField.setAccessible(true);
 
-					Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
+                    Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
 
-					Map<Integer, Class<?>> treeMap = new TreeMap<>();
-					for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
-						treeMap.put(entry1.getValue(), entry1.getKey());
-					}
+                    Map<Integer, Class<?>> treeMap = new TreeMap<>();
+                    for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
+                        treeMap.put(entry1.getValue(), entry1.getKey());
+                    }
 
-					for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
-						try {
-							PacketType type = PacketType.fromClass(entry1.getValue());
-							if (type.getCurrentId() != entry1.getKey()) {
-								throw new IllegalStateException(
-										"Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got "
-												+ type.getCurrentId());
-							}
-						} catch (Throwable ex) {
-							if (ex.getMessage().contains("BundleDelimiterPacket")) {
-								continue;
-							}
+                    for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
+                        try {
+                            PacketType type = PacketType.fromClass(entry1.getValue());
+                            if (type.getCurrentId() != entry1.getKey()) {
+                                throw new IllegalStateException(
+                                        "Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got "
+                                                + type.getCurrentId());
+                            }
+                        } catch (Throwable ex) {
+                            if (ex.getMessage().contains("BundleDelimiterPacket")) {
+                                continue;
+                            }
 
-							ex.printStackTrace();
-							fail = true;
-						}
-					}
-				}
-			}
+                            ex.printStackTrace();
+                            fail = true;
+                        }
+                    }
+                }
+            }
 
-			assertFalse(fail, "Packet type(s) were incorrect!");
-		} finally {
-			PacketType.onDynamicCreate = __ -> { };
-		}
-	}
+            assertFalse(fail, "Packet type(s) were incorrect!");
+        } finally {
+            PacketType.onDynamicCreate = __ -> { };
+        }
+    }
 
-	@Test
-	public void testPacketCreation() {
-		boolean fail = false;
-		for (PacketType type : PacketType.values()) {
-			if (type.isSupported()) {
-				try {
-					new PacketContainer(type);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-					fail = true;
-				}
-			}
-		}
-		assertFalse(fail, "Packet type(s) failed to instantiate");
-	}
+    @Test
+    public void testPacketCreation() {
+        boolean fail = false;
+        for (PacketType type : PacketType.values()) {
+            if (type.isSupported()) {
+                try {
+                    new PacketContainer(type);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    fail = true;
+                }
+            }
+        }
+        assertFalse(fail, "Packet type(s) failed to instantiate");
+    }
 
-	@Test
-	public void testPacketBundleWriting() {
-		PacketContainer bundlePacket = new PacketContainer(PacketType.Play.Server.BUNDLE);
-		assertEquals(MinecraftReflection.getPackedBundlePacketClass().orElseThrow(() -> new IllegalStateException("Packet Bundle class is not present")), bundlePacket.getHandle().getClass());
-		List<PacketContainer> bundle = new ArrayList<>();
+    @Test
+    public void testPacketBundleWriting() {
+        PacketContainer bundlePacket = new PacketContainer(PacketType.Play.Server.BUNDLE);
+        assertEquals(MinecraftReflection.getPackedBundlePacketClass().orElseThrow(() -> new IllegalStateException("Packet Bundle class is not present")), bundlePacket.getHandle().getClass());
+        List<PacketContainer> bundle = new ArrayList<>();
 
-		PacketContainer chatMessage = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
-		chatMessage.getStrings().write(0, WrappedChatComponent.fromText("Test").getJson());
-		chatMessage.getBooleans().write(0, false);
-		bundle.add(chatMessage);
-		bundlePacket.getPacketBundles().write(0, bundle);
-	}
+        PacketContainer chatMessage = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
+        chatMessage.getStrings().write(0, WrappedChatComponent.fromText("Test").getJson());
+        chatMessage.getBooleans().write(0, false);
+        bundle.add(chatMessage);
+        bundlePacket.getPacketBundles().write(0, bundle);
+    }
 }

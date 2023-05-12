@@ -33,77 +33,77 @@ import java.net.URL;
  */
 
 public final class SpigotUpdater extends Updater {
-	private String remoteVersion;
+    private String remoteVersion;
 
-	public SpigotUpdater(Plugin plugin, UpdateType type, boolean announce) {
-		super(plugin, type, announce);
-	}
+    public SpigotUpdater(Plugin plugin, UpdateType type, boolean announce) {
+        super(plugin, type, announce);
+    }
 
-	@Override
-	public void start(UpdateType type) {
-    	waitForThread();
+    @Override
+    public void start(UpdateType type) {
+        waitForThread();
   
-    	this.type = type;
+        this.type = type;
         this.thread = new Thread(new SpigotUpdateRunnable());
         this.thread.start();
-	}
+    }
 
-	@Override
-	public String getResult() {
-		waitForThread();
-		return String.format(result.toString(), remoteVersion, plugin.getDescription().getVersion(), RESOURCE_URL);
-	}
+    @Override
+    public String getResult() {
+        waitForThread();
+        return String.format(result.toString(), remoteVersion, plugin.getDescription().getVersion(), RESOURCE_URL);
+    }
 
-	private class SpigotUpdateRunnable implements Runnable {
+    private class SpigotUpdateRunnable implements Runnable {
 
-		@Override
-		public void run() {
-			try {
-				String version = getSpigotVersion();
-				remoteVersion = version;
+        @Override
+        public void run() {
+            try {
+                String version = getSpigotVersion();
+                remoteVersion = version;
 
-				if (versionCheck(version)) {
-					result = UpdateResult.SPIGOT_UPDATE_AVAILABLE;
-				} else {
-					result = UpdateResult.NO_UPDATE;
-				}
-			} catch (Throwable ex) {
-				if (ProtocolLibrary.getConfig().isDebug()) {
-					ProtocolLibrary.getErrorReporter().reportDetailed(
-							SpigotUpdater.this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(ex).callerParam(this));
-				} else {
-					// People don't care
-					// plugin.getLogger().log(Level.WARNING, "Failed to check for updates: " + ex);
-				}
+                if (versionCheck(version)) {
+                    result = UpdateResult.SPIGOT_UPDATE_AVAILABLE;
+                } else {
+                    result = UpdateResult.NO_UPDATE;
+                }
+            } catch (Throwable ex) {
+                if (ProtocolLibrary.getConfig().isDebug()) {
+                    ProtocolLibrary.getErrorReporter().reportDetailed(
+                            SpigotUpdater.this, Report.newBuilder(REPORT_CANNOT_UPDATE_PLUGIN).error(ex).callerParam(this));
+                } else {
+                    // People don't care
+                    // plugin.getLogger().log(Level.WARNING, "Failed to check for updates: " + ex);
+                }
 
-				ProtocolLibrary.disableUpdates();
-			} finally {
-				// Invoke the listeners on the main thread
-				for (Runnable listener : listeners) {
-					plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, listener);
-				}
-			}
-		}
-	}
+                ProtocolLibrary.disableUpdates();
+            } finally {
+                // Invoke the listeners on the main thread
+                for (Runnable listener : listeners) {
+                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, listener);
+                }
+            }
+        }
+    }
 
-	private static final String RESOURCE_URL = "https://www.spigotmc.org/resources/protocollib.1997/";
-	private static final String UPDATE_URL = "https://api.spigotmc.org/legacy/update.php?resource=1997";
-	private static final String ACTION = "GET";
+    private static final String RESOURCE_URL = "https://www.spigotmc.org/resources/protocollib.1997/";
+    private static final String UPDATE_URL = "https://api.spigotmc.org/legacy/update.php?resource=1997";
+    private static final String ACTION = "GET";
 
-	public String getSpigotVersion() throws IOException {
-		try (Closer closer = Closer.create()) {
-			HttpURLConnection con = (HttpURLConnection) new URL(UPDATE_URL).openConnection();
-			con.setDoOutput(true);
-			con.setRequestMethod(ACTION);
+    public String getSpigotVersion() throws IOException {
+        try (Closer closer = Closer.create()) {
+            HttpURLConnection con = (HttpURLConnection) new URL(UPDATE_URL).openConnection();
+            con.setDoOutput(true);
+            con.setRequestMethod(ACTION);
 
-			InputStreamReader isr = closer.register(new InputStreamReader(con.getInputStream()));
-			BufferedReader br = closer.register(new BufferedReader(isr));
-			return br.readLine();
-		}
-	}
+            InputStreamReader isr = closer.register(new InputStreamReader(con.getInputStream()));
+            BufferedReader br = closer.register(new BufferedReader(isr));
+            return br.readLine();
+        }
+    }
 
-	@Override
-	public String getRemoteVersion() {
-		return remoteVersion;
-	}
+    @Override
+    public String getRemoteVersion() {
+        return remoteVersion;
+    }
 }

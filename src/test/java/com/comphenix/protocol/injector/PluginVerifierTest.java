@@ -24,63 +24,63 @@ import org.mockito.stubbing.Answer;
 // Damn final classes
 class PluginVerifierTest {
 
-	@Test
-	void testDependecies() {
-		List<Plugin> plugins = new ArrayList<>();
-		Server server = this.mockServer(plugins);
+    @Test
+    void testDependecies() {
+        List<Plugin> plugins = new ArrayList<>();
+        Server server = this.mockServer(plugins);
 
-		Plugin library = this.mockPlugin(server, "ProtocolLib", PluginLoadOrder.POSTWORLD);
-		Plugin skillPlugin = this.mockPlugin(server, "SkillPlugin", "RaidCraft-API", "RCPermissions", "RCConversations");
-		Plugin raidCraftAPI = this.mockPlugin(server, "RaidCraft-API", "WorldGuard", "WorldEdit");
-		Plugin conversations = this.mockPlugin(server, "RCConversations", "RaidCraft-API");
-		Plugin permissions = this.mockPlugin(server, "RCPermissions", "RaidCraft-API");
+        Plugin library = this.mockPlugin(server, "ProtocolLib", PluginLoadOrder.POSTWORLD);
+        Plugin skillPlugin = this.mockPlugin(server, "SkillPlugin", "RaidCraft-API", "RCPermissions", "RCConversations");
+        Plugin raidCraftAPI = this.mockPlugin(server, "RaidCraft-API", "WorldGuard", "WorldEdit");
+        Plugin conversations = this.mockPlugin(server, "RCConversations", "RaidCraft-API");
+        Plugin permissions = this.mockPlugin(server, "RCPermissions", "RaidCraft-API");
 
-		// Add the plugins
-		plugins.addAll(Arrays.asList(library, skillPlugin, raidCraftAPI, conversations, permissions));
-		PluginVerifier verifier = new PluginVerifier(library);
+        // Add the plugins
+        plugins.addAll(Arrays.asList(library, skillPlugin, raidCraftAPI, conversations, permissions));
+        PluginVerifier verifier = new PluginVerifier(library);
 
-		// Verify the root - it should have no dependencies on ProtocolLib
-		assertEquals(VerificationResult.NO_DEPEND, verifier.verify(skillPlugin));
-	}
+        // Verify the root - it should have no dependencies on ProtocolLib
+        assertEquals(VerificationResult.NO_DEPEND, verifier.verify(skillPlugin));
+    }
 
-	private Server mockServer(final List<Plugin> plugins) {
-		Server mockServer = mock(Server.class);
-		PluginManager manager = mock(PluginManager.class);
+    private Server mockServer(final List<Plugin> plugins) {
+        Server mockServer = mock(Server.class);
+        PluginManager manager = mock(PluginManager.class);
 
-		when(mockServer.getPluginManager()).thenReturn(manager);
-		when(manager.getPlugin(anyString())).thenAnswer(new Answer<Plugin>() {
-			@Override
-			public Plugin answer(InvocationOnMock invocation) throws Throwable {
-				String name = (String) invocation.getArguments()[0];
+        when(mockServer.getPluginManager()).thenReturn(manager);
+        when(manager.getPlugin(anyString())).thenAnswer(new Answer<Plugin>() {
+            @Override
+            public Plugin answer(InvocationOnMock invocation) throws Throwable {
+                String name = (String) invocation.getArguments()[0];
 
-				for (Plugin plugin : plugins) {
-					if (Objects.equal(name, plugin.getName())) {
-						return plugin;
-					}
-				}
-				return null;
-			}
-		});
-		return mockServer;
-	}
+                for (Plugin plugin : plugins) {
+                    if (Objects.equal(name, plugin.getName())) {
+                        return plugin;
+                    }
+                }
+                return null;
+            }
+        });
+        return mockServer;
+    }
 
-	private Plugin mockPlugin(Server server, String name, String... depend) {
-		return this.mockPlugin(server, name, PluginLoadOrder.POSTWORLD, depend);
-	}
+    private Plugin mockPlugin(Server server, String name, String... depend) {
+        return this.mockPlugin(server, name, PluginLoadOrder.POSTWORLD, depend);
+    }
 
-	private Plugin mockPlugin(Server server, String name, PluginLoadOrder order, String... depend) {
-		Plugin plugin = mock(Plugin.class);
-		PluginDescriptionFile file = mock(PluginDescriptionFile.class);
+    private Plugin mockPlugin(Server server, String name, PluginLoadOrder order, String... depend) {
+        Plugin plugin = mock(Plugin.class);
+        PluginDescriptionFile file = mock(PluginDescriptionFile.class);
 
-		when(plugin.getServer()).thenReturn(server);
-		when(plugin.getName()).thenReturn(name);
-		when(plugin.toString()).thenReturn(name);
-		when(plugin.getDescription()).thenReturn(file);
+        when(plugin.getServer()).thenReturn(server);
+        when(plugin.getName()).thenReturn(name);
+        when(plugin.toString()).thenReturn(name);
+        when(plugin.getDescription()).thenReturn(file);
 
-		// This is the difficult part
-		when(file.getLoad()).thenReturn(order);
-		when(file.getDepend()).thenReturn(Arrays.asList(depend));
-		when(file.getSoftDepend()).thenReturn(null);
-		return plugin;
-	}
+        // This is the difficult part
+        when(file.getLoad()).thenReturn(order);
+        when(file.getDepend()).thenReturn(Arrays.asList(depend));
+        when(file.getSoftDepend()).thenReturn(null);
+        return plugin;
+    }
 }

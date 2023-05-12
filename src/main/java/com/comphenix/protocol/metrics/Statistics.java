@@ -31,64 +31,64 @@ import java.util.Map;
 
 public class Statistics {
 
-	// Metrics
-	private Metrics metrics;
+    // Metrics
+    private Metrics metrics;
 
-	public Statistics(ProtocolLib plugin) throws IOException {
-		metrics = new Metrics(plugin);
-		metrics.logFailedRequests(plugin.getProtocolConfig().isDebug());
+    public Statistics(ProtocolLib plugin) throws IOException {
+        metrics = new Metrics(plugin);
+        metrics.logFailedRequests(plugin.getProtocolConfig().isDebug());
 
-		addCustomGraphs(metrics);
-	}
+        addCustomGraphs(metrics);
+    }
 
-	private void addCustomGraphs(Metrics metrics) {
-		metrics.addCustomChart(new Metrics.AdvancedPie("pluginUsers", this::getPluginUsers));
-		metrics.addCustomChart(new Metrics.SimplePie("buildVersion", this::getBuildNumber));
-		metrics.addCustomChart(new Metrics.SimplePie("serverBrand", this::getServerBrand));
-	}
+    private void addCustomGraphs(Metrics metrics) {
+        metrics.addCustomChart(new Metrics.AdvancedPie("pluginUsers", this::getPluginUsers));
+        metrics.addCustomChart(new Metrics.SimplePie("buildVersion", this::getBuildNumber));
+        metrics.addCustomChart(new Metrics.SimplePie("serverBrand", this::getServerBrand));
+    }
 
-	private String getServerBrand() {
-		// spigot doesn't overwrite the serverName, but paper does
-		if (!Bukkit.getServer().getName().equals("CraftBukkit")) {
-			return Bukkit.getServer().getName();
-		} else if (Util.isUsingSpigot()) {
-			return "Spigot";
-		} else {
-			return "CraftBukkit";
-		}
-	}
+    private String getServerBrand() {
+        // spigot doesn't overwrite the serverName, but paper does
+        if (!Bukkit.getServer().getName().equals("CraftBukkit")) {
+            return Bukkit.getServer().getName();
+        } else if (Util.isUsingSpigot()) {
+            return "Spigot";
+        } else {
+            return "CraftBukkit";
+        }
+    }
 
-	private String getBuildNumber() {
-		String version = ProtocolLibrary.getPlugin().getDescription().getVersion();
-		if (version.contains("-b")) {
-			String[] split = version.split("-b");
-			return split[1];
-		} else if (!version.contains("SNAPSHOT")) {
-			return "Release";
-		} else {
-			return "Unknown";
-		}
-	}
+    private String getBuildNumber() {
+        String version = ProtocolLibrary.getPlugin().getDescription().getVersion();
+        if (version.contains("-b")) {
+            String[] split = version.split("-b");
+            return split[1];
+        } else if (!version.contains("SNAPSHOT")) {
+            return "Release";
+        } else {
+            return "Unknown";
+        }
+    }
 
-	public static String getVersion() {
-		String version = ProtocolLibrary.getPlugin().getDescription().getVersion();
-		if (version.contains("-b")) {
-			String[] split = version.split("-b");
-			return split[0];
-		} else {
-			return version;
-		}
-	}
+    public static String getVersion() {
+        String version = ProtocolLibrary.getPlugin().getDescription().getVersion();
+        if (version.contains("-b")) {
+            String[] split = version.split("-b");
+            return split[0];
+        } else {
+            return version;
+        }
+    }
 
-	// Retrieve loaded plugins
-	private Map<String, Integer> getPluginUsers() {
-		Map<String, Integer> users = new HashMap<>();
+    // Retrieve loaded plugins
+    private Map<String, Integer> getPluginUsers() {
+        Map<String, Integer> users = new HashMap<>();
 
-		for (PacketListener listener : ProtocolLibrary.getProtocolManager().getPacketListeners()) {
-			String name = PacketAdapter.getPluginName(listener);
-			users.put(name, 1);
-		}
+        for (PacketListener listener : ProtocolLibrary.getProtocolManager().getPacketListeners()) {
+            String name = PacketAdapter.getPluginName(listener);
+            users.put(name, 1);
+        }
 
-		return users;
-	}
+        return users;
+    }
 }

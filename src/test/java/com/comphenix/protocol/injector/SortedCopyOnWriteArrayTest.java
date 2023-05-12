@@ -30,69 +30,69 @@ import org.junit.jupiter.api.Test;
 
 public class SortedCopyOnWriteArrayTest {
 
-	@Test
-	public void testInsertion() {
-		final int MAX_NUMBER = 50;
+    @Test
+    public void testInsertion() {
+        final int MAX_NUMBER = 50;
 
-		SortedCopyOnWriteArray<Integer> test = new SortedCopyOnWriteArray<Integer>();
+        SortedCopyOnWriteArray<Integer> test = new SortedCopyOnWriteArray<Integer>();
 
-		// Generate some numbers
-		List<Integer> numbers = new ArrayList<Integer>();
+        // Generate some numbers
+        List<Integer> numbers = new ArrayList<Integer>();
 
-		for (int i = 0; i < MAX_NUMBER; i++) {
-			numbers.add(i);
-		}
+        for (int i = 0; i < MAX_NUMBER; i++) {
+            numbers.add(i);
+        }
 
-		// Random insertion to test it all
-		Collections.shuffle(numbers);
+        // Random insertion to test it all
+        Collections.shuffle(numbers);
 
-		// O(n^2) of course, so don't use too large numbers
-		for (int i = 0; i < MAX_NUMBER; i++) {
-			test.add(numbers.get(i));
-		}
+        // O(n^2) of course, so don't use too large numbers
+        for (int i = 0; i < MAX_NUMBER; i++) {
+            test.add(numbers.get(i));
+        }
 
-		// Check that everything is correct
-		for (int i = 0; i < MAX_NUMBER; i++) {
-			assertEquals((Integer) i, test.get(i));
-		}
-	}
+        // Check that everything is correct
+        for (int i = 0; i < MAX_NUMBER; i++) {
+            assertEquals((Integer) i, test.get(i));
+        }
+    }
 
-	@Test
-	public void testOrder() {
-		PriorityStuff a = new PriorityStuff(ListenerPriority.HIGH, 1);
-		PriorityStuff b = new PriorityStuff(ListenerPriority.NORMAL, 2);
-		PriorityStuff c = new PriorityStuff(ListenerPriority.NORMAL, 3);
-		SortedCopyOnWriteArray<PriorityStuff> test = new SortedCopyOnWriteArray<PriorityStuff>();
+    @Test
+    public void testOrder() {
+        PriorityStuff a = new PriorityStuff(ListenerPriority.HIGH, 1);
+        PriorityStuff b = new PriorityStuff(ListenerPriority.NORMAL, 2);
+        PriorityStuff c = new PriorityStuff(ListenerPriority.NORMAL, 3);
+        SortedCopyOnWriteArray<PriorityStuff> test = new SortedCopyOnWriteArray<PriorityStuff>();
 
-		test.add(a);
-		test.add(b);
-		test.add(c);
+        test.add(a);
+        test.add(b);
+        test.add(c);
 
-		// Make sure the normal's are in the right order
-		assertEquals(2, test.get(0).id);
-		assertEquals(3, test.get(1).id);
+        // Make sure the normal's are in the right order
+        assertEquals(2, test.get(0).id);
+        assertEquals(3, test.get(1).id);
 
-		// Test remove
-		test.remove(b);
-		assertEquals(2, test.size());
-		assertFalse(test.contains(b));
-	}
+        // Test remove
+        test.remove(b);
+        assertEquals(2, test.size());
+        assertFalse(test.contains(b));
+    }
 
-	private static class PriorityStuff implements Comparable<PriorityStuff> {
+    private static class PriorityStuff implements Comparable<PriorityStuff> {
 
-		public ListenerPriority priority;
-		public int id;
+        public ListenerPriority priority;
+        public int id;
 
-		public PriorityStuff(ListenerPriority priority, int id) {
-			this.priority = priority;
-			this.id = id;
-		}
+        public PriorityStuff(ListenerPriority priority, int id) {
+            this.priority = priority;
+            this.id = id;
+        }
 
-		@Override
-		public int compareTo(PriorityStuff other) {
-			// This ensures that lower priority listeners are executed first
-			return Ints.compare(this.priority.getSlot(),
-					other.priority.getSlot());
-		}
-	}
+        @Override
+        public int compareTo(PriorityStuff other) {
+            // This ensures that lower priority listeners are executed first
+            return Ints.compare(this.priority.getSlot(),
+                    other.priority.getSlot());
+        }
+    }
 }

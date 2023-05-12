@@ -21,44 +21,44 @@ import org.junit.jupiter.api.Test;
  */
 public class UpdaterTest {
 
-	private static final int BUKKIT_DEV_ID = 45564;
-	private static Plugin plugin;
+    private static final int BUKKIT_DEV_ID = 45564;
+    private static Plugin plugin;
 
-	@BeforeAll
-	public static void preparePlugin() {
-		Server server = mock(Server.class);
-		when(server.getUpdateFolder()).thenReturn(null);
+    @BeforeAll
+    public static void preparePlugin() {
+        Server server = mock(Server.class);
+        when(server.getUpdateFolder()).thenReturn(null);
 
-		plugin = mock(Plugin.class);
-		String version = System.getProperty("projectVersion");
-		if (version == null) {
-			version = "4.4.0";
-		}
-		when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", version, null));
-		when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
-		when(plugin.getDataFolder()).thenReturn(null);
-		when(plugin.getServer()).thenReturn(server);
-	}
+        plugin = mock(Plugin.class);
+        String version = System.getProperty("projectVersion");
+        if (version == null) {
+            version = "4.4.0";
+        }
+        when(plugin.getDescription()).thenReturn(new PluginDescriptionFile("ProtocolLib", version, null));
+        when(plugin.getLogger()).thenReturn(Logger.getLogger("ProtocolLib"));
+        when(plugin.getDataFolder()).thenReturn(null);
+        when(plugin.getServer()).thenReturn(server);
+    }
 
-	@Test
-	public void testUpdaterType() {
-		assertEquals(Updater.create(plugin, BUKKIT_DEV_ID, null, UpdateType.NO_DOWNLOAD, true).getClass(),
-				SpigotUpdater.class);
-	}
+    @Test
+    public void testUpdaterType() {
+        assertEquals(Updater.create(plugin, BUKKIT_DEV_ID, null, UpdateType.NO_DOWNLOAD, true).getClass(),
+                SpigotUpdater.class);
+    }
 
-	// @Test
-	public void testSpigotUpdater() {
-		SpigotUpdater updater = new SpigotUpdater(plugin, UpdateType.NO_DOWNLOAD, true);
+    // @Test
+    public void testSpigotUpdater() {
+        SpigotUpdater updater = new SpigotUpdater(plugin, UpdateType.NO_DOWNLOAD, true);
 
-		String remote = null;
+        String remote = null;
 
-		try {
-			remote = updater.getSpigotVersion();
-		} catch (Throwable ex) {
-			fail("Failed to check for updates", ex);
-		}
+        try {
+            remote = updater.getSpigotVersion();
+        } catch (Throwable ex) {
+            fail("Failed to check for updates", ex);
+        }
 
-		System.out.println("Determined remote Spigot version: " + remote);
-		System.out.println("Update available: " + updater.versionCheck(remote));
-	}
+        System.out.println("Determined remote Spigot version: " + remote);
+        System.out.println("Update available: " + updater.versionCheck(remote));
+    }
 }

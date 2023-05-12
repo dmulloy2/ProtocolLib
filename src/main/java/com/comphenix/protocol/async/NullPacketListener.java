@@ -27,51 +27,51 @@ import org.bukkit.plugin.Plugin;
  * @author Kristian
  */
 class NullPacketListener implements PacketListener {
-	
-	private ListeningWhitelist sendingWhitelist;
-	private ListeningWhitelist receivingWhitelist;
-	private Plugin plugin;
+    
+    private ListeningWhitelist sendingWhitelist;
+    private ListeningWhitelist receivingWhitelist;
+    private Plugin plugin;
 
-	/**
-	 * Create a no-op listener with the same whitelist and plugin as the given listener.
-	 * @param original - the packet listener to copy.
-	 */
-	public NullPacketListener(PacketListener original) {
-		this.sendingWhitelist = cloneWhitelist(ListenerPriority.LOW, original.getSendingWhitelist());
-		this.receivingWhitelist = cloneWhitelist(ListenerPriority.LOW, original.getReceivingWhitelist());
-		this.plugin = original.getPlugin();
-	}
+    /**
+     * Create a no-op listener with the same whitelist and plugin as the given listener.
+     * @param original - the packet listener to copy.
+     */
+    public NullPacketListener(PacketListener original) {
+        this.sendingWhitelist = cloneWhitelist(ListenerPriority.LOW, original.getSendingWhitelist());
+        this.receivingWhitelist = cloneWhitelist(ListenerPriority.LOW, original.getReceivingWhitelist());
+        this.plugin = original.getPlugin();
+    }
 
-	@Override
-	public void onPacketSending(PacketEvent event) {
-		// NULL
-	}
+    @Override
+    public void onPacketSending(PacketEvent event) {
+        // NULL
+    }
 
-	@Override
-	public void onPacketReceiving(PacketEvent event) {
-		// NULL
-	}
+    @Override
+    public void onPacketReceiving(PacketEvent event) {
+        // NULL
+    }
 
-	@Override
-	public ListeningWhitelist getSendingWhitelist() {
-		return sendingWhitelist;
-	}
+    @Override
+    public ListeningWhitelist getSendingWhitelist() {
+        return sendingWhitelist;
+    }
 
-	@Override
-	public ListeningWhitelist getReceivingWhitelist() {
-		return receivingWhitelist;
-	}
-	
-	private ListeningWhitelist cloneWhitelist(ListenerPriority priority, ListeningWhitelist whitelist) {
-		if (whitelist != null) 
-			// We don't use the Bukkit API, so don't engage the ProtocolLib synchronization code
-			return ListeningWhitelist.newBuilder(whitelist).priority(priority).mergeOptions(ListenerOptions.ASYNC).build();
-		else 
-			return null;
-	}
+    @Override
+    public ListeningWhitelist getReceivingWhitelist() {
+        return receivingWhitelist;
+    }
+    
+    private ListeningWhitelist cloneWhitelist(ListenerPriority priority, ListeningWhitelist whitelist) {
+        if (whitelist != null) 
+            // We don't use the Bukkit API, so don't engage the ProtocolLib synchronization code
+            return ListeningWhitelist.newBuilder(whitelist).priority(priority).mergeOptions(ListenerOptions.ASYNC).build();
+        else 
+            return null;
+    }
 
-	@Override
-	public Plugin getPlugin() {
-		return plugin;
-	}
+    @Override
+    public Plugin getPlugin() {
+        return plugin;
+    }
 }

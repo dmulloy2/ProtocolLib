@@ -8,17 +8,17 @@ package com.comphenix.protocol.injector.temporary;
  */
 public class TemporaryPlayer {
 
-	private volatile MinimalInjector injector;
+    private volatile MinimalInjector injector;
 
-	MinimalInjector getInjector() {
-		return this.injector;
-	}
+    MinimalInjector getInjector() {
+        return this.injector;
+    }
 
-	void setInjector(MinimalInjector injector) {
-		if (injector == null) {
-			throw new IllegalArgumentException("Injector cannot be NULL.");
-		}
+    void setInjector(MinimalInjector injector) {
+        if (injector == null) {
+            throw new IllegalArgumentException("Injector cannot be NULL.");
+        }
 
-		this.injector = injector;
-	}
+        this.injector = injector;
+    }
 }

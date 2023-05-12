@@ -26,66 +26,66 @@ import com.comphenix.protocol.utility.MinecraftVersion;
  * @author dmulloy2
  */
 public class ProtocolLogger {
-	private static boolean debugEnabled = false;
-	private static Logger logger = Logger.getLogger("Minecraft");
+    private static boolean debugEnabled = false;
+    private static Logger logger = Logger.getLogger("Minecraft");
 
-	/**
-	 * Don't call this method from any plugin. Currently only public to test if it fixes a weird error.
-	 * See GH-740
-	 * @param plugin ProtocolLib
-	 */
-	public static void init(ProtocolLib plugin) {
-		logger = plugin.getLogger();
+    /**
+     * Don't call this method from any plugin. Currently only public to test if it fixes a weird error.
+     * See GH-740
+     * @param plugin ProtocolLib
+     */
+    public static void init(ProtocolLib plugin) {
+        logger = plugin.getLogger();
 
-		try {
-			debugEnabled = plugin.getConfig().getBoolean("global.debug", false);
-		} catch (Throwable ignored) { }
-	}
+        try {
+            debugEnabled = plugin.getConfig().getBoolean("global.debug", false);
+        } catch (Throwable ignored) { }
+    }
 
-	/**
-	 * Logs a message to console with a given level.
-	 * @param level Logging level
-	 * @param message Message to log
-	 * @param args Arguments to format in
-	 */
-	public static void log(Level level, String message, Object... args) {
-		logger.log(level, MessageFormat.format(message, args));
-	}
+    /**
+     * Logs a message to console with a given level.
+     * @param level Logging level
+     * @param message Message to log
+     * @param args Arguments to format in
+     */
+    public static void log(Level level, String message, Object... args) {
+        logger.log(level, MessageFormat.format(message, args));
+    }
 
-	/**
-	 * Logs a method to console with the INFO level.
-	 * @param message Message to log
-	 * @param args Arguments to format in
-	 */
-	public static void log(String message, Object... args) {
-		log(Level.INFO, message, args);
-	}
+    /**
+     * Logs a method to console with the INFO level.
+     * @param message Message to log
+     * @param args Arguments to format in
+     */
+    public static void log(String message, Object... args) {
+        log(Level.INFO, message, args);
+    }
 
-	/**
-	 * Logs a message to console with a given level and exception.
-	 * @param level Logging level
-	 * @param message Message to log
-	 * @param ex Exception to log
-	 */
-	public static void log(Level level, String message, Throwable ex) {
-		logger.log(level, message, ex);
-	}
+    /**
+     * Logs a message to console with a given level and exception.
+     * @param level Logging level
+     * @param message Message to log
+     * @param ex Exception to log
+     */
+    public static void log(Level level, String message, Throwable ex) {
+        logger.log(level, message, ex);
+    }
 
-	public static void debug(String message, Object... args) {
-		if (debugEnabled) {
-			log("[Debug] " + message, args);
-		}
-	}
+    public static void debug(String message, Object... args) {
+        if (debugEnabled) {
+            log("[Debug] " + message, args);
+        }
+    }
 
-	public static void debug(String message, Throwable ex) {
-		if (debugEnabled) {
-			logger.log(Level.WARNING, "[Debug] " + message, ex);
-		}
-	}
+    public static void debug(String message, Throwable ex) {
+        if (debugEnabled) {
+            logger.log(Level.WARNING, "[Debug] " + message, ex);
+        }
+    }
 
-	public static void warnAbove(MinecraftVersion version, String message, Object... args) {
-		if (version.atOrAbove()) {
-			log(Level.WARNING, message, args);
-		}
-	}
+    public static void warnAbove(MinecraftVersion version, String message, Object... args) {
+        if (version.atOrAbove()) {
+            log(Level.WARNING, message, args);
+        }
+    }
 }

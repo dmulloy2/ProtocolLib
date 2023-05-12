@@ -9,11 +9,11 @@ import java.util.Set;
  * @param <T> - the element type.
  */
 public class CachedSet<T> extends CachedCollection<T> implements Set<T> {
-	/**
-	 * Construct a cached set from the given delegate.
-	 * @param delegate - the set delegate.
-	 */
-	public CachedSet(Set<T> delegate) {
-		super(delegate);
-	}
+    /**
+     * Construct a cached set from the given delegate.
+     * @param delegate - the set delegate.
+     */
+    public CachedSet(Set<T> delegate) {
+        super(delegate);
+    }
 }

@@ -27,32 +27,32 @@ import net.md_5.bungee.chat.ComponentSerializer;
  */
 public final class ComponentConverter {
 
-	private ComponentConverter() {
-	}
+    private ComponentConverter() {
+    }
 
-	/**
-	 * Converts a {@link WrappedChatComponent} into an array of {@link BaseComponent}s
-	 * @param wrapper ProtocolLib wrapper
-	 * @return BaseComponent array
-	 */
-	public static BaseComponent[] fromWrapper(WrappedChatComponent wrapper) {
-		return ComponentSerializer.parse(wrapper.getJson());
-	}
+    /**
+     * Converts a {@link WrappedChatComponent} into an array of {@link BaseComponent}s
+     * @param wrapper ProtocolLib wrapper
+     * @return BaseComponent array
+     */
+    public static BaseComponent[] fromWrapper(WrappedChatComponent wrapper) {
+        return ComponentSerializer.parse(wrapper.getJson());
+    }
 
-	/**
-	 * Converts an array of {@link BaseComponent}s into a ProtocolLib wrapper
-	 * @param components BaseComponent array
-	 * @return ProtocolLib wrapper
-	 */
-	public static WrappedChatComponent fromBaseComponent(BaseComponent... components) {
-		return WrappedChatComponent.fromJson(ComponentSerializer.toString(components));
-	}
+    /**
+     * Converts an array of {@link BaseComponent}s into a ProtocolLib wrapper
+     * @param components BaseComponent array
+     * @return ProtocolLib wrapper
+     */
+    public static WrappedChatComponent fromBaseComponent(BaseComponent... components) {
+        return WrappedChatComponent.fromJson(ComponentSerializer.toString(components));
+    }
 
-	public static Class<?> getBaseComponentArrayClass() {
-		return BaseComponent[].class;
-	}
+    public static Class<?> getBaseComponentArrayClass() {
+        return BaseComponent[].class;
+    }
 
-	public static BaseComponent[] clone(BaseComponent... components) {
-		return ComponentSerializer.parse(ComponentSerializer.toString(components));
-	}
+    public static BaseComponent[] clone(BaseComponent... components) {
+        return ComponentSerializer.parse(ComponentSerializer.toString(components));
+    }
 }
