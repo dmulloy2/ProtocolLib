@@ -488,7 +488,7 @@ public class ProtocolLib extends JavaPlugin {
             }
 
             // Attempt to create task
-            this.packetTask = SchedulerUtil.scheduleSyncRepeatingTask(this, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY, () -> {
+            this.packetTask = SchedulerUtil.scheduleSyncRepeatingTask(this, () -> {
                 AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
                 // We KNOW we're on the main thread at the moment
                 manager.sendProcessedPackets(ProtocolLib.this.tickCounter++, true);
@@ -500,7 +500,7 @@ public class ProtocolLib extends JavaPlugin {
                 if (!ProtocolLibrary.updatesDisabled() && (ProtocolLib.this.tickCounter % 20) == 0) {
                     ProtocolLib.this.checkUpdates();
                 }
-            });
+            }, ASYNC_MANAGER_DELAY, ASYNC_MANAGER_DELAY);
         } catch (OutOfMemoryError e) {
             throw e;
         } catch (Throwable e) {

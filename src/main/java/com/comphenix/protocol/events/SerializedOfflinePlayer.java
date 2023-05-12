@@ -21,7 +21,6 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.Util;
-import com.destroystokyo.paper.profile.PlayerProfile;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -39,6 +38,7 @@ import net.bytebuddy.matcher.ElementMatchers;
 import org.bukkit.*;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.profile.PlayerProfile;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -76,8 +76,8 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     private boolean playedBefore;
     private boolean online;
     private boolean whitelisted;
-    long lastLogin;
-    long lastSeen;
+    private long lastLogin;
+    private long lastSeen;
 
     private static final Constructor<?> proxyPlayerConstructor = setupProxyPlayerConstructor();
 
@@ -103,9 +103,11 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         this.playedBefore = offline.hasPlayedBefore();
         this.online = offline.isOnline();
         this.whitelisted = offline.isWhitelisted();
+
+        // TODO needs to be reflectively obtained
         if (Util.isUsingFolia()) {
-            this.lastSeen = offline.getLastSeen();
-            this.lastLogin = offline.getLastLogin();
+            // this.lastSeen = offline.getLastSeen();
+            // this.lastLogin = offline.getLastLogin();
         }
     }
 
@@ -129,12 +131,12 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return bedSpawnLocation;
     }
 
-    @Override
+    // @Override
     public long getLastLogin() {
         return lastLogin;
     }
 
-    @Override
+    // @Override
     public long getLastSeen() {
         return lastSeen;
     }

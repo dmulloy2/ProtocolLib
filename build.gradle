@@ -23,10 +23,6 @@ repositories {
     }
 
     maven {
-        url 'https://repo.papermc.io/repository/maven-public/'
-    }
-
-    maven {
         url 'https://libraries.minecraft.net/'
         metadataSources {
             mavenPom()
@@ -38,7 +34,6 @@ repositories {
 
 dependencies {
     implementation 'net.bytebuddy:byte-buddy:1.14.3'
-    compileOnly 'dev.folia:folia-api:1.19.4-R0.1-SNAPSHOT'
     compileOnly 'org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT'
     compileOnly 'org.spigotmc:spigot:1.19.4-R0.1-SNAPSHOT'
     compileOnly 'io.netty:netty-all:4.0.23.Final'
@@ -57,11 +52,11 @@ dependencies {
 }
 
 java {
-   sourceCompatibility = JavaVersion.VERSION_1_8
-   targetCompatibility = JavaVersion.VERSION_17 // Need for Folia
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 
-   withJavadocJar()
-   withSourcesJar()
+    withJavadocJar()
+    withSourcesJar()
 }
 
 shadowJar {
