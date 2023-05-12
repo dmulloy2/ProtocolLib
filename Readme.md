@@ -10,8 +10,6 @@ Critically, different plugins that use this approach may _hook_ into the same cl
 with unpredictable outcomes. More than often this causes plugins to crash, but it may also
 lead to more subtle bugs.
 
-Currently maintained by dmulloy2 on behalf of [Spigot](https://www.spigotmc.org/).
-
 ### Resources
 
 * [Resource Page](https://www.spigotmc.org/resources/protocollib.1997/)
@@ -55,7 +53,7 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>5.0.0</version>
     <scope>provided</scope>
   </dependency>
 </dependencies>
@@ -69,7 +67,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.comphenix.protocol:ProtocolLib:5.0.0-SNAPSHOT'
+    compileOnly 'com.comphenix.protocol:ProtocolLib:5.0.0'
 }
 ```
 
