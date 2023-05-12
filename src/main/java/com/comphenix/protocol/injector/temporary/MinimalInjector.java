@@ -11,40 +11,40 @@ import org.bukkit.entity.Player;
  */
 public interface MinimalInjector {
 
-	/**
-	 * Retrieve the associated address of this player.
-	 *
-	 * @return The associated address.
-	 */
-	SocketAddress getAddress();
+    /**
+     * Retrieve the associated address of this player.
+     *
+     * @return The associated address.
+     */
+    SocketAddress getAddress();
 
-	/**
-	 * Attempt to disconnect the current client.
-	 *
-	 * @param message - the message to display.
-	 */
-	void disconnect(String message);
+    /**
+     * Attempt to disconnect the current client.
+     *
+     * @param message - the message to display.
+     */
+    void disconnect(String message);
 
-	/**
-	 * Send a packet to the client.
-	 *
-	 * @param packet   - server packet to send.
-	 * @param marker   - the network marker.
-	 * @param filtered - whether or not the packet will be filtered by our listeners.
-	 */
-	void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered);
+    /**
+     * Send a packet to the client.
+     *
+     * @param packet   - server packet to send.
+     * @param marker   - the network marker.
+     * @param filtered - whether or not the packet will be filtered by our listeners.
+     */
+    void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered);
 
-	/**
-	 * Retrieve the hooked player.
-	 *
-	 * @return The hooked player.
-	 */
-	Player getPlayer();
+    /**
+     * Retrieve the hooked player.
+     *
+     * @return The hooked player.
+     */
+    Player getPlayer();
 
-	/**
-	 * Determines if the player is currently connected.
-	 *
-	 * @return true if the player is connected.
-	 */
-	boolean isConnected();
+    /**
+     * Determines if the player is currently connected.
+     *
+     * @return true if the player is connected.
+     */
+    boolean isConnected();
 }

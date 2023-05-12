@@ -17,215 +17,215 @@ import java.net.Socket;
 
 public class SimpleMinecraftClient {
 
-	private static final int CONNECT_TIMEOUT = 2500;
-	private static final int READ_TIMEOUT = 15000;
-	// Typical Minecraft serializer
-	private static final StreamSerializer serializer = StreamSerializer.getDefault();
-	// Current Minecraft version
-	private final int protocolVersion;
+    private static final int CONNECT_TIMEOUT = 2500;
+    private static final int READ_TIMEOUT = 15000;
+    // Typical Minecraft serializer
+    private static final StreamSerializer serializer = StreamSerializer.getDefault();
+    // Current Minecraft version
+    private final int protocolVersion;
 
-	public SimpleMinecraftClient(int protocolVersion) {
-		this.protocolVersion = protocolVersion;
-	}
+    public SimpleMinecraftClient(int protocolVersion) {
+        this.protocolVersion = protocolVersion;
+    }
 
-	/**
-	 * Write a byte array to the output stream, prefixed by a length.
-	 *
-	 * @param output - the stream.
-	 * @param data   - the data to write.
-	 */
-	private static void writeByteArray(DataOutputStream output, byte[] data) throws IOException {
-		StreamSerializer.getDefault().serializeVarInt(output, data.length);
+    /**
+     * Write a byte array to the output stream, prefixed by a length.
+     *
+     * @param output - the stream.
+     * @param data   - the data to write.
+     */
+    private static void writeByteArray(DataOutputStream output, byte[] data) throws IOException {
+        StreamSerializer.getDefault().serializeVarInt(output, data.length);
 
-		if (data.length > 0) {
-			output.write(data);
-		}
-	}
+        if (data.length > 0) {
+            output.write(data);
+        }
+    }
 
-	/**
-	 * Read a byte array from an input stream, prefixed by length.
-	 *
-	 * @param input - the input stream.
-	 * @return The read byte array.
-	 */
-	private static byte[] readByteArray(DataInputStream input) throws IOException {
-		int length = serializer.deserializeVarInt(input);
-		byte[] data = new byte[length];
+    /**
+     * Read a byte array from an input stream, prefixed by length.
+     *
+     * @param input - the input stream.
+     * @return The read byte array.
+     */
+    private static byte[] readByteArray(DataInputStream input) throws IOException {
+        int length = serializer.deserializeVarInt(input);
+        byte[] data = new byte[length];
 
-		ByteStreams.readFully(input, data);
-		return data;
-	}
+        ByteStreams.readFully(input, data);
+        return data;
+    }
 
-	/**
-	 * Query the local server for ping information.
-	 *
-	 * @return The server information.
-	 * @throws IOException
-	 */
-	public String queryLocalPing() throws IOException {
-		return this.queryServerPing(new InetSocketAddress("localhost", 25565));
-	}
+    /**
+     * Query the local server for ping information.
+     *
+     * @return The server information.
+     * @throws IOException
+     */
+    public String queryLocalPing() throws IOException {
+        return this.queryServerPing(new InetSocketAddress("localhost", 25565));
+    }
 
-	/**
-	 * Query the given server for its list ping information.
-	 *
-	 * @param address - the server hostname and port.
-	 * @return The server information.
-	 * @throws IOException
-	 */
-	public String queryServerPing(InetSocketAddress address) throws IOException {
-		Socket socket = null;
-		OutputStream output = null;
-		InputStream input = null;
+    /**
+     * Query the given server for its list ping information.
+     *
+     * @param address - the server hostname and port.
+     * @return The server information.
+     * @throws IOException
+     */
+    public String queryServerPing(InetSocketAddress address) throws IOException {
+        Socket socket = null;
+        OutputStream output = null;
+        InputStream input = null;
 
-		try {
-			socket = new Socket();
-			socket.connect(address, CONNECT_TIMEOUT);
+        try {
+            socket = new Socket();
+            socket.connect(address, CONNECT_TIMEOUT);
 
-			// Shouldn't take that long
-			socket.setSoTimeout(READ_TIMEOUT);
+            // Shouldn't take that long
+            socket.setSoTimeout(READ_TIMEOUT);
 
-			// Retrieve sockets
-			output = socket.getOutputStream();
-			input = socket.getInputStream();
+            // Retrieve sockets
+            output = socket.getOutputStream();
+            input = socket.getInputStream();
 
-			// The output writer
-			DataOutputStream data = new DataOutputStream(output);
+            // The output writer
+            DataOutputStream data = new DataOutputStream(output);
 
-			// Request a server information packet
-			this.writePacket(data, new HandshakePacket(this.protocolVersion, address.getHostName(), address.getPort(), 1));
-			this.writePacket(data, new RequestPacket());
-			data.flush();
+            // Request a server information packet
+            this.writePacket(data, new HandshakePacket(this.protocolVersion, address.getHostName(), address.getPort(), 1));
+            this.writePacket(data, new RequestPacket());
+            data.flush();
 
-			// Read a single packet, and close the connection
-			SimplePacket packet = this.readPacket(new DataInputStream(input), Protocol.STATUS);
+            // Read a single packet, and close the connection
+            SimplePacket packet = this.readPacket(new DataInputStream(input), Protocol.STATUS);
 
-			socket.close();
-			return ((ResponsePacket) packet).getPingJson();
-		} finally {
-			if (input != null) {
-				input.close();
-			}
-			if (output != null) {
-				output.close();
-			}
-			if (socket != null) {
-				socket.close();
-			}
-		}
-	}
+            socket.close();
+            return ((ResponsePacket) packet).getPingJson();
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+            if (socket != null) {
+                socket.close();
+            }
+        }
+    }
 
-	private void writePacket(DataOutputStream output, SimplePacket packet) throws IOException {
-		ByteArrayOutputStream packetBuffer = new ByteArrayOutputStream();
-		DataOutputStream packetOutput = new DataOutputStream(packetBuffer);
+    private void writePacket(DataOutputStream output, SimplePacket packet) throws IOException {
+        ByteArrayOutputStream packetBuffer = new ByteArrayOutputStream();
+        DataOutputStream packetOutput = new DataOutputStream(packetBuffer);
 
-		// Prefix the packet with a length field
-		packet.write(packetOutput);
-		writeByteArray(output, packetBuffer.toByteArray());
-	}
+        // Prefix the packet with a length field
+        packet.write(packetOutput);
+        writeByteArray(output, packetBuffer.toByteArray());
+    }
 
-	private SimplePacket readPacket(DataInputStream input, Protocol protocol) throws IOException {
-		while (true) {
-			byte[] buffer = readByteArray(input);
+    private SimplePacket readPacket(DataInputStream input, Protocol protocol) throws IOException {
+        while (true) {
+            byte[] buffer = readByteArray(input);
 
-			// Skip empty packets
-			if (buffer.length == 0) {
-				continue;
-			}
+            // Skip empty packets
+            if (buffer.length == 0) {
+                continue;
+            }
 
-			DataInputStream data = this.getDataInput(buffer);
-			PacketType type = PacketType.findCurrent(protocol, Sender.SERVER, serializer.deserializeVarInt(data));
+            DataInputStream data = this.getDataInput(buffer);
+            PacketType type = PacketType.findCurrent(protocol, Sender.SERVER, serializer.deserializeVarInt(data));
 
-			if (type == PacketType.Status.Server.SERVER_INFO) {
-				ResponsePacket response = new ResponsePacket();
-				response.read(type, data);
-				return response;
-			} else {
-				throw new IllegalArgumentException("Unsuppported and unexpected type: " + type);
-			}
-		}
-	}
+            if (type == PacketType.Status.Server.SERVER_INFO) {
+                ResponsePacket response = new ResponsePacket();
+                response.read(type, data);
+                return response;
+            } else {
+                throw new IllegalArgumentException("Unsuppported and unexpected type: " + type);
+            }
+        }
+    }
 
-	/**
-	 * Wrap an input stream around a byte array.
-	 *
-	 * @param bytes - the array.
-	 * @return The wrapped input stream.
-	 */
-	private DataInputStream getDataInput(byte[] bytes) {
-		return new DataInputStream(new ByteArrayInputStream(bytes));
-	}
+    /**
+     * Wrap an input stream around a byte array.
+     *
+     * @param bytes - the array.
+     * @return The wrapped input stream.
+     */
+    private DataInputStream getDataInput(byte[] bytes) {
+        return new DataInputStream(new ByteArrayInputStream(bytes));
+    }
 
-	private static class RequestPacket extends SimplePacket {
+    private static class RequestPacket extends SimplePacket {
 
-		public RequestPacket() {
-			super(PacketType.Status.Client.START);
-		}
-	}
+        public RequestPacket() {
+            super(PacketType.Status.Client.START);
+        }
+    }
 
-	private static class ResponsePacket extends SimplePacket {
+    private static class ResponsePacket extends SimplePacket {
 
-		private String ping;
+        private String ping;
 
-		public ResponsePacket() {
-			super(PacketType.Status.Server.SERVER_INFO);
-		}
+        public ResponsePacket() {
+            super(PacketType.Status.Server.SERVER_INFO);
+        }
 
-		@Override
-		public void read(PacketType type, DataInputStream input) throws IOException {
-			super.read(type, input);
-			this.ping = this.serializer.deserializeString(input, 32000);
-		}
+        @Override
+        public void read(PacketType type, DataInputStream input) throws IOException {
+            super.read(type, input);
+            this.ping = this.serializer.deserializeString(input, 32000);
+        }
 
-		public String getPingJson() {
-			return this.ping;
-		}
-	}
+        public String getPingJson() {
+            return this.ping;
+        }
+    }
 
-	private static class HandshakePacket extends SimplePacket {
+    private static class HandshakePacket extends SimplePacket {
 
-		private final int protocol;
-		private final String host;
-		private final int port;
-		private final int nextState;
+        private final int protocol;
+        private final String host;
+        private final int port;
+        private final int nextState;
 
-		public HandshakePacket(int protocol, String host, int port, int nextState) {
-			super(PacketType.Handshake.Client.SET_PROTOCOL);
-			this.protocol = protocol;
-			this.host = host;
-			this.port = port;
-			this.nextState = nextState;
-		}
+        public HandshakePacket(int protocol, String host, int port, int nextState) {
+            super(PacketType.Handshake.Client.SET_PROTOCOL);
+            this.protocol = protocol;
+            this.host = host;
+            this.port = port;
+            this.nextState = nextState;
+        }
 
-		@Override
-		public void write(DataOutputStream output) throws IOException {
-			super.write(output);
-			this.serializer.serializeVarInt(output, this.protocol);
-			this.serializer.serializeString(output, this.host);
-			output.writeShort(this.port);
-			this.serializer.serializeVarInt(output, this.nextState);
-		}
-	}
+        @Override
+        public void write(DataOutputStream output) throws IOException {
+            super.write(output);
+            this.serializer.serializeVarInt(output, this.protocol);
+            this.serializer.serializeString(output, this.host);
+            output.writeShort(this.port);
+            this.serializer.serializeVarInt(output, this.nextState);
+        }
+    }
 
-	private static class SimplePacket {
+    private static class SimplePacket {
 
-		protected final PacketType type;
-		protected final StreamSerializer serializer = StreamSerializer.getDefault();
+        protected final PacketType type;
+        protected final StreamSerializer serializer = StreamSerializer.getDefault();
 
-		public SimplePacket(PacketType type) {
-			this.type = type;
-		}
+        public SimplePacket(PacketType type) {
+            this.type = type;
+        }
 
-		public void write(DataOutputStream output) throws IOException {
-			this.serializer.serializeVarInt(output, this.type.getCurrentId());
-		}
+        public void write(DataOutputStream output) throws IOException {
+            this.serializer.serializeVarInt(output, this.type.getCurrentId());
+        }
 
-		@SuppressWarnings("unused")
-		public void read(PacketType type, DataInputStream input) throws IOException {
-			// Note - we don't read the packet id
-			if (this.type != type) {
-				throw new IllegalArgumentException("Unexpected type: " + type);
-			}
-		}
-	}
+        @SuppressWarnings("unused")
+        public void read(PacketType type, DataInputStream input) throws IOException {
+            // Note - we don't read the packet id
+            if (this.type != type) {
+                throw new IllegalArgumentException("Unexpected type: " + type);
+            }
+        }
+    }
 }

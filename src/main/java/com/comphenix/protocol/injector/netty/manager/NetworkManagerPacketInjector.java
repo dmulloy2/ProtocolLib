@@ -14,48 +14,48 @@ import org.bukkit.entity.Player;
 
 final class NetworkManagerPacketInjector extends AbstractPacketInjector {
 
-	private final ListenerInvoker invoker;
-	private final ChannelListener channelListener;
-	private final PacketTypeSet mainThreadListeners;
+    private final ListenerInvoker invoker;
+    private final ChannelListener channelListener;
+    private final PacketTypeSet mainThreadListeners;
 
-	public NetworkManagerPacketInjector(
-			PacketTypeSet inboundFilters,
-			ListenerInvoker invoker,
-			ChannelListener listener,
-			PacketTypeSet mainThreadListeners
-	) {
-		super(inboundFilters);
+    public NetworkManagerPacketInjector(
+            PacketTypeSet inboundFilters,
+            ListenerInvoker invoker,
+            ChannelListener listener,
+            PacketTypeSet mainThreadListeners
+    ) {
+        super(inboundFilters);
 
-		this.invoker = invoker;
-		this.channelListener = listener;
-		this.mainThreadListeners = mainThreadListeners;
-	}
+        this.invoker = invoker;
+        this.channelListener = listener;
+        this.mainThreadListeners = mainThreadListeners;
+    }
 
-	@Override
-	public boolean addPacketHandler(PacketType type, Set<ListenerOptions> options) {
-		if (!type.isAsyncForced() && options != null && options.contains(ListenerOptions.SYNC)) {
-			this.mainThreadListeners.addType(type);
-		}
+    @Override
+    public boolean addPacketHandler(PacketType type, Set<ListenerOptions> options) {
+        if (!type.isAsyncForced() && options != null && options.contains(ListenerOptions.SYNC)) {
+            this.mainThreadListeners.addType(type);
+        }
 
-		return super.addPacketHandler(type, options);
-	}
+        return super.addPacketHandler(type, options);
+    }
 
-	@Override
-	public boolean removePacketHandler(PacketType type) {
-		this.mainThreadListeners.removeType(type);
-		return super.removePacketHandler(type);
-	}
+    @Override
+    public boolean removePacketHandler(PacketType type) {
+        this.mainThreadListeners.removeType(type);
+        return super.removePacketHandler(type);
+    }
 
-	@Override
-	public PacketEvent packetReceived(PacketContainer packet, Player client) {
-		PacketEvent event = PacketEvent.fromClient(this.channelListener, packet, null, client);
-		this.invoker.invokePacketReceiving(event);
+    @Override
+    public PacketEvent packetReceived(PacketContainer packet, Player client) {
+        PacketEvent event = PacketEvent.fromClient(this.channelListener, packet, null, client);
+        this.invoker.invokePacketReceiving(event);
 
-		return event;
-	}
+        return event;
+    }
 
-	@Override
-	public boolean hasMainThreadListener(PacketType type) {
-		return this.mainThreadListeners.contains(type);
-	}
+    @Override
+    public boolean hasMainThreadListener(PacketType type) {
+        return this.mainThreadListeners.contains(type);
+    }
 }

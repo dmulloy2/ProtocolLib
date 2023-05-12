@@ -25,33 +25,33 @@ import java.util.List;
 // TODO Switch to AutoCloseable w/ Java 7
 @Deprecated
 public class Closer implements AutoCloseable {
-	private final List<Closeable> list;
+    private final List<Closeable> list;
 
-	private Closer() {
-		this.list = new ArrayList<>();
-	}
+    private Closer() {
+        this.list = new ArrayList<>();
+    }
 
-	public static Closer create() {
-		return new Closer();
-	}
+    public static Closer create() {
+        return new Closer();
+    }
 
-	public static void closeQuietly(Closeable close) {
-		try {
-			close.close();
-		} catch (Throwable ex) {
-		}
-	}
+    public static void closeQuietly(Closeable close) {
+        try {
+            close.close();
+        } catch (Throwable ex) {
+        }
+    }
 
-	public <C extends Closeable> C register(C close) {
-		list.add(close);
-		return close;
-	}
+    public <C extends Closeable> C register(C close) {
+        list.add(close);
+        return close;
+    }
 
-	@Override
-	public void close() {
-		for (Closeable close : list) {
-			closeQuietly(close);
-		}
-	}
+    @Override
+    public void close() {
+        for (Closeable close : list) {
+            closeQuietly(close);
+        }
+    }
 
 }

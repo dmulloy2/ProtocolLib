@@ -31,47 +31,47 @@ import org.bukkit.plugin.Plugin;
  */
 public abstract class MonitorAdapter implements PacketListener {
 
-	private final Plugin plugin;
-	private final ListeningWhitelist sending;
-	private final ListeningWhitelist receiving;
+    private final Plugin plugin;
+    private final ListeningWhitelist sending;
+    private final ListeningWhitelist receiving;
 
-	public MonitorAdapter(Plugin plugin, ConnectionSide side) {
-		this.plugin = plugin;
+    public MonitorAdapter(Plugin plugin, ConnectionSide side) {
+        this.plugin = plugin;
 
-		// check the connection side and register the packets for the given side
-		this.sending = side.isForServer() ? buildWhitelist(PacketRegistry.getServerPacketTypes()) : ListeningWhitelist.EMPTY_WHITELIST;
-		this.receiving = side.isForClient() ? buildWhitelist(PacketRegistry.getClientPacketTypes()) : ListeningWhitelist.EMPTY_WHITELIST;
-	}
+        // check the connection side and register the packets for the given side
+        this.sending = side.isForServer() ? buildWhitelist(PacketRegistry.getServerPacketTypes()) : ListeningWhitelist.EMPTY_WHITELIST;
+        this.receiving = side.isForClient() ? buildWhitelist(PacketRegistry.getClientPacketTypes()) : ListeningWhitelist.EMPTY_WHITELIST;
+    }
 
-	@Deprecated
-	public MonitorAdapter(Plugin plugin, ConnectionSide side, Logger logger) {
-		this(plugin, side);
-	}
+    @Deprecated
+    public MonitorAdapter(Plugin plugin, ConnectionSide side, Logger logger) {
+        this(plugin, side);
+    }
 
-	private static ListeningWhitelist buildWhitelist(Collection<PacketType> packetTypes) {
-		return ListeningWhitelist.newBuilder().monitor().gamePhaseBoth().types(packetTypes).build();
-	}
+    private static ListeningWhitelist buildWhitelist(Collection<PacketType> packetTypes) {
+        return ListeningWhitelist.newBuilder().monitor().gamePhaseBoth().types(packetTypes).build();
+    }
 
-	@Override
-	public ListeningWhitelist getSendingWhitelist() {
-		return this.sending;
-	}
+    @Override
+    public ListeningWhitelist getSendingWhitelist() {
+        return this.sending;
+    }
 
-	@Override
-	public ListeningWhitelist getReceivingWhitelist() {
-		return this.receiving;
-	}
+    @Override
+    public ListeningWhitelist getReceivingWhitelist() {
+        return this.receiving;
+    }
 
-	@Override
-	public Plugin getPlugin() {
-		return this.plugin;
-	}
+    @Override
+    public Plugin getPlugin() {
+        return this.plugin;
+    }
 
-	@Override
-	public void onPacketSending(PacketEvent event) {
-	}
+    @Override
+    public void onPacketSending(PacketEvent event) {
+    }
 
-	@Override
-	public void onPacketReceiving(PacketEvent event) {
-	}
+    @Override
+    public void onPacketReceiving(PacketEvent event) {
+    }
 }

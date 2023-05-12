@@ -39,24 +39,24 @@ import javax.annotation.Nullable;
  */
 public class CollectionGenerator implements InstanceProvider {
 
-	/**
-	 * Shared instance of this generator.
-	 */
-	public static final CollectionGenerator INSTANCE = new CollectionGenerator();
-	
-	@Override
-	public Object create(@Nullable Class<?> type) {
-		// Standard collection types
-		if (type != null && type.isInterface()) {
-			if (type.equals(Collection.class) || type.equals(List.class)) return new ArrayList<>();
-			else if (type.equals(Set.class)) return new HashSet<>();
-			else if (type.equals(Map.class)) return new HashMap<>();
-			else if (type.equals(SortedSet.class)) return new TreeSet<>();
-			else if (type.equals(SortedMap.class)) return new TreeMap<>();
-			else if (type.equals(Queue.class)) return new LinkedList<>();
-		}
-		
-		// Cannot provide an instance
-		return null;
-	}
+    /**
+     * Shared instance of this generator.
+     */
+    public static final CollectionGenerator INSTANCE = new CollectionGenerator();
+    
+    @Override
+    public Object create(@Nullable Class<?> type) {
+        // Standard collection types
+        if (type != null && type.isInterface()) {
+            if (type.equals(Collection.class) || type.equals(List.class)) return new ArrayList<>();
+            else if (type.equals(Set.class)) return new HashSet<>();
+            else if (type.equals(Map.class)) return new HashMap<>();
+            else if (type.equals(SortedSet.class)) return new TreeSet<>();
+            else if (type.equals(SortedMap.class)) return new TreeMap<>();
+            else if (type.equals(Queue.class)) return new LinkedList<>();
+        }
+        
+        // Cannot provide an instance
+        return null;
+    }
 }

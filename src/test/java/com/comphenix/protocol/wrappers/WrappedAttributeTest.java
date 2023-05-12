@@ -23,82 +23,82 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WrappedAttributeTest {
 
-	private WrappedAttributeModifier doubleModifier;
-	private WrappedAttributeModifier constantModifier;
-	private WrappedAttribute attribute;
+    private WrappedAttributeModifier doubleModifier;
+    private WrappedAttributeModifier constantModifier;
+    private WrappedAttribute attribute;
 
-	@BeforeAll
-	public static void initializeBukkit() {
-		BukkitInitialization.initializeAll();
-	}
+    @BeforeAll
+    public static void initializeBukkit() {
+        BukkitInitialization.initializeAll();
+    }
 
-	@BeforeEach
-	public void setUp() {
-		// Create a couple of modifiers
-		this.doubleModifier =
-				WrappedAttributeModifier.newBuilder().
-						name("Double Damage").
-						amount(1).
-						operation(Operation.ADD_PERCENTAGE).
-						build();
-		this.constantModifier =
-				WrappedAttributeModifier.newBuilder().
-						name("Damage Bonus").
-						amount(5).
-						operation(Operation.ADD_NUMBER).
-						build();
+    @BeforeEach
+    public void setUp() {
+        // Create a couple of modifiers
+        this.doubleModifier =
+                WrappedAttributeModifier.newBuilder().
+                        name("Double Damage").
+                        amount(1).
+                        operation(Operation.ADD_PERCENTAGE).
+                        build();
+        this.constantModifier =
+                WrappedAttributeModifier.newBuilder().
+                        name("Damage Bonus").
+                        amount(5).
+                        operation(Operation.ADD_NUMBER).
+                        build();
 
-		// Create attribute
-		this.attribute = WrappedAttribute.newBuilder().
-				attributeKey("generic.attackDamage").
-				baseValue(2).
-				packet(new PacketContainer(PacketType.Play.Server.UPDATE_ATTRIBUTES)).
-				modifiers(Lists.newArrayList(this.constantModifier, this.doubleModifier)).
-				build();
-	}
+        // Create attribute
+        this.attribute = WrappedAttribute.newBuilder().
+                attributeKey("generic.attackDamage").
+                baseValue(2).
+                packet(new PacketContainer(PacketType.Play.Server.UPDATE_ATTRIBUTES)).
+                modifiers(Lists.newArrayList(this.constantModifier, this.doubleModifier)).
+                build();
+    }
 
-	@Test
-	public void testEquality() {
-		// Check wrapped equality
-		assertEquals(this.doubleModifier, this.doubleModifier);
-		assertNotSame(this.constantModifier, this.doubleModifier);
+    @Test
+    public void testEquality() {
+        // Check wrapped equality
+        assertEquals(this.doubleModifier, this.doubleModifier);
+        assertNotSame(this.constantModifier, this.doubleModifier);
 
-		assertEquals(this.doubleModifier.getHandle(), this.getModifierCopy(this.doubleModifier));
-		assertEquals(this.constantModifier.getHandle(), this.getModifierCopy(this.constantModifier));
-	}
+        assertEquals(this.doubleModifier.getHandle(), this.getModifierCopy(this.doubleModifier));
+        assertEquals(this.constantModifier.getHandle(), this.getModifierCopy(this.constantModifier));
+    }
 
-	@Test
-	public void testAttribute() {
-		assertEquals(this.attribute, WrappedAttribute.fromHandle(this.getAttributeCopy(this.attribute)));
+    @Test
+    public void testAttribute() {
+        assertEquals(this.attribute, WrappedAttribute.fromHandle(this.getAttributeCopy(this.attribute)));
 
-		assertTrue(this.attribute.hasModifier(this.doubleModifier.getUUID()));
-		assertTrue(this.attribute.hasModifier(this.constantModifier.getUUID()));
-	}
+        assertTrue(this.attribute.hasModifier(this.doubleModifier.getUUID()));
+        assertTrue(this.attribute.hasModifier(this.constantModifier.getUUID()));
+    }
 
-	@Test
-	public void testFromTemplate() {
-		assertEquals(this.attribute, WrappedAttribute.newBuilder(this.attribute).build());
-	}
+    @Test
+    public void testFromTemplate() {
+        assertEquals(this.attribute, WrappedAttribute.newBuilder(this.attribute).build());
+    }
 
-	/**
-	 * Retrieve the equivalent NMS attribute.
-	 *
-	 * @param attribute - the wrapped attribute.
-	 * @return The equivalent NMS attribute.
-	 */
-	private AttributeSnapshot getAttributeCopy(WrappedAttribute attribute) {
-		List<AttributeModifier> modifiers = new ArrayList<>();
+    /**
+     * Retrieve the equivalent NMS attribute.
+     *
+     * @param attribute - the wrapped attribute.
+     * @return The equivalent NMS attribute.
+     */
+    private AttributeSnapshot getAttributeCopy(WrappedAttribute attribute) {
+        List<AttributeModifier> modifiers = new ArrayList<>();
 
-		for (WrappedAttributeModifier wrapper : attribute.getModifiers()) {
-			modifiers.add((AttributeModifier) wrapper.getHandle());
-		}
+        for (WrappedAttributeModifier wrapper : attribute.getModifiers()) {
+            modifiers.add((AttributeModifier) wrapper.getHandle());
+        }
 
-		AttributeBase base = BuiltInRegistries.u.a(MinecraftKey.a(attribute.getAttributeKey()));
-		return new AttributeSnapshot(base, attribute.getBaseValue(), modifiers);
-	}
+        AttributeBase base = BuiltInRegistries.u.a(MinecraftKey.a(attribute.getAttributeKey()));
+        return new AttributeSnapshot(base, attribute.getBaseValue(), modifiers);
+    }
 
-	private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
-		AttributeModifier.Operation operation = AttributeModifier.Operation.values()[modifier.getOperation().getId()];
-		return new AttributeModifier(modifier.getUUID(), modifier.getName(), modifier.getAmount(), operation);
-	}
+    private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
+        AttributeModifier.Operation operation = AttributeModifier.Operation.values()[modifier.getOperation().getId()];
+        return new AttributeModifier(modifier.getUUID(), modifier.getName(), modifier.getAmount(), operation);
+    }
 }

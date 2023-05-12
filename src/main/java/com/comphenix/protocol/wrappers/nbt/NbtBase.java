@@ -29,65 +29,65 @@ import com.comphenix.protocol.wrappers.ClonableWrapper;
  * @param <TType> - type of the value that is stored.
  */
 public interface NbtBase<TType> extends ClonableWrapper {
-	/**
-	 * Accepts a NBT visitor.
-	 * @param visitor - the hierarchical NBT visitor.
-	 * @return TRUE if the parent should continue processing children at the current level, FALSE otherwise.
-	 */
-	public abstract boolean accept(NbtVisitor visitor);
-	
-	/**
-	 * Retrieve the type of this NBT element.
-	 * @return The type of this NBT element.
-	 */
-	public abstract NbtType getType();
+    /**
+     * Accepts a NBT visitor.
+     * @param visitor - the hierarchical NBT visitor.
+     * @return TRUE if the parent should continue processing children at the current level, FALSE otherwise.
+     */
+    public abstract boolean accept(NbtVisitor visitor);
+    
+    /**
+     * Retrieve the type of this NBT element.
+     * @return The type of this NBT element.
+     */
+    public abstract NbtType getType();
 
-	/**
-	 * Retrieve the name of this NBT tag.
-	 * <p>
-	 * This will be an empty string if the NBT tag is stored in a list.
-	 * @return Name of the tag.
-	 */
-	public abstract String getName();
+    /**
+     * Retrieve the name of this NBT tag.
+     * <p>
+     * This will be an empty string if the NBT tag is stored in a list.
+     * @return Name of the tag.
+     */
+    public abstract String getName();
 
-	/**
-	 * Set the name of this NBT tag.
-	 * <p>
-	 * This will be ignored if the NBT tag is stored in a list.
-	 * @param name - name of the tag.
-	 */
-	public abstract void setName(String name);
+    /**
+     * Set the name of this NBT tag.
+     * <p>
+     * This will be ignored if the NBT tag is stored in a list.
+     * @param name - name of the tag.
+     */
+    public abstract void setName(String name);
 
-	/**
-	 * Retrieve the value of this NBT tag.
-	 * <p>
-	 * Is either a primitive {@link java.lang.Number wrapper}, {@link java.lang.String String}, 
-	 * {@link java.util.List List} or a {@link java.util.Map Map}. 
-	 * <p>
-	 * Users are encouraged to cast an NBT compound to {@link NbtCompound} and use its put and get-methods
-	 * instead of accessing its content from getValue().
-	 * <p>
-	 * All operations that modify collections directly, such as {@link java.util.List#add(Object) List.add(Object)} or 
-	 * {@link java.util.Map#clear() Map.clear()}, are considered optional. This also include members in {@link java.util.Iterator Iterator} and 
-	 * {@link java.util.ListIterator ListIterator}. Operations that are not implemented throw a 
-	 * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.
-	 * @return Value of this tag.
-	 */
-	public abstract TType getValue();
+    /**
+     * Retrieve the value of this NBT tag.
+     * <p>
+     * Is either a primitive {@link java.lang.Number wrapper}, {@link java.lang.String String}, 
+     * {@link java.util.List List} or a {@link java.util.Map Map}. 
+     * <p>
+     * Users are encouraged to cast an NBT compound to {@link NbtCompound} and use its put and get-methods
+     * instead of accessing its content from getValue().
+     * <p>
+     * All operations that modify collections directly, such as {@link java.util.List#add(Object) List.add(Object)} or 
+     * {@link java.util.Map#clear() Map.clear()}, are considered optional. This also include members in {@link java.util.Iterator Iterator} and 
+     * {@link java.util.ListIterator ListIterator}. Operations that are not implemented throw a 
+     * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.
+     * @return Value of this tag.
+     */
+    public abstract TType getValue();
 
-	/**
-	 * Set the value of this NBT tag.
-	 * @param newValue - the new value of this tag.
-	 */
-	public abstract void setValue(TType newValue);
+    /**
+     * Set the value of this NBT tag.
+     * @param newValue - the new value of this tag.
+     */
+    public abstract void setValue(TType newValue);
 
-	/**
-	 * Clone the current NBT tag.
-	 * @return The cloned tag.
-	 */
-	public abstract NbtBase<TType> deepClone();
+    /**
+     * Clone the current NBT tag.
+     * @return The cloned tag.
+     */
+    public abstract NbtBase<TType> deepClone();
 
-	default Object getHandle() {
-		return null;
-	}
+    default Object getHandle() {
+        return null;
+    }
 }

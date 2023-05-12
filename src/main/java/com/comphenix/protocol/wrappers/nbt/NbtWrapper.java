@@ -31,15 +31,15 @@ import com.comphenix.protocol.wrappers.ClonableWrapper;
  * @param <TType> - type of the value that is stored.
  */
 public interface NbtWrapper<TType> extends NbtBase<TType>, ClonableWrapper {
-	/**
-	 * Retrieve the underlying net.minecraft.server instance.
-	 * @return The NMS instance.
-	 */
-	public Object getHandle();
-	
-	/**
-	 * Write the current NBT tag to an output stream.
-	 * @param destination - the destination stream.
-	 */
-	public void write(DataOutput destination);
+    /**
+     * Retrieve the underlying net.minecraft.server instance.
+     * @return The NMS instance.
+     */
+    public Object getHandle();
+    
+    /**
+     * Write the current NBT tag to an output stream.
+     * @param destination - the destination stream.
+     */
+    public void write(DataOutput destination);
 }

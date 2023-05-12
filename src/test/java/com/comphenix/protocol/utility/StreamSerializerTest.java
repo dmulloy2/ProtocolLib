@@ -20,67 +20,67 @@ import org.junit.jupiter.api.Test;
 
 public class StreamSerializerTest {
 
-	@BeforeAll
-	public static void initializeBukkit() {
-		BukkitInitialization.initializeAll();
-	}
+    @BeforeAll
+    public static void initializeBukkit() {
+        BukkitInitialization.initializeAll();
+    }
 
-	@Test
-	public void testStrings() throws IOException {
-		StreamSerializer serializer = new StreamSerializer();
-		String initial = "Hello - this is a test.";
+    @Test
+    public void testStrings() throws IOException {
+        StreamSerializer serializer = new StreamSerializer();
+        String initial = "Hello - this is a test.";
 
-		// Buffer
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		serializer.serializeString(new DataOutputStream(buffer), initial);
+        // Buffer
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        serializer.serializeString(new DataOutputStream(buffer), initial);
 
-		DataInputStream input = new DataInputStream(new ByteArrayInputStream(buffer.toByteArray()));
-		String deserialized = serializer.deserializeString(input, 50);
+        DataInputStream input = new DataInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        String deserialized = serializer.deserializeString(input, 50);
 
-		assertEquals(initial, deserialized);
-	}
+        assertEquals(initial, deserialized);
+    }
 
-	// For future reference, items are saved in the ChunkRegionLoader and TileEntityChest
+    // For future reference, items are saved in the ChunkRegionLoader and TileEntityChest
 
-	@Test
-	public void testCompound() throws IOException {
-		StreamSerializer serializer = new StreamSerializer();
-		NbtCompound initial = NbtFactory.ofCompound("tag");
-		initial.put("name", "Ole");
-		initial.put("age", 20);
+    @Test
+    public void testCompound() throws IOException {
+        StreamSerializer serializer = new StreamSerializer();
+        NbtCompound initial = NbtFactory.ofCompound("tag");
+        initial.put("name", "Ole");
+        initial.put("age", 20);
 
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		serializer.serializeCompound(new DataOutputStream(buffer), initial);
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        serializer.serializeCompound(new DataOutputStream(buffer), initial);
 
-		DataInputStream input = new DataInputStream(new ByteArrayInputStream(buffer.toByteArray()));
-		NbtCompound deserialized = serializer.deserializeCompound(input);
+        DataInputStream input = new DataInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        NbtCompound deserialized = serializer.deserializeCompound(input);
 
-		assertEquals(initial, deserialized);
-	}
+        assertEquals(initial, deserialized);
+    }
 
-	@Test
-	public void testItems() throws IOException {
-		StreamSerializer serializer = new StreamSerializer();
-		ItemStack initial = new ItemStack(Material.STRING);
+    @Test
+    public void testItems() throws IOException {
+        StreamSerializer serializer = new StreamSerializer();
+        ItemStack initial = new ItemStack(Material.STRING);
 
-		String serialized = serializer.serializeItemStack(initial);
-		ItemStack deserialized = serializer.deserializeItemStack(serialized);
+        String serialized = serializer.serializeItemStack(initial);
+        ItemStack deserialized = serializer.deserializeItemStack(serialized);
 
-		assertItemsEqual(initial, deserialized);
-	}
+        assertItemsEqual(initial, deserialized);
+    }
 
-	@Test
-	public void testItemMeta() throws IOException {
-		StreamSerializer serializer = new StreamSerializer();
-		ItemStack initial = new ItemStack(Material.BLUE_WOOL, 2);
+    @Test
+    public void testItemMeta() throws IOException {
+        StreamSerializer serializer = new StreamSerializer();
+        ItemStack initial = new ItemStack(Material.BLUE_WOOL, 2);
 
-		ItemMeta meta = initial.getItemMeta();
-		meta.setDisplayName(ChatColor.BLUE + "Blue Wool");
-		initial.setItemMeta(meta);
+        ItemMeta meta = initial.getItemMeta();
+        meta.setDisplayName(ChatColor.BLUE + "Blue Wool");
+        initial.setItemMeta(meta);
 
-		String serialized = serializer.serializeItemStack(initial);
-		ItemStack deserialized = serializer.deserializeItemStack(serialized);
+        String serialized = serializer.serializeItemStack(initial);
+        ItemStack deserialized = serializer.deserializeItemStack(serialized);
 
-		assertItemsEqual(initial, deserialized);
-	}
+        assertItemsEqual(initial, deserialized);
+    }
 }

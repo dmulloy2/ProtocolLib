@@ -16,66 +16,66 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestPingPacket {
 
-	// Current versions
-	private static final int PROTOCOL_VERSION = 4;
+    // Current versions
+    private static final int PROTOCOL_VERSION = 4;
 
-	// Timeout
-	private static final int TIMEOUT_PING_MS = 10000;
+    // Timeout
+    private static final int TIMEOUT_PING_MS = 10000;
 
-	private volatile String source;
+    private volatile String source;
 
-	private TestPingPacket() {
-		// Prevent external constructors
-	}
+    private TestPingPacket() {
+        // Prevent external constructors
+    }
 
-	/**
-	 * Create a new test ping packet test.
-	 *
-	 * @return The new test.
-	 */
-	public static TestPingPacket newTest() {
-		return new TestPingPacket();
-	}
+    /**
+     * Create a new test ping packet test.
+     *
+     * @return The new test.
+     */
+    public static TestPingPacket newTest() {
+        return new TestPingPacket();
+    }
 
-	/**
-	 * Invoked when the test should be started.
-	 *
-	 * @param plugin - the current plugin.
-	 * @throws Throwable Anything went wrong.
-	 */
-	public void startTest(Plugin plugin) throws Throwable {
-		try {
-			String transmitted = this.testInterception(plugin).
-					get(TIMEOUT_PING_MS, TimeUnit.MILLISECONDS);
+    /**
+     * Invoked when the test should be started.
+     *
+     * @param plugin - the current plugin.
+     * @throws Throwable Anything went wrong.
+     */
+    public void startTest(Plugin plugin) throws Throwable {
+        try {
+            String transmitted = this.testInterception(plugin).
+                    get(TIMEOUT_PING_MS, TimeUnit.MILLISECONDS);
 
-			// Make sure it's the same
-			System.out.println("Server string: " + transmitted);
-			assertEquals(this.source, transmitted);
-		} catch (ExecutionException e) {
-			throw e.getCause();
-		}
-	}
+            // Make sure it's the same
+            System.out.println("Server string: " + transmitted);
+            assertEquals(this.source, transmitted);
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
+    }
 
-	private Future<String> testInterception(Plugin test) {
-		final CountDownLatch latch = new CountDownLatch(1);
+    private Future<String> testInterception(Plugin test) {
+        final CountDownLatch latch = new CountDownLatch(1);
 
-		ProtocolLibrary.getProtocolManager().addPacketListener(
-				new PacketAdapter(test, PacketType.Status.Server.SERVER_INFO) {
-					@Override
-					public void onPacketSending(PacketEvent event) {
-						TestPingPacket.this.source = event.getPacket().getServerPings().read(0).toJson();
-						latch.countDown();
-					}
-				});
+        ProtocolLibrary.getProtocolManager().addPacketListener(
+                new PacketAdapter(test, PacketType.Status.Server.SERVER_INFO) {
+                    @Override
+                    public void onPacketSending(PacketEvent event) {
+                        TestPingPacket.this.source = event.getPacket().getServerPings().read(0).toJson();
+                        latch.countDown();
+                    }
+                });
 
-		// Invoke the client on a separate thread
-		return Executors.newSingleThreadExecutor().submit(() -> {
-			SimpleMinecraftClient client = new SimpleMinecraftClient(PROTOCOL_VERSION);
-			String information = client.queryLocalPing();
+        // Invoke the client on a separate thread
+        return Executors.newSingleThreadExecutor().submit(() -> {
+            SimpleMinecraftClient client = new SimpleMinecraftClient(PROTOCOL_VERSION);
+            String information = client.queryLocalPing();
 
-			// Wait for the listener to catch up
-			latch.await(1, TimeUnit.SECONDS);
-			return information;
-		});
-	}
+            // Wait for the listener to catch up
+            latch.await(1, TimeUnit.SECONDS);
+            return information;
+        });
+    }
 }

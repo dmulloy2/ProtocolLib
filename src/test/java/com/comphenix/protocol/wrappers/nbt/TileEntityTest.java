@@ -24,15 +24,15 @@ import org.junit.jupiter.api.Test;
  */
 public class TileEntityTest {
 
-	@BeforeAll
-	public static void beforeClass() {
-		BukkitInitialization.initializeAll();
-	}
+    @BeforeAll
+    public static void beforeClass() {
+        BukkitInitialization.initializeAll();
+    }
 
-	@Test
-	public void test() {
-		// Ensure the read and write methods exist
-		TileEntityAccessor<BlockState> accessor = new TileEntityAccessor<>();
-		accessor.findMethods(null, null);
-	}
+    @Test
+    public void test() {
+        // Ensure the read and write methods exist
+        TileEntityAccessor<BlockState> accessor = new TileEntityAccessor<>();
+        accessor.findMethods(null, null);
+    }
 }

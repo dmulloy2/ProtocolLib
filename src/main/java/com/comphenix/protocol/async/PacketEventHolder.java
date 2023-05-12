@@ -29,48 +29,48 @@ import com.google.common.primitives.Longs;
  */
 class PacketEventHolder implements Comparable<PacketEventHolder> {
 
-	private PacketEvent event;
-	private long sendingIndex = 0;
-	
-	/**
-	 * A wrapper that ensures the packet event is ordered by sending index.
-	 * @param event - packet event to wrap.
-	 */
-	public PacketEventHolder(PacketEvent event) {
-		this.event = Preconditions.checkNotNull(event, "Event must be non-null");
-		
-		if (event.getAsyncMarker() != null)
-			this.sendingIndex = event.getAsyncMarker().getNewSendingIndex();
-	}
+    private PacketEvent event;
+    private long sendingIndex = 0;
+    
+    /**
+     * A wrapper that ensures the packet event is ordered by sending index.
+     * @param event - packet event to wrap.
+     */
+    public PacketEventHolder(PacketEvent event) {
+        this.event = Preconditions.checkNotNull(event, "Event must be non-null");
+        
+        if (event.getAsyncMarker() != null)
+            this.sendingIndex = event.getAsyncMarker().getNewSendingIndex();
+    }
 
-	/**
-	 * Retrieve the stored event.
-	 * @return The stored event.
-	 */
-	public PacketEvent getEvent() {
-		return event;
-	}
-	
-	@Override
-	public int compareTo(PacketEventHolder other) {
-		return ComparisonChain.start().
-			   compare(sendingIndex, other.sendingIndex).
-			   result();
-	}
-	
-	@Override
-	public boolean equals(Object other) {
-		// Standard equals
-		if (other == this)
-			return true;
-		if (other instanceof PacketEventHolder)
-			return sendingIndex == ((PacketEventHolder) other).sendingIndex;
-		else
-			return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return Longs.hashCode(sendingIndex);
-	}
+    /**
+     * Retrieve the stored event.
+     * @return The stored event.
+     */
+    public PacketEvent getEvent() {
+        return event;
+    }
+    
+    @Override
+    public int compareTo(PacketEventHolder other) {
+        return ComparisonChain.start().
+               compare(sendingIndex, other.sendingIndex).
+               result();
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        // Standard equals
+        if (other == this)
+            return true;
+        if (other instanceof PacketEventHolder)
+            return sendingIndex == ((PacketEventHolder) other).sendingIndex;
+        else
+            return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Longs.hashCode(sendingIndex);
+    }
 }

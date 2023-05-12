@@ -28,87 +28,87 @@ import org.bukkit.plugin.Plugin;
  */
 public class ProtocolLibrary {
 
-	/**
-	 * The minimum version ProtocolLib has been tested with.
-	 */
-	public static final String MINIMUM_MINECRAFT_VERSION = "1.8";
+    /**
+     * The minimum version ProtocolLib has been tested with.
+     */
+    public static final String MINIMUM_MINECRAFT_VERSION = "1.8";
 
-	/**
-	 * The maximum version ProtocolLib has been tested with.
-	 */
-	public static final String MAXIMUM_MINECRAFT_VERSION = MinecraftVersion.LATEST.getVersion();
+    /**
+     * The maximum version ProtocolLib has been tested with.
+     */
+    public static final String MAXIMUM_MINECRAFT_VERSION = MinecraftVersion.LATEST.getVersion();
 
-	/**
-	 * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19.2) was released.
-	 */
-	public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-08-05";
+    /**
+     * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19.2) was released.
+     */
+    public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-08-05";
 
-	/**
-	 * Plugins that are currently incompatible with ProtocolLib.
-	 */
-	public static final List<String> INCOMPATIBLE = ImmutableList.of("TagAPI");
+    /**
+     * Plugins that are currently incompatible with ProtocolLib.
+     */
+    public static final List<String> INCOMPATIBLE = ImmutableList.of("TagAPI");
 
-	private static Plugin plugin;
-	private static ProtocolConfig config;
-	private static ProtocolManager manager;
-	private static ErrorReporter reporter = new BasicErrorReporter();
+    private static Plugin plugin;
+    private static ProtocolConfig config;
+    private static ProtocolManager manager;
+    private static ErrorReporter reporter = new BasicErrorReporter();
 
-	private static boolean updatesDisabled;
-	private static boolean initialized;
+    private static boolean updatesDisabled;
+    private static boolean initialized;
 
-	protected static void init(Plugin plugin, ProtocolConfig config, ProtocolManager manager, ErrorReporter reporter) {
-		Validate.isTrue(!initialized, "ProtocolLib has already been initialized.");
-		ProtocolLibrary.plugin = plugin;
-		ProtocolLibrary.config = config;
-		ProtocolLibrary.manager = manager;
-		ProtocolLibrary.reporter = reporter;
-		initialized = true;
-	}
+    protected static void init(Plugin plugin, ProtocolConfig config, ProtocolManager manager, ErrorReporter reporter) {
+        Validate.isTrue(!initialized, "ProtocolLib has already been initialized.");
+        ProtocolLibrary.plugin = plugin;
+        ProtocolLibrary.config = config;
+        ProtocolLibrary.manager = manager;
+        ProtocolLibrary.reporter = reporter;
+        initialized = true;
+    }
 
-	/**
-	 * Gets the ProtocolLib plugin instance.
-	 * @return The plugin instance
-	 */
-	public static Plugin getPlugin() {
-		return plugin;
-	}
+    /**
+     * Gets the ProtocolLib plugin instance.
+     * @return The plugin instance
+     */
+    public static Plugin getPlugin() {
+        return plugin;
+    }
 
-	/**
-	 * Gets ProtocolLib's configuration
-	 * @return The config
-	 */
-	public static ProtocolConfig getConfig() {
-		return config;
-	}
+    /**
+     * Gets ProtocolLib's configuration
+     * @return The config
+     */
+    public static ProtocolConfig getConfig() {
+        return config;
+    }
 
-	/**
-	 * Retrieves the packet protocol manager.
-	 * @return Packet protocol manager
-	 */
-	public static ProtocolManager getProtocolManager() {
-		return manager;
-	}
+    /**
+     * Retrieves the packet protocol manager.
+     * @return Packet protocol manager
+     */
+    public static ProtocolManager getProtocolManager() {
+        return manager;
+    }
 
-	/**
-	 * Retrieve the current error reporter.
-	 * @return Current error reporter.
-	 */
-	public static ErrorReporter getErrorReporter() {
-		return reporter;
-	}
+    /**
+     * Retrieve the current error reporter.
+     * @return Current error reporter.
+     */
+    public static ErrorReporter getErrorReporter() {
+        return reporter;
+    }
 
-	/**
-	 * Disables the ProtocolLib update checker.
-	 */
-	public static void disableUpdates() {
-		updatesDisabled = true;
-	}
+    /**
+     * Disables the ProtocolLib update checker.
+     */
+    public static void disableUpdates() {
+        updatesDisabled = true;
+    }
 
-	/**
-	 * Whether updates are currently disabled.
-	 * @return True if it is, false if not
-	 */
-	public static boolean updatesDisabled() {
-		return updatesDisabled;
-	}
+    /**
+     * Whether updates are currently disabled.
+     * @return True if it is, false if not
+     */
+    public static boolean updatesDisabled() {
+        return updatesDisabled;
+    }
 }

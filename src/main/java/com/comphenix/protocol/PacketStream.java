@@ -30,74 +30,74 @@ import org.bukkit.entity.Player;
  */
 public interface PacketStream {
 
-	/**
-	 * Send a packet to the given player.
-	 *
-	 * @param receiver - the reciever.
-	 * @param packet   - packet to send.
-	 */
-	void sendServerPacket(Player receiver, PacketContainer packet);
+    /**
+     * Send a packet to the given player.
+     *
+     * @param receiver - the reciever.
+     * @param packet   - packet to send.
+     */
+    void sendServerPacket(Player receiver, PacketContainer packet);
 
-	/**
-	 * Send a packet to the given player.
-	 *
-	 * @param receiver - the reciever.
-	 * @param packet   - packet to send.
-	 * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 */
-	void sendServerPacket(Player receiver, PacketContainer packet, boolean filters);
+    /**
+     * Send a packet to the given player.
+     *
+     * @param receiver - the reciever.
+     * @param packet   - packet to send.
+     * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
+     */
+    void sendServerPacket(Player receiver, PacketContainer packet, boolean filters);
 
-	/**
-	 * Send a packet to the given player.
-	 *
-	 * @param receiver - the receiver.
-	 * @param packet   - packet to send.
-	 * @param marker   - the network marker to use.
-	 * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 */
-	void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters);
+    /**
+     * Send a packet to the given player.
+     *
+     * @param receiver - the receiver.
+     * @param packet   - packet to send.
+     * @param marker   - the network marker to use.
+     * @param filters  - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
+     */
+    void sendServerPacket(Player receiver, PacketContainer packet, NetworkMarker marker, boolean filters);
 
-	/**
-	 * Send a wire packet to the given player.
-	 *
-	 * @param receiver - the receiver.
-	 * @param id       - packet id.
-	 * @param bytes    - packet bytes.
-	 */
-	void sendWirePacket(Player receiver, int id, byte[] bytes);
+    /**
+     * Send a wire packet to the given player.
+     *
+     * @param receiver - the receiver.
+     * @param id       - packet id.
+     * @param bytes    - packet bytes.
+     */
+    void sendWirePacket(Player receiver, int id, byte[] bytes);
 
-	/**
-	 * Send a wire packet to the given player.
-	 *
-	 * @param receiver - the receiver.
-	 * @param packet   - packet to send.
-	 */
-	void sendWirePacket(Player receiver, WirePacket packet);
+    /**
+     * Send a wire packet to the given player.
+     *
+     * @param receiver - the receiver.
+     * @param packet   - packet to send.
+     */
+    void sendWirePacket(Player receiver, WirePacket packet);
 
-	/**
-	 * Simulate recieving a certain packet from a given player.
-	 *
-	 * @param sender - the sender.
-	 * @param packet - the packet that was sent.
-	 */
-	void receiveClientPacket(Player sender, PacketContainer packet);
+    /**
+     * Simulate recieving a certain packet from a given player.
+     *
+     * @param sender - the sender.
+     * @param packet - the packet that was sent.
+     */
+    void receiveClientPacket(Player sender, PacketContainer packet);
 
-	/**
-	 * Simulate recieving a certain packet from a given player.
-	 *
-	 * @param sender  - the sender.
-	 * @param packet  - the packet that was sent.
-	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 */
-	void receiveClientPacket(Player sender, PacketContainer packet, boolean filters);
+    /**
+     * Simulate recieving a certain packet from a given player.
+     *
+     * @param sender  - the sender.
+     * @param packet  - the packet that was sent.
+     * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
+     */
+    void receiveClientPacket(Player sender, PacketContainer packet, boolean filters);
 
-	/**
-	 * Simulate recieving a certain packet from a given player.
-	 *
-	 * @param sender  - the sender.
-	 * @param packet  - the packet that was sent.
-	 * @param marker  - the network marker to use.
-	 * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
-	 */
-	void receiveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters);
+    /**
+     * Simulate recieving a certain packet from a given player.
+     *
+     * @param sender  - the sender.
+     * @param packet  - the packet that was sent.
+     * @param marker  - the network marker to use.
+     * @param filters - whether or not to invoke any packet filters below {@link ListenerPriority#MONITOR}.
+     */
+    void receiveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters);
 }

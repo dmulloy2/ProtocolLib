@@ -27,38 +27,38 @@ import org.bukkit.Material;
  */
 public class MultiBlockChangeTest {
 
-	// @BeforeAll
-	public static void initializeBukkit() {
-		BukkitInitialization.initializeAll();
-	}
+    // @BeforeAll
+    public static void initializeBukkit() {
+        BukkitInitialization.initializeAll();
+    }
 
-	// @Test
-	public void test() {
-		int x = 42;
-		int y = 64;
-		int z = 70;
+    // @Test
+    public void test() {
+        int x = 42;
+        int y = 64;
+        int z = 70;
 
-		Location loc = new Location(null, x, y, z);
-		ChunkCoordIntPair chunk = new ChunkCoordIntPair(x >> 4, z >> 4);
-		WrappedBlockData blockData = WrappedBlockData.createData(Material.STONE);
-		MultiBlockChangeInfo info = new MultiBlockChangeInfo(loc, blockData);
+        Location loc = new Location(null, x, y, z);
+        ChunkCoordIntPair chunk = new ChunkCoordIntPair(x >> 4, z >> 4);
+        WrappedBlockData blockData = WrappedBlockData.createData(Material.STONE);
+        MultiBlockChangeInfo info = new MultiBlockChangeInfo(loc, blockData);
 
-		// Make sure the location is correct
-		assertEquals(loc, info.getLocation(null));
+        // Make sure the location is correct
+        assertEquals(loc, info.getLocation(null));
 
-		MultiBlockChangeInfo[] array = {info, info};
+        MultiBlockChangeInfo[] array = {info, info};
 
-		EquivalentConverter<MultiBlockChangeInfo[]> converter = Converters.array(
-				MinecraftReflection.getMultiBlockChangeInfoClass(),
-				MultiBlockChangeInfo.getConverter(chunk)
-		);
-		Object generic = converter.getGeneric(array);
-		MultiBlockChangeInfo[] back = converter.getSpecific(generic);
+        EquivalentConverter<MultiBlockChangeInfo[]> converter = Converters.array(
+                MinecraftReflection.getMultiBlockChangeInfoClass(),
+                MultiBlockChangeInfo.getConverter(chunk)
+        );
+        Object generic = converter.getGeneric(array);
+        MultiBlockChangeInfo[] back = converter.getSpecific(generic);
 
-		// Make sure our conversions are correct
-		assertEquals(info.getX(), back[0].getX());
-		assertEquals(info.getY(), back[0].getY());
-		assertEquals(info.getZ(), back[0].getZ());
-		assertEquals(info.getData(), back[0].getData());
-	}
+        // Make sure our conversions are correct
+        assertEquals(info.getX(), back[0].getX());
+        assertEquals(info.getY(), back[0].getY());
+        assertEquals(info.getZ(), back[0].getZ());
+        assertEquals(info.getData(), back[0].getData());
+    }
 }

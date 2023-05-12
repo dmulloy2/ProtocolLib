@@ -34,102 +34,102 @@ import java.util.Map;
  */
 public class ObjectWriter {
 
-	// Cache structure modifiers
-	private static final Map<Class<?>, StructureModifier<Object>> CACHE = new HashMap<>();
+    // Cache structure modifiers
+    private static final Map<Class<?>, StructureModifier<Object>> CACHE = new HashMap<>();
 
-	/**
-	 * Retrieve a usable structure modifier for the given object type.
-	 * <p>
-	 * Will attempt to reuse any other structure modifiers we have cached.
-	 *
-	 * @param type - the type of the object we are modifying.
-	 * @return A structure modifier for the given type.
-	 */
-	private StructureModifier<Object> getModifier(Class<?> type) {
-		Class<?> packetClass = MinecraftReflection.getPacketClass();
+    /**
+     * Retrieve a usable structure modifier for the given object type.
+     * <p>
+     * Will attempt to reuse any other structure modifiers we have cached.
+     *
+     * @param type - the type of the object we are modifying.
+     * @return A structure modifier for the given type.
+     */
+    private StructureModifier<Object> getModifier(Class<?> type) {
+        Class<?> packetClass = MinecraftReflection.getPacketClass();
 
-		// Handle subclasses of the packet class with our custom structure cache, if possible
-		if (!type.equals(packetClass) && packetClass.isAssignableFrom(type)) {
-			// might be a packet, but some packets are not registered (for example PacketPlayInFlying, only the subtypes are present)
-			PacketType packetType = PacketRegistry.getPacketType(type);
-			if (packetType != null) {
-				// packet is present, delegate to the cache
-				return StructureCache.getStructure(packetType);
-			}
-		}
+        // Handle subclasses of the packet class with our custom structure cache, if possible
+        if (!type.equals(packetClass) && packetClass.isAssignableFrom(type)) {
+            // might be a packet, but some packets are not registered (for example PacketPlayInFlying, only the subtypes are present)
+            PacketType packetType = PacketRegistry.getPacketType(type);
+            if (packetType != null) {
+                // packet is present, delegate to the cache
+                return StructureCache.getStructure(packetType);
+            }
+        }
 
-		// Create the structure modifier if we haven't already
-		StructureModifier<Object> modifier = CACHE.get(type);
-		if (modifier == null) {
-			StructureModifier<Object> value = new StructureModifier<>(type, null, false);
-			modifier = CACHE.putIfAbsent(type, value);
+        // Create the structure modifier if we haven't already
+        StructureModifier<Object> modifier = CACHE.get(type);
+        if (modifier == null) {
+            StructureModifier<Object> value = new StructureModifier<>(type, null, false);
+            modifier = CACHE.putIfAbsent(type, value);
 
-			if (modifier == null) {
-				modifier = value;
-			}
-		}
+            if (modifier == null) {
+                modifier = value;
+            }
+        }
 
-		// And we're done
-		return modifier;
-	}
+        // And we're done
+        return modifier;
+    }
 
-	/**
-	 * Copy every field in object A to object B. Each value is copied directly, and is not cloned.
-	 * <p>
-	 * The two objects must have the same number of fields of the same type.
-	 *
-	 * @param source      - fields to copy.
-	 * @param destination - fields to copy to.
-	 * @param commonType  - type containing each field to copy.
-	 */
-	public void copyTo(Object source, Object destination, Class<?> commonType) {
-		// Note that we indicate that public fields will be copied the first time around
-		this.copyToInternal(source, destination, commonType, true);
-	}
+    /**
+     * Copy every field in object A to object B. Each value is copied directly, and is not cloned.
+     * <p>
+     * The two objects must have the same number of fields of the same type.
+     *
+     * @param source      - fields to copy.
+     * @param destination - fields to copy to.
+     * @param commonType  - type containing each field to copy.
+     */
+    public void copyTo(Object source, Object destination, Class<?> commonType) {
+        // Note that we indicate that public fields will be copied the first time around
+        this.copyToInternal(source, destination, commonType, true);
+    }
 
-	/**
-	 * Called for every non-static field that will be copied.
-	 *
-	 * @param modifierSource - modifier for the original object.
-	 * @param modifierDest   - modifier for the new cloned object.
-	 * @param fieldIndex     - the current field index.
-	 */
-	protected void transformField(
-			StructureModifier<Object> modifierSource,
-			StructureModifier<Object> modifierDest,
-			int fieldIndex
-	) {
-		Object value = modifierSource.read(fieldIndex);
-		modifierDest.write(fieldIndex, value);
-	}
+    /**
+     * Called for every non-static field that will be copied.
+     *
+     * @param modifierSource - modifier for the original object.
+     * @param modifierDest   - modifier for the new cloned object.
+     * @param fieldIndex     - the current field index.
+     */
+    protected void transformField(
+            StructureModifier<Object> modifierSource,
+            StructureModifier<Object> modifierDest,
+            int fieldIndex
+    ) {
+        Object value = modifierSource.read(fieldIndex);
+        modifierDest.write(fieldIndex, value);
+    }
 
-	// Internal method that will actually implement the recursion
-	private void copyToInternal(Object source, Object destination, Class<?> commonType, boolean copyPublic) {
-		StructureModifier<Object> modifier = this.getModifier(commonType);
+    // Internal method that will actually implement the recursion
+    private void copyToInternal(Object source, Object destination, Class<?> commonType, boolean copyPublic) {
+        StructureModifier<Object> modifier = this.getModifier(commonType);
 
-		// Add target
-		StructureModifier<Object> modifierSource = modifier.withTarget(source);
-		StructureModifier<Object> modifierDest = modifier.withTarget(destination);
+        // Add target
+        StructureModifier<Object> modifierSource = modifier.withTarget(source);
+        StructureModifier<Object> modifierDest = modifier.withTarget(destination);
 
-		// Copy every field
-		try {
-			for (int i = 0; i < modifierSource.size(); i++) {
-				Field field = modifierSource.getField(i);
-				int mod = field.getModifiers();
+        // Copy every field
+        try {
+            for (int i = 0; i < modifierSource.size(); i++) {
+                Field field = modifierSource.getField(i);
+                int mod = field.getModifiers();
 
-				// Skip static fields. We also get the "public" fields fairly often, so we'll skip that.
-				if (!Modifier.isStatic(mod) && (!Modifier.isPublic(mod) || copyPublic)) {
-					this.transformField(modifierSource, modifierDest, i);
-				}
-			}
+                // Skip static fields. We also get the "public" fields fairly often, so we'll skip that.
+                if (!Modifier.isStatic(mod) && (!Modifier.isPublic(mod) || copyPublic)) {
+                    this.transformField(modifierSource, modifierDest, i);
+                }
+            }
 
-			// Copy private fields underneath
-			Class<?> superclass = commonType.getSuperclass();
-			if (superclass != null && !superclass.equals(Object.class)) {
-				this.copyToInternal(source, destination, superclass, false);
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to copy fields from " + commonType.getName(), e);
-		}
-	}
+            // Copy private fields underneath
+            Class<?> superclass = commonType.getSuperclass();
+            if (superclass != null && !superclass.equals(Object.class)) {
+                this.copyToInternal(source, destination, superclass, false);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to copy fields from " + commonType.getName(), e);
+        }
+    }
 }

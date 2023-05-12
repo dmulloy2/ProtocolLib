@@ -27,49 +27,49 @@ import java.lang.reflect.Constructor;
  * @author dmulloy2
  */
 public class ComponentParser {
-	
-	private static Constructor readerConstructor;
-	private static Method setLenient;
-	private static Method getAdapter;
-	private static Method read;
-	
-	private ComponentParser() {
-	}
+    
+    private static Constructor readerConstructor;
+    private static Method setLenient;
+    private static Method getAdapter;
+    private static Method read;
+    
+    private ComponentParser() {
+    }
 
-	public static Object deserialize(Object gson, Class<?> component, StringReader str) {
-		try {
-			com.google.gson.stream.JsonReader reader = new com.google.gson.stream.JsonReader(str);
-			reader.setLenient(true);
-			return ((com.google.gson.Gson) gson).getAdapter(component).read(reader);
-		} catch (IOException ex) {
-			throw new RuntimeException("Failed to read JSON", ex);
-		} catch (LinkageError er) {
-			return deserializeLegacy(gson, component, str);
-		}
-	}
+    public static Object deserialize(Object gson, Class<?> component, StringReader str) {
+        try {
+            com.google.gson.stream.JsonReader reader = new com.google.gson.stream.JsonReader(str);
+            reader.setLenient(true);
+            return ((com.google.gson.Gson) gson).getAdapter(component).read(reader);
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to read JSON", ex);
+        } catch (LinkageError er) {
+            return deserializeLegacy(gson, component, str);
+        }
+    }
 
-	// Should only be needed on 1.8.
-	private static Object deserializeLegacy(Object gson, Class<?> component, StringReader str) {
-		try {
-			if (readerConstructor == null) {
+    // Should only be needed on 1.8.
+    private static Object deserializeLegacy(Object gson, Class<?> component, StringReader str) {
+        try {
+            if (readerConstructor == null) {
 
-				Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
-				readerConstructor = readerClass.getDeclaredConstructor(Reader.class);
-				readerConstructor.setAccessible(true);
-				setLenient = readerClass.getDeclaredMethod("setLenient", boolean.class);
-				setLenient.setAccessible(true);
-				getAdapter = gson.getClass().getDeclaredMethod("getAdapter", Class.class);
-				getAdapter.setAccessible(true);
-				Object adapter = getAdapter.invoke(gson, component);
-				read = adapter.getClass().getDeclaredMethod("read", readerClass);
-				read.setAccessible(true);
-			}
-			Object reader = readerConstructor.newInstance(str);
-			setLenient.invoke(reader, true);
-			Object adapter = getAdapter.invoke(gson, component);
-			return read.invoke(adapter, reader);
-		} catch (ReflectiveOperationException ex) {
-			throw new RuntimeException("Failed to read JSON", ex);
-		}
-	}
+                Class<?> readerClass = Class.forName("org.bukkit.craftbukkit.libs.com.google.gson.stream.JsonReader");
+                readerConstructor = readerClass.getDeclaredConstructor(Reader.class);
+                readerConstructor.setAccessible(true);
+                setLenient = readerClass.getDeclaredMethod("setLenient", boolean.class);
+                setLenient.setAccessible(true);
+                getAdapter = gson.getClass().getDeclaredMethod("getAdapter", Class.class);
+                getAdapter.setAccessible(true);
+                Object adapter = getAdapter.invoke(gson, component);
+                read = adapter.getClass().getDeclaredMethod("read", readerClass);
+                read.setAccessible(true);
+            }
+            Object reader = readerConstructor.newInstance(str);
+            setLenient.invoke(reader, true);
+            Object adapter = getAdapter.invoke(gson, component);
+            return read.invoke(adapter, reader);
+        } catch (ReflectiveOperationException ex) {
+            throw new RuntimeException("Failed to read JSON", ex);
+        }
+    }
 }
