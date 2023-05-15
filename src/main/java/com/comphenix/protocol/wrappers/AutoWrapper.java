@@ -151,6 +151,7 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
         if (wrapperAccessors == null) {
             wrapperAccessors = Arrays
                     .stream(wrapperClass.getDeclaredFields())
+                    .filter(field -> !Modifier.isStatic(field.getModifiers()))
                     .map(Accessors::getFieldAccessor)
                     .toArray(FieldAccessor[]::new);
         }
