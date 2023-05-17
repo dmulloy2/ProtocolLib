@@ -27,7 +27,7 @@ public class SchedulerUtil {
             foliaScheduler = getScheduler.invoke(Bukkit.getServer());
 
             runAtFixedRate = Accessors.getMethodAccessor(foliaScheduler.getClass(), "runAtFixedRate", Plugin.class,
-                    Runnable.class, long.class, long.class);
+                    Consumer.class, long.class, long.class);
             cancelTasks = Accessors.getMethodAccessor(foliaScheduler.getClass(), "cancelTasks", Plugin.class);
             execute = Accessors.getMethodAccessor(foliaScheduler.getClass(), "execute", Plugin.class, Runnable.class);
         }
