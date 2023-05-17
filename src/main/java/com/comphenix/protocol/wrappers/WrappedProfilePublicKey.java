@@ -11,7 +11,11 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Base64.Encoder;
+
+import com.comphenix.protocol.utility.MinecraftVersion;
 import org.bukkit.entity.Player;
+
+import javax.annotation.Nullable;
 
 /**
  * A wrapper around the profile public key.
@@ -57,7 +61,12 @@ public class WrappedProfilePublicKey extends AbstractWrapper {
      * @param player the player to get the key of.
      * @return a wrapper around the public key of the given player.
      */
+    @Nullable
     public static WrappedProfilePublicKey ofPlayer(Player player) {
+        if(MinecraftVersion.FEATURE_PREVIEW_2.atOrAbove()) {
+            WrappedRemoteChatSessionData data = WrappedRemoteChatSessionData.fromPlayer(player);
+            return data == null ? null : new WrappedProfilePublicKey(data.getProfilePublicKey());
+        }
         FieldAccessor accessor = PROFILE_KEY_ACCESSOR;
         if (accessor == null) {
             accessor = Accessors.getFieldAccessor(MinecraftReflection.getEntityHumanClass(),

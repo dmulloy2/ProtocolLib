@@ -940,6 +940,7 @@ public abstract class AbstractStructure {
         );
     }
 
+
     /**
      * Retrieve a read/write structure for SectionPositions in 1.16.2+
      * @return The Structure Modifier
