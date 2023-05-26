@@ -38,6 +38,11 @@ import org.bukkit.Server;
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
 
     /**
+     * Version 1.20 - the trails and tails update
+     */
+    public static final MinecraftVersion TRAILS_AND_TAILS = new MinecraftVersion("1.20");
+
+    /**
      * Version 1.19.4 - the rest of the feature preview
      */
     public static final MinecraftVersion FEATURE_PREVIEW_2 = new MinecraftVersion("1.19.4");

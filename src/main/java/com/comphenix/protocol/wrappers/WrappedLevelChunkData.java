@@ -7,6 +7,7 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -168,6 +169,8 @@ public final class WrappedLevelChunkData {
                     .build()));
         }
 
+        private boolean dummyTrustEdges = false;
+
         public LightData(Object handle) {
             super(HANDLE_TYPE);
 
@@ -268,27 +271,63 @@ public final class WrappedLevelChunkData {
 
         /**
          * Whether edges can be trusted for light updates or not.
-         *
+         * @deprecated Removed in 1.20
          * @return {@code true} if edges can be trusted, {@code false} otherwise.
          */
+        @Deprecated
         public boolean isTrustEdges() {
+            if(MinecraftVersion.TRAILS_AND_TAILS.atOrAbove()) {
+                return dummyTrustEdges; // ensure backwards compatability and prevent inconsistent states
+            }
             return (boolean) TRUST_EDGES_ACCESSOR.get(handle);
         }
 
         /**
          * Sets whether edges can be trusted for light updates or not.
-         *
+         * @deprecated Removed in 1.20
          * @param trustEdges the new value
          */
+        @Deprecated
         public void setTrustEdges(boolean trustEdges) {
+            if(MinecraftVersion.TRAILS_AND_TAILS.atOrAbove()) {
+                dummyTrustEdges = trustEdges; // ensure backwards compatability and prevent inconsistent states
+                return;
+            }
             TRUST_EDGES_ACCESSOR.set(handle, trustEdges);
         }
 
+        /**
+         * Constructs new LightData from values
+         * @param trustEdges Ignored
+         * @param skyYMask skyYMask
+         * @param blockYMask blockYMask
+         * @param emptySkyYMask emptySkyYMask
+         * @param emptyBlockYMask emptyBlockYMask
+         * @param skyUpdates skyUpdates
+         * @param blockUpdates blockUpdates
+         * @deprecated Parameter trustEdges was removed in 1.20
+         * @return new light data
+         */
+        @Deprecated
         public static LightData fromValues(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
                                            List<byte[]> skyUpdates, List<byte[]> blockUpdates, boolean trustEdges) {
+            return fromValues(skyYMask, blockYMask, emptySkyYMask, emptyBlockYMask, skyUpdates, blockUpdates);
+        }
+
+        /**
+         * Constructs new LightData from values
+         * @param skyYMask skyYMask
+         * @param blockYMask blockYMask
+         * @param emptySkyYMask emptySkyYMask
+         * @param emptyBlockYMask emptyBlockYMask
+         * @param skyUpdates skyUpdates
+         * @param blockUpdates blockUpdates
+         * @return new light data
+         */
+        public static LightData fromValues(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
+                                           List<byte[]> skyUpdates, List<byte[]> blockUpdates) {
             LightData data = new LightData(LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()), 0, 0));
 
-            data.setTrustEdges(trustEdges);
             data.setSkyYMask(skyYMask);
             data.setBlockYMask(blockYMask);
             data.setEmptySkyYMask(emptySkyYMask);
