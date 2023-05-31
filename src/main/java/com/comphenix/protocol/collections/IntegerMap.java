@@ -13,6 +13,8 @@ import java.util.Map;
  * @author Kristian
  */
 public class IntegerMap<T> {
+    private static final int MAX_SIGNED_POWER_OF_TWO = 1 << (Integer.SIZE - 2);
+
     private T[] array;
     private int size;
     
@@ -74,8 +76,8 @@ public class IntegerMap<T> {
 
         // Fast calculation of the new size.
         // See IntMath#ceilingPowerOfTwo in newer guava versions.
-        int newLength =  1 << -Integer.numberOfLeadingZeros(key - 1);
-        if (newLength <= key) newLength = Integer.MAX_VALUE;
+        int newLength = 1 << -Integer.numberOfLeadingZeros(key - 1);
+        if (key > MAX_SIGNED_POWER_OF_TWO) newLength = Integer.MAX_VALUE;
 
         this.array = Arrays.copyOf(array, newLength);
     }
