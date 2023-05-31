@@ -24,7 +24,7 @@ package com.comphenix.protocol.events;
  */
 public enum ListenerPriority {
     /**
-     * Event call is of very low importance and should be ran first, to allow
+     * Event call is of very low importance and should be run first, to allow
      * other plugins to further customise the outcome.
      */
     LOWEST(0),
@@ -33,7 +33,7 @@ public enum ListenerPriority {
      */
     LOW(1),
     /**
-     * Event call is neither important or unimportant, and may be ran normally.
+     * Event call is neither important nor unimportant, and may be run normally.
      */
     NORMAL(2),
     /**
@@ -54,13 +54,13 @@ public enum ListenerPriority {
 
     private final int slot;
 
-    private ListenerPriority(int slot) {
+    ListenerPriority(int slot) {
         this.slot = slot;
     }
 
     /**
      * A low slot represents a low priority.
-     * @return Integer representation of this priorty.
+     * @return Integer representation of this priority.
      */
     public int getSlot() {
         return slot;
