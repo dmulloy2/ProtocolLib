@@ -1,10 +1,10 @@
 package com.comphenix.protocol.collections;
 
+import com.google.common.base.Preconditions;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.google.common.base.Preconditions;
 
 /**
  * Represents a very quick integer-based lookup map, with a fixed key space size.
@@ -46,8 +46,7 @@ public class IntegerMap<T> {
         T old = array[key];
         array[key] = Preconditions.checkNotNull(value, "value cannot be NULL");
         
-        if (old == null)
-            size++;
+        if (old == null) ++size;
         return old;
     }
     
@@ -60,8 +59,7 @@ public class IntegerMap<T> {
         T old = array[key];
         array[key] = null;
         
-        if (old != null)
-            size--;
+        if (old != null) --size;
         return old;
     }
     
@@ -70,19 +68,15 @@ public class IntegerMap<T> {
      * @param key - the key.
      */
     protected void ensureCapacity(int key) {
-        int newLength = array.length;
-
         // Don't resize if the key fits
-        if (key < 0)
-            throw new IllegalArgumentException("Negative key values are not permitted.");
-        if (key < newLength)
-            return;
-        
-        while (newLength <= key) {
-            int next = newLength * 2;
-            // Handle overflow
-            newLength = next > newLength ? next : Integer.MAX_VALUE;
-        }
+        if (key < 0) throw new IllegalArgumentException("Negative key values are not permitted.");
+        if (key < array.length) return;
+
+        // Fast calculation of the new size.
+        // See IntMath#ceilingPowerOfTwo in newer guava versions.
+        int newLength =  1 << -Integer.numberOfLeadingZeros(key - 1);
+        if(newLength <= key) newLength = Integer.MAX_VALUE;
+
         this.array = Arrays.copyOf(array, newLength);
     }
     
