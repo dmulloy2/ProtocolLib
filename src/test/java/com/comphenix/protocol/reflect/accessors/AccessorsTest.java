@@ -1,16 +1,17 @@
 package com.comphenix.protocol.reflect.accessors;
 
+import com.comphenix.protocol.reflect.ExactReflection;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.comphenix.protocol.reflect.ExactReflection;
-import java.lang.reflect.Field;
-import org.junit.jupiter.api.Test;
-
-public class AccessorsTest {
+class AccessorsTest {
 
     @Test
-    public void testField() {
+    void testField() {
         Player player = new Player(123, "ABC");
 
         Field id = assertDoesNotThrow(() -> ExactReflection.fromClass(Player.class, true).getField("id"));
@@ -24,7 +25,7 @@ public class AccessorsTest {
     }
 
     @Test
-    public void testMethod() {
+    void testMethod() {
         Player player = new Player(123, "ABC");
 
         assertDoesNotThrow(() -> Accessors.getMethodAccessor(player.getClass(), "setId", int.class).invoke(player, 0));
@@ -32,7 +33,7 @@ public class AccessorsTest {
     }
 
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         Player player = (Player) assertDoesNotThrow(() -> Accessors
                 .getConstructorAccessor(Player.class, int.class, String.class)
                 .invoke(12, "hi"));
