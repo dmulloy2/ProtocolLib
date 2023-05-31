@@ -33,7 +33,7 @@ import java.util.Set;
  */
 class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompound {
     // A list container
-    private WrappedElement<Map<String, Object>> container;
+    private final WrappedElement<Map<String, Object>> container;
     
     // Saved wrapper map
     private ConvertedMap<String, Object, NbtBase<?>> savedMap;
@@ -67,7 +67,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
      * @param handle - the NMS handle.
      */
     public WrappedCompound(Object handle) {
-        this.container = new WrappedElement<Map<String,Object>>(handle);
+        this.container = new WrappedElement<>(handle);
     }
 
     /**
@@ -76,7 +76,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
      * @param name - the name of the current compound.
      */
     public WrappedCompound(Object handle, String name) {
-        this.container = new WrappedElement<Map<String,Object>>(handle, name);
+        this.container = new WrappedElement<>(handle, name);
     }
     
     @Override
@@ -147,7 +147,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
                     if (inner == null)
                         return null;
                     return NbtFactory.fromNMS(inner);
-                };
+                }
                 
                 @Override
                 protected NbtBase<?> toOuter(String key, Object inner) {
