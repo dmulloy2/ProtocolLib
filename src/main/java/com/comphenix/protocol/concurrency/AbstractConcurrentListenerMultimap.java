@@ -38,7 +38,7 @@ public abstract class AbstractConcurrentListenerMultimap<T> {
     // The core of our map
     private final ConcurrentMap<PacketType, SortedCopyOnWriteArray<PrioritizedListener<T>>> mapListeners;
 
-    public AbstractConcurrentListenerMultimap() {
+    protected AbstractConcurrentListenerMultimap() {
         this.mapListeners = new ConcurrentHashMap<>();
     }
 
