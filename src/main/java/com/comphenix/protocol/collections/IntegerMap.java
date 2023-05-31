@@ -94,9 +94,7 @@ public class IntegerMap<T> {
      * @return The value, or NULL if not found.
      */
     public T get(int key) {
-        if (key >= 0 && key < array.length)
-            return array[key];
-        return null;
+        return key >= 0 && key < array.length ? array[key] : null;
     }
     
     /**
