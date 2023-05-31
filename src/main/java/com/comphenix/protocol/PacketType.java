@@ -621,8 +621,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
          */
         LEGACY("", "");
 
-        private String packetName;
-        private String mojangName;
+        private final String packetName;
+        private final String mojangName;
 
         Protocol(String packetName, String mojangName) {
             this.packetName = packetName;
@@ -674,9 +674,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
          */
         SERVER("Clientbound", "Out", "server");
 
-        private String mojangName;
-        private String packetName;
-        private String mcpName;
+        private final String mojangName;
+        private final String packetName;
+        private final String mcpName;
 
         Sender(String mojangName, String packetName, String mcpName) {
             this.mojangName = mojangName;
@@ -904,7 +904,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
     /**
      * Retrieve a packet type from a protocol, sender and packet ID, for pre-1.8.
      * <p>
-     * The packet will automatically be registered if its missing.
+     * The packet will automatically be registered if it is missing.
      * @param protocol - the current protocol.
      * @param sender - the sender.
      * @param packetId - the packet ID. Can be UNKNOWN_PACKET.
@@ -930,7 +930,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
     /**
      * Retrieve a packet type from a protocol, sender, ID, and class for 1.8+
      * <p>
-     * The packet will automatically be registered if its missing.
+     * The packet will automatically be registered if it is missing.
      * @param protocol - the current protocol.
      * @param sender - the sender.
      * @param packetId - the packet ID. Can be UNKNOWN_PACKET.
@@ -1089,12 +1089,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         this.version = version;
         
         this.classNames = new ArrayList<>();
-        for (int i = 0; i < names.length; i++) {
-            if (isMcpPacketName(names[i])) { // Minecraft MCP packets
-                classNames.add(formatMcpClassName(protocol, sender, names[i]));
+        for (String classname : names) {
+            if (isMcpPacketName(classname)) { // Minecraft MCP packets
+                classNames.add(formatMcpClassName(protocol, sender, classname));
             } else {
-                classNames.add(formatClassName(protocol, sender, names[i]));
-                classNames.add(formatMojangClassName(protocol, sender, names[i]));
+                classNames.add(formatClassName(protocol, sender, classname));
+                classNames.add(formatMojangClassName(protocol, sender, classname));
             }
         }
 
@@ -1103,7 +1103,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
     /**
      * Determine if this packet is supported on the current server.
-     * @return Whether or not the packet is supported.
+     * @return Whether the packet is supported.
      */
     public boolean isSupported() {
         return PacketRegistry.isSupported(this);
