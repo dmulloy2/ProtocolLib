@@ -1,10 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-import java.util.UUID;
-import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -13,6 +8,11 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+
+import javax.annotation.Nonnull;
+import java.lang.reflect.Constructor;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Represents a wrapper around a AttributeModifier.
@@ -27,8 +27,8 @@ public class WrappedAttributeModifier extends AbstractWrapper {
     private static final EquivalentConverter<Operation> OPERATION_CONVERTER;
 
     private static class IndexedEnumConverter<T extends Enum<T>> implements EquivalentConverter<T> {
-        private Class<T> specificClass;
-        private Class<?> genericClass;
+        private final Class<T> specificClass;
+        private final Class<?> genericClass;
 
         private IndexedEnumConverter(Class<T> specificClass, Class<?> genericClass) {
             this.specificClass = specificClass;
@@ -102,9 +102,9 @@ public class WrappedAttributeModifier extends AbstractWrapper {
          */
         ADD_PERCENTAGE(2);
         
-        private int id;
+        private final int id;
         
-        private Operation(int id) {
+        Operation(int id) {
             this.id = id;
         }
         
@@ -254,12 +254,11 @@ public class WrappedAttributeModifier extends AbstractWrapper {
     /**
      * Initialize modifier from a given handle.
      * @param handle - the handle.
-     * @return The given handle.
      */
     private void initializeModifier(@Nonnull Object handle) {
         // Initialize modifier
         if (BASE_MODIFIER == null) {
-            BASE_MODIFIER = new StructureModifier<Object>(MinecraftReflection.getAttributeModifierClass());
+            BASE_MODIFIER = new StructureModifier<>(MinecraftReflection.getAttributeModifierClass());
         }
         this.modifier = BASE_MODIFIER.withTarget(handle);
     }
@@ -307,17 +306,17 @@ public class WrappedAttributeModifier extends AbstractWrapper {
     }
     
     /**
-     * Set whether or not the modifier is pending synchronization with the client.
+     * Set whether the modifier is pending synchronization with the client.
      * <p>
      * This value will be disregarded for {@link #equals(Object)}.
-     * @param pending - TRUE if is is, FALSE otherwise.
+     * @param pending - TRUE if it is pending, FALSE otherwise.
      */
     public void setPendingSynchronization(boolean pending) {
         modifier.withType(boolean.class).write(0, pending);
     }
     
     /**
-     * Whether or not the modifier is pending synchronization with the client.
+     * Whether the modifier is pending synchronization with the client.
      * @return TRUE if it is, FALSE otherwise.
      */
     public boolean isPendingSynchronization() {
