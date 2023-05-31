@@ -28,8 +28,8 @@ import com.google.common.primitives.Ints;
  */
 public class PrioritizedListener<TListener> implements Comparable<PrioritizedListener<TListener>> {
 
-    private TListener listener;
-    private ListenerPriority priority;
+    private final TListener listener;
+    private final ListenerPriority priority;
     
     public PrioritizedListener(TListener listener, ListenerPriority priority) {
         this.listener = listener;
