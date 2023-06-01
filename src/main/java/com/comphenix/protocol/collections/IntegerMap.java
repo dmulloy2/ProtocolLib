@@ -1,5 +1,6 @@
 package com.comphenix.protocol.collections;
 
+import com.comphenix.protocol.utility.IntegerMath;
 import com.google.common.base.Preconditions;
 
 import java.util.Arrays;
@@ -13,18 +14,17 @@ import java.util.Map;
  * @author Kristian
  */
 public class IntegerMap<T> {
-    private static final int MAX_SIGNED_POWER_OF_TWO = 1 << (Integer.SIZE - 2);
 
     private T[] array;
     private int size;
-    
+
     /**
      * Construct a new integer map with a default capacity.
      */
     public IntegerMap() {
         this(8);
     }
-    
+
     /**
      * Construct a new integer map with a given capacity.
      * @param initialCapacity - the capacity.
@@ -44,14 +44,14 @@ public class IntegerMap<T> {
      */
     public T put(int key, T value) {
         ensureCapacity(key);
-        
+
         T old = array[key];
         array[key] = Preconditions.checkNotNull(value, "value cannot be NULL");
-        
+
         if (old == null) ++size;
         return old;
     }
-    
+
     /**
      * Remove an association from the map.
      * @param key - the key of the association to remove.
@@ -60,11 +60,11 @@ public class IntegerMap<T> {
     public T remove(int key) {
         T old = array[key];
         array[key] = null;
-        
+
         if (old != null) --size;
         return old;
     }
-    
+
     /**
      * Resize the backing array to fit the given key.
      * @param key - the key.
@@ -76,12 +76,11 @@ public class IntegerMap<T> {
 
         // Fast calculation of the new size.
         // See IntMath#ceilingPowerOfTwo in newer guava versions.
-        int newLength = 1 << -Integer.numberOfLeadingZeros(key - 1);
-        if (key > MAX_SIGNED_POWER_OF_TWO) newLength = Integer.MAX_VALUE;
+        int newLength = IntegerMath.nextPowerOfTwo(key);
 
         this.array = Arrays.copyOf(array, newLength);
     }
-    
+
     /**
      * Retrieve the number of mappings in this map.
      * @return The number of mapping.
@@ -98,7 +97,7 @@ public class IntegerMap<T> {
     public T get(int key) {
         return key >= 0 && key < array.length ? array[key] : null;
     }
-    
+
     /**
      * Determine if the given key exists in the map.
      * @param key - the key to check.
@@ -107,14 +106,14 @@ public class IntegerMap<T> {
     public boolean containsKey(int key) {
         return get(key) != null;
     }
-    
+
     /**
      * Convert the current map to an Integer map.
      * @return The Integer map.
      */
     public Map<Integer, Object> toMap() {
         final Map<Integer, Object> map = new HashMap<>();
-        
+
         for (int i = 0; i < array.length; i++) {
             if (array[i] != null) {
                 map.put(i, array[i]);
