@@ -1,17 +1,10 @@
 package com.comphenix.protocol;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
+import com.comphenix.protocol.MultipleLinesPrompt.MultipleConversationCanceller;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.PacketEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
@@ -22,11 +15,16 @@ import org.bukkit.conversations.ConversationContext;
 import org.bukkit.conversations.ConversationFactory;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.MultipleLinesPrompt.MultipleConversationCanceller;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.PacketEvent;
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A command to apply JavaScript filtering to the packet command.
@@ -48,7 +46,7 @@ public class CommandFilter extends CommandBase {
          * @param ex - the failure.
          * @return TRUE to keep processing this filter, FALSE to remove it.
          */
-        public boolean handle(PacketEvent event, Filter filter, Exception ex);
+        boolean handle(PacketEvent event, Filter filter, Exception ex);
     }
     
     /**
@@ -57,7 +55,7 @@ public class CommandFilter extends CommandBase {
      * @author Kristian
      */
     private enum SubCommand {
-        ADD, REMOVE;
+        ADD, REMOVE
     }
     
     /**
@@ -206,13 +204,13 @@ public class CommandFilter extends CommandBase {
     private FilterFailedHandler defaultFailedHandler;
     
     // Currently registered filters
-    private List<Filter> filters = new ArrayList<Filter>();
+    private final Map<String, Filter> filters = new HashMap<>();
     
     // Owner plugin
     private final Plugin plugin;
     
-    // Whether or not the command is enabled
-    private ProtocolConfig config;
+    // Whether the command is enabled
+    private final ProtocolConfig config;
     
     // Script engine
     private ScriptEngine engine;
@@ -227,7 +225,7 @@ public class CommandFilter extends CommandBase {
         this.uninitialized = true;
     }
     
-    private void initalizeScript() {
+    private void initializeScript() {
         try {
             // First attempt
             initializeEngine();
@@ -306,7 +304,7 @@ public class CommandFilter extends CommandBase {
     }
     
     /**
-     * Determine whether or not to pass the given packet event to the packet listeners.
+     * Determine whether to pass the given packet event to the packet listeners.
      * <p>
      * Uses a default filter failure handler that simply prints the error message and removes the filter.
      * @param event - the event.
@@ -317,13 +315,13 @@ public class CommandFilter extends CommandBase {
     }
     
     /**
-     * Determine whether or not to pass the given packet event to the packet listeners.
+     * Determine whether to pass the given packet event to the packet listeners.
      * @param event - the event.
      * @param handler - failure handler.
      * @return TRUE if we should, FALSE otherwise.
      */
     public boolean filterEvent(PacketEvent event, FilterFailedHandler handler) {
-        for (Iterator<Filter> it = filters.iterator(); it.hasNext(); ) {
+        for (Iterator<Filter> it = filters.values().iterator(); it.hasNext(); ) {
             Filter filter = it.next();
             
             try {
@@ -347,7 +345,7 @@ public class CommandFilter extends CommandBase {
         // Start the engine
         if (uninitialized) {
             uninitialized = false;
-            initalizeScript();
+            initializeScript();
         }
     }
     
@@ -370,11 +368,12 @@ public class CommandFilter extends CommandBase {
         
         final SubCommand command = parseCommand(args, 0);
         final String name = args[1];
-        
+        final String lowerCaseName = name.toLowerCase();
+
         switch (command) {
             case ADD:
                 // Never overwrite an existing filter
-                if (findFilter(name) != null) {
+                if(filters.containsKey(lowerCaseName)) {
                     sender.sendMessage(ChatColor.RED + "Filter " + name + " already exists. Remove it first.");
                     return true;
                 }
@@ -402,8 +401,8 @@ public class CommandFilter extends CommandBase {
                                     final Conversable whom = event.getContext().getForWhom();
                                     
                                     if (event.gracefulExit()) {
-                                        String predicate = prompt.removeAccumulatedInput(event.getContext());
-                                        Filter filter = new Filter(name, predicate, packets);
+                                        final String predicate = prompt.removeAccumulatedInput(event.getContext());
+                                        final Filter filter = new Filter(name, predicate, packets);
     
                                         // Print the last line as well
                                         whom.sendRawMessage(prompt.getPromptText(event.getContext()));
@@ -412,7 +411,7 @@ public class CommandFilter extends CommandBase {
                                             // Force early compilation
                                             filter.compile(engine);
                                             
-                                            filters.add(filter);
+                                            filters.put(lowerCaseName, filter);
                                             whom.sendRawMessage(ChatColor.GOLD + "Added filter " + name);
                                         } catch (ScriptException e) {
                                             e.printStackTrace();
@@ -438,12 +437,12 @@ public class CommandFilter extends CommandBase {
                 break;
                 
             case REMOVE:
-                Filter filter = findFilter(name);
+                final Filter filter = filters.get(lowerCaseName);
                 
                 // See if it exists before we remove it
                 if (filter != null) {
                     filter.close(engine);
-                    filters.remove(filter);
+                    filters.remove(lowerCaseName);
                     sender.sendMessage(ChatColor.GOLD + "Removed filter " + name);
                 } else {
                     sender.sendMessage(ChatColor.RED + "Unable to find a filter by the name " + name);
@@ -453,22 +452,7 @@ public class CommandFilter extends CommandBase {
         
         return true;
     }
-    
-    /**
-     * Lookup a filter by its name.
-     * @param name - the filter name.
-     * @return The filter, or NULL if not found.
-     */
-    private Filter findFilter(String name) {
-        // We'll just use a linear scan for now - we don't expect that many filters
-        for (Filter filter : filters) {
-            if (filter.getName().equalsIgnoreCase(name)) {
-                return filter;
-            }
-        }
-        return null;
-    }
-    
+
     private SubCommand parseCommand(String[] args, int index) {
         String text = args[index].toUpperCase();
         
