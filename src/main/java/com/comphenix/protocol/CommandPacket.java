@@ -17,7 +17,21 @@
 
 package com.comphenix.protocol;
 
-import java.lang.reflect.InvocationTargetException;
+import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.concurrency.PacketTypeSet;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.HexDumper;
+import com.google.common.collect.MapMaker;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,23 +44,6 @@ import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-
-import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.concurrency.PacketTypeSet;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.utility.ChatExtensions;
-import com.comphenix.protocol.utility.HexDumper;
-import com.google.common.collect.MapMaker;
-
 /**
  * Handles the "packet" debug command.
  * 
@@ -56,7 +53,7 @@ class CommandPacket extends CommandBase {
     public static final ReportType REPORT_CANNOT_SEND_MESSAGE = new ReportType("Cannot send chat message.");
 
     private enum SubCommand {
-        ADD, REMOVE, NAMES, PAGE;
+        ADD, REMOVE, NAMES, PAGE
     }
     
     /**
@@ -69,25 +66,25 @@ class CommandPacket extends CommandBase {
      */
     public static final int PAGE_LINE_COUNT = 9;
     
-    private Plugin plugin;
-    private Logger logger;
-    private ProtocolManager manager;
+    private final Plugin plugin;
+    private final Logger logger;
+    private final ProtocolManager manager;
         
-    private ChatExtensions chatter;
+    private final ChatExtensions chatter;
     
     // The main parser
-    private PacketTypeParser typeParser = new PacketTypeParser();
+    private final PacketTypeParser typeParser = new PacketTypeParser();
     
     // Paged message
-    private Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<CommandSender, List<String>>();
+    private final Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<CommandSender, List<String>>();
     
     // Current registered packet types
-    private PacketTypeSet packetTypes = new PacketTypeSet();
-    private PacketTypeSet extendedTypes = new PacketTypeSet();
+    private final PacketTypeSet packetTypes = new PacketTypeSet();
+    private final PacketTypeSet extendedTypes = new PacketTypeSet();
     
     // Compare listeners
-    private PacketTypeSet compareTypes = new PacketTypeSet();
-    private Map<PacketEvent, String> originalPackets = new MapMaker().weakKeys().makeMap();
+    private final PacketTypeSet compareTypes = new PacketTypeSet();
+    private final Map<PacketEvent, String> originalPackets = new MapMaker().weakKeys().makeMap();
     
     // The packet listener
     private PacketListener listener;
@@ -96,7 +93,7 @@ class CommandPacket extends CommandBase {
     private PacketListener compareListener;
     
     // Filter packet events
-    private CommandFilter filter;
+    private final CommandFilter filter;
     
     public CommandPacket(ErrorReporter reporter, Plugin plugin, Logger logger, CommandFilter filter, ProtocolManager manager) {
         super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
@@ -156,7 +153,7 @@ class CommandPacket extends CommandBase {
     @Override
     protected boolean handleCommand(CommandSender sender, String[] args) {
         try {
-            Deque<String> arguments = new ArrayDeque<String>(Arrays.asList(args));
+            Deque<String> arguments = new ArrayDeque<>(Arrays.asList(args));
             SubCommand subCommand = parseCommand(arguments);
 
             // Commands with different parameters
@@ -247,14 +244,14 @@ class CommandPacket extends CommandBase {
     }
     
     private void executeNamesCommand(CommandSender sender, Set<PacketType> types) {
-        List<String> messages = new ArrayList<String>();
+        List<String> messages = new ArrayList<>();
         
         // Print the equivalent name of every given ID
         for (PacketType type : types) {
             messages.add(ChatColor.YELLOW + type.toString());
         }
         
-        if (sender instanceof Player && messages.size() > 0 && messages.size() > PAGE_LINE_COUNT) {
+        if (sender instanceof Player && messages.size() > PAGE_LINE_COUNT) {
             // Divide the messages into chuncks
             pagedMessage.put(sender, messages);
             printPage(sender, 1);
@@ -444,19 +441,6 @@ class CommandPacket extends CommandBase {
     
     private SubCommand parseCommand(Deque<String> arguments)
     {
-        final String text = arguments.remove().toLowerCase();
-
-        switch (text) {
-            case "add":
-                return SubCommand.ADD;
-            case "remove":
-                return SubCommand.REMOVE;
-            case "names":
-                return SubCommand.NAMES;
-            case "page":
-                return SubCommand.PAGE;
-            default:
-                throw new IllegalArgumentException(text + " is not a valid sub command. Must be add or remove.");
-        }
+        return SubCommand.valueOf(arguments.remove().toUpperCase());
     }
 }
