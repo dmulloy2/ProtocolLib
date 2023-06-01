@@ -1,14 +1,12 @@
 package com.comphenix.protocol.concurrency;
 
 import com.comphenix.protocol.utility.SafeCacheBuilder;
-import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalListener;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -304,7 +302,7 @@ public class ConcurrentPlayerMap<TValue> extends AbstractMap<Player, TValue> imp
                         source.remove();
                         keyLookup.remove(entry.getKey());
                     } else {
-                        return new SimpleEntry<Player, TValue>(player, entry.getValue());
+                        return new SimpleEntry<>(player, entry.getValue());
                     }
                 }
                 return endOfData();
