@@ -60,6 +60,6 @@ class MemoryElement<TType> implements NbtBase<TType> {
     @Override
     public NbtBase<TType> deepClone() {
         // This assumes value is an immutable object
-        return new MemoryElement<TType>(name, value, type);
+        return new MemoryElement<>(name, value, type);
     }
 }

@@ -1,9 +1,9 @@
 package com.comphenix.protocol.wrappers.nbt;
 
+import com.comphenix.protocol.reflect.StructureModifier;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.comphenix.protocol.reflect.StructureModifier;
 
 public abstract class NameProperty {
     private static final Map<Class<?>, StructureModifier<String>> MODIFIERS = new ConcurrentHashMap<>();
@@ -30,7 +30,7 @@ public abstract class NameProperty {
         
         // Share modifier
         if (modifier == null) {
-            modifier = new StructureModifier<Object>(baseClass, Object.class, false).withType(String.class);
+            modifier = new StructureModifier<>(baseClass, Object.class, false).withType(String.class);
             MODIFIERS.put(baseClass, modifier);
         }
         return modifier;

@@ -17,18 +17,6 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.io.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-import javax.annotation.Nonnull;
-
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -39,11 +27,26 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import com.google.common.base.Preconditions;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.ItemStack;
+
+import javax.annotation.Nonnull;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Factory methods for creating NBT elements, lists and compounds.
@@ -152,7 +155,7 @@ public class NbtFactory {
 
     /**
      * Construct a wrapper for an NBT tag stored (in memory) in an item stack. This is where
-     * auxillary data such as enchanting, name and lore is stored. It doesn't include the items
+     * auxiliary data such as enchanting, name and lore is stored. It doesn't include the items
      * material, damage value or count.
      * <p>
      * The item stack must be a wrapper for a CraftItemStack. Use
@@ -176,7 +179,7 @@ public class NbtFactory {
     }
 
     /**
-     * Constructs a wrapper for a NBT tag in an ItemStack. This is where auxillary
+     * Constructs a wrapper for a NBT tag in an ItemStack. This is where auxiliary
      * data such as enchantments, name, and lore is stored. It doesn't include the material,
      * damage value, or stack size.
      * <p>
