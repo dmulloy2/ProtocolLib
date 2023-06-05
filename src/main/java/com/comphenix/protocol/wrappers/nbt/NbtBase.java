@@ -34,13 +34,13 @@ public interface NbtBase<TType> extends ClonableWrapper {
      * @param visitor - the hierarchical NBT visitor.
      * @return TRUE if the parent should continue processing children at the current level, FALSE otherwise.
      */
-    public abstract boolean accept(NbtVisitor visitor);
+    boolean accept(NbtVisitor visitor);
     
     /**
      * Retrieve the type of this NBT element.
      * @return The type of this NBT element.
      */
-    public abstract NbtType getType();
+    NbtType getType();
 
     /**
      * Retrieve the name of this NBT tag.
@@ -48,7 +48,7 @@ public interface NbtBase<TType> extends ClonableWrapper {
      * This will be an empty string if the NBT tag is stored in a list.
      * @return Name of the tag.
      */
-    public abstract String getName();
+    String getName();
 
     /**
      * Set the name of this NBT tag.
@@ -56,7 +56,7 @@ public interface NbtBase<TType> extends ClonableWrapper {
      * This will be ignored if the NBT tag is stored in a list.
      * @param name - name of the tag.
      */
-    public abstract void setName(String name);
+    void setName(String name);
 
     /**
      * Retrieve the value of this NBT tag.
@@ -73,19 +73,19 @@ public interface NbtBase<TType> extends ClonableWrapper {
      * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.
      * @return Value of this tag.
      */
-    public abstract TType getValue();
+    TType getValue();
 
     /**
      * Set the value of this NBT tag.
      * @param newValue - the new value of this tag.
      */
-    public abstract void setValue(TType newValue);
+    void setValue(TType newValue);
 
     /**
      * Clone the current NBT tag.
      * @return The cloned tag.
      */
-    public abstract NbtBase<TType> deepClone();
+    NbtBase<TType> deepClone();
 
     default Object getHandle() {
         return null;

@@ -17,14 +17,14 @@
 
 package com.comphenix.protocol.concurrency;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Range;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.Range;
 
 /**
  * Represents a generic store of intervals and associated values. No two intervals
@@ -49,8 +49,8 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
      * Represents a range and a value in this interval tree.
      */
     public class Entry implements Map.Entry<Range<TKey>, TValue> {
-        private EndPoint left;
-        private EndPoint right;
+        private final EndPoint left;
+        private final EndPoint right;
 
         Entry(EndPoint left, EndPoint right) {
             if (left == null)
@@ -133,7 +133,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
     }
     
     // To quickly look up ranges we'll index them by endpoints
-    protected NavigableMap<TKey, EndPoint> bounds = new TreeMap<TKey, EndPoint>();
+    protected NavigableMap<TKey, EndPoint> bounds = new TreeMap<>();
     
     /**
      * Removes every interval that intersects with the given range.
@@ -163,8 +163,8 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
         EndPoint previous = null;
         EndPoint next = null;
         
-        Set<Entry> resized = new HashSet<Entry>();
-        Set<Entry> removed = new HashSet<Entry>();
+        Set<Entry> resized = new HashSet<>();
+        Set<Entry> removed = new HashSet<>();
         
         // Remove the previous element too. A close end-point must be preceded by an OPEN end-point.
         if (first != null && first.state == State.CLOSE) {
@@ -315,7 +315,7 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
      */
     public Set<Entry> entrySet() {
         // Don't mind the Java noise
-        Set<Entry> result = new HashSet<Entry>();
+        Set<Entry> result = new HashSet<>();
         getEntries(result, bounds);
         return result;
     }

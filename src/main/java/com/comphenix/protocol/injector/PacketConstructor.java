@@ -26,6 +26,7 @@ import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -42,7 +43,7 @@ public class PacketConstructor {
      * <p>
      * Remember to call withPacket().
      */
-    public static PacketConstructor DEFAULT = new PacketConstructor(null);
+    public static final PacketConstructor DEFAULT = new PacketConstructor(null);
 
     // The constructor method that's actually responsible for creating the packet
     private final Constructor<?> constructorMethod;
@@ -56,7 +57,7 @@ public class PacketConstructor {
 
     private PacketConstructor(Constructor<?> constructorMethod) {
         this.constructorMethod = constructorMethod;
-        this.unwrappers = Lists.newArrayList((Unwrapper) new BukkitUnwrapper(new RethrowErrorReporter()));
+        this.unwrappers = Lists.newArrayList(new BukkitUnwrapper(new RethrowErrorReporter()));
         this.unwrappers.addAll(BukkitConverters.getUnwrappers());
     }
 

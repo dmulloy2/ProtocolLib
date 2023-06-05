@@ -1,18 +1,17 @@
 package com.comphenix.protocol.wrappers.collection;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
+
+import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Represents a multimap that wraps another multimap by transforming the entries that are going in and out.
@@ -24,7 +23,7 @@ import com.google.common.collect.Multiset;
  */
 public abstract class ConvertedMultimap<Key, VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Multimap<Key, VOuter> {
     // Inner multimap
-    private Multimap<Key, VInner> inner;
+    private final Multimap<Key, VInner> inner;
 
     public ConvertedMultimap(Multimap<Key, VInner> inner) {
         this.inner = Preconditions.checkNotNull(inner, "inner map cannot be NULL.");

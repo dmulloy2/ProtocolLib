@@ -17,17 +17,17 @@
 
 package com.comphenix.protocol;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
-import org.junit.jupiter.api.Test;
-
-public class MinecraftVersionTest {
+class MinecraftVersionTest {
 
     @Test
-    public void testComparision() {
+    void testComparision() {
         MinecraftVersion within = new MinecraftVersion(1, 2, 5);
         MinecraftVersion outside = new MinecraftVersion(1, 7, 0);
 
@@ -49,13 +49,12 @@ public class MinecraftVersionTest {
     } */
 
     @Test
-    public void testParsing() {
-        assertEquals(MinecraftVersion.extractVersion("CraftBukkit R3.0 (MC: 1.4.3)"), "1.4.3");
-        assertEquals(MinecraftVersion.extractVersion("CraftBukkit Test Beta 1 (MC: 1.10.01 )"), "1.10.01");
-        assertEquals(MinecraftVersion.extractVersion("Hello (MC: 2.3.4)"), "2.3.4");
+    void testParsing() {
+        assertEquals("1.4.3", MinecraftVersion.extractVersion("CraftBukkit R3.0 (MC: 1.4.3)"));
+        assertEquals("1.10.01", MinecraftVersion.extractVersion("CraftBukkit Test Beta 1 (MC: 1.10.01 )"));
+        assertEquals("2.3.4", MinecraftVersion.extractVersion("Hello (MC: 2.3.4)"));
 
-        assertEquals(MinecraftVersion.fromServerVersion("git-Cauldron-Reloaded-1.7.10-1.1388.1.0 (MC: 1.7.10)"),
-                new MinecraftVersion(1, 7, 10));
-        assertEquals(MinecraftVersion.fromServerVersion("git-Bukkit-18fbb24 (MC: 1.8.8)"), new MinecraftVersion(1, 8, 8));
+        assertEquals(new MinecraftVersion(1, 7, 10), MinecraftVersion.fromServerVersion("git-Cauldron-Reloaded-1.7.10-1.1388.1.0 (MC: 1.7.10)"));
+        assertEquals(new MinecraftVersion(1, 8, 8), MinecraftVersion.fromServerVersion("git-Bukkit-18fbb24 (MC: 1.8.8)"));
     }
 }

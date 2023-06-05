@@ -11,7 +11,7 @@ public interface PacketPostListener {
      * Retrieve the plugin this listener belongs to.
      * @return The assoicated plugin.
      */
-    public Plugin getPlugin();
+    Plugin getPlugin();
     
     /**
      * Invoked after a packet has been sent or received.
@@ -19,5 +19,5 @@ public interface PacketPostListener {
      * Note that this is invoked asynchronously.
      * @param event - the packet event.
      */
-    public void onPostEvent(PacketEvent event);
+    void onPostEvent(PacketEvent event);
 }

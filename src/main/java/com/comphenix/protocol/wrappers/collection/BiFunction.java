@@ -8,5 +8,5 @@ package com.comphenix.protocol.wrappers.collection;
  * @param <TResult> - type of the return value.
  */
 public interface BiFunction<T1, T2, TResult> {
-    public TResult apply(T1 arg1, T2 arg2);
+    TResult apply(T1 arg1, T2 arg2);
 }

@@ -17,17 +17,17 @@
 
 package com.comphenix.protocol.concurrency;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-
 import com.comphenix.protocol.utility.SafeCacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A map that supports blocking on read operations. Null keys are not supported.
@@ -80,7 +80,7 @@ public class BlockingHashMap<TKey, TValue> {
             build(BlockingHashMap.<TKey, TValue> newInvalidCacheLoader());
         
         // Normal concurrent hash map
-        locks = new ConcurrentHashMap<TKey, Object>();
+        locks = new ConcurrentHashMap<>();
     }
     
     /**
@@ -90,7 +90,7 @@ public class BlockingHashMap<TKey, TValue> {
      * @return The created map.
      */
     public static <TKey, TValue> BlockingHashMap<TKey, TValue> create() {
-        return new BlockingHashMap<TKey, TValue>();
+        return new BlockingHashMap<>();
     }
     
     /**

@@ -17,15 +17,15 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import java.io.DataOutput;
-import java.lang.reflect.Method;
-
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import com.google.common.base.Objects;
+
+import java.io.DataOutput;
+import java.lang.reflect.Method;
 
 /**
  * Represents a wrapped NBT tag element, composite or not.
@@ -43,7 +43,7 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
     private static volatile Boolean hasNbtName;
     
     // Structure modifiers for the different NBT elements
-    private static StructureModifier<?>[] modifiers = new StructureModifier<?>[NbtType.values().length];
+    private static final StructureModifier<?>[] MODIFIERS = new StructureModifier<?>[NbtType.values().length];
     
     // The underlying NBT object
     private Object handle;
@@ -107,15 +107,15 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
     @SuppressWarnings("unchecked")
     protected StructureModifier<Object> getCurrentBaseModifier() {
         int index = getType().ordinal();
-        StructureModifier<Object> modifier = (StructureModifier<Object>) modifiers[index];
+        StructureModifier<Object> modifier = (StructureModifier<Object>) MODIFIERS[index];
         
         // Double checked locking
         if (modifier == null) {
             synchronized (this) {
-                if (modifiers[index] == null) {
-                    modifiers[index] = new StructureModifier<Object>(handle.getClass(), MinecraftReflection.getNBTBaseClass(), false);
+                if (MODIFIERS[index] == null) {
+                    MODIFIERS[index] = new StructureModifier<Object>(handle.getClass(), MinecraftReflection.getNBTBaseClass(), false);
                 }
-                modifier = (StructureModifier<Object>) modifiers[index];
+                modifier = (StructureModifier<Object>) MODIFIERS[index];
             }
         }
         
