@@ -17,14 +17,14 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
+import com.comphenix.protocol.wrappers.collection.ConvertedMap;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+
 import java.io.DataOutput;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import com.comphenix.protocol.wrappers.collection.ConvertedMap;
-import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 
 /**
  * A concrete implementation of an NbtCompound that wraps an underlying NMS Compound.
@@ -33,7 +33,7 @@ import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
  */
 class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompound {
     // A list container
-    private WrappedElement<Map<String, Object>> container;
+    private final WrappedElement<Map<String, Object>> container;
     
     // Saved wrapper map
     private ConvertedMap<String, Object, NbtBase<?>> savedMap;
@@ -67,7 +67,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
      * @param handle - the NMS handle.
      */
     public WrappedCompound(Object handle) {
-        this.container = new WrappedElement<Map<String,Object>>(handle);
+        this.container = new WrappedElement<>(handle);
     }
 
     /**
@@ -76,7 +76,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
      * @param name - the name of the current compound.
      */
     public WrappedCompound(Object handle, String name) {
-        this.container = new WrappedElement<Map<String,Object>>(handle, name);
+        this.container = new WrappedElement<>(handle, name);
     }
     
     @Override
@@ -147,7 +147,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
                     if (inner == null)
                         return null;
                     return NbtFactory.fromNMS(inner);
-                };
+                }
                 
                 @Override
                 protected NbtBase<?> toOuter(String key, Object inner) {
@@ -169,13 +169,8 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
     public void setValue(Map<String, NbtBase<?>> newValue) {
         // Write all the entries
         for (Map.Entry<String, NbtBase<?>> entry : newValue.entrySet()) {
-            Object value = entry.getValue();
-            
-            // We don't really know
-            if (value instanceof NbtBase)
-                put(entry.getValue());
-            else
-                putObject(entry.getKey(), entry.getValue());
+            if (entry.getValue() == null) putObject(entry.getKey(), null);
+            else put(entry.getValue());
         }
     }
     
@@ -287,7 +282,7 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
         } else if (value instanceof NbtBase) {
             put(key, (NbtBase<?>) value);
         } else {
-            NbtBase<?> base = new MemoryElement<Object>(key, value);
+            NbtBase<?> base = new MemoryElement<>(key, value);
             put(base);
         }
         return this;
@@ -671,16 +666,16 @@ class WrappedCompound implements NbtWrapper<Map<String, NbtBase<?>>>, NbtCompoun
         StringBuilder builder = new StringBuilder();
 
         builder.append("{");
-        builder.append("\"name\": \"" + getName() + "\"");
+        builder.append("\"name\": \"").append(getName()).append("\"");
         
         for (NbtBase<?> element : this) {
             builder.append(", ");
             
             // Wrap in quotation marks
             if (element.getType() == NbtType.TAG_STRING)
-                builder.append("\"" + element.getName() + "\": \"" + element.getValue() + "\"");
+                builder.append("\"").append(element.getName()).append("\": \"").append(element.getValue()).append("\"");
             else
-                builder.append("\"" + element.getName() + "\": " + element.getValue());
+                builder.append("\"").append(element.getName()).append("\": ").append(element.getValue());
         }
         
         builder.append("}");

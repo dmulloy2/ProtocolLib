@@ -17,6 +17,9 @@
 
 package com.comphenix.protocol.reflect;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.google.common.primitives.Primitives;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -24,9 +27,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.google.common.primitives.Primitives;
 
 /**
  * Used to print the content of an arbitrary class.
@@ -105,7 +105,7 @@ public class PrettyPrinter {
         }
 
         StringBuilder output = new StringBuilder();
-        Set<Object> previous = new HashSet<Object>();
+        Set<Object> previous = new HashSet<>();
 
         // Start and stop
         output.append("{ ");
@@ -262,7 +262,7 @@ public class PrettyPrinter {
         } else if (type.isPrimitive() || Primitives.isWrapperType(type)) {
             output.append(value);
         } else if (type == String.class || hierachyIndex <= 0) {
-            output.append("\"" + value + "\"");
+            output.append("\"").append(value).append("\"");
         } else if (type.isArray()) {
             printArray(output, value, type, stop, previous, hierachyIndex, printer);
         } else if (Iterable.class.isAssignableFrom(type)) {
@@ -271,7 +271,7 @@ public class PrettyPrinter {
             printMap(output, (Map<Object, Object>) value, type, stop, previous, hierachyIndex, printer);
         } else if (ClassLoader.class.isAssignableFrom(type) || previous.contains(value)) {
             // Don't print previous objects
-            output.append("\"" + value + "\"");
+            output.append("\"").append(value).append("\"");
         } else {
             output.append("{ ");
             printObject(output, value, value.getClass(), stop, previous, hierachyIndex, true, printer);

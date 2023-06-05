@@ -14,13 +14,13 @@ public interface PacketOutputHandler {
      * Higher priority is executed before lower.
      * @return The handler priority.
      */
-    public ListenerPriority getPriority();
+    ListenerPriority getPriority();
     
     /**
      * The plugin that owns this output handler.
      * @return The owner plugin.
      */
-    public Plugin getPlugin();
+    Plugin getPlugin();
     
     /**
      * Invoked when a given packet is to be written to the output stream.
@@ -33,5 +33,5 @@ public interface PacketOutputHandler {
      * @param buffer - the data that is currently scheduled to be outputted.
      * @return The modified byte array to write. NULL is not permitted.
      */
-    public byte[] handle(PacketEvent event, byte[] buffer);
+    byte[] handle(PacketEvent event, byte[] buffer);
 }

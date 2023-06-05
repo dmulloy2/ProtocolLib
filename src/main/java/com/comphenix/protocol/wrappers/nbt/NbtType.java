@@ -17,11 +17,11 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
+import com.google.common.primitives.Primitives;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.google.common.primitives.Primitives;
 
 /**
  * Represents all the element types 
@@ -94,22 +94,21 @@ public enum NbtType {
      */
     TAG_LONG_ARRAY(12, long[].class);
     
-    private int rawID;
-    private Class<?> valueType;
+    private final int rawID;
+    private final Class<?> valueType;
     
-    // Used to lookup a specified NBT
-    private static NbtType[] lookup;
+    // Used to look up a specified NBT
+    private static final NbtType[] lookup;
     
     // Lookup NBT by class
-    private static Map<Class<?>, NbtType> classLookup;
+    private static final Map<Class<?>, NbtType> classLookup;
     
     static {
-        NbtType[] values = values();
-        lookup = new NbtType[values.length];
-        classLookup = new HashMap<Class<?>, NbtType>();
+        lookup = new NbtType[values().length];
+        classLookup = new HashMap<>();
         
         // Initialize lookup tables
-        for (NbtType type : values) {
+        for (NbtType type : values()) {
             lookup[type.getRawID()] = type;
             classLookup.put(type.getValueType(), type);
             
@@ -173,10 +172,10 @@ public enum NbtType {
     public static NbtType getTypeFromClass(Class<?> clazz) {
         NbtType result = classLookup.get(clazz);
         
-        // Try to lookup this value
+        // Try to look up this value
         if (result != null) {
             return result;
-        } else { 
+        } else {
             // Look for interfaces
             for (Class<?> implemented : clazz.getInterfaces()) {
                 if (classLookup.containsKey(implemented))

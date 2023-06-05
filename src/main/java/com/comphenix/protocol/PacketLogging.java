@@ -158,7 +158,7 @@ public class PacketLogging implements CommandExecutor, PacketListener {
             sender.sendMessage(ChatColor.RED + "Invalid syntax: /packetlog <protocol> <sender> <packet> [location]");
             return true;
         } catch (Throwable ex) {
-            sender.sendMessage(ChatColor.RED + "Failed to parse command: " + ex.toString());
+            sender.sendMessage(ChatColor.RED + "Failed to parse command: " + ex);
             return true;
         }
     }
@@ -173,7 +173,7 @@ public class PacketLogging implements CommandExecutor, PacketListener {
         this.sendingWhitelist = ListeningWhitelist.newBuilder().types(sendingTypes).build();
         this.receivingWhitelist = ListeningWhitelist.newBuilder().types(receivingTypes).build();
 
-        // Setup the file logger if it hasn't been already
+        // Set up the file logger if it hasn't been already
         if (location == LogLocation.FILE && fileLogger == null) {
             fileLogger = Logger.getLogger("ProtocolLib-FileLogging");
 
@@ -270,15 +270,8 @@ public class PacketLogging implements CommandExecutor, PacketListener {
 
         @Override
         public String format(LogRecord record) {
-            String string = formatMessage(record);
-            if (string.isEmpty()) {
-                return LINE_SEPARATOR;
-            }
-
-            StringBuilder message = new StringBuilder();
-            message.append(MessageFormat.format(FORMAT, DATE.format(record.getMillis()), string));
-            message.append(LINE_SEPARATOR);
-            return message.toString();
+            final String string = formatMessage(record);
+            return string.isEmpty() ? LINE_SEPARATOR : MessageFormat.format(FORMAT, DATE.format(record.getMillis()), string) + LINE_SEPARATOR;
         }
     }
 }

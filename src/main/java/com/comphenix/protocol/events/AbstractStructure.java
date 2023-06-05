@@ -1254,16 +1254,16 @@ public abstract class AbstractStructure {
      * @author dmulloy2
      */
     private static class NBTComponentConverter implements EquivalentConverter<WrappedChatComponent[]> {
-        private EquivalentConverter<NbtBase<?>> nbtConverter = BukkitConverters.getNbtConverter();
-        private final int lines = 4;
+        private final EquivalentConverter<NbtBase<?>> nbtConverter = BukkitConverters.getNbtConverter();
+        private static final int LINES = 4;
 
         @Override
         public WrappedChatComponent[] getSpecific(Object generic) {
-            NbtBase<?> nbtBase = nbtConverter.getSpecific(generic);
-            NbtCompound compound = (NbtCompound) nbtBase;
+            final NbtBase<?> nbtBase = nbtConverter.getSpecific(generic);
+            final NbtCompound compound = (NbtCompound) nbtBase;
 
-            WrappedChatComponent[] components = new WrappedChatComponent[lines];
-            for (int i = 0; i < lines; i++) {
+            final WrappedChatComponent[] components = new WrappedChatComponent[LINES];
+            for (int i = 0; i < LINES; i++) {
                 if (compound.containsKey("Text" + (i + 1))) {
                     components[i] = WrappedChatComponent.fromJson(compound.getString("Text" + (i + 1)));
                 } else {
@@ -1278,7 +1278,7 @@ public abstract class AbstractStructure {
         public Object getGeneric(WrappedChatComponent[] specific) {
             NbtCompound compound = NbtFactory.ofCompound("");
 
-            for (int i = 0; i < lines; i++) {
+            for (int i = 0; i < LINES; i++) {
                 WrappedChatComponent component;
                 if (i < specific.length && specific[i] != null) {
                     component = specific[i];

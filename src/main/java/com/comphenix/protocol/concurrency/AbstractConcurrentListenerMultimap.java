@@ -38,7 +38,7 @@ public abstract class AbstractConcurrentListenerMultimap<T> {
     // The core of our map
     private final ConcurrentMap<PacketType, SortedCopyOnWriteArray<PrioritizedListener<T>>> mapListeners;
 
-    public AbstractConcurrentListenerMultimap() {
+    protected AbstractConcurrentListenerMultimap() {
         this.mapListeners = new ConcurrentHashMap<>();
     }
 
@@ -49,21 +49,21 @@ public abstract class AbstractConcurrentListenerMultimap<T> {
      * @param whitelist - the packet whitelist to use.
      */
     public void addListener(T listener, ListeningWhitelist whitelist) {
-        PrioritizedListener<T> prioritized = new PrioritizedListener<>(listener, whitelist.getPriority());
+        final PrioritizedListener<T> prioritized = new PrioritizedListener<>(listener, whitelist.getPriority());
         for (PacketType type : whitelist.getTypes()) {
             this.addListener(type, prioritized);
         }
     }
 
-    // Add the listener to a specific packet notifcation list
+    // Add the listener to a specific packet notification list
     private void addListener(PacketType type, PrioritizedListener<T> listener) {
         SortedCopyOnWriteArray<PrioritizedListener<T>> list = this.mapListeners.get(type);
 
         // We don't want to create this for every lookup
         if (list == null) {
-            // It would be nice if we could use a PriorityBlockingQueue, but it doesn't preseve iterator order,
-            // which is a essential feature for our purposes.
-            final SortedCopyOnWriteArray<PrioritizedListener<T>> value = new SortedCopyOnWriteArray<PrioritizedListener<T>>();
+            // It would be nice if we could use a PriorityBlockingQueue, but it doesn't preserve iterator order,
+            // which is an essential feature for our purposes.
+            final SortedCopyOnWriteArray<PrioritizedListener<T>> value = new SortedCopyOnWriteArray<>();
 
             // We may end up creating multiple multisets, but we'll agree on which to use
             list = this.mapListeners.putIfAbsent(type, value);
@@ -85,24 +85,21 @@ public abstract class AbstractConcurrentListenerMultimap<T> {
      * @return Every packet ID that was removed due to no listeners.
      */
     public List<PacketType> removeListener(T listener, ListeningWhitelist whitelist) {
-        List<PacketType> removedPackets = new ArrayList<PacketType>();
+        List<PacketType> removedPackets = new ArrayList<>();
 
         // Again, not terribly efficient. But adding or removing listeners should be a rare event.
         for (PacketType type : whitelist.getTypes()) {
             SortedCopyOnWriteArray<PrioritizedListener<T>> list = this.mapListeners.get(type);
 
-            // Remove any listeners
-            if (list != null) {
-                // Don't remove from newly created lists
-                if (list.size() > 0) {
-                    // Remove this listener. Note that priority is generally ignored.
-                    list.remove(new PrioritizedListener<T>(listener, whitelist.getPriority()));
+            if(list == null || list.isEmpty()) continue;
 
-                    if (list.size() == 0) {
-                        this.mapListeners.remove(type);
-                        removedPackets.add(type);
-                    }
-                }
+            // Remove any listeners
+            // Remove this listener. Note that priority is generally ignored.
+            list.remove(new PrioritizedListener<T>(listener, whitelist.getPriority()));
+
+            if (list.isEmpty()) {
+                this.mapListeners.remove(type);
+                removedPackets.add(type);
             }
             // Move on to the next
         }
