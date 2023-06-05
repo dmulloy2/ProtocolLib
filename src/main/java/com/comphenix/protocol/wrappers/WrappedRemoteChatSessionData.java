@@ -1,10 +1,16 @@
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.ExactReflection;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import org.bukkit.entity.Player;
 
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 /**
@@ -16,6 +22,9 @@ public class WrappedRemoteChatSessionData extends AbstractWrapper {
     private final static Class<?> HANDLE_TYPE = MinecraftReflection.getRemoteChatSessionDataClass();
     private static ConstructorAccessor CONSTRUCTOR;
     private StructureModifier<Object> modifier;
+    private static MethodAccessor PLAYER_GET_HANDLE;
+    private static FieldAccessor REMOTE_CHAT_SESSION_FIELD;
+    private static MethodAccessor AS_DATA_METHOD;
 
     /**
      * Constructs a new profile public key wrapper directly from a nms RemoteChatSession.Data/RemoteChatSession.a object.
@@ -92,5 +101,30 @@ public class WrappedRemoteChatSessionData extends AbstractWrapper {
     @Override
     public int hashCode() {
         return handle.hashCode();
+    }
+
+    /**
+     * Retrieves the current session data of the player
+     * @since 1.19.4
+     * @return Wrapper for session data or null if not present
+     */
+    @Nullable
+    public static WrappedRemoteChatSessionData fromPlayer(Player player) {
+        if(PLAYER_GET_HANDLE == null) {
+            PLAYER_GET_HANDLE = Accessors.getMethodAccessor(MinecraftReflection.getCraftPlayerClass(), "getHandle");
+        }
+        if(REMOTE_CHAT_SESSION_FIELD == null) {
+            REMOTE_CHAT_SESSION_FIELD = Accessors.getFieldAccessor(MinecraftReflection.getEntityPlayerClass(), MinecraftReflection.getRemoteChatSessionClass(), true);
+        }
+        if(AS_DATA_METHOD == null) {
+            AS_DATA_METHOD = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getRemoteChatSessionClass(), true).getMethodListByParameters(HANDLE_TYPE).get(0));
+        }
+        Object handle = PLAYER_GET_HANDLE.invoke(player);
+        Object remoteChatSession = REMOTE_CHAT_SESSION_FIELD.get(handle);
+        if(remoteChatSession == null) {
+            return null;
+        }
+        Object remoteChatSessionData = AS_DATA_METHOD.invoke(remoteChatSession);
+        return remoteChatSessionData == null ? null : new WrappedRemoteChatSessionData(remoteChatSessionData);
     }
 }
