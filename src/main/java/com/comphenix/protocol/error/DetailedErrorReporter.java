@@ -391,7 +391,8 @@ public class DetailedErrorReporter implements ErrorReporter {
             writer.println(addPrefix(Bukkit.getServer().getVersion(), SECOND_LEVEL_PREFIX));
 
             // Inform of this occurrence
-            if (ERROR_PERMISSION != null && ProtocolLibrary.getConfig().isChatWarnings()) {
+            ProtocolConfig config = ProtocolLibrary.getConfig();
+            if (ERROR_PERMISSION != null && config != null && config.isChatWarnings())) {
                 Bukkit.getServer().broadcast(
                         String.format("Error %s (%s) occurred in %s.", report.getReportMessage(), report.getException(), sender),
                         ERROR_PERMISSION
