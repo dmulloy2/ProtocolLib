@@ -14,26 +14,13 @@
  */
 package com.comphenix.protocol;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-
-import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import net.minecraft.network.EnumProtocol;
 import net.minecraft.network.protocol.EnumProtocolDirection;
@@ -42,6 +29,12 @@ import org.apache.commons.lang.WordUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author dmulloy2
@@ -62,6 +55,11 @@ public class PacketTypeTest {
     public static void afterClass() {
         PacketType.onDynamicCreate = __ -> {
         };
+    }
+
+    @Test
+    void testCurrent() {
+        assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
     }
 
     @SuppressWarnings("unchecked")

@@ -20,9 +20,7 @@ package com.comphenix.protocol;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MinecraftVersionTest {
 
@@ -40,17 +38,6 @@ class MinecraftVersionTest {
         assertTrue(lower.compareTo(within) < 0 && within.compareTo(highest) < 0);
         assertFalse(outside.compareTo(within) < 0 && outside.compareTo(highest) < 0);
         assertTrue(atLeast.isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE));
-    }
-    
-    /* @Test
-    public void testSnapshotVersion() {
-        MinecraftVersion version = MinecraftVersion.fromServerVersion("git-Spigot-1119 (MC: 13w39b)");
-        assertEquals(version.getSnapshot(), new SnapshotVersion("13w39b"));
-    } */
-
-    @Test
-    void testCurrent() {
-        assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
     }
 
     @Test
