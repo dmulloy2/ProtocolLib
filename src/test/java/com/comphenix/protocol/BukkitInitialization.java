@@ -14,10 +14,10 @@ import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_19_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_19_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_19_R3.util.Versioning;
+import org.bukkit.craftbukkit.v1_20_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_20_R1.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.Mockito.mock;

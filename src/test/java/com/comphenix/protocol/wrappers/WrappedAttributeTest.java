@@ -93,7 +93,7 @@ public class WrappedAttributeTest {
             modifiers.add((AttributeModifier) wrapper.getHandle());
         }
 
-        AttributeBase base = BuiltInRegistries.u.a(MinecraftKey.a(attribute.getAttributeKey()));
+        AttributeBase base = BuiltInRegistries.v.a(MinecraftKey.a(attribute.getAttributeKey()));
         return new AttributeSnapshot(base, attribute.getBaseValue(), modifiers);
     }
 
