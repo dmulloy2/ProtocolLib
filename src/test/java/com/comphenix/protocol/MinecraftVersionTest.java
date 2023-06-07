@@ -41,6 +41,11 @@ class MinecraftVersionTest {
     }
 
     @Test
+    void testCurrent() {
+        assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
+    }
+
+    @Test
     void testParsing() {
         assertEquals("1.4.3", MinecraftVersion.extractVersion("CraftBukkit R3.0 (MC: 1.4.3)"));
         assertEquals("1.10.01", MinecraftVersion.extractVersion("CraftBukkit Test Beta 1 (MC: 1.10.01 )"));
