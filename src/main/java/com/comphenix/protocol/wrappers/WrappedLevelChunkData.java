@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
@@ -12,6 +13,7 @@ import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
+import org.bukkit.Bukkit;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -164,9 +166,15 @@ public final class WrappedLevelChunkData {
                     MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
             BIT_SET_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, BitSet.class, true);
             BYTE_ARRAY_LIST_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, List.class, true);
-            TRUST_EDGES_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
-                    .typeExact(boolean.class)
-                    .build()));
+            System.out.println(Bukkit.getVersion());
+            System.out.println("Current version: " + MinecraftVersion.getCurrentVersion());
+            if(MinecraftVersion.TRAILS_AND_TAILS.atOrAbove()) {
+                TRUST_EDGES_ACCESSOR = null;
+            } else {
+                TRUST_EDGES_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
+                        .typeExact(boolean.class)
+                        .build()));
+            }
         }
 
         private boolean dummyTrustEdges = false;
