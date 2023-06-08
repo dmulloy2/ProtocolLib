@@ -2,7 +2,6 @@ package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.MethodInfo;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
@@ -13,7 +12,6 @@ import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
-import org.bukkit.Bukkit;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
