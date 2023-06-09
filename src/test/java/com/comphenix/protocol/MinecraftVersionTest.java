@@ -18,14 +18,19 @@
 package com.comphenix.protocol;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class MinecraftVersionTest {
+    @BeforeAll
+    public static void beforeAll() {
+        BukkitInitialization.initializeAll();
+    }
 
     @Test
-    void testComparision() {
+    void testComparison() {
         MinecraftVersion within = new MinecraftVersion(1, 2, 5);
         MinecraftVersion outside = new MinecraftVersion(1, 7, 0);
 
@@ -38,6 +43,12 @@ class MinecraftVersionTest {
         assertTrue(lower.compareTo(within) < 0 && within.compareTo(highest) < 0);
         assertFalse(outside.compareTo(within) < 0 && outside.compareTo(highest) < 0);
         assertTrue(atLeast.isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE));
+    }
+
+
+    @Test
+    void testCurrent() {
+        assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
     }
 
     @Test

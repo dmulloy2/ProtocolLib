@@ -316,7 +316,9 @@ public final class WrappedLevelChunkData {
         @Deprecated
         public static LightData fromValues(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
                                            List<byte[]> skyUpdates, List<byte[]> blockUpdates, boolean trustEdges) {
-            return fromValues(skyYMask, blockYMask, emptySkyYMask, emptyBlockYMask, skyUpdates, blockUpdates);
+            LightData lightData = fromValues(skyYMask, blockYMask, emptySkyYMask, emptyBlockYMask, skyUpdates, blockUpdates);
+            lightData.setTrustEdges(trustEdges);
+            return lightData;
         }
 
         /**

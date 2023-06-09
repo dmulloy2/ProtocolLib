@@ -20,7 +20,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import net.minecraft.network.EnumProtocol;
 import net.minecraft.network.protocol.EnumProtocolDirection;
@@ -55,11 +54,6 @@ public class PacketTypeTest {
     public static void afterClass() {
         PacketType.onDynamicCreate = __ -> {
         };
-    }
-
-    @Test
-    void testCurrent() {
-        assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
     }
 
     @SuppressWarnings("unchecked")
