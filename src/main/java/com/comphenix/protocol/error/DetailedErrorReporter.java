@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.comphenix.protocol.ProtocolConfig;
+import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.collections.ExpireHashMap;
@@ -391,7 +393,7 @@ public class DetailedErrorReporter implements ErrorReporter {
             writer.println(addPrefix(Bukkit.getServer().getVersion(), SECOND_LEVEL_PREFIX));
 
             // Inform of this occurrence
-            if (ERROR_PERMISSION != null && ProtocolLibrary.getConfig().isChatWarnings()) {
+            if (isChatWarnings()) {
                 Bukkit.getServer().broadcast(
                         String.format("Error %s (%s) occurred in %s.", report.getReportMessage(), report.getException(), sender),
                         ERROR_PERMISSION
@@ -402,7 +404,15 @@ public class DetailedErrorReporter implements ErrorReporter {
         // Make sure it is reported
         logger.severe(addPrefix(text.toString(), prefix));
     }
-    
+
+    private boolean isChatWarnings() {
+        try {
+            ProtocolConfig config = ProtocolLibrary.getConfig();
+            return config != null && config.isChatWarnings();
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     /**
      * Print the call stack to the given logger.
      * @param logger - the logger.

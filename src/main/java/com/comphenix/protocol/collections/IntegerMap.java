@@ -76,8 +76,7 @@ public class IntegerMap<T> {
 
         // Fast calculation of the new size.
         // See IntMath#ceilingPowerOfTwo in newer guava versions.
-        int newLength = IntegerMath.nextPowerOfTwo(key);
-
+        int newLength = IntegerMath.nextPowerOfTwo(key + 1);
         this.array = Arrays.copyOf(array, newLength);
     }
 
