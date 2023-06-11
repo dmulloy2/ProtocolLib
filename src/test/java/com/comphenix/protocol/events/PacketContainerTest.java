@@ -443,7 +443,7 @@ public class PacketContainerTest {
         // are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
         // members of the packet itself)
         PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
-        AttributeBase base = BuiltInRegistries.u.a(MinecraftKey.a("generic.max_health"));
+        AttributeBase base = BuiltInRegistries.v.a(MinecraftKey.a("generic.max_health"));
         AttributeSnapshot snapshot = new AttributeSnapshot(base, 20.0D, modifiers);
         attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 
@@ -838,7 +838,7 @@ public class PacketContainerTest {
                                     0,
                                     Registry.getItemStackSerializer(false),
                                     BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.WOODEN_AXE))),
-                            new WrappedDataValue(0, Registry.get(CatVariant.class), BuiltInRegistries.ai.e(CatVariant.e)),
+                            new WrappedDataValue(0, Registry.get(CatVariant.class), BuiltInRegistries.aj.e(CatVariant.e)),
                             new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariant.a)
                     ));
                 } else if (type == PacketType.Play.Server.CHAT) {

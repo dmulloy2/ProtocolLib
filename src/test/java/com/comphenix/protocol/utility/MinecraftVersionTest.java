@@ -15,19 +15,23 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol;
+package com.comphenix.protocol.utility;
 
+import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MinecraftVersionTest {
+    @BeforeAll
+    public static void beforeAll() {
+        BukkitInitialization.initializeAll();
+    }
 
     @Test
-    void testComparision() {
+    void testComparison() {
         MinecraftVersion within = new MinecraftVersion(1, 2, 5);
         MinecraftVersion outside = new MinecraftVersion(1, 7, 0);
 
@@ -41,12 +45,18 @@ class MinecraftVersionTest {
         assertFalse(outside.compareTo(within) < 0 && outside.compareTo(highest) < 0);
         assertTrue(atLeast.isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE));
     }
-    
-    /* @Test
-    public void testSnapshotVersion() {
-        MinecraftVersion version = MinecraftVersion.fromServerVersion("git-Spigot-1119 (MC: 13w39b)");
-        assertEquals(version.getSnapshot(), new SnapshotVersion("13w39b"));
-    } */
+
+
+    @Test
+    void testCurrent() {
+        assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
+    }
+
+    @Test
+    void testCurrentProtocol() {
+        // MIN_VALUE is returned when the current version is not supported
+        assertNotEquals(MinecraftProtocolVersion.getCurrentVersion(), Integer.MIN_VALUE);
+    }
 
     @Test
     void testParsing() {
