@@ -2,20 +2,44 @@
  *  ProtocolLib - Bukkit server library that allows access to the Minecraft protocol.
  *  Copyright (C) 2012 Kristian S. Stangeland
  *
- *  This program is free software; you can redistribute it and/or modify it under the terms of the 
- *  GNU General Public License as published by the Free Software Foundation; either version 2 of 
+ *  This program is free software; you can redistribute it and/or modify it under the terms of the
+ *  GNU General Public License as published by the Free Software Foundation; either version 2 of
  *  the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *  See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with this program; 
- *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *  You should have received a copy of the GNU General Public License along with this program;
+ *  if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *  02111-1307 USA
  */
 
 package com.comphenix.protocol.events;
+
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.Util;
+import net.bytebuddy.description.ByteCodeElement;
+import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
+import net.bytebuddy.implementation.FieldAccessor;
+import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.FieldValue;
+import net.bytebuddy.implementation.bind.annotation.Origin;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.matcher.ElementMatchers;
+import org.bukkit.*;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.profile.PlayerProfile;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -28,33 +52,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
-
-import org.bukkit.*;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.profile.PlayerProfile;
-
-import net.bytebuddy.description.ByteCodeElement;
-import net.bytebuddy.description.modifier.Visibility;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
-import net.bytebuddy.implementation.FieldAccessor;
-import net.bytebuddy.implementation.InvocationHandlerAdapter;
-import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bind.annotation.AllArguments;
-import net.bytebuddy.implementation.bind.annotation.Origin;
-import net.bytebuddy.implementation.bind.annotation.FieldValue;
-import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.matcher.ElementMatchers;
-
 /**
  * Represents a player object that can be serialized by Java.
- * 
+ *
  * @author Kristian
  */
 class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
@@ -65,7 +65,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     private static final long serialVersionUID = -2728976288470282810L;
 
     private transient Location bedSpawnLocation;
-    
+
     // Relevant data about an offline player
     private String name;
     private UUID uuid;
@@ -76,6 +76,8 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     private boolean playedBefore;
     private boolean online;
     private boolean whitelisted;
+    private long lastLogin;
+    private long lastSeen;
 
     private static final Constructor<?> proxyPlayerConstructor = setupProxyPlayerConstructor();
 
@@ -85,9 +87,10 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     public SerializedOfflinePlayer() {
         // Do nothing
     }
-    
+
     /**
      * Initialize this serializable offline player from another player.
+     *
      * @param offline - another player.
      */
     public SerializedOfflinePlayer(OfflinePlayer offline) {
@@ -100,8 +103,14 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         this.playedBefore = offline.hasPlayedBefore();
         this.online = offline.isOnline();
         this.whitelisted = offline.isWhitelisted();
+
+        // TODO needs to be reflectively obtained
+        if (Util.isUsingFolia()) {
+            // this.lastSeen = offline.getLastSeen();
+            // this.lastLogin = offline.getLastLogin();
+        }
     }
-    
+
     @Override
     public boolean isOp() {
         return operator;
@@ -122,49 +131,74 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return bedSpawnLocation;
     }
 
+    // @Override
+    public long getLastLogin() {
+        return lastLogin;
+    }
+
+    // @Override
+    public long getLastSeen() {
+        return lastSeen;
+    }
+
     // TODO do we need to implement this?
-    
-    public void incrementStatistic(Statistic statistic) throws IllegalArgumentException { }
 
-    public void decrementStatistic(Statistic statistic) throws IllegalArgumentException { }
+    public void incrementStatistic(Statistic statistic) throws IllegalArgumentException {
+    }
 
-    public void incrementStatistic(Statistic statistic, int i) throws IllegalArgumentException { }
+    public void decrementStatistic(Statistic statistic) throws IllegalArgumentException {
+    }
 
-    public void decrementStatistic(Statistic statistic, int i) throws IllegalArgumentException { }
+    public void incrementStatistic(Statistic statistic, int i) throws IllegalArgumentException {
+    }
 
-    public void setStatistic(Statistic statistic, int i) throws IllegalArgumentException { }
+    public void decrementStatistic(Statistic statistic, int i) throws IllegalArgumentException {
+    }
+
+    public void setStatistic(Statistic statistic, int i) throws IllegalArgumentException {
+    }
 
     public int getStatistic(Statistic statistic) throws IllegalArgumentException {
         return 0;
     }
 
-    public void incrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException { }
+    public void incrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
+    }
 
-    public void decrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException { }
+    public void decrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
+    }
 
     public int getStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
         return 0;
     }
 
-    public void incrementStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException { }
+    public void incrementStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException {
+    }
 
-    public void decrementStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException { }
+    public void decrementStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException {
+    }
 
-    public void setStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException { }
+    public void setStatistic(Statistic statistic, Material material, int i) throws IllegalArgumentException {
+    }
 
-    public void incrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException { }
+    public void incrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
+    }
 
-    public void decrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException { }
+    public void decrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
+    }
 
     public int getStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
         return 0;
     }
 
-    public void incrementStatistic(Statistic statistic, EntityType entityType, int i) throws IllegalArgumentException { }
+    public void incrementStatistic(Statistic statistic, EntityType entityType, int i) throws IllegalArgumentException {
+    }
 
-    public void decrementStatistic(Statistic statistic, EntityType entityType, int i) { }
+    public void decrementStatistic(Statistic statistic, EntityType entityType, int i) {
+    }
 
-    public void setStatistic(Statistic statistic, EntityType entityType, int i) { }
+    public void setStatistic(Statistic statistic, EntityType entityType, int i) {
+    }
 
     @Override
     public Location getLastDeathLocation() {
@@ -187,7 +221,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     }
 
     @Override
-    public PlayerProfile getPlayerProfile() {
+    public @NotNull PlayerProfile getPlayerProfile() {
         return null;
     }
 
@@ -195,7 +229,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     public String getName() {
         return name;
     }
-    
+
     @Override
     public boolean hasPlayedBefore() {
         return playedBefore;
@@ -209,7 +243,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     public void setBanned(boolean banned) {
         this.banned = banned;
     }
-    
+
     @Override
     public boolean isOnline() {
         return online;
@@ -227,14 +261,14 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 
     private void writeObject(ObjectOutputStream output) throws IOException {
         output.defaultWriteObject();
-        
+
         // Serialize the bed spawn location
         output.writeUTF(bedSpawnLocation.getWorld().getName());
         output.writeDouble(bedSpawnLocation.getX());
         output.writeDouble(bedSpawnLocation.getY());
         output.writeDouble(bedSpawnLocation.getZ());
     }
-    
+
     private void readObject(ObjectInputStream input) throws ClassNotFoundException, IOException {
         input.defaultReadObject();
 
@@ -246,7 +280,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
                 input.readDouble()
         );
     }
-    
+
     private World getWorld(String name) {
         try {
             // Try to get the world at least
@@ -256,7 +290,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
             return null;
         }
     }
-    
+
     @Override
     public Player getPlayer() {
         try {
@@ -266,11 +300,12 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
             return getProxyPlayer();
         }
     }
-    
+
     /**
      * Retrieve a player object that implements OfflinePlayer by referring to this object.
      * <p>
      * All other methods cause an exception.
+     *
      * @return Proxy object.
      */
     public Player getProxyPlayer() {
@@ -285,8 +320,7 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         }
     }
 
-    private static Constructor<? extends Player> setupProxyPlayerConstructor()
-    {
+    private static Constructor<? extends Player> setupProxyPlayerConstructor() {
         final Method[] offlinePlayerMethods = OfflinePlayer.class.getMethods();
         final String[] methodNames = new String[offlinePlayerMethods.length];
         for (int idx = 0; idx < offlinePlayerMethods.length; ++idx)
@@ -321,9 +355,9 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
             });
 
             final InvocationHandlerAdapter throwException = InvocationHandlerAdapter.of((obj, method, args) -> {
-                    throw new UnsupportedOperationException(
+                throw new UnsupportedOperationException(
                         "The method " + method.getName() + " is not supported for offline players.");
-                });
+            });
 
             return ByteBuddyFactory.getInstance()
                     .createSubclass(PlayerUnion.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
@@ -354,7 +388,6 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
      * This interface extends both OfflinePlayer and Player (in that order) so that the class generated by ByteBuddy
      * looks at OfflinePlayer's methods first while still being a Player.
      */
-    private interface PlayerUnion extends OfflinePlayer, Player
-    {
+    private interface PlayerUnion extends OfflinePlayer, Player {
     }
 }

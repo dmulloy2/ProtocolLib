@@ -22,6 +22,7 @@ package com.comphenix.protocol.utility;
 public final class Util {
 
     private static final boolean SPIGOT = classExists("org.spigotmc.SpigotConfig");
+    private static final boolean FOLIA = classExists("io.papermc.paper.threadedregions.RegionizedServer");
     private static Class<?> cachedBundleClass;
 
     public static boolean classExists(String className) {
@@ -41,6 +42,10 @@ public final class Util {
      */
     public static boolean isUsingSpigot() {
         return SPIGOT;
+    }
+
+    public static boolean isUsingFolia() {
+        return FOLIA;
     }
 
     /**

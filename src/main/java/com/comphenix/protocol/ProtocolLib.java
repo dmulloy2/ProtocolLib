@@ -27,12 +27,10 @@ import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
-import com.comphenix.protocol.utility.ChatExtensions;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.Util;
+import com.comphenix.protocol.utility.*;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
@@ -44,6 +42,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
@@ -57,7 +56,6 @@ import org.bukkit.plugin.java.JavaPlugin;
  * @author Kristian
  */
 public class ProtocolLib extends JavaPlugin {
-
     // Every possible error or warning report type
     public static final ReportType REPORT_CANNOT_DELETE_CONFIG = new ReportType(
             "Cannot delete old ProtocolLib configuration.");
@@ -490,9 +488,8 @@ public class ProtocolLib extends JavaPlugin {
             }
 
             // Attempt to create task
-            this.packetTask = server.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            this.packetTask = SchedulerUtil.scheduleSyncRepeatingTask(this, () -> {
                 AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
-
                 // We KNOW we're on the main thread at the moment
                 manager.sendProcessedPackets(ProtocolLib.this.tickCounter++, true);
 
@@ -567,7 +564,7 @@ public class ProtocolLib extends JavaPlugin {
 
         // Clean up
         if (this.packetTask >= 0) {
-            this.getServer().getScheduler().cancelTask(this.packetTask);
+            SchedulerUtil.cancelTask(this, packetTask);
             this.packetTask = -1;
         }
 
