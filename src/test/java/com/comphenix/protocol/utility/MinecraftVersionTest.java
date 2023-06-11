@@ -15,8 +15,9 @@
  *  02111-1307 USA
  */
 
-package com.comphenix.protocol;
+package com.comphenix.protocol.utility;
 
+import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,12 @@ class MinecraftVersionTest {
     @Test
     void testCurrent() {
         assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
+    }
+
+    @Test
+    void testCurrentProtocol() {
+        // MIN_VALUE is returned when the current version is not supported
+        assertNotEquals(MinecraftProtocolVersion.getCurrentVersion(), Integer.MIN_VALUE);
     }
 
     @Test
