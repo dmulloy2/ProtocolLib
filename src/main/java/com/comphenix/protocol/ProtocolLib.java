@@ -25,6 +25,10 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
+import com.comphenix.protocol.scheduler.DefaultScheduler;
+import com.comphenix.protocol.scheduler.FoliaScheduler;
+import com.comphenix.protocol.scheduler.ProtocolScheduler;
+import com.comphenix.protocol.scheduler.Task;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.*;
@@ -34,6 +38,7 @@ import com.google.common.collect.Iterables;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
@@ -90,19 +95,20 @@ public class ProtocolLib extends JavaPlugin {
     // these fields are only existing once, we can make them static
     private static Logger logger;
     private static ProtocolConfig config;
-
     private static InternalManager protocolManager;
     private static ErrorReporter reporter = new BasicErrorReporter();
 
     private Statistics statistics;
 
-    private int packetTask = -1;
+    private Task packetTask = null;
     private int tickCounter = 0;
     private int configExpectedMod = -1;
 
     // updater
     private Updater updater;
     private Handler redirectHandler;
+
+    private ProtocolScheduler scheduler;
 
     // commands
     private CommandProtocol commandProtocol;
@@ -155,6 +161,10 @@ public class ProtocolLib extends JavaPlugin {
         }
 
         try {
+            this.scheduler = Util.isUsingFolia()
+                    ? new FoliaScheduler(this)
+                    : new DefaultScheduler(this);
+
             // Check for other versions
             this.checkConflictingVersions();
 
@@ -171,7 +181,7 @@ public class ProtocolLib extends JavaPlugin {
                     .minecraftVersion(version)
                     .reporter(reporter)
                     .build();
-            ProtocolLibrary.init(this, config, protocolManager, reporter);
+            ProtocolLibrary.init(this, config, protocolManager, scheduler, reporter);
 
             // Setup error reporter
             detailedReporter.addGlobalParameter("manager", protocolManager);
@@ -483,12 +493,12 @@ public class ProtocolLib extends JavaPlugin {
 
     private void createPacketTask(Server server) {
         try {
-            if (this.packetTask >= 0) {
+            if (this.packetTask != null) {
                 throw new IllegalStateException("Packet task has already been created");
             }
 
             // Attempt to create task
-            this.packetTask = SchedulerUtil.scheduleSyncRepeatingTask(this, () -> {
+            this.packetTask = scheduler.scheduleSyncRepeatingTask(() -> {
                 AsyncFilterManager manager = (AsyncFilterManager) protocolManager.getAsynchronousManager();
                 // We KNOW we're on the main thread at the moment
                 manager.sendProcessedPackets(ProtocolLib.this.tickCounter++, true);
@@ -504,7 +514,7 @@ public class ProtocolLib extends JavaPlugin {
         } catch (OutOfMemoryError e) {
             throw e;
         } catch (Throwable e) {
-            if (this.packetTask == -1) {
+            if (this.packetTask == null) {
                 reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_CREATE_TIMEOUT_TASK).error(e));
             }
         }
@@ -563,9 +573,9 @@ public class ProtocolLib extends JavaPlugin {
         }
 
         // Clean up
-        if (this.packetTask >= 0) {
-            SchedulerUtil.cancelTask(this, packetTask);
-            this.packetTask = -1;
+        if (this.packetTask != null) {
+            packetTask.cancel();
+            this.packetTask = null;
         }
 
         // And redirect handler too
@@ -599,6 +609,10 @@ public class ProtocolLib extends JavaPlugin {
 
     public ProtocolConfig getProtocolConfig() {
         return config;
+    }
+
+    public ProtocolScheduler getScheduler() {
+        return scheduler;
     }
 
     // Different commands
