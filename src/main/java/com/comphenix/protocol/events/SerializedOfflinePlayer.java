@@ -76,8 +76,6 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     private boolean playedBefore;
     private boolean online;
     private boolean whitelisted;
-    private long lastLogin;
-    private long lastSeen;
 
     private static final Constructor<?> proxyPlayerConstructor = setupProxyPlayerConstructor();
 
@@ -103,12 +101,6 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         this.playedBefore = offline.hasPlayedBefore();
         this.online = offline.isOnline();
         this.whitelisted = offline.isWhitelisted();
-
-        // TODO needs to be reflectively obtained
-        if (Util.isUsingFolia()) {
-            // this.lastSeen = offline.getLastSeen();
-            // this.lastLogin = offline.getLastLogin();
-        }
     }
 
     @Override
@@ -129,16 +121,6 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     @Override
     public Location getBedSpawnLocation() {
         return bedSpawnLocation;
-    }
-
-    // @Override
-    public long getLastLogin() {
-        return lastLogin;
-    }
-
-    // @Override
-    public long getLastSeen() {
-        return lastSeen;
     }
 
     // TODO do we need to implement this?
