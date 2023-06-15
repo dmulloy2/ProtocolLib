@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector;
 
+import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -10,7 +11,7 @@ import org.bukkit.plugin.Plugin;
 public class PacketFilterBuilder {
 
     private Server server;
-    private Plugin library;
+    private ProtocolLib library;
     private MinecraftVersion mcVersion;
     private ErrorReporter reporter;
     private AsyncFilterManager asyncManager;
@@ -32,7 +33,7 @@ public class PacketFilterBuilder {
      * @param library - plugin instance.
      * @return This builder, for chaining.
      */
-    public PacketFilterBuilder library(@Nonnull Plugin library) {
+    public PacketFilterBuilder library(@Nonnull ProtocolLib library) {
         this.library = library;
         return this;
     }
@@ -116,7 +117,7 @@ public class PacketFilterBuilder {
             throw new IllegalArgumentException("reporter cannot be NULL.");
         }
 
-        this.asyncManager = new AsyncFilterManager(this.reporter, this.server.getScheduler());
+        this.asyncManager = new AsyncFilterManager(this.reporter, this.library.getScheduler());
         return new PacketFilterManager(this);
     }
 }

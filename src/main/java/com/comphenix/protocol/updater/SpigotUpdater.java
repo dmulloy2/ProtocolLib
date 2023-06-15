@@ -81,7 +81,7 @@ public final class SpigotUpdater extends Updater {
             } finally {
                 // Invoke the listeners on the main thread
                 for (Runnable listener : listeners) {
-                    SchedulerUtil.execute(plugin, listener);
+                    ProtocolLibrary.getScheduler().runTask(listener);
                 }
             }
         }

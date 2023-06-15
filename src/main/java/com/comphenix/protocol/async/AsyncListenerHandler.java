@@ -31,6 +31,7 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.scheduler.Task;
 import com.comphenix.protocol.timing.TimedListenerManager;
 import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.timing.TimedTracker;
@@ -91,13 +92,13 @@ public class AsyncListenerHandler {
     private final Object stopLock = new Object();
     
     // Processing task on the main thread
-    private int syncTask = -1;
+    private Task syncTask = null;
     
     // Minecraft main thread
     private Thread mainThread;
     
     // Warn plugins that the async listener handler must be started
-    private int warningTask;
+    private Task warningTask;
     
     // Timing manager
     private TimedListenerManager timedManager = TimedListenerManager.getInstance();
@@ -121,19 +122,16 @@ public class AsyncListenerHandler {
     }
     
     private void startWarningTask() {
-        warningTask = filterManager.getScheduler().scheduleSyncDelayedTask(getPlugin(), () -> ProtocolLibrary.getErrorReporter().reportWarning(AsyncListenerHandler.this, Report.
+        warningTask = filterManager.getScheduler().scheduleSyncDelayedTask(() -> ProtocolLibrary.getErrorReporter().reportWarning(AsyncListenerHandler.this, Report.
                                                                  newBuilder(REPORT_HANDLER_NOT_STARTED).
                                                                  messageParam(listener.getPlugin(), AsyncListenerHandler.this).
                                                                  build()), 2 * TICKS_PER_SECOND);
     }
     
     private void stopWarningTask() {
-        int taskId = warningTask;
-        
-        // Ensure we have a task to cancel
-        if (warningTask >= 0) {
-            filterManager.getScheduler().cancelTask(taskId);
-            warningTask = -1;
+        if (warningTask != null) {
+            warningTask.cancel();
+            warningTask = null;
         }
     }
     
@@ -406,10 +404,10 @@ public class AsyncListenerHandler {
         final long tickDelay = 1;
         final int workerID = nextID.incrementAndGet();
         
-        if (syncTask < 0) {
+        if (syncTask == null) {
             stopWarningTask();
             
-            syncTask = filterManager.getScheduler().scheduleSyncRepeatingTask(getPlugin(), () -> {
+            syncTask = filterManager.getScheduler().scheduleSyncRepeatingTask(() -> {
                 long stopTime = System.nanoTime() + unit.convert(time, TimeUnit.NANOSECONDS);
 
                 while (!cancelled) {
@@ -435,7 +433,7 @@ public class AsyncListenerHandler {
             }, tickDelay, tickDelay);
             
             // This is very bad - force the caller to handle it
-            if (syncTask < 0)
+            if (syncTask == null)
                 throw new IllegalStateException("Cannot start synchronous task.");
             else
                 return true;
@@ -449,10 +447,9 @@ public class AsyncListenerHandler {
      * @return TRUE if we stopped any processing tasks, FALSE if it has already been stopped.
      */
     public synchronized boolean syncStop() {
-        if (syncTask > 0) {
-            filterManager.getScheduler().cancelTask(syncTask);
-            
-            syncTask = -1;
+        if (syncTask != null) {
+            syncTask.cancel();
+            syncTask = null;
             return true;
         } else {
             return false;
