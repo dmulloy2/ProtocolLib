@@ -24,8 +24,8 @@ public class FoliaScheduler implements ProtocolScheduler {
 
         this.runAtFixedRate = Accessors.getMethodAccessor(foliaScheduler.getClass(), "runAtFixedRate", Plugin.class,
                 Consumer.class, long.class, long.class);
-        this.execute = Accessors.getMethodAccessor(foliaScheduler.getClass(), "run", Plugin.class, Runnable.class);
-        this.runDelayed = Accessors.getMethodAccessor(foliaScheduler.getClass(), "runDelayed", Plugin.class, Runnable.class, long.class);
+        this.execute = Accessors.getMethodAccessor(foliaScheduler.getClass(), "run", Plugin.class, Consumer.class);
+        this.runDelayed = Accessors.getMethodAccessor(foliaScheduler.getClass(), "runDelayed", Plugin.class, Consumer.class, long.class);
 
         Class<?> taskClass = MinecraftReflection.getLibraryClass("io.papermc.paper.threadedregions.scheduler.ScheduledTask");
         this.cancel = Accessors.getMethodAccessor(taskClass, "cancel");
