@@ -15,6 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -490,8 +491,7 @@ public class NettyChannelInjector implements Injector {
     void processInboundPacket(ChannelHandlerContext ctx, Object packet, Class<?> packetClass) {
         if (this.channelListener.hasMainThreadListener(packetClass) && !this.server.isPrimaryThread()) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
-            this.server.getScheduler().runTask(
-                    this.injectionFactory.getPlugin(),
+            ProtocolLibrary.getScheduler().runTask(
                     () -> this.processInboundPacket(ctx, packet, packetClass));
             return;
         }
@@ -555,8 +555,7 @@ public class NettyChannelInjector implements Injector {
         // ensure that we are on the main thread if we need to
         if (this.channelListener.hasMainThreadListener(packet.getClass()) && !this.server.isPrimaryThread()) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
-            this.server.getScheduler().scheduleSyncDelayedTask(
-                    this.injectionFactory.getPlugin(),
+            ProtocolLibrary.getScheduler().runTask(
                     () -> this.sendServerPacket(packet, null, true));
             return null;
         }
