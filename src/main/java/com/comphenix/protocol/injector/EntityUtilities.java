@@ -221,42 +221,42 @@ class EntityUtilities {
             }
 
             return this.foliaTrackerField.get(entity);
-        } else {
-            if (this.getChunkProvider == null) {
-                Class<?> chunkProviderClass = MinecraftReflection.getChunkProviderServer();
-                this.getChunkProvider = Accessors.getMethodAccessor(FuzzyReflection.fromClass(worldServer.getClass(), false)
-                        .getMethod(FuzzyMethodContract.newBuilder().parameterCount(0).returnTypeExact(chunkProviderClass).build()));
-            }
-
-            Object chunkProvider = this.getChunkProvider.invoke(worldServer);
-
-            if (this.chunkMapField == null) {
-                Class<?> chunkMapClass = MinecraftReflection.getPlayerChunkMap();
-                this.chunkMapField = Accessors.getFieldAccessor(FuzzyReflection.fromClass(chunkProvider.getClass(), false)
-                        .getField(FuzzyFieldContract.newBuilder().typeExact(chunkMapClass).build()));
-            }
-
-            Object playerChunkMap = this.chunkMapField.get(chunkProvider);
-
-            if (this.trackedEntitiesField == null) {
-                if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-                    this.trackedEntitiesField = Accessors.getFieldAccessor(
-                            FuzzyReflection.fromClass(playerChunkMap.getClass(), true)
-                                    .getField(FuzzyFieldContract.newBuilder()
-                                            .banModifier(Modifier.STATIC)
-                                            .requirePublic()
-                                            .typeExact(MinecraftReflection.getInt2ObjectMapClass())
-                                            .build()));
-                } else {
-                    this.trackedEntitiesField = Accessors.getFieldAccessor(
-                            FuzzyReflection.fromClass(playerChunkMap.getClass(), false).getField(
-                                    FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).nameExact("trackedEntities").build()));
-                }
-            }
-
-            Map<Integer, Object> trackedEntities = (Map<Integer, Object>) this.trackedEntitiesField.get(playerChunkMap);
-            return trackedEntities.get(entityId);
         }
+        
+        if (this.getChunkProvider == null) {
+            Class<?> chunkProviderClass = MinecraftReflection.getChunkProviderServer();
+            this.getChunkProvider = Accessors.getMethodAccessor(FuzzyReflection.fromClass(worldServer.getClass(), false)
+                    .getMethod(FuzzyMethodContract.newBuilder().parameterCount(0).returnTypeExact(chunkProviderClass).build()));
+        }
+
+        Object chunkProvider = this.getChunkProvider.invoke(worldServer);
+
+        if (this.chunkMapField == null) {
+            Class<?> chunkMapClass = MinecraftReflection.getPlayerChunkMap();
+            this.chunkMapField = Accessors.getFieldAccessor(FuzzyReflection.fromClass(chunkProvider.getClass(), false)
+                    .getField(FuzzyFieldContract.newBuilder().typeExact(chunkMapClass).build()));
+        }
+
+        Object playerChunkMap = this.chunkMapField.get(chunkProvider);
+
+        if (this.trackedEntitiesField == null) {
+            if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+                this.trackedEntitiesField = Accessors.getFieldAccessor(
+                        FuzzyReflection.fromClass(playerChunkMap.getClass(), true)
+                                .getField(FuzzyFieldContract.newBuilder()
+                                        .banModifier(Modifier.STATIC)
+                                        .requirePublic()
+                                        .typeExact(MinecraftReflection.getInt2ObjectMapClass())
+                                        .build()));
+            } else {
+                this.trackedEntitiesField = Accessors.getFieldAccessor(
+                        FuzzyReflection.fromClass(playerChunkMap.getClass(), false).getField(
+                                FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).nameExact("trackedEntities").build()));
+            }
+        }
+
+        Map<Integer, Object> trackedEntities = (Map<Integer, Object>) this.trackedEntitiesField.get(playerChunkMap);
+        return trackedEntities.get(entityId);
     }
 
     private Object getEntityTrackerEntry(World world, int entityID) {
