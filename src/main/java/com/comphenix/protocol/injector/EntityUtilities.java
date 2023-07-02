@@ -222,7 +222,7 @@ class EntityUtilities {
 
             return this.foliaTrackerField.get(entity);
         }
-        
+
         if (this.getChunkProvider == null) {
             Class<?> chunkProviderClass = MinecraftReflection.getChunkProviderServer();
             this.getChunkProvider = Accessors.getMethodAccessor(FuzzyReflection.fromClass(worldServer.getClass(), false)
