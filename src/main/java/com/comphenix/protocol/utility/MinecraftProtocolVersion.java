@@ -88,7 +88,7 @@ public final class MinecraftProtocolVersion {
         map.put(new MinecraftVersion(1, 19, 4), 762);
 
         map.put(new MinecraftVersion(1, 20, 0), 763);
-        map.put(new MinecraftVersion(1, 20, 1), 764);
+        map.put(new MinecraftVersion(1, 20, 1), 763);
         return map;
     }
 
