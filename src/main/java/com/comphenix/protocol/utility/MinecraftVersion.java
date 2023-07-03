@@ -40,7 +40,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
     /**
      * Version 1.20 - the trails and tails update
      */
-    public static final MinecraftVersion TRAILS_AND_TAILS = new MinecraftVersion("1.20");
+    public static final MinecraftVersion TRAILS_AND_TAILS = new MinecraftVersion("1.20.1");
 
     /**
      * Version 1.19.4 - the rest of the feature preview
