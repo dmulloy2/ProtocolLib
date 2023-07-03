@@ -75,9 +75,31 @@ public class WrappedParticle<T> {
 
     /**
      * Gets this Particle's Bukkit/ProtocolLib data. The type of this data depends on the
-     * {@link #getParticle() Particle type}. For Block particles it will be {@link WrappedBlockData},
-     * for Item crack particles, it will be an {@link ItemStack}, and for redstone particles it will
-     * be {@link Particle.DustOptions}
+     * {@link #getParticle() Particle type}. Refer to the table below for the corresponding data types.
+     * <p>
+     * <table border="1">
+     * <caption>Particle Data Types</caption>
+     * <tr>
+     * <td><b>Particle Type</b></td>
+     * <td><b>Particle Data Type</b></td>
+     * </tr>
+     * <tr>
+     * <td>Block particles (BLOCK_CRACK, BLOCK_DUST, FALLING_DUST)</td>
+     * <td>{@link WrappedBlockData}</td>
+     * </tr>
+     * <tr>
+     * <td>Item crack particles</td>
+     * <td>{@link ItemStack}</td>
+     * </tr>
+     * <tr>
+     * <td>Redstone particles</td>
+     * <td>{@link Particle.DustOptions}</td>
+     * </tr>
+     * <tr>
+     * <td>Dust color transition particles</td>
+     * <td>{@link Particle.DustTransition}</td>
+     * </tr>
+     * </table>
      *
      * @return The particle data
      */
@@ -110,6 +132,9 @@ public class WrappedParticle<T> {
             case REDSTONE:
                 data = getRedstone(handle);
                 break;
+            case DUST_COLOR_TRANSITION:
+                data = getDustTransition(handle);
+                break;
             default:
                 break;
         }
@@ -133,7 +158,7 @@ public class WrappedParticle<T> {
 
     private static Object getRedstone(Object handle) {
         int r, g, b;
-        float alpha;
+        float size;
 
         if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
             StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
@@ -142,7 +167,7 @@ public class WrappedParticle<T> {
             r = (int) (rgb.x() * 255);
             g = (int) (rgb.y() * 255);
             b = (int) (rgb.z() * 255);
-            alpha = (float) modifier.withType(float.class).read(0);
+            size = (float) modifier.withType(float.class).read(0);
         } else if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
             if (VECTOR_3FA == null) {
                 VECTOR_3FA = MinecraftReflection.getLibraryClass("com.mojang.math.Vector3fa");
@@ -156,16 +181,67 @@ public class WrappedParticle<T> {
             r = (int) (rgbModifier.<Float>withType(float.class).read(0) * 255);
             g = (int) (rgbModifier.<Float>withType(float.class).read(1) * 255);
             b = (int) (rgbModifier.<Float>withType(float.class).read(2) * 255);
-            alpha = (float) modifier.withType(float.class).read(0);
+            size = (float) modifier.withType(float.class).read(0);
         } else {
             StructureModifier<Float> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle).withType(float.class);
             r = (int) (modifier.read(0) * 255);
             g = (int) (modifier.read(1) * 255);
             b = (int) (modifier.read(2) * 255);
-            alpha = modifier.read(3);
+            size = modifier.read(3);
         }
 
-        return new Particle.DustOptions(Color.fromRGB(r, g, b), alpha);
+        return new Particle.DustOptions(Color.fromRGB(r, g, b), size);
+    }
+
+    private static Object getDustTransition(Object handle) {
+        int fromR, fromG, fromB, toR, toG, toB;
+        float size;
+
+        if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+            StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+            org.joml.Vector3f toRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(0);
+            org.joml.Vector3f fromRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(1);
+            size = (float) modifier.withType(float.class).read(0);
+
+            fromR = (int) (fromRGB.x() * 255);
+            fromG = (int) (fromRGB.y() * 255);
+            fromB = (int) (fromRGB.z() * 255);
+
+            toR = (int) (toRGB.x() * 255);
+            toG = (int) (toRGB.y() * 255);
+            toB = (int) (toRGB.z() * 255);
+        } else if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+            if (VECTOR_3FA == null) {
+                VECTOR_3FA = MinecraftReflection.getLibraryClass("com.mojang.math.Vector3fa");
+            }
+
+            StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
+
+            Object toRGB = modifier.withType(VECTOR_3FA).read(0);
+            Object fromRGB = modifier.withType(VECTOR_3FA).read(1);
+            size = (float) modifier.withType(float.class).read(0);
+            StructureModifier<Object> rgbModifier = new StructureModifier<>(VECTOR_3FA).withTarget(fromRGB);
+            StructureModifier<Object> rgbModifier2 = new StructureModifier<>(VECTOR_3FA).withTarget(toRGB);
+
+            fromR = (int) (rgbModifier.<Float>withType(float.class).read(0) * 255);
+            fromG = (int) (rgbModifier.<Float>withType(float.class).read(1) * 255);
+            fromB = (int) (rgbModifier.<Float>withType(float.class).read(2) * 255);
+
+            toR = (int) (rgbModifier2.<Float>withType(float.class).read(0) * 255);
+            toG = (int) (rgbModifier2.<Float>withType(float.class).read(1) * 255);
+            toB = (int) (rgbModifier2.<Float>withType(float.class).read(2) * 255);
+        } else {
+            StructureModifier<Float> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle).withType(float.class);
+            toR = (int) (modifier.read(0) * 255);
+            toG = (int) (modifier.read(1) * 255);
+            toB = (int) (modifier.read(2) * 255);
+            size = modifier.read(3);
+            fromR = (int) (modifier.read(4) * 255);
+            fromG = (int) (modifier.read(5) * 255);
+            fromB = (int) (modifier.read(6) * 255);
+        }
+
+        return new Particle.DustTransition(Color.fromRGB(fromR, fromG, fromB), Color.fromRGB(toR, toG, toB), size);
     }
 
     public static <T> WrappedParticle<T> create(Particle particle, T data) {
