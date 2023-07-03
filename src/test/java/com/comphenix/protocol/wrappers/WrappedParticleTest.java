@@ -10,6 +10,7 @@ import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Particle.DustOptions;
+import org.bukkit.Particle.DustTransition;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,23 @@ public class WrappedParticleTest {
         DustOptions beforeDust = (DustOptions) before.getData();
         DustOptions afterDust = (DustOptions) after.getData();
         assertEquals(beforeDust.getColor(), afterDust.getColor());
+        assertEquals(beforeDust.getSize(), afterDust.getSize(), 0);
+    }
+
+    @Test
+    public void testDustColorTransition() {
+        PacketContainer packet = new PacketContainer(PacketType.Play.Server.WORLD_PARTICLES);
+        WrappedParticle before = WrappedParticle.create(Particle.DUST_COLOR_TRANSITION, new DustTransition(Color.BLUE, Color.RED, 1));
+        packet.getNewParticles().write(0, before);
+
+        WrappedParticle after = packet.getNewParticles().read(0);
+        assertEquals(before.getParticle(), after.getParticle());
+
+        Particle.DustTransition beforeDust = (Particle.DustTransition) before.getData();
+        Particle.DustTransition afterDust = (Particle.DustTransition) after.getData();
+
+        assertEquals(beforeDust.getColor(), afterDust.getColor());
+        assertEquals(beforeDust.getToColor(), afterDust.getToColor());
         assertEquals(beforeDust.getSize(), afterDust.getSize(), 0);
     }
 }

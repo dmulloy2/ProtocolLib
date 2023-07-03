@@ -27,6 +27,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
 
 import java.lang.reflect.Field;
@@ -34,7 +35,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,6 +61,7 @@ class EntityUtilities {
     private FieldAccessor entityTrackerField;
     private FieldAccessor trackedPlayersField;
     private FieldAccessor trackedEntitiesField;
+    private FieldAccessor foliaTrackerField;
 
     private MethodAccessor getEntity;
     private MethodAccessor getChunkProvider;
@@ -203,6 +204,25 @@ class EntityUtilities {
 
     @SuppressWarnings("unchecked")
     private Object getNewEntityTracker(Object worldServer, int entityId) {
+        if (Util.isUsingFolia()) {
+            if (this.getEntity == null) {
+                Method entityGetter = FuzzyReflection.fromObject(worldServer).getMethodByReturnTypeAndParameters(
+                        "getEntity",
+                        MinecraftReflection.getEntityClass(),
+                        int.class);
+                this.getEntity = Accessors.getMethodAccessor(entityGetter);
+            }
+
+            Object entity = this.getEntity.invoke(worldServer, entityId);
+
+            if (this.foliaTrackerField == null) {
+                this.foliaTrackerField = Accessors.getFieldAccessor(FuzzyReflection.fromClass(entity.getClass(), false)
+                        .getField(FuzzyFieldContract.newBuilder().typeExact(MinecraftReflection.getEntityTrackerClass()).build()));
+            }
+
+            return this.foliaTrackerField.get(entity);
+        }
+
         if (this.getChunkProvider == null) {
             Class<?> chunkProviderClass = MinecraftReflection.getChunkProviderServer();
             this.getChunkProvider = Accessors.getMethodAccessor(FuzzyReflection.fromClass(worldServer.getClass(), false)
