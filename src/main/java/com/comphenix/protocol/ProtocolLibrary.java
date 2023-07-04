@@ -37,12 +37,12 @@ public class ProtocolLibrary {
     /**
      * The maximum version ProtocolLib has been tested with.
      */
-    public static final String MAXIMUM_MINECRAFT_VERSION = MinecraftVersion.LATEST.getVersion();
+    public static final String MAXIMUM_MINECRAFT_VERSION = "1.20.1";
 
     /**
-     * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.19.2) was released.
+     * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.20.1) was released.
      */
-    public static final String MINECRAFT_LAST_RELEASE_DATE = "2022-08-05";
+    public static final String MINECRAFT_LAST_RELEASE_DATE = "2023-06-12";
 
     /**
      * Plugins that are currently incompatible with ProtocolLib.
