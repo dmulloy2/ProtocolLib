@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import com.comphenix.protocol.PacketTypeLookup.ClassLookup;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.scheduler.UniversalRunnable;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Preconditions;
@@ -19,8 +20,6 @@ import com.google.common.collect.Iterables;
 
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitRunnable;
-
 /**
  * Represents the type of a packet in a specific protocol.
  * <p>
@@ -1022,7 +1021,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
      * @param name - the name of the packet.
      */
     public static void scheduleRegister(final PacketType type, final String name) {
-        BukkitRunnable runnable = new BukkitRunnable() {
+        UniversalRunnable runnable = new UniversalRunnable() {
             @Override
             public void run() {
                 PacketTypeEnum objEnum;
