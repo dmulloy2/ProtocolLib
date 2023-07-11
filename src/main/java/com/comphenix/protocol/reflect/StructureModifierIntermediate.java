@@ -16,41 +16,42 @@
  */
 package com.comphenix.protocol.reflect;
 
-import java.util.Iterator;
-
 /**
- * Provides iterator access to a {@link StructureModifier}
+ * Created by {@link StructureModifierIterator} iterator access to a {@link StructureModifier}
  *
  * @param <T> Type of the fields in the {@link StructureModifier}
  * @author BradBot_1
  */
-class StructureModifierIterator<T> implements Iterator<StructureModifierIntermediate<T>> {
+public class StructureModifierIntermediate<T> {
     
-    private final StructureModifier<T> structure;
-    private int index = 0;
+    protected final StructureModifier<T> structure;
+    protected final int index;
 
     /**
      * @param structure - {@link StructureModifier} to operate on.
+     * @param index - index to access.
+     * 
+     * @apiNote Must be public, else extending it would not work properly.
      */
-    StructureModifierIterator(final StructureModifier<T> structure) {
+    public StructureModifierIntermediate(final StructureModifier<T> structure, final int index) {
         this.structure = structure;
+        this.index = index;
     }
 
     /**
-	 * {@inheritDoc}
-	 */
-    @Override
-    public boolean hasNext() {
-        return this.index < this.structure.size();
+     * @return Object at index.
+     */
+    public T get() {
+        return this.structure.read(this.index);
     }
 
     /**
-	 * {@inheritDoc}
-	 */
-    @Override
-    public StructureModifierIntermediate<T> next() {
-        if (!this.hasNext()) return null;
-        return new StructureModifierIntermediate<T>(this.structure, this.index++);
+     * Overwrites the existing value at the index in the structure.
+     * 
+     * @param toWrite - Object to overwrite the existing one.
+     */
+    public void set(final T toWrite) {
+        this.structure.write(index, toWrite);
     }
 
 }

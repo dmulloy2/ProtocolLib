@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  * @param <T> Type of the fields to retrieve.
  * @author Kristian
  */
-public class StructureModifier<T> implements Iterable<T> {
+public class StructureModifier<T> implements Iterable<StructureModifierIntermediate<T>> {
 
     // Instance generator we will use
     private static final DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
@@ -673,7 +673,7 @@ public class StructureModifier<T> implements Iterable<T> {
 	 * {@inheritDoc}
 	 */
     @Override
-    public Iterator<T> iterator() {
+    public Iterator<StructureModifierIntermediate<T>> iterator() {
         return new StructureModifierIterator<T>(this);
     }
 }
