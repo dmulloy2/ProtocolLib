@@ -54,4 +54,11 @@ public class StructureModifierIntermediate<T> {
         this.structure.write(index, toWrite);
     }
 
+    /**
+     * @return The internal structure modifier
+     */
+    public StructureModifier<T> getInternalStructureModifier() {
+        return this.structure;
+    }
+
 }
