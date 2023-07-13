@@ -42,8 +42,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Spliterator;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
@@ -675,5 +677,13 @@ public class StructureModifier<T> implements Iterable<StructureModifierIntermedi
     @Override
     public Iterator<StructureModifierIntermediate<T>> iterator() {
         return new StructureModifierIterator<T>(this);
+    }
+
+    /**
+	 * {@inheritDoc}
+	 */
+    @Override
+    public Spliterator<StructureModifierIntermediate<T>> spliterator() {
+        return new StructureModifierSpliterator<T>(this);
     }
 }
