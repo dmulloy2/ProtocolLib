@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -684,6 +685,6 @@ public class StructureModifier<T> implements Iterable<StructureModifierIntermedi
 	 */
     @Override
     public Spliterator<StructureModifierIntermediate<T>> spliterator() {
-        return new StructureModifierSpliterator<T>(this);
+        return Spliterators.spliterator(this.iterator(), this.size(), Spliterator.DISTINCT | Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.SIZED);
     }
 }
