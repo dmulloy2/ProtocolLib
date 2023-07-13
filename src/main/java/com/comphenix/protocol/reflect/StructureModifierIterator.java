@@ -17,6 +17,7 @@
 package com.comphenix.protocol.reflect;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Provides iterator access to a {@link StructureModifier}
@@ -49,7 +50,7 @@ class StructureModifierIterator<T> implements Iterator<StructureModifierIntermed
 	 */
     @Override
     public StructureModifierIntermediate<T> next() {
-        if (!this.hasNext()) return null;
+        if (!this.hasNext()) throw new NoSuchElementException();
         return new StructureModifierIntermediate<T>(this.structure, this.index++);
     }
 
