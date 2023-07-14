@@ -17,13 +17,13 @@
 
 package com.comphenix.protocol.async;
 
+import com.google.common.base.Preconditions;
+
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Queue;
-
-import com.google.common.base.Preconditions;
 
 /**
  * Synchronization views copied from Google Guava.
@@ -43,8 +43,7 @@ class Synchronization {
      */
     public static <E> Queue<E> queue(Queue<E> queue, @Nullable Object mutex) {
         return (queue instanceof SynchronizedQueue) ? 
-                queue : 
-                    new SynchronizedQueue<E>(queue, mutex);
+                queue : new SynchronizedQueue<>(queue, mutex);
     }
     
     private static class SynchronizedObject implements Serializable {
