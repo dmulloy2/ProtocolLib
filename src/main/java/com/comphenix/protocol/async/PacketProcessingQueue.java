@@ -128,39 +128,38 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
             PacketEventHolder holder = processingQueue.poll();
             
             // Any packet queued?
-            if (holder != null) {
-                PacketEvent packet = holder.getEvent();
-                AsyncMarker marker = packet.getAsyncMarker();
-                Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketType());
-                
-                marker.incrementProcessingDelay();
-                
-                // Yes, removing the marker will cause the chain to stop
-                if (list != null) {
-                    Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
-                    
-                    if (iterator.hasNext()) {
-                        marker.setListenerTraversal(iterator);
-                        iterator.next().getListener().enqueuePacket(packet);
-                        continue;
-                    }
-                }
-                
-                // The packet has no further listeners. Just send it.
-                if (marker.decrementProcessingDelay() == 0) {
-                    PacketSendingQueue sendingQueue = sendingHandler.getSendingQueue(packet, false);
-                    
-                    // In case the player has logged out
-                    if (sendingQueue != null)
-                        sendingQueue.signalPacketUpdate(packet, onMainThread);
-                }
-                signalProcessingDone();
-                
-            } else {
+            if (holder == null) {
                 // No more queued packets.
                 signalProcessingDone();
                 return;
             }
+
+            PacketEvent packet = holder.getEvent();
+            AsyncMarker marker = packet.getAsyncMarker();
+            Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketType());
+
+            marker.incrementProcessingDelay();
+
+            // Yes, removing the marker will cause the chain to stop
+            if (list != null) {
+                Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
+
+                if (iterator.hasNext()) {
+                    marker.setListenerTraversal(iterator);
+                    iterator.next().getListener().enqueuePacket(packet);
+                    continue;
+                }
+            }
+
+            // The packet has no further listeners. Just send it.
+            if (marker.decrementProcessingDelay() == 0) {
+                PacketSendingQueue sendingQueue = sendingHandler.getSendingQueue(packet, false);
+
+                // In case the player has logged out
+                if (sendingQueue != null)
+                    sendingQueue.signalPacketUpdate(packet, onMainThread);
+            }
+            signalProcessingDone();
         }
     }
     
