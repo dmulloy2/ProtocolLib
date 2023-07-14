@@ -731,7 +731,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
     private boolean forceAsync;
 
     private boolean dynamic;
-    private int hashCode;
+    private transient int hashCode;
 
     /**
      * Retrieve the current packet/legacy lookup.
