@@ -277,10 +277,10 @@ public class ProtocolLib extends JavaPlugin {
         // Broadcast information to every user too
         this.redirectHandler = new Handler() {
             @Override
-            public void publish(LogRecord record) {
+            public void publish(LogRecord logRecord) {
                 // Only display warnings and above
-                if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
-                    ProtocolLib.this.commandPacket.broadcastMessageSilently(record.getMessage(), permission);
+                if (logRecord.getLevel().intValue() >= Level.WARNING.intValue()) {
+                    ProtocolLib.this.commandPacket.broadcastMessageSilently(logRecord.getMessage(), permission);
                 }
             }
 
