@@ -253,36 +253,33 @@ public class BukkitUnwrapper implements Unwrapper {
      */
     private Unwrapper getFieldUnwrapper(final Class<?> type) {
         // See if we succeeded
-        FieldAccessor accessor = Accessors.getFieldAccessorOrNull(type, "handle", null);
-        if (accessor != null) {
-            Unwrapper fieldUnwrapper = new Unwrapper() {
-                @Override
-                public Object unwrapItem(Object wrappedObject) {
-                    try {
-                        if (wrappedObject instanceof Class) {
-                            return checkClass((Class<?>) wrappedObject, type, accessor.getField().getType());
-                        }
-
-                        return accessor.get(wrappedObject);
-                    } catch (IllegalStateException e) {
-                        reporter.reportDetailed(this,
-                                Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e)
-                                        .callerParam(wrappedObject, accessor.getField())
-                        );
-                        return null;
-                    }
-                }
-            };
-
-            UNWRAPPER_CACHE.put(type, fieldUnwrapper);
-            return fieldUnwrapper;
-
-        } else {
+        final FieldAccessor accessor = Accessors.getFieldAccessorOrNull(type, "handle", null);
+        if (accessor == null) {
             // Inform about this too
-            reporter.reportDetailed(this,
-                    Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(type)
-            );
+            reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(type));
             return null;
         }
+
+        Unwrapper fieldUnwrapper = new Unwrapper() {
+            @Override
+            public Object unwrapItem(Object wrappedObject) {
+                try {
+                    if (wrappedObject instanceof Class) {
+                        return checkClass((Class<?>) wrappedObject, type, accessor.getField().getType());
+                    }
+
+                    return accessor.get(wrappedObject);
+                } catch (IllegalStateException e) {
+                    reporter.reportDetailed(this,
+                            Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e)
+                                    .callerParam(wrappedObject, accessor.getField())
+                    );
+                    return null;
+                }
+            }
+        };
+
+        UNWRAPPER_CACHE.put(type, fieldUnwrapper);
+        return fieldUnwrapper;
     }
 }
