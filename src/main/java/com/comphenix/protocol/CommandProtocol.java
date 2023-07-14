@@ -51,9 +51,9 @@ class CommandProtocol extends CommandBase {
      */
     public static final String NAME = "protocol";
     
-    private Plugin plugin;
-    private Updater updater;
-    private ProtocolConfig config;
+    private final Plugin plugin;
+    private final Updater updater;
+    private final ProtocolConfig config;
 
     public CommandProtocol(ErrorReporter reporter, Plugin plugin, Updater updater, ProtocolConfig config) {
         super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 1);
