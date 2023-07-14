@@ -29,6 +29,10 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.WrappedIntHashMap;
+import org.apache.commons.lang.Validate;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -38,11 +42,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.lang.Validate;
-import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
+import java.util.stream.Collectors;
 
 /**
  * Used to perform certain operations on entities.
@@ -287,9 +287,9 @@ class EntityUtilities {
     }
 
     private List<Object> getPlayerConnections(List<Object> nmsPlayers) {
-        List<Object> connections = new ArrayList<>(nmsPlayers.size());
-        nmsPlayers.forEach(nmsPlayer -> connections.add(MinecraftFields.getPlayerConnection(nmsPlayer)));
-        return connections;
+        return nmsPlayers.stream()
+                .map(MinecraftFields::getPlayerConnection)
+                .collect(Collectors.toList());
     }
 
     private List<Object> unwrapBukkit(List<Player> players) {
