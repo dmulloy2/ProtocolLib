@@ -97,7 +97,7 @@ final class RangeParser {
 
         // Set every ID
         for (Range<Integer> range : ranges) {
-            for (int id : ContiguousSet.create(range, DiscreteDomain.integers())) {
+            for (int id : ContiguousSet.create(range, DiscreteDomain.integers()).headSet(maximum + 1)) {
                 bitSet.set(id);
             }
         }
