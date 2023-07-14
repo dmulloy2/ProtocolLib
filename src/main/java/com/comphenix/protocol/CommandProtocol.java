@@ -16,6 +16,19 @@
  */
 package com.comphenix.protocol;
 
+import com.comphenix.protocol.error.DetailedErrorReporter;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.timing.TimedListenerManager;
+import com.comphenix.protocol.timing.TimingReportGenerator;
+import com.comphenix.protocol.updater.Updater;
+import com.comphenix.protocol.updater.Updater.UpdateType;
+import com.comphenix.protocol.utility.Closer;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,20 +39,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-
-import com.comphenix.protocol.error.DetailedErrorReporter;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimingReportGenerator;
-import com.comphenix.protocol.updater.Updater;
-import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.Closer;
 
 /**
  * Handles the "protocol" administration command.
@@ -65,27 +64,34 @@ class CommandProtocol extends CommandBase {
     
     @Override
     protected boolean handleCommand(CommandSender sender, String[] args) {
-        String subCommand = args[0];
-
         // Only return TRUE if we executed the correct command
-        if (subCommand.equalsIgnoreCase("config") || subCommand.equalsIgnoreCase("reload")) {
-            reloadConfiguration(sender);
-        } else if (subCommand.equalsIgnoreCase("check")) {
-            checkVersion(sender, true);
-        } else if (subCommand.equalsIgnoreCase("update")) {
-            updateVersion(sender, true);
-        } else if (subCommand.equalsIgnoreCase("timings")) {
-            toggleTimings(sender, args);
-        } else if (subCommand.equalsIgnoreCase("listeners")) {
-            printListeners(sender);
-        } else if (subCommand.equalsIgnoreCase("version")) {
-            printVersion(sender);
-        } else if (subCommand.equalsIgnoreCase("dump")) {
-            dump(sender);
-        } else {
-            return false;
+        switch (args[0].toLowerCase())
+        {
+            case "config":
+            case "reload":
+                reloadConfiguration(sender);
+                break;
+            case "check":
+                checkVersion(sender, true);
+                break;
+            case "update":
+                updateVersion(sender, true);
+                break;
+            case "timings":
+                toggleTimings(sender, args);
+                break;
+            case "listeners":
+                printListeners(sender);
+                break;
+            case "version":
+                printVersion(sender);
+                break;
+            case "dump":
+                dump(sender);
+                break;
+            default:
+                return false;
         }
-
         return true;
     }
     
