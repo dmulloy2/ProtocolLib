@@ -56,7 +56,7 @@ public class ProtocolConfig {
     // Defaults
     private static final long DEFAULT_UPDATER_DELAY = 43200;
 
-    private Plugin plugin;
+    private final Plugin plugin;
     private Configuration config;
     private boolean loadingSections;
 
@@ -145,7 +145,7 @@ public class ProtocolConfig {
     /**
      * Load data sections.
      *
-     * @param copyDefaults - whether or not to copy configuration defaults.
+     * @param copyDefaults - whether to copy configuration defaults.
      */
     private void loadSections(boolean copyDefaults) {
         if (config != null) {
@@ -231,7 +231,7 @@ public class ProtocolConfig {
     }
 
     /**
-     * Retrieve whether or not ProtocolLib should determine if a new version has been released.
+     * Retrieve whether ProtocolLib should determine if a new version has been released.
      *
      * @return TRUE if it should do this automatically, FALSE otherwise.
      */
@@ -240,7 +240,7 @@ public class ProtocolConfig {
     }
 
     /**
-     * Retrieve whether or not ProtocolLib should automatically download the new version.
+     * Retrieve whether ProtocolLib should automatically download the new version.
      *
      * @return TRUE if it should, FALSE otherwise.
      */
@@ -249,7 +249,7 @@ public class ProtocolConfig {
     }
 
     /**
-     * Determine whether or not debug mode is enabled.
+     * Determine whether debug mode is enabled.
      * <p>
      * This grants access to the filter command.
      *
@@ -260,7 +260,7 @@ public class ProtocolConfig {
     }
 
     /**
-     * Set whether or not debug mode is enabled.
+     * Set whether debug mode is enabled.
      *
      * @param value - TRUE if it is enabled, FALSE otherwise.
      */
