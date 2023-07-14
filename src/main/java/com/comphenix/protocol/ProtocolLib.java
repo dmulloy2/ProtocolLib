@@ -197,7 +197,7 @@ public class ProtocolLib extends JavaPlugin {
      */
     private void initializeCommands() {
         // Initialize command handlers
-        String commandName = "";
+        String commandName = "?";
         try {
             commandName = "PROTOCOL";
             this.commandProtocol = new CommandProtocol(reporter, this, this.updater, config);
