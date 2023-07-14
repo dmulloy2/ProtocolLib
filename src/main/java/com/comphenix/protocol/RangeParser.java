@@ -21,15 +21,11 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 /**
  * Used to parse ranges in CommandPacket.
- * 
+ *
  * @author Kristian
  */
 final class RangeParser {
@@ -44,7 +40,7 @@ final class RangeParser {
     public static List<Range<Integer>> getRanges(String text, Range<Integer> legalRange) {
         return getRanges(new ArrayDeque<>(Collections.singletonList(text)), legalRange);
     }
-    
+
     /**
      * Parse ranges from an array of elements.
      * @param input the input to parse the ranges from
@@ -54,12 +50,12 @@ final class RangeParser {
     public static List<Range<Integer>> getRanges(Deque<String> input, Range<Integer> legalRange) {
         List<String> tokens = tokenizeInput(input);
         List<Range<Integer>> ranges = new ArrayList<>();
-        
+
         for (int i = 0; i < tokens.size(); i++) {
             Range<Integer> range;
             String current = tokens.get(i);
             String next = i + 1 < tokens.size() ? tokens.get(i + 1) : null;
-            
+
             // Yoda equality is done for null-safety
             if ("-".equals(current)) {
                 throw new IllegalArgumentException("A hyphen must appear between two numbers.");
@@ -70,25 +66,25 @@ final class RangeParser {
                 // This is a proper range
                 range = Range.closed(Integer.parseInt(current), Integer.parseInt(tokens.get(i + 2)));
                 ranges.add(range);
-                
+
                 // Skip the two next tokens
                 i += 2;
-                
+
             } else {
                 // Just a single number
                 range = Range.singleton(Integer.parseInt(current));
                 ranges.add(range);
             }
-            
+
             // Validate ranges
             if (!legalRange.encloses(range)) {
                 throw new IllegalArgumentException(range + " is not in the range " + range.toString());
             }
         }
-        
+
         return simplify(ranges, legalRange.upperEndpoint());
     }
-    
+
     /**
      * Simplify a list of ranges by assuming a maximum value.
      * @param ranges - the list of ranges to simplify.
@@ -96,45 +92,39 @@ final class RangeParser {
      * @return A simplified list of ranges.
      */
     private static List<Range<Integer>> simplify(List<Range<Integer>> ranges, int maximum) {
-        List<Range<Integer>> result = new ArrayList<>();
-        boolean[] set = new boolean[maximum + 1];
-        int start = -1;
-        
+        final List<Range<Integer>> result = new ArrayList<>();
+        final BitSet bitSet = new BitSet(maximum + 1);
+
         // Set every ID
         for (Range<Integer> range : ranges) {
             for (int id : ContiguousSet.create(range, DiscreteDomain.integers())) {
-                set[id] = true;
+                bitSet.set(id);
             }
         }
-        
-        // Generate ranges from this set
-        for (int i = 0; i <= set.length; i++) {
-            if (i < set.length && set[i]) {
-                if (start < 0) {
-                    start = i;
-                }
-            } else {
-                if (start >= 0) {
-                    result.add(Range.closed(start, i - 1));
-                    start = -1;
-                }
-            }
+
+        int start = 0;
+        int end = 0;
+        while (start >= 0) {
+            start = bitSet.nextSetBit(end);
+            end = bitSet.nextClearBit(start);
+
+            result.add(Range.closed(start, end));
         }
-        
+
         return result;
     }
-    
+
     private static List<String> tokenizeInput(Deque<String> input) {
         List<String> tokens = new ArrayList<>();
-        
+
         // Tokenize the input
         while (!input.isEmpty()) {
             StringBuilder number = new StringBuilder();
             String text = input.peek();
-            
+
             for (int j = 0; j < text.length(); j++) {
                 char current = text.charAt(j);
-                
+
                 if (Character.isDigit(current)) {
                     number.append(current);
                 } else if (Character.isWhitespace(current)) {
@@ -145,20 +135,20 @@ final class RangeParser {
                         tokens.add(number.toString());
                         number.setLength(0);
                     }
-                    
+
                     tokens.add(Character.toString(current));
                 } else {
                     // We're no longer dealing with integers - quit
                     return tokens;
                 }
             }
-            
+
             // Add the number token, if it hasn't already
             if (number.length() > 0)
                 tokens.add(number.toString());
             input.poll();
         }
-        
+
         return tokens;
     }
 }
