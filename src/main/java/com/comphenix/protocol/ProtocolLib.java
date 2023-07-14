@@ -31,6 +31,7 @@ import com.comphenix.protocol.utility.ChatExtensions;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
@@ -41,7 +42,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
@@ -225,17 +225,17 @@ public class ProtocolLib extends JavaPlugin {
     private ErrorReporter getFilteredReporter(ErrorReporter reporter) {
         return new DelegatedErrorReporter(reporter) {
             private int lastModCount = -1;
-            private Set<String> reports = new HashSet<>();
+            private Set<String> reports;
 
             @Override
             protected Report filterReport(Object sender, Report report, boolean detailed) {
                 try {
-                    String canonicalName = ReportType.getReportName(sender, report.getType());
-                    String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
+                    final String canonicalName = ReportType.getReportName(sender, report.getType());
+                    final String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
 
                     if (config != null && config.getModificationCount() != this.lastModCount) {
                         // Update our cached set again
-                        this.reports = new HashSet<>(config.getSuppressedReports());
+                        this.reports = ImmutableSet.copyOf(config.getSuppressedReports());
                         this.lastModCount = config.getModificationCount();
                     }
 
