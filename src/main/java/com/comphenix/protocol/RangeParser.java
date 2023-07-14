@@ -108,7 +108,7 @@ final class RangeParser {
             start = bitSet.nextSetBit(end);
             end = bitSet.nextClearBit(start);
 
-            result.add(Range.closed(start, end));
+            result.add(Range.closed(start, end - 1));
         }
 
         return result;
