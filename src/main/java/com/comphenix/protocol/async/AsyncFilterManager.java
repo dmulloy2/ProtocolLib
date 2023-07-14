@@ -17,12 +17,6 @@
 
 package com.comphenix.protocol.async;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.PacketType;
@@ -37,9 +31,14 @@ import com.comphenix.protocol.scheduler.ProtocolScheduler;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents a filter manager for asynchronous packets.
@@ -163,7 +162,7 @@ public class AsyncFilterManager implements AsynchronousManager {
      * If you already have a synchronous event, call this method with autoInject set to FALSE.
      * 
      * @param listener - the packet listener that will receive these asynchronous events.
-     * @param autoInject - whether or not to automatically create the corresponding synchronous listener,
+     * @param autoInject - whether to automatically create the corresponding synchronous listener,
      * @return An asynchronous handler.
      */
     public AsyncListenerHandler registerAsyncHandler(PacketListener listener, boolean autoInject) {
@@ -460,7 +459,7 @@ public class AsyncFilterManager implements AsynchronousManager {
     /**
      * Send any due packets, or clean up packets that have expired.
      * @param tickCounter Tick counter
-     * @param onMainThread Whether or not to execute on the main thread
+     * @param onMainThread Whether to execute on the main thread
      */
     public void sendProcessedPackets(int tickCounter, boolean onMainThread) {
         // The server queue is unlikely to need checking that often

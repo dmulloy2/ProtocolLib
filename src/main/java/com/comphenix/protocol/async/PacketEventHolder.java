@@ -29,7 +29,7 @@ import com.google.common.primitives.Longs;
  */
 class PacketEventHolder implements Comparable<PacketEventHolder> {
 
-    private PacketEvent event;
+    private final PacketEvent event;
     private long sendingIndex = 0;
     
     /**

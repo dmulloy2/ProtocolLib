@@ -32,15 +32,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,7 +68,7 @@ class CommandPacket extends CommandBase {
     private final PacketTypeParser typeParser = new PacketTypeParser();
     
     // Paged message
-    private final Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<CommandSender, List<String>>();
+    private final Map<CommandSender, List<String>> pagedMessage = new WeakHashMap<>();
     
     // Current registered packet types
     private final PacketTypeSet packetTypes = new PacketTypeSet();
