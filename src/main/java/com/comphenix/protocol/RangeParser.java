@@ -84,7 +84,7 @@ final class RangeParser {
     }
 
     /**
-     * Simplify a list of ranges by assuming that no range exceeds a certain maximum value.
+     * Simplify a list of closed ranges by assuming that no range exceeds a certain maximum value.
      * @param ranges - the list of ranges to simplify.
      * @param maximum - the maximum value (minimum value is always 0).
      * @return A simplified list of ranges.
