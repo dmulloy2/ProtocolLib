@@ -23,10 +23,11 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Represents a map that wraps another map by transforming the entries going in and out.
- * 
+ *
  * @author Kristian
  *
  * @param <VInner> - type of the value in the entries in the inner invisible map.
@@ -34,14 +35,14 @@ import java.util.Set;
  */
 public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverted<VInner, VOuter> implements Map<Key, VOuter> {
     // Inner map
-    private Map<Key, VInner> inner;
+    private final Map<Key, VInner> inner;
 
     // Inner conversion
     private final BiFunction<Key, VOuter, VInner> innerConverter = this::toInner;
-    
+
     // Outer conversion
     private final BiFunction<Key, VInner, VOuter> outerConverter = this::toOuter;
-    
+
     public ConvertedMap(Map<Key, VInner> inner) {
         if (inner == null)
             throw new IllegalArgumentException("Inner map cannot be NULL.");
@@ -78,7 +79,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
     protected VOuter toOuter(Key key, VInner inner) {
         return toOuter(inner);
     }
-    
+
     /**
      * Convert a value from the outer map to the internal inner map.
      * @param key - unused value.
@@ -88,7 +89,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
     protected VInner toInner(Key key, VOuter outer) {
         return toInner(outer);
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public VOuter get(Object key) {
@@ -165,7 +166,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
             sb.append(", ");
         }
     }
-    
+
     /**
      * Convert a collection of entries.
      * @param entries - the collection of entries.
@@ -177,7 +178,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
             final Collection<Entry<Key, VInner>> entries,
             final BiFunction<Key, VOuter, VInner> innerFunction,
             final BiFunction<Key, VInner, VOuter> outerFunction) {
-        
+
         return new ConvertedSet<Entry<Key,VInner>, Entry<Key,VOuter>>(entries) {
             @Override
             protected Entry<Key, VInner> toInner(final Entry<Key, VOuter> outer) {
@@ -196,14 +197,14 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
                     public VInner setValue(VInner value) {
                         return innerFunction.apply(getKey(), outer.setValue(outerFunction.apply(getKey(), value)));
                     }
-                    
+
                     @Override
                     public String toString() {
                         return String.format("\"%s\": %s", getKey(), getValue());
                     }
                 };
             }
-            
+
             @Override
             protected Entry<Key, VOuter> toOuter(final Entry<Key, VInner> inner) {
                 return new Entry<Key, VOuter>() {
@@ -222,7 +223,7 @@ public abstract class ConvertedMap<Key, VInner, VOuter> extends AbstractConverte
                         final VInner converted = innerFunction.apply(getKey(), value);
                         return outerFunction.apply(getKey(), inner.setValue(converted));
                     }
-                    
+
                     @Override
                     public String toString() {
                         return String.format("\"%s\": %s", getKey(), getValue());
