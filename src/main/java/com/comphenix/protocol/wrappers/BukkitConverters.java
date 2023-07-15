@@ -16,29 +16,11 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.Either.Left;
-import com.comphenix.protocol.wrappers.Either.Right;
-import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
@@ -54,21 +36,18 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.Either.Left;
+import com.comphenix.protocol.wrappers.Either.Right;
 import com.comphenix.protocol.wrappers.EnumWrappers.Dimension;
 import com.comphenix.protocol.wrappers.EnumWrappers.FauxEnumConverter;
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
+import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -78,6 +57,14 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.comphenix.protocol.utility.MinecraftReflection.getCraftBukkitClass;
 import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
@@ -1458,7 +1445,7 @@ public class BukkitConverters {
         THE_NETHER_IMPL(-1),
         THE_END_IMPL(1);
 
-        int id;
+        final int id;
         DimensionImpl(int id) {
             this.id = id;
         }
