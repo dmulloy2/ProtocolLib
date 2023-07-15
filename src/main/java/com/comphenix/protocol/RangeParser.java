@@ -17,8 +17,6 @@
 
 package com.comphenix.protocol;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 
 import java.util.*;
@@ -86,26 +84,26 @@ final class RangeParser {
     }
 
     /**
-     * Simplify a list of ranges by assuming a maximum value.
+     * Simplify a list of ranges by assuming that no range exceeds a certain maximum value.
      * @param ranges - the list of ranges to simplify.
      * @param maximum - the maximum value (minimum value is always 0).
      * @return A simplified list of ranges.
      */
     private static List<Range<Integer>> simplify(List<Range<Integer>> ranges, int maximum) {
         final List<Range<Integer>> result = new ArrayList<>();
+        // + 1 to make sure we always have one bit in the end that is not set.
         final BitSet bitSet = new BitSet(maximum + 1);
 
         // Set every ID
         for (Range<Integer> range : ranges) {
-            for (int id : ContiguousSet.create(range, DiscreteDomain.integers()).headSet(maximum + 1)) {
-                bitSet.set(id);
-            }
+            bitSet.set(range.lowerEndpoint(), range.upperEndpoint() + 1);
         }
 
         int start = 0;
         int end = 0;
-        while (start >= 0) {
+        while (true) {
             start = bitSet.nextSetBit(end);
+            if(start == -1) break;
             end = bitSet.nextClearBit(start);
 
             result.add(Range.closed(start, end - 1));
