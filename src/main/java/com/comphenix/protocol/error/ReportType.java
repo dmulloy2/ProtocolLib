@@ -1,13 +1,13 @@
 package com.comphenix.protocol.error;
 
+import com.comphenix.protocol.reflect.FieldAccessException;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.comphenix.protocol.reflect.FieldAccessException;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 
 /**
  * Represents a strongly-typed report. Subclasses should be immutable.
@@ -118,7 +118,7 @@ public class ReportType {
     public static ReportType[] getReports(Class<?> sender) {
         if (sender == null)
             throw new IllegalArgumentException("sender cannot be NULL.");
-        List<ReportType> result = new ArrayList<ReportType>();
+        List<ReportType> result = new ArrayList<>();
         
         // Go through all the fields
         for (Field field : getReportFields(sender)) {

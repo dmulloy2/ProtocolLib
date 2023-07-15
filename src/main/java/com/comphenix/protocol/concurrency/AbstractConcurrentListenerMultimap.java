@@ -21,6 +21,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.google.common.collect.Iterables;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -95,7 +96,7 @@ public abstract class AbstractConcurrentListenerMultimap<T> {
 
             // Remove any listeners
             // Remove this listener. Note that priority is generally ignored.
-            list.remove(new PrioritizedListener<T>(listener, whitelist.getPriority()));
+            list.remove(new PrioritizedListener<>(listener, whitelist.getPriority()));
 
             if (list.isEmpty()) {
                 this.mapListeners.remove(type);

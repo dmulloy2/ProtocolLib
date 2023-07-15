@@ -6,24 +6,16 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
-import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import net.bytebuddy.jar.asm.*;
+import org.bukkit.block.BlockState;
+
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.bytebuddy.implementation.InvocationHandlerAdapter;
-import net.bytebuddy.jar.asm.ClassReader;
-import net.bytebuddy.jar.asm.ClassVisitor;
-import net.bytebuddy.jar.asm.MethodVisitor;
-import net.bytebuddy.jar.asm.Opcodes;
-import net.bytebuddy.jar.asm.Type;
-import net.bytebuddy.matcher.ElementMatchers;
-import org.bukkit.block.BlockState;
 
 /**
  * Manipulate tile entities.
@@ -91,7 +83,7 @@ class TileEntityAccessor<T extends BlockState> {
                 created = EMPTY_ACCESSOR;
             }
             if (field != null) {
-                created = new TileEntityAccessor<T>(field, state);
+                created = new TileEntityAccessor<>(field, state);
             }
             accessor = cachedAccessors.putIfAbsent(craftBlockState, created);
 

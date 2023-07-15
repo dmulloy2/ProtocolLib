@@ -1,12 +1,5 @@
 package com.comphenix.protocol.injector.netty.manager;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
@@ -28,11 +21,17 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.Pair;
 import io.netty.channel.ChannelFuture;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class NetworkManagerInjector implements ChannelListener {
 

@@ -275,7 +275,7 @@ public class ProtocolConfig {
      * @return Every suppressed report type.
      */
     public ImmutableList<String> getSuppressedReports() {
-        return ImmutableList.copyOf(getGlobalValue(SUPPRESSED_REPORTS, new ArrayList<String>()));
+        return ImmutableList.copyOf(getGlobalValue(SUPPRESSED_REPORTS, new ArrayList<>()));
     }
 
     /**

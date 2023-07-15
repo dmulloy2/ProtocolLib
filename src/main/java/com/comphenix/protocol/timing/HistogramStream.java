@@ -1,10 +1,10 @@
 package com.comphenix.protocol.timing;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents an online algortihm of computing histograms over time.
@@ -36,7 +36,7 @@ public class HistogramStream extends OnlineComputation {
      * @param binWidth - maximum number of observations in each bin.
      */
     public HistogramStream(int binWidth) {
-        this(new ArrayList<StatisticsStream>(), new StatisticsStream(), binWidth);
+        this(new ArrayList<>(), new StatisticsStream(), binWidth);
     }
     
     /**

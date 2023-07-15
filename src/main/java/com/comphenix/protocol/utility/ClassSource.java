@@ -3,7 +3,6 @@ package com.comphenix.protocol.utility;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Represents an abstract class loader that can only retrieve classes by their canonical name.

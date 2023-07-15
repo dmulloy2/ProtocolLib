@@ -18,10 +18,11 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Preconditions;
+import org.bukkit.plugin.Plugin;
+
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.bukkit.plugin.Plugin;
 
 /**
  * @author dmulloy2
@@ -40,7 +41,7 @@ public abstract class Updater {
     protected boolean announce;
     protected Thread thread;
     protected UpdateResult result = UpdateResult.SUCCESS;
-    protected List<Runnable> listeners = new CopyOnWriteArrayList<Runnable>();
+    protected List<Runnable> listeners = new CopyOnWriteArrayList<>();
 
     protected Updater(Plugin plugin, UpdateType type, boolean announce) {
         this.plugin = plugin;

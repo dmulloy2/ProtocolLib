@@ -137,7 +137,7 @@ class MultipleLinesPrompt extends StringPrompt {
         // Save the last line as well
         context.setSessionData(KEY_LAST, in);
         context.setSessionData(KEY_LINES, ++count);
-        result.append(in + "\n");
+        result.append(in).append("\n");
 
         // And we're done
         if (endMarker.cancelBasedOnInput(context, in, result, count))

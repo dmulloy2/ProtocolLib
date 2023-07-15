@@ -17,14 +17,15 @@
 
 package com.comphenix.protocol.reflect.instances;
 
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nullable;
-import com.comphenix.protocol.reflect.FuzzyReflection;
 
 /**
  * Provides instance constructors using a list of existing values.
@@ -45,7 +46,7 @@ public class ExistingGenerator implements InstanceProvider {
         private int level;
 
         public Node(Class<?> key, Object value, int level) {
-            this.children = new HashMap<Class<?>, Node>();
+            this.children = new HashMap<>();
             this.key = key;
             this.value = value;
             this.level = level;
@@ -168,8 +169,8 @@ public class ExistingGenerator implements InstanceProvider {
         Class<?>[] path = getHierachy(type);
         Node current = start;
 
-        for (int i = 0; i < path.length; i++) {
-            Node next = getNext(current, path[i], readOnly);
+        for (Class<?> clazz : path) {
+            Node next = getNext(current, clazz, readOnly);
 
             // Try every interface too
             if (next == null && readOnly) {

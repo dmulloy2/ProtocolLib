@@ -84,8 +84,7 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
                 this, Report.newBuilder(REPORT_GUAVA_CORRUPT_MISSING).error(e));
             
             // It's a Beta class after all
-            this.processingQueue = Synchronization.queue(
-                    new PriorityQueue<PacketEventHolder>(), null);
+            this.processingQueue = Synchronization.queue(new PriorityQueue<>(), null);
         }
                 
         this.maximumConcurrency = maximumConcurrency;

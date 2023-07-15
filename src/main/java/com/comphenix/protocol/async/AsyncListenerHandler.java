@@ -619,9 +619,7 @@ public class AsyncListenerHandler {
                 }
             }
             
-        } catch (OutOfMemoryError e) {
-            throw e;
-        } catch (ThreadDeath e) {
+        } catch (OutOfMemoryError | ThreadDeath e) {
             throw e;
         } catch (Throwable e) {
             // Minecraft doesn't want your Exception.
@@ -665,7 +663,7 @@ public class AsyncListenerHandler {
     }
     
     /**
-     * Use the poision pill method to stop every worker thread.
+     * Use the poison pill method to stop every worker thread.
      */
     private void stopThreads() {
         // Poison Pill Shutdown
