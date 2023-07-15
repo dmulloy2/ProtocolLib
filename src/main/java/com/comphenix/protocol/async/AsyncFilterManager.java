@@ -51,10 +51,10 @@ public class AsyncFilterManager implements AsynchronousManager {
 
     private SortedPacketListenerList serverTimeoutListeners;
     private SortedPacketListenerList clientTimeoutListeners;
-    private Set<PacketListener> timeoutListeners;
+    private final Set<PacketListener> timeoutListeners;
     
-    private PacketProcessingQueue serverProcessingQueue;
-    private PacketProcessingQueue clientProcessingQueue;
+    private final PacketProcessingQueue serverProcessingQueue;
+    private final PacketProcessingQueue clientProcessingQueue;
 
     // Sending queues
     private final PlayerSendingHandler playerSendingHandler;

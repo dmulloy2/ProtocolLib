@@ -93,7 +93,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     private volatile boolean asyncCancelled;
 
         // Whether to delay processing
-    private AtomicInteger processingDelay = new AtomicInteger();
+    private final AtomicInteger processingDelay = new AtomicInteger();
 
     // Used to synchronize processing on the shared PacketEvent
     private Object processingLock = new Object();
