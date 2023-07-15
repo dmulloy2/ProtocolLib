@@ -17,21 +17,6 @@
 
 package com.comphenix.protocol.events;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -40,15 +25,8 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.reflect.cloning.AggregateCloner;
+import com.comphenix.protocol.reflect.cloning.*;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner.BuilderParameters;
-import com.comphenix.protocol.reflect.cloning.BukkitCloner;
-import com.comphenix.protocol.reflect.cloning.Cloner;
-import com.comphenix.protocol.reflect.cloning.CollectionCloner;
-import com.comphenix.protocol.reflect.cloning.FieldCloner;
-import com.comphenix.protocol.reflect.cloning.GuavaOptionalCloner;
-import com.comphenix.protocol.reflect.cloning.ImmutableDetector;
-import com.comphenix.protocol.reflect.cloning.JavaOptionalCloner;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.reflect.instances.MinecraftGenerator;
@@ -59,7 +37,18 @@ import com.comphenix.protocol.wrappers.Converters;
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
+
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -270,7 +259,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
                                 modifierDest.write(fieldIndex, modifierSource.read(fieldIndex));
                             else
                                 defaultTransform(modifierSource, modifierDest, getDefaultCloner(), fieldIndex);
-                        };
+                        }
                     };
                 }};
             }

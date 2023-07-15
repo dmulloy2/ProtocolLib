@@ -123,7 +123,7 @@ public enum NbtType {
         classLookup.put(NbtCompound.class, TAG_COMPOUND);
     }
     
-    private NbtType(int rawID, Class<?> valueType) {
+    NbtType(int rawID, Class<?> valueType) {
         this.rawID = rawID;
         this.valueType = valueType;
     }
