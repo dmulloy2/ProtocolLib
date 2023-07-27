@@ -413,6 +413,19 @@ public class AsyncFilterManager implements AsynchronousManager {
         
         // Only send if the packet is ready
         if (marker.decrementProcessingDelay() == 0) {
+
+            // Now, get the next non-cancelled listener
+            if (!marker.hasExpired()) {
+                for (; marker.getListenerTraversal().hasNext(); ) {
+                    AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
+                    
+                    if (!handler.isCancelled()) {
+                        getProcessingQueue(packet).enqueue(packet, onMainThread);
+                        return;
+                    }
+                }
+            }
+
             PacketSendingQueue queue = getSendingQueue(packet, false);
             
             // No need to create a new queue if the player has logged out

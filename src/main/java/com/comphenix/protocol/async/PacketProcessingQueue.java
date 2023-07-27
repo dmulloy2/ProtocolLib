@@ -131,18 +131,30 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
             if (holder != null) {
                 PacketEvent packet = holder.getEvent();
                 AsyncMarker marker = packet.getAsyncMarker();
-                Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketType());
+                Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = marker.getListenerTraversal();
                 
                 marker.incrementProcessingDelay();
                 
-                // Yes, removing the marker will cause the chain to stop
-                if (list != null) {
-                    Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
-                    
-                    if (iterator.hasNext()) {
-                        marker.setListenerTraversal(iterator);
-                        iterator.next().getListener().enqueuePacket(packet);
+                if (iterator != null && iterator.hasNext()) {
+                    AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
+                    if (!handler.isCancelled()) {
+                        handler.enqueuePacket(packet);
                         continue;
+                    }
+                }
+
+                if (iterator == null) {
+                    Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketType());
+
+                    // Yes, removing the marker will cause the chain to stop
+                    if (list != null) {
+                        iterator = list.iterator();
+                        
+                        if (iterator.hasNext()) {
+                            marker.setListenerTraversal(iterator);
+                            iterator.next().getListener().enqueuePacket(packet);
+                            continue;
+                        }
                     }
                 }
                 
