@@ -53,7 +53,7 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>com.comphenix.protocol</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>5.0.0</version>
+    <version>5.1.0</version>
     <scope>provided</scope>
   </dependency>
 </dependencies>
@@ -67,7 +67,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.comphenix.protocol:ProtocolLib:5.0.0'
+    compileOnly 'com.comphenix.protocol:ProtocolLib:5.1.0'
 }
 ```
 
