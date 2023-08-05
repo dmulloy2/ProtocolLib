@@ -168,6 +168,7 @@ public class Converters {
 
             @Override
             public Optional<T> getSpecific(Object generic) {
+                if (generic == null) return Optional.empty();
                 Optional<Object> optional = (Optional<Object>) generic;
                 return optional.map(converter::getSpecific);
             }
