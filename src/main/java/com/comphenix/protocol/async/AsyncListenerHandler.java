@@ -632,9 +632,6 @@ public class AsyncListenerHandler {
             filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), methodName, e);
         }
         
-        // There are no more listeners - queue the packet for transmission
-        filterManager.signalFreeProcessingSlot(packet);
-        
         // Note that listeners can opt to delay the packet transmission
         filterManager.signalPacketTransmission(packet);
     }

@@ -420,11 +420,15 @@ public class AsyncFilterManager implements AsynchronousManager {
                     AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
                     
                     if (!handler.isCancelled()) {
-                        getProcessingQueue(packet).enqueue(packet, onMainThread);
+                    	marker.incrementProcessingDelay();
+                    	handler.enqueuePacket(packet);
                         return;
                     }
                 }
             }
+            
+            // There are no more listeners - queue the packet for transmission
+            signalFreeProcessingSlot(packet);
 
             PacketSendingQueue queue = getSendingQueue(packet, false);
             
