@@ -349,31 +349,31 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
              * @deprecated Removed in 1.19.3
              */
             @Deprecated
-            public static final PacketType CHAT_PREVIEW =                 new PacketType(PROTOCOL, SENDER, 0x0C, "ChatPreview");
+            public static final PacketType CHAT_PREVIEW =                 new PacketType(PROTOCOL, SENDER, 240, "ChatPreview");
 
             /**
              * @deprecated Removed in 1.19.3
              */
             @Deprecated
-            public static final PacketType PLAYER_CHAT_HEADER =           new PacketType(PROTOCOL, SENDER, 0xF0, "PlayerChatHeader");
+            public static final PacketType PLAYER_CHAT_HEADER =           new PacketType(PROTOCOL, SENDER, 239, "PlayerChatHeader");
 
             /**
              * @deprecated Removed in 1.19.3
              */
             @Deprecated
-            public static final PacketType SET_DISPLAY_CHAT_PREVIEW =     new PacketType(PROTOCOL, SENDER, 0x4E, "SetDisplayChatPreview");
+            public static final PacketType SET_DISPLAY_CHAT_PREVIEW =     new PacketType(PROTOCOL, SENDER, 238, "SetDisplayChatPreview");
 
             /**
              * @deprecated Removed in 1.19.3
              */
             @Deprecated
-            public static final PacketType CUSTOM_SOUND_EFFECT =          new PacketType(PROTOCOL, SENDER, 0x16, "CustomSoundEffect", "SPacketCustomSound");
+            public static final PacketType CUSTOM_SOUND_EFFECT =          new PacketType(PROTOCOL, SENDER, 237, "CustomSoundEffect", "SPacketCustomSound");
 
             /**
              * @deprecated Removed in 1.20.2: moved to configuration phase packets
              */
             @Deprecated
-            public static final PacketType UPDATE_ENABLED_FEATURES =      new PacketType(PROTOCOL, SENDER, 0x6E, "UpdateEnabledFeatures");
+            public static final PacketType UPDATE_ENABLED_FEATURES =      new PacketType(PROTOCOL, SENDER, 236, "UpdateEnabledFeatures");
 
             private static final Server INSTANCE = new Server();
 
@@ -466,7 +466,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
              * @deprecated Removed in 1.19.3
              */
             @Deprecated
-            public static final PacketType CHAT_PREVIEW =                 new PacketType(PROTOCOL, SENDER, 0x06, "ChatPreview");
+            public static final PacketType CHAT_PREVIEW =                 new PacketType(PROTOCOL, SENDER, 253, "ChatPreview");
 
             private static final Client INSTANCE = new Client();
 
