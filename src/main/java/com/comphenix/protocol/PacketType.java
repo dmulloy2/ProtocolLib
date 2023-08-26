@@ -352,7 +352,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
              * @deprecated Removed in 1.19.3
              */
             @Deprecated
-            public static final PacketType PLAYER_CHAT_HEADER =           new PacketType(PROTOCOL, SENDER, 0x32, "PlayerChatHeader");
+            public static final PacketType PLAYER_CHAT_HEADER =           new PacketType(PROTOCOL, SENDER, 0xF0, "PlayerChatHeader");
 
             /**
              * @deprecated Removed in 1.19.3
