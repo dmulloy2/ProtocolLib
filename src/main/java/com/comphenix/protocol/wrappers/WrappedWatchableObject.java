@@ -14,8 +14,6 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import static com.comphenix.protocol.utility.MinecraftReflection.is;
-
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
@@ -25,12 +23,15 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import java.util.Optional;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Optional;
+
+import static com.comphenix.protocol.utility.MinecraftReflection.is;
+
 /**
- * Represents a DataWatcher Item in 1.8 to 1.10.
- *
+ * Represents a DataWatcher Item in 1.8 to 1.19.2.
+ * Use {@link WrappedDataValue} for 1.19.3 or later.
  * @author dmulloy2
  */
 public class WrappedWatchableObject extends AbstractWrapper {
@@ -97,6 +98,9 @@ public class WrappedWatchableObject extends AbstractWrapper {
      * @return The wrapped object.
      */
     static Object getWrapped(Object value) {
+        if(value == null) {
+            return null;
+        }
         // Handle watcher items first
         if (is(MinecraftReflection.getDataWatcherItemClass(), value)) {
             return getWrapped(new WrappedWatchableObject(value).getRawValue());
@@ -135,6 +139,9 @@ public class WrappedWatchableObject extends AbstractWrapper {
      */
     // Must be kept in sync with getWrapped!
     static Object getUnwrapped(Object wrapped) {
+        if(wrapped == null) {
+            return null;
+        }
         if (wrapped instanceof Optional<?>) {
             return ((Optional<?>) wrapped).map(WrappedWatchableObject::getUnwrapped);
         }
