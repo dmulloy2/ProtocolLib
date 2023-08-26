@@ -1,10 +1,5 @@
 package com.comphenix.protocol.events;
 
-import javax.annotation.Nonnull;
-import java.lang.reflect.Array;
-import java.time.Instant;
-import java.util.*;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -17,7 +12,6 @@ import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.base.Preconditions;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -30,6 +24,11 @@ import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
+import java.lang.reflect.Array;
+import java.time.Instant;
+import java.util.*;
 
 public abstract class AbstractStructure {
     protected transient Object handle;
@@ -410,7 +409,7 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieves a read/write structure for collections of watchable objects.
+     * Retrieves a read/write structure for collections of watchable objects before Minecraft 1.19.3.
      * <p>
      * This modifier will automatically marshal between the visible WrappedWatchableObject and the
      * internal Minecraft WatchableObject.
@@ -424,7 +423,7 @@ public abstract class AbstractStructure {
     }
 
     /**
-     * Retrieves a read/write structure for collections of data values.
+     * Retrieves a read/write structure for collections of data values for Minecraft 1.19.3 or later.
      * @return A modifier for data values.
      */
     public StructureModifier<List<WrappedDataValue>> getDataValueCollectionModifier() {
