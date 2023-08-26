@@ -1,16 +1,15 @@
 package com.comphenix.protocol.injector;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginLoadOrder;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
-
-import com.google.common.collect.ImmutableSet;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginLoadOrder;
-
-import com.google.common.collect.Sets;
 
 /**
  * Determine if a plugin using ProtocolLib is correct.
@@ -174,11 +173,8 @@ class PluginVerifier {
         }
         
         // No dependency - check the load order
-        if (beforePlugin.getDescription().getLoad() == PluginLoadOrder.STARTUP &&
-            afterPlugin.getDescription().getLoad() == PluginLoadOrder.POSTWORLD) {
-            return true;
-        }
-        return false;
+        return beforePlugin.getDescription().getLoad() == PluginLoadOrder.STARTUP &&
+                afterPlugin.getDescription().getLoad() == PluginLoadOrder.POSTWORLD;
     }
     
     /**
@@ -188,7 +184,7 @@ class PluginVerifier {
      * @return TRUE if the plugin has the given dependency, FALSE otherwise.
      */
     private boolean hasDependency(Plugin plugin, Plugin dependency) {
-        return hasDependency(plugin, dependency, Sets.<String>newHashSet());
+        return hasDependency(plugin, dependency, Sets.newHashSet());
     }
     
     /**

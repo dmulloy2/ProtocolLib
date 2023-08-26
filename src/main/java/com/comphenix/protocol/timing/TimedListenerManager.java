@@ -1,16 +1,15 @@
 package com.comphenix.protocol.timing;
 
+import com.comphenix.protocol.events.PacketListener;
+import com.google.common.collect.ImmutableMap;
+import org.bukkit.plugin.Plugin;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.bukkit.plugin.Plugin;
-
-import com.comphenix.protocol.events.PacketListener;
-import com.google.common.collect.ImmutableMap;
 
 /**
  * Represents a system for recording the time spent by each packet listener.
@@ -21,7 +20,7 @@ public class TimedListenerManager {
         ASYNC_SERVER_SIDE,
         ASYNC_CLIENT_SIDE,
         SYNC_SERVER_SIDE,
-        SYNC_CLIENT_SIDE;
+        SYNC_CLIENT_SIDE
     }
     
     // The shared manager

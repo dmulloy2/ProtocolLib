@@ -20,8 +20,6 @@ package com.comphenix.protocol.injector.temporary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ChatExtensions;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -29,15 +27,14 @@ import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
 import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bind.annotation.AllArguments;
-import net.bytebuddy.implementation.bind.annotation.FieldValue;
-import net.bytebuddy.implementation.bind.annotation.Origin;
-import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.implementation.bind.annotation.This;
+import net.bytebuddy.implementation.bind.annotation.*;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * Create fake player instances that represents pre-authenticated clients.
@@ -86,38 +83,36 @@ public class TemporaryPlayerFactory {
                     throw new IllegalStateException("Unable to find injector.");
                 }
 
-                // Use the socket to get the address
-                else if (methodName.equals("getPlayer")) {
-                    return injector.getPlayer();
-                } else if (methodName.equals("getAddress")) {
-                    return injector.getAddress();
-                } else if (methodName.equals("getServer")) {
-                    return server;
-                }
+                switch (methodName)
+                {
+                    case "getPlayer":
+                        return injector.getPlayer();
+                    case "getAddress":
+                        // Use the socket to get the address
+                        return injector.getAddress();
+                    case "getServer":
+                        return server;
+                    case "chat":
+                    case "sendMessage":
+                        try {
+                            Object argument = args[0];
 
-                // Handle send message methods
-                if (methodName.equals("chat") || methodName.equals("sendMessage")) {
-                    try {
-                        Object argument = args[0];
-
-                        // Dynamic overloading
-                        if (argument instanceof String) {
-                            return sendMessage(injector, (String) argument);
-                        } else if (argument instanceof String[]) {
-                            for (String message : (String[]) argument) {
-                                sendMessage(injector, message);
+                            // Dynamic overloading
+                            if (argument instanceof String) {
+                                return sendMessage(injector, (String) argument);
+                            } else if (argument instanceof String[]) {
+                                for (String message : (String[]) argument) {
+                                    sendMessage(injector, message);
+                                }
+                                return null;
                             }
-                            return null;
+                        } catch (Exception exception) {
+                            throw exception.getCause();
                         }
-                    } catch (Exception exception) {
-                        throw exception.getCause();
-                    }
-                }
-
-                // Also, handle kicking
-                if (methodName.equals("kickPlayer")) {
-                    injector.disconnect((String) args[0]);
-                    return null;
+                        return null;
+                    case "kickPlayer":
+                        injector.disconnect((String) args[0]);
+                        return null;
                 }
 
                 // The fallback instance
@@ -127,9 +122,9 @@ public class TemporaryPlayerFactory {
                 }
 
                 // Methods that are supported in the fallback instance
-                if (methodName.equals("isOnline")) {
+                if ("isOnline".equals(methodName)) {
                     return injector.isConnected();
-                } else if (methodName.equals("getName")) {
+                } else if ("getName".equals(methodName)) {
                     return "UNKNOWN[" + injector.getAddress() + "]";
                 }
 

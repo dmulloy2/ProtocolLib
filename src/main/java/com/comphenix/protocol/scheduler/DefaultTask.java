@@ -1,7 +1,6 @@
 package com.comphenix.protocol.scheduler;
 
 import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.scheduler.BukkitTask;
 
 public class DefaultTask implements Task {
     private final int taskId;

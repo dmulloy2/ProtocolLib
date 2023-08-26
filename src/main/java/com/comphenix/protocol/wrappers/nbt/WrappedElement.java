@@ -113,7 +113,7 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
         if (modifier == null) {
             synchronized (this) {
                 if (MODIFIERS[index] == null) {
-                    MODIFIERS[index] = new StructureModifier<Object>(handle.getClass(), MinecraftReflection.getNBTBaseClass(), false);
+                    MODIFIERS[index] = new StructureModifier<>(handle.getClass(), MinecraftReflection.getNBTBaseClass(), false);
                 }
                 modifier = (StructureModifier<Object>) MODIFIERS[index];
             }
@@ -241,13 +241,13 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
         result.append("{");
         
         if (name != null && name.length() > 0)
-            result.append("name: '" + name + "', ");
+            result.append("name: '").append(name).append("', ");
         
         result.append("value: ");
         
         // Wrap quotation marks
         if (getType() == NbtType.TAG_STRING)
-            result.append("'" + getValue() + "'");
+            result.append("'").append(getValue()).append("'");
         else
             result.append(getValue());
         

@@ -21,7 +21,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.StreamSerializer;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;

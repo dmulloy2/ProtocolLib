@@ -1,11 +1,6 @@
 package com.comphenix.protocol;
 
-import org.bukkit.conversations.Conversation;
-import org.bukkit.conversations.ConversationCanceller;
-import org.bukkit.conversations.ConversationContext;
-import org.bukkit.conversations.ExactMatchConversationCanceller;
-import org.bukkit.conversations.Prompt;
-import org.bukkit.conversations.StringPrompt;
+import org.bukkit.conversations.*;
 
 /**
  * Represents a conversation prompt that accepts a list of lines.
@@ -17,9 +12,9 @@ class MultipleLinesPrompt extends StringPrompt {
      * Represents a canceller that determines if the multiple lines prompt is finished.
      * @author Kristian
      */
-    public static interface MultipleConversationCanceller extends ConversationCanceller {
+    public interface MultipleConversationCanceller extends ConversationCanceller {
         @Override
-        public boolean cancelBasedOnInput(ConversationContext context, String currentLine);
+        boolean cancelBasedOnInput(ConversationContext context, String currentLine);
 
         /**
          * Determine if the current prompt is done based on the context, last
@@ -31,7 +26,7 @@ class MultipleLinesPrompt extends StringPrompt {
          * @param lineCount - number of lines.
          * @return TRUE if we are done, FALSE otherwise.
          */
-        public boolean cancelBasedOnInput(ConversationContext context, String currentLine, 
+        boolean cancelBasedOnInput(ConversationContext context, String currentLine,
                                           StringBuilder lines, int lineCount);
     }
 
@@ -40,7 +35,7 @@ class MultipleLinesPrompt extends StringPrompt {
      * @author Kristian
      */
     private static class MultipleWrapper implements MultipleConversationCanceller {
-        private ConversationCanceller canceller;
+        private final ConversationCanceller canceller;
 
         public MultipleWrapper(ConversationCanceller canceller) {
             this.canceller = canceller;
@@ -142,7 +137,7 @@ class MultipleLinesPrompt extends StringPrompt {
         // Save the last line as well
         context.setSessionData(KEY_LAST, in);
         context.setSessionData(KEY_LINES, ++count);
-        result.append(in + "\n");
+        result.append(in).append("\n");
 
         // And we're done
         if (endMarker.cancelBasedOnInput(context, in, result, count))

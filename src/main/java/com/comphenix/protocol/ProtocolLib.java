@@ -16,12 +16,7 @@
 package com.comphenix.protocol;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.error.BasicErrorReporter;
-import com.comphenix.protocol.error.DelegatedErrorReporter;
-import com.comphenix.protocol.error.DetailedErrorReporter;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.error.*;
 import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
@@ -31,14 +26,22 @@ import com.comphenix.protocol.scheduler.ProtocolScheduler;
 import com.comphenix.protocol.scheduler.Task;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.*;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import org.bukkit.Server;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
@@ -47,13 +50,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.bukkit.Server;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * The main entry point for ProtocolLib.
@@ -201,52 +197,45 @@ public class ProtocolLib extends JavaPlugin {
      */
     private void initializeCommands() {
         // Initialize command handlers
-        for (ProtocolCommand command : ProtocolCommand.values()) {
-            try {
-                switch (command) {
-                    case PROTOCOL:
-                        this.commandProtocol = new CommandProtocol(reporter, this, this.updater, config);
-                        break;
-                    case FILTER:
-                        this.commandFilter = new CommandFilter(reporter, this, config);
-                        break;
-                    case PACKET:
-                        this.commandPacket = new CommandPacket(reporter, this, logger, this.commandFilter, protocolManager);
-                        break;
-                    case LOGGING:
-                        this.packetLogging = new PacketLogging(this, protocolManager);
-                        break;
-                }
-            } catch (OutOfMemoryError e) {
-                throw e;
-            } catch (LinkageError e) {
-                logger.warning("Failed to register command " + command.name() + ": " + e);
-            } catch (Throwable e) {
-                reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND)
-                        .messageParam(command.name(), e.getMessage()).error(e));
-            }
+        String commandName = "?";
+        try {
+            commandName = "PROTOCOL";
+            this.commandProtocol = new CommandProtocol(reporter, this, this.updater, config);
+            commandName = "FILTER";
+            this.commandFilter = new CommandFilter(reporter, this, config);
+            commandName = "PACKET";
+            this.commandPacket = new CommandPacket(reporter, this, logger, this.commandFilter, protocolManager);
+            commandName = "LOGGING";
+            this.packetLogging = new PacketLogging(this, protocolManager);
+        } catch (OutOfMemoryError e) {
+            throw e;
+        } catch (LinkageError e) {
+            logger.warning("Failed to register command " + commandName + ": " + e);
+        } catch (Throwable e) {
+            reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND)
+                    .messageParam(commandName, e.getMessage()).error(e));
         }
     }
 
     /**
-     * Retrieve a error reporter that may be filtered by the configuration.
+     * Retrieve an error reporter that may be filtered by the configuration.
      *
      * @return The new default error reporter.
      */
     private ErrorReporter getFilteredReporter(ErrorReporter reporter) {
         return new DelegatedErrorReporter(reporter) {
             private int lastModCount = -1;
-            private Set<String> reports = new HashSet<>();
+            private Set<String> reports;
 
             @Override
             protected Report filterReport(Object sender, Report report, boolean detailed) {
                 try {
-                    String canonicalName = ReportType.getReportName(sender, report.getType());
-                    String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
+                    final String canonicalName = ReportType.getReportName(sender, report.getType());
+                    final String reportName = Iterables.getLast(Splitter.on("#").split(canonicalName)).toUpperCase();
 
                     if (config != null && config.getModificationCount() != this.lastModCount) {
                         // Update our cached set again
-                        this.reports = new HashSet<>(config.getSuppressedReports());
+                        this.reports = ImmutableSet.copyOf(config.getSuppressedReports());
                         this.lastModCount = config.getModificationCount();
                     }
 
@@ -288,10 +277,10 @@ public class ProtocolLib extends JavaPlugin {
         // Broadcast information to every user too
         this.redirectHandler = new Handler() {
             @Override
-            public void publish(LogRecord record) {
+            public void publish(LogRecord logRecord) {
                 // Only display warnings and above
-                if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
-                    ProtocolLib.this.commandPacket.broadcastMessageSilently(record.getMessage(), permission);
+                if (logRecord.getLevel().intValue() >= Level.WARNING.intValue()) {
+                    ProtocolLib.this.commandPacket.broadcastMessageSilently(logRecord.getMessage(), permission);
                 }
             }
 
@@ -613,13 +602,5 @@ public class ProtocolLib extends JavaPlugin {
 
     public ProtocolScheduler getScheduler() {
         return scheduler;
-    }
-
-    // Different commands
-    private enum ProtocolCommand {
-        FILTER,
-        PACKET,
-        PROTOCOL,
-        LOGGING
     }
 }

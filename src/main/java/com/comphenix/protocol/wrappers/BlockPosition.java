@@ -16,17 +16,16 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
-
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.util.Vector;
-
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.base.Objects;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.util.Vector;
+
+import java.lang.reflect.Constructor;
 
 /**
  * Copies a immutable net.minecraft.server.BlockPosition, which represents a integer 3D vector.
@@ -176,8 +175,7 @@ public class BlockPosition {
                 
                 // Construct the underlying BlockPosition
                 try {
-                    Object result = blockPositionConstructor.newInstance(specific.x, specific.y, specific.z);
-                    return result;
+                    return blockPositionConstructor.newInstance(specific.x, specific.y, specific.z);
                 } catch (Exception e) {
                     throw new RuntimeException("Cannot construct BlockPosition.", e);
                 }
@@ -197,8 +195,7 @@ public class BlockPosition {
                     if (intModifier.size() >= 3) {
                         try {
                             StructureModifier<Integer> instance = intModifier.withTarget(generic);
-                            BlockPosition result = new BlockPosition(instance.read(0), instance.read(1), instance.read(2));
-                            return result;
+                            return new BlockPosition(instance.read(0), instance.read(1), instance.read(2));
                         } catch (FieldAccessException e) {
                             // This is an exeptional work-around, so we don't want to burden the caller with the messy details
                             throw new RuntimeException("Field access error.", e);

@@ -17,11 +17,6 @@
 
 package com.comphenix.protocol.injector;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.logging.Level;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
@@ -35,6 +30,10 @@ import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.timing.TimedTracker;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Registry of synchronous packet listeners.
@@ -43,7 +42,7 @@ import javax.annotation.Nullable;
  */
 public final class SortedPacketListenerList extends AbstractConcurrentListenerMultimap<PacketListener> {
     // The current listener manager
-    private TimedListenerManager timedManager = TimedListenerManager.getInstance();
+    private final TimedListenerManager timedManager = TimedListenerManager.getInstance();
     
     public SortedPacketListenerList() {
         super();

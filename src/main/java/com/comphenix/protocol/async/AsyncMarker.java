@@ -17,15 +17,6 @@
 
 package com.comphenix.protocol.async;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
@@ -37,6 +28,15 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.primitives.Longs;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 /**
  * Contains information about the packet that is being processed by asynchronous listeners.
@@ -53,7 +53,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     private static final long serialVersionUID = -2621498096616187384L;
 
     /**
-     * Default number of milliseconds until a packet will rejected.
+     * Default number of milliseconds until a packet will be rejected.
      */
     public static final int DEFAULT_TIMEOUT_DELTA = 1800 * 1000;
 
@@ -83,17 +83,17 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     // Used to determine if a packet must be reordered in the sending queue
     private Long queuedSendingIndex;
 
-    // Whether or not the packet has been processed by the listeners
+    // Whether the packet has been processed by the listeners
     private volatile boolean processed;
 
-    // Whether or not the packet has been sent
+    // Whether the packet has been sent
     private volatile boolean transmitted;
 
-    // Whether or not the asynchronous processing itself should be cancelled
+    // Whether the asynchronous processing itself should be cancelled
     private volatile boolean asyncCancelled;
 
-        // Whether or not to delay processing
-    private AtomicInteger processingDelay = new AtomicInteger();
+        // Whether to delay processing
+    private final AtomicInteger processingDelay = new AtomicInteger();
 
     // Used to synchronize processing on the shared PacketEvent
     private Object processingLock = new Object();
@@ -103,11 +103,11 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     private transient int workerID;
 
     // Determine if Minecraft processes this packet asynchronously
-    private volatile static Method isMinecraftAsync;
-    private volatile static boolean alwaysSync;
+    private static volatile Method isMinecraftAsync;
+    private static volatile boolean alwaysSync;
 
     /**
-     * Create a container for asyncronous packets.
+     * Create a container for asynchronous packets.
      * @param initialTime - the current time in milliseconds since 01.01.1970 00:00.
      */
     AsyncMarker(PacketStream packetStream, long sendingIndex, long initialTime, long timeoutDelta) {
@@ -194,7 +194,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     }
 
     /**
-     * Retrieve whether or not this packet has been processed by the async listeners.
+     * Retrieve whether this packet has been processed by the async listeners.
      * @return TRUE if it has been processed, FALSE otherwise.
      */
     public boolean isProcessed() {
@@ -202,7 +202,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     }
 
     /**
-     * Sets whether or not this packet has been processed by the async listeners.
+     * Sets whether this packet has been processed by the async listeners.
      * @param processed - TRUE if it has, FALSE otherwise.
      */
     void setProcessed(boolean processed) {
@@ -315,7 +315,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     }
 
     /**
-     * Set whether or not the asynchronous handling should be cancelled.
+     * Set whether the asynchronous handling should be cancelled.
      * <p>
      * This is only relevant during the synchronous processing. Asynchronous
      * listeners should use the normal cancel-field to cancel a PacketEvent.
@@ -457,10 +457,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
 
     @Override
     public int compareTo(AsyncMarker o) {
-        if (o == null)
-            return 1;
-        else
-            return Longs.compare(getNewSendingIndex(), o.getNewSendingIndex());
+        return o == null ? 1 : Longs.compare(getNewSendingIndex(), o.getNewSendingIndex());
     }
 
     @Override

@@ -182,8 +182,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 
         StructureModifier<String> stringMod = modifier.withType(String.class);
         if (stringMod.size() == 0) {
-            Supplier<String> supplier = (Supplier<String>) modifier.withType(Supplier.class).read(0);
-            this.name = supplier;
+            this.name = (Supplier<String>) modifier.withType(Supplier.class).read(0);
         } else {
             this.name = () -> stringMod.read(0);
         }

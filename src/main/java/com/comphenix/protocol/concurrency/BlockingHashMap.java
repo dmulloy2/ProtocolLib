@@ -77,7 +77,7 @@ public class BlockingHashMap<TKey, TValue> {
                         }
                     }
                 }).
-            build(BlockingHashMap.<TKey, TValue> newInvalidCacheLoader());
+            build(BlockingHashMap.newInvalidCacheLoader());
         
         // Normal concurrent hash map
         locks = new ConcurrentHashMap<>();

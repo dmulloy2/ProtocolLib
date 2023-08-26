@@ -31,5 +31,5 @@ public interface InstanceProvider {
      * @return The instance, or NULL if the type cannot be created.
      * @throws NotConstructableException Thrown to indicate that this type cannot or should never be constructed.
      */
-    public abstract Object create(@Nullable Class<?> type);
+    Object create(@Nullable Class<?> type);
 }

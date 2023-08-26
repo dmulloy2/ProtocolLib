@@ -17,12 +17,6 @@
 
 package com.comphenix.protocol.async;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.PriorityQueue;
-import java.util.Queue;
-import java.util.concurrent.Semaphore;
-
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
 import com.comphenix.protocol.error.Report;
@@ -30,6 +24,12 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.PrioritizedListener;
 import com.google.common.collect.MinMaxPriorityQueue;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.concurrent.Semaphore;
 
 
 /**
@@ -58,13 +58,13 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
      * Number of packets we're processing concurrently.
      */
     private final int maximumConcurrency;
-    private Semaphore concurrentProcessing;
+    private final Semaphore concurrentProcessing;
     
     // Queued packets for being processed
     private Queue<PacketEventHolder> processingQueue;
     
     // Packets for sending
-    private PlayerSendingHandler sendingHandler;
+    private final PlayerSendingHandler sendingHandler;
     
     public PacketProcessingQueue(PlayerSendingHandler sendingHandler) {
         this(sendingHandler, INITIAL_CAPACITY, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
@@ -77,15 +77,14 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
             this.processingQueue = Synchronization.queue(MinMaxPriorityQueue.
                     expectedSize(initialSize).
                     maximumSize(maximumSize).
-                    <PacketEventHolder>create(), null);
+                    create(), null);
         } catch (IncompatibleClassChangeError e) {
             // Print in the console
             ProtocolLibrary.getErrorReporter().reportWarning(
                 this, Report.newBuilder(REPORT_GUAVA_CORRUPT_MISSING).error(e));
             
             // It's a Beta class after all
-            this.processingQueue = Synchronization.queue(
-                    new PriorityQueue<PacketEventHolder>(), null);
+            this.processingQueue = Synchronization.queue(new PriorityQueue<>(), null);
         }
                 
         this.maximumConcurrency = maximumConcurrency;
@@ -96,8 +95,8 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
     /**
      * Enqueue a packet for processing by the asynchronous listeners.
      * @param packet - packet to process.
-     * @param onMainThread - whether or not this is occuring on the main thread.
-     * @return TRUE if we sucessfully queued the packet, FALSE if the queue ran out if space.
+     * @param onMainThread - whether this is occurring on the main thread.
+     * @return TRUE if we successfully queued the packet, FALSE if the queue ran out if space.
      */
     public boolean enqueue(PacketEvent packet, boolean onMainThread) {
         try {
@@ -121,46 +120,45 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
     
     /**
      * Called by the current method and each thread to signal that a packet might be ready for processing.
-     * @param onMainThread - whether or not this is occuring on the main thread.
+     * @param onMainThread - whether this is occurring on the main thread.
      */
     public void signalBeginProcessing(boolean onMainThread) {   
         while (concurrentProcessing.tryAcquire()) {
             PacketEventHolder holder = processingQueue.poll();
             
             // Any packet queued?
-            if (holder != null) {
-                PacketEvent packet = holder.getEvent();
-                AsyncMarker marker = packet.getAsyncMarker();
-                Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketType());
-                
-                marker.incrementProcessingDelay();
-                
-                // Yes, removing the marker will cause the chain to stop
-                if (list != null) {
-                    Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
-                    
-                    if (iterator.hasNext()) {
-                        marker.setListenerTraversal(iterator);
-                        iterator.next().getListener().enqueuePacket(packet);
-                        continue;
-                    }
-                }
-                
-                // The packet has no further listeners. Just send it.
-                if (marker.decrementProcessingDelay() == 0) {
-                    PacketSendingQueue sendingQueue = sendingHandler.getSendingQueue(packet, false);
-                    
-                    // In case the player has logged out
-                    if (sendingQueue != null)
-                        sendingQueue.signalPacketUpdate(packet, onMainThread);
-                }
-                signalProcessingDone();
-                
-            } else {
+            if (holder == null) {
                 // No more queued packets.
                 signalProcessingDone();
                 return;
             }
+
+            PacketEvent packet = holder.getEvent();
+            AsyncMarker marker = packet.getAsyncMarker();
+            Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketType());
+
+            marker.incrementProcessingDelay();
+
+            // Yes, removing the marker will cause the chain to stop
+            if (list != null) {
+                Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
+
+                if (iterator.hasNext()) {
+                    marker.setListenerTraversal(iterator);
+                    iterator.next().getListener().enqueuePacket(packet);
+                    continue;
+                }
+            }
+
+            // The packet has no further listeners. Just send it.
+            if (marker.decrementProcessingDelay() == 0) {
+                PacketSendingQueue sendingQueue = sendingHandler.getSendingQueue(packet, false);
+
+                // In case the player has logged out
+                if (sendingQueue != null)
+                    sendingQueue.signalPacketUpdate(packet, onMainThread);
+            }
+            signalProcessingDone();
         }
     }
     

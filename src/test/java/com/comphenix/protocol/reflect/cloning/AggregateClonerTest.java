@@ -1,17 +1,18 @@
 package com.comphenix.protocol.reflect.cloning;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import java.util.Arrays;
-import java.util.List;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AggregateClonerTest {
 
@@ -21,7 +22,7 @@ public class AggregateClonerTest {
     }
 
     @Test
-    public void testArrays() {
+    void testArrays() {
         List<Integer> input = Arrays.asList(1, 2, 3);
         assertEquals(input, AggregateCloner.DEFAULT.clone(input));
     }

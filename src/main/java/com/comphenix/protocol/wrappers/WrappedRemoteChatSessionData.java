@@ -1,6 +1,5 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;

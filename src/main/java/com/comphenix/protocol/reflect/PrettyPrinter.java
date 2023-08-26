@@ -189,10 +189,7 @@ public class PrettyPrinter {
             // Handle exceptions
             try {
                 printValue(output, Array.get(array, i), component, stop, previous, hierachyIndex - 1, printer);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                e.printStackTrace();
-                break;
-            } catch (IllegalArgumentException e) {
+            } catch (ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
                 e.printStackTrace();
                 break;
             }

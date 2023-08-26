@@ -17,18 +17,17 @@
 
 package com.comphenix.protocol.async;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.reflect.FieldAccessException;
+import org.bukkit.entity.Player;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
-
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.FieldAccessException;
-
-import org.bukkit.entity.Player;
 
 /**
  * Represents packets ready to be transmitted to a client.
@@ -38,18 +37,18 @@ import org.bukkit.entity.Player;
 abstract class PacketSendingQueue {
 
     public static final int INITIAL_CAPACITY = 10;
-    // Whether or not packet transmission must occur on a specific thread
+    // Whether packet transmission must occur on a specific thread
     private final boolean notThreadSafe;
     private final PriorityBlockingQueue<PacketEventHolder> sendingQueue;
     // Asynchronous packet sending
     private final Executor asynchronousSender;
-    // Whether or not we've run the cleanup procedure
+    // Whether we've run the cleanup procedure
     private boolean cleanedUp = false;
 
     /**
      * Create a packet sending queue.
      *
-     * @param notThreadSafe - whether or not to synchronize with the main thread or a background thread.
+     * @param notThreadSafe - whether to synchronize with the main thread or a background thread.
      */
     public PacketSendingQueue(boolean notThreadSafe, Executor asynchronousSender) {
         this.sendingQueue = new PriorityBlockingQueue<>(INITIAL_CAPACITY);
@@ -79,7 +78,7 @@ abstract class PacketSendingQueue {
      * Invoked when one of the packets have finished processing.
      *
      * @param packetUpdated - the packet that has now been updated.
-     * @param onMainThread  - whether or not this is occuring on the main thread.
+     * @param onMainThread  - whether this is occurring on the main thread.
      */
     public synchronized void signalPacketUpdate(PacketEvent packetUpdated, boolean onMainThread) {
 
@@ -105,7 +104,7 @@ abstract class PacketSendingQueue {
     /***
      * Invoked when a list of packet IDs are no longer associated with any listeners.
      * @param packetsRemoved - packets that no longer have any listeners.
-     * @param onMainThread - whether or not this is occurring on the main thread.
+     * @param onMainThread - whether this is occurring on the main thread.
      */
     public synchronized void signalPacketUpdate(List<PacketType> packetsRemoved, boolean onMainThread) {
         Set<PacketType> lookup = new HashSet<>(packetsRemoved);
@@ -126,10 +125,10 @@ abstract class PacketSendingQueue {
     /**
      * Attempt to send any remaining packets.
      *
-     * @param onMainThread - whether or not this is occuring on the main thread.
+     * @param onMainThread - whether this is occurring on the main thread.
      */
     public void trySendPackets(boolean onMainThread) {
-        // Whether or not to continue sending packets
+        // Whether to continue sending packets
         boolean sending = true;
 
         // Transmit as many packets as we can
@@ -255,7 +254,7 @@ abstract class PacketSendingQueue {
     }
 
     /**
-     * Whether or not the packet transmission must synchronize with the main thread.
+     * Whether the packet transmission must synchronize with the main thread.
      *
      * @return TRUE if it must, FALSE otherwise.
      */

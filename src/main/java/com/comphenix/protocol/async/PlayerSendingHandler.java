@@ -17,21 +17,20 @@
 
 package com.comphenix.protocol.async;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.ConcurrentPlayerMap;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.SortedPacketListenerList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import org.bukkit.entity.Player;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.stream.Collectors;
 
 /**
  * Contains every sending queue for every player.
@@ -49,7 +48,7 @@ class PlayerSendingHandler {
     // Asynchronous packet sending
     private Executor asynchronousSender;
     
-    // Whether or not we're currently cleaning up
+    // Whether we're currently cleaning up
     private volatile boolean cleaningUp;
     
     /**
@@ -221,11 +220,9 @@ class PlayerSendingHandler {
      * @return Every sever packet queue.
      */
     public List<PacketSendingQueue> getServerQueues() {
-        List<PacketSendingQueue> result = new ArrayList<>();
-        
-        for (QueueContainer queue : playerSendingQueues.values())
-            result.add(queue.getServerQueue());
-        return result;
+        return playerSendingQueues.values().stream()
+                .map(QueueContainer::getServerQueue)
+                .collect(Collectors.toList());
     }
     
     /**
@@ -233,11 +230,9 @@ class PlayerSendingHandler {
      * @return Every client packet queue.
      */
     public List<PacketSendingQueue> getClientQueues() {
-        List<PacketSendingQueue> result = new ArrayList<>();
-        
-        for (QueueContainer queue : playerSendingQueues.values())
-            result.add(queue.getClientQueue());
-        return result;
+        return playerSendingQueues.values().stream()
+                .map(QueueContainer::getClientQueue)
+                .collect(Collectors.toList());
     }
     
     /**

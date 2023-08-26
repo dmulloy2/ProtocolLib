@@ -27,13 +27,14 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.primitives.Primitives;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Represents an object capable of converting wrapped Bukkit objects into NMS objects.
@@ -53,7 +54,7 @@ public class BukkitUnwrapper implements Unwrapper {
     public static final ReportType REPORT_CANNOT_FIND_UNWRAP_METHOD = new ReportType("Cannot find method.");
     public static final ReportType REPORT_CANNOT_READ_FIELD_HANDLE = new ReportType("Cannot read field 'handle'.");
 
-    private static final Map<Class<?>, Unwrapper> UNWRAPPER_CACHE = new ConcurrentHashMap<Class<?>, Unwrapper>();
+    private static final ConcurrentMap<Class<?>, Unwrapper> UNWRAPPER_CACHE = new ConcurrentHashMap<>();
     private static BukkitUnwrapper DEFAULT;
 
     // The current error reporter
@@ -154,11 +155,10 @@ public class BukkitUnwrapper implements Unwrapper {
      * @return An unwrapper for the given class.
      */
     private Unwrapper getSpecificUnwrapper(final Class<?> type) {
-        // See if we're already determined this
-        if (UNWRAPPER_CACHE.containsKey(type)) {
-            // We will never remove from the cache, so this ought to be thread safe
-            return UNWRAPPER_CACHE.get(type);
-        }
+        // See if we've already determined this
+        // We will never remove from the cache, so this ought to be thread safe
+        final Unwrapper cached = UNWRAPPER_CACHE.get(type);
+        if (cached != null) return cached;
 
         try {
             final Method find = type.getMethod("getHandle");
@@ -253,36 +253,33 @@ public class BukkitUnwrapper implements Unwrapper {
      */
     private Unwrapper getFieldUnwrapper(final Class<?> type) {
         // See if we succeeded
-        FieldAccessor accessor = Accessors.getFieldAccessorOrNull(type, "handle", null);
-        if (accessor != null) {
-            Unwrapper fieldUnwrapper = new Unwrapper() {
-                @Override
-                public Object unwrapItem(Object wrappedObject) {
-                    try {
-                        if (wrappedObject instanceof Class) {
-                            return checkClass((Class<?>) wrappedObject, type, accessor.getField().getType());
-                        }
-
-                        return accessor.get(wrappedObject);
-                    } catch (IllegalStateException e) {
-                        reporter.reportDetailed(this,
-                                Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e)
-                                        .callerParam(wrappedObject, accessor.getField())
-                        );
-                        return null;
-                    }
-                }
-            };
-
-            UNWRAPPER_CACHE.put(type, fieldUnwrapper);
-            return fieldUnwrapper;
-
-        } else {
+        final FieldAccessor accessor = Accessors.getFieldAccessorOrNull(type, "handle", null);
+        if (accessor == null) {
             // Inform about this too
-            reporter.reportDetailed(this,
-                    Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(type)
-            );
+            reporter.reportDetailed(this, Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).callerParam(type));
             return null;
         }
+
+        Unwrapper fieldUnwrapper = new Unwrapper() {
+            @Override
+            public Object unwrapItem(Object wrappedObject) {
+                try {
+                    if (wrappedObject instanceof Class) {
+                        return checkClass((Class<?>) wrappedObject, type, accessor.getField().getType());
+                    }
+
+                    return accessor.get(wrappedObject);
+                } catch (IllegalStateException e) {
+                    reporter.reportDetailed(this,
+                            Report.newBuilder(REPORT_CANNOT_READ_FIELD_HANDLE).error(e)
+                                    .callerParam(wrappedObject, accessor.getField())
+                    );
+                    return null;
+                }
+            }
+        };
+
+        UNWRAPPER_CACHE.put(type, fieldUnwrapper);
+        return fieldUnwrapper;
     }
 }

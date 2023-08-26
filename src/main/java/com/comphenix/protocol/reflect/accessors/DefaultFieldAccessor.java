@@ -1,10 +1,9 @@
 package com.comphenix.protocol.reflect.accessors;
 
+import com.google.common.base.Preconditions;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
-import com.google.common.base.Preconditions;
 
 final class DefaultFieldAccessor implements FieldAccessor {
 

@@ -1,7 +1,5 @@
 package com.comphenix.protocol.injector.player;
 
-import java.util.Set;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
@@ -9,6 +7,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketListener;
 import io.netty.channel.Channel;
 import org.bukkit.entity.Player;
+
+import java.util.Set;
 
 public interface PlayerInjectionHandler {
 
@@ -144,6 +144,6 @@ public interface PlayerInjectionHandler {
         /**
          * Immediately exit.
          */
-        BAIL_OUT;
+        BAIL_OUT
     }
 }
