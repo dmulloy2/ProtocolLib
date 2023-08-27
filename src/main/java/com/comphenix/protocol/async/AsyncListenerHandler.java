@@ -632,21 +632,6 @@ public class AsyncListenerHandler {
             filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), methodName, e);
         }
         
-        // Now, get the next non-cancelled listener
-        if (!marker.hasExpired()) {
-            for (; marker.getListenerTraversal().hasNext(); ) {
-                AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
-                
-                if (!handler.isCancelled()) {
-                    handler.enqueuePacket(packet);
-                    return;
-                }
-            }
-        }
-        
-        // There are no more listeners - queue the packet for transmission
-        filterManager.signalFreeProcessingSlot(packet);
-        
         // Note that listeners can opt to delay the packet transmission
         filterManager.signalPacketTransmission(packet);
     }
