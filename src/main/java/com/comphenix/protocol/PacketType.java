@@ -648,11 +648,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         public static class Client extends PacketTypeEnum {
             private static final Sender SENDER = Sender.CLIENT;
 
-            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x00, "CustomPayload");
-            public static final PacketType FINISH_CONFIGURATION =         new PacketType(PROTOCOL, SENDER, 0x01, "FinishConfiguration");
-            public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x02, "KeepAlive");
-            public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x03, "Pong");
-            public static final PacketType RESOURCE_PACK_ACK =            new PacketType(PROTOCOL, SENDER, 0x04, "ResourcePack");
+            public static final PacketType CLIENT_INFORMATION =           new PacketType(PROTOCOL, SENDER, 0x00, "ClientInformation");
+            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x01, "CustomPayload");
+            public static final PacketType FINISH_CONFIGURATION =         new PacketType(PROTOCOL, SENDER, 0x02, "FinishConfiguration");
+            public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x03, "KeepAlive");
+            public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x04, "Pong");
+            public static final PacketType RESOURCE_PACK_ACK =            new PacketType(PROTOCOL, SENDER, 0x05, "ResourcePack");
         }
     }
 
