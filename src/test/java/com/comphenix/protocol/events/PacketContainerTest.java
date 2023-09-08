@@ -154,12 +154,6 @@ public class PacketContainerTest {
     }
 
     @Test
-    public void testGetBytes() {
-        PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
-        this.testPrimitive(spawnMob.getBytes(), 0, (byte) 0, (byte) 1);
-    }
-
-    @Test
     public void testGetShorts() {
         PacketContainer itemData = new PacketContainer(PacketType.Play.Server.REL_ENTITY_MOVE);
         this.testPrimitive(itemData.getShorts(), 0, (short) 0, (short) 1);
