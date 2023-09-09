@@ -19,7 +19,6 @@ package com.comphenix.protocol.updater;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.utility.Closer;
-import com.comphenix.protocol.utility.SchedulerUtil;
 import org.bukkit.plugin.Plugin;
 
 import java.io.BufferedReader;
