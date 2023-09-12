@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers.ping;
 
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.google.common.collect.ImmutableList;
 
 public interface ServerPingImpl extends Cloneable {
@@ -17,8 +18,8 @@ public interface ServerPingImpl extends Cloneable {
     void setVersionName(String versionName);
     int getVersionProtocol();
     void setVersionProtocol(int protocolVersion);
-    String getFavicon();
-    void setFavicon(String favicon);
+    WrappedServerPing.CompressedImage getFavicon();
+    void setFavicon(WrappedServerPing.CompressedImage favicon);
     boolean isEnforceSecureChat();
     void setEnforceSecureChat(boolean safeChat);
 

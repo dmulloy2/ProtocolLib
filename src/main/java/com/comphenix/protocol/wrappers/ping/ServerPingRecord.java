@@ -273,13 +273,13 @@ public final class ServerPingRecord implements ServerPingImpl {
     }
 
     @Override
-    public String getFavicon() {
-        return new String(favicon.iconBytes, StandardCharsets.UTF_8);
+    public WrappedServerPing.CompressedImage getFavicon() {
+        return new WrappedServerPing.CompressedImage("data:image/png;base64", favicon.iconBytes);
     }
 
     @Override
-    public void setFavicon(String favicon) {
-        this.favicon.iconBytes = favicon.getBytes(StandardCharsets.UTF_8);
+    public void setFavicon(WrappedServerPing.CompressedImage favicon) {
+        this.favicon.iconBytes = favicon.getDataCopy();
     }
 
     @Override
