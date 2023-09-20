@@ -180,5 +180,6 @@ logs/
 .gradle/
 build/
 logs/
+run/
 .java-version
 gradle.properties

@@ -11,7 +11,7 @@ This page will detail specific things that must be done if you intend to contrib
     that means ProtocolLib needs to be updated._
 2. **When do we need to update other parts of ProtocolLib?**
     _When the package version guard changes. The package version guard is the version string inserted
-    into the package identifier for CraftBukkit and net.minecraft.server (e.g. v1_9_R2). It is incremented
+    into the package identifier for CraftBukkit and net.minecraft.server (e.g. v1_20_R1). It is incremented
     by Spigot if there is a major breaking change in the internal server code. This is to encourage plugins
     that interact directly with CraftBukkit/nms code to update more specifically. However, since most of
     ProtocolLib uses reflection, and the structure of packet classes is generally static, one will have
@@ -26,7 +26,7 @@ or #spigot on [irc.spi.gt](http://irc.spi.gt) ([webchat](https://irc.spi.gt/iris
 (or had their ID changed), make sure to update this list. If a packet was removed
 in favor of usage of another packet, instead of removing it, move it to the bottom of the list
 in its section, add a deprecation warning to it, and redirect it to the packet that replaced it.
-4. `mvn` in the root directory to build the project.
+4. `gradlew build` in the root directory to build the project.
 5. If tests fail in the maven build, go through the tests to make sure you removed references to any removed packets
 and changed the NMS version guards.
 6. Increment the package version in `com.comphenix.protocol.utility.Constants`.
@@ -34,5 +34,5 @@ and changed the NMS version guards.
 and the release date.
 8. `com.comphenix.protocol.utility.MinecraftProtocolVersion` contains a map of all the protocol version integers.
 If the protocol version has been incremented, add a new line to the map.
-9. `mvn` in root directory again. If it builds successfully, test on the appropriate version of a Spigot server. If
+9. `gradlew build` in root directory again. If it builds successfully, test on the appropriate version of a Spigot server. If
 the build fails, debug!

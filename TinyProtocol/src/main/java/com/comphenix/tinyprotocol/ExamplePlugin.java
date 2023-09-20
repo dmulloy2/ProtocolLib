@@ -15,6 +15,7 @@ import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
 /**
  * Represents an example plugin utilizing TinyProtocol
  */
+@SuppressWarnings("deprecation")
 public class ExamplePlugin extends JavaPlugin {
     // Chat packets
     private FieldAccessor<String> CHAT_MESSAGE = Reflection.getField("{nms}.PacketPlayInChat", String.class, 0);

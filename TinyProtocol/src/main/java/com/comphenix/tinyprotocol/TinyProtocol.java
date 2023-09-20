@@ -1,22 +1,11 @@
 package com.comphenix.tinyprotocol;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
+import com.comphenix.tinyprotocol.Reflection.MethodInvoker;
+import com.google.common.collect.MapMaker;
+import com.mojang.authlib.GameProfile;
 
-import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
+import io.netty.channel.*;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -29,11 +18,10 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.comphenix.tinyprotocol.Reflection.FieldAccessor;
-import com.comphenix.tinyprotocol.Reflection.MethodInvoker;
-import com.google.common.collect.Lists;
-import com.google.common.collect.MapMaker;
-import com.mojang.authlib.GameProfile;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 /**
  * Represents a very tiny alternative to ProtocolLib.
@@ -371,7 +359,6 @@ public abstract class TinyProtocol {
      * Add a custom channel handler to the given channel.
      * 
      * @param channel - the channel to inject.
-     * @return The intercepted channel, or NULL if it has already been injected.
      */
     public void injectChannel(Channel channel) {
         injectChannelInternal(channel);

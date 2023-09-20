@@ -71,6 +71,18 @@ dependencies {
 }
 ```
 
+Or with gradle kotlin DSL:
+
+```kts
+repositories {
+    maven("https://repo.dmulloy2.net/repository/public/")
+}
+
+dependencies {
+    compileOnly("com.comphenix.protocol:ProtocolLib:5.1.0")
+}
+```
+
 Then get a reference to ProtocolManager in onLoad() or onEnable() and you're good to go.
 
 ````java

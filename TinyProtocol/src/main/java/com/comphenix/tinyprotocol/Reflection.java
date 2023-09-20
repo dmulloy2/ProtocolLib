@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 
 /**
- * An utility class that simplifies reflection in Bukkit plugins.
+ * A utility class that simplifies reflection in Bukkit plugins.
  * 
  * @author Kristian
  */
@@ -318,7 +318,7 @@ public final class Reflection {
      * This is useful when looking up fields by a NMS or OBC type.
      * <p>
      * 
-     * @see {@link #getClass()} for more information.
+     * @see #getClass(String) getClass for more information.
      * @param lookupName - the class name with variables.
      * @return The class.
      */
@@ -334,7 +334,7 @@ public final class Reflection {
      * This is useful when looking up fields by a NMS or OBC type.
      * <p>
      * 
-     * @see {@link #getClass()} for more information.
+     * @see #getClass(String, String...) getClass for more information.
      * @param lookupName - the class name with variables.
      * @param aliases - alternative names for this class.
      * @return The class.
@@ -351,6 +351,7 @@ public final class Reflection {
      * Strings enclosed with curly brackets - such as {TEXT} - will be replaced according to the following table:
      * <p>
      * <table border="1">
+     * <caption></caption>
      * <tr>
      * <th>Variable</th>
      * <th>Content</th>
@@ -383,6 +384,7 @@ public final class Reflection {
      * Strings enclosed with curly brackets - such as {TEXT} - will be replaced according to the following table:
      * <p>
      * <table border="1">
+     * <caption></caption>
      * <tr>
      * <th>Variable</th>
      * <th>Content</th>
