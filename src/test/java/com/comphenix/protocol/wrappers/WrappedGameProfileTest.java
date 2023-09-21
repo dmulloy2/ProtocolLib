@@ -81,8 +81,8 @@ public class WrappedGameProfileTest {
         PropertyMap properties = profile.getProperties();
         Property property = properties.get(name).iterator().next();
 
-        assertEquals(property.getName(), name);
-        assertEquals(property.getValue(), value);
-        assertEquals(property.getSignature(), signature);
+        assertEquals(property.name(), name);
+        assertEquals(property.value(), value);
+        assertEquals(property.signature(), signature);
     }
 }

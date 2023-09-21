@@ -697,6 +697,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
                 case "PLAY": return PLAY;
                 case "STATUS": return STATUS;
                 case "LOGIN": return LOGIN;
+                case "CONFIGURATION": return CONFIGURATION;
                 default:
                     throw new IllegalArgumentException("Unrecognized vanilla enum " + vanilla);
             }

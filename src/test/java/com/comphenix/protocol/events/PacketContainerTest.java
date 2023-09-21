@@ -63,6 +63,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.Attribu
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.animal.CatVariant;
@@ -79,7 +80,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.comphenix.protocol.utility.TestUtils.assertItemCollectionsEqual;
@@ -487,7 +487,7 @@ public class PacketContainerTest {
     @SuppressWarnings("deprecation")
     public void testPotionEffect() {
         PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
-        MobEffect mobEffect = new MobEffect(MobEffectList.a(effect.getType().getId()), effect.getDuration(),
+        MobEffect mobEffect = new MobEffect(MobEffects.l, effect.getDuration(),
                 effect.getAmplifier(), effect.isAmbient(),
                 effect.hasParticles());
         int entityId = 42;

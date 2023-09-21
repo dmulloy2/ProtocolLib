@@ -42,7 +42,7 @@ public class ProtocolLibrary {
     /**
      * The date (with ISO 8601 or YYYY-MM-DD) when the most recent version (1.20.2) was released.
      */
-    public static final String MINECRAFT_LAST_RELEASE_DATE = //"2023-06-12";
+    public static final String MINECRAFT_LAST_RELEASE_DATE = "2023-09-21";
 
     /**
      * Plugins that are currently incompatible with ProtocolLib.
