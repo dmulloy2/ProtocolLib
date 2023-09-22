@@ -9,7 +9,9 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.instances.MinecraftGenerator;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.collection.ConvertedMultimap;
 import com.google.common.base.Objects;
 import com.google.common.collect.Multimap;
@@ -112,15 +114,7 @@ public class WrappedGameProfile extends AbstractWrapper {
      */
     @Deprecated
     public WrappedGameProfile(String id, String name) {
-        super(GAME_PROFILE);
-
-        if (CREATE_STRING_STRING != null) {
-            setHandle(CREATE_STRING_STRING.invoke(id, name));
-        } else if (CREATE_UUID_STRING != null) {
-            setHandle(CREATE_UUID_STRING.invoke(parseUUID(id), name));
-        } else {
-            throw new IllegalArgumentException("Unsupported GameProfile constructor.");
-        }
+        this(parseUUID(id), name);
     }
 
     /**
@@ -137,7 +131,17 @@ public class WrappedGameProfile extends AbstractWrapper {
         if (CREATE_STRING_STRING != null) {
             setHandle(CREATE_STRING_STRING.invoke(uuid != null ? uuid.toString() : null, name));
         } else if (CREATE_UUID_STRING != null) {
-            setHandle(CREATE_UUID_STRING.invoke(uuid, name));
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                // 1.20.2+ requires all fields to have a value: null uuid -> UUID(0,0), null name -> empty name
+                // it's not allowed to pass null for both, so we need to pre-check that
+                if (uuid == null && (name == null || name.isEmpty())) {
+                    throw new IllegalArgumentException("Name and ID cannot both be blank");
+                }
+
+                setHandle(CREATE_UUID_STRING.invoke(uuid == null ? MinecraftGenerator.SYS_UUID : uuid, name == null ? "" : name));
+            } else {
+                setHandle(CREATE_UUID_STRING.invoke(uuid, name));
+            }
         } else {
             throw new IllegalArgumentException("Unsupported GameProfile constructor.");
         }
@@ -197,6 +201,10 @@ public class WrappedGameProfile extends AbstractWrapper {
                     uuid = parseUUID(getId());
                 } else if (GET_ID != null) {
                     uuid = (UUID) GET_ID.invoke(handle);
+                    if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove() && MinecraftGenerator.SYS_UUID.equals(uuid)) {
+                        // see CraftPlayerProfile
+                        uuid = null;
+                    }
                 } else {
                     throw new IllegalStateException("Unsupported getId() method");
                 }
@@ -224,7 +232,7 @@ public class WrappedGameProfile extends AbstractWrapper {
         if (GET_UUID_STRING != null) {
             return (String) GET_UUID_STRING.get(handle);
         } else if (GET_ID != null) {
-            UUID uuid = (UUID) GET_ID.invoke(handle);
+            UUID uuid = getUUID();
             return uuid != null ? uuid.toString() : null;
         } else {
             throw new IllegalStateException("Unsupported getId() method");
@@ -238,7 +246,12 @@ public class WrappedGameProfile extends AbstractWrapper {
      */
     public String getName() {
         if (GET_NAME != null) {
-            return (String) GET_NAME.invoke(handle);
+            String name = (String) GET_NAME.invoke(handle);
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove() && name != null && name.isEmpty()) {
+                // see CraftPlayerProfile
+                name = null;
+            }
+            return name;
         } else {
             throw new IllegalStateException("Unsupported getName() method");
         }
