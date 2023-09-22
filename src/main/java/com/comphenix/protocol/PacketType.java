@@ -1040,8 +1040,11 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
     /**
      * Lookup a packet type from a packet class.
      * @param packetClass - the packet class.
-     * @return The corresponding packet type, or NULL if not found.
+     * @return The corresponding packet type, never null.
+     * @throws IllegalArgumentException if the given packet class is not a registered packet.
+     * @deprecated since 1.20.2 there are packet classes that are shared between protocol states, therefore the result can be invalid.
      */
+    @Deprecated
     public static PacketType fromClass(Class<?> packetClass) {
         PacketType type = PacketRegistry.getPacketType(packetClass);
 
