@@ -868,6 +868,16 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for custom packet payloads (available since Minecraft 1.20.2).
+     * @return A modifier for CustomPacketPayloads fields.
+     */
+    public StructureModifier<CustomPacketPayloadWrapper> getCustomPacketPayloads() {
+        return structureModifier.withType(
+                CustomPacketPayloadWrapper.getCustomPacketPayloadClass(),
+                CustomPacketPayloadWrapper.getConverter());
+    }
+
+    /**
      * Retrieve a read/write structure for dimension IDs in 1.13.1+
      * @return A modifier for dimension IDs
      */

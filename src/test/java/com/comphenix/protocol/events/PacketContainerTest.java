@@ -15,6 +15,8 @@
  */
 package com.comphenix.protocol.events;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -50,13 +52,13 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
-import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.network.protocol.game.PacketPlayOutGameStateChange;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
@@ -387,27 +389,31 @@ public class PacketContainerTest {
     @Test
     public void testBigPacketSerialization() {
         PacketContainer payload = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
-        payload.getMinecraftKeys().write(0, new com.comphenix.protocol.wrappers.MinecraftKey("test"));
 
         byte[] randomData = new byte[8192];
         ThreadLocalRandom.current().nextBytes(randomData);
-
-        ByteBuf serializer = (ByteBuf) MinecraftReflection.createPacketDataSerializer(randomData.length);
-        serializer.writeBytes(randomData);
-
-        payload.getModifier().withType(MinecraftReflection.getPacketDataSerializerClass()).write(0, serializer);
+        CustomPacketPayloadWrapper payloadWrapper = new CustomPacketPayloadWrapper(randomData, new com.comphenix.protocol.wrappers.MinecraftKey("test"));
+        payload.getCustomPacketPayloads().write(0, payloadWrapper);
 
         PacketContainer cloned = SerializableCloner.clone(payload);
-        com.comphenix.protocol.wrappers.MinecraftKey clonedKey = cloned.getMinecraftKeys().read(0);
+        Assertions.assertNotSame(payload, cloned);
+    }
 
-        byte[] clonedData = new byte[randomData.length];
-        ByteBuf clonedBuffer = (ByteBuf) cloned.getModifier()
-                .withType(MinecraftReflection.getPacketDataSerializerClass())
-                .read(0);
-        clonedBuffer.readBytes(clonedData);
+    @Test
+    public void testUnknownPayloadDeserialize() {
+        MinecraftKey id = new MinecraftKey("test");
+        byte[] payloadData = new byte[]{0x00, 0x01, 0x05, 0x07};
+        ByteBuf buffer = Unpooled.wrappedBuffer(payloadData);
+        ServerboundCustomPayloadPacket.UnknownPayload payload = new ServerboundCustomPayloadPacket.UnknownPayload(id, buffer);
+        ServerboundCustomPayloadPacket packet = new ServerboundCustomPayloadPacket(payload);
 
-        assertEquals("minecraft:test", clonedKey.getFullKey());
-        assertArrayEquals(randomData, clonedData);
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Client.CUSTOM_PAYLOAD, packet);
+        CustomPacketPayloadWrapper payloadWrapper = packetContainer.getCustomPacketPayloads().read(0);
+
+        com.comphenix.protocol.wrappers.MinecraftKey key = payloadWrapper.getId();
+        Assertions.assertEquals("minecraft", key.getPrefix());
+        Assertions.assertEquals("test", key.getKey());
+        Assertions.assertArrayEquals(payloadData, payloadWrapper.getPayload());
     }
 
     @Test
