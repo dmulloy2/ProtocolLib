@@ -503,7 +503,7 @@ public class PacketContainerTest {
 
         WrappedRegistry registry = WrappedRegistry.getRegistry(MinecraftReflection.getMobEffectListClass());
         Object effectList = assertInstanceOf(MobEffectList.class, packet.getStructures().read(0).getHandle());
-        assertEquals(effect.getType().getId(), registry.getId(effectList));
+        assertEquals(effect.getType().getId(), registry.getId(effectList) + 1); // +1 is correct, see CraftPotionEffectType
 
         int e = 0;
         if (effect.isAmbient()) {

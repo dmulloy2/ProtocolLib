@@ -1115,7 +1115,6 @@ public class BukkitConverters {
     static MethodAccessor getSoundEffect = null;
     static FieldAccessor soundKey = null;
 
-    static MethodAccessor getSoundEffectByKey = null;
     static MethodAccessor getSoundEffectBySound = null;
     static MethodAccessor getSoundByEffect = null;
 
@@ -1124,15 +1123,9 @@ public class BukkitConverters {
     public static EquivalentConverter<Sound> getSoundConverter() {
         // Try to create sound converter for new versions greater 1.16.4
         if (MinecraftVersion.NETHER_UPDATE_4.atOrAbove()) {
-            if (getSoundEffectByKey == null || getSoundEffectBySound == null || getSoundByEffect == null) {
+            if (getSoundEffectBySound == null || getSoundByEffect == null) {
                 Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
                 FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
-
-                getSoundEffectByKey = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
-                        "getSoundEffect",
-                        MinecraftReflection.getSoundEffectClass(),
-                        String.class
-                ));
 
                 getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
                         "getSoundEffect",
