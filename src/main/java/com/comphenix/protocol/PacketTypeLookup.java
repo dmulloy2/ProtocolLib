@@ -60,7 +60,9 @@ class PacketTypeLookup {
         public final Map<String, PacketType> STATUS_SERVER = new ConcurrentHashMap<>();
         public final Map<String, PacketType> LOGIN_CLIENT = new ConcurrentHashMap<>();
         public final Map<String, PacketType> LOGIN_SERVER = new ConcurrentHashMap<>();
-        
+        public final Map<String, PacketType> CONFIGURATION_CLIENT = new ConcurrentHashMap<>();
+        public final Map<String, PacketType> CONFIGURATION_SERVER = new ConcurrentHashMap<>();
+
         /**
          * Retrieve the correct integer map for a specific protocol and sender.
          * @param protocol - the protocol.
@@ -77,6 +79,8 @@ class PacketTypeLookup {
                     return sender == Sender.CLIENT ? STATUS_CLIENT : STATUS_SERVER;
                 case LOGIN:
                     return sender == Sender.CLIENT ? LOGIN_CLIENT : LOGIN_SERVER;
+                case CONFIGURATION:
+                    return sender == Sender.CLIENT ? CONFIGURATION_CLIENT : CONFIGURATION_SERVER;
                 default:
                     throw new IllegalArgumentException("Unable to find protocol " + protocol);
             }

@@ -1,6 +1,7 @@
 package com.comphenix.protocol.utility;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import org.bukkit.entity.Player;
@@ -33,7 +34,13 @@ public final class MinecraftFields {
         if (NETWORK_ACCESSOR == null) {
             Class<?> networkClass = MinecraftReflection.getNetworkManagerClass();
             Class<?> connectionClass = MinecraftReflection.getPlayerConnectionClass();
-            NETWORK_ACCESSOR = Accessors.getFieldAccessor(connectionClass, networkClass, true);
+            NETWORK_ACCESSOR = FuzzyReflection.fromClass(connectionClass, true)
+                    .getDeclaredFields(Object.class)
+                    .stream()
+                    .filter(field -> field.getType().equals(networkClass))
+                    .findFirst()
+                    .map(Accessors::getFieldAccessor)
+                    .orElseThrow(() -> new IllegalArgumentException("Unable to find the NetworkManager field in PlayerConnection"));
         }
 
         // Retrieve the network manager
