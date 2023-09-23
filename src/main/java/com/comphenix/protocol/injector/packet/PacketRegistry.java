@@ -27,7 +27,9 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
@@ -158,8 +160,10 @@ public class PacketRegistry {
         final Map<Object, Map<Class<?>, Integer>> clientMaps = new LinkedHashMap<>();
 
         Register result = new Register();
+
         Field mainMapField = null;
         Field packetMapField = null;
+        Field holderClassField = null; // only 1.20.2+
 
         // Iterate through the protocols
         for (Object protocol : protocols) {
@@ -184,7 +188,26 @@ public class PacketRegistry {
             for (Map.Entry<Object, Object> entry : directionMap.entrySet()) {
                 Object holder = entry.getValue();
                 if (packetMapField == null) {
-                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(holder.getClass(), true);
+                    Class<?> packetHolderClass = holder.getClass();
+                    if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                        FuzzyReflection holderFuzzy = FuzzyReflection.fromClass(packetHolderClass, true);
+                        holderClassField = holderFuzzy.getField(FuzzyFieldContract.newBuilder()
+                                .banModifier(Modifier.STATIC)
+                                .requireModifier(Modifier.FINAL)
+                                .typeMatches(FuzzyClassContract.newBuilder()
+                                        .method(FuzzyMethodContract.newBuilder()
+                                                .returnTypeExact(MinecraftReflection.getPacketClass())
+                                                .parameterCount(2)
+                                                .parameterExactType(int.class, 0)
+                                                .parameterExactType(MinecraftReflection.getPacketDataSerializerClass(), 1)
+                                                .build())
+                                        .build())
+                                .build());
+                        holderClassField.setAccessible(true);
+                        packetHolderClass = holderClassField.getType();
+                    }
+
+                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(packetHolderClass, true);
                     packetMapField = fuzzy.getField(FuzzyFieldContract.newBuilder()
                             .banModifier(Modifier.STATIC)
                             .requireModifier(Modifier.FINAL)
@@ -193,10 +216,18 @@ public class PacketRegistry {
                     packetMapField.setAccessible(true);
                 }
 
-                Map<Class<?>, Integer> packetMap;
+                Object holderInstance = holder;
+                if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                    try {
+                        holderInstance = holderClassField.get(holder);
+                    } catch (ReflectiveOperationException ex) {
+                        throw new RuntimeException("Failed to access packet map", ex);
+                    }
+                }
 
+                Map<Class<?>, Integer> packetMap;
                 try {
-                    packetMap = (Map<Class<?>, Integer>) packetMapField.get(holder);
+                    packetMap = (Map<Class<?>, Integer>) packetMapField.get(holderInstance);
                 } catch (ReflectiveOperationException ex) {
                     throw new RuntimeException("Failed to access packet map", ex);
                 }

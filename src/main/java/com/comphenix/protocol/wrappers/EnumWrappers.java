@@ -484,8 +484,6 @@ public abstract class EnumWrappers {
      * Initialize the wrappers, if we haven't already.
      */
     private static void initialize() {
-
-
         if (INITIALIZED)
             return;
 
@@ -493,7 +491,12 @@ public abstract class EnumWrappers {
 
         PROTOCOL_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
         CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
-        CHAT_VISIBILITY_CLASS = getEnum(PacketType.Play.Client.SETTINGS.getPacketClass(), 0);
+
+        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+            CHAT_VISIBILITY_CLASS = MinecraftReflection.getMinecraftClass("world.entity.player.EnumChatVisibility");
+        } else {
+            CHAT_VISIBILITY_CLASS = getEnum(PacketType.Play.Client.SETTINGS.getPacketClass(), 0);
+        }
 
         try {
             DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.SERVER_DIFFICULTY.getPacketClass(), 0);
@@ -501,7 +504,12 @@ public abstract class EnumWrappers {
             DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
         }
 
-        GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
+        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+            GAMEMODE_CLASS = getEnum(MinecraftReflection.getPlayerInfoDataClass(), 0);
+        } else {
+            GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
+        }
+
         RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
         TITLE_ACTION_CLASS = getEnum(PacketType.Play.Server.TITLE.getPacketClass(), 0);
         WORLD_BORDER_ACTION_CLASS = getEnum(PacketType.Play.Server.WORLD_BORDER.getPacketClass(), 0);

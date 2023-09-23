@@ -297,15 +297,19 @@ public class PacketTypeTest {
 
             EnumProtocol[] protocols = EnumProtocol.values();
             for (EnumProtocol protocol : protocols) {
-                Field field = EnumProtocol.class.getDeclaredField("k");
+                Field field = EnumProtocol.class.getDeclaredField("h");
                 field.setAccessible(true);
 
                 Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
                 for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
-                    Field mapField = entry.getValue().getClass().getDeclaredField("b");
+                    Field holderField = entry.getValue().getClass().getDeclaredField("c");
+                    holderField.setAccessible(true);
+
+                    Object holder = holderField.get(entry.getValue());
+                    Field mapField = holder.getClass().getDeclaredField("b");
                     mapField.setAccessible(true);
 
-                    Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
+                    Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(holder);
 
                     Map<Integer, Class<?>> treeMap = new TreeMap<>();
                     for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {

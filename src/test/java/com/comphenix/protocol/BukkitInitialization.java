@@ -2,24 +2,45 @@ package com.comphenix.protocol;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
+import com.google.common.util.concurrent.MoreExecutors;
 import net.minecraft.SharedConstants;
+import net.minecraft.commands.CommandDispatcher;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.LayeredRegistryAccess;
+import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.server.DataPackResources;
 import net.minecraft.server.DispenserRegistry;
+import net.minecraft.server.RegistryLayer;
+import net.minecraft.server.WorldLoader;
 import net.minecraft.server.level.WorldServer;
+import net.minecraft.server.packs.EnumResourcePackType;
+import net.minecraft.server.packs.repository.ResourcePackLoader;
+import net.minecraft.server.packs.repository.ResourcePackRepository;
+import net.minecraft.server.packs.repository.ResourcePackSourceVanilla;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.flag.FeatureFlagSet;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.item.enchantment.Enchantments;
 import org.apache.logging.log4j.LogManager;
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
-import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_20_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_20_R1.util.Versioning;
+import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_20_R2.CraftLootTable;
+import org.bukkit.craftbukkit.v1_20_R2.CraftRegistry;
+import org.bukkit.craftbukkit.v1_20_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_20_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_20_R2.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_20_R2.util.Versioning;
+import org.bukkit.enchantments.Enchantment;
 import org.spigotmc.SpigotWorldConfig;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -69,8 +90,30 @@ public class BukkitInitialization {
 
             instance.setPackage();
 
-            SharedConstants.a();
-            DispenserRegistry.a();
+            // Minecraft Data Init
+            SharedConstants.a(); // .tryDetectVersion()
+            DispenserRegistry.a(); // .bootStrap()
+
+            ResourcePackRepository resourcePackRepository = ResourcePackSourceVanilla.c(); // .createVanillaTrustedRepository()
+            resourcePackRepository.a(); // .reload()
+
+            ResourceManager resourceManager = new ResourceManager(
+                    EnumResourcePackType.b /* SERVER_DATA */,
+                    resourcePackRepository.c() /* getAvailablePacks() */ .stream().map(ResourcePackLoader::e /* openFull() */).collect(Collectors.toList()));
+            LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = RegistryLayer.a(); // .createRegistryAccess()
+            layeredRegistryAccess = WorldLoader.b(resourceManager, layeredRegistryAccess, RegistryLayer.b /* WORLDGEN */, RegistryDataLoader.a /* WORLDGEN_REGISTRIES */); // .loadAndReplaceLayer()
+            IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().c(); // .compositeAccess().freeze()
+
+            DataPackResources dataPackResources = DataPackResources.a(
+                    resourceManager,
+                    registryCustom,
+                    FeatureFlags.d.a() /* REGISTRY.allFlags() */,
+                    CommandDispatcher.ServerType.b /* DEDICATED */,
+                    0,
+                    MoreExecutors.directExecutor(),
+                    MoreExecutors.directExecutor()
+            ).join();
+            dataPackResources.a(registryCustom); // .updateRegistryTags()
 
             try {
                 IRegistry.class.getName();
@@ -89,11 +132,19 @@ public class BukkitInitialization {
             when(mockedServer.getVersion()).thenReturn(serverVersion + " (MC: " + releaseTarget + ")");
             when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
 
-            when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
             when(mockedServer.isPrimaryThread()).thenReturn(true);
+            when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
+            when(mockedServer.getUnsafe()).thenReturn(CraftMagicNumbers.INSTANCE);
+            when(mockedServer.getLootTable(any())).thenAnswer(invocation -> {
+                NamespacedKey key = invocation.getArgument(0);
+                return new CraftLootTable(key, dataPackResources.b() /* .getLootData() */ .getLootTable(CraftNamespacedKey.toMinecraft(key)));
+            });
+            when(mockedServer.getRegistry(any())).thenAnswer(invocation -> {
+                Class<Keyed> registryType = invocation.getArgument(0);
+                return CraftRegistry.createRegistry(registryType, registryCustom);
+            });
 
             WorldServer nmsWorld = mock(WorldServer.class);
-
             SpigotWorldConfig mockWorldConfig = mock(SpigotWorldConfig.class);
 
             try {
@@ -109,8 +160,13 @@ public class BukkitInitialization {
             List<World> worlds = Collections.singletonList(world);
             when(mockedServer.getWorlds()).thenReturn(worlds);
 
-            // Inject this fake server
+            // Inject this fake server & our registry (must happen after server set)
             Bukkit.setServer(mockedServer);
+            CraftRegistry.setMinecraftRegistry(registryCustom);
+
+            // Init Enchantments
+            Enchantments.A.getClass();
+            Enchantment.stopAcceptingRegistrations();
 
             initialized = true;
         }

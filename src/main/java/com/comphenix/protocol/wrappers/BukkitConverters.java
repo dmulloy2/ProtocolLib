@@ -22,15 +22,8 @@ import com.comphenix.protocol.wrappers.Either.Right;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -1115,7 +1108,6 @@ public class BukkitConverters {
     static MethodAccessor getSoundEffect = null;
     static FieldAccessor soundKey = null;
 
-    static MethodAccessor getSoundEffectByKey = null;
     static MethodAccessor getSoundEffectBySound = null;
     static MethodAccessor getSoundByEffect = null;
 
@@ -1124,15 +1116,9 @@ public class BukkitConverters {
     public static EquivalentConverter<Sound> getSoundConverter() {
         // Try to create sound converter for new versions greater 1.16.4
         if (MinecraftVersion.NETHER_UPDATE_4.atOrAbove()) {
-            if (getSoundEffectByKey == null || getSoundEffectBySound == null || getSoundByEffect == null) {
+            if (getSoundEffectBySound == null || getSoundByEffect == null) {
                 Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
                 FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
-
-                getSoundEffectByKey = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
-                        "getSoundEffect",
-                        MinecraftReflection.getSoundEffectClass(),
-                        String.class
-                ));
 
                 getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
                         "getSoundEffect",
@@ -1164,8 +1150,9 @@ public class BukkitConverters {
                     try {
                         return (Sound) getSoundByEffect.invoke(null, generic);
                     } catch (IllegalStateException ex) {
-                        if (ex.getCause() instanceof NullPointerException) {
+                        if (ex.getCause() instanceof NullPointerException || ex.getCause() instanceof NoSuchElementException) {
                             // "null" sounds cause NPEs inside getSoundByEffect
+                            // "null" sounds can also trigger a NSE in newer versions because of Optional.get() usages
                             return null;
                         }
                         throw ex;
@@ -1361,34 +1348,62 @@ public class BukkitConverters {
 
             @Override
             public Object getGeneric(PotionEffectType specific) {
-                Class<?> clazz = MinecraftReflection.getMobEffectListClass();
-                if (getMobEffect == null) {
-                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
-                    getMobEffect = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-                            .parameterExactArray(int.class)
-                            .returnTypeExact(clazz)
-                            .requireModifier(Modifier.STATIC)
-                            .build()));
-                }
+                if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                    if (getMobEffect == null) {
+                        Class<?> potionEffectTypeClass = MinecraftReflection.getCraftBukkitClass("potion.CraftPotionEffectType");
+                        FuzzyReflection fuzzy = FuzzyReflection.fromClass(potionEffectTypeClass, false);
+                        getMobEffect = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                                .parameterExactArray(PotionEffectType.class)
+                                .returnTypeExact(MinecraftReflection.getMobEffectListClass())
+                                .requireModifier(Modifier.STATIC)
+                                .build()));
+                    }
 
-                int id = specific.getId();
-                return getMobEffect.invoke(null, id);
+                    return getMobEffect.invoke(null, specific);
+                } else {
+                    if (getMobEffect == null) {
+                        Class<?> clazz = MinecraftReflection.getMobEffectListClass();
+                        FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
+                        getMobEffect = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                                .parameterExactArray(int.class)
+                                .returnTypeExact(clazz)
+                                .requireModifier(Modifier.STATIC)
+                                .build()));
+                    }
+
+                    int id = specific.getId();
+                    return getMobEffect.invoke(null, id);
+                }
             }
 
             @Override
             public PotionEffectType getSpecific(Object generic) {
-                Class<?> clazz = MinecraftReflection.getMobEffectListClass();
-                if (getMobEffectId == null) {
-                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
-                    getMobEffectId = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-                            .parameterExactArray(clazz)
-                            .returnTypeExact(int.class)
-                            .requireModifier(Modifier.STATIC)
-                            .build()));
-                }
+                if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                    if (getMobEffectId == null) {
+                        Class<?> potionEffectTypeClass = MinecraftReflection.getCraftBukkitClass("potion.CraftPotionEffectType");
+                        FuzzyReflection fuzzy = FuzzyReflection.fromClass(potionEffectTypeClass, false);
+                        getMobEffectId = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                                .parameterExactArray(MinecraftReflection.getMobEffectListClass())
+                                .returnTypeExact(PotionEffectType.class)
+                                .requireModifier(Modifier.STATIC)
+                                .build()));
+                    }
 
-                int id = (int) getMobEffectId.invoke(null, generic);
-                return PotionEffectType.getById(id);
+                    return (PotionEffectType) getMobEffectId.invoke(null, generic);
+                } else {
+                    if (getMobEffectId == null) {
+                        Class<?> clazz = MinecraftReflection.getMobEffectListClass();
+                        FuzzyReflection fuzzy = FuzzyReflection.fromClass(clazz, false);
+                        getMobEffectId = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                                .parameterExactArray(clazz)
+                                .returnTypeExact(int.class)
+                                .requireModifier(Modifier.STATIC)
+                                .build()));
+                    }
+
+                    int id = (int) getMobEffectId.invoke(null, generic);
+                    return PotionEffectType.getById(id);
+                }
             }
         });
     }

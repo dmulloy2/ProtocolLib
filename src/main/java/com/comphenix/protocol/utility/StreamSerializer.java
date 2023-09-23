@@ -4,6 +4,7 @@ import com.comphenix.protocol.injector.netty.NettyByteBufAdapter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
@@ -93,13 +94,24 @@ public class StreamSerializer {
      */
     public void serializeCompound(DataOutputStream output, NbtCompound compound) {
         if (WRITE_NBT_METHOD == null) {
-            WRITE_NBT_METHOD = Accessors.getMethodAccessor(FuzzyReflection
-                    .fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
-                    .getMethodByParameters("writeNbtCompound", MinecraftReflection.getNBTCompoundClass()));
+            FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), true);
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                FuzzyMethodContract writeNbtContract = FuzzyMethodContract.newBuilder()
+                        .returnTypeExact(MinecraftReflection.getPacketDataSerializerClass())
+                        .parameterExactArray(MinecraftReflection.getNBTBaseClass())
+                        .build();
+                WRITE_NBT_METHOD = Accessors.getMethodAccessor(fuzzy.getMethod(writeNbtContract));
+            } else {
+                WRITE_NBT_METHOD = Accessors.getMethodAccessor(fuzzy.getMethodByParameters("writeNbtCompound", MinecraftReflection.getNBTCompoundClass()));
+            }
         }
 
         ByteBuf buf = NettyByteBufAdapter.packetWriter(output);
-        buf.writeByte(NbtType.TAG_COMPOUND.getRawID());
+
+        // 1.20.2+ will write the id automatically
+        if (!MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+            buf.writeByte(NbtType.TAG_COMPOUND.getRawID());
+        }
 
         // Get the NMS version of the compound
         Object handle = compound != null ? NbtFactory.fromBase(compound).getHandle() : null;

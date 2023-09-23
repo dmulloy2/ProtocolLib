@@ -171,7 +171,7 @@ public final class MinecraftMethods {
                     .method(ElementMatchers.not(ElementMatchers.isDeclaredBy(Object.class)))
                     .intercept(MethodDelegation.to(new Object() {
                         @RuntimeType
-                        public Object delegate(@SuperCall Callable<?> zuper, @Origin Method method) throws Exception {
+                        public Object delegate(@SuperCall(nullIfImpossible = true) Callable<?> zuper, @Origin Method method) throws Exception {
                             if (method.getName().contains("read")) {
                                 throw new ReadMethodException();
                             }
@@ -203,7 +203,8 @@ public final class MinecraftMethods {
             }
 
             // constructs a new decorated serializer
-            Object decoratedSerializer = decoratedDataSerializerAccessor.invoke(Unpooled.EMPTY_BUFFER);
+            Object serializerBacking = decoratedDataSerializerAccessor.invoke(Unpooled.EMPTY_BUFFER);
+            Object decoratedSerializer = decoratedDataSerializerAccessor.invoke(serializerBacking);
 
             // find all methods which might be the read or write methods
             List<Method> candidates = FuzzyReflection

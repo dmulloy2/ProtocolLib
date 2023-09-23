@@ -46,10 +46,9 @@ class MinecraftVersionTest {
         assertTrue(atLeast.isAtLeast(MinecraftVersion.BOUNTIFUL_UPDATE));
     }
 
-
     @Test
     void testCurrent() {
-        assertEquals(MinecraftVersion.TRAILS_AND_TAILS, MinecraftVersion.getCurrentVersion());
+        assertEquals(MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE, MinecraftVersion.getCurrentVersion());
     }
 
     @Test
