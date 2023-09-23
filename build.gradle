@@ -11,7 +11,7 @@ description = 'Provides access to the Minecraft protocol'
 def isSnapshot = version.endsWith('-SNAPSHOT')
 
 repositories {
-    mavenLocal() // can speed up build, but may fail in CI
+    // mavenLocal() // can speed up build, but may fail in CI
     mavenCentral()
 
     maven {
