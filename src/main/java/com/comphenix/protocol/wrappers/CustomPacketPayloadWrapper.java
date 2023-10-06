@@ -12,10 +12,13 @@ import com.comphenix.protocol.utility.ByteBuddyGenerated;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.StreamSerializer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
+
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.FieldAccessor;
@@ -40,26 +43,32 @@ public final class CustomPacketPayloadWrapper {
     private static final Class<?> MINECRAFT_KEY_CLASS;
     private static final Class<?> CUSTOM_PACKET_PAYLOAD_CLASS;
 
-    private static final MethodAccessor WRITE_BYTES_METHOD;
     private static final ConstructorAccessor PAYLOAD_WRAPPER_CONSTRUCTOR;
+
+    private static final MethodAccessor GET_ID_PAYLOAD_METHOD;
+    private static final MethodAccessor SERIALIZE_PAYLOAD_METHOD;
 
     private static final EquivalentConverter<CustomPacketPayloadWrapper> CONVERTER;
 
     static {
         try {
-            // using this method is a small hack to prevent fuzzy from finding the renamed "getBytes(byte[])" method
-            // the method we're extracting here is: writeBytes(byte[] data, int arrayStartInclusive, int arrayEndExclusive)
-            Class<?> packetDataSerializer = MinecraftReflection.getPacketDataSerializerClass();
-            Method writeBytes = FuzzyReflection.fromClass(packetDataSerializer, false).getMethod(FuzzyMethodContract.newBuilder()
-                    .banModifier(Modifier.STATIC)
-                    .requireModifier(Modifier.PUBLIC)
-                    .parameterExactArray(byte[].class, int.class, int.class)
-                    .returnTypeExact(packetDataSerializer)
-                    .build());
-            WRITE_BYTES_METHOD = Accessors.getMethodAccessor(writeBytes);
-
             MINECRAFT_KEY_CLASS = MinecraftReflection.getMinecraftKeyClass();
             CUSTOM_PACKET_PAYLOAD_CLASS = MinecraftReflection.getMinecraftClass("network.protocol.common.custom.CustomPacketPayload");
+
+            Method getPayloadId = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
+                    .banModifier(Modifier.STATIC)
+                    .returnTypeExact(MINECRAFT_KEY_CLASS)
+                    .parameterCount(0)
+                    .build());
+            GET_ID_PAYLOAD_METHOD = Accessors.getMethodAccessor(getPayloadId);
+
+            Method serializePayloadData = FuzzyReflection.fromClass(CUSTOM_PACKET_PAYLOAD_CLASS).getMethod(FuzzyMethodContract.newBuilder()
+                    .banModifier(Modifier.STATIC)
+                    .returnTypeVoid()
+                    .parameterCount(1)
+                    .parameterDerivedOf(ByteBuf.class, 0)
+                    .build());
+            SERIALIZE_PAYLOAD_METHOD = Accessors.getMethodAccessor(serializePayloadData);
 
             Constructor<?> payloadWrapperConstructor = makePayloadWrapper();
             PAYLOAD_WRAPPER_CONSTRUCTOR = Accessors.getConstructorAccessor(payloadWrapperConstructor);
@@ -153,23 +162,36 @@ public final class CustomPacketPayloadWrapper {
     }
 
     /**
-     * Constructs this wrapper from an incoming ServerboundCustomPayloadPacket.UnknownPayload. All other types of
-     * payloads are not supported and will result in an exception.
+     * Constructs this wrapper from any CustomPayload type.
      * <p>
-     * Note: the buffer of the given UnknownPayload will <strong>NOT</strong> be released by this operation. Make sure
+     * Note: the buffer of the given payload (if any) will <strong>NOT</strong> be released by this operation. Make sure
      * to release the buffer manually if you discard the packet to prevent memory leaks.
      *
-     * @param unknownPayload the instance of the unknown payload to convert to this wrapper.
-     * @return a wrapper holding the minecraft key and payload of the given UnknownPayload instance.
+     * @param payload the instance of the custom payload to convert to this wrapper.
+     * @return a wrapper holding the minecraft key and payload of the given custom payload instance.
      */
-    public static CustomPacketPayloadWrapper fromUnknownPayload(Object unknownPayload) {
-        StructureModifier<Object> modifier = new StructureModifier<>(unknownPayload.getClass()).withTarget(unknownPayload);
-        Object messageId = modifier.withType(MINECRAFT_KEY_CLASS).read(0);
-        ByteBuf messagePayload = (ByteBuf) modifier.withType(ByteBuf.class).read(0);
-
+    public static CustomPacketPayloadWrapper fromUnknownPayload(Object payload) {
+        Object messageId = GET_ID_PAYLOAD_METHOD.invoke(payload);
         MinecraftKey id = MinecraftKey.getConverter().getSpecific(messageId);
-        byte[] payload = StreamSerializer.getDefault().getBytesAndRelease(messagePayload.retain());
-        return new CustomPacketPayloadWrapper(payload, id);
+
+        // we read and retain the underlying buffer in case the class uses a buffer to store the data
+        // this way, when passing the packet to further handling, the buffer is not released and can be re-used
+        StructureModifier<Object> modifier = new StructureModifier<>(payload.getClass()).withTarget(payload);
+        byte[] messagePayload = modifier.withType(ByteBuf.class).optionRead(0)
+                .map(buffer -> {
+                    ByteBuf buf = (ByteBuf) buffer;
+                    byte[] data = StreamSerializer.getDefault().getBytesAndRelease(buf.markReaderIndex().retain());
+                    buf.resetReaderIndex();
+                    return data;
+                })
+                .orElseGet(() -> {
+                    ByteBuf buffer = Unpooled.buffer();
+                    Object serializer = MinecraftReflection.getPacketDataSerializer(buffer);
+                    SERIALIZE_PAYLOAD_METHOD.invoke(payload, serializer);
+                    return StreamSerializer.getDefault().getBytesAndRelease(buffer);
+                });
+
+        return new CustomPacketPayloadWrapper(messagePayload, id);
     }
 
     /**
@@ -217,7 +239,7 @@ public final class CustomPacketPayloadWrapper {
     @SuppressWarnings("unused")
     static final class CustomPacketPayloadInterceptionHandler {
         public static void intercept(@FieldValue("payload") byte[] payload, @Argument(0) Object packetBuffer) {
-            WRITE_BYTES_METHOD.invoke(packetBuffer, payload, 0, payload.length);
+            ((ByteBuf) packetBuffer).writeBytes(payload);
         }
     }
 }
