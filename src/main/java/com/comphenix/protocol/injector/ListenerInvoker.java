@@ -46,6 +46,8 @@ public interface ListenerInvoker {
      *
      * @param packet - the packet.
      * @return The packet type.
+     * @deprecated use {@link com.comphenix.protocol.injector.packet.PacketRegistry#getPacketType(PacketType.Protocol, Class)} instead.
      */
+    @Deprecated
     PacketType getPacketType(Object packet);
 }

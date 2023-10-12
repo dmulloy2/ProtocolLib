@@ -28,7 +28,6 @@ import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.Util;
 import com.comphenix.protocol.wrappers.Pair;
 import io.netty.channel.ChannelFuture;
 import org.bukkit.Server;
@@ -93,7 +92,8 @@ public class NetworkManagerInjector implements ChannelListener {
         Class<?> packetClass = packet.getClass();
         if (marker != null || MinecraftReflection.isBundlePacket(packetClass) || outboundListeners.contains(packetClass)) {
             // wrap packet and construct the event
-            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(packetClass), packet);
+            PacketType.Protocol currentProtocol = injector.getCurrentProtocol(PacketType.Sender.SERVER);
+            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(currentProtocol, packetClass), packet);
             PacketEvent packetEvent = PacketEvent.fromServer(this, container, marker, injector.getPlayer());
 
             // post to all listeners, then return the packet event we constructed
@@ -111,7 +111,8 @@ public class NetworkManagerInjector implements ChannelListener {
         Class<?> packetClass = packet.getClass();
         if (marker != null || inboundListeners.contains(packetClass)) {
             // wrap the packet and construct the event
-            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(packetClass), packet);
+            PacketType.Protocol currentProtocol = injector.getCurrentProtocol(PacketType.Sender.CLIENT);
+            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(currentProtocol, packetClass), packet);
             PacketEvent packetEvent = PacketEvent.fromClient(this, container, marker, injector.getPlayer());
 
             // post to all listeners, then return the packet event we constructed
@@ -238,7 +239,6 @@ public class NetworkManagerInjector implements ChannelListener {
                 // just reset to the list we wrapped originally
                 ListeningList ourList = (ListeningList) currentFieldValue;
                 List<Object> original = ourList.getOriginal();
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (original) {
                     // revert the injection from all values of the list
                     ourList.unProcessAll();

@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.netty;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
 import org.bukkit.entity.Player;
@@ -49,8 +50,21 @@ public interface Injector {
      * Retrieve the current protocol state.
      *
      * @return The current protocol.
+     * @deprecated use {@link #getCurrentProtocol(PacketType.Sender)} instead.
      */
-    Protocol getCurrentProtocol();
+    @Deprecated
+    default Protocol getCurrentProtocol() {
+        return this.getCurrentProtocol(PacketType.Sender.SERVER);
+    }
+
+    /**
+     * Retrieve the current protocol state. Note that since 1.20.2 the client and server direction can be in different
+     * protocol states.
+     *
+     * @param sender the side for which the state should be resolved.
+     * @return The current protocol.
+     */
+    Protocol getCurrentProtocol(PacketType.Sender sender);
 
     /**
      * Retrieve the network marker associated with a given packet.

@@ -2,8 +2,6 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
@@ -110,7 +108,6 @@ public class NettyChannelInjector implements Injector {
 
     // lazy initialized fields, if we don't need them we don't bother about them
     private Object playerConnection;
-    private FieldAccessor protocolAccessor;
 
     public NettyChannelInjector(
             Player player,
@@ -322,17 +319,8 @@ public class NettyChannelInjector implements Injector {
     }
 
     @Override
-    public Protocol getCurrentProtocol() {
-        // ensure that the accessor to the protocol field is available
-        if (this.protocolAccessor == null) {
-            this.protocolAccessor = Accessors.getFieldAccessor(
-                    this.networkManager.getClass(),
-                    MinecraftReflection.getEnumProtocolClass(),
-                    true);
-        }
-
-        Object nmsProtocol = this.protocolAccessor.get(this.networkManager);
-        return Protocol.fromVanilla((Enum<?>) nmsProtocol);
+    public Protocol getCurrentProtocol(PacketType.Sender sender) {
+        return ChannelProtocolUtil.PROTOCOL_RESOLVER.apply(this.wrappedChannel, sender);
     }
 
     @Override
