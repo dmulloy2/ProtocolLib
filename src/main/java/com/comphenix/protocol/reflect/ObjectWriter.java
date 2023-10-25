@@ -17,11 +17,6 @@
 
 package com.comphenix.protocol.reflect;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.injector.StructureCache;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.StreamSerializer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -46,18 +41,6 @@ public class ObjectWriter {
      * @return A structure modifier for the given type.
      */
     private StructureModifier<Object> getModifier(Class<?> type) {
-        Class<?> packetClass = MinecraftReflection.getPacketClass();
-
-        // Handle subclasses of the packet class with our custom structure cache, if possible
-        if (!type.equals(packetClass) && packetClass.isAssignableFrom(type)) {
-            // might be a packet, but some packets are not registered (for example PacketPlayInFlying, only the subtypes are present)
-            PacketType packetType = PacketRegistry.getPacketType(type);
-            if (packetType != null) {
-                // packet is present, delegate to the cache
-                return StructureCache.getStructure(packetType);
-            }
-        }
-
         // Create the structure modifier if we haven't already
         StructureModifier<Object> modifier = CACHE.get(type);
         if (modifier == null) {

@@ -118,7 +118,9 @@ public class StructureCache {
      *
      * @param packetType - packet type.
      * @return A structure modifier.
+     * @deprecated use {@link #getStructure(PacketType)} instead.
      */
+    @Deprecated
     public static StructureModifier<Object> getStructure(Class<?> packetType) {
         // Get the ID from the class
         PacketType type = PacketRegistry.getPacketType(packetType);

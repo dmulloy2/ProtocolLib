@@ -48,7 +48,9 @@ public class PacketRegistry {
     protected static class Register {
         // The main lookup table
         final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
+
         final Map<Class<?>, PacketType> classToType = new ConcurrentHashMap<>();
+        final Map<PacketType.Protocol, Map<Class<?>, PacketType>> protocolClassToType = new ConcurrentHashMap<>();
 
         volatile Set<PacketType> serverPackets = new HashSet<>();
         volatile Set<PacketType> clientPackets = new HashSet<>();
@@ -58,7 +60,10 @@ public class PacketRegistry {
 
         public void registerPacket(PacketType type, Class<?> clazz, Sender sender) {
             typeToClass.put(type, Optional.of(clazz));
+
             classToType.put(clazz, type);
+            protocolClassToType.computeIfAbsent(type.getProtocol(), __ -> new ConcurrentHashMap<>()).put(clazz, type);
+
             if (sender == Sender.CLIENT) {
                 clientPackets.add(type);
             } else {
@@ -430,7 +435,9 @@ public class PacketRegistry {
      * Retrieve the packet type of a given packet.
      * @param packet - the class of the packet.
      * @return The packet type, or NULL if not found.
+     * @deprecated major issues due to packets with shared classes being registered in multiple states.
      */
+    @Deprecated
     public static PacketType getPacketType(Class<?> packet) {
         initialize();
 
@@ -440,7 +447,24 @@ public class PacketRegistry {
         
         return REGISTER.classToType.get(packet);
     }
-    
+
+    /**
+     * Retrieve the associated packet type for a packet class in the given protocol state.
+     *
+     * @param protocol the protocol state to retrieve the packet from.
+     * @param packet the class identifying the packet type.
+     * @return the packet type associated with the given class in the given protocol state, or null if not found.
+     */
+    public static PacketType getPacketType(PacketType.Protocol protocol, Class<?> packet) {
+        initialize();
+        if (MinecraftReflection.isBundlePacket(packet)) {
+            return PacketType.Play.Server.BUNDLE;
+        }
+
+        Map<Class<?>, PacketType> classToTypesForProtocol = REGISTER.protocolClassToType.get(protocol);
+        return classToTypesForProtocol == null ? null : classToTypesForProtocol.get(packet);
+    }
+
     /**
      * Retrieve the packet type of a given packet.
      * @param packet - the class of the packet.
