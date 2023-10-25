@@ -20,6 +20,7 @@ import io.netty.buffer.Unpooled;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,7 +59,10 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.PacketDataSerializer;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.BrandPayload;
 import net.minecraft.network.protocol.game.PacketPlayOutGameStateChange;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
@@ -414,6 +418,59 @@ public class PacketContainerTest {
         Assertions.assertEquals("minecraft", key.getPrefix());
         Assertions.assertEquals("test", key.getKey());
         Assertions.assertArrayEquals(payloadData, payloadWrapper.getPayload());
+    }
+
+    @Test
+    public void testCustomPayloadPacket() {
+        byte[] customPayload = "Hello World, This is A Super-Cool-Test!!!!!".getBytes(StandardCharsets.UTF_8);
+        com.comphenix.protocol.wrappers.MinecraftKey key = new com.comphenix.protocol.wrappers.MinecraftKey("protocollib", "test");
+        CustomPacketPayloadWrapper payloadWrapper = new CustomPacketPayloadWrapper(customPayload, key);
+
+        PacketContainer container = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
+        container.getCustomPacketPayloads().write(0, payloadWrapper);
+
+        PacketDataSerializer serializer = new PacketDataSerializer(Unpooled.buffer());
+        ClientboundCustomPayloadPacket constructedHandle = (ClientboundCustomPayloadPacket) container.getHandle();
+        constructedHandle.a(serializer);
+
+        ServerboundCustomPayloadPacket deserializedHandle = new ServerboundCustomPayloadPacket(serializer);
+        PacketContainer serverContainer = new PacketContainer(PacketType.Play.Client.CUSTOM_PAYLOAD, deserializedHandle);
+
+        CustomPacketPayloadWrapper deserializedPayloadWrapper = serverContainer.getCustomPacketPayloads().read(0);
+        Assertions.assertEquals(key, deserializedPayloadWrapper.getId());
+        Assertions.assertArrayEquals(customPayload, deserializedPayloadWrapper.getPayload());
+    }
+
+    @Test
+    public void testSomeCustomPayloadRead() {
+        BrandPayload payload = new BrandPayload("Hello World!");
+        ClientboundCustomPayloadPacket handle = new ClientboundCustomPayloadPacket(payload);
+
+        PacketContainer container = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD, handle);
+        CustomPacketPayloadWrapper payloadWrapper = container.getCustomPacketPayloads().read(0);
+
+        com.comphenix.protocol.wrappers.MinecraftKey payloadId = payloadWrapper.getId();
+        Assertions.assertEquals(BrandPayload.a.toString(), payloadId.getFullKey());
+
+        PacketDataSerializer serializer = new PacketDataSerializer(Unpooled.wrappedBuffer(payloadWrapper.getPayload()));
+        BrandPayload deserializedPayload = new BrandPayload(serializer);
+        Assertions.assertEquals(payload.b(), deserializedPayload.b());
+    }
+
+    @Test
+    public void testUnknownPayloadNotReleasedOnRead() {
+        MinecraftKey id = new MinecraftKey("plib", "main");
+        ByteBuf data = Unpooled.wrappedBuffer("This is a Test!!".getBytes(StandardCharsets.UTF_8));
+        ServerboundCustomPayloadPacket.UnknownPayload payload = new ServerboundCustomPayloadPacket.UnknownPayload(id, data);
+        ServerboundCustomPayloadPacket handle = new ServerboundCustomPayloadPacket(payload);
+
+        PacketContainer container = new PacketContainer(PacketType.Play.Client.CUSTOM_PAYLOAD, handle);
+        CustomPacketPayloadWrapper payloadWrapper = container.getCustomPacketPayloads().read(0);
+
+        Assertions.assertEquals(id.toString(), payloadWrapper.getId().getFullKey());
+        Assertions.assertEquals("This is a Test!!", new String(payloadWrapper.getPayload()));
+        Assertions.assertEquals(1, payload.data().refCnt());
+        Assertions.assertEquals(0, payload.data().readerIndex());
     }
 
     @Test
