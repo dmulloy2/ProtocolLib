@@ -33,17 +33,17 @@ repositories {
 }
 
 dependencies {
-    implementation 'net.bytebuddy:byte-buddy:1.14.3'
+    implementation 'net.bytebuddy:byte-buddy:1.14.9'
     compileOnly 'org.spigotmc:spigot-api:1.20.2-R0.1-SNAPSHOT'
     compileOnly 'org.spigotmc:spigot:1.20.2-R0.1-SNAPSHOT'
     compileOnly 'io.netty:netty-all:4.0.23.Final'
     compileOnly 'net.kyori:adventure-text-serializer-gson:4.13.0'
     compileOnly 'com.googlecode.json-simple:json-simple:1.1.1'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
-    testImplementation 'org.mockito:mockito-core:4.11.0'
-    testImplementation 'org.mockito:mockito-inline:4.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.0'
+    testImplementation 'org.mockito:mockito-core:5.6.0'
     testImplementation 'io.netty:netty-common:4.1.97.Final'
     testImplementation 'io.netty:netty-transport:4.1.97.Final'
     testImplementation 'org.spigotmc:spigot:1.20.2-R0.1-SNAPSHOT'
