@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.comphenix.protocol'
-version = '5.1.1-SNAPSHOT'
+version = '5.2.0-SNAPSHOT'
 description = 'Provides access to the Minecraft protocol'
 
 def isSnapshot = version.endsWith('-SNAPSHOT')
