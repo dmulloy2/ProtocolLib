@@ -58,6 +58,7 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
+import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.PacketDataSerializer;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
@@ -500,7 +501,8 @@ public class PacketContainerTest {
         // are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
         // members of the packet itself)
         PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
-        AttributeBase base = BuiltInRegistries.v.a(MinecraftKey.a("generic.max_health"));
+		IRegistry<AttributeBase> registry = BuiltInRegistries.u;
+        AttributeBase base = registry.a(MinecraftKey.a("generic.max_health"));
         AttributeSnapshot snapshot = new AttributeSnapshot(base, 20.0D, modifiers);
         attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 
@@ -882,6 +884,7 @@ public class PacketContainerTest {
 
                 // Make sure watchable collections can be cloned
                 if (type == PacketType.Play.Server.ENTITY_METADATA) {
+					IRegistry<CatVariant> catVariantRegistry = BuiltInRegistries.ak;
                     constructed.getDataValueCollectionModifier().write(0, Lists.newArrayList(
                             new WrappedDataValue(0, Registry.get(Byte.class), (byte) 1),
                             new WrappedDataValue(0, Registry.get(Float.class), 5F),
@@ -895,7 +898,7 @@ public class PacketContainerTest {
                                     0,
                                     Registry.getItemStackSerializer(false),
                                     BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.WOODEN_AXE))),
-                            new WrappedDataValue(0, Registry.get(CatVariant.class), BuiltInRegistries.aj.e(CatVariant.e)),
+                            new WrappedDataValue(0, Registry.get(CatVariant.class), catVariantRegistry.e(CatVariant.e)),
                             new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariant.a)
                     ));
                 } else if (type == PacketType.Play.Server.CHAT) {

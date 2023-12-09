@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
+
 import com.google.common.util.concurrent.MoreExecutors;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.CommandDispatcher;
@@ -28,16 +29,19 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.enchantment.Enchantments;
 import org.apache.logging.log4j.LogManager;
-import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_20_R2.CraftLootTable;
-import org.bukkit.craftbukkit.v1_20_R2.CraftRegistry;
-import org.bukkit.craftbukkit.v1_20_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R2.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_20_R2.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_20_R2.util.CraftNamespacedKey;
-import org.bukkit.craftbukkit.v1_20_R2.util.Versioning;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.Bukkit;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Server;
+import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_20_R3.CraftLootTable;
+import org.bukkit.craftbukkit.v1_20_R3.CraftRegistry;
+import org.bukkit.craftbukkit.v1_20_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_20_R3.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_20_R3.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_20_R3.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -102,12 +106,13 @@ public class BukkitInitialization {
                     resourcePackRepository.c() /* getAvailablePacks() */ .stream().map(ResourcePackLoader::e /* openFull() */).collect(Collectors.toList()));
             LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = RegistryLayer.a(); // .createRegistryAccess()
             layeredRegistryAccess = WorldLoader.b(resourceManager, layeredRegistryAccess, RegistryLayer.b /* WORLDGEN */, RegistryDataLoader.a /* WORLDGEN_REGISTRIES */); // .loadAndReplaceLayer()
-            IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().c(); // .compositeAccess().freeze()
+			IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().d(); // .compositeAccess().freeze()
+            // IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().c(); // .compositeAccess().freeze()
 
             DataPackResources dataPackResources = DataPackResources.a(
                     resourceManager,
                     registryCustom,
-                    FeatureFlags.d.a() /* REGISTRY.allFlags() */,
+					FeatureFlagSet.a() /* REGISTRY.allFlags() */,
                     CommandDispatcher.ServerType.b /* DEDICATED */,
                     0,
                     MoreExecutors.directExecutor(),
@@ -166,7 +171,7 @@ public class BukkitInitialization {
 
             // Init Enchantments
             Enchantments.A.getClass();
-            Enchantment.stopAcceptingRegistrations();
+            // Enchantment.stopAcceptingRegistrations();
 
             initialized = true;
         }

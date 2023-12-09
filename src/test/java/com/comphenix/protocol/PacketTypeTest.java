@@ -45,9 +45,9 @@ public class PacketTypeTest {
         BukkitInitialization.initializeAll();
 
         // I'm well aware this is jank, but it does in fact work correctly and give the desired result
-        /*PacketType.onDynamicCreate = className -> {
+        /* PacketType.onDynamicCreate = className -> {
             throw new RuntimeException("Dynamically generated packet " + className);
-        };*/
+        }; */
     }
 
     @AfterAll
@@ -342,21 +342,22 @@ public class PacketTypeTest {
         }
     }
 
-    @Test
-    public void testPacketCreation() {
-        boolean fail = false;
-        for (PacketType type : PacketType.values()) {
-            if (type.isSupported()) {
-                try {
-                    new PacketContainer(type);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    fail = true;
-                }
-            }
-        }
-        assertFalse(fail, "Packet type(s) failed to instantiate");
-    }
+	@Test
+	public void testPacketCreation() {
+		List<PacketType> failed = new ArrayList<>();
+		for (PacketType type : PacketType.values()) {
+			if (!type.isSupported()) {
+				continue;
+			}
+
+			try {
+				new PacketContainer(type);
+			} catch (Exception ex) {
+				failed.add(type);
+			}
+		}
+		assertTrue(failed.isEmpty(), "Failed to create: " + failed);
+	}
 
     @Test
     public void testPacketBundleWriting() {
@@ -365,7 +366,7 @@ public class PacketTypeTest {
         List<PacketContainer> bundle = new ArrayList<>();
 
         PacketContainer chatMessage = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
-        chatMessage.getStrings().write(0, WrappedChatComponent.fromText("Test").getJson());
+        chatMessage.getChatComponents().write(0, WrappedChatComponent.fromText("Test"));
         chatMessage.getBooleans().write(0, false);
         bundle.add(chatMessage);
         bundlePacket.getPacketBundles().write(0, bundle);

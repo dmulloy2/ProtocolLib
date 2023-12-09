@@ -13,7 +13,7 @@ import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_20_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.AfterAll;

@@ -1390,7 +1390,7 @@ public final class MinecraftReflection {
      * @param aliases Potential aliases
      * @return Optional that may contain the class
      */
-    private static Optional<Class<?>> getOptionalNMS(String className, String... aliases) {
+    public static Optional<Class<?>> getOptionalNMS(String className, String... aliases) {
         if (minecraftPackage == null) {
             minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
         }

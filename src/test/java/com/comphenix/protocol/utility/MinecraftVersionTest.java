@@ -48,7 +48,7 @@ class MinecraftVersionTest {
 
     @Test
     void testCurrent() {
-        assertEquals(MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE, MinecraftVersion.getCurrentVersion());
+        assertEquals(MinecraftVersion.v1_20_4, MinecraftVersion.getCurrentVersion());
     }
 
     @Test

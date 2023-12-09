@@ -28,7 +28,7 @@ public class AggregateClonerTest {
 
     // @Test
     // Usages of NonNullList were removed in 1.17.1
-    public void testNonNullList() {
+    /* public void testNonNullList() {
         PacketContainer packet = new PacketContainer(PacketType.Play.Server.WINDOW_ITEMS);
 
         NonNullList<ItemStack> list = NonNullList.a(16, ItemStack.b);
@@ -41,5 +41,5 @@ public class AggregateClonerTest {
 
         assertEquals(list.size(), list1.size());
         Assertions.assertArrayEquals(list.toArray(), list1.toArray());
-    }
+    } */
 }

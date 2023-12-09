@@ -12,8 +12,8 @@ import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.PlayerChunkMap.EntityTracker;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.Entity;
-import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_20_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R3.entity.CraftEntity;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +35,7 @@ public class EntityUtilitiesTest {
         when(bukkit.getHandle()).thenReturn(world);
 
         ChunkProviderServer provider = mock(ChunkProviderServer.class);
-        when(world.k()).thenReturn(provider);
+		when(world.l()).thenReturn(provider);
 
         PlayerChunkMap chunkMap = mock(PlayerChunkMap.class);
         Field chunkMapField = FuzzyReflection.fromClass(ChunkProviderServer.class, true)

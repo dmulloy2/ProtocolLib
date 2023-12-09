@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import com.google.gson.JsonObject;
 import java.io.StringReader;
+import java.util.Optional;
 
 import org.bukkit.ChatColor;
 
@@ -10,7 +11,10 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+
 import com.google.common.base.Preconditions;
+import net.minecraft.network.chat.IChatBaseComponent;
 
 /**
  * Represents a chat component added in Minecraft 1.7.2
@@ -20,6 +24,8 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
     private static final Class<?> SERIALIZER = MinecraftReflection.getChatSerializerClass();
     private static final Class<?> COMPONENT = MinecraftReflection.getIChatBaseComponentClass();
     private static final Class<?> GSON_CLASS = MinecraftReflection.getMinecraftGsonClass();
+	private static final Optional<Class<?>> MUTABLE_COMPONENT_CLASS
+		= MinecraftReflection.getOptionalNMS("network.chat.IChatMutableComponent");
 
     private static Object GSON = null;
     private static MethodAccessor DESERIALIZE = null;
@@ -38,13 +44,18 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
         GSON = Accessors.getFieldAccessor(fuzzy.getFieldByType("gson", GSON_CLASS)).get(null);
 
-        try {
-            DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getChatDeserializer(), true)
-                .getMethodByReturnTypeAndParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
-        } catch (IllegalArgumentException ex) {
-            // We'll handle it in the ComponentParser
-            DESERIALIZE = null;
-        }
+		if (MinecraftVersion.v1_20_4.atOrAbove()) {
+			DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(SERIALIZER, false)
+					.getMethodByReturnTypeAndParameters("fromJsonLenient", MUTABLE_COMPONENT_CLASS.get(), String.class));
+		} else {
+			try {
+				DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getChatDeserializer(), true)
+					.getMethodByReturnTypeAndParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
+			} catch (IllegalArgumentException ex) {
+				// We'll handle it in the ComponentParser
+				DESERIALIZE = null;
+			}
+		}
 
         // Get a component from a standard Minecraft message
         CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class, boolean.class);
@@ -58,6 +69,10 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
     }
 
     private static Object deserialize(String json) {
+		if (MinecraftVersion.v1_20_4.atOrAbove()) {
+			return DESERIALIZE.invoke(null, json);
+		}
+
         // Should be non-null on 1.9 and up
         if (DESERIALIZE != null) {
             return DESERIALIZE.invoke(null, GSON, json, COMPONENT, true);

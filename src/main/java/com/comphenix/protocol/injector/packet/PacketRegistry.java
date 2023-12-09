@@ -41,6 +41,12 @@ public class PacketRegistry {
     // Whether or not the registry has been initialized
     private static volatile boolean INITIALIZED = false;
 
+	static void reset() {
+		synchronized (registryLock) {
+			INITIALIZED = false;
+		}
+	}
+
     /**
      * Represents a register we are currently building.
      * @author Kristian
@@ -314,7 +320,7 @@ public class PacketRegistry {
     /**
      * Initializes the packet registry.
      */
-    private static void initialize() {
+    static void initialize() {
         if (INITIALIZED) {
             return;
         }

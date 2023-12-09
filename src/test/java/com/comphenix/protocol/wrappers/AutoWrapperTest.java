@@ -1,5 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
+import java.util.Optional;
+
 import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -46,7 +48,8 @@ public class AutoWrapperTest {
         assertTrue(nms.h());
         assertTrue(nms.j());
         assertFalse(nms.i());
-        assertEquals("test", nms.d().a());
+		assertTrue(nms.d().isPresent());
+        assertEquals("test", nms.d().get().a());
         validateRawText(nms.a(), "Test123");
         validateRawText(nms.b(), "Test567");
         assertSame(AdvancementFrameType.b, nms.e());
@@ -61,7 +64,7 @@ public class AutoWrapperTest {
               (net.minecraft.world.item.ItemStack)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
               IChatBaseComponent.b("Test123"),
               IChatBaseComponent.b("Test567"),
-              new net.minecraft.resources.MinecraftKey("minecraft", "test"),
+			  Optional.of(new net.minecraft.resources.MinecraftKey("minecraft", "test")),
               AdvancementFrameType.b,
               true,
               false,
