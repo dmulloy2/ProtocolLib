@@ -37,7 +37,7 @@ dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT'
     compileOnly 'org.spigotmc:spigot:1.20.4-R0.1-SNAPSHOT'
     compileOnly 'io.netty:netty-all:4.0.23.Final'
-    compileOnly 'net.kyori:adventure-text-serializer-gson:4.13.0'
+    compileOnly 'net.kyori:adventure-text-serializer-gson:4.14.0'
     compileOnly 'com.googlecode.json-simple:json-simple:1.1.1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
@@ -47,8 +47,8 @@ dependencies {
     testImplementation 'io.netty:netty-common:4.1.97.Final'
     testImplementation 'io.netty:netty-transport:4.1.97.Final'
     testImplementation 'org.spigotmc:spigot:1.20.4-R0.1-SNAPSHOT'
-    testImplementation 'net.kyori:adventure-text-serializer-gson:4.13.0'
-    testImplementation 'net.kyori:adventure-text-serializer-plain:4.13.1'
+    testImplementation 'net.kyori:adventure-text-serializer-gson:4.14.0'
+    testImplementation 'net.kyori:adventure-text-serializer-plain:4.14.0'
 }
 
 java {
