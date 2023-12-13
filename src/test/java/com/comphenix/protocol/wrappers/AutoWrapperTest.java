@@ -79,8 +79,8 @@ public class AutoWrapperTest {
         assertFalse(wrapped.announceChat);
         assertTrue(wrapped.background.isPresent());
         assertEquals("test", wrapped.background.get().getKey());
-        assertEquals("{\"text\":\"Test123\"}", wrapped.title.getJson());
-        assertEquals("{\"text\":\"Test567\"}", wrapped.description.getJson());
+        assertEquals("\"Test123\"", wrapped.title.getJson());
+        assertEquals("\"Test567\"", wrapped.description.getJson());
         assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
         assertSame(Material.ENDER_EYE, wrapped.item.getType());
         assertEquals(5f, wrapped.x, 0f);
@@ -100,7 +100,7 @@ public class AutoWrapperTest {
 
     private void validateRawText(IChatBaseComponent component, String expected) {
         LiteralContents content = assertInstanceOf(LiteralContents.class, component.b());
-        assertEquals(expected, content.a());
+        assertEquals(expected, content.b());
     }
 
     public enum WrappedFrameType {

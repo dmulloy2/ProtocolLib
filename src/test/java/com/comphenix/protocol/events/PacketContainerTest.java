@@ -363,7 +363,7 @@ public class PacketContainerTest {
         chatPacket.getChatComponents().write(0,
                 WrappedChatComponent.fromChatMessage("You shall not " + ChatColor.ITALIC + "pass!")[0]);
 
-        assertEquals("{\"extra\":[{\"text\":\"You shall not \"},{\"italic\":true,\"text\":\"pass!\"}],\"text\":\"\"}",
+        assertEquals("{\"text\":\"\",\"extra\":[\"You shall not \",{\"text\":\"pass!\",\"italic\":true}]}",
                 chatPacket.getChatComponents().read(0).getJson());
     }
 
