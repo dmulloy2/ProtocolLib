@@ -35,7 +35,7 @@ public class AutoWrapperTest {
         display.title = WrappedChatComponent.fromText("Test123");
         display.description = WrappedChatComponent.fromText("Test567");
         display.item = new ItemStack(Material.GOLD_INGOT);
-        display.background = new MinecraftKey("test");
+        display.background = Optional.of(new MinecraftKey("test"));
         display.frameType = WrappedFrameType.CHALLENGE;
         display.announceChat = false;
         display.showToast = true;
@@ -48,7 +48,7 @@ public class AutoWrapperTest {
         assertTrue(nms.h());
         assertTrue(nms.j());
         assertFalse(nms.i());
-		assertTrue(nms.d().isPresent());
+		    assertTrue(nms.d().isPresent());
         assertEquals("test", nms.d().get().a());
         validateRawText(nms.a(), "Test123");
         validateRawText(nms.b(), "Test567");
@@ -77,7 +77,8 @@ public class AutoWrapperTest {
         assertTrue(wrapped.showToast);
         assertTrue(wrapped.hidden);
         assertFalse(wrapped.announceChat);
-        assertEquals("test", wrapped.background.getKey());
+        assertTrue(wrapped.background.isPresent());
+        assertEquals("test", wrapped.background.get().getKey());
         assertEquals("{\"text\":\"Test123\"}", wrapped.title.getJson());
         assertEquals("{\"text\":\"Test567\"}", wrapped.description.getJson());
         assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
@@ -92,7 +93,7 @@ public class AutoWrapperTest {
                 .field(0, BukkitConverters.getWrappedChatComponentConverter())
                 .field(1, BukkitConverters.getWrappedChatComponentConverter())
                 .field(2, BukkitConverters.getItemStackConverter())
-                .field(3, MinecraftKey.getConverter())
+                .field(3, Converters.optional(MinecraftKey.getConverter()))
                 .field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType", "advancements.FrameType"),
                         WrappedFrameType.class));
     }
@@ -113,7 +114,7 @@ public class AutoWrapperTest {
         public WrappedChatComponent title;
         public WrappedChatComponent description;
         public ItemStack item;
-        public MinecraftKey background;
+        public Optional<MinecraftKey> background;
         public WrappedFrameType frameType;
         public boolean showToast;
         public boolean announceChat;
