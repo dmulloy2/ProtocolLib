@@ -121,7 +121,11 @@ public abstract class EnumWrappers {
         SUCCESSFULLY_LOADED,
         DECLINED,
         FAILED_DOWNLOAD,
-        ACCEPTED
+        ACCEPTED,
+        DOWNLOADED,
+        INVALID_URL,
+        FAILED_RELOAD,
+        DISCARDED;
     }
 
     public enum PlayerInfoAction {
@@ -404,7 +408,10 @@ public abstract class EnumWrappers {
         ROARING,
         SNIFFING,
         EMERGING,
-        DIGGING;
+        DIGGING,
+        SLIDING,
+        SHOOTING,
+        INHALING;
 
         private final static EquivalentConverter<EntityPose> POSE_CONVERTER = EnumWrappers.getEntityPoseConverter();
         
