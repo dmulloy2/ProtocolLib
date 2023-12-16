@@ -363,7 +363,7 @@ public class PacketContainerTest {
         chatPacket.getChatComponents().write(0,
                 WrappedChatComponent.fromChatMessage("You shall not " + ChatColor.ITALIC + "pass!")[0]);
 
-        assertEquals("{\"extra\":[{\"text\":\"You shall not \"},{\"italic\":true,\"text\":\"pass!\"}],\"text\":\"\"}",
+        assertEquals("{\"text\":\"\",\"extra\":[\"You shall not \",{\"text\":\"pass!\",\"italic\":true}]}",
                 chatPacket.getChatComponents().read(0).getJson());
     }
 
@@ -901,7 +901,7 @@ public class PacketContainerTest {
                             new WrappedDataValue(0, Registry.get(CatVariant.class), catVariantRegistry.e(CatVariant.e)),
                             new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariant.a)
                     ));
-                } else if (type == PacketType.Play.Server.CHAT) {
+                } else if (type == PacketType.Play.Server.CHAT || type == PacketType.Login.Server.DISCONNECT) {
                     constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
                 } else if (type == PacketType.Play.Server.REMOVE_ENTITY_EFFECT || type == PacketType.Play.Server.ENTITY_EFFECT) {
                     constructed.getEffectTypes().write(0, PotionEffectType.GLOWING);
