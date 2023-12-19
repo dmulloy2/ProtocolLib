@@ -155,8 +155,10 @@ public final class LegacyServerPing extends AbstractWrapper implements ServerPin
      * @return The favicon, or NULL if no favicon will be displayed.
      */
     @Override
-    public String getFavicon() {
-        return (String) FAVICON.get(handle);
+    public WrappedServerPing.CompressedImage getFavicon() {
+
+        String favicon = (String) FAVICON.get(handle);
+        return (favicon != null) ? WrappedServerPing.CompressedImage.fromEncodedText(favicon) : null;
     }
 
     /**
@@ -164,8 +166,8 @@ public final class LegacyServerPing extends AbstractWrapper implements ServerPin
      * @param image - the new compressed image or NULL if no favicon should be displayed.
      */
     @Override
-    public void setFavicon(String image) {
-        FAVICON.set(handle, image);
+    public void setFavicon(WrappedServerPing.CompressedImage image) {
+        FAVICON.set(handle, (image != null) ? image.toEncodedText() : null);
     }
 
     /**

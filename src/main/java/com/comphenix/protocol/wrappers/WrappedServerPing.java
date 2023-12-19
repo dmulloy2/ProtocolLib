@@ -134,8 +134,7 @@ public class WrappedServerPing implements ClonableWrapper {
      * @return The favicon, or NULL if no favicon will be displayed.
      */
     public CompressedImage getFavicon() {
-        String favicon = impl.getFavicon();
-        return (favicon != null) ? CompressedImage.fromEncodedText(favicon) : null;
+        return impl.getFavicon();
     }
 
     /**
@@ -143,7 +142,7 @@ public class WrappedServerPing implements ClonableWrapper {
      * @param image - the new compressed image or NULL if no favicon should be displayed.
      */
     public void setFavicon(CompressedImage image) {
-        impl.setFavicon((image != null) ? image.toEncodedText() : null);
+        impl.setFavicon(image);
     }
 
     /**
