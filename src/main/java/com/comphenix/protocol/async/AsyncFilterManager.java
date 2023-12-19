@@ -428,7 +428,7 @@ public class AsyncFilterManager implements AsynchronousManager {
             }
             
             // There are no more listeners - queue the packet for transmission
-            signalFreeProcessingSlot(packet);
+            signalFreeProcessingSlot(packet, onMainThread);
 
             PacketSendingQueue queue = getSendingQueue(packet, false);
             
@@ -467,11 +467,18 @@ public class AsyncFilterManager implements AsynchronousManager {
     }
     
     /**
-     * Signal that a packet has finished processing.
+     * Signal that a packet has finished processing. Tries to process further packets
+     * if a processing slot is still free.
      * @param packet - packet to signal.
+     * @param onMainThread whether or not this method was run by the main thread.
      */
-    public void signalFreeProcessingSlot(PacketEvent packet) {
-        getProcessingQueue(packet).signalProcessingDone();
+    public void signalFreeProcessingSlot(PacketEvent packet, boolean onMainThread) {
+    	PacketProcessingQueue queue = getProcessingQueue(packet);
+    	// mark slot as done
+    	queue.signalProcessingDone();
+    	
+    	// start processing next slot if possible
+    	queue.signalBeginProcessing(onMainThread);
     }
     
     /**
