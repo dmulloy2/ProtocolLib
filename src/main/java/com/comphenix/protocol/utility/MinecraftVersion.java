@@ -36,7 +36,15 @@ import org.bukkit.Server;
  * @author Kristian
  */
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
+	/**
+	 * Version 1.20.4 - the decorated pot update
+	 */
+	public static final MinecraftVersion v1_20_4 = new MinecraftVersion("1.20.4");
 
+    /**
+     * Version 1.20.2 - the update that added the configuration protocol phase.
+     */
+    public static final MinecraftVersion CONFIG_PHASE_PROTOCOL_UPDATE = new MinecraftVersion("1.20.2");
     /**
      * Version 1.20 - the trails and tails update
      */
@@ -131,7 +139,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
     /**
      * The latest release version of minecraft.
      */
-    public static final MinecraftVersion LATEST = TRAILS_AND_TAILS;
+    public static final MinecraftVersion LATEST = v1_20_4;
 
     // used when serializing
     private static final long serialVersionUID = -8695133558996459770L;

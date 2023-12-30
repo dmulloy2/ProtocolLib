@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.bukkit.plugin.Plugin;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -37,8 +39,6 @@ import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
 import com.comphenix.protocol.timing.TimedTracker;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-
-import org.bukkit.plugin.Plugin;
 
 /**
  * Represents a handler for an asynchronous event.
@@ -328,7 +328,7 @@ public class AsyncListenerHandler {
     }
     
     private void scheduleAsync(Runnable runnable) {
-        listener.getPlugin().getServer().getScheduler().runTaskAsynchronously(listener.getPlugin(), runnable);
+    	filterManager.getScheduler().runTaskAsync(runnable);
     }
     
     /**
@@ -631,21 +631,6 @@ public class AsyncListenerHandler {
             // Minecraft doesn't want your Exception.
             filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), methodName, e);
         }
-        
-        // Now, get the next non-cancelled listener
-        if (!marker.hasExpired()) {
-            for (; marker.getListenerTraversal().hasNext(); ) {
-                AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
-                
-                if (!handler.isCancelled()) {
-                    handler.enqueuePacket(packet);
-                    return;
-                }
-            }
-        }
-        
-        // There are no more listeners - queue the packet for transmission
-        filterManager.signalFreeProcessingSlot(packet);
         
         // Note that listeners can opt to delay the packet transmission
         filterManager.signalPacketTransmission(packet);

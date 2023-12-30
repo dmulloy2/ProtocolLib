@@ -29,4 +29,10 @@ public class DefaultScheduler implements ProtocolScheduler {
         int taskId = scheduler.scheduleSyncDelayedTask(plugin, task, delay);
         return taskId >= 0 ? new DefaultTask(scheduler, taskId) : null;
     }
+
+    @Override
+    public Task runTaskAsync(Runnable task) {
+    	int taskId = scheduler.runTaskAsynchronously(plugin, task).getTaskId();
+        return taskId >= 0 ? new DefaultTask(scheduler, taskId) : null;
+    }
 }

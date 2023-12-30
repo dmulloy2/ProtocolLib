@@ -143,8 +143,7 @@ public class StructureModifier<T> {
         for (FieldAccessor accessor : fields) {
             Field field = accessor.getField();
             if (!field.getType().isPrimitive() && !Modifier.isFinal(field.getModifiers())) {
-                Object defaultInstance = DEFAULT_GENERATOR.getDefault(field.getType());
-                if (defaultInstance != null) {
+                if (DEFAULT_GENERATOR.hasDefault(field.getType())) {
                     requireDefaults.put(accessor, currentFieldIndex);
                 }
             }

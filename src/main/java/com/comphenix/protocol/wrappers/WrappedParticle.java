@@ -20,6 +20,7 @@ public class WrappedParticle<T> {
     private static Class<?> VECTOR_3FA;
 
     private static MethodAccessor toBukkit;
+    private static MethodAccessor getType;
     private static MethodAccessor toNMS;
     private static MethodAccessor toCraftData;
 
@@ -29,15 +30,33 @@ public class WrappedParticle<T> {
         }
 
         FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getCraftBukkitClass("CraftParticle"));
-        FuzzyMethodContract contract = FuzzyMethodContract
-                .newBuilder()
-                .requireModifier(Modifier.STATIC)
-                .returnTypeExact(Particle.class)
-                .parameterExactType(MinecraftReflection.getParticleParam())
-                .build();
-        toBukkit = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
+        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+            FuzzyMethodContract contract = FuzzyMethodContract
+                    .newBuilder()
+                    .requireModifier(Modifier.STATIC)
+                    .returnTypeExact(Particle.class)
+                    .parameterExactArray(MinecraftReflection.getParticleClass())
+                    .build();
+            toBukkit = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 
-        contract = FuzzyMethodContract
+            FuzzyReflection particleParam = FuzzyReflection.fromClass(MinecraftReflection.getParticleParam(), false);
+            contract = FuzzyMethodContract
+                    .newBuilder()
+                    .returnTypeExact(MinecraftReflection.getParticleClass())
+                    .parameterCount(0)
+                    .build();
+            getType = Accessors.getMethodAccessor(particleParam.getMethod(contract));
+        } else {
+            FuzzyMethodContract contract = FuzzyMethodContract
+                    .newBuilder()
+                    .requireModifier(Modifier.STATIC)
+                    .returnTypeExact(Particle.class)
+                    .parameterExactType(MinecraftReflection.getParticleParam())
+                    .build();
+            toBukkit = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
+        }
+
+        FuzzyMethodContract contract = FuzzyMethodContract
                 .newBuilder()
                 .requireModifier(Modifier.STATIC)
                 .returnTypeExact(MinecraftReflection.getParticleParam())
@@ -117,9 +136,15 @@ public class WrappedParticle<T> {
     public static WrappedParticle fromHandle(Object handle) {
         ensureMethods();
 
-        Particle bukkit = (Particle) toBukkit.invoke(null, handle);
-        Object data = null;
+        Particle bukkit;
+        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+            Object particle = getType.invoke(handle);
+            bukkit = (Particle) toBukkit.invoke(null, particle);
+        } else {
+            bukkit = (Particle) toBukkit.invoke(null, handle);
+        }
 
+        Object data = null;
         switch (bukkit) {
             case BLOCK_CRACK:
             case BLOCK_DUST:

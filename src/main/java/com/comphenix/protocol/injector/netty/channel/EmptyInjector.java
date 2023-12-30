@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.netty.channel;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.injector.netty.Injector;
@@ -42,7 +43,7 @@ final class EmptyInjector implements Injector {
     }
 
     @Override
-    public Protocol getCurrentProtocol() {
+    public Protocol getCurrentProtocol(PacketType.Sender sender) {
         return Protocol.HANDSHAKING;
     }
 

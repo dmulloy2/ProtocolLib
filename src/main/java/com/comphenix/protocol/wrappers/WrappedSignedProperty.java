@@ -5,6 +5,7 @@ import java.security.PublicKey;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Objects;
 
 /**
@@ -36,16 +37,23 @@ public class WrappedSignedProperty extends AbstractWrapper {
 
         try {
             CONSTRUCTOR = Accessors.getConstructorAccessor(PROPERTY, String.class, String.class, String.class);
-            GET_NAME = Accessors.getMethodAccessor(PROPERTY, "getName");
-            GET_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "getSignature");
-            GET_VALUE = Accessors.getMethodAccessor(PROPERTY, "getValue");
             HAS_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "hasSignature");
             IS_SIGNATURE_VALID = Accessors.getMethodAccessor(PROPERTY, "isSignatureValid", PublicKey.class);
+
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                GET_NAME = Accessors.getMethodAccessorOrNull(PROPERTY, "name");
+                GET_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "signature");
+                GET_VALUE = Accessors.getMethodAccessor(PROPERTY, "value");
+            } else {
+                GET_NAME = Accessors.getMethodAccessorOrNull(PROPERTY, "getName");
+                GET_SIGNATURE = Accessors.getMethodAccessor(PROPERTY, "getSignature");
+                GET_VALUE = Accessors.getMethodAccessor(PROPERTY, "getValue");
+            }
         } catch (Throwable ex) {
             throw new RuntimeException("Failed to obtain methods for Property.", ex);
         }
     }
-    
+
     /**
      * Construct a new wrapped signed property from the given values.
      * @param name - the name of the property.

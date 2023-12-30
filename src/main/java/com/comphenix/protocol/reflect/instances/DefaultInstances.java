@@ -26,6 +26,8 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 
 /**
@@ -164,7 +166,19 @@ public class DefaultInstances implements InstanceProvider {
     public <T> T getDefault(Class<T> type) {
         return getDefaultInternal(type, registered, 0);
     }
-    
+
+    private final ThreadLocal<Map<Class<?>, Boolean>> cache = ThreadLocal.withInitial(WeakHashMap::new);
+
+    /**
+     * Determines if a given class has a default value.
+     *
+     * @param type - the class to check
+     * @return true if the class has a default value, false otherwise
+     */
+    public boolean hasDefault(Class<?> type) {
+        return cache.get().computeIfAbsent(type, aClass -> getDefaultInternal(aClass, registered, 0) != null);
+    }
+
     /**
      * Retrieve the constructor with the fewest number of parameters.
      * @param <T> Type

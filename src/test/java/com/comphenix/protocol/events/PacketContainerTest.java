@@ -15,9 +15,12 @@
  */
 package com.comphenix.protocol.events;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,19 +53,24 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
-import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
+import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.PacketDataSerializer;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.BrandPayload;
 import net.minecraft.network.protocol.game.PacketPlayOutGameStateChange;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.animal.CatVariant;
@@ -79,7 +87,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.comphenix.protocol.utility.TestUtils.assertItemCollectionsEqual;
@@ -151,12 +158,6 @@ public class PacketContainerTest {
         // Check and see if we can write to it
         bytes.write(0, testArray);
         assertArrayEquals(testArray, bytes.read(0));
-    }
-
-    @Test
-    public void testGetBytes() {
-        PacketContainer spawnMob = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
-        this.testPrimitive(spawnMob.getBytes(), 0, (byte) 0, (byte) 1);
     }
 
     @Test
@@ -362,7 +363,7 @@ public class PacketContainerTest {
         chatPacket.getChatComponents().write(0,
                 WrappedChatComponent.fromChatMessage("You shall not " + ChatColor.ITALIC + "pass!")[0]);
 
-        assertEquals("{\"extra\":[{\"text\":\"You shall not \"},{\"italic\":true,\"text\":\"pass!\"}],\"text\":\"\"}",
+        assertEquals("{\"text\":\"\",\"extra\":[\"You shall not \",{\"text\":\"pass!\",\"italic\":true}]}",
                 chatPacket.getChatComponents().read(0).getJson());
     }
 
@@ -393,27 +394,84 @@ public class PacketContainerTest {
     @Test
     public void testBigPacketSerialization() {
         PacketContainer payload = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
-        payload.getMinecraftKeys().write(0, new com.comphenix.protocol.wrappers.MinecraftKey("test"));
 
         byte[] randomData = new byte[8192];
         ThreadLocalRandom.current().nextBytes(randomData);
-
-        ByteBuf serializer = (ByteBuf) MinecraftReflection.createPacketDataSerializer(randomData.length);
-        serializer.writeBytes(randomData);
-
-        payload.getModifier().withType(MinecraftReflection.getPacketDataSerializerClass()).write(0, serializer);
+        CustomPacketPayloadWrapper payloadWrapper = new CustomPacketPayloadWrapper(randomData, new com.comphenix.protocol.wrappers.MinecraftKey("test"));
+        payload.getCustomPacketPayloads().write(0, payloadWrapper);
 
         PacketContainer cloned = SerializableCloner.clone(payload);
-        com.comphenix.protocol.wrappers.MinecraftKey clonedKey = cloned.getMinecraftKeys().read(0);
+        Assertions.assertNotSame(payload, cloned);
+    }
 
-        byte[] clonedData = new byte[randomData.length];
-        ByteBuf clonedBuffer = (ByteBuf) cloned.getModifier()
-                .withType(MinecraftReflection.getPacketDataSerializerClass())
-                .read(0);
-        clonedBuffer.readBytes(clonedData);
+    @Test
+    public void testUnknownPayloadDeserialize() {
+        MinecraftKey id = new MinecraftKey("test");
+        byte[] payloadData = new byte[]{0x00, 0x01, 0x05, 0x07};
+        ByteBuf buffer = Unpooled.wrappedBuffer(payloadData);
+        ServerboundCustomPayloadPacket.UnknownPayload payload = new ServerboundCustomPayloadPacket.UnknownPayload(id, buffer);
+        ServerboundCustomPayloadPacket packet = new ServerboundCustomPayloadPacket(payload);
 
-        assertEquals("minecraft:test", clonedKey.getFullKey());
-        assertArrayEquals(randomData, clonedData);
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Client.CUSTOM_PAYLOAD, packet);
+        CustomPacketPayloadWrapper payloadWrapper = packetContainer.getCustomPacketPayloads().read(0);
+
+        com.comphenix.protocol.wrappers.MinecraftKey key = payloadWrapper.getId();
+        Assertions.assertEquals("minecraft", key.getPrefix());
+        Assertions.assertEquals("test", key.getKey());
+        Assertions.assertArrayEquals(payloadData, payloadWrapper.getPayload());
+    }
+
+    @Test
+    public void testCustomPayloadPacket() {
+        byte[] customPayload = "Hello World, This is A Super-Cool-Test!!!!!".getBytes(StandardCharsets.UTF_8);
+        com.comphenix.protocol.wrappers.MinecraftKey key = new com.comphenix.protocol.wrappers.MinecraftKey("protocollib", "test");
+        CustomPacketPayloadWrapper payloadWrapper = new CustomPacketPayloadWrapper(customPayload, key);
+
+        PacketContainer container = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD);
+        container.getCustomPacketPayloads().write(0, payloadWrapper);
+
+        PacketDataSerializer serializer = new PacketDataSerializer(Unpooled.buffer());
+        ClientboundCustomPayloadPacket constructedHandle = (ClientboundCustomPayloadPacket) container.getHandle();
+        constructedHandle.a(serializer);
+
+        ServerboundCustomPayloadPacket deserializedHandle = new ServerboundCustomPayloadPacket(serializer);
+        PacketContainer serverContainer = new PacketContainer(PacketType.Play.Client.CUSTOM_PAYLOAD, deserializedHandle);
+
+        CustomPacketPayloadWrapper deserializedPayloadWrapper = serverContainer.getCustomPacketPayloads().read(0);
+        Assertions.assertEquals(key, deserializedPayloadWrapper.getId());
+        Assertions.assertArrayEquals(customPayload, deserializedPayloadWrapper.getPayload());
+    }
+
+    @Test
+    public void testSomeCustomPayloadRead() {
+        BrandPayload payload = new BrandPayload("Hello World!");
+        ClientboundCustomPayloadPacket handle = new ClientboundCustomPayloadPacket(payload);
+
+        PacketContainer container = new PacketContainer(PacketType.Play.Server.CUSTOM_PAYLOAD, handle);
+        CustomPacketPayloadWrapper payloadWrapper = container.getCustomPacketPayloads().read(0);
+
+        com.comphenix.protocol.wrappers.MinecraftKey payloadId = payloadWrapper.getId();
+        Assertions.assertEquals(BrandPayload.a.toString(), payloadId.getFullKey());
+
+        PacketDataSerializer serializer = new PacketDataSerializer(Unpooled.wrappedBuffer(payloadWrapper.getPayload()));
+        BrandPayload deserializedPayload = new BrandPayload(serializer);
+        Assertions.assertEquals(payload.b(), deserializedPayload.b());
+    }
+
+    @Test
+    public void testUnknownPayloadNotReleasedOnRead() {
+        MinecraftKey id = new MinecraftKey("plib", "main");
+        ByteBuf data = Unpooled.wrappedBuffer("This is a Test!!".getBytes(StandardCharsets.UTF_8));
+        ServerboundCustomPayloadPacket.UnknownPayload payload = new ServerboundCustomPayloadPacket.UnknownPayload(id, data);
+        ServerboundCustomPayloadPacket handle = new ServerboundCustomPayloadPacket(payload);
+
+        PacketContainer container = new PacketContainer(PacketType.Play.Client.CUSTOM_PAYLOAD, handle);
+        CustomPacketPayloadWrapper payloadWrapper = container.getCustomPacketPayloads().read(0);
+
+        Assertions.assertEquals(id.toString(), payloadWrapper.getId().getFullKey());
+        Assertions.assertEquals("This is a Test!!", new String(payloadWrapper.getPayload()));
+        Assertions.assertEquals(1, payload.data().refCnt());
+        Assertions.assertEquals(0, payload.data().readerIndex());
     }
 
     @Test
@@ -443,7 +501,8 @@ public class PacketContainerTest {
         // are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
         // members of the packet itself)
         PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
-        AttributeBase base = BuiltInRegistries.v.a(MinecraftKey.a("generic.max_health"));
+		IRegistry<AttributeBase> registry = BuiltInRegistries.u;
+        AttributeBase base = registry.a(MinecraftKey.a("generic.max_health"));
         AttributeSnapshot snapshot = new AttributeSnapshot(base, 20.0D, modifiers);
         attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 
@@ -493,7 +552,7 @@ public class PacketContainerTest {
     @SuppressWarnings("deprecation")
     public void testPotionEffect() {
         PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
-        MobEffect mobEffect = new MobEffect(MobEffectList.a(effect.getType().getId()), effect.getDuration(),
+        MobEffect mobEffect = new MobEffect(MobEffects.l, effect.getDuration(),
                 effect.getAmplifier(), effect.isAmbient(),
                 effect.hasParticles());
         int entityId = 42;
@@ -509,7 +568,7 @@ public class PacketContainerTest {
 
         WrappedRegistry registry = WrappedRegistry.getRegistry(MinecraftReflection.getMobEffectListClass());
         Object effectList = assertInstanceOf(MobEffectList.class, packet.getStructures().read(0).getHandle());
-        assertEquals(effect.getType().getId(), registry.getId(effectList));
+        assertEquals(effect.getType().getId(), registry.getId(effectList) + 1); // +1 is correct, see CraftPotionEffectType
 
         int e = 0;
         if (effect.isAmbient()) {
@@ -825,6 +884,7 @@ public class PacketContainerTest {
 
                 // Make sure watchable collections can be cloned
                 if (type == PacketType.Play.Server.ENTITY_METADATA) {
+					IRegistry<CatVariant> catVariantRegistry = BuiltInRegistries.ak;
                     constructed.getDataValueCollectionModifier().write(0, Lists.newArrayList(
                             new WrappedDataValue(0, Registry.get(Byte.class), (byte) 1),
                             new WrappedDataValue(0, Registry.get(Float.class), 5F),
@@ -838,10 +898,10 @@ public class PacketContainerTest {
                                     0,
                                     Registry.getItemStackSerializer(false),
                                     BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.WOODEN_AXE))),
-                            new WrappedDataValue(0, Registry.get(CatVariant.class), BuiltInRegistries.aj.e(CatVariant.e)),
+                            new WrappedDataValue(0, Registry.get(CatVariant.class), catVariantRegistry.e(CatVariant.e)),
                             new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariant.a)
                     ));
-                } else if (type == PacketType.Play.Server.CHAT) {
+                } else if (type == PacketType.Play.Server.CHAT || type == PacketType.Login.Server.DISCONNECT) {
                     constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
                 } else if (type == PacketType.Play.Server.REMOVE_ENTITY_EFFECT || type == PacketType.Play.Server.ENTITY_EFFECT) {
                     constructed.getEffectTypes().write(0, PotionEffectType.GLOWING);

@@ -27,7 +27,9 @@ import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 
@@ -39,6 +41,12 @@ public class PacketRegistry {
     // Whether or not the registry has been initialized
     private static volatile boolean INITIALIZED = false;
 
+	static void reset() {
+		synchronized (registryLock) {
+			INITIALIZED = false;
+		}
+	}
+
     /**
      * Represents a register we are currently building.
      * @author Kristian
@@ -46,7 +54,9 @@ public class PacketRegistry {
     protected static class Register {
         // The main lookup table
         final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
+
         final Map<Class<?>, PacketType> classToType = new ConcurrentHashMap<>();
+        final Map<PacketType.Protocol, Map<Class<?>, PacketType>> protocolClassToType = new ConcurrentHashMap<>();
 
         volatile Set<PacketType> serverPackets = new HashSet<>();
         volatile Set<PacketType> clientPackets = new HashSet<>();
@@ -56,7 +66,10 @@ public class PacketRegistry {
 
         public void registerPacket(PacketType type, Class<?> clazz, Sender sender) {
             typeToClass.put(type, Optional.of(clazz));
+
             classToType.put(clazz, type);
+            protocolClassToType.computeIfAbsent(type.getProtocol(), __ -> new ConcurrentHashMap<>()).put(clazz, type);
+
             if (sender == Sender.CLIENT) {
                 clientPackets.add(type);
             } else {
@@ -158,8 +171,10 @@ public class PacketRegistry {
         final Map<Object, Map<Class<?>, Integer>> clientMaps = new LinkedHashMap<>();
 
         Register result = new Register();
+
         Field mainMapField = null;
         Field packetMapField = null;
+        Field holderClassField = null; // only 1.20.2+
 
         // Iterate through the protocols
         for (Object protocol : protocols) {
@@ -184,7 +199,26 @@ public class PacketRegistry {
             for (Map.Entry<Object, Object> entry : directionMap.entrySet()) {
                 Object holder = entry.getValue();
                 if (packetMapField == null) {
-                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(holder.getClass(), true);
+                    Class<?> packetHolderClass = holder.getClass();
+                    if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                        FuzzyReflection holderFuzzy = FuzzyReflection.fromClass(packetHolderClass, true);
+                        holderClassField = holderFuzzy.getField(FuzzyFieldContract.newBuilder()
+                                .banModifier(Modifier.STATIC)
+                                .requireModifier(Modifier.FINAL)
+                                .typeMatches(FuzzyClassContract.newBuilder()
+                                        .method(FuzzyMethodContract.newBuilder()
+                                                .returnTypeExact(MinecraftReflection.getPacketClass())
+                                                .parameterCount(2)
+                                                .parameterExactType(int.class, 0)
+                                                .parameterExactType(MinecraftReflection.getPacketDataSerializerClass(), 1)
+                                                .build())
+                                        .build())
+                                .build());
+                        holderClassField.setAccessible(true);
+                        packetHolderClass = holderClassField.getType();
+                    }
+
+                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(packetHolderClass, true);
                     packetMapField = fuzzy.getField(FuzzyFieldContract.newBuilder()
                             .banModifier(Modifier.STATIC)
                             .requireModifier(Modifier.FINAL)
@@ -193,10 +227,18 @@ public class PacketRegistry {
                     packetMapField.setAccessible(true);
                 }
 
-                Map<Class<?>, Integer> packetMap;
+                Object holderInstance = holder;
+                if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                    try {
+                        holderInstance = holderClassField.get(holder);
+                    } catch (ReflectiveOperationException ex) {
+                        throw new RuntimeException("Failed to access packet map", ex);
+                    }
+                }
 
+                Map<Class<?>, Integer> packetMap;
                 try {
-                    packetMap = (Map<Class<?>, Integer>) packetMapField.get(holder);
+                    packetMap = (Map<Class<?>, Integer>) packetMapField.get(holderInstance);
                 } catch (ReflectiveOperationException ex) {
                     throw new RuntimeException("Failed to access packet map", ex);
                 }
@@ -278,7 +320,7 @@ public class PacketRegistry {
     /**
      * Initializes the packet registry.
      */
-    private static void initialize() {
+    static void initialize() {
         if (INITIALIZED) {
             return;
         }
@@ -399,7 +441,9 @@ public class PacketRegistry {
      * Retrieve the packet type of a given packet.
      * @param packet - the class of the packet.
      * @return The packet type, or NULL if not found.
+     * @deprecated major issues due to packets with shared classes being registered in multiple states.
      */
+    @Deprecated
     public static PacketType getPacketType(Class<?> packet) {
         initialize();
 
@@ -409,7 +453,24 @@ public class PacketRegistry {
         
         return REGISTER.classToType.get(packet);
     }
-    
+
+    /**
+     * Retrieve the associated packet type for a packet class in the given protocol state.
+     *
+     * @param protocol the protocol state to retrieve the packet from.
+     * @param packet the class identifying the packet type.
+     * @return the packet type associated with the given class in the given protocol state, or null if not found.
+     */
+    public static PacketType getPacketType(PacketType.Protocol protocol, Class<?> packet) {
+        initialize();
+        if (MinecraftReflection.isBundlePacket(packet)) {
+            return PacketType.Play.Server.BUNDLE;
+        }
+
+        Map<Class<?>, PacketType> classToTypesForProtocol = REGISTER.protocolClassToType.get(protocol);
+        return classToTypesForProtocol == null ? null : classToTypesForProtocol.get(packet);
+    }
+
     /**
      * Retrieve the packet type of a given packet.
      * @param packet - the class of the packet.

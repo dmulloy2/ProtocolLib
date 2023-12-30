@@ -805,6 +805,10 @@ public final class MinecraftReflection {
         return getNullableNMS("core.particles.ParticleType", "core.particles.SimpleParticleType", "ParticleType");
     }
 
+    public static Class<?> getParticleClass() {
+        return getNullableNMS("core.particles.Particle");
+    }
+
     /**
      * Retrieve the WorldType class.
      *
@@ -1386,7 +1390,7 @@ public final class MinecraftReflection {
      * @param aliases Potential aliases
      * @return Optional that may contain the class
      */
-    private static Optional<Class<?>> getOptionalNMS(String className, String... aliases) {
+    public static Optional<Class<?>> getOptionalNMS(String className, String... aliases) {
         if (minecraftPackage == null) {
             minecraftPackage = new CachedPackage(getMinecraftPackage(), getClassSource());
         }

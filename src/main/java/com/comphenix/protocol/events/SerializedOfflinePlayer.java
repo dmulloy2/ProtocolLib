@@ -40,6 +40,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.profile.PlayerProfile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -48,6 +49,9 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -238,6 +242,24 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     @Override
     public boolean isBanned() {
         return banned;
+    }
+
+    @Nullable
+    public BanEntry<PlayerProfile> ban(@Nullable String s, @Nullable Date date, @Nullable String s1) {
+        setBanned(true);
+        return null;
+    }
+
+    @Nullable
+    public BanEntry<PlayerProfile> ban(@Nullable String s, @Nullable Instant instant, @Nullable String s1) {
+        setBanned(true);
+        return null;
+    }
+
+    @Nullable
+    public BanEntry<PlayerProfile> ban(@Nullable String s, @Nullable Duration duration, @Nullable String s1) {
+        setBanned(true);
+        return null;
     }
 
     public void setBanned(boolean banned) {

@@ -1,5 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
+import java.util.Optional;
+
 import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -33,7 +35,7 @@ public class AutoWrapperTest {
         display.title = WrappedChatComponent.fromText("Test123");
         display.description = WrappedChatComponent.fromText("Test567");
         display.item = new ItemStack(Material.GOLD_INGOT);
-        display.background = new MinecraftKey("test");
+        display.background = Optional.of(new MinecraftKey("test"));
         display.frameType = WrappedFrameType.CHALLENGE;
         display.announceChat = false;
         display.showToast = true;
@@ -46,7 +48,8 @@ public class AutoWrapperTest {
         assertTrue(nms.h());
         assertTrue(nms.j());
         assertFalse(nms.i());
-        assertEquals("test", nms.d().a());
+		    assertTrue(nms.d().isPresent());
+        assertEquals("test", nms.d().get().a());
         validateRawText(nms.a(), "Test123");
         validateRawText(nms.b(), "Test567");
         assertSame(AdvancementFrameType.b, nms.e());
@@ -61,7 +64,7 @@ public class AutoWrapperTest {
               (net.minecraft.world.item.ItemStack)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
               IChatBaseComponent.b("Test123"),
               IChatBaseComponent.b("Test567"),
-              new net.minecraft.resources.MinecraftKey("minecraft", "test"),
+			  Optional.of(new net.minecraft.resources.MinecraftKey("minecraft", "test")),
               AdvancementFrameType.b,
               true,
               false,
@@ -74,9 +77,10 @@ public class AutoWrapperTest {
         assertTrue(wrapped.showToast);
         assertTrue(wrapped.hidden);
         assertFalse(wrapped.announceChat);
-        assertEquals("test", wrapped.background.getKey());
-        assertEquals("{\"text\":\"Test123\"}", wrapped.title.getJson());
-        assertEquals("{\"text\":\"Test567\"}", wrapped.description.getJson());
+        assertTrue(wrapped.background.isPresent());
+        assertEquals("test", wrapped.background.get().getKey());
+        assertEquals("\"Test123\"", wrapped.title.getJson());
+        assertEquals("\"Test567\"", wrapped.description.getJson());
         assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
         assertSame(Material.ENDER_EYE, wrapped.item.getType());
         assertEquals(5f, wrapped.x, 0f);
@@ -89,14 +93,14 @@ public class AutoWrapperTest {
                 .field(0, BukkitConverters.getWrappedChatComponentConverter())
                 .field(1, BukkitConverters.getWrappedChatComponentConverter())
                 .field(2, BukkitConverters.getItemStackConverter())
-                .field(3, MinecraftKey.getConverter())
+                .field(3, Converters.optional(MinecraftKey.getConverter()))
                 .field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType", "advancements.FrameType"),
                         WrappedFrameType.class));
     }
 
     private void validateRawText(IChatBaseComponent component, String expected) {
         LiteralContents content = assertInstanceOf(LiteralContents.class, component.b());
-        assertEquals(expected, content.a());
+        assertEquals(expected, content.b());
     }
 
     public enum WrappedFrameType {
@@ -110,7 +114,7 @@ public class AutoWrapperTest {
         public WrappedChatComponent title;
         public WrappedChatComponent description;
         public ItemStack item;
-        public MinecraftKey background;
+        public Optional<MinecraftKey> background;
         public WrappedFrameType frameType;
         public boolean showToast;
         public boolean announceChat;
