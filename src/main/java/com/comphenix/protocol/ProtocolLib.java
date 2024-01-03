@@ -114,6 +114,7 @@ public class ProtocolLib extends JavaPlugin {
 
     // Whether disabling field resetting is needed
     private boolean skipDisable;
+    private boolean loadingFailed = false;
 
     @Override
     public void onLoad() {
@@ -167,7 +168,7 @@ public class ProtocolLib extends JavaPlugin {
             // Handle unexpected Minecraft versions
             MinecraftVersion version = this.verifyMinecraftVersion(); // returns the current version or null if a version mismatch was detected
             if(version == null) {
-                this.disablePlugin();
+                loadingFailed = true;
                 return;
             }
 
@@ -192,7 +193,7 @@ public class ProtocolLib extends JavaPlugin {
 
         } catch (Exception e) {
             reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
-            this.disablePlugin();
+            loadingFailed = true;
         }
     }
 
@@ -311,6 +312,11 @@ public class ProtocolLib extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        if(loadingFailed) {
+            this.getLogger().log(Level.SEVERE, "Loading of ProtocolLib failed (see log above). ProtocolLib will be disabled.");
+            this.disablePlugin();
+            return;
+        }
         try {
             Server server = this.getServer();
             PluginManager manager = server.getPluginManager();
@@ -404,7 +410,7 @@ public class ProtocolLib extends JavaPlugin {
                 Level level = ignore ? Level.WARNING : Level.SEVERE;
                 logger.log(level, line);
                 logger.log(level, "");
-                logger.log(level, "This version of ProtocolLib (" + getDescription().getVersion() + ") has not been tested with Minecraft " + current + " and is likely not work as expected.");
+                logger.log(level, "This version of ProtocolLib (" + getDescription().getVersion() + ") has not been tested with Minecraft " + current.getVersion() + " and is likely not work as expected.");
                 if(ignore) {
                     logger.log(level, "As you configured ProtocolLib to ignore this, ProtocolLib will attempt to continue initialization. Proceed with caution!");
                 } else {
