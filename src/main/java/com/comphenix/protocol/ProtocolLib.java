@@ -16,12 +16,7 @@
 package com.comphenix.protocol;
 
 import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.error.BasicErrorReporter;
-import com.comphenix.protocol.error.DelegatedErrorReporter;
-import com.comphenix.protocol.error.DetailedErrorReporter;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.error.*;
 import com.comphenix.protocol.injector.InternalManager;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.metrics.Statistics;
@@ -31,14 +26,22 @@ import com.comphenix.protocol.scheduler.ProtocolScheduler;
 import com.comphenix.protocol.scheduler.Task;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.*;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+import org.bukkit.Server;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
@@ -47,13 +50,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.bukkit.Server;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * The main entry point for ProtocolLib.
@@ -118,6 +114,7 @@ public class ProtocolLib extends JavaPlugin {
 
     // Whether disabling field resetting is needed
     private boolean skipDisable;
+    private boolean loadingFailed = false;
 
     @Override
     public void onLoad() {
@@ -169,7 +166,11 @@ public class ProtocolLib extends JavaPlugin {
             this.checkConflictingVersions();
 
             // Handle unexpected Minecraft versions
-            MinecraftVersion version = this.verifyMinecraftVersion();
+            MinecraftVersion version = this.verifyMinecraftVersion(); // returns the current version or null if a version mismatch was detected
+            if(version == null) {
+                loadingFailed = true;
+                return;
+            }
 
             // Set updater - this will not perform any update automatically
             this.updater = Updater.create(this, 0, this.getFile(), UpdateType.NO_DOWNLOAD, true);
@@ -192,7 +193,7 @@ public class ProtocolLib extends JavaPlugin {
 
         } catch (Exception e) {
             reporter.reportDetailed(this, Report.newBuilder(REPORT_PLUGIN_LOAD_ERROR).error(e).callerParam(protocolManager));
-            this.disablePlugin();
+            loadingFailed = true;
         }
     }
 
@@ -311,6 +312,11 @@ public class ProtocolLib extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        if(loadingFailed) {
+            this.getLogger().log(Level.SEVERE, "Loading of ProtocolLib failed (see log above). ProtocolLib will be disabled.");
+            this.disablePlugin();
+            return;
+        }
         try {
             Server server = this.getServer();
             PluginManager manager = server.getPluginManager();
@@ -385,8 +391,6 @@ public class ProtocolLib extends JavaPlugin {
         }
     }
 
-    // Plugin authors: Notify me to remove these
-
     // Used to check Minecraft version
     private MinecraftVersion verifyMinecraftVersion() {
         MinecraftVersion minimum = new MinecraftVersion(ProtocolLibrary.MINIMUM_MINECRAFT_VERSION);
@@ -395,14 +399,29 @@ public class ProtocolLib extends JavaPlugin {
         try {
             MinecraftVersion current = new MinecraftVersion(this.getServer());
 
-            // Skip certain versions
-            if (!config.getIgnoreVersionCheck().equals(current.getVersion())) {
-                // We'll just warn the user for now
-                if (current.compareTo(minimum) < 0) {
-                    logger.warning("Version " + current + " is lower than the minimum " + minimum);
+
+            String line = "============================================================";
+            // We'll just warn the user for now
+            if (current.compareTo(minimum) < 0) {
+                logger.warning(line + "\nThis version of ProtocolLib has only been tested with Minecraft " + minimum.getVersion() + " or newer.\n" + line);
+            }
+            if (current.compareTo(maximum) > 0) {
+                boolean ignore = config.getIgnoreVersionCheck().equals(current.getVersion());
+                Level level = ignore ? Level.WARNING : Level.SEVERE;
+                logger.log(level, line);
+                logger.log(level, "");
+                logger.log(level, "This version of ProtocolLib (" + getDescription().getVersion() + ") has not been tested with Minecraft " + current.getVersion() + " and is likely not work as expected.");
+                if(ignore) {
+                    logger.log(level, "As you configured ProtocolLib to ignore this, ProtocolLib will attempt to continue initialization. Proceed with caution!");
+                } else {
+                    logger.log(level, "ProtocolLib will be **DISABLED** now. If you want to ignore this error, set \"ignore version check: '" + current.getVersion() +  "'\" in 'plugins/ProtocolLib/config.yml' and restart the server. Proceed with caution and expect errors!");
                 }
-                if (current.compareTo(maximum) > 0) {
-                    logger.warning("Version " + current + " has not yet been tested! Proceed with caution.");
+                logger.log(level, "Check https://github.com/dmulloy2/ProtocolLib/releases for new releases of ProtocolLib and https://ci.dmulloy2.net/job/ProtocolLib/ for the latest development builds, which might support minecraft " + current.getVersion());
+                logger.log(level, "");
+                logger.log(level, line);
+
+                if(!ignore) {
+                    return null;
                 }
             }
 

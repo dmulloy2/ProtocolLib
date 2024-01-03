@@ -16,6 +16,19 @@
  */
 package com.comphenix.protocol;
 
+import com.comphenix.protocol.error.DetailedErrorReporter;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.timing.TimedListenerManager;
+import com.comphenix.protocol.timing.TimingReportGenerator;
+import com.comphenix.protocol.updater.Updater;
+import com.comphenix.protocol.updater.Updater.UpdateType;
+import com.comphenix.protocol.utility.Closer;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,20 +39,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-
-import com.comphenix.protocol.error.DetailedErrorReporter;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimingReportGenerator;
-import com.comphenix.protocol.updater.Updater;
-import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.Closer;
 
 /**
  * Handles the "protocol" administration command.
@@ -243,7 +242,8 @@ class CommandProtocol extends CommandBase {
             pw.println("ProtocolLib Version: " + plugin.toString());
             pw.println("Bukkit Version: " + plugin.getServer().getBukkitVersion());
             pw.println("Server Version: " + plugin.getServer().getVersion());
-            pw.println("Java Version: " + System.getProperty("java.version"));
+            pw.println("Java Version: " + System.getProperty("java.version", "N/A") + " - " + System.getProperty("java.vm.vendor", "N/A") + " (" + System.getProperty("java.vendor.version", "N/A") + ")");
+            pw.println("Operating System: " + System.getProperty("os.name", "N/A"));
             pw.println();
 
             ProtocolManager manager = ProtocolLibrary.getProtocolManager();
