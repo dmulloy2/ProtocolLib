@@ -165,7 +165,7 @@ public class ProtocolLib extends JavaPlugin {
             this.checkConflictingVersions();
 
             // Handle unexpected Minecraft versions
-            MinecraftVersion version = this.verifyMinecraftVersion();
+            MinecraftVersion version = this.verifyMinecraftVersion(); // returns the current version or null if a version mismatch was detected
             if(version == null) {
                 this.disablePlugin();
                 return;
@@ -384,8 +384,6 @@ public class ProtocolLib extends JavaPlugin {
             }
         }
     }
-
-    // Plugin authors: Notify me to remove these
 
     // Used to check Minecraft version
     private MinecraftVersion verifyMinecraftVersion() {
