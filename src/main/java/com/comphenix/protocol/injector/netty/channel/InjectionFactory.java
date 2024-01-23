@@ -168,11 +168,19 @@ public class InjectionFactory {
         Object netManager = this.findNetworkManager(channel);
         Player temporaryPlayer = playerFactory.createTemporaryPlayer(this.server);
 
+        // Use the channel field from an already found network manager to prevent our channel injector given in
+        // this method from overwriting initialized custom channel implementation in some spigot forks
+        Channel wrappedChannel = FuzzyReflection.getFieldValue(netManager, Channel.class, true);
+        if (wrappedChannel == null)  {
+            // Use the channel straight from ChannelHandlerContext as fallback if the field has null value
+            wrappedChannel = channel;
+        }
+
         NettyChannelInjector injector = new NettyChannelInjector(
                 temporaryPlayer,
                 this.server,
                 netManager,
-                channel,
+                wrappedChannel,
                 listener,
                 this,
                 this.errorReporter);
