@@ -135,6 +135,18 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return bedSpawnLocation;
     }
 
+    @Nullable
+    @Override
+    public Location getRespawnLocation() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Location getLocation() {
+        return null;
+    }
+
     // @Override
     public long getLastLogin() {
         return lastLogin;
