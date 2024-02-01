@@ -527,7 +527,7 @@ public class PacketEvent extends EventObject implements Cancellable {
 
         // Write the name of the player (or NULL if it's not set)
         Player player = getPlayer();
-        output.writeObject(player != null ? new SerializedOfflinePlayer(player) : null);
+        output.writeObject(player != null ? SerializedOfflinePlayer.init(player) : null);
     }
 
     private void readObject(ObjectInputStream input) throws ClassNotFoundException, IOException {

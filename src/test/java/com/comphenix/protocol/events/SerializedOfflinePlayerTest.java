@@ -39,7 +39,7 @@ public class SerializedOfflinePlayerTest {
         when(offlinePlayer.hasPlayedBefore()).thenReturn(playedBefore);
         when(offlinePlayer.isWhitelisted()).thenReturn(whitelisted);
 
-        serializedOfflinePlayer = new SerializedOfflinePlayer(offlinePlayer);
+        serializedOfflinePlayer = SerializedOfflinePlayer.init(offlinePlayer);
     }
 
     @Test
