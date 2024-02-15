@@ -93,7 +93,12 @@ public class NetworkManagerInjector implements ChannelListener {
         if (marker != null || MinecraftReflection.isBundlePacket(packetClass) || outboundListeners.contains(packetClass)) {
             // wrap packet and construct the event
             PacketType.Protocol currentProtocol = injector.getCurrentProtocol(PacketType.Sender.SERVER);
-            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(currentProtocol, packetClass), packet);
+            PacketType type = PacketRegistry.getPacketType(currentProtocol, packetClass);
+            if (type == null) {
+                ProtocolLogger.debug("Invalid packet type: " + packetClass.getName());
+                return null;
+            }
+            PacketContainer container = new PacketContainer(type, packet);
             PacketEvent packetEvent = PacketEvent.fromServer(this, container, marker, injector.getPlayer());
 
             // post to all listeners, then return the packet event we constructed
