@@ -135,6 +135,12 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return bedSpawnLocation;
     }
 
+    @Nullable
+    @Override
+    public Location getRespawnLocation() {
+        return null;
+    }
+
     // @Override
     public long getLastLogin() {
         return lastLogin;
@@ -206,6 +212,12 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 
     @Override
     public Location getLastDeathLocation() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Location getLocation() {
         return null;
     }
 
