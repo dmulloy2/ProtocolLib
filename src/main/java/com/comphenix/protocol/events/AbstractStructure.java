@@ -858,6 +858,16 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for the DisplaySlot enum in 1.20.2.
+     * @return A modifier for DisplaySlot enum fields.
+     */
+    public StructureModifier<EnumWrappers.DisplaySlot> getDisplaySlots() {
+        return structureModifier.withType(
+                EnumWrappers.getDisplaySlotClass(),
+                EnumWrappers.getDisplaySlotConverter());
+    }
+
+    /**
      * Retrieve a read/write structure for the MinecraftKey class.
      * @return A modifier for MinecraftKey fields.
      */

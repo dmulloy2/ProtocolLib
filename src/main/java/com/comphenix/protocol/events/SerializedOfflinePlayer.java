@@ -281,6 +281,18 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         this.whitelisted = whitelisted;
     }
 
+    @Nullable
+    @Override
+    public Location getRespawnLocation() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Location getLocation() {
+        return null;
+    }
+
     private void writeObject(ObjectOutputStream output) throws IOException {
         output.defaultWriteObject();
 

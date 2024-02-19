@@ -460,6 +460,31 @@ public abstract class EnumWrappers {
         }
     }
 
+    /**
+     * @since 1.20.2
+     */
+    public enum DisplaySlot {
+        LIST,
+        SIDEBAR,
+        BELOW_NAME,
+        TEAM_BLACK,
+        TEAM_DARK_BLUE,
+        TEAM_DARK_GREEN,
+        TEAM_DARK_AQUA,
+        TEAM_DARK_RED,
+        TEAM_DARK_PURPLE,
+        TEAM_GOLD,
+        TEAM_GRAY,
+        TEAM_DARK_GRAY,
+        TEAM_BLUE,
+        TEAM_GREEN,
+        TEAM_AQUA,
+        TEAM_RED,
+        TEAM_LIGHT_PURPLE,
+        TEAM_YELLOW,
+        TEAM_WHITE;
+    }
+
     private static Class<?> PROTOCOL_CLASS = null;
     private static Class<?> CLIENT_COMMAND_CLASS = null;
     private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -481,6 +506,7 @@ public abstract class EnumWrappers {
     private static Class<?> DIRECTION_CLASS = null;
     private static Class<?> CHAT_TYPE_CLASS = null;
     private static Class<?> ENTITY_POSE_CLASS = null;
+    private static Class<?> DISPLAY_SLOT_CLASS = null;
 
     private static boolean INITIALIZED = false;
     private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
@@ -564,6 +590,7 @@ public abstract class EnumWrappers {
 
         CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
         ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
+        DISPLAY_SLOT_CLASS = MinecraftReflection.getNullableNMS("world.scores.DisplaySlot");
 
         associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
         associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -736,6 +763,11 @@ public abstract class EnumWrappers {
         return ENTITY_POSE_CLASS;
     }
 
+    public static Class<?> getDisplaySlotClass() {
+        initialize();
+        return DISPLAY_SLOT_CLASS;
+    }
+
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
         return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -816,7 +848,11 @@ public abstract class EnumWrappers {
     public static EquivalentConverter<ChatType> getChatTypeConverter() {
         return new EnumConverter<>(getChatTypeClass(), ChatType.class);
     }
-    
+
+    public static EquivalentConverter<DisplaySlot> getDisplaySlotConverter() {
+        return new EnumConverter<>(getDisplaySlotClass(), DisplaySlot.class);
+    }
+
     /**
      * @since 1.13+
      * @return {@link EnumConverter} or null (if bellow 1.13 / nms EnumPose class cannot be found)
