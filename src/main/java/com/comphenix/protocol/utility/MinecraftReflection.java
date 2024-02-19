@@ -680,6 +680,16 @@ public final class MinecraftReflection {
     }
 
     /**
+     * Retrieve the component style serializer class.
+     *
+     * @return The serializer class.
+     */
+    public static Class<?> getStyleSerializerClass() {
+        return getMinecraftClass("network.chat.ChatModifier$ChatModifierSerializer", "ChatModifier$ChatModifierSerializer");
+    }
+
+
+    /**
      * Retrieve the ServerPing class.
      *
      * @return The ServerPing class.
@@ -1018,6 +1028,60 @@ public final class MinecraftReflection {
      */
     public static Class<?> getTileEntityClass() {
         return getMinecraftClass("world.level.block.entity.TileEntity", "world.level.block.entity.BlockEntity", "TileEntity");
+    }
+
+    /**
+     * Retrieve the NMS team parameters class.
+     *
+     * @return The team parameters class.
+     */
+    public static Optional<Class<?>> getTeamParametersClass() {
+        return getOptionalNMS("network.protocol.game.PacketPlayOutScoreboardTeam$b");
+    }
+
+    /**
+     * Retrieve the NMS component style class.
+     *
+     * @return The component style class.
+     */
+    public static Class<?> getComponentStyleClass() {
+        return getMinecraftClass("network.chat.ChatModifier", "ChatModifier");
+    }
+
+    /**
+     * Retrieve the NMS NumberFormat class.
+     *
+     * @return The NumberFormat class.
+     */
+    public static Optional<Class<?>> getNumberFormatClass() {
+        return getOptionalNMS("network.chat.numbers.NumberFormat");
+    }
+
+    /**
+     * Retrieve the NMS BlankFormat class.
+     *
+     * @return The FixedFormat class.
+     */
+    public static Optional<Class<?>> getBlankFormatClass() {
+        return getOptionalNMS("network.chat.numbers.BlankFormat");
+    }
+
+    /**
+     * Retrieve the NMS FixedFormat class.
+     *
+     * @return The FixedFormat class.
+     */
+    public static Optional<Class<?>> getFixedFormatClass() {
+        return getOptionalNMS("network.chat.numbers.FixedFormat");
+    }
+
+    /**
+     * Retrieve the NMS StyledFormat class.
+     *
+     * @return The StyledFormat class.
+     */
+    public static Optional<Class<?>> getStyledFormatClass() {
+        return getOptionalNMS("network.chat.numbers.StyledFormat");
     }
 
     /**

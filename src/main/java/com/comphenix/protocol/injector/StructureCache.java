@@ -69,9 +69,12 @@ public class StructureCache {
 
     public static Object newPacket(Class<?> packetClass) {
         Supplier<Object> packetConstructor = PACKET_INSTANCE_CREATORS.computeIfAbsent(packetClass, packetClassKey -> {
-            PacketCreator creator = PacketCreator.forPacket(packetClassKey);
-            if (creator.get() != null) {
-                return creator;
+            try {
+                PacketCreator creator = PacketCreator.forPacket(packetClassKey);
+                if (creator.get() != null) {
+                    return creator;
+                }
+            } catch (Exception ignored) {
             }
 
             WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(packetClassKey);

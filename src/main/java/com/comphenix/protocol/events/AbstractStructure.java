@@ -871,6 +871,55 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for the DisplaySlot enum in 1.20.2.
+     * @return A modifier for DisplaySlot enum fields.
+     */
+    public StructureModifier<EnumWrappers.DisplaySlot> getDisplaySlots() {
+        return structureModifier.withType(
+                EnumWrappers.getDisplaySlotClass(),
+                EnumWrappers.getDisplaySlotConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for the RenderType enum.
+     * @return A modifier for RenderType enum fields.
+     */
+    public StructureModifier<EnumWrappers.RenderType> getRenderTypes() {
+        return structureModifier.withType(
+                EnumWrappers.getRenderTypeClass(),
+                EnumWrappers.getRenderTypeConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for the ChatFormatting enum.
+     * @return A modifier for ChatFormatting enum fields.
+     */
+    public StructureModifier<EnumWrappers.ChatFormatting> getChatFormattings() {
+        return structureModifier.withType(
+                EnumWrappers.getChatFormattingClass(),
+                EnumWrappers.getChatFormattingConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for optional team parameters in 1.17+.
+     * @return A modifier for optional team parameters fields.
+     */
+    public StructureModifier<Optional<WrappedTeamParameters>> getOptionalTeamParameters() {
+        return getOptionals(BukkitConverters.getWrappedTeamParametersConverter());
+    }
+
+    /**
+     * Retrieve a read/write structure for the NumberFormat class in 1.20.4+.
+     * @return A modifier for NumberFormat fields.
+     */
+    public StructureModifier<WrappedNumberFormat> getNumberFormats() {
+        return structureModifier.withType(
+                MinecraftReflection.getNumberFormatClass().orElse(null),
+                BukkitConverters.getWrappedNumberFormatConverter());
+    }
+
+
+    /**
      * Retrieve a read/write structure for the MinecraftKey class.
      * @return A modifier for MinecraftKey fields.
      */
