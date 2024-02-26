@@ -485,6 +485,11 @@ public abstract class EnumWrappers {
         TEAM_WHITE;
     }
 
+    public enum RenderType {
+        INTEGER,
+        HEARTS
+    }
+
     private static Class<?> PROTOCOL_CLASS = null;
     private static Class<?> CLIENT_COMMAND_CLASS = null;
     private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -507,6 +512,7 @@ public abstract class EnumWrappers {
     private static Class<?> CHAT_TYPE_CLASS = null;
     private static Class<?> ENTITY_POSE_CLASS = null;
     private static Class<?> DISPLAY_SLOT_CLASS = null;
+    private static Class<?> RENDER_TYPE_CLASS = null;
 
     private static boolean INITIALIZED = false;
     private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
@@ -591,6 +597,7 @@ public abstract class EnumWrappers {
         CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
         ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
         DISPLAY_SLOT_CLASS = MinecraftReflection.getNullableNMS("world.scores.DisplaySlot");
+        RENDER_TYPE_CLASS = MinecraftReflection.getNullableNMS("world.scores.criteria.IScoreboardCriteria$EnumScoreboardHealthDisplay", "IScoreboardCriteria$EnumScoreboardHealthDisplay");
 
         associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
         associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -768,6 +775,11 @@ public abstract class EnumWrappers {
         return DISPLAY_SLOT_CLASS;
     }
 
+    public static Class<?> getRenderTypeClass() {
+        initialize();
+        return RENDER_TYPE_CLASS;
+    }
+
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
         return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -851,6 +863,10 @@ public abstract class EnumWrappers {
 
     public static EquivalentConverter<DisplaySlot> getDisplaySlotConverter() {
         return new EnumConverter<>(getDisplaySlotClass(), DisplaySlot.class);
+    }
+
+    public static EquivalentConverter<RenderType> getRenderTypeConverter() {
+        return new EnumConverter<>(getRenderTypeClass(), RenderType.class);
     }
 
     /**

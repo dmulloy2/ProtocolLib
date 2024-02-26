@@ -868,6 +868,17 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for the RenderType enum.
+     * @return A modifier for RenderType enum fields.
+     */
+    public StructureModifier<EnumWrappers.RenderType> getRenderTypes() {
+        return structureModifier.withType(
+                EnumWrappers.getRenderTypeClass(),
+                EnumWrappers.getRenderTypeConverter());
+    }
+
+
+    /**
      * Retrieve a read/write structure for the MinecraftKey class.
      * @return A modifier for MinecraftKey fields.
      */
