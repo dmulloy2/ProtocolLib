@@ -1010,6 +1010,15 @@ public final class MinecraftReflection {
     }
 
     /**
+     * Retrieve the NMS team parameters class.
+     *
+     * @return The team parameters class.
+     */
+    public static Optional<Class<?>> getTeamParametersClass() {
+        return getOptionalNMS("network.protocol.game.PacketPlayOutScoreboardTeam$b");
+    }
+
+    /**
      * Retrieve the Gson class used by Minecraft.
      *
      * @return The Gson class.

@@ -877,6 +877,16 @@ public abstract class AbstractStructure {
                 EnumWrappers.getRenderTypeConverter());
     }
 
+    /**
+     * Retrieve a read/write structure for the ChatFormatting enum.
+     * @return A modifier for ChatFormatting enum fields.
+     */
+    public StructureModifier<EnumWrappers.ChatFormatting> getChatFormattings() {
+        return structureModifier.withType(
+                EnumWrappers.getChatFormattingClass(),
+                EnumWrappers.getChatFormattingConverter());
+    }
+
 
     /**
      * Retrieve a read/write structure for the MinecraftKey class.
