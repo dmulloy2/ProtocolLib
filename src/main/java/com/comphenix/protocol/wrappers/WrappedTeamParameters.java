@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 1.17
  */
 public class WrappedTeamParameters extends AbstractWrapper {
-    private static Class<?> getNmsClass() {
+    public static Class<?> getNmsClassOrThrow() {
         return MinecraftReflection.getTeamParametersClass()
                 .orElseThrow(() -> new IllegalStateException("Team parameters class doesn't exist on this server version"));
     }
@@ -37,9 +37,9 @@ public class WrappedTeamParameters extends AbstractWrapper {
     private final StructureModifier<Object> modifier;
 
     public WrappedTeamParameters(Object handle) {
-        super(getNmsClass());
+        super(getNmsClassOrThrow());
         setHandle(handle);
-        this.modifier = new StructureModifier<>(getNmsClass()).withTarget(handle);
+        this.modifier = new StructureModifier<>(getNmsClassOrThrow()).withTarget(handle);
     }
 
     @NotNull
@@ -155,7 +155,7 @@ public class WrappedTeamParameters extends AbstractWrapper {
             Preconditions.checkNotNull(color, "Color not set");
 
             // Not technically a packet, but it has a PacketDataSerializer constructor, so it works fine
-            Object handle = StructureCache.newPacket(getNmsClass());
+            Object handle = StructureCache.newPacket(getNmsClassOrThrow());
 
             WrappedTeamParameters wrapped = new WrappedTeamParameters(handle);
             wrapped.writeComponent(0, displayName);

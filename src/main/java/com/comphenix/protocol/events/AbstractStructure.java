@@ -887,6 +887,13 @@ public abstract class AbstractStructure {
                 EnumWrappers.getChatFormattingConverter());
     }
 
+    /**
+     * Retrieve a read/write structure for optional team parameters in 1.17+.
+     * @return A modifier for optional team parameters fields.
+     */
+    public StructureModifier<Optional<WrappedTeamParameters>> getOptionalTeamParameters() {
+        return getOptionals(BukkitConverters.getWrappedTeamParametersConverter());
+    }
 
     /**
      * Retrieve a read/write structure for the MinecraftKey class.
