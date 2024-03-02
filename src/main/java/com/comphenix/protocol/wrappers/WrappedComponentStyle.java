@@ -7,7 +7,7 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.codecs.WrappedCodec;
 import com.comphenix.protocol.wrappers.codecs.WrappedDynamicOps;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 
 /**
@@ -37,16 +37,16 @@ public class WrappedComponentStyle extends AbstractWrapper {
         setHandle(handle);
     }
 
-    public JsonObject getJson() {
+    public JsonElement getJson() {
         if (CODEC != null) {
-            return (JsonObject) CODEC.encode(handle, WrappedDynamicOps.json(false))
+            return (JsonElement) CODEC.encode(handle, WrappedDynamicOps.json(false))
                     .getOrThrow(JsonParseException::new);
         } else {
-            return (JsonObject) GSON.toJsonTree(handle);
+            return GSON.toJsonTree(handle);
         }
     }
 
-    public static WrappedComponentStyle fromJson(JsonObject json) {
+    public static WrappedComponentStyle fromJson(JsonElement json) {
         Object handle;
         if (CODEC != null) {
             handle = CODEC.parse(json, WrappedDynamicOps.json(false))

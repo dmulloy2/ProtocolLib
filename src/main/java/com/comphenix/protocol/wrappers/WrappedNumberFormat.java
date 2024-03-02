@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
  */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class WrappedNumberFormat extends AbstractWrapper {
-    private static final IllegalStateException UNSUPPORTED = new IllegalStateException("NumberFormat classes don't exist on this server version");
     private static final Object BLANK;
     private static final ConstructorAccessor FIXED_CONSTRUCTOR, STYLED_CONSTRUCTOR;
 
@@ -49,10 +48,7 @@ public class WrappedNumberFormat extends AbstractWrapper {
     }
 
     public static WrappedNumberFormat fromHandle(Object handle) {
-        if (!isSupported()) {
-            throw UNSUPPORTED;
-        }
-
+        throwIfUnsupported();
         if (MinecraftReflection.getBlankFormatClass().get().isInstance(handle)) {
             return new Blank(handle);
         } else if (MinecraftReflection.getFixedFormatClass().get().isInstance(handle)) {
@@ -65,29 +61,26 @@ public class WrappedNumberFormat extends AbstractWrapper {
     }
 
     public static Blank blank() {
-        if (!isSupported()) {
-            throw UNSUPPORTED;
-        }
-
+        throwIfUnsupported();
         return new Blank(WrappedNumberFormat.BLANK);
     }
 
     public static Fixed fixed(@NotNull WrappedChatComponent content) {
-        if (!isSupported()) {
-            throw UNSUPPORTED;
-        }
-
+        throwIfUnsupported();
         Object handle = FIXED_CONSTRUCTOR.invoke(content.getHandle());
         return new Fixed(handle);
     }
 
     public static Styled styled(@NotNull WrappedComponentStyle style) {
-        if (!isSupported()) {
-            throw UNSUPPORTED;
-        }
-
+        throwIfUnsupported();
         Object handle = STYLED_CONSTRUCTOR.invoke(style.getHandle());
         return new Styled(handle);
+    }
+
+    private static void throwIfUnsupported() {
+        if (!isSupported()) {
+            throw new IllegalStateException("NumberFormat classes don't exist on this server version");
+        }
     }
 
     private WrappedNumberFormat(Class<?> handleType) {
