@@ -669,6 +669,16 @@ public final class MinecraftReflection {
     }
 
     /**
+     * Retrieve the component style serializer class.
+     *
+     * @return The serializer class.
+     */
+    public static Class<?> getStyleSerializerClass() {
+        return getMinecraftClass("network.chat.ChatModifier$ChatModifierSerializer", "ChatModifier$ChatModifierSerializer");
+    }
+
+
+    /**
      * Retrieve the ServerPing class.
      *
      * @return The ServerPing class.
@@ -1016,6 +1026,15 @@ public final class MinecraftReflection {
      */
     public static Optional<Class<?>> getTeamParametersClass() {
         return getOptionalNMS("network.protocol.game.PacketPlayOutScoreboardTeam$b");
+    }
+
+    /**
+     * Retrieve the NMS component style class.
+     *
+     * @return The component style class.
+     */
+    public static Class<?> getComponentStyleClass() {
+        return getMinecraftClass("network.chat.ChatModifier", "ChatModifier");
     }
 
     /**
