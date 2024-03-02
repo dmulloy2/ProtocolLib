@@ -46,10 +46,6 @@ public class WrappedComponentStyle extends AbstractWrapper {
         }
     }
 
-    public static WrappedComponentStyle fromHandle(Object handle) {
-        return new WrappedComponentStyle(handle);
-    }
-
     public static WrappedComponentStyle fromJson(JsonObject json) {
         Object handle;
         if (CODEC != null) {

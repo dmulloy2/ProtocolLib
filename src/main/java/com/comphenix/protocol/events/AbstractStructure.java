@@ -896,6 +896,17 @@ public abstract class AbstractStructure {
     }
 
     /**
+     * Retrieve a read/write structure for the NumberFormat class in 1.20.4+.
+     * @return A modifier for NumberFormat fields.
+     */
+    public StructureModifier<WrappedNumberFormat> getNumberFormats() {
+        return structureModifier.withType(
+                MinecraftReflection.getNumberFormatClass().orElse(null),
+                BukkitConverters.getWrappedNumberFormatConverter());
+    }
+
+
+    /**
      * Retrieve a read/write structure for the MinecraftKey class.
      * @return A modifier for MinecraftKey fields.
      */

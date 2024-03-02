@@ -1038,6 +1038,42 @@ public final class MinecraftReflection {
     }
 
     /**
+     * Retrieve the NMS NumberFormat class.
+     *
+     * @return The NumberFormat class.
+     */
+    public static Optional<Class<?>> getNumberFormatClass() {
+        return getOptionalNMS("network.chat.numbers.NumberFormat");
+    }
+
+    /**
+     * Retrieve the NMS BlankFormat class.
+     *
+     * @return The FixedFormat class.
+     */
+    public static Optional<Class<?>> getBlankFormatClass() {
+        return getOptionalNMS("network.chat.numbers.BlankFormat");
+    }
+
+    /**
+     * Retrieve the NMS FixedFormat class.
+     *
+     * @return The FixedFormat class.
+     */
+    public static Optional<Class<?>> getFixedFormatClass() {
+        return getOptionalNMS("network.chat.numbers.FixedFormat");
+    }
+
+    /**
+     * Retrieve the NMS StyledFormat class.
+     *
+     * @return The StyledFormat class.
+     */
+    public static Optional<Class<?>> getStyledFormatClass() {
+        return getOptionalNMS("network.chat.numbers.StyledFormat");
+    }
+
+    /**
      * Retrieve the Gson class used by Minecraft.
      *
      * @return The Gson class.
