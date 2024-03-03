@@ -640,6 +640,14 @@ public class BukkitConverters {
         return ignoreNull(handle(WrappedLevelChunkData.LightData::getHandle, WrappedLevelChunkData.LightData::new, WrappedLevelChunkData.LightData.class));
     }
 
+    public static EquivalentConverter<WrappedTeamParameters> getWrappedTeamParametersConverter() {
+        return ignoreNull(handle(WrappedTeamParameters::getHandle, WrappedTeamParameters::new, WrappedTeamParameters.class));
+    }
+
+    public static EquivalentConverter<WrappedNumberFormat> getWrappedNumberFormatConverter() {
+        return ignoreNull(handle(WrappedNumberFormat::getHandle, WrappedNumberFormat::fromHandle, WrappedNumberFormat.class));
+    }
+
     public static EquivalentConverter<PacketContainer> getPacketContainerConverter() {
         return ignoreNull(handle(PacketContainer::getHandle, PacketContainer::fromPacket, PacketContainer.class));
     }
