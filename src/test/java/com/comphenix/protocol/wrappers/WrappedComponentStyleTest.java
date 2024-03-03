@@ -1,7 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
@@ -24,7 +24,7 @@ public class WrappedComponentStyleTest {
     public void testComponentStyle() {
         ChatModifier style = ChatModifier.a.b(EnumChatFormat.m).a(true);
         WrappedComponentStyle wrapped = new WrappedComponentStyle(style);
-        JsonObject json = wrapped.getJson();
+        JsonElement json = wrapped.getJson();
         assertEquals("{\"color\":\"red\",\"bold\":true}", json.toString());
         assertEquals(style, WrappedComponentStyle.fromJson(json).getHandle());
     }
