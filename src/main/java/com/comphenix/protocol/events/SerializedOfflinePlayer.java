@@ -145,6 +145,16 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return lastSeen;
     }
 
+	@Override
+	public Location getRespawnLocation() {
+		return null;
+	}
+
+	@Override
+	public Location getLocation() {
+		return null;
+	}
+
     // TODO do we need to implement this?
 
     public void incrementStatistic(Statistic statistic) throws IllegalArgumentException {
