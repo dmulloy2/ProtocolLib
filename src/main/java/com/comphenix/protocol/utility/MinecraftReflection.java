@@ -1660,7 +1660,7 @@ public final class MinecraftReflection {
      */
     private static void useFallbackServer() {
         // Get the first constructor that matches CraftServer(MINECRAFT_OBJECT, ANY)
-        Constructor<?> selected = FuzzyReflection.fromClass(getCraftBukkitClass("CraftServer"))
+        Constructor<?> selected = FuzzyReflection.fromClass(getCraftServer())
                 .getConstructor(FuzzyMethodContract.newBuilder()
                         .parameterMatches(getMinecraftObjectMatcher(), 0)
                         .parameterCount(2)
@@ -1715,5 +1715,13 @@ public final class MinecraftReflection {
 
     public static Class<?> getHolderClass() {
         return getMinecraftClass("core.Holder");
+    }
+
+    public static Class<?> getCraftServer() {
+    	return getCraftBukkitClass("CraftServer");
+    }
+
+    public static Class<?> getHolderLookupProviderClass() {
+        return getMinecraftClass("core.HolderLookup$a" /* Spigot Mappings */, "core.HolderLookup$Provider" /* Mojang Mappings */);
     }
 }
