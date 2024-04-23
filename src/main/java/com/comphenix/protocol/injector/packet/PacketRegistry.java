@@ -18,9 +18,21 @@
 package com.comphenix.protocol.injector.packet;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
@@ -279,6 +291,172 @@ public class PacketRegistry {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
+    private static synchronized Register createNewNewRegister() {
+        Object[] protocols = ENUM_PROTOCOL.getEnumConstants();
+
+        // ID to Packet class maps
+        final Map<Object, Class<?>> packetTypeMap = new HashMap<>();
+        final Map<Object, Map<Class<?>, Integer>> serverMaps = new LinkedHashMap<>();
+        final Map<Object, Map<Class<?>, Integer>> clientMaps = new LinkedHashMap<>();
+
+		String[] protocolClassNames = new String[] {
+				"configuration.ConfigurationProtocols",
+				"game.GameProtocols",
+				"handshake.HandshakeProtocols",
+				"login.LoginProtocols",
+				"status.StatusProtocols"
+		};
+
+		String[] packetTypesClassNames = new String[] {
+				"common.CommonPacketTypes",
+				"configuration.ConfigurationPacketTypes",
+				"cookie.CookiePacketTypes",
+				"game.GamePacketTypes",
+				"handshake.HandshakePacketTypes",
+				"login.LoginPacketTypes",
+				"ping.PingPacketTypes",
+				"status.StatusPacketTypes",
+		};
+
+		Class<?> protocolInfoClass = MinecraftReflection.getMinecraftClass("network.ProtocolInfo");
+		Class<?> protocolInfoUnboundClass = MinecraftReflection.getMinecraftClass("network.ProtocolInfo$a");
+		Class<?> streamCodecClass = MinecraftReflection.getMinecraftClass("network.codec.StreamCodec");
+		Class<?> idDispatchCodecClass = MinecraftReflection.getMinecraftClass("network.codec.IdDispatchCodec");
+		Class<?> packetTypeClass = MinecraftReflection.getMinecraftClass("network.protocol.PacketType");
+		Class<?> protocolDirectionClass = MinecraftReflection.getMinecraftClass("network.protocol.EnumProtocolDirection");
+
+		Function<?, ?> emptyFunction = input -> null;
+
+		Method protocolMethod = FuzzyReflection.fromClass(protocolInfoClass)
+				.getMethod(FuzzyMethodContract.newBuilder()
+						.returnTypeExact(MinecraftReflection.getEnumProtocolClass())
+						.build());
+		protocolMethod.setAccessible(true);
+
+		Method directionMethod = FuzzyReflection.fromClass(protocolInfoClass)
+				.getMethod(FuzzyMethodContract.newBuilder()
+						.returnTypeExact(protocolDirectionClass)
+						.build());
+		directionMethod.setAccessible(true);
+
+		Method codecMethod = FuzzyReflection.fromClass(protocolInfoClass)
+				.getMethod(FuzzyMethodContract.newBuilder()
+						.returnTypeExact(streamCodecClass)
+						.build());
+		codecMethod.setAccessible(true);
+
+		Method bindMethod = FuzzyReflection.fromClass(protocolInfoUnboundClass)
+				.getMethod(FuzzyMethodContract.newBuilder()
+						.returnTypeExact(protocolInfoClass)
+						.build());
+		bindMethod.setAccessible(true);
+
+		Field toIdField = FuzzyReflection.fromClass(idDispatchCodecClass, true)
+				.getField(FuzzyFieldContract.newBuilder()
+						.typeDerivedOf(Map.class)
+						.build());
+		toIdField.setAccessible(true);
+
+		for (String packetTypesClassName : packetTypesClassNames) {
+			Class<?> packetTypesClass = MinecraftReflection.getMinecraftClass("network.protocol." + packetTypesClassName);
+
+			for (Field field : packetTypesClass.getDeclaredFields()) {
+				try {
+					if (!Modifier.isFinal(field.getModifiers()) || !Modifier.isStatic(field.getModifiers())) {
+						System.out.println("failed modifier " + field);
+						continue;
+					}
+
+					Object packetType = field.get(null);
+					if (!packetTypeClass.isInstance(packetType)) {
+						System.out.println("failed packetTypeClass " + field);
+						continue;
+					}
+
+					Type packet = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+					if (packet instanceof Class<?>) {
+						packetTypeMap.put(packetType, (Class<?>) packet);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					continue;
+				}
+			}
+		}
+
+		for (String protocolClassName : protocolClassNames) {
+			Class<?> protocolClass = MinecraftReflection.getMinecraftClass("network.protocol." + protocolClassName);
+
+			for (Field field : protocolClass.getDeclaredFields()) {
+				try {
+					if (!Modifier.isFinal(field.getModifiers()) || !Modifier.isStatic(field.getModifiers())) {
+						System.out.println("failed modifier " + field);
+						continue;
+					}
+
+					Object protocolInfo = field.get(null);
+					if (protocolInfoUnboundClass.isInstance(protocolInfo)) {
+						protocolInfo = bindMethod.invoke(protocolInfo, new Object[] { emptyFunction });
+					}
+
+					if (!protocolInfoClass.isInstance(protocolInfo)) {
+						System.out.println("failed protocolInfoClass " + field);
+						continue;
+					}
+
+					Object codec = codecMethod.invoke(protocolInfo);
+					if (!idDispatchCodecClass.isInstance(codec)) {
+						System.out.println("failed idDispatchCodecClass " + field);
+						continue;
+					}
+
+					Map<Class<?>, Integer> packetMap = new HashMap<>();
+					Map<Object, Integer> packetTypeIdMap = (Map<Object, Integer>) toIdField.get(codec);
+
+					for (Map.Entry<Object, Integer> entry : packetTypeIdMap.entrySet()) {
+						Class<?> packet = packetTypeMap.get(entry.getKey());
+						if (packet == null) {
+							throw new RuntimeException("packetType missing packet " + entry.getKey());
+						}
+	
+						packetMap.put(packet, entry.getValue());
+					}
+					
+
+					Object protocol = protocolMethod.invoke(protocolInfo);
+	                String direction = directionMethod.invoke(protocolInfo).toString();
+
+	                if (direction.contains("CLIENTBOUND")) { // Sent by Server
+	                    serverMaps.put(protocol, packetMap);
+	                } else if (direction.contains("SERVERBOUND")) { // Sent by Client
+	                    clientMaps.put(protocol, packetMap);
+	                }
+				} catch (Exception e) {
+					e.printStackTrace();
+					continue;
+				}
+			}
+		}
+
+        Register result = new Register();
+
+        for (Object protocol : protocols) {
+            Enum<?> enumProtocol = (Enum<?>) protocol;
+            PacketType.Protocol equivalent = PacketType.Protocol.fromVanilla(enumProtocol);
+
+            // Associate known types
+            if (serverMaps.containsKey(protocol)) {
+                associatePackets(result, reverse(serverMaps.get(protocol)), equivalent, Sender.SERVER);
+            }
+            if (clientMaps.containsKey(protocol)) {
+                associatePackets(result, reverse(clientMaps.get(protocol)), equivalent, Sender.CLIENT);
+            }
+        }
+
+        return result;
+    }
+
     /**
      * Reverses a key->value map to value->key
      * Non-deterministic behavior when multiple keys are mapped to the same value
@@ -330,7 +508,9 @@ public class PacketRegistry {
                 return;
             }
 
-            if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
+            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+            	REGISTER = createNewNewRegister();
+            } else if (MinecraftVersion.BEE_UPDATE.atOrAbove()) {
                 REGISTER = createNewRegister();
             } else {
                 REGISTER = createOldRegister();
