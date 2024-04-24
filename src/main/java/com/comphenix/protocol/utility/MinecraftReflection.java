@@ -638,7 +638,8 @@ public final class MinecraftReflection {
     }
 
     public static boolean isBundleDelimiter(Class<?> packetClass) {
-        return Optionals.Equals(getBundleDelimiterClass(), packetClass);
+    	Class<?> bundleDelimiterClass = getBundleDelimiterClass().orElse(null);
+        return bundleDelimiterClass != null && (packetClass.equals(bundleDelimiterClass) || bundleDelimiterClass.isAssignableFrom(packetClass));
     }
 
     public static Optional<Class<?>> getBundleDelimiterClass() {
@@ -1723,5 +1724,9 @@ public final class MinecraftReflection {
 
     public static Class<?> getHolderLookupProviderClass() {
         return getMinecraftClass("core.HolderLookup$a" /* Spigot Mappings */, "core.HolderLookup$Provider" /* Mojang Mappings */);
+    }
+
+    public static Class<?> getProtocolInfoClass() {
+    	return getMinecraftClass("network.ProtocolInfo");
     }
 }

@@ -9,11 +9,16 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 
+/**
+ * Static getter for the registry access accessor which is need for most of the methods
+ * since 1.20.5 that access the registry and in form.
+ */
 public class MinecraftRegistryAccess {
 
 	private static MethodAccessor GET_SERVER = null;
 	private static MethodAccessor REGISTRY_ACCESS = null;
 
+	// lazy initialized
 	private static Object registryAccess = null;
 
 	static {
@@ -34,6 +39,12 @@ public class MinecraftRegistryAccess {
 		}
 	}
 
+	/**
+	 * Returns the composite global registry access. Equiv. of
+	 * <pre>((CraftServer) Bukkit.getServer()).getServer().registryAccess()</pre>
+	 * 
+	 * @return composite registy acesss
+	 */
 	public static Object get() {
 		if (GET_SERVER == null || REGISTRY_ACCESS == null) {
 			return null;

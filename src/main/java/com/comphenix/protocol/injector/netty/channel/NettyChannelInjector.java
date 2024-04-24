@@ -31,6 +31,7 @@ import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
 import org.bukkit.Server;
@@ -202,9 +203,18 @@ public class NettyChannelInjector implements Injector {
                 return false;
             }
 
+            ChannelPipeline pipeline = this.wrappedChannel.pipeline();
+
+            // since 1.20.5 the encoder is renamed to outbound_config only in the handshake phase
+            String encoderName = pipeline.get("outbound_config") != null
+            		? "outbound_config" : "encoder";
+
             // inject our handlers
-            this.wrappedChannel.pipeline().addAfter("encoder", WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER);
-            this.wrappedChannel.pipeline().addAfter(
+            pipeline.addAfter(
+                    encoderName,
+                    WIRE_PACKET_ENCODER_NAME,
+                    WIRE_PACKET_ENCODER);
+            pipeline.addAfter(
                     "decoder",
                     INTERCEPTOR_NAME,
                     new InboundPacketInterceptor(this, this.channelListener));
