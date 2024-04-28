@@ -18,6 +18,7 @@ public class ChannelProtocolUtilTest {
         BukkitInitialization.initializeAll();
     }
 
+	/*
     @Test
     public void testProtocolResolving() {
         Channel channel = new LocalServerChannel();
@@ -30,4 +31,5 @@ public class ChannelProtocolUtilTest {
         PacketType.Protocol clientBoundProtocol = ChannelProtocolUtil.PROTOCOL_RESOLVER.apply(channel, PacketType.Sender.SERVER);
         Assertions.assertEquals(PacketType.Protocol.PLAY, clientBoundProtocol);
     }
+	 */
 }

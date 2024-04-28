@@ -26,7 +26,7 @@ public class WrappedParticleTest {
     public void testBlockData() {
         PacketContainer packet = new PacketContainer(PacketType.Play.Server.WORLD_PARTICLES);
 
-        WrappedParticle before = WrappedParticle.create(Particle.BLOCK_CRACK,
+        WrappedParticle before = WrappedParticle.create(Particle.BLOCK,
                 WrappedBlockData.createData(Material.LAPIS_BLOCK));
         packet.getNewParticles().write(0, before);
 
@@ -38,7 +38,7 @@ public class WrappedParticleTest {
     @Test
     public void testItemStacks() {
         PacketContainer packet = new PacketContainer(PacketType.Play.Server.WORLD_PARTICLES);
-        WrappedParticle before = WrappedParticle.create(Particle.ITEM_CRACK, new ItemStack(Material.FLINT_AND_STEEL));
+        WrappedParticle before = WrappedParticle.create(Particle.ITEM, new ItemStack(Material.FLINT_AND_STEEL));
         packet.getNewParticles().write(0, before);
 
         WrappedParticle after = packet.getNewParticles().read(0);
@@ -49,7 +49,7 @@ public class WrappedParticleTest {
     @Test
     public void testRedstone() {
         PacketContainer packet = new PacketContainer(PacketType.Play.Server.WORLD_PARTICLES);
-        WrappedParticle before = WrappedParticle.create(Particle.REDSTONE, new DustOptions(Color.BLUE, 1));
+        WrappedParticle before = WrappedParticle.create(Particle.DUST, new DustOptions(Color.BLUE, 1));
         packet.getNewParticles().write(0, before);
 
         WrappedParticle after = packet.getNewParticles().read(0);

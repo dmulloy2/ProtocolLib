@@ -17,8 +17,12 @@ import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.server.DataPackResources;
 import net.minecraft.server.DispenserRegistry;
+import net.minecraft.server.Main;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.WorldLoader;
+import net.minecraft.server.dedicated.DedicatedServer;
+import net.minecraft.server.dedicated.DedicatedServerProperties;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.server.packs.EnumResourcePackType;
 import net.minecraft.server.packs.repository.ResourcePackLoader;
@@ -34,14 +38,14 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_20_R3.CraftLootTable;
-import org.bukkit.craftbukkit.v1_20_R3.CraftRegistry;
-import org.bukkit.craftbukkit.v1_20_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_20_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_20_R3.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_20_R3.util.CraftNamespacedKey;
-import org.bukkit.craftbukkit.v1_20_R3.util.Versioning;
+import org.bukkit.craftbukkit.v1_20_R4.CraftLootTable;
+import org.bukkit.craftbukkit.v1_20_R4.CraftRegistry;
+import org.bukkit.craftbukkit.v1_20_R4.CraftServer;
+import org.bukkit.craftbukkit.v1_20_R4.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R4.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_20_R4.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_20_R4.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_20_R4.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -103,7 +107,7 @@ public class BukkitInitialization {
 
             ResourceManager resourceManager = new ResourceManager(
                     EnumResourcePackType.b /* SERVER_DATA */,
-                    resourcePackRepository.c() /* getAvailablePacks() */ .stream().map(ResourcePackLoader::e /* openFull() */).collect(Collectors.toList()));
+                    resourcePackRepository.c() /* getAvailablePacks() */ .stream().map(ResourcePackLoader::f /* openFull() */).collect(Collectors.toList()));
             LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = RegistryLayer.a(); // .createRegistryAccess()
             layeredRegistryAccess = WorldLoader.b(resourceManager, layeredRegistryAccess, RegistryLayer.b /* WORLDGEN */, RegistryDataLoader.a /* WORLDGEN_REGISTRIES */); // .loadAndReplaceLayer()
 			IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().d(); // .compositeAccess().freeze()
@@ -111,14 +115,14 @@ public class BukkitInitialization {
 
             DataPackResources dataPackResources = DataPackResources.a(
                     resourceManager,
-                    registryCustom,
+                    layeredRegistryAccess,
 					FeatureFlagSet.a() /* REGISTRY.allFlags() */,
                     CommandDispatcher.ServerType.b /* DEDICATED */,
                     0,
                     MoreExecutors.directExecutor(),
                     MoreExecutors.directExecutor()
             ).join();
-            dataPackResources.a(registryCustom); // .updateRegistryTags()
+            // dataPackResources.a(registryCustom); // .updateRegistryTags()
 
             try {
                 IRegistry.class.getName();
@@ -140,10 +144,10 @@ public class BukkitInitialization {
             when(mockedServer.isPrimaryThread()).thenReturn(true);
             when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
             when(mockedServer.getUnsafe()).thenReturn(CraftMagicNumbers.INSTANCE);
-            when(mockedServer.getLootTable(any())).thenAnswer(invocation -> {
+            /*when(mockedServer.getLootTable(any())).thenAnswer(invocation -> {
                 NamespacedKey key = invocation.getArgument(0);
-                return new CraftLootTable(key, dataPackResources.b() /* .getLootData() */ .getLootTable(CraftNamespacedKey.toMinecraft(key)));
-            });
+                return new CraftLootTable(key, dataPackResources.b().b(CraftNamespacedKey.toMinecraft(key)));
+            });*/
             when(mockedServer.getRegistry(any())).thenAnswer(invocation -> {
                 Class<Keyed> registryType = invocation.getArgument(0);
                 return CraftRegistry.createRegistry(registryType, registryCustom);

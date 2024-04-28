@@ -8,6 +8,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
 import com.google.common.collect.Lists;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
@@ -96,7 +97,7 @@ public class WrappedAttributeTest {
 
 		IRegistry<AttributeBase> registry = BuiltInRegistries.u;
         AttributeBase base = registry.a(MinecraftKey.a(attribute.getAttributeKey()));
-        return new AttributeSnapshot(base, attribute.getBaseValue(), modifiers);
+        return new AttributeSnapshot(Holder.a(base), attribute.getBaseValue(), modifiers);
     }
 
     private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
