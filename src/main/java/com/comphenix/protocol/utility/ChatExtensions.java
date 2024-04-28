@@ -62,7 +62,7 @@ public final class ChatExtensions {
                 // since 1.19 system chat is extracted into a separate packet
                 packet = new PacketContainer(PacketType.Play.Server.SYSTEM_CHAT);
 
-                packet.getStrings().write(0, component.getJson());
+                packet.getChatComponents().write(0, component);
                 packet.getBooleans().write(0, false);
             } else {
                 packet = new PacketContainer(PacketType.Play.Server.CHAT);

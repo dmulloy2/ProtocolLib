@@ -36,6 +36,11 @@ import org.bukkit.Server;
  * @author Kristian
  */
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
+    /**
+     * Version 1.20.5 - the cookie and transfer packet update
+     */
+    public static final MinecraftVersion v1_20_5 = new MinecraftVersion("1.20.5");
+
 	/**
 	 * Version 1.20.4 - the decorated pot update
 	 */
