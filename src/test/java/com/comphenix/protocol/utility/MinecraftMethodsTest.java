@@ -31,8 +31,12 @@ public class MinecraftMethodsTest {
         this.setNull("packetReadByteBuf");
         this.setNull("packetWriteByteBuf");
 
-        assertNotNull(MinecraftMethods.getPacketWriteByteBufMethod());
-        // TODO it's now a constructor
-        // assertNotNull(MinecraftMethods.getPacketReadByteBufMethod());
+		// the write and read method got replaced by the StreamCodec class and each
+		// packet now has it's own unique codec instance
+        if (!MinecraftVersion.v1_20_5.atOrAbove()) {
+            assertNotNull(MinecraftMethods.getPacketWriteByteBufMethod());
+            // TODO it's now a constructor
+            // assertNotNull(MinecraftMethods.getPacketReadByteBufMethod());
+        }
     }
 }

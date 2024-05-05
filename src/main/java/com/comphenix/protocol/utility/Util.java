@@ -23,7 +23,6 @@ public final class Util {
 
     private static final boolean SPIGOT = classExists("org.spigotmc.SpigotConfig");
     private static final boolean FOLIA = classExists("io.papermc.paper.threadedregions.RegionizedServer");
-    private static Class<?> cachedBundleClass;
 
     public static boolean classExists(String className) {
         try {

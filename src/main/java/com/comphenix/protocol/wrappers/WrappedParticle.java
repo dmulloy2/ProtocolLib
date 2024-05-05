@@ -217,8 +217,8 @@ public class WrappedParticle<T> {
 
         if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
             StructureModifier<Object> modifier = new StructureModifier<>(handle.getClass()).withTarget(handle);
-            org.joml.Vector3f toRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(0);
-            org.joml.Vector3f fromRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(1);
+            org.joml.Vector3f toRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(1);
+            org.joml.Vector3f fromRGB = (org.joml.Vector3f) modifier.withType(org.joml.Vector3f.class).read(0);
             size = (float) modifier.withType(float.class).read(0);
 
             fromR = (int) (fromRGB.x() * 255);

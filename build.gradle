@@ -69,6 +69,9 @@ shadowJar {
 
 test {
     useJUnitPlatform()
+    testLogging {
+        exceptionFormat = 'full'
+    }
 }
 
 processResources {

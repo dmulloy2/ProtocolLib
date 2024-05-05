@@ -134,12 +134,16 @@ public class BukkitInitialization {
             String serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
             // Mock the server object
-            Server mockedServer = mock(Server.class);
+            CraftServer mockedServer = mock(CraftServer.class);
+            DedicatedServer mockedGameServer = mock(DedicatedServer.class);
+
+            when(mockedGameServer.bc()/*registryAccess*/).thenReturn(registryCustom);
 
             when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
             when(mockedServer.getName()).thenReturn("Mock Server");
             when(mockedServer.getVersion()).thenReturn(serverVersion + " (MC: " + releaseTarget + ")");
             when(mockedServer.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
+            when(mockedServer.getServer()).thenReturn(mockedGameServer);
 
             when(mockedServer.isPrimaryThread()).thenReturn(true);
             when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());

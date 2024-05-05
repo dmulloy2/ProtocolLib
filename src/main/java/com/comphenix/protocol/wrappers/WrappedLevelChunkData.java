@@ -1,23 +1,24 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.ZeroBuffer;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.google.common.collect.Lists;
-import org.jetbrains.annotations.Nullable;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
 
 /**
  * Wrapper classes for ClientboundLevelChunkWithLightPacket
@@ -45,8 +46,11 @@ public final class WrappedLevelChunkData {
         static {
             FuzzyReflection reflection = FuzzyReflection.fromClass(HANDLE_TYPE, true);
 
-            LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE,
-                    MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
+            LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
+            		.parameterDerivedOf(MinecraftReflection.getPacketDataSerializerClass())
+            		.parameterExactType(int.class)
+            		.parameterExactType(int.class)
+            		.build()));
             BLOCK_ENTITIES_DATA_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
                     .typeExact(List.class)
                     .build()));
@@ -160,8 +164,11 @@ public final class WrappedLevelChunkData {
         static {
             FuzzyReflection reflection = FuzzyReflection.fromClass(HANDLE_TYPE, true);
 
-            LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(HANDLE_TYPE,
-                    MinecraftReflection.getPacketDataSerializerClass(), int.class, int.class);
+            LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR = Accessors.getConstructorAccessor(reflection.getConstructor(FuzzyMethodContract.newBuilder()
+            		.parameterDerivedOf(MinecraftReflection.getPacketDataSerializerClass())
+            		.parameterExactType(int.class)
+            		.parameterExactType(int.class)
+            		.build()));
             BIT_SET_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, BitSet.class, true);
             BYTE_ARRAY_LIST_ACCESSORS = Accessors.getFieldAccessorArray(HANDLE_TYPE, List.class, true);
 
@@ -333,7 +340,7 @@ public final class WrappedLevelChunkData {
          */
         public static LightData fromValues(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask,
                                            List<byte[]> skyUpdates, List<byte[]> blockUpdates) {
-            LightData data = new LightData(LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR.invoke(MinecraftReflection.getPacketDataSerializer(new ZeroBuffer()), 0, 0));
+            LightData data = new LightData(LIGHT_UPDATE_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
 
             data.setSkyYMask(skyYMask);
             data.setBlockYMask(blockYMask);
