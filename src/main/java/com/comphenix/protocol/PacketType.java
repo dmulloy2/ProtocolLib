@@ -5,8 +5,17 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+
+import org.apache.commons.lang.WordUtils;
+import org.bukkit.Bukkit;
 
 import com.comphenix.protocol.PacketTypeLookup.ClassLookup;
 import com.comphenix.protocol.events.ConnectionSide;
@@ -17,9 +26,6 @@ import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Iterables;
-
-import org.apache.commons.lang.WordUtils;
-import org.bukkit.Bukkit;
 /**
  * Represents the type of a packet in a specific protocol.
  * <p>
@@ -519,7 +525,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             @ForceAsync
             public static final PacketType SERVER_INFO =                  new PacketType(PROTOCOL, SENDER, 0x00, "ServerInfo", "SPacketServerInfo");
             @ForceAsync
-            public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x01, "Pong", "SPacketPong");
+            public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x01, "PongResponse", "Pong", "SPacketPong");
 
             /**
              * @deprecated Renamed to {@link #SERVER_INFO}
@@ -550,7 +556,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
             public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, "Start", "CPacketServerQuery");
             @ForceAsync
-            public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x01, "Ping", "CPacketPing");
+            public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x01, "PingRequest", "Ping", "CPacketPing");
 
             private static final Client INSTANCE = new Client();
 
@@ -590,6 +596,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, "Success", "SPacketLoginSuccess");
             public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x03, "SetCompression", "SPacketEnableCompression");
             public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x04, "CustomPayload", "SPacketCustomPayload");
+            public static final PacketType COOKIE_REQUEST =               new PacketType(PROTOCOL, SENDER, 0x05, "CookieRequest");
 
             private static final Server INSTANCE = new Server();
 
@@ -613,8 +620,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
             public static final PacketType START =                        new PacketType(PROTOCOL, SENDER, 0x00, "Start", "CPacketLoginStart");
             public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, "EncryptionBegin", "CPacketEncryptionResponse");
-            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, "CustomPayload", "CPacketCustomPayload");
+            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, "CustomQueryAnswer", "CustomPayload", "CPacketCustomPayload");
             public static final PacketType LOGIN_ACK =                    new PacketType(PROTOCOL, SENDER, 0x03, "LoginAcknowledged");
+            public static final PacketType COOKIE_RESPONSE =              new PacketType(PROTOCOL, SENDER, 0x04, "CookieResponse");
 
             private static final Client INSTANCE = new Client();
 
@@ -647,22 +655,36 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         public static class Server extends PacketTypeEnum {
             private static final Sender SENDER = Sender.SERVER;
 
-            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x00, "CustomPayload");
-            public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x01, "Disconnect");
-            public static final PacketType FINISH_CONFIGURATION =         new PacketType(PROTOCOL, SENDER, 0x02, "FinishConfiguration");
-            public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x03, "KeepAlive");
-            public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x04, "Ping");
-            public static final PacketType REGISTRY_DATA =                new PacketType(PROTOCOL, SENDER, 0x05, "RegistryData");
-            public static final PacketType REMOVE_RESOURCE_PACK =         new PacketType(PROTOCOL, SENDER, 0x06, "ResourcePackPopPacket");
-            public static final PacketType ADD_RESOURCE_PACK =            new PacketType(PROTOCOL, SENDER, 0x07, "ResourcePackPushPacket");
-            public static final PacketType UPDATE_ENABLED_FEATURES =      new PacketType(PROTOCOL, SENDER, 0x08, "UpdateEnabledFeatures");
-            public static final PacketType UPDATE_TAGS =                  new PacketType(PROTOCOL, SENDER, 0x09, "UpdateTags");
+            public static final PacketType COOKIE_REQUEST =               new PacketType(PROTOCOL, SENDER, 0x00, "CookieRequest");
+            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x01, "CustomPayload");
+            public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x02, "Disconnect");
+            public static final PacketType FINISH_CONFIGURATION =         new PacketType(PROTOCOL, SENDER, 0x03, "FinishConfiguration");
+            public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x04, "KeepAlive");
+            public static final PacketType PING =                         new PacketType(PROTOCOL, SENDER, 0x05, "Ping");
+            public static final PacketType RESET_CHAT =                   new PacketType(PROTOCOL, SENDER, 0x06, "ResetChat");
+            public static final PacketType REGISTRY_DATA =                new PacketType(PROTOCOL, SENDER, 0x07, "RegistryData");
+            public static final PacketType REMOVE_RESOURCE_PACK =         new PacketType(PROTOCOL, SENDER, 0x08, "ResourcePackPop");
+            public static final PacketType ADD_RESOURCE_PACK =            new PacketType(PROTOCOL, SENDER, 0x09, "ResourcePackPush");
+            public static final PacketType STORE_COOKIE =                 new PacketType(PROTOCOL, SENDER, 0x0A, "StoreCookie");
+            public static final PacketType TRANSFER =                     new PacketType(PROTOCOL, SENDER, 0x0B, "Transfer");
+            public static final PacketType UPDATE_ENABLED_FEATURES =      new PacketType(PROTOCOL, SENDER, 0x0C, "UpdateEnabledFeatures");
+            public static final PacketType UPDATE_TAGS =                  new PacketType(PROTOCOL, SENDER, 0x0D, "UpdateTags");
+            public static final PacketType SELECT_KNOWN_PACKS =           new PacketType(PROTOCOL, SENDER, 0x0E, "ClientboundSelectKnownPacks");
 
             /**
              * @deprecated Removed in 1.20.4: replaced with new packets for removing and sending resource packs
              */
             @Deprecated
             public static final PacketType RESOURCE_PACK =                new PacketType(PROTOCOL, SENDER, 255, "ResourcePack");
+            
+            private static final Server INSTANCE = new Server();
+
+            // Prevent accidental construction
+            private Server() { super(); }
+
+            public static Server getInstance() {
+                return INSTANCE;
+            }
         }
 
         /**
@@ -672,11 +694,22 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             private static final Sender SENDER = Sender.CLIENT;
 
             public static final PacketType CLIENT_INFORMATION =           new PacketType(PROTOCOL, SENDER, 0x00, "ClientInformation");
-            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x01, "CustomPayload");
-            public static final PacketType FINISH_CONFIGURATION =         new PacketType(PROTOCOL, SENDER, 0x02, "FinishConfiguration");
-            public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x03, "KeepAlive");
-            public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x04, "Pong");
-            public static final PacketType RESOURCE_PACK_ACK =            new PacketType(PROTOCOL, SENDER, 0x05, "ResourcePack");
+            public static final PacketType COOKIE_RESPONSE =              new PacketType(PROTOCOL, SENDER, 0x01, "CookieResponse");
+            public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x02, "CustomPayload");
+            public static final PacketType FINISH_CONFIGURATION =         new PacketType(PROTOCOL, SENDER, 0x03, "FinishConfiguration");
+            public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x04, "KeepAlive");
+            public static final PacketType PONG =                         new PacketType(PROTOCOL, SENDER, 0x05, "Pong");
+            public static final PacketType RESOURCE_PACK_ACK =            new PacketType(PROTOCOL, SENDER, 0x06, "ResourcePack");
+            public static final PacketType SELECT_KNOWN_PACKS =           new PacketType(PROTOCOL, SENDER, 0x07, "ServerboundSelectKnownPacks");
+
+            private static final Client INSTANCE = new Client();
+
+            // Prevent accidental construction
+            private Client() { super(); }
+
+            public static Client getInstance() {
+                return INSTANCE;
+            }
         }
     }
 
@@ -824,7 +857,9 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
                 addPacketTypes(Status.Client.getInstance()).
                 addPacketTypes(Status.Server.getInstance()).
                 addPacketTypes(Login.Client.getInstance()).
-                addPacketTypes(Login.Server.getInstance());
+                addPacketTypes(Login.Server.getInstance()).
+                addPacketTypes(Configuration.Client.getInstance()).
+                addPacketTypes(Configuration.Server.getInstance());
         }
         return LOOKUP;
     }
@@ -931,6 +966,10 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         }
     }
 
+    private static String formatSimpleClassName(Protocol protocol, Sender sender, String name) {
+        return sender.getMojangName() + name + "Packet";
+    }
+
     private static String formatMojangClassName(Protocol protocol, Sender sender, String name) {
         return "net.minecraft.network.protocol." + protocol.getMojangName() + "." + sender.getMojangName()
                 + name + "Packet";
@@ -1001,7 +1040,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         return type;
     }
 
-    static Consumer<String> onDynamicCreate = x -> {};
+    static BiConsumer<PacketType, String> onDynamicCreate = (type, className) -> {};
 
     /**
      * Retrieve a packet type from a protocol, sender, ID, and class for 1.8+
@@ -1019,7 +1058,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
         // Check the map first
         String className = packetClass.getName();
-        PacketType type = find(map, className);
+        PacketType type = find(map, packetClass);
         if (type == null) {
             // Guess we don't support this packet :/
             type = new PacketType(protocol, sender, packetId, PROTOCOL_VERSION, className);
@@ -1027,14 +1066,15 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
 
             // Many may be scheduled, but only the first will be executed
             scheduleRegister(type, "Dynamic-" + UUID.randomUUID().toString());
-            onDynamicCreate.accept(className);
+            onDynamicCreate.accept(type, className);
         }
 
         return type;
     }
 
-    private static PacketType find(Map<String, PacketType> map, String clazz) {
-        PacketType ret = map.get(clazz);
+    private static PacketType find(Map<String, PacketType> map, Class<?> packetClass) {
+    	String className = packetClass.getName();
+        PacketType ret = map.get(className);
         if (ret != null) {
             return ret;
         }
@@ -1044,7 +1084,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             List<String> aliases = check.getClassNames();
             if (aliases.size() > 1) {
                 for (String alias : aliases) {
-                    if (alias.equals(clazz)) {
+                    if (alias.equals(className) || alias.equals(packetClass.getSimpleName())) {
                         // We have a match!
                         return check;
                     }
@@ -1174,6 +1214,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             } else {
                 classNames.add(formatClassName(protocol, sender, classname));
                 classNames.add(formatMojangClassName(protocol, sender, classname));
+                classNames.add(formatSimpleClassName(protocol, sender, classname));
+                classNames.add(classname);
             }
         }
 
