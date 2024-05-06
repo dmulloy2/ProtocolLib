@@ -167,6 +167,7 @@ public final class MinecraftMethods {
      * Retrieve the Packet.read(PacketDataSerializer) method.
      *
      * @return The packet read method.
+     * @deprecated no longer works since 1.20.5
      */
     public static MethodAccessor getPacketReadByteBufMethod() {
         initializePacket();
@@ -179,6 +180,7 @@ public final class MinecraftMethods {
      * This only exists in version 1.7.2 and above.
      *
      * @return The packet write method.
+     * @deprecated no longer works since 1.20.5
      */
     public static MethodAccessor getPacketWriteByteBufMethod() {
         initializePacket();
@@ -217,6 +219,11 @@ public final class MinecraftMethods {
      * Initialize the two read() and write() methods.
      */
     private static void initializePacket() {
+    	// write and read methods are no longer part of the packet interface since 1.20.5
+        if (MinecraftVersion.v1_20_5.atOrAbove()) {
+        	throw new IllegalStateException("can't access packet read/write method after 1.20.5");
+        }
+
         // Initialize the methods
         if (packetReadByteBuf == null || packetWriteByteBuf == null) {
             // setups a decorated PacketDataSerializer which we can use to identity read/write methods in the packet class
@@ -251,11 +258,6 @@ public final class MinecraftMethods {
                 } catch (IllegalAccessException exception) {
                     throw new RuntimeException("Unable to invoke " + candidate, exception);
                 }
-            }
-
-            // write and read methods are no longer part of the packet interface since 1.20.5
-            if (MinecraftVersion.v1_20_5.atOrAbove()) {
-            	return;
             }
 
             // write must be there, read is gone since 1.18 (handled via constructor)

@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +40,8 @@ import net.minecraft.network.protocol.login.PacketLoginInStart;
  * @author dmulloy2
  */
 public class PacketTypeTest {
+
+	private static final Pattern PACKET_PATTERN = Pattern.compile("(?<sender>Serverbound|Clientbound)(?<name>\\w+)Packet");
 
     @BeforeAll
     public static void beforeClass() {
@@ -59,13 +63,26 @@ public class PacketTypeTest {
 //    public void generateNewPackets() throws Exception {
         BukkitInitialization.initializeAll();
 
-        PacketType.onDynamicCreate = (type, className) -> System.out.printf("%s, %s = new PacketType(PROTOCOL, SENDER, %s, \"%s\")\n", type.getProtocol(), type.getSender(), formatHex(type.getCurrentId()), className);
+        PacketType.onDynamicCreate = (type, className) -> {
+        	String packetTypeClassName = className;
+
+        	Matcher matcher = PACKET_PATTERN.matcher(className);
+        	if (matcher.find()) {
+        		if (!matcher.group("sender").equals(type.getSender().getMojangName())) {
+        			throw new RuntimeException(String.format("wrong packet flow, exepected: %s, got: %s", type.getSender().getMojangName(), matcher.group("sender")));
+        		}
+        		packetTypeClassName = matcher.group("name");
+        	}
+
+        	System.out.printf("%s, %s = new PacketType(PROTOCOL, SENDER, %s, \"%s\") %s\n", type.getProtocol(), type.getSender(), formatHex(type.getCurrentId()), packetTypeClassName, className);
+        };
+
+        PacketType.onIdMismatch = (type, newId) -> {
+        	System.out.printf("%s, %s, %s %s MISMTACH %s\n", type.getProtocol(), type.getSender(), type.name(), formatHex(type.getCurrentId()), formatHex(newId));
+        };
         
         // initialize packet registry
         PacketRegistry.getClientPacketTypes();
-
-        System.out.println(PacketType.Configuration.Client.getInstance().values());
-        System.out.println(PacketType.Configuration.Client.CLIENT_INFORMATION.getClassNames());
 
         for (PacketType type : PacketType.values()) {
             if (type.isDeprecated()) {
