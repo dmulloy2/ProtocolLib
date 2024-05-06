@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '19'
+          java-version: '21'
           cache: 'gradle'
 
       - name: Initialize CodeQL

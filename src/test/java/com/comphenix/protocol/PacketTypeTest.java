@@ -14,31 +14,34 @@
  */
 package com.comphenix.protocol;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import net.minecraft.network.EnumProtocol;
-import net.minecraft.network.protocol.EnumProtocolDirection;
+
 import net.minecraft.network.protocol.login.PacketLoginInStart;
-import org.apache.commons.lang.WordUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Field;
-import java.util.*;
-import java.util.Map.Entry;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author dmulloy2
  */
 public class PacketTypeTest {
+
+	private static final Pattern PACKET_PATTERN = Pattern.compile("(?<sender>Serverbound|Clientbound)(?<name>\\w+)Packet");
 
     @BeforeAll
     public static void beforeClass() {
@@ -52,60 +55,41 @@ public class PacketTypeTest {
 
     @AfterAll
     public static void afterClass() {
-        PacketType.onDynamicCreate = __ -> {
+        PacketType.onDynamicCreate = (x, y) -> {
         };
     }
 
-    @SuppressWarnings("unchecked")
-    // @Test
-    // public static void main(String[] args) throws Exception {
-    public void generateNewPackets() throws Exception {
-        MinecraftReflectionTestUtil.init();
+     public static void main(String[] args) throws Exception {
+//    public void generateNewPackets() throws Exception {
+        BukkitInitialization.initializeAll();
 
-        Set<Class<?>> allTypes = new HashSet<>();
-        List<Class<?>> newTypes = new ArrayList<>();
+        PacketType.onDynamicCreate = (type, className) -> {
+        	String packetTypeClassName = className;
 
-        EnumProtocol[] protocols = EnumProtocol.values();
-        for (EnumProtocol protocol : protocols) {
-            System.out.println(WordUtils.capitalize(protocol.name().toLowerCase()));
+        	Matcher matcher = PACKET_PATTERN.matcher(className);
+        	if (matcher.find()) {
+        		if (!matcher.group("sender").equals(type.getSender().getMojangName())) {
+        			throw new RuntimeException(String.format("wrong packet flow, exepected: %s, got: %s", type.getSender().getMojangName(), matcher.group("sender")));
+        		}
+        		packetTypeClassName = matcher.group("name");
+        	}
 
-            Field field = EnumProtocol.class.getDeclaredField("k");
-            field.setAccessible(true);
+        	System.out.printf("%s, %s = new PacketType(PROTOCOL, SENDER, %s, \"%s\") %s\n", type.getProtocol(), type.getSender(), formatHex(type.getCurrentId()), packetTypeClassName, className);
+        };
 
-            Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
-            for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
-                Field mapField = entry.getValue().getClass().getDeclaredField("b");
-                mapField.setAccessible(true);
-
-                Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(entry.getValue());
-
-                Map<Integer, Class<?>> treeMap = new TreeMap<>();
-                for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
-                    treeMap.put(entry1.getValue(), entry1.getKey());
-                }
-
-                System.out.println("  " + entry.getKey());
-                for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
-                    System.out.println(generateNewType(entry1.getKey(), entry1.getValue()));
-                    allTypes.add(entry1.getValue());
-
-                    try {
-                        PacketType.fromClass(entry1.getValue());
-                    } catch (Exception ex) {
-                        newTypes.add(entry1.getValue());
-                    }
-                }
-            }
-        }
-
-        System.out.println("New types: " + newTypes);
+        PacketType.onIdMismatch = (type, newId) -> {
+        	System.out.printf("%s, %s, %s %s MISMTACH %s\n", type.getProtocol(), type.getSender(), type.name(), formatHex(type.getCurrentId()), formatHex(newId));
+        };
+        
+        // initialize packet registry
+        PacketRegistry.getClientPacketTypes();
 
         for (PacketType type : PacketType.values()) {
             if (type.isDeprecated()) {
                 continue;
             }
 
-            if (!allTypes.contains(type.getPacketClass())) {
+            if (type.getPacketClass() == null) {
                 System.out.println(type + " was removed");
             }
         }
@@ -286,60 +270,17 @@ public class PacketTypeTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void ensureTypesAreCorrect() throws Exception {
-        PacketType.onDynamicCreate = className -> {
-            throw new RuntimeException("Dynamically generated packet " + className);
-        };
-
+    public void ensureRegistryInitializes() throws Exception {
         try {
-            boolean fail = false;
+            PacketType.onDynamicCreate = (type, className) -> {
+                throw new RuntimeException("Dynamically generated packet " + className);
+            };
 
-            EnumProtocol[] protocols = EnumProtocol.values();
-            for (EnumProtocol protocol : protocols) {
-                Field field = EnumProtocol.class.getDeclaredField("h");
-                field.setAccessible(true);
-
-                Map<EnumProtocolDirection, Object> map = (Map<EnumProtocolDirection, Object>) field.get(protocol);
-                for (Entry<EnumProtocolDirection, Object> entry : map.entrySet()) {
-                    Field holderField = entry.getValue().getClass().getDeclaredField("c");
-                    holderField.setAccessible(true);
-
-                    Object holder = holderField.get(entry.getValue());
-                    Field mapField = holder.getClass().getDeclaredField("b");
-                    mapField.setAccessible(true);
-
-                    Map<Class<?>, Integer> reverseMap = (Map<Class<?>, Integer>) mapField.get(holder);
-
-                    Map<Integer, Class<?>> treeMap = new TreeMap<>();
-                    for (Entry<Class<?>, Integer> entry1 : reverseMap.entrySet()) {
-                        treeMap.put(entry1.getValue(), entry1.getKey());
-                    }
-
-                    for (Entry<Integer, Class<?>> entry1 : treeMap.entrySet()) {
-                        try {
-                            PacketType type = PacketType.fromClass(entry1.getValue());
-                            if (type.getCurrentId() != entry1.getKey()) {
-                                throw new IllegalStateException(
-                                        "Packet ID for " + type + " is incorrect. Expected " + entry1.getKey() + ", but got "
-                                                + type.getCurrentId());
-                            }
-                        } catch (Throwable ex) {
-                            if (ex.getMessage().contains("BundleDelimiterPacket")) {
-                                continue;
-                            }
-
-                            ex.printStackTrace();
-                            fail = true;
-                        }
-                    }
-                }
-            }
-
-            assertFalse(fail, "Packet type(s) were incorrect!");
-        } finally {
-            PacketType.onDynamicCreate = __ -> { };
-        }
+            // try to initialize packet registry
+            PacketRegistry.getClientPacketTypes();
+		} finally {
+	        PacketType.onDynamicCreate = (x, y) -> { };
+		}
     }
 
 	@Test

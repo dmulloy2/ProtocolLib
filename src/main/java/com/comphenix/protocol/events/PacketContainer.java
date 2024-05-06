@@ -34,6 +34,7 @@ import java.util.function.Function;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.StructureCache;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.ObjectWriter;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -56,6 +57,7 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.Converters;
+import com.comphenix.protocol.wrappers.WrappedStreamCodec;
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
@@ -345,6 +347,11 @@ public class PacketContainer extends AbstractStructure implements Serializable {
         }
 
         Function<Object, Object> deserializer = PACKET_DESERIALIZER_METHODS.computeIfAbsent(packetType, type -> {
+        	WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(type.getPacketClass());
+        	if (streamCodec != null) {
+        		return streamCodec::decode;
+        	}
+
             if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
                 // best guess - a constructor which takes a buffer as the only argument
                 ConstructorAccessor bufferConstructor = Accessors.getConstructorAccessorOrNull(
@@ -392,7 +399,14 @@ public class PacketContainer extends AbstractStructure implements Serializable {
         }
 
         Object targetBuffer = MinecraftReflection.createPacketDataSerializer(0);
-        MinecraftMethods.getPacketWriteByteBufMethod().invoke(handle, targetBuffer);
+
+    	WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(type.getPacketClass());
+    	if (streamCodec != null) {
+    		streamCodec.encode(targetBuffer, handle);
+    	} else {
+            MinecraftMethods.getPacketWriteByteBufMethod().invoke(handle, targetBuffer);
+    	}
+
         return targetBuffer;
     }
 

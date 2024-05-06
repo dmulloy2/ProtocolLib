@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLogger;
@@ -46,6 +48,7 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.WrappedStreamCodec;
 
 /**
  * Static packet registry in Minecraft.
@@ -67,11 +70,12 @@ public class PacketRegistry {
 	 * 
 	 * @author Kristian
 	 */
-	protected static class Register {
+	private static class Register {
 		// The main lookup table
 		final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
 
 		final Map<Class<?>, PacketType> classToType = new ConcurrentHashMap<>();
+		final Map<Class<?>, WrappedStreamCodec> classToCodec = new ConcurrentHashMap<>();
 		final Map<PacketType.Protocol, Map<Class<?>, PacketType>> protocolClassToType = new ConcurrentHashMap<>();
 
 		volatile Set<PacketType> serverPackets = new HashSet<>();
@@ -297,16 +301,27 @@ public class PacketRegistry {
 		final Map<Object, Class<?>> packetTypeMap = new HashMap<>();
 
 		// List of all class containing PacketTypes
-		String[] packetTypesClassNames = new String[] { "common.CommonPacketTypes",
-				"configuration.ConfigurationPacketTypes", "cookie.CookiePacketTypes", "game.GamePacketTypes",
-				"handshake.HandshakePacketTypes", "login.LoginPacketTypes", "ping.PingPacketTypes",
-				"status.StatusPacketTypes", };
+		String[] packetTypesClassNames = new String[] {
+				"common.CommonPacketTypes",
+				"configuration.ConfigurationPacketTypes",
+				"cookie.CookiePacketTypes",
+				"game.GamePacketTypes",
+				"handshake.HandshakePacketTypes",
+				"login.LoginPacketTypes",
+				"ping.PingPacketTypes",
+				"status.StatusPacketTypes"
+		};
 
 		Class<?> packetTypeClass = MinecraftReflection.getMinecraftClass("network.protocol.PacketType");
 
 		for (String packetTypesClassName : packetTypesClassNames) {
 			Class<?> packetTypesClass = MinecraftReflection
-					.getMinecraftClass("network.protocol." + packetTypesClassName);
+					.getOptionalNMS("network.protocol." + packetTypesClassName)
+					.orElse(null);
+			if (packetTypesClass == null) {
+				ProtocolLogger.debug("Can't find PacketType class: {0}, will skip it", packetTypesClassName);
+				continue;
+			}
 
 			// check every field for "static final PacketType<?>"
 			for (Field field : packetTypesClass.getDeclaredFields()) {
@@ -336,16 +351,24 @@ public class PacketRegistry {
 		final Map<Object, Map<Class<?>, Integer>> serverMaps = new LinkedHashMap<>();
 		final Map<Object, Map<Class<?>, Integer>> clientMaps = new LinkedHashMap<>();
 
+		// global registry instance
+		final Register result = new Register();
+
 		// List of all class containing ProtocolInfos
-		String[] protocolClassNames = new String[] { "configuration.ConfigurationProtocols", "game.GameProtocols",
-				"handshake.HandshakeProtocols", "login.LoginProtocols", "status.StatusProtocols" };
+		String[] protocolClassNames = new String[] {
+				"configuration.ConfigurationProtocols",
+				"game.GameProtocols",
+				"handshake.HandshakeProtocols",
+				"login.LoginProtocols",
+				"status.StatusProtocols"
+		};
 
 		Class<?> protocolInfoClass = MinecraftReflection.getProtocolInfoClass();
-		Class<?> protocolInfoUnboundClass = MinecraftReflection.getMinecraftClass("network.ProtocolInfo$a");
-		Class<?> streamCodecClass = MinecraftReflection.getMinecraftClass("network.codec.StreamCodec");
-		Class<?> idDispatchCodecClass = MinecraftReflection.getMinecraftClass("network.codec.IdDispatchCodec");
-		Class<?> protocolDirectionClass = MinecraftReflection
-				.getMinecraftClass("network.protocol.EnumProtocolDirection");
+		Class<?> protocolInfoUnboundClass = MinecraftReflection.getProtocolInfoUnboundClass();
+		Class<?> streamCodecClass = MinecraftReflection.getStreamCodecClass();
+		Class<?> idCodecClass = MinecraftReflection.getMinecraftClass("network.codec.IdDispatchCodec");
+		Class<?> idCodecEntryClass = MinecraftReflection.getMinecraftClass("network.codec.IdDispatchCodec$Entry", "network.codec.IdDispatchCodec$b");
+		Class<?> protocolDirectionClass = MinecraftReflection.getPacketFlowClass();
 
 		Function<?, ?> emptyFunction = input -> null;
 
@@ -363,11 +386,30 @@ public class PacketRegistry {
 		MethodAccessor bindAccessor = Accessors.getMethodAccessor(FuzzyReflection.fromClass(protocolInfoUnboundClass)
 				.getMethodByReturnTypeAndParameters("bind", protocolInfoClass, new Class[] { Function.class }));
 
-		FieldAccessor toIdAccessor = Accessors.getFieldAccessor(FuzzyReflection.fromClass(idDispatchCodecClass, true)
+		FuzzyReflection idCodecReflection = FuzzyReflection.fromClass(idCodecClass, true);
+
+		FieldAccessor byIdAccessor = Accessors.getFieldAccessor(idCodecReflection
+				.getField(FuzzyFieldContract.newBuilder().typeDerivedOf(List.class).build()));
+
+		FieldAccessor toIdAccessor = Accessors.getFieldAccessor(idCodecReflection
 				.getField(FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).build()));
 
+		FuzzyReflection idCodecEntryReflection = FuzzyReflection.fromClass(idCodecEntryClass, true);
+
+		MethodAccessor idCodecEntryTypeAccessor = Accessors.getMethodAccessor(idCodecEntryReflection
+				.getMethodByReturnTypeAndParameters("type", Object.class, new Class[0]));
+
+		MethodAccessor idCodecEntrySerializerAccessor = Accessors.getMethodAccessor(idCodecEntryReflection
+				.getMethodByReturnTypeAndParameters("serializer", streamCodecClass, new Class[0]));
+
 		for (String protocolClassName : protocolClassNames) {
-			Class<?> protocolClass = MinecraftReflection.getMinecraftClass("network.protocol." + protocolClassName);
+			Class<?> protocolClass = MinecraftReflection
+					.getOptionalNMS("network.protocol." + protocolClassName)
+					.orElse(null);
+			if (protocolClass == null) {
+				ProtocolLogger.debug("Can't find protocol class: {0}, will skip it", protocolClassName);
+				continue;
+			}
 
 			for (Field field : protocolClass.getDeclaredFields()) {
 				try {
@@ -391,21 +433,35 @@ public class PacketRegistry {
 					// get codec and check if codec is instance of IdDispatchCodec
 					// since that is the only support codec as of now
 					Object codec = codecAccessor.invoke(protocolInfo);
-					if (!idDispatchCodecClass.isInstance(codec)) {
+					if (!idCodecClass.isInstance(codec)) {
 						continue;
 					}
 
 					// retrieve packetTypeMap and convert it to packetIdMap
 					Map<Class<?>, Integer> packetMap = new HashMap<>();
+					List<Object> serializerList = (List<Object>) byIdAccessor.get(codec);
 					Map<Object, Integer> packetTypeIdMap = (Map<Object, Integer>) toIdAccessor.get(codec);
 
 					for (Map.Entry<Object, Integer> entry : packetTypeIdMap.entrySet()) {
-						Class<?> packet = packetTypeMap.get(entry.getKey());
-						if (packet == null) {
+						Class<?> packetClass = packetTypeMap.get(entry.getKey());
+						if (packetClass == null) {
 							throw new RuntimeException("packetType missing packet " + entry.getKey());
 						}
 
-						packetMap.put(packet, entry.getValue());
+						packetMap.put(packetClass, entry.getValue());
+					}
+
+					// retrieve packet codecs for packet construction and write methods
+					for (Object entry : serializerList) {
+						Object packetType = idCodecEntryTypeAccessor.invoke(entry);
+
+						Class<?> packetClass = packetTypeMap.get(packetType);
+						if (packetClass == null) {
+							throw new RuntimeException("packetType missing packet " + packetType);
+						}
+
+						Object serializer = idCodecEntrySerializerAccessor.invoke(entry);
+						result.classToCodec.put(packetClass, new WrappedStreamCodec(serializer));
 					}
 
 					// get EnumProtocol and Direction of protocol info
@@ -423,8 +479,6 @@ public class PacketRegistry {
 				}
 			}
 		}
-
-		Register result = new Register();
 
 		for (Object protocol : protocols) {
 			Enum<?> enumProtocol = (Enum<?>) protocol;
@@ -504,6 +558,18 @@ public class PacketRegistry {
 
 			INITIALIZED = true;
 		}
+	}
+
+	/**
+	 * Returns the wrapped stream codec to de-/serialize the given packet class
+	 * 
+	 * @param packetClass - the packet class
+	 * @return wrapped stream codec if existing, otherwise <code>null</code>
+	 */
+	@Nullable
+	public static WrappedStreamCodec getStreamCodec(Class<?> packetClass) {
+		initialize();
+		return REGISTER.classToCodec.get(packetClass);
 	}
 
 	/**

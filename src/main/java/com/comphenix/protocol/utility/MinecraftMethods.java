@@ -5,7 +5,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
@@ -15,9 +17,9 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.Origin;
@@ -47,8 +49,28 @@ public final class MinecraftMethods {
     // Decorated PacketSerializer to identify methods
     private volatile static ConstructorAccessor decoratedDataSerializerAccessor;
 
+    private volatile static Function<ByteBuf, Object> friendlyBufBufConstructor;
+
     private MinecraftMethods() {
         // sealed
+    }
+    
+    public static Function<ByteBuf, Object> getFriendlyBufBufConstructor() {
+    	if (friendlyBufBufConstructor == null) {
+    		Optional<Class<?>> registryByteBuf = MinecraftReflection.getRegistryFriendlyByteBufClass();
+    		
+    		if (registryByteBuf.isPresent()) {
+    			ConstructorAccessor accessor = Accessors.getConstructorAccessor(FuzzyReflection.fromClass(registryByteBuf.get()).getConstructor(FuzzyMethodContract.newBuilder()
+    					.parameterDerivedOf(ByteBuf.class)
+    					.parameterDerivedOf(MinecraftReflection.getRegistryAccessClass())
+    					.build()));
+    			friendlyBufBufConstructor = (byteBuf) -> accessor.invoke(byteBuf, MinecraftRegistryAccess.get());
+    		} else {
+    			ConstructorAccessor accessor = Accessors.getConstructorAccessor(MinecraftReflection.getPacketDataSerializerClass(), ByteBuf.class);
+    			friendlyBufBufConstructor = (byteBuf) -> accessor.invoke(byteBuf);
+    		}
+    	}
+    	return friendlyBufBufConstructor;
     }
 
     /**
@@ -145,6 +167,7 @@ public final class MinecraftMethods {
      * Retrieve the Packet.read(PacketDataSerializer) method.
      *
      * @return The packet read method.
+     * @deprecated no longer works since 1.20.5
      */
     public static MethodAccessor getPacketReadByteBufMethod() {
         initializePacket();
@@ -157,6 +180,7 @@ public final class MinecraftMethods {
      * This only exists in version 1.7.2 and above.
      *
      * @return The packet write method.
+     * @deprecated no longer works since 1.20.5
      */
     public static MethodAccessor getPacketWriteByteBufMethod() {
         initializePacket();
@@ -195,6 +219,11 @@ public final class MinecraftMethods {
      * Initialize the two read() and write() methods.
      */
     private static void initializePacket() {
+    	// write and read methods are no longer part of the packet interface since 1.20.5
+        if (MinecraftVersion.v1_20_5.atOrAbove()) {
+        	throw new IllegalStateException("can't access packet read/write method after 1.20.5");
+        }
+
         // Initialize the methods
         if (packetReadByteBuf == null || packetWriteByteBuf == null) {
             // setups a decorated PacketDataSerializer which we can use to identity read/write methods in the packet class

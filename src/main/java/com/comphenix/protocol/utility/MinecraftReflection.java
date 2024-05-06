@@ -30,6 +30,12 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
@@ -43,12 +49,9 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -160,7 +163,7 @@ public final class MinecraftReflection {
             Matcher packageMatcher = PACKAGE_VERSION_MATCHER.matcher(CRAFTBUKKIT_PACKAGE);
             if (packageMatcher.matches()) {
                 packageVersion = packageMatcher.group(1);
-            } else {
+            } else if (!MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) { // ignore version prefix since it's no longer needed
                 MinecraftVersion version = new MinecraftVersion(craftServer);
 
                 // Just assume R1 - it's probably fine (warn anyway)
@@ -1500,9 +1503,7 @@ public final class MinecraftReflection {
      */
     public static Object getPacketDataSerializer(Object buffer) {
         try {
-            // TODO: move this to MinecraftMethods, or at least, cache the constructor accessor
-            Class<?> packetSerializer = getPacketDataSerializerClass();
-            return packetSerializer.getConstructor(getByteBufClass()).newInstance(buffer);
+            return MinecraftMethods.getFriendlyBufBufConstructor().apply((ByteBuf) buffer);
         } catch (Exception e) {
             throw new RuntimeException("Cannot construct packet serializer.", e);
         }
@@ -1721,12 +1722,32 @@ public final class MinecraftReflection {
     public static Class<?> getCraftServer() {
     	return getCraftBukkitClass("CraftServer");
     }
-
+ 
     public static Class<?> getHolderLookupProviderClass() {
         return getMinecraftClass("core.HolderLookup$a" /* Spigot Mappings */, "core.HolderLookup$Provider" /* Mojang Mappings */);
     }
 
+    public static Class<?> getRegistryAccessClass() {
+        return getMinecraftClass("core.IRegistryCustom" /* Spigot Mappings */, "core.RegistryAccess" /* Mojang Mappings */);
+    }
+
     public static Class<?> getProtocolInfoClass() {
     	return getMinecraftClass("network.ProtocolInfo");
+    }
+
+    public static Class<?> getProtocolInfoUnboundClass() {
+    	return getMinecraftClass("network.ProtocolInfo$a" /* Spigot Mappings */, "network.ProtocolInfo$Unbound" /* Mojang Mappings */);
+    }
+
+    public static Class<?> getPacketFlowClass() {
+    	return getMinecraftClass("network.protocol.EnumProtocolDirection" /* Spigot Mappings */, "network.protocol.PacketFlow" /* Mojang Mappings */);
+    }
+
+    public static Class<?> getStreamCodecClass() {
+    	return getMinecraftClass("network.codec.StreamCodec");
+    }
+
+    public static Optional<Class<?>> getRegistryFriendlyByteBufClass() {
+    	return getOptionalNMS("network.RegistryFriendlyByteBuf");
     }
 }

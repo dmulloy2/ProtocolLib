@@ -17,6 +17,7 @@ import com.google.common.collect.Multimap;
  * @author Kristian
  */
 class PacketTypeLookup {
+
     public static class ProtocolSenderLookup {
         // Unroll lookup for performance reasons
         public final IntegerMap<PacketType> HANDSHAKE_CLIENT = new IntegerMap<>();
@@ -27,6 +28,8 @@ class PacketTypeLookup {
         public final IntegerMap<PacketType> STATUS_SERVER = new IntegerMap<>();
         public final IntegerMap<PacketType> LOGIN_CLIENT = new IntegerMap<>();
         public final IntegerMap<PacketType> LOGIN_SERVER = new IntegerMap<>();
+        public final IntegerMap<PacketType> CONFIGURATION_CLIENT = new IntegerMap<>();
+        public final IntegerMap<PacketType> CONFIGURATION_SERVER = new IntegerMap<>();
         
         /**
          * Retrieve the correct integer map for a specific protocol and sender.
@@ -44,6 +47,8 @@ class PacketTypeLookup {
                     return sender == Sender.CLIENT ? STATUS_CLIENT : STATUS_SERVER;
                 case LOGIN:
                     return sender == Sender.CLIENT ? LOGIN_CLIENT : LOGIN_SERVER;
+                case CONFIGURATION:
+                    return sender == Sender.CLIENT ? CONFIGURATION_CLIENT : CONFIGURATION_SERVER;
                 default:
                     throw new IllegalArgumentException("Unable to find protocol " + protocol);
             }
@@ -87,11 +92,6 @@ class PacketTypeLookup {
         }
     }
     
-    // Packet IDs from 1.6.4 and below
-    private final IntegerMap<PacketType> legacyLookup = new IntegerMap<>();
-    private final IntegerMap<PacketType> serverLookup = new IntegerMap<>();
-    private final IntegerMap<PacketType> clientLookup = new IntegerMap<>();
-    
     // Packets for 1.7.2
     private final ProtocolSenderLookup idLookup = new ProtocolSenderLookup();
 
@@ -123,9 +123,11 @@ class PacketTypeLookup {
      * Retrieve a packet type from a legacy (1.6.4 and below) packet ID.
      * @param packetId - the legacy packet ID.
      * @return The corresponding packet type, or NULL if not found.
+     * @deprecated no longer works and will always return null
      */
+    @Deprecated
     public PacketType getFromLegacy(int packetId) {
-        return legacyLookup.get(packetId);
+    	return null;
     }
     
     /**
@@ -142,20 +144,11 @@ class PacketTypeLookup {
      * @param packetId - the legacy packet ID.
      * @param preference - which packet type to look for first.
      * @return The corresponding packet type, or NULL if not found.
+     * @deprecated no longer works and will always return null
      */
-    public PacketType getFromLegacy(int packetId, Sender preference) {  
-        if (preference == Sender.CLIENT)
-            return getFirst(packetId, clientLookup, serverLookup);
-        else
-            return getFirst(packetId, serverLookup, clientLookup);
-    }
-    
-    // Helper method for looking up in two sets
-    private <T> T getFirst(int packetId, IntegerMap<T> first, IntegerMap<T> second) {
-        if (first.containsKey(packetId))
-            return first.get(packetId);
-        else
-            return second.get(packetId);
+    @Deprecated
+    public PacketType getFromLegacy(int packetId, Sender preference) {
+    	return null;
     }
     
     /**

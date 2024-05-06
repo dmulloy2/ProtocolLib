@@ -34,7 +34,7 @@ public class MinecraftRegistryAccess {
 					FuzzyReflection.fromClass(MinecraftReflection.getMinecraftServerClass(), false)
 					.getMethod(FuzzyMethodContract.newBuilder()
 							.banModifier(Modifier.STATIC)
-							.returnDerivedOf(MinecraftReflection.getHolderLookupProviderClass())
+							.returnDerivedOf(MinecraftReflection.getRegistryAccessClass())
 							.build()));
 		}
 	}
