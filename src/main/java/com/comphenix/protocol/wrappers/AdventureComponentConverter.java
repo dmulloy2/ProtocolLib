@@ -41,7 +41,7 @@ public class AdventureComponentConverter {
     /**
      * Converts a JSON {@link String} into a Component object
      * @param json Json String
-     * @return ProtocolLib wrapper
+     * @return Component object
      */
     public static Object fromJson(final String json) {
         return GsonComponentSerializer.gson().deserialize(json);
