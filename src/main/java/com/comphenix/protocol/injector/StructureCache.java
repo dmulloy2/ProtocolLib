@@ -54,6 +54,16 @@ import net.bytebuddy.matcher.ElementMatchers;
  * @author Kristian
  */
 public class StructureCache {
+	private static final sun.misc.Unsafe UNSAFE;
+	static {
+		try {
+			java.lang.reflect.Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+			f.setAccessible(true);
+			UNSAFE = (sun.misc.Unsafe) f.get(null);
+		} catch (NoSuchFieldException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
     // Structure modifiers
     private static final Map<Class<?>, Supplier<Object>> PACKET_INSTANCE_CREATORS = new ConcurrentHashMap<>();
@@ -90,6 +100,19 @@ public class StructureCache {
 					} catch (Exception ignored) {
 						// shrug, fall back to default behaviour
 					}
+				}
+
+				try {
+					UNSAFE.allocateInstance(packetClass);
+					return () -> {
+						try {
+							return UNSAFE.allocateInstance(packetClass);
+						} catch (InstantiationException e) {
+							throw new RuntimeException(e);
+						}
+					};
+				} catch (Exception ignored) {
+					// shrug, fall back to default behaviour
 				}
 			}
 
