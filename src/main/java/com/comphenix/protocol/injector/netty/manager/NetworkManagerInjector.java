@@ -112,15 +112,7 @@ public class NetworkManagerInjector implements ChannelListener {
         if (marker != null || inboundListeners.contains(packetClass)) {
             // wrap the packet and construct the event
             PacketType.Protocol currentProtocol = injector.getCurrentProtocol(PacketType.Sender.CLIENT);
-            PacketType packetType = PacketRegistry.getPacketType(currentProtocol, packetClass);
-
-            // if packet type could not be found, fallback to HANDSHAKING protocol
-            // temporary workaround for https://github.com/dmulloy2/ProtocolLib/issues/2601
-            if (packetType == null) {
-                packetType = PacketRegistry.getPacketType(PacketType.Protocol.HANDSHAKING, packetClass);
-            }
-
-            PacketContainer container = new PacketContainer(packetType, packet);
+            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(currentProtocol, packetClass), packet);
             PacketEvent packetEvent = PacketEvent.fromClient(this, container, marker, injector.getPlayer());
 
             // post to all listeners, then return the packet event we constructed
