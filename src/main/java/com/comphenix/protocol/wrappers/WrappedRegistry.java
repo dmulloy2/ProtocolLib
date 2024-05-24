@@ -43,8 +43,7 @@ public class WrappedRegistry {
                     // make sure it's actually a registry
                     if (iRegistry.isAssignableFrom(field.getType())) {
                         Type genType = field.getGenericType();
-                        if (genType instanceof ParameterizedType) {
-                            ParameterizedType par = (ParameterizedType) genType;
+                        if (genType instanceof ParameterizedType par) {
                             Type paramType = par.getActualTypeArguments()[0];
                             if (paramType instanceof Class) {
                                 // for example Registry<Item>
@@ -53,10 +52,9 @@ public class WrappedRegistry {
                                 // for example Registry<EntityType<?>>
                                 par = (ParameterizedType) paramType;
                                 paramType = par.getActualTypeArguments()[0];
-                                if (paramType instanceof WildcardType) {
+                                if (paramType instanceof WildcardType wildcard) {
                                     // some registry types are even more nested, but we don't want them
                                     // for example Registry<Codec<ChunkGenerator>>, Registry<Codec<WorldChunkManager>>
-                                    WildcardType wildcard = (WildcardType) paramType;
                                     if (wildcard.getUpperBounds().length != 1 || wildcard.getLowerBounds().length > 0) {
                                         continue;
                                     }

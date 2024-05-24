@@ -427,8 +427,8 @@ public class FuzzyReflection {
         for (Field field : this.getFields()) {
             if (field.getType().equals(fieldType)) {
                 Type type = field.getGenericType();
-                if (type instanceof ParameterizedType) {
-                    if (Arrays.equals(((ParameterizedType) type).getActualTypeArguments(), params)) {
+                if (type instanceof ParameterizedType parameterizedType) {
+                    if (Arrays.equals(parameterizedType.getActualTypeArguments(), params)) {
                         return field;
                     }
                 }

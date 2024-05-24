@@ -468,8 +468,8 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
         // Standard equals
         if (other == this)
             return true;
-        if (other instanceof AsyncMarker)
-            return getNewSendingIndex() == ((AsyncMarker) other).getNewSendingIndex();
+        if (other instanceof AsyncMarker asyncMarker)
+            return getNewSendingIndex() == asyncMarker.getNewSendingIndex();
         else
             return false;
     }

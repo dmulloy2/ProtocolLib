@@ -1252,8 +1252,7 @@ public final class MinecraftReflection {
             return new ItemStack(Material.AIR);
         }
 
-        if (generic instanceof ItemStack) {
-            ItemStack bukkit = (ItemStack) generic;
+        if (generic instanceof ItemStack bukkit) {
 
             // They're probably looking for the CraftItemStack
             // If it's one already our work is done

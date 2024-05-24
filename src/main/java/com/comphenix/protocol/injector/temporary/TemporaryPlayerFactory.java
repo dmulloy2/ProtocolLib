@@ -53,8 +53,8 @@ public class TemporaryPlayerFactory {
      * @return The referenced player injector, or NULL if none can be found.
      */
     public static MinimalInjector getInjectorFromPlayer(Player player) {
-        if (player instanceof TemporaryPlayer) {
-            return ((TemporaryPlayer) player).getInjector();
+        if (player instanceof TemporaryPlayer temporaryPlayer) {
+            return temporaryPlayer.getInjector();
         }
         return null;
     }

@@ -428,9 +428,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
             return true;
         }
 
-        if (obj instanceof MinecraftVersion) {
-            MinecraftVersion other = (MinecraftVersion) obj;
-
+        if (obj instanceof MinecraftVersion other) {
             return this.getMajor() == other.getMajor() &&
                     this.getMinor() == other.getMinor() &&
                     this.getBuild() == other.getBuild() &&

@@ -248,15 +248,15 @@ final class ListeningList implements List<Object> {
     }
 
     private void processInsert(Object element) {
-        if (element instanceof ChannelFuture) {
-            Channel channel = ((ChannelFuture) element).channel();
+        if (element instanceof ChannelFuture channelFuture) {
+            Channel channel = channelFuture.channel();
             channel.eventLoop().execute(() -> channel.pipeline().addFirst(this.channelHandler));
         }
     }
 
     private void processRemove(Object element) {
-        if (element instanceof ChannelFuture) {
-            Channel channel = ((ChannelFuture) element).channel();
+        if (element instanceof ChannelFuture channelFuture) {
+            Channel channel = channelFuture.channel();
             channel.eventLoop().execute(() -> {
                 try {
                     channel.pipeline().remove(this.channelHandler);

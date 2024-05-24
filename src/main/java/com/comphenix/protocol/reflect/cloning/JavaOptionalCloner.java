@@ -24,13 +24,11 @@ public class JavaOptionalCloner implements Cloner {
 
     @Override
     public Object clone(Object source) {
-        if (source instanceof Optional) {
-            Optional<?> optional = (Optional<?>) source;
+        if (source instanceof Optional<?> optional) {
             return optional.map(o -> wrapped.clone(o));
-        } else if (source instanceof OptionalInt) {
+        } else if (source instanceof OptionalInt optional) {
             // why Java felt the need to make each optional class distinct is beyond me
             // like why couldn't they have given us at least a common interface or something
-            OptionalInt optional = (OptionalInt) source;
             return optional.isPresent() ? OptionalInt.of(optional.getAsInt()) : OptionalInt.empty();
         }
 

@@ -49,8 +49,7 @@ class PacketMetadata {
         public boolean equals(Object o) {
             if (o == this) return true;
 
-            if (o instanceof MetaObject) {
-                MetaObject that = (MetaObject) o;
+            if (o instanceof MetaObject that) {
                 return that.key.equals(this.key) &&
                        that.value.equals(this.value);
             }

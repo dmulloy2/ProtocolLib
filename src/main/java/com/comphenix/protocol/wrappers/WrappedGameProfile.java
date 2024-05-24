@@ -338,8 +338,7 @@ public class WrappedGameProfile extends AbstractWrapper {
         if (obj == this)
             return true;
 
-        if (obj instanceof WrappedGameProfile) {
-            WrappedGameProfile other = (WrappedGameProfile) obj;
+        if (obj instanceof WrappedGameProfile other) {
             return Objects.equal(getHandle(), other.getHandle());
         }
 

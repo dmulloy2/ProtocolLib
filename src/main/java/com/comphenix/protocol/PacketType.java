@@ -1380,8 +1380,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         if (obj == this)
             return true;
 
-        if (obj instanceof PacketType) {
-            PacketType other = (PacketType) obj;
+        if (obj instanceof PacketType other) {
             return protocol == other.protocol &&
                    sender == other.sender &&
                    currentId == other.currentId;

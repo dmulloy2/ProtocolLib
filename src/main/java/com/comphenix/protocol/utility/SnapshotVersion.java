@@ -109,8 +109,7 @@ public class SnapshotVersion implements Comparable<SnapshotVersion>, Serializabl
             return true;
         }
 
-        if (obj instanceof SnapshotVersion) {
-            SnapshotVersion other = (SnapshotVersion) obj;
+        if (obj instanceof SnapshotVersion other) {
             return Objects.equals(this.snapshotDate, other.getSnapshotDate())
                     && this.snapshotWeekVersion == other.getSnapshotWeekVersion();
         }

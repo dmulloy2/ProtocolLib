@@ -17,8 +17,7 @@ final class InjectionChannelInitializer extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (msg instanceof Channel) {
-            Channel channel = (Channel) msg;
+        if (msg instanceof Channel channel) {
             channel.pipeline().addLast(this.inboundHandlerName, this.handler);
         }
 

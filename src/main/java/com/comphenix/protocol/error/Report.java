@@ -228,8 +228,7 @@ public class Report {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (obj instanceof Report) {
-            Report other = (Report) obj;
+        if (obj instanceof Report other) {
             return type == other.type &&
                    Arrays.equals(callerParameters, other.callerParameters) &&
                    Arrays.equals(messageParameters, other.messageParameters);

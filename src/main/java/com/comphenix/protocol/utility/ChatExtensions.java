@@ -146,8 +146,8 @@ public final class ChatExtensions {
         }
 
         // Handle the player case by manually sending packets
-        if (receiver instanceof Player) {
-            this.sendMessageSilently((Player) receiver, message);
+        if (receiver instanceof Player player) {
+            this.sendMessageSilently(player, message);
         } else {
             receiver.sendMessage(message);
         }

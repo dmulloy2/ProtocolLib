@@ -225,8 +225,7 @@ public class BlockPosition {
         if (obj == null) return false;
         
         // Only compare objects of similar type
-        if (obj instanceof BlockPosition) {
-            BlockPosition other = (BlockPosition) obj;
+        if (obj instanceof BlockPosition other) {
             return x == other.x && y == other.y && z == other.z;
         }
         return false;

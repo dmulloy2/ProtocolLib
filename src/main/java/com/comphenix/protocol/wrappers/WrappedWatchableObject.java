@@ -107,8 +107,8 @@ public class WrappedWatchableObject extends AbstractWrapper {
         }
 
         // Then deal with optionals
-        if (value instanceof Optional<?>) {
-            return ((Optional<?>) value).map(WrappedWatchableObject::getWrapped);
+        if (value instanceof Optional<?> optional) {
+            return optional.map(WrappedWatchableObject::getWrapped);
         }
 
         // Current supported classes
@@ -142,25 +142,25 @@ public class WrappedWatchableObject extends AbstractWrapper {
         if(wrapped == null) {
             return null;
         }
-        if (wrapped instanceof Optional<?>) {
-            return ((Optional<?>) wrapped).map(WrappedWatchableObject::getUnwrapped);
+        if (wrapped instanceof Optional<?> optional) {
+            return optional.map(WrappedWatchableObject::getUnwrapped);
         }
 
         // Current supported classes
-        if (wrapped instanceof WrappedChatComponent) {
-            return ((WrappedChatComponent) wrapped).getHandle();
-        } else if (wrapped instanceof ItemStack) {
-            return BukkitConverters.getItemStackConverter().getGeneric((ItemStack) wrapped);
-        } else if (wrapped instanceof WrappedBlockData) {
-            return BukkitConverters.getWrappedBlockDataConverter().getGeneric((WrappedBlockData) wrapped);
-        } else if (wrapped instanceof Vector3F) {
-            return Vector3F.getConverter().getGeneric((Vector3F) wrapped);
-        } else if (wrapped instanceof BlockPosition) {
-            return BlockPosition.getConverter().getGeneric((BlockPosition) wrapped);
-        } else if (wrapped instanceof Direction) {
-            return EnumWrappers.getDirectionConverter().getGeneric((Direction) wrapped);
-        } else if (wrapped instanceof NbtCompound) {
-            return NbtFactory.fromBase((NbtCompound) wrapped).getHandle();
+        if (wrapped instanceof WrappedChatComponent wrappedChatComponent) {
+            return wrappedChatComponent.getHandle();
+        } else if (wrapped instanceof ItemStack itemStack) {
+            return BukkitConverters.getItemStackConverter().getGeneric(itemStack);
+        } else if (wrapped instanceof WrappedBlockData wrappedBlockData) {
+            return BukkitConverters.getWrappedBlockDataConverter().getGeneric(wrappedBlockData);
+        } else if (wrapped instanceof Vector3F vector3F) {
+            return Vector3F.getConverter().getGeneric(vector3F);
+        } else if (wrapped instanceof BlockPosition blockPos) {
+            return BlockPosition.getConverter().getGeneric(blockPos);
+        } else if (wrapped instanceof Direction direction) {
+            return EnumWrappers.getDirectionConverter().getGeneric(direction);
+        } else if (wrapped instanceof NbtCompound nbtCompound) {
+            return NbtFactory.fromBase(nbtCompound).getHandle();
         }
 
         return wrapped;
@@ -260,8 +260,7 @@ public class WrappedWatchableObject extends AbstractWrapper {
             return true;
         }
 
-        if (obj instanceof WrappedWatchableObject) {
-            WrappedWatchableObject that = (WrappedWatchableObject) obj;
+        if (obj instanceof WrappedWatchableObject that) {
             return this.getIndex() == that.getIndex() &&
                     this.getRawValue().equals(that.getRawValue()) &&
                     this.getDirtyState() == that.getDirtyState();

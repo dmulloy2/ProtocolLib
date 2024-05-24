@@ -63,8 +63,8 @@ class PacketEventHolder implements Comparable<PacketEventHolder> {
         // Standard equals
         if (other == this)
             return true;
-        if (other instanceof PacketEventHolder)
-            return sendingIndex == ((PacketEventHolder) other).sendingIndex;
+        if (other instanceof PacketEventHolder packetEventHolder)
+            return sendingIndex == packetEventHolder.sendingIndex;
         else
             return false;
     }

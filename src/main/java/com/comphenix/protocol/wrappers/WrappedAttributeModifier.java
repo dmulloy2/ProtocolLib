@@ -333,9 +333,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (obj instanceof WrappedAttributeModifier) {
-            WrappedAttributeModifier other = (WrappedAttributeModifier) obj;
-            
+        if (obj instanceof WrappedAttributeModifier other) {
             // Ensure they are equal
             return Objects.equal(uuid, other.getUUID());
         }

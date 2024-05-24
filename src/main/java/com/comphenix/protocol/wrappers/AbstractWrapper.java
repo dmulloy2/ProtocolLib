@@ -52,8 +52,7 @@ public abstract class AbstractWrapper {
     public boolean equals(Object obj) {
         if (obj == this) return true;
 
-        if (obj instanceof AbstractWrapper) {
-            AbstractWrapper that = (AbstractWrapper) obj;
+        if (obj instanceof AbstractWrapper that) {
             return this.handle.equals(that.handle);
         }
 

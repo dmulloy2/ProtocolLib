@@ -68,8 +68,7 @@ public class Vector3F {
     public boolean equals(Object obj) {
         if (this == obj) return true;
 
-        if (obj instanceof Vector3F) {
-            Vector3F that = (Vector3F) obj;
+        if (obj instanceof Vector3F that) {
             if (Float.floatToIntBits(x) != Float.floatToIntBits(that.x))
                 return false;
             if (Float.floatToIntBits(y) != Float.floatToIntBits(that.y))

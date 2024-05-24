@@ -60,8 +60,9 @@ public final class ServerPingRecord implements ServerPingImpl {
 
                 DATA_WRAPPER = AutoWrapper.wrap(ServerData.class, SERVER_DATA_CLASS);
                 SAMPLE_WRAPPER = AutoWrapper.wrap(PlayerSample.class, PLAYER_SAMPLE_CLASS);
-                FAVICON_WRAPPER = AutoWrapper.wrap(Favicon.class, MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a"));
-
+                FAVICON_WRAPPER = AutoWrapper.wrap(Favicon.class,
+                        MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a",
+                                "network.protocol.status.ServerStatus$Favicon"));
                 PROFILE_LIST_CONVERTER = BukkitConverters.getListConverter(BukkitConverters.getWrappedGameProfileConverter());
 
                 DEFAULT_DESCRIPTION = WrappedChatComponent.fromLegacyText("A Minecraft Server");
@@ -332,15 +333,14 @@ public final class ServerPingRecord implements ServerPingImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof ServerPingRecord)) {
-            return false;
+        if(obj instanceof ServerPingRecord other) {
+            return Objects.equals(description, other.description)
+            && Objects.equals(playerSample, other.playerSample)
+            && Objects.equals(serverData, other.serverData)
+            && ((favicon == null && other.favicon.iconBytes == null)
+            || ((favicon != null) == (other.favicon != null) && Arrays.equals(favicon.iconBytes, other.favicon.iconBytes)));
         }
-        ServerPingRecord other = (ServerPingRecord) obj;
+        return false;
 
-        return Objects.equals(description, other.description)
-                && Objects.equals(playerSample, other.playerSample)
-                && Objects.equals(serverData, other.serverData)
-                && ((favicon == null && other.favicon.iconBytes == null)
-                || ((favicon != null) == (other.favicon != null) && Arrays.equals(favicon.iconBytes, other.favicon.iconBytes)));
     }
 }

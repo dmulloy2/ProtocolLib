@@ -236,8 +236,8 @@ public class InjectionFactory {
      */
     private NettyChannelInjector getTemporaryInjector(Player player) {
         MinimalInjector injector = TemporaryPlayerFactory.getInjectorFromPlayer(player);
-        if (injector instanceof NettyChannelMinimalInjector) {
-            return ((NettyChannelMinimalInjector) injector).getInjector();
+        if (injector instanceof NettyChannelMinimalInjector nettyChannelMinimalInjector) {
+            return nettyChannelMinimalInjector.getInjector();
         }
 
         return null;

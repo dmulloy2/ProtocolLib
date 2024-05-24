@@ -104,8 +104,7 @@ public class ChunkCoordIntPair {
         if (this == obj) return true;
         
         // Only compare objects of similar type
-        if (obj instanceof ChunkCoordIntPair) {
-            ChunkCoordIntPair other = (ChunkCoordIntPair) obj;
+        if (obj instanceof ChunkCoordIntPair other) {
             return chunkX == other.chunkX && chunkZ == other.chunkZ;
         }
         return false;

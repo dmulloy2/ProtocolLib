@@ -77,8 +77,8 @@ final class NetworkManagerPlayerInjector extends AbstractPlayerInjectionHandler 
     @Override
     public Channel getChannel(Player player) {
         Injector injector = this.injectionFactory.fromPlayer(player, this.listener);
-        if (injector instanceof NettyChannelInjector) {
-            return ((NettyChannelInjector) injector).getWrappedChannel();
+        if (injector instanceof NettyChannelInjector nettyChannelInjector) {
+            return nettyChannelInjector.getWrappedChannel();
         }
 
         return null;

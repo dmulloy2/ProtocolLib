@@ -161,8 +161,7 @@ public abstract class AbstractFuzzyMember<T extends Member> implements AbstractF
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
-        } else if (obj instanceof AbstractFuzzyMember) {
-            AbstractFuzzyMember<?> other = (AbstractFuzzyMember<?>) obj;
+        } else if (obj instanceof AbstractFuzzyMember<?> other) {
             return this.modifiersBanned == other.modifiersBanned
                     && this.modifiersRequired == other.modifiersRequired
                     && FuzzyMatchers.checkPattern(this.nameRegex, other.nameRegex)

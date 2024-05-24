@@ -169,8 +169,7 @@ public class BukkitConverters {
         public boolean equals(Object obj) {
             if (this == obj) return true;
 
-            if (obj instanceof EquivalentConverter) {
-                EquivalentConverter<?> that = (EquivalentConverter<?>) obj;
+            if (obj instanceof EquivalentConverter that) {
                 return Objects.equal(this.getSpecificType(), that.getSpecificType());
             }
 
@@ -206,8 +205,7 @@ public class BukkitConverters {
             if (obj == this) return true;
 
             // Add another constraint
-            if (obj instanceof WorldSpecificConverter && super.equals(obj)) {
-                WorldSpecificConverter<?> that = (WorldSpecificConverter<?>) obj;
+            if (obj instanceof WorldSpecificConverter that && super.equals(obj)) {
                 return Objects.equal(this.world, that.world);
             }
 
@@ -659,8 +657,8 @@ public class BukkitConverters {
             public WrappedWatchableObject getSpecific(Object generic) {
                 if (MinecraftReflection.is(MinecraftReflection.getDataWatcherItemClass(), generic))
                     return new WrappedWatchableObject(generic);
-                else if (generic instanceof WrappedWatchableObject)
-                    return (WrappedWatchableObject) generic;
+                else if (generic instanceof WrappedWatchableObject wrappedWatchableObject)
+                    return wrappedWatchableObject;
                 else
                     throw new IllegalArgumentException("Unrecognized type " + generic.getClass());
             }
@@ -710,8 +708,8 @@ public class BukkitConverters {
             public WrappedDataWatcher getSpecific(Object generic) {
                 if (MinecraftReflection.isDataWatcher(generic))
                     return new WrappedDataWatcher(generic);
-                else if (generic instanceof WrappedDataWatcher)
-                    return (WrappedDataWatcher) generic;
+                else if (generic instanceof WrappedDataWatcher wrappedDataWatcher)
+                    return wrappedDataWatcher;
                 else
                     throw new IllegalArgumentException("Unrecognized type " + generic.getClass());
             }

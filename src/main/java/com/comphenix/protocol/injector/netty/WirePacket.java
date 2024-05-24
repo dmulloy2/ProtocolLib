@@ -217,8 +217,7 @@ public class WirePacket {
             return true;
         }
 
-        if (obj instanceof WirePacket) {
-            WirePacket that = (WirePacket) obj;
+        if (obj instanceof WirePacket that) {
             return this.id == that.id && Arrays.equals(this.bytes, that.bytes);
         }
 

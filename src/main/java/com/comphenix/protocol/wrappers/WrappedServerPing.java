@@ -545,10 +545,10 @@ public class WrappedServerPing implements ClonableWrapper {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof WrappedServerPing)) {
-            return false;
+        if(obj instanceof WrappedServerPing wrappedServerPing) {
+            return getHandle().equals(wrappedServerPing.getHandle());
         }
-        return getHandle().equals(((WrappedServerPing) obj).getHandle());
+        return false;
     }
 
     @Override

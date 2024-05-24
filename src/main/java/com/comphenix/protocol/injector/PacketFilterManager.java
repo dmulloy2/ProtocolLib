@@ -257,8 +257,8 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     public void broadcastServerPacket(PacketContainer packet, Entity entity, boolean includeTracker) {
         if (!this.closed) {
             Collection<Player> trackers = this.getEntityTrackers(entity);
-            if (includeTracker && entity instanceof Player) {
-                trackers.add((Player) entity);
+            if (includeTracker && entity instanceof Player player) {
+                trackers.add(player);
             }
 
             this.broadcastServerPacket(packet, trackers);

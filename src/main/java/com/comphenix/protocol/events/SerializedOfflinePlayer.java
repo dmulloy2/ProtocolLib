@@ -236,7 +236,8 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
 
     @Override
     public @NotNull PlayerProfile getPlayerProfile() {
-        return null;
+        OfflinePlayer tmp = Bukkit.getOfflinePlayer(uuid);
+        return tmp.getPlayerProfile().isComplete() ? tmp.getPlayerProfile() : null;
     }
 
     @Override

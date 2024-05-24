@@ -67,8 +67,8 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
             if (element == null)
                 throw new IllegalArgumentException("An NBT list cannot contain a null element!");
             
-            if (element instanceof NbtBase) 
-                result.add((NbtBase) element);
+            if (element instanceof NbtBase other) 
+                result.add(other);
             else
                 result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
         }
@@ -89,8 +89,8 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
             if (element == null)
                 throw new IllegalArgumentException("An NBT list cannot contain a null element!");
             
-            if (element instanceof NbtBase) 
-                result.add((NbtBase) element);
+            if (element instanceof NbtBase other) 
+                result.add(other);
             else
                 result.add(NbtFactory.ofWrapper(element.getClass(), EMPTY_NAME, element));
         }
@@ -240,9 +240,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
         if (getElementType() == NbtType.TAG_END)
             throw new IllegalStateException("This list has not been typed yet.");
         
-        if (value instanceof Number) {
-            Number number = (Number) value;
-            
+        if (value instanceof Number number) {
             // Convert the number
             switch (getElementType()) {
                 case TAG_BYTE: add(number.byteValue()); break;

@@ -194,8 +194,8 @@ public final class Reflection {
         for (Field field : target.getDeclaredFields()) {
             if (field.getType().equals(fieldType)) {
                 Type type = field.getGenericType();
-                if (type instanceof ParameterizedType) {
-                    if (Arrays.equals(((ParameterizedType) type).getActualTypeArguments(), params))
+                if (type instanceof ParameterizedType parameterizedType) {
+                    if (Arrays.equals(parameterizedType.getActualTypeArguments(), params))
                         return field;
                 }
             }

@@ -85,16 +85,16 @@ public abstract class AbstractIntervalTree<TKey extends Comparable<TKey>, TValue
             return old;
         }
         
-        @SuppressWarnings("rawtypes")
+
         @Override
         public boolean equals(Object obj) {
             // Quick equality check
             if (obj == this) {
                 return true;
-            } else if (obj instanceof AbstractIntervalTree.Entry) {
-                return Objects.equal(left.key, ((AbstractIntervalTree.Entry) obj).left.key) &&
-                       Objects.equal(right.key, ((AbstractIntervalTree.Entry) obj).right.key) &&
-                       Objects.equal(left.value, ((AbstractIntervalTree.Entry) obj).left.value);
+            } else if (obj instanceof AbstractIntervalTree.Entry abstractIntervalTreeEntry) {
+                return Objects.equal(left.key, abstractIntervalTreeEntry.left.key) &&
+                       Objects.equal(right.key, abstractIntervalTreeEntry.right.key) &&
+                       Objects.equal(left.value, abstractIntervalTreeEntry.left.value);
             } else {
                 return false;
             }

@@ -228,11 +228,10 @@ public class NbtConfigurationSerializer {
         }
         
         // Is this a compound?
-        if (node instanceof ConfigurationSection) {
+        if (node instanceof ConfigurationSection section) {
             // Is this a list of a map?
             if (type != NbtType.TAG_END) {
                 NbtList<Object> list = NbtFactory.ofList(decoded[0]);
-                ConfigurationSection section = (ConfigurationSection) node;
                 List<String> sorted = sortSet(section.getKeys(false));
                 
                 // Read everything in order
@@ -245,7 +244,6 @@ public class NbtConfigurationSerializer {
             
             } else {
                 NbtCompound compound = NbtFactory.ofCompound(decoded[0]);
-                ConfigurationSection section = (ConfigurationSection) node;
                 
                 // As above
                 for (String key : section.getKeys(false))

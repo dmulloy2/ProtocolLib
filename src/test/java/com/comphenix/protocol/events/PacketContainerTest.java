@@ -955,9 +955,9 @@ public class PacketContainerTest {
             throw new AssertionError("a was not null, but b was null");
         }
 
-        if (a instanceof Optional) {
-            if (b instanceof Optional) {
-                this.testEquality(((Optional<?>) a).orElse(null), ((Optional<?>) b).orElse(null));
+        if (a instanceof Optional<?> ao) {
+            if (b instanceof Optional<?> bo) {
+                this.testEquality(ao.orElse(null), bo.orElse(null));
                 return;
             } else {
                 throw new AssertionError("a was optional, but b was not");
@@ -976,15 +976,13 @@ public class PacketContainerTest {
             b = this.itemConvert.getSpecific(b);
         }
 
-        if (a instanceof ItemStack && b instanceof ItemStack) {
-            assertItemsEqual((ItemStack) a, (ItemStack) b);
+        if (a instanceof ItemStack ai && b instanceof ItemStack bi) {
+            assertItemsEqual(ai, bi);
             return;
         }
 
-        if (a instanceof List<?>) {
-            if (b instanceof List<?>) {
-                List<?> listA = (List<?>) a;
-                List<?> listB = (List<?>) b;
+        if (a instanceof List<?> listA) {
+            if (b instanceof List<?> listB) {
 
                 assertEquals(listA.size(), listB.size());
                 for (int i = 0; i < listA.size(); i++) {

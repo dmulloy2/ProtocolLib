@@ -621,8 +621,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
         if (obj == this) return true;
         if (obj == null) return false;
 
-        if (obj instanceof WrappedDataWatcher) {
-            WrappedDataWatcher other = (WrappedDataWatcher) obj;
+        if (obj instanceof WrappedDataWatcher other) {
             Iterator<WrappedWatchableObject> first = iterator(), second = other.iterator();
 
             // Make sure they're the same size
@@ -775,8 +774,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
         public boolean equals(Object obj) {
             if (obj == this) return true;
 
-            if (obj instanceof WrappedDataWatcherObject) {
-                WrappedDataWatcherObject other = (WrappedDataWatcherObject) obj;
+            if (obj instanceof WrappedDataWatcherObject other) {
                 return handle.equals(other.handle);
             }
 
@@ -826,8 +824,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
             if (obj == this) return true;
             if (obj == null) return false;
 
-            if (obj instanceof DummyWatcherObject) {
-                DummyWatcherObject that = (DummyWatcherObject) obj;
+            if (obj instanceof DummyWatcherObject that) {
                 return this.index == that.index;
             }
 
@@ -994,8 +991,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
                     .getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
             for (Field candidate : candidates) {
                 Type generic = candidate.getGenericType();
-                if (generic instanceof ParameterizedType) {
-                    ParameterizedType type = (ParameterizedType) generic;
+                if (generic instanceof ParameterizedType type) {
                     Type[] args = type.getActualTypeArguments();
                     Type arg = args[0];
 
@@ -1004,8 +1000,8 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
 
                     if (arg instanceof Class<?>) {
                         innerClass = (Class<?>) arg;
-                    } else if (arg instanceof ParameterizedType) {
-                        innerClass = (Class<?>) ((ParameterizedType) arg).getActualTypeArguments()[0];
+                    } else if (arg instanceof ParameterizedType argType) {
+                        innerClass = (Class<?>) argType.getActualTypeArguments()[0];
                         optional = true;
                     } else {
                         throw new IllegalStateException("Failed to find inner class of field " + candidate);

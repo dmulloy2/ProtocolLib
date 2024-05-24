@@ -222,9 +222,7 @@ class WrappedElement<TType> implements NbtWrapper<TType> {
     
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof NbtBase) {
-            NbtBase<?> other = (NbtBase<?>) obj;
-            
+        if (obj instanceof NbtBase other) {
             // Make sure we're dealing with the same type
             if (other.getType().equals(getType())) {
                 return Objects.equal(getValue(), other.getValue());

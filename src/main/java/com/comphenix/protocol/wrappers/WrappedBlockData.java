@@ -335,8 +335,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
     public boolean equals(Object o) {
         if (o == this) return true;
 
-        if (o instanceof WrappedBlockData) {
-            WrappedBlockData that = (WrappedBlockData) o;
+        if (o instanceof WrappedBlockData that) {
             return this.handle.equals(that.handle)
                    || (this.getType() == that.getType() && this.getData() == that.getData());
         }

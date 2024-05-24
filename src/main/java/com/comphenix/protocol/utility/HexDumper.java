@@ -278,9 +278,7 @@ public class HexDumper {
         return PrettyPrinter.printObject(packet, clazz, MinecraftReflection.getPacketClass(),
             PrettyPrinter.RECURSE_DEPTH, (output, value) -> {
                 // Special case
-                if (value instanceof byte[]) {
-                    byte[] data = (byte[]) value;
-
+                if (value instanceof byte[] data) {
                     if (data.length > HEX_DUMP_THRESHOLD) {
                         output.append("[");
                         HexDumper.defaultDumper().appendTo(output, data);

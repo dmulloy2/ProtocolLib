@@ -331,8 +331,7 @@ public class PlayerInfoData {
         if (obj == null) return false;
 
         // Only compare objects of similar type
-        if (obj instanceof PlayerInfoData) {
-            PlayerInfoData other = (PlayerInfoData) obj;
+        if (obj instanceof PlayerInfoData other) {
             return Objects.equals(profile, other.profile)
                     && Objects.equals(profileId, other.profileId)
                     && latency == other.latency

@@ -262,9 +262,7 @@ public class WrappedAttribute extends AbstractWrapper {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (obj instanceof WrappedAttribute) {
-            WrappedAttribute other = (WrappedAttribute) obj;
-
+        if (obj instanceof WrappedAttribute other) {
             if (getBaseValue() == other.getBaseValue() &&
                     Objects.equal(getAttributeKey(), other.getAttributeKey())) {
                 return other.getModifiers().containsAll(getModifiers());

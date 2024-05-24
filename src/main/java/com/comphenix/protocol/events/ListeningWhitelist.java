@@ -170,8 +170,7 @@ public class ListeningWhitelist {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof ListeningWhitelist) {
-            final ListeningWhitelist other = (ListeningWhitelist) obj;
+        if (obj instanceof final ListeningWhitelist other) {
             return Objects.equal(priority, other.priority)
                     && Objects.equal(types, other.types)
                     && Objects.equal(gamePhase, other.gamePhase)

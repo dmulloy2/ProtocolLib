@@ -266,8 +266,7 @@ public class WrappedParticle<T> {
         ensureMethods();
 
         Object bukkitData = data;
-        if (data instanceof WrappedBlockData) {
-            WrappedBlockData blockData = (WrappedBlockData) data;
+        if (data instanceof WrappedBlockData blockData) {
             bukkitData = toCraftData.invoke(null, blockData.getHandle());
         }
 

@@ -87,8 +87,8 @@ public class WrappedRemoteChatSessionData extends AbstractWrapper {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof WrappedRemoteChatSessionData) {
-            return handle.equals(((WrappedRemoteChatSessionData) obj).getHandle());
+        if(obj instanceof WrappedRemoteChatSessionData wrappedRemoteChatSessionData) {
+            return handle.equals(wrappedRemoteChatSessionData.getHandle());
         }
         return false;
     }
