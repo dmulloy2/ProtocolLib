@@ -110,7 +110,9 @@ final class ChannelProtocolUtil {
             AttributeKey<Object> key = this.getKeyForSender(sender);
             Object codecData = channel.attr(key).get();
             if (codecData == null) {
-                return null;
+                // If the codec handler was not found, fallback to HANDSHAKING
+                // Fixes https://github.com/dmulloy2/ProtocolLib/issues/2601
+                return PacketType.Protocol.HANDSHAKING;
             }
 
             FieldAccessor protocolAccessor = this.getProtocolAccessor(codecData.getClass());
@@ -152,7 +154,9 @@ final class ChannelProtocolUtil {
             String key = this.getKeyForSender(sender);
             Object codecHandler = channel.pipeline().get(key);
             if (codecHandler == null) {
-                return null;
+                // If the codec handler was not found, fallback to HANDSHAKING
+                // Fixes https://github.com/dmulloy2/ProtocolLib/issues/2601
+                return PacketType.Protocol.HANDSHAKING;
             }
 
             Function<Object, Object> protocolAccessor = this.getProtocolAccessor(codecHandler.getClass(), sender);
