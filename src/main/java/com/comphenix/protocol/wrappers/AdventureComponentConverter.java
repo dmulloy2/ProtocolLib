@@ -39,6 +39,33 @@ public class AdventureComponentConverter {
     }
 
     /**
+     * Converts a {@link WrappedChatComponent} into a {@link Component}
+     * @param wrapper ProtocolLib wrapper
+     * @return Component
+     */
+    public static Object fromWrapperAsObject(WrappedChatComponent wrapper) {
+            return fromWrapper(wrapper);
+    }
+
+    /**
+     * Converts a JSON {@link String} into a Component
+     * @param json Json String
+     * @return Component
+     */
+    public static Component fromJson(final String json) {
+            return GsonComponentSerializer.gson().deserialize(json);
+    }
+
+    /**
+     * Converts a JSON {@link String} into a Component object
+     * @param json Json String
+     * @return Component object
+     */
+    public static Object fromJsonAsObject(final String json) {
+            return fromJson(json);
+    }
+
+    /**
      * Converts a {@link Component} into a ProtocolLib wrapper
      * @param component Component
      * @return ProtocolLib wrapper
