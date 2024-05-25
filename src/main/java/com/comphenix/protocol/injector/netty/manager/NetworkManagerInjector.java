@@ -7,9 +7,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.bukkit.Server;
+import org.bukkit.plugin.Plugin;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
-import com.comphenix.protocol.concurrency.PacketTypeSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
@@ -18,8 +20,6 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
-import com.comphenix.protocol.injector.packet.PacketInjector;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
 import com.comphenix.protocol.injector.temporary.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -29,18 +29,13 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.Pair;
+
 import io.netty.channel.ChannelFuture;
-import org.bukkit.Server;
-import org.bukkit.plugin.Plugin;
 
 public class NetworkManagerInjector implements ChannelListener {
 
     private static final String INBOUND_INJECT_HANDLER_NAME = "protocol_lib_inbound_inject";
     private static final TemporaryPlayerFactory PLAYER_FACTORY = new TemporaryPlayerFactory();
-
-    private final PacketTypeSet inboundListeners = new PacketTypeSet();
-    private final PacketTypeSet outboundListeners = new PacketTypeSet();
-    private final PacketTypeSet mainThreadListeners = new PacketTypeSet();
 
     // all list fields which we've overridden and need to revert to a non-proxying list afterwards
     private final Set<Pair<Object, FieldAccessor>> overriddenLists = new HashSet<>();
@@ -50,7 +45,6 @@ public class NetworkManagerInjector implements ChannelListener {
     private final InjectionFactory injectionFactory;
 
     // injectors based on this "global" injector
-    private final PacketInjector packetInjector;
     private final PlayerInjectionHandler playerInjectionHandler;
 
     private final InjectionChannelInitializer pipelineInjectorHandler;
@@ -75,26 +69,17 @@ public class NetworkManagerInjector implements ChannelListener {
 
         // other injectors
         this.playerInjectionHandler = new NetworkManagerPlayerInjector(
-                this.outboundListeners,
                 this,
-                this.injectionFactory,
-                this.mainThreadListeners);
-        this.packetInjector = new NetworkManagerPacketInjector(
-                this.inboundListeners,
-                this.listenerInvoker,
-                this,
-                this.mainThreadListeners);
+                this.injectionFactory);
     }
 
     @Override
-    public PacketEvent onPacketSending(Injector injector, Object packet, NetworkMarker marker) {
+    public PacketEvent onPacketSending(Injector injector, PacketContainer packet, NetworkMarker marker) {
         // check if we need to intercept the packet
-        Class<?> packetClass = packet.getClass();
-        if (marker != null || MinecraftReflection.isBundlePacket(packetClass) || outboundListeners.contains(packetClass)) {
+        Class<?> packetClass = packet.getHandle().getClass();
+        if (marker != null || MinecraftReflection.isBundlePacket(packetClass) || hasOutboundListener(packet.getType())) {
             // wrap packet and construct the event
-            PacketType.Protocol currentProtocol = injector.getCurrentProtocol(PacketType.Sender.SERVER);
-            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(currentProtocol, packetClass), packet);
-            PacketEvent packetEvent = PacketEvent.fromServer(this, container, marker, injector.getPlayer());
+            PacketEvent packetEvent = PacketEvent.fromServer(this, packet, marker, injector.getPlayer());
 
             // post to all listeners, then return the packet event we constructed
             this.listenerInvoker.invokePacketSending(packetEvent);
@@ -106,22 +91,9 @@ public class NetworkManagerInjector implements ChannelListener {
     }
 
     @Override
-    public PacketEvent onPacketReceiving(Injector injector, Object packet, NetworkMarker marker) {
-        // check if we need to intercept the packet
-        Class<?> packetClass = packet.getClass();
-        if (marker != null || inboundListeners.contains(packetClass)) {
-            // wrap the packet and construct the event
-            PacketType.Protocol currentProtocol = injector.getCurrentProtocol(PacketType.Sender.CLIENT);
-            PacketType packetType = PacketRegistry.getPacketType(currentProtocol, packetClass);
-
-            // if packet type could not be found, fallback to HANDSHAKING protocol
-            // temporary workaround for https://github.com/dmulloy2/ProtocolLib/issues/2601
-            if (packetType == null) {
-                packetType = PacketRegistry.getPacketType(PacketType.Protocol.HANDSHAKING, packetClass);
-            }
-
-            PacketContainer container = new PacketContainer(packetType, packet);
-            PacketEvent packetEvent = PacketEvent.fromClient(this, container, marker, injector.getPlayer());
+    public PacketEvent onPacketReceiving(Injector injector, PacketContainer packet, NetworkMarker marker) {
+        if (marker != null || hasInboundListener(packet.getType())) {
+            PacketEvent packetEvent = PacketEvent.fromClient(this, packet, marker, injector.getPlayer());
 
             // post to all listeners, then return the packet event we constructed
             this.listenerInvoker.invokePacketReceiving(packetEvent);
@@ -133,18 +105,18 @@ public class NetworkManagerInjector implements ChannelListener {
     }
 
     @Override
-    public boolean hasListener(Class<?> packetClass) {
-        return this.outboundListeners.contains(packetClass) || this.inboundListeners.contains(packetClass);
+    public boolean hasInboundListener(PacketType packetType) {
+        return this.listenerInvoker.hasInboundListener(packetType);
+    }
+    
+    @Override
+    public boolean hasOutboundListener(PacketType packetType) {
+        return this.listenerInvoker.hasOutboundListener(packetType);
     }
 
     @Override
-    public boolean hasMainThreadListener(Class<?> packetClass) {
-        return this.mainThreadListeners.contains(packetClass);
-    }
-
-    @Override
-    public boolean hasMainThreadListener(PacketType type) {
-        return this.mainThreadListeners.contains(type);
+    public boolean hasMainThreadListener(PacketType packetType) {
+        return this.listenerInvoker.hasMainThreadListener(packetType);
     }
 
     @Override
@@ -258,10 +230,6 @@ public class NetworkManagerInjector implements ChannelListener {
         // clear up
         this.overriddenLists.clear();
         this.injectionFactory.close();
-    }
-
-    public PacketInjector getPacketInjector() {
-        return this.packetInjector;
     }
 
     public PlayerInjectionHandler getPlayerInjectionHandler() {

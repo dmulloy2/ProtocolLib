@@ -11,6 +11,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -18,24 +21,30 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.NetworkMarker;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.NetworkProcessor;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.utility.*;
+import com.comphenix.protocol.utility.ByteBuddyGenerated;
+import com.comphenix.protocol.utility.MinecraftFields;
+import com.comphenix.protocol.utility.MinecraftMethods;
+import com.comphenix.protocol.utility.MinecraftProtocolVersion;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
 
 public class NettyChannelInjector implements Injector {
 
@@ -57,11 +66,12 @@ public class NettyChannelInjector implements Injector {
     };
 
     private static final String INTERCEPTOR_NAME = "protocol_lib_inbound_interceptor";
+    private static final String PROTOCOL_READER_NAME = "protocol_lib_protocol_reader";
     private static final String WIRE_PACKET_ENCODER_NAME = "protocol_lib_wire_packet_encoder";
 
     // all registered channel handlers to easier make sure we unregister them all from the pipeline
     private static final String[] PROTOCOL_LIB_HANDLERS = new String[]{
-            WIRE_PACKET_ENCODER_NAME, INTERCEPTOR_NAME
+            WIRE_PACKET_ENCODER_NAME, INTERCEPTOR_NAME, PROTOCOL_READER_NAME
     };
 
     private static final ReportType REPORT_CANNOT_SEND_PACKET = new ReportType("Unable to send packet %s to %s");
@@ -109,6 +119,8 @@ public class NettyChannelInjector implements Injector {
 
     // lazy initialized fields, if we don't need them we don't bother about them
     private Object playerConnection;
+    
+    private InboundProtocolReader inboundProtocolReader;
 
     public NettyChannelInjector(
             Player player,
@@ -214,6 +226,13 @@ public class NettyChannelInjector implements Injector {
                     encoderName,
                     WIRE_PACKET_ENCODER_NAME,
                     WIRE_PACKET_ENCODER);
+            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+            	this.inboundProtocolReader = new InboundProtocolReader(this);
+                pipeline.addBefore(
+                		"decoder",
+                		PROTOCOL_READER_NAME,
+                		this.inboundProtocolReader);
+            }
             pipeline.addAfter(
                     "decoder",
                     INTERCEPTOR_NAME,
@@ -326,6 +345,13 @@ public class NettyChannelInjector implements Injector {
         } else {
             this.ensureInEventLoop(receiveAction);
         }
+    }
+    
+    public PacketType.Protocol getInboundProtocol() {
+    	if (this.inboundProtocolReader != null) {
+        	return this.inboundProtocolReader.getProtocol();
+    	}
+    	return getCurrentProtocol(PacketType.Sender.CLIENT);
     }
 
     @Override
@@ -486,16 +512,17 @@ public class NettyChannelInjector implements Injector {
         }
     }
 
-    void processInboundPacket(ChannelHandlerContext ctx, Object packet, Class<?> packetClass) {
-        if (this.channelListener.hasMainThreadListener(packetClass) && !this.server.isPrimaryThread()) {
+    void processInboundPacket(ChannelHandlerContext ctx, Object packet, PacketType packetType) {
+        if (this.channelListener.hasMainThreadListener(packetType) && !this.server.isPrimaryThread()) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
             ProtocolLibrary.getScheduler().runTask(
-                    () -> this.processInboundPacket(ctx, packet, packetClass));
+                    () -> this.processInboundPacket(ctx, packet, packetType));
             return;
         }
 
         // call packet handlers, a null result indicates that we shouldn't change anything
-        PacketEvent interceptionResult = this.channelListener.onPacketReceiving(this, packet, null);
+        PacketContainer packetContainer = new PacketContainer(packetType, packet);
+        PacketEvent interceptionResult = this.channelListener.onPacketReceiving(this, packetContainer, null);
         if (interceptionResult == null) {
             this.ensureInEventLoop(ctx.channel().eventLoop(), () -> ctx.fireChannelRead(packet));
             return;
@@ -545,13 +572,16 @@ public class NettyChannelInjector implements Injector {
             return action;
         }
 
+        PacketType.Protocol protocol = this.getCurrentProtocol(PacketType.Sender.SERVER);
+		PacketType packetType = PacketRegistry.getPacketType(protocol, packet.getClass());
+
         // no listener and no marker - no magic :)
-        if (!this.channelListener.hasListener(packet.getClass()) && marker == null && !MinecraftReflection.isBundlePacket(packet.getClass())) {
+        if (!this.channelListener.hasOutboundListener(packetType) && marker == null && !MinecraftReflection.isBundlePacket(packet.getClass())) {
             return action;
         }
 
         // ensure that we are on the main thread if we need to
-        if (this.channelListener.hasMainThreadListener(packet.getClass()) && !this.server.isPrimaryThread()) {
+        if (this.channelListener.hasMainThreadListener(packetType) && !this.server.isPrimaryThread()) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
             ProtocolLibrary.getScheduler().runTask(
                     () -> this.sendServerPacket(packet, null, true));
@@ -560,7 +590,8 @@ public class NettyChannelInjector implements Injector {
 
         // call all listeners which are listening to the outbound packet, if any
         // null indicates that no listener was affected by the packet, meaning that we can directly send the original packet
-        PacketEvent event = this.channelListener.onPacketSending(this, packet, marker);
+        PacketContainer packetContainer = new PacketContainer(packetType, packet);
+        PacketEvent event = this.channelListener.onPacketSending(this, packetContainer, marker);
         if (event == null) {
             return action;
         }
