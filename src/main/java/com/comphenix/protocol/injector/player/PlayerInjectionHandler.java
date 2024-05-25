@@ -1,14 +1,11 @@
 package com.comphenix.protocol.injector.player;
 
-import java.util.Set;
+import org.bukkit.entity.Player;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketListener;
+
 import io.netty.channel.Channel;
-import org.bukkit.entity.Player;
 
 public interface PlayerInjectionHandler {
 
@@ -21,21 +18,6 @@ public interface PlayerInjectionHandler {
     int getProtocolVersion(Player player);
 
     /**
-     * Add an underlying packet handler of the given type.
-     *
-     * @param type    - packet type to register.
-     * @param options - any specified listener options.
-     */
-    void addPacketHandler(PacketType type, Set<ListenerOptions> options);
-
-    /**
-     * Remove an underlying packet handler of this type.
-     *
-     * @param type - packet type to unregister.
-     */
-    void removePacketHandler(PacketType type);
-
-    /**
      * Initialize a player hook, allowing us to read server packets.
      * <p>
      * This call will  be ignored if there's no listener that can receive the given events.
@@ -44,13 +26,6 @@ public interface PlayerInjectionHandler {
      * @param strategy - how to handle injection conflicts.
      */
     void injectPlayer(Player player, ConflictStrategy strategy);
-
-    /**
-     * Invoke special routines for handling disconnect before a player is uninjected.
-     *
-     * @param player - player to process.
-     */
-    void handleDisconnect(Player player);
 
     /**
      * Uninject the given player.
@@ -84,49 +59,6 @@ public interface PlayerInjectionHandler {
      * @param player - the player to update.
      */
     void updatePlayer(Player player);
-
-    /**
-     * Determine if the given listeners are valid.
-     *
-     * @param listeners - listeners to check.
-     */
-    void checkListener(Set<PacketListener> listeners);
-
-    /**
-     * Determine if a listener is valid or not.
-     * <p>
-     * If not, a warning will be printed to the console.
-     *
-     * @param listener - listener to check.
-     */
-    void checkListener(PacketListener listener);
-
-    /**
-     * Retrieve the current list of registered sending listeners.
-     *
-     * @return List of the sending listeners's packet IDs.
-     */
-    Set<PacketType> getSendingFilters();
-
-    /**
-     * Whether or not this player injection handler can also receive packets.
-     *
-     * @return TRUE if it can, FALSE otherwise.
-     */
-    boolean canReceivePackets();
-
-    /**
-     * Close any lingering proxy injections.
-     */
-    void close();
-
-    /**
-     * Determine if we have packet listeners with the given type that must be executed on the main thread.
-     *
-     * @param type - the packet type.
-     * @return TRUE if we do, FALSE otherwise.
-     */
-    boolean hasMainThreadListener(PacketType type);
 
     Channel getChannel(Player player);
 
