@@ -18,6 +18,8 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.timing.TimingListenerType;
+import com.comphenix.protocol.timing.TimingTrackerManager;
 import com.google.common.collect.ImmutableSet;
 
 public abstract class PacketListenerSet {
@@ -43,8 +45,12 @@ public abstract class PacketListenerSet {
 
 		Set<ListenerOptions> options = listeningWhitelist.getOptions();
 		for (PacketType packetType : listeningWhitelist.getTypes()) {
-			if (!packetType.isAsyncForced() && !options.contains(ListenerOptions.ASYNC)) {
-				this.mainThreadPacketTypes.add(packetType, packetListener);
+			if (this.mainThreadPacketTypes != null && !packetType.isAsyncForced()) {
+				boolean isOutboundSync = packetType.getSender() == Sender.SERVER && !options.contains(ListenerOptions.ASYNC);
+				boolean isInboundSync = packetType.getSender() == Sender.CLIENT && options.contains(ListenerOptions.SYNC);
+				if (isOutboundSync || isInboundSync) {
+					this.mainThreadPacketTypes.add(packetType, packetListener);
+				}
 			}
 
 			Set<PacketType> supportedPacketTypes = (packetType.getSender() == Sender.SERVER)
@@ -63,8 +69,10 @@ public abstract class PacketListenerSet {
 		ListeningWhitelist listeningWhitelist = getListeningWhitelist(packetListener);
 		this.map.remove(listeningWhitelist, packetListener);
 
-		for (PacketType packetType : listeningWhitelist.getTypes()) {
-			this.mainThreadPacketTypes.remove(packetType, packetListener);
+		if (this.mainThreadPacketTypes != null) {
+			for (PacketType packetType : listeningWhitelist.getTypes()) {
+				this.mainThreadPacketTypes.remove(packetType, packetListener);
+			}
 		}
 	}
 
@@ -80,7 +88,21 @@ public abstract class PacketListenerSet {
 		this.invoke(event, null);
 	}
 
-	public abstract void invoke(PacketEvent event, @Nullable ListenerPriority priorityFilter);
+	public void invoke(PacketEvent event, @Nullable ListenerPriority priorityFilter) {
+		Iterable<PacketListener> listeners = this.map.get(event.getPacketType());
+
+		for (PacketListener listener : listeners) {
+			ListeningWhitelist listeningWhitelist = listener.getReceivingWhitelist();
+			if (priorityFilter != null && listeningWhitelist.getPriority() != priorityFilter) {
+				continue;
+			}
+
+			TimingTrackerManager.get(listener, event.isServerPacket() ? TimingListenerType.SYNC_OUTBOUND : TimingListenerType.SYNC_INBOUND)
+				.track(event.getPacketType(), () -> invokeListener(event, listener));
+		}
+	}
+
+	protected abstract void invokeListener(PacketEvent event, PacketListener listener);
 
 	public void clear() {
 		this.map.clear();

@@ -24,14 +24,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.concurrency.ConcurrentPlayerMap;
-import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.SortedPacketListenerList;
+import com.comphenix.protocol.injector.collection.InboundPacketListenerSet;
+import com.comphenix.protocol.injector.collection.OutboundPacketListenerSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import org.bukkit.entity.Player;
 
 /**
  * Contains every sending queue for every player.
@@ -39,12 +39,11 @@ import org.bukkit.entity.Player;
  * @author Kristian
  */
 class PlayerSendingHandler {
-    private final ErrorReporter reporter;
     private final ConcurrentMap<Player, QueueContainer> playerSendingQueues;
     
     // Timeout listeners
-    private final SortedPacketListenerList serverTimeoutListeners;
-    private final SortedPacketListenerList clientTimeoutListeners;
+    private final OutboundPacketListenerSet outboundTimeoutListeners;
+    private final InboundPacketListenerSet inboundTimeoutListeners;
     
     // Asynchronous packet sending
     private Executor asynchronousSender;
@@ -58,37 +57,37 @@ class PlayerSendingHandler {
      * @author Kristian
      */
     private class QueueContainer {
-        private final PacketSendingQueue serverQueue;
-        private final PacketSendingQueue clientQueue;
+        private final PacketSendingQueue outboundQueue;
+        private final PacketSendingQueue inboundQueue;
         
         public QueueContainer() {
             // Server packets can be sent concurrently
-            serverQueue = new PacketSendingQueue(false, asynchronousSender) {
+            outboundQueue = new PacketSendingQueue(false, asynchronousSender) {
                 @Override
                 protected void onPacketTimeout(PacketEvent event) {
                     if (!cleaningUp) {
-                        serverTimeoutListeners.invokePacketSending(reporter, event);
+                        outboundTimeoutListeners.invoke(event);
                     }
                 }
             };
             
             // Client packets must be synchronized
-            clientQueue = new PacketSendingQueue(true, asynchronousSender) {
+            inboundQueue = new PacketSendingQueue(true, asynchronousSender) {
                 @Override
                 protected void onPacketTimeout(PacketEvent event) {
                     if (!cleaningUp) {
-                        clientTimeoutListeners.invokePacketSending(reporter, event);
+                        inboundTimeoutListeners.invoke(event);
                     }
                 }
             };
         }
 
-        public PacketSendingQueue getServerQueue() {
-            return serverQueue;
+        public PacketSendingQueue getOutboundQueue() {
+            return outboundQueue;
         }
 
-        public PacketSendingQueue getClientQueue() {
-            return clientQueue;
+        public PacketSendingQueue getInboundQueue() {
+            return inboundQueue;
         }
     }
     
@@ -98,12 +97,9 @@ class PlayerSendingHandler {
      * @param serverTimeoutListeners - set of server timeout listeners.
      * @param clientTimeoutListeners - set of client timeout listeners.
      */
-    public PlayerSendingHandler(ErrorReporter reporter, 
-            SortedPacketListenerList serverTimeoutListeners, SortedPacketListenerList clientTimeoutListeners) {
-        
-        this.reporter = reporter;
-        this.serverTimeoutListeners = serverTimeoutListeners;
-        this.clientTimeoutListeners = clientTimeoutListeners;
+    public PlayerSendingHandler(OutboundPacketListenerSet serverTimeoutListeners, InboundPacketListenerSet clientTimeoutListeners) {
+        this.outboundTimeoutListeners = serverTimeoutListeners;
+        this.inboundTimeoutListeners = clientTimeoutListeners;
         
         // Initialize storage of queues
         this.playerSendingQueues = ConcurrentPlayerMap.usingAddress();
@@ -154,7 +150,7 @@ class PlayerSendingHandler {
         
         // Check for NULL again
         if (queues != null)
-            return packet.isServerPacket() ? queues.getServerQueue() : queues.getClientQueue();
+            return packet.isServerPacket() ? queues.getOutboundQueue() : queues.getInboundQueue();
         else
             return null;
     }
@@ -165,8 +161,8 @@ class PlayerSendingHandler {
     public void sendAllPackets() {
         if (!cleaningUp) {
             for (QueueContainer queues : playerSendingQueues.values()) {
-                queues.getClientQueue().cleanupAll();
-                queues.getServerQueue().cleanupAll();
+                queues.getInboundQueue().cleanupAll();
+                queues.getOutboundQueue().cleanupAll();
             }
         }
     }
@@ -179,7 +175,7 @@ class PlayerSendingHandler {
     public void sendServerPackets(List<PacketType> types, boolean synchronusOK) {
         if (!cleaningUp) {
             for (QueueContainer queue : playerSendingQueues.values()) {
-                queue.getServerQueue().signalPacketUpdate(types, synchronusOK);
+                queue.getOutboundQueue().signalPacketUpdate(types, synchronusOK);
             }
         }
     }
@@ -191,7 +187,7 @@ class PlayerSendingHandler {
     public void sendClientPackets(List<PacketType> types, boolean synchronusOK) {
         if (!cleaningUp) {
             for (QueueContainer queue : playerSendingQueues.values()) {
-                queue.getClientQueue().signalPacketUpdate(types, synchronusOK);
+                queue.getInboundQueue().signalPacketUpdate(types, synchronusOK);
             }
         }
     }
@@ -202,7 +198,7 @@ class PlayerSendingHandler {
      */
     public void trySendServerPackets(boolean onMainThread) {
         for (QueueContainer queue : playerSendingQueues.values()) {
-            queue.getServerQueue().trySendPackets(onMainThread);
+            queue.getOutboundQueue().trySendPackets(onMainThread);
         }
     }
     
@@ -212,7 +208,7 @@ class PlayerSendingHandler {
      */
     public void trySendClientPackets(boolean onMainThread) {
         for (QueueContainer queue : playerSendingQueues.values()) {
-            queue.getClientQueue().trySendPackets(onMainThread);
+            queue.getInboundQueue().trySendPackets(onMainThread);
         }
     }
     
@@ -224,7 +220,7 @@ class PlayerSendingHandler {
         List<PacketSendingQueue> result = new ArrayList<>();
         
         for (QueueContainer queue : playerSendingQueues.values())
-            result.add(queue.getServerQueue());
+            result.add(queue.getOutboundQueue());
         return result;
     }
     
@@ -236,7 +232,7 @@ class PlayerSendingHandler {
         List<PacketSendingQueue> result = new ArrayList<>();
         
         for (QueueContainer queue : playerSendingQueues.values())
-            result.add(queue.getClientQueue());
+            result.add(queue.getInboundQueue());
         return result;
     }
     

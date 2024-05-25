@@ -34,9 +34,8 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.scheduler.Task;
-import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
-import com.comphenix.protocol.timing.TimedTracker;
+import com.comphenix.protocol.timing.TimingListenerType;
+import com.comphenix.protocol.timing.TimingTrackerManager;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 
@@ -99,9 +98,6 @@ public class AsyncListenerHandler {
     
     // Warn plugins that the async listener handler must be started
     private Task warningTask;
-    
-    // Timing manager
-    private TimedListenerManager timedManager = TimedListenerManager.getInstance();
     
     /**
      * Construct a manager for an asynchronous packet handler.
@@ -600,27 +596,13 @@ public class AsyncListenerHandler {
                 marker.setListenerHandler(this);
                 marker.setWorkerID(workerID);
                 
-                // We're not THAT worried about performance here
-                if (timedManager.isTiming()) {
-                    // Retrieve the tracker to use
-                    TimedTracker tracker = timedManager.getTracker(listener,
-                        packet.isServerPacket() ? ListenerType.ASYNC_SERVER_SIDE : ListenerType.ASYNC_CLIENT_SIDE);
-                    long token = tracker.beginTracking();
-                    
-                    if (packet.isServerPacket())
-                        listener.onPacketSending(packet);
-                    else
-                        listener.onPacketReceiving(packet);
-                    
-                    // And we're done
-                    tracker.endTracking(token, packet.getPacketType());
-                    
-                } else {
-                    if (packet.isServerPacket())
-                        listener.onPacketSending(packet);
-                    else
-                        listener.onPacketReceiving(packet);
-                }
+                TimingTrackerManager.get(listener, packet.isServerPacket() ? TimingListenerType.ASYNC_OUTBOUND : TimingListenerType.ASYNC_INBOUND)
+                	.track(packet.getPacketType(), () -> {
+                        if (packet.isServerPacket())
+                            listener.onPacketSending(packet);
+                        else
+                            listener.onPacketReceiving(packet);
+                	});
             }
             
         } catch (OutOfMemoryError e) {

@@ -17,18 +17,20 @@
 
 package com.comphenix.protocol.async;
 
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.concurrency.AbstractConcurrentListenerMultimap;
+import com.comphenix.protocol.concurrent.PacketTypeMultiMap;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.PrioritizedListener;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MinMaxPriorityQueue;
 
 
@@ -37,7 +39,7 @@ import com.google.common.collect.MinMaxPriorityQueue;
  * 
  * @author Kristian
  */
-class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncListenerHandler> {
+class PacketProcessingQueue {
     public static final ReportType REPORT_GUAVA_CORRUPT_MISSING = 
             new ReportType("Guava is either missing or corrupt. Reverting to PriorityQueue.");
 
@@ -65,6 +67,16 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
     
     // Packets for sending
     private PlayerSendingHandler sendingHandler;
+    
+    private final PacketTypeMultiMap<AsyncListenerHandler> map = new PacketTypeMultiMap<>();
+
+    public void addListener(AsyncListenerHandler listener, ListeningWhitelist whitelist) {
+		map.put(whitelist, listener);
+	}
+	
+	public List<PacketType> removeListener(AsyncListenerHandler listener, ListeningWhitelist whitelist) {
+		return map.remove(whitelist, listener);
+	}
     
     public PacketProcessingQueue(PlayerSendingHandler sendingHandler) {
         this(sendingHandler, INITIAL_CAPACITY, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
@@ -131,17 +143,17 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
             if (holder != null) {
                 PacketEvent packet = holder.getEvent();
                 AsyncMarker marker = packet.getAsyncMarker();
-                Collection<PrioritizedListener<AsyncListenerHandler>> list = getListener(packet.getPacketType());
+                Iterable<AsyncListenerHandler> list = map.get(packet.getPacketType());
                 
                 marker.incrementProcessingDelay();
                 
                 // Yes, removing the marker will cause the chain to stop
                 if (list != null) {
-                    Iterator<PrioritizedListener<AsyncListenerHandler>> iterator = list.iterator();
+                    Iterator<AsyncListenerHandler> iterator = list.iterator();
                     
                     if (iterator.hasNext()) {
                         marker.setListenerTraversal(iterator);
-                        iterator.next().getListener().enqueuePacket(packet);
+                        iterator.next().enqueuePacket(packet);
                         continue;
                     }
                 }
@@ -178,17 +190,31 @@ class PacketProcessingQueue extends AbstractConcurrentListenerMultimap<AsyncList
     public int getMaximumConcurrency() {
         return maximumConcurrency;
     }
+
+	public boolean contains(PacketType packetType) {
+		return map.contains(packetType);
+	}
+
+	public Iterable<AsyncListenerHandler> get(PacketType packetType) {
+		return map.get(packetType);
+	}
+
+    public ImmutableSet<PacketType> keySet() {
+    	return map.getPacketTypes();
+    }
+
+    public Iterable<AsyncListenerHandler> values() {
+    	return map.values();
+    }
     
     public void cleanupAll() {
         // Cancel all the threads and every listener
-        for (PrioritizedListener<AsyncListenerHandler> handler : values()) {
-            if (handler != null) {
-                handler.getListener().cancel();
-            }
+        for (AsyncListenerHandler handler : map.values()) {
+            handler.cancel();
         }
         
         // Remove the rest, just in case
-        clearListeners();
+        map.clear();
         
         // Remove every packet in the queue
         processingQueue.clear();

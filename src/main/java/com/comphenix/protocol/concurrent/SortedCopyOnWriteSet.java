@@ -136,15 +136,15 @@ public class SortedCopyOnWriteSet<E, C extends Comparable<C>> implements Iterabl
 	 */
 	@Override
 	public Iterator<E> iterator() {
-		return new EntryIterator(this.array);
+		return new ElementIterator(this.array);
 	}
 
-	private class EntryIterator implements Iterator<E> {
+	private class ElementIterator implements Iterator<E> {
 
 		private final Entry<E, C>[] array;
 		private int cursor = 0;
 
-		public EntryIterator(Entry<E, C>[] array) {
+		public ElementIterator(Entry<E, C>[] array) {
 			this.array = array;
 		}
 
