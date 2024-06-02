@@ -715,6 +715,15 @@ public class PacketRegistry {
 			return PacketType.Play.Server.BUNDLE;
 		}
 
+		/*
+		 * Reverts https://github.com/dmulloy2/ProtocolLib/pull/2568 for server versions 1.8 to 1.20.1.
+		 *
+		 * Since packet classes are not shared for these versions,
+		 * the protocol state is not needed to determine the packet type from class.
+		 */
+		if (!MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+			return getPacketType(packet);
+		}
 		Map<Class<?>, PacketType> classToTypesForProtocol = REGISTER.protocolClassToType.get(protocol);
 		return classToTypesForProtocol == null ? null : classToTypesForProtocol.get(packet);
 	}
