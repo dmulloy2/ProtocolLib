@@ -28,6 +28,12 @@ final class InboundPacketInterceptor extends ChannelInboundHandlerAdapter {
 
 			PacketType.Protocol protocol = this.injector.getInboundProtocol();
 			PacketType packetType = PacketRegistry.getPacketType(protocol, msg.getClass());
+			
+			// TODO: ignore packet or throw error?
+			if (packetType == null) {
+				ctx.fireChannelRead(msg);
+				return;
+			}
 
 			// check if there are any listeners bound for the packet - if not just post the
 			// packet down the pipeline

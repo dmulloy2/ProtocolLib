@@ -15,9 +15,6 @@ import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimedListenerManager.ListenerType;
-import com.comphenix.protocol.timing.TimedTracker;
 
 public class OutboundPacketListenerSet extends PacketListenerSet {
 
@@ -30,17 +27,10 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
 		return packetListener.getSendingWhitelist();
 	}
 
-	/**
-	 * Invokes the given packet event for every registered listener of the given
-	 * priority.
-	 * 
-	 * @param event          - the packet event to invoke.
-	 * @param priorityFilter - the priority for a listener to be invoked. If null is
-	 *                       provided, every registered listener will be invoked
-	 */
 	@Override
 	public void invoke(PacketEvent event, @Nullable ListenerPriority priorityFilter) {
-		invokeUnpackedPacketSending(event, priorityFilter);
+		super.invoke(event, priorityFilter);
+
 		if (event.getPacketType() == PacketType.Play.Server.BUNDLE && !event.isCancelled()) {
 			// unpack the bundle and invoke for each packet in the bundle
 			Iterable<PacketContainer> packets = event.getPacket().getPacketBundles().read(0);
@@ -56,7 +46,7 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
 				}
 				PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(),
 						event.getPlayer());
-				invokeUnpackedPacketSending(subPacketEvent, priorityFilter);
+				super.invoke(subPacketEvent, priorityFilter);
 
 				if (!subPacketEvent.isCancelled()) {
 					// if the packet event has been cancelled, the packet will be removed from the
@@ -83,45 +73,14 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
 		}
 	}
 
-	private void invokeUnpackedPacketSending(PacketEvent event, @Nullable ListenerPriority priorityFilter) {
-		Iterable<PacketListener> listeners = this.map.get(event.getPacketType());
-
-		TimedListenerManager timedManager = TimedListenerManager.getInstance();
-		if (timedManager.isTiming()) {
-			for (PacketListener element : listeners) {
-				if (priorityFilter == null || element.getSendingWhitelist().getPriority() == priorityFilter) {
-					TimedTracker tracker = timedManager.getTracker(element, ListenerType.SYNC_SERVER_SIDE);
-					long token = tracker.beginTracking();
-
-					// Measure and record the execution time
-					invokeSendingListener(event, element);
-					tracker.endTracking(token, event.getPacketType());
-				}
-			}
-		} else {
-			for (PacketListener element : listeners) {
-				if (priorityFilter == null || element.getSendingWhitelist().getPriority() == priorityFilter) {
-					invokeSendingListener(event, element);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Invoke a particular sending listener.
-	 * 
-	 * @param reporter - the error reporter.
-	 * @param event    - the related packet event.
-	 * @param listener - the listener to invoke.
-	 */
-	private void invokeSendingListener(PacketEvent event, PacketListener listener) {
+	@Override
+	protected void invokeListener(PacketEvent event, PacketListener listener) {
 		try {
 			event.setReadOnly(listener.getSendingWhitelist().getPriority() == ListenerPriority.MONITOR);
 			listener.onPacketSending(event);
 		} catch (OutOfMemoryError | ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
-			// Minecraft doesn't want your Exception.
 			errorReporter.reportMinimal(listener.getPlugin(), "onPacketSending(PacketEvent)", e,
 					event.getPacket().getHandle());
 		}

@@ -5,7 +5,7 @@ package com.comphenix.protocol.timing;
  *
  * @author Kristian
  */
-public class StatisticsStream extends OnlineComputation {
+public class StatisticsStream {
     // This algorithm is due to Donald Knuth, as described in:
     //     Donald E. Knuth (1998). The Art of Computer Programming, volume 2:
     //     Seminumerical Algorithms, 3rd edn., p. 232. Boston: Addison-Wesley.
@@ -37,18 +37,12 @@ public class StatisticsStream extends OnlineComputation {
         this.maximum = other.maximum;
     }
 
-    @Override
-    public StatisticsStream copy() {
-        return new StatisticsStream(this);
-    }
-
     /**
      * Observe a value.
      *
      * @param value - the observed value.
      */
-    @Override
-    public void observe(double value) {
+    public synchronized void observe(double value) {
         double delta = value - this.mean;
 
         // As per Knuth
@@ -145,7 +139,6 @@ public class StatisticsStream extends OnlineComputation {
      *
      * @return Number of observations.
      */
-    @Override
     public int getCount() {
         return this.count;
     }

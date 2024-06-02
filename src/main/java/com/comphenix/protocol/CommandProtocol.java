@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
@@ -35,8 +36,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import com.comphenix.protocol.error.DetailedErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.timing.TimedListenerManager;
-import com.comphenix.protocol.timing.TimingReportGenerator;
+import com.comphenix.protocol.timing.TimingReport;
+import com.comphenix.protocol.timing.TimingTrackerManager;
 import com.comphenix.protocol.updater.Updater;
 import com.comphenix.protocol.updater.Updater.UpdateType;
 import com.comphenix.protocol.utility.Closer;
@@ -143,15 +144,14 @@ class CommandProtocol extends CommandBase {
     }
     
     private void toggleTimings(CommandSender sender, String[] args) {
-        TimedListenerManager manager = TimedListenerManager.getInstance();
-        boolean state = !manager.isTiming(); // toggle
+        boolean isNotTracking = !TimingTrackerManager.isTracking();
         
         // Parse the boolean parameter
         if (args.length == 2) {
             Boolean parsed = parseBoolean(toQueue(args, 2), "start");
             
             if (parsed != null) {
-                state = parsed;
+                isNotTracking = parsed;
             } else {
                 sender.sendMessage(ChatColor.RED + "Specify a state: ON or OFF.");
                 return;
@@ -161,15 +161,14 @@ class CommandProtocol extends CommandBase {
             return;
         }
         
-        // Now change the state
-        if (state) {
-            if (manager.startTiming())
+        if (isNotTracking) {
+            if (TimingTrackerManager.startTracking())
                 sender.sendMessage(ChatColor.GOLD + "Started timing packet listeners.");
             else
                 sender.sendMessage(ChatColor.RED + "Packet timing already started.");
         } else {
-            if (manager.stopTiming()) {
-                saveTimings(manager);
+            if (TimingTrackerManager.stopTracking()) {
+                saveTimings(TimingTrackerManager.createReportAndReset());
                 sender.sendMessage(ChatColor.GOLD + "Stopped and saved result in plugin folder.");
             } else {
                 sender.sendMessage(ChatColor.RED + "Packet timing already stopped.");
@@ -177,15 +176,10 @@ class CommandProtocol extends CommandBase {
         }
     }
     
-    private void saveTimings(TimedListenerManager manager) {
+    private void saveTimings(TimingReport report) {
         try {
-            File destination = new File(plugin.getDataFolder(), "Timings - " + System.currentTimeMillis() + ".txt");
-            TimingReportGenerator generator = new TimingReportGenerator();
-            
-            // Print to a text file
-            generator.saveTo(destination, manager);
-            manager.clear();
-            
+        	Path path = plugin.getDataFolder().toPath().resolve("timings_" + System.currentTimeMillis() + ".txt");
+        	report.saveTo(path);
         } catch (IOException e) {
             reporter.reportMinimal(plugin, "saveTimings()", e);
         }

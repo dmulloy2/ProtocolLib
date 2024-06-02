@@ -17,11 +17,13 @@
 
 package com.comphenix.protocol.async;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
@@ -31,15 +33,12 @@ import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.PrioritizedListener;
-import com.comphenix.protocol.injector.SortedPacketListenerList;
+import com.comphenix.protocol.injector.collection.InboundPacketListenerSet;
+import com.comphenix.protocol.injector.collection.OutboundPacketListenerSet;
 import com.comphenix.protocol.scheduler.ProtocolScheduler;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 /**
  * Represents a filter manager for asynchronous packets.
@@ -50,8 +49,8 @@ import org.bukkit.plugin.Plugin;
  */
 public class AsyncFilterManager implements AsynchronousManager {
 
-    private SortedPacketListenerList serverTimeoutListeners;
-    private SortedPacketListenerList clientTimeoutListeners;
+    private OutboundPacketListenerSet outboundTimeoutListeners;
+    private InboundPacketListenerSet inboundTimeoutListeners;
     private Set<PacketListener> timeoutListeners;
     
     private PacketProcessingQueue serverProcessingQueue;
@@ -84,11 +83,11 @@ public class AsyncFilterManager implements AsynchronousManager {
      */
     public AsyncFilterManager(ErrorReporter reporter, ProtocolScheduler scheduler) {
         // Initialize timeout listeners
-        this.serverTimeoutListeners = new SortedPacketListenerList();
-        this.clientTimeoutListeners = new SortedPacketListenerList();
+        this.outboundTimeoutListeners = new OutboundPacketListenerSet(null, reporter);
+        this.inboundTimeoutListeners = new InboundPacketListenerSet(null, reporter);
         this.timeoutListeners = ConcurrentHashMap.newKeySet();
 
-        this.playerSendingHandler = new PlayerSendingHandler(reporter, serverTimeoutListeners, clientTimeoutListeners);
+        this.playerSendingHandler = new PlayerSendingHandler(outboundTimeoutListeners, inboundTimeoutListeners);
         this.serverProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
         this.clientProcessingQueue = new PacketProcessingQueue(playerSendingHandler);
         this.playerSendingHandler.initializeScheduler();
@@ -130,9 +129,9 @@ public class AsyncFilterManager implements AsynchronousManager {
         ListeningWhitelist receiving = listener.getReceivingWhitelist();
         
         if (!ListeningWhitelist.isEmpty(sending))
-            serverTimeoutListeners.addListener(listener, sending);
+            outboundTimeoutListeners.addListener(listener);
         if (!ListeningWhitelist.isEmpty(receiving))
-            serverTimeoutListeners.addListener(listener, receiving);
+            inboundTimeoutListeners.addListener(listener);
     }
 
     @Override
@@ -145,9 +144,8 @@ public class AsyncFilterManager implements AsynchronousManager {
         ImmutableSet.Builder<PacketListener> builder = ImmutableSet.builder();
         
         // Add every asynchronous packet listener
-        for (PrioritizedListener<AsyncListenerHandler> handler :
-                Iterables.concat(serverProcessingQueue.values(), clientProcessingQueue.values())) {
-            builder.add(handler.getListener().getAsyncListener());
+        for (AsyncListenerHandler handler : Iterables.concat(serverProcessingQueue.values(), clientProcessingQueue.values())) {
+            builder.add(handler.getAsyncListener());
         }
         return builder.build();
     }
@@ -203,13 +201,9 @@ public class AsyncFilterManager implements AsynchronousManager {
         if (listener == null)
             throw new IllegalArgumentException("listener cannot be NULL.");
         
-        ListeningWhitelist sending = listener.getSendingWhitelist();
-        ListeningWhitelist receiving = listener.getReceivingWhitelist();
-        
-        // Do it in the opposite order
-        if (serverTimeoutListeners.removeListener(listener, sending).size() > 0 ||
-            clientTimeoutListeners.removeListener(listener, receiving).size() > 0) {
-            timeoutListeners.remove(listener);
+        if (timeoutListeners.remove(listener)) {
+            outboundTimeoutListeners.removeListener(listener);
+            inboundTimeoutListeners.removeListener(listener);
         }
     }
     
@@ -233,9 +227,9 @@ public class AsyncFilterManager implements AsynchronousManager {
             return null;
         
         for (PacketType type : search.getTypes()) {
-            for (PrioritizedListener<AsyncListenerHandler> element : queue.getListener(type)) {
-                if (element.getListener().getAsyncListener() == target) {
-                    return element.getListener();
+            for (AsyncListenerHandler element : queue.get(type)) {
+                if (element.getAsyncListener() == target) {
+                    return element;
                 }
             }
         }
@@ -292,10 +286,10 @@ public class AsyncFilterManager implements AsynchronousManager {
     private void unregisterAsyncHandlers(PacketProcessingQueue processingQueue, Plugin plugin) {
         
         // Iterate through every packet listener
-        for (PrioritizedListener<AsyncListenerHandler> listener : processingQueue.values()) {
+        for (AsyncListenerHandler listener : processingQueue.values()) {
             // Remove the listener
-            if (Objects.equal(listener.getListener().getPlugin(), plugin)) {
-                unregisterAsyncHandler(listener.getListener());
+            if (Objects.equal(listener.getPlugin(), plugin)) {
+                unregisterAsyncHandler(listener);
             }
         }
     }
@@ -346,8 +340,7 @@ public class AsyncFilterManager implements AsynchronousManager {
     
     @Override
     public boolean hasAsynchronousListeners(PacketEvent packet) {
-         Collection<?> list = getProcessingQueue(packet).getListener(packet.getPacketType());
-         return list != null && list.size() > 0;
+         return getProcessingQueue(packet).contains(packet.getPacketType());
     }
     
     /**
@@ -388,8 +381,8 @@ public class AsyncFilterManager implements AsynchronousManager {
         playerSendingHandler.cleanupAll();
         timeoutListeners.clear();
         
-        serverTimeoutListeners = null;
-        clientTimeoutListeners = null;
+        outboundTimeoutListeners = null;
+        inboundTimeoutListeners = null;
     }
     
     @Override
@@ -417,7 +410,7 @@ public class AsyncFilterManager implements AsynchronousManager {
             // Now, get the next non-cancelled listener
             if (!marker.hasExpired()) {
                 for (; marker.getListenerTraversal().hasNext(); ) {
-                    AsyncListenerHandler handler = marker.getListenerTraversal().next().getListener();
+                    AsyncListenerHandler handler = marker.getListenerTraversal().next();
                     
                     if (!handler.isCancelled()) {
                     	marker.incrementProcessingDelay();

@@ -1,7 +1,9 @@
 package com.comphenix.protocol.concurrent;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -9,6 +11,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 
 /**
  * A map-like data structure that associates {@link PacketType}s with sets of
@@ -57,11 +60,15 @@ public class PacketTypeMultiMap<T> {
 	 * @param key   the whitelist containing the packet types to disassociate the
 	 *              value from
 	 * @param value the value to be removed
+	 * @return a list of packet types that got removed because they don't have any
+	 *         associated values anymore
 	 * @throws NullPointerException if the key or value is null
 	 */
-	public synchronized void remove(ListeningWhitelist key, T value) {
+	public synchronized List<PacketType> remove(ListeningWhitelist key, T value) {
 		Objects.requireNonNull(key, "key cannot be null");
 		Objects.requireNonNull(value, "value cannot be null");
+
+		List<PacketType> removedTypes = new ArrayList<>();
 
 		for (PacketType packetType : key.getTypes()) {
 			SortedCopyOnWriteSet<T, PriorityHolder> entrySet = this.typeMap.get(packetType);
@@ -80,8 +87,11 @@ public class PacketTypeMultiMap<T> {
 			// remove packet type without entries
 			if (entrySet.isEmpty()) {
 				this.typeMap.remove(packetType);
+				removedTypes.add(packetType);
 			}
 		}
+		
+		return removedTypes;
 	}
 
 	/**
@@ -123,6 +133,10 @@ public class PacketTypeMultiMap<T> {
 			return Collections.emptyIterator();
 		};
 	}
+
+    public Iterable<T> values() {
+        return Iterables.concat(this.typeMap.values());
+    }
 
 	/**
 	 * Clears all entries from the map.

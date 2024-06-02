@@ -31,7 +31,6 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.PrioritizedListener;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -70,7 +69,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
     /**
      * Current list of async packet listeners.
      */
-    private transient Iterator<PrioritizedListener<AsyncListenerHandler>> listenerTraversal;
+    private transient Iterator<AsyncListenerHandler> listenerTraversal;
 
     // Timeout handling
     private long initialTime;
@@ -366,7 +365,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
      * Retrieve iterator for the next listener in line.
      * @return Next async packet listener iterator.
      */
-    Iterator<PrioritizedListener<AsyncListenerHandler>> getListenerTraversal() {
+    Iterator<AsyncListenerHandler> getListenerTraversal() {
         return listenerTraversal;
     }
 
@@ -374,7 +373,7 @@ public class AsyncMarker implements Serializable, Comparable<AsyncMarker> {
      * Set the iterator for the next listener.
      * @param listenerTraversal - the new async packet listener iterator.
      */
-    void setListenerTraversal(Iterator<PrioritizedListener<AsyncListenerHandler>> listenerTraversal) {
+    void setListenerTraversal(Iterator<AsyncListenerHandler> listenerTraversal) {
         this.listenerTraversal = listenerTraversal;
     }
 

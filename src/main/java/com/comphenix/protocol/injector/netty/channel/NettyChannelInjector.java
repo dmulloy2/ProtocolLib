@@ -574,6 +574,11 @@ public class NettyChannelInjector implements Injector {
 
         PacketType.Protocol protocol = this.getCurrentProtocol(PacketType.Sender.SERVER);
 		PacketType packetType = PacketRegistry.getPacketType(protocol, packet.getClass());
+		
+		// TODO: ignore packet or throw error?
+		if (packetType == null) {
+			return action;
+		}
 
         // no listener and no marker - no magic :)
         if (!this.channelListener.hasOutboundListener(packetType) && marker == null && !MinecraftReflection.isBundlePacket(packet.getClass())) {
