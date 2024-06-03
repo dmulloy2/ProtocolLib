@@ -40,21 +40,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -310,13 +305,13 @@ public class ProtocolLib extends JavaPlugin {
         logger.addHandler(this.redirectHandler);
     }
 
-	private void highlyVisibleError(String... lines) {
-		Logger directLogging = Logger.getLogger("Minecraft");
+    private void highlyVisibleError(String... lines) {
+        Logger directLogging = Logger.getLogger("Minecraft");
 
-		for (String line : ChatExtensions.toFlowerBox(lines, "*", 3, 1)) {
-			directLogging.severe(line);
-		}
-	}
+        for (String line : ChatExtensions.toFlowerBox(lines, "*", 3, 1)) {
+            directLogging.severe(line);
+        }
+    }
 
     @Override
     public void onEnable() {
@@ -326,10 +321,10 @@ public class ProtocolLib extends JavaPlugin {
 
             // Silly plugin reloaders!
             if (protocolManager == null) {
-				highlyVisibleError(
-					" ProtocolLib does not support plugin reloaders! ",
-					" Please use the built-in reload command! "
-				);
+                highlyVisibleError(
+                    " ProtocolLib does not support plugin reloaders! ",
+                    " Please use the built-in reload command! "
+                );
                 disablePlugin();
                 return;
             }
@@ -400,44 +395,44 @@ public class ProtocolLib extends JavaPlugin {
 
     private void scanForOtherProtocolLibJars() {
         try {
-			File loadedFile = this.getFile();
+            File loadedFile = this.getFile();
             File pluginFolder = this.getDataFolder().getParentFile();
 
             File[] candidates = pluginFolder.listFiles();
-			if (candidates == null) {
-				return;
-			}
+            if (candidates == null) {
+                return;
+            }
 
-			String ourName = loadedFile.getName();
-			List<String> others = new ArrayList<>();
+            String ourName = loadedFile.getName();
+            List<String> others = new ArrayList<>();
 
-			for (File candidate : candidates) {
-				if (!candidate.isFile()) {
-					continue;
-				}
+            for (File candidate : candidates) {
+                if (!candidate.isFile()) {
+                    continue;
+                }
 
-				String jarName = candidate.getName();
-				if (jarName.equals(ourName)) {
-					continue;
-				}
+                String jarName = candidate.getName();
+                if (jarName.equals(ourName)) {
+                    continue;
+                }
 
-				String jarNameLower = candidate.getName().toLowerCase();
-				if (!jarNameLower.startsWith("protocollib") || !jarNameLower.endsWith(".jar")) {
-					continue;
-				}
+                String jarNameLower = candidate.getName().toLowerCase();
+                if (!jarNameLower.startsWith("protocollib") || !jarNameLower.endsWith(".jar")) {
+                    continue;
+                }
 
-				others.add(jarName);
-			}
+                others.add(jarName);
+            }
 
-			if (!others.isEmpty()) {
-				highlyVisibleError(
-					" Detected multiple ProtocolLib JAR files in the plugin directory! ",
-					" You should remove all but one of them or there will likely be undesired behavior. ",
-					" This JAR: " + loadedFile.getName(),
-					" Other detected JARs: " + String.join(",", others)
-				);
-			}
-		} catch (Exception ex) {
+            if (!others.isEmpty()) {
+                highlyVisibleError(
+                    " Detected multiple ProtocolLib JAR files in the plugin directory! ",
+                    " You should remove all but one of them or there will likely be undesired behavior. ",
+                    " This JAR: " + loadedFile.getName(),
+                    " Other detected JARs: " + String.join(",", others)
+                );
+            }
+        } catch (Exception ex) {
             ProtocolLogger.debug("Failed to scan plugins directory for ProtocolLib jars", ex);
         }
     }
