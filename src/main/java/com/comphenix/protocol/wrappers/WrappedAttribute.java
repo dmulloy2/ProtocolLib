@@ -12,17 +12,11 @@ import com.comphenix.protocol.wrappers.collection.ConvertedSet;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
-import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
-import net.minecraft.world.entity.ai.attributes.AttributeBase;
-import org.w3c.dom.Attr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.util.*;
-
 
 /**
  * Represents a single attribute sent in packet 44.
