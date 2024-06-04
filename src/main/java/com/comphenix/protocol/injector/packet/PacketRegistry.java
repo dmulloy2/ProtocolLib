@@ -461,7 +461,10 @@ public class PacketRegistry {
 						}
 
 						Object serializer = idCodecEntrySerializerAccessor.invoke(entry);
-						result.classToCodec.put(packetClass, new WrappedStreamCodec(serializer));
+						Field outerThisField = serializer.getClass().getDeclaredField("this$0");
+						outerThisField.setAccessible(true);
+						Object realSer = outerThisField.get(serializer);
+						result.classToCodec.put(packetClass, new WrappedStreamCodec(realSer));
 					}
 
 					// get EnumProtocol and Direction of protocol info
