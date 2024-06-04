@@ -731,6 +731,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         STATUS("Status", "status"),
         LOGIN("Login", "login"),
         CONFIGURATION("Configuration", "configuration"),
+        TRANSFER("Transfer", "transfer"), // TODO are these the right names?
 
         /**
          * Only for packets removed in Minecraft 1.7.2

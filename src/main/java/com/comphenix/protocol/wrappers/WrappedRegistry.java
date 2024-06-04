@@ -3,6 +3,7 @@ package com.comphenix.protocol.wrappers;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -15,6 +16,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class WrappedRegistry {
@@ -87,7 +89,7 @@ public class WrappedRegistry {
         GET = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract
                 .newBuilder()
                 .parameterCount(1)
-                .returnDerivedOf(Object.class)
+                .returnTypeMatches(FuzzyMatchers.and(FuzzyMatchers.assignable(Object.class), FuzzyMatchers.except(Optional.class)))
                 .requireModifier(Modifier.ABSTRACT)
                 .parameterExactType(MinecraftReflection.getMinecraftKeyClass())
                 .build()));

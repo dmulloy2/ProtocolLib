@@ -12,6 +12,11 @@ import com.comphenix.protocol.wrappers.collection.ConvertedSet;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
+import net.minecraft.world.entity.ai.attributes.AttributeBase;
+import org.w3c.dom.Attr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,6 +31,8 @@ import java.util.*;
  */
 public class WrappedAttribute extends AbstractWrapper {
     public static boolean KEY_WRAPPED = MinecraftVersion.NETHER_UPDATE.atOrAbove();
+    public static boolean IS_STATIC = MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
+    public static boolean IS_IN_HOLDER = MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove();
 
     // Shared structure modifier
     private static StructureModifier<Object> ATTRIBUTE_MODIFIER;
@@ -136,8 +143,13 @@ public class WrappedAttribute extends AbstractWrapper {
      */
     public String getAttributeKey() {
         if (KEY_WRAPPED) {
-            WrappedAttributeBase base = modifier.withType(ATTRIBUTE_BASE_CLASS, ATTRIBUTE_BASE).read(0);
-            return base.key.replace("attribute.name.", ""); // TODO not entirely sure why this happens
+            StructureModifier<WrappedAttributeBase> typedModifier = IS_IN_HOLDER
+                    ? modifier.withParamType(MinecraftReflection.getHolderClass(),
+                        Converters.holder(ATTRIBUTE_BASE, WrappedRegistry.getAttributeRegistry()),
+                        ATTRIBUTE_BASE_CLASS)
+                    : modifier.withType(ATTRIBUTE_BASE_CLASS, ATTRIBUTE_BASE);
+            WrappedAttributeBase base = typedModifier.read(0);
+            return base.key.replace("attribute.name.", "");
         } else {
             return (String) modifier.withType(String.class).read(0);
         }
@@ -447,12 +459,10 @@ public class WrappedAttribute extends AbstractWrapper {
                 throw new IllegalStateException("Base value has not been set.");
             }
 
-            boolean isStatic = MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
-
             if (ATTRIBUTE_CONSTRUCTOR == null) {
                 FuzzyReflection ref = FuzzyReflection.fromClass(MinecraftReflection.getAttributeSnapshotClass(), true);
-                FuzzyMethodContract.Builder contract = FuzzyMethodContract.newBuilder().parameterCount(isStatic ? 3 : 4);
-                if (!isStatic) {
+                FuzzyMethodContract.Builder contract = FuzzyMethodContract.newBuilder().parameterCount(IS_STATIC ? 3 : 4);
+                if (!IS_STATIC) {
                     contract.parameterDerivedOf(MinecraftReflection.getPacketClass(), 0);
                 }
                 contract.parameterExactType(double.class).parameterDerivedOf(Collection.class);
@@ -471,13 +481,15 @@ public class WrappedAttribute extends AbstractWrapper {
                 if (attributeKey == null) {
                     throw new IllegalArgumentException("Invalid attribute name: " + this.attributeKey);
                 }
+
+                attributeKey = registry.getHolder(attributeKey);
             } else {
                 attributeKey = this.attributeKey;
             }
 
             try {
                 Object handle;
-                if (isStatic) {
+                if (IS_STATIC) {
                     handle = ATTRIBUTE_CONSTRUCTOR.newInstance(attributeKey, baseValue, getUnwrappedModifiers());
                 } else {
                     handle = ATTRIBUTE_CONSTRUCTOR.newInstance(packet.getHandle(), attributeKey, baseValue, getUnwrappedModifiers());

@@ -29,6 +29,26 @@ public class FuzzyMatchers {
         return (value, parent) -> value.isArray() && componentMatcher.isMatch(value.getComponentType(), parent);
     }
 
+    public static AbstractFuzzyMatcher<Class<?>> except(Class<?> clazz) {
+        return (value, parent) -> !clazz.isAssignableFrom(value);
+    }
+
+    public static AbstractFuzzyMatcher<Class<?>> assignable(Class<?> clazz) {
+        return (value, parent) -> clazz.isAssignableFrom(value);
+    }
+
+    @SafeVarargs
+    public static AbstractFuzzyMatcher<Class<?>> and(AbstractFuzzyMatcher<Class<?>>... matchers) {
+        return (value, parent) -> {
+            for (AbstractFuzzyMatcher<Class<?>> matcher : matchers) {
+                if (!matcher.isMatch(value, parent)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+    }
+
     /**
      * Retrieve a fuzzy matcher that will match any class.
      *

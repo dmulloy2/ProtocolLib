@@ -95,9 +95,12 @@ public class WrappedAttributeTest {
             modifiers.add((AttributeModifier) wrapper.getHandle());
         }
 
-		IRegistry<AttributeBase> registry = BuiltInRegistries.u;
-        AttributeBase base = registry.a(MinecraftKey.a(attribute.getAttributeKey()));
-        return new AttributeSnapshot(Holder.a(base), attribute.getBaseValue(), modifiers);
+        IRegistry<AttributeBase> registry = BuiltInRegistries.u;
+        String attributeKey = attribute.getAttributeKey();
+        MinecraftKey key = MinecraftKey.a(attributeKey);
+        AttributeBase base = registry.a(key);
+        Holder<AttributeBase> holder = registry.e(base);
+        return new AttributeSnapshot(holder, attribute.getBaseValue(), modifiers);
     }
 
     private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
