@@ -48,7 +48,6 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy.Default;
 import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.matcher.ElementMatchers;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 
 /**
  * Caches structure modifiers.
