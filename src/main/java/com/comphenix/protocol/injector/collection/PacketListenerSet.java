@@ -15,6 +15,7 @@ import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
@@ -24,8 +25,10 @@ import com.google.common.collect.ImmutableSet;
 
 public abstract class PacketListenerSet {
 
-    private static final ReportType UNSUPPORTED_PACKET = new ReportType(
+    private static final ReportType REPORT_UNSUPPORTED_PACKET = new ReportType(
             "Plugin %s tried to register listener for unknown packet %s [direction: from %s]");
+    private static final ReportType REPORT_NULL_PACKET = new ReportType(
+            "Plugin %s tried to set a packet or packet handle to null [type: %s, direction: %s]");
 
     protected final PacketTypeMultiMap<PacketListener> map = new PacketTypeMultiMap<>();
 
@@ -48,7 +51,7 @@ public abstract class PacketListenerSet {
                     : PacketRegistry.getClientPacketTypes();
 
             if (!supportedPacketTypes.contains(packetType)) {
-                this.errorReporter.reportWarning(this, Report.newBuilder(UNSUPPORTED_PACKET)
+                this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_UNSUPPORTED_PACKET)
                         .messageParam(PacketAdapter.getPluginName(packetListener), packetType, packetType.getSender())
                         .build());
                 
@@ -105,9 +108,26 @@ public abstract class PacketListenerSet {
                 continue;
             }
 
+            PacketContainer originalPacket = event.getPacket();
+            if (originalPacket == null || originalPacket.getHandle() == null) {
+                // ignore null packets, they are evil and shouldn't exist
+                break;
+            }
+
+            // invoke packet listener
             TimingTrackerManager
                     .get(listener, event.isServerPacket() ? TimingListenerType.SYNC_OUTBOUND : TimingListenerType.SYNC_INBOUND)
                     .track(event.getPacketType(), () -> invokeListener(event, listener));
+            
+            // check for new null packets
+            PacketContainer newPacket = event.getPacket();
+            if (newPacket == null || newPacket.getHandle() == null) {
+                errorReporter.reportWarning(this, Report.newBuilder(REPORT_NULL_PACKET)
+                        .messageParam(PacketAdapter.getPluginName(listener), originalPacket.getType(), originalPacket.getType().getSender())
+                        .build());
+                // reset packet to previous packet
+                event.setPacket(originalPacket);
+            }
         }
     }
 

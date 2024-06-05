@@ -36,31 +36,27 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
             Iterable<PacketContainer> packets = event.getPacket().getPacketBundles().read(0);
             List<PacketContainer> outPackets = new ArrayList<>();
             for (PacketContainer subPacket : packets) {
+                // ignore null packets as the will throw an error in the packet encoder
                 if (subPacket == null) {
-                    ProtocolLogger.log(Level.WARNING,
-                            "Failed to invoke packet event "
-                                    + (priorityFilter == null ? "" : ("with priority " + priorityFilter))
-                                    + " in bundle because bundle contains null packet: " + packets,
-                            new Throwable());
                     continue;
                 }
+
                 PacketEvent subPacketEvent = PacketEvent.fromServer(this, subPacket, event.getNetworkMarker(),
                         event.getPlayer());
                 super.invoke(subPacketEvent, priorityFilter);
 
-                if (!subPacketEvent.isCancelled()) {
-                    // if the packet event has been cancelled, the packet will be removed from the
-                    // bundle
-                    PacketContainer packet = subPacketEvent.getPacket();
-                    if (packet == null) {
-                        ProtocolLogger.log(Level.WARNING, "null packet container returned for " + subPacketEvent,
-                                new NullPointerException());
-                    } else if (packet.getHandle() == null) {
-                        ProtocolLogger.log(Level.WARNING, "null packet handle returned for " + subPacketEvent,
-                                new NullPointerException());
-                    } else {
-                        outPackets.add(packet);
-                    }
+                
+                // if the packet has been cancelled, the packet will not be add to the bundle
+                if (subPacketEvent.isCancelled()) {
+                    continue;
+                }
+
+                PacketContainer packet = subPacketEvent.getPacket();
+                if (packet == null || packet.getHandle() == null) {
+                    // super.invoke() should prevent us from getting new null packet so we just ignore it here
+                    continue;
+                } else {
+                    outPackets.add(packet);
                 }
             }
 
