@@ -11,55 +11,55 @@ import com.google.common.collect.ImmutableMap;
 
 public class TimingTrackerManager {
 
-	private final static AtomicBoolean IS_TRACKING = new AtomicBoolean();
+    private final static AtomicBoolean IS_TRACKING = new AtomicBoolean();
 
-	private static volatile Date startTime;
-	private static volatile Date stopTime;
+    private static volatile Date startTime;
+    private static volatile Date stopTime;
 
-	private static final Map<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> TRACKER_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> TRACKER_MAP = new ConcurrentHashMap<>();
 
-	public static boolean startTracking() {
-		if (IS_TRACKING.compareAndSet(false, true)) {
-			startTime = Calendar.getInstance().getTime();
-			return true;
-		}
-		return false;
-	}
+    public static boolean startTracking() {
+        if (IS_TRACKING.compareAndSet(false, true)) {
+            startTime = Calendar.getInstance().getTime();
+            return true;
+        }
+        return false;
+    }
 
-	public static boolean isTracking() {
-		return IS_TRACKING.get();
-	}
+    public static boolean isTracking() {
+        return IS_TRACKING.get();
+    }
 
-	public static boolean stopTracking() {
-		if (IS_TRACKING.compareAndSet(true, false)) {
-			stopTime = Calendar.getInstance().getTime();
-			return true;
-		}
-		return false;
-	}
+    public static boolean stopTracking() {
+        if (IS_TRACKING.compareAndSet(true, false)) {
+            stopTime = Calendar.getInstance().getTime();
+            return true;
+        }
+        return false;
+    }
 
-	public static TimingReport createReportAndReset() {
-		TimingReport report = new TimingReport(startTime, stopTime, ImmutableMap.copyOf(TRACKER_MAP));
-		TRACKER_MAP.clear();
-		return report;
-	}
+    public static TimingReport createReportAndReset() {
+        TimingReport report = new TimingReport(startTime, stopTime, ImmutableMap.copyOf(TRACKER_MAP));
+        TRACKER_MAP.clear();
+        return report;
+    }
 
-	public static TimingTracker get(PacketListener listener, TimingListenerType type) {
-		if (!IS_TRACKING.get()) {
-			return TimingTracker.EMPTY;
-		}
+    public static TimingTracker get(PacketListener listener, TimingListenerType type) {
+        if (!IS_TRACKING.get()) {
+            return TimingTracker.EMPTY;
+        }
 
-		String plugin = listener.getPlugin().getName();
-		return TRACKER_MAP.computeIfAbsent(plugin, k -> newTrackerMap()).get(type);
-	}
+        String plugin = listener.getPlugin().getName();
+        return TRACKER_MAP.computeIfAbsent(plugin, k -> newTrackerMap()).get(type);
+    }
 
-	private static ImmutableMap<TimingListenerType, PluginTimingTracker> newTrackerMap() {
-		ImmutableMap.Builder<TimingListenerType, PluginTimingTracker> builder = ImmutableMap.builder();
+    private static ImmutableMap<TimingListenerType, PluginTimingTracker> newTrackerMap() {
+        ImmutableMap.Builder<TimingListenerType, PluginTimingTracker> builder = ImmutableMap.builder();
 
-		for (TimingListenerType type : TimingListenerType.values()) {
-			builder.put(type, new PluginTimingTracker());
-		}
+        for (TimingListenerType type : TimingListenerType.values()) {
+            builder.put(type, new PluginTimingTracker());
+        }
 
-		return builder.build();
-	}
+        return builder.build();
+    }
 }

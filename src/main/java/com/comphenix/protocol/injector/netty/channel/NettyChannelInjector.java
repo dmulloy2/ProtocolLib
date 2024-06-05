@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
@@ -219,7 +220,7 @@ public class NettyChannelInjector implements Injector {
 
             // since 1.20.5 the encoder is renamed to outbound_config only in the handshake phase
             String encoderName = pipeline.get("outbound_config") != null
-            		? "outbound_config" : "encoder";
+                    ? "outbound_config" : "encoder";
 
             // inject our handlers
             pipeline.addAfter(
@@ -227,11 +228,11 @@ public class NettyChannelInjector implements Injector {
                     WIRE_PACKET_ENCODER_NAME,
                     WIRE_PACKET_ENCODER);
             if (MinecraftVersion.v1_20_5.atOrAbove()) {
-            	this.inboundProtocolReader = new InboundProtocolReader(this);
+                this.inboundProtocolReader = new InboundProtocolReader(this);
                 pipeline.addBefore(
-                		"decoder",
-                		PROTOCOL_READER_NAME,
-                		this.inboundProtocolReader);
+                        "decoder",
+                        PROTOCOL_READER_NAME,
+                        this.inboundProtocolReader);
             }
             pipeline.addAfter(
                     "decoder",
@@ -346,12 +347,12 @@ public class NettyChannelInjector implements Injector {
             this.ensureInEventLoop(receiveAction);
         }
     }
-    
+
     public PacketType.Protocol getInboundProtocol() {
-    	if (this.inboundProtocolReader != null) {
-        	return this.inboundProtocolReader.getProtocol();
-    	}
-    	return getCurrentProtocol(PacketType.Sender.CLIENT);
+        if (this.inboundProtocolReader != null) {
+            return this.inboundProtocolReader.getProtocol();
+        }
+        return getCurrentProtocol(PacketType.Sender.CLIENT);
     }
 
     @Override
@@ -573,12 +574,12 @@ public class NettyChannelInjector implements Injector {
         }
 
         PacketType.Protocol protocol = this.getCurrentProtocol(PacketType.Sender.SERVER);
-		PacketType packetType = PacketRegistry.getPacketType(protocol, packet.getClass());
-		
-		// TODO: ignore packet or throw error?
-		if (packetType == null) {
-			return action;
-		}
+        PacketType packetType = PacketRegistry.getPacketType(protocol, packet.getClass());
+
+        if (packetType == null) {
+            ProtocolLogger.debug("skipping unknown outbound packet type for {0}", packet.getClass());
+            return action;
+        }
 
         // no listener and no marker - no magic :)
         if (!this.channelListener.hasOutboundListener(packetType) && marker == null && !MinecraftReflection.isBundlePacket(packet.getClass())) {

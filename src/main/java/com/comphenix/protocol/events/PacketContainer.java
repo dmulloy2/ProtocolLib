@@ -347,10 +347,10 @@ public class PacketContainer extends AbstractStructure implements Serializable {
         }
 
         Function<Object, Object> deserializer = PACKET_DESERIALIZER_METHODS.computeIfAbsent(packetType, type -> {
-        	WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(type.getPacketClass());
-        	if (streamCodec != null) {
-        		return streamCodec::decode;
-        	}
+            WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(type.getPacketClass());
+            if (streamCodec != null) {
+                return streamCodec::decode;
+            }
 
             if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
                 // best guess - a constructor which takes a buffer as the only argument
@@ -400,12 +400,12 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 
         Object targetBuffer = MinecraftReflection.createPacketDataSerializer(0);
 
-    	WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(type.getPacketClass());
-    	if (streamCodec != null) {
-    		streamCodec.encode(targetBuffer, handle);
-    	} else {
+        WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(type.getPacketClass());
+        if (streamCodec != null) {
+            streamCodec.encode(targetBuffer, handle);
+        } else {
             MinecraftMethods.getPacketWriteByteBufMethod().invoke(handle, targetBuffer);
-    	}
+        }
 
         return targetBuffer;
     }

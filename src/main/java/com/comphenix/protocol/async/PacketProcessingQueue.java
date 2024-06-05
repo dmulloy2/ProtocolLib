@@ -71,13 +71,13 @@ class PacketProcessingQueue {
     private final PacketTypeMultiMap<AsyncListenerHandler> map = new PacketTypeMultiMap<>();
 
     public void addListener(AsyncListenerHandler listener, ListeningWhitelist whitelist) {
-		map.put(whitelist, listener);
-	}
-	
-	public List<PacketType> removeListener(AsyncListenerHandler listener, ListeningWhitelist whitelist) {
-		return map.remove(whitelist, listener);
-	}
-    
+        map.put(whitelist, listener);
+    }
+
+    public List<PacketType> removeListener(AsyncListenerHandler listener, ListeningWhitelist whitelist) {
+        return map.remove(whitelist, listener);
+    }
+
     public PacketProcessingQueue(PlayerSendingHandler sendingHandler) {
         this(sendingHandler, INITIAL_CAPACITY, DEFAULT_QUEUE_LIMIT, DEFAULT_MAXIMUM_CONCURRENCY);
     }
@@ -191,20 +191,20 @@ class PacketProcessingQueue {
         return maximumConcurrency;
     }
 
-	public boolean contains(PacketType packetType) {
-		return map.contains(packetType);
-	}
+    public boolean contains(PacketType packetType) {
+        return map.contains(packetType);
+    }
 
-	public Iterable<AsyncListenerHandler> get(PacketType packetType) {
-		return map.get(packetType);
-	}
+    public Iterable<AsyncListenerHandler> get(PacketType packetType) {
+        return map.get(packetType);
+    }
 
     public ImmutableSet<PacketType> keySet() {
-    	return map.getPacketTypes();
+        return map.getPacketTypes();
     }
 
     public Iterable<AsyncListenerHandler> values() {
-    	return map.values();
+        return map.values();
     }
     
     public void cleanupAll() {

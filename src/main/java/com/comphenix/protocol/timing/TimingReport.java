@@ -27,46 +27,46 @@ public class TimingReport {
     private static final String STATISTICS_ROW =    " %-14s %-29s %-12d %-15.6f %-15.6f %-15.6f %.6f " + NEWLINE;
     private static final String SUM_MAIN_THREAD = " => Time on main thread: %.6f ms" + NEWLINE;
 
-	private final Date startTime;
-	private final Date stopTime;
-	private final ImmutableMap<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> trackerMap;
+    private final Date startTime;
+    private final Date stopTime;
+    private final ImmutableMap<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> trackerMap;
 
-	public TimingReport(Date startTime, Date stopTime, ImmutableMap<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> trackerMap) {
-		this.startTime = startTime;
-		this.stopTime = stopTime;
-		this.trackerMap = trackerMap;
-	}
+    public TimingReport(Date startTime, Date stopTime, ImmutableMap<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> trackerMap) {
+        this.startTime = startTime;
+        this.stopTime = stopTime;
+        this.trackerMap = trackerMap;
+    }
 
-	public void saveTo(Path path) throws IOException {
-		final long seconds = Math.abs((stopTime.getTime() - startTime.getTime()) / 1000);
+    public void saveTo(Path path) throws IOException {
+        final long seconds = Math.abs((stopTime.getTime() - startTime.getTime()) / 1000);
 
-		try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-			// Write some timing information
-			writer.write(String.format(META_STARTED, startTime));
-			writer.write(String.format(META_STOPPED, stopTime, seconds));
-			writer.write(NEWLINE);
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            // Write some timing information
+            writer.write(String.format(META_STARTED, startTime));
+            writer.write(String.format(META_STOPPED, stopTime, seconds));
+            writer.write(NEWLINE);
 
-			for (Map.Entry<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> pluginEntry : trackerMap.entrySet()) {
-				writer.write(String.format(PLUGIN_HEADER, pluginEntry.getKey()));
+            for (Map.Entry<String, ImmutableMap<TimingListenerType, PluginTimingTracker>> pluginEntry : trackerMap.entrySet()) {
+                writer.write(String.format(PLUGIN_HEADER, pluginEntry.getKey()));
 
-				for (Map.Entry<TimingListenerType, PluginTimingTracker> entry : pluginEntry.getValue().entrySet()) {
-					TimingListenerType type = entry.getKey();
-					PluginTimingTracker tracker = entry.getValue();
+                for (Map.Entry<TimingListenerType, PluginTimingTracker> entry : pluginEntry.getValue().entrySet()) {
+                    TimingListenerType type = entry.getKey();
+                    PluginTimingTracker tracker = entry.getValue();
 
-					// We only care if it has any observations at all
-					if (tracker.hasReceivedData()) {
-						writer.write(String.format(LISTENER_HEADER, type));
+                    // We only care if it has any observations at all
+                    if (tracker.hasReceivedData()) {
+                        writer.write(String.format(LISTENER_HEADER, type));
 
-						writer.write(SEPERATION_LINE);
-						saveStatistics(writer, tracker, type);
-						writer.write(SEPERATION_LINE);
-					}
-				}
-				// Next plugin
-				writer.write(NEWLINE);
-			}
-		}
-	}
+                        writer.write(SEPERATION_LINE);
+                        saveStatistics(writer, tracker, type);
+                        writer.write(SEPERATION_LINE);
+                    }
+                }
+                // Next plugin
+                writer.write(NEWLINE);
+            }
+        }
+    }
 
     private void saveStatistics(Writer destination, PluginTimingTracker tracker, TimingListenerType type) throws IOException {
         Map<PacketType, StatisticsStream> streams = tracker.getStatistics();

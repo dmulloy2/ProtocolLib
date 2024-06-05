@@ -501,20 +501,20 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
-    
+
     @Override
     public boolean hasInboundListener(PacketType packetType) {
-    	return this.inboundListeners.containsPacketType(packetType);
+        return this.inboundListeners.containsPacketType(packetType);
     }
-    
+
     @Override
     public boolean hasOutboundListener(PacketType packetType) {
-    	return this.outboundListeners.containsPacketType(packetType);
+        return this.outboundListeners.containsPacketType(packetType);
     }
-    
+
     @Override
     public boolean hasMainThreadListener(PacketType packetType) {
-    	return this.mainThreadPacketTypes.contains(packetType);
+        return this.mainThreadPacketTypes.contains(packetType);
     }
 
     @Override

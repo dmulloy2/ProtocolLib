@@ -322,9 +322,9 @@ public class AsyncListenerHandler {
         
         scheduleAsync(() -> delegateCopy.apply(listenerLoop));
     }
-    
+
     private void scheduleAsync(Runnable runnable) {
-    	filterManager.getScheduler().runTaskAsync(runnable);
+        filterManager.getScheduler().runTaskAsync(runnable);
     }
     
     /**
@@ -597,12 +597,12 @@ public class AsyncListenerHandler {
                 marker.setWorkerID(workerID);
                 
                 TimingTrackerManager.get(listener, packet.isServerPacket() ? TimingListenerType.ASYNC_OUTBOUND : TimingListenerType.ASYNC_INBOUND)
-                	.track(packet.getPacketType(), () -> {
-                        if (packet.isServerPacket())
-                            listener.onPacketSending(packet);
-                        else
-                            listener.onPacketReceiving(packet);
-                	});
+                        .track(packet.getPacketType(), () -> {
+                            if (packet.isServerPacket())
+                                listener.onPacketSending(packet);
+                            else
+                                listener.onPacketReceiving(packet);
+                        });
             }
             
         } catch (OutOfMemoryError e) {

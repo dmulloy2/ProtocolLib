@@ -411,10 +411,10 @@ public class AsyncFilterManager implements AsynchronousManager {
             if (!marker.hasExpired()) {
                 for (; marker.getListenerTraversal().hasNext(); ) {
                     AsyncListenerHandler handler = marker.getListenerTraversal().next();
-                    
+
                     if (!handler.isCancelled()) {
-                    	marker.incrementProcessingDelay();
-                    	handler.enqueuePacket(packet);
+                        marker.incrementProcessingDelay();
+                        handler.enqueuePacket(packet);
                         return;
                     }
                 }
@@ -466,12 +466,12 @@ public class AsyncFilterManager implements AsynchronousManager {
      * @param onMainThread whether or not this method was run by the main thread.
      */
     public void signalFreeProcessingSlot(PacketEvent packet, boolean onMainThread) {
-    	PacketProcessingQueue queue = getProcessingQueue(packet);
-    	// mark slot as done
-    	queue.signalProcessingDone();
-    	
-    	// start processing next slot if possible
-    	queue.signalBeginProcessing(onMainThread);
+        PacketProcessingQueue queue = getProcessingQueue(packet);
+        // mark slot as done
+        queue.signalProcessingDone();
+
+        // start processing next slot if possible
+        queue.signalBeginProcessing(onMainThread);
     }
     
     /**

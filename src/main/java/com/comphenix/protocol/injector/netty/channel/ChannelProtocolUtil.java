@@ -34,7 +34,7 @@ final class ChannelProtocolUtil {
 
         BiFunction<Channel, PacketType.Sender, Object> baseResolver = null;
         if (attributeKeys.isEmpty()) {
-        	// since 1.20.5 the protocol is stored as final field in de-/encoder
+            // since 1.20.5 the protocol is stored as final field in de-/encoder
             baseResolver = new Post1_20_5WrappedResolver();
         } else if (attributeKeys.size() == 1) {
             // if there is only one attribute key we can assume it's the correct one (1.8 - 1.20.1)
@@ -151,8 +151,8 @@ final class ChannelProtocolUtil {
         @Override
         public Object apply(Channel channel, PacketType.Sender sender) {
             Class<? extends ChannelHandler> handlerClass = this.getHandlerClass(sender)
-            		.asSubclass(ChannelHandler.class);
-            
+                    .asSubclass(ChannelHandler.class);
+
             ChannelHandlerContext handlerContext = channel.pipeline().context(handlerClass);
             if (handlerContext == null) {
                 return null;
@@ -165,15 +165,15 @@ final class ChannelProtocolUtil {
         private Function<Object, Object> getProtocolAccessor(Class<?> codecHandler, PacketType.Sender sender) {
             switch (sender) {
                 case SERVER:
-                	if (this.serverProtocolAccessor == null) {
-                		this.serverProtocolAccessor = getProtocolAccessor(codecHandler);
-                	}
-                	return this.serverProtocolAccessor;
+                    if (this.serverProtocolAccessor == null) {
+                        this.serverProtocolAccessor = getProtocolAccessor(codecHandler);
+                    }
+                    return this.serverProtocolAccessor;
                 case CLIENT:
-                	if (this.clientProtocolAccessor == null) {
-                		this.clientProtocolAccessor = getProtocolAccessor(codecHandler);
-                	}
-                	return this.clientProtocolAccessor;
+                    if (this.clientProtocolAccessor == null) {
+                        this.clientProtocolAccessor = getProtocolAccessor(codecHandler);
+                    }
+                    return this.clientProtocolAccessor;
                 default:
                     throw new IllegalArgumentException("Illegal packet sender " + sender.name());
             }
@@ -191,19 +191,19 @@ final class ChannelProtocolUtil {
         }
 
         private Function<Object, Object> getProtocolAccessor(Class<?> codecHandler) {
-    		Class<?> protocolInfoClass = MinecraftReflection.getProtocolInfoClass();
+            Class<?> protocolInfoClass = MinecraftReflection.getProtocolInfoClass();
 
-    		MethodAccessor protocolAccessor = Accessors.getMethodAccessor(FuzzyReflection
-    				.fromClass(protocolInfoClass)
-    				.getMethodByReturnTypeAndParameters("id", MinecraftReflection.getEnumProtocolClass(), new Class[0]));
+            MethodAccessor protocolAccessor = Accessors.getMethodAccessor(FuzzyReflection
+                    .fromClass(protocolInfoClass).getMethodByReturnTypeAndParameters("id",
+                            MinecraftReflection.getEnumProtocolClass(), new Class[0]));
 
-    		FieldAccessor protocolInfoAccessor = Accessors.getFieldAccessor(codecHandler, protocolInfoClass, true);
-    		
-    		// get ProtocolInfo from handler and get EnumProtocol of ProtocolInfo
-    		return (handler) -> {
-    			Object protocolInfo = protocolInfoAccessor.get(handler);
-    			return protocolAccessor.invoke(protocolInfo);
-    		};
+            FieldAccessor protocolInfoAccessor = Accessors.getFieldAccessor(codecHandler, protocolInfoClass, true);
+
+            // get ProtocolInfo from handler and get EnumProtocol of ProtocolInfo
+            return (handler) -> {
+                Object protocolInfo = protocolInfoAccessor.get(handler);
+                return protocolAccessor.invoke(protocolInfo);
+            };
         }
     }
 }

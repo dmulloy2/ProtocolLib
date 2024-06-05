@@ -27,35 +27,35 @@ import com.comphenix.protocol.events.PacketEvent;
  */
 public interface ListenerInvoker {
 
-	boolean hasInboundListener(PacketType packetType);
+    boolean hasInboundListener(PacketType packetType);
 
-	boolean hasOutboundListener(PacketType packetType);
+    boolean hasOutboundListener(PacketType packetType);
 
-	boolean hasMainThreadListener(PacketType packetType);
+    boolean hasMainThreadListener(PacketType packetType);
 
-	/**
-	 * Invokes the given packet event for every registered listener.
-	 *
-	 * @param event - the packet event to invoke.
-	 */
-	void invokePacketReceiving(PacketEvent event);
+    /**
+     * Invokes the given packet event for every registered listener.
+     *
+     * @param event - the packet event to invoke.
+     */
+    void invokePacketReceiving(PacketEvent event);
 
-	/**
-	 * Invokes the given packet event for every registered listener.
-	 *
-	 * @param event - the packet event to invoke.
-	 */
-	void invokePacketSending(PacketEvent event);
+    /**
+     * Invokes the given packet event for every registered listener.
+     *
+     * @param event - the packet event to invoke.
+     */
+    void invokePacketSending(PacketEvent event);
 
-	/**
-	 * Retrieve the associated type of a packet.
-	 *
-	 * @param packet - the packet.
-	 * @return The packet type.
-	 * @deprecated use
-	 *             {@link com.comphenix.protocol.injector.packet.PacketRegistry#getPacketType(PacketType.Protocol, Class)}
-	 *             instead.
-	 */
-	@Deprecated
-	PacketType getPacketType(Object packet);
+    /**
+     * Retrieve the associated type of a packet.
+     *
+     * @param packet - the packet.
+     * @return The packet type.
+     * @deprecated use
+     *             {@link com.comphenix.protocol.injector.packet.PacketRegistry#getPacketType(PacketType.Protocol, Class)}
+     *             instead.
+     */
+    @Deprecated
+    PacketType getPacketType(Object packet);
 }

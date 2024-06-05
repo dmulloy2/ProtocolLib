@@ -175,11 +175,11 @@ class CommandProtocol extends CommandBase {
             }
         }
     }
-    
+
     private void saveTimings(TimingReport report) {
         try {
-        	Path path = plugin.getDataFolder().toPath().resolve("timings_" + System.currentTimeMillis() + ".txt");
-        	report.saveTo(path);
+            Path path = plugin.getDataFolder().toPath().resolve("timings_" + System.currentTimeMillis() + ".txt");
+            report.saveTo(path);
         } catch (IOException e) {
             reporter.reportMinimal(plugin, "saveTimings()", e);
         }

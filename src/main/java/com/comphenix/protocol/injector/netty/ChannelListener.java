@@ -37,9 +37,9 @@ public interface ChannelListener {
      */
     PacketEvent onPacketReceiving(Injector injector, PacketContainer packet, NetworkMarker marker);
 
-	boolean hasInboundListener(PacketType packetType);
+    boolean hasInboundListener(PacketType packetType);
 
-	boolean hasOutboundListener(PacketType packetType);
+    boolean hasOutboundListener(PacketType packetType);
 
     boolean hasMainThreadListener(PacketType type);
 
