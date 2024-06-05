@@ -1220,10 +1220,11 @@ public final class MinecraftReflection {
 
     public static MethodAccessor getNonNullListCreateAccessor() {
         try {
-            Class<?> nonNullListType = MinecraftReflection.getNonNullListClass();
+            Class<?> nonNullListType = getNonNullListClass();
             Method method = FuzzyReflection.fromClass(nonNullListType).getMethod(FuzzyMethodContract.newBuilder()
                     .returnTypeExact(nonNullListType)
                     .requireModifier(Modifier.STATIC)
+                    .parameterCount(0)
                     .build());
             return Accessors.getMethodAccessor(method);
         } catch (Exception ex) {
@@ -1470,6 +1471,14 @@ public final class MinecraftReflection {
                 .orElseThrow(() -> new RuntimeException("Failed to find class: " + className));
     }
 
+    public static Optional<Class<?>> getOptionalLibraryClass(String className) {
+        if (libraryPackage == null) {
+            libraryPackage = new CachedPackage("", getClassSource());
+        }
+
+        return libraryPackage.getPackageClass(className);
+    }
+
     /**
      * Set the class object for the specific library class.
      *
@@ -1651,9 +1660,13 @@ public final class MinecraftReflection {
         try {
             return getMinecraftLibraryClass(classname);
         } catch (RuntimeException ex) {
-            Class<?> clazz = getMinecraftLibraryClass("org.bukkit.craftbukkit.libs." + classname);
-            setMinecraftLibraryClass(classname, clazz);
-            return clazz;
+            try {
+                Class<?> clazz = getMinecraftLibraryClass("org.bukkit.craftbukkit.libs." + classname);
+                setMinecraftLibraryClass(classname, clazz);
+                return clazz;
+            } catch (Exception ignored) {
+                throw ex;
+            }
         }
     }
 

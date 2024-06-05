@@ -40,7 +40,7 @@ public class PrimitiveGenerator implements InstanceProvider {
     /**
      * Shared instance of this generator.
      */
-    public static PrimitiveGenerator INSTANCE = new PrimitiveGenerator();
+    public static final PrimitiveGenerator INSTANCE = new PrimitiveGenerator();
 
     // Our default string value
     private final String stringDefault;

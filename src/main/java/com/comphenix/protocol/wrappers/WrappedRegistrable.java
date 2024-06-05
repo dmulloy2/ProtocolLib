@@ -149,20 +149,9 @@ public final class WrappedRegistrable extends AbstractWrapper implements Clonabl
         @NotNull
         private final WrappedRegistry registry;
 
-        @NotNull
-        private final FieldAccessor fieldAccessor;
-
         private Factory(@NotNull final Class<?> registrableClass) {
             this.registrableClass = registrableClass;
             this.registry = WrappedRegistry.getRegistry(registrableClass);
-            this.fieldAccessor = Accessors.getFieldAccessor(
-                FuzzyReflection.fromClass(registrableClass, true)
-                    .getField(
-                        FuzzyFieldContract.newBuilder()
-                            .typeExact(registrableClass)
-                            .build()
-                    )
-            );
         }
 
         @NotNull
@@ -174,7 +163,7 @@ public final class WrappedRegistrable extends AbstractWrapper implements Clonabl
 
         @NotNull
         public MinecraftKey getKey(@NotNull final Object handle) {
-            return registry.getKey(fieldAccessor.get(handle));
+            return registry.getKey(handle);
         }
 
         @NotNull

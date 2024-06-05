@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Utility class for converters
  * @author dmulloy2
@@ -287,6 +289,8 @@ public class Converters {
 
             @Override
             public T getSpecific(Object generic) {
+                Preconditions.checkNotNull(generic, "generic cannot be null");
+
                 if (holderGetValue == null) {
                     Class<?> holderClass = MinecraftReflection.getHolderClass();
                     FuzzyReflection fuzzy = FuzzyReflection.fromClass(holderClass, false);
@@ -296,6 +300,10 @@ public class Converters {
                             .banModifier(Modifier.STATIC)
                             .returnTypeExact(Object.class)
                             .build()));
+                }
+
+                if (holderGetValue == null) {
+                    throw new IllegalStateException("Unable to find Holder#value method.");
                 }
 
                 Object value = holderGetValue.invoke(generic);

@@ -358,7 +358,8 @@ public abstract class EnumWrappers {
         FEET,
         LEGS,
         CHEST,
-        HEAD
+        HEAD,
+        BODY
     }
 
     public enum Hand {
@@ -500,7 +501,7 @@ public abstract class EnumWrappers {
         CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
 
         if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
-            CHAT_VISIBILITY_CLASS = MinecraftReflection.getMinecraftClass("world.entity.player.EnumChatVisibility");
+            CHAT_VISIBILITY_CLASS = MinecraftReflection.getMinecraftClass("world.entity.player.EnumChatVisibility", "world.entity.player.ChatVisibility", "world.entity.player.ChatVisiblity"); // Some versions have a typo
         } else {
             CHAT_VISIBILITY_CLASS = getEnum(PacketType.Play.Client.SETTINGS.getPacketClass(), 0);
         }

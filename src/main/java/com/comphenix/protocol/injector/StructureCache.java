@@ -32,6 +32,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.reflect.instances.PacketCreator;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -68,6 +69,11 @@ public class StructureCache {
 
     public static Object newPacket(Class<?> packetClass) {
         Supplier<Object> packetConstructor = PACKET_INSTANCE_CREATORS.computeIfAbsent(packetClass, packetClassKey -> {
+            PacketCreator creator = PacketCreator.forPacket(packetClassKey);
+            if (creator.get() != null) {
+                return creator;
+            }
+
             WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(packetClassKey);
 
             // use the new stream codec for versions above 1.20.5 if possible
@@ -79,7 +85,7 @@ public class StructureCache {
 
                     // method is working
                     return () -> streamCodec.decode(serializer);
-                } catch (Exception exception) {
+                } catch (Exception ignored) {
                     try {
                         // try with the json accessor
                         Object serializer = TRICKED_DATA_SERIALIZER_JSON.get();
@@ -87,7 +93,7 @@ public class StructureCache {
 
                         // method is working
                         return () -> streamCodec.decode(serializer);
-                    } catch (Exception ignored) {
+                    } catch (Exception ignored1) {
                         // shrug, fall back to default behaviour
                     }
                 }
@@ -108,7 +114,7 @@ public class StructureCache {
 
                             // method is working
                             return () -> serializerAccessor.invoke(serializer);
-                        } catch (Exception exception) {
+                        } catch (Exception ignored) {
                             try {
                                 // try with the json accessor
                                 Object serializer = TRICKED_DATA_SERIALIZER_JSON.get();
@@ -116,7 +122,7 @@ public class StructureCache {
 
                                 // method is working
                                 return () -> serializerAccessor.invoke(serializer);
-                            } catch (Exception ignored) {
+                            } catch (Exception ignored1) {
                                 // shrug, fall back to default behaviour
                             }
                         }

@@ -37,21 +37,19 @@ import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -76,8 +74,6 @@ public class ProtocolLib extends JavaPlugin {
 
     public static final ReportType REPORT_CANNOT_PARSE_MINECRAFT_VERSION = new ReportType(
             "Unable to retrieve current Minecraft version. Assuming %s");
-    public static final ReportType REPORT_CANNOT_DETECT_CONFLICTING_PLUGINS = new ReportType(
-            "Unable to detect conflicting plugin versions.");
     public static final ReportType REPORT_CANNOT_REGISTER_COMMAND = new ReportType("Cannot register command %s: %s");
 
     public static final ReportType REPORT_CANNOT_CREATE_TIMEOUT_TASK = new ReportType(
@@ -166,7 +162,7 @@ public class ProtocolLib extends JavaPlugin {
                     : new DefaultScheduler(this);
 
             // Check for other versions
-            this.checkConflictingVersions();
+            scanForOtherProtocolLibJars();
 
             // Handle unexpected Minecraft versions
             MinecraftVersion version = this.verifyMinecraftVersion();
@@ -309,6 +305,14 @@ public class ProtocolLib extends JavaPlugin {
         logger.addHandler(this.redirectHandler);
     }
 
+    private void highlyVisibleError(String... lines) {
+        Logger directLogging = Logger.getLogger("Minecraft");
+
+        for (String line : ChatExtensions.toFlowerBox(lines, "*", 3, 1)) {
+            directLogging.severe(line);
+        }
+    }
+
     @Override
     public void onEnable() {
         try {
@@ -317,22 +321,13 @@ public class ProtocolLib extends JavaPlugin {
 
             // Silly plugin reloaders!
             if (protocolManager == null) {
-                Logger directLogging = Logger.getLogger("Minecraft");
-                String[] message = new String[]{
-                        " ProtocolLib does not support plugin reloaders! ", " Please use the built-in reload command! "
-                };
-
-                // Print as severe
-                for (String line : ChatExtensions.toFlowerBox(message, "*", 3, 1)) {
-                    directLogging.severe(line);
-                }
-
-                this.disablePlugin();
+                highlyVisibleError(
+                    " ProtocolLib does not support plugin reloaders! ",
+                    " Please use the built-in reload command! "
+                );
+                disablePlugin();
                 return;
             }
-
-            // Check for incompatible plugins
-            this.checkForIncompatibility(manager);
 
             // Set up command handlers
             this.registerCommand(CommandProtocol.NAME, this.commandProtocol);
@@ -369,24 +364,6 @@ public class ProtocolLib extends JavaPlugin {
         }
     }
 
-    private void checkForIncompatibility(PluginManager manager) {
-        for (String plugin : ProtocolLibrary.INCOMPATIBLE) {
-            if (manager.getPlugin(plugin) != null) {
-                // Special case for TagAPI and iTag
-                if (plugin.equals("TagAPI")) {
-                    Plugin iTag = manager.getPlugin("iTag");
-                    if (iTag == null || iTag.getDescription().getVersion().startsWith("1.0")) {
-                        logger.severe("Detected incompatible plugin: TagAPI");
-                    }
-                } else {
-                    logger.severe("Detected incompatible plugin: " + plugin);
-                }
-            }
-        }
-    }
-
-    // Plugin authors: Notify me to remove these
-
     // Used to check Minecraft version
     private MinecraftVersion verifyMinecraftVersion() {
         MinecraftVersion minimum = new MinecraftVersion(ProtocolLibrary.MINIMUM_MINECRAFT_VERSION);
@@ -416,50 +393,47 @@ public class ProtocolLib extends JavaPlugin {
         }
     }
 
-    private void checkConflictingVersions() {
-        Pattern ourPlugin = Pattern.compile("ProtocolLib-(.*)\\.jar");
-        MinecraftVersion currentVersion = new MinecraftVersion(this.getDescription().getVersion());
-        MinecraftVersion newestVersion = null;
-
-        // Skip the file that contains this current instance however
-        File loadedFile = this.getFile();
-
+    private void scanForOtherProtocolLibJars() {
         try {
-            // Scan the plugin folder for newer versions of ProtocolLib
-            // The plugin folder isn't always plugins/
+            File loadedFile = this.getFile();
             File pluginFolder = this.getDataFolder().getParentFile();
 
             File[] candidates = pluginFolder.listFiles();
-            if (candidates != null) {
-                for (File candidate : candidates) {
-                    if (candidate.isFile() && !candidate.equals(loadedFile)) {
-                        Matcher match = ourPlugin.matcher(candidate.getName());
-                        if (match.matches()) {
-                            MinecraftVersion version = new MinecraftVersion(match.group(1));
-
-                            if (candidate.length() == 0) {
-                                // Delete and inform the user
-                                logger.info((candidate.delete() ? "Deleted " : "Could not delete ") + candidate);
-                            } else if (newestVersion == null || newestVersion.compareTo(version) < 0) {
-                                newestVersion = version;
-                            }
-                        }
-                    }
-                }
+            if (candidates == null) {
+                return;
             }
-        } catch (Exception e) {
-            // TODO This shows [ProtocolLib] and [ProtocolLibrary] in the message
-            reporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DETECT_CONFLICTING_PLUGINS).error(e));
-        }
 
-        // See if the newest version is actually higher
-        if (newestVersion != null && currentVersion.compareTo(newestVersion) < 0) {
-            // We don't need to set internal classes or instances to NULL - that would break the other loaded plugin
-            this.skipDisable = true;
+            String ourName = loadedFile.getName();
+            List<String> others = new ArrayList<>();
 
-            throw new IllegalStateException(String.format(
-                    "Detected a newer version of ProtocolLib (%s) in plugin folder than the current (%s). Disabling.",
-                    newestVersion.getVersion(), currentVersion.getVersion()));
+            for (File candidate : candidates) {
+                if (!candidate.isFile()) {
+                    continue;
+                }
+
+                String jarName = candidate.getName();
+                if (jarName.equals(ourName)) {
+                    continue;
+                }
+
+                String jarNameLower = candidate.getName().toLowerCase();
+                if (!jarNameLower.startsWith("protocollib") || !jarNameLower.endsWith(".jar")) {
+                    continue;
+                }
+
+                others.add(jarName);
+            }
+
+            if (!others.isEmpty()) {
+                highlyVisibleError(
+                    " Detected multiple ProtocolLib JAR files in the plugin directory! ",
+                    " You should remove all but one of them or there will likely be undesired behavior. ",
+                    " This JAR: " + loadedFile.getName(),
+                    " Other detected JARs: " + String.join(",", others)
+                );
+            }
+        } catch (Exception ex) {
+            ProtocolLogger.debug("Failed to scan plugins directory for ProtocolLib jars", ex);
         }
     }
 

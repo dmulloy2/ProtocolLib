@@ -16,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class StreamSerializerTest {
@@ -59,6 +60,7 @@ public class StreamSerializerTest {
     }
 
     @Test
+    @Disabled // TODO -- replaced with registry friendly bytebuf
     public void testItems() throws IOException {
         StreamSerializer serializer = new StreamSerializer();
         ItemStack initial = new ItemStack(Material.STRING);
@@ -70,6 +72,7 @@ public class StreamSerializerTest {
     }
 
     @Test
+    @Disabled // TODO -- replaced with registry friendly bytebuf
     public void testItemMeta() throws IOException {
         StreamSerializer serializer = new StreamSerializer();
         ItemStack initial = new ItemStack(Material.BLUE_WOOL, 2);

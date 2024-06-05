@@ -44,8 +44,9 @@ public class EnumWrappersTest {
                     assertNotNull(unwrappedValue);
 
                     assertEquals(nativeConstant, unwrappedValue);
-                } catch (Exception exception) {
-                    fail(exception);
+                } catch (Exception ex) {
+                    fail(ex);
+                    // ex.printStackTrace();
                 }
             }
         }
