@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.reflect.instances;
 
+import java.util.Collection;
 import javax.annotation.Nullable;
 
 /**
@@ -24,6 +25,7 @@ import javax.annotation.Nullable;
  * 
  * @author Kristian
  */
+@FunctionalInterface
 public interface InstanceProvider {
     /**
      * Create an instance given a type, if possible.
@@ -31,5 +33,5 @@ public interface InstanceProvider {
      * @return The instance, or NULL if the type cannot be created.
      * @throws NotConstructableException Thrown to indicate that this type cannot or should never be constructed.
      */
-    public abstract Object create(@Nullable Class<?> type);
+    Object create(@Nullable Class<?> type);
 }

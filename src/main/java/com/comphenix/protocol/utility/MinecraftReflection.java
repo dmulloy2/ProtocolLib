@@ -1220,10 +1220,11 @@ public final class MinecraftReflection {
 
     public static MethodAccessor getNonNullListCreateAccessor() {
         try {
-            Class<?> nonNullListType = MinecraftReflection.getNonNullListClass();
+            Class<?> nonNullListType = getNonNullListClass();
             Method method = FuzzyReflection.fromClass(nonNullListType).getMethod(FuzzyMethodContract.newBuilder()
                     .returnTypeExact(nonNullListType)
                     .requireModifier(Modifier.STATIC)
+                    .parameterCount(0)
                     .build());
             return Accessors.getMethodAccessor(method);
         } catch (Exception ex) {

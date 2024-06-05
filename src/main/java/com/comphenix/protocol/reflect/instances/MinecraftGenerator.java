@@ -53,12 +53,12 @@ public class MinecraftGenerator {
                     }
                 }
                 return DEFAULT_ENTITY_TYPES;
-            } else if (type.isAssignableFrom(Map.class)) {
+            } else if (Map.class.isAssignableFrom(type)) {
                 ConstructorAccessor ctor = FAST_MAP_CONSTRUCTORS.computeIfAbsent(type, __ -> {
                     try {
-                        String name = type.getCanonicalName();
-                        if (name != null && name.contains("it.unimi.fastutils")) {
-                            Class<?> clz = Class.forName(name.substring(name.length() - 3) + "OpenHashMap");
+                        String name = type.getName();
+                        if (name.contains("it.unimi.dsi.fastutil")) {
+                            Class<?> clz = Class.forName(name.replace("Map", "OpenHashMap"));
                             return Accessors.getConstructorAccessorOrNull(clz);
                         }
                     } catch (Exception ignored) {

@@ -769,6 +769,10 @@ public abstract class AbstractStructure {
      * @return A modifier for MobEffectList fields.
      */
     public StructureModifier<PotionEffectType> getEffectTypes() {
+        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+            return getHolders(MinecraftReflection.getMobEffectListClass(), BukkitConverters.getEffectTypeConverter());
+        }
+
         // Convert to and from Bukkit
         return structureModifier.withType(
                 MinecraftReflection.getMobEffectListClass(),
@@ -793,11 +797,20 @@ public abstract class AbstractStructure {
      * @return A modifier for Holder fields
      * @param <T> Bukkit type
      */
-    public <T> StructureModifier<T> getHolders(Class<?> genericType,
-                                               EquivalentConverter<T> converter) {
+    public <T> StructureModifier<T> getHolders(Class<?> genericType, EquivalentConverter<T> converter) {
+        Preconditions.checkNotNull(genericType, "genericType cannot be null");
+        Preconditions.checkNotNull(converter, "converter cannot be null");
+
+        Class<?> holderClass = MinecraftReflection.getHolderClass();
+
+        WrappedRegistry registry = WrappedRegistry.getRegistry(genericType);
+        if (registry == null) {
+            throw new IllegalArgumentException("No registry found for " + genericType);
+        }
+
         return structureModifier.withParamType(
-                MinecraftReflection.getHolderClass(),
-                Converters.holder(converter, WrappedRegistry.getRegistry(genericType)),
+                holderClass,
+                Converters.ignoreNull(Converters.holder(converter, registry)),
                 genericType
         );
     }

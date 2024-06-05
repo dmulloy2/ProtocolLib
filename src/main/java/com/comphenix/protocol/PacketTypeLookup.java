@@ -165,7 +165,8 @@ class PacketTypeLookup {
     }
 
     public PacketType getFromCurrent(Protocol protocol, Sender sender, String name) {
-        return classLookup.getMap(protocol, sender).get(name);
+        Map<String, PacketType> map = classLookup.getMap(protocol, sender);
+        return map.get(name);
     }
 
     public ClassLookup getClassLookup() {
