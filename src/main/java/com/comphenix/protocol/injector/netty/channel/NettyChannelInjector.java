@@ -320,6 +320,8 @@ public class NettyChannelInjector implements Injector {
                 Object playerConnection = this.getPlayerConnection();
                 if (playerConnection != null) {
                     MinecraftMethods.getSendPacketMethod().invoke(playerConnection, packet);
+                } else {
+                    MinecraftMethods.getNetworkManagerHandleMethod().invoke(this.networkManager, packet);
                 }
             }
         } catch (Exception exception) {

@@ -2,12 +2,10 @@ package com.comphenix.protocol.injector.collection;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 
 import javax.annotation.Nullable;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.concurrent.PacketTypeListenerSet;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.events.ListenerPriority;
