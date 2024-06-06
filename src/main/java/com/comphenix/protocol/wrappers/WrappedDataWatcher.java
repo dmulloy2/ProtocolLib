@@ -18,8 +18,11 @@ package com.comphenix.protocol.wrappers;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.comphenix.protocol.injector.BukkitUnwrapper;
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -30,6 +33,7 @@ import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableBiMap;
@@ -45,6 +49,11 @@ import org.bukkit.inventory.ItemStack;
  */
 public class WrappedDataWatcher extends AbstractWrapper implements Iterable<WrappedWatchableObject>, ClonableWrapper {
     private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherClass();
+    private static final boolean ARRAY_BACKED = MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove();
+
+    private static Class<?> SYNCHED_DATA_HOLDER_CLASS = ARRAY_BACKED
+        ? MinecraftReflection.getMinecraftClass("network.syncher.SyncedDataHolder")
+        : MinecraftReflection.getEntityClass();
 
     private static MethodAccessor GETTER = null;
     private static MethodAccessor SETTER = null;
@@ -53,6 +62,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
     private static FieldAccessor ENTITY_DATA_FIELD = null;
     private static FieldAccessor ENTITY_FIELD = null;
     private static FieldAccessor MAP_FIELD = null;
+    private static FieldAccessor ARRAY_FIELD = null;
 
     private static ConstructorAccessor constructor = null;
     private static ConstructorAccessor eggConstructor = null;
@@ -78,8 +88,9 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * resulting DataWatcher will not have any keys or values and new ones will
      * have to be added using watcher objects.
      */
+    @Deprecated
     public WrappedDataWatcher() {
-        this(newHandle(fakeEntity()));
+        this(new ArrayList<>());
     }
 
     /**
@@ -89,8 +100,9 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * 
      * @param entity The entity
      */
+    @Deprecated
     public WrappedDataWatcher(Entity entity) {
-        this(newHandle(BukkitUnwrapper.getInstance().unwrapItem(entity)));
+        this(getHandleFromEntity(entity));
     }
 
     /**
@@ -99,26 +111,51 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * 
      * @param objects The list of objects
      */
+    @Deprecated
     public WrappedDataWatcher(List<WrappedWatchableObject> objects) {
-        this();
-
-        if (MinecraftReflection.watcherObjectExists()) {
-            for (WrappedWatchableObject object : objects) {
-                setObject(object.getWatcherObject(), object);
-            }
-        } else {
-            for (WrappedWatchableObject object : objects) {
-                setObject(object.getIndex(), object);
-            }
-        }
+        this(newHandle(fakeEntity(), objects));
     }
 
-    private static Object newHandle(Object entity) {
-        if (constructor == null) {
-            constructor = Accessors.getConstructorAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass());
+    private static final EquivalentConverter<List<WrappedWatchableObject>> ITEMS_CONVERTER = new EquivalentConverter<List<WrappedWatchableObject>>() {
+        @Override
+        public Object getGeneric(List<WrappedWatchableObject> specific) {
+            Object[] generic = (Object[]) Array.newInstance(MinecraftReflection.getDataWatcherItemClass(), specific.size());
+            for (int i = 0; i < specific.size(); i++) {
+                generic[i] = specific.get(i).getHandle();
+            }
+            return generic;
         }
 
-        return constructor.invoke(entity);
+        @Override
+        public List<WrappedWatchableObject> getSpecific(Object generic) {
+            Object[] genericArray = (Object[]) generic;
+            List<WrappedWatchableObject> specific = new ArrayList<>(genericArray.length);
+            for (Object genericObj : genericArray) {
+                specific.add(new WrappedWatchableObject(genericObj));
+            }
+            return specific;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Class<List<WrappedWatchableObject>> getSpecificType() {
+            Class<?> dummy = List.class;
+            return (Class<List<WrappedWatchableObject>>) dummy;
+        }
+    };
+
+    public static WrappedDataWatcher create(Entity entity, List<WrappedWatchableObject> objects) {
+        return new WrappedDataWatcher(newHandle(entity, objects));
+    }
+
+    private static Object newHandle(Object entity, List<WrappedWatchableObject> objects) {
+        if (constructor == null) {
+            constructor = Accessors.getConstructorAccessor(HANDLE_TYPE, SYNCHED_DATA_HOLDER_CLASS,
+                MinecraftReflection.getArrayClass(MinecraftReflection.getDataWatcherItemClass()));
+        }
+
+        Object[] genericItems = (Object[]) ITEMS_CONVERTER.getGeneric(objects);
+        return constructor.invoke(entity, genericItems);
     }
 
     private static Object fakeEntity() {
@@ -142,6 +179,7 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
     // ---- Collection Methods
 
     @SuppressWarnings("unchecked")
+    @Deprecated
     private Map<Integer, Object> getMap() {
         if (MAP_FIELD == null) {
             try {
@@ -152,19 +190,49 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
                         .typeDerivedOf(Map.class)
                         .build()));
             } catch (IllegalArgumentException ex) {
-                throw new FieldAccessException("Failed to find watchable object map");
+                throw new FieldAccessException("Failed to find watchable object map", ex);
             }
         }
 
         return (Map<Integer, Object>) MAP_FIELD.get(handle);
     }
 
+    private Object[] getBackingArray() {
+        if (ARRAY_FIELD == null) {
+            try {
+                FuzzyReflection fuzzy = FuzzyReflection.fromClass(handleType, true);
+                ARRAY_FIELD = Accessors.getFieldAccessor(fuzzy.getField(FuzzyFieldContract
+                        .newBuilder()
+                        .banModifier(Modifier.STATIC)
+                        .typeDerivedOf(Object[].class)
+                        .build()));
+            } catch (IllegalArgumentException ex) {
+                throw new FieldAccessException("Failed to find watchable object array", ex);
+            }
+        }
+
+        Object[] backing = (Object[]) ARRAY_FIELD.get(handle);
+        return backing;
+    }
+
     /**
      * Gets the contents of this DataWatcher as a map.
      * @return The contents
      */
+    @Deprecated
     public Map<Integer, WrappedWatchableObject> asMap() {
-        return new ConvertedMap<Integer, Object, WrappedWatchableObject>(getMap()) {
+        Map<Integer, Object> backingMap;
+        if (ARRAY_BACKED) {
+            Object[] backingArray = getBackingArray();
+            backingMap = new HashMap<>(backingArray.length);
+            for (int i = 0; i < backingArray.length; i++) {
+                backingMap.put(i, backingArray[i]);
+            }
+        } else {
+            backingMap = getMap();
+        }
+
+        return new ConvertedMap<Integer, Object, WrappedWatchableObject>(backingMap) {
             @Override
             protected WrappedWatchableObject toOuter(Object inner) {
                 return inner != null ? new WrappedWatchableObject(inner) : null;
@@ -181,7 +249,12 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * Gets a set containing the registered indexes.
      * @return The set
      */
+    @Deprecated
     public Set<Integer> getIndexes() {
+        if (ARRAY_BACKED) {
+            return IntStream.range(0, size()).boxed().collect(Collectors.toSet());
+        }
+
         return getMap().keySet();
     }
 
@@ -189,7 +262,12 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * Gets a list of the contents of this DataWatcher.
      * @return The contents
      */
+    @SuppressWarnings("unchecked")
     public List<WrappedWatchableObject> getWatchableObjects() {
+        if (ARRAY_BACKED) {
+            return (List<WrappedWatchableObject>)ITEMS_CONVERTER.getSpecific(getBackingArray());
+        }
+
         return new ArrayList<>(asMap().values());
     }
 
@@ -203,6 +281,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @return The size
      */
     public int size() {
+        if (ARRAY_BACKED) {
+            return getBackingArray().length;
+        }
+
         return getMap().size();
     }
 
@@ -213,7 +295,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @return The watchable object, or null if none exists
      */
     public WrappedWatchableObject getWatchableObject(int index) {
-        Object handle = getMap().get(index);
+        Object handle = ARRAY_BACKED
+            ? getBackingArray()[index]
+            : getMap().get(index);
+
         if (handle != null) {
             return new WrappedWatchableObject(handle);
         } else {
@@ -247,6 +332,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @return True if it does, false if not
      */
     public boolean hasIndex(int index) {
+        if (ARRAY_BACKED) {
+            return index < size();
+        }
+
         return getMap().containsKey(index);
     }
 
@@ -254,14 +343,16 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * Returns a set containing all the registered indexes
      * @return The set
      */
+    @Deprecated
     public Set<Integer> indexSet() {
-        return getMap().keySet();
+        return getIndexes();
     }
 
     /**
      * Clears the contents of this DataWatcher. The watcher will be empty after
      * this operation is called.
      */
+    @Deprecated
     public void clear() {
         getMap().clear();
     }
@@ -523,6 +614,10 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @return A cloned data watcher.
      */
     public WrappedDataWatcher deepClone() {
+        if (ARRAY_BACKED) {
+            return new WrappedDataWatcher(newHandle(getEntityHandle(), getWatchableObjects()));
+        }
+
         WrappedDataWatcher clone = new WrappedDataWatcher(getEntity());
 
         if (MinecraftReflection.watcherObjectExists()) {
@@ -545,22 +640,23 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
      * @return Associated data watcher.
      */
     public static WrappedDataWatcher getEntityWatcher(Entity entity) {
+        Object handle = getHandleFromEntity(entity);
+        return handle != null ? new WrappedDataWatcher(handle) : null;
+    }
+
+    private static Object getHandleFromEntity(Entity entity) {
         if (ENTITY_DATA_FIELD == null) {
             ENTITY_DATA_FIELD = Accessors.getFieldAccessor(MinecraftReflection.getEntityClass(), MinecraftReflection.getDataWatcherClass(), true);
         }
 
         BukkitUnwrapper unwrapper = new BukkitUnwrapper();
         Object handle = ENTITY_DATA_FIELD.get(unwrapper.unwrapItem(entity));
-        return handle != null ? new WrappedDataWatcher(handle) : null;
+        return handle;
     }
 
-    /**
-     * Retrieve the entity associated with this data watcher.
-     * @return The entity, or NULL.
-     */
-    public Entity getEntity() {
+    private Object getEntityHandle() {
         if (ENTITY_FIELD == null) {
-            ENTITY_FIELD = Accessors.getFieldAccessor(HANDLE_TYPE, MinecraftReflection.getEntityClass(), true);
+            ENTITY_FIELD = Accessors.getFieldAccessor(HANDLE_TYPE, SYNCHED_DATA_HOLDER_CLASS, true);
         }
 
         Object entity = ENTITY_FIELD.get(handle);
@@ -568,6 +664,15 @@ public class WrappedDataWatcher extends AbstractWrapper implements Iterable<Wrap
             throw new NullPointerException(handle + "." + ENTITY_FIELD);
         }
 
+        return entity;
+    }
+
+    /**
+     * Retrieve the entity associated with this data watcher.
+     * @return The entity, or NULL.
+     */
+    public Entity getEntity() {
+        Object entity = getEntityHandle();
         return (Entity) MinecraftReflection.getBukkitEntity(entity);
     }
 

@@ -19,6 +19,7 @@ package com.comphenix.protocol.utility;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -115,6 +117,8 @@ public final class MinecraftReflection {
     private static MethodAccessor asCraftMirror = null;
     private static MethodAccessor isEmpty = null;
 
+    private static boolean isMojangMapped = false;
+
     private MinecraftReflection() {
         // No need to make this constructable.
     }
@@ -203,6 +207,9 @@ public final class MinecraftReflection {
                     setDynamicPackageMatcher(MINECRAFT_CLASS_NAME_REGEX);
                 }
             }
+
+            // for now, we're going to say that it's Mojang mapped if the nms world was renamed to ServerLevel
+            isMojangMapped = getNmsWorldClass().getName().contains("ServerLevel");
 
             return MINECRAFT_FULL_PACKAGE;
         } catch (NoSuchMethodException exception) {
@@ -1109,19 +1116,37 @@ public final class MinecraftReflection {
         }
     }
 
+    static Class<?> getOrInferMinecraftClass(String className, Supplier<Class<?>> supplier) {
+        return getOptionalNMS(className).orElseGet(() -> {
+            Class<?> clazz = supplier.get();
+            return setMinecraftClass(className, clazz);
+        });
+    }
+
     /**
      * Retrieves the entity use action class in 1.17.
      *
      * @return The EntityUseAction class
      */
     public static Class<?> getEnumEntityUseActionClass() {
-        Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
-        FuzzyReflection fuzzyReflection = FuzzyReflection.fromClass(packetClass, true);
-        try {
-            return fuzzyReflection.getFieldByType("^.*(EnumEntityUseAction)").getType();
-        } catch (IllegalArgumentException ignored) {
-            return fuzzyReflection.getFieldByType("^.*(Action)").getType();
-        }
+        return getOrInferMinecraftClass("ServerboundInteractPacket.Action", () -> {
+            Class<?> packetClass = PacketType.Play.Client.USE_ENTITY.getPacketClass();
+            FuzzyReflection fuzzyReflection = FuzzyReflection.fromClass(packetClass, true);
+
+            Field field = fuzzyReflection.getField(FuzzyFieldContract.newBuilder()
+                .banModifier(Modifier.STATIC)
+                .typeDerivedOf(Object.class)
+                .build());
+            if (field != null) {
+                return field.getType();
+            }
+
+            try {
+                return fuzzyReflection.getFieldByType("^.*(EnumEntityUseAction)").getType();
+            } catch (IllegalArgumentException ignored) {
+                return fuzzyReflection.getFieldByType("^.*(Action)").getType();
+            }
+        });
     }
 
     /**
@@ -1762,5 +1787,9 @@ public final class MinecraftReflection {
 
     public static Optional<Class<?>> getRegistryFriendlyByteBufClass() {
     	return getOptionalNMS("network.RegistryFriendlyByteBuf");
+    }
+
+    public static boolean isMojangMapped() {
+        return isMojangMapped;
     }
 }

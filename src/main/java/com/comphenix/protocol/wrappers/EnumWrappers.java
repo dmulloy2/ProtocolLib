@@ -7,12 +7,15 @@ import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import org.apache.commons.lang.Validate;
 import org.bukkit.GameMode;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -549,8 +552,14 @@ public abstract class EnumWrappers {
         // In 1.17 the hand and use action class is no longer a field in the packet
         if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
             HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand", "world.InteractionHand");
-            // class is named 'b' in the packet but class order differs in spigot and paper so we can only use the first method's return type (safest way)
-            ENTITY_USE_ACTION_CLASS = MinecraftReflection.getEnumEntityUseActionClass().getMethods()[0].getReturnType();
+
+            FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
+            Method getType = fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                .parameterCount(0)
+                .returnTypeMatches(FuzzyMatchers.except(Void.class))
+                .build());
+
+            ENTITY_USE_ACTION_CLASS = getType.getReturnType();
         } else {
             HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
             ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
