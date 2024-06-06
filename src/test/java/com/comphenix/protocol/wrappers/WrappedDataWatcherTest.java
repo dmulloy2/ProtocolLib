@@ -18,9 +18,11 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
+
 import net.minecraft.world.entity.projectile.EntityEgg;
 import org.bukkit.craftbukkit.v1_20_R4.entity.CraftEgg;
 import org.bukkit.craftbukkit.v1_20_R4.entity.CraftEntity;
+import org.bukkit.entity.Entity;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -33,46 +35,47 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author dmulloy2
  */
 public class WrappedDataWatcherTest {
+    private static Entity mockEntity;
 
     @BeforeAll
     public static void prepare() {
         BukkitInitialization.initializeAll();
+
+        EntityEgg nmsEgg = new EntityEgg(null, 0, 0, 0);
+        mockEntity = new CraftEgg(null, nmsEgg);
     }
 
     @Test
-    @Disabled // TODO -- need to fix data watchers
+    @Disabled // TODO -- SETTER is null
     public void testBytes() {
-        // Create a fake lightning strike and get its watcher
-        EntityEgg nmsEgg = new EntityEgg(null, 0, 0, 0);
-        CraftEntity craftEgg = new CraftEgg(null, nmsEgg);
-        WrappedDataWatcher wrapper = WrappedDataWatcher.getEntityWatcher(craftEgg);
+        WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(mockEntity);
 
-        WrappedWatchableObject watchable = wrapper.getWatchableObject(0);
+        WrappedWatchableObject watchable = watcher.getWatchableObject(0);
         WrappedDataWatcherObject object = watchable.getWatcherObject();
 
         // Make sure the serializers work
         assertEquals(object.getSerializer(), Registry.get(Byte.class));
 
         // Make sure we can set existing objects
-        wrapper.setObject(0, (byte) 21);
-        assertEquals(21, (byte) wrapper.getByte(0));
+        watcher.setObject(0, (byte) 21);
+        assertEquals(21, (byte) watcher.getByte(0));
     }
 
     @Test
-    @Disabled // TODO -- need to fix data watchers
+    @Disabled // TODO -- SETTER is null
     public void testStrings() {
-        WrappedDataWatcher wrapper = new WrappedDataWatcher();
+        WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(mockEntity);
 
         // Make sure we can create watcher objects
         Serializer serializer = Registry.get(String.class);
         WrappedDataWatcherObject object = new WrappedDataWatcherObject(3, serializer);
-        wrapper.setObject(object, "Test");
+        watcher.setObject(object, "Test");
 
-        assertEquals(wrapper.getString(3), "Test");
+        assertEquals(watcher.getString(3), "Test");
     }
 
     @Test
-    @Disabled // TODO -- need to fix data watchers
+    @Disabled // TODO -- need a better example for floats
     public void testFloats() {
         WrappedDataWatcher wrapper = new WrappedDataWatcher();
 
@@ -85,35 +88,28 @@ public class WrappedDataWatcherTest {
     }
 
     @Test
-    @Disabled // TODO -- need to fix data watchers
     public void testSerializers() {
         Serializer blockPos = Registry.get(net.minecraft.core.BlockPosition.class, false);
         Serializer optionalBlockPos = Registry.get(net.minecraft.core.BlockPosition.class, true);
         assertNotSame(blockPos, optionalBlockPos);
 
-        // assertNull(Registry.get(ItemStack.class, false));
+        // assertNull(Registry.get(ItemStack.class, false)); // TODO
         assertNotNull(Registry.get(UUID.class, true));
     }
 
     @Test
-    @Disabled // TODO -- need to fix data watchers
     public void testHasIndex() {
-        WrappedDataWatcher watcher = new WrappedDataWatcher();
-        Serializer serializer = Registry.get(Integer.class);
-
-        assertFalse(watcher.hasIndex(0));
-        watcher.setObject(0, serializer, 1);
-        assertTrue(watcher.hasIndex(0));
+        WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(mockEntity);
+        assertTrue(watcher.hasIndex(1));
+        assertFalse(watcher.hasIndex(9999));
     }
 
     @Test
-    @Disabled // TODO -- need to fix data watchers
     public void testDeepClone() {
-        WrappedDataWatcher watcher = new WrappedDataWatcher();
-        watcher.setObject(0, Registry.get(Integer.class), 1);
-
+        WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(mockEntity);
         WrappedDataWatcher cloned = watcher.deepClone();
-        assertEquals(1, cloned.asMap().size());
-        assertEquals(1, (Object) cloned.getInteger(0));
+
+        assertEquals(watcher.size(), cloned.size());
+        assertEquals(watcher.getObject(1), cloned.getObject(1));
     }
 }

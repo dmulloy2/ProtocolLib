@@ -535,15 +535,15 @@ public class ProtocolLib extends JavaPlugin {
 
         // that reloading the server might break ProtocolLib / plugins depending on it
         if (Util.isCurrentlyReloading()) {
-            logger.severe("╔══════════════════════════════════════════════════════════════════╗");
-            logger.severe("║                               WARNING                            ║");
-            logger.severe("║     RELOADING THE SERVER WHILE PROTOCOL LIB IS ENABLED MIGHT     ║");
-            logger.severe("║                    LEAD TO UNEXPECTED ERRORS!                    ║");
-            logger.severe("║                                                                  ║");
-            logger.severe("║     Consider to cleanly restart your server if you encounter     ║");
-            logger.severe("║    any issues related to Protocol Lib before opening an issue    ║");
-            logger.severe("║                            on GitHub!                            ║");
-            logger.severe("╚══════════════════════════════════════════════════════════════════╝");
+            highlyVisibleError(
+                " WARNING ",
+                " RELOADING THE SERVER WHILE PROTOCOLLIB IS ENABLED MIGHT ",
+                " LEAD TO UNEXPECTED ERRORS! ",
+                " ",
+                " Consider cleanly restarting your server if you encounter ",
+                " any issues related to ProtocolLib before opening an issue ",
+                " on GitHub! "
+            );
         }
 
         // Clean up

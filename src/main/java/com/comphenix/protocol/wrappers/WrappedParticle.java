@@ -36,7 +36,9 @@ public class WrappedParticle<T> {
                     .newBuilder()
                     .requireModifier(Modifier.STATIC)
                     .returnTypeExact(Particle.class)
-                    .parameterExactArray(MinecraftReflection.getParticleClass())
+                    .parameterExactArray(MinecraftReflection.isMojangMapped()
+                        ? MinecraftReflection.getParticleTypeClass()
+                        : MinecraftReflection.getParticleClass())
                     .build();
             toBukkit = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 
