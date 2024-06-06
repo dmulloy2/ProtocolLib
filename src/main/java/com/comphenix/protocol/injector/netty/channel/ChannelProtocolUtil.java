@@ -32,7 +32,7 @@ final class ChannelProtocolUtil {
                 .declaringClassExactType(networkManagerClass)
                 .build());
 
-        BiFunction<Channel, PacketType.Sender, PacketType.Protocol> baseResolver = null;
+        BiFunction<Channel, PacketType.Sender, Object> baseResolver = null;
         if (attributeKeys.isEmpty()) {
             // since 1.20.5 the protocol is stored as final field in de-/encoder
             baseResolver = new Post1_20_5WrappedResolver();
@@ -76,10 +76,10 @@ final class ChannelProtocolUtil {
         }
 
         // decorate the base resolver by wrapping its return value into our packet type value
-        PROTOCOL_RESOLVER = baseResolver;
+        PROTOCOL_RESOLVER = baseResolver.andThen(protocol -> PacketType.Protocol.fromVanilla((Enum<?>) protocol));
     }
 
-    private static final class Pre1_20_2DirectResolver implements BiFunction<Channel, PacketType.Sender, PacketType.Protocol> {
+    private static final class Pre1_20_2DirectResolver implements BiFunction<Channel, PacketType.Sender, Object> {
 
         private final AttributeKey<Object> attributeKey;
 
@@ -88,12 +88,12 @@ final class ChannelProtocolUtil {
         }
 
         @Override
-        public PacketType.Protocol apply(Channel channel, PacketType.Sender sender) {
-            return PacketType.Protocol.fromVanilla((Enum<?>) channel.attr(this.attributeKey).get());
+        public Object apply(Channel channel, PacketType.Sender sender) {
+            return channel.attr(this.attributeKey).get();
         }
     }
 
-    private static final class Post1_20_2WrappedResolver implements BiFunction<Channel, PacketType.Sender, PacketType.Protocol> {
+    private static final class Post1_20_2WrappedResolver implements BiFunction<Channel, PacketType.Sender, Object> {
 
         private final AttributeKey<Object> serverBoundKey;
         private final AttributeKey<Object> clientBoundKey;
@@ -107,7 +107,7 @@ final class ChannelProtocolUtil {
         }
 
         @Override
-        public PacketType.Protocol apply(Channel channel, PacketType.Sender sender) {
+        public Object apply(Channel channel, PacketType.Sender sender) {
             AttributeKey<Object> key = this.getKeyForSender(sender);
             Object codecData = channel.attr(key).get();
             if (codecData == null) {
@@ -115,7 +115,7 @@ final class ChannelProtocolUtil {
             }
 
             FieldAccessor protocolAccessor = this.getProtocolAccessor(codecData.getClass());
-            return PacketType.Protocol.fromVanilla((Enum<?>) protocolAccessor.get(codecData));
+            return protocolAccessor.get(codecData);
         }
 
         private AttributeKey<Object> getKeyForSender(PacketType.Sender sender) {
@@ -142,7 +142,7 @@ final class ChannelProtocolUtil {
     /**
      * Since 1.20.5 the protocol is stored as final field in de-/encoder
      */
-    private static final class Post1_20_5WrappedResolver implements BiFunction<Channel, PacketType.Sender, PacketType.Protocol> {
+    private static final class Post1_20_5WrappedResolver implements BiFunction<Channel, PacketType.Sender, Object> {
 
         // lazy initialized when needed
         private Function<Object, Object> serverProtocolAccessor;
