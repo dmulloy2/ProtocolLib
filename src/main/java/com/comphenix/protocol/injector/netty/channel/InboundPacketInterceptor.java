@@ -1,7 +1,11 @@
 package com.comphenix.protocol.injector.netty.channel;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -17,28 +21,33 @@ final class InboundPacketInterceptor extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        Class<?> messageClass = msg.getClass();
-        if (this.shouldInterceptMessage(messageClass)) {
-            // process the login if the packet is one before posting the packet to any handler to provide "real" data
-            // the method invocation will do nothing if the packet is not a login packet
+        if (MinecraftReflection.isPacketClass(msg)) {
+            // process the login if the packet is one before posting the packet to any
+            // handler to provide "real" data the method invocation will do nothing if the
+            // packet is not a login packet
             this.injector.tryProcessLogin(msg);
 
-            // check if there are any listeners bound for the packet - if not just post the packet down the pipeline
-            if (!this.channelListener.hasListener(messageClass)) {
+            PacketType.Protocol protocol = this.injector.getInboundProtocol();
+            PacketType packetType = PacketRegistry.getPacketType(protocol, msg.getClass());
+
+            if (packetType == null) {
+                ProtocolLogger.debug("skipping unknown inbound packet type for {0}", msg.getClass());
+                ctx.fireChannelRead(msg);
+                return;
+            }
+
+            // check if there are any listeners bound for the packet - if not just post the
+            // packet down the pipeline
+            if (!this.channelListener.hasInboundListener(packetType)) {
                 ctx.fireChannelRead(msg);
                 return;
             }
 
             // call all inbound listeners
-            this.injector.processInboundPacket(ctx, msg, messageClass);
+            this.injector.processInboundPacket(ctx, msg, packetType);
         } else {
             // just pass the message down the pipeline
             ctx.fireChannelRead(msg);
         }
-    }
-
-    private boolean shouldInterceptMessage(Class<?> messageClass) {
-        // only intercept minecraft packets and no garbage from other stuff in the channel
-        return MinecraftReflection.getPacketClass().isAssignableFrom(messageClass);
     }
 }

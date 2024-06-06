@@ -13,7 +13,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-@SuppressWarnings("NullableProblems")
 final class ListeningList implements List<Object> {
 
     private final List<Object> original;

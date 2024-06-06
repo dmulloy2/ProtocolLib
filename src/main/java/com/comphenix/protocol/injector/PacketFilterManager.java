@@ -1,32 +1,5 @@
 package com.comphenix.protocol.injector;
 
-import com.comphenix.protocol.AsynchronousManager;
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.events.ListenerOptions;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
-import com.comphenix.protocol.injector.netty.WirePacket;
-import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
-import com.comphenix.protocol.injector.packet.PacketInjector;
-import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.google.common.collect.ImmutableSet;
-import io.netty.channel.Channel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,15 +23,42 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
+import com.comphenix.protocol.AsynchronousManager;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.concurrent.PacketTypeListenerSet;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.events.ListenerOptions;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.NetworkMarker;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
+import com.comphenix.protocol.injector.collection.InboundPacketListenerSet;
+import com.comphenix.protocol.injector.collection.OutboundPacketListenerSet;
+import com.comphenix.protocol.injector.collection.PacketListenerSet;
+import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
+import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
+import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.google.common.collect.ImmutableSet;
+
+import io.netty.channel.Channel;
+
 public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
     // plugin verifier reports
     private static final ReportType PLUGIN_VERIFIER_ERROR = new ReportType("Plugin verifier error: %s");
     private static final ReportType INVALID_PLUGIN_VERIFY = new ReportType("Plugin %s does not %s on ProtocolLib");
-
-    // listener registration reports
-    private static final ReportType UNSUPPORTED_PACKET = new ReportType(
-            "Plugin %s tried to register listener for unknown packet %s [direction: from %s]");
 
     // bukkit references
     private final Plugin plugin;
@@ -72,14 +72,14 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     private final PluginVerifier pluginVerifier;
 
     // packet listeners
-    private final SortedPacketListenerList inboundListeners;
-    private final SortedPacketListenerList outboundListeners;
+    private final PacketTypeListenerSet mainThreadPacketTypes;
+    private final InboundPacketListenerSet inboundListeners;
+    private final OutboundPacketListenerSet outboundListeners;
 
     // only for api lookups
     private final Set<PacketListener> registeredListeners;
 
     // injectors
-    private final PacketInjector packetInjector;
     private final PlayerInjectionHandler playerInjectionHandler;
     private final NetworkManagerInjector networkManagerInjector;
 
@@ -104,8 +104,9 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
         // packet listeners
         this.registeredListeners = new HashSet<>();
-        this.inboundListeners = new SortedPacketListenerList();
-        this.outboundListeners = new SortedPacketListenerList();
+        this.mainThreadPacketTypes = new PacketTypeListenerSet();
+        this.inboundListeners = new InboundPacketListenerSet(mainThreadPacketTypes, this.reporter);
+        this.outboundListeners = new OutboundPacketListenerSet(mainThreadPacketTypes, this.reporter);
 
         // injectors
         this.networkManagerInjector = new NetworkManagerInjector(
@@ -113,7 +114,6 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
                 builder.getServer(),
                 this,
                 builder.getReporter());
-        this.packetInjector = this.networkManagerInjector.getPacketInjector();
         this.playerInjectionHandler = this.networkManagerInjector.getPlayerInjectionHandler();
 
         // ensure that all packet types are loaded and synced
@@ -164,7 +164,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             // monitor listeners before doing so - they will not be able to change the event tho
             if (!filters) {
                 // ensure we are on the main thread if any listener requires that
-                if (this.playerInjectionHandler.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
+                if (this.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
                     NetworkMarker copy = marker; // okay fine
                     ProtocolLibrary.getScheduler().scheduleSyncDelayedTask(
                             () -> this.sendServerPacket(receiver, packet, copy, false), 1L);
@@ -173,7 +173,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
                 // construct the event and post to all monitor listeners
                 PacketEvent event = PacketEvent.fromServer(this, packet, marker, receiver, false);
-                this.outboundListeners.invokePacketSending(this.reporter, event, ListenerPriority.MONITOR);
+                this.outboundListeners.invoke(event, ListenerPriority.MONITOR);
 
                 // update the marker of the event without accidentally constructing it
                 marker = NetworkMarker.getNetworkMarker(event);
@@ -216,7 +216,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     public void receiveClientPacket(Player sender, PacketContainer packet, NetworkMarker marker, boolean filters) {
         if (!this.closed) {
             // make sure we are on the main thread if any listener of the packet needs it
-            if (this.playerInjectionHandler.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
+            if (this.hasMainThreadListener(packet.getType()) && !this.server.isPrimaryThread()) {
                 ProtocolLibrary.getScheduler().runTask(
                         () -> this.receiveClientPacket(sender, packet, marker, filters));
                 return;
@@ -226,7 +226,8 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             // check to which listeners we need to post the packet
             if (filters) {
                 // post to all listeners
-                PacketEvent event = this.packetInjector.packetReceived(packet, sender);
+            	PacketEvent event = PacketEvent.fromClient(this.networkManagerInjector, packet, null, sender);
+                this.invokePacketReceiving(event);
                 if (event.isCancelled()) {
                     return;
                 }
@@ -235,7 +236,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
                 nmsPacket = event.getPacket().getHandle();
             } else {
                 PacketEvent event = PacketEvent.fromClient(this, packet, marker, sender, false);
-                this.inboundListeners.invokePacketRecieving(this.reporter, event, ListenerPriority.MONITOR);
+                this.inboundListeners.invoke(event, ListenerPriority.MONITOR);
             }
 
             // post to the player inject, reset our cancel state change
@@ -320,28 +321,20 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             if (outbound != null && outbound.isEnabled()) {
                 // verification
                 this.verifyWhitelist(listener, outbound);
-                this.playerInjectionHandler.checkListener(listener);
 
                 // registration
                 this.registeredListeners.add(listener);
-                this.outboundListeners.addListener(listener, outbound);
-
-                // let the injectors know about the change as well
-                this.registerPacketListenerInInjectors(listener, outbound.getTypes());
+                this.outboundListeners.addListener(listener);
             }
 
             // register as inbound listener if anything outbound is handled
             if (inbound != null && inbound.isEnabled()) {
                 // verification
                 this.verifyWhitelist(listener, inbound);
-                this.playerInjectionHandler.checkListener(listener);
 
                 // registration
                 this.registeredListeners.add(listener);
-                this.inboundListeners.addListener(listener, inbound);
-
-                // let the injectors know about the change as well
-                this.registerPacketListenerInInjectors(listener, inbound.getTypes());
+                this.inboundListeners.addListener(listener);
             }
         }
     }
@@ -354,18 +347,12 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
             // remove outbound listeners (if any)
             if (outbound != null && outbound.isEnabled()) {
-                Collection<PacketType> removed = this.outboundListeners.removeListener(listener, outbound);
-                if (!removed.isEmpty()) {
-                    this.unregisterPacketListenerInInjectors(removed);
-                }
+                this.outboundListeners.removeListener(listener);
             }
 
             // remove inbound listeners (if any)
             if (inbound != null && inbound.isEnabled()) {
-                Collection<PacketType> removed = this.inboundListeners.removeListener(listener, inbound);
-                if (!removed.isEmpty()) {
-                    this.unregisterPacketListenerInInjectors(removed);
-                }
+                this.inboundListeners.removeListener(listener);
             }
         }
     }
@@ -416,12 +403,12 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
     @Override
     public Set<PacketType> getSendingFilterTypes() {
-        return Collections.unmodifiableSet(this.playerInjectionHandler.getSendingFilters());
+        return Collections.unmodifiableSet(this.outboundListeners.getPacketTypes());
     }
 
     @Override
     public Set<PacketType> getReceivingFilterTypes() {
-        return Collections.unmodifiableSet(this.packetInjector.getPacketHandlers());
+        return Collections.unmodifiableSet(this.inboundListeners.getPacketTypes());
     }
 
     @Override
@@ -471,7 +458,6 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
                 @EventHandler(priority = EventPriority.MONITOR)
                 public void handleQuit(PlayerQuitEvent event) {
                     PacketFilterManager.this.asyncFilterManager.removePlayer(event.getPlayer());
-                    PacketFilterManager.this.playerInjectionHandler.handleDisconnect(event.getPlayer());
                 }
 
                 @EventHandler(priority = EventPriority.MONITOR)
@@ -494,11 +480,14 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
             // uninject all clutter
             this.networkManagerInjector.close();
-            this.playerInjectionHandler.close();
+
+            // clear listener collections
+            this.mainThreadPacketTypes.clear();
+            this.inboundListeners.clear();
+            this.outboundListeners.clear();
 
             // cleanup
             this.registeredListeners.clear();
-            this.packetInjector.cleanupAll();
             this.asyncFilterManager.cleanupAll();
         }
     }
@@ -511,6 +500,21 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     @Override
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    @Override
+    public boolean hasInboundListener(PacketType packetType) {
+        return this.inboundListeners.containsPacketType(packetType);
+    }
+
+    @Override
+    public boolean hasOutboundListener(PacketType packetType) {
+        return this.outboundListeners.containsPacketType(packetType);
+    }
+
+    @Override
+    public boolean hasMainThreadListener(PacketType packetType) {
+        return this.mainThreadPacketTypes.contains(packetType);
     }
 
     @Override
@@ -541,7 +545,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
         throw new IllegalArgumentException("Unable to associate given packet " + packet + " with a registered packet!");
     }
 
-    private void postPacketToListeners(SortedPacketListenerList listeners, PacketEvent event, boolean outbound) {
+    private void postPacketToListeners(PacketListenerSet listeners, PacketEvent event, boolean outbound) {
         try {
             // append async marker if any async listener for the packet was registered
             if (this.asyncFilterManager.hasAsynchronousListeners(event)) {
@@ -549,11 +553,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             }
 
             // post to sync listeners
-            if (outbound) {
-                listeners.invokePacketSending(this.reporter, event);
-            } else {
-                listeners.invokePacketRecieving(this.reporter, event);
-            }
+            listeners.invoke(event);
 
             // check if we need to post the packet to the async handler
             if (!event.isCancelled() && event.getAsyncMarker() != null && !event.getAsyncMarker().isAsyncCancelled()) {
@@ -584,41 +584,6 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
                 this.reporter.reportWarning(this, Report.newBuilder(INVALID_PLUGIN_VERIFY)
                         .messageParam(plugin.getName(), result)
                         .build());
-            }
-        }
-    }
-
-    private void registerPacketListenerInInjectors(PacketListener listener, Collection<PacketType> packetTypes) {
-        for (PacketType packetType : packetTypes) {
-            // check the packet direction
-            if (packetType.getSender() == Sender.SERVER) {
-                // check if the packet is registered on the server side
-                if (PacketRegistry.getServerPacketTypes().contains(packetType)) {
-                    this.playerInjectionHandler.addPacketHandler(packetType, listener.getSendingWhitelist().getOptions());
-                } else {
-                    this.reporter.reportWarning(this, Report.newBuilder(UNSUPPORTED_PACKET)
-                            .messageParam(PacketAdapter.getPluginName(listener), packetType, packetType.getSender())
-                            .build());
-                }
-            } else if (packetType.getSender() == Sender.CLIENT) {
-                // check if the packet is registered on the client side
-                if (PacketRegistry.getClientPacketTypes().contains(packetType)) {
-                    this.packetInjector.addPacketHandler(packetType, listener.getReceivingWhitelist().getOptions());
-                } else {
-                    this.reporter.reportWarning(this, Report.newBuilder(UNSUPPORTED_PACKET)
-                            .messageParam(PacketAdapter.getPluginName(listener), packetType, packetType.getSender())
-                            .build());
-                }
-            }
-        }
-    }
-
-    private void unregisterPacketListenerInInjectors(Collection<PacketType> packetTypes) {
-        for (PacketType packetType : packetTypes) {
-            if (packetType.getSender() == Sender.SERVER) {
-                this.playerInjectionHandler.removePacketHandler(packetType);
-            } else if (packetType.getSender() == Sender.CLIENT) {
-                this.packetInjector.removePacketHandler(packetType);
             }
         }
     }
