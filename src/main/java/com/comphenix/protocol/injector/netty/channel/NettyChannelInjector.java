@@ -218,7 +218,8 @@ public class NettyChannelInjector implements Injector {
 
             ChannelPipeline pipeline = this.wrappedChannel.pipeline();
 
-            // since 1.20.5 the encoder is renamed to outbound_config only in the handshake phase
+            // since 1.20.5 the encoder is renamed to outbound_config when the channel is
+            // waiting for the next protocol phase
             String encoderName = pipeline.get("outbound_config") != null
                     ? "outbound_config" : "encoder";
 
@@ -227,13 +228,19 @@ public class NettyChannelInjector implements Injector {
                     encoderName,
                     WIRE_PACKET_ENCODER_NAME,
                     WIRE_PACKET_ENCODER);
-            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+
+            // since 1.20.2 the packet decoder will remove or reconfigure the protocol for
+            // terminal packets which is why we need to read it before the packet gets
+            // decoded
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
                 this.inboundProtocolReader = new InboundProtocolReader(this);
                 pipeline.addBefore(
                         "decoder",
                         PROTOCOL_READER_NAME,
                         this.inboundProtocolReader);
             }
+
+            // inject inbound packet interceptor
             pipeline.addAfter(
                     "decoder",
                     INTERCEPTOR_NAME,
