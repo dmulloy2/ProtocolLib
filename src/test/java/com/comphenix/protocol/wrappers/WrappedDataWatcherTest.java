@@ -14,6 +14,8 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.util.UUID;
+
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
@@ -21,13 +23,9 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObje
 
 import net.minecraft.world.entity.projectile.EntityEgg;
 import org.bukkit.craftbukkit.v1_20_R4.entity.CraftEgg;
-import org.bukkit.craftbukkit.v1_20_R4.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,7 +44,6 @@ public class WrappedDataWatcherTest {
     }
 
     @Test
-    @Disabled // TODO -- SETTER is null
     public void testBytes() {
         WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(mockEntity);
 
@@ -62,7 +59,6 @@ public class WrappedDataWatcherTest {
     }
 
     @Test
-    @Disabled // TODO -- SETTER is null
     public void testStrings() {
         WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(mockEntity);
 
@@ -75,7 +71,6 @@ public class WrappedDataWatcherTest {
     }
 
     @Test
-    @Disabled // TODO -- need a better example for floats
     public void testFloats() {
         WrappedDataWatcher wrapper = new WrappedDataWatcher();
 

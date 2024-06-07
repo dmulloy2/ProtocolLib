@@ -34,7 +34,7 @@ import static com.comphenix.protocol.utility.MinecraftReflection.is;
  * Use {@link WrappedDataValue} for 1.19.3 or later.
  * @author dmulloy2
  */
-public class WrappedWatchableObject extends AbstractWrapper {
+public final class WrappedWatchableObject extends AbstractWrapper {
 
     private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherItemClass();
     private static Integer VALUE_INDEX = null;
