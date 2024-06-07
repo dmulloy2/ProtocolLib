@@ -28,7 +28,7 @@ final class InjectionChannelInitializer extends ChannelInboundHandlerAdapter {
 
     @Override
     public boolean isSharable() {
-        // we do it this way to prevent the lookup overheat
+        // we do it this way to prevent the lookup overhead
         return true;
     }
 }

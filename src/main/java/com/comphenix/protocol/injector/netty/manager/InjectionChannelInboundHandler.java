@@ -3,7 +3,7 @@ package com.comphenix.protocol.injector.netty.manager;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
-import com.comphenix.protocol.injector.temporary.TemporaryPlayerFactory;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -13,16 +13,13 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
     private final InjectionFactory factory;
     private final NetworkManagerInjector listener;
-    private final TemporaryPlayerFactory playerFactory;
 
     public InjectionChannelInboundHandler(
             InjectionFactory factory,
-            NetworkManagerInjector listener,
-            TemporaryPlayerFactory playerFactory
+            NetworkManagerInjector listener
     ) {
         this.factory = factory;
         this.listener = listener;
-        this.playerFactory = playerFactory;
     }
 
     @Override
@@ -37,7 +34,7 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
         // that point we might accidentally trigger class loads which result in exceptions.
         if (!this.factory.isClosed()) {
             try {
-                this.factory.fromChannel(ctx.channel(), this.listener, this.playerFactory).inject();
+                this.factory.fromChannel(ctx.channel()).inject();
             } catch (Exception exception) {
                 this.listener.getReporter().reportDetailed(this, Report.newBuilder(CANNOT_INJECT_CHANNEL)
                         .messageParam(ctx.channel())
@@ -52,7 +49,7 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
     @Override
     public boolean isSharable() {
-        // we do it this way to prevent the lookup overheat
+        // we do it this way to prevent the lookup overhead
         return true;
     }
 }

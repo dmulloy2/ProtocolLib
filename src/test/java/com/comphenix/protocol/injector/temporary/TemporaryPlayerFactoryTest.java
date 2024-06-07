@@ -1,6 +1,5 @@
 package com.comphenix.protocol.injector.temporary;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.bukkit.Server;
@@ -11,8 +10,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class TemporaryPlayerFactoryTest {
-
-    private static final TemporaryPlayerFactory temporaryPlayerFactory = new TemporaryPlayerFactory();
 
     @Mock
     Server server;
@@ -26,17 +23,7 @@ public class TemporaryPlayerFactoryTest {
 
     @Test
     public void testUnavailableSocketInjector() {
-        Player player = temporaryPlayerFactory.createTemporaryPlayer(this.server);
+        Player player = TemporaryPlayerFactory.createTemporaryPlayer(this.server);
         assertThrows(IllegalStateException.class, player::getPlayer);
-    }
-
-    @Test
-    public void createTemporaryPlayer() {
-
-        Player player = temporaryPlayerFactory.createTemporaryPlayer(this.server, this.minimalInjector);
-        assertEquals(this.server, player.getServer());
-
-        // May seem dumb, but this makes sure that the .equals method is still instact.
-        assertEquals(player, player);
     }
 }

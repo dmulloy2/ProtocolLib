@@ -607,8 +607,6 @@ public class AsyncListenerHandler {
             
         } catch (OutOfMemoryError e) {
             throw e;
-        } catch (ThreadDeath e) {
-            throw e;
         } catch (Throwable e) {
             // Minecraft doesn't want your Exception.
             filterManager.getErrorReporter().reportMinimal(listener.getPlugin(), methodName, e);

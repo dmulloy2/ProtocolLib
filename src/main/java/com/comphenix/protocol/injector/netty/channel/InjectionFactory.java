@@ -14,6 +14,14 @@
  */
 package com.comphenix.protocol.injector.netty.channel;
 
+import java.util.concurrent.ConcurrentMap;
+
+import javax.annotation.Nonnull;
+
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
@@ -23,12 +31,8 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.MapMaker;
+
 import io.netty.channel.Channel;
-import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nonnull;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 /**
  * Represents an injector factory.
@@ -48,14 +52,16 @@ public class InjectionFactory {
     private final Server server;
 
     // protocol lib stuff
+    private final ChannelListener channelListener;
     private final ErrorReporter errorReporter;
 
     // state of the factory
     private boolean closed;
 
-    public InjectionFactory(Plugin plugin, Server server, ErrorReporter errorReporter) {
+    public InjectionFactory(Plugin plugin, Server server, ChannelListener channelListener, ErrorReporter errorReporter) {
         this.plugin = plugin;
         this.server = server;
+        this.channelListener = channelListener;
         this.errorReporter = errorReporter;
     }
 
@@ -72,11 +78,10 @@ public class InjectionFactory {
      * Construct or retrieve a channel injector from an existing Bukkit player.
      *
      * @param player   - the existing Bukkit player.
-     * @param listener - the listener.
      * @return A new injector, an existing injector associated with this player, or a closed injector.
      */
     @Nonnull
-    public Injector fromPlayer(Player player, ChannelListener listener) {
+    public Injector fromPlayer(Player player) {
         if (this.closed) {
             return new EmptyInjector(player);
         }
@@ -117,7 +122,7 @@ public class InjectionFactory {
                     this.server,
                     networkManager,
                     channel,
-                    listener,
+                    this.channelListener,
                     this,
                     this.errorReporter);
             this.cacheInjector(player, injector);
@@ -155,25 +160,23 @@ public class InjectionFactory {
      * Construct a new channel injector for the given channel.
      *
      * @param channel       - the channel.
-     * @param listener      - the listener.
-     * @param playerFactory - a temporary player creator.
      * @return The channel injector, or a closed injector.
      */
     @Nonnull
-    public Injector fromChannel(Channel channel, ChannelListener listener, TemporaryPlayerFactory playerFactory) {
+    public Injector fromChannel(Channel channel) {
         if (this.closed) {
             return EmptyInjector.WITHOUT_PLAYER;
         }
 
         Object netManager = this.findNetworkManager(channel);
-        Player temporaryPlayer = playerFactory.createTemporaryPlayer(this.server);
+        Player temporaryPlayer = TemporaryPlayerFactory.createTemporaryPlayer(this.server);
 
         NettyChannelInjector injector = new NettyChannelInjector(
                 temporaryPlayer,
                 this.server,
                 netManager,
                 channel,
-                listener,
+                this.channelListener,
                 this,
                 this.errorReporter);
         MinimalInjector minimalInjector = new NettyChannelMinimalInjector(injector);

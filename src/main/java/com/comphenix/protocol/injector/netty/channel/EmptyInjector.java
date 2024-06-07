@@ -4,6 +4,8 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.injector.netty.Injector;
+import com.comphenix.protocol.injector.netty.WirePacket;
+
 import org.bukkit.entity.Player;
 
 final class EmptyInjector implements Injector {
@@ -40,6 +42,10 @@ final class EmptyInjector implements Injector {
 
     @Override
     public void receiveClientPacket(Object packet) {
+    }
+
+    @Override
+    public void sendWirePacket(WirePacket packet) {
     }
 
     @Override

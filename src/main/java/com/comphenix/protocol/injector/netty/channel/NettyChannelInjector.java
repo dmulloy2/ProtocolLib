@@ -27,6 +27,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.NetworkProcessor;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
+import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -67,7 +68,7 @@ public class NettyChannelInjector implements Injector {
     };
 
     private static final String INTERCEPTOR_NAME = "protocol_lib_inbound_interceptor";
-    private static final String PROTOCOL_READER_NAME = "protocol_lib_protocol_reader";
+    private static final String PROTOCOL_READER_NAME = "protocol_lib_inbound_protocol_reader";
     private static final String WIRE_PACKET_ENCODER_NAME = "protocol_lib_wire_packet_encoder";
 
     // all registered channel handlers to easier make sure we unregister them all from the pipeline
@@ -355,6 +356,11 @@ public class NettyChannelInjector implements Injector {
         } else {
             this.ensureInEventLoop(receiveAction);
         }
+    }
+
+    @Override
+    public void sendWirePacket(WirePacket packet) {
+    	this.wrappedChannel.writeAndFlush(packet);
     }
 
     public PacketType.Protocol getInboundProtocol() {

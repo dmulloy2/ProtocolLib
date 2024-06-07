@@ -46,6 +46,8 @@ public interface Injector {
 
     void receiveClientPacket(Object packet);
 
+    void sendWirePacket(WirePacket packet);
+
     /**
      * Retrieve the current protocol state.
      *

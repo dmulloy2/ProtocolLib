@@ -17,11 +17,16 @@
 
 package com.comphenix.protocol.injector.temporary;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ChatExtensions;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -36,8 +41,6 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
 
 /**
  * Create fake player instances that represents pre-authenticated clients.
@@ -45,6 +48,8 @@ import org.bukkit.entity.Player;
 public class TemporaryPlayerFactory {
 
     private static final Constructor<? extends Player> PLAYER_CONSTRUCTOR = setupProxyPlayerConstructor();
+
+    private TemporaryPlayerFactory() {}
 
     /**
      * Retrieve the injector from a given player if it contains one.
@@ -200,24 +205,11 @@ public class TemporaryPlayerFactory {
      * @param server - the current server.
      * @return A temporary player instance.
      */
-    public Player createTemporaryPlayer(final Server server) {
+    public static Player createTemporaryPlayer(final Server server) {
         try {
             return PLAYER_CONSTRUCTOR.newInstance(server);
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException("Unable to create temporary player", exception);
         }
-    }
-
-    /**
-     * Construct a temporary player with the given associated socket injector.
-     *
-     * @param server   - the parent server.
-     * @param injector - the referenced socket injector.
-     * @return The temporary player.
-     */
-    public Player createTemporaryPlayer(Server server, MinimalInjector injector) {
-        Player temporary = this.createTemporaryPlayer(server);
-        ((TemporaryPlayer) temporary).setInjector(injector);
-        return temporary;
     }
 }
