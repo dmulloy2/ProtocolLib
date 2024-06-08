@@ -160,17 +160,17 @@ public class NettyChannelInjector implements Injector {
     }
 
     @Override
-    public boolean inject() {
+    public void inject() {
         // ensure we are in the channel's event loop to be "thread-safe" within netty
         // and our own code
         if (!this.channel.eventLoop().inEventLoop()) {
             channel.eventLoop().execute(this::inject);
-            return false;
+            return;
         }
 
         // don't need to inject if injector or channel got closed
         if (this.closed.get() || !this.channel.isActive()) {
-            return false;
+            return;
         }
 
         // wrap channel inside the NetworkMananger to proxy write calls to our
@@ -214,14 +214,13 @@ public class NettyChannelInjector implements Injector {
 
         // mark injector as injected
         this.injected = true;
-        return true;
     }
 
     private void uninject() {
         // ensure we are in the channel's event loop to be "thread-safe" within netty
         // and our own code
         if (!this.channel.eventLoop().inEventLoop()) {
-            channel.eventLoop().execute(this::inject);
+            channel.eventLoop().execute(this::uninject);
             return;
         }
 
@@ -446,6 +445,8 @@ public class NettyChannelInjector implements Injector {
         // invoke plugin listeners
         if (this.channelListener.hasInboundListener(packet.getType())) {
             this.processInboundInternal(ctx, packet);
+        } else {
+            ctx.fireChannelRead(packet.getHandle());
         }
     }
 

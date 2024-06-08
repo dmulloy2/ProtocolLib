@@ -13,8 +13,6 @@ public class TemporaryPlayerFactoryTest {
 
     @Mock
     Server server;
-    @Mock
-    MinimalInjector minimalInjector;
 
     @BeforeEach
     public void initMocks() {

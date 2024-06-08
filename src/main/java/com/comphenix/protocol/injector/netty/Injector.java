@@ -26,10 +26,8 @@ public interface Injector {
      * Inject the current channel.
      * <p>
      * Note that only active channels can be injected.
-     *
-     * @return TRUE if we injected the channel, false if we could not inject or it was already injected.
      */
-    boolean inject();
+    void inject();
 
     /**
      * Close the current injector.
@@ -48,17 +46,6 @@ public interface Injector {
     void receiveClientPacket(Object packet);
 
     void sendWirePacket(WirePacket packet);
-
-    /**
-     * Retrieve the current protocol state.
-     *
-     * @return The current protocol.
-     * @deprecated use {@link #getCurrentProtocol(PacketType.Sender)} instead.
-     */
-    @Deprecated
-    default Protocol getCurrentProtocol() {
-        return this.getCurrentProtocol(PacketType.Sender.SERVER);
-    }
 
     /**
      * Retrieve the current protocol state. Note that since 1.20.2 the client and server direction can be in different

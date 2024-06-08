@@ -17,7 +17,12 @@
 
 package com.comphenix.protocol.events;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.GamePhase;
@@ -88,20 +93,6 @@ public class ListeningWhitelist {
      */
     public static Builder newBuilder(ListeningWhitelist template) {
         return new Builder(template);
-    }
-
-    /**
-     * Construct a copy of a given enum.
-     *
-     * @param options - the options to copy, or NULL to indicate the empty set.
-     * @return A copy of the enum set.
-     */
-    private static <T extends Enum<T>> EnumSet<T> safeEnumSet(Collection<T> options, Class<T> enumClass) {
-        if (options != null && !options.isEmpty()) {
-            return EnumSet.copyOf(options);
-        } else {
-            return EnumSet.noneOf(enumClass);
-        }
     }
 
     /**
@@ -311,6 +302,7 @@ public class ListeningWhitelist {
          * @param gamePhase - the gamephase.
          * @return This builder, for chaining.
          */
+        @Deprecated
         public Builder gamePhase(GamePhase gamePhase) {
             this.gamePhase = gamePhase;
             return this;
@@ -321,6 +313,7 @@ public class ListeningWhitelist {
          *
          * @return This builder, for chaining.
          */
+        @Deprecated
         public Builder gamePhaseBoth() {
             return gamePhase(GamePhase.BOTH);
         }

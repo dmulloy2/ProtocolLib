@@ -34,8 +34,7 @@ final class EmptyInjector implements Injector {
     }
 
     @Override
-    public boolean inject() {
-        return false;
+    public void inject() {
     }
 
     @Override

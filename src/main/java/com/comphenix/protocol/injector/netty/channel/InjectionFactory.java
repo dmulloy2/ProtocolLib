@@ -25,7 +25,6 @@ import org.bukkit.plugin.Plugin;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
-import com.comphenix.protocol.injector.temporary.MinimalInjector;
 import com.comphenix.protocol.injector.temporary.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftFields;
@@ -175,10 +174,9 @@ public class InjectionFactory {
                 this.channelListener,
                 this,
                 this.errorReporter);
-        MinimalInjector minimalInjector = new NettyChannelMinimalInjector(injector);
 
         // Initialize temporary player
-        TemporaryPlayerFactory.setInjectorInPlayer(temporaryPlayer, minimalInjector);
+        TemporaryPlayerFactory.setInjectorForPlayer(temporaryPlayer, injector);
         return injector;
     }
 
@@ -234,9 +232,9 @@ public class InjectionFactory {
      * @return The associated injector, or NULL if this is a Bukkit player.
      */
     private NettyChannelInjector getTemporaryInjector(Player player) {
-        MinimalInjector injector = TemporaryPlayerFactory.getInjectorFromPlayer(player);
-        if (injector instanceof NettyChannelMinimalInjector) {
-            return ((NettyChannelMinimalInjector) injector).getInjector();
+        Injector injector = TemporaryPlayerFactory.getInjectorFromPlayer(player);
+        if (injector instanceof NettyChannelInjector) {
+            return (NettyChannelInjector) injector;
         }
 
         return null;

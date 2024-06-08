@@ -22,6 +22,7 @@ package com.comphenix.protocol.injector;
  *
  * @author Kristian
  */
+@Deprecated
 public enum GamePhase {
     /**
      * Only listen for packets sent or received before a player has logged in.

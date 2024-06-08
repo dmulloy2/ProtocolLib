@@ -25,15 +25,13 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.ChatExtensions;
 
 import net.bytebuddy.description.ByteCodeElement;
-import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
-import net.bytebuddy.implementation.FieldAccessor;
-import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.FieldValue;
@@ -58,7 +56,7 @@ public class TemporaryPlayerFactory {
      * @param player - the player that may contain a reference to a player injector.
      * @return The referenced player injector, or NULL if none can be found.
      */
-    public static MinimalInjector getInjectorFromPlayer(Player player) {
+    public static Injector getInjectorFromPlayer(Player player) {
         if (player instanceof TemporaryPlayer) {
             return ((TemporaryPlayer) player).getInjector();
         }
@@ -71,7 +69,7 @@ public class TemporaryPlayerFactory {
      * @param player   - the player to update.
      * @param injector - the injector to store.
      */
-    public static void setInjectorInPlayer(Player player, MinimalInjector injector) {
+    public static void setInjectorForPlayer(Player player, Injector injector) {
         ((TemporaryPlayer) player).setInjector(injector);
     }
 
@@ -82,11 +80,10 @@ public class TemporaryPlayerFactory {
             public Object delegate(
                     @This Object obj,
                     @Origin Method method,
-                    @FieldValue("server") Server server,
+                    @FieldValue("injector") Injector injector,
                     @AllArguments Object... args
             ) throws Throwable {
                 String methodName = method.getName();
-                MinimalInjector injector = ((TemporaryPlayer) obj).getInjector();
 
                 if (injector == null) {
                     throw new IllegalStateException("Unable to find injector.");
@@ -98,7 +95,7 @@ public class TemporaryPlayerFactory {
                 } else if (methodName.equals("getAddress")) {
                     return injector.getAddress();
                 } else if (methodName.equals("getServer")) {
-                    return server;
+                    return Bukkit.getServer();
                 }
 
                 // Handle send message methods
@@ -153,12 +150,6 @@ public class TemporaryPlayerFactory {
                     .createSubclass(TemporaryPlayer.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
                     .name(TemporaryPlayerFactory.class.getPackage().getName() + ".TemporaryPlayerInvocationHandler")
                     .implement(Player.class)
-
-                    .defineField("server", Server.class, Visibility.PRIVATE)
-                    .defineConstructor(Visibility.PUBLIC)
-                    .withParameters(Server.class)
-                    .intercept(MethodCall.invoke(TemporaryPlayer.class.getDeclaredConstructor())
-                            .andThen(FieldAccessor.ofField("server").setsArgumentAt(0)))
                     .method(callbackFilter)
                     .intercept(implementation)
                     .make()
@@ -178,7 +169,7 @@ public class TemporaryPlayerFactory {
      * @param message  - a message.
      * @return Always NULL.
      */
-    private static Object sendMessage(MinimalInjector injector, String message) {
+    private static Object sendMessage(Injector injector, String message) {
         for (PacketContainer packet : ChatExtensions.createChatPackets(message)) {
             injector.sendServerPacket(packet.getHandle(), null, false);
         }
@@ -207,7 +198,7 @@ public class TemporaryPlayerFactory {
      */
     public static Player createTemporaryPlayer() {
         try {
-            return PLAYER_CONSTRUCTOR.newInstance(Bukkit.getServer());
+            return PLAYER_CONSTRUCTOR.newInstance();
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException("Unable to create temporary player", exception);
         }

@@ -13,6 +13,7 @@ public enum ListenerOptions {
      * Disable the automatic game phase detection that will normally force {@link GamePhase#LOGIN} when a packet ID is
      * known to be transmitted during login.
      */
+    @Deprecated
     DISABLE_GAMEPHASE_DETECTION,
 
     /**
