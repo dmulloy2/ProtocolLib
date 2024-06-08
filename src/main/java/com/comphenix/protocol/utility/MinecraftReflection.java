@@ -32,12 +32,6 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
@@ -54,6 +48,11 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Methods and constants specifically used in conjuction with reflecting Minecraft object.
@@ -117,7 +116,7 @@ public final class MinecraftReflection {
     private static MethodAccessor asCraftMirror = null;
     private static MethodAccessor isEmpty = null;
 
-    private static boolean isMojangMapped = false;
+    private static Boolean isMojangMapped = null;
 
     private MinecraftReflection() {
         // No need to make this constructable.
@@ -207,9 +206,6 @@ public final class MinecraftReflection {
                     setDynamicPackageMatcher(MINECRAFT_CLASS_NAME_REGEX);
                 }
             }
-
-            // for now, we're going to say that it's Mojang mapped if the nms world was renamed to ServerLevel
-            isMojangMapped = getNmsWorldClass().getName().contains("ServerLevel");
 
             return MINECRAFT_FULL_PACKAGE;
         } catch (NoSuchMethodException exception) {
@@ -685,9 +681,11 @@ public final class MinecraftReflection {
      * @return The serializer class.
      */
     public static Class<?> getStyleSerializerClass() {
-        return getMinecraftClass("network.chat.ChatModifier$ChatModifierSerializer", "ChatModifier$ChatModifierSerializer");
+        return getMinecraftClass(
+            "network.chat.Style$Serializer",
+            "network.chat.ChatModifier$ChatModifierSerializer",
+            "ChatModifier$ChatModifierSerializer");
     }
-
 
     /**
      * Retrieve the ServerPing class.
@@ -1036,7 +1034,21 @@ public final class MinecraftReflection {
      * @return The team parameters class.
      */
     public static Optional<Class<?>> getTeamParametersClass() {
-        return getOptionalNMS("network.protocol.game.PacketPlayOutScoreboardTeam$b");
+        Optional<Class<?>> clazz = getOptionalNMS(
+            "network.protocol.game.ClientboundSetPlayerTeamPacket$Parameters",
+            "network.protocol.game.PacketPlayOutScoreboardTeam$b"
+        );
+
+        if (!clazz.isPresent()) {
+            try {
+                Class<?> clazz1 = PacketType.Play.Server.SCOREBOARD_TEAM.getPacketClass().getClasses()[0];
+                setMinecraftClass("network.protocol.game.ClientboundSetPlayerTeamPacket$Parameters", clazz1);
+                return Optional.of(clazz1);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return clazz;
     }
 
     /**
@@ -1045,7 +1057,11 @@ public final class MinecraftReflection {
      * @return The component style class.
      */
     public static Class<?> getComponentStyleClass() {
-        return getMinecraftClass("network.chat.ChatModifier", "ChatModifier");
+        return getMinecraftClass(
+            "network.chat.Style",
+            "network.chat.ChatModifier",
+            "ChatModifier"
+        );
     }
 
     /**
@@ -1180,8 +1196,8 @@ public final class MinecraftReflection {
         }
     }
 
-    static Class<?> getOrInferMinecraftClass(String className, Supplier<Class<?>> supplier) {
-        return getOptionalNMS(className).orElseGet(() -> {
+    static Class<?> getOrInferMinecraftClass(String className, Supplier<Class<?>> supplier, String... aliases) {
+        return getOptionalNMS(className, aliases).orElseGet(() -> {
             Class<?> clazz = supplier.get();
             return setMinecraftClass(className, clazz);
         });
@@ -1854,6 +1870,11 @@ public final class MinecraftReflection {
     }
 
     public static boolean isMojangMapped() {
+        if (isMojangMapped == null) {
+            String craftServerName = Bukkit.getServer().getClass().getName();
+            isMojangMapped = !craftServerName.contains(".v") && !craftServerName.contains("_R");
+        }
+
         return isMojangMapped;
     }
 }

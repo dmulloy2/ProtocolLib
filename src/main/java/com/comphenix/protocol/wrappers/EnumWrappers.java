@@ -1,5 +1,16 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
@@ -11,20 +22,10 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
 import org.apache.commons.lang.Validate;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a generic enum converter.
@@ -737,7 +738,7 @@ public abstract class EnumWrappers {
         ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
         DISPLAY_SLOT_CLASS = MinecraftReflection.getNullableNMS("world.scores.DisplaySlot");
         RENDER_TYPE_CLASS = MinecraftReflection.getNullableNMS("world.scores.criteria.IScoreboardCriteria$EnumScoreboardHealthDisplay", "IScoreboardCriteria$EnumScoreboardHealthDisplay");
-        CHAT_FORMATTING_CLASS = MinecraftReflection.getNullableNMS("EnumChatFormat");
+        CHAT_FORMATTING_CLASS = MinecraftReflection.getNullableNMS("ChatFormatting", "EnumChatFormat");
 
         associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
         associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
