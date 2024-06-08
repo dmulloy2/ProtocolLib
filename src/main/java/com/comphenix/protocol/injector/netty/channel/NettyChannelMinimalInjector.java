@@ -15,7 +15,7 @@ final class NettyChannelMinimalInjector implements MinimalInjector {
 
     @Override
     public SocketAddress getAddress() {
-        return this.injector.getWrappedChannel().remoteAddress();
+        return this.injector.getAddress();
     }
 
     @Override
@@ -35,7 +35,7 @@ final class NettyChannelMinimalInjector implements MinimalInjector {
 
     @Override
     public boolean isConnected() {
-        return this.injector.getWrappedChannel().isActive();
+        return this.injector.isConnected();
     }
 
     public NettyChannelInjector getInjector() {

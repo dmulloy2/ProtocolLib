@@ -2,16 +2,18 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.SocketAddress;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.bukkit.Server;
+import javax.annotation.Nullable;
+
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.PacketType;
@@ -39,10 +41,10 @@ import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
@@ -50,49 +52,34 @@ import io.netty.util.AttributeKey;
 
 public class NettyChannelInjector implements Injector {
 
-    // an accessor used when we're unable to retrieve the actual packet field in an outbound packet send
-    private static final FieldAccessor NO_OP_ACCESSOR = new FieldAccessor() {
-        @Override
-        public Object get(Object instance) {
-            return null;
-        }
-
-        @Override
-        public void set(Object instance, Object value) {
-        }
-
-        @Override
-        public Field getField() {
-            return null;
-        }
-    };
-
-    private static final String INTERCEPTOR_NAME = "protocol_lib_inbound_interceptor";
-    private static final String PROTOCOL_READER_NAME = "protocol_lib_inbound_protocol_reader";
+    private static final String INBOUND_INTERCEPTOR_NAME = "protocol_lib_inbound_interceptor";
+    private static final String INBOUND_PROTOCOL_GETTER_NAME = "protocol_lib_inbound_protocol_getter";
     private static final String WIRE_PACKET_ENCODER_NAME = "protocol_lib_wire_packet_encoder";
 
     // all registered channel handlers to easier make sure we unregister them all from the pipeline
-    private static final String[] PROTOCOL_LIB_HANDLERS = new String[]{
-            WIRE_PACKET_ENCODER_NAME, INTERCEPTOR_NAME, PROTOCOL_READER_NAME
+    private static final String[] NETTY_HANDLER_NAMES = new String[]{
+            WIRE_PACKET_ENCODER_NAME, INBOUND_INTERCEPTOR_NAME, INBOUND_PROTOCOL_GETTER_NAME
     };
 
     private static final ReportType REPORT_CANNOT_SEND_PACKET = new ReportType("Unable to send packet %s to %s");
+    private static final ReportType REPORT_CANNOT_SEND_WRITE_PACKET = new ReportType("Unable to send wire packet %s to %s");
+    private static final ReportType REPORT_CANNOT_READ_PACKET = new ReportType("Unable to read packet %s for %s");
+    private static final ReportType REPORT_CANNOT_DISCONNECT = new ReportType("Unable to disconnect %s for %s");
 
     private static final WirePacketEncoder WIRE_PACKET_ENCODER = new WirePacketEncoder();
     private static final Map<Class<?>, FieldAccessor> PACKET_ACCESSORS = new ConcurrentHashMap<>(16, 0.9f);
 
-    private static final Class<?> LOGIN_PACKET_START_CLASS = PacketType.Login.Client.START.getPacketClass();
-    private static final Class<?> PACKET_PROTOCOL_CLASS = PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass();
-
+    // use random attribute name because they need to be unique and would throw on reload
     private static final AttributeKey<Integer> PROTOCOL_VERSION = AttributeKey.valueOf(getRandomKey());
     private static final AttributeKey<NettyChannelInjector> INJECTOR = AttributeKey.valueOf(getRandomKey());
 
-    // lazy initialized fields, if we don't need them we don't bother about them
-    private static FieldAccessor LOGIN_PROFILE_ACCESSOR;
-    private static FieldAccessor PROTOCOL_VERSION_ACCESSOR;
+    static NettyChannelInjector findInjector(Channel channel) {
+        return channel.attr(INJECTOR).get();
+    }
 
-    // bukkit stuff
-    private final Server server;
+    private static String getRandomKey() {
+        return "ProtocolLib-" + ThreadLocalRandom.current().nextLong();
+    }
 
     // protocol lib stuff we need
     private final ErrorReporter errorReporter;
@@ -100,7 +87,7 @@ public class NettyChannelInjector implements Injector {
 
     // references
     private final Object networkManager;
-    private final Channel wrappedChannel;
+    private final Channel channel;
     private final ChannelListener channelListener;
     private final InjectionFactory injectionFactory;
 
@@ -112,47 +99,44 @@ public class NettyChannelInjector implements Injector {
     protected final ThreadLocal<Boolean> processedPackets = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     // status of this injector
-    private volatile boolean closed = false;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     private volatile boolean injected = false;
 
     // information about the player belonging to this injector
     private String playerName;
-    private Player resolvedPlayer;
+    private Player player;
 
     // lazy initialized fields, if we don't need them we don't bother about them
-    private Object playerConnection;
-    
-    private InboundProtocolReader inboundProtocolReader;
+    private volatile Object playerConnection;
+    private volatile InboundProtocolReader inboundProtocolReader;
 
     public NettyChannelInjector(
             Player player,
-            Server server,
-            Object netManager,
+            Object networkManager,
             Channel channel,
             ChannelListener listener,
             InjectionFactory injector,
             ErrorReporter errorReporter
     ) {
         // bukkit stuff
-        this.server = server;
-        this.resolvedPlayer = player;
+        this.player = player;
 
         // protocol lib stuff
         this.errorReporter = errorReporter;
         this.networkProcessor = new NetworkProcessor(errorReporter);
 
         // references
-        this.networkManager = netManager;
-        this.wrappedChannel = channel;
+        this.networkManager = networkManager;
+        this.channel = channel;
         this.channelListener = listener;
         this.injectionFactory = injector;
 
         // register us into the channel
-        this.wrappedChannel.attr(INJECTOR).set(this);
+        this.channel.attr(INJECTOR).set(this);
 
         // read the channel field from the network manager given to this method
         // we re-read this field every time as plugins/spigot forks might give us different network manager types
-        Field channelField = FuzzyReflection.fromObject(netManager, true).getField(FuzzyFieldContract.newBuilder()
+        Field channelField = FuzzyReflection.fromObject(networkManager, true).getField(FuzzyFieldContract.newBuilder()
                 .typeExact(Channel.class)
                 .banModifier(Modifier.STATIC)
                 .build());
@@ -161,134 +145,110 @@ public class NettyChannelInjector implements Injector {
         // hook here into the close future to be 100% sure that this injector gets closed when the channel we wrap gets closed
         // normally we listen to the disconnect event, but there is a very small period of time, between the login and actual
         // join that is not covered by the disconnect event and may lead to unexpected injector states...
-        this.wrappedChannel.closeFuture().addListener(future -> this.close());
+        this.channel.closeFuture().addListener(future -> this.close());
     }
 
-    static NettyChannelInjector findInjector(Channel channel) {
-        return channel.attr(INJECTOR).get();
-    }
-
-    static Object findChannelHandler(Channel channel, Class<?> type) {
-        for (Entry<String, ChannelHandler> entry : channel.pipeline()) {
-            if (type.isAssignableFrom(entry.getValue().getClass())) {
-                return entry.getValue();
-            }
-        }
-        return null;
-    }
-
-    private static String getRandomKey() {
-        return "ProtocolLib-" + ThreadLocalRandom.current().nextLong();
-    }
-
-    private static boolean hasProtocolLibHandler(Channel channel) {
-        for (String handler : PROTOCOL_LIB_HANDLERS) {
-            if (channel.pipeline().get(handler) != null) {
-                return true;
-            }
-        }
-        return false;
+    @Override
+    public SocketAddress getAddress() {
+        return this.channel.remoteAddress();
     }
 
     @Override
     public int getProtocolVersion() {
-        Integer protocolVersion = this.wrappedChannel.attr(PROTOCOL_VERSION).get();
+        Integer protocolVersion = this.channel.attr(PROTOCOL_VERSION).get();
         return protocolVersion == null ? MinecraftProtocolVersion.getCurrentVersion() : protocolVersion;
     }
 
     @Override
     public boolean inject() {
-        // we only do this on the channel event loop to prevent blocking the main server thread
-        // and to be sure that the netty pipeline view we get is up-to-date
-        if (this.wrappedChannel.eventLoop().inEventLoop()) {
-            // ensure that we should actually inject into the channel
-            if (this.closed || this.wrappedChannel instanceof ByteBuddyGenerated || !this.wrappedChannel.isActive()) {
-                return false;
-            }
-
-            // check here if we need to rewrite the channel field and do so
-            // minecraft overrides the channel field when the channel actually becomes active, so we need to ensure that our
-            // proxied channel is always on that field - therefore this rewrite is event before we check if we're already
-            // injected into the channel
-            this.rewriteChannelField();
-
-            // check if we already injected into the channel
-            if (hasProtocolLibHandler(this.wrappedChannel)) {
-                return false;
-            }
-
-            ChannelPipeline pipeline = this.wrappedChannel.pipeline();
-
-            // since 1.20.5 the encoder is renamed to outbound_config when the channel is
-            // waiting for the next protocol phase
-            String encoderName = pipeline.get("outbound_config") != null
-                    ? "outbound_config" : "encoder";
-
-            // inject our handlers
-            pipeline.addAfter(
-                    encoderName,
-                    WIRE_PACKET_ENCODER_NAME,
-                    WIRE_PACKET_ENCODER);
-
-            // since 1.20.2 the packet decoder will remove or reconfigure the protocol for
-            // terminal packets which is why we need to read it before the packet gets
-            // decoded
-            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
-                this.inboundProtocolReader = new InboundProtocolReader(this);
-                pipeline.addBefore(
-                        "decoder",
-                        PROTOCOL_READER_NAME,
-                        this.inboundProtocolReader);
-            }
-
-            // inject inbound packet interceptor
-            pipeline.addAfter(
-                    "decoder",
-                    INTERCEPTOR_NAME,
-                    new InboundPacketInterceptor(this, this.channelListener));
-
-            this.injected = true;
-            return true;
-        } else {
-            // re-run in event loop, return false as we cannot be sure if the injection actually worked
-            this.ensureInEventLoop(this::inject);
+        // ensure we are in the channel's event loop to be "thread-safe" within netty
+        // and our own code
+        if (!this.channel.eventLoop().inEventLoop()) {
+            channel.eventLoop().execute(this::inject);
             return false;
         }
+
+        // don't need to inject if injector or channel got closed
+        if (this.closed.get() || !this.channel.isActive()) {
+            return false;
+        }
+
+        // wrap channel inside the NetworkMananger to proxy write calls to our
+        // processOutbound method, this way we try to minimize the amount of thread
+        // jumps from event loop to minecraft main thread in order to process packets in
+        // main thread
+        Object networkManangerChannel = this.channelField.get(this.networkManager);
+        if (!(networkManangerChannel instanceof NettyChannelProxy)) {
+            EventLoop proxyEventLoop = new NettyEventLoopProxy(this.channel.eventLoop(), this);
+            Channel proxyChannel = new NettyChannelProxy(this.channel, proxyEventLoop, this);
+            this.channelField.set(this.networkManager, proxyChannel);
+        }
+
+        ChannelPipeline pipeline = this.channel.pipeline();
+
+        // since 1.20.5 the en-/decoder is renamed to out-/inbound_config when the
+        // channel is waiting for the next protocol phase (after terminal packet)
+        String encoderName = pipeline.get("outbound_config") != null
+                ? "outbound_config"
+                : "encoder";
+        String decoderName = pipeline.get("inbound_config") != null
+                ? "inbound_config"
+                : "decoder";
+
+        // try to add wire packet encoder
+        if (pipeline.context(WIRE_PACKET_ENCODER_NAME) == null) {
+            pipeline.addAfter(encoderName, WIRE_PACKET_ENCODER_NAME, WIRE_PACKET_ENCODER);
+        }
+
+        // try to add protocol reader, this is necessary because the en-/decoder will
+        // remove or reconfigure the protocol for terminal since 1.20.2+
+        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove() && pipeline.context(INBOUND_PROTOCOL_GETTER_NAME) == null) {
+            this.inboundProtocolReader = new InboundProtocolReader(this);
+            pipeline.addBefore(decoderName, INBOUND_PROTOCOL_GETTER_NAME, this.inboundProtocolReader);
+        }
+
+        // try to add inbound packet interceptor
+        if (pipeline.context(INBOUND_INTERCEPTOR_NAME) == null) {
+            pipeline.addAfter(decoderName, INBOUND_INTERCEPTOR_NAME, new InboundPacketInterceptor(this));
+        }
+
+        // mark injector as injected
+        this.injected = true;
+        return true;
     }
 
-    @Override
-    public void uninject() {
-        // ensure that we injected into the channel before trying to remove anything from it
-        if (this.injected) {
-            // uninject on the event loop to ensure the instant visibility of the change and prevent blocks of other threads
-            if (this.wrappedChannel.eventLoop().inEventLoop()) {
-                this.injected = false;
+    private void uninject() {
+        // ensure we are in the channel's event loop to be "thread-safe" within netty
+        // and our own code
+        if (!this.channel.eventLoop().inEventLoop()) {
+            channel.eventLoop().execute(this::inject);
+            return;
+        }
 
-                // remove known references to us
-                this.wrappedChannel.attr(INJECTOR).remove();
-                this.channelField.set(this.networkManager, this.wrappedChannel);
+        // replace wrapped channel in NetworkManager with original channel
+        this.channelField.set(this.networkManager, this.channel);
 
-                for (String handler : PROTOCOL_LIB_HANDLERS) {
-                    try {
-                        this.wrappedChannel.pipeline().remove(handler);
-                    } catch (NoSuchElementException ignored) {
-                        // ignore that one, probably an edge case
-                    }
-                }
-            } else {
-                this.ensureInEventLoop(this::uninject);
+        // remove all ProtocolLib netty handler
+        ChannelPipeline pipeline = this.channel.pipeline();
+        for (String handlerName : NETTY_HANDLER_NAMES) {
+            if (pipeline.context(handlerName) != null) {
+                pipeline.remove(handlerName);
             }
         }
+
+        // mark injector as uninjected
+        this.injected = false;
     }
 
     @Override
     public void close() {
         // ensure that the injector wasn't close before
-        if (!this.closed) {
-            this.closed = true;
-
+        if (this.closed.compareAndSet(false, true)) {
             // remove all of our references from the channel
             this.uninject();
+
+            // remove any outgoing references
+            this.channel.attr(INJECTOR).remove();
 
             // cleanup
             this.savedMarkers.clear();
@@ -301,8 +261,8 @@ public class NettyChannelInjector implements Injector {
 
     @Override
     public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
-        // do not send the packet if this injector was already closed / is not injected yet
-        if (this.closed || !this.injected) {
+        // ignore call if the injector is closed or not injected
+        if (this.closed.get() || !this.injected) {
             return;
         }
 
@@ -312,18 +272,18 @@ public class NettyChannelInjector implements Injector {
         }
 
         // save the given packet marker and send the packet
-        this.saveMarker(packet, marker);
+        if (marker != null) {
+            this.savedMarkers.put(packet, marker);
+        }
+
         try {
-            if (this.resolvedPlayer instanceof ByteBuddyGenerated) {
-                MinecraftMethods.getNetworkManagerHandleMethod().invoke(this.networkManager, packet);
+            Object playerConnection = this.getPlayerConnection();
+
+            // try to use the player connection if possible
+            if (playerConnection != null) {
+                MinecraftMethods.getPlayerConnectionSendMethod().invoke(playerConnection, packet);
             } else {
-                // ensure that the player is properly connected before sending
-                Object playerConnection = this.getPlayerConnection();
-                if (playerConnection != null) {
-                    MinecraftMethods.getSendPacketMethod().invoke(playerConnection, packet);
-                } else {
-                    MinecraftMethods.getNetworkManagerHandleMethod().invoke(this.networkManager, packet);
-                }
+                MinecraftMethods.getNetworkManagerSendMethod().invoke(this.networkManager, packet);
             }
         } catch (Exception exception) {
             this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
@@ -335,93 +295,94 @@ public class NettyChannelInjector implements Injector {
 
     @Override
     public void receiveClientPacket(Object packet) {
-        // do not do that if we're not injected or this injector was closed
-        if (this.closed || !this.injected) {
+        // ignore call if the injector is closed or not injected
+        if (this.closed.get() || !this.injected) {
             return;
         }
-
-        Runnable receiveAction = () -> {
+        
+        this.ensureInEventLoop(() -> {
             try {
                 // try to invoke the method, this should normally not fail
                 MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(this.networkManager, null, packet);
             } catch (Exception exception) {
-                // 99% the user gave wrong information to the server
-                this.errorReporter.reportMinimal(this.injectionFactory.getPlugin(), "receiveClientPacket", exception);
+                this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_READ_PACKET)
+                        .messageParam(packet, this.playerName)
+                        .error(exception)
+                        .build());
             }
-        };
-
-        // execute the action on the event loop rather than any thread which we should potentially not block
-        if (this.wrappedChannel.eventLoop().inEventLoop()) {
-            receiveAction.run();
-        } else {
-            this.ensureInEventLoop(receiveAction);
-        }
+        });
     }
 
     @Override
     public void sendWirePacket(WirePacket packet) {
-    	this.wrappedChannel.writeAndFlush(packet);
-    }
-
-    public PacketType.Protocol getInboundProtocol() {
-        if (this.inboundProtocolReader != null) {
-            return this.inboundProtocolReader.getProtocol();
+        // ignore call if the injector is closed or not injected
+        if (this.closed.get() || !this.injected) {
+            return;
         }
-        return getCurrentProtocol(PacketType.Sender.CLIENT);
+
+        this.ensureInEventLoop(() -> {
+            try {
+                this.channel.writeAndFlush(packet);
+            } catch (Exception exception) {
+                this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_WRITE_PACKET)
+                        .messageParam(packet, this.playerName)
+                        .error(exception)
+                        .build());
+            }
+        });
     }
 
     @Override
     public Protocol getCurrentProtocol(PacketType.Sender sender) {
-        return ChannelProtocolUtil.PROTOCOL_RESOLVER.apply(this.wrappedChannel, sender);
-    }
-
-    @Override
-    public NetworkMarker getMarker(Object packet) {
-        return this.savedMarkers.get(packet);
-    }
-
-    @Override
-    public void saveMarker(Object packet, NetworkMarker marker) {
-        if (marker != null && !this.closed) {
-            this.savedMarkers.put(packet, marker);
-        }
+        return ChannelProtocolUtil.PROTOCOL_RESOLVER.apply(this.channel, sender);
     }
 
     @Override
     public Player getPlayer() {
         // if the player was already resolved there is no need to do further lookups
-        if (this.resolvedPlayer != null) {
-            return this.resolvedPlayer;
+        if (this.player != null) {
+            return this.player;
         }
 
         // check if the name of the player is already known to the injector
         if (this.playerName != null) {
-            this.resolvedPlayer = this.server.getPlayerExact(this.playerName);
+            this.player = Bukkit.getPlayerExact(this.playerName);
         }
 
         // either we resolved it or we didn't...
-        return this.resolvedPlayer;
+        return this.player;
     }
 
     @Override
     public void setPlayer(Player player) {
-        this.resolvedPlayer = player;
+        this.player = player;
         this.playerName = player.getName();
     }
 
     @Override
     public void disconnect(String message) {
-        // we're still during pre-login, just close the connection
-        if (this.playerConnection == null || this.resolvedPlayer instanceof ByteBuddyGenerated) {
-            this.wrappedChannel.disconnect();
-        } else {
-            try {
-                // try to call the disconnect method on the player
-                MinecraftMethods.getDisconnectMethod(this.playerConnection.getClass()).invoke(this.playerConnection, message);
-            } catch (Exception exception) {
-                throw new IllegalArgumentException("Unable to disconnect the current injector", exception);
+        try {
+            Object playerConnection = this.getPlayerConnection();
+
+            // try to use the player connection if possible
+            if (playerConnection != null) {
+                // this method prefers the main thread so no event loop here
+                MinecraftMethods.getPlayerConnectionDisconnectMethod().invoke(playerConnection, message);
+            } else {
+                Object component = WrappedChatComponent.fromText(message).getHandle();
+                MinecraftMethods.getNetworkManagerDisconnectMethod().invoke(this.networkManager, component);
             }
+        } catch (Exception exception) {
+            this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DISCONNECT)
+                    .messageParam(this.playerName, message)
+                    .error(exception)
+                    .build());
         }
+    }
+
+    @Override
+    public boolean isConnected() {
+        return this.channel.isActive();
     }
 
     @Override
@@ -431,139 +392,98 @@ public class NettyChannelInjector implements Injector {
 
     @Override
     public boolean isClosed() {
-        return this.closed;
+        return this.closed.get();
     }
 
-    void tryProcessLogin(Object packet) {
-        // check if the given packet is a login packet
-        if (LOGIN_PACKET_START_CLASS != null && LOGIN_PACKET_START_CLASS.equals(packet.getClass())) {
+    PacketType.Protocol getInboundProtocol() {
+        if (this.inboundProtocolReader != null) {
+            return this.inboundProtocolReader.getProtocol();
+        }
+        return getCurrentProtocol(PacketType.Sender.CLIENT);
+    }
+
+    /**
+     * Returns true if any plugin registed listeners or built-in listeners for the
+     * given packet type exist. See {@link #processInbound(ChannelHandlerContext, PacketContainer)}
+     * 
+     * @param type the packet type
+     * @return true if the packet type has listeners; otherwise false
+     */
+    boolean hasInboundListener(PacketType type) {
+        // always return true for types of the built-in listener (see #processInbound)
+        return type == PacketType.Handshake.Client.SET_PROTOCOL ||
+                type == PacketType.Login.Client.START ||
+                // check for plugin registed listener
+                this.channelListener.hasInboundListener(type);
+    }
+
+    void processInbound(ChannelHandlerContext ctx, PacketContainer packet) {
+        // process set protocol packets for the protocol version
+        if (packet.getType() == PacketType.Handshake.Client.SET_PROTOCOL) {
+            Integer protocolVersion = packet.getIntegers().readSafely(0);
+            if (protocolVersion != null) {
+                this.channel.attr(PROTOCOL_VERSION).set(protocolVersion);
+            }
+        }
+
+        // process login packets for the player name
+        if (packet.getType() == PacketType.Login.Client.START) {
+            String username;
             if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
-                // 1.19 removed the profile from the packet and now sends the plain username directly
-                // ensure that the game profile accessor is available
-                if (LOGIN_PROFILE_ACCESSOR == null) {
-                    LOGIN_PROFILE_ACCESSOR = Accessors.getFieldAccessor(LOGIN_PACKET_START_CLASS, String.class, true);
-                }
+                // 1.19 replaced the gameprofile with username and uuid field
+                username = packet.getStrings().readSafely(0);
+            } else {
+                WrappedGameProfile profile = packet.getGameProfiles().readSafely(0);
+                username = profile != null ? profile.getName() : null;
+            }
 
-                // get the username from the packet
-                String username = (String) LOGIN_PROFILE_ACCESSOR.get(packet);
-
-                // cache the injector and the player name
+            if (username != null) {
                 this.playerName = username;
                 this.injectionFactory.cacheInjector(username, this);
-            } else {
-                // ensure that the game profile accessor is available
-                if (LOGIN_PROFILE_ACCESSOR == null) {
-                    LOGIN_PROFILE_ACCESSOR = Accessors.getFieldAccessor(
-                            LOGIN_PACKET_START_CLASS,
-                            MinecraftReflection.getGameProfileClass(),
-                            true);
-                }
-
-                // the client only sends the name but the server wraps it into a GameProfile, so here we are
-                WrappedGameProfile profile = WrappedGameProfile.fromHandle(LOGIN_PROFILE_ACCESSOR.get(packet));
-
-                // cache the injector and the player name
-                this.playerName = profile.getName();
-                this.injectionFactory.cacheInjector(profile.getName(), this);
             }
+        }
 
+        // invoke plugin listeners
+        if (this.channelListener.hasInboundListener(packet.getType())) {
+            this.processInboundInternal(ctx, packet);
+        }
+    }
+
+    private void processInboundInternal(ChannelHandlerContext ctx, PacketContainer packetContainer) {
+        if (this.channelListener.hasMainThreadListener(packetContainer.getType()) && !Bukkit.isPrimaryThread()) {
+            // not on the main thread but we are required to be reschedule the packet on the
+            // main thread
+            ProtocolLibrary.getScheduler().runTask(() -> this.processInboundInternal(ctx, packetContainer));
             return;
         }
 
-        // protocol version begin
-        if (PACKET_PROTOCOL_CLASS != null && PACKET_PROTOCOL_CLASS.equals(packet.getClass())) {
-            // ensure the protocol version accessor is available
-            if (PROTOCOL_VERSION_ACCESSOR == null) {
-                try {
-                    Field ver = FuzzyReflection.fromClass(PACKET_PROTOCOL_CLASS, true).getField(FuzzyFieldContract.newBuilder()
-                            .banModifier(Modifier.STATIC)
-                            .typeExact(int.class)
-                            .build());
-                    PROTOCOL_VERSION_ACCESSOR = Accessors.getFieldAccessor(ver);
-                } catch (IllegalArgumentException exception) {
-                    // unable to resolve that field, continue no-op
-                    PROTOCOL_VERSION_ACCESSOR = NO_OP_ACCESSOR;
-                }
-            }
-
-            // read the protocol version from the field if available
-            if (PROTOCOL_VERSION_ACCESSOR != NO_OP_ACCESSOR) {
-                int protocolVersion = (int) PROTOCOL_VERSION_ACCESSOR.get(packet);
-                this.wrappedChannel.attr(PROTOCOL_VERSION).set(protocolVersion);
-            }
-        }
-    }
-
-    private void rewriteChannelField() {
-        // check if we need to rewrite the channel or if the channel is already correct (prevent wrapping a wrapped channel)
-        Object currentChannel = this.channelField.get(this.networkManager);
-        if (currentChannel instanceof NettyChannelProxy) {
+        // call packet handlers, a null result indicates that we shouldn't change
+        // anything
+        PacketEvent event = this.channelListener.onPacketReceiving(this, packetContainer, null);
+        if (event == null) {
+            this.ensureInEventLoop(ctx.channel().eventLoop(), () -> ctx.fireChannelRead(packetContainer.getHandle()));
             return;
         }
 
-        // the field is not correct, rewrite now to our handler
-        Channel ch = new NettyChannelProxy(this.wrappedChannel, new NettyEventLoopProxy(this.wrappedChannel.eventLoop(), this) {
-            @Override
-            protected Runnable doProxyRunnable(Runnable original) {
-                return NettyChannelInjector.this.processOutbound(original);
-            }
+        Object packet = event.getPacket().getHandle();
 
-            @Override
-            protected <T> Callable<T> doProxyCallable(Callable<T> original) {
-                return NettyChannelInjector.this.processOutbound(original);
-            }
-        }, this);
-        this.channelField.set(this.networkManager, ch);
-    }
-
-    private void ensureInEventLoop(Runnable runnable) {
-        this.ensureInEventLoop(this.wrappedChannel.eventLoop(), runnable);
-    }
-
-    private void ensureInEventLoop(EventLoop eventLoop, Runnable runnable) {
-        if (eventLoop.inEventLoop()) {
-            runnable.run();
-        } else {
-            eventLoop.execute(runnable);
-        }
-    }
-
-    void processInboundPacket(ChannelHandlerContext ctx, Object packet, PacketType packetType) {
-        if (this.channelListener.hasMainThreadListener(packetType) && !this.server.isPrimaryThread()) {
-            // not on the main thread but we are required to be - re-schedule the packet on the main thread
-            ProtocolLibrary.getScheduler().runTask(
-                    () -> this.processInboundPacket(ctx, packet, packetType));
-            return;
-        }
-
-        // call packet handlers, a null result indicates that we shouldn't change anything
-        PacketContainer packetContainer = new PacketContainer(packetType, packet);
-        PacketEvent interceptionResult = this.channelListener.onPacketReceiving(this, packetContainer, null);
-        if (interceptionResult == null) {
+        // fire the intercepted packet down the pipeline if it wasn't cancelled and isn't null
+        if (!event.isCancelled() && packet != null) {
             this.ensureInEventLoop(ctx.channel().eventLoop(), () -> ctx.fireChannelRead(packet));
-            return;
-        }
-
-        // fire the intercepted packet down the pipeline if it wasn't cancelled
-        if (!interceptionResult.isCancelled()) {
-            this.ensureInEventLoop(
-                    ctx.channel().eventLoop(),
-                    () -> ctx.fireChannelRead(interceptionResult.getPacket().getHandle()));
 
             // check if there were any post events added the packet after we fired it down the pipeline
             // we use this way as we don't want to construct a new network manager accidentally
-            NetworkMarker marker = NetworkMarker.getNetworkMarker(interceptionResult);
+            NetworkMarker marker = NetworkMarker.getNetworkMarker(event);
             if (marker != null) {
-                this.networkProcessor.invokePostEvent(interceptionResult, marker);
+                this.networkProcessor.invokePostEvent(event, marker);
             }
         }
     }
 
     <T> T processOutbound(T action) {
-        // get the accessor to the packet field
-        // if we are unable to look up the accessor then just return the runnable, probably nothing of our business
+        // try to get packet field accessor or return on failure
         FieldAccessor packetAccessor = this.lookupPacketAccessor(action);
-        if (packetAccessor == NO_OP_ACCESSOR) {
+        if (packetAccessor == FieldAccessor.NO_OP_ACCESSOR) {
             return action;
         }
 
@@ -602,10 +522,9 @@ public class NettyChannelInjector implements Injector {
         }
 
         // ensure that we are on the main thread if we need to
-        if (this.channelListener.hasMainThreadListener(packetType) && !this.server.isPrimaryThread()) {
+        if (this.channelListener.hasMainThreadListener(packetType) && !Bukkit.isPrimaryThread()) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
-            ProtocolLibrary.getScheduler().runTask(
-                    () -> this.sendServerPacket(packet, null, true));
+            ProtocolLibrary.getScheduler().runTask(() -> this.sendServerPacket(packet, null, true));
             return null;
         }
 
@@ -617,10 +536,11 @@ public class NettyChannelInjector implements Injector {
             return action;
         }
 
+        Object interceptedPacket = event.getPacket().getHandle();
+
         // if the event wasn't cancelled by this action we must recheck if the packet changed during the method call
-        if (!event.isCancelled()) {
+        if (!event.isCancelled() && interceptedPacket != null) {
             // rewrite the packet in the given action if the packet was changed during the event call
-            Object interceptedPacket = event.getPacket().getHandle();
             if (interceptedPacket != packet) {
                 packetAccessor.set(action, interceptedPacket);
             }
@@ -670,37 +590,53 @@ public class NettyChannelInjector implements Injector {
     }
 
     private FieldAccessor lookupPacketAccessor(Object action) {
-        return PACKET_ACCESSORS.computeIfAbsent(action.getClass(), clazz -> {
+        return PACKET_ACCESSORS.computeIfAbsent(action.getClass(), key -> {
             try {
-                // find the field
-                Field packetField = FuzzyReflection.fromClass(clazz, true).getField(FuzzyFieldContract
-                        .newBuilder()
+                Field packetField = FuzzyReflection.fromClass(key, true).getField(
+                        FuzzyFieldContract.newBuilder()
                         .typeSuperOf(MinecraftReflection.getPacketClass())
                         .build());
                 return Accessors.getFieldAccessor(packetField);
             } catch (IllegalArgumentException exception) {
-                // no such field found :(
-                return NO_OP_ACCESSOR;
+                // return noop accessor because computeIfAbsent interprets null as a missing key
+                return FieldAccessor.NO_OP_ACCESSOR;
             }
         });
     }
 
+    /**
+     * Returns the PlayerConnection or null if the player instance is null or a
+     * temporary player
+     * 
+     * @return the PlayerConnection or null
+     */
+    @Nullable
     private Object getPlayerConnection() {
         // resolve the player connection if needed
         if (this.playerConnection == null) {
             Player target = this.getPlayer();
-            if (target == null) {
+            // if player is null or temporary return null
+            if (target == null || target instanceof ByteBuddyGenerated) {
                 return null;
             }
 
+            // this can in some cases still return null because the connection isn't set
+            // during the configuration phase but the player instance got created
             this.playerConnection = MinecraftFields.getPlayerConnection(target);
         }
 
-        // cannot be null at this point
         return this.playerConnection;
     }
 
-    public Channel getWrappedChannel() {
-        return this.wrappedChannel;
+    private void ensureInEventLoop(Runnable runnable) {
+        this.ensureInEventLoop(this.channel.eventLoop(), runnable);
+    }
+
+    private void ensureInEventLoop(EventLoop eventLoop, Runnable runnable) {
+        if (eventLoop.inEventLoop()) {
+            runnable.run();
+        } else {
+            eventLoop.execute(runnable);
+        }
     }
 }

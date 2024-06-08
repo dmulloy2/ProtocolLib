@@ -20,6 +20,7 @@ package com.comphenix.protocol.injector.temporary;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -202,12 +203,11 @@ public class TemporaryPlayerFactory {
      * Note that a temporary player has not yet been assigned a name, and thus cannot be
      * uniquely identified. Use the address instead.
      *
-     * @param server - the current server.
      * @return A temporary player instance.
      */
-    public static Player createTemporaryPlayer(final Server server) {
+    public static Player createTemporaryPlayer() {
         try {
-            return PLAYER_CONSTRUCTOR.newInstance(server);
+            return PLAYER_CONSTRUCTOR.newInstance(Bukkit.getServer());
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException("Unable to create temporary player", exception);
         }

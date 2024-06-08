@@ -2,10 +2,12 @@ package com.comphenix.protocol.utility;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.comphenix.protocol.BukkitInitialization;
 import java.lang.reflect.Field;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import com.comphenix.protocol.BukkitInitialization;
 
 public class MinecraftMethodsTest {
 
@@ -16,8 +18,12 @@ public class MinecraftMethodsTest {
 
     @Test
     public void testSendPacketMethods() {
-        assertNotNull(MinecraftMethods.getSendPacketMethod());
-        assertNotNull(MinecraftMethods.getNetworkManagerHandleMethod());
+        assertNotNull(MinecraftMethods.getPlayerConnectionSendMethod());
+        assertNotNull(MinecraftMethods.getPlayerConnectionDisconnectMethod());
+
+        assertNotNull(MinecraftMethods.getNetworkManagerSendMethod());
+        assertNotNull(MinecraftMethods.getNetworkManagerReadPacketMethod());
+        assertNotNull(MinecraftMethods.getNetworkManagerDisconnectMethod());
     }
 
     private void setNull(final String fieldName) throws NoSuchFieldException, IllegalAccessException {

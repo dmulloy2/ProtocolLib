@@ -10,6 +10,25 @@ import java.lang.reflect.Field;
 public interface FieldAccessor {
 
     /**
+     * NoOp Accessor, does what is says: nothing.
+     */
+    static final FieldAccessor NO_OP_ACCESSOR = new FieldAccessor() {
+        @Override
+        public Object get(Object instance) {
+            return null;
+        }
+
+        @Override
+        public void set(Object instance, Object value) {
+        }
+
+        @Override
+        public Field getField() {
+            return null;
+        }
+    };
+
+    /**
      * Retrieve the value of a field for a particular instance.
      *
      * @param instance - the instance, or NULL for a static field.

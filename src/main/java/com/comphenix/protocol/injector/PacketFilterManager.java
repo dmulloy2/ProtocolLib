@@ -106,7 +106,6 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
         // injectors
         this.networkManagerInjector = new NetworkManagerInjector(
                 builder.getLibrary(),
-                builder.getServer(),
                 this,
                 builder.getReporter());
 

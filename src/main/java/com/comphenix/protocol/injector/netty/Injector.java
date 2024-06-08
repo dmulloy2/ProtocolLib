@@ -1,9 +1,12 @@
 package com.comphenix.protocol.injector.netty;
 
+import java.net.SocketAddress;
+
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
-import org.bukkit.entity.Player;
 
 /**
  * Represents an injected client connection.
@@ -27,8 +30,6 @@ public interface Injector {
      * @return TRUE if we injected the channel, false if we could not inject or it was already injected.
      */
     boolean inject();
-
-    void uninject();
 
     /**
      * Close the current injector.
@@ -68,21 +69,7 @@ public interface Injector {
      */
     Protocol getCurrentProtocol(PacketType.Sender sender);
 
-    /**
-     * Retrieve the network marker associated with a given packet.
-     *
-     * @param packet - the packet.
-     * @return The network marker.
-     */
-    NetworkMarker getMarker(Object packet);
-
-    /**
-     * Associate a given network marker with a specific packet.
-     *
-     * @param packet - the NMS packet.
-     * @param marker - the associated marker.
-     */
-    void saveMarker(Object packet, NetworkMarker marker);
+    SocketAddress getAddress();
 
     /**
      * Retrieve the current player or temporary player associated with the injector.
@@ -99,6 +86,8 @@ public interface Injector {
     void setPlayer(Player player);
 
     void disconnect(String message);
+
+    boolean isConnected();
 
     /**
      * Determine if the channel has already been injected.

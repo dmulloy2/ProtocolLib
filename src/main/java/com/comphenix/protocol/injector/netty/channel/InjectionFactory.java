@@ -14,11 +14,11 @@
  */
 package com.comphenix.protocol.injector.netty.channel;
 
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nonnull;
 
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -33,6 +33,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.MapMaker;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 
 /**
  * Represents an injector factory.
@@ -43,13 +44,11 @@ import io.netty.channel.Channel;
  */
 public class InjectionFactory {
 
-    // This should work as long as the injectors are, uh, injected
     private final ConcurrentMap<String, Injector> nameLookup = new MapMaker().weakValues().makeMap();
     private final ConcurrentMap<Player, Injector> playerLookup = new MapMaker().weakKeys().weakValues().makeMap();
 
     // bukkit stuff
     private final Plugin plugin;
-    private final Server server;
 
     // protocol lib stuff
     private final ChannelListener channelListener;
@@ -58,9 +57,8 @@ public class InjectionFactory {
     // state of the factory
     private boolean closed;
 
-    public InjectionFactory(Plugin plugin, Server server, ChannelListener channelListener, ErrorReporter errorReporter) {
+    public InjectionFactory(Plugin plugin, ChannelListener channelListener, ErrorReporter errorReporter) {
         this.plugin = plugin;
-        this.server = server;
         this.channelListener = channelListener;
         this.errorReporter = errorReporter;
     }
@@ -119,7 +117,6 @@ public class InjectionFactory {
             // construct a new injector as it seems like we have none yet
             injector = new NettyChannelInjector(
                     player,
-                    this.server,
                     networkManager,
                     channel,
                     this.channelListener,
@@ -168,13 +165,12 @@ public class InjectionFactory {
             return EmptyInjector.WITHOUT_PLAYER;
         }
 
-        Object netManager = this.findNetworkManager(channel);
-        Player temporaryPlayer = TemporaryPlayerFactory.createTemporaryPlayer(this.server);
+        Object networkManager = this.findNetworkManager(channel);
+        Player temporaryPlayer = TemporaryPlayerFactory.createTemporaryPlayer();
 
         NettyChannelInjector injector = new NettyChannelInjector(
                 temporaryPlayer,
-                this.server,
-                netManager,
+                networkManager,
                 channel,
                 this.channelListener,
                 this,
@@ -253,11 +249,12 @@ public class InjectionFactory {
      * @return The network manager.
      */
     private Object findNetworkManager(Channel channel) {
-        // Find the network manager
-        Object networkManager = NettyChannelInjector.findChannelHandler(channel,
-                MinecraftReflection.getNetworkManagerClass());
-        if (networkManager != null) {
-            return networkManager;
+        Class<?> networkManagerClass = MinecraftReflection.getNetworkManagerClass();
+
+        for (Entry<String, ChannelHandler> entry : channel.pipeline()) {
+            if (networkManagerClass.isAssignableFrom(entry.getValue().getClass())) {
+                return entry.getValue();
+            }
         }
 
         throw new IllegalArgumentException("Unable to find NetworkManager in " + channel);

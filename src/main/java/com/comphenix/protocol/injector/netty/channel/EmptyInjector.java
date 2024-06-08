@@ -1,12 +1,14 @@
 package com.comphenix.protocol.injector.netty.channel;
 
+import java.net.SocketAddress;
+
+import org.bukkit.entity.Player;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.WirePacket;
-
-import org.bukkit.entity.Player;
 
 final class EmptyInjector implements Injector {
 
@@ -19,6 +21,14 @@ final class EmptyInjector implements Injector {
     }
 
     @Override
+    public SocketAddress getAddress() {
+        if (this.player != null) {
+            return this.player.getAddress();
+        }
+        return null;
+    }
+
+    @Override
     public int getProtocolVersion() {
         return Integer.MIN_VALUE;
     }
@@ -26,10 +36,6 @@ final class EmptyInjector implements Injector {
     @Override
     public boolean inject() {
         return false;
-    }
-
-    @Override
-    public void uninject() {
     }
 
     @Override
@@ -54,15 +60,6 @@ final class EmptyInjector implements Injector {
     }
 
     @Override
-    public NetworkMarker getMarker(Object packet) {
-        return null;
-    }
-
-    @Override
-    public void saveMarker(Object packet, NetworkMarker marker) {
-    }
-
-    @Override
     public Player getPlayer() {
         return this.player;
     }
@@ -74,6 +71,11 @@ final class EmptyInjector implements Injector {
 
     @Override
     public void disconnect(String message) {
+    }
+
+    @Override
+    public boolean isConnected() {
+        return false;
     }
 
     @Override

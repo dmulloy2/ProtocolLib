@@ -23,7 +23,7 @@ public class TemporaryPlayerFactoryTest {
 
     @Test
     public void testUnavailableSocketInjector() {
-        Player player = TemporaryPlayerFactory.createTemporaryPlayer(this.server);
+        Player player = TemporaryPlayerFactory.createTemporaryPlayer();
         assertThrows(IllegalStateException.class, player::getPlayer);
     }
 }

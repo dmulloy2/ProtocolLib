@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -51,10 +50,10 @@ public class NetworkManagerInjector implements ChannelListener {
     private boolean closed = false;
     private boolean injected = false;
 
-    public NetworkManagerInjector(Plugin plugin, Server server, ListenerInvoker listenerInvoker, ErrorReporter reporter) {
+    public NetworkManagerInjector(Plugin plugin, ListenerInvoker listenerInvoker, ErrorReporter reporter) {
         this.errorReporter = reporter;
         this.listenerInvoker = listenerInvoker;
-        this.injectionFactory = new InjectionFactory(plugin, server, this, reporter);
+        this.injectionFactory = new InjectionFactory(plugin, this, reporter);
 
         // hooking netty handlers
         InjectionChannelInboundHandler injectionHandler = new InjectionChannelInboundHandler(
