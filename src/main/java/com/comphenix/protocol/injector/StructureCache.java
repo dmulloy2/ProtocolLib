@@ -32,7 +32,7 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.reflect.instances.DefaultInstances;
-import com.comphenix.protocol.reflect.instances.PacketCreator;
+import com.comphenix.protocol.reflect.instances.InstanceCreator;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -57,7 +57,7 @@ import net.bytebuddy.matcher.ElementMatchers;
 public class StructureCache {
 
     // Structure modifiers
-    private static final Map<Class<?>, Supplier<Object>> PACKET_INSTANCE_CREATORS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Supplier<Object>> CACHED_INSTANCE_CREATORS = new ConcurrentHashMap<>();
     private static final Map<PacketType, StructureModifier<Object>> STRUCTURE_MODIFIER_CACHE = new ConcurrentHashMap<>();
 
     // packet data serializer which always returns an empty nbt tag compound
@@ -67,80 +67,90 @@ public class StructureCache {
     private static Supplier<Object> TRICKED_DATA_SERIALIZER_BASE;
     private static Supplier<Object> TRICKED_DATA_SERIALIZER_JSON;
 
+    /**
+     * @deprecated Renamed to {@link #newInstance(Class)}.
+     */
+    @Deprecated
     public static Object newPacket(Class<?> packetClass) {
-        Supplier<Object> packetConstructor = PACKET_INSTANCE_CREATORS.computeIfAbsent(packetClass, packetClassKey -> {
-            try {
-                PacketCreator creator = PacketCreator.forPacket(packetClassKey);
-                if (creator.get() != null) {
-                    return creator;
-                }
-            } catch (Exception ignored) {
+        return newInstance(packetClass);
+    }
+
+    public static Object newInstance(Class<?> clazz) {
+        Supplier<Object> creator = CACHED_INSTANCE_CREATORS.computeIfAbsent(clazz, StructureCache::determineBestCreator);
+        return creator.get();
+    }
+
+    static Supplier<Object> determineBestCreator(Class<?> clazz) {
+        try {
+            InstanceCreator creator = InstanceCreator.forClass(clazz);
+            if (creator.get() != null) {
+                return creator;
             }
+        } catch (Exception ignored) {
+        }
 
-            WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(packetClassKey);
+        WrappedStreamCodec streamCodec = PacketRegistry.getStreamCodec(clazz);
 
-            // use the new stream codec for versions above 1.20.5 if possible
-            if (streamCodec != null && tryInitTrickDataSerializer()) {
+        // use the new stream codec for versions above 1.20.5 if possible
+        if (streamCodec != null && tryInitTrickDataSerializer()) {
+            try {
+                // first try with the base accessor
+                Object serializer = TRICKED_DATA_SERIALIZER_BASE.get();
+                streamCodec.decode(serializer); // throwaway instance, for testing
+
+                // method is working
+                return () -> streamCodec.decode(serializer);
+            } catch (Exception ignored) {
                 try {
-                    // first try with the base accessor
-                    Object serializer = TRICKED_DATA_SERIALIZER_BASE.get();
+                    // try with the json accessor
+                    Object serializer = TRICKED_DATA_SERIALIZER_JSON.get();
                     streamCodec.decode(serializer); // throwaway instance, for testing
 
                     // method is working
                     return () -> streamCodec.decode(serializer);
-                } catch (Exception ignored) {
-                    try {
-                        // try with the json accessor
-                        Object serializer = TRICKED_DATA_SERIALIZER_JSON.get();
-                        streamCodec.decode(serializer); // throwaway instance, for testing
-
-                        // method is working
-                        return () -> streamCodec.decode(serializer);
-                    } catch (Exception ignored1) {
-                        // shrug, fall back to default behaviour
-                    }
+                } catch (Exception ignored1) {
+                    // shrug, fall back to default behaviour
                 }
             }
+        }
 
-            // prefer construction via PacketDataSerializer constructor on 1.17 and above
-            if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-                ConstructorAccessor serializerAccessor = Accessors.getConstructorAccessorOrNull(
-                        packetClassKey,
-                        MinecraftReflection.getPacketDataSerializerClass());
-                if (serializerAccessor != null) {
-                    // check if the method is possible
-                    if (tryInitTrickDataSerializer()) {
+        // prefer construction via PacketDataSerializer constructor on 1.17 and above
+        if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+            ConstructorAccessor serializerAccessor = Accessors.getConstructorAccessorOrNull(
+                clazz,
+                MinecraftReflection.getPacketDataSerializerClass());
+            if (serializerAccessor != null) {
+                // check if the method is possible
+                if (tryInitTrickDataSerializer()) {
+                    try {
+                        // first try with the base accessor
+                        Object serializer = TRICKED_DATA_SERIALIZER_BASE.get();
+                        serializerAccessor.invoke(serializer); // throwaway instance, for testing
+
+                        // method is working
+                        return () -> serializerAccessor.invoke(serializer);
+                    } catch (Exception ignored) {
                         try {
-                            // first try with the base accessor
-                            Object serializer = TRICKED_DATA_SERIALIZER_BASE.get();
+                            // try with the json accessor
+                            Object serializer = TRICKED_DATA_SERIALIZER_JSON.get();
                             serializerAccessor.invoke(serializer); // throwaway instance, for testing
 
                             // method is working
                             return () -> serializerAccessor.invoke(serializer);
-                        } catch (Exception ignored) {
-                            try {
-                                // try with the json accessor
-                                Object serializer = TRICKED_DATA_SERIALIZER_JSON.get();
-                                serializerAccessor.invoke(serializer); // throwaway instance, for testing
-
-                                // method is working
-                                return () -> serializerAccessor.invoke(serializer);
-                            } catch (Exception ignored1) {
-                                // shrug, fall back to default behaviour
-                            }
+                        } catch (Exception ignored1) {
+                            // shrug, fall back to default behaviour
                         }
                     }
                 }
             }
+        }
 
-            // try via DefaultInstances as fallback
-            return () -> {
-                Object packetInstance = DefaultInstances.DEFAULT.create(packetClassKey);
-                Objects.requireNonNull(packetInstance, "Unable to create packet instance for class " + packetClassKey + " - " + tryInitTrickDataSerializer() + " - " + streamCodec);
-                return packetInstance;
-            };
-        });
-        return packetConstructor.get();
+        // try via DefaultInstances as fallback
+        return () -> {
+            Object packetInstance = DefaultInstances.DEFAULT.create(clazz);
+            Objects.requireNonNull(packetInstance, "Unable to create instance for class " + clazz + " - " + tryInitTrickDataSerializer() + " - " + streamCodec);
+            return packetInstance;
+        };
     }
 
     /**

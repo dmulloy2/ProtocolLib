@@ -154,8 +154,7 @@ public class WrappedTeamParameters extends AbstractWrapper {
             Preconditions.checkNotNull(collisionRule, "Collision rule not set");
             Preconditions.checkNotNull(color, "Color not set");
 
-            // Not technically a packet, but it has a PacketDataSerializer constructor, so it works fine
-            Object handle = StructureCache.newPacket(getNmsClassOrThrow());
+            Object handle = StructureCache.newInstance(getNmsClassOrThrow());
 
             WrappedTeamParameters wrapped = new WrappedTeamParameters(handle);
             wrapped.writeComponent(0, displayName);
