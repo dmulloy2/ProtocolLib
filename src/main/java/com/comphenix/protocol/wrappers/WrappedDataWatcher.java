@@ -20,9 +20,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -33,9 +35,12 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.EnumWrappers.Direction;
+import com.comphenix.protocol.wrappers.EnumWrappers.EntityPose;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
@@ -200,7 +205,7 @@ public class WrappedDataWatcher implements IDataWatcher {
         impl.clear();
     }
 
-    // ---- Object Getters
+    // ---- 0: byte
 
     /**
      * Get a watched byte.
@@ -212,6 +217,12 @@ public class WrappedDataWatcher implements IDataWatcher {
         return (Byte) getObject(index);
     }
 
+    public void setByte(int index, byte value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(Byte.class)), value, update);
+    }
+
+    // ---- short (unused)
+
     /**
      * Get a watched short.
      * 
@@ -221,6 +232,8 @@ public class WrappedDataWatcher implements IDataWatcher {
     public Short getShort(int index) {
         return (Short) getObject(index);
     }
+
+    // ---- 1: varint (integer)
 
     /**
      * Get a watched integer.
@@ -232,6 +245,22 @@ public class WrappedDataWatcher implements IDataWatcher {
         return (Integer) getObject(index);
     }
 
+    public void setInteger(int index, Integer value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(Integer.class)), value, update);
+    }
+
+    // ---- 2: varlong (long)
+
+    public Long getLong(int index) {
+        return (Long) getObject(index);
+    }
+
+    public void setLong(int index, Long value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(Long.class)), value, update);
+    }
+
+    // ---- 3: float
+
     /**
      * Get a watched float.
      * 
@@ -241,6 +270,12 @@ public class WrappedDataWatcher implements IDataWatcher {
     public Float getFloat(int index) {
         return (Float) getObject(index);
     }
+
+    public void setFloat(int index, Float value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(Float.class)), value, update);
+    }
+
+    // ---- 4: string
 
     /**
      * Get a watched string.
@@ -252,6 +287,32 @@ public class WrappedDataWatcher implements IDataWatcher {
         return (String) getObject(index);
     }
 
+    public void setString(int index, String value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(String.class)), value, update);
+    }
+
+    // ---- 5: text component
+
+    public WrappedChatComponent getChatComponent(int index) {
+        return (WrappedChatComponent) getObject(index);
+    }
+
+    public void setChatComponent(int index, WrappedChatComponent value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getChatComponentSerializer()), value, update);
+    }
+
+    // ---- 6: optional text component
+
+    public Optional<WrappedChatComponent> getOptionalChatComponent(int index) {
+        return (Optional<WrappedChatComponent>) getObject(index);
+    }
+
+    public void setOptionalChatComponent(int index, Optional<WrappedChatComponent> value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getChatComponentSerializer(true)), value, update);
+    }
+
+    // ---- 7: slot (item stack)
+
     /**
      * Get a watched string.
      * 
@@ -261,6 +322,158 @@ public class WrappedDataWatcher implements IDataWatcher {
     public ItemStack getItemStack(int index) {
         return (ItemStack) getObject(index);
     }
+
+    public void setItemStack(int index, ItemStack itemStack, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getItemStackSerializer(false)), itemStack, update);
+    }
+
+    // ---- 8: boolean
+
+    public Boolean getBoolean(int index) {
+        return (Boolean) getObject(index);
+    }
+
+    public void setBoolean(int index, Boolean value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(Boolean.class)), value, update);
+    }
+
+    // ---- 9: rotations
+    // TODO
+
+    // ---- 10: position
+
+    public BlockPosition getPosition(int index) {
+        return (BlockPosition) getObject(index);
+    }
+
+    public void setPosition(int index, BlockPosition position, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getBlockPositionSerializer(false)), position, update);
+    }
+
+    // ---- 11: optional position
+
+    public Optional<BlockPosition> getOptionalPosition(int index) {
+        return (Optional<BlockPosition>) getObject(index);
+    }
+
+    public void setOptionalPosition(int index, java.util.Optional<BlockPosition> position, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getBlockPositionSerializer(true)), position, update);
+    }
+
+    // ---- 12: direction
+
+    public Direction getDirection(int index) {
+        return (Direction) getObject(index);
+    }
+
+    public void setDirection(int index, Direction direction, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getDirectionSerializer()), direction, update);
+    }
+
+    // ---- 13: optional uuid
+
+    public Optional<UUID> getOptionalUUID(int index) {
+        return (Optional<UUID>) getObject(index);
+    }
+
+    public void setOptionalUUID(int index, Optional<UUID> uuid, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getUUIDSerializer(true)), uuid, update);
+    }
+
+    // ---- 14: block state
+
+    public WrappedBlockData getBlockState(int index) {
+        return (WrappedBlockData) getObject(index);
+    }
+
+    public void setBlockState(int index, WrappedBlockData blockData, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getBlockDataSerializer(false)), blockData, update);
+    }
+
+    // ---- 15: optional block state
+
+    public Optional<WrappedBlockData> getOptionalBlockState(int index) {
+        return (Optional<WrappedBlockData>) getObject(index);
+    }
+
+    public void setOptionalBlockState(int index, Optional<WrappedBlockData> value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getBlockDataSerializer(true)), value, update);
+    }
+
+    // ---- 16: NBT
+
+    public NbtCompound getNBTCompound(int index) {
+        return (NbtCompound) getObject(index);
+    }
+
+    public void setNBTCompound(int index, NbtCompound nbt, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.getNBTCompoundSerializer()), nbt, update);
+    }
+
+    // ---- 17: particle
+
+    public WrappedParticle<?> getParticle(int index) {
+        return (WrappedParticle<?>) getObject(index);
+    }
+
+    public void setParticle(int index, WrappedParticle<?> particle, boolean update) {
+        // TODO: is ParticleParam correct?
+        setObject(new WrappedDataWatcherObject(index, Registry.get(MinecraftReflection.getParticleParam(), false)), particle, update);
+    }
+
+    // ---- 18: villager data
+
+    public WrappedVillagerData getVillagerData(int index) {
+        return (WrappedVillagerData) getObject(index);
+    }
+
+    public void setVillagerData(int index, WrappedVillagerData data, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(WrappedVillagerData.getNmsClass(), false)), data, update);
+    }
+
+    // ---- 19: optional varint (int)
+
+    public Optional<Integer> getOptionalInteger(int index) {
+        return (Optional<Integer>) getObject(index);
+    }
+
+    public void setOptionalInteger(int index, Optional<Integer> value, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(Integer.class, true)), value, update);
+    }
+
+    // ---- 20: pose
+
+    public EntityPose getPose(int index) {
+        return (EntityPose) getObject(index);
+    }
+
+    public void setPose(int index, EntityPose pose, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(EnumWrappers.getEntityPoseClass(), false)), pose, update);
+    }
+
+    // TODO: 21-25, 27
+
+    // ---- 21: cat variant
+
+    // ---- 22: frog variant
+
+    // ---- 23: optional global position
+
+    // ---- 24: painting variant
+
+    // ---- 25: sniffer state
+
+    // ---- 26: vector3
+
+    public Vector3F getVector3F(int index) {
+        return (Vector3F) getObject(index);
+    }
+
+    public void setVector3F(int index, Vector3F vector, boolean update) {
+        setObject(new WrappedDataWatcherObject(index, Registry.get(Vector3F.getMinecraftClass(), false)), vector, update);
+    }
+
+    // ---- 27: quaternion
 
     /**
      * Retrieve a watchable object by index.
@@ -437,6 +650,22 @@ public class WrappedDataWatcher implements IDataWatcher {
      */
     public void setEntity(Entity entity) {
         impl.setEntity(entity);
+    }
+
+    /**
+     * Exports the contents of this data watcher to a list of WrappedDataValues
+     * for use in the ENTITY_METADATA packet
+     * @return The data value collection
+     */
+    public List<WrappedDataValue> toDataValueCollection() {
+        List<WrappedWatchableObject> objects = impl.getWatchableObjects();
+        List<WrappedDataValue> values = new ArrayList<>(objects.size());
+        for (WrappedWatchableObject object : objects) {
+            WrappedDataWatcherObject watcherObj = object.getWatcherObject();
+            Object value = WrappedWatchableObject.getUnwrapped(object.getRawValue());
+            values.add(new WrappedDataValue(watcherObj.getIndex(), watcherObj.getSerializer(), value));
+        }
+        return values;
     }
 
     private static final ImmutableBiMap<Class<?>, Integer> CLASS_TO_ID = new ImmutableBiMap.Builder<Class<?>, Integer>()
@@ -756,7 +985,9 @@ public class WrappedDataWatcher implements IDataWatcher {
      */
     public static class Registry {
         private static boolean INITIALIZED = false;
-        private static List<Serializer> REGISTRY = new ArrayList<>();
+
+        private static Map<Class<?>, Serializer> RAW_REGISTRY = null;
+        private static Map<Class<?>, Serializer> OPTIONAL_REGISTRY = null;
 
         /**
          * Gets the first serializer associated with a given class.
@@ -774,13 +1005,13 @@ public class WrappedDataWatcher implements IDataWatcher {
             Validate.notNull(clazz,"Class cannot be null!");
             initialize();
 
-            for (Serializer serializer : REGISTRY) {
-                if (serializer.getType().equals(clazz)) {
-                    return serializer;
-                }
+            Serializer serializer = RAW_REGISTRY.getOrDefault(clazz,
+                OPTIONAL_REGISTRY.getOrDefault(clazz, null));
+            if (serializer == null) {
+                throw new IllegalArgumentException("No serializer found for " + clazz);
             }
 
-            throw new IllegalArgumentException("No serializer found for " + clazz);
+            return serializer;
         }
 
         /**
@@ -797,16 +1028,12 @@ public class WrappedDataWatcher implements IDataWatcher {
             Validate.notNull(clazz, "Class cannot be null!");
             initialize();
 
-            Validate.notEmpty(REGISTRY, "Registry has no elements!");
-
-            for (Serializer serializer : REGISTRY) {
-                if (serializer.getType().equals(clazz)
-                    && serializer.isOptional() == optional) {
-                    return serializer;
-                }
+            Serializer serializer = optional ? OPTIONAL_REGISTRY.get(clazz) : RAW_REGISTRY.get(clazz);
+            if (serializer == null) {
+                throw new IllegalArgumentException("No serializer found for " + (optional ? "Optional<" + clazz + ">" : clazz));
             }
 
-            throw new IllegalArgumentException("No serializer found for " + (optional ? "Optional<" + clazz + ">" : clazz));
+            return serializer;
         }
 
         /**
@@ -818,7 +1045,13 @@ public class WrappedDataWatcher implements IDataWatcher {
             Validate.notNull(handle, "handle cannot be null!");
             initialize();
 
-            for (Serializer serializer : REGISTRY) {
+            for (Serializer serializer : RAW_REGISTRY.values()) {
+                if (serializer.getHandle().equals(handle)) {
+                    return serializer;
+                }
+            }
+
+            for (Serializer serializer : OPTIONAL_REGISTRY.values()) {
                 if (serializer.getHandle().equals(handle)) {
                     return serializer;
                 }
@@ -833,6 +1066,9 @@ public class WrappedDataWatcher implements IDataWatcher {
             } else {
                 return;
             }
+
+            Map<Class<?>, Serializer> rawRegistry = new HashMap<>();
+            Map<Class<?>, Serializer> optionalRegistry = new HashMap<>();
 
             List<Field> candidates = FuzzyReflection.fromClass(MinecraftReflection.getDataWatcherRegistryClass(), true)
                     .getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
@@ -867,9 +1103,16 @@ public class WrappedDataWatcher implements IDataWatcher {
                         throw new RuntimeException("Failed to read serializer: " + candidate.getName());
                     }
 
-                    REGISTRY.add(new Serializer(innerClass, serializer, optional));
+                    if (optional) {
+                        optionalRegistry.put(innerClass, new Serializer(innerClass, serializer, true));
+                    } else {
+                        rawRegistry.put(innerClass, new Serializer(innerClass, serializer, false));
+                    }
                 }
             }
+
+            RAW_REGISTRY = ImmutableMap.copyOf(rawRegistry);
+            OPTIONAL_REGISTRY = ImmutableMap.copyOf(optionalRegistry);
         }
 
         // ---- Helper methods

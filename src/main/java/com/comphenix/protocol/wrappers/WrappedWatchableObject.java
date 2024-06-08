@@ -14,6 +14,8 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.util.Optional;
+
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
@@ -23,9 +25,8 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.Optional;
+import org.bukkit.inventory.ItemStack;
 
 import static com.comphenix.protocol.utility.MinecraftReflection.is;
 
@@ -80,11 +81,13 @@ public final class WrappedWatchableObject extends AbstractWrapper {
             constructor = Accessors.getConstructorAccessor(HANDLE_TYPE.getConstructors()[0]);
         }
 
+        Object nmsValue = getUnwrapped(value);
+
         if (MinecraftReflection.watcherObjectExists()) {
-            return constructor.invoke(watcherObject.getHandle(), value);
+            return constructor.invoke(watcherObject.getHandle(), nmsValue);
         } else {
             // new WatchableObject(classId, index, value)
-            return constructor.invoke(WrappedDataWatcher.getTypeID(value.getClass()), watcherObject.getIndex(), value);
+            return constructor.invoke(WrappedDataWatcher.getTypeID(value.getClass()), watcherObject.getIndex(), nmsValue);
         }
     }
 
