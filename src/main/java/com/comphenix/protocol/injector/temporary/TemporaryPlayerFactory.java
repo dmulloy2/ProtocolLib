@@ -21,7 +21,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -147,7 +146,7 @@ public class TemporaryPlayerFactory {
 
         try {
             final Constructor<?> constructor = ByteBuddyFactory.getInstance()
-                    .createSubclass(TemporaryPlayer.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
+                    .createSubclass(TemporaryPlayer.class, ConstructorStrategy.Default.DEFAULT_CONSTRUCTOR)
                     .name(TemporaryPlayerFactory.class.getPackage().getName() + ".TemporaryPlayerInvocationHandler")
                     .implement(Player.class)
                     .method(callbackFilter)
@@ -155,7 +154,7 @@ public class TemporaryPlayerFactory {
                     .make()
                     .load(ByteBuddyFactory.getInstance().getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
                     .getLoaded()
-                    .getDeclaredConstructor(Server.class);
+                    .getDeclaredConstructor();
             return (Constructor<? extends Player>) constructor;
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Failed to find Temporary Player constructor!", e);

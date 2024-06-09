@@ -12,7 +12,7 @@ import com.comphenix.protocol.injector.netty.Injector;
  */
 public class TemporaryPlayer {
 
-    private volatile Injector injector;
+    protected volatile Injector injector;
 
     public Injector getInjector() {
         return this.injector;
