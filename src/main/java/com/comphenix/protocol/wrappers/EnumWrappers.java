@@ -737,7 +737,11 @@ public abstract class EnumWrappers {
         CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
         ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
         DISPLAY_SLOT_CLASS = MinecraftReflection.getNullableNMS("world.scores.DisplaySlot");
-        RENDER_TYPE_CLASS = MinecraftReflection.getNullableNMS("world.scores.criteria.IScoreboardCriteria$EnumScoreboardHealthDisplay", "IScoreboardCriteria$EnumScoreboardHealthDisplay");
+
+        RENDER_TYPE_CLASS = MinecraftReflection.getNullableNMS(
+            "world.scores.criteria.ObjectiveCriteria$RenderType",
+            "world.scores.criteria.IScoreboardCriteria$EnumScoreboardHealthDisplay",
+            "IScoreboardCriteria$EnumScoreboardHealthDisplay");
         CHAT_FORMATTING_CLASS = MinecraftReflection.getNullableNMS("ChatFormatting", "EnumChatFormat");
 
         associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());

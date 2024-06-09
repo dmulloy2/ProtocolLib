@@ -64,11 +64,16 @@ final class CachedPackage {
      * @param clazz     - type of class.
      */
     public void setPackageClass(String className, Class<?> clazz) {
-        if (clazz != null) {
-            this.cache.put(className, Optional.of(clazz));
-        } else {
-            this.cache.remove(className);
+        Optional<Class<?>> previous = cache.get(className);
+        if (previous != null && previous.isPresent()) {
+            throw new IllegalStateException("Tried to redefine class " + className);
         }
+
+        cache.put(className, Optional.ofNullable(clazz));
+    }
+
+    public void removePackageClass(String className) {
+        cache.remove(className);
     }
 
     private Optional<Class<?>> resolveClass(String className) {
