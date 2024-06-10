@@ -53,7 +53,7 @@ public final class InMemoryDataWatcher implements IDataWatcher {
     private static FieldAccessor ARRAY_FIELD;
     private static ConstructorAccessor CONSTRUCTOR;
 
-    private static boolean ARRAY_BACKED = MinecraftVersion.v1_20_4.atOrAbove();
+    private static boolean ARRAY_BACKED = MinecraftVersion.v1_20_5.atOrAbove();
 
     private static Class<?> SYNCED_DATA_HOLDER_CLASS = ARRAY_BACKED
         ? MinecraftReflection.getMinecraftClass("network.syncher.SyncedDataHolder")
