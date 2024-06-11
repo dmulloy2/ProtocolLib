@@ -14,18 +14,18 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
-import org.apache.commons.lang.WordUtils;
-import org.bukkit.Bukkit;
-
 import com.comphenix.protocol.PacketTypeLookup.ClassLookup;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.scheduler.UniversalRunnable;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Iterables;
+import org.apache.commons.lang.WordUtils;
+import org.bukkit.Bukkit;
 /**
  * Represents the type of a packet in a specific protocol.
  * <p>
@@ -477,8 +477,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType UPDATE_SIGN =                  new PacketType(PROTOCOL, SENDER, 0x35, "SignUpdate", "UpdateSign", "CPacketUpdateSign");
             public static final PacketType ARM_ANIMATION =                new PacketType(PROTOCOL, SENDER, 0x36, "Swing", "ArmAnimation", "CPacketAnimation");
             public static final PacketType SPECTATE =                     new PacketType(PROTOCOL, SENDER, 0x37, "TeleportToEntity", "Spectate", "CPacketSpectate");
-            public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x38, "UseItemOn", "UseItem", "CPacketPlayerTryUseItemOnBlock");
-            public static final PacketType BLOCK_PLACE =                  new PacketType(PROTOCOL, SENDER, 0x39, "BlockPlace", "CPacketPlayerTryUseItem");
+            public static final PacketType USE_ITEM_ON =                  new PacketType(PROTOCOL, SENDER, 0x38, "UseItemOn", "BlockPlace", "CPacketPlayerTryUseItemOnBlock");
+            public static final PacketType USE_ITEM =                     new PacketType(PROTOCOL, SENDER, 0x39, "UseItem", "CPacketPlayerTryUseItem");
 
             /**
              * @deprecated Removed in 1.17
@@ -497,6 +497,12 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
              */
             @Deprecated
             public static final PacketType CHAT_PREVIEW =                 new PacketType(PROTOCOL, SENDER, 253, "ChatPreview");
+
+            /**
+             * @deprecated Renamed to USE_ITEM_ON
+             */
+            @Deprecated
+            public static final PacketType BLOCK_PLACE = USE_ITEM_ON.clone();
 
             private static final Client INSTANCE = new Client();
 

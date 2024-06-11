@@ -16,14 +16,22 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.Either.Left;
-import com.comphenix.protocol.wrappers.Either.Right;
-import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -32,6 +40,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.injector.PacketConstructor.Unwrapper;
@@ -47,8 +56,11 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.Either.Left;
+import com.comphenix.protocol.wrappers.Either.Right;
 import com.comphenix.protocol.wrappers.EnumWrappers.Dimension;
 import com.comphenix.protocol.wrappers.EnumWrappers.FauxEnumConverter;
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
@@ -56,7 +68,6 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -640,6 +651,14 @@ public class BukkitConverters {
         return ignoreNull(handle(WrappedLevelChunkData.LightData::getHandle, WrappedLevelChunkData.LightData::new, WrappedLevelChunkData.LightData.class));
     }
 
+    public static EquivalentConverter<WrappedTeamParameters> getWrappedTeamParametersConverter() {
+        return ignoreNull(handle(WrappedTeamParameters::getHandle, WrappedTeamParameters::new, WrappedTeamParameters.class));
+    }
+
+    public static EquivalentConverter<WrappedNumberFormat> getWrappedNumberFormatConverter() {
+        return ignoreNull(handle(WrappedNumberFormat::getHandle, WrappedNumberFormat::fromHandle, WrappedNumberFormat.class));
+    }
+
     public static EquivalentConverter<PacketContainer> getPacketContainerConverter() {
         return ignoreNull(handle(PacketContainer::getHandle, PacketContainer::fromPacket, PacketContainer.class));
     }
@@ -1108,29 +1127,30 @@ public class BukkitConverters {
     static MethodAccessor getSoundEffect = null;
     static FieldAccessor soundKey = null;
 
-    static MethodAccessor getSoundEffectBySound = null;
-    static MethodAccessor getSoundByEffect = null;
+    static MethodAccessor bukkitToMinecraft = null;
+    static MethodAccessor minecraftToBukkit = null;
 
     static Map<String, Sound> soundIndex = null;
 
     public static EquivalentConverter<Sound> getSoundConverter() {
         // Try to create sound converter for new versions greater 1.16.4
         if (MinecraftVersion.NETHER_UPDATE_4.atOrAbove()) {
-            if (getSoundEffectBySound == null || getSoundByEffect == null) {
+            if (bukkitToMinecraft == null && minecraftToBukkit == null) {
                 Class<?> craftSound = MinecraftReflection.getCraftSoundClass();
-                FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, true);
+                Class<?> soundEvent = MinecraftReflection.getSoundEffectClass();
+                FuzzyReflection fuzzy = FuzzyReflection.fromClass(craftSound, false);
 
-                getSoundEffectBySound = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
-                        "getSoundEffect",
-                        MinecraftReflection.getSoundEffectClass(),
-                        Sound.class
-                ));
+                bukkitToMinecraft = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                    .returnTypeExact(soundEvent)
+                    .parameterExactArray(Sound.class)
+                    .requireModifier(Modifier.STATIC)
+                    .build()));
 
-                getSoundByEffect = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters(
-                        "getBukkit",
-                        Sound.class,
-                        MinecraftReflection.getSoundEffectClass()
-                ));
+                minecraftToBukkit = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                    .returnTypeExact(Sound.class)
+                    .parameterExactArray(soundEvent)
+                    .requireModifier(Modifier.STATIC)
+                    .build()));
             }
 
             return ignoreNull(new EquivalentConverter<Sound>() {
@@ -1142,13 +1162,13 @@ public class BukkitConverters {
 
                 @Override
                 public Object getGeneric(Sound specific) {
-                    return getSoundEffectBySound.invoke(null, specific);
+                    return bukkitToMinecraft.invoke(null, specific);
                 }
 
                 @Override
                 public Sound getSpecific(Object generic) {
                     try {
-                        return (Sound) getSoundByEffect.invoke(null, generic);
+                        return (Sound) minecraftToBukkit.invoke(null, generic);
                     } catch (IllegalStateException ex) {
                         if (ex.getCause() instanceof NullPointerException || ex.getCause() instanceof NoSuchElementException) {
                             // "null" sounds cause NPEs inside getSoundByEffect

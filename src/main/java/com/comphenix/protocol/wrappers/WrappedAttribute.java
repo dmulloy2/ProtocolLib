@@ -26,7 +26,7 @@ import java.util.*;
 public class WrappedAttribute extends AbstractWrapper {
     public static boolean KEY_WRAPPED = MinecraftVersion.NETHER_UPDATE.atOrAbove();
     public static boolean IS_STATIC = MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
-    public static boolean IS_IN_HOLDER = MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove();
+    public static boolean IS_IN_HOLDER = MinecraftVersion.v1_20_5.atOrAbove();
 
     // Shared structure modifier
     private static StructureModifier<Object> ATTRIBUTE_MODIFIER;

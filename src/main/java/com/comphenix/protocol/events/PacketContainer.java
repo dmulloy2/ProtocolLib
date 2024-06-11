@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import javax.annotation.Nullable;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.injector.StructureCache;
@@ -58,10 +59,10 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.Converters;
 import com.comphenix.protocol.wrappers.WrappedStreamCodec;
+
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
-import javax.annotation.Nullable;
 
 /**
  * Represents a Minecraft packet indirectly.
@@ -80,7 +81,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
     // Used to clone packets
     private static final AggregateCloner DEEP_CLONER = AggregateCloner
             .newBuilder()
-            .instanceProvider(StructureCache::newPacket)
+            .instanceProvider(StructureCache::newInstance)
             .andThen(BukkitCloner.class)
             .andThen(ImmutableDetector.class)
             .andThen(JavaOptionalCloner.class)
@@ -91,7 +92,7 @@ public class PacketContainer extends AbstractStructure implements Serializable {
 
     private static final AggregateCloner SHALLOW_CLONER = AggregateCloner
             .newBuilder()
-            .instanceProvider(StructureCache::newPacket)
+            .instanceProvider(StructureCache::newInstance)
             .andThen(param -> {
                 if (param == null)
                     throw new IllegalArgumentException("Cannot be NULL.");

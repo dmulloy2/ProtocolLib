@@ -8,30 +8,25 @@ import java.util.function.Supplier;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.MinecraftReflection;
 
-public final class PacketCreator implements Supplier<Object> {
+public final class InstanceCreator implements Supplier<Object> {
     private ConstructorAccessor constructor = null;
     private MethodAccessor factoryMethod = null;
-    private Object[] params = null;
+    private Class<?>[] paramTypes = null;
     private boolean failed = false;
 
     private final Class<?> type;
 
-    private PacketCreator(Class<?> type) {
+    private InstanceCreator(Class<?> type) {
         this.type = type;
     }
 
-    public static PacketCreator forPacket(Class<?> type) {
+    public static InstanceCreator forClass(Class<?> type) {
         if (type == null) {
             throw new IllegalArgumentException("Type cannot be null.");
         }
 
-        if (!MinecraftReflection.getPacketClass().isAssignableFrom(type)) {
-            throw new IllegalArgumentException("Type must be a subclass of Packet.");
-        }
-
-        return new PacketCreator(type);
+        return new InstanceCreator(type);
     }
 
     private Object createInstance(Class<?> clazz) {
@@ -42,8 +37,18 @@ public final class PacketCreator implements Supplier<Object> {
         }
     }
 
+    private Object[] createParams(Class<?>[] paramTypes) {
+        Object[] params = new Object[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+            params[i] = createInstance(paramTypes[i]);
+        }
+        return params;
+    }
+
     @Override
     public Object get() {
+        Object[] params = paramTypes != null ? createParams(paramTypes) : null;
+
         if (constructor != null) {
             return constructor.invoke(params);
         }
@@ -65,16 +70,13 @@ public final class PacketCreator implements Supplier<Object> {
                 continue;
             }
 
-            Object[] testParams = new Object[paramTypes.length];
-            for (int i = 0; i < paramTypes.length; i++) {
-                testParams[i] = createInstance(paramTypes[i]);
-            }
+            Object[] testParams = createParams(paramTypes);
 
             try {
                 result = testCtor.newInstance(testParams);
                 minCount = paramTypes.length;
                 this.constructor = Accessors.getConstructorAccessor(testCtor);
-                this.params = testParams;
+                this.paramTypes = paramTypes;
             } catch (Exception ignored) {
             }
         }
@@ -100,16 +102,13 @@ public final class PacketCreator implements Supplier<Object> {
                 continue;
             }
 
-            Object[] testParams = new Object[paramTypes.length];
-            for (int i = 0; i < paramTypes.length; i++) {
-                testParams[i] = createInstance(paramTypes[i]);
-            }
+            Object[] testParams = createParams(paramTypes);
 
             try {
                 result = testMethod.invoke(null, testParams);
                 minCount = paramTypes.length;
                 this.factoryMethod = Accessors.getMethodAccessor(testMethod);
-                this.params = testParams;
+                this.paramTypes = paramTypes;
             } catch (Exception ignored) {
             }
         }

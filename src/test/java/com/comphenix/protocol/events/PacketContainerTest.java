@@ -334,7 +334,7 @@ public class PacketContainerTest {
     }
 
     @Test
-    @Disabled // TODO -- handle type is null
+    // @Disabled // TODO -- handle type is null
     public void testGetDataValueCollectionModifier() {
         PacketContainer entityMetadata = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
         StructureModifier<List<WrappedDataValue>> watchableAccessor = entityMetadata.getDataValueCollectionModifier();

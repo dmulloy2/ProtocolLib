@@ -1,5 +1,9 @@
 package com.comphenix.protocol.wrappers.nbt.io;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.lang.reflect.Method;
+
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -12,9 +16,6 @@ import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtList;
 import com.comphenix.protocol.wrappers.nbt.NbtWrapper;
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.lang.reflect.Method;
 
 public class NbtBinarySerializer {
 
@@ -153,15 +154,23 @@ public class NbtBinarySerializer {
         public LoadMethodConfigPhaseUpdate() {
             // there are now two methods with the same signature: readAnyTag/readUnnamedTag & writeAnyTag/writeUnnamedTag
             // we can only find the correct method here by using the method name... thanks Mojang
+            String readNbtMethodName = MinecraftReflection.isMojangMapped()
+                ? "readAnyTag"
+                : "b";
+
+            String writeNbtMethodName = MinecraftReflection.isMojangMapped()
+                ? "writeAnyTag"
+                : "a";
+
             Method readNbtMethod = getUtilityClass().getMethod(FuzzyMethodContract.newBuilder()
-                    .nameExact("b")
+                    .nameExact(readNbtMethodName)
                     .returnTypeExact(MinecraftReflection.getNBTBaseClass())
                     .parameterExactArray(DataInput.class, this.readLimitClass)
                     .build());
             this.readNbt = Accessors.getMethodAccessor(readNbtMethod);
 
             Method writeNbtMethod = getUtilityClass().getMethod(FuzzyMethodContract.newBuilder()
-                    .nameExact("a")
+                    .nameExact(writeNbtMethodName)
                     .parameterExactArray(MinecraftReflection.getNBTBaseClass(), DataOutput.class)
                     .build());
             this.writeNbt = Accessors.getMethodAccessor(writeNbtMethod);

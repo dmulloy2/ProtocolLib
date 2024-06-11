@@ -9,6 +9,8 @@ import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
+import com.google.common.base.Preconditions;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.block.data.BlockData;
@@ -30,22 +32,26 @@ public class WrappedParticle<T> {
             return;
         }
 
+        Class<?> particleType = MinecraftReflection.isMojangMapped()
+            ? MinecraftReflection.getParticleTypeClass()
+            : MinecraftReflection.getParticleClass();
+
+        Preconditions.checkNotNull(particleType, "Cannot find ParticleType class (MojMap: " + MinecraftReflection.isMojangMapped() + ")");
+
         FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getCraftBukkitClass("CraftParticle"));
         if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
             FuzzyMethodContract contract = FuzzyMethodContract
                     .newBuilder()
                     .requireModifier(Modifier.STATIC)
                     .returnTypeExact(Particle.class)
-                    .parameterExactArray(MinecraftReflection.isMojangMapped()
-                        ? MinecraftReflection.getParticleTypeClass()
-                        : MinecraftReflection.getParticleClass())
+                    .parameterExactArray(particleType)
                     .build();
             toBukkit = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 
             FuzzyReflection particleParam = FuzzyReflection.fromClass(MinecraftReflection.getParticleParam(), false);
             contract = FuzzyMethodContract
                     .newBuilder()
-                    .returnTypeExact(MinecraftReflection.getParticleClass())
+                    .returnTypeExact(particleType)
                     .parameterCount(0)
                     .build();
             getType = Accessors.getMethodAccessor(particleParam.getMethod(contract));

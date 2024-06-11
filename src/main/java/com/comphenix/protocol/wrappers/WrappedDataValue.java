@@ -13,7 +13,12 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
  */
 public class WrappedDataValue extends AbstractWrapper {
 
-    private static final Class<?> HANDLE_TYPE = MinecraftReflection.getNullableNMS("network.syncher.DataWatcher$b", "network.syncher.SynchedEntityData$DataValue");
+    // TODO: need a better solution
+    private static final Class<?> HANDLE_TYPE = MinecraftReflection.getNullableNMS(
+        "network.syncher.SynchedEntityData$DataValue",
+        "network.syncher.DataWatcher$b",
+        "network.syncher.DataWatcher$c"
+    );
 
     private static ConstructorAccessor constructor;
 

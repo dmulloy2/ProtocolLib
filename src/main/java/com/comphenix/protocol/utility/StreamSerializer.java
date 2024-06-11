@@ -1,5 +1,12 @@
 package com.comphenix.protocol.utility;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Modifier;
+import java.util.Base64;
+
 import com.comphenix.protocol.injector.netty.NettyByteBufAdapter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -8,14 +15,10 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import com.comphenix.protocol.wrappers.nbt.NbtType;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Base64;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -148,9 +151,14 @@ public class StreamSerializer {
      */
     public void serializeString(DataOutputStream output, String text) {
         if (WRITE_STRING_METHOD == null) {
-            WRITE_STRING_METHOD = Accessors.getMethodAccessor(FuzzyReflection
-                    .fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
-                    .getMethodByParameters("writeString", String.class));
+            FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getPacketDataSerializerClass(), false);
+            WRITE_STRING_METHOD = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                    .parameterExactType(String.class)
+                    .parameterCount(1)
+                    .returnDerivedOf(ByteBuf.class)
+                    .requireModifier(Modifier.PUBLIC)
+                    .banModifier(Modifier.STATIC)
+                    .build()));
         }
 
         ByteBuf buf = NettyByteBufAdapter.packetWriter(output);

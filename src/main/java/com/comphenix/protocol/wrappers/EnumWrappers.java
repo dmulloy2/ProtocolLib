@@ -1,5 +1,16 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
@@ -11,19 +22,10 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import org.apache.commons.lang.Validate;
-import org.bukkit.GameMode;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang.Validate;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 
 /**
  * Represents a generic enum converter.
@@ -464,6 +466,163 @@ public abstract class EnumWrappers {
         }
     }
 
+    /**
+     * @since 1.20.2
+     */
+    public enum DisplaySlot {
+        LIST,
+        SIDEBAR,
+        BELOW_NAME,
+        TEAM_BLACK,
+        TEAM_DARK_BLUE,
+        TEAM_DARK_GREEN,
+        TEAM_DARK_AQUA,
+        TEAM_DARK_RED,
+        TEAM_DARK_PURPLE,
+        TEAM_GOLD,
+        TEAM_GRAY,
+        TEAM_DARK_GRAY,
+        TEAM_BLUE,
+        TEAM_GREEN,
+        TEAM_AQUA,
+        TEAM_RED,
+        TEAM_LIGHT_PURPLE,
+        TEAM_YELLOW,
+        TEAM_WHITE;
+    }
+
+    public enum RenderType {
+        INTEGER,
+        HEARTS
+    }
+
+    public enum ChatFormatting {
+        BLACK,
+        DARK_BLUE,
+        DARK_GREEN,
+        DARK_AQUA,
+        DARK_RED,
+        DARK_PURPLE,
+        GOLD,
+        GRAY,
+        DARK_GRAY,
+        BLUE,
+        GREEN,
+        AQUA,
+        RED,
+        LIGHT_PURPLE,
+        YELLOW,
+        WHITE,
+        OBFUSCATED,
+        BOLD,
+        STRIKETHROUGH,
+        UNDERLINE,
+        ITALIC,
+        RESET;
+
+        public ChatColor toBukkit() {
+            switch (this){
+                case BLACK:
+                    return ChatColor.BLACK;
+                case DARK_BLUE:
+                    return ChatColor.DARK_BLUE;
+                case DARK_GREEN:
+                    return ChatColor.DARK_GREEN;
+                case DARK_AQUA:
+                    return ChatColor.DARK_AQUA;
+                case DARK_RED:
+                    return ChatColor.DARK_RED;
+                case DARK_PURPLE:
+                    return ChatColor.DARK_PURPLE;
+                case GOLD:
+                    return ChatColor.GOLD;
+                case GRAY:
+                    return ChatColor.GRAY;
+                case DARK_GRAY:
+                    return ChatColor.DARK_GRAY;
+                case BLUE:
+                    return ChatColor.BLUE;
+                case GREEN:
+                    return ChatColor.GREEN;
+                case AQUA:
+                    return ChatColor.AQUA;
+                case RED:
+                    return ChatColor.RED;
+                case LIGHT_PURPLE:
+                    return ChatColor.LIGHT_PURPLE;
+                case YELLOW:
+                    return ChatColor.YELLOW;
+                case WHITE:
+                    return ChatColor.WHITE;
+                case OBFUSCATED:
+                    return ChatColor.MAGIC;
+                case BOLD:
+                    return ChatColor.BOLD;
+                case STRIKETHROUGH:
+                    return ChatColor.STRIKETHROUGH;
+                case UNDERLINE:
+                    return ChatColor.UNDERLINE;
+                case ITALIC:
+                    return ChatColor.ITALIC;
+                case RESET:
+                    return ChatColor.RESET;
+                default:
+                    throw new IllegalStateException("Unimplemented Bukkit equivalent for " + name());
+            }
+        }
+
+        public static ChatFormatting fromBukkit(ChatColor color) {
+            switch (color){
+                case BLACK:
+                    return ChatFormatting.BLACK;
+                case DARK_BLUE:
+                    return ChatFormatting.DARK_BLUE;
+                case DARK_GREEN:
+                    return ChatFormatting.DARK_GREEN;
+                case DARK_AQUA:
+                    return ChatFormatting.DARK_AQUA;
+                case DARK_RED:
+                    return ChatFormatting.DARK_RED;
+                case DARK_PURPLE:
+                    return ChatFormatting.DARK_PURPLE;
+                case GOLD:
+                    return ChatFormatting.GOLD;
+                case GRAY:
+                    return ChatFormatting.GRAY;
+                case DARK_GRAY:
+                    return ChatFormatting.DARK_GRAY;
+                case BLUE:
+                    return ChatFormatting.BLUE;
+                case GREEN:
+                    return ChatFormatting.GREEN;
+                case AQUA:
+                    return ChatFormatting.AQUA;
+                case RED:
+                    return ChatFormatting.RED;
+                case LIGHT_PURPLE:
+                    return ChatFormatting.LIGHT_PURPLE;
+                case YELLOW:
+                    return ChatFormatting.YELLOW;
+                case WHITE:
+                    return ChatFormatting.WHITE;
+                case MAGIC:
+                    return ChatFormatting.OBFUSCATED;
+                case BOLD:
+                    return ChatFormatting.BOLD;
+                case STRIKETHROUGH:
+                    return ChatFormatting.STRIKETHROUGH;
+                case UNDERLINE:
+                    return ChatFormatting.UNDERLINE;
+                case ITALIC:
+                    return ChatFormatting.ITALIC;
+                case RESET:
+                    return ChatFormatting.RESET;
+                default:
+                    throw new IllegalStateException("Unknown ChatColor " + color);
+            }
+        }
+    }
+
     private static Class<?> PROTOCOL_CLASS = null;
     private static Class<?> CLIENT_COMMAND_CLASS = null;
     private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -485,6 +644,9 @@ public abstract class EnumWrappers {
     private static Class<?> DIRECTION_CLASS = null;
     private static Class<?> CHAT_TYPE_CLASS = null;
     private static Class<?> ENTITY_POSE_CLASS = null;
+    private static Class<?> DISPLAY_SLOT_CLASS = null;
+    private static Class<?> RENDER_TYPE_CLASS = null;
+    private static Class<?> CHAT_FORMATTING_CLASS = null;
 
     private static boolean INITIALIZED = false;
     private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
@@ -574,6 +736,13 @@ public abstract class EnumWrappers {
 
         CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
         ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
+        DISPLAY_SLOT_CLASS = MinecraftReflection.getNullableNMS("world.scores.DisplaySlot");
+
+        RENDER_TYPE_CLASS = MinecraftReflection.getNullableNMS(
+            "world.scores.criteria.ObjectiveCriteria$RenderType",
+            "world.scores.criteria.IScoreboardCriteria$EnumScoreboardHealthDisplay",
+            "IScoreboardCriteria$EnumScoreboardHealthDisplay");
+        CHAT_FORMATTING_CLASS = MinecraftReflection.getNullableNMS("ChatFormatting", "EnumChatFormat");
 
         associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
         associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
@@ -595,6 +764,9 @@ public abstract class EnumWrappers {
         associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
         associate(HAND_CLASS, Hand.class, getHandConverter());
         associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
+        associate(DISPLAY_SLOT_CLASS, DisplaySlot.class, getDisplaySlotConverter());
+        associate(RENDER_TYPE_CLASS, RenderType.class, getRenderTypeConverter());
+        associate(CHAT_FORMATTING_CLASS, ChatFormatting.class, getChatFormattingConverter());
 
         if (ENTITY_POSE_CLASS != null) {
             associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
@@ -746,6 +918,21 @@ public abstract class EnumWrappers {
         return ENTITY_POSE_CLASS;
     }
 
+    public static Class<?> getDisplaySlotClass() {
+        initialize();
+        return DISPLAY_SLOT_CLASS;
+    }
+
+    public static Class<?> getRenderTypeClass() {
+        initialize();
+        return RENDER_TYPE_CLASS;
+    }
+
+    public static Class<?> getChatFormattingClass() {
+        initialize();
+        return CHAT_FORMATTING_CLASS;
+    }
+
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
         return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -826,7 +1013,19 @@ public abstract class EnumWrappers {
     public static EquivalentConverter<ChatType> getChatTypeConverter() {
         return new EnumConverter<>(getChatTypeClass(), ChatType.class);
     }
-    
+
+    public static EquivalentConverter<DisplaySlot> getDisplaySlotConverter() {
+        return new EnumConverter<>(getDisplaySlotClass(), DisplaySlot.class);
+    }
+
+    public static EquivalentConverter<RenderType> getRenderTypeConverter() {
+        return new EnumConverter<>(getRenderTypeClass(), RenderType.class);
+    }
+
+    public static EquivalentConverter<ChatFormatting> getChatFormattingConverter() {
+        return new EnumConverter<>(getChatFormattingClass(), ChatFormatting.class);
+    }
+
     /**
      * @since 1.13+
      * @return {@link EnumConverter} or null (if bellow 1.13 / nms EnumPose class cannot be found)

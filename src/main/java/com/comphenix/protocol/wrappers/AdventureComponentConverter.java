@@ -16,7 +16,10 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.google.gson.JsonObject;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 /**
@@ -25,7 +28,16 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
  * Note: The Adventure API Component is not included in CraftBukkit, Bukkit or Spigot and but is present in PaperMC.
  */
 public class AdventureComponentConverter {
-    
+    private static final GsonComponentSerializer SERIALIZER;
+
+    static {
+        if (MinecraftVersion.NETHER_UPDATE.atOrAbove()) {
+            SERIALIZER = GsonComponentSerializer.gson();
+        } else {
+            SERIALIZER = GsonComponentSerializer.colorDownsamplingGson();
+        }
+    }
+
     private AdventureComponentConverter() {
     }
 
@@ -35,7 +47,7 @@ public class AdventureComponentConverter {
      * @return Component
      */
     public static Component fromWrapper(WrappedChatComponent wrapper) {
-            return GsonComponentSerializer.gson().deserialize(wrapper.getJson());
+        return SERIALIZER.deserialize(wrapper.getJson());
     }
 
     /**
@@ -71,11 +83,29 @@ public class AdventureComponentConverter {
      * @return ProtocolLib wrapper
      */
     public static WrappedChatComponent fromComponent(Component component) {
-            return WrappedChatComponent.fromJson(GsonComponentSerializer.gson().serialize(component));
+        return WrappedChatComponent.fromJson(SERIALIZER.serialize(component));
+    }
+
+    /**
+     * Converts a {@link WrappedComponentStyle} into a {@link Style}
+     * @param wrapper ProtocolLib wrapper
+     * @return Style
+     */
+    public static Style fromWrapper(WrappedComponentStyle wrapper) {
+        return SERIALIZER.serializer().fromJson(wrapper.getJson(), Style.class);
+    }
+
+    /**
+     * Converts a {@link Style} into a ProtocolLib wrapper
+     * @param style Style
+     * @return ProtocolLib wrapper
+     */
+    public static WrappedComponentStyle fromStyle(Style style) {
+        return WrappedComponentStyle.fromJson((JsonObject) SERIALIZER.serializer().toJsonTree(style));
     }
 
     public static Class<?> getComponentClass() {
-            return Component.class;
+        return Component.class;
     }
 
     public static Component clone(Object component) {
