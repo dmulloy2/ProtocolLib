@@ -26,6 +26,8 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
+import java.lang.Iterable;
+import java.util.Iterator;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
@@ -40,8 +42,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
@@ -51,7 +56,7 @@ import java.util.stream.Collectors;
  * @param <T> Type of the fields to retrieve.
  * @author Kristian
  */
-public class StructureModifier<T> {
+public class StructureModifier<T> implements Iterable<StructureModifierIntermediate<T>> {
 
     // Instance generator we will use
     private static final DefaultInstances DEFAULT_GENERATOR = getDefaultGenerator();
@@ -664,5 +669,21 @@ public class StructureModifier<T> {
     @Override
     public String toString() {
         return "StructureModifier[fieldType=" + this.fieldType + ", data=" + this.accessors + "]";
+    }
+
+    /**
+	 * {@inheritDoc}
+	 */
+    @Override
+    public Iterator<StructureModifierIntermediate<T>> iterator() {
+        return new StructureModifierIterator<T>(this);
+    }
+
+    /**
+	 * {@inheritDoc}
+	 */
+    @Override
+    public Spliterator<StructureModifierIntermediate<T>> spliterator() {
+        return Spliterators.spliterator(this.iterator(), this.size(), Spliterator.DISTINCT | Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.SIZED);
     }
 }
