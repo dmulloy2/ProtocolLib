@@ -7,6 +7,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
+
 import com.google.common.collect.Lists;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
@@ -17,12 +18,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WrappedAttributeTest {
 
@@ -71,7 +69,6 @@ public class WrappedAttributeTest {
     }
 
     @Test
-    @Disabled // TODO -- modifiers are missing (or the hasModifier check is wrong)
     public void testAttribute() {
         assertEquals(this.attribute, WrappedAttribute.fromHandle(this.getAttributeCopy(this.attribute)));
 
