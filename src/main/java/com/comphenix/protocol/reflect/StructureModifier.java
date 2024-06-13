@@ -17,15 +17,6 @@
 
 package com.comphenix.protocol.reflect;
 
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.instances.BannedGenerator;
-import com.comphenix.protocol.reflect.instances.DefaultInstances;
-import com.comphenix.protocol.reflect.instances.InstanceProvider;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
-
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
@@ -42,6 +33,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+
+import com.comphenix.protocol.injector.StructureCache;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.instances.BannedGenerator;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.reflect.instances.InstanceProvider;
+import com.comphenix.protocol.utility.MinecraftReflection;
+
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 
 /**
  * Provides list-oriented access to the fields of a Minecraft packet.
@@ -142,8 +144,9 @@ public class StructureModifier<T> {
 
         for (FieldAccessor accessor : fields) {
             Field field = accessor.getField();
-            if (!field.getType().isPrimitive() && !Modifier.isFinal(field.getModifiers())) {
-                if (DEFAULT_GENERATOR.hasDefault(field.getType())) {
+            if (!field.getType().isPrimitive()) {// && !Modifier.isFinal(field.getModifiers())) {
+                // if (DEFAULT_GENERATOR.hasDefault(field.getType())) {
+                if (StructureCache.canCreateInstance(field.getType())) {
                     requireDefaults.put(accessor, currentFieldIndex);
                 }
             }
@@ -395,13 +398,12 @@ public class StructureModifier<T> {
             // They must be null or messages will be blank
             Field field = accessor.getField();
             if (field.getType().getCanonicalName().equals("net.md_5.bungee.api.chat.BaseComponent[]")) {
-                accessor.set(this.target, null);
+                accessor.set(target, null);
                 continue;
             }
 
-            // get the default value and write the field
-            Object defaultValue = DEFAULT_GENERATOR.getDefault(field.getType());
-            accessor.set(this.target, defaultValue);
+            Object value = StructureCache.newInstance(field.getType());
+            accessor.set(target, value);
         }
 
         return this;

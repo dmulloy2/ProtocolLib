@@ -264,6 +264,10 @@ public final class WrappedAttribute extends AbstractWrapper {
         return newBuilder(this).modifiers(modifiers).build();
     }
 
+    public WrappedAttribute shallowClone() {
+        return newBuilder(this).build();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -363,7 +367,7 @@ public final class WrappedAttribute extends AbstractWrapper {
         private double baseValue = Double.NaN;
         private String attributeKey;
         private PacketContainer packet;
-        private Collection<WrappedAttributeModifier> modifiers = Collections.emptyList();
+        private Set<WrappedAttributeModifier> modifiers = new HashSet<>();
 
         Builder(WrappedAttribute template) {
             if (template != null) {
@@ -407,7 +411,14 @@ public final class WrappedAttribute extends AbstractWrapper {
          * @return This builder, for chaining.
          */
         public Builder modifiers(Collection<WrappedAttributeModifier> modifiers) {
-            this.modifiers = Preconditions.checkNotNull(modifiers, "modifiers cannot be NULL - use an empty list instead.");
+            Preconditions.checkNotNull(modifiers, "modifiers cannot be NULL - use an empty list instead.");
+            this.modifiers.addAll(modifiers);
+            return this;
+        }
+
+        public Builder addModifier(WrappedAttributeModifier modifier) {
+            Preconditions.checkNotNull(modifier, "modifier cannot be NULL.");
+            this.modifiers.add(modifier);
             return this;
         }
 
@@ -416,7 +427,9 @@ public final class WrappedAttribute extends AbstractWrapper {
          *
          * @param packet - the parent packet.
          * @return This builder, for chaining.
+         * @deprecated Removed in 1.17
          */
+        @Deprecated
         public Builder packet(PacketContainer packet) {
             if (Preconditions.checkNotNull(packet, "packet cannot be NULL").getType() != PacketType.Play.Server.UPDATE_ATTRIBUTES) {
                 throw new IllegalArgumentException("Packet must be UPDATE_ATTRIBUTES (44)");

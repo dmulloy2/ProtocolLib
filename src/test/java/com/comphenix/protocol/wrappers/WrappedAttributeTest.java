@@ -94,7 +94,7 @@ public class WrappedAttributeTest {
             modifiers.add((AttributeModifier) wrapper.getHandle());
         }
 
-        IRegistry<AttributeBase> registry = BuiltInRegistries.u;
+        IRegistry<AttributeBase> registry = BuiltInRegistries.s;
         String attributeKey = attribute.getAttributeKey();
         MinecraftKey key = MinecraftKey.a(attributeKey);
         AttributeBase base = registry.a(key);
@@ -104,6 +104,7 @@ public class WrappedAttributeTest {
 
     private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
         AttributeModifier.Operation operation = AttributeModifier.Operation.values()[modifier.getOperation().getId()];
-        return new AttributeModifier(modifier.getUUID(), modifier.getName(), modifier.getAmount(), operation);
+        return new AttributeModifier((MinecraftKey) com.comphenix.protocol.wrappers.MinecraftKey.getConverter().getGeneric(modifier.getKey()),
+            modifier.getAmount(), operation);
     }
 }

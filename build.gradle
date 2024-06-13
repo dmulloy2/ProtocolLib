@@ -35,7 +35,7 @@ repositories {
 dependencies {
     implementation 'net.bytebuddy:byte-buddy:1.14.14'
     compileOnly 'org.spigotmc:spigot-api:1.20.6-R0.1-SNAPSHOT'
-    compileOnly 'org.spigotmc:spigot:1.20.6-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot:1.21-R0.1-SNAPSHOT'
     compileOnly 'io.netty:netty-all:4.0.23.Final'
     compileOnly 'net.kyori:adventure-text-serializer-gson:4.14.0'
     compileOnly 'com.googlecode.json-simple:json-simple:1.1.1'
@@ -46,7 +46,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.6.0'
     testImplementation 'io.netty:netty-common:4.1.97.Final'
     testImplementation 'io.netty:netty-transport:4.1.97.Final'
-    testImplementation 'org.spigotmc:spigot:1.20.6-R0.1-SNAPSHOT'
+    testImplementation 'org.spigotmc:spigot:1.21-R0.1-SNAPSHOT'
     testImplementation 'net.kyori:adventure-text-serializer-gson:4.14.0'
     testImplementation 'net.kyori:adventure-text-serializer-plain:4.14.0'
 }
@@ -57,6 +57,14 @@ java {
 
     withJavadocJar()
     withSourcesJar()
+}
+
+jar {
+    manifest {
+        attributes(
+                'paperweight-mappings-namespace': 'mojang'
+        )
+    }
 }
 
 shadowJar {

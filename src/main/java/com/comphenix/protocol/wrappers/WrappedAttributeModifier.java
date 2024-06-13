@@ -1,18 +1,22 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Supplier;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 
-import javax.annotation.Nonnull;
-import java.lang.reflect.Constructor;
-import java.util.UUID;
-import java.util.function.Supplier;
+import com.google.common.base.Preconditions;
 
 /**
  * Represents a wrapper around a AttributeModifier.
@@ -23,6 +27,8 @@ import java.util.function.Supplier;
  */
 public class WrappedAttributeModifier extends AbstractWrapper {
     private static final boolean OPERATION_ENUM = MinecraftVersion.VILLAGE_UPDATE.atOrAbove();
+    static final boolean USES_RESOURCE_LOCATION = MinecraftVersion.v1_21_0.atOrAbove();
+
     private static final Class<?> OPERATION_CLASS;
     private static final EquivalentConverter<Operation> OPERATION_CONVERTER;
 
@@ -131,41 +137,24 @@ public class WrappedAttributeModifier extends AbstractWrapper {
             throw new IllegalArgumentException("Corrupt operation ID " + id + " detected.");
         }
      }
-         
-    // Shared structure modifier
-    private static StructureModifier<Object> BASE_MODIFIER;
-    
+
     // The constructor we are interested in
-    private static Constructor<?> ATTRIBUTE_MODIFIER_CONSTRUCTOR;
+    private static ConstructorAccessor ATTRIBUTE_MODIFIER_CONSTRUCTOR;
     
     // A modifier for the wrapped handler
-    protected StructureModifier<Object> modifier;
+    protected InternalStructure modifier;
     
     // Cached values
+    @Nullable
+    private final MinecraftKey key;
+
+    @Nullable
     private final UUID uuid;
+
     private final Supplier<String> name;
     private final Operation operation;
     private final double amount;
-    
-    /**
-     * Construct a new wrapped attribute modifier with no associated handle.
-     * <p>
-     * Note that the handle object is not initialized after this constructor.
-     * @param uuid - the UUID.
-     * @param name - the human readable name.
-     * @param amount - the amount.
-     * @param operation - the operation.
-     */
-    protected WrappedAttributeModifier(UUID uuid, String name, double amount, Operation operation) {
-        super(MinecraftReflection.getAttributeModifierClass());
-        
-        // Use the supplied values instead of reading from the NMS instance
-        this.uuid = uuid;
-        this.name = () -> name;
-        this.amount = amount;
-        this.operation = operation;
-    }
-    
+
     /**
      * Construct an attribute modifier wrapper around a given NMS instance.
      * @param handle - the NMS instance.
@@ -176,24 +165,29 @@ public class WrappedAttributeModifier extends AbstractWrapper {
         super(MinecraftReflection.getAttributeModifierClass());
         setHandle(handle);
         initializeModifier(handle);
-        
-        // Load final values, caching them
-        this.uuid = (UUID) modifier.withType(UUID.class).read(0);
 
-        StructureModifier<String> stringMod = modifier.withType(String.class);
-        if (stringMod.size() == 0) {
-            Supplier<String> supplier = (Supplier<String>) modifier.withType(Supplier.class).read(0);
-            this.name = supplier;
+        if (USES_RESOURCE_LOCATION) {
+            this.key = modifier.getMinecraftKeys().read(0);
+            this.uuid = null;
+            this.name = () -> null;
         } else {
-            this.name = () -> stringMod.read(0);
+            this.key = null;
+            this.uuid = modifier.getUUIDs().read(0);
+
+            Optional<String> name = modifier.getStrings().optionRead(0);
+            if (name.isPresent()) {
+                this.name = name::get;
+            } else {
+                this.name = (Supplier<String>) modifier.getModifier().withType(Supplier.class).read(0);
+            }
         }
 
-        this.amount = (Double) modifier.withType(double.class).read(0);
+        this.amount = modifier.getDoubles().read(0);
 
         if (OPERATION_ENUM) {
-            this.operation = modifier.withType(OPERATION_CLASS, OPERATION_CONVERTER).readSafely(0);
+            this.operation = modifier.getModifier().withType(OPERATION_CLASS, OPERATION_CONVERTER).readSafely(0);
         } else {
-            this.operation = Operation.fromId((Integer) modifier.withType(int.class).readSafely(0));
+            this.operation = Operation.fromId(modifier.getIntegers().readSafely(0));
         }
     }
     
@@ -206,9 +200,28 @@ public class WrappedAttributeModifier extends AbstractWrapper {
      * @param operation - the operation.
      */
     protected WrappedAttributeModifier(@Nonnull Object handle, UUID uuid, String name, double amount, Operation operation) {
-        this(uuid, name, amount, operation);
+        super(MinecraftReflection.getAttributeModifierClass());
+
+        this.uuid = uuid;
+        this.name = () -> name;
+        this.amount = amount;
+        this.operation = operation;
+        this.key = null;
         
         // Initialize handle and modifier
+        setHandle(handle);
+        initializeModifier(handle);
+    }
+
+    protected WrappedAttributeModifier(Object handle, MinecraftKey key, double amount, Operation operation) {
+        super(MinecraftReflection.getAttributeModifierClass());
+
+        this.uuid = null;
+        this.key = key;
+        this.amount = amount;
+        this.name = key::toString;
+        this.operation = operation;
+
         setHandle(handle);
         initializeModifier(handle);
     }
@@ -256,11 +269,11 @@ public class WrappedAttributeModifier extends AbstractWrapper {
      * @param handle - the handle.
      */
     private void initializeModifier(@Nonnull Object handle) {
-        // Initialize modifier
-        if (BASE_MODIFIER == null) {
-            BASE_MODIFIER = new StructureModifier<>(MinecraftReflection.getAttributeModifierClass());
-        }
-        this.modifier = BASE_MODIFIER.withTarget(handle);
+        this.modifier = InternalStructure.getConverter().getSpecific(handle);
+    }
+
+    public MinecraftKey getKey() {
+        return key;
     }
     
     /**
@@ -312,7 +325,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
      * @param pending - TRUE if it is pending, FALSE otherwise.
      */
     public void setPendingSynchronization(boolean pending) {
-        modifier.withType(boolean.class).write(0, pending);
+        modifier.getBooleans().write(0, pending);
     }
     
     /**
@@ -320,7 +333,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
      * @return TRUE if it is, FALSE otherwise.
      */
     public boolean isPendingSynchronization() {
-        return (Boolean) modifier.withType(boolean.class).optionRead(0).orElse(false);
+        return modifier.getBooleans().optionRead(0).orElse(false);
     }
 
     /**
@@ -331,25 +344,34 @@ public class WrappedAttributeModifier extends AbstractWrapper {
      * @return TRUE if the given object is the same, FALSE otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj == this)
-            return true;
+        if (obj == this) return true;
+        if (obj == null) return false;
+
         if (obj instanceof WrappedAttributeModifier) {
             WrappedAttributeModifier other = (WrappedAttributeModifier) obj;
-            
-            // Ensure they are equal
-            return Objects.equal(uuid, other.getUUID());
+            if (USES_RESOURCE_LOCATION) {
+                return this.key.equals(other.key);
+            } else {
+                return this.uuid.equals(other.uuid);
+            }
+
         }
+
         return false;
     }
     
     @Override
     public int hashCode() {
-        return uuid != null ? uuid.hashCode() : 0;
+        if (USES_RESOURCE_LOCATION) {
+            return key != null ? key.hashCode() : 0;
+        } else {
+            return uuid != null ? uuid.hashCode() : 0;
+        }
     }
     
     @Override
     public String toString() {
-        return "[amount=" + amount + ", operation=" + operation + ", name='" + name + "', id=" + uuid + ", serialize=" + isPendingSynchronization() + "]";
+        return "[key=" + key + ", amount=" + amount + ", operation=" + operation + "]";
     }
 
     /**
@@ -363,13 +385,15 @@ public class WrappedAttributeModifier extends AbstractWrapper {
         private String name = "Unknown";
         private double amount;
         private UUID uuid;
+        private MinecraftKey key;
 
         private Builder(WrappedAttributeModifier template) {
             if (template != null) {
-                operation = template.getOperation();
-                name = template.getName();
-                amount = template.getAmount();
-                uuid = template.getUUID();
+                this.operation = template.getOperation();
+                this.name = template.getName();
+                this.amount = template.getAmount();
+                this.uuid = template.getUUID();
+                this.key = template.getKey();
             }
         }
 
@@ -382,6 +406,7 @@ public class WrappedAttributeModifier extends AbstractWrapper {
          * @param uuid - the uuid to supply to the new object.
          * @return This builder, for chaining.
          */
+        @Deprecated
         public Builder uuid(@Nonnull UUID uuid) {
             this.uuid = Preconditions.checkNotNull(uuid, "uuid cannot be NULL.");
             return this;
@@ -403,9 +428,19 @@ public class WrappedAttributeModifier extends AbstractWrapper {
          * @param name - the name of the modifier.
          * @return This builder, for chaining.
          */
+        @Deprecated
         public Builder name(@Nonnull String name) {
             this.name = Preconditions.checkNotNull(name, "name cannot be NULL.");
             return this;
+        }
+
+        public Builder key(@Nonnull MinecraftKey key) {
+            this.key = Preconditions.checkNotNull(key, "key cannot be NULL.");
+            return this;
+        }
+
+        public Builder key(String prefix, String value) {
+            return key(new MinecraftKey(prefix, value));
         }
 
         /**
@@ -435,12 +470,28 @@ public class WrappedAttributeModifier extends AbstractWrapper {
 
             // Construct it
             try {
-                // No need to read these values with a modifier
-                return new WrappedAttributeModifier(
-                    ATTRIBUTE_MODIFIER_CONSTRUCTOR.newInstance(
-                        uuid, name, amount, getOperationParam(operation)),
-                    uuid, name, amount, operation
-                );
+                if (USES_RESOURCE_LOCATION) {
+                    if (key == null) {
+                        UUID uuid = this.uuid != null ? this.uuid : UUID.randomUUID();
+                        key = new MinecraftKey("protocollib", uuid.toString());
+                    }
+
+                    Object handle = ATTRIBUTE_MODIFIER_CONSTRUCTOR.invoke(
+                        MinecraftKey.getConverter().getGeneric(key),
+                        amount,
+                        OPERATION_CONVERTER.getGeneric(operation)
+                    );
+
+                    return new WrappedAttributeModifier(handle, key, amount, operation);
+                } else {
+                    Object handle = ATTRIBUTE_MODIFIER_CONSTRUCTOR.invoke(
+                        uuid, name, amount, getOperationParam(operation));
+
+                    return new WrappedAttributeModifier(
+                        handle,
+                        uuid, name, amount, operation
+                    );
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Cannot construct AttributeModifier.", e);
             }
@@ -451,22 +502,30 @@ public class WrappedAttributeModifier extends AbstractWrapper {
         return OPERATION_ENUM ? OPERATION_CONVERTER.getGeneric(operation) : operation.getId();
     }
 
-    private static Constructor<?> getConstructor() {
-        FuzzyMethodContract.Builder builder = FuzzyMethodContract
-                .newBuilder()
-                .parameterCount(4)
+    private static ConstructorAccessor getConstructor() {
+        FuzzyMethodContract.Builder builder = FuzzyMethodContract.newBuilder();
+
+        if (USES_RESOURCE_LOCATION) {
+            builder.parameterCount(3)
+                .parameterDerivedOf(MinecraftReflection.getMinecraftKeyClass())
+                .parameterExactType(double.class)
+                .parameterExactType(OPERATION_CLASS);
+        } else {
+            builder.parameterCount(4)
                 .parameterDerivedOf(UUID.class, 0)
                 .parameterExactType(String.class, 1)
                 .parameterExactType(double.class, 2);
-        if (OPERATION_ENUM) {
-            builder = builder.parameterExactType(OPERATION_CLASS, 3);
-        } else {
-            builder = builder.parameterExactType(int.class, 3);
+
+            if (OPERATION_ENUM) {
+                builder.parameterExactType(OPERATION_CLASS, 3);
+            } else {
+                builder.parameterExactType(int.class, 3);
+            }
         }
 
-        Constructor<?> ret = FuzzyReflection.fromClass(MinecraftReflection.getAttributeModifierClass(), true)
-                                            .getConstructor(builder.build());
-        ret.setAccessible(true);
-        return ret;
+        Constructor<?> ret = FuzzyReflection
+            .fromClass(MinecraftReflection.getAttributeModifierClass(), true)
+            .getConstructor(builder.build());
+        return Accessors.getConstructorAccessor(ret);
     }
 }

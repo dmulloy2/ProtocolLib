@@ -64,7 +64,7 @@ public final class InstanceCreator implements Supplier<Object> {
         Object result = null;
         int minCount = Integer.MAX_VALUE;
 
-        for (Constructor<?> testCtor : type.getConstructors()) {
+        for (Constructor<?> testCtor : type.getDeclaredConstructors()) {
             Class<?>[] paramTypes = testCtor.getParameterTypes();
             if (paramTypes.length > minCount) {
                 continue;
@@ -73,9 +73,10 @@ public final class InstanceCreator implements Supplier<Object> {
             Object[] testParams = createParams(paramTypes);
 
             try {
-                result = testCtor.newInstance(testParams);
+                ConstructorAccessor testAccessor = Accessors.getConstructorAccessor(testCtor);
+                result = testAccessor.invoke(testParams);
                 minCount = paramTypes.length;
-                this.constructor = Accessors.getConstructorAccessor(testCtor);
+                this.constructor = testAccessor;
                 this.paramTypes = paramTypes;
             } catch (Exception ignored) {
             }
@@ -105,9 +106,10 @@ public final class InstanceCreator implements Supplier<Object> {
             Object[] testParams = createParams(paramTypes);
 
             try {
-                result = testMethod.invoke(null, testParams);
+                MethodAccessor testAccessor = Accessors.getMethodAccessor(testMethod);
+                result = testAccessor.invoke(null, testParams);
                 minCount = paramTypes.length;
-                this.factoryMethod = Accessors.getMethodAccessor(testMethod);
+                this.factoryMethod = testAccessor;
                 this.paramTypes = paramTypes;
             } catch (Exception ignored) {
             }
