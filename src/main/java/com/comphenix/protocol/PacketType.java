@@ -741,11 +741,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         STATUS("Status", "status"),
         LOGIN("Login", "login"),
         CONFIGURATION("Configuration", "configuration"),
-
-        /**
-         * Only for packets removed in Minecraft 1.7.2
-         */
-        LEGACY("", "");
+        UNKNOWN("", "");
 
         private final String packetName;
         private final String mojangName;
@@ -761,14 +757,17 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
          * @return The corresponding protocol.
          */
         public static Protocol fromVanilla(Enum<?> vanilla) {
+            if (vanilla == null) {
+                return UNKNOWN;
+            }
+
             switch (vanilla.name()) {
                 case "HANDSHAKING": return HANDSHAKING;
                 case "PLAY": return PLAY;
                 case "STATUS": return STATUS;
                 case "LOGIN": return LOGIN;
                 case "CONFIGURATION": return CONFIGURATION;
-                default:
-                    throw new IllegalArgumentException("Unrecognized vanilla enum " + vanilla);
+                default: return UNKNOWN;
             }
         }
 

@@ -11,9 +11,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -46,6 +43,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
 
 public class NettyChannelInjector implements Injector {
 
@@ -583,8 +582,12 @@ public class NettyChannelInjector implements Injector {
         }
 
         PacketType.Protocol protocol = this.getCurrentProtocol(PacketType.Sender.SERVER);
+        if (protocol == Protocol.UNKNOWN) {
+            ProtocolLogger.debug("skipping unknown protocol for {0}", packet.getClass());
+            return action;
+        }
+        
         PacketType packetType = PacketRegistry.getPacketType(protocol, packet.getClass());
-
         if (packetType == null) {
             ProtocolLogger.debug("skipping unknown outbound packet type for {0}", packet.getClass());
             return action;
