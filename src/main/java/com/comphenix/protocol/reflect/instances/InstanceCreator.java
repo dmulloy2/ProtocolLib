@@ -3,6 +3,10 @@ package com.comphenix.protocol.reflect.instances;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
@@ -10,6 +14,16 @@ import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 
 public final class InstanceCreator implements Supplier<Object> {
+    private static Map<Class<?>, Object> BANNED_PARAMETERS = new WeakHashMap<>();
+
+    static {
+        try {
+            BANNED_PARAMETERS.put(ByteBuffer.class, true);
+            BANNED_PARAMETERS.put(FloatBuffer.class, true);
+        } catch (Throwable ignored) {
+        }
+    }
+
     private ConstructorAccessor constructor = null;
     private MethodAccessor factoryMethod = null;
     private Class<?>[] paramTypes = null;
@@ -45,6 +59,15 @@ public final class InstanceCreator implements Supplier<Object> {
         return params;
     }
 
+    private boolean containsBannedParameter(Class<?>[] paramTypes) {
+        for (Class<?> paramType : paramTypes) {
+            if (BANNED_PARAMETERS.containsKey(paramType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public Object get() {
         Object[] params = paramTypes != null ? createParams(paramTypes) : null;
@@ -67,6 +90,10 @@ public final class InstanceCreator implements Supplier<Object> {
         for (Constructor<?> testCtor : type.getDeclaredConstructors()) {
             Class<?>[] paramTypes = testCtor.getParameterTypes();
             if (paramTypes.length > minCount) {
+                continue;
+            }
+
+            if (containsBannedParameter(paramTypes)) {
                 continue;
             }
 
@@ -100,6 +127,10 @@ public final class InstanceCreator implements Supplier<Object> {
 
             Class<?>[] paramTypes = testMethod.getParameterTypes();
             if (paramTypes.length > minCount) {
+                continue;
+            }
+
+            if (containsBannedParameter(paramTypes)) {
                 continue;
             }
 
