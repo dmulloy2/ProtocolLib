@@ -662,7 +662,7 @@ public abstract class EnumWrappers {
 
         INITIALIZED = true;
 
-        PROTOCOL_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
+        PROTOCOL_CLASS = MinecraftReflection.getEnumProtocolClass();
         CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
 
         if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
