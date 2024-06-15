@@ -109,17 +109,26 @@ public final class MinecraftMethods {
     public static MethodAccessor getPlayerConnectionDisconnectMethod() {
         if (playerConnectionDisconnectMethod == null) {
             FuzzyReflection playerConnectionClass = FuzzyReflection.fromClass(MinecraftReflection.getPlayerConnectionClass());
-            try {
+
+            if (MinecraftVersion.v1_21_0.atOrAbove()) {
                 playerConnectionDisconnectMethod = Accessors.getMethodAccessor(playerConnectionClass.getMethod(FuzzyMethodContract.newBuilder()
                         .returnTypeVoid()
-                        .nameRegex("disconnect.*")
                         .parameterCount(1)
-                        .parameterExactType(String.class, 0)
+                        .parameterExactType(MinecraftReflection.getIChatBaseComponentClass(), 0)
                         .build()));
-            } catch (IllegalArgumentException e) {
-                // Just assume it's the first String method
-                Method disconnect = playerConnectionClass.getMethodByParameters("disconnect", String.class);
-                playerConnectionDisconnectMethod = Accessors.getMethodAccessor(disconnect);
+            } else {
+                try {
+                    playerConnectionDisconnectMethod = Accessors.getMethodAccessor(playerConnectionClass.getMethod(FuzzyMethodContract.newBuilder()
+                            .returnTypeVoid()
+                            .nameRegex("disconnect.*")
+                            .parameterCount(1)
+                            .parameterExactType(String.class, 0)
+                            .build()));
+                } catch (IllegalArgumentException e) {
+                    // Just assume it's the first String method
+                    Method disconnect = playerConnectionClass.getMethodByParameters("disconnect", String.class);
+                    playerConnectionDisconnectMethod = Accessors.getMethodAccessor(disconnect);
+                }
             }
         }
 

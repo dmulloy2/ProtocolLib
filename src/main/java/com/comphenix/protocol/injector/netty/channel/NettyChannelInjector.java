@@ -34,6 +34,7 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.ByteBuddyGenerated;
 import com.comphenix.protocol.utility.MinecraftFields;
@@ -366,7 +367,15 @@ public class NettyChannelInjector implements Injector {
             // try to use the player connection if possible
             if (playerConnection != null) {
                 // this method prefers the main thread so no event loop here
-                MinecraftMethods.getPlayerConnectionDisconnectMethod().invoke(playerConnection, message);
+                MethodAccessor accessor = MinecraftMethods.getPlayerConnectionDisconnectMethod();
+
+                // check if the parameter is a chat component
+                if (MinecraftReflection.isIChatBaseComponent(accessor.getMethod().getParameters()[0].getClass())) {
+                    Object component = WrappedChatComponent.fromText(message).getHandle();
+                    accessor.invoke(playerConnection, component);
+                } else {
+                    accessor.invoke(playerConnection, message);
+                }
             } else {
                 Object component = WrappedChatComponent.fromText(message).getHandle();
                 MinecraftMethods.getNetworkManagerDisconnectMethod().invoke(this.networkManager, component);
