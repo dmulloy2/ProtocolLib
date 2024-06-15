@@ -2,6 +2,7 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
+import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -22,9 +23,13 @@ final class InboundPacketInterceptor extends ChannelInboundHandlerAdapter {
         if (MinecraftReflection.isPacketClass(msg)) {
             // try get packet type
             PacketType.Protocol protocol = this.injector.getInboundProtocol();
-            PacketType packetType = PacketRegistry.getPacketType(protocol, msg.getClass());
+            if (protocol == Protocol.UNKNOWN) {
+                ProtocolLogger.debug("skipping unknown inbound protocol for {0}", msg.getClass());
+                ctx.fireChannelRead(msg);
+                return;
+            }
 
-            // ignore unknown packets "silently"
+            PacketType packetType = PacketRegistry.getPacketType(protocol, msg.getClass());
             if (packetType == null) {
                 ProtocolLogger.debug("skipping unknown inbound packet type for {0}", msg.getClass());
                 ctx.fireChannelRead(msg);

@@ -520,7 +520,7 @@ public class NettyChannelInjector implements Injector {
 
         PacketType.Protocol protocol = this.getCurrentProtocol(PacketType.Sender.SERVER);
         if (protocol == Protocol.UNKNOWN) {
-            ProtocolLogger.debug("skipping unknown protocol for {0}", packet.getClass());
+            ProtocolLogger.debug("skipping unknown outbound protocol for {0}", packet.getClass());
             return action;
         }
         
