@@ -370,7 +370,7 @@ public class PacketRegistry {
         Class<?> idCodecEntryClass = MinecraftReflection.getMinecraftClass("network.codec.IdDispatchCodec$Entry", "network.codec.IdDispatchCodec$b");
         Class<?> protocolDirectionClass = MinecraftReflection.getPacketFlowClass();
 
-        Function<?, ?> emptyFunction = input -> null;
+        Function<?, ?> emptyFunction = input -> input;
 
         FuzzyReflection protocolInfoReflection = FuzzyReflection.fromClass(protocolInfoClass);
 

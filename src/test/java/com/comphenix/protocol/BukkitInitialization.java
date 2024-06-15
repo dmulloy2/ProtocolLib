@@ -17,35 +17,29 @@ import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.server.DataPackResources;
 import net.minecraft.server.DispenserRegistry;
-import net.minecraft.server.Main;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.WorldLoader;
 import net.minecraft.server.dedicated.DedicatedServer;
-import net.minecraft.server.dedicated.DedicatedServerProperties;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.server.packs.EnumResourcePackType;
 import net.minecraft.server.packs.repository.ResourcePackLoader;
 import net.minecraft.server.packs.repository.ResourcePackRepository;
 import net.minecraft.server.packs.repository.ResourcePackSourceVanilla;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.enchantment.Enchantments;
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_20_R4.CraftLootTable;
-import org.bukkit.craftbukkit.v1_20_R4.CraftRegistry;
-import org.bukkit.craftbukkit.v1_20_R4.CraftServer;
-import org.bukkit.craftbukkit.v1_20_R4.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R4.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_20_R4.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_20_R4.util.CraftNamespacedKey;
-import org.bukkit.craftbukkit.v1_20_R4.util.Versioning;
+import org.bukkit.craftbukkit.v1_21_R1.CraftLootTable;
+import org.bukkit.craftbukkit.v1_21_R1.CraftRegistry;
+import org.bukkit.craftbukkit.v1_21_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_21_R1.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_21_R1.util.Versioning;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -116,13 +110,13 @@ public class BukkitInitialization {
             DataPackResources dataPackResources = DataPackResources.a(
                     resourceManager,
                     layeredRegistryAccess,
-					FeatureFlagSet.a() /* REGISTRY.allFlags() */,
+                    FeatureFlags.d.a() /* REGISTRY.allFlags() */,
                     CommandDispatcher.ServerType.b /* DEDICATED */,
                     0,
                     MoreExecutors.directExecutor(),
                     MoreExecutors.directExecutor()
             ).join();
-            // dataPackResources.a(registryCustom); // .updateRegistryTags()
+            dataPackResources.g();
 
             try {
                 IRegistry.class.getName();
@@ -148,10 +142,10 @@ public class BukkitInitialization {
             when(mockedServer.isPrimaryThread()).thenReturn(true);
             when(mockedServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
             when(mockedServer.getUnsafe()).thenReturn(CraftMagicNumbers.INSTANCE);
-            /*when(mockedServer.getLootTable(any())).thenAnswer(invocation -> {
+            when(mockedServer.getLootTable(any())).thenAnswer(invocation -> {
                 NamespacedKey key = invocation.getArgument(0);
-                return new CraftLootTable(key, dataPackResources.b().b(CraftNamespacedKey.toMinecraft(key)));
-            });*/
+                return new CraftLootTable(key, dataPackResources.b().b(CraftLootTable.bukkitKeyToMinecraft(key)));
+            });
             when(mockedServer.getRegistry(any())).thenAnswer(invocation -> {
                 Class<Keyed> registryType = invocation.getArgument(0);
                 return CraftRegistry.createRegistry(registryType, registryCustom);

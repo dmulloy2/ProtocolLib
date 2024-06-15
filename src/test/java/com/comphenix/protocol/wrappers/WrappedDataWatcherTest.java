@@ -28,7 +28,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 import net.minecraft.world.entity.projectile.EntityEgg;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.craftbukkit.v1_20_R4.entity.CraftEgg;
+import org.bukkit.craftbukkit.v1_21_R1.entity.CraftEgg;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;

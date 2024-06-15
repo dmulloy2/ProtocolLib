@@ -16,12 +16,13 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import java.lang.reflect.Constructor;
 import java.util.Locale;
 import java.util.Objects;
 
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
@@ -130,7 +131,7 @@ public class MinecraftKey {
         return Objects.hash(prefix, key);
     }
 
-    private static Constructor<?> constructor = null;
+    private static ConstructorAccessor CONSTRUCTOR;
 
     public static EquivalentConverter<MinecraftKey> getConverter() {
         return new EquivalentConverter<MinecraftKey>() {
@@ -141,19 +142,12 @@ public class MinecraftKey {
 
             @Override
             public Object getGeneric(MinecraftKey specific) {
-                if (constructor == null) {
-                    try {
-                        constructor = MinecraftReflection.getMinecraftKeyClass().getConstructor(String.class, String.class);
-                    } catch (ReflectiveOperationException e) {
-                        throw new RuntimeException("Failed to obtain MinecraftKey constructor", e);
-                    }
+                if (CONSTRUCTOR == null) {
+                    CONSTRUCTOR = Accessors.getConstructorAccessor(MinecraftReflection.getMinecraftKeyClass(),
+                        String.class, String.class);
                 }
 
-                try {
-                    return constructor.newInstance(specific.getPrefix(), specific.getKey());
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException("Failed to create new MinecraftKey", e);
-                }
+                return CONSTRUCTOR.invoke(specific.getPrefix(), specific.getKey());
             }
 
             @Override

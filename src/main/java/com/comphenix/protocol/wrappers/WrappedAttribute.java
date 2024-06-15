@@ -1,5 +1,14 @@
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -9,37 +18,33 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.collection.CachedSet;
 import com.comphenix.protocol.wrappers.collection.ConvertedSet;
+
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.lang.reflect.Constructor;
-import java.util.*;
 
 /**
  * Represents a single attribute sent in packet 44.
  *
  * @author Kristian
  */
-public class WrappedAttribute extends AbstractWrapper {
-    public static boolean KEY_WRAPPED = MinecraftVersion.NETHER_UPDATE.atOrAbove();
-    public static boolean IS_STATIC = MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
-    public static boolean IS_IN_HOLDER = MinecraftVersion.v1_20_5.atOrAbove();
+public final class WrappedAttribute extends AbstractWrapper {
+    static final boolean KEY_WRAPPED = MinecraftVersion.NETHER_UPDATE.atOrAbove();
+    static final boolean IS_STATIC = MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
+    static final boolean IS_IN_HOLDER = MinecraftVersion.v1_20_5.atOrAbove();
 
     // Shared structure modifier
-    private static StructureModifier<Object> ATTRIBUTE_MODIFIER;
+    static StructureModifier<Object> ATTRIBUTE_MODIFIER;
 
     // The one constructor
-    private static Constructor<?> ATTRIBUTE_CONSTRUCTOR;
+    static Constructor<?> ATTRIBUTE_CONSTRUCTOR;
 
     /**
      * Remaps attributes if needed.
      *
      * @return the remapped attribute or the attribute itself if no remapping was necessary.
      */
-    private static String remap(String string) {
+    static String remap(String string) {
         switch (string) {
             case "generic.maxHealth": return "generic.max_health";
             case "generic.followRange": return "generic.follow_range";
@@ -55,11 +60,7 @@ public class WrappedAttribute extends AbstractWrapper {
         }
     }
 
-    /**
-     * Reference to the underlying attribute snapshot.
-     */
-    protected Object handle;
-    protected StructureModifier<Object> modifier;
+    StructureModifier<Object> modifier;
 
     // Cached computed value
     private double computedValue = Double.NaN;
@@ -72,7 +73,7 @@ public class WrappedAttribute extends AbstractWrapper {
      *
      * @param handle - the NMS instance.
      */
-    private WrappedAttribute(@Nonnull Object handle) {
+    WrappedAttribute(@Nonnull Object handle) {
         super(MinecraftReflection.getAttributeSnapshotClass());
         setHandle(handle);
 
@@ -82,7 +83,6 @@ public class WrappedAttribute extends AbstractWrapper {
         }
         this.modifier = ATTRIBUTE_MODIFIER.withTarget(handle);
     }
-
 
     /**
      * Construct a new wrapped attribute around a specific NMS instance.
@@ -205,7 +205,7 @@ public class WrappedAttribute extends AbstractWrapper {
      * @return TRUE if it does, FALSE otherwise.
      */
     public boolean hasModifier(UUID id) {
-        return getModifiers().contains(WrappedAttributeModifier.newBuilder(id).build());
+        return getModifierByUUID(id) != null;
     }
 
     /**
@@ -214,14 +214,14 @@ public class WrappedAttribute extends AbstractWrapper {
      * @param id - the id to look for.
      * @return The single attribute modifier with the given ID.
      */
+    @Nullable
     public WrappedAttributeModifier getModifierByUUID(UUID id) {
-        if (hasModifier(id)) {
-            for (WrappedAttributeModifier modifier : getModifiers()) {
-                if (Objects.equal(modifier.getUUID(), id)) {
-                    return modifier;
-                }
+        for (WrappedAttributeModifier modifier : getModifiers()) {
+            if (Objects.equal(modifier.getUUID(), id)) {
+                return modifier;
             }
         }
+
         return null;
     }
 
@@ -264,6 +264,10 @@ public class WrappedAttribute extends AbstractWrapper {
         return newBuilder(this).modifiers(modifiers).build();
     }
 
+    public WrappedAttribute shallowClone() {
+        return newBuilder(this).build();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -283,7 +287,7 @@ public class WrappedAttribute extends AbstractWrapper {
     public int hashCode() {
         if (attributeModifiers == null)
             getModifiers();
-        return Objects.hashCode(getAttributeKey(), getBaseValue(), attributeModifiers);
+        return Objects.hashCode(getAttributeKey(), getBaseValue(), attributeModifiers.hashCode());
     }
 
     /**
@@ -363,9 +367,9 @@ public class WrappedAttribute extends AbstractWrapper {
         private double baseValue = Double.NaN;
         private String attributeKey;
         private PacketContainer packet;
-        private Collection<WrappedAttributeModifier> modifiers = Collections.emptyList();
+        private Set<WrappedAttributeModifier> modifiers = new HashSet<>();
 
-        private Builder(WrappedAttribute template) {
+        Builder(WrappedAttribute template) {
             if (template != null) {
                 baseValue = template.getBaseValue();
                 attributeKey = template.getAttributeKey();
@@ -407,7 +411,14 @@ public class WrappedAttribute extends AbstractWrapper {
          * @return This builder, for chaining.
          */
         public Builder modifiers(Collection<WrappedAttributeModifier> modifiers) {
-            this.modifiers = Preconditions.checkNotNull(modifiers, "modifiers cannot be NULL - use an empty list instead.");
+            Preconditions.checkNotNull(modifiers, "modifiers cannot be NULL - use an empty list instead.");
+            this.modifiers.addAll(modifiers);
+            return this;
+        }
+
+        public Builder addModifier(WrappedAttributeModifier modifier) {
+            Preconditions.checkNotNull(modifier, "modifier cannot be NULL.");
+            this.modifiers.add(modifier);
             return this;
         }
 
@@ -416,7 +427,9 @@ public class WrappedAttribute extends AbstractWrapper {
          *
          * @param packet - the parent packet.
          * @return This builder, for chaining.
+         * @deprecated Removed in 1.17
          */
+        @Deprecated
         public Builder packet(PacketContainer packet) {
             if (Preconditions.checkNotNull(packet, "packet cannot be NULL").getType() != PacketType.Play.Server.UPDATE_ATTRIBUTES) {
                 throw new IllegalArgumentException("Packet must be UPDATE_ATTRIBUTES (44)");
@@ -431,7 +444,7 @@ public class WrappedAttribute extends AbstractWrapper {
          * @return Unwrapped modifiers.
          */
         private Set<Object> getUnwrappedModifiers() {
-            final Set<Object> output = new HashSet<>();
+            Set<Object> output = new HashSet<>();
 
             for (WrappedAttributeModifier modifier : modifiers) {
                 output.add(modifier.getHandle());
@@ -476,7 +489,9 @@ public class WrappedAttribute extends AbstractWrapper {
                     throw new IllegalArgumentException("Invalid attribute name: " + this.attributeKey);
                 }
 
-                attributeKey = registry.getHolder(attributeKey);
+                if (IS_IN_HOLDER) {
+                    attributeKey = registry.getHolder(attributeKey);
+                }
             } else {
                 attributeKey = this.attributeKey;
             }

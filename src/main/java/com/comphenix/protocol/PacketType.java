@@ -229,6 +229,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType RECIPE_UPDATE =                new PacketType(PROTOCOL, SENDER, 0x77, "UpdateRecipes", "RecipeUpdate");
             public static final PacketType TAGS =                         new PacketType(PROTOCOL, SENDER, 0x78, "UpdateTags", "Tags");
             public static final PacketType PROJECTILE_POWER =             new PacketType(PROTOCOL, SENDER, 0x79, "ProjectilePower");
+            public static final PacketType REPORT_DETAILS =               new PacketType(PROTOCOL, SENDER, 0x7A, "CustomReportDetails");
+            public static final PacketType SERVER_LINKS =                 new PacketType(PROTOCOL, SENDER, 0x7B, "ServerLinks");
 
             // ---- Removed in 1.9
 
@@ -684,6 +686,8 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType UPDATE_ENABLED_FEATURES =      new PacketType(PROTOCOL, SENDER, 0x0C, "UpdateEnabledFeatures");
             public static final PacketType UPDATE_TAGS =                  new PacketType(PROTOCOL, SENDER, 0x0D, "UpdateTags");
             public static final PacketType SELECT_KNOWN_PACKS =           new PacketType(PROTOCOL, SENDER, 0x0E, "ClientboundSelectKnownPacks");
+            public static final PacketType REPORT_DETAILS =               new PacketType(PROTOCOL, SENDER, 0x0F, "CustomReportDetails");
+            public static final PacketType SERVER_LINKS =                 new PacketType(PROTOCOL, SENDER, 0x10, "ServerLinks");
 
             /**
              * @deprecated Removed in 1.20.4: replaced with new packets for removing and sending resource packs
@@ -737,12 +741,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
         STATUS("Status", "status"),
         LOGIN("Login", "login"),
         CONFIGURATION("Configuration", "configuration"),
-        TRANSFER("Transfer", "transfer"), // TODO are these the right names?
-
-        /**
-         * Only for packets removed in Minecraft 1.7.2
-         */
-        LEGACY("", "");
+        UNKNOWN("", "");
 
         private final String packetName;
         private final String mojangName;
@@ -758,14 +757,17 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
          * @return The corresponding protocol.
          */
         public static Protocol fromVanilla(Enum<?> vanilla) {
+            if (vanilla == null) {
+                return UNKNOWN;
+            }
+
             switch (vanilla.name()) {
                 case "HANDSHAKING": return HANDSHAKING;
                 case "PLAY": return PLAY;
                 case "STATUS": return STATUS;
                 case "LOGIN": return LOGIN;
                 case "CONFIGURATION": return CONFIGURATION;
-                default:
-                    throw new IllegalArgumentException("Unrecognized vanilla enum " + vanilla);
+                default: return UNKNOWN;
             }
         }
 

@@ -7,6 +7,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
+
 import com.google.common.collect.Lists;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
@@ -17,12 +18,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WrappedAttributeTest {
 
@@ -71,7 +69,6 @@ public class WrappedAttributeTest {
     }
 
     @Test
-    @Disabled // TODO -- modifiers are missing (or the hasModifier check is wrong)
     public void testAttribute() {
         assertEquals(this.attribute, WrappedAttribute.fromHandle(this.getAttributeCopy(this.attribute)));
 
@@ -97,7 +94,7 @@ public class WrappedAttributeTest {
             modifiers.add((AttributeModifier) wrapper.getHandle());
         }
 
-        IRegistry<AttributeBase> registry = BuiltInRegistries.u;
+        IRegistry<AttributeBase> registry = BuiltInRegistries.s;
         String attributeKey = attribute.getAttributeKey();
         MinecraftKey key = MinecraftKey.a(attributeKey);
         AttributeBase base = registry.a(key);
@@ -107,6 +104,7 @@ public class WrappedAttributeTest {
 
     private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
         AttributeModifier.Operation operation = AttributeModifier.Operation.values()[modifier.getOperation().getId()];
-        return new AttributeModifier(modifier.getUUID(), modifier.getName(), modifier.getAmount(), operation);
+        return new AttributeModifier((MinecraftKey) com.comphenix.protocol.wrappers.MinecraftKey.getConverter().getGeneric(modifier.getKey()),
+            modifier.getAmount(), operation);
     }
 }

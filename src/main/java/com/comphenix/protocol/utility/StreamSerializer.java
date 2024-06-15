@@ -231,14 +231,14 @@ public class StreamSerializer {
      * @return A deserialized item stack, or NULL if the serialized ItemStack was also NULL.
      */
     public ItemStack deserializeItemStackFromByteArray(byte[] input) {
-        if (READ_ITEM_METHOD == null) {
-            READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
-                    .fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
-                    .getMethodByReturnTypeAndParameters("readItemStack", MinecraftReflection.getItemStackClass()));
-        }
-
         ByteBuf buf = Unpooled.wrappedBuffer(input);
         Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
+
+        if (READ_ITEM_METHOD == null) {
+            READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+                    .fromClass(serializer.getClass(), false)
+                    .getMethodByReturnTypeAndParameters("readItemStack", MinecraftReflection.getItemStackClass()));
+        }
 
         try {
             // unwrap the item
@@ -262,6 +262,7 @@ public class StreamSerializer {
      * @throws IOException If the operation fails due to reflection problems.
      */
     public void serializeItemStack(DataOutputStream output, ItemStack stack) throws IOException {
+        // TODO this functionality was replaced by the CODEC field in the nms ItemStack
         if (WRITE_ITEM_METHOD == null) {
             WRITE_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
                     .fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)

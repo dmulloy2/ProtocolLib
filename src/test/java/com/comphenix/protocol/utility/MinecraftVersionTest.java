@@ -18,7 +18,7 @@
 package com.comphenix.protocol.utility;
 
 import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.utility.MinecraftVersion;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +48,7 @@ class MinecraftVersionTest {
 
     @Test
     void testCurrent() {
-        assertEquals(MinecraftVersion.v1_20_5, MinecraftVersion.getCurrentVersion());
+        assertEquals(MinecraftVersion.v1_21_0, MinecraftVersion.getCurrentVersion());
     }
 
     @Test

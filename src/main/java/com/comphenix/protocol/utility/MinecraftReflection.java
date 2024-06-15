@@ -418,6 +418,10 @@ public final class MinecraftReflection {
         return is(getPacketClass(), obj);
     }
 
+    public static boolean isPacketClass(Class<?> clazz) {
+        return is(getPacketClass(), clazz);
+    }
+
     /**
      * Determine if the given object is assignable to a NetServerHandler (PlayerConnection)
      *
