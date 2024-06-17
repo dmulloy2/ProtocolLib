@@ -1,5 +1,9 @@
 package com.comphenix.protocol.injector.temporary;
 
+import java.util.Objects;
+
+import com.comphenix.protocol.injector.netty.Injector;
+
 /**
  * A temporary player created by ProtocolLib when a true player instance does not exist.
  * <p>
@@ -8,15 +12,17 @@ package com.comphenix.protocol.injector.temporary;
  */
 public class TemporaryPlayer {
 
-    private volatile MinimalInjector injector;
+    protected volatile Injector injector;
 
-    MinimalInjector getInjector() {
+    public Injector getInjector() {
         return this.injector;
     }
 
-    void setInjector(MinimalInjector injector) {
-        if (injector == null) {
-            throw new IllegalArgumentException("Injector cannot be NULL.");
+    void setInjector(Injector injector) {
+        Objects.requireNonNull(injector, "injector can't be null");
+
+        if (this.injector != null) {
+            throw new IllegalStateException("Can't redefine injector for temporary player");
         }
 
         this.injector = injector;

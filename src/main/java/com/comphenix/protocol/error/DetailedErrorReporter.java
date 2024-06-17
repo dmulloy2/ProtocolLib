@@ -30,8 +30,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
+
 import com.comphenix.protocol.ProtocolConfig;
-import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.collections.ExpireHashMap;
@@ -40,11 +44,6 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.reflect.PrettyPrinter;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
 
 /**
  * Internal class used to handle exceptions.
@@ -479,7 +478,7 @@ public class DetailedErrorReporter implements ErrorReporter {
             } catch (LinkageError ex) {
                 // Apache is probably missing
                 apacheCommonsMissing = true;
-            } catch (ThreadDeath | OutOfMemoryError e) {
+            } catch (OutOfMemoryError e) {
                 throw e;
             } catch (Throwable ex) {
                 // Don't use the error logger to log errors in error logging (that could lead to infinite loops)

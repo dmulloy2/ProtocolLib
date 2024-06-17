@@ -1,15 +1,5 @@
 package com.comphenix.protocol.injector.netty.channel;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.ProgressivePromise;
-import io.netty.util.concurrent.Promise;
-import io.netty.util.concurrent.ScheduledFuture;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -20,11 +10,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ProgressivePromise;
+import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
+
 /**
  * An abstract event loop implementation which delegates all calls to a given event loop, but proxies all calls which
  * schedule something on the event loop to methods which decide what should happen to the scheduled task.
  */
-abstract class NettyEventLoopProxy implements EventLoop {
+final class NettyEventLoopProxy implements EventLoop {
 
     private static final Callable<?> EMPTY_CALLABLE = () -> null;
     private static final Runnable EMPTY_RUNNABLE = () -> {
@@ -40,7 +41,7 @@ abstract class NettyEventLoopProxy implements EventLoop {
 
     private Runnable proxyRunnable(Runnable original) {
         // execute the proxy and check if we need to do anything
-        Runnable proxied = this.doProxyRunnable(original);
+        Runnable proxied = this.injector.processOutbound(original);
         if (proxied != null && proxied == original) {
             // was not changed, we need to mark the packet as processed manually
             return () -> {
@@ -55,7 +56,7 @@ abstract class NettyEventLoopProxy implements EventLoop {
 
     private <T> Callable<T> proxyCallable(Callable<T> original) {
         // execute the proxy and check if we need to do anything
-        Callable<T> proxied = this.doProxyCallable(original);
+        Callable<T> proxied = this.injector.processOutbound(original);
         if (proxied != null && proxied == original) {
             // was not changed, we need to mark the packet as processed manually
             return () -> {
@@ -67,26 +68,6 @@ abstract class NettyEventLoopProxy implements EventLoop {
             return proxied;
         }
     }
-
-    /**
-     * Proxies the given runnable. The returned runnable will be executed instead of the original. If this method returns
-     * null a no-op runnable will be scheduled instead, preventing the original action from happening.
-     *
-     * @param original the runnable to proxy.
-     * @return the runnable to execute instead, null to execute no action.
-     */
-    protected abstract Runnable doProxyRunnable(Runnable original);
-
-    /**
-     * Proxies the given callable. The returned callable will be executed instead of the original. If this method returns
-     * null a callable which always returns null will be scheduled instead, preventing the original action from
-     * happening.
-     *
-     * @param original the callable to proxy.
-     * @param <T>      the return type of the original callable.
-     * @return the callable to execute instead of the original, null to use a no-op callable instead.
-     */
-    protected abstract <T> Callable<T> doProxyCallable(Callable<T> original);
 
     @Override
     public EventLoopGroup parent() {

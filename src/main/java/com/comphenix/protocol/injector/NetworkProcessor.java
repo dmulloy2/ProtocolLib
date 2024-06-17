@@ -1,5 +1,7 @@
 package com.comphenix.protocol.injector;
 
+import java.util.Deque;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.error.ErrorReporter;
@@ -7,7 +9,6 @@ import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketPostListener;
 import com.comphenix.protocol.events.ScheduledPacket;
-import java.util.Deque;
 
 /**
  * Represents a processor for network markers.
@@ -43,7 +44,7 @@ public class NetworkProcessor {
             for (PacketPostListener listener : marker.getPostListeners()) {
                 try {
                     listener.onPostEvent(event);
-                } catch (OutOfMemoryError | ThreadDeath e) {
+                } catch (OutOfMemoryError e) {
                     throw e;
                 } catch (Throwable e) {
                     this.reporter.reportMinimal(listener.getPlugin(), "SentListener.run()", e);

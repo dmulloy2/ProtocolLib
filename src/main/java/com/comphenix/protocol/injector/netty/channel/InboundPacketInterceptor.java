@@ -2,7 +2,8 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
-import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
@@ -12,39 +13,38 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 final class InboundPacketInterceptor extends ChannelInboundHandlerAdapter {
 
     private final NettyChannelInjector injector;
-    private final ChannelListener channelListener;
 
-    public InboundPacketInterceptor(NettyChannelInjector injector, ChannelListener listener) {
+    public InboundPacketInterceptor(NettyChannelInjector injector) {
         this.injector = injector;
-        this.channelListener = listener;
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (MinecraftReflection.isPacketClass(msg)) {
-            // process the login if the packet is one before posting the packet to any
-            // handler to provide "real" data the method invocation will do nothing if the
-            // packet is not a login packet
-            this.injector.tryProcessLogin(msg);
-
+            // try get packet type
             PacketType.Protocol protocol = this.injector.getInboundProtocol();
-            PacketType packetType = PacketRegistry.getPacketType(protocol, msg.getClass());
+            if (protocol == Protocol.UNKNOWN) {
+                ProtocolLogger.debug("skipping unknown inbound protocol for {0}", msg.getClass());
+                ctx.fireChannelRead(msg);
+                return;
+            }
 
+            PacketType packetType = PacketRegistry.getPacketType(protocol, msg.getClass());
             if (packetType == null) {
                 ProtocolLogger.debug("skipping unknown inbound packet type for {0}", msg.getClass());
                 ctx.fireChannelRead(msg);
                 return;
             }
 
-            // check if there are any listeners bound for the packet - if not just post the
+            // check if there are any listeners bound for the packet - if not just send the
             // packet down the pipeline
-            if (!this.channelListener.hasInboundListener(packetType)) {
+            if (!this.injector.hasInboundListener(packetType)) {
                 ctx.fireChannelRead(msg);
                 return;
             }
 
-            // call all inbound listeners
-            this.injector.processInboundPacket(ctx, msg, packetType);
+            // don't invoke next handler and transfer packet to injector for further processing
+            this.injector.processInbound(ctx, new PacketContainer(packetType, msg));
         } else {
             // just pass the message down the pipeline
             ctx.fireChannelRead(msg);

@@ -46,13 +46,9 @@ import com.comphenix.protocol.injector.collection.PacketListenerSet;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler.ConflictStrategy;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
-
-import io.netty.channel.Channel;
 
 public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
@@ -80,7 +76,6 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     private final Set<PacketListener> registeredListeners;
 
     // injectors
-    private final PlayerInjectionHandler playerInjectionHandler;
     private final NetworkManagerInjector networkManagerInjector;
 
     // status of this manager
@@ -111,10 +106,8 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
         // injectors
         this.networkManagerInjector = new NetworkManagerInjector(
                 builder.getLibrary(),
-                builder.getServer(),
                 this,
                 builder.getReporter());
-        this.playerInjectionHandler = this.networkManagerInjector.getPlayerInjectionHandler();
 
         // ensure that all packet types are loaded and synced
         PacketRegistry.getClientPacketTypes();
@@ -122,7 +115,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
         // hook into all connected players
         for (Player player : this.server.getOnlinePlayers()) {
-            this.playerInjectionHandler.injectPlayer(player, ConflictStrategy.BAIL_OUT);
+        	this.networkManagerInjector.getInjector(player).inject();
         }
     }
 
@@ -180,7 +173,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             }
 
             // process outbound
-            this.playerInjectionHandler.sendServerPacket(receiver, packet, marker, filters);
+            this.networkManagerInjector.getInjector(receiver).sendServerPacket(packet.getHandle(), marker, filters);
         }
     }
 
@@ -192,13 +185,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     @Override
     public void sendWirePacket(Player receiver, WirePacket packet) {
         if (!this.closed) {
-            // special case - we just throw the wire packet down the pipeline without processing it
-            Channel outboundChannel = this.playerInjectionHandler.getChannel(receiver);
-            if (outboundChannel == null) {
-                throw new IllegalArgumentException("Unable to obtain connection of player " + receiver);
-            }
-
-            outboundChannel.writeAndFlush(packet);
+        	this.networkManagerInjector.getInjector(receiver).sendWirePacket(packet);
         }
     }
 
@@ -240,13 +227,13 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             }
 
             // post to the player inject, reset our cancel state change
-            this.playerInjectionHandler.receiveClientPacket(sender, nmsPacket);
+            this.networkManagerInjector.getInjector(sender).receiveClientPacket(nmsPacket);
         }
     }
 
     @Override
     public int getProtocolVersion(Player player) {
-        return this.playerInjectionHandler.getProtocolVersion(player);
+        return this.networkManagerInjector.getInjector(player).getProtocolVersion();
     }
 
     @Override
@@ -447,12 +434,12 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
 
                 @EventHandler(priority = EventPriority.LOWEST)
                 public void handleLogin(PlayerLoginEvent event) {
-                    PacketFilterManager.this.playerInjectionHandler.updatePlayer(event.getPlayer());
+                	networkManagerInjector.getInjector(event.getPlayer()).inject();
                 }
 
                 @EventHandler(priority = EventPriority.LOWEST)
                 public void handleJoin(PlayerJoinEvent event) {
-                    PacketFilterManager.this.playerInjectionHandler.updatePlayer(event.getPlayer());
+                	networkManagerInjector.getInjector(event.getPlayer()).inject();
                 }
 
                 @EventHandler(priority = EventPriority.MONITOR)

@@ -35,12 +35,13 @@ import net.bytebuddy.matcher.ElementMatchers;
 public final class MinecraftMethods {
 
     // For player connection
-    private volatile static MethodAccessor sendPacketMethod;
-    private volatile static MethodAccessor disconnectMethod;
+    private volatile static MethodAccessor playerConnectionSendMethod;
+    private volatile static MethodAccessor playerConnectionDisconnectMethod;
 
     // For network manager
-    private volatile static MethodAccessor networkManagerHandle;
+    private volatile static MethodAccessor networkManagerSend;
     private volatile static MethodAccessor networkManagerPacketRead;
+    private volatile static MethodAccessor networkManagerDisconnect;
 
     // For packet
     private volatile static MethodAccessor packetReadByteBuf;
@@ -78,18 +79,18 @@ public final class MinecraftMethods {
      *
      * @return The send packet method.
      */
-    public static MethodAccessor getSendPacketMethod() {
-        if (sendPacketMethod == null) {
+    public static MethodAccessor getPlayerConnectionSendMethod() {
+        if (playerConnectionSendMethod == null) {
             FuzzyReflection serverHandlerClass = FuzzyReflection.fromClass(MinecraftReflection.getPlayerConnectionClass());
 
             try {
-                sendPacketMethod = Accessors.getMethodAccessor(serverHandlerClass.getMethod(FuzzyMethodContract.newBuilder()
+                playerConnectionSendMethod = Accessors.getMethodAccessor(serverHandlerClass.getMethod(FuzzyMethodContract.newBuilder()
                         .parameterCount(1)
                         .returnTypeVoid()
                         .parameterExactType(MinecraftReflection.getPacketClass(), 0)
                         .build()));
             } catch (IllegalArgumentException e) {
-                sendPacketMethod = Accessors.getMethodAccessor(serverHandlerClass.getMethod(FuzzyMethodContract.newBuilder()
+                playerConnectionSendMethod = Accessors.getMethodAccessor(serverHandlerClass.getMethod(FuzzyMethodContract.newBuilder()
                         .nameRegex("sendPacket.*")
                         .returnTypeVoid()
                         .parameterCount(1)
@@ -97,33 +98,41 @@ public final class MinecraftMethods {
             }
         }
 
-        return sendPacketMethod;
+        return playerConnectionSendMethod;
     }
 
     /**
      * Retrieve the disconnect method for a given player connection.
      *
-     * @param playerConnection - the player connection.
      * @return The
      */
-    public static MethodAccessor getDisconnectMethod(Class<?> playerConnection) {
-        if (disconnectMethod == null) {
-            FuzzyReflection playerConnectionClass = FuzzyReflection.fromClass(playerConnection);
-            try {
-                disconnectMethod = Accessors.getMethodAccessor(playerConnectionClass.getMethod(FuzzyMethodContract.newBuilder()
+    public static MethodAccessor getPlayerConnectionDisconnectMethod() {
+        if (playerConnectionDisconnectMethod == null) {
+            FuzzyReflection playerConnectionClass = FuzzyReflection.fromClass(MinecraftReflection.getPlayerConnectionClass());
+
+            if (MinecraftVersion.v1_21_0.atOrAbove()) {
+                playerConnectionDisconnectMethod = Accessors.getMethodAccessor(playerConnectionClass.getMethod(FuzzyMethodContract.newBuilder()
                         .returnTypeVoid()
-                        .nameRegex("disconnect.*")
                         .parameterCount(1)
-                        .parameterExactType(String.class, 0)
+                        .parameterExactType(MinecraftReflection.getIChatBaseComponentClass(), 0)
                         .build()));
-            } catch (IllegalArgumentException e) {
-                // Just assume it's the first String method
-                Method disconnect = playerConnectionClass.getMethodByParameters("disconnect", String.class);
-                disconnectMethod = Accessors.getMethodAccessor(disconnect);
+            } else {
+                try {
+                    playerConnectionDisconnectMethod = Accessors.getMethodAccessor(playerConnectionClass.getMethod(FuzzyMethodContract.newBuilder()
+                            .returnTypeVoid()
+                            .nameRegex("disconnect.*")
+                            .parameterCount(1)
+                            .parameterExactType(String.class, 0)
+                            .build()));
+                } catch (IllegalArgumentException e) {
+                    // Just assume it's the first String method
+                    Method disconnect = playerConnectionClass.getMethodByParameters("disconnect", String.class);
+                    playerConnectionDisconnectMethod = Accessors.getMethodAccessor(disconnect);
+                }
             }
         }
 
-        return disconnectMethod;
+        return playerConnectionDisconnectMethod;
     }
 
     /**
@@ -131,8 +140,8 @@ public final class MinecraftMethods {
      *
      * @return The handle method.
      */
-    public static MethodAccessor getNetworkManagerHandleMethod() {
-        if (networkManagerHandle == null) {
+    public static MethodAccessor getNetworkManagerSendMethod() {
+        if (networkManagerSend == null) {
             Method handleMethod = FuzzyReflection
                     .fromClass(MinecraftReflection.getNetworkManagerClass(), true)
                     .getMethod(FuzzyMethodContract.newBuilder()
@@ -141,10 +150,10 @@ public final class MinecraftMethods {
                             .parameterCount(1)
                             .parameterExactType(MinecraftReflection.getPacketClass(), 0)
                             .build());
-            networkManagerHandle = Accessors.getMethodAccessor(handleMethod);
+            networkManagerSend = Accessors.getMethodAccessor(handleMethod);
         }
 
-        return networkManagerHandle;
+        return networkManagerSend;
     }
 
     /**
@@ -161,6 +170,27 @@ public final class MinecraftMethods {
         }
 
         return networkManagerPacketRead;
+    }
+
+    /**
+     * Retrieve the handle/send packet method of network manager.
+     *
+     * @return The handle method.
+     */
+    public static MethodAccessor getNetworkManagerDisconnectMethod() {
+        if (networkManagerDisconnect == null) {
+            Method handleMethod = FuzzyReflection
+                    .fromClass(MinecraftReflection.getNetworkManagerClass(), true)
+                    .getMethod(FuzzyMethodContract.newBuilder()
+                            .banModifier(Modifier.STATIC)
+                            .returnTypeVoid()
+                            .parameterCount(1)
+                            .parameterExactType(MinecraftReflection.getIChatBaseComponentClass(), 0)
+                            .build());
+            networkManagerDisconnect = Accessors.getMethodAccessor(handleMethod);
+        }
+
+        return networkManagerDisconnect;
     }
 
     /**

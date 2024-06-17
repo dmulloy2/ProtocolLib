@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.Server;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.PacketType;
@@ -20,8 +20,6 @@ import com.comphenix.protocol.injector.ListenerInvoker;
 import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
-import com.comphenix.protocol.injector.player.PlayerInjectionHandler;
-import com.comphenix.protocol.injector.temporary.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
@@ -35,7 +33,6 @@ import io.netty.channel.ChannelFuture;
 public class NetworkManagerInjector implements ChannelListener {
 
     private static final String INBOUND_INJECT_HANDLER_NAME = "protocol_lib_inbound_inject";
-    private static final TemporaryPlayerFactory PLAYER_FACTORY = new TemporaryPlayerFactory();
 
     // all list fields which we've overridden and need to revert to a non-proxying list afterwards
     private final Set<Pair<Object, FieldAccessor>> overriddenLists = new HashSet<>();
@@ -44,9 +41,7 @@ public class NetworkManagerInjector implements ChannelListener {
     private final ListenerInvoker listenerInvoker;
     private final InjectionFactory injectionFactory;
 
-    // injectors based on this "global" injector
-    private final PlayerInjectionHandler playerInjectionHandler;
-
+    // netty handler
     private final InjectionChannelInitializer pipelineInjectorHandler;
 
     private boolean debug = false;
@@ -55,22 +50,16 @@ public class NetworkManagerInjector implements ChannelListener {
     private boolean closed = false;
     private boolean injected = false;
 
-    public NetworkManagerInjector(Plugin plugin, Server server, ListenerInvoker listenerInvoker, ErrorReporter reporter) {
+    public NetworkManagerInjector(Plugin plugin, ListenerInvoker listenerInvoker, ErrorReporter reporter) {
         this.errorReporter = reporter;
         this.listenerInvoker = listenerInvoker;
-        this.injectionFactory = new InjectionFactory(plugin, server, reporter);
+        this.injectionFactory = new InjectionFactory(plugin, this, reporter);
 
         // hooking netty handlers
         InjectionChannelInboundHandler injectionHandler = new InjectionChannelInboundHandler(
                 this.injectionFactory,
-                this,
-                PLAYER_FACTORY);
+                this);
         this.pipelineInjectorHandler = new InjectionChannelInitializer(INBOUND_INJECT_HANDLER_NAME, injectionHandler);
-
-        // other injectors
-        this.playerInjectionHandler = new NetworkManagerPlayerInjector(
-                this,
-                this.injectionFactory);
     }
 
     @Override
@@ -131,6 +120,10 @@ public class NetworkManagerInjector implements ChannelListener {
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    public Injector getInjector(Player player) {
+    	return this.injectionFactory.fromPlayer(player);
     }
 
     @SuppressWarnings("unchecked")
@@ -230,9 +223,5 @@ public class NetworkManagerInjector implements ChannelListener {
         // clear up
         this.overriddenLists.clear();
         this.injectionFactory.close();
-    }
-
-    public PlayerInjectionHandler getPlayerInjectionHandler() {
-        return this.playerInjectionHandler;
     }
 }
