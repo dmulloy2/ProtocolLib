@@ -11,8 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.annotation.Nullable;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -34,15 +32,10 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import com.comphenix.protocol.utility.ByteBuddyGenerated;
-import com.comphenix.protocol.utility.MinecraftFields;
-import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 
 import io.netty.channel.Channel;
@@ -85,6 +78,7 @@ public class NettyChannelInjector implements Injector {
     // protocol lib stuff we need
     private final ErrorReporter errorReporter;
     private final NetworkProcessor networkProcessor;
+    private final PacketListenerInvoker listenerInvoker;
 
     // references
     private final Object networkManager;
@@ -108,7 +102,6 @@ public class NettyChannelInjector implements Injector {
     private Player player;
 
     // lazy initialized fields, if we don't need them we don't bother about them
-    private volatile Object playerConnection;
     private volatile InboundProtocolReader inboundProtocolReader;
 
     public NettyChannelInjector(
@@ -125,6 +118,7 @@ public class NettyChannelInjector implements Injector {
         // protocol lib stuff
         this.errorReporter = errorReporter;
         this.networkProcessor = new NetworkProcessor(errorReporter);
+        this.listenerInvoker = new PacketListenerInvoker(networkManager);
 
         // references
         this.networkManager = networkManager;
@@ -260,7 +254,7 @@ public class NettyChannelInjector implements Injector {
     }
 
     @Override
-    public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
+    public void sendClientboundPacket(Object packet, NetworkMarker marker, boolean filtered) {
         // ignore call if the injector is closed or not injected
         if (this.closed.get() || !this.injected) {
             return;
@@ -277,14 +271,7 @@ public class NettyChannelInjector implements Injector {
         }
 
         try {
-            Object playerConnection = this.getPlayerConnection();
-
-            // try to use the player connection if possible
-            if (playerConnection != null) {
-                MinecraftMethods.getPlayerConnectionSendMethod().invoke(playerConnection, packet);
-            } else {
-                MinecraftMethods.getNetworkManagerSendMethod().invoke(this.networkManager, packet);
-            }
+            this.listenerInvoker.send(packet);
         } catch (Exception exception) {
             this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
                     .messageParam(packet, this.playerName)
@@ -294,7 +281,7 @@ public class NettyChannelInjector implements Injector {
     }
 
     @Override
-    public void receiveClientPacket(Object packet) {
+    public void readServerboundPacket(Object packet) {
         // ignore call if the injector is closed or not injected
         if (this.closed.get() || !this.injected) {
             return;
@@ -303,7 +290,7 @@ public class NettyChannelInjector implements Injector {
         this.ensureInEventLoop(() -> {
             try {
                 // try to invoke the method, this should normally not fail
-                MinecraftMethods.getNetworkManagerReadPacketMethod().invoke(this.networkManager, null, packet);
+                this.listenerInvoker.read(packet);
             } catch (Exception exception) {
                 this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_READ_PACKET)
                         .messageParam(packet, this.playerName)
@@ -333,6 +320,23 @@ public class NettyChannelInjector implements Injector {
     }
 
     @Override
+    public void disconnect(String message) {
+        // ignore call if the injector is closed or not injected
+        if (this.closed.get() || !this.injected) {
+            return;
+        }
+
+        try {
+            this.listenerInvoker.disconnect(message);
+        } catch (Exception exception) {
+            this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DISCONNECT)
+                    .messageParam(this.playerName, message)
+                    .error(exception)
+                    .build());
+        }
+    }
+
+    @Override
     public Protocol getCurrentProtocol(PacketType.Sender sender) {
         return ChannelProtocolUtil.PROTOCOL_RESOLVER.apply(this.channel, sender);
     }
@@ -357,35 +361,6 @@ public class NettyChannelInjector implements Injector {
     public void setPlayer(Player player) {
         this.player = player;
         this.playerName = player.getName();
-    }
-
-    @Override
-    public void disconnect(String message) {
-        try {
-            Object playerConnection = this.getPlayerConnection();
-
-            // try to use the player connection if possible
-            if (playerConnection != null) {
-                // this method prefers the main thread so no event loop here
-                MethodAccessor accessor = MinecraftMethods.getPlayerConnectionDisconnectMethod();
-
-                // check if the parameter is a chat component
-                if (MinecraftReflection.isIChatBaseComponent(accessor.getMethod().getParameters()[0].getClass())) {
-                    Object component = WrappedChatComponent.fromText(message).getHandle();
-                    accessor.invoke(playerConnection, component);
-                } else {
-                    accessor.invoke(playerConnection, message);
-                }
-            } else {
-                Object component = WrappedChatComponent.fromText(message).getHandle();
-                MinecraftMethods.getNetworkManagerDisconnectMethod().invoke(this.networkManager, component);
-            }
-        } catch (Exception exception) {
-            this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_DISCONNECT)
-                    .messageParam(this.playerName, message)
-                    .error(exception)
-                    .build());
-        }
     }
 
     @Override
@@ -538,7 +513,7 @@ public class NettyChannelInjector implements Injector {
         // ensure that we are on the main thread if we need to
         if (this.channelListener.hasMainThreadListener(packetType) && !Bukkit.isPrimaryThread()) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
-            ProtocolLibrary.getScheduler().runTask(() -> this.sendServerPacket(packet, null, true));
+            ProtocolLibrary.getScheduler().runTask(() -> this.sendClientboundPacket(packet, null, true));
             return null;
         }
 
@@ -616,30 +591,6 @@ public class NettyChannelInjector implements Injector {
                 return FieldAccessor.NO_OP_ACCESSOR;
             }
         });
-    }
-
-    /**
-     * Returns the PlayerConnection or null if the player instance is null or a
-     * temporary player
-     * 
-     * @return the PlayerConnection or null
-     */
-    @Nullable
-    private Object getPlayerConnection() {
-        // resolve the player connection if needed
-        if (this.playerConnection == null) {
-            Player target = this.getPlayer();
-            // if player is null or temporary return null
-            if (target == null || target instanceof ByteBuddyGenerated) {
-                return null;
-            }
-
-            // this can in some cases still return null because the connection isn't set
-            // during the configuration phase but the player instance got created
-            this.playerConnection = MinecraftFields.getPlayerConnection(target);
-        }
-
-        return this.playerConnection;
     }
 
     private void ensureInEventLoop(Runnable runnable) {

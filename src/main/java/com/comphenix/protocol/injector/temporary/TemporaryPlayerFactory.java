@@ -170,7 +170,7 @@ public class TemporaryPlayerFactory {
      */
     private static Object sendMessage(Injector injector, String message) {
         for (PacketContainer packet : ChatExtensions.createChatPackets(message)) {
-            injector.sendServerPacket(packet.getHandle(), null, false);
+            injector.sendClientboundPacket(packet.getHandle(), null, false);
         }
 
         return null;

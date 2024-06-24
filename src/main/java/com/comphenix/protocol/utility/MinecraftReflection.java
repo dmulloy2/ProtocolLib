@@ -374,7 +374,7 @@ public final class MinecraftReflection {
             return false;
         }
         
-        // check for accidential class objects
+        // check for accidental class objects
         if (object instanceof Class) {
             return clazz.isAssignableFrom((Class<?>) object);
         }

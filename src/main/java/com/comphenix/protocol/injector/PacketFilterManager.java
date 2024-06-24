@@ -173,7 +173,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             }
 
             // process outbound
-            this.networkManagerInjector.getInjector(receiver).sendServerPacket(packet.getHandle(), marker, filters);
+            this.networkManagerInjector.getInjector(receiver).sendClientboundPacket(packet.getHandle(), marker, filters);
         }
     }
 
@@ -227,7 +227,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             }
 
             // post to the player inject, reset our cancel state change
-            this.networkManagerInjector.getInjector(sender).receiveClientPacket(nmsPacket);
+            this.networkManagerInjector.getInjector(sender).readServerboundPacket(nmsPacket);
         }
     }
 

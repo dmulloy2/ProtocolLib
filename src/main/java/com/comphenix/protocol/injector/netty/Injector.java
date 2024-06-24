@@ -15,6 +15,8 @@ import com.comphenix.protocol.events.NetworkMarker;
  */
 public interface Injector {
 
+    SocketAddress getAddress();
+
     /**
      * Retrieve the current protocol version of the player.
      *
@@ -41,11 +43,13 @@ public interface Injector {
      * @param marker   - the network marker.
      * @param filtered - whether or not the packet is filtered.
      */
-    void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered);
+    void sendClientboundPacket(Object packet, NetworkMarker marker, boolean filtered);
 
-    void receiveClientPacket(Object packet);
+    void readServerboundPacket(Object packet);
 
     void sendWirePacket(WirePacket packet);
+
+    void disconnect(String message);
 
     /**
      * Retrieve the current protocol state. Note that since 1.20.2 the client and server direction can be in different
@@ -55,8 +59,6 @@ public interface Injector {
      * @return The current protocol.
      */
     Protocol getCurrentProtocol(PacketType.Sender sender);
-
-    SocketAddress getAddress();
 
     /**
      * Retrieve the current player or temporary player associated with the injector.
@@ -71,8 +73,6 @@ public interface Injector {
      * @param player - the current player.
      */
     void setPlayer(Player player);
-
-    void disconnect(String message);
 
     boolean isConnected();
 

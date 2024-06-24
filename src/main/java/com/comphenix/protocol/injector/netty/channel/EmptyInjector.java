@@ -42,15 +42,19 @@ final class EmptyInjector implements Injector {
     }
 
     @Override
-    public void sendServerPacket(Object packet, NetworkMarker marker, boolean filtered) {
+    public void sendClientboundPacket(Object packet, NetworkMarker marker, boolean filtered) {
     }
 
     @Override
-    public void receiveClientPacket(Object packet) {
+    public void readServerboundPacket(Object packet) {
     }
 
     @Override
     public void sendWirePacket(WirePacket packet) {
+    }
+
+    @Override
+    public void disconnect(String message) {
     }
 
     @Override
@@ -66,10 +70,6 @@ final class EmptyInjector implements Injector {
     @Override
     public void setPlayer(Player player) {
         this.player = player;
-    }
-
-    @Override
-    public void disconnect(String message) {
     }
 
     @Override
