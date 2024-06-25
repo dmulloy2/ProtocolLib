@@ -1,17 +1,18 @@
 package com.comphenix.protocol.events;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.utility.StreamSerializer;
-import com.comphenix.protocol.wrappers.*;
-import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
-import com.comphenix.protocol.wrappers.nbt.NbtBase;
-import com.comphenix.protocol.wrappers.nbt.NbtCompound;
-import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-import com.google.common.base.Preconditions;
+import java.lang.reflect.Array;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.annotation.Nonnull;
+
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -25,10 +26,49 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-import java.lang.reflect.Array;
-import java.time.Instant;
-import java.util.*;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.StreamSerializer;
+import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
+import com.comphenix.protocol.wrappers.Converters;
+import com.comphenix.protocol.wrappers.CustomPacketPayloadWrapper;
+import com.comphenix.protocol.wrappers.Either;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.MinecraftKey;
+import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
+import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
+import com.comphenix.protocol.wrappers.Pair;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
+import com.comphenix.protocol.wrappers.WrappedAttribute;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.WrappedDataValue;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.WrappedLevelChunkData;
+import com.comphenix.protocol.wrappers.WrappedMessageSignature;
+import com.comphenix.protocol.wrappers.WrappedNumberFormat;
+import com.comphenix.protocol.wrappers.WrappedParticle;
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey;
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
+import com.comphenix.protocol.wrappers.WrappedRegistrable;
+import com.comphenix.protocol.wrappers.WrappedRegistry;
+import com.comphenix.protocol.wrappers.WrappedRemoteChatSessionData;
+import com.comphenix.protocol.wrappers.WrappedSaltedSignature;
+import com.comphenix.protocol.wrappers.WrappedServerPing;
+import com.comphenix.protocol.wrappers.WrappedStatistic;
+import com.comphenix.protocol.wrappers.WrappedTeamParameters;
+import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.nbt.NbtBase;
+import com.comphenix.protocol.wrappers.nbt.NbtCompound;
+import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+import com.google.common.base.Preconditions;
 
 public abstract class AbstractStructure {
     protected transient Object handle;
@@ -1132,6 +1172,17 @@ public abstract class AbstractStructure {
                 MinecraftReflection.getMessageSignatureClass(),
                 BukkitConverters.getWrappedMessageSignatureConverter()
         );
+    }
+
+    /**
+     * Retrieve a read/write structure for the ClientIntent enum used in Handshake/SetProtocol packet
+     * @return A modifier for Protocol enum fields.
+     */
+    public StructureModifier<EnumWrappers.ClientIntent> getClientIntents() {
+        // Convert to and from the wrapper
+        return structureModifier.withType(
+                EnumWrappers.getClientIntentClass(),
+                EnumWrappers.getClientIntentConverter());
     }
 
     /**
