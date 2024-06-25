@@ -24,8 +24,8 @@ import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.ListenerManager;
 import com.comphenix.protocol.injector.NetworkProcessor;
-import com.comphenix.protocol.injector.netty.ChannelListener;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
@@ -77,14 +77,14 @@ public class NettyChannelInjector implements Injector {
 
     // protocol lib stuff we need
     private final ErrorReporter errorReporter;
+    private final InjectionFactory injectionFactory;
+    private final ListenerManager listenerManager;
     private final NetworkProcessor networkProcessor;
     private final PacketListenerInvoker listenerInvoker;
 
     // references
     private final Object networkManager;
     private final Channel channel;
-    private final ChannelListener channelListener;
-    private final InjectionFactory injectionFactory;
 
     private final FieldAccessor channelField;
 
@@ -108,7 +108,7 @@ public class NettyChannelInjector implements Injector {
             Player player,
             Object networkManager,
             Channel channel,
-            ChannelListener listener,
+            ListenerManager listenerManager,
             InjectionFactory injector,
             ErrorReporter errorReporter
     ) {
@@ -123,7 +123,7 @@ public class NettyChannelInjector implements Injector {
         // references
         this.networkManager = networkManager;
         this.channel = channel;
-        this.channelListener = listener;
+        this.listenerManager = listenerManager;
         this.injectionFactory = injector;
 
         // register us into the channel
@@ -351,6 +351,9 @@ public class NettyChannelInjector implements Injector {
         // check if the name of the player is already known to the injector
         if (this.playerName != null) {
             this.player = Bukkit.getPlayerExact(this.playerName);
+            if (this.player != null) {
+                this.injectionFactory.cacheInjector(this.player, this);
+            }
         }
 
         // either we resolved it or we didn't...
@@ -359,8 +362,13 @@ public class NettyChannelInjector implements Injector {
 
     @Override
     public void setPlayer(Player player) {
+        this.injectionFactory.invalidate(this.player, this.playerName);
+
         this.player = player;
         this.playerName = player.getName();
+
+        this.injectionFactory.cacheInjector(player, this);
+        this.injectionFactory.cacheInjector(player.getName(), this);
     }
 
     @Override
@@ -397,7 +405,7 @@ public class NettyChannelInjector implements Injector {
         return type == PacketType.Handshake.Client.SET_PROTOCOL ||
                 type == PacketType.Login.Client.START ||
                 // check for plugin registed listener
-                this.channelListener.hasInboundListener(type);
+                this.listenerManager.hasInboundListener(type);
     }
 
     void processInbound(ChannelHandlerContext ctx, PacketContainer packet) {
@@ -427,7 +435,7 @@ public class NettyChannelInjector implements Injector {
         }
 
         // invoke plugin listeners
-        if (this.channelListener.hasInboundListener(packet.getType())) {
+        if (this.listenerManager.hasInboundListener(packet.getType())) {
             this.processInboundInternal(ctx, packet);
         } else {
             ctx.fireChannelRead(packet.getHandle());
@@ -435,21 +443,18 @@ public class NettyChannelInjector implements Injector {
     }
 
     private void processInboundInternal(ChannelHandlerContext ctx, PacketContainer packetContainer) {
-        if (this.channelListener.hasMainThreadListener(packetContainer.getType()) && !Bukkit.isPrimaryThread()) {
+        if (this.listenerManager.hasMainThreadListener(packetContainer.getType()) && !Bukkit.isPrimaryThread()) {
             // not on the main thread but we are required to be reschedule the packet on the
             // main thread
             ProtocolLibrary.getScheduler().runTask(() -> this.processInboundInternal(ctx, packetContainer));
             return;
         }
 
-        // call packet handlers, a null result indicates that we shouldn't change
-        // anything
-        PacketEvent event = this.channelListener.onPacketReceiving(this, packetContainer, null);
-        if (event == null) {
-            this.ensureInEventLoop(ctx.channel().eventLoop(), () -> ctx.fireChannelRead(packetContainer.getHandle()));
-            return;
-        }
+        // create event and invoke listeners
+        PacketEvent event = PacketEvent.fromClient(this, packetContainer, this.player);
+        this.listenerManager.invokeInboundPacketListeners(event);
 
+        // get packet of event
         Object packet = event.getPacket().getHandle();
 
         // fire the intercepted packet down the pipeline if it wasn't cancelled and isn't null
@@ -506,25 +511,23 @@ public class NettyChannelInjector implements Injector {
         }
 
         // no listener and no marker - no magic :)
-        if (!this.channelListener.hasOutboundListener(packetType) && marker == null && !MinecraftReflection.isBundlePacket(packet.getClass())) {
+        if (!this.listenerManager.hasOutboundListener(packetType) && marker == null && !MinecraftReflection.isBundlePacket(packet.getClass())) {
             return action;
         }
 
         // ensure that we are on the main thread if we need to
-        if (this.channelListener.hasMainThreadListener(packetType) && !Bukkit.isPrimaryThread()) {
+        if (this.listenerManager.hasMainThreadListener(packetType) && !Bukkit.isPrimaryThread()) {
             // not on the main thread but we are required to be - re-schedule the packet on the main thread
             ProtocolLibrary.getScheduler().runTask(() -> this.sendClientboundPacket(packet, null, true));
             return null;
         }
 
-        // call all listeners which are listening to the outbound packet, if any
-        // null indicates that no listener was affected by the packet, meaning that we can directly send the original packet
+        // create event and invoke listeners
         PacketContainer packetContainer = new PacketContainer(packetType, packet);
-        PacketEvent event = this.channelListener.onPacketSending(this, packetContainer, marker);
-        if (event == null) {
-            return action;
-        }
+        PacketEvent event = PacketEvent.fromServer(this, packetContainer, marker, this.player);
+        this.listenerManager.invokeOutboundPacketListeners(event);
 
+        // get packet of event
         Object interceptedPacket = event.getPacket().getHandle();
 
         // if the event wasn't cancelled by this action we must recheck if the packet changed during the method call

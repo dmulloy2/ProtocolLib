@@ -23,7 +23,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.ListenerManager;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.temporary.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -50,16 +50,16 @@ public class InjectionFactory {
     private final Plugin plugin;
 
     // protocol lib stuff
-    private final ChannelListener channelListener;
     private final ErrorReporter errorReporter;
+    private final ListenerManager listenerManager;
 
     // state of the factory
     private boolean closed;
 
-    public InjectionFactory(Plugin plugin, ChannelListener channelListener, ErrorReporter errorReporter) {
+    public InjectionFactory(Plugin plugin, ErrorReporter errorReporter, ListenerManager listenerManager) {
         this.plugin = plugin;
-        this.channelListener = channelListener;
         this.errorReporter = errorReporter;
+        this.listenerManager = listenerManager;
     }
 
     /**
@@ -118,7 +118,7 @@ public class InjectionFactory {
                     player,
                     networkManager,
                     channel,
-                    this.channelListener,
+                    this.listenerManager,
                     this,
                     this.errorReporter);
             this.cacheInjector(player, injector);
@@ -171,7 +171,7 @@ public class InjectionFactory {
                 temporaryPlayer,
                 networkManager,
                 channel,
-                this.channelListener,
+                this.listenerManager,
                 this,
                 this.errorReporter);
 

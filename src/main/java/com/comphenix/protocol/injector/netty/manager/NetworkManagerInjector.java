@@ -10,14 +10,9 @@ import java.util.Set;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.events.NetworkMarker;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.ListenerInvoker;
-import com.comphenix.protocol.injector.netty.ChannelListener;
+import com.comphenix.protocol.injector.ListenerManager;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -30,7 +25,7 @@ import com.comphenix.protocol.wrappers.Pair;
 
 import io.netty.channel.ChannelFuture;
 
-public class NetworkManagerInjector implements ChannelListener {
+public class NetworkManagerInjector {
 
     private static final String INBOUND_INJECT_HANDLER_NAME = "protocol_lib_inbound_inject";
 
@@ -38,88 +33,24 @@ public class NetworkManagerInjector implements ChannelListener {
     private final Set<Pair<Object, FieldAccessor>> overriddenLists = new HashSet<>();
 
     private final ErrorReporter errorReporter;
-    private final ListenerInvoker listenerInvoker;
     private final InjectionFactory injectionFactory;
 
     // netty handler
     private final InjectionChannelInitializer pipelineInjectorHandler;
 
-    private boolean debug = false;
-
     // status of this injector
     private boolean closed = false;
     private boolean injected = false;
 
-    public NetworkManagerInjector(Plugin plugin, ListenerInvoker listenerInvoker, ErrorReporter reporter) {
+    public NetworkManagerInjector(Plugin plugin, ListenerManager listenerManager, ErrorReporter reporter) {
         this.errorReporter = reporter;
-        this.listenerInvoker = listenerInvoker;
-        this.injectionFactory = new InjectionFactory(plugin, this, reporter);
+        this.injectionFactory = new InjectionFactory(plugin, reporter, listenerManager);
 
         // hooking netty handlers
         InjectionChannelInboundHandler injectionHandler = new InjectionChannelInboundHandler(
-                this.injectionFactory,
-                this);
+                this.errorReporter,
+                this.injectionFactory);
         this.pipelineInjectorHandler = new InjectionChannelInitializer(INBOUND_INJECT_HANDLER_NAME, injectionHandler);
-    }
-
-    @Override
-    public PacketEvent onPacketSending(Injector injector, PacketContainer packet, NetworkMarker marker) {
-        // check if we need to intercept the packet
-        Class<?> packetClass = packet.getHandle().getClass();
-        if (marker != null || MinecraftReflection.isBundlePacket(packetClass) || hasOutboundListener(packet.getType())) {
-            // wrap packet and construct the event
-            PacketEvent packetEvent = PacketEvent.fromServer(this, packet, marker, injector.getPlayer());
-
-            // post to all listeners, then return the packet event we constructed
-            this.listenerInvoker.invokePacketSending(packetEvent);
-            return packetEvent;
-        }
-
-        // no listener so there is no change we need to apply
-        return null;
-    }
-
-    @Override
-    public PacketEvent onPacketReceiving(Injector injector, PacketContainer packet, NetworkMarker marker) {
-        if (marker != null || hasInboundListener(packet.getType())) {
-            PacketEvent packetEvent = PacketEvent.fromClient(this, packet, marker, injector.getPlayer());
-
-            // post to all listeners, then return the packet event we constructed
-            this.listenerInvoker.invokePacketReceiving(packetEvent);
-            return packetEvent;
-        }
-
-        // no listener so there is no change we need to apply
-        return null;
-    }
-
-    @Override
-    public boolean hasInboundListener(PacketType packetType) {
-        return this.listenerInvoker.hasInboundListener(packetType);
-    }
-    
-    @Override
-    public boolean hasOutboundListener(PacketType packetType) {
-        return this.listenerInvoker.hasOutboundListener(packetType);
-    }
-
-    @Override
-    public boolean hasMainThreadListener(PacketType packetType) {
-        return this.listenerInvoker.hasMainThreadListener(packetType);
-    }
-
-    @Override
-    public ErrorReporter getReporter() {
-        return this.errorReporter;
-    }
-
-    @Override
-    public boolean isDebug() {
-        return this.debug;
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
     }
 
     public Injector getInjector(Player player) {
