@@ -1,16 +1,18 @@
 package com.comphenix.protocol.reflect.instances;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
+
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import org.bukkit.Material;
-import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.ItemStack;
 
 public class MinecraftGenerator {
 
@@ -58,14 +60,20 @@ public class MinecraftGenerator {
                     try {
                         String name = type.getName();
                         if (name.contains("it.unimi.dsi.fastutil")) {
-                            Class<?> clz = Class.forName(name.replace("Map", "OpenHashMap"));
-                            return Accessors.getConstructorAccessorOrNull(clz);
+                            // convert interface maps to OpenHashMaps
+                            if (!name.endsWith("OpenHashMap")) {
+                                name = name.replace("Map", "OpenHashMap");
+                            }
+
+                            Class<?> hashMapClass = Class.forName(name);
+                            return Accessors.getConstructorAccessorOrNull(hashMapClass);
                         }
                     } catch (Exception ignored) {
                     }
-                    return null;
+                    return ConstructorAccessor.NO_OP_ACCESSOR;
                 });
-                if (ctor != null) {
+
+                if (ctor != ConstructorAccessor.NO_OP_ACCESSOR) {
                     try {
                         return ctor.invoke();
                     } catch (Exception ignored) {

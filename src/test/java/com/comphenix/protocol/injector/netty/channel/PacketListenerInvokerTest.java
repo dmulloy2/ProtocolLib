@@ -15,7 +15,7 @@ public class PacketListenerInvokerTest {
     }
 
     @Test
-    public void test() {
+    public void testInitialization() {
         assertDoesNotThrow(() -> PacketListenerInvoker.ensureStaticInitializedWithoutError());
     }
 }
