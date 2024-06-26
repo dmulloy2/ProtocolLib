@@ -11,6 +11,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.Validate;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
@@ -22,10 +26,6 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-
-import org.apache.commons.lang.Validate;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
 
 /**
  * Represents a generic enum converter.
@@ -623,6 +623,21 @@ public abstract class EnumWrappers {
         }
     }
 
+    /**
+     * Represents the client's intentions when connecting to the server. Previously, 
+     * the game utilized the {@code EnumProtocol}, which included the additional states 
+     * HANDSHAKE and PLAY. These states are not incorporated in the ClientIntent enum 
+     * as they were never valid values for client intent under the current or 
+     * past implementations.
+     *
+     * @since 1.20.5
+     */
+    public enum ClientIntent {
+        STATUS,
+        LOGIN,
+        TRANSFER;
+    }
+
     private static Class<?> PROTOCOL_CLASS = null;
     private static Class<?> CLIENT_COMMAND_CLASS = null;
     private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -647,6 +662,7 @@ public abstract class EnumWrappers {
     private static Class<?> DISPLAY_SLOT_CLASS = null;
     private static Class<?> RENDER_TYPE_CLASS = null;
     private static Class<?> CHAT_FORMATTING_CLASS = null;
+    private static Class<?> CLIENT_INTENT_CLASS = null;
 
     private static boolean INITIALIZED = false;
     private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
@@ -744,6 +760,8 @@ public abstract class EnumWrappers {
             "IScoreboardCriteria$EnumScoreboardHealthDisplay");
         CHAT_FORMATTING_CLASS = MinecraftReflection.getNullableNMS("ChatFormatting", "EnumChatFormat");
 
+        CLIENT_INTENT_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
+
         associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
         associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
         associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
@@ -767,6 +785,7 @@ public abstract class EnumWrappers {
         associate(DISPLAY_SLOT_CLASS, DisplaySlot.class, getDisplaySlotConverter());
         associate(RENDER_TYPE_CLASS, RenderType.class, getRenderTypeConverter());
         associate(CHAT_FORMATTING_CLASS, ChatFormatting.class, getChatFormattingConverter());
+        associate(CLIENT_INTENT_CLASS, ClientIntent.class, getClientIntentConverter());
 
         if (ENTITY_POSE_CLASS != null) {
             associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
@@ -933,6 +952,11 @@ public abstract class EnumWrappers {
         return CHAT_FORMATTING_CLASS;
     }
 
+    public static Class<?> getClientIntentClass() {
+        initialize();
+        return CLIENT_INTENT_CLASS;
+    }
+
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
         return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -1024,6 +1048,10 @@ public abstract class EnumWrappers {
 
     public static EquivalentConverter<ChatFormatting> getChatFormattingConverter() {
         return new EnumConverter<>(getChatFormattingClass(), ChatFormatting.class);
+    }
+
+    public static EquivalentConverter<ClientIntent> getClientIntentConverter() {
+        return new EnumConverter<>(getClientIntentClass(), ClientIntent.class);
     }
 
     /**

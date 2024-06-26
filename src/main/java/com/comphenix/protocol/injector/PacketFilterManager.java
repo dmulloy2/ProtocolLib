@@ -46,11 +46,10 @@ import com.comphenix.protocol.injector.collection.PacketListenerSet;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
 
-public class PacketFilterManager implements ListenerInvoker, InternalManager {
+public class PacketFilterManager implements ListenerManager, InternalManager {
 
     // plugin verifier reports
     private static final ReportType PLUGIN_VERIFIER_ERROR = new ReportType("Plugin verifier error: %s");
@@ -173,7 +172,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             }
 
             // process outbound
-            this.networkManagerInjector.getInjector(receiver).sendServerPacket(packet.getHandle(), marker, filters);
+            this.networkManagerInjector.getInjector(receiver).sendClientboundPacket(packet.getHandle(), marker, filters);
         }
     }
 
@@ -214,7 +213,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             if (filters) {
                 // post to all listeners
             	PacketEvent event = PacketEvent.fromClient(this.networkManagerInjector, packet, null, sender);
-                this.invokePacketReceiving(event);
+                this.invokeInboundPacketListeners(event);
                 if (event.isCancelled()) {
                     return;
                 }
@@ -227,7 +226,7 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
             }
 
             // post to the player inject, reset our cancel state change
-            this.networkManagerInjector.getInjector(sender).receiveClientPacket(nmsPacket);
+            this.networkManagerInjector.getInjector(sender).readServerboundPacket(nmsPacket);
         }
     }
 
@@ -505,31 +504,17 @@ public class PacketFilterManager implements ListenerInvoker, InternalManager {
     }
 
     @Override
-    public void invokePacketReceiving(PacketEvent event) {
+    public void invokeInboundPacketListeners(PacketEvent event) {
         if (!this.closed) {
             this.postPacketToListeners(this.inboundListeners, event, false);
         }
     }
 
     @Override
-    public void invokePacketSending(PacketEvent event) {
+    public void invokeOutboundPacketListeners(PacketEvent event) {
         if (!this.closed) {
             this.postPacketToListeners(this.outboundListeners, event, true);
         }
-    }
-
-    @Override
-    public PacketType getPacketType(Object packet) {
-        if (!MinecraftReflection.isPacketClass(packet)) {
-            throw new IllegalArgumentException("Given packet is not a minecraft packet instance");
-        }
-
-        PacketType type = PacketRegistry.getPacketType(packet.getClass());
-        if (type != null) {
-            return type;
-        }
-
-        throw new IllegalArgumentException("Unable to associate given packet " + packet + " with a registered packet!");
     }
 
     private void postPacketToListeners(PacketListenerSet listeners, PacketEvent event, boolean outbound) {

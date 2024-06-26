@@ -25,7 +25,7 @@ import com.comphenix.protocol.events.PacketEvent;
  *
  * @author Kristian
  */
-public interface ListenerInvoker {
+public interface ListenerManager {
 
     boolean hasInboundListener(PacketType packetType);
 
@@ -38,24 +38,12 @@ public interface ListenerInvoker {
      *
      * @param event - the packet event to invoke.
      */
-    void invokePacketReceiving(PacketEvent event);
+    void invokeInboundPacketListeners(PacketEvent event);
 
     /**
      * Invokes the given packet event for every registered listener.
      *
      * @param event - the packet event to invoke.
      */
-    void invokePacketSending(PacketEvent event);
-
-    /**
-     * Retrieve the associated type of a packet.
-     *
-     * @param packet - the packet.
-     * @return The packet type.
-     * @deprecated use
-     *             {@link com.comphenix.protocol.injector.packet.PacketRegistry#getPacketType(PacketType.Protocol, Class)}
-     *             instead.
-     */
-    @Deprecated
-    PacketType getPacketType(Object packet);
+    void invokeOutboundPacketListeners(PacketEvent event);
 }

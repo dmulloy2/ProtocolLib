@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.netty.manager;
 
+import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.injector.netty.channel.InjectionFactory;
@@ -11,15 +12,15 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
     private static final ReportType CANNOT_INJECT_CHANNEL = new ReportType("Unable to inject incoming channel %s.");
 
-    private final InjectionFactory factory;
-    private final NetworkManagerInjector listener;
+    private final ErrorReporter errorReporter;
+    private final InjectionFactory injectionFactory;
 
     public InjectionChannelInboundHandler(
-            InjectionFactory factory,
-            NetworkManagerInjector listener
+            ErrorReporter errorReporter,
+            InjectionFactory injectionFactory
     ) {
-        this.factory = factory;
-        this.listener = listener;
+        this.errorReporter = errorReporter;
+        this.injectionFactory = injectionFactory;
     }
 
     @Override
@@ -32,11 +33,11 @@ final class InjectionChannelInboundHandler extends ChannelInboundHandlerAdapter 
         // We're first checking if the factory is still open, just might be a delay between accepting the connection
         // (which adds this handler to the pipeline) and the actual channelActive call. If the injector is closed at
         // that point we might accidentally trigger class loads which result in exceptions.
-        if (!this.factory.isClosed()) {
+        if (!this.injectionFactory.isClosed()) {
             try {
-                this.factory.fromChannel(ctx.channel()).inject();
+                this.injectionFactory.fromChannel(ctx.channel()).inject();
             } catch (Exception exception) {
-                this.listener.getReporter().reportDetailed(this, Report.newBuilder(CANNOT_INJECT_CHANNEL)
+                this.errorReporter.reportDetailed(this, Report.newBuilder(CANNOT_INJECT_CHANNEL)
                         .messageParam(ctx.channel())
                         .error(exception)
                         .build());
