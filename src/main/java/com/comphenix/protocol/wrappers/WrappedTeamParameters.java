@@ -95,8 +95,8 @@ public class WrappedTeamParameters extends AbstractWrapper {
         private Builder(@Nullable WrappedTeamParameters template) {
             if (template != null) {
                 this.displayName = template.getDisplayName();
-                this.prefix = template.getDisplayName();
-                this.suffix = template.getDisplayName();
+                this.prefix = template.getPrefix();
+                this.suffix = template.getSuffix();
                 this.nametagVisibility = template.getNametagVisibility();
                 this.collisionRule = template.getCollisionRule();
                 this.color = template.getColor();
