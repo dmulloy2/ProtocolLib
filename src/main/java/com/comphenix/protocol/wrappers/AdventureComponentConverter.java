@@ -87,6 +87,15 @@ public class AdventureComponentConverter {
     }
 
     /**
+     * Converts an object that is instance of {@link Component} into a ProtocolLib wrapper
+     * @param component Component
+     * @return ProtocolLib wrapper
+     */
+    public static WrappedChatComponent fromComponentObject(Object component) {
+        return fromComponent((Component) component);
+    }
+
+    /**
      * Converts a {@link WrappedComponentStyle} into a {@link Style}
      * @param wrapper ProtocolLib wrapper
      * @return Style
