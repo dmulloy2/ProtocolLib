@@ -664,6 +664,7 @@ public abstract class EnumWrappers {
     private static Class<?> CHAT_FORMATTING_CLASS = null;
     private static Class<?> CLIENT_INTENT_CLASS = null;
 
+    private static boolean INITIALIZING = false;
     private static boolean INITIALIZED = false;
     private static Map<Class<?>, EquivalentConverter<?>> FROM_NATIVE = new HashMap<>();
     private static Map<Class<?>, EquivalentConverter<?>> FROM_WRAPPER = new HashMap<>();
@@ -676,119 +677,129 @@ public abstract class EnumWrappers {
         if (INITIALIZED)
             return;
 
-        INITIALIZED = true;
+        synchronized (EnumWrappers.class) {
+            // Recheck initialization status inside the lock
+            if (INITIALIZING || INITIALIZED)
+                return;
 
-        PROTOCOL_CLASS = MinecraftReflection.getEnumProtocolClass();
-        CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
+            // Prevent circular calls to initialize during initialization
+            // (certain methods below indirectly call initialize again)
+            INITIALIZING = true;
 
-        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
-            CHAT_VISIBILITY_CLASS = MinecraftReflection.getMinecraftClass("world.entity.player.EnumChatVisibility", "world.entity.player.ChatVisibility", "world.entity.player.ChatVisiblity"); // Some versions have a typo
-        } else {
-            CHAT_VISIBILITY_CLASS = getEnum(PacketType.Play.Client.SETTINGS.getPacketClass(), 0);
-        }
+            PROTOCOL_CLASS = MinecraftReflection.getEnumProtocolClass();
+            CLIENT_COMMAND_CLASS = getEnum(PacketType.Play.Client.CLIENT_COMMAND.getPacketClass(), 0);
 
-        try {
-            DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.SERVER_DIFFICULTY.getPacketClass(), 0);
-        } catch (Exception ex) {
-            DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
-        }
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                CHAT_VISIBILITY_CLASS = MinecraftReflection.getMinecraftClass("world.entity.player.EnumChatVisibility", "world.entity.player.ChatVisibility", "world.entity.player.ChatVisiblity"); // Some versions have a typo
+            } else {
+                CHAT_VISIBILITY_CLASS = getEnum(PacketType.Play.Client.SETTINGS.getPacketClass(), 0);
+            }
 
-        if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
-            GAMEMODE_CLASS = getEnum(MinecraftReflection.getPlayerInfoDataClass(), 0);
-        } else {
-            GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
-        }
+            try {
+                DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.SERVER_DIFFICULTY.getPacketClass(), 0);
+            } catch (Exception ex) {
+                DIFFICULTY_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 1);
+            }
 
-        RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
-        TITLE_ACTION_CLASS = getEnum(PacketType.Play.Server.TITLE.getPacketClass(), 0);
-        WORLD_BORDER_ACTION_CLASS = getEnum(PacketType.Play.Server.WORLD_BORDER.getPacketClass(), 0);
-        COMBAT_EVENT_TYPE_CLASS = getEnum(PacketType.Play.Server.COMBAT_EVENT.getPacketClass(), 0);
-        PLAYER_DIG_TYPE_CLASS = getEnum(PacketType.Play.Client.BLOCK_DIG.getPacketClass(), 1);
-        PLAYER_ACTION_CLASS = getEnum(PacketType.Play.Client.ENTITY_ACTION.getPacketClass(), 0);
-        SCOREBOARD_ACTION_CLASS = getEnum(PacketType.Play.Server.SCOREBOARD_SCORE.getPacketClass(), 0);
-        PARTICLE_CLASS = getEnum(PacketType.Play.Server.WORLD_PARTICLES.getPacketClass(), 0);
+            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+                GAMEMODE_CLASS = getEnum(MinecraftReflection.getPlayerInfoDataClass(), 0);
+            } else {
+                GAMEMODE_CLASS = getEnum(PacketType.Play.Server.LOGIN.getPacketClass(), 0);
+            }
 
-        PLAYER_INFO_ACTION_CLASS = getEnum(PacketType.Play.Server.PLAYER_INFO.getPacketClass(), 0);
-        if (PLAYER_INFO_ACTION_CLASS == null) {
-            // todo: we can also use getField(0).getGenericType().getTypeParameters()[0]; but this should hold for now
-            PLAYER_INFO_ACTION_CLASS = PacketType.Play.Server.PLAYER_INFO.getPacketClass().getClasses()[1];
-        }
+            RESOURCE_PACK_STATUS_CLASS = getEnum(PacketType.Play.Client.RESOURCE_PACK_STATUS.getPacketClass(), 0);
+            TITLE_ACTION_CLASS = getEnum(PacketType.Play.Server.TITLE.getPacketClass(), 0);
+            WORLD_BORDER_ACTION_CLASS = getEnum(PacketType.Play.Server.WORLD_BORDER.getPacketClass(), 0);
+            COMBAT_EVENT_TYPE_CLASS = getEnum(PacketType.Play.Server.COMBAT_EVENT.getPacketClass(), 0);
+            PLAYER_DIG_TYPE_CLASS = getEnum(PacketType.Play.Client.BLOCK_DIG.getPacketClass(), 1);
+            PLAYER_ACTION_CLASS = getEnum(PacketType.Play.Client.ENTITY_ACTION.getPacketClass(), 0);
+            SCOREBOARD_ACTION_CLASS = getEnum(PacketType.Play.Server.SCOREBOARD_SCORE.getPacketClass(), 0);
+            PARTICLE_CLASS = getEnum(PacketType.Play.Server.WORLD_PARTICLES.getPacketClass(), 0);
 
-        try {
-            SOUND_CATEGORY_CLASS = MinecraftReflection.getMinecraftClass("sounds.SoundCategory");
-        } catch (Exception ex) {
-            SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.NAMED_SOUND_EFFECT.getPacketClass(), 0);
-        }
+            PLAYER_INFO_ACTION_CLASS = getEnum(PacketType.Play.Server.PLAYER_INFO.getPacketClass(), 0);
+            if (PLAYER_INFO_ACTION_CLASS == null) {
+                // todo: we can also use getField(0).getGenericType().getTypeParameters()[0]; but this should hold for now
+                PLAYER_INFO_ACTION_CLASS = PacketType.Play.Server.PLAYER_INFO.getPacketClass().getClasses()[1];
+            }
 
-        try {
-            // TODO enum names are more stable than their packet associations
-            ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("world.entity.EnumItemSlot", "world.entity.EquipmentSlot", "EnumItemSlot");
-        } catch (Exception ex) {
-            ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
-        }
+            try {
+                SOUND_CATEGORY_CLASS = MinecraftReflection.getMinecraftClass("sounds.SoundCategory");
+            } catch (Exception ex) {
+                SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.NAMED_SOUND_EFFECT.getPacketClass(), 0);
+            }
 
-        // In 1.17 the hand and use action class is no longer a field in the packet
-        if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-            HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand", "world.InteractionHand");
+            try {
+                // TODO enum names are more stable than their packet associations
+                ITEM_SLOT_CLASS = MinecraftReflection.getMinecraftClass("world.entity.EnumItemSlot", "world.entity.EquipmentSlot", "EnumItemSlot");
+            } catch (Exception ex) {
+                ITEM_SLOT_CLASS = getEnum(PacketType.Play.Server.ENTITY_EQUIPMENT.getPacketClass(), 0);
+            }
 
-            FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
-            Method getType = fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-                .parameterCount(0)
-                .returnTypeMatches(FuzzyMatchers.except(Void.class))
-                .build());
+            // In 1.17 the hand and use action class is no longer a field in the packet
+            if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
+                HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand", "world.InteractionHand");
 
-            ENTITY_USE_ACTION_CLASS = getType.getReturnType();
-        } else {
-            HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
-            ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
-        }
+                FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
+                Method getType = fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                    .parameterCount(0)
+                    .returnTypeMatches(FuzzyMatchers.except(Void.class))
+                    .build());
 
-        // 1.19 removed the entity spawn packet and moved the direction into a seperated class
-        if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
-            DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection", "core.Direction");
-        } else {
-            DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
-        }
+                ENTITY_USE_ACTION_CLASS = getType.getReturnType();
+            } else {
+                HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
+                ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
+            }
 
-        CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
-        ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
-        DISPLAY_SLOT_CLASS = MinecraftReflection.getNullableNMS("world.scores.DisplaySlot");
+            // 1.19 removed the entity spawn packet and moved the direction into a seperated class
+            if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
+                DIRECTION_CLASS = MinecraftReflection.getMinecraftClass("core.EnumDirection", "core.Direction");
+            } else {
+                DIRECTION_CLASS = getEnum(PacketType.Play.Server.SPAWN_ENTITY_PAINTING.getPacketClass(), 0);
+            }
 
-        RENDER_TYPE_CLASS = MinecraftReflection.getNullableNMS(
-            "world.scores.criteria.ObjectiveCriteria$RenderType",
-            "world.scores.criteria.IScoreboardCriteria$EnumScoreboardHealthDisplay",
-            "IScoreboardCriteria$EnumScoreboardHealthDisplay");
-        CHAT_FORMATTING_CLASS = MinecraftReflection.getNullableNMS("ChatFormatting", "EnumChatFormat");
+            CHAT_TYPE_CLASS = getEnum(PacketType.Play.Server.CHAT.getPacketClass(), 0);
+            ENTITY_POSE_CLASS = MinecraftReflection.getNullableNMS("world.entity.EntityPose", "world.entity.Pose", "EntityPose");
+            DISPLAY_SLOT_CLASS = MinecraftReflection.getNullableNMS("world.scores.DisplaySlot");
 
-        CLIENT_INTENT_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
+            RENDER_TYPE_CLASS = MinecraftReflection.getNullableNMS(
+                "world.scores.criteria.ObjectiveCriteria$RenderType",
+                "world.scores.criteria.IScoreboardCriteria$EnumScoreboardHealthDisplay",
+                "IScoreboardCriteria$EnumScoreboardHealthDisplay");
+            CHAT_FORMATTING_CLASS = MinecraftReflection.getNullableNMS("ChatFormatting", "EnumChatFormat");
 
-        associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
-        associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
-        associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
-        associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());
-        associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
-        associate(RESOURCE_PACK_STATUS_CLASS, ResourcePackStatus.class, getResourcePackStatusConverter());
-        associate(PLAYER_INFO_ACTION_CLASS, PlayerInfoAction.class, getPlayerInfoActionConverter());
-        associate(TITLE_ACTION_CLASS, TitleAction.class, getTitleActionConverter());
-        associate(WORLD_BORDER_ACTION_CLASS, WorldBorderAction.class, getWorldBorderActionConverter());
-        associate(COMBAT_EVENT_TYPE_CLASS, CombatEventType.class, getCombatEventTypeConverter());
-        associate(PLAYER_DIG_TYPE_CLASS, PlayerDigType.class, getPlayerDiggingActionConverter());
-        associate(PLAYER_ACTION_CLASS, PlayerAction.class, getEntityActionConverter());
-        associate(SCOREBOARD_ACTION_CLASS, ScoreboardAction.class, getUpdateScoreActionConverter());
-        associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
-        associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
-        associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
-        associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
-        associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
-        associate(HAND_CLASS, Hand.class, getHandConverter());
-        associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
-        associate(DISPLAY_SLOT_CLASS, DisplaySlot.class, getDisplaySlotConverter());
-        associate(RENDER_TYPE_CLASS, RenderType.class, getRenderTypeConverter());
-        associate(CHAT_FORMATTING_CLASS, ChatFormatting.class, getChatFormattingConverter());
-        associate(CLIENT_INTENT_CLASS, ClientIntent.class, getClientIntentConverter());
+            CLIENT_INTENT_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
 
-        if (ENTITY_POSE_CLASS != null) {
-            associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
+            associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
+            associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
+            associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
+            associate(DIFFICULTY_CLASS, Difficulty.class, getDifficultyConverter());
+            associate(GAMEMODE_CLASS, NativeGameMode.class, getGameModeConverter());
+            associate(RESOURCE_PACK_STATUS_CLASS, ResourcePackStatus.class, getResourcePackStatusConverter());
+            associate(PLAYER_INFO_ACTION_CLASS, PlayerInfoAction.class, getPlayerInfoActionConverter());
+            associate(TITLE_ACTION_CLASS, TitleAction.class, getTitleActionConverter());
+            associate(WORLD_BORDER_ACTION_CLASS, WorldBorderAction.class, getWorldBorderActionConverter());
+            associate(COMBAT_EVENT_TYPE_CLASS, CombatEventType.class, getCombatEventTypeConverter());
+            associate(PLAYER_DIG_TYPE_CLASS, PlayerDigType.class, getPlayerDiggingActionConverter());
+            associate(PLAYER_ACTION_CLASS, PlayerAction.class, getEntityActionConverter());
+            associate(SCOREBOARD_ACTION_CLASS, ScoreboardAction.class, getUpdateScoreActionConverter());
+            associate(PARTICLE_CLASS, Particle.class, getParticleConverter());
+            associate(SOUND_CATEGORY_CLASS, SoundCategory.class, getSoundCategoryConverter());
+            associate(ITEM_SLOT_CLASS, ItemSlot.class, getItemSlotConverter());
+            associate(DIRECTION_CLASS, Direction.class, getDirectionConverter());
+            associate(CHAT_TYPE_CLASS, ChatType.class, getChatTypeConverter());
+            associate(HAND_CLASS, Hand.class, getHandConverter());
+            associate(ENTITY_USE_ACTION_CLASS, EntityUseAction.class, getEntityUseActionConverter());
+            associate(DISPLAY_SLOT_CLASS, DisplaySlot.class, getDisplaySlotConverter());
+            associate(RENDER_TYPE_CLASS, RenderType.class, getRenderTypeConverter());
+            associate(CHAT_FORMATTING_CLASS, ChatFormatting.class, getChatFormattingConverter());
+            associate(CLIENT_INTENT_CLASS, ClientIntent.class, getClientIntentConverter());
+
+            if (ENTITY_POSE_CLASS != null) {
+                associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
+            }
+
+            INITIALIZED = true;
         }
     }
 
