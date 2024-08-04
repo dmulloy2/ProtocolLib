@@ -17,14 +17,6 @@
 
 package com.comphenix.protocol.async;
 
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketStream;
 import com.comphenix.protocol.PacketType;
@@ -37,8 +29,16 @@ import com.comphenix.protocol.injector.collection.InboundPacketListenerSet;
 import com.comphenix.protocol.injector.collection.OutboundPacketListenerSet;
 import com.comphenix.protocol.scheduler.ProtocolScheduler;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents a filter manager for asynchronous packets.
@@ -284,9 +284,9 @@ public class AsyncFilterManager implements AsynchronousManager {
     }
     
     private void unregisterAsyncHandlers(PacketProcessingQueue processingQueue, Plugin plugin) {
-        
+
         // Iterate through every packet listener
-        for (AsyncListenerHandler listener : processingQueue.values()) {
+        for (AsyncListenerHandler listener : ImmutableList.copyOf(processingQueue.values())) {
             // Remove the listener
             if (Objects.equal(listener.getPlugin(), plugin)) {
                 unregisterAsyncHandler(listener);
