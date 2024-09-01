@@ -12,6 +12,7 @@ import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
@@ -241,7 +242,9 @@ public class StreamSerializer {
                 if (STREAM_CODEC == null) {
                     STREAM_CODEC = Accessors.getFieldAccessor(FuzzyReflection
                             .fromClass(MinecraftReflection.getItemStackClass())
-                            .getFieldByType("STREAM_CODEC", MinecraftReflection.getStreamCodecClass()));
+                            .getFieldList(FuzzyFieldContract.newBuilder()
+                                    .typeExact(MinecraftReflection.getStreamCodecClass())
+                                    .build()).get(1)); //skip OPTIONAL_STREAM_CODEC
                 }
 
                 READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection.fromObject(STREAM_CODEC.get(null), true)
@@ -288,7 +291,9 @@ public class StreamSerializer {
                 if (STREAM_CODEC == null) {
                     STREAM_CODEC = Accessors.getFieldAccessor(FuzzyReflection
                             .fromClass(MinecraftReflection.getItemStackClass())
-                            .getFieldByType("STREAM_CODEC", MinecraftReflection.getStreamCodecClass()));
+                            .getFieldList(FuzzyFieldContract.newBuilder()
+                                    .typeExact(MinecraftReflection.getStreamCodecClass())
+                                    .build()).get(1)); //skip OPTIONAL_STREAM_CODEC
                 }
 
                 WRITE_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection.fromObject(STREAM_CODEC.get(null), true)
