@@ -10,6 +10,7 @@ import java.util.Base64;
 import com.comphenix.protocol.injector.netty.NettyByteBufAdapter;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -31,6 +32,7 @@ public class StreamSerializer {
     private static final StreamSerializer DEFAULT = new StreamSerializer();
 
     // Cached methods
+    private static FieldAccessor STREAM_CODEC;
     private static MethodAccessor READ_ITEM_METHOD;
     private static MethodAccessor WRITE_ITEM_METHOD;
 
@@ -235,14 +237,33 @@ public class StreamSerializer {
         Object serializer = MinecraftReflection.getPacketDataSerializer(buf);
 
         if (READ_ITEM_METHOD == null) {
-            READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
-                    .fromClass(serializer.getClass(), false)
-                    .getMethodByReturnTypeAndParameters("readItemStack", MinecraftReflection.getItemStackClass()));
+            if (MinecraftVersion.v1_21_0.atOrAbove()) {
+                if (STREAM_CODEC == null) {
+                    STREAM_CODEC = Accessors.getFieldAccessor(FuzzyReflection
+                            .fromClass(MinecraftReflection.getItemStackClass())
+                            .getFieldByType("STREAM_CODEC", MinecraftReflection.getStreamCodecClass()));
+                }
+
+                READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection.fromObject(STREAM_CODEC.get(null), true)
+                        .getMethod(FuzzyMethodContract.newBuilder()
+                                .parameterExactType(MinecraftReflection.getRegistryFriendlyByteBufClass().get())
+                                .returnTypeExact(MinecraftReflection.getItemStackClass())
+                                .build()));
+            } else {
+                READ_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+                        .fromClass(serializer.getClass(), false)
+                        .getMethodByReturnTypeAndParameters("readItemStack", MinecraftReflection.getItemStackClass()));
+            }
         }
 
         try {
             // unwrap the item
-            Object nmsItem = READ_ITEM_METHOD.invoke(serializer);
+            Object nmsItem;
+            if (MinecraftVersion.v1_21_0.atOrAbove()) {
+                nmsItem = READ_ITEM_METHOD.invoke(STREAM_CODEC.get(null), serializer);
+            } else {
+                nmsItem = READ_ITEM_METHOD.invoke(serializer);
+            }
             return nmsItem != null ? MinecraftReflection.getBukkitItemStack(nmsItem) : null;
         } finally {
             ReferenceCountUtil.safeRelease(buf);
@@ -262,11 +283,24 @@ public class StreamSerializer {
      * @throws IOException If the operation fails due to reflection problems.
      */
     public void serializeItemStack(DataOutputStream output, ItemStack stack) throws IOException {
-        // TODO this functionality was replaced by the CODEC field in the nms ItemStack
         if (WRITE_ITEM_METHOD == null) {
-            WRITE_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
-                    .fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
-                    .getMethodByParameters("writeStack", MinecraftReflection.getItemStackClass()));
+            if (MinecraftVersion.v1_21_0.atOrAbove()) {
+                if (STREAM_CODEC == null) {
+                    STREAM_CODEC = Accessors.getFieldAccessor(FuzzyReflection
+                            .fromClass(MinecraftReflection.getItemStackClass())
+                            .getFieldByType("STREAM_CODEC", MinecraftReflection.getStreamCodecClass()));
+                }
+
+                WRITE_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection.fromObject(STREAM_CODEC.get(null), true)
+                        .getMethod(FuzzyMethodContract.newBuilder()
+                                .parameterExactArray(MinecraftReflection.getRegistryFriendlyByteBufClass().get(), MinecraftReflection.getItemStackClass())
+                                .returnTypeExact(void.class)
+                                .build()));
+            } else {
+                WRITE_ITEM_METHOD = Accessors.getMethodAccessor(FuzzyReflection
+                        .fromClass(MinecraftReflection.getPacketDataSerializerClass(), true)
+                        .getMethodByParameters("writeStack", MinecraftReflection.getItemStackClass()));
+            }
         }
 
         ByteBuf buf = Unpooled.buffer();
@@ -274,7 +308,12 @@ public class StreamSerializer {
 
         // Get the NMS version of the ItemStack and write it into the buffer
         Object nmsItem = MinecraftReflection.getMinecraftItemStack(stack);
-        WRITE_ITEM_METHOD.invoke(serializer, nmsItem);
+
+        if (MinecraftVersion.v1_21_0.atOrAbove()) {
+            WRITE_ITEM_METHOD.invoke(STREAM_CODEC.get(null), serializer, nmsItem);
+        } else {
+            WRITE_ITEM_METHOD.invoke(serializer, nmsItem);
+        }
 
         // write the serialized content to the stream
         output.write(this.getBytesAndRelease(buf));
