@@ -162,7 +162,14 @@ public class BukkitInitialization {
             });
             when(mockedServer.getRegistry(any())).thenAnswer(invocation -> {
                 Class<Keyed> registryType = invocation.getArgument(0);
-                return CraftRegistry.createRegistry(registryType, registryCustom);
+                Object registry = CraftRegistry.createRegistry(registryType, registryCustom);
+                
+                // this is very temporary fix to the version mismatch between spigot-api (spigot-repo) and spigot (dmulloy2-repo)
+                // if you remove this fix please also remove the DummyRegistry class down below
+                if (registry == null)
+                	return new DummyRegistry<>();
+                
+                return registry;
             });
 
             when(mockedServer.getTag(any(), any(), any())).then(mock -> {
@@ -249,5 +256,24 @@ public class BukkitInitialization {
 
             MinecraftReflectionTestUtil.init();
         }
+    }
+
+    class DummyRegistry<T extends Keyed> implements Registry<T> {
+
+		@Override
+		public Iterator<T> iterator() {
+			return Collections.emptyIterator();
+		}
+
+		@Override
+		public T get(NamespacedKey key) {
+			return null;
+		}
+
+		@Override
+		public Stream<T> stream() {
+			List<T> emtpy = Collections.emptyList();
+			return emtpy.stream();
+		}
     }
 }
