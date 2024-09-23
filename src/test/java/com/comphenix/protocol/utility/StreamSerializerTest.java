@@ -60,7 +60,6 @@ public class StreamSerializerTest {
     }
 
     @Test
-    @Disabled // TODO -- replaced with registry friendly bytebuf
     public void testItems() throws IOException {
         StreamSerializer serializer = new StreamSerializer();
         ItemStack initial = new ItemStack(Material.STRING);
@@ -72,7 +71,6 @@ public class StreamSerializerTest {
     }
 
     @Test
-    @Disabled // TODO -- replaced with registry friendly bytebuf
     public void testItemMeta() throws IOException {
         StreamSerializer serializer = new StreamSerializer();
         ItemStack initial = new ItemStack(Material.BLUE_WOOL, 2);
