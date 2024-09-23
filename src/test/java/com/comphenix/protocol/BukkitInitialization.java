@@ -167,12 +167,12 @@ public class BukkitInitialization {
             when(mockedServer.getRegistry(any())).thenAnswer(invocation -> {
                 Class<Keyed> registryType = invocation.getArgument(0);
                 Object registry = CraftRegistry.createRegistry(registryType, registryCustom);
-                
-                // this is very temporary fix to the version mismatch between spigot-api (spigot-repo) and spigot (dmulloy2-repo)
-                // if you remove this fix please also remove the DummyRegistry class down below
-                if (registry == null)
-                	return new DummyRegistry<>();
-                
+
+                if (registry == null) {
+                    System.err.println("WARN: Missing registry for " + registryType);
+                    return new DummyRegistry<>();
+                }
+
                 return registry;
             });
 
