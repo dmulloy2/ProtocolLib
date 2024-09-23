@@ -1,5 +1,6 @@
 package com.comphenix.protocol.injector.collection;
 
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -45,7 +46,9 @@ public abstract class PacketListenerSet {
     public void addListener(PacketListener packetListener) {
         ListeningWhitelist listeningWhitelist = getListeningWhitelist(packetListener);
 
-        for (PacketType packetType : listeningWhitelist.getTypes()) {
+        for (Iterator<PacketType> packet = listeningWhitelist.getTypes().iterator(); packet.hasNext();) {
+            PacketType packetType = packet.next();
+
             Set<PacketType> supportedPacketTypes = (packetType.getSender() == Sender.SERVER)
                     ? PacketRegistry.getServerPacketTypes()
                     : PacketRegistry.getClientPacketTypes();
@@ -56,7 +59,7 @@ public abstract class PacketListenerSet {
                         .build());
                 
                 // remove unknown packet types
-                listeningWhitelist.getTypes().remove(packetType);
+                packet.remove();
             }
         }
 
