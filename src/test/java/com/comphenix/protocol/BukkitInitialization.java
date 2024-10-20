@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
@@ -58,6 +57,7 @@ import org.bukkit.craftbukkit.v1_21_R1.tag.CraftItemTag;
 import org.bukkit.craftbukkit.v1_21_R1.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.v1_21_R1.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.v1_21_R1.util.Versioning;
+import org.jetbrains.annotations.NotNull;
 import org.spigotmc.SpigotWorldConfig;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -122,7 +122,7 @@ public class BukkitInitialization {
                     resourcePackRepository.c() /* getAvailablePacks() */ .stream().map(ResourcePackLoader::f /* openFull() */).collect(Collectors.toList()));
             LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = RegistryLayer.a(); // .createRegistryAccess()
             layeredRegistryAccess = WorldLoader.b(resourceManager, layeredRegistryAccess, RegistryLayer.b /* WORLDGEN */, RegistryDataLoader.a /* WORLDGEN_REGISTRIES */); // .loadAndReplaceLayer()
-			IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().d(); // .compositeAccess().freeze()
+            IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().d(); // .compositeAccess().freeze()
             // IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().c(); // .compositeAccess().freeze()
 
             DataPackResources dataPackResources = DataPackResources.a(
@@ -264,20 +264,25 @@ public class BukkitInitialization {
 
     class DummyRegistry<T extends Keyed> implements Registry<T> {
 
-		@Override
-		public Iterator<T> iterator() {
-			return Collections.emptyIterator();
-		}
+        @Override
+        public Iterator<T> iterator() {
+            return Collections.emptyIterator();
+        }
 
-		@Override
-		public T get(NamespacedKey key) {
-			return null;
-		}
+        @Override
+        public T get(NamespacedKey key) {
+            return null;
+        }
 
-		@Override
-		public Stream<T> stream() {
-			List<T> emtpy = Collections.emptyList();
-			return emtpy.stream();
-		}
+        @Override
+        public T getOrThrow(@NotNull NamespacedKey namespacedKey) {
+            return null;
+        }
+
+        @Override
+        public Stream<T> stream() {
+            List<T> empty = Collections.emptyList();
+            return empty.stream();
+        }
     }
 }
