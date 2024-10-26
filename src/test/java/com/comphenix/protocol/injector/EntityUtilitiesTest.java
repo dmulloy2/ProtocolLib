@@ -5,19 +5,22 @@ import java.lang.reflect.Field;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 import net.minecraft.server.level.ChunkProviderServer;
 import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.PlayerChunkMap.EntityTracker;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.Entity;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_21_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R2.entity.CraftEntity;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 import static com.comphenix.protocol.utility.TestUtils.setFinalField;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +38,7 @@ public class EntityUtilitiesTest {
         when(bukkit.getHandle()).thenReturn(world);
 
         ChunkProviderServer provider = mock(ChunkProviderServer.class);
-		when(world.l()).thenReturn(provider);
+		when(world.m()).thenReturn(provider);
 
         PlayerChunkMap chunkMap = mock(PlayerChunkMap.class);
         Field chunkMapField = FuzzyReflection.fromClass(ChunkProviderServer.class, true)

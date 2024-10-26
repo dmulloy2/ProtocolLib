@@ -51,7 +51,7 @@ public class WrappedAttributeTest {
 
         // Create attribute
         this.attribute = WrappedAttribute.newBuilder().
-                attributeKey("generic.attackDamage").
+                attributeKey("attack_damage").
                 baseValue(2).
                 packet(new PacketContainer(PacketType.Play.Server.UPDATE_ATTRIBUTES)).
                 modifiers(Lists.newArrayList(this.constantModifier, this.doubleModifier)).

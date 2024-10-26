@@ -11,10 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang.Validate;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
@@ -26,6 +22,10 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
+import org.apache.commons.lang.Validate;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 
 /**
  * Represents a generic enum converter.
@@ -140,6 +140,7 @@ public abstract class EnumWrappers {
         UPDATE_LISTED,
         UPDATE_LATENCY,
         UPDATE_DISPLAY_NAME,
+        UPDATE_LIST_ORDER,
         /**
          * @deprecated Removed in 1.19.3
          */

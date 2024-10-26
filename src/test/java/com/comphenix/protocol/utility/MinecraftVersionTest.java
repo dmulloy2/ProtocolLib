@@ -48,7 +48,7 @@ class MinecraftVersionTest {
 
     @Test
     void testCurrent() {
-        assertEquals(MinecraftVersion.v1_21_0, MinecraftVersion.getCurrentVersion());
+        assertEquals(MinecraftVersion.v1_21_2, MinecraftVersion.getCurrentVersion());
     }
 
     @Test

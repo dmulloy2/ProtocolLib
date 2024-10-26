@@ -13,7 +13,8 @@ import com.comphenix.protocol.utility.MinecraftReflectionTestUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.MoreExecutors;
 import net.minecraft.SharedConstants;
-import net.minecraft.commands.CommandDispatcher;
+import net.minecraft.commands.CommandDispatcher.ServerType;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.LayeredRegistryAccess;
@@ -24,14 +25,15 @@ import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.server.DataPackResources;
 import net.minecraft.server.DispenserRegistry;
 import net.minecraft.server.RegistryLayer;
-import net.minecraft.server.WorldLoader;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.server.packs.EnumResourcePackType;
 import net.minecraft.server.packs.repository.ResourcePackLoader;
 import net.minecraft.server.packs.repository.ResourcePackRepository;
 import net.minecraft.server.packs.repository.ResourcePackSourceVanilla;
+import net.minecraft.server.packs.resources.IResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.tags.TagDataPack;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.flag.FeatureFlags;
@@ -45,18 +47,18 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R1.CraftLootTable;
-import org.bukkit.craftbukkit.v1_21_R1.CraftRegistry;
-import org.bukkit.craftbukkit.v1_21_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_21_R1.tag.CraftBlockTag;
-import org.bukkit.craftbukkit.v1_21_R1.tag.CraftEntityTag;
-import org.bukkit.craftbukkit.v1_21_R1.tag.CraftFluidTag;
-import org.bukkit.craftbukkit.v1_21_R1.tag.CraftItemTag;
-import org.bukkit.craftbukkit.v1_21_R1.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_21_R1.util.CraftNamespacedKey;
-import org.bukkit.craftbukkit.v1_21_R1.util.Versioning;
+import org.bukkit.craftbukkit.v1_21_R2.CraftLootTable;
+import org.bukkit.craftbukkit.v1_21_R2.CraftRegistry;
+import org.bukkit.craftbukkit.v1_21_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R2.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_21_R2.tag.CraftBlockTag;
+import org.bukkit.craftbukkit.v1_21_R2.tag.CraftEntityTag;
+import org.bukkit.craftbukkit.v1_21_R2.tag.CraftFluidTag;
+import org.bukkit.craftbukkit.v1_21_R2.tag.CraftItemTag;
+import org.bukkit.craftbukkit.v1_21_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_21_R2.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_21_R2.util.Versioning;
 import org.jetbrains.annotations.NotNull;
 import org.spigotmc.SpigotWorldConfig;
 
@@ -110,30 +112,19 @@ public class BukkitInitialization {
 
             instance.setPackage();
 
-            // Minecraft Data Init
-            SharedConstants.a(); // .tryDetectVersion()
-            DispenserRegistry.a(); // .bootStrap()
-
-            ResourcePackRepository resourcePackRepository = ResourcePackSourceVanilla.c(); // .createVanillaTrustedRepository()
-            resourcePackRepository.a(); // .reload()
-
-            ResourceManager resourceManager = new ResourceManager(
-                    EnumResourcePackType.b /* SERVER_DATA */,
-                    resourcePackRepository.c() /* getAvailablePacks() */ .stream().map(ResourcePackLoader::f /* openFull() */).collect(Collectors.toList()));
-            LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = RegistryLayer.a(); // .createRegistryAccess()
-            layeredRegistryAccess = WorldLoader.b(resourceManager, layeredRegistryAccess, RegistryLayer.b /* WORLDGEN */, RegistryDataLoader.a /* WORLDGEN_REGISTRIES */); // .loadAndReplaceLayer()
-            IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().d(); // .compositeAccess().freeze()
-            // IRegistryCustom.Dimension registryCustom = layeredRegistryAccess.a().c(); // .compositeAccess().freeze()
-
-            DataPackResources dataPackResources = DataPackResources.a(
-                    resourceManager,
-                    layeredRegistryAccess,
-                    FeatureFlags.d.a() /* REGISTRY.allFlags() */,
-                    CommandDispatcher.ServerType.b /* DEDICATED */,
-                    0,
-                    MoreExecutors.directExecutor(),
-                    MoreExecutors.directExecutor()
-            ).join();
+            SharedConstants.a();
+            DispenserRegistry.a();
+            ResourcePackRepository resourcePackRepository = ResourcePackSourceVanilla.c();
+            resourcePackRepository.a();
+            IResourceManager resourceManager = new ResourceManager(EnumResourcePackType.b, resourcePackRepository.d().stream().map(ResourcePackLoader::f).collect(Collectors.toList()));
+            LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = RegistryLayer.a();
+            List<IRegistry.a<?>> list = TagDataPack.a(resourceManager, layeredregistryaccess.a(RegistryLayer.a));
+            IRegistryCustom.Dimension frozen1 = layeredregistryaccess.b(RegistryLayer.b);
+            List<HolderLookup.b<?>> list1 = TagDataPack.a(frozen1, list);
+            IRegistryCustom.Dimension frozen2 = RegistryDataLoader.a(resourceManager, list1, RegistryDataLoader.a);
+            LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.a(RegistryLayer.b, frozen2);
+            IRegistryCustom.Dimension registryCustom = layers.a().e();
+            DataPackResources dataPackResources = DataPackResources.a(resourceManager, layers, list, FeatureFlags.f.a(), ServerType.b, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
             dataPackResources.g();
 
             try {
@@ -149,7 +140,7 @@ public class BukkitInitialization {
             CraftServer mockedServer = mock(CraftServer.class);
             DedicatedServer mockedGameServer = mock(DedicatedServer.class);
 
-            when(mockedGameServer.bc()/*registryAccess*/).thenReturn(registryCustom);
+            when(mockedGameServer.ba()/*registryAccess*/).thenReturn(registryCustom);
 
             when(mockedServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("Minecraft"));
             when(mockedServer.getName()).thenReturn("Mock Server");
@@ -185,28 +176,28 @@ public class BukkitInitialization {
                     case org.bukkit.Tag.REGISTRY_BLOCKS -> {
                         Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have block type");
                         TagKey<Block> blockTagKey = TagKey.a(Registries.f, key);
-                        if (BuiltInRegistries.e.b(blockTagKey).isPresent()) {
+                        if (BuiltInRegistries.e.a(blockTagKey).isPresent()) {
                             return new CraftBlockTag(BuiltInRegistries.e, blockTagKey);
                         }
                     }
                     case org.bukkit.Tag.REGISTRY_ITEMS -> {
                         Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have item type");
                         TagKey<Item> itemTagKey = TagKey.a(Registries.K, key);
-                        if (BuiltInRegistries.g.b(itemTagKey).isPresent()) {
+                        if (BuiltInRegistries.g.a(itemTagKey).isPresent()) {
                             return new CraftItemTag(BuiltInRegistries.g, itemTagKey);
                         }
                     }
                     case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                         Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
                         TagKey<FluidType> fluidTagKey = TagKey.a(Registries.D, key);
-                        if (BuiltInRegistries.c.b(fluidTagKey).isPresent()) {
+                        if (BuiltInRegistries.c.a(fluidTagKey).isPresent()) {
                             return new CraftFluidTag(BuiltInRegistries.c, fluidTagKey);
                         }
                     }
                     case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                         Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
                         TagKey<EntityTypes<?>> entityTagKey = TagKey.a(Registries.z, key);
-                        if (BuiltInRegistries.f.b(entityTagKey).isPresent()) {
+                        if (BuiltInRegistries.f.a(entityTagKey).isPresent()) {
                             return new CraftEntityTag(BuiltInRegistries.f, entityTagKey);
                         }
                     }

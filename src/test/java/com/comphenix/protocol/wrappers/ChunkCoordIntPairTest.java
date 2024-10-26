@@ -1,10 +1,11 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.comphenix.protocol.BukkitInitialization;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ChunkCoordIntPairTest {
 
@@ -25,7 +26,7 @@ public class ChunkCoordIntPairTest {
                 (net.minecraft.world.level.ChunkCoordIntPair) ChunkCoordIntPair.getConverter().
                         getGeneric(specific);
 
-        assertEquals(1, roundtrip.e);
-        assertEquals(2, roundtrip.f);
+        assertEquals(1, roundtrip.h);
+        assertEquals(2, roundtrip.i);
     }
 }

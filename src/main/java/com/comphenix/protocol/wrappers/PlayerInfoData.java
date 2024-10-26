@@ -16,12 +16,12 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -29,8 +29,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
-
-import javax.annotation.Nullable;
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 
 /**
  * Represents an immutable PlayerInfoData in the PLAYER_INFO packet.
@@ -41,6 +40,7 @@ public class PlayerInfoData {
 
     private final UUID profileId;
     private final int latency;
+    private final int listOrder = 0;
     private final boolean listed;
     private final NativeGameMode gameMode;
     private final WrappedGameProfile profile;
@@ -202,7 +202,9 @@ public class PlayerInfoData {
      * @return A new converter.
      */
     public static EquivalentConverter<PlayerInfoData> getConverter() {
-        return new EquivalentConverter<PlayerInfoData>() {
+        return new EquivalentConverter<>() {
+            private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+
             @Override
             public Object getGeneric(PlayerInfoData specific) {
                 if (constructor == null) {
@@ -225,13 +227,17 @@ public class PlayerInfoData {
                         args.add(EnumWrappers.getGameModeClass());
                         args.add(MinecraftReflection.getIChatBaseComponentClass());
 
+                        if (MinecraftVersion.v1_21_2.atOrAbove()) {
+                            args.add(int.class);
+                        }
+
                         if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
                             args.add(MinecraftReflection.getRemoteChatSessionDataClass());
                         } else if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
                             args.add(MinecraftReflection.getProfilePublicKeyDataClass());
                         }
 
-                        constructor = MinecraftReflection.getPlayerInfoDataClass().getConstructor(args.toArray(new Class<?>[0]));
+                        constructor = MinecraftReflection.getPlayerInfoDataClass().getConstructor(args.toArray(EMPTY_CLASS_ARRAY));
                     } catch (Exception e) {
                         throw new RuntimeException("Cannot find PlayerInfoData constructor.", e);
                     }
@@ -242,30 +248,58 @@ public class PlayerInfoData {
                 try {
                     Object gameMode = EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode);
                     Object displayName = specific.displayName != null ? specific.displayName.handle : null;
-
                     Object profile = specific.profile != null ? specific.profile.handle : null;
-                    if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
-                        return constructor.newInstance(
-                                specific.profileId,
-                                profile,
-                                specific.listed,
-                                specific.latency,
-                                gameMode,
-                                displayName,
-                                specific.remoteChatSessionData != null ? BukkitConverters.getWrappedRemoteChatSessionDataConverter().getGeneric(specific.remoteChatSessionData) : null
-                        );
+                    Object remoteChatSessionData = specific.remoteChatSessionData != null ? BukkitConverters.getWrappedRemoteChatSessionDataConverter().getGeneric(specific.remoteChatSessionData) : null;
+
+                    Object[] args;
+
+                    if (MinecraftVersion.v1_21_2.atOrAbove()) {
+                        args = new Object[] {
+                            specific.profileId,
+                            profile,
+                            specific.listed,
+                            specific.latency,
+                            gameMode,
+                            displayName,
+                            specific.listOrder,
+                            remoteChatSessionData
+                        };
+                    } else if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+                        args = new Object[] {
+                            specific.profileId,
+                            profile,
+                            specific.listed,
+                            specific.latency,
+                            gameMode,
+                            displayName,
+                            remoteChatSessionData
+                        };
                     } else if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
-                        return constructor.newInstance(
-                                profile,
-                                specific.latency,
-                                gameMode,
-                                displayName,
-                                specific.profileKeyData == null ? null : specific.profileKeyData.handle);
+                        args = new Object[] {
+                            profile,
+                            specific.latency,
+                            gameMode,
+                            displayName,
+                            specific.profileKeyData == null ? null : specific.profileKeyData.handle
+                        };
                     } else if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
-                        return constructor.newInstance(profile, specific.latency, gameMode, displayName);
+                        args = new Object[] {
+                            profile,
+                            specific.latency,
+                            gameMode,
+                            displayName
+                        };
                     } else {
-                        return constructor.newInstance(null, profile, specific.latency, gameMode, displayName);
+                        args = new Object[] {
+                            null,
+                            profile,
+                            specific.latency,
+                            gameMode,
+                            displayName
+                        };
                     }
+
+                    return constructor.newInstance(args);
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to construct PlayerInfoData.", e);
                 }
@@ -275,37 +309,37 @@ public class PlayerInfoData {
             public PlayerInfoData getSpecific(Object generic) {
                 if (MinecraftReflection.isPlayerInfoData(generic)) {
                     StructureModifier<Object> modifier = new StructureModifier<>(generic.getClass(), null, false)
-                            .withTarget(generic);
+                        .withTarget(generic);
 
                     StructureModifier<WrappedGameProfile> gameProfiles = modifier.withType(
-                            MinecraftReflection.getGameProfileClass(), BukkitConverters.getWrappedGameProfileConverter());
+                        MinecraftReflection.getGameProfileClass(), BukkitConverters.getWrappedGameProfileConverter());
                     WrappedGameProfile gameProfile = gameProfiles.read(0);
 
                     StructureModifier<Integer> ints = modifier.withType(int.class);
                     int latency = ints.read(0);
 
                     StructureModifier<NativeGameMode> gameModes = modifier.withType(
-                            EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
+                        EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
                     NativeGameMode gameMode = gameModes.read(0);
 
                     StructureModifier<WrappedChatComponent> displayNames = modifier.withType(
-                            MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
+                        MinecraftReflection.getIChatBaseComponentClass(), BukkitConverters.getWrappedChatComponentConverter());
                     WrappedChatComponent displayName = displayNames.read(0);
 
-                    if(MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
+                    if (MinecraftVersion.FEATURE_PREVIEW_UPDATE.atOrAbove()) {
                         return new PlayerInfoData(modifier.<UUID>withType(UUID.class).read(0),
-                                latency,
-                                modifier.<Boolean>withType(boolean.class).read(0),
-                                gameMode,
-                                gameProfile,
-                                displayName,
-                                modifier.withType(MinecraftReflection.getRemoteChatSessionDataClass(), BukkitConverters.getWrappedRemoteChatSessionDataConverter()).read(0)
-                                );
+                            latency,
+                            modifier.<Boolean>withType(boolean.class).read(0),
+                            gameMode,
+                            gameProfile,
+                            displayName,
+                            modifier.withType(MinecraftReflection.getRemoteChatSessionDataClass(), BukkitConverters.getWrappedRemoteChatSessionDataConverter()).read(0)
+                        );
                     }
                     WrappedProfileKeyData key = null;
                     if (MinecraftVersion.WILD_UPDATE.atOrAbove()) {
                         StructureModifier<WrappedProfileKeyData> keyData = modifier.withType(
-                                MinecraftReflection.getProfilePublicKeyDataClass(), BukkitConverters.getWrappedPublicKeyDataConverter());
+                            MinecraftReflection.getProfilePublicKeyDataClass(), BukkitConverters.getWrappedPublicKeyDataConverter());
                         key = keyData.read(0);
                     }
 

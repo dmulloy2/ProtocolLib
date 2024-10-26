@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.comphenix.protocol'
-version = '5.3.0'
+version = '5.4.0-SNAPSHOT'
 description = 'Provides access to the Minecraft protocol'
 
 def isSnapshot = version.endsWith('-SNAPSHOT')
@@ -34,8 +34,8 @@ repositories {
 
 dependencies {
     implementation 'net.bytebuddy:byte-buddy:1.15.1'
-    compileOnly 'org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT'
-    compileOnly 'org.spigotmc:spigot:1.21.1-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:1.21.3-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot:1.21.3-R0.1-SNAPSHOT'
     compileOnly 'io.netty:netty-all:4.0.23.Final'
     compileOnly 'net.kyori:adventure-text-serializer-gson:4.14.0'
     compileOnly 'com.googlecode.json-simple:json-simple:1.1.1'
@@ -46,14 +46,14 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.6.0'
     testImplementation 'io.netty:netty-common:4.1.97.Final'
     testImplementation 'io.netty:netty-transport:4.1.97.Final'
-    testImplementation 'org.spigotmc:spigot:1.21.1-R0.1-SNAPSHOT'
+    testImplementation 'org.spigotmc:spigot:1.21.3-R0.1-SNAPSHOT'
     testImplementation 'net.kyori:adventure-text-serializer-gson:4.14.0'
     testImplementation 'net.kyori:adventure-text-serializer-plain:4.14.0'
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     withJavadocJar()
     withSourcesJar()
