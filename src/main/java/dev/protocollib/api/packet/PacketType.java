@@ -1,7 +1,8 @@
-package dev.protocollib.api;
+package dev.protocollib.api.packet;
 
 import java.util.Optional;
 
+import dev.protocollib.api.ProtocolDirection;
 import net.kyori.adventure.key.Keyed;
 
 /**

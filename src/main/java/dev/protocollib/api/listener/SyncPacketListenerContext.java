@@ -27,10 +27,10 @@ public interface SyncPacketListenerContext {
     void cancel();
 
     /**
-     * Adds a listener to be invoked after the packet is sent.
+     * Adds a listener to be invoked after the packet is sent or received.
      *
-     * @param listener the post-sent listener
+     * @param listener the transmission listener to invoke
      */
-    void addPostSentListener(PacketSentListener listener);
+    void addTransmissionListener(PacketTransmissionListener listener);
 }
 

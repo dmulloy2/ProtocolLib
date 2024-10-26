@@ -5,24 +5,31 @@ import java.util.Optional;
 
 import org.bukkit.entity.Player;
 
-import dev.protocollib.api.listener.PacketSentListener;
+import dev.protocollib.api.packet.PacketLike;
+import dev.protocollib.api.packet.PacketOperationBuilder;
 
 /**
- * Representing a connection of a player.
+ * Represents a connection associated with a player.
+ * 
+ * <p>This interface provides methods to interact with the player's network connection,
+ * including retrieving the player's information, connection address, protocol version,
+ * and current connection state. It also allows for sending and receiving packets
+ * through the connection.</p>
  */
 public interface Connection {
+
 
     /**
      * Retrieves the player associated with the connection, if available.
      *
-     * @return an optional containing the player, or empty if the player is not present
+     * @return an {@link Optional} containing the player, or empty if the player is not present
      */
     Optional<Player> player();
 
     /**
      * Retrieves the address of the connection.
      *
-     * @return the remote address of the connection
+     * @return the remote {@link InetSocketAddress} of the connection
      */
     InetSocketAddress address();
 
@@ -37,53 +44,37 @@ public interface Connection {
      * Retrieves the current protocol phase of the connection for a given direction.
      *
      * @param packetDirection the direction of the packet (clientbound or serverbound)
-     * @return the protocol phase of the connection
+     * @return the {@link ProtocolPhase} representing the current phase of the connection
      */
     ProtocolPhase protocolPhase(ProtocolDirection packetDirection);
 
     /**
      * Checks if the connection is currently open.
      *
-     * @return true if the connection is open, false otherwise
+     * @return {@code true} if the connection is open, {@code false} otherwise
      */
     boolean isConnected();
 
     /**
-     * Sends a binary packet over the connection.
+     * Initiates a packet operation, which can involve sending or receiving a packet.
      *
-     * @param packet the binary packet to send
+     * @return a {@link PacketOperationBuilder} to configure the packet operation
      */
-    void sendPacket(BinaryPacket packet);
+    PacketOperationBuilder packetOperation();
 
     /**
-     * Sends a binary packet over the connection and registers a listener for when the packet is sent.
+     * Sends a packet to the client.
      *
-     * @param packet   the binary packet to send
-     * @param listener the listener to invoke once the packet is sent
+     * @param packet the packet to send
      */
-    void sendPacket(BinaryPacket packet, PacketSentListener listener);
+    void sendPacket(PacketLike packet);
 
     /**
-     * Sends a packet container over the connection.
+     * Receives a packet as if the client had sent it.
      *
-     * @param packet the packet container to send
+     * @param packet the received packet
      */
-    void sendPacket(PacketContainer packet);
-
-    /**
-     * Sends a packet container over the connection and registers a listener for when the packet is sent.
-     *
-     * @param packet   the packet container to send
-     * @param listener the listener to invoke once the packet is sent
-     */
-    void sendPacket(PacketContainer packet, PacketSentListener listener);
-
-    /**
-     * Receives a packet container from the connection.
-     *
-     * @param packet the packet container received
-     */
-    void receivePacket(PacketContainer packet);
+    void receivePacket(PacketLike packet);
 
     /**
      * Disconnects the connection with the specified reason.

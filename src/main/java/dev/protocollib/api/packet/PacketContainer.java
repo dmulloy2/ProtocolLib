@@ -1,9 +1,9 @@
-package dev.protocollib.api;
+package dev.protocollib.api.packet;
 
 /**
  * Representing a container for a packet.
  */
-public interface PacketContainer {
+public non-sealed interface PacketContainer extends PacketLike {
 
     /**
      * Retrieves the type of the packet.
@@ -18,5 +18,12 @@ public interface PacketContainer {
      * @return the packet object
      */
     Object packet();
+
+    /**
+     * Creates and returns a mutable copy of this packet.
+     * 
+     * @return a clone of this instance.
+     */
+    PacketContainer clone();
 
 }

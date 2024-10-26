@@ -2,7 +2,7 @@ package dev.protocollib.api.listener;
 
 import java.util.Collection;
 
-import dev.protocollib.api.PacketType;
+import dev.protocollib.api.packet.PacketType;
 
 /**
  * Builder for creating and registering packet listeners.

@@ -1,4 +1,4 @@
-package dev.protocollib.api;
+package dev.protocollib.api.packet;
 
 public class PacketTypes {
 

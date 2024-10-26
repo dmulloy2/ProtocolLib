@@ -4,6 +4,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import dev.protocollib.api.listener.PacketListenerBuilder;
+import dev.protocollib.api.packet.BinaryPacket;
+import dev.protocollib.api.packet.PacketContainer;
+import dev.protocollib.api.packet.PacketLike;
+import dev.protocollib.api.packet.PacketType;
 
 /**
  * Representing the main entry point for the ProtocolLib API.
@@ -25,6 +29,24 @@ public interface ProtocolLib {
      * @return the connection for the specified player
      */
     Connection connection(Player player);
+
+    /**
+     * Sends a packet to the player.
+     *
+     * @param packet the packet to send
+     */
+    default void sendPacket(Player player, PacketLike packet) {
+        connection(player).sendPacket(packet);
+    }
+
+    /**
+     * Receives a packet as if the player had sent it.
+     *
+     * @param packet the received packet
+     */
+    default void receivePacket(Player player, PacketLike packet) {
+        connection(player).receivePacket(packet);
+    }
 
     /**
      * Creates a new binary packet with the given type and payload.

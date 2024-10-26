@@ -1,6 +1,6 @@
 package dev.protocollib.api.listener;
 
-import dev.protocollib.api.PacketContainer;
+import dev.protocollib.api.packet.PacketContainer;
 
 /**
  * Functional interface for handling packets asynchronously.

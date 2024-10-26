@@ -1,9 +1,9 @@
-package dev.protocollib.api;
+package dev.protocollib.api.packet;
 
 /**
  * Representing a raw binary packet with a packet id and payload.
  */
-public interface BinaryPacket {
+public non-sealed interface BinaryPacket extends PacketLike {
 
     /**
      * Retrieves the packet id.
@@ -19,4 +19,3 @@ public interface BinaryPacket {
      */
     byte[] payload();
 }
-
