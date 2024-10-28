@@ -10,11 +10,11 @@ import com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation;
 
 import com.google.common.collect.Lists;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
-import net.minecraft.resources.MinecraftKey;
-import net.minecraft.world.entity.ai.attributes.AttributeBase;
+import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket.AttributeSnapshot;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,17 +94,17 @@ public class WrappedAttributeTest {
             modifiers.add((AttributeModifier) wrapper.getHandle());
         }
 
-        IRegistry<AttributeBase> registry = BuiltInRegistries.s;
+        Registry<Attribute> registry = BuiltInRegistries.ATTRIBUTE;
         String attributeKey = attribute.getAttributeKey();
-        MinecraftKey key = MinecraftKey.a(attributeKey);
-        AttributeBase base = registry.a(key);
-        Holder<AttributeBase> holder = registry.e(base);
+        ResourceLocation key = ResourceLocation.parse(attributeKey);
+        Attribute base = registry.getValue(key);
+        Holder<Attribute> holder = registry.wrapAsHolder(base);
         return new AttributeSnapshot(holder, attribute.getBaseValue(), modifiers);
     }
 
     private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
         AttributeModifier.Operation operation = AttributeModifier.Operation.values()[modifier.getOperation().getId()];
-        return new AttributeModifier((MinecraftKey) com.comphenix.protocol.wrappers.MinecraftKey.getConverter().getGeneric(modifier.getKey()),
+        return new AttributeModifier((ResourceLocation) com.comphenix.protocol.wrappers.MinecraftKey.getConverter().getGeneric(modifier.getKey()),
             modifier.getAmount(), operation);
     }
 }

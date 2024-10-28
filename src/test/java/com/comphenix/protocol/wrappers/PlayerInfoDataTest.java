@@ -14,14 +14,16 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.UUID;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.TestUtils;
 import com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode;
-import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author dmulloy2

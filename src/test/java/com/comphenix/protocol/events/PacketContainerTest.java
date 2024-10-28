@@ -72,18 +72,17 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Text;
-import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.game.PacketPlayOutGameStateChange;
-import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
-import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes.AttributeSnapshot;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
+import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket.AttributeSnapshot;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectList;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.ai.attributes.AttributeBase;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.animal.FrogVariant;
 import org.apache.commons.lang.SerializationUtils;
@@ -511,16 +510,16 @@ public class PacketContainerTest {
 
         // Initialize some test data
         List<AttributeModifier> modifiers = Lists.newArrayList(
-                new AttributeModifier(MinecraftKey.a("protocollib:test"),10,
-                        AttributeModifier.Operation.a));
+                new AttributeModifier(ResourceLocation.parse("protocollib:test"),10,
+                        Operation.ADD_VALUE));
 
         // Obtain an AttributeSnapshot instance. This is complicated by the fact that AttributeSnapshots
         // are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
         // members of the packet itself)
-        PacketPlayOutUpdateAttributes packet = (PacketPlayOutUpdateAttributes) attribute.getHandle();
-		IRegistry<AttributeBase> registry = BuiltInRegistries.s;
-        AttributeBase base = registry.a(MinecraftKey.a("generic.max_health"));
-        AttributeSnapshot snapshot = new AttributeSnapshot(Holder.a(base), 20.0D, modifiers);
+        ClientboundUpdateAttributesPacket packet = (ClientboundUpdateAttributesPacket) attribute.getHandle();
+		net.minecraft.core.Registry<Attribute> registry = BuiltInRegistries.ATTRIBUTE;
+        Attribute base = registry.getValue(ResourceLocation.parse("max_health"));
+        AttributeSnapshot snapshot = new AttributeSnapshot(registry.wrapAsHolder(base), 20.0D, modifiers);
         attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 
         PacketContainer cloned = attribute.deepClone();
@@ -569,14 +568,14 @@ public class PacketContainerTest {
     @SuppressWarnings("deprecation")
     public void testPotionEffect() {
         PotionEffect effect = new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 20 * 60, 1);
-        MobEffect mobEffect = new MobEffect(MobEffects.l, effect.getDuration(),
+        MobEffectInstance mobEffect = new MobEffectInstance(MobEffects.FIRE_RESISTANCE, effect.getDuration(),
                 effect.getAmplifier(), effect.isAmbient(),
                 effect.hasParticles());
         int entityId = 42;
 
         // The constructor we want to call
         PacketConstructor creator = PacketConstructor.DEFAULT.withPacket(
-                PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[] { int.class, MobEffect.class, boolean.class });
+                PacketType.Play.Server.ENTITY_EFFECT, new Class<?>[] { int.class, MobEffectInstance.class, boolean.class });
         PacketContainer packet = creator.createPacket(entityId, mobEffect, true);
 
         assertEquals(entityId, packet.getIntegers().read(0));
@@ -586,8 +585,8 @@ public class PacketContainerTest {
         WrappedRegistry registry = WrappedRegistry.getRegistry(MinecraftReflection.getMobEffectListClass());
 
         Object effectList = assertInstanceOf(
-            MobEffectList.class,
-            packet.getHolders(MobEffectList.class, InternalStructure.CONVERTER).read(0).getHandle()
+            MobEffect.class,
+            packet.getHolders(MobEffect.class, InternalStructure.CONVERTER).read(0).getHandle()
         );
 
         assertEquals(effect.getType().getId(), registry.getId(effectList) + 1); // +1 is correct, see CraftPotionEffectType
@@ -698,7 +697,7 @@ public class PacketContainerTest {
 
     @Test
     public void testMovingBlockPos() {
-        PacketContainer container = new PacketContainer(PacketType.Play.Client.USE_ITEM);
+        PacketContainer container = new PacketContainer(PacketType.Play.Client.USE_ITEM_ON);
 
         Vector vector = new Vector(0, 1, 2);
         BlockPosition position = new BlockPosition(3, 4, 5);
@@ -911,7 +910,7 @@ public class PacketContainerTest {
 
                 // Make sure watchable collections can be cloned
                 if (type == PacketType.Play.Server.ENTITY_METADATA) {
-					IRegistry<CatVariant> catVariantRegistry = BuiltInRegistries.ai;
+					net.minecraft.core.Registry<CatVariant> catVariantRegistry = BuiltInRegistries.CAT_VARIANT;
                     constructed.getDataValueCollectionModifier().write(0, Lists.newArrayList(
                             new WrappedDataValue(0, Registry.get(Byte.class), (byte) 1),
                             new WrappedDataValue(0, Registry.get(Float.class), 5F),
@@ -925,8 +924,8 @@ public class PacketContainerTest {
                                     0,
                                     Registry.getItemStackSerializer(false),
                                     BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.WOODEN_AXE))),
-                            new WrappedDataValue(0, Registry.get(CatVariant.class), catVariantRegistry.e(CatVariant.e)),
-                            new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariant.a)
+                            new WrappedDataValue(0, Registry.get(CatVariant.class), catVariantRegistry.getValue(CatVariant.RED)),
+                            new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariant.COLD)
                     ));
                 } else if (type == PacketType.Play.Server.CHAT || type == PacketType.Login.Server.DISCONNECT) {
                     constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
@@ -935,7 +934,7 @@ public class PacketContainerTest {
                 } else if (type == PacketType.Play.Server.GAME_STATE_CHANGE) {
                     constructed.getStructures().write(
                             0,
-                            InternalStructure.getConverter().getSpecific(PacketPlayOutGameStateChange.a));
+                            InternalStructure.getConverter().getSpecific(ClientboundGameEventPacket.ARROW_HIT_PLAYER));
                 } else if (type == PacketType.Play.Client.USE_ITEM || type == PacketType.Play.Client.BLOCK_PLACE) {
                     constructed.getLongs().write(0, 0L); // timestamp of the packet, not sent over the network
                 }

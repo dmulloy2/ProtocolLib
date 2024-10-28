@@ -1,23 +1,19 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.events.PacketContainer;
+import java.lang.reflect.Field;
+import java.util.BitSet;
+import java.util.List;
+
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
-
-import java.lang.reflect.Field;
-import java.util.BitSet;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Etrayed

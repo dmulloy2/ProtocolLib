@@ -1,9 +1,10 @@
 package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
-import net.minecraft.EnumChatFormat;
-import net.minecraft.network.chat.IChatBaseComponent;
-import net.minecraft.network.protocol.game.PacketPlayOutScoreboardTeam;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -17,9 +18,9 @@ public class WrappedTeamParametersTest {
 
     @Test
     void testTeamParameters() {
-        IChatBaseComponent displayName = IChatBaseComponent.b("display name");
-        IChatBaseComponent prefix = IChatBaseComponent.b("prefix");
-        IChatBaseComponent suffix = IChatBaseComponent.b("suffix");
+        Component displayName = Component.literal("display name");
+        Component prefix = Component.literal("prefix");
+        Component suffix = Component.literal("suffix");
         String nametagVisibility = "always";
         String collisionRule = "never";
 
@@ -41,13 +42,13 @@ public class WrappedTeamParametersTest {
         assertEquals(EnumWrappers.ChatFormatting.RED, wrapped.getColor());
         assertEquals(1, wrapped.getOptions());
 
-        PacketPlayOutScoreboardTeam.b handle = (PacketPlayOutScoreboardTeam.b) wrapped.getHandle();
-        assertEquals(handle.a(), displayName);
-        assertEquals(handle.f(), prefix);
-        assertEquals(handle.g(), suffix);
-        assertEquals(handle.d(), nametagVisibility);
-        assertEquals(handle.e(), collisionRule);
-        assertEquals(handle.c(), EnumChatFormat.m);
-        assertEquals(handle.b(), 1);
+        ClientboundSetPlayerTeamPacket.Parameters handle = (ClientboundSetPlayerTeamPacket.Parameters) wrapped.getHandle();
+        assertEquals(handle.getDisplayName(), displayName);
+        assertEquals(handle.getPlayerPrefix(), prefix);
+        assertEquals(handle.getPlayerSuffix(), suffix);
+        assertEquals(handle.getNametagVisibility(), nametagVisibility);
+        assertEquals(handle.getCollisionRule(), collisionRule);
+        assertEquals(handle.getColor(), ChatFormatting.RED);
+        assertEquals(handle.getOptions(), 1);
     }
 }

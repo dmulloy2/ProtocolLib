@@ -1,15 +1,8 @@
 package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.PacketType;
-import io.netty.channel.Channel;
-import io.netty.channel.local.LocalServerChannel;
-import net.minecraft.network.EnumProtocol;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.protocol.EnumProtocolDirection;
-import org.junit.jupiter.api.Assertions;
+
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 public class ChannelProtocolUtilTest {
 

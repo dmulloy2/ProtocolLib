@@ -1,9 +1,10 @@
 package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
-import net.minecraft.EnumChatFormat;
-import net.minecraft.network.chat.ChatModifier;
-import net.minecraft.network.chat.IChatBaseComponent;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.numbers.BlankFormat;
 import net.minecraft.network.chat.numbers.FixedFormat;
 import net.minecraft.network.chat.numbers.StyledFormat;
@@ -22,13 +23,13 @@ public class WrappedNumberFormatTest {
 
     @Test
     void testBlankFormat() {
-        assertInstanceOf(WrappedNumberFormat.Blank.class, WrappedNumberFormat.fromHandle(BlankFormat.a));
-        assertEquals(BlankFormat.a, WrappedNumberFormat.blank().getHandle());
+        assertInstanceOf(WrappedNumberFormat.Blank.class, WrappedNumberFormat.fromHandle(BlankFormat.INSTANCE));
+        assertEquals(BlankFormat.INSTANCE, WrappedNumberFormat.blank().getHandle());
     }
 
     @Test
     void testFixedFormat() {
-        IChatBaseComponent content = IChatBaseComponent.a("Fixed");
+        Component content = Component.literal("Fixed");
         WrappedNumberFormat wrappedHandle = WrappedNumberFormat.fromHandle(new FixedFormat(content));
         assertInstanceOf(WrappedNumberFormat.Fixed.class, wrappedHandle);
         assertEquals(content, ((WrappedNumberFormat.Fixed) wrappedHandle).getContent().getHandle());
@@ -39,7 +40,7 @@ public class WrappedNumberFormatTest {
 
     @Test
     void testStyledFormat() {
-        ChatModifier style = ChatModifier.a.b(EnumChatFormat.g);
+        Style style = Style.EMPTY.applyFormat(ChatFormatting.AQUA);
         WrappedNumberFormat wrappedHandle = WrappedNumberFormat.fromHandle(new StyledFormat(style));
         assertInstanceOf(WrappedNumberFormat.Styled.class, wrappedHandle);
         assertEquals(style, ((WrappedNumberFormat.Styled) wrappedHandle).getStyle().getHandle());

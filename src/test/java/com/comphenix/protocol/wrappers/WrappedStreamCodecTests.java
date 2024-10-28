@@ -3,12 +3,12 @@ package com.comphenix.protocol.wrappers;
 import com.comphenix.protocol.BukkitInitialization;
 
 import io.netty.buffer.Unpooled;
-import net.minecraft.network.PacketDataSerializer;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.game.PacketPlayOutOpenBook;
-import net.minecraft.network.protocol.game.PacketPlayOutSetSlot;
-import net.minecraft.world.EnumHand;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.network.protocol.game.ClientboundOpenBookPacket;
+import net.minecraft.world.InteractionHand;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_21_R2.CraftRegistry;
 import org.bukkit.craftbukkit.v1_21_R2.inventory.CraftItemStack;
@@ -26,29 +26,30 @@ public class WrappedStreamCodecTests {
 
     @Test
     public void testWithItemStack() {
-        StreamCodec<RegistryFriendlyByteBuf, PacketPlayOutSetSlot> nmsCodec = PacketPlayOutSetSlot.a;
+        StreamCodec<RegistryFriendlyByteBuf, ClientboundContainerSetSlotPacket> nmsCodec = ClientboundContainerSetSlotPacket.STREAM_CODEC;
         WrappedStreamCodec codec = new WrappedStreamCodec(nmsCodec);
 
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), CraftRegistry.getMinecraftRegistry());
-        PacketPlayOutSetSlot packet = new PacketPlayOutSetSlot(1, 2, 3, CraftItemStack.asNMSCopy(new ItemStack(Material.GOLDEN_SHOVEL)));
+        ClientboundContainerSetSlotPacket packet = new ClientboundContainerSetSlotPacket(1, 2, 3,
+            CraftItemStack.asNMSCopy(new ItemStack(Material.GOLDEN_SHOVEL)));
 
         codec.encode(buf, packet);
-        PacketPlayOutSetSlot roundTrip = (PacketPlayOutSetSlot) codec.decode(buf);
+        ClientboundContainerSetSlotPacket roundTrip = (ClientboundContainerSetSlotPacket) codec.decode(buf);
 
-        assertEquals(Material.GOLDEN_SHOVEL, CraftItemStack.asBukkitCopy(roundTrip.f()).getType());
+        assertEquals(Material.GOLDEN_SHOVEL, CraftItemStack.asBukkitCopy(roundTrip.getItem()).getType());
     }
 
     @Test
     public void testWithStandardSerializer() {
-        StreamCodec<PacketDataSerializer, PacketPlayOutOpenBook> nmsCodec = PacketPlayOutOpenBook.a;
+        StreamCodec<FriendlyByteBuf, ClientboundOpenBookPacket> nmsCodec = ClientboundOpenBookPacket.STREAM_CODEC;
         WrappedStreamCodec codec = new WrappedStreamCodec(nmsCodec);
 
-        PacketDataSerializer buf = new PacketDataSerializer(Unpooled.buffer());
-        PacketPlayOutOpenBook packet = new PacketPlayOutOpenBook(EnumHand.a);
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        ClientboundOpenBookPacket packet = new ClientboundOpenBookPacket(InteractionHand.OFF_HAND);
 
         codec.encode(buf, packet);
-        PacketPlayOutOpenBook roundTrip = (PacketPlayOutOpenBook) codec.decode(buf);
+        ClientboundOpenBookPacket roundTrip = (ClientboundOpenBookPacket) codec.decode(buf);
 
-        assertEquals(EnumHand.a, roundTrip.b());
+        assertEquals(InteractionHand.OFF_HAND, roundTrip.getHand());
     }
 }

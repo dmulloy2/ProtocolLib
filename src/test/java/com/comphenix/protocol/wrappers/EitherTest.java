@@ -1,9 +1,9 @@
 package com.comphenix.protocol.wrappers;
 
+import java.util.Optional;
+
 import com.comphenix.protocol.wrappers.Either.Left;
 import com.comphenix.protocol.wrappers.Either.Right;
-
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 

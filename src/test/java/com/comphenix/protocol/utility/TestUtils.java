@@ -1,11 +1,5 @@
 package com.comphenix.protocol.utility;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.comphenix.protocol.reflect.accessors.Accessors;
 import java.lang.reflect.Field;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -14,10 +8,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey;
 import com.comphenix.protocol.wrappers.WrappedRemoteChatSessionData;
+
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestUtils {
 

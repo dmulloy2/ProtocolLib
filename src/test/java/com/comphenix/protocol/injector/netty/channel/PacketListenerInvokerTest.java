@@ -1,11 +1,11 @@
 package com.comphenix.protocol.injector.netty.channel;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import com.comphenix.protocol.BukkitInitialization;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.comphenix.protocol.BukkitInitialization;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class PacketListenerInvokerTest {
 

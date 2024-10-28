@@ -8,6 +8,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
+
 import com.google.common.io.Resources;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.junit.jupiter.api.BeforeAll;

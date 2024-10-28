@@ -1,13 +1,13 @@
 package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
+
 import com.google.gson.JsonElement;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.minecraft.EnumChatFormat;
-import net.minecraft.network.chat.ChatModifier;
+import net.minecraft.ChatFormatting;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ public class WrappedComponentStyleTest {
 
     @Test
     public void testComponentStyle() {
-        ChatModifier style = ChatModifier.a.b(EnumChatFormat.m).a(true);
+        net.minecraft.network.chat.Style style = net.minecraft.network.chat.Style.EMPTY.withColor(ChatFormatting.RED).withBold(true);
         WrappedComponentStyle wrapped = new WrappedComponentStyle(style);
         JsonElement json = wrapped.getJson();
         assertEquals("{\"color\":\"red\",\"bold\":true}", json.toString());

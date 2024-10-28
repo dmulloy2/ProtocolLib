@@ -6,13 +6,12 @@ import java.util.Set;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
+
 import com.google.common.collect.Sets;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EnumWrappersTest {
 

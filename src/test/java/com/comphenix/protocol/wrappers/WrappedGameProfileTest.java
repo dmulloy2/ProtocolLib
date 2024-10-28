@@ -1,6 +1,10 @@
 package com.comphenix.protocol.wrappers;
 
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
 import com.comphenix.protocol.BukkitInitialization;
+
 import com.google.common.collect.Multimap;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
@@ -8,12 +12,7 @@ import com.mojang.authlib.properties.PropertyMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WrappedGameProfileTest {
 

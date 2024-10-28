@@ -15,6 +15,7 @@
 package com.comphenix.protocol.wrappers.nbt;
 
 import com.comphenix.protocol.BukkitInitialization;
+
 import org.bukkit.block.BlockState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

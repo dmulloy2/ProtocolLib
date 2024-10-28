@@ -206,7 +206,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType ENTITY_EQUIPMENT =             new PacketType(PROTOCOL, SENDER, 0x60, "SetEquipment", "EntityEquipment", "SPacketEntityEquipment");
             public static final PacketType EXPERIENCE =                   new PacketType(PROTOCOL, SENDER, 0x61, "SetExperience", "Experience", "SPacketSetExperience");
             public static final PacketType UPDATE_HEALTH =                new PacketType(PROTOCOL, SENDER, 0x62, "SetHealth", "UpdateHealth", "SPacketUpdateHealth");
-            public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x63, "SetCarriedItem", "HeldItemSlot", "SPacketHeldItemChange");
+            public static final PacketType HELD_ITEM_SLOT =               new PacketType(PROTOCOL, SENDER, 0x63, "SetHeldSlot", "SetCarriedItem", "HeldItemSlot", "SPacketHeldItemChange");
             public static final PacketType SCOREBOARD_OBJECTIVE =         new PacketType(PROTOCOL, SENDER, 0x64, "SetObjective", "ScoreboardObjective", "SPacketScoreboardObjective");
             public static final PacketType MOUNT =                        new PacketType(PROTOCOL, SENDER, 0x65, "SetPassengers", "Mount", "SPacketSetPassengers");
             public static final PacketType SET_PLAYER_INVENTORY =         new PacketType(PROTOCOL, SENDER, 0x66, "SetPlayerInventory");
@@ -616,7 +616,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             @ForceAsync
             public static final PacketType DISCONNECT =                   new PacketType(PROTOCOL, SENDER, 0x00, "LoginDisconnect", "Disconnect", "SPacketDisconnect");
             public static final PacketType ENCRYPTION_BEGIN =             new PacketType(PROTOCOL, SENDER, 0x01, "Hello", "EncryptionBegin", "SPacketEncryptionRequest");
-            public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, "GameProfile", "Success", "SPacketLoginSuccess");
+            public static final PacketType SUCCESS =                      new PacketType(PROTOCOL, SENDER, 0x02, "LoginFinished", "GameProfile", "Success", "SPacketLoginSuccess");
             public static final PacketType SET_COMPRESSION =              new PacketType(PROTOCOL, SENDER, 0x03, "LoginCompression", "SetCompression", "SPacketEnableCompression");
             public static final PacketType CUSTOM_PAYLOAD =               new PacketType(PROTOCOL, SENDER, 0x04, "CustomQuery", "CustomPayload", "SPacketCustomPayload");
             public static final PacketType COOKIE_REQUEST =               new PacketType(PROTOCOL, SENDER, 0x05, "CookieRequest");

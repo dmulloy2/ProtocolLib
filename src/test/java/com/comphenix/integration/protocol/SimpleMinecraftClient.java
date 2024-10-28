@@ -1,10 +1,5 @@
 package com.comphenix.integration.protocol;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.PacketType.Protocol;
-import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.utility.StreamSerializer;
-import com.google.common.io.ByteStreams;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -14,6 +9,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.utility.StreamSerializer;
+
+import com.google.common.io.ByteStreams;
 
 public class SimpleMinecraftClient {
 

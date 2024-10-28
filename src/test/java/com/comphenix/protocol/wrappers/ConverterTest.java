@@ -1,15 +1,14 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
+
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Lukas Alt

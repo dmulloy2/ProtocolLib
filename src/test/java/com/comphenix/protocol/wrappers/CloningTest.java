@@ -1,11 +1,12 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.cloning.AggregateCloner;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CloningTest {
 

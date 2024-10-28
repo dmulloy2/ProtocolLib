@@ -17,22 +17,24 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+
+import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NbtFactoryTest {
 
@@ -66,7 +68,7 @@ public class NbtFactoryTest {
     @Test
     @Disabled // TODO
     public void testItemTag() {
-        ItemStack test = new ItemStack(Items.L);
+        ItemStack test = new ItemStack(Items.GOLDEN_SHOVEL);
         org.bukkit.inventory.ItemStack craftTest = MinecraftReflection.getBukkitItemStack(test);
 
         NbtCompound compound = NbtFactory.ofCompound("tag");

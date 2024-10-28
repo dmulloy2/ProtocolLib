@@ -1,17 +1,14 @@
 package com.comphenix.protocol.reflect.cloning;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
 import java.util.Arrays;
 import java.util.List;
-import net.minecraft.core.NonNullList;
-import net.minecraft.world.item.ItemStack;
-import org.junit.jupiter.api.Assertions;
+
+import com.comphenix.protocol.BukkitInitialization;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AggregateClonerTest {
 

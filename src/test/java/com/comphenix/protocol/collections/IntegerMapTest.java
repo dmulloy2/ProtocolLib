@@ -1,6 +1,7 @@
 package com.comphenix.protocol.collections;
 
 import com.comphenix.protocol.utility.IntegerMath;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

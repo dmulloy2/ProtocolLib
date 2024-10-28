@@ -1,17 +1,12 @@
 package com.comphenix.protocol.injector;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
-import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import com.comphenix.protocol.injector.PluginVerifier.VerificationResult;
+
+import com.google.common.base.Objects;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -20,6 +15,11 @@ import org.bukkit.plugin.PluginManager;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 // Damn final classes
 class PluginVerifierTest {

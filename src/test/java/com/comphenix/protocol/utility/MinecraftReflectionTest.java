@@ -1,16 +1,17 @@
 package com.comphenix.protocol.utility;
 
 import com.comphenix.protocol.BukkitInitialization;
+
 import com.mojang.authlib.GameProfile;
-import net.minecraft.nbt.NBTCompressedStreamTools;
-import net.minecraft.network.chat.IChatBaseComponent;
-import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
-import net.minecraft.network.protocol.status.ServerPing;
-import net.minecraft.network.syncher.DataWatcher;
-import net.minecraft.server.network.PlayerConnection;
-import net.minecraft.util.MinecraftEncryption;
-import net.minecraft.world.level.ChunkCoordIntPair;
-import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
+import net.minecraft.network.protocol.status.ServerStatus;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.Crypt;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_21_R2.inventory.CraftItemStack;
@@ -21,13 +22,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class MinecraftReflectionTest {
 
@@ -66,63 +63,63 @@ public class MinecraftReflectionTest {
 
     @Test
     public void testAttributeSnapshot() {
-        assertEquals(PacketPlayOutUpdateAttributes.AttributeSnapshot.class,
+        assertEquals(ClientboundUpdateAttributesPacket.AttributeSnapshot.class,
                 MinecraftReflection.getAttributeSnapshotClass());
     }
 
     @Test
     public void testChatComponent() {
-        assertEquals(IChatBaseComponent.class, MinecraftReflection.getIChatBaseComponentClass());
+        assertEquals(Component.class, MinecraftReflection.getIChatBaseComponentClass());
     }
 
     @Test
     public void testChatSerializer() {
-        assertEquals(IChatBaseComponent.ChatSerializer.class, MinecraftReflection.getChatSerializerClass());
+        assertEquals(Component.Serializer.class, MinecraftReflection.getChatSerializerClass());
     }
 
     @Test
     public void testChunkCoordIntPair() {
-        assertEquals(ChunkCoordIntPair.class, MinecraftReflection.getChunkCoordIntPair());
+        assertEquals(ChunkPos.class, MinecraftReflection.getChunkCoordIntPair());
     }
 
     @Test
     public void testIBlockData() {
-        assertEquals(IBlockData.class, MinecraftReflection.getIBlockDataClass());
+        assertEquals(BlockState.class, MinecraftReflection.getIBlockDataClass());
     }
 
     @Test
     public void testPlayerConnection() {
-        assertEquals(PlayerConnection.class, MinecraftReflection.getPlayerConnectionClass());
+        assertEquals(ServerGamePacketListenerImpl.class, MinecraftReflection.getPlayerConnectionClass());
     }
 
     @Test
     public void testServerPing() {
-        assertEquals(ServerPing.class, MinecraftReflection.getServerPingClass());
+        assertEquals(ServerStatus.class, MinecraftReflection.getServerPingClass());
     }
 
     @Test
     public void testServerPingPlayerSample() {
-        assertEquals(ServerPing.ServerPingPlayerSample.class, MinecraftReflection.getServerPingPlayerSampleClass());
+        assertEquals(ServerStatus.Players.class, MinecraftReflection.getServerPingPlayerSampleClass());
     }
 
     @Test
     public void testServerPingServerData() {
-        assertEquals(ServerPing.ServerData.class, MinecraftReflection.getServerPingServerDataClass());
+        assertEquals(ServerStatus.Version.class, MinecraftReflection.getServerPingServerDataClass());
     }
 
     @Test
     public void testNbtStreamTools() {
-        assertEquals(NBTCompressedStreamTools.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
+        assertEquals(NbtIo.class, MinecraftReflection.getNbtCompressedStreamToolsClass());
     }
 
     @Test
     public void testDataWatcherItem() {
-        assertEquals(DataWatcher.Item.class, MinecraftReflection.getDataWatcherItemClass());
+        assertEquals(SynchedEntityData.DataItem.class, MinecraftReflection.getDataWatcherItemClass());
     }
 
     @Test
     public void testLoginSignature() {
-        assertEquals(MinecraftEncryption.b.class, MinecraftReflection.getSaltedSignatureClass());
+        assertEquals(Crypt.SaltSignaturePair.class, MinecraftReflection.getSaltedSignatureClass());
     }
 
     @Test

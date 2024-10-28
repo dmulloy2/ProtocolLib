@@ -6,11 +6,11 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 
-import net.minecraft.server.level.ChunkProviderServer;
-import net.minecraft.server.level.PlayerChunkMap;
-import net.minecraft.server.level.PlayerChunkMap.EntityTracker;
-import net.minecraft.server.level.WorldServer;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import org.bukkit.craftbukkit.v1_21_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R2.entity.CraftEntity;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,15 +34,15 @@ public class EntityUtilitiesTest {
     @Test
     public void testReflection() {
         CraftWorld bukkit = mock(CraftWorld.class);
-        WorldServer world = mock(WorldServer.class);
+        ServerLevel world = mock(ServerLevel.class);
         when(bukkit.getHandle()).thenReturn(world);
 
-        ChunkProviderServer provider = mock(ChunkProviderServer.class);
-		when(world.m()).thenReturn(provider);
+        ServerChunkCache provider = mock(ServerChunkCache.class);
+		when(world.getChunkSource()).thenReturn(provider);
 
-        PlayerChunkMap chunkMap = mock(PlayerChunkMap.class);
-        Field chunkMapField = FuzzyReflection.fromClass(ChunkProviderServer.class, true)
-                .getField(FuzzyFieldContract.newBuilder().typeExact(PlayerChunkMap.class).build());
+        ChunkMap chunkMap = mock(ChunkMap.class);
+        Field chunkMapField = FuzzyReflection.fromClass(ServerChunkCache.class, true)
+                .getField(FuzzyFieldContract.newBuilder().typeExact(ChunkMap.class).build());
         setFinalField(provider, chunkMapField, chunkMap);
 
         CraftEntity bukkitEntity = mock(CraftEntity.class);
@@ -56,7 +56,7 @@ public class EntityUtilitiesTest {
 
         Int2ObjectMap<EntityTracker> trackerMap = new Int2ObjectOpenHashMap<>();
         trackerMap.put(1, tracker);
-        Field trackedEntitiesField = FuzzyReflection.fromClass(PlayerChunkMap.class, true)
+        Field trackedEntitiesField = FuzzyReflection.fromClass(ChunkMap.class, true)
                 .getField(FuzzyFieldContract.newBuilder().typeExact(Int2ObjectMap.class).build());
         setFinalField(chunkMap, trackedEntitiesField, trackerMap);
     }

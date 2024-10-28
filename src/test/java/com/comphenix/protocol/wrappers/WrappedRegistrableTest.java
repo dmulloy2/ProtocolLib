@@ -2,6 +2,7 @@ package com.comphenix.protocol.wrappers;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.MinecraftReflection;
+
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
@@ -11,9 +12,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WrappedRegistrableTest {
 

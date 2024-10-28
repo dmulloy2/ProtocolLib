@@ -5,10 +5,11 @@ import java.util.Optional;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
-import net.minecraft.advancements.AdvancementDisplay;
-import net.minecraft.advancements.AdvancementFrameType;
-import net.minecraft.network.chat.IChatBaseComponent;
-import net.minecraft.network.chat.contents.LiteralContents;
+import net.minecraft.advancements.AdvancementType;
+import net.minecraft.advancements.DisplayInfo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.PlainTextContents;
+import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,34 +40,34 @@ public class AutoWrapperTest {
         display.x = 5f;
         display.y = 67f;
 
-        AdvancementDisplay nms = (AdvancementDisplay) displayWrapper().unwrap(display);
+        DisplayInfo nms = (DisplayInfo) displayWrapper().unwrap(display);
 
-        assertTrue(nms.h());
-        assertTrue(nms.j());
-        assertFalse(nms.i());
-		    assertTrue(nms.d().isPresent());
-        assertEquals("test", nms.d().get().a());
-        validateRawText(nms.a(), "Test123");
-        validateRawText(nms.b(), "Test567");
-        assertSame(AdvancementFrameType.b, nms.e());
-        assertSame(MinecraftReflection.getBukkitItemStack(nms.c()).getType(), Material.GOLD_INGOT);
-        assertEquals(5f, nms.f(), 0f);
-        assertEquals(67f, nms.g(), 0f);
+        assertTrue(nms.shouldShowToast());
+        assertTrue(nms.isHidden());
+        assertFalse(nms.shouldAnnounceChat());
+        assertTrue(nms.getBackground().isPresent());
+        assertEquals("test", nms.getBackground().get().getPath());
+        validateRawText(nms.getTitle(), "Test123");
+        validateRawText(nms.getDescription(), "Test567");
+        assertSame(AdvancementType.CHALLENGE, nms.getType());
+        assertSame(MinecraftReflection.getBukkitItemStack(nms.getIcon()).getType(), Material.GOLD_INGOT);
+        assertEquals(5f, nms.getX(), 0f);
+        assertEquals(67f, nms.getY(), 0f);
     }
 
     @Test
     public void testFromNms() {
-        AdvancementDisplay display = new AdvancementDisplay(
+        DisplayInfo display = new DisplayInfo(
               (net.minecraft.world.item.ItemStack)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
-              IChatBaseComponent.b("Test123"),
-              IChatBaseComponent.b("Test567"),
-			  Optional.of(net.minecraft.resources.MinecraftKey.a("minecraft", "test")),
-              AdvancementFrameType.b,
+              Component.literal("Test123"),
+              Component.literal("Test567"),
+			  Optional.of(ResourceLocation.fromNamespaceAndPath("minecraft", "test")),
+              AdvancementType.CHALLENGE,
               true,
               false,
               true
         );
-        display.a(5f, 67f);
+        display.setLocation(5f, 67f);
 
         WrappedAdvancementDisplay wrapped = displayWrapper().wrap(display);
 
@@ -90,13 +91,15 @@ public class AutoWrapperTest {
                 .field(1, BukkitConverters.getWrappedChatComponentConverter())
                 .field(2, BukkitConverters.getItemStackConverter())
                 .field(3, Converters.optional(MinecraftKey.getConverter()))
-                .field(4, EnumWrappers.getGenericConverter(getMinecraftClass("advancements.AdvancementFrameType", "advancements.FrameType"),
-                        WrappedFrameType.class));
+                .field(4, EnumWrappers.getGenericConverter(
+                    getMinecraftClass("advancements.AdvancementType", "advancements.AdvancementFrameType", "advancements.FrameType"),
+                    WrappedFrameType.class)
+                );
     }
 
-    private void validateRawText(IChatBaseComponent component, String expected) {
-        LiteralContents content = assertInstanceOf(LiteralContents.class, component.b());
-        assertEquals(expected, content.b());
+    private void validateRawText(Component component, String expected) {
+        PlainTextContents.LiteralContents content = assertInstanceOf(PlainTextContents.LiteralContents.class, component.getContents());
+        assertEquals(expected, content.text());
     }
 
     public enum WrappedFrameType {

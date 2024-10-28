@@ -1,8 +1,16 @@
 package com.comphenix.integration.protocol;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.reflect.ExactReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import org.apache.logging.log4j.Logger;
@@ -12,13 +20,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.plugin.PluginManager;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

@@ -25,7 +25,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
-import net.minecraft.world.entity.projectile.EntityEgg;
+import net.minecraft.world.entity.projectile.ThrownEgg;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.craftbukkit.v1_21_R2.entity.CraftEgg;
@@ -46,7 +46,7 @@ public class WrappedDataWatcherTest {
     public static void prepare() {
         BukkitInitialization.initializeAll();
 
-        EntityEgg nmsEgg = new EntityEgg(null, 0, 0, 0, net.minecraft.world.item.ItemStack.j);
+        ThrownEgg nmsEgg = new ThrownEgg(null, 0, 0, 0, net.minecraft.world.item.ItemStack.EMPTY);
         mockEntity = new CraftEgg(null, nmsEgg);
     }
 

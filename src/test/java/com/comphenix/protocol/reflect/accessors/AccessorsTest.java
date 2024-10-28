@@ -1,9 +1,10 @@
 package com.comphenix.protocol.reflect.accessors;
 
-import com.comphenix.protocol.reflect.ExactReflection;
-import org.junit.jupiter.api.Test;
-
 import java.lang.reflect.Field;
+
+import com.comphenix.protocol.reflect.ExactReflection;
+
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -1,19 +1,17 @@
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-import com.comphenix.protocol.BukkitInitialization;
-import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.time.Instant;
+
+import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
+
 import net.minecraft.world.entity.player.ProfilePublicKey;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WrappedProfilePublicKeyTest {
 
@@ -37,12 +35,12 @@ public class WrappedProfilePublicKeyTest {
         WrappedProfileKeyData keyData = new WrappedProfileKeyData(timeout, keyPair.getPublic(), new byte[]{0x01, 0x0F});
 
         Object handle = keyData.getHandle();
-        ProfilePublicKey.a data = assertInstanceOf(ProfilePublicKey.a.class, handle);
+        ProfilePublicKey.Data data = assertInstanceOf(ProfilePublicKey.Data.class, handle);
 
-        assertFalse(data.a());
-        assertEquals(timeout, data.b());
-        assertEquals(keyPair.getPublic(), data.c());
-        assertArrayEquals(keyData.getSignature(), data.d());
+        assertFalse(data.hasExpired());
+        assertEquals(timeout, data.expiresAt());
+        assertEquals(keyPair.getPublic(), data.key());
+        assertArrayEquals(keyData.getSignature(), data.keySignature());
 
         // test key data unwrapping
         WrappedProfileKeyData unwrapped = BukkitConverters.getWrappedPublicKeyDataConverter().getSpecific(data);
@@ -54,12 +52,12 @@ public class WrappedProfilePublicKeyTest {
 
         // test key data wrapping
         Object wrappedData = BukkitConverters.getWrappedPublicKeyDataConverter().getGeneric(keyData);
-        ProfilePublicKey.a wrapped = assertInstanceOf(ProfilePublicKey.a.class, wrappedData);
+        ProfilePublicKey.Data wrapped = assertInstanceOf(ProfilePublicKey.Data.class, wrappedData);
 
-        assertFalse(wrapped.a());
-        assertEquals(timeout, wrapped.b());
-        assertEquals(keyPair.getPublic(), wrapped.c());
-        assertArrayEquals(keyData.getSignature(), wrapped.d());
+        assertFalse(wrapped.hasExpired());
+        assertEquals(timeout, wrapped.expiresAt());
+        assertEquals(keyPair.getPublic(), wrapped.key());
+        assertArrayEquals(keyData.getSignature(), wrapped.keySignature());
 
         // test profile key unwrapping
         WrappedProfilePublicKey profilePublicKey = new WrappedProfilePublicKey(keyData);
@@ -67,7 +65,7 @@ public class WrappedProfilePublicKeyTest {
         Object keyHandle = profilePublicKey.getHandle();
         ProfilePublicKey profileKey = assertInstanceOf(ProfilePublicKey.class, keyHandle);
 
-        assertNotNull(profileKey.b());
+        assertNotNull(profileKey.data());
 
         // test profile key wrapping
         WrappedProfilePublicKey wrappedKey = BukkitConverters.getWrappedProfilePublicKeyConverter().getSpecific(keyHandle);

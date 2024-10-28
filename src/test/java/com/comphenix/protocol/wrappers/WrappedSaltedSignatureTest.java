@@ -1,11 +1,10 @@
 package com.comphenix.protocol.wrappers;
 
-import com.comphenix.protocol.BukkitInitialization;
-
 import java.util.concurrent.ThreadLocalRandom;
 
-import net.minecraft.util.MinecraftEncryption;
+import com.comphenix.protocol.BukkitInitialization;
 
+import net.minecraft.util.Crypt;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -28,11 +27,11 @@ class WrappedSaltedSignatureTest {
         WrappedSaltedSignature loginSignature = new WrappedSaltedSignature(salt, signature);
 
         Object handle = loginSignature.getHandle();
-        MinecraftEncryption.b data = assertInstanceOf(MinecraftEncryption.b.class, handle);
+        Crypt.SaltSignaturePair data = assertInstanceOf(Crypt.SaltSignaturePair.class, handle);
 
-        assertTrue(data.a());
-        assertArrayEquals(signature, data.d());
-        assertEquals(salt, data.c());
+        assertTrue(data.isValid());
+        assertArrayEquals(signature, data.signature());
+        assertEquals(salt, data.salt());
 
         // test key data unwrapping
         WrappedSaltedSignature unwrapped = BukkitConverters.getWrappedSignatureConverter().getSpecific(data);
@@ -44,12 +43,12 @@ class WrappedSaltedSignatureTest {
 
         // test key data wrapping
         Object wrappedData = BukkitConverters.getWrappedSignatureConverter().getGeneric(loginSignature);
-        MinecraftEncryption.b wrapped = assertInstanceOf(MinecraftEncryption.b.class, wrappedData);
+        Crypt.SaltSignaturePair wrapped = assertInstanceOf(Crypt.SaltSignaturePair.class, wrappedData);
 
-        assertTrue(wrapped.a());
-        assertEquals(loginSignature.getSalt(), wrapped.c());
-        assertArrayEquals(loginSignature.getSignature(), wrapped.d());
-        assertArrayEquals(loginSignature.getSaltBytes(), wrapped.b());
+        assertTrue(wrapped.isValid());
+        assertEquals(loginSignature.getSalt(), wrapped.salt());
+        assertArrayEquals(loginSignature.getSignature(), wrapped.signature());
+        assertArrayEquals(loginSignature.getSaltBytes(), wrapped.saltAsBytes());
     }
 
     @Test
@@ -61,11 +60,11 @@ class WrappedSaltedSignatureTest {
         WrappedSaltedSignature loginSignature = new WrappedSaltedSignature(salt, signature);
 
         Object handle = loginSignature.getHandle();
-        MinecraftEncryption.b data = assertInstanceOf(MinecraftEncryption.b.class, handle);
+        Crypt.SaltSignaturePair data = assertInstanceOf(Crypt.SaltSignaturePair.class, handle);
 
-        assertFalse(data.a());
-        assertArrayEquals(signature, data.d());
-        assertEquals(salt, data.c());
+        assertFalse(data.isValid());
+        assertArrayEquals(signature, data.signature());
+        assertEquals(salt, data.salt());
 
         // test key data unwrapping
         WrappedSaltedSignature unwrapped = BukkitConverters.getWrappedSignatureConverter().getSpecific(data);
@@ -77,11 +76,11 @@ class WrappedSaltedSignatureTest {
 
         // test key data wrapping
         Object wrappedData = BukkitConverters.getWrappedSignatureConverter().getGeneric(loginSignature);
-        MinecraftEncryption.b wrapped = assertInstanceOf(MinecraftEncryption.b.class, wrappedData);
+        Crypt.SaltSignaturePair wrapped = assertInstanceOf(Crypt.SaltSignaturePair.class, wrappedData);
 
-        assertFalse(wrapped.a());
-        assertEquals(loginSignature.getSalt(), wrapped.c());
-        assertArrayEquals(loginSignature.getSignature(), wrapped.d());
-        assertArrayEquals(loginSignature.getSaltBytes(), wrapped.b());
+        assertFalse(wrapped.isValid());
+        assertEquals(loginSignature.getSalt(), wrapped.salt());
+        assertArrayEquals(loginSignature.getSignature(), wrapped.signature());
+        assertArrayEquals(loginSignature.getSaltBytes(), wrapped.saltAsBytes());
     }
 }

@@ -14,13 +14,14 @@
  */
 package com.comphenix.protocol.wrappers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.utility.MinecraftReflection;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author dmulloy2
