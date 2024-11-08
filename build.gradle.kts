@@ -13,7 +13,7 @@ group = "com.comphenix.protocol"
 version = "5.4.0-SNAPSHOT"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "1.21.2"
+val mcVersion = "1.21.3"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
 val isJenkins = buildNumber.isNotEmpty()
@@ -26,11 +26,11 @@ repositories {
     mavenCentral()
 
     maven {
-        url = uri("https://repo.dmulloy2.net/repository/public/")
+        url = uri("https://repo.codemc.io/repository/nms/")
     }
 
     maven {
-        url = uri("https://repo.codemc.io/repository/nms/")
+        url = uri("https://repo.dmulloy2.net/repository/public/")
     }
 
     maven {

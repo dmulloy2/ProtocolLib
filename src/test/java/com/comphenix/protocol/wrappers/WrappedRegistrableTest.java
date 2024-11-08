@@ -26,7 +26,7 @@ public class WrappedRegistrableTest {
         // some randomly selected registrables which we can prove that work using the bukkit api
         validate(MinecraftReflection.getEntityTypes(), EntityType.WARDEN.getKey());
         validate(MinecraftReflection.getItemClass(), Material.DIAMOND_AXE.getKey());
-        validate(MinecraftReflection.getAttributeBase(), Attribute.GENERIC_MAX_HEALTH.getKey());
+        validate(MinecraftReflection.getAttributeBase(), Attribute.MAX_HEALTH.getKey());
         validate(MinecraftReflection.getSoundEffectClass(), Sound.ENTITY_WARDEN_SNIFF.getKey());
         validate(MinecraftReflection.getMobEffectListClass(), PotionEffectType.REGENERATION.getKey());
     }
