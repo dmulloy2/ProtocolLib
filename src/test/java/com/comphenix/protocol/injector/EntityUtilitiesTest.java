@@ -11,8 +11,8 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.EntityTracker;
-import org.bukkit.craftbukkit.v1_21_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R3.entity.CraftEntity;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
