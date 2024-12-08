@@ -25,7 +25,7 @@ public class WrappedComponentStyleTest {
         net.minecraft.network.chat.Style style = net.minecraft.network.chat.Style.EMPTY.withColor(ChatFormatting.RED).withBold(true);
         WrappedComponentStyle wrapped = new WrappedComponentStyle(style);
         JsonElement json = wrapped.getJson();
-        assertEquals("{\"color\":\"red\",\"bold\":true}", json.toString());
+        assertEquals("{\"bold\":true,\"color\":\"red\"}", json.toString());
         assertEquals(style, WrappedComponentStyle.fromJson(json).getHandle());
     }
 

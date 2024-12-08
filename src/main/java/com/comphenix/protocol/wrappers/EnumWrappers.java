@@ -141,6 +141,7 @@ public abstract class EnumWrappers {
         UPDATE_LATENCY,
         UPDATE_DISPLAY_NAME,
         UPDATE_LIST_ORDER,
+        UPDATE_HAT,
         /**
          * @deprecated Removed in 1.19.3
          */
