@@ -2,7 +2,7 @@
 
 Certain tasks are impossible to perform with the standard Bukkit API, and may require
 working with and even modifying Minecraft directly. A common technique is to modify incoming
-and outgoing [packets](https://wiki.vg/Protocol), or inject custom packets into the
+and outgoing packets, or inject custom packets into the
 stream. This is quite cumbersome to do, however, and most implementations will break
 as soon as a new version of Minecraft has been released, mostly due to obfuscation.
 
@@ -12,9 +12,10 @@ lead to more subtle bugs.
 
 ### Resources
 
-* [Resource Page](https://www.spigotmc.org/resources/protocollib.1997/)
+* [Spigot Page](https://www.spigotmc.org/resources/protocollib.1997/)
 * [Dev Builds](https://ci.dmulloy2.net/job/ProtocolLib)
 * [JavaDoc](https://ci.dmulloy2.net/job/ProtocolLib/javadoc/index.html)
+* [Protocol Wiki](https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol)
 
 ### Compilation
 
