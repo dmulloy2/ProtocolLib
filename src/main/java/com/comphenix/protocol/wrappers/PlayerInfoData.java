@@ -276,7 +276,7 @@ public class PlayerInfoData {
                 // Attempt to construct the underlying PlayerInfoData
 
                 try {
-                    Object gameMode = EnumWrappers.getGameModeConverter().getGeneric(specific.gameMode);
+                    Object gameMode = Converters.ignoreNull(EnumWrappers.getGameModeConverter()).getGeneric(specific.gameMode);
                     Object displayName = specific.displayName != null ? specific.displayName.handle : null;
                     Object profile = specific.profile != null ? specific.profile.handle : null;
                     Object remoteChatSessionData = specific.remoteChatSessionData != null ? BukkitConverters.getWrappedRemoteChatSessionDataConverter().getGeneric(specific.remoteChatSessionData) : null;
@@ -361,7 +361,7 @@ public class PlayerInfoData {
                     int latency = ints.read(0);
 
                     StructureModifier<NativeGameMode> gameModes = modifier.withType(
-                        EnumWrappers.getGameModeClass(), EnumWrappers.getGameModeConverter());
+                        EnumWrappers.getGameModeClass(), Converters.ignoreNull(EnumWrappers.getGameModeConverter()));
                     NativeGameMode gameMode = gameModes.read(0);
 
                     StructureModifier<WrappedChatComponent> displayNames = modifier.withType(
