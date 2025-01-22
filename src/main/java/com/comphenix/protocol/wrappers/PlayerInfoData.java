@@ -40,7 +40,7 @@ public class PlayerInfoData {
 
     private final UUID profileId;
     private final int latency;
-    private final int listOrder = 0;
+    private final int listOrder;
     private final boolean listed;
     private final boolean showHat;
     private final NativeGameMode gameMode;
@@ -113,6 +113,23 @@ public class PlayerInfoData {
         this.profileKeyData = profileKeyData;
         this.remoteChatSessionData = null;
         this.showHat = false;
+        this.listOrder = 0;
+    }
+
+    /**
+     * Constructs a new PlayerInfoData for Minecraft 1.21.2 or later.
+     *
+     * @param profileId the id of the profile (has to be non-null)
+     * @param latency the latency in milliseconds
+     * @param listed whether the player is listed in the tab list
+     * @param gameMode the game mode
+     * @param profile the game profile
+     * @param displayName display name in tab list (optional)
+     * @param listOrder the priority of this entry in the tab list
+     * @param remoteChatSession the remote chat session for this profile or null
+     */
+    public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, int listOrder, @Nullable WrappedRemoteChatSessionData remoteChatSession) {
+        this(profileId, latency, listed, gameMode, profile, displayName, false, listOrder, remoteChatSession);
     }
 
     /**
@@ -128,6 +145,23 @@ public class PlayerInfoData {
      * @param remoteChatSession the remote chat session for this profile or null
      */
     public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, boolean showHat, @Nullable WrappedRemoteChatSessionData remoteChatSession) {
+        this(profileId, latency, listed, gameMode, profile, displayName, showHat, 0, remoteChatSession);
+    }
+
+    /**
+     * Constructs a new PlayerInfoData for Minecraft 1.21.4 or later.
+     *
+     * @param profileId the id of the profile (has to be non-null)
+     * @param latency the latency in milliseconds
+     * @param listed whether the player is listed in the tab list
+     * @param gameMode the game mode
+     * @param profile the game profile
+     * @param displayName display name in tab list (optional)
+     * @param showHat whether a hat should be shown
+     * @param listOrder the priority of this entry in the tab list
+     * @param remoteChatSession the remote chat session for this profile or null
+     */
+    public PlayerInfoData(UUID profileId, int latency, boolean listed, NativeGameMode gameMode, WrappedGameProfile profile, WrappedChatComponent displayName, boolean showHat, int listOrder, @Nullable WrappedRemoteChatSessionData remoteChatSession) {
         this.profileId = profileId;
         this.latency = latency;
         this.listed = listed;
@@ -137,6 +171,7 @@ public class PlayerInfoData {
         this.profileKeyData = null;
         this.remoteChatSessionData = remoteChatSession;
         this.showHat = showHat;
+        this.listOrder = listOrder;
     }
 
     /**
@@ -203,8 +238,16 @@ public class PlayerInfoData {
      * @return if the hat is shown
      */
     public boolean isShowHat() {
-		return showHat;
-	}
+        return showHat;
+    }
+
+    /**
+     * Gets the priority of this entry in the tab list (since 1.21.2)
+     * @return the priority of this entry in the tab list
+     */
+    public int getListOrder() {
+        return listOrder;
+    }
 
     /**
      * Returns the public key of the profile (since 1.19). Returns the public key of the remote chat session since 1.19.3
@@ -255,7 +298,7 @@ public class PlayerInfoData {
                         args.add(MinecraftReflection.getIChatBaseComponentClass());
 
                         if (MinecraftVersion.v1_21_4.atOrAbove()) {
-                        	args.add(boolean.class);
+                            args.add(boolean.class);
                         }
                         if (MinecraftVersion.v1_21_2.atOrAbove()) {
                             args.add(int.class);
@@ -376,6 +419,18 @@ public class PlayerInfoData {
                             gameProfile,
                             displayName,
                             modifier.<Boolean>withType(boolean.class).read(1),
+                            ints.read(1),
+                            modifier.withType(MinecraftReflection.getRemoteChatSessionDataClass(), BukkitConverters.getWrappedRemoteChatSessionDataConverter()).read(0)
+                        );
+                    }
+                    if (MinecraftVersion.v1_21_2.atOrAbove()) {
+                        return new PlayerInfoData(modifier.<UUID>withType(UUID.class).read(0),
+                            latency,
+                            modifier.<Boolean>withType(boolean.class).read(0),
+                            gameMode,
+                            gameProfile,
+                            displayName,
+                            ints.read(1),
                             modifier.withType(MinecraftReflection.getRemoteChatSessionDataClass(), BukkitConverters.getWrappedRemoteChatSessionDataConverter()).read(0)
                         );
                     }

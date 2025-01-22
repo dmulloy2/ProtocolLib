@@ -44,6 +44,7 @@ public class PlayerInfoDataTest {
         testWriteBack(new PlayerInfoData(profile.getUUID(), 42, false, NativeGameMode.CREATIVE, profile, displayName, TestUtils.creteDummyRemoteChatSessionData()));
         testWriteBack(new PlayerInfoData(profile.getUUID(), 42, false, NativeGameMode.CREATIVE, null, null, TestUtils.creteDummyRemoteChatSessionData()));
         testWriteBack(new PlayerInfoData(profile.getUUID(), 42, true, NativeGameMode.CREATIVE, null, displayName));
+        testWriteBack(new PlayerInfoData(profile.getUUID(), 42, true, NativeGameMode.CREATIVE, profile, displayName, true, 5, TestUtils.creteDummyRemoteChatSessionData()));
     }
 
     private static void testWriteBack(PlayerInfoData data) {
