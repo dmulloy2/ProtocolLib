@@ -271,7 +271,7 @@ public class NettyChannelInjector implements Injector {
         }
 
         try {
-            this.listenerInvoker.send(packet);
+            this.channel.pipeline().context(WIRE_PACKET_ENCODER_NAME).writeAndFlush(packet);
         } catch (Exception exception) {
             this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
                     .messageParam(packet, this.playerName)
@@ -289,8 +289,7 @@ public class NettyChannelInjector implements Injector {
         
         this.ensureInEventLoop(() -> {
             try {
-                // try to invoke the method, this should normally not fail
-                this.listenerInvoker.read(packet);
+                this.channel.pipeline().context(INBOUND_INTERCEPTOR_NAME).fireChannelRead(packet);
             } catch (Exception exception) {
                 this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_READ_PACKET)
                         .messageParam(packet, this.playerName)
