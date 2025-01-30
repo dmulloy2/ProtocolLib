@@ -16,7 +16,7 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 /**
  * This class facilitates the invocation of methods on the current packet listener.
- * It attempts to execute the <code>disconnect</code> method, upon failure
+ * It attempts to execute the <code>send</code>, and <code>disconnect</code> methods, upon failure
  * (either due to the absence of the method or the packet listener being of an incorrect type),
  * it delegates the call to the network manager.
  * 
@@ -36,13 +36,33 @@ public class PacketListenerInvoker {
     private static final Class<?> COMMON_PACKET_LISTENER_CLASS = MinecraftReflection.getNullableNMS("server.network.ServerCommonPacketListenerImpl");
     private static final Class<?> PREFERRED_PACKET_LISTENER_CLASS = COMMON_PACKET_LISTENER_CLASS != null ? COMMON_PACKET_LISTENER_CLASS : GAME_PACKET_LISTENER_CLASS;
 
+    private static final MethodAccessor PACKET_LISTENER_SEND = getPacketListenerSend();
     private static final MethodAccessor PACKET_LISTENER_DISCONNECT = getPacketListenerDisconnect();
     private static final boolean DOES_PACKET_LISTENER_DISCONNECT_USE_COMPONENT = doesPacketListenerDisconnectUseComponent();
 
+    private static final MethodAccessor NETWORK_MANAGER_SEND = getNetworkManagerSend();
     private static final MethodAccessor NETWORK_MANAGER_DISCONNECT = getNetworkManagerDisconnect();
     private static final MethodAccessor NETWORK_MANAGER_PACKET_LISTENER = getNetworkManagerPacketListener();
 
     public static void ensureStaticInitializedWithoutError() {
+    }
+
+    private static MethodAccessor getPacketListenerSend() {
+        FuzzyReflection packetListener = FuzzyReflection.fromClass(PREFERRED_PACKET_LISTENER_CLASS);
+
+        List<Method> send = packetListener.getMethodList(FuzzyMethodContract.newBuilder()
+                .banModifier(Modifier.STATIC)
+                .returnTypeVoid()
+                .parameterCount(1)
+                .parameterExactType(MinecraftReflection.getPacketClass(), 0)
+                .build());
+
+        if (send.isEmpty()) {
+            ProtocolLogger.debug("Can't get packet listener send method");
+            return null;
+        }
+
+        return Accessors.getMethodAccessor(send.get(0));
     }
 
     private static MethodAccessor getPacketListenerDisconnect() {
@@ -79,6 +99,19 @@ public class PacketListenerInvoker {
             return MinecraftReflection.isIChatBaseComponent(reason.getClass());
         }
         return false;
+    }
+
+    private static MethodAccessor getNetworkManagerSend() {
+        FuzzyReflection networkManager = FuzzyReflection.fromClass(MinecraftReflection.getNetworkManagerClass());
+
+        Method send = networkManager.getMethod(FuzzyMethodContract.newBuilder()
+                .banModifier(Modifier.STATIC)
+                .returnTypeVoid()
+                .parameterCount(1)
+                .parameterExactType(MinecraftReflection.getPacketClass(), 0)
+                .build());
+
+        return Accessors.getMethodAccessor(send);
     }
 
     private static MethodAccessor getNetworkManagerDisconnect() {
@@ -142,6 +175,21 @@ public class PacketListenerInvoker {
 
         // Return the currently cached packet listener, which may be null if it does not match the preferred type.
         return this.packetListener.get();
+    }
+
+    /**
+     * Sends a packet using the current packet listener if available and valid; otherwise,
+     * falls back to the network manager.
+     *
+     * @param packet The packet to be sent.
+     */
+    public void send(Object packet) {
+        Object packetListener = this.getPacketListener();
+        if (PACKET_LISTENER_SEND != null && packetListener != null) {
+            PACKET_LISTENER_SEND.invoke(packetListener, packet);
+        } else {
+            NETWORK_MANAGER_SEND.invoke(this.networkManager, packet);
+        }
     }
 
     /**

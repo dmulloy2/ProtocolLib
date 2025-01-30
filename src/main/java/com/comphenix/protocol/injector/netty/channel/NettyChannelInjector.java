@@ -271,7 +271,7 @@ public class NettyChannelInjector implements Injector {
         }
 
         try {
-            this.channel.pipeline().context(WIRE_PACKET_ENCODER_NAME).writeAndFlush(packet);
+            this.listenerInvoker.send(packet);
         } catch (Exception exception) {
             this.errorReporter.reportWarning(this, Report.newBuilder(REPORT_CANNOT_SEND_PACKET)
                     .messageParam(packet, this.playerName)
