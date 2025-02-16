@@ -504,6 +504,17 @@ public class ProtocolLib extends JavaPlugin {
     }
 
     private void checkUpdates() {
+        // Do not run updater if no supported updater is loaded
+        if (this.updater == null) {
+            highlyVisibleError(
+                    " WARNING ",
+                    " ProtocolLib is unable to check for updates. ",
+                    " You are likely not using a supported version (Such as CraftBukkit). "
+            );
+            ProtocolLibrary.disableUpdates();
+            return;
+        }
+
         // Ignore milliseconds - it's pointless
         long currentTime = System.currentTimeMillis() / MILLI_PER_SECOND;
 
