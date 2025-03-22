@@ -1,5 +1,8 @@
 package dev.protocollib.api.packet;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import dev.protocollib.api.listener.PacketTransmissionListener;
 
 /**
@@ -18,6 +21,7 @@ public interface PacketOperationBuilder {
      *
      * @return the same builder for further configuration
      */
+    @Contract("_ -> this")
     PacketOperationBuilder skipProcessing();
 
     /**
@@ -26,19 +30,20 @@ public interface PacketOperationBuilder {
      * @param listener the listener to be notified upon packet transmission
      * @return the same builder for further configuration
      */
-    PacketOperationBuilder postTransmission(PacketTransmissionListener listener);
+    @Contract("_ -> this")
+    PacketOperationBuilder postTransmission(@NotNull PacketTransmissionListener listener);
 
     /**
      * Sends a packet to the client.
      * 
      * @param packet the {@link PacketContainer} to send
      */
-    void send(PacketLike packet);
+    void send(@NotNull PacketLike packet);
 
     /**
      * Receives a packet as if the client had sent it.
      * 
      * @param packet the {@link PacketContainer} to receive
      */
-    void receive(PacketLike packet);
+    void receive(@NotNull PacketLike packet);
 }

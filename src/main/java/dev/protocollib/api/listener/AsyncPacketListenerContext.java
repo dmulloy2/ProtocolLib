@@ -1,5 +1,7 @@
 package dev.protocollib.api.listener;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Representing the context of an asynchronous packet listener.
  */
@@ -16,6 +18,6 @@ public interface AsyncPacketListenerContext extends SyncPacketListenerContext {
 	 * 
 	 * @param throwable the processing exception
 	 */
-	void resumeProcessingWithException(Throwable throwable);
+	void resumeProcessingWithException(@NotNull Throwable throwable);
 
 }

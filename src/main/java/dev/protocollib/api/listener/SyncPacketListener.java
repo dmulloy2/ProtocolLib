@@ -1,5 +1,7 @@
 package dev.protocollib.api.listener;
 
+import org.jetbrains.annotations.NotNull;
+
 import dev.protocollib.api.packet.PacketContainer;
 
 /**
@@ -14,6 +16,6 @@ public interface SyncPacketListener {
      * @param packet  the packet to handle
      * @param context the context providing additional information about the packet and functions
      */
-    void handlePacket(PacketContainer packet, SyncPacketListenerContext context);
+    void handlePacket(@NotNull PacketContainer packet, @NotNull SyncPacketListenerContext context);
 
 }

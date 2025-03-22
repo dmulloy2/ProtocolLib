@@ -2,6 +2,9 @@ package dev.protocollib.api.listener;
 
 import java.util.Collection;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import dev.protocollib.api.packet.PacketType;
 
 /**
@@ -15,7 +18,8 @@ public interface PacketListenerBuilder {
      * @param packetTypes the packet types to listen for
      * @return the same builder for further configuration
      */
-    PacketListenerBuilder.WithType types(PacketType... packetTypes);
+    @NotNull
+    PacketListenerBuilder.WithType types(@NotNull PacketType... packetTypes);
 
     /**
      * Specifies the types of packets to listen for.
@@ -23,7 +27,8 @@ public interface PacketListenerBuilder {
      * @param packetTypes the collection of packet types to listen for
      * @return the same builder for further configuration
      */
-    PacketListenerBuilder.WithType types(Collection<PacketType> packetTypes);
+    @NotNull
+    PacketListenerBuilder.WithType types(@NotNull Collection<PacketType> packetTypes);
 
     /**
      * Interface for building a packet listener with specific packet types.
@@ -36,22 +41,36 @@ public interface PacketListenerBuilder {
          * @param priority the priority to assign to the listener
          * @return the same builder for further configuration
          */
-        PacketListenerBuilder.WithType priority(PacketListenerPriority priority);
+        @Contract("_ -> this")
+        PacketListenerBuilder.WithType priority(@NotNull PacketListenerPriority priority);
 
         /**
-         * Marks the listener as immutable, preventing modifications of packets
-         * inside the listener.
+         * Allows the listener to modify packets. By default, listeners are read-only and
+         * cannot modify packets.
          *
          * @return the same builder for further configuration
          */
-        PacketListenerBuilder.WithType immutable();
+        @Contract("_ -> this")
+        PacketListenerBuilder.WithType mutable();
 
         /**
-         * Configures the listener to ignore packets that have been cancelled.
+         * Configures the bundle behavior for the listener, determining how packets in bundles are handled.
+         *
+         * @param bundleBehavior the bundle behavior to apply
+         * @return the same builder for further configuration
+         * @see PacketListenerBundleBehavior
+         */
+        @Contract("_ -> this")
+        PacketListenerBuilder.WithType bundleBehavior(@NotNull PacketListenerBundleBehavior bundleBehavior);
+
+        /**
+         * Configures the listener to include packets that have been canceled. By default,
+         * canceled packets are skipped.
          *
          * @return the same builder for further configuration
          */
-        PacketListenerBuilder.WithType ignoreCancelledPackets();
+        @Contract("_ -> this")
+        PacketListenerBuilder.WithType includeCanceledPackets();
 
         /**
          * Registers the packet listener to operate synchronously. The listener
@@ -60,7 +79,8 @@ public interface PacketListenerBuilder {
          * @param listener the synchronous packet listener to register
          * @return the same builder for further configuration
          */
-        PacketListenerRegistration registerSync(SyncPacketListener listener);
+        @NotNull
+        PacketListenerRegistration registerSync(@NotNull SyncPacketListener listener);
 
         /**
          * Registers the packet listener to operate asynchronously.
@@ -68,7 +88,7 @@ public interface PacketListenerBuilder {
          * @param listener the asynchronous packet listener to register
          * @return the same builder for further configuration
          */
-        PacketListenerRegistration registerAsync(AsyncPacketListener listener);
+        @NotNull
+        PacketListenerRegistration registerAsync(@NotNull AsyncPacketListener listener);
     }
 }
-

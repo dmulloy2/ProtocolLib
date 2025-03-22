@@ -11,4 +11,3 @@ public interface PacketListenerRegistration {
      */
     void unregister();
 }
-

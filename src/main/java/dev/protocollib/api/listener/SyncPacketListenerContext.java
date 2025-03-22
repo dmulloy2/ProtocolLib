@@ -1,5 +1,7 @@
 package dev.protocollib.api.listener;
 
+import org.jetbrains.annotations.NotNull;
+
 import dev.protocollib.api.Connection;
 
 /**
@@ -12,6 +14,7 @@ public interface SyncPacketListenerContext {
      *
      * @return the connection handling the packet
      */
+    @NotNull
     Connection connection();
 
     /**
@@ -22,15 +25,17 @@ public interface SyncPacketListenerContext {
     boolean isCancelled();
 
     /**
-     * Cancels the packet, preventing it from being processed further.
+     * Sets whether the packet handling is cancelled. If cancelled, the packet
+     * will not be processed further.
+     *
+     * @param cancelled true to cancel the packet, false to allow processing
      */
-    void cancel();
+    void setCancelled(boolean cancelled);
 
     /**
      * Adds a listener to be invoked after the packet is sent or received.
      *
      * @param listener the transmission listener to invoke
      */
-    void addTransmissionListener(PacketTransmissionListener listener);
+    void addTransmissionListener(@NotNull PacketTransmissionListener listener);
 }
-

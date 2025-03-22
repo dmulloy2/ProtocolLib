@@ -1,5 +1,7 @@
 package dev.protocollib.api.listener;
 
+import org.jetbrains.annotations.NotNull;
+
 import dev.protocollib.api.packet.PacketContainer;
 
 /**
@@ -27,6 +29,6 @@ public interface AsyncPacketListener {
      * @param packet  the packet to handle
      * @param context the context providing additional information about the packet and connection
      */
-    void handlePacket(PacketContainer packet, AsyncPacketListenerContext context);
+    void handlePacket(@NotNull PacketContainer packet, @NotNull AsyncPacketListenerContext context);
 
 }
