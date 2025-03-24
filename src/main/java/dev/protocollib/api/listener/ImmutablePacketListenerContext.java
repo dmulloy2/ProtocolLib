@@ -4,10 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.protocollib.api.Connection;
 
-/**
- * Representing the context of a synchronous packet listener.
- */
-public interface SyncPacketListenerContext {
+public interface ImmutablePacketListenerContext {
 
     /**
      * Retrieves the connection associated with the packet.
@@ -22,15 +19,7 @@ public interface SyncPacketListenerContext {
      *
      * @return true if the packet is cancelled, false otherwise
      */
-    boolean isCancelled();
-
-    /**
-     * Sets whether the packet handling is cancelled. If cancelled, the packet
-     * will not be processed further.
-     *
-     * @param cancelled true to cancel the packet, false to allow processing
-     */
-    void setCancelled(boolean cancelled);
+    boolean isCancelledVolatile();
 
     /**
      * Adds a listener to be invoked after the packet is sent or received.

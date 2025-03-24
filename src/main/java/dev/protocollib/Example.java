@@ -1,17 +1,74 @@
 package dev.protocollib;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+
 import dev.protocollib.api.ProtocolLib;
-import dev.protocollib.api.listener.*;
-import dev.protocollib.api.packet.*;
-import java.util.concurrent.*;
+import dev.protocollib.api.listener.PacketListenerBundleBehavior;
+import dev.protocollib.api.listener.PacketListenerPriority;
+import dev.protocollib.api.packet.MutablePacketContainer;
+import dev.protocollib.api.packet.PacketContainer;
+import dev.protocollib.api.packet.PacketTypes;
+import dev.protocollib.api.reflect.MutableGenericAccessor;
 
 public class Example {
  
     private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     private static ProtocolLib protocolLib;
     private static Plugin plugin;
+
+    public static class ParticleData {
+        public String s;
+        public int i;
+    }
+
+    public static class ParticlePacket {
+        public int duration;
+        public String name;
+        public ParticleData data;
+    }
+
+    static {
+        MutablePacketContainer packet = null;
+        Class<?> clazz = MutableGenericAccessor.class;
+        
+        packet.accessor().update(a -> {
+            a.update(ParticleData.class, 0, b -> {
+                
+            });
+        });
+        
+        packet.accessor().getAccessor(ParticleData.class, 0).update(accessor -> {
+            
+        });
+
+        packet.accessor().update(accessor -> {
+            
+            accessor.setObject(clazz, 1, "");
+            accessor.set(Integer.class, 1, 1235);
+            accessor.set(String.class, 1, "world");
+
+            accessor.getAccessor(Object.class, 1).getAccessor(Object.class, 1).update(mutableAccessor -> {
+
+            });
+
+            accessor.update(Object.class, 1, mutableAccessor -> {
+                mutableAccessor.set(int.class, 1, -1);
+            });
+
+            accessor.update(ParticleData.class, 1, (pd) -> {
+                pd.i++;
+                return pd;
+            });
+
+            accessor.update(ParticleData.class, 1, (pd) -> {
+                pd.set(int.class, 1, pd.get(int.class, 1) + 1);
+            });
+        });
+    }
 
     // ========================
     //  Packet Listeners
@@ -41,7 +98,7 @@ public class Example {
                 // do processing here ...
                 // write changes to packet ...
                 
-                context.addTransmissionListener(chunk::markSent);
+                context.addAsyncTransmissionListener(chunk::markSent);
                 context.resumeProcessing();
             });
 
@@ -58,7 +115,7 @@ public class Example {
                     // do heavy processing here ...
                     // write changes to packet ...
                     
-                    context.addTransmissionListener(chunk::markSent);
+                    context.addAsyncTransmissionListener(chunk::markSent);
                     context.resumeProcessing();
                 });
             });

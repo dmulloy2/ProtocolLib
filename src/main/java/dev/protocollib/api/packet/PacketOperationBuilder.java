@@ -36,14 +36,14 @@ public interface PacketOperationBuilder {
     /**
      * Sends a packet to the client.
      * 
-     * @param packet the {@link PacketContainer} to send
+     * @param packet the packet to send
      */
     void send(@NotNull PacketLike packet);
 
     /**
      * Receives a packet as if the client had sent it.
      * 
-     * @param packet the {@link PacketContainer} to receive
+     * @param packet the packet to receive
      */
     void receive(@NotNull PacketLike packet);
 }

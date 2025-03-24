@@ -5,7 +5,7 @@ import org.bukkit.plugin.Plugin;
 
 import dev.protocollib.api.listener.PacketListenerBuilder;
 import dev.protocollib.api.packet.BinaryPacket;
-import dev.protocollib.api.packet.PacketContainer;
+import dev.protocollib.api.packet.MutablePacketContainer;
 import dev.protocollib.api.packet.PacketLike;
 import dev.protocollib.api.packet.PacketType;
 
@@ -61,7 +61,7 @@ public interface ProtocolLib {
      * Creates a new packet container for the given packet type.
      *
      * @param packetType the type of the packet to create
-     * @return a new {@link PacketContainer} instance
+     * @return a new {@link MutablePacketContainer} instance
      */
-    PacketContainer createPacket(PacketType packetType);
+    MutablePacketContainer createPacket(PacketType packetType);
 }

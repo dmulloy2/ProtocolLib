@@ -45,15 +45,6 @@ public interface PacketListenerBuilder {
         PacketListenerBuilder.WithType priority(@NotNull PacketListenerPriority priority);
 
         /**
-         * Allows the listener to modify packets. By default, listeners are read-only and
-         * cannot modify packets.
-         *
-         * @return the same builder for further configuration
-         */
-        @Contract("_ -> this")
-        PacketListenerBuilder.WithType mutable();
-
-        /**
          * Configures the bundle behavior for the listener, determining how packets in bundles are handled.
          *
          * @param bundleBehavior the bundle behavior to apply
@@ -71,6 +62,24 @@ public interface PacketListenerBuilder {
          */
         @Contract("_ -> this")
         PacketListenerBuilder.WithType includeCanceledPackets();
+
+        /**
+         * Allows the listener to modify packets. By default, listeners are read-only and
+         * cannot modify packets.
+         *
+         * @return the same builder for further configuration
+         */
+        @NotNull
+        PacketListenerBuilder.Mutable mutable();
+
+        @NotNull
+        PacketListenerRegistration registerSync(@NotNull ImmutablePacketListener listener);
+
+        @NotNull
+        PacketListenerRegistration registerAsync(@NotNull ImmutablePacketListener listener);
+    }
+
+    public interface Mutable {
 
         /**
          * Registers the packet listener to operate synchronously. The listener

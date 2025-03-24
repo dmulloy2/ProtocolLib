@@ -3,6 +3,8 @@ package dev.protocollib.api.packet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import dev.protocollib.api.reflect.GenericAccessor;
+
 /**
  * Representing a container for a packet.
  */
@@ -16,13 +18,8 @@ public non-sealed interface PacketContainer extends PacketLike {
     @NotNull
     PacketType packetType();
 
-    /**
-     * Retrieves the raw packet object.
-     *
-     * @return the packet object
-     */
     @NotNull
-    Object packet();
+    GenericAccessor accessor();
 
     /**
      * Retrieves the packet bundle that this packet is part of, if any.

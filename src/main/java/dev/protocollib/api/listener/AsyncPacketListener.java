@@ -2,7 +2,7 @@ package dev.protocollib.api.listener;
 
 import org.jetbrains.annotations.NotNull;
 
-import dev.protocollib.api.packet.PacketContainer;
+import dev.protocollib.api.packet.MutablePacketContainer;
 
 /**
  * Functional interface for handling packets asynchronously.
@@ -29,6 +29,6 @@ public interface AsyncPacketListener {
      * @param packet  the packet to handle
      * @param context the context providing additional information about the packet and connection
      */
-    void handlePacket(@NotNull PacketContainer packet, @NotNull AsyncPacketListenerContext context);
+    void handlePacket(@NotNull MutablePacketContainer packet, @NotNull AsyncPacketListenerContext context);
 
 }
