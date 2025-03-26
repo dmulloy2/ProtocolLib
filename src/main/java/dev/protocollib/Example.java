@@ -37,12 +37,8 @@ public class Example {
         
         packet.accessor().update(a -> {
             a.update(ParticleData.class, 0, b -> {
-                
+                b.set(int.class, 0, -1);
             });
-        });
-        
-        packet.accessor().getAccessor(ParticleData.class, 0).update(accessor -> {
-            
         });
 
         packet.accessor().update(accessor -> {
@@ -51,8 +47,10 @@ public class Example {
             accessor.set(Integer.class, 1, 1235);
             accessor.set(String.class, 1, "world");
 
-            accessor.getAccessor(Object.class, 1).getAccessor(Object.class, 1).update(mutableAccessor -> {
-
+            accessor.update(Object.class, 1, a -> {
+               a.update(Object.class, 1, b -> {
+                  b.set(int.class, 2, -1); 
+               });
             });
 
             accessor.update(Object.class, 1, mutableAccessor -> {
@@ -98,7 +96,7 @@ public class Example {
                 // do processing here ...
                 // write changes to packet ...
                 
-                context.addAsyncTransmissionListener(chunk::markSent);
+                context.addTransmissionListener(chunk::markSent);
                 context.resumeProcessing();
             });
 
@@ -115,7 +113,7 @@ public class Example {
                     // do heavy processing here ...
                     // write changes to packet ...
                     
-                    context.addAsyncTransmissionListener(chunk::markSent);
+                    context.addTransmissionListener(chunk::markSent);
                     context.resumeProcessing();
                 });
             });

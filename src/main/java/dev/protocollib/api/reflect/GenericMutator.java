@@ -5,9 +5,6 @@ import java.util.function.UnaryOperator;
 
 public interface GenericMutator extends GenericAccessor {
 
-    MutableGenericAccessor getAccessor(Class<?> type, int ordinal);
-    MutableGenericAccessor getAccessorOrThrow(Class<?> type, int ordinal);
-
     // ====================================================
     //  Value Modification
     // ====================================================

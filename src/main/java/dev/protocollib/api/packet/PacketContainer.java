@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import dev.protocollib.api.reflect.GenericAccessor;
 
 /**
- * Representing a container for a packet.
+ * Represents a container for a packet.
  */
 public non-sealed interface PacketContainer extends PacketLike {
 
@@ -18,6 +18,11 @@ public non-sealed interface PacketContainer extends PacketLike {
     @NotNull
     PacketType packetType();
 
+    /**
+     * Provides a {@link GenericAccessor} for accessing packet fields reflectively.
+     *
+     * @return the generic accessor for packet data
+     */
     @NotNull
     GenericAccessor accessor();
 
@@ -32,8 +37,10 @@ public non-sealed interface PacketContainer extends PacketLike {
 
     /**
      * Creates and returns a mutable copy of this packet.
-     * 
-     * @return a clone of this instance
+     *
+     * <p>The cloned packet allows modifications, unlike the immutable {@code PacketContainer}.</p>
+     *
+     * @return a mutable clone of this packet container
      */
     @Nullable
     PacketContainer clone();

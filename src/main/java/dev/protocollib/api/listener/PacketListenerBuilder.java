@@ -9,6 +9,10 @@ import dev.protocollib.api.packet.PacketType;
 
 /**
  * Builder for creating and registering packet listeners.
+ * 
+ * <p>This builder allows configuring packet listeners with various settings,
+ * including the packet types they should handle, execution priority, and behavior
+ * regarding canceled packets and packet bundles.</p>
  */
 public interface PacketListenerBuilder {
 
@@ -49,6 +53,7 @@ public interface PacketListenerBuilder {
          *
          * @param bundleBehavior the bundle behavior to apply
          * @return the same builder for further configuration
+         * 
          * @see PacketListenerBundleBehavior
          */
         @Contract("_ -> this")
@@ -67,37 +72,55 @@ public interface PacketListenerBuilder {
          * Allows the listener to modify packets. By default, listeners are read-only and
          * cannot modify packets.
          *
-         * @return the same builder for further configuration
+         * @return the mutable packet listener builder for further configuration
          */
         @NotNull
         PacketListenerBuilder.Mutable mutable();
 
+        /**
+         * Registers the packet listener to operate synchronously. The listener will be executed
+         * in order relative to other synchronous listeners.
+         *
+         * @param listener the immutable synchronous packet listener to register
+         * @return the packet listener registration instance
+         */
         @NotNull
         PacketListenerRegistration registerSync(@NotNull ImmutablePacketListener listener);
 
+        /**
+         * Registers the packet listener to operate asynchronously. The listener will be executed
+         * in parallel with other asynchronous listeners, ensuring non-blocking packet processing.
+         *
+         * @param listener the immutable asynchronous packet listener to register
+         * @return the packet listener registration instance
+         */
         @NotNull
         PacketListenerRegistration registerAsync(@NotNull ImmutablePacketListener listener);
     }
 
+    /**
+     * Interface for building a mutable packet listener, allowing packet modifications.
+     */
     public interface Mutable {
 
         /**
-         * Registers the packet listener to operate synchronously. The listener
-         * will always get called on the main game thread.
+         * Registers the packet listener to operate synchronously. The listener will always
+         * be executed on the main game thread.
          *
-         * @param listener the synchronous packet listener to register
-         * @return the same builder for further configuration
+         * @param listener the synchronous mutable packet listener to register
+         * @return the packet listener registration instance
          */
         @NotNull
-        PacketListenerRegistration registerSync(@NotNull SyncPacketListener listener);
+        PacketListenerRegistration registerSync(@NotNull MutableSyncPacketListener listener);
 
         /**
-         * Registers the packet listener to operate asynchronously.
+         * Registers the packet listener to operate asynchronously. The listener will be executed
+         * in parallel with other asynchronous listeners, ensuring non-blocking packet processing.
          *
-         * @param listener the asynchronous packet listener to register
-         * @return the same builder for further configuration
+         * @param listener the asynchronous mutable packet listener to register
+         * @return the packet listener registration instance
          */
         @NotNull
-        PacketListenerRegistration registerAsync(@NotNull AsyncPacketListener listener);
+        PacketListenerRegistration registerAsync(@NotNull MutableAsyncPacketListener listener);
     }
 }

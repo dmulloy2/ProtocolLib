@@ -2,6 +2,8 @@ package dev.protocollib.api.packet;
 
 import java.util.Optional;
 
+import org.jetbrains.annotations.NotNull;
+
 import dev.protocollib.api.ProtocolDirection;
 import dev.protocollib.api.ProtocolPhase;
 import net.kyori.adventure.key.Keyed;
@@ -20,6 +22,7 @@ public interface PacketType extends Keyed {
      *
      * @return the {@link ProtocolDirection} of the packet, either clientbound or serverbound
      */
+    @NotNull
     ProtocolDirection protocolDirection();
 
     /**
@@ -29,6 +32,7 @@ public interface PacketType extends Keyed {
      *
      * @return the {@link ProtocolPhase} associated with this packet
      */
+    @NotNull
     ProtocolPhase protocolPhase();
 
     /**
@@ -42,6 +46,7 @@ public interface PacketType extends Keyed {
      *
      * @return an {@link Optional} containing the class of the packet, or empty if not applicable
      */
+    @NotNull
     Optional<Class<?>> packetClass();
 
     /**

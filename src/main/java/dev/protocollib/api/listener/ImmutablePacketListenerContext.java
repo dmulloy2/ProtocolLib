@@ -4,6 +4,9 @@ import org.jetbrains.annotations.NotNull;
 
 import dev.protocollib.api.Connection;
 
+/**
+ * Context for immutable packet listeners.
+ */
 public interface ImmutablePacketListenerContext {
 
     /**
@@ -19,12 +22,14 @@ public interface ImmutablePacketListenerContext {
      *
      * @return true if the packet is cancelled, false otherwise
      */
-    boolean isCancelledVolatile();
+    boolean isCancelled();
 
     /**
-     * Adds a listener to be invoked after the packet is sent or received.
+     * Adds a listener to be invoked after the packet is fully sent or received.
+     * The transmission listener will get invoked on the underlying channel's
+     * event-loop.
      *
      * @param listener the transmission listener to invoke
      */
-    void addAsyncTransmissionListener(@NotNull PacketTransmissionListener listener);// TODO async via netty
+    void addTransmissionListener(@NotNull PacketTransmissionListener listener);
 }

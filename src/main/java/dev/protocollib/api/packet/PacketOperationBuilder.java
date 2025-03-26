@@ -26,6 +26,8 @@ public interface PacketOperationBuilder {
 
     /**
      * Registers a listener to be called once the packet has been sent or received.
+     * The transmission listener will get invoked on the underlying channel's
+     * event-loop.
      * 
      * @param listener the listener to be notified upon packet transmission
      * @return the same builder for further configuration

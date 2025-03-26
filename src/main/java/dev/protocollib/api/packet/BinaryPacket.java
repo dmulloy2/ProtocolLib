@@ -1,5 +1,7 @@
 package dev.protocollib.api.packet;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Representing a raw binary packet with a packet id and payload.
  */
@@ -17,5 +19,6 @@ public non-sealed interface BinaryPacket extends PacketLike {
      *
      * @return the packet payload as a byte array
      */
+    @NotNull
     byte[] payload();
 }

@@ -5,17 +5,17 @@ import org.jetbrains.annotations.NotNull;
 import dev.protocollib.api.packet.MutablePacketContainer;
 
 /**
- * Functional interface for handling packets synchronously.
+ * Functional interface for handling and manipulating packets synchronously.
  */
 @FunctionalInterface
-public interface SyncPacketListener {
+public interface MutableSyncPacketListener {
 
     /**
-     * Synchronously handles a packet that was sent or received.
+     * Handles a packet that was sent or received, synchronously.
      *
      * @param packet  the packet to handle
      * @param context the context providing additional information about the packet and functions
      */
-    void handlePacket(@NotNull MutablePacketContainer packet, @NotNull SyncPacketListenerContext context);
+    void handlePacket(@NotNull MutablePacketContainer packet, @NotNull MutableSyncPacketListenerContext context);
 
 }
