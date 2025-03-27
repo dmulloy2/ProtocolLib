@@ -1085,6 +1085,7 @@ public class WrappedDataWatcher implements IDataWatcher {
                     if (arg instanceof Class<?>) {
                         innerClass = (Class<?>) arg;
                     } else if (arg instanceof ParameterizedType) {
+                    	// TODO(fix): this was build for Optional<T> and breaks for Optional<EntityReference<EntityLiving>>
                         innerClass = (Class<?>) ((ParameterizedType) arg).getActualTypeArguments()[0];
                         optional = true;
                     } else {

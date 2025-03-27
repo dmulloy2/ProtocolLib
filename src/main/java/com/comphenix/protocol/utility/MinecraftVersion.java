@@ -36,6 +36,12 @@ import org.bukkit.Server;
  * @author Kristian
  */
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
+
+    /**
+     * Version 1.21.5 - spring to life drop
+     */
+    public static final MinecraftVersion v1_21_5 = new MinecraftVersion("1.21.5");
+
     /**
      * Version 1.21.4 - the garden awakens drop
      */

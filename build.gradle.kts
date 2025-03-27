@@ -12,7 +12,7 @@ plugins {
 group = "com.comphenix.protocol"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "1.21.4"
+val mcVersion = "1.21.5"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
 val isJenkins = buildNumber.isNotEmpty()
@@ -51,7 +51,7 @@ dependencies {
     compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
     compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
     compileOnly("io.netty:netty-all:4.0.23.Final")
-    compileOnly("net.kyori:adventure-text-serializer-gson:4.14.0")
+    compileOnly("net.kyori:adventure-text-serializer-gson:4.19.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
