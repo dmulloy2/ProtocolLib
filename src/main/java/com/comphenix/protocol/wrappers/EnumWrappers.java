@@ -11,6 +11,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.Validate;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLogger;
@@ -22,10 +26,6 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMatchers;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
-
-import org.apache.commons.lang.Validate;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
 
 /**
  * Represents a generic enum converter.
@@ -640,6 +640,62 @@ public abstract class EnumWrappers {
         TRANSFER;
     }
 
+    public enum TeamCollisionRule {
+
+        ALWAYS("always"),
+        NEVER("never"),
+        PUSH_OTHER_TEAMS("pushOtherTeams"),
+        PUSH_OWN_TEAM("pushOwnTeam");
+
+        public static TeamCollisionRule fromName(String name) {
+            for (TeamCollisionRule value : values()) {
+                if (value.name.equals(name)) {
+                    return value;
+                }
+            }
+            throw new IllegalArgumentException("Unknown team collision rule: " + name);
+        }
+
+        private final String name;
+
+        TeamCollisionRule(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    public enum TeamVisibility {
+
+        ALWAYS("always"),
+        NEVER("never"),
+        HIDE_FOR_OTHER_TEAMS("hideForOtherTeams"),
+        HIDE_FOR_OWN_TEAM("hideForOwnTeam");
+
+        public static TeamVisibility fromName(String name) {
+            for (TeamVisibility value : values()) {
+                if (value.name.equals(name)) {
+                    return value;
+                }
+            }
+            throw new IllegalArgumentException("Unknown team visibility: " + name);
+        }
+
+        private final String name;
+
+        TeamVisibility(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
     private static Class<?> PROTOCOL_CLASS = null;
     private static Class<?> CLIENT_COMMAND_CLASS = null;
     private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -665,6 +721,8 @@ public abstract class EnumWrappers {
     private static Class<?> RENDER_TYPE_CLASS = null;
     private static Class<?> CHAT_FORMATTING_CLASS = null;
     private static Class<?> CLIENT_INTENT_CLASS = null;
+    private static Class<?> TEAM_COLLISION_RULE_CLASS = null;
+    private static Class<?> TEAM_VISIBILITY_CLASS = null;
 
     private static boolean INITIALIZING = false;
     private static boolean INITIALIZED = false;
@@ -772,6 +830,13 @@ public abstract class EnumWrappers {
 
             CLIENT_INTENT_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
 
+            TEAM_COLLISION_RULE_CLASS = MinecraftReflection.getNullableNMS(
+                    "world.scores.ScoreboardTeamBase$EnumTeamPush" /* Spigot Mapping */,
+                    "world.scores.Team$CollisionRule" /* Mojang Mapping */);
+            TEAM_VISIBILITY_CLASS = MinecraftReflection.getNullableNMS(
+                    "world.scores.ScoreboardTeamBase$EnumNameTagVisibility" /* Spigot Mapping */,
+                    "world.scores.Team$Visibility" /* Mojang Mapping */);
+
             associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
             associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
             associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
@@ -796,6 +861,8 @@ public abstract class EnumWrappers {
             associate(RENDER_TYPE_CLASS, RenderType.class, getRenderTypeConverter());
             associate(CHAT_FORMATTING_CLASS, ChatFormatting.class, getChatFormattingConverter());
             associate(CLIENT_INTENT_CLASS, ClientIntent.class, getClientIntentConverter());
+            associate(TEAM_COLLISION_RULE_CLASS, TeamCollisionRule.class, getTeamCollisionRuleConverter());
+            associate(TEAM_VISIBILITY_CLASS, TeamVisibility.class, getTeamVisibilityConverter());
 
             if (ENTITY_POSE_CLASS != null) {
                 associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
@@ -970,6 +1037,16 @@ public abstract class EnumWrappers {
         return CLIENT_INTENT_CLASS;
     }
 
+    public static Class<?> getTeamCollisionRuleClass() {
+        initialize();
+        return TEAM_COLLISION_RULE_CLASS;
+    }
+
+    public static Class<?> getTeamVisibilityClass() {
+        initialize();
+        return TEAM_VISIBILITY_CLASS;
+    }
+
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
         return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -1065,6 +1142,14 @@ public abstract class EnumWrappers {
 
     public static EquivalentConverter<ClientIntent> getClientIntentConverter() {
         return new EnumConverter<>(getClientIntentClass(), ClientIntent.class);
+    }
+
+    public static EquivalentConverter<TeamCollisionRule> getTeamCollisionRuleConverter() {
+        return new EnumConverter<>(getTeamCollisionRuleClass(), TeamCollisionRule.class);
+    }
+
+    public static EquivalentConverter<TeamVisibility> getTeamVisibilityConverter() {
+        return new EnumConverter<>(getTeamVisibilityClass(), TeamVisibility.class);
     }
 
     /**

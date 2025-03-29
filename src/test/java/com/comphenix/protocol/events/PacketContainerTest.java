@@ -15,6 +15,18 @@
  */
 package com.comphenix.protocol.events;
 
+import static com.comphenix.protocol.utility.TestUtils.assertItemCollectionsEqual;
+import static com.comphenix.protocol.utility.TestUtils.assertItemsEqual;
+import static com.comphenix.protocol.utility.TestUtils.equivalentItem;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -28,6 +40,21 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+
+import org.apache.commons.lang.SerializationUtils;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
@@ -65,8 +92,8 @@ import com.comphenix.protocol.wrappers.WrappedRegistry;
 import com.comphenix.protocol.wrappers.WrappedRemoteChatSessionData;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
-
 import com.google.common.collect.Lists;
+
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -84,25 +111,9 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.animal.CatVariant;
-import net.minecraft.world.entity.animal.FrogVariant;
-import org.apache.commons.lang.SerializationUtils;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import static com.comphenix.protocol.utility.TestUtils.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import net.minecraft.world.entity.animal.CatVariants;
+import net.minecraft.world.entity.animal.frog.FrogVariant;
+import net.minecraft.world.entity.animal.frog.FrogVariants;
 
 public class PacketContainerTest {
 
@@ -271,6 +282,8 @@ public class PacketContainerTest {
         NbtCompound compound = NbtFactory.ofCompound("test");
         compound.put("test", "name");
         compound.put(NbtFactory.ofList("ages", 1, 2, 3));
+        // TODO(fix): the type field got replace by `identifyRawElementType()` which is invoked
+        // 			  on write to determine the type
 
         updateTileEntity.getNbtModifier().write(0, compound);
 
@@ -910,7 +923,6 @@ public class PacketContainerTest {
 
                 // Make sure watchable collections can be cloned
                 if (type == PacketType.Play.Server.ENTITY_METADATA) {
-					net.minecraft.core.Registry<CatVariant> catVariantRegistry = BuiltInRegistries.CAT_VARIANT;
                     constructed.getDataValueCollectionModifier().write(0, Lists.newArrayList(
                             new WrappedDataValue(0, Registry.get(Byte.class), (byte) 1),
                             new WrappedDataValue(0, Registry.get(Float.class), 5F),
@@ -924,8 +936,8 @@ public class PacketContainerTest {
                                     0,
                                     Registry.getItemStackSerializer(false),
                                     BukkitConverters.getItemStackConverter().getGeneric(new ItemStack(Material.WOODEN_AXE))),
-                            new WrappedDataValue(0, Registry.get(CatVariant.class), catVariantRegistry.getValue(CatVariant.RED)),
-                            new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariant.COLD)
+                            new WrappedDataValue(0, Registry.get(CatVariant.class), CatVariants.RED),
+                            new WrappedDataValue(0, Registry.get(FrogVariant.class), FrogVariants.COLD)
                     ));
                 } else if (type == PacketType.Play.Server.CHAT || type == PacketType.Login.Server.DISCONNECT) {
                     constructed.getChatComponents().write(0, ComponentConverter.fromBaseComponent(TEST_COMPONENT));
@@ -934,7 +946,7 @@ public class PacketContainerTest {
                 } else if (type == PacketType.Play.Server.GAME_STATE_CHANGE) {
                     constructed.getStructures().write(
                             0,
-                            InternalStructure.getConverter().getSpecific(ClientboundGameEventPacket.ARROW_HIT_PLAYER));
+                            InternalStructure.getConverter().getSpecific(ClientboundGameEventPacket.WIN_GAME));
                 } else if (type == PacketType.Play.Client.USE_ITEM || type == PacketType.Play.Client.BLOCK_PLACE) {
                     constructed.getLongs().write(0, 0L); // timestamp of the packet, not sent over the network
                 }

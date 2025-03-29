@@ -1,23 +1,28 @@
 package com.comphenix.protocol.wrappers;
 
+import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Optional;
+
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.utility.MinecraftReflection;
 
 import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.DisplayInfo;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.resources.ResourceLocation;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import static com.comphenix.protocol.utility.MinecraftReflection.getMinecraftClass;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class AutoWrapperTest {
 
@@ -32,7 +37,7 @@ public class AutoWrapperTest {
         display.title = WrappedChatComponent.fromText("Test123");
         display.description = WrappedChatComponent.fromText("Test567");
         display.item = new ItemStack(Material.GOLD_INGOT);
-        display.background = Optional.of(new MinecraftKey("test"));
+        display.background = Optional.of(new ClientAsset(ResourceLocation.fromNamespaceAndPath("minecraft", "test")));
         display.frameType = WrappedFrameType.CHALLENGE;
         display.announceChat = false;
         display.showToast = true;
@@ -46,7 +51,7 @@ public class AutoWrapperTest {
         assertTrue(nms.isHidden());
         assertFalse(nms.shouldAnnounceChat());
         assertTrue(nms.getBackground().isPresent());
-        assertEquals("test", nms.getBackground().get().getPath());
+        assertEquals("test", nms.getBackground().get().id().getPath());
         validateRawText(nms.getTitle(), "Test123");
         validateRawText(nms.getDescription(), "Test567");
         assertSame(AdvancementType.CHALLENGE, nms.getType());
@@ -61,7 +66,7 @@ public class AutoWrapperTest {
               (net.minecraft.world.item.ItemStack)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
               Component.literal("Test123"),
               Component.literal("Test567"),
-			  Optional.of(ResourceLocation.fromNamespaceAndPath("minecraft", "test")),
+			  Optional.of(new ClientAsset(ResourceLocation.fromNamespaceAndPath("minecraft", "test"))),
               AdvancementType.CHALLENGE,
               true,
               false,
@@ -75,7 +80,7 @@ public class AutoWrapperTest {
         assertTrue(wrapped.hidden);
         assertFalse(wrapped.announceChat);
         assertTrue(wrapped.background.isPresent());
-        assertEquals("test", wrapped.background.get().getKey());
+        assertEquals("test", wrapped.background.get().id().getPath());
         assertEquals("\"Test123\"", wrapped.title.getJson());
         assertEquals("\"Test567\"", wrapped.description.getJson());
         assertSame(WrappedFrameType.CHALLENGE, wrapped.frameType);
@@ -91,6 +96,7 @@ public class AutoWrapperTest {
                 .field(1, BukkitConverters.getWrappedChatComponentConverter())
                 .field(2, BukkitConverters.getItemStackConverter())
                 .field(3, Converters.optional(MinecraftKey.getConverter()))
+                // TODO(fix): we would technically need a new Converter for ClientAsset here as it replace the MinecraftKey in DisplayInfo
                 .field(4, EnumWrappers.getGenericConverter(
                     getMinecraftClass("advancements.AdvancementType", "advancements.AdvancementFrameType", "advancements.FrameType"),
                     WrappedFrameType.class)
@@ -113,7 +119,7 @@ public class AutoWrapperTest {
         public WrappedChatComponent title;
         public WrappedChatComponent description;
         public ItemStack item;
-        public Optional<MinecraftKey> background;
+        public Optional<ClientAsset> background;
         public WrappedFrameType frameType;
         public boolean showToast;
         public boolean announceChat;

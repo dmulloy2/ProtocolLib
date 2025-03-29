@@ -34,6 +34,7 @@ public class WrappedComponentStyleTest {
         Style adventureStyle = Style.style(NamedTextColor.GREEN, TextDecoration.BOLD)
                 .clickEvent(ClickEvent.changePage(10));
 
+        // TODO(fix): wait for https://github.com/KyoriPowered/adventure/issues/1194 to be fixed
         WrappedComponentStyle wrapped = AdventureComponentConverter.fromStyle(adventureStyle);
         assertEquals(adventureStyle, AdventureComponentConverter.fromWrapper(wrapped));
     }

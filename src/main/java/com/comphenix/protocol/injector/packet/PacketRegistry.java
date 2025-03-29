@@ -19,8 +19,6 @@ package com.comphenix.protocol.injector.packet;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,18 +29,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Sender;
 import com.comphenix.protocol.ProtocolLogger;
+import com.comphenix.protocol.injector.packet.internal.ProtocolRegistry_1_20_5;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.FieldAccessor;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyClassContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyFieldContract;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
@@ -70,7 +65,7 @@ public class PacketRegistry {
      * 
      * @author Kristian
      */
-    private static class Register {
+    public static class Register {
         // The main lookup table
         final Map<PacketType, Optional<Class<?>>> typeToClass = new ConcurrentHashMap<>();
 
@@ -82,14 +77,18 @@ public class PacketRegistry {
         volatile Set<PacketType> clientPackets = new HashSet<>();
         final List<MapContainer> containers = new ArrayList<>();
 
-        public Register() {
+        private Register() {
         }
 
-        public void registerPacket(PacketType type, Class<?> clazz, Sender sender) {
-            typeToClass.put(type, Optional.of(clazz));
+        public void registerPacket(PacketType type, Class<?> packetClass, Sender sender, WrappedStreamCodec codec) {
+            typeToClass.put(type, Optional.of(packetClass));
+            classToType.put(packetClass, type);
 
-            classToType.put(clazz, type);
-            protocolClassToType.computeIfAbsent(type.getProtocol(), __ -> new ConcurrentHashMap<>()).put(clazz, type);
+            if (codec != null) {
+                classToCodec.put(packetClass, codec);
+            }
+
+            protocolClassToType.computeIfAbsent(type.getProtocol(), __ -> new ConcurrentHashMap<>()).put(packetClass, type);
 
             if (sender == Sender.CLIENT) {
                 clientPackets.add(type);
@@ -293,206 +292,9 @@ public class PacketRegistry {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     private static synchronized Register createRegisterV1_20_5() {
-        Object[] protocols = ENUM_PROTOCOL.getEnumConstants();
-
-        // PacketType<?> to class map
-        final Map<Object, Class<?>> packetTypeMap = new HashMap<>();
-
-        // List of all class containing PacketTypes
-        String[] packetTypesClassNames = new String[] {
-                "common.CommonPacketTypes",
-                "configuration.ConfigurationPacketTypes",
-                "cookie.CookiePacketTypes",
-                "game.GamePacketTypes",
-                "handshake.HandshakePacketTypes",
-                "login.LoginPacketTypes",
-                "ping.PingPacketTypes",
-                "status.StatusPacketTypes"
-        };
-
-        Class<?> packetTypeClass = MinecraftReflection.getMinecraftClass("network.protocol.PacketType");
-
-        for (String packetTypesClassName : packetTypesClassNames) {
-            Class<?> packetTypesClass = MinecraftReflection
-                    .getOptionalNMS("network.protocol." + packetTypesClassName)
-                    .orElse(null);
-            if (packetTypesClass == null) {
-                ProtocolLogger.debug("Can't find PacketType class: {0}, will skip it", packetTypesClassName);
-                continue;
-            }
-
-            // check every field for "static final PacketType<?>"
-            for (Field field : packetTypesClass.getDeclaredFields()) {
-                try {
-                    if (!Modifier.isFinal(field.getModifiers()) || !Modifier.isStatic(field.getModifiers())) {
-                        continue;
-                    }
-
-                    Object packetType = field.get(null);
-                    if (!packetTypeClass.isInstance(packetType)) {
-                        continue;
-                    }
-
-                    // retrieve the generic type T of the PacketType<T> field
-                    Type packet = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-                    if (packet instanceof Class<?>) {
-                        packetTypeMap.put(packetType, (Class<?>) packet);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    continue;
-                }
-            }
-        }
-
-        // ID to Packet class maps
-        final Map<Object, Map<Class<?>, Integer>> serverMaps = new LinkedHashMap<>();
-        final Map<Object, Map<Class<?>, Integer>> clientMaps = new LinkedHashMap<>();
-
-        // global registry instance
         final Register result = new Register();
-
-        // List of all class containing ProtocolInfos
-        String[] protocolClassNames = new String[] {
-                "configuration.ConfigurationProtocols",
-                "game.GameProtocols",
-                "handshake.HandshakeProtocols",
-                "login.LoginProtocols",
-                "status.StatusProtocols"
-        };
-
-        Class<?> protocolInfoClass = MinecraftReflection.getProtocolInfoClass();
-        Class<?> protocolInfoUnboundClass = MinecraftReflection.getProtocolInfoUnboundClass();
-        Class<?> streamCodecClass = MinecraftReflection.getStreamCodecClass();
-        Class<?> idCodecClass = MinecraftReflection.getMinecraftClass("network.codec.IdDispatchCodec");
-        Class<?> idCodecEntryClass = MinecraftReflection.getMinecraftClass("network.codec.IdDispatchCodec$Entry", "network.codec.IdDispatchCodec$b");
-        Class<?> protocolDirectionClass = MinecraftReflection.getPacketFlowClass();
-
-        Function<?, ?> emptyFunction = input -> input;
-
-        FuzzyReflection protocolInfoReflection = FuzzyReflection.fromClass(protocolInfoClass);
-
-        MethodAccessor protocolAccessor = Accessors.getMethodAccessor(protocolInfoReflection
-                .getMethodByReturnTypeAndParameters("id", MinecraftReflection.getEnumProtocolClass(), new Class[0]));
-
-        MethodAccessor directionAccessor = Accessors.getMethodAccessor(protocolInfoReflection
-                .getMethodByReturnTypeAndParameters("flow", protocolDirectionClass, new Class[0]));
-
-        MethodAccessor codecAccessor = Accessors.getMethodAccessor(
-                protocolInfoReflection.getMethodByReturnTypeAndParameters("codec", streamCodecClass, new Class[0]));
-
-        MethodAccessor bindAccessor = Accessors.getMethodAccessor(FuzzyReflection.fromClass(protocolInfoUnboundClass)
-                .getMethodByReturnTypeAndParameters("bind", protocolInfoClass, new Class[] { Function.class }));
-
-        FuzzyReflection idCodecReflection = FuzzyReflection.fromClass(idCodecClass, true);
-
-        FieldAccessor byIdAccessor = Accessors.getFieldAccessor(idCodecReflection
-                .getField(FuzzyFieldContract.newBuilder().typeDerivedOf(List.class).build()));
-
-        FieldAccessor toIdAccessor = Accessors.getFieldAccessor(idCodecReflection
-                .getField(FuzzyFieldContract.newBuilder().typeDerivedOf(Map.class).build()));
-
-        FuzzyReflection idCodecEntryReflection = FuzzyReflection.fromClass(idCodecEntryClass, true);
-
-        MethodAccessor idCodecEntryTypeAccessor = Accessors.getMethodAccessor(idCodecEntryReflection
-                .getMethodByReturnTypeAndParameters("type", Object.class, new Class[0]));
-
-        MethodAccessor idCodecEntrySerializerAccessor = Accessors.getMethodAccessor(idCodecEntryReflection
-                .getMethodByReturnTypeAndParameters("serializer", streamCodecClass, new Class[0]));
-
-        for (String protocolClassName : protocolClassNames) {
-            Class<?> protocolClass = MinecraftReflection
-                    .getOptionalNMS("network.protocol." + protocolClassName)
-                    .orElse(null);
-            if (protocolClass == null) {
-                ProtocolLogger.debug("Can't find protocol class: {0}, will skip it", protocolClassName);
-                continue;
-            }
-
-            for (Field field : protocolClass.getDeclaredFields()) {
-                try {
-                    // ignore none static and final fields
-                    if (!Modifier.isFinal(field.getModifiers()) || !Modifier.isStatic(field.getModifiers())) {
-                        continue;
-                    }
-
-                    Object protocolInfo = field.get(null);
-
-                    // bind unbound ProtocolInfo to empty function to get real ProtocolInfo
-                    if (protocolInfoUnboundClass.isInstance(protocolInfo)) {
-                        protocolInfo = bindAccessor.invoke(protocolInfo, new Object[] { emptyFunction });
-                    }
-
-                    // ignore any field that isn't a ProtocolInfo
-                    if (!protocolInfoClass.isInstance(protocolInfo)) {
-                        continue;
-                    }
-
-                    // get codec and check if codec is instance of IdDispatchCodec
-                    // since that is the only support codec as of now
-                    Object codec = codecAccessor.invoke(protocolInfo);
-                    if (!idCodecClass.isInstance(codec)) {
-                        continue;
-                    }
-
-                    // retrieve packetTypeMap and convert it to packetIdMap
-                    Map<Class<?>, Integer> packetMap = new HashMap<>();
-                    List<Object> serializerList = (List<Object>) byIdAccessor.get(codec);
-                    Map<Object, Integer> packetTypeIdMap = (Map<Object, Integer>) toIdAccessor.get(codec);
-
-                    for (Map.Entry<Object, Integer> entry : packetTypeIdMap.entrySet()) {
-                        Class<?> packetClass = packetTypeMap.get(entry.getKey());
-                        if (packetClass == null) {
-                            throw new RuntimeException("packetType missing packet " + entry.getKey());
-                        }
-
-                        packetMap.put(packetClass, entry.getValue());
-                    }
-
-                    // retrieve packet codecs for packet construction and write methods
-                    for (Object entry : serializerList) {
-                        Object packetType = idCodecEntryTypeAccessor.invoke(entry);
-
-                        Class<?> packetClass = packetTypeMap.get(packetType);
-                        if (packetClass == null) {
-                            throw new RuntimeException("packetType missing packet " + packetType);
-                        }
-
-                        Object serializer = idCodecEntrySerializerAccessor.invoke(entry);
-                        result.classToCodec.put(packetClass, new WrappedStreamCodec(serializer));
-                    }
-
-                    // get EnumProtocol and Direction of protocol info
-                    Object protocol = protocolAccessor.invoke(protocolInfo);
-                    String direction = directionAccessor.invoke(protocolInfo).toString();
-
-                    if (direction.contains("CLIENTBOUND")) { // Sent by Server
-                        serverMaps.put(protocol, packetMap);
-                    } else if (direction.contains("SERVERBOUND")) { // Sent by Client
-                        clientMaps.put(protocol, packetMap);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    continue;
-                }
-            }
-        }
-
-        for (Object protocol : protocols) {
-            Enum<?> enumProtocol = (Enum<?>) protocol;
-            PacketType.Protocol equivalent = PacketType.Protocol.fromVanilla(enumProtocol);
-
-            // Associate known types
-            if (serverMaps.containsKey(protocol)) {
-                associatePackets(result, reverse(serverMaps.get(protocol)), equivalent, Sender.SERVER);
-            }
-            if (clientMaps.containsKey(protocol)) {
-                associatePackets(result, reverse(clientMaps.get(protocol)), equivalent, Sender.CLIENT);
-            }
-        }
-
+        ProtocolRegistry_1_20_5.fillRegister(result);
         return result;
     }
 
@@ -517,7 +319,7 @@ public class PacketRegistry {
             PacketType type = PacketType.fromCurrent(protocol, sender, packetId, packetClass);
 
             try {
-                register.registerPacket(type, packetClass, sender);
+                register.registerPacket(type, packetClass, sender, null);
             } catch (Exception ex) {
                 ProtocolLogger.debug("Encountered an exception associating packet " + type, ex);
             }

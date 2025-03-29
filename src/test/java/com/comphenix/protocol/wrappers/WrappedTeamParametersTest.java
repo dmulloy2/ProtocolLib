@@ -1,14 +1,18 @@
 package com.comphenix.protocol.wrappers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import com.comphenix.protocol.BukkitInitialization;
+import com.comphenix.protocol.wrappers.EnumWrappers.TeamCollisionRule;
+import com.comphenix.protocol.wrappers.EnumWrappers.TeamVisibility;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import net.minecraft.world.scores.Team;
 
 public class WrappedTeamParametersTest {
     @BeforeAll
@@ -17,12 +21,12 @@ public class WrappedTeamParametersTest {
     }
 
     @Test
-    void testTeamParameters() {
+    public void testTeamParameters() {
         Component displayName = Component.literal("display name");
         Component prefix = Component.literal("prefix");
         Component suffix = Component.literal("suffix");
-        String nametagVisibility = "always";
-        String collisionRule = "never";
+        TeamVisibility nametagVisibility = TeamVisibility.ALWAYS;
+        TeamCollisionRule collisionRule = TeamCollisionRule.NEVER;
 
         WrappedTeamParameters wrapped = WrappedTeamParameters.newBuilder()
                 .displayName(WrappedChatComponent.fromHandle(displayName))
@@ -46,8 +50,8 @@ public class WrappedTeamParametersTest {
         assertEquals(handle.getDisplayName(), displayName);
         assertEquals(handle.getPlayerPrefix(), prefix);
         assertEquals(handle.getPlayerSuffix(), suffix);
-        assertEquals(handle.getNametagVisibility(), nametagVisibility);
-        assertEquals(handle.getCollisionRule(), collisionRule);
+        assertEquals(handle.getNametagVisibility(), Team.Visibility.ALWAYS);
+        assertEquals(handle.getCollisionRule(), Team.CollisionRule.NEVER);
         assertEquals(handle.getColor(), ChatFormatting.RED);
         assertEquals(handle.getOptions(), 1);
     }
