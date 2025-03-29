@@ -28,7 +28,7 @@ public class ProtocolContexts {
         });
     }
 
-    private static Object createContext(Class<?> interfaceClass, SimpleInvocationHandler handler) {
+    private static Object createContext(Class<?> interfaceClass, InvocationHandler handler) {
     	if (interfaceClass == null) {
     		return null;
     	}
@@ -40,10 +40,5 @@ public class ProtocolContexts {
                 return handler.invoke(proxy, method, args);
             }
         });
-    }
-
-    @FunctionalInterface
-    private interface SimpleInvocationHandler {
-        Object invoke(Object proxy, Method method, Object[] args) throws Throwable;
     }
 }

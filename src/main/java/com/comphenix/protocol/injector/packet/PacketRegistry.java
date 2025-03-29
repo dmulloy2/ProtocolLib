@@ -82,9 +82,11 @@ public class PacketRegistry {
 
         public void registerPacket(PacketType type, Class<?> packetClass, Sender sender, WrappedStreamCodec codec) {
             typeToClass.put(type, Optional.of(packetClass));
-
             classToType.put(packetClass, type);
-            classToCodec.put(packetClass, codec);
+
+            if (codec != null) {
+                classToCodec.put(packetClass, codec);
+            }
 
             protocolClassToType.computeIfAbsent(type.getProtocol(), __ -> new ConcurrentHashMap<>()).put(packetClass, type);
 
