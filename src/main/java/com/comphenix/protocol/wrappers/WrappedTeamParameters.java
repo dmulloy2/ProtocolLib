@@ -1,11 +1,15 @@
 package com.comphenix.protocol.wrappers;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.EnumWrappers.TeamCollisionRule;
+import com.comphenix.protocol.wrappers.EnumWrappers.TeamVisibility;
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A wrapper around the team parameters NMS class.
@@ -35,11 +39,16 @@ public class WrappedTeamParameters extends AbstractWrapper {
     }
 
     private final StructureModifier<Object> modifier;
+    private final StructureModifier<TeamVisibility> visiblityModifier;
+    private final StructureModifier<TeamCollisionRule> collisionRuleModifier;
 
     public WrappedTeamParameters(Object handle) {
         super(getNmsClassOrThrow());
         setHandle(handle);
+
         this.modifier = new StructureModifier<>(getNmsClassOrThrow()).withTarget(handle);
+        this.visiblityModifier = this.modifier.withType(EnumWrappers.getTeamVisibilityClass(), EnumWrappers.getTeamVisibilityConverter());
+        this.collisionRuleModifier = this.modifier.withType(EnumWrappers.getTeamCollisionRuleClass(), EnumWrappers.getTeamCollisionRuleConverter());
     }
 
     @NotNull
@@ -58,19 +67,32 @@ public class WrappedTeamParameters extends AbstractWrapper {
     }
 
     @NotNull
-    public String getNametagVisibility() {
-        return modifier.<String>withType(String.class).read(0);
+    public TeamVisibility getNametagVisibility() {
+        TeamVisibility visibility = this.visiblityModifier.readSafely(0);
+
+        if (visibility == null) {
+            return TeamVisibility.fromName(modifier.<String>withType(String.class).read(0));
+        } else {
+            return visibility;
+        }
     }
 
     @NotNull
-    public String getCollisionRule() {
-        return modifier.<String>withType(String.class).read(1);
+    public TeamCollisionRule getCollisionRule() {
+        TeamCollisionRule collisionRule = this.collisionRuleModifier.readSafely(0);
+
+        if (collisionRule == null) {
+            return TeamCollisionRule.fromName(modifier.<String>withType(String.class).read(1));
+        } else {
+            return collisionRule;
+        }
     }
 
     @NotNull
     public EnumWrappers.ChatFormatting getColor() {
-        Object handle = modifier.withType(EnumWrappers.getChatFormattingClass()).read(0);
-        return EnumWrappers.getChatFormattingConverter().getSpecific(handle);
+        return modifier
+                .withType(EnumWrappers.getChatFormattingClass(), EnumWrappers.getChatFormattingConverter())
+                .read(0);
     }
 
     public int getOptions() {
@@ -88,7 +110,8 @@ public class WrappedTeamParameters extends AbstractWrapper {
 
     public static class Builder {
         private WrappedChatComponent displayName, prefix, suffix;
-        private String nametagVisibility, collisionRule;
+        private TeamVisibility nametagVisibility;
+        private TeamCollisionRule collisionRule;
         private EnumWrappers.ChatFormatting color;
         private int options;
 
@@ -122,13 +145,13 @@ public class WrappedTeamParameters extends AbstractWrapper {
             return this;
         }
 
-        public Builder nametagVisibility(@NotNull String nametagVisibility) {
+        public Builder nametagVisibility(@NotNull TeamVisibility nametagVisibility) {
             Preconditions.checkNotNull(nametagVisibility);
             this.nametagVisibility = nametagVisibility;
             return this;
         }
 
-        public Builder collisionRule(@NotNull String collisionRule) {
+        public Builder collisionRule(@NotNull TeamCollisionRule collisionRule) {
             Preconditions.checkNotNull(collisionRule);
             this.collisionRule = collisionRule;
             return this;
@@ -160,8 +183,15 @@ public class WrappedTeamParameters extends AbstractWrapper {
             wrapped.writeComponent(0, displayName);
             wrapped.writeComponent(1, prefix);
             wrapped.writeComponent(2, suffix);
-            wrapped.modifier.withType(String.class).write(0, nametagVisibility);
-            wrapped.modifier.withType(String.class).write(1, collisionRule);
+
+            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+                wrapped.visiblityModifier.writeSafely(0, nametagVisibility);
+                wrapped.collisionRuleModifier.writeSafely(0, collisionRule);
+            } else {
+                wrapped.modifier.withType(String.class).writeSafely(0, nametagVisibility.toString());
+                wrapped.modifier.withType(String.class).writeSafely(1, collisionRule.toString());
+            }
+
             wrapped.modifier.withType(EnumWrappers.getChatFormattingClass()).write(0, EnumWrappers.getChatFormattingConverter().getGeneric(color));
             wrapped.modifier.withType(int.class).write(0, options);
             return wrapped;
