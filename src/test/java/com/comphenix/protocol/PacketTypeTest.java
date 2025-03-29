@@ -59,9 +59,8 @@ public class PacketTypeTest {
     }
 
      public static void main(String[] args) throws Exception {
-//    public void generateNewPackets() throws Exception {
         BukkitInitialization.initializeAll();
-        
+
         PacketType.onDynamicCreate = (type, className) -> {
         	String packetTypeClassName = className;
 

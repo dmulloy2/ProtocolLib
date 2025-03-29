@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import com.comphenix.protocol.injector.StructureCache;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers.TeamCollisionRule;
 import com.comphenix.protocol.wrappers.EnumWrappers.TeamVisibility;
 import com.google.common.base.Preconditions;
@@ -67,31 +68,31 @@ public class WrappedTeamParameters extends AbstractWrapper {
 
     @NotNull
     public TeamVisibility getNametagVisibility() {
-    	TeamVisibility visibility = this.visiblityModifier.readSafely(0);
+        TeamVisibility visibility = this.visiblityModifier.readSafely(0);
 
-    	if (visibility == null) {
-    		return TeamVisibility.fromName(modifier.<String>withType(String.class).read(0));
-    	} else {
-    		return visibility;
-    	}
+        if (visibility == null) {
+            return TeamVisibility.fromName(modifier.<String>withType(String.class).read(0));
+        } else {
+            return visibility;
+        }
     }
 
     @NotNull
     public TeamCollisionRule getCollisionRule() {
-    	TeamCollisionRule collisionRule = this.collisionRuleModifier.readSafely(0);
+        TeamCollisionRule collisionRule = this.collisionRuleModifier.readSafely(0);
 
-    	if (collisionRule == null) {
-    		return TeamCollisionRule.fromName(modifier.<String>withType(String.class).read(1));
-    	} else {
-    		return collisionRule;
-    	}
+        if (collisionRule == null) {
+            return TeamCollisionRule.fromName(modifier.<String>withType(String.class).read(1));
+        } else {
+            return collisionRule;
+        }
     }
 
     @NotNull
     public EnumWrappers.ChatFormatting getColor() {
         return modifier
-        		.withType(EnumWrappers.getChatFormattingClass(), EnumWrappers.getChatFormattingConverter())
-        		.read(0);
+                .withType(EnumWrappers.getChatFormattingClass(), EnumWrappers.getChatFormattingConverter())
+                .read(0);
     }
 
     public int getOptions() {
@@ -183,11 +184,13 @@ public class WrappedTeamParameters extends AbstractWrapper {
             wrapped.writeComponent(1, prefix);
             wrapped.writeComponent(2, suffix);
 
-            wrapped.visiblityModifier.writeSafely(0, nametagVisibility);
-            wrapped.modifier.withType(String.class).writeSafely(0, nametagVisibility.toString());
-
-            wrapped.collisionRuleModifier.writeSafely(0, collisionRule);
-            wrapped.modifier.withType(String.class).writeSafely(1, collisionRule.toString());
+            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+                wrapped.visiblityModifier.writeSafely(0, nametagVisibility);
+                wrapped.collisionRuleModifier.writeSafely(0, collisionRule);
+            } else {
+                wrapped.modifier.withType(String.class).writeSafely(0, nametagVisibility.toString());
+                wrapped.modifier.withType(String.class).writeSafely(1, collisionRule.toString());
+            }
 
             wrapped.modifier.withType(EnumWrappers.getChatFormattingClass()).write(0, EnumWrappers.getChatFormattingConverter().getGeneric(color));
             wrapped.modifier.withType(int.class).write(0, options);

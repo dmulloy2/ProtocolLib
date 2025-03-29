@@ -642,58 +642,58 @@ public abstract class EnumWrappers {
 
     public enum TeamCollisionRule {
 
-    	ALWAYS("always"),
-    	NEVER("never"),
-    	PUSH_OTHER_TEAMS("pushOtherTeams"),
-    	PUSH_OWN_TEAM("pushOwnTeam");
+        ALWAYS("always"),
+        NEVER("never"),
+        PUSH_OTHER_TEAMS("pushOtherTeams"),
+        PUSH_OWN_TEAM("pushOwnTeam");
 
-    	public static TeamCollisionRule fromName(String name) {
-    		for (TeamCollisionRule value : values()) {
-    			if (value.name.equals(name)) {
-    				return value;
-    			}
-    		}
-    		throw new IllegalArgumentException("Unknown team collision rule: " + name);
-    	}
+        public static TeamCollisionRule fromName(String name) {
+            for (TeamCollisionRule value : values()) {
+                if (value.name.equals(name)) {
+                    return value;
+                }
+            }
+            throw new IllegalArgumentException("Unknown team collision rule: " + name);
+        }
 
-    	private final String name;
+        private final String name;
 
-    	TeamCollisionRule(String name) {
-			this.name = name;
-		}
+        TeamCollisionRule(String name) {
+            this.name = name;
+        }
 
-		@Override
-		public String toString() {
-			return name;
-		}
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     public enum TeamVisibility {
 
-    	ALWAYS("always"),
-    	NEVER("never"),
-    	HIDE_FOR_OTHER_TEAMS("hideForOtherTeams"),
-    	HIDE_FOR_OWN_TEAM("hideForOwnTeam");
+        ALWAYS("always"),
+        NEVER("never"),
+        HIDE_FOR_OTHER_TEAMS("hideForOtherTeams"),
+        HIDE_FOR_OWN_TEAM("hideForOwnTeam");
 
-    	public static TeamVisibility fromName(String name) {
-    		for (TeamVisibility value : values()) {
-    			if (value.name.equals(name)) {
-    				return value;
-    			}
-    		}
-    		throw new IllegalArgumentException("Unknown team visibility: " + name);
-    	}
+        public static TeamVisibility fromName(String name) {
+            for (TeamVisibility value : values()) {
+                if (value.name.equals(name)) {
+                    return value;
+                }
+            }
+            throw new IllegalArgumentException("Unknown team visibility: " + name);
+        }
 
-    	private final String name;
+        private final String name;
 
-		TeamVisibility(String name) {
-			this.name = name;
-		}
+        TeamVisibility(String name) {
+            this.name = name;
+        }
 
-		@Override
-		public String toString() {
-			return name;
-		}
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     private static Class<?> PROTOCOL_CLASS = null;
@@ -831,11 +831,11 @@ public abstract class EnumWrappers {
             CLIENT_INTENT_CLASS = getEnum(PacketType.Handshake.Client.SET_PROTOCOL.getPacketClass(), 0);
 
             TEAM_COLLISION_RULE_CLASS = MinecraftReflection.getNullableNMS(
-            		"world.scores.ScoreboardTeamBase$EnumTeamPush" /* Spigot Mapping */,
-            		"world.scores.Team$CollisionRule" /* Mojang Mapping */);
+                    "world.scores.ScoreboardTeamBase$EnumTeamPush" /* Spigot Mapping */,
+                    "world.scores.Team$CollisionRule" /* Mojang Mapping */);
             TEAM_VISIBILITY_CLASS = MinecraftReflection.getNullableNMS(
-            		"world.scores.ScoreboardTeamBase$EnumNameTagVisibility" /* Spigot Mapping */,
-            		"world.scores.Team$Visibility" /* Mojang Mapping */);
+                    "world.scores.ScoreboardTeamBase$EnumNameTagVisibility" /* Spigot Mapping */,
+                    "world.scores.Team$Visibility" /* Mojang Mapping */);
 
             associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
             associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
