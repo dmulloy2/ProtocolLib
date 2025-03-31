@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -40,7 +41,6 @@ import com.comphenix.protocol.wrappers.EnumWrappers.EntityPose;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 
 import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
@@ -66,7 +66,7 @@ public class WrappedDataWatcher implements IDataWatcher {
      * Constructs a new DataWatcher wrapper around a NMS handle. The resulting
      * DataWatcher will likely have existing values that can be removed with
      * {@link #clear()}.
-     * 
+     *
      * @param handle DataWatcher handle
      */
     public WrappedDataWatcher(Object handle) {
@@ -90,7 +90,7 @@ public class WrappedDataWatcher implements IDataWatcher {
      * Constructs a new DataWatcher using a real entity. The resulting
      * DataWatcher will not have any keys or values and new ones will have to
      * be added using watcher objects.
-     * 
+     *
      * @param entity The entity
      */
     public WrappedDataWatcher(Entity entity) {
@@ -102,7 +102,7 @@ public class WrappedDataWatcher implements IDataWatcher {
     /**
      * Constructs a new DataWatcher using a fake egg entity and a given
      * list of watchable objects.
-     * 
+     *
      * @param objects The list of objects
      */
     public WrappedDataWatcher(List<WrappedWatchableObject> objects) {
@@ -152,7 +152,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Gets the item at a given index.
-     * 
+     *
      * @param index Index to get
      * @return The watchable object, or null if none exists
      */
@@ -170,7 +170,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Removes the item at a given index.
-     * 
+     *
      * @param index Index to remove
      * @return The previous value, or null if none existed
      */
@@ -180,7 +180,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Whether or not this DataWatcher has an object at a given index.
-     * 
+     *
      * @param index Index to check for
      * @return True if it does, false if not
      */
@@ -209,7 +209,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Get a watched byte.
-     * 
+     *
      * @param index - index of the watched byte.
      * @return The watched byte, or NULL if this value doesn't exist.
      */
@@ -225,7 +225,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Get a watched short.
-     * 
+     *
      * @param index - index of the watched short.
      * @return The watched short, or NULL if this value doesn't exist.
      */
@@ -237,7 +237,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Get a watched integer.
-     * 
+     *
      * @param index - index of the watched integer.
      * @return The watched integer, or NULL if this value doesn't exist.
      */
@@ -263,7 +263,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Get a watched float.
-     * 
+     *
      * @param index - index of the watched float.
      * @return The watched float, or NULL if this value doesn't exist.
      */
@@ -279,7 +279,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Get a watched string.
-     * 
+     *
      * @param index - index of the watched string.
      * @return The watched string, or NULL if this value doesn't exist.
      */
@@ -315,7 +315,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Get a watched string.
-     * 
+     *
      * @param index - index of the watched string.
      * @return The watched string, or NULL if this value doesn't exist.
      */
@@ -477,7 +477,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Retrieve a watchable object by index.
-     * 
+     *
      * @param index Index of the object to retrieve.
      * @return The watched object or null if it doesn't exist.
      */
@@ -487,7 +487,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Retrieve a watchable object by watcher object.
-     * 
+     *
      * @param object The watcher object
      * @return The watched object or null if it doesn't exist.
      */
@@ -500,11 +500,11 @@ public class WrappedDataWatcher implements IDataWatcher {
     /**
      * Sets the DataWatcher Item at a given index to a new value. In 1.9 and up,
      * you cannot register objects without a watcher object.
-     * 
+     *
      * @param index Index of the object to set
      * @param value New value
      * @param update Whether or not to inform the client
-     * 
+     *
      * @see WrappedDataWatcher#setObject(WrappedDataWatcherObject, Object, boolean)
      * @throws IllegalArgumentException in 1.9 and up if there isn't already an
      *      object at this index
@@ -526,12 +526,12 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Sets the DataWatcher Item at a given index to a new value.
-     * 
+     *
      * @param index Index of the object to set
      * @param serializer Serializer from {@link Registry#get(Class)}
      * @param value New value
      * @param update Whether or not to inform the client
-     * 
+     *
      * @see WrappedDataWatcher#setObject(WrappedDataWatcherObject, Object)
      */
     public void setObject(int index, Serializer serializer, Object value, boolean update) {
@@ -547,11 +547,11 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Sets the DataWatcher Item at a given index to a new value.
-     * 
+     *
      * @param index Index of the object to set
      * @param value New value
      * @param update Whether or not to inform the client
-     * 
+     *
      * @see WrappedDataWatcher#setObject(int, Object, boolean)
      */
     public void setObject(int index, WrappedWatchableObject value, boolean update) {
@@ -567,11 +567,11 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Sets the DataWatcher Item associated with a given watcher object to a new value.
-     * 
+     *
      * @param object Associated watcher object
      * @param value Wrapped value
      * @param update Whether or not to inform the client
-     * 
+     *
      * @see #setObject(WrappedDataWatcherObject, Object)
      */
     public void setObject(WrappedDataWatcherObject object, WrappedWatchableObject value, boolean update) {
@@ -589,10 +589,10 @@ public class WrappedDataWatcher implements IDataWatcher {
      * Sets the DataWatcher Item associated with a given watcher object to a
      * new value. If there is not already an object at this index, the
      * specified watcher object must have a serializer.
-     * 
+     *
      * @param object Associated watcher object
      * @param value New value
-     * 
+     *
      * @throws IllegalArgumentException If the watcher object is null or must
      *          have a serializer and does not have one.
      */
@@ -611,7 +611,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Clone the content of the current DataWatcher.
-     * 
+     *
      * @return A cloned data watcher.
      */
     public WrappedDataWatcher deepClone() {
@@ -628,7 +628,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
     /**
      * Retrieve the data watcher associated with an entity.
-     * 
+     *
      * @param entity - the entity to read from.
      * @return Associated data watcher.
      */
@@ -682,7 +682,7 @@ public class WrappedDataWatcher implements IDataWatcher {
     /**
      * Retrieves the type ID associated with a given class. No longer supported
      * in 1.9 and up due to the removal of type IDs.
-     * 
+     *
      * @param clazz Class to find ID for
      * @return The ID, or null if not found
      */
@@ -693,7 +693,7 @@ public class WrappedDataWatcher implements IDataWatcher {
     /**
      * Retrieves the class associated with a given type ID. No longer
      * supported in 1.9 and up due to the removal of type IDs.
-     * 
+     *
      * @param typeID ID to find Class for
      * @return The Class, or null if not found
      */
@@ -729,7 +729,7 @@ public class WrappedDataWatcher implements IDataWatcher {
     /**
      * Represents a DataWatcherObject in 1.9. In order to register an object,
      * the serializer must be specified.
-     * 
+     *
      * @author dmulloy2
      */
     public static class WrappedDataWatcherObject {
@@ -745,7 +745,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
         /**
          * Creates a new watcher object from a NMS handle.
-         * 
+         *
          * @param handle The handle
          */
         public WrappedDataWatcherObject(Object handle) {
@@ -755,7 +755,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
         /**
          * Creates a new watcher object from an index and serializer.
-         * 
+         *
          * @param index Index
          * @param serializer Serializer, see {@link Registry}
          */
@@ -795,7 +795,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
         /**
          * Gets this watcher object's index.
-         * 
+         *
          * @return The index
          */
         public int getIndex() {
@@ -805,7 +805,7 @@ public class WrappedDataWatcher implements IDataWatcher {
         /**
          * Gets this watcher object's serializer. Will return null if the
          * serializer was never specified.
-         * 
+         *
          * @return The serializer, or null
          */
         public Serializer getSerializer() {
@@ -911,23 +911,36 @@ public class WrappedDataWatcher implements IDataWatcher {
     /**
      * Represents a DataWatcherSerializer in 1.9. If a Serializer is optional,
      * values must be wrapped in a {@link Optional}.
-     * 
+     *
      * @author dmulloy2
      */
     public static class Serializer extends AbstractWrapper {
         private static final Class<?> HANDLE_TYPE = MinecraftReflection.getDataWatcherSerializerClass();
 
-        private final Class<?> type;
+        private final Type type;
         private final boolean optional;
 
         /**
          * Constructs a new Serializer
-         * 
+         *
+         * @param type Type it serializes
+         * @param handle NMS handle
+         * @param optional Whether or not it's {@link Optional}
+         * @deprecated Use {@link Serializer#Serializer(Type, Object, boolean)} instead.
+         */
+        @Deprecated(forRemoval = true)
+        public Serializer(Class<?> type, Object handle, boolean optional) {
+            this((Type) type, handle, optional);
+        }
+
+        /**
+         * Constructs a new Serializer
+         *
          * @param type Type it serializes
          * @param handle NMS handle
          * @param optional Whether or not it's {@link Optional}
          */
-        public Serializer(Class<?> type, Object handle, boolean optional) {
+        public Serializer(Type type, Object handle, boolean optional) {
             super(HANDLE_TYPE);
             this.type = type;
             this.optional = optional;
@@ -937,17 +950,32 @@ public class WrappedDataWatcher implements IDataWatcher {
 
         /**
          * Gets the type this serializer serializes.
-         * 
+         *
          * @return The type
+         * @deprecated use {@link #getGenericType()} instead.
          */
+        @Deprecated(forRemoval = true)
         public Class<?> getType() {
-            return type;
+            if (this.type instanceof Class<?> c) {
+                return c;
+            }
+
+            throw new IllegalStateException("Serializer does not serialize a class");
+        }
+
+        /**
+         * Gets the type this serializer serializes.
+         *
+         * @return The type.
+         */
+        public Type getGenericType() {
+            return this.type;
         }
 
         /**
          * Whether or not this serializer is optional, that is whether or not
          * the return type is wrapped in a {@link Optional}.
-         * 
+         *
          * @return True if it is, false if not
          */
         public boolean isOptional() {
@@ -986,11 +1014,19 @@ public class WrappedDataWatcher implements IDataWatcher {
     public static class Registry {
         private static boolean INITIALIZED = false;
 
-        private static Map<Class<?>, Serializer> RAW_REGISTRY = null;
-        private static Map<Class<?>, Serializer> OPTIONAL_REGISTRY = null;
+        private static Map<Type, Serializer> RAW_REGISTRY = null;
+        private static Map<Type, Serializer> OPTIONAL_REGISTRY = null;
 
         /**
-         * Gets the first serializer associated with a given class.
+         * @deprecated use {@link #get(Type)} instead.
+         */
+        @Deprecated(forRemoval = true)
+        public static Serializer get(Class<?> clazz) {
+            return get((Type) clazz);
+        }
+
+        /**
+         * Gets the first serializer associated with a given type.
          *
          * <p><b>Note</b>: If {@link Serializer#isOptional() the serializer is optional},
          *   values <i>must</i> be wrapped in an {@link Optional}.</p>
@@ -998,39 +1034,46 @@ public class WrappedDataWatcher implements IDataWatcher {
          * <p>If there are multiple serializers for a given class (i.e. BlockPosition),
          *   you should use {@link #get(Class, boolean)} for more precision.</p>
          *
-         * @param clazz Class to find serializer for
+         * @param type Type to find serializer for
          * @return The serializer, or null if none exists
          */
-        public static Serializer get(Class<?> clazz) {
-            Validate.notNull(clazz,"Class cannot be null!");
+        public static Serializer get(Type type) {
+            Validate.notNull(type,"Type cannot be null!");
             initialize();
 
-            Serializer serializer = RAW_REGISTRY.getOrDefault(clazz,
-                OPTIONAL_REGISTRY.getOrDefault(clazz, null));
+            Serializer serializer = RAW_REGISTRY.getOrDefault(type, OPTIONAL_REGISTRY.get(type));
             if (serializer == null) {
-                throw new IllegalArgumentException("No serializer found for " + clazz);
+                throw new IllegalArgumentException("No serializer found for " + type);
             }
 
             return serializer;
         }
 
         /**
-         * Gets the first serializer associated with a given class and optional state.
+         * @deprecated use {@link #get(Type, boolean)} instead.
+         */
+        @Deprecated(forRemoval = true)
+        public static Serializer get(Class<?> clazz, boolean optional) {
+            return get((Type) clazz, optional);
+        }
+
+        /**
+         * Gets the first serializer associated with a given type and optional state.
          * <br/>
          * <b>Note</b>: If the serializer is optional, values <i>must</i> be
          * wrapped in an {@link Optional}
          *
-         * @param clazz Class to find serializer for
+         * @param type Type to find serializer for
          * @param optional Optional state
          * @return The serializer, or null if none exists
          */
-        public static Serializer get(Class<?> clazz, boolean optional) {
-            Validate.notNull(clazz, "Class cannot be null!");
+        public static Serializer get(Type type, boolean optional) {
+            Validate.notNull(type, "Type cannot be null!");
             initialize();
 
-            Serializer serializer = optional ? OPTIONAL_REGISTRY.get(clazz) : RAW_REGISTRY.get(clazz);
+            Serializer serializer = optional ? OPTIONAL_REGISTRY.get(type) : RAW_REGISTRY.get(type);
             if (serializer == null) {
-                throw new IllegalArgumentException("No serializer found for " + (optional ? "Optional<" + clazz + ">" : clazz));
+                throw new IllegalArgumentException("No serializer found for " + (optional ? "Optional<" + type + ">" : type));
             }
 
             return serializer;
@@ -1067,53 +1110,41 @@ public class WrappedDataWatcher implements IDataWatcher {
                 return;
             }
 
-            Map<Class<?>, Serializer> rawRegistry = new HashMap<>();
-            Map<Class<?>, Serializer> optionalRegistry = new HashMap<>();
+            Map<Type, Serializer> rawRegistry = new HashMap<>();
+            Map<Type, Serializer> optionalRegistry = new HashMap<>();
 
             List<Field> candidates = FuzzyReflection.fromClass(MinecraftReflection.getDataWatcherRegistryClass(), true)
                     .getFieldListByType(MinecraftReflection.getDataWatcherSerializerClass());
             for (Field candidate : candidates) {
-                Type generic = candidate.getGenericType();
-                if (generic instanceof ParameterizedType) {
-                    ParameterizedType type = (ParameterizedType) generic;
-                    Type[] args = type.getActualTypeArguments();
-                    Type arg = args[0];
-
-                    Class<?> innerClass;
-                    boolean optional = false;
-
-                    if (arg instanceof Class<?>) {
-                        innerClass = (Class<?>) arg;
-                    } else if (arg instanceof ParameterizedType) {
-                    	// TODO(fix): this was build for Optional<T> and breaks for Optional<EntityReference<EntityLiving>>
-                        innerClass = (Class<?>) ((ParameterizedType) arg).getActualTypeArguments()[0];
-                        optional = true;
-                    } else {
-                        throw new IllegalStateException("Failed to find inner class of field " + candidate);
-                    }
-
+                if (candidate.getGenericType() instanceof ParameterizedType cpt) {
                     Object serializer;
-
                     try {
                         serializer = candidate.get(null);
+                        Objects.requireNonNull(serializer, "Failed to read serializer: " + candidate.getName());
                     } catch (ReflectiveOperationException e) {
                         throw new IllegalStateException("Failed to read field " + candidate);
                     }
 
-                    if (serializer == null) {
-                        throw new RuntimeException("Failed to read serializer: " + candidate.getName());
+                    // all types are wrapped in EntityDataSerializer<?>
+                    Type serializingType = cpt.getActualTypeArguments()[0];
+                    if (serializingType instanceof ParameterizedType spt) {
+                        Class<?> root = (Class<?>) spt.getRawType();
+                        if (root == Optional.class) {
+                            // special case: EntityDataSerializer<Optional<?>>
+                            Type actualType = spt.getActualTypeArguments()[0];
+                            Serializer wrappedSerializer = new Serializer(actualType, serializer, true);
+                            optionalRegistry.put(actualType, wrappedSerializer);
+                            continue;
+                        }
                     }
 
-                    if (optional) {
-                        optionalRegistry.put(innerClass, new Serializer(innerClass, serializer, true));
-                    } else {
-                        rawRegistry.put(innerClass, new Serializer(innerClass, serializer, false));
-                    }
+                    Serializer wrappedSerializer = new Serializer(serializingType, serializer, false);
+                    rawRegistry.put(serializingType, wrappedSerializer);
                 }
             }
 
-            RAW_REGISTRY = ImmutableMap.copyOf(rawRegistry);
-            OPTIONAL_REGISTRY = ImmutableMap.copyOf(optionalRegistry);
+            RAW_REGISTRY = Map.copyOf(rawRegistry);
+            OPTIONAL_REGISTRY = Map.copyOf(optionalRegistry);
         }
 
         // ---- Helper methods
