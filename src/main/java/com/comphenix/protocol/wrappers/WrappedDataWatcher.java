@@ -1043,7 +1043,7 @@ public class WrappedDataWatcher implements IDataWatcher {
 
             Serializer serializer = RAW_REGISTRY.getOrDefault(type, OPTIONAL_REGISTRY.get(type));
             if (serializer == null) {
-              throw new IllegalArgumentException("No serializer found for " + type);
+                throw new IllegalArgumentException("No serializer found for " + type);
             }
 
             return serializer;
@@ -1054,7 +1054,7 @@ public class WrappedDataWatcher implements IDataWatcher {
          */
         @Deprecated(forRemoval = true)
         public static Serializer get(Class<?> clazz, boolean optional) {
-          return get((Type) clazz, optional);
+            return get((Type) clazz, optional);
         }
 
         /**
@@ -1068,15 +1068,15 @@ public class WrappedDataWatcher implements IDataWatcher {
          * @return The serializer, or null if none exists
          */
         public static Serializer get(Type type, boolean optional) {
-          Validate.notNull(type, "Type cannot be null!");
-          initialize();
+            Validate.notNull(type, "Type cannot be null!");
+            initialize();
 
-          Serializer serializer = optional ? OPTIONAL_REGISTRY.get(type) : RAW_REGISTRY.get(type);
-          if (serializer == null) {
-            throw new IllegalArgumentException("No serializer found for " + (optional ? "Optional<" + type + ">" : type));
-          }
+            Serializer serializer = optional ? OPTIONAL_REGISTRY.get(type) : RAW_REGISTRY.get(type);
+            if (serializer == null) {
+                throw new IllegalArgumentException("No serializer found for " + (optional ? "Optional<" + type + ">" : type));
+            }
 
-          return serializer;
+            return serializer;
         }
 
         /**
