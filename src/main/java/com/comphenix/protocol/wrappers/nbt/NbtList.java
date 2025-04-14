@@ -23,7 +23,7 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
     String EMPTY_NAME = "";
     
     /**
-     * Get the type of each element.
+     * Get the type of each element. For heterogeneous lists this will return the type of the first element.
      * <p>
      * This will be {@link NbtType#TAG_END TAG_END} if the NBT list has just been created.
      * @return Element type.
@@ -33,7 +33,9 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
     /**
      * Set the type of each element.
      * @param type - type of each element.
+     * @deprecated no-op since 1.21.5
      */
+    @Deprecated
     void setElementType(NbtType type);
     
     /**

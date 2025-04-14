@@ -17,6 +17,7 @@
 
 package com.comphenix.protocol.wrappers.nbt;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.collection.ConvertedList;
 import com.comphenix.protocol.wrappers.nbt.io.NbtBinarySerializer;
 import com.google.common.base.Joiner;
@@ -103,7 +104,9 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
      */
     public WrappedList(Object handle) {
         this.container = new WrappedElement<>(handle);
-        this.elementType = container.getSubType();
+        if (!MinecraftVersion.v1_21_5.atOrAbove()) {
+            this.elementType = container.getSubType();
+        }
     }
     
     /**
@@ -113,7 +116,9 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
      */
     public WrappedList(Object handle, String name) {
         this.container = new WrappedElement<>(handle, name);
-        this.elementType = container.getSubType();
+        if (!MinecraftVersion.v1_21_5.atOrAbove()) {
+            this.elementType = container.getSubType();
+        }
     }
 
     @Override
@@ -141,13 +146,20 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
     
     @Override
     public NbtType getElementType() {
-        return elementType;
+        if (!MinecraftVersion.v1_21_5.atOrAbove()) {
+            return elementType;
+        } else {
+            List<NbtBase<TType>> value = getValue();
+            return value.isEmpty() ? NbtType.TAG_END : value.get(0).getType();
+        }
     }
     
     @Override
     public void setElementType(NbtType type) {
-        this.elementType = type;
-        container.setSubType(type);
+        if (!MinecraftVersion.v1_21_5.atOrAbove()) {
+            this.elementType = type;
+            container.setSubType(type);
+        }
     }
 
     @Override
@@ -171,14 +183,16 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
                     if (!element.getName().equals(EMPTY_NAME))
                         throw new IllegalArgumentException("Cannot add a the named NBT tag " + element + " to a list.");
                     
-                    // Check element type
-                    if (getElementType() != NbtType.TAG_END) {
-                        if (!element.getType().equals(getElementType())) {
-                            throw new IllegalArgumentException(
-                                    "Cannot add " + element + " of " + element.getType() + " to a list of type " + getElementType());
+                    if (!MinecraftVersion.v1_21_5.atOrAbove()) {
+                        // Check element type
+                        if (getElementType() != NbtType.TAG_END) {
+                            if (!element.getType().equals(getElementType())) {
+                                throw new IllegalArgumentException(
+                                        "Cannot add " + element + " of " + element.getType() + " to a list of type " + getElementType());
+                            }
+                        } else {
+                            container.setSubType(element.getType());
                         }
-                    } else {
-                        container.setSubType(element.getType());
                     }
                 }
                 
@@ -355,7 +369,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
         }
         
         // Update the sub type as well
-        if (lastElement != null) {
+        if (lastElement != null && !MinecraftVersion.v1_21_5.atOrAbove()) {
             container.setSubType(lastElement.getType());
         }
     }
