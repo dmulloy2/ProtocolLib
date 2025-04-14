@@ -33,7 +33,9 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
     /**
      * Set the type of each element.
      * @param type - type of each element.
+     * @deprecated no-op since 1.21.5
      */
+    @Deprecated
     void setElementType(NbtType type);
     
     /**
