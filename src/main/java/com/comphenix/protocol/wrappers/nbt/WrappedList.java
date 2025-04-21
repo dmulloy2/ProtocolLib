@@ -150,14 +150,22 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
             return elementType;
         } else {
             List<NbtBase<TType>> value = getValue();
-            return value.isEmpty() ? NbtType.TAG_END : value.get(0).getType();
+            NbtType type = NbtType.TAG_END;
+            for (NbtBase<TType> entry : value) {
+                if(type == NbtType.TAG_END) {
+                    type = entry.getType();
+                } else if(type != entry.getType()) {
+                    return NbtType.TAG_COMPOUND;
+                }
+            }
+            return type;
         }
     }
     
     @Override
     public void setElementType(NbtType type) {
+        this.elementType = type;
         if (!MinecraftVersion.v1_21_5.atOrAbove()) {
-            this.elementType = type;
             container.setSubType(type);
         }
     }
@@ -251,14 +259,14 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
     @Override
     @SuppressWarnings("unchecked")
     public void addClosest(Object value) {
-        if (getElementType() == NbtType.TAG_END)
+        if (elementType == NbtType.TAG_END)
             throw new IllegalStateException("This list has not been typed yet.");
         
         if (value instanceof Number) {
             Number number = (Number) value;
             
             // Convert the number
-            switch (getElementType()) {
+            switch (elementType) {
                 case TAG_BYTE: add(number.byteValue()); break;
                 case TAG_SHORT: add(number.shortValue()); break;
                 case TAG_INT: add(number.intValue()); break;
@@ -276,7 +284,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
             
         } else {
             // Just add it
-            add((NbtBase<TType>) NbtFactory.ofWrapper(getElementType(), EMPTY_NAME, value));
+            add((NbtBase<TType>) NbtFactory.ofWrapper(elementType, EMPTY_NAME, value));
         }
     }
     
