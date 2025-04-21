@@ -152,9 +152,9 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
             List<NbtBase<TType>> value = getValue();
             NbtType type = NbtType.TAG_END;
             for (NbtBase<TType> entry : value) {
-                if(type == NbtType.TAG_END) {
+                if (type == NbtType.TAG_END) {
                     type = entry.getType();
-                } else if(type != entry.getType()) {
+                } else if (type != entry.getType()) {
                     return NbtType.TAG_COMPOUND;
                 }
             }
