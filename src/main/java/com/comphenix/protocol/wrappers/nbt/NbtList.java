@@ -35,7 +35,9 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
      * <p>
      * In 1.21.5 and up lists can be heterogeneous, here the type is only used to convert elements added with {@link NbtList#addClosest(Object)}
      * @param type - type of each element.
+     * @deprecated since 1.21.5 lists can be heterogeneous
      */
+    @Deprecated
     void setElementType(NbtType type);
     
     /**
@@ -43,9 +45,19 @@ public interface NbtList<TType> extends NbtBase<List<NbtBase<TType>>>, Iterable<
      * <p>
      * Note that the list must be typed by setting {@link #setElementType(NbtType)} before calling this function.
      * @param value - the value to add.
+     * @deprecated since 1.21.5 lists can be heterogeneous. Use {@link NbtList#addClosest(Object, NbtType)}
      */
+    @Deprecated
     void addClosest(Object value);
-    
+
+    /**
+     * Add a value to a typed list by attempting to convert it to the nearest value.
+     * <p>
+     * @param value - the value to add.
+     * @param type - the resulting type of the entry
+     */
+    void addClosest(Object value, NbtType type);
+
     /**
      * Add a NBT list or NBT compound to the list.
      * @param element Element to add

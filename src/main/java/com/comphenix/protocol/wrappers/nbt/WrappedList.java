@@ -257,16 +257,21 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
     }
     
     @Override
-    @SuppressWarnings("unchecked")
     public void addClosest(Object value) {
         if (elementType == NbtType.TAG_END)
             throw new IllegalStateException("This list has not been typed yet.");
-        
+
+        addClosest(value, elementType);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void addClosest(Object value, NbtType type) {
         if (value instanceof Number) {
             Number number = (Number) value;
             
             // Convert the number
-            switch (elementType) {
+            switch (type) {
                 case TAG_BYTE: add(number.byteValue()); break;
                 case TAG_SHORT: add(number.shortValue()); break;
                 case TAG_INT: add(number.intValue()); break;
@@ -284,7 +289,7 @@ class WrappedList<TType> implements NbtWrapper<List<NbtBase<TType>>>, NbtList<TT
             
         } else {
             // Just add it
-            add((NbtBase<TType>) NbtFactory.ofWrapper(elementType, EMPTY_NAME, value));
+            add((NbtBase<TType>) NbtFactory.ofWrapper(type, EMPTY_NAME, value));
         }
     }
     

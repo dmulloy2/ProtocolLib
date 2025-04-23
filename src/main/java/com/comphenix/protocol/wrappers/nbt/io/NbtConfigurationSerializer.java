@@ -261,10 +261,9 @@ public class NbtConfigurationSerializer {
 
             if (node instanceof List) {
                 NbtList<Object> list = NbtFactory.ofList(decoded[0]);
-                list.setElementType(type);
                 
                 for (Object value : (List<Object>) node) {
-                    list.addClosest(toNodeValue(value, type));
+                    list.addClosest(toNodeValue(value, type), type);
                 }
                 
                 // Add the list
