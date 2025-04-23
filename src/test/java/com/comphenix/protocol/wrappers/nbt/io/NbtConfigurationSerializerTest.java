@@ -24,6 +24,7 @@ public class NbtConfigurationSerializerTest {
         compound.put("name", "test");
         compound.put("values", new int[]{1, 2, 3});
         compound.put(NbtFactory.ofList("telephone", "12345678", "81549300"));
+        compound.put(NbtFactory.ofList("heterogeneous", "somestring", 12345, 1.0));
 
         compound.put(NbtFactory.ofList("lists", NbtFactory.ofList("", "a", "a", "b", "c")));
 
