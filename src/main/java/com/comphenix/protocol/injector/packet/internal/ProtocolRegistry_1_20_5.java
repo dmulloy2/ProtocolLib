@@ -94,7 +94,7 @@ public class ProtocolRegistry_1_20_5 {
                         }
 
                         PacketType packetType = PacketType.fromCurrent(packetProtocol, packetSender, id, packetClass);
-                        // TODO(fix): validate that every codec pass in and expects FriendlyByteBuf
+                        // TODO(fix): validate that every codec expects FriendlyByteBuf
                         register.registerPacket(packetType, packetClass, packetSender, entry.serializer());
                     }
                 } catch (Exception e) {

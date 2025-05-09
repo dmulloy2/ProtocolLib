@@ -16,10 +16,12 @@ package com.comphenix.protocol;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -250,6 +252,16 @@ public class PacketTypeTest {
         for (PacketType type : PacketType.values()) {
             PacketType roundTrip = PacketType.findCurrent(type.getProtocol(), type.getSender(), type.names[0]);
             assertEquals(type, roundTrip);
+        }
+    }
+    
+    @Test
+    public void testPacketCodec() {
+        Set<PacketType> notSerializable = Set.of(PacketType.Play.Server.BUNDLE);
+        for (PacketType type : PacketType.values()) {
+            if (!notSerializable.contains(type) && type.isSupported()) {
+                assertNotNull(PacketRegistry.getStreamCodec(type.getPacketClass()), "missing serializer for " + type);
+            }
         }
     }
 
