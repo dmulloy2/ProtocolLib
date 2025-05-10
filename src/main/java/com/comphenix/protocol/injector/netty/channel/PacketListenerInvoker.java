@@ -14,13 +14,11 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
-import io.netty.channel.ChannelHandlerContext;
-
 /**
  * This class facilitates the invocation of methods on the current packet listener.
- * It attempts to execute the <code>send</code>, <code>read</code>, and <code>disconnect</code> 
- * methods and, upon failure (either due to the absence of the method or the packet 
- * listener being of an incorrect type), it delegates the call to the network manager.
+ * It attempts to execute the <code>send</code>, and <code>disconnect</code> methods, upon failure
+ * (either due to the absence of the method or the packet listener being of an incorrect type),
+ * it delegates the call to the network manager.
  * 
  * <p>Supported packet listener types include CONFIGURATION and PLAY. If the packet
  * listener does not match these types, or if the required method is missing, the 
@@ -43,7 +41,6 @@ public class PacketListenerInvoker {
     private static final boolean DOES_PACKET_LISTENER_DISCONNECT_USE_COMPONENT = doesPacketListenerDisconnectUseComponent();
 
     private static final MethodAccessor NETWORK_MANAGER_SEND = getNetworkManagerSend();
-    private static final MethodAccessor NETWORK_MANAGER_READ = getNetworkManagerRead();
     private static final MethodAccessor NETWORK_MANAGER_DISCONNECT = getNetworkManagerDisconnect();
     private static final MethodAccessor NETWORK_MANAGER_PACKET_LISTENER = getNetworkManagerPacketListener();
 
@@ -117,15 +114,6 @@ public class PacketListenerInvoker {
         return Accessors.getMethodAccessor(send);
     }
 
-    private static MethodAccessor getNetworkManagerRead() {
-        FuzzyReflection networkManager = FuzzyReflection.fromClass(MinecraftReflection.getNetworkManagerClass(), true);
-
-        Method read = networkManager
-            .getMethodByParameters("read", ChannelHandlerContext.class, MinecraftReflection.getPacketClass());
-
-        return Accessors.getMethodAccessor(read);
-    }
-
     private static MethodAccessor getNetworkManagerDisconnect() {
         FuzzyReflection networkManager = FuzzyReflection.fromClass(MinecraftReflection.getNetworkManagerClass());
 
@@ -190,7 +178,7 @@ public class PacketListenerInvoker {
     }
 
     /**
-     * Sends a packet using the current packet listener if available and valid; otherwise, 
+     * Sends a packet using the current packet listener if available and valid; otherwise,
      * falls back to the network manager.
      *
      * @param packet The packet to be sent.
@@ -202,15 +190,6 @@ public class PacketListenerInvoker {
         } else {
             NETWORK_MANAGER_SEND.invoke(this.networkManager, packet);
         }
-    }
-
-    /**
-     * Reads a packet directly using the network manager.
-     *
-     * @param packet The packet to be read.
-     */
-    public void read(Object packet) {
-        NETWORK_MANAGER_READ.invoke(this.networkManager, null, packet);
     }
 
     /**
