@@ -366,7 +366,8 @@ public abstract class EnumWrappers {
         LEGS,
         CHEST,
         HEAD,
-        BODY
+        BODY,
+        SADDLE
     }
 
     public enum Hand {

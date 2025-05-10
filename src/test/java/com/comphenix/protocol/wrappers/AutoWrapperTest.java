@@ -95,8 +95,7 @@ public class AutoWrapperTest {
                 .field(0, BukkitConverters.getWrappedChatComponentConverter())
                 .field(1, BukkitConverters.getWrappedChatComponentConverter())
                 .field(2, BukkitConverters.getItemStackConverter())
-                .field(3, Converters.optional(MinecraftKey.getConverter()))
-                // TODO(fix): we would technically need a new Converter for ClientAsset here as it replace the MinecraftKey in DisplayInfo
+                .field(3, Converters.optional(Converters.passthrough(ClientAsset.class)))
                 .field(4, EnumWrappers.getGenericConverter(
                     getMinecraftClass("advancements.AdvancementType", "advancements.AdvancementFrameType", "advancements.FrameType"),
                     WrappedFrameType.class)

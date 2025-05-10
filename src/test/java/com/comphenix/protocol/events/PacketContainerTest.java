@@ -235,7 +235,7 @@ public class PacketContainerTest {
 
     @Test
     public void testGetItemModifier() {
-        PacketContainer windowClick = new PacketContainer(PacketType.Play.Client.WINDOW_CLICK);
+        PacketContainer windowClick = new PacketContainer(PacketType.Play.Server.SET_CURSOR_ITEM);
 
         ItemStack item = this.itemWithData();
 
@@ -282,8 +282,6 @@ public class PacketContainerTest {
         NbtCompound compound = NbtFactory.ofCompound("test");
         compound.put("test", "name");
         compound.put(NbtFactory.ofList("ages", 1, 2, 3));
-        // TODO(fix): the type field got replace by `identifyRawElementType()` which is invoked
-        // 			  on write to determine the type
 
         updateTileEntity.getNbtModifier().write(0, compound);
 

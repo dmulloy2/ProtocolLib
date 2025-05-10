@@ -51,7 +51,12 @@ dependencies {
     compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
     compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
     compileOnly("io.netty:netty-all:4.0.23.Final")
-    compileOnly("net.kyori:adventure-text-serializer-gson:4.19.0")
+    /* 
+     * TODO(fix): once you update kyori:adventure-text-serializer-gson please uncomment the TODO in
+     * com.comphenix.protocol.wrappers.WrappedComponentStyleTest if the following issue got fixed:
+     * https://github.com/KyoriPowered/adventure/issues/1194
+     */
+    compileOnly("net.kyori:adventure-text-serializer-gson:4.21.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")

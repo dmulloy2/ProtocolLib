@@ -1,29 +1,28 @@
 package com.comphenix.protocol.wrappers.nbt;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.bukkit.block.BlockState;
+
 import com.comphenix.protocol.injector.BukkitUnwrapper;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
-import com.comphenix.protocol.utility.ByteBuddyFactory;
-import com.comphenix.protocol.utility.MinecraftMethods;
 import com.comphenix.protocol.utility.MinecraftReflection;
+import com.comphenix.protocol.utility.MinecraftRegistryAccess;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.bytebuddy.implementation.InvocationHandlerAdapter;
+
 import net.bytebuddy.jar.asm.ClassReader;
 import net.bytebuddy.jar.asm.ClassVisitor;
 import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.jar.asm.Type;
-import net.bytebuddy.matcher.ElementMatchers;
-import org.bukkit.block.BlockState;
 
 /**
  * Manipulate tile entities.
@@ -34,6 +33,7 @@ class TileEntityAccessor<T extends BlockState> {
 
     private static final boolean BLOCK_DATA_INCL = MinecraftVersion.NETHER_UPDATE.atOrAbove()
             && !MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
+    private static final boolean USE_HOLDER_LOOKUP = MinecraftVersion.v1_21_5.atOrAbove();
 
     /**
      * Token indicating that the given block state doesn't contain any tile entities.
@@ -104,11 +104,33 @@ class TileEntityAccessor<T extends BlockState> {
     }
 
     void findMethods(Class<?> type, T state) {
-        if (BLOCK_DATA_INCL) {
-            Class<?> tileEntityClass = MinecraftReflection.getTileEntityClass();
-            Class<?> iBlockData = MinecraftReflection.getIBlockDataClass();
-            Class<?> nbtCompound = MinecraftReflection.getNBTCompoundClass();
+        Class<?> tileEntityClass = MinecraftReflection.getTileEntityClass();
+        Class<?> nbtCompound = MinecraftReflection.getNBTCompoundClass();
+        
+        if (USE_HOLDER_LOOKUP) {
+            Class<?> holderLookup = MinecraftReflection.getHolderLookupProviderClass();
 
+            FuzzyReflection fuzzy = FuzzyReflection.fromClass(tileEntityClass, false);
+            // should be equiv. to `CompoundTag saveWithFullMetadata(HolderLookup.Provider)`
+            writeCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
+                    FuzzyMethodContract.newBuilder()
+                            .banModifier(Modifier.STATIC)
+                            .requireModifier(Modifier.FINAL)
+                            .returnTypeExact(nbtCompound)
+                            .parameterExactArray(holderLookup)
+                            .build()));
+
+            // should be equiv. to `void loadWithComponents(CompoundTag, HolderLookup.Provider)`
+            readCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
+                    FuzzyMethodContract.newBuilder()
+                            .banModifier(Modifier.STATIC)
+                            .requireModifier(Modifier.FINAL)
+                            .returnTypeVoid()
+                            .parameterExactArray(nbtCompound, holderLookup)
+                            .build()));
+        } else if (BLOCK_DATA_INCL) {
+            Class<?> iBlockData = MinecraftReflection.getIBlockDataClass();
+            
             FuzzyReflection fuzzy = FuzzyReflection.fromClass(tileEntityClass, false);
             writeCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
                     FuzzyMethodContract.newBuilder()
@@ -214,12 +236,17 @@ class TileEntityAccessor<T extends BlockState> {
      * @return The compound.
      */
     public NbtCompound readBlockState(T state) {
-        NbtCompound output = NbtFactory.ofCompound("");
         Object tileEntity = tileEntityField.get(state);
 
         // Write the block state to the output compound
-        writeCompound.invoke(tileEntity, NbtFactory.fromBase(output).getHandle());
-        return output;
+        if (USE_HOLDER_LOOKUP) {
+            Object tag = writeCompound.invoke(tileEntity, MinecraftRegistryAccess.get());
+            return new WrappedCompound(tag);
+        } else {
+            NbtCompound output = NbtFactory.ofCompound("");
+            writeCompound.invoke(tileEntity, NbtFactory.fromBase(output).getHandle());
+            return output;
+        }
     }
 
     /**
@@ -232,7 +259,9 @@ class TileEntityAccessor<T extends BlockState> {
         Object tileEntity = tileEntityField.get(state);
 
         // Ensure the block state is set to the compound
-        if (BLOCK_DATA_INCL) {
+        if (USE_HOLDER_LOOKUP) {
+            readCompound.invoke(tileEntity, NbtFactory.fromBase(compound).getHandle(), MinecraftRegistryAccess.get());
+        } else if (BLOCK_DATA_INCL) {
             Object blockData = BukkitUnwrapper.getInstance().unwrapItem(state);
             readCompound.invoke(tileEntity, blockData, NbtFactory.fromBase(compound).getHandle());
         } else {
