@@ -151,9 +151,27 @@ public class WrappedTeamParameters extends AbstractWrapper {
             return this;
         }
 
+        /**
+         * Compatibility stub for FeatherBoard – accepts raw String visibility.
+         */
+        public Builder nametagVisibility(@NotNull String visibility) {
+            Preconditions.checkNotNull(visibility, "visibility string cannot be null");
+            this.nametagVisibility = TeamVisibility.fromName(visibility);
+            return this;
+        }
+
         public Builder collisionRule(@NotNull TeamCollisionRule collisionRule) {
             Preconditions.checkNotNull(collisionRule);
             this.collisionRule = collisionRule;
+            return this;
+        }
+
+        /**
+         * Compatibility stub for FeatherBoard – accepts raw String collision rules.
+         */
+        public Builder collisionRule(@NotNull String rule) {
+            Preconditions.checkNotNull(rule, "collision rule cannot be null");
+            this.collisionRule = TeamCollisionRule.fromName(rule);
             return this;
         }
 
