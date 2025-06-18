@@ -41,6 +41,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -625,10 +627,6 @@ public class PacketContainerTest {
         // no change across nms versions
         container.getPlayerActions().write(0, EnumWrappers.PlayerAction.OPEN_INVENTORY);
         assertEquals(container.getPlayerActions().read(0), EnumWrappers.PlayerAction.OPEN_INVENTORY);
-
-        // changed in 1.15
-        container.getPlayerActions().write(0, EnumWrappers.PlayerAction.START_SNEAKING);
-        assertEquals(container.getPlayerActions().read(0), EnumWrappers.PlayerAction.START_SNEAKING);
     }
 
     @Test

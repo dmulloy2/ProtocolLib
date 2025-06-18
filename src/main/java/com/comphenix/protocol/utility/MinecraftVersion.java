@@ -36,6 +36,10 @@ import org.bukkit.Server;
  * @author Kristian
  */
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
+    /**
+     * Version 1.21.6 - chase the skies
+     */
+    public static final MinecraftVersion v1_21_6 = new MinecraftVersion("1.21.6");
 
     /**
      * Version 1.21.5 - spring to life drop
@@ -165,7 +169,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
     /**
      * The latest release version of minecraft.
      */
-    public static final MinecraftVersion LATEST = v1_21_5;
+    public static final MinecraftVersion LATEST = v1_21_6;
 
     // used when serializing
     private static final long serialVersionUID = -8695133558996459770L;

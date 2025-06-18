@@ -20,9 +20,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.GlassPane;
-import org.bukkit.craftbukkit.v1_21_R4.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_21_R4.block.impl.CraftStainedGlassPane;
-import org.bukkit.craftbukkit.v1_21_R4.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_21_R5.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_21_R5.block.impl.CraftStainedGlassPane;
+import org.bukkit.craftbukkit.v1_21_R5.util.CraftMagicNumbers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
