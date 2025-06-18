@@ -1,8 +1,14 @@
 package com.comphenix.protocol.wrappers;
 
 import java.io.StringReader;
+import java.lang.reflect.Field;
 import java.util.Optional;
 
+import com.comphenix.protocol.wrappers.codecs.WrappedCodec;
+import com.comphenix.protocol.wrappers.codecs.WrappedDynamicOps;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import org.bukkit.ChatColor;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -35,41 +41,49 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
     private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
 
-    static {
-        FuzzyReflection reflection = FuzzyReflection.fromClass(SERIALIZER, true);
+    private static WrappedCodec CODEC;
 
-        // Retrieve the correct methods
-        if (MinecraftVersion.v1_20_5.atOrAbove()) {
-            SERIALIZE_COMPONENT = Accessors.getMethodAccessor(reflection.getMethod(FuzzyMethodContract.newBuilder()
+    static {
+        FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER, true);
+
+        if (MinecraftVersion.v1_21_6.atOrAbove()) {
+            Field codecField = fuzzy.getFieldByType("CODEC", MinecraftReflection.getCodecClass());
+            CODEC = WrappedCodec.fromHandle(Accessors.getFieldAccessor(codecField).get(null));
+        } else if (MinecraftVersion.v1_20_5.atOrAbove()) {
+            SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
         			.returnTypeExact(String.class)
         			.parameterDerivedOf(COMPONENT)
         			.parameterDerivedOf(MinecraftReflection.getHolderLookupProviderClass())
         			.build()));
         } else {
-            SERIALIZE_COMPONENT = Accessors.getMethodAccessor(reflection.getMethodByReturnTypeAndParameters("serialize", /* a */
+            SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethodByReturnTypeAndParameters("serialize", /* a */
                     String.class, new Class<?>[] { COMPONENT }));
         }
 
-        GSON = Accessors.getFieldAccessor(reflection.getFieldByType("gson", GSON_CLASS)).get(null);
+        if (!MinecraftVersion.v1_20_4.atOrAbove()) {
+            GSON = Accessors.getFieldAccessor(fuzzy.getFieldByType("gson", GSON_CLASS)).get(null);
+        }
 
-        if (MinecraftVersion.v1_20_5.atOrAbove()) {
-			DESERIALIZE = Accessors.getMethodAccessor(reflection.getMethod(FuzzyMethodContract.newBuilder()
-        			.returnDerivedOf(COMPONENT)
-        			.parameterExactType(String.class)
-        			.parameterDerivedOf(MinecraftReflection.getHolderLookupProviderClass())
-        			.build()));
-        } else if (MinecraftVersion.v1_20_4.atOrAbove()) {
-			DESERIALIZE = Accessors.getMethodAccessor(reflection
-					.getMethodByReturnTypeAndParameters("fromJson", MUTABLE_COMPONENT_CLASS.get(), new Class[] { String.class }));
-		} else {
-			try {
-				DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getChatDeserializer(), true)
-					.getMethodByReturnTypeAndParameters("deserialize", Object.class, new Class<?>[] { GSON_CLASS, String.class, Class.class, boolean.class }));
-			} catch (IllegalArgumentException ex) {
-				// We'll handle it in the ComponentParser
-				DESERIALIZE = null;
-			}
-		}
+        if (!MinecraftVersion.v1_21_6.atOrAbove()) {
+            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+                DESERIALIZE = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                        .returnDerivedOf(COMPONENT)
+                        .parameterExactType(String.class)
+                        .parameterDerivedOf(MinecraftReflection.getHolderLookupProviderClass())
+                        .build()));
+            } else if (MinecraftVersion.v1_20_4.atOrAbove()) {
+                DESERIALIZE = Accessors.getMethodAccessor(fuzzy
+                        .getMethodByReturnTypeAndParameters("fromJson", MUTABLE_COMPONENT_CLASS.get(), new Class[]{String.class}));
+            } else {
+                try {
+                    DESERIALIZE = Accessors.getMethodAccessor(FuzzyReflection.fromClass(MinecraftReflection.getChatDeserializer(), true)
+                            .getMethodByReturnTypeAndParameters("deserialize", Object.class, new Class<?>[]{GSON_CLASS, String.class, Class.class, boolean.class}));
+                } catch (IllegalArgumentException ex) {
+                    // We'll handle it in the ComponentParser
+                    DESERIALIZE = null;
+                }
+            }
+        }
 
         // Get a component from a standard Minecraft message
         CONSTRUCT_COMPONENT = Accessors.getMethodAccessor(MinecraftReflection.getCraftChatMessage(), "fromString", String.class, boolean.class);
@@ -83,6 +97,11 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
     }
 
     private static Object serialize(Object handle) {
+        if (CODEC != null) {
+            Object jobj = CODEC.encode(handle, WrappedDynamicOps.json(false)).getOrThrow(JsonParseException::new);
+            return jobj.toString();
+        }
+
     	if (MinecraftVersion.v1_20_5.atOrAbove()) {
     		return SERIALIZE_COMPONENT.invoke(null, handle, MinecraftRegistryAccess.get());
     	}
@@ -91,6 +110,10 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
     }
 
     private static Object deserialize(String json) {
+        if (CODEC != null) {
+            return CODEC.parse(JsonParser.parseString(json), WrappedDynamicOps.json(false)).getOrThrow(JsonParseException::new);
+        }
+
     	if (MinecraftVersion.v1_20_5.atOrAbove()) {
     		return DESERIALIZE.invoke(null, json, MinecraftRegistryAccess.get());
     	}

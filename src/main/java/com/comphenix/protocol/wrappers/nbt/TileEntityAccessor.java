@@ -1,7 +1,6 @@
 package com.comphenix.protocol.wrappers.nbt;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +33,9 @@ class TileEntityAccessor<T extends BlockState> {
     private static final boolean BLOCK_DATA_INCL = MinecraftVersion.NETHER_UPDATE.atOrAbove()
             && !MinecraftVersion.CAVES_CLIFFS_1.atOrAbove();
     private static final boolean USE_HOLDER_LOOKUP = MinecraftVersion.v1_21_5.atOrAbove();
+    private static final boolean USE_TAG_VALUE_INPUT = MinecraftVersion.v1_21_6.atOrAbove();
+
+    private static final Class<?> TAG_VALUE_INPUT = MinecraftReflection.getNullableNMS("world.level.storage.TagValueInput");
 
     /**
      * Token indicating that the given block state doesn't contain any tile entities.
@@ -45,7 +47,7 @@ class TileEntityAccessor<T extends BlockState> {
      */
     private static final Map<Class<?>, TileEntityAccessor<?>> cachedAccessors = new HashMap<>();
 
-    private static Constructor<?> nbtCompoundParserConstructor;
+    private MethodAccessor createInputWrapper;
 
     private FieldAccessor tileEntityField;
     private MethodAccessor readCompound;
@@ -120,14 +122,31 @@ class TileEntityAccessor<T extends BlockState> {
                             .parameterExactArray(holderLookup)
                             .build()));
 
-            // should be equiv. to `void loadWithComponents(CompoundTag, HolderLookup.Provider)`
-            readCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
-                    FuzzyMethodContract.newBuilder()
-                            .banModifier(Modifier.STATIC)
-                            .requireModifier(Modifier.FINAL)
-                            .returnTypeVoid()
-                            .parameterExactArray(nbtCompound, holderLookup)
-                            .build()));
+            if (USE_TAG_VALUE_INPUT) {
+                createInputWrapper = Accessors.getMethodAccessor(FuzzyReflection.fromClass(TAG_VALUE_INPUT).getMethod(
+                        FuzzyMethodContract.newBuilder()
+                                .requireModifier(Modifier.STATIC)
+                                .parameterExactArray(MinecraftReflection.getMinecraftClass("util.ProblemReporter"), holderLookup, nbtCompound)
+                                .build()));
+
+                // should be equiv. to `void loadWithComponents(ValueInput)`
+                readCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
+                        FuzzyMethodContract.newBuilder()
+                                .banModifier(Modifier.STATIC)
+                                .requireModifier(Modifier.FINAL)
+                                .returnTypeVoid()
+                                .parameterSuperOf(TAG_VALUE_INPUT)
+                                .build()));
+            } else {
+                // should be equiv. to `void loadWithComponents(CompoundTag, HolderLookup.Provider)`
+                readCompound = Accessors.getMethodAccessor(fuzzy.getMethod(
+                        FuzzyMethodContract.newBuilder()
+                                .banModifier(Modifier.STATIC)
+                                .requireModifier(Modifier.FINAL)
+                                .returnTypeVoid()
+                                .parameterExactArray(nbtCompound, holderLookup)
+                                .build()));
+            }
         } else if (BLOCK_DATA_INCL) {
             Class<?> iBlockData = MinecraftReflection.getIBlockDataClass();
             
@@ -260,7 +279,12 @@ class TileEntityAccessor<T extends BlockState> {
 
         // Ensure the block state is set to the compound
         if (USE_HOLDER_LOOKUP) {
-            readCompound.invoke(tileEntity, NbtFactory.fromBase(compound).getHandle(), MinecraftRegistryAccess.get());
+            if (USE_TAG_VALUE_INPUT) {
+                Object tagValueInput = createInputWrapper.invoke(null, null,  MinecraftRegistryAccess.get(), NbtFactory.fromBase(compound).getHandle());
+                readCompound.invoke(tileEntity, tagValueInput);
+            } else {
+                readCompound.invoke(tileEntity, NbtFactory.fromBase(compound).getHandle(), MinecraftRegistryAccess.get());
+            }
         } else if (BLOCK_DATA_INCL) {
             Object blockData = BukkitUnwrapper.getInstance().unwrapItem(state);
             readCompound.invoke(tileEntity, blockData, NbtFactory.fromBase(compound).getHandle());

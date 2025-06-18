@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraft.world.entity.Interaction;
 import org.apache.commons.lang.Validate;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -193,8 +194,18 @@ public abstract class EnumWrappers {
     }
 
     public enum PlayerAction implements AliasedEnum {
+        /**
+         * @deprecated Removed in 1.21.6
+         */
+        @Deprecated
         START_SNEAKING("PRESS_SHIFT_KEY"),
+
+        /**
+         * @deprecated Removed in 1.21.6
+         */
+        @Deprecated
         STOP_SNEAKING("RELEASE_SHIFT_KEY"),
+
         STOP_SLEEPING,
         START_SPRINTING,
         STOP_SPRINTING,
@@ -334,7 +345,8 @@ public abstract class EnumWrappers {
         NEUTRAL("neutral"),
         PLAYERS("player"),
         AMBIENT("ambient"),
-        VOICE("voice");
+        VOICE("voice"),
+        UI("ui");
 
         private static final Map<String, SoundCategory> LOOKUP;
         static {

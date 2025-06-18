@@ -5,6 +5,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.status.ServerStatus;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -14,7 +15,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_21_R4.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_21_R5.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.AfterAll;
@@ -74,7 +75,7 @@ public class MinecraftReflectionTest {
 
     @Test
     public void testChatSerializer() {
-        assertEquals(Component.Serializer.class, MinecraftReflection.getChatSerializerClass());
+        assertEquals(ComponentSerialization.class, MinecraftReflection.getChatSerializerClass());
     }
 
     @Test

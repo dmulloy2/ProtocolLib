@@ -685,7 +685,8 @@ public final class MinecraftReflection {
      * @throws IllegalStateException If the class could not be found or deduced.
      */
     public static Class<?> getChatSerializerClass() {
-        return getMinecraftClass("network.chat.IChatBaseComponent$ChatSerializer", "network.chat.Component$Serializer", "IChatBaseComponent$ChatSerializer");
+        return getMinecraftClass("network.chat.ComponentSerialization",
+                "network.chat.IChatBaseComponent$ChatSerializer", "network.chat.Component$Serializer", "IChatBaseComponent$ChatSerializer");
     }
 
     /**
