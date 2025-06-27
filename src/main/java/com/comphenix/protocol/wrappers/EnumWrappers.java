@@ -708,6 +708,15 @@ public abstract class EnumWrappers {
         }
     }
 
+    public enum HeightmapType {
+        WORLD_SURFACE_WG,
+        WORLD_SURFACE,
+        OCEAN_FLOOR_WG,
+        OCEAN_FLOOR,
+        MOTION_BLOCKING,
+        MOTION_BLOCKING_NO_LEAVES,
+    }
+
     private static Class<?> PROTOCOL_CLASS = null;
     private static Class<?> CLIENT_COMMAND_CLASS = null;
     private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -735,6 +744,7 @@ public abstract class EnumWrappers {
     private static Class<?> CLIENT_INTENT_CLASS = null;
     private static Class<?> TEAM_COLLISION_RULE_CLASS = null;
     private static Class<?> TEAM_VISIBILITY_CLASS = null;
+    private static Class<?> HEIGHTMAP_TYPE_CLASS = null;
 
     private static boolean INITIALIZING = false;
     private static boolean INITIALIZED = false;
@@ -849,6 +859,10 @@ public abstract class EnumWrappers {
                     "world.scores.ScoreboardTeamBase$EnumNameTagVisibility" /* Spigot Mapping */,
                     "world.scores.Team$Visibility" /* Mojang Mapping */);
 
+            HEIGHTMAP_TYPE_CLASS = MinecraftReflection.getNullableNMS(
+                    "world.level.levelgen.HeightMap$Type" /* Spigot Mapping */,
+                    "world.level.levelgen.Heightmap$Types" /* Mojang Mapping */);
+
             associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
             associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
             associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
@@ -875,6 +889,7 @@ public abstract class EnumWrappers {
             associate(CLIENT_INTENT_CLASS, ClientIntent.class, getClientIntentConverter());
             associate(TEAM_COLLISION_RULE_CLASS, TeamCollisionRule.class, getTeamCollisionRuleConverter());
             associate(TEAM_VISIBILITY_CLASS, TeamVisibility.class, getTeamVisibilityConverter());
+            associate(HEIGHTMAP_TYPE_CLASS, HeightmapType.class, getHeightmapTypeConverter());
 
             if (ENTITY_POSE_CLASS != null) {
                 associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
@@ -1059,6 +1074,11 @@ public abstract class EnumWrappers {
         return TEAM_VISIBILITY_CLASS;
     }
 
+    public static Class<?> getHeightmapTypeClass() {
+        initialize();
+        return HEIGHTMAP_TYPE_CLASS;
+    }
+
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
         return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -1162,6 +1182,10 @@ public abstract class EnumWrappers {
 
     public static EquivalentConverter<TeamVisibility> getTeamVisibilityConverter() {
         return new EnumConverter<>(getTeamVisibilityClass(), TeamVisibility.class);
+    }
+
+    public static EquivalentConverter<HeightmapType> getHeightmapTypeConverter() {
+        return new EnumConverter<>(getHeightmapTypeClass(), HeightmapType.class);
     }
 
     /**
