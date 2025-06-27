@@ -202,7 +202,7 @@ public class WrappedTeamParameters extends AbstractWrapper {
             wrapped.writeComponent(1, prefix);
             wrapped.writeComponent(2, suffix);
 
-            if (MinecraftVersion.v1_20_5.atOrAbove()) {
+            if (MinecraftVersion.v1_21_5.atOrAbove()) {
                 wrapped.visiblityModifier.writeSafely(0, nametagVisibility);
                 wrapped.collisionRuleModifier.writeSafely(0, collisionRule);
             } else {
