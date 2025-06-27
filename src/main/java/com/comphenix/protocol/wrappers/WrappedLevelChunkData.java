@@ -4,7 +4,9 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
 import org.jetbrains.annotations.Nullable;
 
 import com.comphenix.protocol.injector.StructureCache;
@@ -41,6 +43,7 @@ public final class WrappedLevelChunkData {
 
         private static final FieldAccessor BLOCK_ENTITIES_DATA_ACCESSOR;
         private static final FieldAccessor HEIGHTMAPS_ACCESSOR;
+        private static final EquivalentConverter<Map<EnumWrappers.HeightmapType, long[]>> HEIGHTMAPS_CONVERTER;
         private static final FieldAccessor BUFFER_ACCESSOR;
 
         static {
@@ -54,9 +57,17 @@ public final class WrappedLevelChunkData {
             BLOCK_ENTITIES_DATA_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
                     .typeExact(List.class)
                     .build()));
-            HEIGHTMAPS_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
-                    .typeExact(MinecraftReflection.getNBTCompoundClass())
-                    .build()));
+            if (MinecraftVersion.v1_21_5.atOrAbove()) {
+                HEIGHTMAPS_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
+                        .typeExact(Map.class)
+                        .build()));
+                HEIGHTMAPS_CONVERTER = BukkitConverters.getMapConverter(EnumWrappers.getHeightmapTypeConverter(), Converters.passthrough(long[].class));
+            } else {
+                HEIGHTMAPS_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder()
+                        .typeExact(MinecraftReflection.getNBTCompoundClass())
+                        .build()));
+                HEIGHTMAPS_CONVERTER = null;
+            }
             BUFFER_ACCESSOR = Accessors.getFieldAccessor(reflection.getField(FuzzyFieldContract.newBuilder().typeExact(byte[].class).build()));
         }
 
@@ -68,20 +79,48 @@ public final class WrappedLevelChunkData {
 
         /**
          * The heightmap of this chunk.
+         * <p>
+         * Removed in Minecraft 1.21.5.
          *
          * @return an NBT-Tag
+         * @deprecated Use {@link ChunkData#getHeightmaps()} instead.
          */
+        @Deprecated
         public NbtCompound getHeightmapsTag() {
             return NbtFactory.fromNMSCompound(HEIGHTMAPS_ACCESSOR.get(handle));
         }
 
         /**
          * Sets the heightmap tag of this chunk.
+         * <p>
+         * Removed in Minecraft 1.21.5.
          *
          * @param heightmapsTag the new heightmaps tag.
+         * @deprecated Use {@link ChunkData#setHeightmaps(Map)} instead.
          */
+        @Deprecated
         public void setHeightmapsTag(NbtCompound heightmapsTag) {
             HEIGHTMAPS_ACCESSOR.set(handle, NbtFactory.fromBase(heightmapsTag).getHandle());
+        }
+
+        /**
+         * The heightmap of this chunk.
+         *
+         * @return a map containing the heightmaps
+         */
+        public Map<EnumWrappers.HeightmapType, long[]> getHeightmaps() {
+            return HEIGHTMAPS_CONVERTER.getSpecific(HEIGHTMAPS_ACCESSOR.get(handle));
+        }
+
+        /**
+         * Sets the heightmap tag of this chunk.
+         * <p>
+         * Removed in Minecraft 1.21.5.
+         *
+         * @param heightmaps the new heightmaps.
+         */
+        public void setHeightmaps(Map<EnumWrappers.HeightmapType, long[]> heightmaps) {
+            HEIGHTMAPS_ACCESSOR.set(handle, HEIGHTMAPS_CONVERTER.getGeneric(heightmaps));
         }
 
         /**
@@ -130,16 +169,38 @@ public final class WrappedLevelChunkData {
 
         /**
          * Creates a new wrapper using predefined values.
+         * <p>
+         * Removed in Minecraft 1.21.5.
          *
          * @param heightmapsTag   the heightmaps tag
          * @param buffer          the buffer
          * @param blockEntityInfo a list of wrapped block entities
          * @return a newly created wrapper
+         * @deprecated Use {@link ChunkData#fromValues(Map, byte[], List)} instead.
          */
+        @Deprecated
         public static ChunkData fromValues(NbtCompound heightmapsTag, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
             ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
 
             data.setHeightmapsTag(heightmapsTag);
+            data.setBuffer(buffer);
+            data.setBlockEntityInfo(blockEntityInfo);
+
+            return new ChunkData(data);
+        }
+
+        /**
+         * Creates a new wrapper using predefined values.
+         *
+         * @param heightmaps      the heightmaps
+         * @param buffer          the buffer
+         * @param blockEntityInfo a list of wrapped block entities
+         * @return a newly created wrapper
+         */
+        public static ChunkData fromValues(Map<EnumWrappers.HeightmapType, long[]> heightmaps, byte[] buffer, List<BlockEntityInfo> blockEntityInfo) {
+            ChunkData data = new ChunkData(LEVEL_CHUNK_PACKET_DATA_CONSTRUCTOR.invoke(StructureCache.newNullDataSerializer(), 0, 0));
+
+            data.setHeightmaps(heightmaps);
             data.setBuffer(buffer);
             data.setBlockEntityInfo(blockEntityInfo);
 
