@@ -31,6 +31,7 @@ public class ProtocolInfoWrapper extends AbstractWrapper {
     static {
         SIMPLE_UNBOUND_PROTOCOL_CLASS = MinecraftReflection.getMinecraftClass(
                 "network.protocol.SimpleUnboundProtocol" /* 1.21.5+ */,
+                "network.protocol.UnboundProtocol" /* 1.21.8+ Alternative */,
                 "network.ProtocolInfo$a" /* Spigot Mappings */,
                 "network.ProtocolInfo$Unbound" /* Mojang Mappings */);
         BIND_SIMPLE_ACCESSOR = Accessors.getMethodAccessor(FuzzyReflection.fromClass(SIMPLE_UNBOUND_PROTOCOL_CLASS)

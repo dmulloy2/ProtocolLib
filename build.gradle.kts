@@ -12,7 +12,7 @@ plugins {
 group = "com.comphenix.protocol"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "1.21.6"
+val mcVersion = "1.21.7"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
 val isJenkins = buildNumber.isNotEmpty()
