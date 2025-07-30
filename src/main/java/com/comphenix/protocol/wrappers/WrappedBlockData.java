@@ -141,7 +141,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 
         @Override
         public void setTypeAndData(Material material, int data) {
-            setHandle(TO_LEGACY_DATA.invoke(null, material, (byte) data));
+            setHandle(FROM_LEGACY_DATA.invoke(null, material, (byte) data));
         }
 
         @Override
