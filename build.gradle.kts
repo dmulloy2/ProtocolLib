@@ -5,11 +5,13 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 plugins {
     `java-library`
     `maven-publish`
+    `signing`
     id("com.gradleup.shadow") version "9.0.0-beta13"
     id("io.github.patrick.remapper") version "1.4.2"
+    id("com.vanniktech.maven.publish") version "0.34.0"
 }
 
-group = "com.comphenix.protocol"
+group = "net.dmulloy2"
 description = "Provides access to the Minecraft protocol"
 
 val mcVersion = "1.21.7"
@@ -125,84 +127,47 @@ tasks {
     compileJava {
         options.encoding = "UTF-8"
     }
-
-    register<org.gradle.jvm.tasks.Jar>("javadocJar") {
-        archiveClassifier.set("javadoc")
-        from(getByName("javadoc"))
-    }
-
-    register<org.gradle.jvm.tasks.Jar>("sourcesJar") {
-        archiveClassifier.set("sources")
-        from(project.the<JavaPluginExtension>().sourceSets["main"].allJava)
-    }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-            artifact(tasks.getByName("sourcesJar"))
-            artifact(tasks.getByName("javadocJar"))
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
 
-            pom {
-                name.set(project.name)
-                description.set(project.description)
-                url.set("https://github.com/dmulloy2/ProtocolLib")
+    coordinates("${group}", project.name, "${version}")
 
-                developers {
-                    developer {
-                        id.set("dmulloy2")
-                        name.set("Dan Mulloy")
-                        url.set("https://dmulloy2.net/")
-                    }
-                    developer {
-                        id.set("aadnk")
-                        email.set("kr_stang@hotmail.com")
-                        name.set("Kristian S. Stangeland")
-                        url.set("https://comphenix.net/")
-                    }
-                }
+    pom {
+        name.set(project.name)
+        description.set(project.description)
+        inceptionYear.set("2012")
+        url.set("https://github.com/dmulloy2/ProtocolLib")
 
-                licenses {
-                    license {
-                        name.set("GNU GENERAL PUBLIC LICENSE - Version 2, June 1991")
-                        url.set("https://www.gnu.org/licenses/gpl-2.0.txt")
-                        distribution.set("repo")
-                    }
-                }
-
-                scm {
-                    tag.set("HEAD")
-                    url.set("https://github.com/dmulloy2/ProtocolLib")
-                    connection.set("scm:git:git://github.com/dmulloy2/ProtocolLib.git")
-                    developerConnection.set("scm:git:git@github.com:dmulloy2/ProtocolLib.git")
-                }
-
-                issueManagement {
-                    system.set("GitHub Issues")
-                    url.set("https://github.com/dmulloy2/ProtocolLib/issues")
-                }
-
-                ciManagement {
-                    system.set("Jenkins")
-                    url.set("https://ci.dmulloy2.net/job/ProtocolLib")
-                }
+        developers {
+            developer {
+                id.set("dmulloy2")
+                name.set("Dan Mulloy")
+                url.set("https://dmulloy2.net/")
+                email.set("dev@dmulloy2.net")
             }
         }
-    }
 
-    repositories {
-        maven {
-            url = if (isSnapshot) {
-                uri("https://repo.dmulloy2.net/repository/snapshots/")
-            } else {
-                uri("https://repo.dmulloy2.net/repository/releases/")
+        licenses {
+            license {
+                name.set("GNU GENERAL PUBLIC LICENSE - Version 2, June 1991")
+                url.set("https://www.gnu.org/licenses/gpl-2.0.txt")
+                distribution.set("repo")
             }
+        }
 
-            credentials {
-                username = System.getenv("NEXUS_USERNAME")
-                password = System.getenv("NEXUS_PASSWORD")
-            }
+        scm {
+            tag.set("HEAD")
+            url.set("https://github.com/dmulloy2/ProtocolLib")
+            connection.set("scm:git:git://github.com/dmulloy2/ProtocolLib.git")
+            developerConnection.set("scm:git:git@github.com:dmulloy2/ProtocolLib.git")
+        }
+
+        issueManagement {
+            system.set("GitHub Issues")
+            url.set("https://github.com/dmulloy2/ProtocolLib/issues")
         }
     }
 }
