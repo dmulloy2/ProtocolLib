@@ -61,7 +61,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.comphenix.protocol:ProtocolLib:5.3.0'
+    compileOnly 'net.dmulloy2:ProtocolLib:5.3.0'
 }
 ```
 
