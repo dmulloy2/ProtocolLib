@@ -12,9 +12,9 @@ lead to more subtle bugs.
 
 ### Resources
 
-* [Spigot Page](https://www.spigotmc.org/resources/protocollib.1997/)
-* [Dev Builds](https://ci.dmulloy2.net/job/ProtocolLib)
-* [JavaDoc](https://ci.dmulloy2.net/job/ProtocolLib/javadoc/index.html)
+* [Spigot Page](https://spigotmc.org/resources/protocollib.1997/)
+* [Releases](https://github.com/dmulloy2/ProtocolLib/releases)
+* [JavaDoc](https://dmulloy2.net/ProtocolLib/javadoc/)
 * [Protocol Wiki](https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol)
 
 ### Compilation
@@ -47,7 +47,7 @@ You can also add ProtocolLib as a Maven dependency:
   <dependency>
     <groupId>net.dmulloy2</groupId>
     <artifactId>ProtocolLib</artifactId>
-    <version>5.3.0</version>
+    <version>5.4.0</version>
     <scope>provided</scope>
   </dependency>
 </dependencies>
@@ -61,7 +61,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'net.dmulloy2:ProtocolLib:5.3.0'
+    compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
 }
 ```
 

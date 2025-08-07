@@ -14,7 +14,7 @@ plugins {
 group = "net.dmulloy2"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "1.21.7"
+val mcVersion = "1.21.8"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
 val isJenkins = buildNumber.isNotEmpty()
@@ -28,10 +28,6 @@ repositories {
 
     maven {
         url = uri("https://repo.codemc.io/repository/nms/")
-    }
-
-    maven {
-        url = uri("https://repo.dmulloy2.net/repository/public/")
     }
 
     maven {
@@ -133,7 +129,7 @@ mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
 
-    coordinates("${group}", project.name, "${version}")
+    coordinates("$group", project.name, "$version")
 
     pom {
         name.set(project.name)
