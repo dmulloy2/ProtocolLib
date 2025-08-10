@@ -14,6 +14,7 @@ lead to more subtle bugs.
 
 * [Spigot Page](https://spigotmc.org/resources/protocollib.1997/)
 * [Releases](https://github.com/dmulloy2/ProtocolLib/releases)
+* [Dev Build](https://github.com/dmulloy2/ProtocolLib/releases/tag/dev-build)
 * [JavaDoc](https://dmulloy2.net/ProtocolLib/javadoc/)
 * [Protocol Wiki](https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol)
 
