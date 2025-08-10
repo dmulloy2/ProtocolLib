@@ -22,8 +22,7 @@ jobs:
 
       - name: Run gradle build lifecycle
         run: |
-          COMMIT_SHA=${{ github.sha }}
-          ./gradlew build shadowJar --no-daemon
+          COMMIT_SHA=${{ github.sha }} ./gradlew build shadowJar --no-daemon
 
       - name: Upload plugin file
         uses: actions/upload-artifact@v4
