@@ -1,0 +1,43 @@
+name: ProtocolLib development build
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Run gradle build lifecycle
+        run: |
+          COMMIT_SHA=${{ github.sha }} ./gradlew build shadowJar --no-daemon
+
+      - name: Upload plugin file
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProtocolLib
+          path: build/libs/ProtocolLib.jar
+
+      - name: Create or update GitHub pre-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          SHORT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
+          RELEASE_NOTES=$(gh release view dev-build --repo ${{ github.repository }} --json body -q ".body" 2>/dev/null || echo "")
+          gh release view dev-build --repo ${{ github.repository }} || \
+            gh release create dev-build --prerelease --title "Development Build" --notes "## Changelog" --repo ${{ github.repository }}
+          NEW_NOTES="$RELEASE_NOTES"$'\n'"* [$SHORT_HASH] $COMMIT_MSG"
+          gh release edit dev-build --notes "$NEW_NOTES" --repo ${{ github.repository }}
+          gh release upload dev-build build/libs/ProtocolLib.jar#ProtocolLib.jar --clobber --repo ${{ github.repository }}

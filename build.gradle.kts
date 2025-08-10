@@ -16,11 +16,11 @@ description = "Provides access to the Minecraft protocol"
 
 val mcVersion = "1.21.8"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
-val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
-val isJenkins = buildNumber.isNotEmpty()
+val commitHash = System.getenv("COMMIT_SHA") ?: ""
+val isCI = commitHash.isNotEmpty()
 
 repositories {
-    if (!isJenkins) {
+    if (!isCI) {
         mavenLocal()
     }
 
@@ -75,7 +75,7 @@ java {
 
 tasks {
     processResources {
-        val fullVersion = if (isSnapshot && isJenkins) "${version}-${buildNumber}" else version
+        val fullVersion = if (isSnapshot && isCI) "${version}-${commitHash.take(7)}" else version
 
         eachFile {
             expand("version" to fullVersion)
