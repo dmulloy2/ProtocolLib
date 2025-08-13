@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import com.comphenix.protocol.wrappers.codecs.WrappedCodec;
 import com.comphenix.protocol.wrappers.codecs.WrappedDynamicOps;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import org.bukkit.ChatColor;
@@ -42,6 +41,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
     private static ConstructorAccessor CONSTRUCT_TEXT_COMPONENT = null;
 
     private static WrappedCodec CODEC;
+    private static WrappedDynamicOps REGISTRY_JSON_OPS;
 
     static {
         FuzzyReflection fuzzy = FuzzyReflection.fromClass(SERIALIZER, true);
@@ -49,6 +49,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
         if (MinecraftVersion.v1_21_6.atOrAbove()) {
             Field codecField = fuzzy.getFieldByType("CODEC", MinecraftReflection.getCodecClass());
             CODEC = WrappedCodec.fromHandle(Accessors.getFieldAccessor(codecField).get(null));
+            REGISTRY_JSON_OPS = MinecraftRegistryAccess.createSerializationContext(WrappedDynamicOps.json(false));
         } else if (MinecraftVersion.v1_20_5.atOrAbove()) {
             SERIALIZE_COMPONENT = Accessors.getMethodAccessor(fuzzy.getMethod(FuzzyMethodContract.newBuilder()
         			.returnTypeExact(String.class)
@@ -98,7 +99,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
     private static Object serialize(Object handle) {
         if (CODEC != null) {
-            Object jobj = CODEC.encode(handle, WrappedDynamicOps.json(false)).getOrThrow(JsonParseException::new);
+            Object jobj = CODEC.encode(handle, REGISTRY_JSON_OPS).getOrThrow(JsonParseException::new);
             return jobj.toString();
         }
 
@@ -111,7 +112,7 @@ public class WrappedChatComponent extends AbstractWrapper implements ClonableWra
 
     private static Object deserialize(String json) {
         if (CODEC != null) {
-            return CODEC.parse(JsonParser.parseString(json), WrappedDynamicOps.json(false)).getOrThrow(JsonParseException::new);
+            return CODEC.parse(JsonParser.parseString(json), REGISTRY_JSON_OPS).getOrThrow(JsonParseException::new);
         }
 
     	if (MinecraftVersion.v1_20_5.atOrAbove()) {
