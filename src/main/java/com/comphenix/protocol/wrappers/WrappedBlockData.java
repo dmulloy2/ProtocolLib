@@ -45,7 +45,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
         private static MethodAccessor TO_LEGACY_DATA;
         private static MethodAccessor GET_BLOCK;
         private static MethodAccessor BLOCK_FROM_MATERIAL;
-        private static MethodAccessor GET_BLOCK_DATA;
+        private static MethodAccessor DEFAULT_BLOCK_DATA;
         private static MethodAccessor FROM_LEGACY_DATA;
         private static MethodAccessor GET_HANDLE;
 
@@ -100,7 +100,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
                         .parameterCount(0)
                         .returnTypeExact(IBLOCK_DATA)
                         .build();
-                GET_BLOCK_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
+                DEFAULT_BLOCK_DATA = Accessors.getMethodAccessor(fuzzy.getMethod(contract));
 
                 fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getCraftBukkitClass("block.data.CraftBlockData"));
                 contract = FuzzyMethodContract
@@ -131,7 +131,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
         @Override
         public void setType(Material material) {
             Object block = BLOCK_FROM_MATERIAL.invoke(null, material);
-            setHandle(GET_BLOCK_DATA.invoke(block));
+            setHandle(DEFAULT_BLOCK_DATA.invoke(block));
         }
 
         @Override
@@ -141,7 +141,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 
         @Override
         public void setTypeAndData(Material material, int data) {
-            setHandle(TO_LEGACY_DATA.invoke(null, material, (byte) data));
+            setHandle(FROM_LEGACY_DATA.invoke(null, material, (byte) data));
         }
 
         @Override
@@ -151,7 +151,7 @@ public abstract class WrappedBlockData extends AbstractWrapper implements Clonab
 
         private static WrappedBlockData createNewData(Material material) {
             Object block = BLOCK_FROM_MATERIAL.invoke(null, material);
-            return new NewBlockData(GET_BLOCK_DATA.invoke(block));
+            return new NewBlockData(DEFAULT_BLOCK_DATA.invoke(block));
         }
 
         private static WrappedBlockData createNewData(Material material, int data) {
