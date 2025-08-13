@@ -2,6 +2,7 @@ package com.comphenix.protocol.utility;
 
 import java.lang.reflect.Modifier;
 
+import com.comphenix.protocol.wrappers.codecs.WrappedDynamicOps;
 import org.bukkit.Bukkit;
 
 import com.comphenix.protocol.reflect.FuzzyReflection;
@@ -17,6 +18,7 @@ public class MinecraftRegistryAccess {
 
 	private static MethodAccessor GET_SERVER = null;
 	private static MethodAccessor REGISTRY_ACCESS = null;
+	private static MethodAccessor CREATE_SERIALIZATION_CONTEXT = null;
 
 	// lazy initialized
 	private static Object registryAccess = null;
@@ -36,6 +38,14 @@ public class MinecraftRegistryAccess {
 							.banModifier(Modifier.STATIC)
 							.returnDerivedOf(MinecraftReflection.getRegistryAccessClass())
 							.build()));
+
+			CREATE_SERIALIZATION_CONTEXT = Accessors.getMethodAccessor(
+					FuzzyReflection.fromClass(MinecraftReflection.getHolderLookupProviderClass(), false)
+							.getMethod(FuzzyMethodContract.newBuilder()
+									.banModifier(Modifier.STATIC)
+									.returnDerivedOf(MinecraftReflection.getDynamicOpsClass())
+									.parameterDerivedOf(MinecraftReflection.getDynamicOpsClass())
+									.build()));
 		}
 	}
 
@@ -56,5 +66,14 @@ public class MinecraftRegistryAccess {
 		}
 
 		return registryAccess;
+	}
+
+	/**
+	 * Returns a RegistryOps using the given DynamicOps as the underlying ops.
+	 *
+	 * @return a RegistryOps
+	 */
+	public static WrappedDynamicOps createSerializationContext(WrappedDynamicOps dynamicOps) {
+		return WrappedDynamicOps.fromHandle(CREATE_SERIALIZATION_CONTEXT.invoke(get(), dynamicOps.getHandle()));
 	}
 }
