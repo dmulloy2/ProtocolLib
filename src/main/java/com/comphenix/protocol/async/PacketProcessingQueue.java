@@ -30,6 +30,8 @@ import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
+
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MinMaxPriorityQueue;
 
@@ -209,7 +211,7 @@ class PacketProcessingQueue {
     
     public void cleanupAll() {
         // Cancel all the threads and every listener
-        for (AsyncListenerHandler handler : map.values()) {
+        for (AsyncListenerHandler handler : ImmutableList.copyOf(map.values())) {
             handler.cancel();
         }
         

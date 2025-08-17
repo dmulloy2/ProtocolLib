@@ -6,7 +6,7 @@ plugins {
     `java-library`
     `maven-publish`
     `signing`
-    id("com.gradleup.shadow") version "9.0.0-beta13"
+    id("com.gradleup.shadow") version "9.0.2"
     id("io.github.patrick.remapper") version "1.4.2"
     id("com.vanniktech.maven.publish") version "0.34.0"
 }
