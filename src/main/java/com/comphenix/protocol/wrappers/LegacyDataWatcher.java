@@ -37,7 +37,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.collection.ConvertedMap;
 
-import org.apache.commons.lang.Validate;
+import com.comphenix.protocol.utility.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 

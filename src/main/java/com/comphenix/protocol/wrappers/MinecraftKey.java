@@ -53,7 +53,14 @@ public class MinecraftKey {
      * @param key The key
      */
     public MinecraftKey(String key) {
-        this("minecraft", key);
+        if (key.contains(":")) {
+            String[] split = key.split(":", 2);
+            this.prefix = split[0];
+            this.key = split[1];
+        } else {
+            this.prefix = "minecraft";
+            this.key = key;
+        }
     }
 
     /**

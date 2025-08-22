@@ -15,26 +15,6 @@
  */
 package com.comphenix.protocol;
 
-import com.comphenix.protocol.async.AsyncFilterManager;
-import com.comphenix.protocol.error.BasicErrorReporter;
-import com.comphenix.protocol.error.DelegatedErrorReporter;
-import com.comphenix.protocol.error.DetailedErrorReporter;
-import com.comphenix.protocol.error.ErrorReporter;
-import com.comphenix.protocol.error.Report;
-import com.comphenix.protocol.error.ReportType;
-import com.comphenix.protocol.injector.InternalManager;
-import com.comphenix.protocol.injector.PacketFilterManager;
-import com.comphenix.protocol.metrics.Statistics;
-import com.comphenix.protocol.scheduler.DefaultScheduler;
-import com.comphenix.protocol.scheduler.FoliaScheduler;
-import com.comphenix.protocol.scheduler.ProtocolScheduler;
-import com.comphenix.protocol.scheduler.Task;
-import com.comphenix.protocol.updater.Updater;
-import com.comphenix.protocol.updater.Updater.UpdateType;
-import com.comphenix.protocol.utility.*;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,9 +27,29 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import com.comphenix.protocol.async.AsyncFilterManager;
+import com.comphenix.protocol.error.BasicErrorReporter;
+import com.comphenix.protocol.error.DelegatedErrorReporter;
+import com.comphenix.protocol.error.DetailedErrorReporter;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.error.Report;
+import com.comphenix.protocol.error.ReportType;
+import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.metrics.Statistics;
+import com.comphenix.protocol.scheduler.DefaultScheduler;
+import com.comphenix.protocol.scheduler.FoliaScheduler;
+import com.comphenix.protocol.scheduler.ProtocolScheduler;
+import com.comphenix.protocol.scheduler.Task;
+import com.comphenix.protocol.updater.Updater;
+import com.comphenix.protocol.updater.Updater.UpdateType;
+import com.comphenix.protocol.utility.ByteBuddyFactory;
+import com.comphenix.protocol.utility.ChatExtensions;
+import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.utility.Util;
+
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import org.bukkit.Server;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -58,7 +58,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  *
  * @author Kristian
  */
-public class ProtocolLib extends JavaPlugin {
+public abstract class ProtocolLib extends JavaPlugin {
     // Every possible error or warning report type
     public static final ReportType REPORT_CANNOT_DELETE_CONFIG = new ReportType(
             "Cannot delete old ProtocolLib configuration.");
@@ -91,8 +91,8 @@ public class ProtocolLib extends JavaPlugin {
     // these fields are only existing once, we can make them static
     private static Logger logger;
     private static ProtocolConfig config;
-    private static InternalManager protocolManager;
-    private static ErrorReporter reporter = new BasicErrorReporter();
+    protected static PacketFilterManager protocolManager;
+    protected static ErrorReporter reporter = new BasicErrorReporter();
 
     private Statistics statistics;
 
@@ -210,7 +210,7 @@ public class ProtocolLib extends JavaPlugin {
                         this.commandPacket = new CommandPacket(reporter, this, logger, this.commandFilter, protocolManager);
                         break;
                     case LOGGING:
-                        this.packetLogging = new PacketLogging(this, protocolManager);
+                        this.packetLogging = new PacketLogging(reporter, this, protocolManager);
                         break;
                 }
             } catch (OutOfMemoryError e) {
@@ -336,7 +336,11 @@ public class ProtocolLib extends JavaPlugin {
             this.registerCommand(PacketLogging.NAME, this.packetLogging);
 
             // Player login and logout events
-            protocolManager.registerEvents(manager, this);
+            protocolManager.inject();
+
+            manager.registerEvents(new BukkitListener(protocolManager), this);
+
+            registerLoginListener();
 
             // Worker that ensures that async packets are eventually sent
             // It also performs the update check.
@@ -363,6 +367,8 @@ public class ProtocolLib extends JavaPlugin {
                     this.statistics));
         }
     }
+
+    abstract void registerLoginListener();
 
     // Used to check Minecraft version
     private MinecraftVersion verifyMinecraftVersion() {
@@ -437,26 +443,7 @@ public class ProtocolLib extends JavaPlugin {
         }
     }
 
-    private void registerCommand(String name, CommandExecutor executor) {
-        try {
-            // Ignore these - they must have printed an error already
-            if (executor == null) {
-                return;
-            }
-
-            PluginCommand command = this.getCommand(name);
-
-            // Try to load the command
-            if (command != null) {
-                command.setExecutor(executor);
-            } else {
-                throw new RuntimeException("plugin.yml might be corrupt.");
-            }
-        } catch (RuntimeException e) {
-            reporter.reportWarning(this,
-                    Report.newBuilder(REPORT_CANNOT_REGISTER_COMMAND).messageParam(name, e.getMessage()).error(e));
-        }
-    }
+    abstract void registerCommand(String name, CommandBase command);
 
     /**
      * Disable the current plugin.

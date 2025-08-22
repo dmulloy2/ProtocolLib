@@ -10,21 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import javax.annotation.Nonnull;
-
-import org.apache.commons.lang.Validate;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.WorldType;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.MerchantRecipe;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
-import org.jetbrains.annotations.NotNull;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.EquivalentConverter;
@@ -68,7 +54,20 @@ import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
+
 import com.google.common.base.Preconditions;
+import com.comphenix.protocol.utility.Validate;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.WorldType;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractStructure {
     protected transient Object handle;

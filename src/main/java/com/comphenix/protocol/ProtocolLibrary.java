@@ -18,7 +18,7 @@ import com.comphenix.protocol.error.BasicErrorReporter;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.scheduler.ProtocolScheduler;
 
-import org.apache.commons.lang.Validate;
+import com.comphenix.protocol.utility.Validate;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -48,8 +48,8 @@ public class ProtocolLibrary {
     private static ProtocolScheduler scheduler;
     private static ErrorReporter reporter = new BasicErrorReporter();
 
-    private static boolean updatesDisabled;
-    private static boolean initialized;
+    private static boolean updatesDisabled = false;
+    private static boolean initialized = false;
 
     protected static void init(Plugin plugin, ProtocolConfig config, ProtocolManager manager,
                                ProtocolScheduler scheduler, ErrorReporter reporter) {

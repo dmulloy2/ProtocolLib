@@ -1,0 +1,6 @@
+name: ProtocolLib
+version: ${version}
+main: com.comphenix.protocol.ProtocolLibPaper
+api-version: '1.21.8'
+website: https://github.com/dmulloy2/ProtocolLib
+load: STARTUP

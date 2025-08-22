@@ -16,12 +16,9 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
-
 import javax.annotation.Nonnull;
 
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-
+import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.ListenerManager;
 import com.comphenix.protocol.injector.netty.Injector;
@@ -29,10 +26,12 @@ import com.comphenix.protocol.injector.temporary.TemporaryPlayerFactory;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.utility.MinecraftFields;
 import com.comphenix.protocol.utility.MinecraftReflection;
-import com.google.common.collect.MapMaker;
 
+import com.google.common.collect.MapMaker;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 /**
  * Represents an injector factory.
@@ -85,12 +84,8 @@ public class InjectionFactory {
 
         // try to get the injector using the player reference first
         Injector injector = this.playerLookup.get(player);
-        if (injector == null) {
-            injector = this.getTemporaryInjector(player);
-        }
-
-        // check if we found an injector
         if (injector != null && !injector.isClosed()) {
+            ProtocolLogger.log(player.getName() + " has a cached injector. Player valid: " + injector.hasValidPlayer());
             return injector;
         }
 
@@ -110,7 +105,10 @@ public class InjectionFactory {
                 this.playerLookup.remove(injector.getPlayer());
                 this.cacheInjector(player, injector);
                 // re-set the player of the injection
+                ProtocolLogger.log("Reusing existing injector and setting player to " + player.getName());
                 injector.setPlayer(player);
+            } else {
+                ProtocolLogger.log(player.getName() + "'s channel already has an injector. Player valid: " + injector.hasValidPlayer());
             }
         } else {
             // construct a new injector as it seems like we have none yet

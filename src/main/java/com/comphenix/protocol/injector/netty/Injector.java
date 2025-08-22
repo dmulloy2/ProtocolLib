@@ -2,11 +2,11 @@ package com.comphenix.protocol.injector.netty;
 
 import java.net.SocketAddress;
 
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
+
+import org.bukkit.entity.Player;
 
 /**
  * Represents an injected client connection.
@@ -73,6 +73,8 @@ public interface Injector {
      * @param player - the current player.
      */
     void setPlayer(Player player);
+
+    boolean hasValidPlayer();
 
     boolean isConnected();
 

@@ -3,7 +3,7 @@ version: ${version}
 description: Provides read/write access to the Minecraft protocol.
 authors: [dmulloy2, comphenix]
 
-main: com.comphenix.protocol.ProtocolLib
+main: com.comphenix.protocol.ProtocolLibSpigot
 load: STARTUP
 database: false
 api-version: "1.13"

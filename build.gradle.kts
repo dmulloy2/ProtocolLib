@@ -1,5 +1,6 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import io.github.patrick.gradle.remapper.RemapTask
+//import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+//import io.github.patrick.gradle.remapper.RemapTask
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar.Companion.shadowJar
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
@@ -7,8 +8,9 @@ plugins {
     `maven-publish`
     `signing`
     id("com.gradleup.shadow") version "9.0.2"
-    id("io.github.patrick.remapper") version "1.4.2"
+    // id("io.github.patrick.remapper") version "1.4.2"
     id("com.vanniktech.maven.publish") version "0.34.0"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
 }
 
 group = "net.dmulloy2"
@@ -18,6 +20,18 @@ val mcVersion = "1.21.8"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
+
+paperweight {
+    reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.REOBF_PRODUCTION
+}
+
+tasks.assemble {
+    dependsOn(tasks.reobfJar)
+}
+
+/*tasks.shadowJar {
+    dependsOn(tasks.assemble)
+}*/
 
 repositories {
     if (!isCI) {
@@ -46,16 +60,14 @@ repositories {
 
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.17.5")
-    compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
-    compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
+    // compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
+    // compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
     compileOnly("io.netty:netty-all:4.0.23.Final")
-    /* 
-     * TODO(fix): once you update kyori:adventure-text-serializer-gson please uncomment the TODO in
-     * com.comphenix.protocol.wrappers.WrappedComponentStyleTest if the following issue got fixed:
-     * https://github.com/KyoriPowered/adventure/issues/1194
-     */
-    compileOnly("net.kyori:adventure-text-serializer-gson:4.21.0")
+    compileOnly("net.kyori:adventure-text-serializer-gson:4.24.0")
+    compileOnly("net.kyori:adventure-text-serializer-ansi:4.24.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
+
+    paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
@@ -63,14 +75,15 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.6.0")
     testImplementation("io.netty:netty-common:4.1.97.Final")
     testImplementation("io.netty:netty-transport:4.1.97.Final")
-    testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
-    testImplementation("net.kyori:adventure-text-serializer-gson:4.14.0")
-    testImplementation("net.kyori:adventure-text-serializer-plain:4.14.0")
+    // testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
+    testImplementation("net.kyori:adventure-text-serializer-gson:4.24.0")
+    testImplementation("net.kyori:adventure-text-serializer-plain:4.24.0")
+    testImplementation("net.kyori:adventure-text-serializer-ansi:4.24.0")
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 tasks {
@@ -95,25 +108,17 @@ tasks {
         }
         relocate("net.bytebuddy", "com.comphenix.net.bytebuddy")
 
-        manifest {
+        /*manifest {
             attributes(
                 "paperweight-mappings-namespace" to "mojang"
             )
-        }
+        }*/
 
-        archiveFileName = "ProtocolLib.jar"
+        // archiveFileName = "ProtocolLib.jar"
     }
 
-    remap {
-        dependsOn("shadowJar")
-
-        inputTask.set(getByName<ShadowJar>("shadowJar"))
-        version.set(mcVersion)
-        action.set(RemapTask.Action.MOJANG_TO_SPIGOT)
-    }
-
-    assemble {
-        dependsOn("remap")
+    reobfJar {
+        outputJar = layout.buildDirectory.file("libs/ProtocolLib.jar")
     }
 
     javadoc {

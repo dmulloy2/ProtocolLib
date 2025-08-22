@@ -7,9 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.injector.ListenerManager;
@@ -23,7 +20,10 @@ import com.comphenix.protocol.reflect.fuzzy.FuzzyMethodContract;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.Pair;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 public class NetworkManagerInjector {
 
@@ -55,6 +55,10 @@ public class NetworkManagerInjector {
 
     public Injector getInjector(Player player) {
     	return this.injectionFactory.fromPlayer(player);
+    }
+
+    public Injector getInjector(Channel channel) {
+        return injectionFactory.fromChannel(channel);
     }
 
     @SuppressWarnings("unchecked")

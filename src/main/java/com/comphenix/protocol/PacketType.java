@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
-import org.apache.commons.lang.WordUtils;
+import com.comphenix.protocol.utility.WordUtils;
 import org.bukkit.Bukkit;
 
 import com.comphenix.protocol.PacketTypeLookup.ClassLookup;

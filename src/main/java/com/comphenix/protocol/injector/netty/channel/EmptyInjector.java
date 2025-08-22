@@ -2,13 +2,14 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import java.net.SocketAddress;
 
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.events.NetworkMarker;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.injector.temporary.TemporaryPlayer;
+
+import org.bukkit.entity.Player;
 
 final class EmptyInjector implements Injector {
 
@@ -70,6 +71,11 @@ final class EmptyInjector implements Injector {
     @Override
     public void setPlayer(Player player) {
         this.player = player;
+    }
+
+    @Override
+    public boolean hasValidPlayer() {
+       return player != null && !(player instanceof TemporaryPlayer);
     }
 
     @Override

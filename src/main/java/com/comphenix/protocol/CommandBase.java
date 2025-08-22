@@ -21,21 +21,19 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.error.Report;
 import com.comphenix.protocol.error.ReportType;
+
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 
 /**
  * Base class for all our commands.
  * 
  * @author Kristian
  */
-abstract class CommandBase implements CommandExecutor {
+abstract class CommandBase {
     public static final ReportType REPORT_COMMAND_ERROR = new ReportType("Cannot execute command %s.");
     public static final ReportType REPORT_UNEXPECTED_COMMAND = new ReportType("Incorrect command assigned to %s.");
     
@@ -58,15 +56,8 @@ abstract class CommandBase implements CommandExecutor {
         this.minimumArgumentCount = minimumArgumentCount;
     }
 
-    @Override
-    public final boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         try {
-            // Make sure we're dealing with the correct command
-            if (!command.getName().equalsIgnoreCase(name)) {
-                reporter.reportWarning(this, Report.newBuilder(REPORT_UNEXPECTED_COMMAND).messageParam(this));
-                return false;
-            }
-
             if (permission != null && !sender.hasPermission(permission)) {
                 sender.sendMessage(ChatColor.RED + "You haven't got permission to run this command.");
                 return true;
@@ -81,7 +72,7 @@ abstract class CommandBase implements CommandExecutor {
             }
         } catch (Throwable ex) {
             reporter.reportDetailed(this,
-                    Report.newBuilder(REPORT_COMMAND_ERROR).error(ex).messageParam(name).callerParam(sender, label, args)
+                    Report.newBuilder(REPORT_COMMAND_ERROR).error(ex).messageParam(name).callerParam(sender, name, args)
             );
             return true;
         }

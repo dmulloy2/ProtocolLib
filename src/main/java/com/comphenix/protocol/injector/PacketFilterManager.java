@@ -8,21 +8,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 
-import org.bukkit.Location;
-import org.bukkit.Server;
-import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -47,7 +32,15 @@ import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.netty.manager.NetworkManagerInjector;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import com.comphenix.protocol.utility.MinecraftVersion;
+
 import com.google.common.collect.ImmutableSet;
+import io.netty.channel.Channel;
+import org.bukkit.Location;
+import org.bukkit.Server;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 public class PacketFilterManager implements ListenerManager, InternalManager {
 
@@ -327,24 +320,30 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
 
     @Override
     public void removePacketListener(PacketListener listener) {
-        if (!this.closed && this.registeredListeners.remove(listener)) {
-            ListeningWhitelist outbound = listener.getSendingWhitelist();
-            ListeningWhitelist inbound = listener.getReceivingWhitelist();
+        if (this.closed || !this.registeredListeners.remove(listener)) {
+            return;
+        }
 
-            // remove outbound listeners (if any)
-            if (outbound != null && outbound.isEnabled()) {
-                this.outboundListeners.removeListener(listener);
-            }
+        ListeningWhitelist outbound = listener.getSendingWhitelist();
+        ListeningWhitelist inbound = listener.getReceivingWhitelist();
 
-            // remove inbound listeners (if any)
-            if (inbound != null && inbound.isEnabled()) {
-                this.inboundListeners.removeListener(listener);
-            }
+        // remove outbound listeners (if any)
+        if (outbound != null && outbound.isEnabled()) {
+            this.outboundListeners.removeListener(listener);
+        }
+
+        // remove inbound listeners (if any)
+        if (inbound != null && inbound.isEnabled()) {
+            this.inboundListeners.removeListener(listener);
         }
     }
 
     @Override
     public void removePacketListeners(Plugin plugin) {
+        if (this.closed || this.plugin.equals(plugin)) {
+            return;
+        }
+
         for (PacketListener listener : this.getPacketListeners()) {
             if (Objects.equals(listener.getPlugin(), plugin)) {
                 this.removePacketListener(listener);
@@ -421,40 +420,26 @@ public class PacketFilterManager implements ListenerManager, InternalManager {
         }
     }
 
-    @Override
-    public void registerEvents(PluginManager manager, Plugin plugin) {
-        if (!this.closed && !this.injected) {
-            // prevent duplicate event registrations / injections
-            this.injected = true;
-            this.networkManagerInjector.inject();
+    public void removePlayer(Player player) {
+        asyncFilterManager.removePlayer(player);
+    }
 
-            // all listeners we need, this is a bit messy, but it makes the job correctly
-            manager.registerEvents(new Listener() {
+    public void injectPlayer(Player player) {
+        networkManagerInjector.getInjector(player).inject();
+    }
 
-                @EventHandler(priority = EventPriority.LOWEST)
-                public void handleLogin(PlayerLoginEvent event) {
-                	networkManagerInjector.getInjector(event.getPlayer()).inject();
-                }
+    public void injectChannel(Channel channel) {
+        networkManagerInjector.getInjector(channel).inject();
+    }
 
-                @EventHandler(priority = EventPriority.LOWEST)
-                public void handleJoin(PlayerJoinEvent event) {
-                	networkManagerInjector.getInjector(event.getPlayer()).inject();
-                }
-
-                @EventHandler(priority = EventPriority.MONITOR)
-                public void handleQuit(PlayerQuitEvent event) {
-                    PacketFilterManager.this.asyncFilterManager.removePlayer(event.getPlayer());
-                }
-
-                @EventHandler(priority = EventPriority.MONITOR)
-                public void handlePluginUnload(PluginDisableEvent event) {
-                    // don't do this for our plugin!
-                    if (event.getPlugin() != PacketFilterManager.this.plugin) {
-                        PacketFilterManager.this.removePacketListeners(event.getPlugin());
-                    }
-                }
-            }, plugin);
+    public void inject() {
+        if (this.closed || this.injected) {
+            return;
         }
+
+        // prevent duplicate event registrations / injections
+        this.injected = true;
+        this.networkManagerInjector.inject();
     }
 
     @Override

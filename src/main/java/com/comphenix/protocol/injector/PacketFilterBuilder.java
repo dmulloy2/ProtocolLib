@@ -1,10 +1,12 @@
 package com.comphenix.protocol.injector;
 
+import javax.annotation.Nonnull;
+
 import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.async.AsyncFilterManager;
 import com.comphenix.protocol.error.ErrorReporter;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import javax.annotation.Nonnull;
+
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 
@@ -112,7 +114,7 @@ public class PacketFilterBuilder {
      *
      * @return A new packet filter manager.
      */
-    public InternalManager build() {
+    public PacketFilterManager build() {
         if (this.reporter == null) {
             throw new IllegalArgumentException("reporter cannot be NULL.");
         }

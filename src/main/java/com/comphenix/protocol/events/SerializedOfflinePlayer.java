@@ -36,6 +36,7 @@ import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.utility.ByteBuddyFactory;
 import com.comphenix.protocol.utility.Util;
 
+import io.papermc.paper.persistence.PersistentDataContainerView;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
@@ -60,7 +61,6 @@ import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.profile.PlayerProfile;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -157,8 +157,25 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return null;
     }
 
+    /**
+     * @param b
+     * @return
+     */
+    @Override
+    public @org.jspecify.annotations.Nullable Location getRespawnLocation(boolean b) {
+        return null;
+    }
+
     @Override
     public Location getLocation() {
+        return null;
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public PersistentDataContainerView getPersistentDataContainer() {
         return null;
     }
 
@@ -241,8 +258,11 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
         return uuid;
     }
 
+    /**
+     * @return
+     */
     @Override
-    public @NotNull PlayerProfile getPlayerProfile() {
+    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
         return null;
     }
 
@@ -286,6 +306,14 @@ class SerializedOfflinePlayer implements OfflinePlayer, Serializable {
     @Override
     public boolean isOnline() {
         return online;
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public boolean isConnected() {
+        return false;
     }
 
     @Override

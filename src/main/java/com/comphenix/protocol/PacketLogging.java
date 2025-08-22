@@ -16,22 +16,6 @@
  */
 package com.comphenix.protocol;
 
-import com.comphenix.protocol.PacketType.Protocol;
-import com.comphenix.protocol.PacketType.Sender;
-import com.comphenix.protocol.events.ListeningWhitelist;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.events.PacketListener;
-import com.comphenix.protocol.injector.netty.WirePacket;
-import com.comphenix.protocol.reflect.FuzzyReflection;
-import com.comphenix.protocol.reflect.accessors.Accessors;
-import com.comphenix.protocol.reflect.accessors.MethodAccessor;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -48,11 +32,28 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import com.comphenix.protocol.PacketType.Protocol;
+import com.comphenix.protocol.PacketType.Sender;
+import com.comphenix.protocol.error.ErrorReporter;
+import com.comphenix.protocol.events.ListeningWhitelist;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
+import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.injector.netty.WirePacket;
+import com.comphenix.protocol.reflect.FuzzyReflection;
+import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.utility.MinecraftReflection;
+
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
+
 /**
  * Logs packets to a given stream
  * @author dmulloy2
  */
-public class PacketLogging implements CommandExecutor, PacketListener {
+public class PacketLogging extends CommandBase implements PacketListener {
     public static final String NAME = "packetlog";
 
     private static MethodAccessor HEX_DUMP;
@@ -69,93 +70,94 @@ public class PacketLogging implements CommandExecutor, PacketListener {
     private final ProtocolManager manager;
     private final Plugin plugin;
 
-    PacketLogging(Plugin plugin, ProtocolManager manager) {
+    PacketLogging(ErrorReporter reporter, Plugin plugin, PacketFilterManager manager) {
+        super(reporter, CommandBase.PERMISSION_ADMIN, NAME, 2);
         this.plugin = plugin;
         this.manager = manager;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean handleCommand(CommandSender sender, String[] args) {
         PacketType type = null;
 
         try {
-            if (args.length > 2) {
-                Protocol protocol;
+            if (args.length <= 2) {
+                sender.sendMessage(ChatColor.RED + "Invalid syntax: /packetlog <protocol> <sender> <packet> [location]");
+                return true;
+            }
 
-                try {
-                    protocol = Protocol.valueOf(args[0].toUpperCase());
-                } catch (IllegalArgumentException ex) {
-                    sender.sendMessage(ChatColor.RED + "Unknown protocol " + args[0]);
-                    return true;
-                }
+            Protocol protocol;
 
-                Sender pSender;
+            try {
+                protocol = Protocol.valueOf(args[0].toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                sender.sendMessage(ChatColor.RED + "Unknown protocol " + args[0]);
+                return true;
+            }
 
-                try {
-                    pSender = Sender.valueOf(args[1].toUpperCase());
-                } catch (IllegalArgumentException ex) {
-                    sender.sendMessage(ChatColor.RED + "Unknown sender: " + args[1]);
-                    return true;
-                }
+            Sender pSender;
 
-                try {
-                    try { // Try IDs first
-                        int id = Integer.parseInt(args[2]);
-                        type = PacketType.findCurrent(protocol, pSender, id);
-                    } catch (NumberFormatException ex) { // Check packet names
-                        String name = args[2];
-                        for (PacketType packet : PacketType.values()) {
-                            if (packet.getProtocol() == protocol && packet.getSender() == pSender) {
-                                if (packet.name().equalsIgnoreCase(name)) {
+            try {
+                pSender = Sender.valueOf(args[1].toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                sender.sendMessage(ChatColor.RED + "Unknown sender: " + args[1]);
+                return true;
+            }
+
+            try {
+                try { // Try IDs first
+                    int id = Integer.parseInt(args[2]);
+                    type = PacketType.findCurrent(protocol, pSender, id);
+                } catch (NumberFormatException ex) { // Check packet names
+                    String name = args[2];
+                    for (PacketType packet : PacketType.values()) {
+                        if (packet.getProtocol() == protocol && packet.getSender() == pSender) {
+                            if (packet.name().equalsIgnoreCase(name)) {
+                                type = packet;
+                                break;
+                            }
+                            for (String className : packet.getClassNames()) {
+                                if (className.equalsIgnoreCase(name)) {
                                     type = packet;
                                     break;
-                                }
-                                for (String className : packet.getClassNames()) {
-                                    if (className.equalsIgnoreCase(name)) {
-                                        type = packet;
-                                        break;
-                                    }
                                 }
                             }
                         }
                     }
-                } catch (IllegalArgumentException ex) { // RIP
-                    type = null;
                 }
+            } catch (IllegalArgumentException ex) { // RIP
+                type = null;
+            }
 
-                if (type == null) {
-                    sender.sendMessage(ChatColor.RED + "Unknown packet: " + args[2]);
-                    return true;
-                }
-
-                if (args.length > 3) {
-                    if (args[3].equalsIgnoreCase("console")) {
-                        this.location = LogLocation.CONSOLE;
-                    } else {
-                        this.location = LogLocation.FILE;
-                    }
-                }
-
-                if (pSender == Sender.CLIENT) {
-                    if (receivingTypes.contains(type)) {
-                        receivingTypes.remove(type);
-                    } else {
-                        receivingTypes.add(type);
-                    }
-                } else {
-                    if (sendingTypes.contains(type)) {
-                        sendingTypes.remove(type);
-                    } else {
-                        sendingTypes.add(type);
-                    }
-                }
-
-                startLogging();
-                sender.sendMessage(ChatColor.GREEN + "Now logging " + type.getPacketClass().getSimpleName());
+            if (type == null) {
+                sender.sendMessage(ChatColor.RED + "Unknown packet: " + args[2]);
                 return true;
             }
 
-            sender.sendMessage(ChatColor.RED + "Invalid syntax: /packetlog <protocol> <sender> <packet> [location]");
+            if (args.length > 3) {
+                if (args[3].equalsIgnoreCase("console")) {
+                    this.location = LogLocation.CONSOLE;
+                } else {
+                    this.location = LogLocation.FILE;
+                }
+            }
+
+            if (pSender == Sender.CLIENT) {
+                if (receivingTypes.contains(type)) {
+                    receivingTypes.remove(type);
+                } else {
+                    receivingTypes.add(type);
+                }
+            } else {
+                if (sendingTypes.contains(type)) {
+                    sendingTypes.remove(type);
+                } else {
+                    sendingTypes.add(type);
+                }
+            }
+
+            startLogging();
+            sender.sendMessage(ChatColor.GREEN + "Now logging " + type.getPacketClass().getSimpleName());
             return true;
         } catch (Throwable ex) {
             sender.sendMessage(ChatColor.RED + "Failed to parse command: " + ex);

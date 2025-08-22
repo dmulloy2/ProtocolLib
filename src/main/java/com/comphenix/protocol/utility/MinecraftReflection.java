@@ -1899,4 +1899,16 @@ public final class MinecraftReflection {
 
         return isMojangMapped;
     }
+
+    public static Optional<Class<?>> getDataComponentMapClass() {
+        return getOptionalNMS("core.component.DataComponentMap");
+    }
+
+    public static Optional<Class<?>> getDataComponentHolderClass() {
+        return getOptionalNMS("core.component.DataComponentHolder");
+    }
+
+    public static Optional<Class<?>> getTypedDataComponentClass() {
+        return getOptionalNMS("core.component.TypedDataComponent");
+    }
 }

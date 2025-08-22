@@ -11,9 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.PacketType.Protocol;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -29,6 +26,7 @@ import com.comphenix.protocol.injector.NetworkProcessor;
 import com.comphenix.protocol.injector.netty.Injector;
 import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import com.comphenix.protocol.injector.temporary.TemporaryPlayer;
 import com.comphenix.protocol.reflect.FuzzyReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
@@ -43,6 +41,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 public class NettyChannelInjector implements Injector {
 
@@ -343,7 +343,7 @@ public class NettyChannelInjector implements Injector {
     @Override
     public Player getPlayer() {
         // if the player was already resolved there is no need to do further lookups
-        if (this.player != null) {
+        if (this.player != null && !(this.player instanceof TemporaryPlayer)) {
             return this.player;
         }
 
@@ -368,6 +368,11 @@ public class NettyChannelInjector implements Injector {
 
         this.injectionFactory.cacheInjector(player, this);
         this.injectionFactory.cacheInjector(player.getName(), this);
+    }
+
+    @Override
+    public boolean hasValidPlayer() {
+        return this.player != null && !(player instanceof TemporaryPlayer);
     }
 
     @Override
