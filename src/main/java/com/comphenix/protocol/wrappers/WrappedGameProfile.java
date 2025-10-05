@@ -39,14 +39,24 @@ public class WrappedGameProfile extends AbstractWrapper {
     private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAccessorOrNull(
             GAME_PROFILE, "id", String.class);
 
-    private static final MethodAccessor GET_ID = Accessors.getMethodAccessorOrNull(
-            GAME_PROFILE, "getId");
-    private static final MethodAccessor GET_NAME = Accessors.getMethodAccessorOrNull(
-            GAME_PROFILE, "getName");
-    private static final MethodAccessor GET_PROPERTIES = Accessors.getMethodAccessorOrNull(
-            GAME_PROFILE, "getProperties");
-    private static final MethodAccessor IS_COMPLETE = Accessors.getMethodAccessorOrNull(
-            GAME_PROFILE, "isComplete");
+    private static MethodAccessor GET_ID;
+    private static MethodAccessor GET_NAME;
+    private static MethodAccessor GET_PROPERTIES;
+    private static MethodAccessor IS_COMPLETE;
+
+    static {
+        GET_ID = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "getId");
+        if (GET_ID == null) {
+            GET_ID = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "id");
+            GET_NAME = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "name");
+            GET_PROPERTIES = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "properties");
+            IS_COMPLETE = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "complete");
+        } else {
+            GET_NAME = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "getName");
+            GET_PROPERTIES = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "getProperties");
+            IS_COMPLETE = Accessors.getMethodAccessorOrNull(GAME_PROFILE, "isComplete");
+        }
+    }
 
     // Fetching game profile
     private static FieldAccessor PLAYER_PROFILE;

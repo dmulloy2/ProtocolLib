@@ -25,10 +25,12 @@ import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.projectile.ThrownEgg;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEgg;
+import org.bukkit.craftbukkit.v1_21_R6.entity.CraftEgg;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
@@ -201,7 +203,8 @@ public class WrappedDataWatcherTest {
         assertEquals(Particle.CAMPFIRE_COSY_SMOKE, ((WrappedParticle) wdvs.get(5).getValue()).getParticle());
     }
 
-    @Test
+    // @Test
+    // TODO: CompoundTag has been removed as a data watcher type (replaced with data components)
     public void testNBT() {
         WrappedDataWatcher watcher = new WrappedDataWatcher();
 
