@@ -35,6 +35,8 @@ public class WrappedGameProfile extends AbstractWrapper {
             GAME_PROFILE, String.class, String.class);
     private static final ConstructorAccessor CREATE_UUID_STRING = Accessors.getConstructorAccessorOrNull(
             GAME_PROFILE, UUID.class, String.class);
+    private static final ConstructorAccessor CREATE_UUID_STRING_PROPERTIES = Accessors.getConstructorAccessorOrNull(
+            GAME_PROFILE, UUID.class, String.class, MinecraftReflection.getGameProfilePropertyMapClass());
 
     private static final FieldAccessor GET_UUID_STRING = Accessors.getFieldAccessorOrNull(
             GAME_PROFILE, "id", String.class);
@@ -127,6 +129,51 @@ public class WrappedGameProfile extends AbstractWrapper {
         this(parseUUID(id), name);
     }
 
+    private static Object createHandle(UUID uuid, String name, Multimap<String, WrappedSignedProperty> properties) {
+        if (CREATE_STRING_STRING != null) {
+            return CREATE_STRING_STRING.invoke(uuid != null ? uuid.toString() : null, name);
+        }
+
+        if (CREATE_UUID_STRING == null) {
+            throw new IllegalArgumentException("Unsupported GameProfile constructor.");
+        }
+
+        if (!MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
+            return CREATE_UUID_STRING.invoke(uuid, name);
+        }
+
+        // 1.20.2+ requires all fields to have a value: null uuid -> UUID(0,0), null name -> empty name
+        // it's not allowed to pass null for both, so we need to pre-check that
+        if (uuid == null && (name == null || name.isEmpty())) {
+            throw new IllegalArgumentException("Name and ID cannot both be blank");
+        }
+
+        // 1.21.9+ made PropertyMap's underlying map immutable, so we need to override it with a mutable map
+        if (MinecraftVersion.v1_21_9.atOrAbove()) {
+            return CREATE_UUID_STRING_PROPERTIES.invoke(uuid == null ? MinecraftGenerator.SYS_UUID : uuid, name == null ? "" : name,
+                    convertPropertyMap(properties));
+        }
+
+        return CREATE_UUID_STRING.invoke(uuid == null ? MinecraftGenerator.SYS_UUID : uuid, name == null ? "" : name);
+    }
+
+    private static Object convertPropertyMap(Multimap<String, WrappedSignedProperty> properties) {
+        com.comphenix.protocol.wrappers.MutablePropertyMap map =
+                new com.comphenix.protocol.wrappers.MutablePropertyMap();
+
+        if (properties == null || properties.isEmpty()) {
+            return map;
+        }
+
+        for (String key : properties.keySet()) {
+            for (WrappedSignedProperty property : properties.get(key)) {
+                map.put(key, (com.mojang.authlib.properties.Property) property.getHandle());
+            }
+        }
+
+        return map;
+    }
+
     /**
      * Construct a new game profile with the given properties.
      * <p>
@@ -137,24 +184,12 @@ public class WrappedGameProfile extends AbstractWrapper {
      */
     public WrappedGameProfile(UUID uuid, String name) {
         super(GAME_PROFILE);
+        setHandle(createHandle(uuid, name, null));
+    }
 
-        if (CREATE_STRING_STRING != null) {
-            setHandle(CREATE_STRING_STRING.invoke(uuid != null ? uuid.toString() : null, name));
-        } else if (CREATE_UUID_STRING != null) {
-            if (MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove()) {
-                // 1.20.2+ requires all fields to have a value: null uuid -> UUID(0,0), null name -> empty name
-                // it's not allowed to pass null for both, so we need to pre-check that
-                if (uuid == null && (name == null || name.isEmpty())) {
-                    throw new IllegalArgumentException("Name and ID cannot both be blank");
-                }
-
-                setHandle(CREATE_UUID_STRING.invoke(uuid == null ? MinecraftGenerator.SYS_UUID : uuid, name == null ? "" : name));
-            } else {
-                setHandle(CREATE_UUID_STRING.invoke(uuid, name));
-            }
-        } else {
-            throw new IllegalArgumentException("Unsupported GameProfile constructor.");
-        }
+    public WrappedGameProfile(UUID uuid, String name, Multimap<String, WrappedSignedProperty> properties) {
+        super(GAME_PROFILE);
+        setHandle(createHandle(uuid, name, properties));
     }
 
     /**
@@ -167,7 +202,12 @@ public class WrappedGameProfile extends AbstractWrapper {
         if (handle == null)
             return null;
 
-        return new WrappedGameProfile(handle);
+        WrappedGameProfile delegate = new WrappedGameProfile(handle);
+        if (MinecraftVersion.v1_21_9.atOrAbove()) {
+            return new WrappedGameProfile(delegate.getUUID(), delegate.getName(), delegate.getProperties());
+        } else {
+            return delegate;
+        }
     }
 
     /**
@@ -279,7 +319,15 @@ public class WrappedGameProfile extends AbstractWrapper {
 
         if (result == null) {
             Multimap properties = (Multimap) GET_PROPERTIES.invoke(handle);
-            result = new ConvertedMultimap<String, Object, WrappedSignedProperty>(GuavaWrappers.getBukkitMultimap(properties)) {
+
+            Multimap inner;
+            if (MinecraftVersion.v1_21_9.atOrAbove()) {
+                inner = properties;
+            } else {
+                inner = GuavaWrappers.getBukkitMultimap(properties);
+            }
+
+            result = new ConvertedMultimap<String, Object, WrappedSignedProperty>(inner) {
                 @Override
                 protected Object toInner(WrappedSignedProperty outer) {
                     return outer.handle;

@@ -553,6 +553,10 @@ public final class MinecraftReflection {
         return getClass("com.mojang.authlib.GameProfile");
     }
 
+    public static Class<?> getGameProfilePropertyMapClass() {
+        return getClass("com.mojang.authlib.properties.PropertyMap");
+    }
+
     /**
      * Retrieve the entity (NMS) class.
      *

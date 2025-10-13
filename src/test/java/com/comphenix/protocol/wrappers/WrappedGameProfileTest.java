@@ -67,8 +67,7 @@ public class WrappedGameProfileTest {
         assertEquals(property.getSignature(), signature);
     }
 
-    // @Test
-    // TODO: backing map was changed to be immutable
+    @Test
     void testAddProperties() {
         String name = "test";
         String value = "test";
