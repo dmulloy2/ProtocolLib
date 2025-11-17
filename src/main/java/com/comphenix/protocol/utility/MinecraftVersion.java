@@ -37,6 +37,11 @@ import org.bukkit.Server;
  */
 public final class MinecraftVersion implements Comparable<MinecraftVersion>, Serializable {
     /**
+     * Version 1.21.10 - hotfix for 1.21.9
+     */
+    public static final MinecraftVersion v1_21_10 = new MinecraftVersion("1.21.10");
+
+    /**
      * Version 1.21.9 - the copper age drop
      */
     public static final MinecraftVersion v1_21_9 = new MinecraftVersion("1.21.9");
@@ -174,7 +179,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion>, Ser
     /**
      * The latest release version of minecraft.
      */
-    public static final MinecraftVersion LATEST = v1_21_9;
+    public static final MinecraftVersion LATEST = v1_21_10;
 
     // used when serializing
     private static final long serialVersionUID = -8695133558996459770L;

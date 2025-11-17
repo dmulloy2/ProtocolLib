@@ -1,7 +1,9 @@
 package com.comphenix.protocol.wrappers;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
@@ -11,6 +13,10 @@ import com.comphenix.protocol.wrappers.WrappedServerPing.CompressedImage;
 
 import com.google.common.io.Resources;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
+import net.minecraft.network.protocol.status.ServerStatus;
+import net.minecraft.server.players.NameAndId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -75,6 +81,25 @@ public class WrappedServerPingTest {
 
         CompressedImage copy = CompressedImage.fromBase64Png(Base64Coder.encodeLines(tux.getData()));
         assertArrayEquals(copy.getData(), roundTrip.getFavicon().getData());
+    }
+
+    @Test
+    public void testGetPlayers() {
+        ClientboundStatusResponsePacket packet = new ClientboundStatusResponsePacket(new ServerStatus(
+                Component.literal("A Minecraft Server"),
+                Optional.of(new ServerStatus.Players(2, 2, List.of(
+                        new NameAndId(UUID.randomUUID(), "Player1"),
+                        new NameAndId(UUID.randomUUID(), "Player2")
+                ))),
+                Optional.empty(),
+                Optional.empty(),
+                false
+        ));
+
+        PacketContainer container = PacketContainer.fromPacket(packet);
+
+        WrappedServerPing wrappedServerStatus = container.getServerPings().read(0);
+        assertEquals(2, wrappedServerStatus.getPlayers().size());
     }
 
     @Test

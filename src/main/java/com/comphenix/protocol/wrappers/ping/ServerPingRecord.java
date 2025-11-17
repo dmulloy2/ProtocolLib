@@ -7,6 +7,8 @@ import com.comphenix.protocol.reflect.accessors.Accessors;
 import com.comphenix.protocol.reflect.accessors.ConstructorAccessor;
 import com.comphenix.protocol.reflect.accessors.FieldAccessor;
 import com.comphenix.protocol.reflect.accessors.MethodAccessor;
+import com.comphenix.protocol.reflect.instances.DefaultInstances;
+import com.comphenix.protocol.reflect.instances.MinecraftGenerator;
 import com.comphenix.protocol.utility.MinecraftProtocolVersion;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.utility.MinecraftVersion;
@@ -23,6 +25,7 @@ public final class ServerPingRecord implements ServerPingImpl {
     private static Class<?> SERVER_PING;
     private static Class<?> PLAYER_SAMPLE_CLASS;
     private static Class<?> SERVER_DATA_CLASS;
+    private static Class<?> NAME_AND_ID_CLASS;
 
     private static Class<?> GSON_CLASS;
     private static MethodAccessor GSON_TO_JSON;
@@ -62,7 +65,31 @@ public final class ServerPingRecord implements ServerPingImpl {
                 SAMPLE_WRAPPER = AutoWrapper.wrap(PlayerSample.class, PLAYER_SAMPLE_CLASS);
                 FAVICON_WRAPPER = AutoWrapper.wrap(Favicon.class, MinecraftReflection.getMinecraftClass("network.protocol.status.ServerPing$a", "network.protocol.status.ServerStatus$Favicon"));
 
-                PROFILE_LIST_CONVERTER = BukkitConverters.getListConverter(BukkitConverters.getWrappedGameProfileConverter());
+                if (MinecraftVersion.v1_21_10.atOrAbove()) {
+                    NAME_AND_ID_CLASS = MinecraftReflection.getMinecraftClass("server.players.NameAndId");
+                    NAME_AND_ID_WRAPPER = AutoWrapper.wrap(NameAndId.class, NAME_AND_ID_CLASS);
+
+                    PROFILE_LIST_CONVERTER = BukkitConverters.getListConverter(new EquivalentConverter<>() {
+                        @Override
+                        public Object getGeneric(WrappedGameProfile specific) {
+                            NameAndId wrapper = new NameAndId(specific.getUUID(), specific.getName());
+                            return NAME_AND_ID_WRAPPER.getGeneric(wrapper);
+                        }
+
+                        @Override
+                        public WrappedGameProfile getSpecific(Object generic) {
+                            NameAndId wrapper = NAME_AND_ID_WRAPPER.getSpecific(generic);
+                            return new WrappedGameProfile(wrapper.id, wrapper.name);
+                        }
+
+                        @Override
+                        public Class<WrappedGameProfile> getSpecificType() {
+                            return WrappedGameProfile.class;
+                        }
+                    });
+                } else {
+                    PROFILE_LIST_CONVERTER = BukkitConverters.getListConverter(BukkitConverters.getWrappedGameProfileConverter());
+                }
 
                 DEFAULT_DESCRIPTION = WrappedChatComponent.fromLegacyText("A Minecraft Server");
 
@@ -124,11 +151,24 @@ public final class ServerPingRecord implements ServerPingImpl {
         }
     }
 
+    public static final class NameAndId {
+        public UUID id;
+        public String name;
+
+        public NameAndId(UUID id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public NameAndId() {
+            this(MinecraftGenerator.SYS_UUID, "");
+        }
+    }
+
     private static AutoWrapper<PlayerSample> SAMPLE_WRAPPER;
-
     private static AutoWrapper<ServerData> DATA_WRAPPER;
-
     private static AutoWrapper<Favicon> FAVICON_WRAPPER;
+    private static AutoWrapper<NameAndId> NAME_AND_ID_WRAPPER;
 
     private WrappedChatComponent description;
     private PlayerSample playerSample;
