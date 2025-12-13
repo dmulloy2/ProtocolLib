@@ -598,7 +598,7 @@ public class ZeroBuffer extends ByteBuf {
 
     @Override
     public CharSequence readCharSequence(int i, Charset charset) {
-        return null;
+        return "";
     }
 
     @Override
