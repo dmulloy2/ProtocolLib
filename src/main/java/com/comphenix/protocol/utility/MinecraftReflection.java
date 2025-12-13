@@ -921,7 +921,7 @@ public final class MinecraftReflection {
     }
 
     public static Class<?> getMinecraftKeyClass() {
-        return getMinecraftClass("resources.MinecraftKey", "resources.ResourceLocation", "MinecraftKey");
+        return getMinecraftClass("resources.MinecraftKey", "resources.ResourceLocation", "resources.Identifier", "MinecraftKey");
     }
 
     public static Class<?> getMobEffectListClass() {
