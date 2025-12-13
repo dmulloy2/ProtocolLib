@@ -22,7 +22,7 @@ import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.PlainTextContents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class AutoWrapperTest {
 
@@ -37,7 +37,7 @@ public class AutoWrapperTest {
         display.title = WrappedChatComponent.fromText("Test123");
         display.description = WrappedChatComponent.fromText("Test567");
         display.item = new ItemStack(Material.GOLD_INGOT);
-        display.background = Optional.of(new ClientAsset.ResourceTexture(ResourceLocation.fromNamespaceAndPath("minecraft", "test")));
+        display.background = Optional.of(new ClientAsset.ResourceTexture(Identifier.fromNamespaceAndPath("minecraft", "test")));
         display.frameType = WrappedFrameType.CHALLENGE;
         display.announceChat = false;
         display.showToast = true;
@@ -66,7 +66,7 @@ public class AutoWrapperTest {
               (net.minecraft.world.item.ItemStack)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
               Component.literal("Test123"),
               Component.literal("Test567"),
-			  Optional.of(new ClientAsset.ResourceTexture(ResourceLocation.fromNamespaceAndPath("minecraft", "test"))),
+			  Optional.of(new ClientAsset.ResourceTexture(Identifier.fromNamespaceAndPath("minecraft", "test"))),
               AdvancementType.CHALLENGE,
               true,
               false,

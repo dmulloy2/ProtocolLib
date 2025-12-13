@@ -3,7 +3,6 @@ package com.comphenix.protocol.wrappers;
 import com.comphenix.protocol.BukkitInitialization;
 
 import com.google.gson.JsonElement;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -25,16 +24,13 @@ public class WrappedComponentStyleTest {
         net.minecraft.network.chat.Style style = net.minecraft.network.chat.Style.EMPTY.withColor(ChatFormatting.RED).withBold(true);
         WrappedComponentStyle wrapped = new WrappedComponentStyle(style);
         JsonElement json = wrapped.getJson();
-        assertEquals("{\"bold\":true,\"color\":\"red\"}", json.toString());
+        assertEquals("{\"color\":\"red\",\"bold\":true}", json.toString());
         assertEquals(style, WrappedComponentStyle.fromJson(json).getHandle());
     }
 
     @Test
     public void testStyleAdventureConversion() {
         Style adventureStyle = Style.style(NamedTextColor.GREEN, TextDecoration.BOLD);
-        // TODO(fix): wait for https://github.com/KyoriPowered/adventure/issues/1194 to be fixed
-        //        .clickEvent(ClickEvent.changePage(10));
-
         WrappedComponentStyle wrapped = AdventureComponentConverter.fromStyle(adventureStyle);
         assertEquals(adventureStyle, AdventureComponentConverter.fromWrapper(wrapped));
     }

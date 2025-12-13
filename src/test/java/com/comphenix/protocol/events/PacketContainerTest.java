@@ -41,8 +41,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
-import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import org.apache.commons.lang.SerializationUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -105,15 +104,15 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket.AttributeSnapshot;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
-import net.minecraft.world.entity.animal.CatVariant;
-import net.minecraft.world.entity.animal.CatVariants;
+import net.minecraft.world.entity.animal.feline.CatVariant;
+import net.minecraft.world.entity.animal.feline.CatVariants;
 import net.minecraft.world.entity.animal.frog.FrogVariant;
 import net.minecraft.world.entity.animal.frog.FrogVariants;
 
@@ -523,15 +522,14 @@ public class PacketContainerTest {
 
         // Initialize some test data
         List<AttributeModifier> modifiers = Lists.newArrayList(
-                new AttributeModifier(ResourceLocation.parse("protocollib:test"),10,
-                        Operation.ADD_VALUE));
+                new AttributeModifier(Identifier.parse("protocollib:test"),10, Operation.ADD_VALUE));
 
         // Obtain an AttributeSnapshot instance. This is complicated by the fact that AttributeSnapshots
         // are inner classes (which is ultimately pointless because AttributeSnapshots don't access any
         // members of the packet itself)
         ClientboundUpdateAttributesPacket packet = (ClientboundUpdateAttributesPacket) attribute.getHandle();
 		net.minecraft.core.Registry<Attribute> registry = BuiltInRegistries.ATTRIBUTE;
-        Attribute base = registry.getValue(ResourceLocation.parse("max_health"));
+        Attribute base = registry.getValue(Identifier.parse("max_health"));
         AttributeSnapshot snapshot = new AttributeSnapshot(registry.wrapAsHolder(base), 20.0D, modifiers);
         attribute.getSpecificModifier(List.class).write(0, Lists.newArrayList(snapshot));
 

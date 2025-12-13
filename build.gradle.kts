@@ -6,15 +6,15 @@ plugins {
     `java-library`
     `maven-publish`
     `signing`
-    id("com.gradleup.shadow") version "9.0.2"
+    id("com.gradleup.shadow") version "9.3.0"
     id("io.github.patrick.remapper") version "1.4.2"
-    id("com.vanniktech.maven.publish") version "0.34.0"
+    id("com.vanniktech.maven.publish") version "0.35.0"
 }
 
 group = "net.dmulloy2"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "1.21.10"
+val mcVersion = "1.21.11"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
@@ -45,27 +45,22 @@ repositories {
 }
 
 dependencies {
-    implementation("net.bytebuddy:byte-buddy:1.17.8")
+    implementation("net.bytebuddy:byte-buddy:1.18.2")
     compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
     compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
-    compileOnly("io.netty:netty-all:4.0.23.Final")
-    /* 
-     * TODO(fix): once you update kyori:adventure-text-serializer-gson please uncomment the TODO in
-     * com.comphenix.protocol.wrappers.WrappedComponentStyleTest if the following issue got fixed:
-     * https://github.com/KyoriPowered/adventure/issues/1194
-     */
-    compileOnly("net.kyori:adventure-text-serializer-gson:4.21.0")
+    compileOnly("io.netty:netty-all:4.2.5.Final")
+    compileOnly("net.kyori:adventure-text-serializer-gson:4.25.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.0")
-    testImplementation("org.mockito:mockito-core:5.6.0")
-    testImplementation("io.netty:netty-common:4.1.97.Final")
-    testImplementation("io.netty:netty-transport:4.1.97.Final")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
+    testImplementation("org.mockito:mockito-core:5.21.0")
+    testImplementation("io.netty:netty-common:4.2.8.Final")
+    testImplementation("io.netty:netty-transport:4.2.8.Final")
     testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
-    testImplementation("net.kyori:adventure-text-serializer-gson:4.14.0")
-    testImplementation("net.kyori:adventure-text-serializer-plain:4.14.0")
+    testImplementation("net.kyori:adventure-text-serializer-gson:4.25.0")
+    testImplementation("net.kyori:adventure-text-serializer-plain:4.25.0")
 }
 
 java {

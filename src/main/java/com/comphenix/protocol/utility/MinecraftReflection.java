@@ -921,15 +921,15 @@ public final class MinecraftReflection {
     }
 
     public static Class<?> getMinecraftKeyClass() {
-        return getMinecraftClass("resources.MinecraftKey", "resources.ResourceLocation", "MinecraftKey");
+        return getMinecraftClass("resources.MinecraftKey", "resources.Identifier", "resources.ResourceLocation", "MinecraftKey");
     }
 
     public static Class<?> getMobEffectListClass() {
-        return getMinecraftClass("world.effect.MobEffectList", "MobEffectList", "world.effect.MobEffect");
+        return getMinecraftClass("world.effect.MobEffectList", "MobEffectList", "world.effect.MobEffect", "world.effect.MobEffects");
     }
 
     public static Class<?> getSoundEffectClass() {
-        return getNullableNMS("sounds.SoundEffect", "sounds.SoundEvent", "SoundEffect");
+        return getNullableNMS("sounds.SoundEffect", "sounds.SoundEvent", "SoundEffect", "sounds.SoundEvents");
     }
 
     /**

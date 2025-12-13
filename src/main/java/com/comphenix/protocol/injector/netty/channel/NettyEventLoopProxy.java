@@ -252,6 +252,11 @@ final class NettyEventLoopProxy implements EventLoop {
     }
 
     @Override
+    public ChannelFuture register(ChannelPromise channelPromise) {
+        return this.delegate.register(channelPromise);
+    }
+
+    @Override
     public ChannelFuture register(Channel channel, ChannelPromise promise) {
         return this.delegate.register(channel, promise);
     }
