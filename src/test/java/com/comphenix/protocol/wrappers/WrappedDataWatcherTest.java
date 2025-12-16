@@ -25,12 +25,10 @@ import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
 import com.comphenix.protocol.wrappers.nbt.NbtFactory;
 
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.world.entity.projectile.ThrownEgg;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.craftbukkit.v1_21_R6.entity.CraftEgg;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftEgg;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;

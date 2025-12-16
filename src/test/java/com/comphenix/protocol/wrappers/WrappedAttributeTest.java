@@ -13,7 +13,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket.AttributeSnapshot;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.junit.jupiter.api.BeforeAll;
@@ -96,7 +96,7 @@ public class WrappedAttributeTest {
 
         Registry<Attribute> registry = BuiltInRegistries.ATTRIBUTE;
         String attributeKey = attribute.getAttributeKey();
-        ResourceLocation key = ResourceLocation.parse(attributeKey);
+        Identifier key = Identifier.parse(attributeKey);
         Attribute base = registry.getValue(key);
         Holder<Attribute> holder = registry.wrapAsHolder(base);
         return new AttributeSnapshot(holder, attribute.getBaseValue(), modifiers);
@@ -104,7 +104,7 @@ public class WrappedAttributeTest {
 
     private AttributeModifier getModifierCopy(WrappedAttributeModifier modifier) {
         AttributeModifier.Operation operation = AttributeModifier.Operation.values()[modifier.getOperation().getId()];
-        return new AttributeModifier((ResourceLocation) com.comphenix.protocol.wrappers.MinecraftKey.getConverter().getGeneric(modifier.getKey()),
+        return new AttributeModifier((Identifier) com.comphenix.protocol.wrappers.MinecraftKey.getConverter().getGeneric(modifier.getKey()),
             modifier.getAmount(), operation);
     }
 }

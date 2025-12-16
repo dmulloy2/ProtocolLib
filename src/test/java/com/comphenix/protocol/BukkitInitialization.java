@@ -20,7 +20,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryDataLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.ReloadableServerResources;
@@ -32,6 +32,8 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
 import net.minecraft.world.entity.EntityType;
@@ -46,18 +48,18 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R6.CraftLootTable;
-import org.bukkit.craftbukkit.v1_21_R6.CraftRegistry;
-import org.bukkit.craftbukkit.v1_21_R6.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R6.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R6.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_21_R6.tag.CraftBlockTag;
-import org.bukkit.craftbukkit.v1_21_R6.tag.CraftEntityTag;
-import org.bukkit.craftbukkit.v1_21_R6.tag.CraftFluidTag;
-import org.bukkit.craftbukkit.v1_21_R6.tag.CraftItemTag;
-import org.bukkit.craftbukkit.v1_21_R6.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_21_R6.util.CraftNamespacedKey;
-import org.bukkit.craftbukkit.v1_21_R6.util.Versioning;
+import org.bukkit.craftbukkit.v1_21_R7.CraftLootTable;
+import org.bukkit.craftbukkit.v1_21_R7.CraftRegistry;
+import org.bukkit.craftbukkit.v1_21_R7.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_21_R7.tag.CraftBlockTag;
+import org.bukkit.craftbukkit.v1_21_R7.tag.CraftEntityTag;
+import org.bukkit.craftbukkit.v1_21_R7.tag.CraftFluidTag;
+import org.bukkit.craftbukkit.v1_21_R7.tag.CraftItemTag;
+import org.bukkit.craftbukkit.v1_21_R7.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_21_R7.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_21_R7.util.Versioning;
 import org.jetbrains.annotations.NotNull;
 import org.spigotmc.SpigotWorldConfig;
 
@@ -137,7 +139,7 @@ public class BukkitInitialization {
                 tags,
                 FeatureFlags.REGISTRY.allFlags() /* REGISTRY.allFlags() */,
                 Commands.CommandSelection.DEDICATED /* DEDICATED */,
-                0,
+                LevelBasedPermissionSet.ALL,
                 MoreExecutors.directExecutor(),
                 MoreExecutors.directExecutor()
             ).join();
@@ -186,7 +188,7 @@ public class BukkitInitialization {
             when(mockedServer.getTag(any(), any(), any())).then(mock -> {
                 String registry = mock.getArgument(0);
                 Class<?> clazz = mock.getArgument(2);
-                ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
+                Identifier key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
 
                 switch (registry) {
                     case org.bukkit.Tag.REGISTRY_BLOCKS -> {

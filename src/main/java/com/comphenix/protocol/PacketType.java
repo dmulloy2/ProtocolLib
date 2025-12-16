@@ -147,7 +147,7 @@ public class PacketType implements Serializable, Cloneable, Comparable<PacketTyp
             public static final PacketType UNLOAD_CHUNK =                 new PacketType(PROTOCOL, SENDER, 0x25, "ForgetLevelChunk", "UnloadChunk", "SPacketUnloadChunk");
             public static final PacketType GAME_STATE_CHANGE =            new PacketType(PROTOCOL, SENDER, 0x26, "GameEvent", "GameStateChange", "SPacketChangeGameState");
             public static final PacketType GAME_TEST_HIGHLIGHT_POS =      new PacketType(PROTOCOL, SENDER, 0x27, "GameTestHighlightPos");
-            public static final PacketType OPEN_WINDOW_HORSE =            new PacketType(PROTOCOL, SENDER, 0x28, "HorseScreenOpen", "OpenWindowHorse");
+            public static final PacketType OPEN_WINDOW_HORSE =            new PacketType(PROTOCOL, SENDER, 0x28, "MountScreenOpen", "HorseScreenOpen", "OpenWindowHorse");
             public static final PacketType HURT_ANIMATION =               new PacketType(PROTOCOL, SENDER, 0x29, "HurtAnimation", "ClientboundHurtAnimationPacket");
             public static final PacketType INITIALIZE_BORDER =            new PacketType(PROTOCOL, SENDER, 0x2A, "InitializeBorder");
             public static final PacketType KEEP_ALIVE =                   new PacketType(PROTOCOL, SENDER, 0x2B, "KeepAlive", "SPacketKeepAlive");

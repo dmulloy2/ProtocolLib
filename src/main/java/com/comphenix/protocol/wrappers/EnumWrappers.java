@@ -180,7 +180,8 @@ public abstract class EnumWrappers {
         DROP_ALL_ITEMS,
         DROP_ITEM,
         RELEASE_USE_ITEM,
-        SWAP_HELD_ITEMS("SWAP_ITEM_WITH_OFFHAND");
+        SWAP_HELD_ITEMS("SWAP_ITEM_WITH_OFFHAND"),
+        STAB;
 
         final String[] aliases;
         PlayerDigType(String... aliases) {
@@ -805,7 +806,7 @@ public abstract class EnumWrappers {
             }
 
             try {
-                SOUND_CATEGORY_CLASS = MinecraftReflection.getMinecraftClass("sounds.SoundCategory");
+                SOUND_CATEGORY_CLASS = MinecraftReflection.getMinecraftClass("sounds.SoundCategory", "sounds.SoundSource");
             } catch (Exception ex) {
                 SOUND_CATEGORY_CLASS = getEnum(PacketType.Play.Server.NAMED_SOUND_EFFECT.getPacketClass(), 0);
             }
