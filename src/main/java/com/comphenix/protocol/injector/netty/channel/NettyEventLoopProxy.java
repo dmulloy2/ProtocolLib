@@ -10,11 +10,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import io.netty.channel.AbstractEventLoop;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.AbstractEventExecutor;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ProgressivePromise;
@@ -25,7 +27,7 @@ import io.netty.util.concurrent.ScheduledFuture;
  * An abstract event loop implementation which delegates all calls to a given event loop, but proxies all calls which
  * schedule something on the event loop to methods which decide what should happen to the scheduled task.
  */
-final class NettyEventLoopProxy implements EventLoop {
+final class NettyEventLoopProxy extends AbstractEventLoop {
 
     private static final Callable<?> EMPTY_CALLABLE = () -> null;
     private static final Runnable EMPTY_RUNNABLE = () -> {
@@ -233,6 +235,15 @@ final class NettyEventLoopProxy implements EventLoop {
         Runnable proxied = this.proxyRunnable(command);
         if (proxied != null) {
             this.delegate.execute(proxied);
+        }
+    }
+
+    // ShreddedPaper uses this method
+    @Override
+    public void lazyExecute(Runnable command) {
+        Runnable proxied = this.proxyRunnable(command);
+        if (proxied != null) {
+            ((AbstractEventExecutor)this.delegate).lazyExecute(proxied);
         }
     }
 
