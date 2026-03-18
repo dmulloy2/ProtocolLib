@@ -58,11 +58,13 @@ public class OutboundPacketListenerSet extends PacketListenerSet {
                 }
             }
 
-            if (packets.iterator().hasNext()) {
-                event.getPacket().getPacketBundles().write(0, outPackets);
-            } else {
-                // cancel entire packet if each individual packet has been cancelled
-                event.setCancelled(true);
+            if (!event.isReadOnly()) {
+                if (packets.iterator().hasNext()) {
+                    event.getPacket().getPacketBundles().write(0, outPackets);
+                } else {
+                    // cancel entire packet if each individual packet has been cancelled
+                    event.setCancelled(true);
+                }
             }
         }
     }
