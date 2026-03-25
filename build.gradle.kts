@@ -6,15 +6,15 @@ plugins {
     `java-library`
     `maven-publish`
     `signing`
-    id("com.gradleup.shadow") version "9.3.0"
-    id("io.github.patrick.remapper") version "1.4.2"
-    id("com.vanniktech.maven.publish") version "0.35.0"
+    id("com.gradleup.shadow") version "9.4.0"
+    id("io.github.patrick.remapper") version "1.4.3"
+    id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
 group = "net.dmulloy2"
 description = "Provides access to the Minecraft protocol"
 
-val mcVersion = "1.21.11"
+val mcVersion = "26.1"
 val isSnapshot = version.toString().endsWith("-SNAPSHOT")
 val commitHash = System.getenv("COMMIT_SHA") ?: ""
 val isCI = commitHash.isNotEmpty()
@@ -47,7 +47,7 @@ repositories {
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.18.2")
     compileOnly("org.spigotmc:spigot-api:${mcVersion}-R0.1-SNAPSHOT")
-    compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
+    compileOnly("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")//:remapped-mojang")
     compileOnly("io.netty:netty-all:4.2.8.Final")
     compileOnly("net.kyori:adventure-text-serializer-gson:4.25.0")
     compileOnly("com.googlecode.json-simple:json-simple:1.1.1")
@@ -58,14 +58,18 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.21.0")
     testImplementation("io.netty:netty-common:4.2.8.Final")
     testImplementation("io.netty:netty-transport:4.2.8.Final")
-    testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT:remapped-mojang")
+    testImplementation("org.spigotmc:spigot:${mcVersion}-R0.1-SNAPSHOT")//:remapped-mojang")
     testImplementation("net.kyori:adventure-text-serializer-gson:4.25.0")
     testImplementation("net.kyori:adventure-text-serializer-plain:4.25.0")
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    // sourceCompatibility = JavaVersion.VERSION_25
+    // targetCompatibility = JavaVersion.VERSION_25
+
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
 }
 
 tasks {
@@ -99,7 +103,7 @@ tasks {
         archiveFileName = "ProtocolLib.jar"
     }
 
-    remap {
+    /*remap {
         dependsOn("shadowJar")
 
         inputTask.set(getByName<ShadowJar>("shadowJar"))
@@ -109,7 +113,7 @@ tasks {
 
     assemble {
         dependsOn("remap")
-    }
+    }*/
 
     javadoc {
         options.encoding = "UTF-8"

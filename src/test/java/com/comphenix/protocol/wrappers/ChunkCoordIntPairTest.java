@@ -26,7 +26,7 @@ public class ChunkCoordIntPairTest {
                 (net.minecraft.world.level.ChunkPos) ChunkCoordIntPair.getConverter().
                         getGeneric(specific);
 
-        assertEquals(1, roundtrip.x);
-        assertEquals(2, roundtrip.z);
+        assertEquals(1, roundtrip.x());
+        assertEquals(2, roundtrip.z());
     }
 }

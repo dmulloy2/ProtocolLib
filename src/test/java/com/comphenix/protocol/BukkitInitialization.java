@@ -3,6 +3,7 @@ package com.comphenix.protocol;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,18 +49,18 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R7.CraftLootTable;
-import org.bukkit.craftbukkit.v1_21_R7.CraftRegistry;
-import org.bukkit.craftbukkit.v1_21_R7.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_21_R7.tag.CraftBlockTag;
-import org.bukkit.craftbukkit.v1_21_R7.tag.CraftEntityTag;
-import org.bukkit.craftbukkit.v1_21_R7.tag.CraftFluidTag;
-import org.bukkit.craftbukkit.v1_21_R7.tag.CraftItemTag;
-import org.bukkit.craftbukkit.v1_21_R7.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_21_R7.util.CraftNamespacedKey;
-import org.bukkit.craftbukkit.v1_21_R7.util.Versioning;
+import org.bukkit.craftbukkit.CraftLootTable;
+import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.tag.CraftBlockTag;
+import org.bukkit.craftbukkit.tag.CraftEntityTag;
+import org.bukkit.craftbukkit.tag.CraftFluidTag;
+import org.bukkit.craftbukkit.tag.CraftItemTag;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Versioning;
 import org.jetbrains.annotations.NotNull;
 import org.spigotmc.SpigotWorldConfig;
 
@@ -129,7 +130,15 @@ public class BukkitInitialization {
             List<net.minecraft.core.Registry.PendingTags<?>> tags = TagLoader.loadTagsForExistingRegistries(resourceManager, layeredAccess1.getLayer(RegistryLayer.STATIC));
             RegistryAccess.Frozen access1 = layeredAccess1.getAccessForLoading(RegistryLayer.WORLDGEN);
             List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(access1, tags);
-            RegistryAccess.Frozen access2 = RegistryDataLoader.load(resourceManager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+
+            RegistryAccess.Frozen access2;
+
+            try {
+                access2 = RegistryDataLoader.load(resourceManager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES, Executors.newSingleThreadExecutor()).get();
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+            
             LayeredRegistryAccess<RegistryLayer> layeredAccess2 = layeredAccess1.replaceFrom(RegistryLayer.WORLDGEN, access2);
             RegistryAccess.Frozen registryCustom = layeredAccess2.compositeAccess().freeze();
 
@@ -143,7 +152,7 @@ public class BukkitInitialization {
                 MoreExecutors.directExecutor(),
                 MoreExecutors.directExecutor()
             ).join();
-            dataPackResources.updateStaticRegistryTags();
+            dataPackResources.updateComponentsAndStaticRegistryTags();
 
             /* try {
                 IRegistry.class.getName();

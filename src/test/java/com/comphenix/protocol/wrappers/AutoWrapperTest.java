@@ -63,7 +63,7 @@ public class AutoWrapperTest {
     @Test
     public void testFromNms() {
         DisplayInfo display = new DisplayInfo(
-              (net.minecraft.world.item.ItemStack)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
+              (net.minecraft.world.item.ItemStackTemplate)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
               Component.literal("Test123"),
               Component.literal("Test567"),
 			  Optional.of(new ClientAsset.ResourceTexture(Identifier.fromNamespaceAndPath("minecraft", "test"))),
