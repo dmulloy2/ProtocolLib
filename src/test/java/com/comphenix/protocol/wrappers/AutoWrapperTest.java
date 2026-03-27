@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.Items;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,7 +58,7 @@ public class AutoWrapperTest {
         validateRawText(nms.getTitle(), "Test123");
         validateRawText(nms.getDescription(), "Test567");
         assertSame(AdvancementType.CHALLENGE, nms.getType());
-        assertSame(MinecraftReflection.getBukkitItemStack(nms.getIcon()).getType(), Material.GOLD_INGOT);
+        assertSame(getItemStackTemplateConverter().getSpecific(nms.getIcon()).getType(), Material.GOLD_INGOT);
         assertEquals(5f, nms.getX(), 0f);
         assertEquals(67f, nms.getY(), 0f);
     }
@@ -63,7 +66,7 @@ public class AutoWrapperTest {
     @Test
     public void testFromNms() {
         DisplayInfo display = new DisplayInfo(
-              (net.minecraft.world.item.ItemStackTemplate)MinecraftReflection.getMinecraftItemStack(new ItemStack(Material.ENDER_EYE)),
+              new ItemStackTemplate(Items.ENDER_EYE),
               Component.literal("Test123"),
               Component.literal("Test567"),
 			  Optional.of(new ClientAsset.ResourceTexture(Identifier.fromNamespaceAndPath("minecraft", "test"))),
@@ -94,7 +97,7 @@ public class AutoWrapperTest {
                 .wrap(WrappedAdvancementDisplay.class, "advancements.AdvancementDisplay", "advancements.DisplayInfo")
                 .field(0, BukkitConverters.getWrappedChatComponentConverter())
                 .field(1, BukkitConverters.getWrappedChatComponentConverter())
-                .field(2, BukkitConverters.getItemStackConverter())
+                .field(2, getItemStackTemplateConverter())
                 .field(3, Converters.optional(Converters.passthrough(ClientAsset.class)))
                 .field(4, EnumWrappers.getGenericConverter(
                     getMinecraftClass("advancements.AdvancementType", "advancements.AdvancementFrameType", "advancements.FrameType"),
@@ -111,6 +114,28 @@ public class AutoWrapperTest {
         TASK,
         CHALLENGE,
         GOAL
+    }
+
+    private static EquivalentConverter<ItemStack> getItemStackTemplateConverter() {
+        return Converters.ignoreNull(new EquivalentConverter<ItemStack>() {
+
+            @Override
+            public Object getGeneric(ItemStack specific) {
+                var nmsItemStack = (net.minecraft.world.item.ItemStack) MinecraftReflection.getMinecraftItemStack(specific);
+                return ItemStackTemplate.fromNonEmptyStack(nmsItemStack);
+            }
+
+            @Override
+            public ItemStack getSpecific(Object generic) {
+                var nmsItemStack = ((ItemStackTemplate) generic).create();
+                return MinecraftReflection.getBukkitItemStack(nmsItemStack);
+            }
+
+            @Override
+            public Class<ItemStack> getSpecificType() {
+                return ItemStack.class;
+            }
+        });
     }
 
     public static final class WrappedAdvancementDisplay {

@@ -36,6 +36,12 @@ public abstract class EnumWrappers {
     public enum ClientCommand {
         PERFORM_RESPAWN,
         REQUEST_STATS,
+        REQUEST_GAMERULE_VALUES,
+
+        /**
+         * @deprecated Removed in 26.1
+         */
+        @Deprecated
         OPEN_INVENTORY_ACHIEVEMENT
     }
 
@@ -822,13 +828,17 @@ public abstract class EnumWrappers {
             if (MinecraftVersion.CAVES_CLIFFS_1.atOrAbove()) {
                 HAND_CLASS = MinecraftReflection.getMinecraftClass("world.EnumHand", "world.InteractionHand");
 
-                FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
-                Method getType = fuzzy.getMethod(FuzzyMethodContract.newBuilder()
-                    .parameterCount(0)
-                    .returnTypeMatches(FuzzyMatchers.except(Void.class))
-                    .build());
+                if (MinecraftVersion.v26_1.atOrAbove()) {
+                    // TODO
+                } else {
+                    FuzzyReflection fuzzy = FuzzyReflection.fromClass(MinecraftReflection.getEnumEntityUseActionClass(), true);
+                    Method getType = fuzzy.getMethod(FuzzyMethodContract.newBuilder()
+                            .parameterCount(0)
+                            .returnTypeMatches(FuzzyMatchers.except(Void.class))
+                            .build());
 
-                ENTITY_USE_ACTION_CLASS = getType.getReturnType();
+                    ENTITY_USE_ACTION_CLASS = getType.getReturnType();
+                }
             } else {
                 HAND_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 1);
                 ENTITY_USE_ACTION_CLASS = getEnum(PacketType.Play.Client.USE_ENTITY.getPacketClass(), 0);
