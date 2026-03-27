@@ -1,6 +1,7 @@
 package com.comphenix.protocol.wrappers;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +21,6 @@ import net.minecraft.server.players.NameAndId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,7 +79,7 @@ public class WrappedServerPingTest {
 
         assertArrayEquals(original, roundTrip.getFavicon().getData());
 
-        CompressedImage copy = CompressedImage.fromBase64Png(Base64Coder.encodeLines(tux.getData()));
+        CompressedImage copy = CompressedImage.fromBase64Png(Base64.getEncoder().encodeToString(tux.getData()));
         assertArrayEquals(copy.getData(), roundTrip.getFavicon().getData());
     }
 

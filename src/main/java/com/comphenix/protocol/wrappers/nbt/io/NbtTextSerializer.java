@@ -5,8 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
+import java.util.Base64;
 
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
 import com.comphenix.protocol.wrappers.nbt.NbtCompound;
@@ -23,7 +22,7 @@ public class NbtTextSerializer {
      * A default instance of this serializer.
      */
     public static final NbtTextSerializer DEFAULT = new NbtTextSerializer();
-    
+
     private NbtBinarySerializer binarySerializer;
     
     public NbtTextSerializer() {
@@ -59,7 +58,7 @@ public class NbtTextSerializer {
          binarySerializer.serialize(value, dataOutput);
          
          // Serialize that array
-         return Base64Coder.encodeLines(outputStream.toByteArray());
+         return Base64.getEncoder().encodeToString(outputStream.toByteArray());
     }
     
     /**
@@ -70,7 +69,7 @@ public class NbtTextSerializer {
      * @throws IOException If we are unable to parse the input.
      */
     public <TType> NbtWrapper<TType> deserialize(String input) throws IOException {
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(input));
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(input));
         
         return binarySerializer.deserialize(new DataInputStream(inputStream));
     }
