@@ -45,13 +45,13 @@ public class WrappedClientboundTeleportEntityPacket extends AbstractPacket {
     public static final PacketType TYPE = PacketType.Play.Server.ENTITY_TELEPORT;
 
     /** Create a fresh outgoing packet. */
-    public WrapperGameClientboundTeleportEntity() {
+    public WrappedClientboundTeleportEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
         handle.getModifier().writeDefaults();
     }
 
     /** Wrap a packet received from ProtocolLib. */
-    public WrapperGameClientboundTeleportEntity(PacketContainer packet) {
+    public WrappedClientboundTeleportEntityPacket(PacketContainer packet) {
         super(packet, TYPE);
     }
 }
