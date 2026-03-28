@@ -1910,6 +1910,6 @@ public final class MinecraftReflection {
      * @return The PositionMoveRotation class.
      */
     public static Class<?> getPositionMoveRotationClass() {
-        return getMinecraftClass("network.protocol.game.PositionMoveRotation");
+        return getMinecraftClass("world.entity.PositionMoveRotation");
     }
 }
