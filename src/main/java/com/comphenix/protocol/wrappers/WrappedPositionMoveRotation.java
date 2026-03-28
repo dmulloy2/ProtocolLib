@@ -27,28 +27,28 @@ import org.bukkit.util.Vector;
  */
 public class WrappedPositionMoveRotation extends AbstractWrapper {
 
-    private static Class<?> HANDLE_TYPE;
+    private static Class<?> NMS_CLASS;
     private static ConstructorAccessor CONSTRUCTOR;
     private static StructureModifier<Object> BASE_MODIFIER;
 
     private final StructureModifier<Object> modifier;
 
     private WrappedPositionMoveRotation(Object handle) {
-        super(getHandleType());
+        super(getNmsClass());
         setHandle(handle);
         this.modifier = getBaseModifier().withTarget(handle);
     }
 
-    private static Class<?> getHandleType() {
-        if (HANDLE_TYPE == null) {
-            HANDLE_TYPE = MinecraftReflection.getPositionMoveRotationClass();
+    private static Class<?> getNmsClass() {
+        if (NMS_CLASS == null) {
+            NMS_CLASS = MinecraftReflection.getPositionMoveRotationClass();
         }
-        return HANDLE_TYPE;
+        return NMS_CLASS;
     }
 
     private static StructureModifier<Object> getBaseModifier() {
         if (BASE_MODIFIER == null) {
-            BASE_MODIFIER = new StructureModifier<>(getHandleType());
+            BASE_MODIFIER = new StructureModifier<>(getNmsClass());
         }
         return BASE_MODIFIER;
     }
@@ -56,7 +56,7 @@ public class WrappedPositionMoveRotation extends AbstractWrapper {
     private static ConstructorAccessor getConstructor() {
         if (CONSTRUCTOR == null) {
             CONSTRUCTOR = Accessors.getConstructorAccessor(
-                    getHandleType(),
+                    getNmsClass(),
                     MinecraftReflection.getVec3DClass(),
                     MinecraftReflection.getVec3DClass(),
                     float.class,
@@ -138,7 +138,8 @@ public class WrappedPositionMoveRotation extends AbstractWrapper {
      * @return the yaw as a float.
      */
     public float getYRot() {
-        return modifier.withType(float.class).<Float>read(0);
+        StructureModifier<Float> floats = modifier.withType(float.class);
+        return floats.read(0);
     }
 
     /**
@@ -156,7 +157,8 @@ public class WrappedPositionMoveRotation extends AbstractWrapper {
      * @return the pitch as a float.
      */
     public float getXRot() {
-        return modifier.withType(float.class).<Float>read(1);
+        StructureModifier<Float> floats = modifier.withType(float.class);
+        return floats.read(1);
     }
 
     /**
