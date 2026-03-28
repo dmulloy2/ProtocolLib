@@ -63,6 +63,7 @@ import com.comphenix.protocol.wrappers.WrappedRemoteChatSessionData;
 import com.comphenix.protocol.wrappers.WrappedSaltedSignature;
 import com.comphenix.protocol.wrappers.WrappedServerPing;
 import com.comphenix.protocol.wrappers.WrappedStatistic;
+import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
 import com.comphenix.protocol.wrappers.WrappedTeamParameters;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import com.comphenix.protocol.wrappers.nbt.NbtBase;
@@ -416,6 +417,16 @@ public abstract class AbstractStructure {
         return structureModifier.withType(
                 MinecraftReflection.getVec3DClass(),
                 BukkitConverters.getVectorConverter());
+    }
+
+    /**
+     * Retrieves a read/write structure for PositionMoveRotation fields.
+     * @return A modifier for PositionMoveRotation fields.
+     */
+    public StructureModifier<WrappedPositionMoveRotation> getPositionMoveRotations() {
+        return structureModifier.withType(
+                MinecraftReflection.getMinecraftClass("world.entity.PositionMoveRotation"),
+                WrappedPositionMoveRotation.getConverter());
     }
 
     /**
