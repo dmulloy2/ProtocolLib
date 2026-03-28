@@ -4,6 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.util.Vector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -96,11 +98,11 @@ public class WrappedPositionMoveRotationTest {
 
     @Test
     public void testFromHandle() {
-        // Build a NMS PositionMoveRotation via create() and grab its raw handle
-        Object nmsHandle = WrappedPositionMoveRotation.create(
-                new Vector(5.0, 65.0, 5.0),
-                new Vector(0.0, -0.1, 0.0),
-                270.0f, -45.0f).getHandle();
+        PositionMoveRotation nmsHandle = new PositionMoveRotation(
+                new Vec3(5.0, 65.0, 5.0),
+                new Vec3(0.0, -0.1, 0.0),
+                270.0f,
+                -45.0f);
 
         WrappedPositionMoveRotation wrapper = WrappedPositionMoveRotation.fromHandle(nmsHandle);
 
