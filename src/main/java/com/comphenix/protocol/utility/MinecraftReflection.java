@@ -1903,4 +1903,13 @@ public final class MinecraftReflection {
 
         return isMojangMapped;
     }
+
+    /**
+     * Retrieves the PositionMoveRotation class (introduced in 1.21.2).
+     *
+     * @return The PositionMoveRotation class.
+     */
+    public static Class<?> getPositionMoveRotationClass() {
+        return getMinecraftClass("world.entity.PositionMoveRotation");
+    }
 }

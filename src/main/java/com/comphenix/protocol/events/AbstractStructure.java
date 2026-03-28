@@ -55,6 +55,7 @@ import com.comphenix.protocol.wrappers.WrappedLevelChunkData;
 import com.comphenix.protocol.wrappers.WrappedMessageSignature;
 import com.comphenix.protocol.wrappers.WrappedNumberFormat;
 import com.comphenix.protocol.wrappers.WrappedParticle;
+import com.comphenix.protocol.wrappers.WrappedPositionMoveRotation;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey;
 import com.comphenix.protocol.wrappers.WrappedProfilePublicKey.WrappedProfileKeyData;
 import com.comphenix.protocol.wrappers.WrappedRegistrable;
@@ -1295,6 +1296,20 @@ public abstract class AbstractStructure {
         return structureModifier.withType(Iterable.class, Converters.iterable(
             BukkitConverters.getPacketContainerConverter(), ArrayList::new, ArrayList::new
         ));
+    }
+
+    /**
+     * Retrieve a read/write structure for {@link WrappedPositionMoveRotation} (available since Minecraft 1.21.2).
+     * <p>
+     * This is used in packets such as {@code ENTITY_TELEPORT} and {@code ENTITY_POSITION_SYNC}.
+     *
+     * @return A modifier for PositionMoveRotation fields.
+     */
+    public StructureModifier<WrappedPositionMoveRotation> getPositionMoveRotation() {
+        return structureModifier.withType(
+                MinecraftReflection.getPositionMoveRotationClass(),
+                WrappedPositionMoveRotation.getConverter()
+        );
     }
 
     /**
