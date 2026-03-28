@@ -96,18 +96,23 @@ public class WrappedPositionMoveRotationTest {
 
     @Test
     public void testFromHandle() {
-        Vector position = new Vector(5.0, 65.0, 5.0);
-        Vector delta = new Vector(0.0, -0.1, 0.0);
-        float yRot = 270.0f;
-        float xRot = -45.0f;
+        // Build a NMS PositionMoveRotation via create() and grab its raw handle
+        Object nmsHandle = WrappedPositionMoveRotation.create(
+                new Vector(5.0, 65.0, 5.0),
+                new Vector(0.0, -0.1, 0.0),
+                270.0f, -45.0f).getHandle();
 
-        WrappedPositionMoveRotation original = WrappedPositionMoveRotation.create(position, delta, yRot, xRot);
-        WrappedPositionMoveRotation fromHandle = WrappedPositionMoveRotation.fromHandle(original.getHandle());
+        WrappedPositionMoveRotation wrapper = WrappedPositionMoveRotation.fromHandle(nmsHandle);
 
-        assertEquals(original.getPosition().getX(), fromHandle.getPosition().getX(), 1e-6);
-        assertEquals(original.getPosition().getY(), fromHandle.getPosition().getY(), 1e-6);
-        assertEquals(original.getPosition().getZ(), fromHandle.getPosition().getZ(), 1e-6);
-        assertEquals(original.getYRot(), fromHandle.getYRot(), 1e-6f);
-        assertEquals(original.getXRot(), fromHandle.getXRot(), 1e-6f);
+        assertEquals(5.0,   wrapper.getPosition().getX(), 1e-6);
+        assertEquals(65.0,  wrapper.getPosition().getY(), 1e-6);
+        assertEquals(5.0,   wrapper.getPosition().getZ(), 1e-6);
+
+        assertEquals(0.0,  wrapper.getDeltaMovement().getX(), 1e-6);
+        assertEquals(-0.1, wrapper.getDeltaMovement().getY(), 1e-6);
+        assertEquals(0.0,  wrapper.getDeltaMovement().getZ(), 1e-6);
+
+        assertEquals(270.0f, wrapper.getYRot(), 1e-6f);
+        assertEquals(-45.0f, wrapper.getXRot(), 1e-6f);
     }
 }
