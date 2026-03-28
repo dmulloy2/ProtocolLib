@@ -724,6 +724,10 @@ public abstract class EnumWrappers {
         MOTION_BLOCKING_NO_LEAVES,
     }
 
+    public enum RelativeArgument {
+        X, Y, Z, Y_ROT, X_ROT, DELTA_X, DELTA_Y, DELTA_Z, ROTATE_DELTA
+    }
+
     private static Class<?> PROTOCOL_CLASS = null;
     private static Class<?> CLIENT_COMMAND_CLASS = null;
     private static Class<?> CHAT_VISIBILITY_CLASS = null;
@@ -752,6 +756,7 @@ public abstract class EnumWrappers {
     private static Class<?> TEAM_COLLISION_RULE_CLASS = null;
     private static Class<?> TEAM_VISIBILITY_CLASS = null;
     private static Class<?> HEIGHTMAP_TYPE_CLASS = null;
+    private static Class<?> RELATIVE_CLASS = null;
 
     private static boolean INITIALIZING = false;
     private static boolean INITIALIZED = false;
@@ -874,6 +879,8 @@ public abstract class EnumWrappers {
                     "world.level.levelgen.HeightMap$Type" /* Spigot Mapping */,
                     "world.level.levelgen.Heightmap$Types" /* Mojang Mapping */);
 
+            RELATIVE_CLASS = MinecraftReflection.getMinecraftClass("world.entity.Relative");
+
             associate(PROTOCOL_CLASS, Protocol.class, getProtocolConverter());
             associate(CLIENT_COMMAND_CLASS, ClientCommand.class, getClientCommandConverter());
             associate(CHAT_VISIBILITY_CLASS, ChatVisibility.class, getChatVisibilityConverter());
@@ -901,6 +908,7 @@ public abstract class EnumWrappers {
             associate(TEAM_COLLISION_RULE_CLASS, TeamCollisionRule.class, getTeamCollisionRuleConverter());
             associate(TEAM_VISIBILITY_CLASS, TeamVisibility.class, getTeamVisibilityConverter());
             associate(HEIGHTMAP_TYPE_CLASS, HeightmapType.class, getHeightmapTypeConverter());
+            associate(RELATIVE_CLASS, RelativeArgument.class, getRelativeArgumentConverter());
 
             if (ENTITY_POSE_CLASS != null) {
                 associate(ENTITY_POSE_CLASS, EntityPose.class, getEntityPoseConverter());
@@ -1090,6 +1098,11 @@ public abstract class EnumWrappers {
         return HEIGHTMAP_TYPE_CLASS;
     }
 
+    public static Class<?> getRelativeArgumentClass() {
+        initialize();
+        return RELATIVE_CLASS;
+    }
+
     // Get the converters
     public static EquivalentConverter<Protocol> getProtocolConverter() {
         return new EnumConverter<>(getProtocolClass(), Protocol.class);
@@ -1197,6 +1210,10 @@ public abstract class EnumWrappers {
 
     public static EquivalentConverter<HeightmapType> getHeightmapTypeConverter() {
         return new EnumConverter<>(getHeightmapTypeClass(), HeightmapType.class);
+    }
+
+    public static EquivalentConverter<RelativeArgument> getRelativeArgumentConverter() {
+        return new EnumConverter<>(getRelativeArgumentClass(), RelativeArgument.class);
     }
 
     /**
