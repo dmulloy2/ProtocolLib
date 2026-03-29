@@ -21,8 +21,7 @@ public class WrappedServerboundChunkBatchReceivedPacket extends AbstractPacket {
 
     public WrappedServerboundChunkBatchReceivedPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedServerboundChunkBatchReceivedPacket(float desiredChunksPerTick) {
         this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { float.class }).createPacket(desiredChunksPerTick));

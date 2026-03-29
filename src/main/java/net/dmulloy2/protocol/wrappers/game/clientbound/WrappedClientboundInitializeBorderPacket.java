@@ -25,8 +25,7 @@ public class WrappedClientboundInitializeBorderPacket extends AbstractPacket {
 
     public WrappedClientboundInitializeBorderPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundInitializeBorderPacket(PacketContainer packet) {
         super(packet, TYPE);

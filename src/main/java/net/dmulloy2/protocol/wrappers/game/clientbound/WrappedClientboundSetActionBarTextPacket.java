@@ -21,8 +21,7 @@ public class WrappedClientboundSetActionBarTextPacket extends AbstractPacket {
 
     public WrappedClientboundSetActionBarTextPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetActionBarTextPacket(PacketContainer packet) {
         super(packet, TYPE);

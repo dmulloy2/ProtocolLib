@@ -19,7 +19,10 @@ public class WrappedServerboundRenameItemPacket extends AbstractPacket {
 
     public WrappedServerboundRenameItemPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundRenameItemPacket(String name) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { String.class }).createPacket(name));
     }
 
     public WrappedServerboundRenameItemPacket(PacketContainer packet) {

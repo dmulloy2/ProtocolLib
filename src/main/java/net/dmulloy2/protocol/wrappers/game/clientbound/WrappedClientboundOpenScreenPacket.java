@@ -21,8 +21,7 @@ public class WrappedClientboundOpenScreenPacket extends AbstractPacket {
 
     public WrappedClientboundOpenScreenPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundOpenScreenPacket(PacketContainer packet) {
         super(packet, TYPE);

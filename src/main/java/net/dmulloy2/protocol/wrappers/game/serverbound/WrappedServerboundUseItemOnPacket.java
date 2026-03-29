@@ -22,7 +22,12 @@ public class WrappedServerboundUseItemOnPacket extends AbstractPacket {
 
     public WrappedServerboundUseItemOnPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+    }
+
+    public WrappedServerboundUseItemOnPacket(EnumWrappers.Hand hand, int sequence) {
+        this();
+        setHand(hand);
+        setSequence(sequence);
     }
 
     public WrappedServerboundUseItemOnPacket(PacketContainer packet) {

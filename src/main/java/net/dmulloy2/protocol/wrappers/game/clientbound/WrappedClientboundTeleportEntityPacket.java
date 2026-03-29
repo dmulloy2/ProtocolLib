@@ -27,8 +27,7 @@ public class WrappedClientboundTeleportEntityPacket extends AbstractPacket {
 
     public WrappedClientboundTeleportEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundTeleportEntityPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -26,8 +26,7 @@ public class WrappedClientboundDamageEventPacket extends AbstractPacket {
 
     public WrappedClientboundDamageEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundDamageEventPacket(PacketContainer packet) {
         super(packet, TYPE);

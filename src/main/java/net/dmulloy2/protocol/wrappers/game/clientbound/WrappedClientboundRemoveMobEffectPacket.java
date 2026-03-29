@@ -20,8 +20,7 @@ public class WrappedClientboundRemoveMobEffectPacket extends AbstractPacket {
 
     public WrappedClientboundRemoveMobEffectPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundRemoveMobEffectPacket(PacketContainer packet) {
         super(packet, TYPE);

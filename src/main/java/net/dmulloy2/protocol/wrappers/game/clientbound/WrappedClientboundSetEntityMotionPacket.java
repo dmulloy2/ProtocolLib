@@ -22,8 +22,7 @@ public class WrappedClientboundSetEntityMotionPacket extends AbstractPacket {
 
     public WrappedClientboundSetEntityMotionPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetEntityMotionPacket(PacketContainer packet) {
         super(packet, TYPE);

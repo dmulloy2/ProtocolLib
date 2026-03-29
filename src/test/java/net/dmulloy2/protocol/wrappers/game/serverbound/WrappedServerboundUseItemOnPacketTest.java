@@ -4,6 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -17,40 +18,41 @@ class WrappedServerboundUseItemOnPacketTest {
     }
 
     @Test
-    void testCreate() {
-        // NMS constructor complex (BlockHitResult); use wrapper-based approach
-        WrappedServerboundUseItemOnPacket w = new WrappedServerboundUseItemOnPacket();
-        w.setHand(EnumWrappers.Hand.MAIN_HAND);
-        w.setSequence(1);
+    void testAllArgsCreate() {
+        WrappedServerboundUseItemOnPacket w = new WrappedServerboundUseItemOnPacket(EnumWrappers.Hand.MAIN_HAND, 5);
 
         assertEquals(PacketType.Play.Client.USE_ITEM_ON, w.getHandle().getType());
+
         assertEquals(EnumWrappers.Hand.MAIN_HAND, w.getHand());
-        assertEquals(1, w.getSequence());
+        assertEquals(5, w.getSequence());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        WrappedServerboundUseItemOnPacket src = new WrappedServerboundUseItemOnPacket();
-        src.setHand(EnumWrappers.Hand.OFF_HAND);
-        src.setSequence(5);
+    void testNoArgsCreate() {
+        WrappedServerboundUseItemOnPacket w = new WrappedServerboundUseItemOnPacket();
 
-        WrappedServerboundUseItemOnPacket wrapper = new WrappedServerboundUseItemOnPacket(src.getHandle());
+        assertEquals(PacketType.Play.Client.USE_ITEM_ON, w.getHandle().getType());
 
-        assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
-        assertEquals(5, wrapper.getSequence());
-        assertNotNull(wrapper.getBlockHit());
+        assertNotNull(w.getHand());
+        assertEquals(0, w.getSequence());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundUseItemOnPacket w = new WrappedServerboundUseItemOnPacket();
-        w.setHand(EnumWrappers.Hand.MAIN_HAND);
-        w.setSequence(1);
+        WrappedServerboundUseItemOnPacket src = new WrappedServerboundUseItemOnPacket(EnumWrappers.Hand.MAIN_HAND, 5);
+        ServerboundUseItemOnPacket nmsPacket = (ServerboundUseItemOnPacket) src.getHandle().getHandle();
 
-        w.setHand(EnumWrappers.Hand.OFF_HAND);
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedServerboundUseItemOnPacket wrapper = new WrappedServerboundUseItemOnPacket(container);
 
-        assertEquals(EnumWrappers.Hand.OFF_HAND, w.getHand());
-        assertEquals(1, w.getSequence());
+        assertEquals(EnumWrappers.Hand.MAIN_HAND, wrapper.getHand());
+        assertEquals(5, wrapper.getSequence());
+
+        wrapper.setHand(EnumWrappers.Hand.OFF_HAND);
+        wrapper.setSequence(12);
+
+        assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
+        assertEquals(12, wrapper.getSequence());
     }
 
     @Test

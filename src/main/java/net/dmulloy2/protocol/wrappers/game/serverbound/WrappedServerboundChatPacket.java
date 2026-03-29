@@ -24,7 +24,13 @@ public class WrappedServerboundChatPacket extends AbstractPacket {
 
     public WrappedServerboundChatPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundChatPacket(String message, Instant timeStamp, long salt) {
+        this();
+        setMessage(message);
+        setTimeStamp(timeStamp);
+        setSalt(salt);
     }
 
     public WrappedServerboundChatPacket(PacketContainer packet) {

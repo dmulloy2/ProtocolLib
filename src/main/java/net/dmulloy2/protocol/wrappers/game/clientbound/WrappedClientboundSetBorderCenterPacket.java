@@ -19,8 +19,7 @@ public class WrappedClientboundSetBorderCenterPacket extends AbstractPacket {
 
     public WrappedClientboundSetBorderCenterPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetBorderCenterPacket(PacketContainer packet) {
         super(packet, TYPE);

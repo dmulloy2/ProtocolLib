@@ -24,8 +24,7 @@ public class WrappedClientboundContainerSetContentPacket extends AbstractPacket 
 
     public WrappedClientboundContainerSetContentPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundContainerSetContentPacket(PacketContainer packet) {
         super(packet, TYPE);

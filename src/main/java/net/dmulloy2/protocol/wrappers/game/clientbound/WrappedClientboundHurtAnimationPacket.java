@@ -24,8 +24,7 @@ public class WrappedClientboundHurtAnimationPacket extends AbstractPacket {
 
     public WrappedClientboundHurtAnimationPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundHurtAnimationPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -18,8 +18,7 @@ public class WrappedClientboundPingPacket extends AbstractPacket {
 
     public WrappedClientboundPingPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundPingPacket(PacketContainer packet) {
         super(packet, TYPE);

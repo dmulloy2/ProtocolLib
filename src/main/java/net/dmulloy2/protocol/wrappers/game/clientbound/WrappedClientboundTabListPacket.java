@@ -20,8 +20,7 @@ public class WrappedClientboundTabListPacket extends AbstractPacket {
 
     public WrappedClientboundTabListPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundTabListPacket(PacketContainer packet) {
         super(packet, TYPE);

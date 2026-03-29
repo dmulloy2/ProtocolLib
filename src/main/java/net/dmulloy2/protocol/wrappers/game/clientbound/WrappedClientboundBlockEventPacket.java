@@ -23,8 +23,7 @@ public class WrappedClientboundBlockEventPacket extends AbstractPacket {
 
     public WrappedClientboundBlockEventPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundBlockEventPacket(PacketContainer packet) {
         super(packet, TYPE);

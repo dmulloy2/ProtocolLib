@@ -27,8 +27,7 @@ public class WrappedClientboundRotateHeadPacket extends AbstractPacket {
 
     public WrappedClientboundRotateHeadPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundRotateHeadPacket(PacketContainer packet) {
         super(packet, TYPE);

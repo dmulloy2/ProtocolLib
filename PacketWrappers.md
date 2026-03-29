@@ -265,7 +265,7 @@ Cover these scenarios for each wrapper:
 * testNoArgsCreate
     * Construct a fresh wrapper using the no-args constructor
     * Get the NMS handle packet via `getHandle()`
-    * Assert that all fields in the NMS handle are default/empty values (e.g. 0, null, empty list)
+    * Assert that all fields in the NMS handle are not null
 * testModifyExistingPacket
   * Create the NMS handle packet directly from its constructor, passing known test values
   * Create a packet container from the NMS handle via `PacketContainer.fromPacket()`
@@ -277,6 +277,12 @@ Cover these scenarios for each wrapper:
   * Create a packet container for a different packet type
   * Attempt to construct the wrapper using this incorrect packet container
   * Assert that an appropriate exception is thrown (e.g. IllegalArgumentException)
+
+### Appropriate test values
+
+* For numeric fields, use a mix of positive, negative, and zero values (e.g. -5, 0, 3)
+* For enum fields, prefer the 2nd or 3rd constant rather than the first, to ensure the wrapper correctly handles non-default enum values
+  * Additionally, if the enum constant is @Deprecated, do not use it
 
 Here's a good example of a complete test class for `WrappedClientboundSetExperiencePacket`:
 

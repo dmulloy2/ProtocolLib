@@ -21,8 +21,7 @@ public class WrappedClientboundForgetLevelChunkPacket extends AbstractPacket {
 
     public WrappedClientboundForgetLevelChunkPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundForgetLevelChunkPacket(PacketContainer packet) {
         super(packet, TYPE);

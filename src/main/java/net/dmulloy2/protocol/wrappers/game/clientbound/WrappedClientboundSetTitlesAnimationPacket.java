@@ -20,8 +20,7 @@ public class WrappedClientboundSetTitlesAnimationPacket extends AbstractPacket {
 
     public WrappedClientboundSetTitlesAnimationPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetTitlesAnimationPacket(PacketContainer packet) {
         super(packet, TYPE);

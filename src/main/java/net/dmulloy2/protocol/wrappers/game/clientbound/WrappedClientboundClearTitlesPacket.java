@@ -18,8 +18,7 @@ public class WrappedClientboundClearTitlesPacket extends AbstractPacket {
 
     public WrappedClientboundClearTitlesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundClearTitlesPacket(PacketContainer packet) {
         super(packet, TYPE);

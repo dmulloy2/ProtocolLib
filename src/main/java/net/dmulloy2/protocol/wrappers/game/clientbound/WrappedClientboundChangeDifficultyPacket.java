@@ -20,8 +20,7 @@ public class WrappedClientboundChangeDifficultyPacket extends AbstractPacket {
 
     public WrappedClientboundChangeDifficultyPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundChangeDifficultyPacket(PacketContainer packet) {
         super(packet, TYPE);

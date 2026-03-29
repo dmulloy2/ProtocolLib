@@ -17,25 +17,23 @@ class WrappedServerboundRenameItemPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundRenameItemPacket w = new WrappedServerboundRenameItemPacket();
-        w.setName("My Sword");
+    void testAllArgsCreate() {
+        WrappedServerboundRenameItemPacket w = new WrappedServerboundRenameItemPacket("Diamond Blade");
 
         assertEquals(PacketType.Play.Client.ITEM_NAME, w.getHandle().getType());
 
         ServerboundRenameItemPacket p = (ServerboundRenameItemPacket) w.getHandle().getHandle();
 
-        assertEquals("My Sword", p.getName());
+        assertEquals("Diamond Blade", p.getName());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundRenameItemPacket nmsPacket = new ServerboundRenameItemPacket("Diamond Blade");
+    void testNoArgsCreate() {
+        WrappedServerboundRenameItemPacket w = new WrappedServerboundRenameItemPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundRenameItemPacket wrapper = new WrappedServerboundRenameItemPacket(container);
+        assertEquals(PacketType.Play.Client.ITEM_NAME, w.getHandle().getType());
 
-        assertEquals("Diamond Blade", wrapper.getName());
+        assertNotNull(w.getName());
     }
 
     @Test
@@ -45,9 +43,11 @@ class WrappedServerboundRenameItemPacketTest {
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundRenameItemPacket wrapper = new WrappedServerboundRenameItemPacket(container);
 
+        assertEquals("Old Name", wrapper.getName());
+
         wrapper.setName("New Name");
 
-        assertEquals("New Name", wrapper.getName());
+        assertEquals("New Name", nmsPacket.getName());
     }
 
     @Test

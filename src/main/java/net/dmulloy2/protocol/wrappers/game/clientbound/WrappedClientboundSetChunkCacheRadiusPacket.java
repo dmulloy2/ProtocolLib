@@ -18,8 +18,7 @@ public class WrappedClientboundSetChunkCacheRadiusPacket extends AbstractPacket 
 
     public WrappedClientboundSetChunkCacheRadiusPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetChunkCacheRadiusPacket(PacketContainer packet) {
         super(packet, TYPE);

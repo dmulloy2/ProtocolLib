@@ -19,8 +19,7 @@ public class WrappedClientboundSetSubtitleTextPacket extends AbstractPacket {
 
     public WrappedClientboundSetSubtitleTextPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetSubtitleTextPacket(PacketContainer packet) {
         super(packet, TYPE);

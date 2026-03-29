@@ -21,8 +21,7 @@ public class WrappedClientboundBlockUpdatePacket extends AbstractPacket {
 
     public WrappedClientboundBlockUpdatePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundBlockUpdatePacket(PacketContainer packet) {
         super(packet, TYPE);

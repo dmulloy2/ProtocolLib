@@ -21,8 +21,7 @@ public class WrappedClientboundSetChunkCacheCenterPacket extends AbstractPacket 
 
     public WrappedClientboundSetChunkCacheCenterPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetChunkCacheCenterPacket(PacketContainer packet) {
         super(packet, TYPE);

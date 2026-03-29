@@ -19,8 +19,7 @@ public class WrappedClientboundTickingStatePacket extends AbstractPacket {
 
     public WrappedClientboundTickingStatePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundTickingStatePacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -18,44 +18,48 @@ class WrappedServerboundPlayerCommandPacketTest {
     }
 
     @Test
-    void testCreate() {
-        // NMS constructor takes Entity; use wrapper-based approach
-        WrappedServerboundPlayerCommandPacket w = new WrappedServerboundPlayerCommandPacket();
-        w.setEntityId(10);
-        w.setAction(EnumWrappers.PlayerAction.START_SPRINTING);
-        w.setData(0);
+    void testAllArgsCreate() {
+        WrappedServerboundPlayerCommandPacket w = new WrappedServerboundPlayerCommandPacket(
+                42, EnumWrappers.PlayerAction.OPEN_INVENTORY, 0);
 
         assertEquals(PacketType.Play.Client.ENTITY_ACTION, w.getHandle().getType());
-        assertEquals(10, w.getEntityId());
-        assertEquals(EnumWrappers.PlayerAction.START_SPRINTING, w.getAction());
+
+        assertEquals(42, w.getEntityId());
+        assertEquals(EnumWrappers.PlayerAction.OPEN_INVENTORY, w.getAction());
         assertEquals(0, w.getData());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        WrappedServerboundPlayerCommandPacket src = new WrappedServerboundPlayerCommandPacket();
-        src.setEntityId(15);
-        src.setAction(EnumWrappers.PlayerAction.STOP_SPRINTING);
-        src.setData(0);
+    void testNoArgsCreate() {
+        WrappedServerboundPlayerCommandPacket w = new WrappedServerboundPlayerCommandPacket();
 
-        WrappedServerboundPlayerCommandPacket wrapper = new WrappedServerboundPlayerCommandPacket(src.getHandle());
+        assertEquals(PacketType.Play.Client.ENTITY_ACTION, w.getHandle().getType());
 
-        assertEquals(15, wrapper.getEntityId());
-        assertEquals(EnumWrappers.PlayerAction.STOP_SPRINTING, wrapper.getAction());
-        assertEquals(0, wrapper.getData());
+        assertEquals(0, w.getEntityId());
+        assertNotNull(w.getAction());
+        assertEquals(0, w.getData());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundPlayerCommandPacket w = new WrappedServerboundPlayerCommandPacket();
-        w.setEntityId(5);
-        w.setAction(EnumWrappers.PlayerAction.START_RIDING_JUMP);
-        w.setData(0);
+        WrappedServerboundPlayerCommandPacket src = new WrappedServerboundPlayerCommandPacket(
+                42, EnumWrappers.PlayerAction.START_SPRINTING, 0);
+        ServerboundPlayerCommandPacket nmsPacket = (ServerboundPlayerCommandPacket) src.getHandle().getHandle();
 
-        w.setAction(EnumWrappers.PlayerAction.STOP_RIDING_JUMP);
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedServerboundPlayerCommandPacket wrapper = new WrappedServerboundPlayerCommandPacket(container);
 
-        assertEquals(5, w.getEntityId());
-        assertEquals(EnumWrappers.PlayerAction.STOP_RIDING_JUMP, w.getAction());
+        assertEquals(42, wrapper.getEntityId());
+        assertEquals(EnumWrappers.PlayerAction.START_SPRINTING, wrapper.getAction());
+        assertEquals(0, wrapper.getData());
+
+        wrapper.setEntityId(99);
+        wrapper.setAction(EnumWrappers.PlayerAction.STOP_SPRINTING);
+        wrapper.setData(5);
+
+        assertEquals(99, wrapper.getEntityId());
+        assertEquals(EnumWrappers.PlayerAction.STOP_SPRINTING, wrapper.getAction());
+        assertEquals(5, wrapper.getData());
     }
 
     @Test

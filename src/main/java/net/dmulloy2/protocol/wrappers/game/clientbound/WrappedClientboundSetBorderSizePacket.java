@@ -18,8 +18,7 @@ public class WrappedClientboundSetBorderSizePacket extends AbstractPacket {
 
     public WrappedClientboundSetBorderSizePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetBorderSizePacket(PacketContainer packet) {
         super(packet, TYPE);

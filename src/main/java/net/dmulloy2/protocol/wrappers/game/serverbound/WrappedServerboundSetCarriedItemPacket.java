@@ -19,7 +19,10 @@ public class WrappedServerboundSetCarriedItemPacket extends AbstractPacket {
 
     public WrappedServerboundSetCarriedItemPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundSetCarriedItemPacket(int slot) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class }).createPacket(slot));
     }
 
     public WrappedServerboundSetCarriedItemPacket(PacketContainer packet) {

@@ -24,8 +24,7 @@ public class WrappedClientboundMoveEntityPosRotPacket extends AbstractPacket {
 
     public WrappedClientboundMoveEntityPosRotPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundMoveEntityPosRotPacket(PacketContainer packet) {
         super(packet, TYPE);

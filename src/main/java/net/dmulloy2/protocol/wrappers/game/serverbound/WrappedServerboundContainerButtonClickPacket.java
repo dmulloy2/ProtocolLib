@@ -22,8 +22,7 @@ public class WrappedServerboundContainerButtonClickPacket extends AbstractPacket
 
     public WrappedServerboundContainerButtonClickPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedServerboundContainerButtonClickPacket(int containerId, int buttonId) {
         this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { int.class, int.class }).createPacket(containerId, buttonId));

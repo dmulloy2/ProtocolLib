@@ -22,7 +22,14 @@ public class WrappedServerboundMoveVehiclePacket extends AbstractPacket {
 
     public WrappedServerboundMoveVehiclePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundMoveVehiclePacket(Vector position, float yRot, float xRot, boolean onGround) {
+        this();
+        setPosition(position);
+        setYRot(yRot);
+        setXRot(xRot);
+        setOnGround(onGround);
     }
 
     public WrappedServerboundMoveVehiclePacket(PacketContainer packet) {

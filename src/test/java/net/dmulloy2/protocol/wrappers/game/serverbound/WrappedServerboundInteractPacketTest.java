@@ -4,7 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import org.bukkit.util.Vector;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -18,43 +18,45 @@ class WrappedServerboundInteractPacketTest {
     }
 
     @Test
-    void testCreate() {
-        // NMS constructor is complex; use wrapper-based approach
-        WrappedServerboundInteractPacket w = new WrappedServerboundInteractPacket();
-        w.setEntityId(42);
-        w.setUsingSecondaryAction(false);
+    void testAllArgsCreate() {
+        WrappedServerboundInteractPacket w = new WrappedServerboundInteractPacket(77, true, EnumWrappers.Hand.MAIN_HAND);
 
         assertEquals(PacketType.Play.Client.USE_ENTITY, w.getHandle().getType());
-        assertEquals(42, w.getEntityId());
-        assertFalse(w.isUsingSecondaryAction());
+
+        assertEquals(77, w.getEntityId());
+        assertTrue(w.isUsingSecondaryAction());
+        assertEquals(EnumWrappers.Hand.MAIN_HAND, w.getHand());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        WrappedServerboundInteractPacket src = new WrappedServerboundInteractPacket();
-        src.setEntityId(77);
-        src.setUsingSecondaryAction(true);
-        src.setHand(EnumWrappers.Hand.OFF_HAND);
+    void testNoArgsCreate() {
+        WrappedServerboundInteractPacket w = new WrappedServerboundInteractPacket();
 
-        WrappedServerboundInteractPacket wrapper = new WrappedServerboundInteractPacket(src.getHandle());
+        assertEquals(PacketType.Play.Client.USE_ENTITY, w.getHandle().getType());
 
-        assertEquals(77, wrapper.getEntityId());
-        assertTrue(wrapper.isUsingSecondaryAction());
-        assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
+        assertEquals(0, w.getEntityId());
+        assertFalse(w.isUsingSecondaryAction());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedServerboundInteractPacket w = new WrappedServerboundInteractPacket();
-        w.setEntityId(10);
-        w.setUsingSecondaryAction(false);
-        w.setHand(EnumWrappers.Hand.MAIN_HAND);
+        WrappedServerboundInteractPacket src = new WrappedServerboundInteractPacket(77, true, EnumWrappers.Hand.MAIN_HAND);
+        ServerboundInteractPacket nmsPacket = (ServerboundInteractPacket) src.getHandle().getHandle();
 
-        w.setEntityId(20);
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedServerboundInteractPacket wrapper = new WrappedServerboundInteractPacket(container);
 
-        assertEquals(20, w.getEntityId());
-        assertFalse(w.isUsingSecondaryAction());
-        assertEquals(EnumWrappers.Hand.MAIN_HAND, w.getHand());
+        assertEquals(77, wrapper.getEntityId());
+        assertTrue(wrapper.isUsingSecondaryAction());
+        assertEquals(EnumWrappers.Hand.MAIN_HAND, wrapper.getHand());
+
+        wrapper.setEntityId(100);
+        wrapper.setUsingSecondaryAction(false);
+        wrapper.setHand(EnumWrappers.Hand.OFF_HAND);
+
+        assertEquals(100, wrapper.getEntityId());
+        assertFalse(wrapper.isUsingSecondaryAction());
+        assertEquals(EnumWrappers.Hand.OFF_HAND, wrapper.getHand());
     }
 
     @Test

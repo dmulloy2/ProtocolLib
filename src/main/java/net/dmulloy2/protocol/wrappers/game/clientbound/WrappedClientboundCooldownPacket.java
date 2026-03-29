@@ -20,8 +20,7 @@ public class WrappedClientboundCooldownPacket extends AbstractPacket {
 
     public WrappedClientboundCooldownPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundCooldownPacket(PacketContainer packet) {
         super(packet, TYPE);

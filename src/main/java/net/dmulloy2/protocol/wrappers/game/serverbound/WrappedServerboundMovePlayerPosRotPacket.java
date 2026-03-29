@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.PacketConstructor;
 import net.dmulloy2.protocol.AbstractPacket;
 
 /**
@@ -27,7 +28,10 @@ public class WrappedServerboundMovePlayerPosRotPacket extends AbstractPacket {
 
     public WrappedServerboundMovePlayerPosRotPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundMovePlayerPosRotPacket(double x, double y, double z, float yRot, float xRot, boolean onGround, boolean horizontalCollision) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { double.class, double.class, double.class, float.class, float.class, boolean.class, boolean.class }).createPacket(x, y, z, yRot, xRot, onGround, horizontalCollision));
     }
 
     public WrappedServerboundMovePlayerPosRotPacket(PacketContainer packet) {

@@ -18,8 +18,7 @@ public class WrappedClientboundSetCameraPacket extends AbstractPacket {
 
     public WrappedClientboundSetCameraPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetCameraPacket(PacketContainer packet) {
         super(packet, TYPE);

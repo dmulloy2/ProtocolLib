@@ -25,8 +25,7 @@ public class WrappedClientboundSoundEntityPacket extends AbstractPacket {
 
     public WrappedClientboundSoundEntityPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSoundEntityPacket(PacketContainer packet) {
         super(packet, TYPE);

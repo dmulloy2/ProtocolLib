@@ -28,8 +28,7 @@ public class WrappedClientboundAnimatePacket extends AbstractPacket {
 
     public WrappedClientboundAnimatePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundAnimatePacket(PacketContainer packet) {
         super(packet, TYPE);

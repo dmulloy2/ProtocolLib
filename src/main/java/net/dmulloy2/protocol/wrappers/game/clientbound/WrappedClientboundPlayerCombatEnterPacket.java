@@ -15,8 +15,7 @@ public class WrappedClientboundPlayerCombatEnterPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerCombatEnterPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundPlayerCombatEnterPacket(PacketContainer packet) {
         super(packet, TYPE);

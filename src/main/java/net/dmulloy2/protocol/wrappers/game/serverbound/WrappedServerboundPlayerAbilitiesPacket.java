@@ -20,8 +20,7 @@ public class WrappedServerboundPlayerAbilitiesPacket extends AbstractPacket {
 
     public WrappedServerboundPlayerAbilitiesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedServerboundPlayerAbilitiesPacket(boolean isFlying) {
         this();

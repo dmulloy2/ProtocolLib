@@ -17,37 +17,39 @@ class WrappedServerboundSetCarriedItemPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundSetCarriedItemPacket w = new WrappedServerboundSetCarriedItemPacket();
-        w.setSlot(4);
+    void testAllArgsCreate() {
+        WrappedServerboundSetCarriedItemPacket w = new WrappedServerboundSetCarriedItemPacket(3);
 
         assertEquals(PacketType.Play.Client.HELD_ITEM_SLOT, w.getHandle().getType());
 
         ServerboundSetCarriedItemPacket p = (ServerboundSetCarriedItemPacket) w.getHandle().getHandle();
 
-        assertEquals(4, p.getSlot());
+        assertEquals(3, p.getSlot());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundSetCarriedItemPacket nmsPacket = new ServerboundSetCarriedItemPacket(2);
+    void testNoArgsCreate() {
+        WrappedServerboundSetCarriedItemPacket w = new WrappedServerboundSetCarriedItemPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundSetCarriedItemPacket wrapper = new WrappedServerboundSetCarriedItemPacket(container);
+        assertEquals(PacketType.Play.Client.HELD_ITEM_SLOT, w.getHandle().getType());
 
-        assertEquals(2, wrapper.getSlot());
+        ServerboundSetCarriedItemPacket p = (ServerboundSetCarriedItemPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.getSlot());
     }
 
     @Test
     void testModifyExistingPacket() {
-        ServerboundSetCarriedItemPacket nmsPacket = new ServerboundSetCarriedItemPacket(2);
+        ServerboundSetCarriedItemPacket nmsPacket = new ServerboundSetCarriedItemPacket(3);
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundSetCarriedItemPacket wrapper = new WrappedServerboundSetCarriedItemPacket(container);
 
-        wrapper.setSlot(8);
+        assertEquals(3, wrapper.getSlot());
 
-        assertEquals(8, wrapper.getSlot());
+        wrapper.setSlot(7);
+
+        assertEquals(7, nmsPacket.getSlot());
     }
 
     @Test

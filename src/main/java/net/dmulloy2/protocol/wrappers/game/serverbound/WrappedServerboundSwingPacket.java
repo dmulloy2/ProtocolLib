@@ -2,6 +2,7 @@ package net.dmulloy2.protocol.wrappers.game.serverbound;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.injector.PacketConstructor;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import net.dmulloy2.protocol.AbstractPacket;
 
@@ -19,7 +20,10 @@ public class WrappedServerboundSwingPacket extends AbstractPacket {
 
     public WrappedServerboundSwingPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
+            }
+
+    public WrappedServerboundSwingPacket(EnumWrappers.Hand hand) {
+        this(PacketConstructor.DEFAULT.withPacket(TYPE, new Class<?>[] { EnumWrappers.getHandClass() }).createPacket(EnumWrappers.getHandConverter().getGeneric(hand)));
     }
 
     public WrappedServerboundSwingPacket(PacketContainer packet) {

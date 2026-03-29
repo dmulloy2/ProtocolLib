@@ -23,8 +23,7 @@ public class WrappedClientboundPlayerAbilitiesPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerAbilitiesPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundPlayerAbilitiesPacket(PacketContainer packet) {
         super(packet, TYPE);

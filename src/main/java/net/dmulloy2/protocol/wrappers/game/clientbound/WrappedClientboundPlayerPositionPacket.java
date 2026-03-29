@@ -24,8 +24,7 @@ public class WrappedClientboundPlayerPositionPacket extends AbstractPacket {
 
     public WrappedClientboundPlayerPositionPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundPlayerPositionPacket(PacketContainer packet) {
         super(packet, TYPE);

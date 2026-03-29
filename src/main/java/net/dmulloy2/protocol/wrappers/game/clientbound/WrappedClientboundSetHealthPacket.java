@@ -20,8 +20,7 @@ public class WrappedClientboundSetHealthPacket extends AbstractPacket {
 
     public WrappedClientboundSetHealthPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetHealthPacket(PacketContainer packet) {
         super(packet, TYPE);

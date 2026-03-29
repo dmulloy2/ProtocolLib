@@ -23,8 +23,7 @@ public class WrappedClientboundContainerSetSlotPacket extends AbstractPacket {
 
     public WrappedClientboundContainerSetSlotPacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundContainerSetSlotPacket(PacketContainer packet) {
         super(packet, TYPE);

@@ -17,25 +17,25 @@ class WrappedServerboundAttackPacketTest {
     }
 
     @Test
-    void testCreate() {
-        WrappedServerboundAttackPacket w = new WrappedServerboundAttackPacket();
-        w.setEntityId(123);
+    void testAllArgsCreate() {
+        WrappedServerboundAttackPacket w = new WrappedServerboundAttackPacket(55);
 
         assertEquals(PacketType.Play.Client.ATTACK, w.getHandle().getType());
 
         ServerboundAttackPacket p = (ServerboundAttackPacket) w.getHandle().getHandle();
 
-        assertEquals(123, p.entityId());
+        assertEquals(55, p.entityId());
     }
 
     @Test
-    void testReadFromExistingPacket() {
-        ServerboundAttackPacket nmsPacket = new ServerboundAttackPacket(55);
+    void testNoArgsCreate() {
+        WrappedServerboundAttackPacket w = new WrappedServerboundAttackPacket();
 
-        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedServerboundAttackPacket wrapper = new WrappedServerboundAttackPacket(container);
+        assertEquals(PacketType.Play.Client.ATTACK, w.getHandle().getType());
 
-        assertEquals(55, wrapper.getEntityId());
+        ServerboundAttackPacket p = (ServerboundAttackPacket) w.getHandle().getHandle();
+
+        assertEquals(0, p.entityId());
     }
 
     @Test
@@ -45,9 +45,11 @@ class WrappedServerboundAttackPacketTest {
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
         WrappedServerboundAttackPacket wrapper = new WrappedServerboundAttackPacket(container);
 
-        wrapper.setEntityId(200);
+        assertEquals(55, wrapper.getEntityId());
 
-        assertEquals(200, wrapper.getEntityId());
+        wrapper.setEntityId(99);
+
+        assertEquals(99, nmsPacket.entityId());
     }
 
     @Test

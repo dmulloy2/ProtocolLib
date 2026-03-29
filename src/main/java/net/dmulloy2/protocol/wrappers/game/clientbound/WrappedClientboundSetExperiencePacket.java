@@ -20,8 +20,7 @@ public class WrappedClientboundSetExperiencePacket extends AbstractPacket {
 
     public WrappedClientboundSetExperiencePacket() {
         super(new PacketContainer(TYPE), TYPE);
-        handle.getModifier().writeDefaults();
-    }
+            }
 
     public WrappedClientboundSetExperiencePacket(PacketContainer packet) {
         super(packet, TYPE);
