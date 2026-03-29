@@ -35,7 +35,7 @@ class WrappedClientboundCooldownPacketTest {
     @Test
     void testReadFromExistingPacket() {
         ClientboundCooldownPacket nmsPacket = new ClientboundCooldownPacket(
-                new Identifier("minecraft", "bow"), 5
+                Identifier.fromNamespaceAndPath("minecraft", "bow"), 5
         );
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
@@ -48,7 +48,7 @@ class WrappedClientboundCooldownPacketTest {
     @Test
     void testModifyExistingPacket() {
         ClientboundCooldownPacket nmsPacket = new ClientboundCooldownPacket(
-                new Identifier("minecraft", "bow"), 5
+                Identifier.fromNamespaceAndPath("minecraft", "bow"), 5
         );
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
