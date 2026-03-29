@@ -4,6 +4,8 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundTabListPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -21,32 +23,43 @@ class WrappedClientboundTabListPacketTest {
         WrappedClientboundTabListPacket w = new WrappedClientboundTabListPacket();
         w.setHeader(WrappedChatComponent.fromText("Header text"));
         w.setFooter(WrappedChatComponent.fromText("Footer text"));
+
+        assertEquals(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER, w.getHandle().getType());
+
+        ClientboundTabListPacket p = (ClientboundTabListPacket) w.getHandle().getHandle();
+
+        assertNotNull(p.header());
+        assertNotNull(p.footer());
         assertTrue(w.getHeader().getJson().contains("Header text"));
         assertTrue(w.getFooter().getJson().contains("Footer text"));
-        assertEquals(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER, w.getHandle().getType());
     }
 
     @Test
     void testReadFromExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER);
-        raw.getModifier().writeDefaults();
-        raw.getChatComponents().write(0, WrappedChatComponent.fromText("Top"));
-        raw.getChatComponents().write(1, WrappedChatComponent.fromText("Bottom"));
+        ClientboundTabListPacket nmsPacket = new ClientboundTabListPacket(
+                Component.literal("Top"), Component.literal("Bottom")
+        );
 
-        WrappedClientboundTabListPacket w = new WrappedClientboundTabListPacket(raw);
-        assertTrue(w.getHeader().getJson().contains("Top"));
-        assertTrue(w.getFooter().getJson().contains("Bottom"));
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTabListPacket wrapper = new WrappedClientboundTabListPacket(container);
+
+        assertTrue(wrapper.getHeader().getJson().contains("Top"));
+        assertTrue(wrapper.getFooter().getJson().contains("Bottom"));
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundTabListPacket w = new WrappedClientboundTabListPacket();
-        w.setHeader(WrappedChatComponent.fromText("old"));
+        ClientboundTabListPacket nmsPacket = new ClientboundTabListPacket(
+                Component.literal("old header"), Component.literal("old footer")
+        );
 
-        new WrappedClientboundTabListPacket(w.getHandle())
-                .setHeader(WrappedChatComponent.fromText("new header"));
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTabListPacket wrapper = new WrappedClientboundTabListPacket(container);
 
-        assertTrue(w.getHeader().getJson().contains("new header"));
+        wrapper.setHeader(WrappedChatComponent.fromText("new header"));
+
+        assertTrue(wrapper.getHeader().getJson().contains("new header"));
+        assertTrue(wrapper.getFooter().getJson().contains("old footer"));
     }
 
     @Test

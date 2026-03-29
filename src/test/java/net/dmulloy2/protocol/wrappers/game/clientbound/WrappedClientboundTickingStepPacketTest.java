@@ -3,6 +3,7 @@ package net.dmulloy2.protocol.wrappers.game.clientbound;
 import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import net.minecraft.network.protocol.game.ClientboundTickingStepPacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -19,28 +20,34 @@ class WrappedClientboundTickingStepPacketTest {
     void testCreate() {
         WrappedClientboundTickingStepPacket w = new WrappedClientboundTickingStepPacket();
         w.setTickSteps(3);
-        assertEquals(3, w.getTickSteps());
+
         assertEquals(PacketType.Play.Server.TICKING_STEP_STATE, w.getHandle().getType());
+
+        ClientboundTickingStepPacket p = (ClientboundTickingStepPacket) w.getHandle().getHandle();
+
+        assertEquals(3, p.tickSteps());
     }
 
     @Test
     void testReadFromExistingPacket() {
-        PacketContainer raw = new PacketContainer(PacketType.Play.Server.TICKING_STEP_STATE);
-        raw.getModifier().writeDefaults();
-        raw.getIntegers().write(0, 7);
+        ClientboundTickingStepPacket nmsPacket = new ClientboundTickingStepPacket(7);
 
-        WrappedClientboundTickingStepPacket w = new WrappedClientboundTickingStepPacket(raw);
-        assertEquals(7, w.getTickSteps());
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTickingStepPacket wrapper = new WrappedClientboundTickingStepPacket(container);
+
+        assertEquals(7, wrapper.getTickSteps());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundTickingStepPacket w = new WrappedClientboundTickingStepPacket();
-        w.setTickSteps(1);
+        ClientboundTickingStepPacket nmsPacket = new ClientboundTickingStepPacket(1);
 
-        new WrappedClientboundTickingStepPacket(w.getHandle()).setTickSteps(10);
+        PacketContainer container = PacketContainer.fromPacket(nmsPacket);
+        WrappedClientboundTickingStepPacket wrapper = new WrappedClientboundTickingStepPacket(container);
 
-        assertEquals(10, w.getTickSteps());
+        wrapper.setTickSteps(10);
+
+        assertEquals(10, wrapper.getTickSteps());
     }
 
     @Test

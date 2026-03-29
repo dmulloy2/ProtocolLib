@@ -4,6 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import net.minecraft.network.protocol.game.ClientboundSetDisplayObjectivePacket;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -23,8 +24,11 @@ class WrappedClientboundSetDisplayObjectivePacketTest {
         w.setObjectiveName("myObjective");
 
         assertEquals(PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE, w.getHandle().getType());
+
+        ClientboundSetDisplayObjectivePacket p = (ClientboundSetDisplayObjectivePacket) w.getHandle().getHandle();
+
+        assertEquals("myObjective", p.getObjectiveName());
         assertEquals(EnumWrappers.DisplaySlot.BELOW_NAME, w.getSlot());
-        assertEquals("myObjective", w.getObjectiveName());
     }
 
     @Test
@@ -44,11 +48,13 @@ class WrappedClientboundSetDisplayObjectivePacketTest {
     void testModifyExistingPacket() {
         PacketContainer container = new PacketContainer(PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE);
         container.getModifier().writeDefaults();
+        container.getDisplaySlots().write(0, EnumWrappers.DisplaySlot.SIDEBAR);
         container.getStrings().write(0, "old");
 
         WrappedClientboundSetDisplayObjectivePacket wrapper = new WrappedClientboundSetDisplayObjectivePacket(container);
         wrapper.setObjectiveName("new");
 
+        assertEquals(EnumWrappers.DisplaySlot.SIDEBAR, wrapper.getSlot());
         assertEquals("new", wrapper.getObjectiveName());
     }
 

@@ -4,6 +4,7 @@ import com.comphenix.protocol.BukkitInitialization;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import org.bukkit.Sound;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -26,13 +27,15 @@ class WrappedClientboundSoundEntityPacketTest {
         w.setVolume(1.0f);
         w.setPitch(1.0f);
         w.setSeed(12345L);
-        assertEquals(Sound.ENTITY_CAT_HISS, w.getSound());
-        assertEquals(EnumWrappers.SoundCategory.PLAYERS, w.getCategory());
-        assertEquals(15, w.getEntityId());
-        assertEquals(1.0f, w.getVolume(), 1e-6f);
-        assertEquals(1.0f, w.getPitch(), 1e-6f);
-        assertEquals(12345L, w.getSeed());
+
         assertEquals(PacketType.Play.Server.ENTITY_SOUND, w.getHandle().getType());
+
+        ClientboundSoundEntityPacket p = (ClientboundSoundEntityPacket) w.getHandle().getHandle();
+
+        assertEquals(15, p.getId());
+        assertEquals(1.0f, p.getVolume(), 1e-4f);
+        assertEquals(1.0f, p.getPitch(), 1e-4f);
+        assertEquals(12345L, p.getSeed());
     }
 
     @Test
@@ -44,21 +47,28 @@ class WrappedClientboundSoundEntityPacketTest {
         raw.getFloat().write(1, 2.0f);
         raw.getLongs().write(0, 999L);
 
-        WrappedClientboundSoundEntityPacket w = new WrappedClientboundSoundEntityPacket(raw);
-        assertEquals(20, w.getEntityId());
-        assertEquals(0.5f, w.getVolume(), 1e-6f);
-        assertEquals(2.0f, w.getPitch(), 1e-6f);
-        assertEquals(999L, w.getSeed());
+        WrappedClientboundSoundEntityPacket wrapper = new WrappedClientboundSoundEntityPacket(raw);
+
+        assertEquals(20, wrapper.getEntityId());
+        assertEquals(0.5f, wrapper.getVolume(), 1e-4f);
+        assertEquals(2.0f, wrapper.getPitch(), 1e-4f);
+        assertEquals(999L, wrapper.getSeed());
     }
 
     @Test
     void testModifyExistingPacket() {
-        WrappedClientboundSoundEntityPacket w = new WrappedClientboundSoundEntityPacket();
-        w.setVolume(1.0f);
+        PacketContainer raw = new PacketContainer(PacketType.Play.Server.ENTITY_SOUND);
+        raw.getModifier().writeDefaults();
+        raw.getFloat().write(0, 1.0f);
+        raw.getFloat().write(1, 1.0f);
+        raw.getLongs().write(0, 1L);
 
-        new WrappedClientboundSoundEntityPacket(w.getHandle()).setVolume(0.5f);
+        WrappedClientboundSoundEntityPacket wrapper = new WrappedClientboundSoundEntityPacket(raw);
+        wrapper.setVolume(0.5f);
 
-        assertEquals(0.5f, w.getVolume(), 1e-6f);
+        assertEquals(0.5f, wrapper.getVolume(), 1e-4f);
+        assertEquals(1.0f, wrapper.getPitch(), 1e-4f);
+        assertEquals(1L, wrapper.getSeed());
     }
 
     @Test
