@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class WrappedClientboundHorseScreenOpenPacketTest {
+class WrappedClientboundMountScreenOpenPacketTest {
 
     @BeforeAll
     static void beforeAll() {
@@ -18,7 +18,7 @@ class WrappedClientboundHorseScreenOpenPacketTest {
 
     @Test
     void testCreate() {
-        WrappedClientboundHorseScreenOpenPacket w = new WrappedClientboundHorseScreenOpenPacket();
+        WrappedClientboundMountScreenOpenPacket w = new WrappedClientboundMountScreenOpenPacket();
         w.setWindowId(3);
         w.setContainerSize(6);
         w.setEntityId(55);
@@ -37,7 +37,7 @@ class WrappedClientboundHorseScreenOpenPacketTest {
         ClientboundMountScreenOpenPacket nmsPacket = new ClientboundMountScreenOpenPacket(1, 3, 100);
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundHorseScreenOpenPacket wrapper = new WrappedClientboundHorseScreenOpenPacket(container);
+        WrappedClientboundMountScreenOpenPacket wrapper = new WrappedClientboundMountScreenOpenPacket(container);
 
         assertEquals(1, wrapper.getWindowId());
         assertEquals(3, wrapper.getContainerSize());
@@ -49,7 +49,7 @@ class WrappedClientboundHorseScreenOpenPacketTest {
         ClientboundMountScreenOpenPacket nmsPacket = new ClientboundMountScreenOpenPacket(1, 3, 100);
 
         PacketContainer container = PacketContainer.fromPacket(nmsPacket);
-        WrappedClientboundHorseScreenOpenPacket wrapper = new WrappedClientboundHorseScreenOpenPacket(container);
+        WrappedClientboundMountScreenOpenPacket wrapper = new WrappedClientboundMountScreenOpenPacket(container);
 
         wrapper.setEntityId(77);
 
@@ -61,7 +61,7 @@ class WrappedClientboundHorseScreenOpenPacketTest {
     @Test
     void testWrongPacketTypeThrows() {
         assertThrows(IllegalArgumentException.class,
-                () -> new WrappedClientboundHorseScreenOpenPacket(
+                () -> new WrappedClientboundMountScreenOpenPacket(
                         new PacketContainer(PacketType.Play.Server.CHAT)));
     }
 }
